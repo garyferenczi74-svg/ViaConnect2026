@@ -618,3 +618,5 @@ export function getInteractionsBySubstance(
 
   return results;
 }
+
+export * from './botanical-interactions';
