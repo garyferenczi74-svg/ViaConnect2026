@@ -1,0 +1,19 @@
+{
+  "name": "@genex360/genomics-engine",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "build": "tsc --noEmit",
+    "lint": "eslint src/",
+    "type-check": "tsc --noEmit",
+    "test": "echo \"No tests yet\""
+  },
+  "dependencies": {
+    "@genex360/core": "*"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0"
+  }
+}

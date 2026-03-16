@@ -1,0 +1,27 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-emerald-50: #ecfdf5;
+  --color-emerald-100: #d1fae5;
+  --color-emerald-200: #a7f3d0;
+  --color-emerald-300: #6ee7b7;
+  --color-emerald-400: #34d399;
+  --color-emerald-500: #10b981;
+  --color-emerald-600: #059669;
+  --color-emerald-700: #047857;
+  --color-emerald-800: #065f46;
+  --color-emerald-900: #064e3b;
+  --color-emerald-950: #022c22;
+
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Clash Display', 'Inter', ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Glassmorphism utilities */
+.glass {
+  @apply backdrop-blur-xl bg-white/5 border border-white/10 shadow-xl;
+}
+
+.glass-light {
+  @apply backdrop-blur-xl bg-white/70 border border-white/20 shadow-lg;
+}
