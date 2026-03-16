@@ -2,19 +2,41 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 
+// Portal access by JWT role claim
 const PORTAL_ROLE_MAP: Record<string, string[]> = {
   '/wellness': ['patient'],
   '/practitioner': ['practitioner', 'clinic_admin', 'super_admin'],
   '/naturopath': ['naturopath', 'super_admin'],
 };
 
-const PUBLIC_PATHS = ['/', '/login', '/signup', '/forgot-password'];
+// Role to default portal redirect
+const ROLE_DEFAULT_PORTAL: Record<string, string> = {
+  patient: '/wellness',
+  practitioner: '/practitioner',
+  naturopath: '/naturopath',
+  clinic_admin: '/practitioner',
+  super_admin: '/practitioner',
+};
+
+// Paths that don't require authentication
+const PUBLIC_PATHS = [
+  '/',
+  '/login',
+  '/register',
+  '/forgot-password',
+  '/reset-password',
+  '/verify-email',
+  '/auth/callback',
+];
+
+// Paths that require auth but no specific role
+const AUTH_ONLY_PATHS = ['/onboarding', '/mfa'];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Allow public paths
-  if (PUBLIC_PATHS.some((p) => pathname === p)) {
+  if (PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(p + '/'))) {
     return NextResponse.next();
   }
 
@@ -62,14 +84,22 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  // Check portal access based on role
+  // Extract role from JWT claims (app_metadata set during sign-up)
+  const userRole: string = user.app_metadata?.role || 'patient';
+
+  // Auth-only paths (onboarding, MFA) - any authenticated user can access
+  if (AUTH_ONLY_PATHS.some((p) => pathname === p || pathname.startsWith(p + '/'))) {
+    return response;
+  }
+
+  // Check portal access based on JWT role claim
   for (const [portalPath, allowedRoles] of Object.entries(PORTAL_ROLE_MAP)) {
     if (pathname.startsWith(portalPath)) {
-      const userRole = user.app_metadata?.role || 'patient';
       if (!allowedRoles.includes(userRole)) {
-        // Redirect to appropriate portal
+        // Redirect to user's appropriate portal based on their role
+        const defaultPortal = ROLE_DEFAULT_PORTAL[userRole] || '/wellness';
         const redirectUrl = request.nextUrl.clone();
-        redirectUrl.pathname = '/';
+        redirectUrl.pathname = defaultPortal;
         return NextResponse.redirect(redirectUrl);
       }
     }

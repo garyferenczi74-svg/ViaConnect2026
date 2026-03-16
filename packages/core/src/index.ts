@@ -26,3 +26,5 @@ export const ROLE_PORTAL_MAP: Record<UserRole, PortalType | null> = {
   clinic_admin: 'practitioner',
   super_admin: 'practitioner',
 };
+
+export * from './personalization';
