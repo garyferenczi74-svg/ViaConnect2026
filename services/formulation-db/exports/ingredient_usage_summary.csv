@@ -1,0 +1,323 @@
+name,category,delivery_form,product_count,min_dose_mg,max_dose_mg,avg_dose_mg
+Micellar Bioperine® (Black Pepper Extract),other,micellar,22,5.0,5.0,5.0
+Zinc (Bisglycinate),mineral,standard,13,15.0,20.0,15.76923076923077
+Liposomal Methyl Folate (5-MTHF),vitamin,liposomal,12,0.8,1.0,0.8333333333333334
+Liposomal Magnesium (Bisglycinate),mineral,liposomal,11,50.0,125.0,65.9090909090909
+Metylated Vitamin B2 (Riboflavin-5-Phosphate),vitamin,methylated,10,20.0,25.0,24.5
+Liposomal Vitamin B12 (Methylcobalamin +,vitamin,liposomal,9,1.0,2.0,1.2777777777777777
+Liposomal Curcumin (95% Curcuminoids),botanical,liposomal,8,50.0,150.0,87.5
+Metylated Vitamin B6 (Pyridoxal-5-Phosphate),vitamin,methylated,8,25.0,30.0,27.5
+Liposomal N-Acetylcysteine (NAC),amino_acid,liposomal,7,50.0,200.0,100.0
+Liposomal Vitamin B12 (Methylcobalamin),vitamin,liposomal,7,1.0,1.0,1.0
+Liposomal L-Theanine,amino_acid,liposomal,5,15.0,100.0,73.0
+Liposomal Magnesium Bisglycinate,mineral,liposomal,5,10.0,200.0,75.0
+Liposomal NAC (N-Acetylcysteine),amino_acid,liposomal,5,50.0,150.0,100.0
+Liposomal PQQ (Pyrroloquinoline Quinone),cofactor,liposomal,5,10.0,20.0,16.0
+Liposomal Choline (as Alpha-GPC),other,liposomal,4,100.0,100.0,100.0
+Liposomal CoQ10 (Ubiquinol),cofactor,liposomal,4,25.0,50.0,43.75
+Liposomal Quercetin,botanical,liposomal,4,30.0,100.0,70.0
+SAMe (S-Adenosyl Methionine),amino_acid,standard,4,100.0,200.0,150.0
+Betaine Anhydrous (Trimethylglycine),amino_acid,standard,3,200.0,250.0,216.66666666666666
+C15:0 (Pentadecanoic Acid),lipid,standard,3,30.0,200.0,143.33333333333334
+L-Arginine,amino_acid,standard,3,10.0,100.0,40.0
+Liposomal Alpha-Lipoic Acid (ALA),cofactor,liposomal,3,100.0,100.0,100.0
+Liposomal B9 Folate (5-MTHF),vitamin,liposomal,3,0.8,0.8,0.8000000000000002
+Liposomal Glutathione (Reduced),amino_acid,liposomal,3,100.0,150.0,116.66666666666667
+Liposomal Magnesium L-Threonate,mineral,liposomal,3,10.0,50.0,36.666666666666664
+Liposomal Phosphatidylcholine,lipid,liposomal,3,50.0,100.0,83.33333333333333
+Liposomal Quercetin (Aglycone),botanical,liposomal,3,100.0,100.0,100.0
+Liposomal Trans-Resveratrol (98%),botanical,liposomal,3,25.0,50.0,41.666666666666664
+Liposomal Vitamin C,vitamin,liposomal,3,10.0,500.0,203.33333333333334
+Liposomal Vitamin D3 (Cholecalciferol),vitamin,liposomal,3,0.5,0.5,0.5
+Liposomal Vitamin K2 (Menaquinone-7),vitamin,liposomal,3,0.1,0.2,0.13333333333333333
+Methylated Vitamin B6 (P-5-P),vitamin,methylated,3,25.0,25.0,25.0
+Methylcobalamin (B12),vitamin,standard,3,0.5,0.5,0.5
+Methylfolate (5-MTHF),vitamin,standard,3,0.0,0.8,0.4000000000000001
+Micellar BioPerine® (Black Pepper Extract),other,micellar,3,5.0,50.0,20.0
+Niacin (as Niacinamide),vitamin,standard,3,15.0,50.0,26.666666666666668
+Pyridoxal-5-Phosphate (B6),vitamin,standard,3,5.0,25.0,11.666666666666666
+Riboflavin-5-Phosphate (B2),vitamin,standard,3,5.0,25.0,11.666666666666666
+Selenium (L-Selenomethionine),mineral,standard,3,0.2,1.0,0.4666666666666666
+Thiamine HCL (B1),vitamin,standard,3,10.0,25.0,15.0
+Zinc Bisglycinate,mineral,standard,3,15.0,30.0,20.0
+Algal Phospholipid Matrix (carrier base),lipid,standard,2,90.0,90.0,90.0
+B6 -- Pyridoxine,vitamin,standard,2,10.0,10.0,10.0
+EPA (Eicosapentaenoic Acid) (Algal-derived),lipid,standard,2,120.0,120.0,120.0
+Fennel Seed Extract (4:1),other,standard,2,3.0,40.0,21.5
+Folinic Acid (Calcium Folinate),mineral,standard,2,0.8,0.8,0.8
+Inulin-FOS (Prebiotic Blend),other,standard,2,10.0,10.0,10.0
+L-Carnitine Tartrate,amino_acid,standard,2,25.0,100.0,62.5
+L-Citrulline Malate (2:1),amino_acid,standard,2,150.0,150.0,150.0
+Liposomal Acetyl-L-Carnitine,amino_acid,liposomal,2,100.0,100.0,100.0
+Liposomal B12 -- (Methylcobalamin),vitamin,liposomal,2,2.0,2.0,2.0
+Liposomal B9 -- Methyl Folate (5-MTHF),vitamin,liposomal,2,0.8,0.8,0.8
+Liposomal Choline (Alpha-GPC),other,liposomal,2,10.0,450.0,230.0
+Liposomal Choline Alpha-GPC,other,liposomal,2,100.0,100.0,100.0
+"Liposomal DHA (Algal-Based, Vegan)",lipid,liposomal,2,100.0,100.0,100.0
+Liposomal DHA (Docosahexaenoic Acid) (Algal-derived),lipid,liposomal,2,90.0,90.0,90.0
+Liposomal L-Ergothioneine,other,liposomal,2,2.0,100.0,51.0
+Liposomal L-Taurine,amino_acid,liposomal,2,10.0,50.0,30.0
+Liposomal Methylcobalamin (B12),vitamin,liposomal,2,1.0,1.0,1.0
+Liposomal Phosphatidylserine,lipid,liposomal,2,25.0,100.0,62.5
+Liposomal Taurine,amino_acid,liposomal,2,50.0,100.0,75.0
+Liposomal Vitamin C (Ascorbate),vitamin,liposomal,2,50.0,100.0,75.0
+Lyposomal L-Theanine,amino_acid,standard,2,100.0,100.0,100.0
+Magnesium Bisglycinate,mineral,standard,2,75.0,100.0,87.5
+Magnesium Citrate,mineral,standard,2,40.0,75.0,57.5
+Magnesium L-Threonate,mineral,standard,2,48.0,50.0,49.0
+Magnesium Malate,mineral,standard,2,65.0,75.0,70.0
+Magnesium Orotate,mineral,standard,2,22.0,50.0,36.0
+Magnesium Taurate,mineral,standard,2,50.0,50.0,50.0
+Methylated Pantethine (Vitamin B5 ),vitamin,methylated,2,25.0,50.0,37.5
+Methylated Riboflavin-5-Phosphate (Vitamin B2),vitamin,methylated,2,50.0,50.0,50.0
+Methylated Vitamin B2 (Riboflavin-5-Phosphate),vitamin,methylated,2,25.0,25.0,25.0
+Micellar Ginger Root Extract (10:1),botanical,micellar,2,5.0,15.0,10.0
+Micellar Schisandra Chinensis Extract,botanical,micellar,2,20.0,100.0,60.0
+Molybdenum (Glycinate Chelate),mineral,standard,2,0.5,1.5,1.0
+Molybdenum (Glycinate),mineral,standard,2,0.2,0.2,0.2
+Papaya Extract (Papain enzyme),enzyme,standard,2,5.0,50.0,27.5
+Selenium (L-selenomethionine),mineral,standard,2,0.2,100.0,50.1
+Trimethylglycine (TMG),amino_acid,standard,2,150.0,250.0,200.0
+(20:1 concentration ratio),other,standard,1,50.0,50.0,50.0
+(AstaPure® - 4mg active),other,standard,1,15.0,15.0,15.0
+5-HTP (Griffonia simplicifolia Extract),other,standard,1,100.0,100.0,100.0
+AC-11 (rainforest cat\'s claw extract),lipid,standard,1,500.0,500.0,500.0
+Adenosine Triphosphate (ATP),other,standard,1,25.0,25.0,25.0
+Alpha-Lipoic Acid (ALA),cofactor,standard,1,200.0,200.0,200.0
+Amylase,enzyme,standard,1,20.0,20.0,20.0
+Apigenin (Chamomile Extract),botanical,standard,1,50.0,50.0,50.0
+Astaxanthin,other,standard,1,10.0,10.0,10.0
+Astragalus,botanical,standard,1,400.0,400.0,400.0
+"BHB Salts (Magnesium, Calcium, Sodium)",enzyme,standard,1,150.0,150.0,150.0
+Bacopa Monnieri Extract (Micellar) 50% Bacosides A & B,botanical,standard,1,300.0,300.0,300.0
+Berberine HCl (98% purity),botanical,standard,1,30.0,30.0,30.0
+Beta-Alanine (CarnoSyn®),amino_acid,standard,1,800.0,800.0,800.0
+Betaine (Trimethylglycine - TMG),amino_acid,standard,1,100.0,100.0,100.0
+Bifidobacterium bifidum 1.0 Billion CFU,probiotic,standard,1,20.0,20.0,20.0
+Bifidobacterium infantis 1.0 Billion CFU,probiotic,standard,1,20.0,20.0,20.0
+Bifidobacterium longum 1.0 Billion CFU,probiotic,standard,1,20.0,20.0,20.0
+BioB Fusion™ B-Complex,other,standard,1,32.0,32.0,32.0
+BioB Fusion™ Methylated and Liposomal B Complex,other,standard,1,35.0,35.0,35.0
+BioPerine® (Black Pepper),other,standard,1,10.0,10.0,10.0
+BioPerine® (Micellar) 95% Piperine - Black Pepper,other,standard,1,10.0,10.0,10.0
+Bioperine® (Black Pepper Extract),other,standard,1,5.0,5.0,5.0
+Black Pepper Extract (Bioperine®),other,standard,1,2.0,2.0,2.0
+Boron (Citrate Complex),mineral,standard,1,3.0,3.0,3.0
+Bromelain (from Pineapple extract),enzyme,standard,1,5.0,5.0,5.0
+Butyrate (Sodium Butyrate),enzyme,standard,1,30.0,30.0,30.0
+"C15:0 (Pentadecanoic Acid, Fatty15)",lipid,standard,1,200.0,200.0,200.0
+Calcium (Citrate & MCHC),mineral,standard,1,400.0,400.0,400.0
+Calcium Alpha-Ketoglutarate,mineral,standard,1,100.0,100.0,100.0
+Calcium Bentonite Clay,lipid,standard,1,50.0,50.0,50.0
+Calcium Beta-Hydroxybutyrate,mineral,standard,1,50.0,50.0,50.0
+Calcium-D-Glucarate,mineral,standard,1,50.0,50.0,50.0
+Cellulase,enzyme,standard,1,5.0,5.0,5.0
+Centella Asiatica Extract,other,standard,1,600.0,600.0,600.0
+Choline (Alpha-GPC 50%),other,standard,1,60.0,60.0,60.0
+Christensenella minuta (Next-Gen Keystone Species) 2.5,other,standard,1,30.0,30.0,30.0
+Chromium Picolinate (elemental),mineral,standard,1,2.0,2.0,2.0
+Clinoptilolite Zeolite,other,standard,1,50.0,50.0,50.0
+CoQ10 (Ubiquinol),cofactor,standard,1,100.0,100.0,100.0
+CoQ10 - Ubiquinol (Liposomal) Kaneka QH® or equivalent,cofactor,standard,1,100.0,100.0,100.0
+Copper (Bisglycinate Chelate),mineral,standard,1,2.0,2.0,2.0
+Copper (Bisglycinate),mineral,standard,1,2.0,2.0,2.0
+Creatine Hydrochloride,amino_acid,standard,1,2000.0,2000.0,2000.0
+Cycloastragenol,other,standard,1,50.0,50.0,50.0
+DAO Enzyme (from Non-GMO Porcine Kidney),enzyme,standard,1,0.2,0.2,0.2
+DIM (99% pure),botanical,standard,1,100.0,100.0,100.0
+DMG (Dimethylglycine),amino_acid,standard,1,50.0,50.0,50.0
+DigestiZorb+™ Digestive Enzyme Complex,enzyme,standard,1,75.0,75.0,75.0
+Diindolylmethane (DIM),botanical,standard,1,100.0,100.0,100.0
+Dileucine (Di-peptide),peptide,standard,1,10.0,10.0,10.0
+"EPA (Algal, Phospholipid-bound): 60mg",lipid,standard,1,180.0,180.0,180.0
+Effervescent Hydrogen Matrix (Mg-H complex),other,standard,1,100.0,100.0,100.0
+"Ginkgo Biloba Extract (Micellar) 24% Flavone Glycosides,",botanical,standard,1,120.0,120.0,120.0
+Glycine,amino_acid,standard,1,100.0,100.0,100.0
+Glycine (USP),amino_acid,standard,1,10.0,10.0,10.0
+HMB-FA (Free Acid),other,standard,1,2000.0,2000.0,2000.0
+Holy Basil Extract (Ocimum sanctum),botanical,standard,1,35.0,35.0,35.0
+Inositol,vitamin,standard,1,200.0,200.0,200.0
+Iodine (as Potassium Iodide),mineral,standard,1,2.2,2.2,2.2
+Ionic Boron (Calcium Fructoborate - 1mg elemental),mineral,standard,1,5.0,5.0,5.0
+Iron (as Ferrous Bisglycinate),mineral,standard,1,27.0,27.0,27.0
+Korean Ginseng (Ginsenosides),other,standard,1,200.0,200.0,200.0
+L-Citrulline Malate,amino_acid,standard,1,15.0,15.0,15.0
+L-Dopa (from Mucuna pruriens extract),other,standard,1,30.0,30.0,30.0
+L-Ergothioneine,other,standard,1,12.0,12.0,12.0
+L-Glutamine,amino_acid,standard,1,100.0,100.0,100.0
+L-Glycine,amino_acid,standard,1,100.0,100.0,100.0
+"L-Glycine (Pure, Pharmaceutical Grade)",amino_acid,standard,1,3000.0,3000.0,3000.0
+L-Norvaline,other,standard,1,50.0,50.0,50.0
+L-Ornithine,amino_acid,standard,1,50.0,50.0,50.0
+L-Phenylalanine,other,standard,1,15.0,15.0,15.0
+L-Serine,amino_acid,standard,1,100.0,100.0,100.0
+L-Theanine (Liposomal) Suntheanine® or equivalent,amino_acid,standard,1,200.0,200.0,200.0
+Lactase,enzyme,standard,1,10.0,10.0,10.0
+Lactobacillus acidophilus 1.0 Billion CFU,probiotic,standard,1,20.0,20.0,20.0
+Lactobacillus plantarum 1.0 Billion CFU,probiotic,standard,1,20.0,20.0,20.0
+Lactobacillus rhamnosus GG 2.0 Billion CFU,probiotic,standard,1,20.0,20.0,20.0
+"Lion\'s Mane Extract (Micellar) 30% Polysaccharides, 1%",other,standard,1,500.0,500.0,500.0
+Lipase,enzyme,standard,1,10.0,10.0,10.0
+Liposoaml Uridine Monophosphate,other,standard,1,50.0,50.0,50.0
+Liposomal + Micellar Natural GLP-1 Activator Complex,other,liposomal,1,445.0,445.0,445.0
+Liposomal 5-MTHF (5-Methyltetrahydrofolate),cofactor,liposomal,1,10.0,10.0,10.0
+Liposomal 5-MTHF (Quatrefolic®),vitamin,liposomal,1,0.8,0.8,0.8
+Liposomal Acetyl-L-Carnitine (ALCAR),amino_acid,liposomal,1,150.0,150.0,150.0
+Liposomal Adenosylcobalamin (Vitamin B12),vitamin,liposomal,1,1.0,1.0,1.0
+Liposomal Alpha Lipoic Acid (R-ALA),cofactor,liposomal,1,15.0,15.0,15.0
+Liposomal Alpha-Lipoic Acid,cofactor,liposomal,1,20.0,20.0,20.0
+Liposomal Alpha-Lipoic Acid (R-ALA),cofactor,liposomal,1,100.0,100.0,100.0
+Liposomal BPC-157,peptide,liposomal,1,0.5,0.5,0.5
+Liposomal BPC-157 Peptide,peptide,liposomal,1,0.2,0.2,0.2
+Liposomal Berberine Complex (25% active),botanical,liposomal,1,40.0,40.0,40.0
+Liposomal Berberine HCl,botanical,liposomal,1,50.0,50.0,50.0
+Liposomal Boswellia Serrata Extract (AprèsFlex® - 70%,botanical,liposomal,1,150.0,150.0,150.0
+Liposomal Broccoli Seed Extract (Sulforaphane-rich),botanical,liposomal,1,150.0,150.0,150.0
+Liposomal Citicoline (CDP-Choline),cofactor,liposomal,1,100.0,100.0,100.0
+Liposomal CoQ10 (Ubiquinone),cofactor,liposomal,1,10.0,10.0,10.0
+Liposomal Coenzyme Q10 (Ubiquinol),enzyme,liposomal,1,10.0,10.0,10.0
+Liposomal Coenzyme Q10 (Ubiquinone),enzyme,liposomal,1,100.0,100.0,100.0
+Liposomal Conjugated Linoleic Acid (CLA),lipid,liposomal,1,15.0,15.0,15.0
+Liposomal Copper (Bisglycinate),mineral,liposomal,1,2.0,2.0,2.0
+Liposomal Curcumin Complex (40% active),botanical,liposomal,1,50.0,50.0,50.0
+Liposomal Curcumin Extract (95% Curcuminoids),botanical,liposomal,1,100.0,100.0,100.0
+Liposomal DAO Enzyme (from porcine kidney),enzyme,liposomal,1,0.2,0.2,0.2
+Liposomal DHA (Algal-Based),lipid,liposomal,1,150.0,150.0,150.0
+"Liposomal EGCG (Green Tea Extract, 50%)",botanical,liposomal,1,10.0,10.0,10.0
+Liposomal Folate (5-MTHF Calcium Salt),mineral,liposomal,1,0.8,0.8,0.8
+Liposomal GABA (Gamma-Aminobutyric Acid),other,liposomal,1,100.0,100.0,100.0
+Liposomal GABA (PharmaGABA®),other,liposomal,1,75.0,75.0,75.0
+Liposomal Glutathione (Reduced Form),amino_acid,liposomal,1,100.0,100.0,100.0
+Liposomal Glutathione Complex (25% active),amino_acid,liposomal,1,80.0,80.0,80.0
+Liposomal Grape Seed Extract (95% OPC),botanical,liposomal,1,10.0,10.0,10.0
+Liposomal Hyaluronic Acid (Low molecular weight 50-200,other,liposomal,1,60.0,60.0,60.0
+Liposomal Hydroxocobalamin (Vitamin B12),vitamin,liposomal,1,0.5,0.5,0.5
+Liposomal L-Citrulline,amino_acid,liposomal,1,40.0,40.0,40.0
+Liposomal L-Citrulline Malate (25% active),amino_acid,liposomal,1,250.0,250.0,250.0
+Liposomal L-Glutathione (Reduced),amino_acid,liposomal,1,250.0,250.0,250.0
+Liposomal L-Methionine,amino_acid,liposomal,1,50.0,50.0,50.0
+Liposomal L-Methionine Complex (40% active),amino_acid,liposomal,1,50.0,50.0,50.0
+Liposomal L-Theanine (Suntheanine®),amino_acid,liposomal,1,150.0,150.0,150.0
+Liposomal L-Tryptophan,amino_acid,liposomal,1,50.0,50.0,50.0
+Liposomal L-Tyrosine,amino_acid,liposomal,1,100.0,100.0,100.0
+Liposomal L-Valine,other,liposomal,1,50.0,50.0,50.0
+Liposomal Magnesium (as Bisglycinate),mineral,liposomal,1,100.0,100.0,100.0
+Liposomal Magnesium Synergy Matrix,mineral,liposomal,1,350.0,350.0,350.0
+Liposomal Melatonin (Extended-Release),other,liposomal,1,3.0,3.0,3.0
+Liposomal Methylcobalamin (Vitamin B12),vitamin,liposomal,1,2.0,2.0,2.0
+Liposomal Methylfolate (5-MTHF),vitamin,liposomal,1,0.8,0.8,0.8
+Liposomal Milk Thistle Complex (25% active),botanical,liposomal,1,40.0,40.0,40.0
+Liposomal N-Acetyl Cysteine (NAC),amino_acid,liposomal,1,10.0,10.0,10.0
+Liposomal N-Acetyl Glucosamine,other,liposomal,1,75.0,75.0,75.0
+Liposomal NAC Complex (25% active),amino_acid,liposomal,1,40.0,40.0,40.0
+Liposomal PEA (Palmitoylethanolamide),other,liposomal,1,20.0,20.0,20.0
+Liposomal Paraxanthine (PureCaf®),other,liposomal,1,10.0,10.0,10.0
+Liposomal Pyridoxal-5-Phosphate (B6),vitamin,liposomal,1,10.0,10.0,10.0
+Liposomal Saccharomyces Boulardii,probiotic,liposomal,1,50.0,50.0,50.0
+Liposomal Saffron Extract (affron®),other,liposomal,1,30.0,30.0,30.0
+Liposomal Silymarin (Milk Thistle 80%),botanical,liposomal,1,100.0,100.0,100.0
+Liposomal Sulforaphane (from Broccoli Seed Extract),botanical,liposomal,1,50.0,50.0,50.0
+Liposomal TUDCA Complex (25% active),other,liposomal,1,40.0,40.0,40.0
+Liposomal Trans-Resveratrol,botanical,liposomal,1,200.0,200.0,200.0
+Liposomal Type II Collagen (UC-II® undenatured collagen),other,liposomal,1,40.0,40.0,40.0
+Liposomal Vitamin B6 (Pyridoxal-5-Phosphate),vitamin,liposomal,1,25.0,25.0,25.0
+Liposomal Vitamin C (Ascorbic Acid),vitamin,liposomal,1,500.0,500.0,500.0
+Liposomal Vitamin C (L-Ascorbic Acid),vitamin,liposomal,1,120.0,120.0,120.0
+Liposomal Vitamin D3 (5000 IU / 125mcg cholecalciferol),vitamin,liposomal,1,20.0,20.0,20.0
+Liposomal Vitamin D3 (Cholecalciferol) (2000 IU),vitamin,liposomal,1,0.5,0.5,0.5
+Liposomal Vitamin K2 (MK-7),vitamin,liposomal,1,0.2,0.2,0.2
+Liposomal Vitamin K2-MK7 (200mcg trans-isomer),vitamin,liposomal,1,10.0,10.0,10.0
+LiposomalL-Tyrosine,amino_acid,standard,1,25.0,25.0,25.0
+Lithium Orotate,mineral,standard,1,2.5,2.5,2.5
+Lithium Orotate (Elemental Lithium \~1 mg),mineral,standard,1,5.0,5.0,5.0
+MSM (Methylsulfonylmethane),other,standard,1,100.0,100.0,100.0
+Maca Root Extract (10:1),botanical,standard,1,40.0,40.0,40.0
+Magnesium (as Citrate),mineral,standard,1,50.0,50.0,50.0
+Magnesium Beta-Hydroxybutyrate,mineral,standard,1,50.0,50.0,50.0
+Magnesium Bisglycinate Chelate (\~12mg elemental Mg),mineral,standard,1,60.0,60.0,60.0
+Manganese (Gluconate),mineral,standard,1,2.0,2.0,2.0
+Methylated Niacinamide (Vitamin B3),vitamin,methylated,1,50.0,50.0,50.0
+Methylated Vitamin B3 (Nicotinamide Riboside),cofactor,methylated,1,100.0,100.0,100.0
+Micellar Aloe Vera,botanical,micellar,1,25.0,25.0,25.0
+Micellar Aloe Vera Extract (200:1),botanical,micellar,1,15.0,15.0,15.0
+Micellar Artichoke (50% active),botanical,micellar,1,20.0,20.0,20.0
+Micellar Artichoke Leaf Extract (5% Cynarin),botanical,micellar,1,10.0,10.0,10.0
+Micellar Ashwagandha (40% active),lipid,micellar,1,150.0,150.0,150.0
+Micellar Ashwagandha Extract (5% Withanolides),lipid,micellar,1,50.0,50.0,50.0
+Micellar Ashwagandha Extract (Sensoril®),lipid,micellar,1,125.0,125.0,125.0
+Micellar Ashwagandha Root Extract (KSM-66®),lipid,micellar,1,300.0,300.0,300.0
+Micellar Bacopa Monnieri Extract (Bacosides ≥ 50%),botanical,micellar,1,100.0,100.0,100.0
+Micellar Beetroot Extract (40% active),other,micellar,1,200.0,200.0,200.0
+Micellar BioPerine® (50% active),other,micellar,1,5.0,5.0,5.0
+Micellar BioPerine® (95% piperine - black pepper,other,micellar,1,5.0,5.0,5.0
+"Micellar Bioperine® (Black Pepper Extract, 95%)",other,micellar,1,5.0,5.0,5.0
+Micellar Black Walnut (50% active),other,micellar,1,20.0,20.0,20.0
+Micellar Broad-Spectrum CBD,other,micellar,1,25.0,25.0,25.0
+"Micellar Broad-Spectrum CBD (THC-free, hemp-derived)",other,micellar,1,25.0,25.0,25.0
+Micellar CBN Isolate,other,micellar,1,10.0,10.0,10.0
+Micellar Chlorella (50% active),botanical,micellar,1,20.0,20.0,20.0
+Micellar Cilantro (50% active),other,micellar,1,20.0,20.0,20.0
+Micellar Cinnamon Bark Extract (10:1),botanical,micellar,1,10.0,10.0,10.0
+Micellar Cistanche Tubulosa Extract,other,micellar,1,50.0,50.0,50.0
+Micellar Clove (50% active),other,micellar,1,20.0,20.0,20.0
+Micellar Cordyceps Extract (7% Polysaccharides),botanical,micellar,1,40.0,40.0,40.0
+Micellar Dandelion Root (50% active),botanical,micellar,1,20.0,20.0,20.0
+Micellar Fadogia Agrestis (40% active),cofactor,micellar,1,100.0,100.0,100.0
+Micellar Fulvic Acid (50% active),other,micellar,1,20.0,20.0,20.0
+Micellar Garlic (50% active),botanical,micellar,1,20.0,20.0,20.0
+Micellar Horny Goat Weed (40% active),other,micellar,1,50.0,50.0,50.0
+Micellar Horny Goat Weed (Icariin 10%),other,micellar,1,20.0,20.0,20.0
+Micellar Huperzine A (from Huperzia serrata),other,micellar,1,0.2,0.2,0.2
+Micellar Lion's Mane Extract (Hericenones),botanical,micellar,1,10.0,10.0,10.0
+Micellar Lion\'s Mane Extract (Hericium erinaceus),amino_acid,micellar,1,10.0,10.0,10.0
+Micellar MSM (Methylsulfonylmethane),other,micellar,1,75.0,75.0,75.0
+Micellar Marshmallow Root,other,micellar,1,25.0,25.0,25.0
+Micellar Marshmallow Root Extract (10:1),other,micellar,1,15.0,15.0,15.0
+Micellar Moringa Leaf Extract (10:1),botanical,micellar,1,10.0,10.0,10.0
+Micellar Oregano Oil (50% active),botanical,micellar,1,20.0,20.0,20.0
+Micellar Panax Ginseng Extract (10:1),other,micellar,1,20.0,20.0,20.0
+Micellar Pumpkin Seed (50% active),other,micellar,1,20.0,20.0,20.0
+Micellar Rhodiola Rosea (3% Rosavins),botanical,micellar,1,100.0,100.0,100.0
+Micellar Rhodiola Rosea Extract,botanical,micellar,1,150.0,150.0,150.0
+Micellar Sea Moss Extract,other,micellar,1,20.0,20.0,20.0
+Micellar Shilajit (40% active),other,micellar,1,100.0,100.0,100.0
+Micellar Shilajit Extract (Fulvic Acid 20%),other,micellar,1,25.0,25.0,25.0
+Micellar Tongkat Ali (40% active),botanical,micellar,1,200.0,200.0,200.0
+Micellar Tongkat Ali Extract (200:1),botanical,micellar,1,50.0,50.0,50.0
+Micellar Tribulus Terrestris (60% Saponins),botanical,micellar,1,50.0,50.0,50.0
+Molybdenum (as Glycinate Chelate),mineral,standard,1,0.5,0.5,0.5
+N-Acetylcysteine (NAC),amino_acid,standard,1,300.0,300.0,300.0
+NMN (Nicotinamide Mononucleotide),cofactor,standard,1,300.0,300.0,300.0
+NNB DILEUCINE (DL 185™),amino_acid,standard,1,75.0,75.0,75.0
+Nitrosigine® (Bonded Complex),other,standard,1,150.0,150.0,150.0
+PQQ (Pyrroloquinoline Quinone),cofactor,standard,1,20.0,20.0,20.0
+Paraxanthine (Liposomal) enfinity® or equivalent,other,standard,1,100.0,100.0,100.0
+Potassium (as Citrate),mineral,standard,1,50.0,50.0,50.0
+Proprietary Omega-3 DHA (Algal-Based),lipid,standard,1,150.0,150.0,150.0
+Proprietary Omega-3 DHA/EPA Blend (Algal),lipid,standard,1,600.0,600.0,600.0
+Proprietary Probiotic Blend (10 Billion CFU),probiotic,standard,1,80.0,80.0,80.0
+Protease (acid-stable blend),enzyme,standard,1,15.0,15.0,15.0
+Pterostilbene,botanical,standard,1,50.0,50.0,50.0
+Pure Himalayan Sea Salt Sodium (as Citrate),enzyme,standard,1,50.0,50.0,50.0
+Quercetin,botanical,standard,1,25.0,25.0,25.0
+Quercetin (Sophora japonica),botanical,standard,1,250.0,250.0,250.0
+Quercetin Phytosome (Quercefit® - 20x enhanced,botanical,standard,1,100.0,100.0,100.0
+R-Alpha Lipoic Acid,cofactor,standard,1,300.0,300.0,300.0
+"Rhodiola Rosea Extract (Micellar) 5% Rosavins, 2%",botanical,standard,1,200.0,200.0,200.0
+S-Adenosylmethionine (SAMe),amino_acid,standard,1,100.0,100.0,100.0
+SAMe (S-Adenosylmethionine),amino_acid,standard,1,20.0,20.0,20.0
+Serine,other,standard,1,100.0,100.0,100.0
+Sodium Beta-Hydroxybutyrate,enzyme,standard,1,50.0,50.0,50.0
+Spermidine,other,standard,1,10.0,10.0,10.0
+Superoxide Dismutase (SOD),enzyme,standard,1,50.0,50.0,50.0
+TMG (Trimethylglycine Hydrochloride),amino_acid,standard,1,100.0,100.0,100.0
+TMG (Trimethylglycine),amino_acid,standard,1,100.0,100.0,100.0
+Tart Cherry Extract (10:1 Concentrate),other,standard,1,500.0,500.0,500.0
+Tesofensine (botanical analog mimic),other,standard,1,2.0,2.0,2.0
+Urolithin A,other,standard,1,100.0,100.0,100.0
+Vitamin B5 (Pantethine),vitamin,standard,1,100.0,100.0,100.0
+Zinc (Bisglycinate Chelate),mineral,standard,1,15.0,15.0,15.0
+Zinc (Zinc Bisglycinate),mineral,standard,1,10.0,10.0,10.0
+Zinc (as Zinc Bisglycinate),mineral,standard,1,15.0,15.0,15.0
+Zinc Carnosine (PepZin GI®),mineral,standard,1,20.0,20.0,20.0
+bioavailable,other,standard,1,250.0,250.0,250.0

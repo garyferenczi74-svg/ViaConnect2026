@@ -1,0 +1,532 @@
+sku_number,product_name,ingredient_name,dose_mg,delivery_form,category,dose_unit,sort_order
+1,"Creatine HCL+ (Strength, Endurance & Muscle Recovery) Capsules",Creatine Hydrochloride,2000.0,standard,amino_acid,mg,1
+1,"Creatine HCL+ (Strength, Endurance & Muscle Recovery) Capsules",HMB-FA (Free Acid),2000.0,standard,other,mg,2
+1,"Creatine HCL+ (Strength, Endurance & Muscle Recovery) Capsules",Beta-Alanine (CarnoSyn®),800.0,standard,amino_acid,mg,3
+1,"Creatine HCL+ (Strength, Endurance & Muscle Recovery) Capsules",R-Alpha Lipoic Acid,300.0,standard,cofactor,mg,4
+1,"Creatine HCL+ (Strength, Endurance & Muscle Recovery) Capsules",Glycine,100.0,standard,amino_acid,mg,5
+1,"Creatine HCL+ (Strength, Endurance & Muscle Recovery) Capsules",L-Ergothioneine,12.0,standard,other,mg,6
+1,"Creatine HCL+ (Strength, Endurance & Muscle Recovery) Capsules",BioPerine® (Black Pepper),10.0,standard,other,mg,7
+1,"Creatine HCL+ (Strength, Endurance & Muscle Recovery) Capsules",Methylfolate (5-MTHF),0.0,standard,vitamin,mcg,8
+1,"Creatine HCL+ (Strength, Endurance & Muscle Recovery) Capsules",Methylcobalamin (B12),0.5,standard,vitamin,mcg,9
+1,"Creatine HCL+ (Strength, Endurance & Muscle Recovery) Capsules",Pyridoxal-5-Phosphate (B6),5.0,standard,vitamin,mg,10
+1,"Creatine HCL+ (Strength, Endurance & Muscle Recovery) Capsules",Riboflavin-5-Phosphate (B2),5.0,standard,vitamin,mg,11
+1,"Creatine HCL+ (Strength, Endurance & Muscle Recovery) Capsules",Thiamine HCL (B1),10.0,standard,vitamin,mg,12
+1,"Creatine HCL+ (Strength, Endurance & Muscle Recovery) Capsules",Niacin (as Niacinamide),15.0,standard,vitamin,mg,13
+2,CATALYST+ Energy & Recovery Essentials Multivitamin (Methylated B + Magnesium Synergy),Magnesium Bisglycinate,100.0,standard,mineral,iu,1
+2,CATALYST+ Energy & Recovery Essentials Multivitamin (Methylated B + Magnesium Synergy),Magnesium Citrate,75.0,standard,mineral,iu,2
+2,CATALYST+ Energy & Recovery Essentials Multivitamin (Methylated B + Magnesium Synergy),Magnesium Malate,75.0,standard,mineral,iu,3
+2,CATALYST+ Energy & Recovery Essentials Multivitamin (Methylated B + Magnesium Synergy),Magnesium Orotate,50.0,standard,mineral,iu,4
+2,CATALYST+ Energy & Recovery Essentials Multivitamin (Methylated B + Magnesium Synergy),Magnesium Taurate,50.0,standard,mineral,iu,5
+2,CATALYST+ Energy & Recovery Essentials Multivitamin (Methylated B + Magnesium Synergy),Magnesium L-Threonate,50.0,standard,mineral,iu,6
+2,CATALYST+ Energy & Recovery Essentials Multivitamin (Methylated B + Magnesium Synergy),Methylfolate (5-MTHF),0.8,standard,vitamin,mcg,7
+2,CATALYST+ Energy & Recovery Essentials Multivitamin (Methylated B + Magnesium Synergy),Methylcobalamin (B12),0.5,standard,vitamin,mcg,8
+2,CATALYST+ Energy & Recovery Essentials Multivitamin (Methylated B + Magnesium Synergy),Pyridoxal-5-Phosphate (B6),25.0,standard,vitamin,mg,9
+2,CATALYST+ Energy & Recovery Essentials Multivitamin (Methylated B + Magnesium Synergy),Riboflavin-5-Phosphate (B2),25.0,standard,vitamin,mg,10
+2,CATALYST+ Energy & Recovery Essentials Multivitamin (Methylated B + Magnesium Synergy),Thiamine HCL (B1),25.0,standard,vitamin,mg,11
+2,CATALYST+ Energy & Recovery Essentials Multivitamin (Methylated B + Magnesium Synergy),Niacin (as Niacinamide),50.0,standard,vitamin,mg,12
+2,CATALYST+ Energy & Recovery Essentials Multivitamin (Methylated B + Magnesium Synergy),NNB DILEUCINE (DL 185™),75.0,standard,amino_acid,mg,13
+2,CATALYST+ Energy & Recovery Essentials Multivitamin (Methylated B + Magnesium Synergy),Liposomal L-Valine,50.0,liposomal,other,mg,14
+2,CATALYST+ Energy & Recovery Essentials Multivitamin (Methylated B + Magnesium Synergy),Liposomal L-Methionine,50.0,liposomal,amino_acid,mg,15
+2,CATALYST+ Energy & Recovery Essentials Multivitamin (Methylated B + Magnesium Synergy),Liposomal L-Tryptophan,50.0,liposomal,amino_acid,mg,16
+3,Replenish NAD+ (Cellular Energy & Longevity Formula) Capsules,NMN (Nicotinamide Mononucleotide),300.0,standard,cofactor,mg,1
+3,Replenish NAD+ (Cellular Energy & Longevity Formula) Capsules,Pterostilbene,50.0,standard,botanical,mg,2
+3,Replenish NAD+ (Cellular Energy & Longevity Formula) Capsules,CoQ10 (Ubiquinol),100.0,standard,cofactor,mg,3
+3,Replenish NAD+ (Cellular Energy & Longevity Formula) Capsules,PQQ (Pyrroloquinoline Quinone),20.0,standard,cofactor,mg,4
+3,Replenish NAD+ (Cellular Energy & Longevity Formula) Capsules,Urolithin A,100.0,standard,other,mg,5
+3,Replenish NAD+ (Cellular Energy & Longevity Formula) Capsules,Calcium Alpha-Ketoglutarate,100.0,standard,mineral,iu,6
+3,Replenish NAD+ (Cellular Energy & Longevity Formula) Capsules,C15:0 (Pentadecanoic Acid),30.0,standard,lipid,mg,7
+3,Replenish NAD+ (Cellular Energy & Longevity Formula) Capsules,Spermidine,10.0,standard,other,mg,8
+3,Replenish NAD+ (Cellular Energy & Longevity Formula) Capsules,Quercetin,25.0,standard,botanical,mg,9
+3,Replenish NAD+ (Cellular Energy & Longevity Formula) Capsules,Bioperine® (Black Pepper Extract),5.0,standard,other,mg,10
+4,Balance+ Precision Gut Repair & Microbiome Support,Liposomal BPC-157,0.5,liposomal,peptide,mcg,1
+4,Balance+ Precision Gut Repair & Microbiome Support,L-Glutamine,100.0,standard,amino_acid,mg,2
+4,Balance+ Precision Gut Repair & Microbiome Support,Liposomal N-Acetyl Glucosamine,75.0,liposomal,other,mg,3
+4,Balance+ Precision Gut Repair & Microbiome Support,Liposomal Curcumin (95% Curcuminoids),50.0,liposomal,botanical,mg,4
+4,Balance+ Precision Gut Repair & Microbiome Support,Liposomal Saccharomyces Boulardii,50.0,liposomal,probiotic,mg,5
+4,Balance+ Precision Gut Repair & Microbiome Support,Liposomal Quercetin,30.0,liposomal,botanical,mg,6
+4,Balance+ Precision Gut Repair & Microbiome Support,Butyrate (Sodium Butyrate),30.0,standard,enzyme,iu,7
+4,Balance+ Precision Gut Repair & Microbiome Support,Zinc Carnosine (PepZin GI®),20.0,standard,mineral,mg,8
+4,Balance+ Precision Gut Repair & Microbiome Support,Micellar Aloe Vera Extract (200:1),15.0,micellar,botanical,mg,9
+4,Balance+ Precision Gut Repair & Microbiome Support,Micellar Ginger Root Extract (10:1),15.0,micellar,botanical,mg,10
+4,Balance+ Precision Gut Repair & Microbiome Support,Micellar Marshmallow Root Extract (10:1),15.0,micellar,other,mg,11
+4,Balance+ Precision Gut Repair & Microbiome Support,DigestiZorb+™ Digestive Enzyme Complex,75.0,standard,enzyme,mg,12
+4,Balance+ Precision Gut Repair & Microbiome Support,Papaya Extract (Papain enzyme),50.0,standard,enzyme,mg,13
+4,Balance+ Precision Gut Repair & Microbiome Support,Fennel Seed Extract (4:1),40.0,standard,other,mg,14
+4,Balance+ Precision Gut Repair & Microbiome Support,"C15:0 (Pentadecanoic Acid, Fatty15)",200.0,standard,lipid,mg,15
+4,Balance+ Precision Gut Repair & Microbiome Support,Proprietary Probiotic Blend (10 Billion CFU),80.0,standard,probiotic,billion_cfu,16
+5,Omega-3 DHA/EPA (Algal Source) Blend,Algal Phospholipid Matrix (carrier base),90.0,standard,lipid,mg,1
+5,Omega-3 DHA/EPA (Algal Source) Blend,Liposomal DHA (Docosahexaenoic Acid) (Algal-derived),90.0,liposomal,lipid,mg,2
+5,Omega-3 DHA/EPA (Algal Source) Blend,EPA (Eicosapentaenoic Acid) (Algal-derived),120.0,standard,lipid,mg,3
+5,Omega-3 DHA/EPA (Algal Source) Blend,C15:0 (Pentadecanoic Acid),200.0,standard,lipid,mg,4
+6,Probiotic Blend (10 Billion CFU),Lactobacillus acidophilus 1.0 Billion CFU,20.0,standard,probiotic,billion_cfu,1
+6,Probiotic Blend (10 Billion CFU),Bifidobacterium longum 1.0 Billion CFU,20.0,standard,probiotic,iu,2
+6,Probiotic Blend (10 Billion CFU),Bifidobacterium bifidum 1.0 Billion CFU,20.0,standard,probiotic,iu,3
+6,Probiotic Blend (10 Billion CFU),Christensenella minuta (Next-Gen Keystone Species) 2.5,30.0,standard,other,mg,4
+6,Probiotic Blend (10 Billion CFU),Bifidobacterium infantis 1.0 Billion CFU,20.0,standard,probiotic,iu,5
+6,Probiotic Blend (10 Billion CFU),Lactobacillus plantarum 1.0 Billion CFU,20.0,standard,probiotic,billion_cfu,6
+6,Probiotic Blend (10 Billion CFU),Lactobacillus rhamnosus GG 2.0 Billion CFU,20.0,standard,probiotic,billion_cfu,7
+6,Probiotic Blend (10 Billion CFU),Inulin-FOS (Prebiotic Blend),10.0,standard,other,mg,8
+7,Magnesium Synergy Matrix,Magnesium Bisglycinate,75.0,standard,mineral,iu,1
+7,Magnesium Synergy Matrix,Magnesium L-Threonate,48.0,standard,mineral,iu,2
+7,Magnesium Synergy Matrix,Magnesium Taurate,50.0,standard,mineral,iu,3
+7,Magnesium Synergy Matrix,Magnesium Malate,65.0,standard,mineral,iu,4
+7,Magnesium Synergy Matrix,Magnesium Citrate,40.0,standard,mineral,iu,5
+7,Magnesium Synergy Matrix,Magnesium Orotate,22.0,standard,mineral,iu,6
+8,MethylB Complete+™Methylated and Liposomal B Complex,Methylfolate (5-MTHF),0.4,standard,vitamin,mcg,1
+8,MethylB Complete+™Methylated and Liposomal B Complex,Methylcobalamin (B12),0.5,standard,vitamin,mcg,2
+8,MethylB Complete+™Methylated and Liposomal B Complex,Pyridoxal-5-Phosphate (B6),5.0,standard,vitamin,mg,3
+8,MethylB Complete+™Methylated and Liposomal B Complex,Riboflavin-5-Phosphate (B2),5.0,standard,vitamin,mg,4
+8,MethylB Complete+™Methylated and Liposomal B Complex,Thiamine HCL (B1),10.0,standard,vitamin,mg,5
+8,MethylB Complete+™Methylated and Liposomal B Complex,Niacin (as Niacinamide),15.0,standard,vitamin,mg,6
+9,BLAST+ Nitric Oxide Performance Stack,Liposomal L-Citrulline Malate (25% active),250.0,liposomal,amino_acid,mg,1
+9,BLAST+ Nitric Oxide Performance Stack,Liposomal Methylfolate (5-MTHF),0.8,liposomal,vitamin,mcg,2
+9,BLAST+ Nitric Oxide Performance Stack,Liposomal Methylcobalamin (B12),1.0,liposomal,vitamin,mg,3
+9,BLAST+ Nitric Oxide Performance Stack,Liposomal Pyridoxal-5-Phosphate (B6),10.0,liposomal,vitamin,mg,4
+9,BLAST+ Nitric Oxide Performance Stack,Liposomal Vitamin C,100.0,liposomal,vitamin,mg,5
+9,BLAST+ Nitric Oxide Performance Stack,Micellar Beetroot Extract (40% active),200.0,micellar,other,mg,6
+9,BLAST+ Nitric Oxide Performance Stack,Micellar BioPerine® (50% active),5.0,micellar,other,mg,7
+9,BLAST+ Nitric Oxide Performance Stack,Nitrosigine® (Bonded Complex),150.0,standard,other,mg,8
+10,Calm+ (Aptiigen Complex) Capsules,Micellar Ashwagandha Root Extract (KSM-66®),300.0,micellar,lipid,mg,1
+10,Calm+ (Aptiigen Complex) Capsules,Micellar Rhodiola Rosea Extract,150.0,micellar,botanical,mg,2
+10,Calm+ (Aptiigen Complex) Capsules,Micellar Schisandra Chinensis Extract,100.0,micellar,botanical,mg,3
+10,Calm+ (Aptiigen Complex) Capsules,Holy Basil Extract (Ocimum sanctum),35.0,standard,botanical,mg,4
+10,Calm+ (Aptiigen Complex) Capsules,Liposomal Saffron Extract (affron®),30.0,liposomal,other,mg,5
+10,Calm+ (Aptiigen Complex) Capsules,Liposomal L-Theanine (Suntheanine®),150.0,liposomal,amino_acid,mg,6
+10,Calm+ (Aptiigen Complex) Capsules,Liposomal GABA (PharmaGABA®),75.0,liposomal,other,mg,7
+10,Calm+ (Aptiigen Complex) Capsules,Micellar Lion\'s Mane Extract (Hericium erinaceus),10.0,micellar,amino_acid,iu,8
+10,Calm+ (Aptiigen Complex) Capsules,Micellar BioPerine® (Black Pepper Extract),5.0,micellar,other,mg,9
+11,RELAX+ (Stress Relief & Restful Sleep) MethylatedLiposomal Capsules,Liposomal Melatonin (Extended-Release),3.0,liposomal,other,mg,1
+11,RELAX+ (Stress Relief & Restful Sleep) MethylatedLiposomal Capsules,Tart Cherry Extract (10:1 Concentrate),500.0,standard,other,mg,2
+11,RELAX+ (Stress Relief & Restful Sleep) MethylatedLiposomal Capsules,5-HTP (Griffonia simplicifolia Extract),100.0,standard,other,mg,3
+11,RELAX+ (Stress Relief & Restful Sleep) MethylatedLiposomal Capsules,"L-Glycine (Pure, Pharmaceutical Grade)",3000.0,standard,amino_acid,mg,4
+11,RELAX+ (Stress Relief & Restful Sleep) MethylatedLiposomal Capsules,Apigenin (Chamomile Extract),50.0,standard,botanical,mg,5
+11,RELAX+ (Stress Relief & Restful Sleep) MethylatedLiposomal Capsules,Liposomal Magnesium Bisglycinate,200.0,liposomal,mineral,iu,6
+11,RELAX+ (Stress Relief & Restful Sleep) MethylatedLiposomal Capsules,Micellar Broad-Spectrum CBD,25.0,micellar,other,mg,7
+11,RELAX+ (Stress Relief & Restful Sleep) MethylatedLiposomal Capsules,Micellar CBN Isolate,10.0,micellar,other,mg,8
+11,RELAX+ (Stress Relief & Restful Sleep) MethylatedLiposomal Capsules,Micellar BioPerine® (Black Pepper Extract),5.0,micellar,other,mg,9
+12,"Clean+ (Detoxification, Liver Health, Fatty Liver & Cellular Cleansing)",Liposomal Glutathione Complex (25% active),80.0,liposomal,amino_acid,mg,1
+12,"Clean+ (Detoxification, Liver Health, Fatty Liver & Cellular Cleansing)",Liposomal NAC Complex (25% active),40.0,liposomal,amino_acid,mg,2
+12,"Clean+ (Detoxification, Liver Health, Fatty Liver & Cellular Cleansing)",Liposomal Milk Thistle Complex (25% active),40.0,liposomal,botanical,mg,3
+12,"Clean+ (Detoxification, Liver Health, Fatty Liver & Cellular Cleansing)",Liposomal TUDCA Complex (25% active),40.0,liposomal,other,mg,4
+12,"Clean+ (Detoxification, Liver Health, Fatty Liver & Cellular Cleansing)",Liposomal Curcumin Complex (40% active),50.0,liposomal,botanical,mg,5
+12,"Clean+ (Detoxification, Liver Health, Fatty Liver & Cellular Cleansing)",Liposomal Berberine Complex (25% active),40.0,liposomal,botanical,mg,6
+12,"Clean+ (Detoxification, Liver Health, Fatty Liver & Cellular Cleansing)",Liposomal L-Methionine Complex (40% active),50.0,liposomal,amino_acid,mg,7
+12,"Clean+ (Detoxification, Liver Health, Fatty Liver & Cellular Cleansing)",Micellar Dandelion Root (50% active),20.0,micellar,botanical,mg,8
+12,"Clean+ (Detoxification, Liver Health, Fatty Liver & Cellular Cleansing)",Micellar Chlorella (50% active),20.0,micellar,botanical,mg,9
+12,"Clean+ (Detoxification, Liver Health, Fatty Liver & Cellular Cleansing)",Micellar Cilantro (50% active),20.0,micellar,other,mg,10
+12,"Clean+ (Detoxification, Liver Health, Fatty Liver & Cellular Cleansing)",Micellar Black Walnut (50% active),20.0,micellar,other,mg,11
+12,"Clean+ (Detoxification, Liver Health, Fatty Liver & Cellular Cleansing)",Micellar Pumpkin Seed (50% active),20.0,micellar,other,mg,12
+12,"Clean+ (Detoxification, Liver Health, Fatty Liver & Cellular Cleansing)",Micellar Artichoke (50% active),20.0,micellar,botanical,mg,13
+12,"Clean+ (Detoxification, Liver Health, Fatty Liver & Cellular Cleansing)",Micellar Clove (50% active),20.0,micellar,other,mg,14
+12,"Clean+ (Detoxification, Liver Health, Fatty Liver & Cellular Cleansing)",Micellar Garlic (50% active),20.0,micellar,botanical,mg,15
+12,"Clean+ (Detoxification, Liver Health, Fatty Liver & Cellular Cleansing)",Micellar Fulvic Acid (50% active),20.0,micellar,other,mg,16
+12,"Clean+ (Detoxification, Liver Health, Fatty Liver & Cellular Cleansing)",Micellar Oregano Oil (50% active),20.0,micellar,botanical,mg,17
+14,DigestiZorb+™ Enzyme Complex,Choline (Alpha-GPC 50%),60.0,standard,other,mg,1
+14,DigestiZorb+™ Enzyme Complex,Inositol,200.0,standard,vitamin,mg,2
+15,Teloprime+ (Telomere and Mitochondrial Support) Capsules,Astragalus,400.0,standard,botanical,mg,1
+15,Teloprime+ (Telomere and Mitochondrial Support) Capsules,Cycloastragenol,50.0,standard,other,mg,2
+15,Teloprime+ (Telomere and Mitochondrial Support) Capsules,Centella Asiatica Extract,600.0,standard,other,mg,3
+15,Teloprime+ (Telomere and Mitochondrial Support) Capsules,Liposomal Vitamin D3 (Cholecalciferol),0.5,liposomal,vitamin,mcg,4
+15,Teloprime+ (Telomere and Mitochondrial Support) Capsules,Liposomal Vitamin K2 (Menaquinone-7),0.1,liposomal,vitamin,mcg,5
+15,Teloprime+ (Telomere and Mitochondrial Support) Capsules,Liposomal Trans-Resveratrol,200.0,liposomal,botanical,mg,6
+15,Teloprime+ (Telomere and Mitochondrial Support) Capsules,AC-11 (rainforest cat\'s claw extract),500.0,standard,lipid,mg,7
+15,Teloprime+ (Telomere and Mitochondrial Support) Capsules,Liposomal Vitamin C,500.0,liposomal,vitamin,mg,8
+15,Teloprime+ (Telomere and Mitochondrial Support) Capsules,Zinc Bisglycinate,30.0,standard,mineral,mg,9
+15,Teloprime+ (Telomere and Mitochondrial Support) Capsules,Korean Ginseng (Ginsenosides),200.0,standard,other,mg,10
+15,Teloprime+ (Telomere and Mitochondrial Support) Capsules,B6 -- Pyridoxine,10.0,standard,vitamin,mg,11
+15,Teloprime+ (Telomere and Mitochondrial Support) Capsules,Liposomal B9 -- Methyl Folate (5-MTHF),0.8,liposomal,vitamin,mcg,12
+15,Teloprime+ (Telomere and Mitochondrial Support) Capsules,Liposomal B12 -- (Methylcobalamin),2.0,liposomal,vitamin,mg,13
+16,Omega-3 DHA/EPA (Algal Source) Blend,Algal Phospholipid Matrix (carrier base),90.0,standard,lipid,mg,1
+16,Omega-3 DHA/EPA (Algal Source) Blend,Liposomal DHA (Docosahexaenoic Acid) (Algal-derived),90.0,liposomal,lipid,mg,2
+16,Omega-3 DHA/EPA (Algal Source) Blend,EPA (Eicosapentaenoic Acid) (Algal-derived),120.0,standard,lipid,mg,3
+16,Omega-3 DHA/EPA (Algal Source) Blend,C15:0 (Pentadecanoic Acid),200.0,standard,lipid,mg,4
+17,DigestiZorb+™ Digestive Enzyme Complex,Protease (acid-stable blend),15.0,standard,enzyme,mg,1
+17,DigestiZorb+™ Digestive Enzyme Complex,Amylase,20.0,standard,enzyme,mg,2
+17,DigestiZorb+™ Digestive Enzyme Complex,Lipase,10.0,standard,enzyme,mg,3
+17,DigestiZorb+™ Digestive Enzyme Complex,Lactase,10.0,standard,enzyme,mg,4
+17,DigestiZorb+™ Digestive Enzyme Complex,Cellulase,5.0,standard,enzyme,mg,5
+17,DigestiZorb+™ Digestive Enzyme Complex,Bromelain (from Pineapple extract),5.0,standard,enzyme,mg,6
+17,DigestiZorb+™ Digestive Enzyme Complex,Papaya Extract (Papain enzyme),5.0,standard,enzyme,mg,7
+17,DigestiZorb+™ Digestive Enzyme Complex,Micellar Ginger Root Extract (10:1),5.0,micellar,botanical,mg,8
+17,DigestiZorb+™ Digestive Enzyme Complex,Fennel Seed Extract (4:1),3.0,standard,other,mg,9
+17,DigestiZorb+™ Digestive Enzyme Complex,Black Pepper Extract (Bioperine®),2.0,standard,other,mg,10
+18,FOCUS+ (Advanced Nootropic Formula) Capsules,"Lion\'s Mane Extract (Micellar) 30% Polysaccharides, 1%",500.0,standard,other,mg,1
+18,FOCUS+ (Advanced Nootropic Formula) Capsules,Bacopa Monnieri Extract (Micellar) 50% Bacosides A & B,300.0,standard,botanical,mg,2
+18,FOCUS+ (Advanced Nootropic Formula) Capsules,Paraxanthine (Liposomal) enfinity® or equivalent,100.0,standard,other,mg,3
+18,FOCUS+ (Advanced Nootropic Formula) Capsules,L-Theanine (Liposomal) Suntheanine® or equivalent,200.0,standard,amino_acid,mg,4
+18,FOCUS+ (Advanced Nootropic Formula) Capsules,CoQ10 - Ubiquinol (Liposomal) Kaneka QH® or equivalent,100.0,standard,cofactor,mg,5
+18,FOCUS+ (Advanced Nootropic Formula) Capsules,"Ginkgo Biloba Extract (Micellar) 24% Flavone Glycosides,",120.0,standard,botanical,mg,6
+18,FOCUS+ (Advanced Nootropic Formula) Capsules,"Rhodiola Rosea Extract (Micellar) 5% Rosavins, 2%",200.0,standard,botanical,mg,7
+18,FOCUS+ (Advanced Nootropic Formula) Capsules,BioPerine® (Micellar) 95% Piperine - Black Pepper,10.0,standard,other,mg,8
+19,RISE+ (Male Libido & Testosterone Booster Formula) Methylated Liposomal Capsules,Micellar Tongkat Ali (40% active),200.0,micellar,botanical,mg,1
+19,RISE+ (Male Libido & Testosterone Booster Formula) Methylated Liposomal Capsules,Micellar Fadogia Agrestis (40% active),100.0,micellar,cofactor,mg,2
+19,RISE+ (Male Libido & Testosterone Booster Formula) Methylated Liposomal Capsules,Micellar Ashwagandha (40% active),150.0,micellar,lipid,mg,3
+19,RISE+ (Male Libido & Testosterone Booster Formula) Methylated Liposomal Capsules,Micellar Horny Goat Weed (40% active),50.0,micellar,other,mg,4
+19,RISE+ (Male Libido & Testosterone Booster Formula) Methylated Liposomal Capsules,Micellar Shilajit (40% active),100.0,micellar,other,mg,5
+19,RISE+ (Male Libido & Testosterone Booster Formula) Methylated Liposomal Capsules,L-Citrulline Malate (2:1),150.0,standard,amino_acid,mg,6
+19,RISE+ (Male Libido & Testosterone Booster Formula) Methylated Liposomal Capsules,Zinc Bisglycinate,15.0,standard,mineral,mg,7
+19,RISE+ (Male Libido & Testosterone Booster Formula) Methylated Liposomal Capsules,DIM (99% pure),100.0,standard,botanical,mg,8
+20,FLEX + (Inflammation & Joint Health) Capsules,"EPA (Algal, Phospholipid-bound): 60mg",180.0,standard,lipid,mg,1
+20,FLEX + (Inflammation & Joint Health) Capsules,bioavailable,250.0,standard,other,mg,2
+20,FLEX + (Inflammation & Joint Health) Capsules,Liposomal Boswellia Serrata Extract (AprèsFlex® - 70%,150.0,liposomal,botanical,mg,3
+20,FLEX + (Inflammation & Joint Health) Capsules,Quercetin Phytosome (Quercefit® - 20x enhanced,100.0,standard,botanical,mg,4
+20,FLEX + (Inflammation & Joint Health) Capsules,Liposomal Hyaluronic Acid (Low molecular weight 50-200,60.0,liposomal,other,mg,5
+20,FLEX + (Inflammation & Joint Health) Capsules,Liposomal Type II Collagen (UC-II® undenatured collagen),40.0,liposomal,other,mg,6
+20,FLEX + (Inflammation & Joint Health) Capsules,Micellar MSM (Methylsulfonylmethane),75.0,micellar,other,mg,7
+20,FLEX + (Inflammation & Joint Health) Capsules,(AstaPure® - 4mg active),15.0,standard,other,mg,8
+20,FLEX + (Inflammation & Joint Health) Capsules,(20:1 concentration ratio),50.0,standard,other,mg,9
+20,FLEX + (Inflammation & Joint Health) Capsules,Magnesium Bisglycinate Chelate (\~12mg elemental Mg),60.0,standard,mineral,iu,10
+20,FLEX + (Inflammation & Joint Health) Capsules,Liposomal Vitamin D3 (5000 IU / 125mcg cholecalciferol),20.0,liposomal,vitamin,iu,11
+20,FLEX + (Inflammation & Joint Health) Capsules,Liposomal Vitamin K2-MK7 (200mcg trans-isomer),10.0,liposomal,vitamin,mcg,12
+20,FLEX + (Inflammation & Joint Health) Capsules,Ionic Boron (Calcium Fructoborate - 1mg elemental),5.0,standard,mineral,iu,13
+20,FLEX + (Inflammation & Joint Health) Capsules,Micellar BioPerine® (95% piperine - black pepper,5.0,micellar,other,mg,14
+20,FLEX + (Inflammation & Joint Health) Capsules,Liposomal PEA (Palmitoylethanolamide),20.0,liposomal,other,mg,15
+20,FLEX + (Inflammation & Joint Health) Capsules,"Micellar Broad-Spectrum CBD (THC-free, hemp-derived)",25.0,micellar,other,mg,16
+21,"IRON+ (Iron Absorption, Energy & Red Blood Cell Support) Capsules",Liposomal Vitamin D3 (Cholecalciferol),0.5,liposomal,vitamin,mcg,1
+21,"IRON+ (Iron Absorption, Energy & Red Blood Cell Support) Capsules",Liposomal Vitamin K2 (Menaquinone-7),0.1,liposomal,vitamin,mcg,2
+21,"IRON+ (Iron Absorption, Energy & Red Blood Cell Support) Capsules",Selenium (L-Selenomethionine),0.2,standard,mineral,iu,3
+21,"IRON+ (Iron Absorption, Energy & Red Blood Cell Support) Capsules",Liposomal Vitamin C (Ascorbic Acid),500.0,liposomal,vitamin,mg,4
+21,"IRON+ (Iron Absorption, Energy & Red Blood Cell Support) Capsules",Quercetin (Sophora japonica),250.0,standard,botanical,mg,5
+21,"IRON+ (Iron Absorption, Energy & Red Blood Cell Support) Capsules",Micellar BioPerine® (Black Pepper Extract),50.0,micellar,other,mg,6
+21,"IRON+ (Iron Absorption, Energy & Red Blood Cell Support) Capsules",Copper (Bisglycinate Chelate),2.0,standard,mineral,mg,7
+21,"IRON+ (Iron Absorption, Energy & Red Blood Cell Support) Capsules",Zinc (Bisglycinate Chelate),15.0,standard,mineral,mg,8
+21,"IRON+ (Iron Absorption, Energy & Red Blood Cell Support) Capsules",Molybdenum (Glycinate Chelate),1.5,standard,mineral,mg,9
+21,"IRON+ (Iron Absorption, Energy & Red Blood Cell Support) Capsules",Liposomal L-Glutathione (Reduced),250.0,liposomal,amino_acid,mg,10
+21,"IRON+ (Iron Absorption, Energy & Red Blood Cell Support) Capsules",N-Acetylcysteine (NAC),300.0,standard,amino_acid,mg,11
+21,"IRON+ (Iron Absorption, Energy & Red Blood Cell Support) Capsules",Alpha-Lipoic Acid (ALA),200.0,standard,cofactor,mg,12
+21,"IRON+ (Iron Absorption, Energy & Red Blood Cell Support) Capsules",Liposomal L-Ergothioneine,100.0,liposomal,other,mg,13
+21,"IRON+ (Iron Absorption, Energy & Red Blood Cell Support) Capsules",Liposomal Phosphatidylserine,100.0,liposomal,lipid,mg,14
+22,Shred+ Natural GLP-1 Activator,Liposomal + Micellar Natural GLP-1 Activator Complex,445.0,liposomal,other,mg,1
+23,Probiotic Blend (10 Billion CFU),Liposomal L-Ergothioneine,2.0,liposomal,other,mg,1
+23,Probiotic Blend (10 Billion CFU),Glycine (USP),10.0,standard,amino_acid,mg,2
+23,Probiotic Blend (10 Billion CFU),Liposomal Alpha Lipoic Acid (R-ALA),15.0,liposomal,cofactor,mg,3
+23,Probiotic Blend (10 Billion CFU),Liposomal CoQ10 (Ubiquinone),10.0,liposomal,cofactor,mg,4
+23,Probiotic Blend (10 Billion CFU),Liposomal Choline (Alpha-GPC),10.0,liposomal,other,mg,5
+23,Probiotic Blend (10 Billion CFU),Micellar Bioperine® (Black Pepper Extract),5.0,micellar,other,mg,6
+24,DESIRE+ (Female Libido & Hormonal Balance Formula) Methylated Liposomal Capsules,Micellar Tongkat Ali Extract (200:1),50.0,micellar,botanical,mg,1
+24,DESIRE+ (Female Libido & Hormonal Balance Formula) Methylated Liposomal Capsules,Micellar Tribulus Terrestris (60% Saponins),50.0,micellar,botanical,mg,2
+24,DESIRE+ (Female Libido & Hormonal Balance Formula) Methylated Liposomal Capsules,Micellar Shilajit Extract (Fulvic Acid 20%),25.0,micellar,other,mg,3
+24,DESIRE+ (Female Libido & Hormonal Balance Formula) Methylated Liposomal Capsules,Micellar Sea Moss Extract,20.0,micellar,other,mg,4
+24,DESIRE+ (Female Libido & Hormonal Balance Formula) Methylated Liposomal Capsules,Maca Root Extract (10:1),40.0,standard,botanical,mg,5
+24,DESIRE+ (Female Libido & Hormonal Balance Formula) Methylated Liposomal Capsules,Micellar Ashwagandha Extract (5% Withanolides),50.0,micellar,lipid,mg,6
+24,DESIRE+ (Female Libido & Hormonal Balance Formula) Methylated Liposomal Capsules,Liposomal L-Citrulline,40.0,liposomal,amino_acid,mg,7
+24,DESIRE+ (Female Libido & Hormonal Balance Formula) Methylated Liposomal Capsules,Micellar Schisandra Chinensis Extract,20.0,micellar,botanical,mg,8
+24,DESIRE+ (Female Libido & Hormonal Balance Formula) Methylated Liposomal Capsules,Micellar Cistanche Tubulosa Extract,50.0,micellar,other,mg,9
+24,DESIRE+ (Female Libido & Hormonal Balance Formula) Methylated Liposomal Capsules,L-Arginine,10.0,standard,amino_acid,mg,10
+24,DESIRE+ (Female Libido & Hormonal Balance Formula) Methylated Liposomal Capsules,Micellar Horny Goat Weed (Icariin 10%),20.0,micellar,other,mg,11
+24,DESIRE+ (Female Libido & Hormonal Balance Formula) Methylated Liposomal Capsules,Liposomal Trans-Resveratrol (98%),50.0,liposomal,botanical,mg,12
+24,DESIRE+ (Female Libido & Hormonal Balance Formula) Methylated Liposomal Capsules,Micellar Cordyceps Extract (7% Polysaccharides),40.0,micellar,botanical,mg,13
+24,DESIRE+ (Female Libido & Hormonal Balance Formula) Methylated Liposomal Capsules,Micellar Panax Ginseng Extract (10:1),20.0,micellar,other,mg,14
+24,DESIRE+ (Female Libido & Hormonal Balance Formula) Methylated Liposomal Capsules,Zinc (Zinc Bisglycinate),10.0,standard,mineral,mg,15
+24,DESIRE+ (Female Libido & Hormonal Balance Formula) Methylated Liposomal Capsules,"Micellar Bioperine® (Black Pepper Extract, 95%)",5.0,micellar,other,mg,16
+25,"Grow+ Pre-Natal Nutraceutical Formula, Methylated Liposomal Capsules",BioB Fusion™ B-Complex,32.0,standard,other,mg,1
+25,"Grow+ Pre-Natal Nutraceutical Formula, Methylated Liposomal Capsules",Proprietary Omega-3 DHA/EPA Blend (Algal),600.0,standard,lipid,mg,2
+25,"Grow+ Pre-Natal Nutraceutical Formula, Methylated Liposomal Capsules",Iron (as Ferrous Bisglycinate),27.0,standard,mineral,mg,3
+25,"Grow+ Pre-Natal Nutraceutical Formula, Methylated Liposomal Capsules",Calcium (Citrate & MCHC),400.0,standard,mineral,iu,4
+25,"Grow+ Pre-Natal Nutraceutical Formula, Methylated Liposomal Capsules",Liposomal Vitamin D3 (Cholecalciferol) (2000 IU),0.5,liposomal,vitamin,iu,5
+25,"Grow+ Pre-Natal Nutraceutical Formula, Methylated Liposomal Capsules",Liposomal Vitamin K2 (Menaquinone-7),0.2,liposomal,vitamin,mcg,6
+25,"Grow+ Pre-Natal Nutraceutical Formula, Methylated Liposomal Capsules",Liposomal Choline (Alpha-GPC),450.0,liposomal,other,mg,7
+25,"Grow+ Pre-Natal Nutraceutical Formula, Methylated Liposomal Capsules",Iodine (as Potassium Iodide),2.2,standard,mineral,iu,8
+25,"Grow+ Pre-Natal Nutraceutical Formula, Methylated Liposomal Capsules",Liposomal Magnesium Synergy Matrix,350.0,liposomal,mineral,iu,9
+25,"Grow+ Pre-Natal Nutraceutical Formula, Methylated Liposomal Capsules",Zinc (as Zinc Bisglycinate),15.0,standard,mineral,mg,10
+25,"Grow+ Pre-Natal Nutraceutical Formula, Methylated Liposomal Capsules",Liposomal Vitamin C (L-Ascorbic Acid),120.0,liposomal,vitamin,mg,11
+26,NeuroCalm BH4 Complex,L-Dopa (from Mucuna pruriens extract),30.0,standard,other,mg,1
+26,NeuroCalm BH4 Complex,LiposomalL-Tyrosine,25.0,standard,amino_acid,mg,2
+26,NeuroCalm BH4 Complex,L-Phenylalanine,15.0,standard,other,mg,3
+26,NeuroCalm BH4 Complex,Liposomal PQQ (Pyrroloquinoline Quinone),10.0,liposomal,cofactor,mg,4
+26,NeuroCalm BH4 Complex,Liposomal Coenzyme Q10 (Ubiquinol),10.0,liposomal,enzyme,mg,5
+26,NeuroCalm BH4 Complex,Liposomal 5-MTHF (5-Methyltetrahydrofolate),10.0,liposomal,cofactor,mg,6
+26,NeuroCalm BH4 Complex,L-Citrulline Malate,15.0,standard,amino_acid,mg,7
+26,NeuroCalm BH4 Complex,L-Arginine,10.0,standard,amino_acid,mg,8
+26,NeuroCalm BH4 Complex,Liposomal Vitamin C,10.0,liposomal,vitamin,mg,9
+26,NeuroCalm BH4 Complex,Liposomal L-Theanine,15.0,liposomal,amino_acid,mg,10
+26,NeuroCalm BH4 Complex,Liposomal Magnesium L-Threonate,10.0,liposomal,mineral,iu,11
+26,NeuroCalm BH4 Complex,Micellar Lion's Mane Extract (Hericenones),10.0,micellar,botanical,mg,12
+26,NeuroCalm BH4 Complex,Lithium Orotate (Elemental Lithium \~1 mg),5.0,standard,mineral,iu,13
+28,MTHFR+™ (Targeted Folate Metabolism | Advanced Methylation Support | DNA Repair & Detox Pathways),Metylated Vitamin B2 (Riboflavin-5-Phosphate),25.0,methylated,vitamin,mg,1
+28,MTHFR+™ (Targeted Folate Metabolism | Advanced Methylation Support | DNA Repair & Detox Pathways),Metylated Vitamin B6 (Pyridoxal-5-Phosphate),30.0,methylated,vitamin,mg,2
+28,MTHFR+™ (Targeted Folate Metabolism | Advanced Methylation Support | DNA Repair & Detox Pathways),Liposomal Methyl Folate (5-MTHF),1.0,liposomal,vitamin,mg,3
+28,MTHFR+™ (Targeted Folate Metabolism | Advanced Methylation Support | DNA Repair & Detox Pathways),Liposomal Vitamin B12 (Methylcobalamin +,2.0,liposomal,vitamin,mg,4
+28,MTHFR+™ (Targeted Folate Metabolism | Advanced Methylation Support | DNA Repair & Detox Pathways),SAMe (S-Adenosyl Methionine),100.0,standard,amino_acid,mg,5
+28,MTHFR+™ (Targeted Folate Metabolism | Advanced Methylation Support | DNA Repair & Detox Pathways),Liposomal Magnesium (Bisglycinate),50.0,liposomal,mineral,iu,6
+28,MTHFR+™ (Targeted Folate Metabolism | Advanced Methylation Support | DNA Repair & Detox Pathways),Liposomal Choline (as Alpha-GPC),100.0,liposomal,other,mg,7
+28,MTHFR+™ (Targeted Folate Metabolism | Advanced Methylation Support | DNA Repair & Detox Pathways),Zinc (Bisglycinate),20.0,standard,mineral,mg,8
+28,MTHFR+™ (Targeted Folate Metabolism | Advanced Methylation Support | DNA Repair & Detox Pathways),Liposomal NAC (N-Acetylcysteine),150.0,liposomal,amino_acid,mg,9
+28,MTHFR+™ (Targeted Folate Metabolism | Advanced Methylation Support | DNA Repair & Detox Pathways),Molybdenum (Glycinate),0.2,standard,mineral,mcg,10
+28,MTHFR+™ (Targeted Folate Metabolism | Advanced Methylation Support | DNA Repair & Detox Pathways),Betaine Anhydrous (Trimethylglycine),200.0,standard,amino_acid,mg,11
+28,MTHFR+™ (Targeted Folate Metabolism | Advanced Methylation Support | DNA Repair & Detox Pathways),Micellar Bioperine® (Black Pepper Extract),5.0,micellar,other,mg,12
+29,BHB Ketone Salts,Calcium Beta-Hydroxybutyrate,50.0,standard,mineral,iu,1
+29,BHB Ketone Salts,Magnesium Beta-Hydroxybutyrate,50.0,standard,mineral,iu,2
+29,BHB Ketone Salts,Sodium Beta-Hydroxybutyrate,50.0,standard,enzyme,iu,3
+29,BHB Ketone Salts,B6 -- Pyridoxine,10.0,standard,vitamin,mg,4
+29,BHB Ketone Salts,Liposomal B9 -- Methyl Folate (5-MTHF),0.8,liposomal,vitamin,mcg,5
+29,BHB Ketone Salts,Liposomal B12 -- (Methylcobalamin),2.0,liposomal,vitamin,mg,6
+30,"Electrolyte Blend (Magnesium, Potassium, Sodium Citrate)",Effervescent Hydrogen Matrix (Mg-H complex),100.0,standard,other,mg,1
+30,"Electrolyte Blend (Magnesium, Potassium, Sodium Citrate)",Magnesium (as Citrate),50.0,standard,mineral,iu,2
+30,"Electrolyte Blend (Magnesium, Potassium, Sodium Citrate)",Potassium (as Citrate),50.0,standard,mineral,iu,3
+30,"Electrolyte Blend (Magnesium, Potassium, Sodium Citrate)",Pure Himalayan Sea Salt Sodium (as Citrate),50.0,standard,enzyme,iu,4
+30,"Electrolyte Blend (Magnesium, Potassium, Sodium Citrate)",Berberine HCl (98% purity),30.0,standard,botanical,mg,5
+30,"Electrolyte Blend (Magnesium, Potassium, Sodium Citrate)","BHB Salts (Magnesium, Calcium, Sodium)",150.0,standard,enzyme,iu,6
+30,"Electrolyte Blend (Magnesium, Potassium, Sodium Citrate)",L-Carnitine Tartrate,25.0,standard,amino_acid,mg,7
+30,"Electrolyte Blend (Magnesium, Potassium, Sodium Citrate)",Chromium Picolinate (elemental),2.0,standard,mineral,iu,8
+30,"Electrolyte Blend (Magnesium, Potassium, Sodium Citrate)",Micellar Cinnamon Bark Extract (10:1),10.0,micellar,botanical,mg,9
+30,"Electrolyte Blend (Magnesium, Potassium, Sodium Citrate)",Liposomal Conjugated Linoleic Acid (CLA),15.0,liposomal,lipid,mg,10
+31,Probiotic Blend (10 Billion CFU),Dileucine (Di-peptide),10.0,standard,peptide,mg,1
+31,Probiotic Blend (10 Billion CFU),"Liposomal EGCG (Green Tea Extract, 50%)",10.0,liposomal,botanical,mg,2
+31,Probiotic Blend (10 Billion CFU),Micellar Moringa Leaf Extract (10:1),10.0,micellar,botanical,mg,3
+31,Probiotic Blend (10 Billion CFU),Liposomal Paraxanthine (PureCaf®),10.0,liposomal,other,mg,4
+31,Probiotic Blend (10 Billion CFU),Selenium (L-Selenomethionine),1.0,standard,mineral,iu,5
+31,Probiotic Blend (10 Billion CFU),Tesofensine (botanical analog mimic),2.0,standard,other,mg,6
+31,Probiotic Blend (10 Billion CFU),Micellar Artichoke Leaf Extract (5% Cynarin),10.0,micellar,botanical,mg,7
+31,Probiotic Blend (10 Billion CFU),Inulin-FOS (Prebiotic Blend),10.0,standard,other,mg,8
+32,ToxiBind Matrix™ Zeolite + Bentonite Clay,Calcium Bentonite Clay,50.0,standard,lipid,iu,1
+32,ToxiBind Matrix™ Zeolite + Bentonite Clay,Clinoptilolite Zeolite,50.0,standard,other,mg,2
+34,Histamine Relief Protocol™ Advanced Histamine Defense | Gut-Liver Axis Support | Neurological Calm,BioB Fusion™ Methylated and Liposomal B Complex,35.0,standard,other,mg,1
+35,"Probiotic Blend (Lactobacillus & Bifidobacterium, 10B CFU)",Liposomal BPC-157 Peptide,0.2,liposomal,peptide,mcg,1
+35,"Probiotic Blend (Lactobacillus & Bifidobacterium, 10B CFU)",Liposomal Quercetin (Aglycone),100.0,liposomal,botanical,mg,2
+35,"Probiotic Blend (Lactobacillus & Bifidobacterium, 10B CFU)",Liposomal Magnesium (Bisglycinate),50.0,liposomal,mineral,iu,3
+35,"Probiotic Blend (Lactobacillus & Bifidobacterium, 10B CFU)",Zinc (Bisglycinate),15.0,standard,mineral,mg,4
+35,"Probiotic Blend (Lactobacillus & Bifidobacterium, 10B CFU)",Liposomal Curcumin (95% Curcuminoids),50.0,liposomal,botanical,mg,5
+35,"Probiotic Blend (Lactobacillus & Bifidobacterium, 10B CFU)",Liposomal DAO Enzyme (from porcine kidney),0.2,liposomal,enzyme,mcg,6
+35,"Probiotic Blend (Lactobacillus & Bifidobacterium, 10B CFU)",Liposomal Copper (Bisglycinate),2.0,liposomal,mineral,mg,7
+35,"Probiotic Blend (Lactobacillus & Bifidobacterium, 10B CFU)",Liposomal Vitamin C (Ascorbate),50.0,liposomal,vitamin,mg,8
+35,"Probiotic Blend (Lactobacillus & Bifidobacterium, 10B CFU)",Liposomal L-Theanine,100.0,liposomal,amino_acid,mg,9
+35,"Probiotic Blend (Lactobacillus & Bifidobacterium, 10B CFU)",Micellar Aloe Vera,25.0,micellar,botanical,mg,10
+35,"Probiotic Blend (Lactobacillus & Bifidobacterium, 10B CFU)",Micellar Marshmallow Root,25.0,micellar,other,mg,11
+35,"Probiotic Blend (Lactobacillus & Bifidobacterium, 10B CFU)",Liposomal Berberine HCl,50.0,liposomal,botanical,mg,12
+35,"Probiotic Blend (Lactobacillus & Bifidobacterium, 10B CFU)",Micellar Bioperine® (Black Pepper Extract),5.0,micellar,other,mg,13
+36,ACAT+ Advanced Mitochondrial & Lipid Metabolism Support,Liposomal Acetyl-L-Carnitine,100.0,liposomal,amino_acid,mg,1
+36,ACAT+ Advanced Mitochondrial & Lipid Metabolism Support,Methylated Riboflavin-5-Phosphate (Vitamin B2),50.0,methylated,vitamin,mg,2
+36,ACAT+ Advanced Mitochondrial & Lipid Metabolism Support,Methylated Niacinamide (Vitamin B3),50.0,methylated,vitamin,mg,3
+36,ACAT+ Advanced Mitochondrial & Lipid Metabolism Support,Methylated Pantethine (Vitamin B5 ),50.0,methylated,vitamin,mg,4
+36,ACAT+ Advanced Mitochondrial & Lipid Metabolism Support,Liposomal B9 Folate (5-MTHF),0.8,liposomal,vitamin,mcg,5
+36,ACAT+ Advanced Mitochondrial & Lipid Metabolism Support,Liposomal Vitamin B12 (Methylcobalamin),1.0,liposomal,vitamin,mg,6
+36,ACAT+ Advanced Mitochondrial & Lipid Metabolism Support,Liposomal Coenzyme Q10 (Ubiquinone),100.0,liposomal,enzyme,mg,7
+36,ACAT+ Advanced Mitochondrial & Lipid Metabolism Support,Liposomal Alpha-Lipoic Acid,20.0,liposomal,cofactor,mg,8
+36,ACAT+ Advanced Mitochondrial & Lipid Metabolism Support,Liposomal Phosphatidylcholine,100.0,liposomal,lipid,mg,9
+36,ACAT+ Advanced Mitochondrial & Lipid Metabolism Support,Liposomal N-Acetyl Cysteine (NAC),10.0,liposomal,amino_acid,mg,10
+36,ACAT+ Advanced Mitochondrial & Lipid Metabolism Support,Liposomal L-Taurine,10.0,liposomal,amino_acid,mg,11
+36,ACAT+ Advanced Mitochondrial & Lipid Metabolism Support,Liposomal Magnesium Bisglycinate,10.0,liposomal,mineral,iu,12
+36,ACAT+ Advanced Mitochondrial & Lipid Metabolism Support,Micellar Bioperine® (Black Pepper Extract),5.0,micellar,other,mg,13
+37,ACHY+ Liposomal Acetylcholine Support | Cognitive Focus | Neuro-Muscular Balance,Liposomal Choline Alpha-GPC,100.0,liposomal,other,mg,1
+37,ACHY+ Liposomal Acetylcholine Support | Cognitive Focus | Neuro-Muscular Balance,Liposomal Acetyl-L-Carnitine,100.0,liposomal,amino_acid,mg,2
+37,ACHY+ Liposomal Acetylcholine Support | Cognitive Focus | Neuro-Muscular Balance,Liposomal Citicoline (CDP-Choline),100.0,liposomal,cofactor,mg,3
+37,ACHY+ Liposomal Acetylcholine Support | Cognitive Focus | Neuro-Muscular Balance,Micellar Bacopa Monnieri Extract (Bacosides ≥ 50%),100.0,micellar,botanical,mg,4
+37,ACHY+ Liposomal Acetylcholine Support | Cognitive Focus | Neuro-Muscular Balance,Methylated Pantethine (Vitamin B5 ),25.0,methylated,vitamin,mg,5
+37,ACHY+ Liposomal Acetylcholine Support | Cognitive Focus | Neuro-Muscular Balance,Liposomal Vitamin B12 (Methylcobalamin),1.0,liposomal,vitamin,mg,6
+37,ACHY+ Liposomal Acetylcholine Support | Cognitive Focus | Neuro-Muscular Balance,Liposomal Phosphatidylserine,25.0,liposomal,lipid,mg,7
+37,ACHY+ Liposomal Acetylcholine Support | Cognitive Focus | Neuro-Muscular Balance,Micellar Huperzine A (from Huperzia serrata),0.2,micellar,other,mcg,8
+37,ACHY+ Liposomal Acetylcholine Support | Cognitive Focus | Neuro-Muscular Balance,Liposomal Phosphatidylcholine,50.0,liposomal,lipid,mg,9
+37,ACHY+ Liposomal Acetylcholine Support | Cognitive Focus | Neuro-Muscular Balance,Liposoaml Uridine Monophosphate,50.0,standard,other,mg,10
+37,ACHY+ Liposomal Acetylcholine Support | Cognitive Focus | Neuro-Muscular Balance,Lyposomal L-Theanine,100.0,standard,amino_acid,mg,11
+37,ACHY+ Liposomal Acetylcholine Support | Cognitive Focus | Neuro-Muscular Balance,Liposomal Magnesium L-Threonate,50.0,liposomal,mineral,iu,12
+37,ACHY+ Liposomal Acetylcholine Support | Cognitive Focus | Neuro-Muscular Balance,Micellar Bioperine® (Black Pepper Extract),5.0,micellar,other,mg,13
+38,ADO Support+™ Purine Metabolism | Immune Regulation | Cellular Methylation,Methylated Riboflavin-5-Phosphate (Vitamin B2),50.0,methylated,vitamin,mg,1
+38,ADO Support+™ Purine Metabolism | Immune Regulation | Cellular Methylation,Liposomal B9 Folate (5-MTHF),0.8,liposomal,vitamin,mcg,2
+38,ADO Support+™ Purine Metabolism | Immune Regulation | Cellular Methylation,Liposomal Vitamin B12 (Methylcobalamin),1.0,liposomal,vitamin,mg,3
+38,ADO Support+™ Purine Metabolism | Immune Regulation | Cellular Methylation,Adenosine Triphosphate (ATP),25.0,standard,other,mg,4
+38,ADO Support+™ Purine Metabolism | Immune Regulation | Cellular Methylation,Liposomal N-Acetylcysteine (NAC),100.0,liposomal,amino_acid,mg,5
+38,ADO Support+™ Purine Metabolism | Immune Regulation | Cellular Methylation,Lyposomal L-Theanine,100.0,standard,amino_acid,mg,6
+38,ADO Support+™ Purine Metabolism | Immune Regulation | Cellular Methylation,Liposomal Curcumin Extract (95% Curcuminoids),100.0,liposomal,botanical,mg,7
+38,ADO Support+™ Purine Metabolism | Immune Regulation | Cellular Methylation,S-Adenosylmethionine (SAMe),100.0,standard,amino_acid,mg,8
+38,ADO Support+™ Purine Metabolism | Immune Regulation | Cellular Methylation,Liposomal Magnesium Bisglycinate,15.0,liposomal,mineral,iu,9
+38,ADO Support+™ Purine Metabolism | Immune Regulation | Cellular Methylation,Liposomal Phosphatidylcholine,100.0,liposomal,lipid,mg,10
+38,ADO Support+™ Purine Metabolism | Immune Regulation | Cellular Methylation,Micellar Bioperine® (Black Pepper Extract),5.0,micellar,other,mg,11
+39,BHMT+™,Betaine Anhydrous (Trimethylglycine),250.0,standard,amino_acid,mg,1
+39,BHMT+™,DMG (Dimethylglycine),50.0,standard,amino_acid,mg,2
+39,BHMT+™,Zinc Bisglycinate,15.0,standard,mineral,mg,3
+39,BHMT+™,Liposomal Magnesium L-Threonate,50.0,liposomal,mineral,iu,4
+39,BHMT+™,Liposomal L-Taurine,50.0,liposomal,amino_acid,mg,5
+39,BHMT+™,Liposomal Choline Alpha-GPC,100.0,liposomal,other,mg,6
+39,BHMT+™,Liposomal B9 Folate (5-MTHF),0.8,liposomal,vitamin,mcg,7
+39,BHMT+™,Liposomal Vitamin B12 (Methylcobalamin),1.0,liposomal,vitamin,mg,8
+39,BHMT+™,Liposomal N-Acetylcysteine (NAC),50.0,liposomal,amino_acid,mg,9
+39,BHMT+™,TMG (Trimethylglycine Hydrochloride),100.0,standard,amino_acid,mg,10
+39,BHMT+™,Micellar Bioperine® (Black Pepper Extract),5.0,micellar,other,mg,11
+40,CBS Support+™ Sulfur Pathway Balance | Ammonia Clearance | Glutathione Support,Molybdenum (Glycinate Chelate),0.5,standard,mineral,mcg,1
+40,CBS Support+™ Sulfur Pathway Balance | Ammonia Clearance | Glutathione Support,Methylated Vitamin B6 (P-5-P),25.0,methylated,vitamin,mg,2
+40,CBS Support+™ Sulfur Pathway Balance | Ammonia Clearance | Glutathione Support,L-Serine,100.0,standard,amino_acid,mg,3
+40,CBS Support+™ Sulfur Pathway Balance | Ammonia Clearance | Glutathione Support,Liposomal NAC (N-Acetylcysteine),50.0,liposomal,amino_acid,mg,4
+40,CBS Support+™ Sulfur Pathway Balance | Ammonia Clearance | Glutathione Support,L-Carnitine Tartrate,100.0,standard,amino_acid,mg,5
+40,CBS Support+™ Sulfur Pathway Balance | Ammonia Clearance | Glutathione Support,Liposomal Taurine,50.0,liposomal,amino_acid,mg,6
+40,CBS Support+™ Sulfur Pathway Balance | Ammonia Clearance | Glutathione Support,TMG (Trimethylglycine),100.0,standard,amino_acid,mg,7
+40,CBS Support+™ Sulfur Pathway Balance | Ammonia Clearance | Glutathione Support,Liposomal Glutathione (Reduced),100.0,liposomal,amino_acid,mg,8
+40,CBS Support+™ Sulfur Pathway Balance | Ammonia Clearance | Glutathione Support,Liposomal Magnesium Bisglycinate,50.0,liposomal,mineral,iu,9
+40,CBS Support+™ Sulfur Pathway Balance | Ammonia Clearance | Glutathione Support,L-Ornithine,50.0,standard,amino_acid,mg,10
+40,CBS Support+™ Sulfur Pathway Balance | Ammonia Clearance | Glutathione Support,Liposomal Silymarin (Milk Thistle 80%),100.0,liposomal,botanical,mg,11
+40,CBS Support+™ Sulfur Pathway Balance | Ammonia Clearance | Glutathione Support,Micellar Bioperine® (Black Pepper Extract),5.0,micellar,other,mg,12
+41,COMT+™ Neurotransmitter Balance | Estrogen Detox | Methylation Harmony,Liposomal Magnesium Bisglycinate,100.0,liposomal,mineral,iu,1
+41,COMT+™ Neurotransmitter Balance | Estrogen Detox | Methylation Harmony,SAMe (S-Adenosylmethionine),20.0,standard,amino_acid,mg,2
+41,COMT+™ Neurotransmitter Balance | Estrogen Detox | Methylation Harmony,Methylated Vitamin B2 (Riboflavin-5-Phosphate),25.0,methylated,vitamin,mg,3
+41,COMT+™ Neurotransmitter Balance | Estrogen Detox | Methylation Harmony,Methylated Vitamin B6 (P-5-P),25.0,methylated,vitamin,mg,4
+41,COMT+™ Neurotransmitter Balance | Estrogen Detox | Methylation Harmony,Liposomal Folate (5-MTHF Calcium Salt),0.8,liposomal,mineral,iu,5
+41,COMT+™ Neurotransmitter Balance | Estrogen Detox | Methylation Harmony,Liposomal Vitamin B12 (Methylcobalamin +,1.0,liposomal,vitamin,mg,6
+41,COMT+™ Neurotransmitter Balance | Estrogen Detox | Methylation Harmony,Lithium Orotate,2.5,standard,mineral,iu,7
+41,COMT+™ Neurotransmitter Balance | Estrogen Detox | Methylation Harmony,Liposomal L-Theanine,100.0,liposomal,amino_acid,mg,8
+41,COMT+™ Neurotransmitter Balance | Estrogen Detox | Methylation Harmony,Diindolylmethane (DIM),100.0,standard,botanical,mg,9
+41,COMT+™ Neurotransmitter Balance | Estrogen Detox | Methylation Harmony,Liposomal Quercetin,100.0,liposomal,botanical,mg,10
+41,COMT+™ Neurotransmitter Balance | Estrogen Detox | Methylation Harmony,Liposomal Glutathione (Reduced),100.0,liposomal,amino_acid,mg,11
+41,COMT+™ Neurotransmitter Balance | Estrogen Detox | Methylation Harmony,Micellar Bioperine® (Black Pepper Extract),5.0,micellar,other,mg,12
+42,DAO+™ Histamine Balance | Gut Integrity | Methylation-Linked Enzyme Support,Methylated Vitamin B6 (P-5-P),25.0,methylated,vitamin,mg,1
+42,DAO+™ Histamine Balance | Gut Integrity | Methylation-Linked Enzyme Support,Liposomal Vitamin C (Ascorbate),100.0,liposomal,vitamin,mg,2
+42,DAO+™ Histamine Balance | Gut Integrity | Methylation-Linked Enzyme Support,Copper (Bisglycinate),2.0,standard,mineral,mg,3
+42,DAO+™ Histamine Balance | Gut Integrity | Methylation-Linked Enzyme Support,Zinc (Bisglycinate),20.0,standard,mineral,mg,4
+42,DAO+™ Histamine Balance | Gut Integrity | Methylation-Linked Enzyme Support,Liposomal Quercetin (Aglycone),100.0,liposomal,botanical,mg,5
+42,DAO+™ Histamine Balance | Gut Integrity | Methylation-Linked Enzyme Support,DAO Enzyme (from Non-GMO Porcine Kidney),0.2,standard,enzyme,mcg,6
+42,DAO+™ Histamine Balance | Gut Integrity | Methylation-Linked Enzyme Support,Liposomal Magnesium (Bisglycinate),125.0,liposomal,mineral,iu,7
+42,DAO+™ Histamine Balance | Gut Integrity | Methylation-Linked Enzyme Support,Liposomal 5-MTHF (Quatrefolic®),0.8,liposomal,vitamin,mcg,8
+42,DAO+™ Histamine Balance | Gut Integrity | Methylation-Linked Enzyme Support,Liposomal Methylcobalamin (B12),1.0,liposomal,vitamin,mg,9
+42,DAO+™ Histamine Balance | Gut Integrity | Methylation-Linked Enzyme Support,Liposomal Curcumin (95% Curcuminoids),150.0,liposomal,botanical,mg,10
+42,DAO+™ Histamine Balance | Gut Integrity | Methylation-Linked Enzyme Support,Liposomal L-Theanine,100.0,liposomal,amino_acid,mg,11
+42,DAO+™ Histamine Balance | Gut Integrity | Methylation-Linked Enzyme Support,Micellar Bioperine® (Black Pepper Extract),5.0,micellar,other,mg,12
+43,GST+™ Cellular Detox | Antioxidant Defense | Methylation Support,Liposomal Glutathione (Reduced),150.0,liposomal,amino_acid,mg,1
+43,GST+™ Cellular Detox | Antioxidant Defense | Methylation Support,Liposomal N-Acetylcysteine (NAC),100.0,liposomal,amino_acid,mg,2
+43,GST+™ Cellular Detox | Antioxidant Defense | Methylation Support,Liposomal Alpha-Lipoic Acid (R-ALA),100.0,liposomal,cofactor,mg,3
+43,GST+™ Cellular Detox | Antioxidant Defense | Methylation Support,Selenium (L-Selenomethionine),0.2,standard,mineral,iu,4
+43,GST+™ Cellular Detox | Antioxidant Defense | Methylation Support,Methylated Vitamin B2 (Riboflavin-5-Phosphate),25.0,methylated,vitamin,mg,5
+43,GST+™ Cellular Detox | Antioxidant Defense | Methylation Support,Liposomal Vitamin B6 (Pyridoxal-5-Phosphate),25.0,liposomal,vitamin,mg,6
+43,GST+™ Cellular Detox | Antioxidant Defense | Methylation Support,Liposomal Methyl Folate (5-MTHF),0.8,liposomal,vitamin,mcg,7
+43,GST+™ Cellular Detox | Antioxidant Defense | Methylation Support,Liposomal Vitamin B12 (Methylcobalamin +,1.0,liposomal,vitamin,mg,8
+43,GST+™ Cellular Detox | Antioxidant Defense | Methylation Support,Liposomal Broccoli Seed Extract (Sulforaphane-rich),150.0,liposomal,botanical,mg,9
+43,GST+™ Cellular Detox | Antioxidant Defense | Methylation Support,Liposomal Curcumin (95% Curcuminoids),100.0,liposomal,botanical,mg,10
+43,GST+™ Cellular Detox | Antioxidant Defense | Methylation Support,Liposomal Quercetin,100.0,liposomal,botanical,mg,11
+43,GST+™ Cellular Detox | Antioxidant Defense | Methylation Support,Micellar Bioperine® (Black Pepper Extract),5.0,micellar,other,mg,12
+44,MAOA+™ Neurochemical Balance | Methylation Support | Stress Modulation,SAMe (S-Adenosyl Methionine),100.0,standard,amino_acid,mg,1
+44,MAOA+™ Neurochemical Balance | Methylation Support | Stress Modulation,Metylated Vitamin B2 (Riboflavin-5-Phosphate),25.0,methylated,vitamin,mg,2
+44,MAOA+™ Neurochemical Balance | Methylation Support | Stress Modulation,Metylated Vitamin B6 (Pyridoxal-5-Phosphate),25.0,methylated,vitamin,mg,3
+44,MAOA+™ Neurochemical Balance | Methylation Support | Stress Modulation,Liposomal Methyl Folate (5-MTHF),0.8,liposomal,vitamin,mcg,4
+44,MAOA+™ Neurochemical Balance | Methylation Support | Stress Modulation,Liposomal Vitamin B12 (Methylcobalamin +,1.0,liposomal,vitamin,mg,5
+44,MAOA+™ Neurochemical Balance | Methylation Support | Stress Modulation,Liposomal L-Theanine,50.0,liposomal,amino_acid,mg,6
+44,MAOA+™ Neurochemical Balance | Methylation Support | Stress Modulation,Liposomal Magnesium (Bisglycinate),50.0,liposomal,mineral,iu,7
+44,MAOA+™ Neurochemical Balance | Methylation Support | Stress Modulation,Liposomal GABA (Gamma-Aminobutyric Acid),100.0,liposomal,other,mg,8
+44,MAOA+™ Neurochemical Balance | Methylation Support | Stress Modulation,Micellar Ashwagandha Extract (Sensoril®),125.0,micellar,lipid,mg,9
+44,MAOA+™ Neurochemical Balance | Methylation Support | Stress Modulation,Micellar Rhodiola Rosea (3% Rosavins),100.0,micellar,botanical,mg,10
+44,MAOA+™ Neurochemical Balance | Methylation Support | Stress Modulation,Liposomal PQQ (Pyrroloquinoline Quinone),20.0,liposomal,cofactor,mg,11
+44,MAOA+™ Neurochemical Balance | Methylation Support | Stress Modulation,Liposomal CoQ10 (Ubiquinol),50.0,liposomal,cofactor,mg,12
+44,MAOA+™ Neurochemical Balance | Methylation Support | Stress Modulation,Micellar Bioperine® (Black Pepper Extract),5.0,micellar,other,mg,13
+45,MTR+™ Methylation Matrix | Homocysteine Regulation | Neurovascular Support,Metylated Vitamin B2 (Riboflavin-5-Phosphate),25.0,methylated,vitamin,mg,1
+45,MTR+™ Methylation Matrix | Homocysteine Regulation | Neurovascular Support,Metylated Vitamin B6 (Pyridoxal-5-Phosphate),25.0,methylated,vitamin,mg,2
+45,MTR+™ Methylation Matrix | Homocysteine Regulation | Neurovascular Support,Liposomal Methyl Folate (5-MTHF),0.8,liposomal,vitamin,mcg,3
+45,MTR+™ Methylation Matrix | Homocysteine Regulation | Neurovascular Support,Liposomal Vitamin B12 (Methylcobalamin +,1.5,liposomal,vitamin,mg,4
+45,MTR+™ Methylation Matrix | Homocysteine Regulation | Neurovascular Support,SAMe (S-Adenosyl Methionine),200.0,standard,amino_acid,mg,5
+45,MTR+™ Methylation Matrix | Homocysteine Regulation | Neurovascular Support,Betaine Anhydrous (Trimethylglycine),200.0,standard,amino_acid,mg,6
+45,MTR+™ Methylation Matrix | Homocysteine Regulation | Neurovascular Support,Liposomal Magnesium (Bisglycinate),50.0,liposomal,mineral,iu,7
+45,MTR+™ Methylation Matrix | Homocysteine Regulation | Neurovascular Support,Liposomal Choline (as Alpha-GPC),100.0,liposomal,other,mg,8
+45,MTR+™ Methylation Matrix | Homocysteine Regulation | Neurovascular Support,Zinc (Bisglycinate),15.0,standard,mineral,mg,9
+45,MTR+™ Methylation Matrix | Homocysteine Regulation | Neurovascular Support,Liposomal NAC (N-Acetylcysteine),50.0,liposomal,amino_acid,mg,10
+45,MTR+™ Methylation Matrix | Homocysteine Regulation | Neurovascular Support,Liposomal PQQ (Pyrroloquinoline Quinone),20.0,liposomal,cofactor,mg,11
+45,MTR+™ Methylation Matrix | Homocysteine Regulation | Neurovascular Support,Micellar Bioperine® (Black Pepper Extract),5.0,micellar,other,mg,12
+46,MTRR+™ Methylcobalamin Regeneration | Neurological Health | Homocysteine Support,Metylated Vitamin B2 (Riboflavin-5-Phosphate),25.0,methylated,vitamin,mg,1
+46,MTRR+™ Methylcobalamin Regeneration | Neurological Health | Homocysteine Support,Methylated Vitamin B3 (Nicotinamide Riboside),100.0,methylated,cofactor,mg,2
+46,MTRR+™ Methylcobalamin Regeneration | Neurological Health | Homocysteine Support,Liposomal Methyl Folate (5-MTHF),0.8,liposomal,vitamin,mcg,3
+46,MTRR+™ Methylcobalamin Regeneration | Neurological Health | Homocysteine Support,Liposomal Vitamin B12 (Methylcobalamin +,1.5,liposomal,vitamin,mg,4
+46,MTRR+™ Methylcobalamin Regeneration | Neurological Health | Homocysteine Support,SAMe (S-Adenosyl Methionine),200.0,standard,amino_acid,mg,5
+46,MTRR+™ Methylcobalamin Regeneration | Neurological Health | Homocysteine Support,Liposomal Magnesium (Bisglycinate),100.0,liposomal,mineral,iu,6
+46,MTRR+™ Methylcobalamin Regeneration | Neurological Health | Homocysteine Support,Liposomal Choline (as Alpha-GPC),100.0,liposomal,other,mg,7
+46,MTRR+™ Methylcobalamin Regeneration | Neurological Health | Homocysteine Support,Zinc (Bisglycinate),15.0,standard,mineral,mg,8
+46,MTRR+™ Methylcobalamin Regeneration | Neurological Health | Homocysteine Support,Liposomal NAC (N-Acetylcysteine),150.0,liposomal,amino_acid,mg,9
+46,MTRR+™ Methylcobalamin Regeneration | Neurological Health | Homocysteine Support,Molybdenum (Glycinate),0.2,standard,mineral,mcg,10
+46,MTRR+™ Methylcobalamin Regeneration | Neurological Health | Homocysteine Support,Liposomal PQQ (Pyrroloquinoline Quinone),10.0,liposomal,cofactor,mg,11
+46,MTRR+™ Methylcobalamin Regeneration | Neurological Health | Homocysteine Support,Micellar Bioperine® (Black Pepper Extract),5.0,micellar,other,mg,12
+47,NAT Support +™ Targeted Acetylation Support | Histamine Balance | Phase II Detox Optimization,Metylated Vitamin B2 (Riboflavin-5-Phosphate),25.0,methylated,vitamin,mg,1
+47,NAT Support +™ Targeted Acetylation Support | Histamine Balance | Phase II Detox Optimization,Vitamin B5 (Pantethine),100.0,standard,vitamin,mg,2
+47,NAT Support +™ Targeted Acetylation Support | Histamine Balance | Phase II Detox Optimization,Metylated Vitamin B6 (Pyridoxal-5-Phosphate),30.0,methylated,vitamin,mg,3
+47,NAT Support +™ Targeted Acetylation Support | Histamine Balance | Phase II Detox Optimization,Liposomal Methyl Folate (5-MTHF),0.8,liposomal,vitamin,mcg,4
+47,NAT Support +™ Targeted Acetylation Support | Histamine Balance | Phase II Detox Optimization,Liposomal Vitamin B12 (Methylcobalamin +,1.0,liposomal,vitamin,mg,5
+47,NAT Support +™ Targeted Acetylation Support | Histamine Balance | Phase II Detox Optimization,Liposomal Acetyl-L-Carnitine (ALCAR),150.0,liposomal,amino_acid,mg,6
+47,NAT Support +™ Targeted Acetylation Support | Histamine Balance | Phase II Detox Optimization,Liposomal Magnesium (Bisglycinate),50.0,liposomal,mineral,iu,7
+47,NAT Support +™ Targeted Acetylation Support | Histamine Balance | Phase II Detox Optimization,Liposomal Choline (as Alpha-GPC),100.0,liposomal,other,mg,8
+47,NAT Support +™ Targeted Acetylation Support | Histamine Balance | Phase II Detox Optimization,Zinc (Bisglycinate),15.0,standard,mineral,mg,9
+47,NAT Support +™ Targeted Acetylation Support | Histamine Balance | Phase II Detox Optimization,Liposomal NAC (N-Acetylcysteine),100.0,liposomal,amino_acid,mg,10
+47,NAT Support +™ Targeted Acetylation Support | Histamine Balance | Phase II Detox Optimization,Liposomal Quercetin,50.0,liposomal,botanical,mg,11
+47,NAT Support +™ Targeted Acetylation Support | Histamine Balance | Phase II Detox Optimization,Calcium-D-Glucarate,50.0,standard,mineral,iu,12
+47,NAT Support +™ Targeted Acetylation Support | Histamine Balance | Phase II Detox Optimization,Liposomal Sulforaphane (from Broccoli Seed Extract),50.0,liposomal,botanical,mg,13
+47,NAT Support +™ Targeted Acetylation Support | Histamine Balance | Phase II Detox Optimization,Micellar Bioperine® (Black Pepper Extract),5.0,micellar,other,mg,14
+49,MethylB Complete+™Methylated and Liposomal B Complex,L-Citrulline Malate (2:1),150.0,standard,amino_acid,mg,1
+49,MethylB Complete+™Methylated and Liposomal B Complex,L-Arginine,100.0,standard,amino_acid,mg,2
+49,MethylB Complete+™Methylated and Liposomal B Complex,L-Norvaline,50.0,standard,other,mg,3
+49,MethylB Complete+™Methylated and Liposomal B Complex,Liposomal Magnesium (Bisglycinate),50.0,liposomal,mineral,iu,4
+49,MethylB Complete+™Methylated and Liposomal B Complex,Zinc (Bisglycinate),15.0,standard,mineral,mg,5
+50,NeuroCalm BH4 Complex,Liposomal CoQ10 (Ubiquinol),50.0,liposomal,cofactor,mg,1
+50,NeuroCalm BH4 Complex,Liposomal Trans-Resveratrol (98%),25.0,liposomal,botanical,mg,2
+50,NeuroCalm BH4 Complex,Liposomal Grape Seed Extract (95% OPC),10.0,liposomal,botanical,mg,3
+50,NeuroCalm BH4 Complex,Astaxanthin,10.0,standard,other,mg,4
+50,NeuroCalm BH4 Complex,Micellar Bioperine® (Black Pepper Extract),5.0,micellar,other,mg,5
+51,RFC1 Support +™ Optimized Folate Transport | Methylation Activation | Neurological Support,Metylated Vitamin B2 (Riboflavin-5-Phosphate),25.0,methylated,vitamin,mg,1
+51,RFC1 Support +™ Optimized Folate Transport | Methylation Activation | Neurological Support,Metylated Vitamin B6 (Pyridoxal-5-Phosphate),30.0,methylated,vitamin,mg,2
+51,RFC1 Support +™ Optimized Folate Transport | Methylation Activation | Neurological Support,Liposomal Methyl Folate (5-MTHF),1.0,liposomal,vitamin,mg,3
+51,RFC1 Support +™ Optimized Folate Transport | Methylation Activation | Neurological Support,Liposomal Vitamin B12 (Methylcobalamin +,1.5,liposomal,vitamin,mg,4
+51,RFC1 Support +™ Optimized Folate Transport | Methylation Activation | Neurological Support,Folinic Acid (Calcium Folinate),0.8,standard,mineral,iu,5
+51,RFC1 Support +™ Optimized Folate Transport | Methylation Activation | Neurological Support,Trimethylglycine (TMG),150.0,standard,amino_acid,mg,6
+51,RFC1 Support +™ Optimized Folate Transport | Methylation Activation | Neurological Support,Liposomal Magnesium (Bisglycinate),100.0,liposomal,mineral,iu,7
+51,RFC1 Support +™ Optimized Folate Transport | Methylation Activation | Neurological Support,Zinc (Bisglycinate),15.0,standard,mineral,mg,8
+51,RFC1 Support +™ Optimized Folate Transport | Methylation Activation | Neurological Support,Liposomal L-Tyrosine,100.0,liposomal,amino_acid,mg,9
+51,RFC1 Support +™ Optimized Folate Transport | Methylation Activation | Neurological Support,"Liposomal DHA (Algal-Based, Vegan)",100.0,liposomal,lipid,mg,10
+51,RFC1 Support +™ Optimized Folate Transport | Methylation Activation | Neurological Support,Liposomal N-Acetylcysteine (NAC),100.0,liposomal,amino_acid,mg,11
+51,RFC1 Support +™ Optimized Folate Transport | Methylation Activation | Neurological Support,Liposomal Curcumin (95% Curcuminoids),50.0,liposomal,botanical,mg,12
+51,RFC1 Support +™ Optimized Folate Transport | Methylation Activation | Neurological Support,Micellar Bioperine® (Black Pepper Extract),5.0,micellar,other,mg,13
+52,SHMT+™ Glycine-Folate Balance | DNA Repair | Methylation Synergy,Metylated Vitamin B2 (Riboflavin-5-Phosphate),25.0,methylated,vitamin,mg,1
+52,SHMT+™ Glycine-Folate Balance | DNA Repair | Methylation Synergy,Metylated Vitamin B6 (Pyridoxal-5-Phosphate),30.0,methylated,vitamin,mg,2
+52,SHMT+™ Glycine-Folate Balance | DNA Repair | Methylation Synergy,Liposomal Methyl Folate (5-MTHF),0.8,liposomal,vitamin,mcg,3
+52,SHMT+™ Glycine-Folate Balance | DNA Repair | Methylation Synergy,Liposomal Vitamin B12 (Methylcobalamin +,1.0,liposomal,vitamin,mg,4
+52,SHMT+™ Glycine-Folate Balance | DNA Repair | Methylation Synergy,Folinic Acid (Calcium Folinate),0.8,standard,mineral,iu,5
+52,SHMT+™ Glycine-Folate Balance | DNA Repair | Methylation Synergy,L-Glycine,100.0,standard,amino_acid,mg,6
+52,SHMT+™ Glycine-Folate Balance | DNA Repair | Methylation Synergy,Liposomal Magnesium (Bisglycinate),50.0,liposomal,mineral,iu,7
+52,SHMT+™ Glycine-Folate Balance | DNA Repair | Methylation Synergy,Zinc (Bisglycinate),15.0,standard,mineral,mg,8
+52,SHMT+™ Glycine-Folate Balance | DNA Repair | Methylation Synergy,Serine,100.0,standard,other,mg,9
+52,SHMT+™ Glycine-Folate Balance | DNA Repair | Methylation Synergy,"Liposomal DHA (Algal-Based, Vegan)",100.0,liposomal,lipid,mg,10
+52,SHMT+™ Glycine-Folate Balance | DNA Repair | Methylation Synergy,Liposomal N-Acetylcysteine (NAC),100.0,liposomal,amino_acid,mg,11
+52,SHMT+™ Glycine-Folate Balance | DNA Repair | Methylation Synergy,Betaine (Trimethylglycine - TMG),100.0,standard,amino_acid,mg,12
+52,SHMT+™ Glycine-Folate Balance | DNA Repair | Methylation Synergy,Liposomal Curcumin (95% Curcuminoids),100.0,liposomal,botanical,mg,13
+52,SHMT+™ Glycine-Folate Balance | DNA Repair | Methylation Synergy,Micellar Bioperine® (Black Pepper Extract),5.0,micellar,other,mg,14
+53,SOD+™ Antioxidant Defense | Mitochondrial Protection | Methylation Integrity,Metylated Vitamin B2 (Riboflavin-5-Phosphate),25.0,methylated,vitamin,mg,1
+53,SOD+™ Antioxidant Defense | Mitochondrial Protection | Methylation Integrity,Metylated Vitamin B6 (Pyridoxal-5-Phosphate),25.0,methylated,vitamin,mg,2
+53,SOD+™ Antioxidant Defense | Mitochondrial Protection | Methylation Integrity,Liposomal Methyl Folate (5-MTHF),0.8,liposomal,vitamin,mcg,3
+53,SOD+™ Antioxidant Defense | Mitochondrial Protection | Methylation Integrity,Liposomal Vitamin B12 (Methylcobalamin),1.0,liposomal,vitamin,mg,4
+53,SOD+™ Antioxidant Defense | Mitochondrial Protection | Methylation Integrity,Superoxide Dismutase (SOD),50.0,standard,enzyme,mg,5
+53,SOD+™ Antioxidant Defense | Mitochondrial Protection | Methylation Integrity,Selenium (L-selenomethionine),0.2,standard,mineral,iu,6
+53,SOD+™ Antioxidant Defense | Mitochondrial Protection | Methylation Integrity,Zinc (Bisglycinate),15.0,standard,mineral,mg,7
+53,SOD+™ Antioxidant Defense | Mitochondrial Protection | Methylation Integrity,Manganese (Gluconate),2.0,standard,mineral,mg,8
+53,SOD+™ Antioxidant Defense | Mitochondrial Protection | Methylation Integrity,Liposomal CoQ10 (Ubiquinol),25.0,liposomal,cofactor,mg,9
+53,SOD+™ Antioxidant Defense | Mitochondrial Protection | Methylation Integrity,Liposomal N-Acetylcysteine (NAC),200.0,liposomal,amino_acid,mg,10
+53,SOD+™ Antioxidant Defense | Mitochondrial Protection | Methylation Integrity,Liposomal Curcumin (95% Curcuminoids),100.0,liposomal,botanical,mg,11
+53,SOD+™ Antioxidant Defense | Mitochondrial Protection | Methylation Integrity,Liposomal Alpha-Lipoic Acid (ALA),100.0,liposomal,cofactor,mg,12
+53,SOD+™ Antioxidant Defense | Mitochondrial Protection | Methylation Integrity,Liposomal PQQ (Pyrroloquinoline Quinone),20.0,liposomal,cofactor,mg,13
+53,SOD+™ Antioxidant Defense | Mitochondrial Protection | Methylation Integrity,Micellar Bioperine® (Black Pepper Extract),5.0,micellar,other,mg,14
+54,SUOX+™ Sulfite Clearance | Mitochondrial Detox | Methylation Rescue,Metylated Vitamin B2 (Riboflavin-5-Phosphate),25.0,methylated,vitamin,mg,1
+54,SUOX+™ Sulfite Clearance | Mitochondrial Detox | Methylation Rescue,Metylated Vitamin B6 (Pyridoxal-5-Phosphate),25.0,methylated,vitamin,mg,2
+54,SUOX+™ Sulfite Clearance | Mitochondrial Detox | Methylation Rescue,Liposomal Methyl Folate (5-MTHF),0.8,liposomal,vitamin,mcg,3
+54,SUOX+™ Sulfite Clearance | Mitochondrial Detox | Methylation Rescue,Liposomal Vitamin B12 (Methylcobalamin),1.0,liposomal,vitamin,mg,4
+54,SUOX+™ Sulfite Clearance | Mitochondrial Detox | Methylation Rescue,Molybdenum (as Glycinate Chelate),0.5,standard,mineral,mcg,5
+54,SUOX+™ Sulfite Clearance | Mitochondrial Detox | Methylation Rescue,Selenium (L-selenomethionine),100.0,standard,mineral,iu,6
+54,SUOX+™ Sulfite Clearance | Mitochondrial Detox | Methylation Rescue,Zinc (Bisglycinate),15.0,standard,mineral,mg,7
+54,SUOX+™ Sulfite Clearance | Mitochondrial Detox | Methylation Rescue,Liposomal Glutathione (Reduced Form),100.0,liposomal,amino_acid,mg,8
+54,SUOX+™ Sulfite Clearance | Mitochondrial Detox | Methylation Rescue,Liposomal CoQ10 (Ubiquinol),50.0,liposomal,cofactor,mg,9
+54,SUOX+™ Sulfite Clearance | Mitochondrial Detox | Methylation Rescue,Liposomal N-Acetylcysteine (NAC),50.0,liposomal,amino_acid,mg,10
+54,SUOX+™ Sulfite Clearance | Mitochondrial Detox | Methylation Rescue,Liposomal Taurine,100.0,liposomal,amino_acid,mg,11
+54,SUOX+™ Sulfite Clearance | Mitochondrial Detox | Methylation Rescue,Liposomal Alpha-Lipoic Acid (ALA),100.0,liposomal,cofactor,mg,12
+54,SUOX+™ Sulfite Clearance | Mitochondrial Detox | Methylation Rescue,MSM (Methylsulfonylmethane),100.0,standard,other,mg,13
+54,SUOX+™ Sulfite Clearance | Mitochondrial Detox | Methylation Rescue,Micellar Bioperine® (Black Pepper Extract),5.0,micellar,other,mg,14
+55,TCN2+™ Cellular B12 Transport | Methylation Optimization | Neurological Vitality,Metylated Vitamin B2 (Riboflavin-5-Phosphate),20.0,methylated,vitamin,mg,1
+55,TCN2+™ Cellular B12 Transport | Methylation Optimization | Neurological Vitality,Liposomal Methyl Folate (5-MTHF),0.8,liposomal,vitamin,mcg,2
+55,TCN2+™ Cellular B12 Transport | Methylation Optimization | Neurological Vitality,Liposomal Methylcobalamin (Vitamin B12),2.0,liposomal,vitamin,mg,3
+55,TCN2+™ Cellular B12 Transport | Methylation Optimization | Neurological Vitality,Liposomal Adenosylcobalamin (Vitamin B12),1.0,liposomal,vitamin,mg,4
+55,TCN2+™ Cellular B12 Transport | Methylation Optimization | Neurological Vitality,Liposomal Hydroxocobalamin (Vitamin B12),0.5,liposomal,vitamin,mcg,5
+55,TCN2+™ Cellular B12 Transport | Methylation Optimization | Neurological Vitality,Zinc (Bisglycinate),15.0,standard,mineral,mg,6
+55,TCN2+™ Cellular B12 Transport | Methylation Optimization | Neurological Vitality,Liposomal Magnesium (as Bisglycinate),100.0,liposomal,mineral,iu,7
+55,TCN2+™ Cellular B12 Transport | Methylation Optimization | Neurological Vitality,Trimethylglycine (TMG),250.0,standard,amino_acid,mg,8
+55,TCN2+™ Cellular B12 Transport | Methylation Optimization | Neurological Vitality,Liposomal DHA (Algal-Based),150.0,liposomal,lipid,mg,9
+55,TCN2+™ Cellular B12 Transport | Methylation Optimization | Neurological Vitality,Liposomal Alpha-Lipoic Acid (ALA),100.0,liposomal,cofactor,mg,10
+55,TCN2+™ Cellular B12 Transport | Methylation Optimization | Neurological Vitality,Micellar Bioperine® (Black Pepper Extract),5.0,micellar,other,mg,11
+56,VDR+™ Receptor Activation | Immune Resilience | Mood & Methylation Support,Liposomal Vitamin D3 (Cholecalciferol),0.5,liposomal,vitamin,mcg,1
+56,VDR+™ Receptor Activation | Immune Resilience | Mood & Methylation Support,Liposomal Vitamin K2 (MK-7),0.2,liposomal,vitamin,mcg,2
+56,VDR+™ Receptor Activation | Immune Resilience | Mood & Methylation Support,Liposomal Methyl Folate (5-MTHF),0.8,liposomal,vitamin,mcg,3
+56,VDR+™ Receptor Activation | Immune Resilience | Mood & Methylation Support,Liposomal Vitamin B12 (Methylcobalamin),1.0,liposomal,vitamin,mg,4
+56,VDR+™ Receptor Activation | Immune Resilience | Mood & Methylation Support,Liposomal Magnesium (Bisglycinate),50.0,liposomal,mineral,iu,5
+56,VDR+™ Receptor Activation | Immune Resilience | Mood & Methylation Support,Boron (Citrate Complex),3.0,standard,mineral,mg,6
+56,VDR+™ Receptor Activation | Immune Resilience | Mood & Methylation Support,Zinc (Bisglycinate),15.0,standard,mineral,mg,7
+56,VDR+™ Receptor Activation | Immune Resilience | Mood & Methylation Support,Liposomal Quercetin (Aglycone),100.0,liposomal,botanical,mg,8
+56,VDR+™ Receptor Activation | Immune Resilience | Mood & Methylation Support,Liposomal Trans-Resveratrol (98%),50.0,liposomal,botanical,mg,9
+56,VDR+™ Receptor Activation | Immune Resilience | Mood & Methylation Support,Proprietary Omega-3 DHA (Algal-Based),150.0,standard,lipid,mg,10
+56,VDR+™ Receptor Activation | Immune Resilience | Mood & Methylation Support,Liposomal Curcumin (95% Curcuminoids),100.0,liposomal,botanical,mg,11
+56,VDR+™ Receptor Activation | Immune Resilience | Mood & Methylation Support,Micellar Bioperine® (Black Pepper Extract),5.0,micellar,other,mg,12
