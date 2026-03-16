@@ -1,6 +1,6 @@
 import React from 'react';
 
-export type CardVariant = 'elevated' | 'interactive' | 'flat';
+export type CardVariant = 'elevated' | 'interactive' | 'flat' | 'glass';
 export type CardPadding = 'none' | 'sm' | 'md' | 'lg';
 
 export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -16,6 +16,8 @@ const cardVariantClasses: Record<CardVariant, string> = {
     'bg-white shadow-md hover:shadow-lg transition-shadow cursor-pointer dark:bg-slate-800 border border-slate-200 dark:border-slate-700',
   flat:
     'bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700',
+  glass:
+    'glass-card',
 };
 
 const paddingClasses: Record<CardPadding, string> = {

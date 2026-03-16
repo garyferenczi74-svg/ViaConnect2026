@@ -1,26 +1,29 @@
 import React from 'react';
 
-export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
+export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger' | 'glass';
 export type ButtonSize = 'sm' | 'md' | 'lg' | 'xl';
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
   size?: ButtonSize;
   loading?: boolean;
+  icon?: string;
   children: React.ReactNode;
 }
 
 const variantClasses: Record<ButtonVariant, string> = {
   primary:
-    'bg-emerald-600 text-white hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600',
+    'bg-gradient-to-r from-[#05bed6] to-[#8b5cf6] text-white hover:opacity-90 shadow-xl shadow-[#05bed6]/20',
   secondary:
     'bg-slate-200 text-slate-900 hover:bg-slate-300 dark:bg-slate-700 dark:text-slate-100 dark:hover:bg-slate-600',
   outline:
-    'border-2 border-emerald-600 text-emerald-600 hover:bg-emerald-50 dark:border-emerald-400 dark:text-emerald-400 dark:hover:bg-emerald-950',
+    'border-2 border-[#05bed6] text-[#05bed6] hover:bg-[#05bed6]/10',
   ghost:
-    'text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800',
+    'text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-white/5',
   danger:
     'bg-red-600 text-white hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600',
+  glass:
+    'bg-white/[0.03] backdrop-blur-xl text-white border border-white/10 hover:bg-white/[0.06]',
 };
 
 const sizeClasses: Record<ButtonSize, string> = {
@@ -34,6 +37,7 @@ export function Button({
   variant = 'primary',
   size = 'md',
   loading = false,
+  icon,
   disabled,
   className = '',
   children,
@@ -41,7 +45,7 @@ export function Button({
 }: ButtonProps) {
   return (
     <button
-      className={`inline-flex items-center justify-center rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed ${variantClasses[variant]} ${sizeClasses[size]} ${className}`}
+      className={`inline-flex items-center justify-center gap-2 rounded-xl font-semibold transition-all focus:outline-none focus:ring-2 focus:ring-[#05bed6] focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed ${variantClasses[variant]} ${sizeClasses[size]} ${className}`}
       disabled={disabled || loading}
       {...props}
     >
@@ -65,6 +69,9 @@ export function Button({
             d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
           />
         </svg>
+      )}
+      {icon && (
+        <span className="material-symbols-outlined text-sm">{icon}</span>
       )}
       {children}
     </button>
