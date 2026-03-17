@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>GENEX360™ Genomic Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=JetBrains+Mono:wght@400;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#05bed6",
+                        "accent-violet": "#8b5cf6",
+                        "background-light": "#f5f8f8",
+                        "background-dark": "#060c0e",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"],
+                        "mono": ["JetBrains Mono", "monospace"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        .glass-card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .bg-gradient-dark {
+            background: radial-gradient(circle at top right, #0a1f24, #060c0e);
+        }
+        .radar-grid {
+            background-image: radial-gradient(circle, rgba(5, 190, 214, 0.1) 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 min-h-screen">
+<div class="relative flex min-h-screen w-full flex-col bg-gradient-dark pb-24">
+<!-- Header Section -->
+<header class="p-6 pt-10 flex flex-col gap-4">
+<div class="flex justify-between items-start">
+<div class="flex flex-col gap-1">
+<h1 class="text-4xl font-bold tracking-tight text-white leading-tight">Your Genetic Profile</h1>
+<p class="text-primary/80 text-sm font-medium uppercase tracking-wider">ViaConnect™ GeneX360</p>
+</div>
+<div class="bg-primary/20 border border-primary/30 rounded-lg p-3 text-center min-w-[80px]">
+<div class="text-2xl font-bold text-primary">94<span class="text-xs">/100</span></div>
+<div class="text-[10px] uppercase font-bold text-primary/70">Score</div>
+</div>
+</div>
+<div class="flex flex-col gap-4 mt-2">
+<div class="flex items-center gap-2 text-slate-400 text-sm">
+<span class="material-symbols-outlined text-sm">calendar_today</span>
+<span>GENEX360™ Results · Analyzed March 2026</span>
+</div>
+<button class="flex items-center justify-center gap-2 w-full py-3 px-4 border border-primary/40 rounded-xl text-primary font-bold text-sm hover:bg-primary/10 transition-colors">
+<span class="material-symbols-outlined">download</span>
+                    Download PDF Report
+                </button>
+</div>
+</header>
+<!-- Main Content -->
+<main class="flex flex-col gap-6 px-4">
+<!-- Card 1: Methylation Pathway Map -->
+<section class="glass-card rounded-2xl p-5 overflow-hidden relative">
+<div class="flex items-center gap-3 mb-4">
+<div class="bg-primary/20 p-2 rounded-lg">
+<span class="material-symbols-outlined text-primary">genetics</span>
+</div>
+<h3 class="font-bold text-lg">Methylation Pathway Map</h3>
+</div>
+<div class="relative h-40 w-full mb-4 flex items-center justify-center bg-slate-900/50 rounded-xl overflow-hidden">
+<!-- Conceptual visual nodes -->
+<div class="absolute inset-0 flex items-center justify-around px-8">
+<div class="flex flex-col items-center gap-2 z-10">
+<div class="w-12 h-12 rounded-full border-2 border-red-500 bg-red-500/20 flex items-center justify-center text-[10px] font-bold text-red-500">MTHFR</div>
+<span class="text-[10px] uppercase text-red-400">RED</span>
+</div>
+<div class="flex flex-col items-center gap-2 z-10">
+<div class="w-12 h-12 rounded-full border-2 border-amber-500 bg-amber-500/20 flex items-center justify-center text-[10px] font-bold text-amber-500">COMT</div>
+<span class="text-[10px] uppercase text-amber-400">AMBER</span>
+</div>
+<div class="flex flex-col items-center gap-2 z-10">
+<div class="w-12 h-12 rounded-full border-2 border-emerald-500 bg-emerald-500/20 flex items-center justify-center text-[10px] font-bold text-emerald-500">AHCY</div>
+<span class="text-[10px] uppercase text-emerald-400">GREEN</span>
+</div>
+</div>
+<!-- Decorative lines -->
+<svg class="absolute inset-0 w-full h-full opacity-30" viewbox="0 0 300 100">
+<path class="text-primary" d="M60 50 Q 150 20 240 50" fill="none" stroke="currentColor" stroke-width="2"></path>
+<path class="text-primary" d="M60 50 Q 150 80 240 50" fill="none" stroke="currentColor" stroke-width="2"></path>
+</svg>
+</div>
+<p class="text-sm text-slate-300 leading-relaxed italic">
+                    "Your methylation pathway shows moderate impairment in the folate cycle, specifically affecting MTHFR enzyme activity..."
+                </p>
+</section>
+<!-- Card 2: Nutrient Risk Radar -->
+<section class="glass-card rounded-2xl p-5">
+<div class="flex justify-between items-center mb-6">
+<h3 class="font-bold text-lg">Nutrient Risk Radar</h3>
+<span class="material-symbols-outlined text-accent-violet">insights</span>
+</div>
+<div class="aspect-square w-full relative flex items-center justify-center radar-grid rounded-xl border border-white/5">
+<!-- Simulated Radar Chart -->
+<div class="absolute inset-0 flex items-center justify-center">
+<div class="w-48 h-48 border border-slate-700 rounded-full"></div>
+<div class="absolute w-32 h-32 border border-slate-700 rounded-full"></div>
+<div class="absolute w-16 h-16 border border-slate-700 rounded-full"></div>
+</div>
+<svg class="w-full h-full drop-shadow-[0_0_10px_rgba(5,190,214,0.3)]" viewbox="0 0 100 100">
+<polygon fill="rgba(5, 190, 214, 0.4)" points="50,10 85,35 75,75 25,75 15,35" stroke="#8b5cf6" stroke-width="1"></polygon>
+<!-- Points labels -->
+<text class="font-mono" fill="white" font-size="4" text-anchor="middle" x="50" y="8">B-VIT (HIGH)</text>
+<text class="font-mono" fill="white" font-size="4" text-anchor="start" x="90" y="35">VIT-D (MOD)</text>
+<text class="font-mono" fill="white" font-size="4" text-anchor="middle" x="80" y="82">MAG</text>
+<text class="font-mono" fill="white" font-size="4" text-anchor="middle" x="20" y="82">OMEGA</text>
+<text class="font-mono" fill="white" font-size="4" text-anchor="end" x="5" y="35">IRON</text>
+</svg>
+</div>
+</section>
+<!-- Card 3: Drug Metabolism Profile -->
+<section class="glass-card rounded-2xl p-5">
+<h3 class="font-bold text-lg mb-6">Drug Metabolism (CYP450)</h3>
+<div class="flex flex-col gap-6">
+<div class="space-y-2">
+<div class="flex justify-between items-center text-xs">
+<span class="font-mono text-slate-400">CYP2D6</span>
+<span class="bg-red-500/20 text-red-400 px-2 py-0.5 rounded text-[10px] font-bold">POOR</span>
+</div>
+<div class="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
+<div class="h-full bg-red-500 w-[20%]"></div>
+</div>
+</div>
+<div class="space-y-2">
+<div class="flex justify-between items-center text-xs">
+<span class="font-mono text-slate-400">CYP2C19</span>
+<span class="bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded text-[10px] font-bold">INTERMEDIATE</span>
+</div>
+<div class="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
+<div class="h-full bg-amber-500 w-[55%]"></div>
+</div>
+</div>
+<div class="space-y-2">
+<div class="flex justify-between items-center text-xs">
+<span class="font-mono text-slate-400">CYP3A4</span>
+<span class="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded text-[10px] font-bold">NORMAL</span>
+</div>
+<div class="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
+<div class="h-full bg-emerald-500 w-[90%]"></div>
+</div>
+</div>
+<div class="space-y-2">
+<div class="flex justify-between items-center text-xs">
+<span class="font-mono text-slate-400">CYP1A2</span>
+<span class="bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded text-[10px] font-bold">ULTRA-FAST</span>
+</div>
+<div class="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
+<div class="h-full bg-blue-500 w-[100%]"></div>
+</div>
+</div>
+</div>
+</section>
+<!-- Card 4: Hormonal Balance -->
+<section class="glass-card rounded-2xl p-5">
+<h3 class="font-bold text-lg mb-4">Hormonal Balance</h3>
+<p class="text-xs text-slate-400 mb-4 font-mono uppercase">Cortisol Rhythm (24h)</p>
+<div class="h-32 w-full relative">
+<!-- Shaded band -->
+<div class="absolute inset-0 bg-primary/5 h-16 top-8"></div>
+<!-- Chart line simulated -->
+<svg class="w-full h-full" preserveaspectratio="none" viewbox="0 0 100 40">
+<path d="M0,35 Q10,10 25,5 Q40,5 50,20 Q60,35 75,30 Q90,25 100,38" fill="none" stroke="url(#lineGradient)" stroke-width="1.5"></path>
+<defs>
+<lineargradient id="lineGradient" x1="0%" x2="100%" y1="0%" y2="0%">
+<stop offset="0%" stop-color="#05bed6"></stop>
+<stop offset="100%" stop-color="#8b5cf6"></stop>
+</lineargradient>
+</defs>
+</svg>
+<div class="flex justify-between mt-2 text-[8px] font-mono text-slate-500">
+<span>06:00</span>
+<span>12:00</span>
+<span>18:00</span>
+<span>00:00</span>
+</div>
+</div>
+</section>
+<!-- Card 5: Immune Resilience -->
+<section class="glass-card rounded-2xl p-5 flex items-center gap-6">
+<div class="relative w-28 h-28 shrink-0">
+<svg class="w-full h-full -rotate-90" viewbox="0 0 36 36">
+<path class="text-slate-800" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-dasharray="100, 100" stroke-width="3"></path>
+<path class="text-primary" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-dasharray="72, 100" stroke-linecap="round" stroke-width="3"></path>
+</svg>
+<div class="absolute inset-0 flex flex-col items-center justify-center">
+<span class="text-2xl font-bold font-mono">72</span>
+<span class="text-[8px] uppercase tracking-tighter text-slate-400">Score</span>
+</div>
+</div>
+<div class="flex flex-col gap-3 flex-1">
+<h3 class="font-bold text-lg leading-tight">Immune Resilience</h3>
+<div class="flex flex-col gap-1.5">
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-emerald-500"></div>
+<span class="text-[10px] text-slate-300">T-Cell Efficiency</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-amber-500"></div>
+<span class="text-[10px] text-slate-300">Inflammatory Response</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-red-500"></div>
+<span class="text-[10px] text-slate-300">Autoimmune Risk</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Card 6: Biological Age -->
+<section class="glass-card rounded-2xl p-6 bg-primary/5 border-primary/20">
+<div class="flex justify-between items-start mb-6">
+<div>
+<h3 class="font-bold text-lg">Biological Age</h3>
+<p class="text-xs text-slate-400 font-mono italic">Powered by EpigenHQ™</p>
+</div>
+<div class="text-right">
+<div class="text-3xl font-mono font-bold text-primary">34.2</div>
+<div class="text-[10px] uppercase text-slate-400">Chronological: 38</div>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div class="bg-white/5 p-3 rounded-xl border border-white/5">
+<p class="text-[10px] text-slate-400 uppercase font-bold mb-1">Horvath Clock</p>
+<p class="text-lg font-mono text-slate-100 font-bold">33.8</p>
+</div>
+<div class="bg-white/5 p-3 rounded-xl border border-white/5">
+<p class="text-[10px] text-slate-400 uppercase font-bold mb-1">Hannum Clock</p>
+<p class="text-lg font-mono text-slate-100 font-bold">34.5</p>
+</div>
+<div class="bg-white/5 p-3 rounded-xl border border-white/5">
+<p class="text-[10px] text-slate-400 uppercase font-bold mb-1">PhenoAge</p>
+<p class="text-lg font-mono text-slate-100 font-bold">32.1</p>
+</div>
+<div class="bg-white/5 p-3 rounded-xl border border-white/5">
+<p class="text-[10px] text-slate-400 uppercase font-bold mb-1">GrimAge</p>
+<p class="text-lg font-mono text-slate-100 font-bold">35.2</p>
+</div>
+</div>
+</section>
+</main>
+<!-- Navigation Bar -->
+<nav class="fixed bottom-0 left-0 right-0 z-50 bg-background-dark/80 backdrop-blur-xl border-t border-white/10 px-6 pb-6 pt-3">
+<div class="flex justify-between items-center max-w-md mx-auto">
+<a class="flex flex-col items-center gap-1 text-primary" href="#">
+<span class="material-symbols-outlined fill-1">dashboard</span>
+<span class="text-[10px] font-bold uppercase tracking-widest">Dash</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-slate-500" href="#">
+<span class="material-symbols-outlined">description</span>
+<span class="text-[10px] font-bold uppercase tracking-widest">Reports</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-slate-500" href="#">
+<span class="material-symbols-outlined">psychology</span>
+<span class="text-[10px] font-bold uppercase tracking-widest">Insights</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-slate-500" href="#">
+<span class="material-symbols-outlined">account_circle</span>
+<span class="text-[10px] font-bold uppercase tracking-widest">Profile</span>
+</a>
+</div>
+</nav>
+</div>
+</body></html>
