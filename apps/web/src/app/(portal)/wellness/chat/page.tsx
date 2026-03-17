@@ -3,81 +3,123 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-/* ------------------------------------------------------------------ */
-/*  Types & Data                                                       */
-/* ------------------------------------------------------------------ */
+/* -------------------------------------------------------------------------- */
+/*  Types                                                                     */
+/* -------------------------------------------------------------------------- */
 
-interface Message {
-  id: string;
-  role: 'assistant' | 'user';
-  content: string;
-  timestamp: string;
-  citations?: { label: string; url: string }[];
+interface InteractionItem {
+  med: string;
+  status: 'safe' | 'warning';
+  note: string;
 }
 
-const initialMessages: Message[] = [
+interface ChatMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  confidence?: string;
+  references?: string[];
+  interactions?: InteractionItem[];
+  safetyRating?: string;
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Seed messages                                                             */
+/* -------------------------------------------------------------------------- */
+
+const seedMessages: ChatMessage[] = [
   {
     id: '1',
-    role: 'assistant',
-    content:
-      "Hello! I'm your AI health assistant, grounded in your GeneX360 genomic data and FarmCeutica product catalog. How can I help you today?",
-    timestamp: '10:02 AM',
+    role: 'user',
+    content: 'Why was MTHFR+ recommended for me? I want to understand the science.',
   },
   {
     id: '2',
-    role: 'user',
-    content: 'What supplements should I take for my MTHFR variant?',
-    timestamp: '10:03 AM',
+    role: 'assistant',
+    content: `Your GENEX360™ results show you carry the MTHFR C677T heterozygous variant, which reduces your methylenetetrahydrofolate reductase enzyme activity by approximately 35%. This means your body has difficulty converting folic acid into its active form, L-methylfolate.\n\nMTHFR+ Methylation Support was specifically formulated for this variant and includes:\n\n• L-Methylfolate (800mcg) — Bypasses the MTHFR enzyme entirely\n• Methylcobalamin (1000mcg) — Active B12 for methionine synthase\n• Riboflavin-5-phosphate (25mg) — Cofactor for MTHFR enzyme\n• Betaine TMG (500mg) — Alternative methylation pathway support\n• Pyridoxal-5-phosphate (25mg) — Active B6 for transsulfuration\n\nYour CAQ responses also indicated elevated homocysteine concerns, which aligns with the methylation bottleneck we see in your genetic data.`,
+    confidence: '94% (based on genetic + CAQ data)',
+    references: ['PMID:23754956', 'PMID:30123456'],
   },
   {
     id: '3',
-    role: 'assistant',
-    content:
-      'Based on your MTHFR C677T heterozygous status, I recommend:\n\n1. **Methylated B-Complex** \u2014 Contains L-methylfolate and methylcobalamin, the active forms your body needs.\n2. **Riboflavin (B2)** \u2014 Acts as a cofactor for MTHFR enzyme function.\n\nYour genetic data shows reduced MTHFR enzyme activity (~65% of normal), making methylated forms essential.',
-    timestamp: '10:03 AM',
-    citations: [
-      { label: 'PubMed: 28597126', url: 'https://pubmed.ncbi.nlm.nih.gov/28597126/' },
-      { label: 'PubMed: 31447894', url: 'https://pubmed.ncbi.nlm.nih.gov/31447894/' },
-    ],
+    role: 'user',
+    content: 'Can I take this with my current medications?',
   },
   {
     id: '4',
-    role: 'user',
-    content: 'Should I worry about my homocysteine levels?',
-    timestamp: '10:04 AM',
+    role: 'assistant',
+    content: "I've cross-referenced MTHFR+ Methylation Support with your medication list from your health profile. Here's the interaction analysis:",
+    interactions: [
+      { med: 'Lisinopril 10mg', status: 'safe', note: 'No interaction' },
+      { med: 'Metformin 500mg', status: 'safe', note: 'No interaction (note: Metformin may reduce B12 absorption — MTHFR+ provides methylcobalamin which helps offset this)' },
+      { med: 'Omeprazole 20mg', status: 'warning', note: 'Minor interaction — take MTHFR+ at least 2 hours apart from Omeprazole for optimal folate absorption' },
+    ],
+    safetyRating: 'SAFE with timing adjustment',
   },
 ];
 
-/* ------------------------------------------------------------------ */
-/*  Helpers                                                            */
-/* ------------------------------------------------------------------ */
+const suggestedPrompts = [
+  "What's my biggest genetic risk?",
+  'Optimize my sleep protocol',
+  'Explain my CYP450 results',
+  'What should I eat for my genotype?',
+];
 
-function renderMarkdown(text: string) {
-  // Very lightweight bold markdown renderer
-  const parts = text.split(/(\*\*[^*]+\*\*)/g);
-  return parts.map((part, i) => {
-    if (part.startsWith('**') && part.endsWith('**')) {
+/* -------------------------------------------------------------------------- */
+/*  Simple markdown bold renderer                                             */
+/* -------------------------------------------------------------------------- */
+
+function renderContent(text: string) {
+  const lines = text.split('\n');
+  return lines.map((line, i) => {
+    if (line.startsWith('• ')) {
+      const parts = line.slice(2).split(/(\*\*[^*]+\*\*)/g);
       return (
-        <strong key={i} className="text-white font-semibold">
-          {part.slice(2, -2)}
-        </strong>
+        <div key={i} className="flex gap-2 ml-1">
+          <span className="text-cyan-400 shrink-0">•</span>
+          <span>
+            {parts.map((part, j) =>
+              part.startsWith('**') && part.endsWith('**') ? (
+                <strong key={j} className="text-white font-semibold">{part.slice(2, -2)}</strong>
+              ) : (
+                <span key={j}>{part}</span>
+              )
+            )}
+          </span>
+        </div>
       );
     }
-    return <span key={i}>{part}</span>;
+    if (line === '') return <div key={i} className="h-2" />;
+    const parts = line.split(/(\*\*[^*]+\*\*)/g);
+    return (
+      <p key={i}>
+        {parts.map((part, j) =>
+          part.startsWith('**') && part.endsWith('**') ? (
+            <strong key={j} className="text-white font-semibold">{part.slice(2, -2)}</strong>
+          ) : (
+            <span key={j}>{part}</span>
+          )
+        )}
+      </p>
+    );
   });
 }
+
+/* -------------------------------------------------------------------------- */
+/*  Animations                                                                */
+/* -------------------------------------------------------------------------- */
 
 const messageVariants = {
   hidden: { opacity: 0, y: 12 },
   show: { opacity: 1, y: 0, transition: { duration: 0.3 } },
 };
 
-/* ------------------------------------------------------------------ */
-/*  Component                                                          */
-/* ------------------------------------------------------------------ */
+/* -------------------------------------------------------------------------- */
+/*  Component                                                                 */
+/* -------------------------------------------------------------------------- */
 
 export default function ChatPage() {
-  const [messages, setMessages] = useState<Message[]>(initialMessages);
+  const [messages, setMessages] = useState<ChatMessage[]>(seedMessages);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -86,36 +128,35 @@ export default function ChatPage() {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
   }, [messages, isTyping]);
 
-  const handleSend = () => {
-    const text = input.trim();
-    if (!text) return;
+  const handleSend = (text?: string) => {
+    const msg = (text || input).trim();
+    if (!msg) return;
 
-    const userMsg: Message = {
+    const userMsg: ChatMessage = {
       id: Date.now().toString(),
       role: 'user',
-      content: text,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      content: msg,
     };
     setMessages((prev) => [...prev, userMsg]);
     setInput('');
 
-    // Simulate typing indicator
     setIsTyping(true);
     setTimeout(() => {
       setIsTyping(false);
-      const assistantMsg: Message = {
+      const assistantMsg: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
         content:
-          "Thank you for your question. Based on your genomic profile, I'd recommend discussing this with your healthcare provider and reviewing your latest lab results. I can help you understand the relevant genetic factors involved.",
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          "Based on your GENEX360™ genomic profile, I can provide detailed insights on this topic. Your genetic data shows several relevant variants that influence this area. I'd recommend reviewing your full report and discussing specific protocol changes with your healthcare provider.",
+        confidence: '87% (based on genetic data)',
+        references: ['PMID:28597126', 'PMID:31447894'],
       };
       setMessages((prev) => [...prev, assistantMsg]);
     }, 2000);
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)] max-w-4xl mx-auto">
+    <div className="flex flex-col h-[calc(100vh-6rem)] max-w-3xl mx-auto">
       {/* ---- Header ---- */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
@@ -123,63 +164,94 @@ export default function ChatPage() {
         transition={{ duration: 0.4 }}
         className="shrink-0 pb-4 border-b border-white/10"
       >
-        <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-bold text-white">AI Health Assistant</h1>
-          <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-violet-500/15 text-violet-300 border border-violet-500/20">
-            Powered by Claude
-          </span>
-        </div>
-        <p className="text-sm text-slate-400 mt-1">RAG-grounded in your genomic data</p>
+        <h1 className="text-2xl font-[Syne] font-bold text-white">ViaConnect AI</h1>
+        <p className="text-sm text-slate-400 mt-1">
+          Powered by Claude · Grounded in your genetics
+        </p>
       </motion.div>
 
       {/* ---- Messages ---- */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto py-6 space-y-5 scrollbar-thin scrollbar-thumb-white/10">
+      <div
+        ref={scrollRef}
+        className="flex-1 overflow-y-auto py-6 flex flex-col gap-4 scrollbar-thin scrollbar-thumb-white/10"
+      >
         <AnimatePresence initial={false}>
           {messages.map((msg) => (
-            <motion.div key={msg.id} variants={messageVariants} initial="hidden" animate="show" className="flex gap-3">
-              {/* Avatar */}
-              {msg.role === 'assistant' ? (
-                <div className="shrink-0 w-9 h-9 rounded-full bg-gradient-to-br from-violet-600 to-violet-400 flex items-center justify-center shadow-lg shadow-violet-500/20">
-                  <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 2l2.09 6.26L20.18 9l-5.09 3.74L17.18 19 12 15.27 6.82 19l2.09-6.26L3.82 9l6.09-.74z" />
-                  </svg>
-                </div>
-              ) : (
-                <div className="shrink-0 w-9 h-9 rounded-full bg-gradient-to-br from-cyan-600 to-cyan-400 flex items-center justify-center text-white text-xs font-bold shadow-lg shadow-cyan-500/20">
-                  JD
+            <motion.div
+              key={msg.id}
+              variants={messageVariants}
+              initial="hidden"
+              animate="show"
+              className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+            >
+              {/* AI avatar */}
+              {msg.role === 'assistant' && (
+                <div className="shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-violet-600 to-cyan-500 flex items-center justify-center mr-3 mt-1">
+                  <span className="material-symbols-outlined text-white text-[16px]">smart_toy</span>
                 </div>
               )}
 
-              {/* Bubble */}
-              <div className="flex-1 max-w-[85%]">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-xs font-semibold text-slate-300">{msg.role === 'assistant' ? 'AI Assistant' : 'You'}</span>
-                  <span className="text-xs text-slate-500">{msg.timestamp}</span>
-                </div>
+              <div className={`max-w-[85%] ${msg.role === 'user' ? 'ml-auto' : ''}`}>
                 <div
-                  className={`rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-line ${
-                    msg.role === 'assistant'
-                      ? 'backdrop-blur-xl bg-violet-500/10 border border-violet-500/15 text-slate-200'
-                      : 'backdrop-blur-xl bg-white/5 border border-white/10 text-slate-200'
+                  className={`rounded-2xl p-4 text-sm leading-relaxed ${
+                    msg.role === 'user'
+                      ? 'bg-[#06B6D4]/20 rounded-br-sm text-slate-200'
+                      : 'backdrop-blur-xl bg-white/5 border border-white/10 rounded-bl-sm text-slate-300'
                   }`}
                 >
-                  {renderMarkdown(msg.content)}
+                  {renderContent(msg.content)}
 
-                  {/* Citations */}
-                  {msg.citations && msg.citations.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-white/10">
-                      {msg.citations.map((c) => (
+                  {/* Interaction check cards */}
+                  {msg.interactions && (
+                    <div className="mt-4 flex flex-col gap-2">
+                      {msg.interactions.map((item) => (
+                        <div
+                          key={item.med}
+                          className={`flex items-start gap-2 p-3 rounded-lg border ${
+                            item.status === 'safe'
+                              ? 'bg-emerald-500/10 border-emerald-500/20'
+                              : 'bg-amber-500/10 border-amber-500/20'
+                          }`}
+                        >
+                          <span className="text-base shrink-0 mt-0.5">
+                            {item.status === 'safe' ? '✅' : '⚠️'}
+                          </span>
+                          <div>
+                            <p className="text-sm font-semibold text-white">{item.med}</p>
+                            <p className="text-xs text-slate-400 mt-0.5">{item.note}</p>
+                          </div>
+                        </div>
+                      ))}
+                      {msg.safetyRating && (
+                        <div className="mt-2 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 w-fit">
+                          <span className="text-xs font-semibold text-emerald-400">
+                            Overall safety rating: ✅ {msg.safetyRating}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Confidence */}
+                  {msg.confidence && (
+                    <p className="mt-3 text-xs text-slate-500">
+                      Confidence: <span className="text-slate-400">{msg.confidence}</span>
+                    </p>
+                  )}
+
+                  {/* References */}
+                  {msg.references && msg.references.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-2 pt-2 border-t border-white/5">
+                      <span className="text-xs text-slate-500">References:</span>
+                      {msg.references.map((ref) => (
                         <a
-                          key={c.label}
-                          href={c.url}
+                          key={ref}
+                          href={`https://pubmed.ncbi.nlm.nih.gov/${ref.replace('PMID:', '')}/`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-cyan-500/10 text-cyan-300 border border-cyan-500/20 hover:bg-cyan-500/20 transition-colors"
+                          className="text-xs text-cyan-400 hover:text-cyan-300 underline underline-offset-2 transition-colors"
                         >
-                          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
-                          </svg>
-                          {c.label}
+                          {ref}
                         </a>
                       ))}
                     </div>
@@ -193,13 +265,16 @@ export default function ChatPage() {
         {/* Typing indicator */}
         <AnimatePresence>
           {isTyping && (
-            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }} className="flex gap-3">
-              <div className="shrink-0 w-9 h-9 rounded-full bg-gradient-to-br from-violet-600 to-violet-400 flex items-center justify-center shadow-lg shadow-violet-500/20">
-                <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 2l2.09 6.26L20.18 9l-5.09 3.74L17.18 19 12 15.27 6.82 19l2.09-6.26L3.82 9l6.09-.74z" />
-                </svg>
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 8 }}
+              className="flex items-start gap-3"
+            >
+              <div className="shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-violet-600 to-cyan-500 flex items-center justify-center">
+                <span className="material-symbols-outlined text-white text-[16px]">smart_toy</span>
               </div>
-              <div className="rounded-2xl px-4 py-3 backdrop-blur-xl bg-violet-500/10 border border-violet-500/15">
+              <div className="rounded-2xl rounded-bl-sm px-4 py-3 backdrop-blur-xl bg-white/5 border border-white/10">
                 <div className="flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-violet-400 animate-bounce" style={{ animationDelay: '0ms' }} />
                   <span className="w-2 h-2 rounded-full bg-violet-400 animate-bounce" style={{ animationDelay: '150ms' }} />
@@ -211,34 +286,58 @@ export default function ChatPage() {
         </AnimatePresence>
       </div>
 
-      {/* ---- Input Area ---- */}
+      {/* ---- Suggested Prompts ---- */}
+      <div className="shrink-0 flex flex-wrap gap-2 pb-3">
+        {suggestedPrompts.map((prompt) => (
+          <button
+            key={prompt}
+            onClick={() => handleSend(prompt)}
+            className="px-3 py-1.5 rounded-full text-xs font-medium backdrop-blur-xl bg-white/5 border border-white/10 text-slate-400 hover:text-slate-200 hover:bg-white/10 transition-colors"
+          >
+            {prompt}
+          </button>
+        ))}
+      </div>
+
+      {/* ---- Chat Input ---- */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, delay: 0.2 }}
-        className="shrink-0 pt-4 border-t border-white/10 space-y-2"
+        className="shrink-0 sticky bottom-0 pb-2"
       >
-        <div className="flex gap-3">
+        <div className="rounded-2xl backdrop-blur-xl bg-white/5 border border-white/10 p-3 flex items-center gap-3">
           <input
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
             placeholder="Ask about your health, supplements, or genomic data..."
-            className="flex-1 px-4 py-3 rounded-xl text-sm text-slate-200 placeholder-slate-500 backdrop-blur-xl bg-white/5 border border-white/10 focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/25 transition-colors"
+            className="flex-1 bg-transparent text-sm text-slate-200 placeholder-slate-500 focus:outline-none"
           />
+
+          {/* Mic icon */}
+          <button className="p-2 rounded-lg text-slate-500 hover:text-slate-300 hover:bg-white/5 transition-colors">
+            <span className="material-symbols-outlined text-[20px]">mic</span>
+          </button>
+
+          {/* Attachment icon */}
+          <button className="p-2 rounded-lg text-slate-500 hover:text-slate-300 hover:bg-white/5 transition-colors">
+            <span className="material-symbols-outlined text-[20px]">attach_file</span>
+          </button>
+
+          {/* Send button */}
           <button
-            onClick={handleSend}
+            onClick={() => handleSend()}
             disabled={!input.trim()}
-            className="px-4 py-3 rounded-xl bg-gradient-to-r from-violet-600 to-violet-500 text-white font-medium hover:from-violet-500 hover:to-violet-400 disabled:opacity-40 disabled:cursor-not-allowed shadow-lg shadow-violet-500/25 transition-all"
+            className="w-10 h-10 rounded-full bg-gradient-to-r from-cyan-500 to-cyan-600 flex items-center justify-center text-white hover:from-cyan-400 hover:to-cyan-500 disabled:opacity-40 disabled:cursor-not-allowed shadow-lg shadow-cyan-500/25 transition-all shrink-0"
           >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
-            </svg>
+            <span className="material-symbols-outlined text-[20px]">arrow_upward</span>
           </button>
         </div>
-        <p className="text-xs text-slate-500 text-center">
-          AI responses are for informational purposes only. Consult your healthcare provider before making changes to your protocol.
+
+        <p className="text-[10px] text-slate-600 text-center mt-2">
+          AI responses are for informational purposes only. Consult your healthcare provider before making changes.
         </p>
       </motion.div>
     </div>

@@ -3,223 +3,273 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 
-/* ------------------------------------------------------------------ */
-/*  Data                                                               */
-/* ------------------------------------------------------------------ */
+/* -------------------------------------------------------------------------- */
+/*  Animation helpers                                                         */
+/* -------------------------------------------------------------------------- */
 
-const products = [
-  { name: 'Methylated B-Complex', dosage: '1 capsule', form: 'capsule' as const, time: 'Morning' as const, confidence: 95, rationale: 'MTHFR C677T — requires methylated folate and B12' },
-  { name: 'Vitamin D3 + K2', dosage: '5000 IU', form: 'capsule' as const, time: 'Morning' as const, confidence: 88, rationale: 'VDR Taq variant — enhanced D3 requirement' },
-  { name: 'Omega-3 DHA', dosage: '2000mg', form: 'liquid' as const, time: 'Morning' as const, confidence: 72, rationale: 'APOE \u03B53/\u03B54 — cardiovascular support' },
-  { name: 'Magnesium Glycinate', dosage: '400mg', form: 'capsule' as const, time: 'Afternoon' as const, confidence: 91, rationale: 'COMT Val/Met — magnesium supports methylation' },
-  { name: 'CoQ10 Ubiquinol', dosage: '200mg', form: 'capsule' as const, time: 'Afternoon' as const, confidence: 85, rationale: 'NQO1 variant — mitochondrial support' },
-  { name: 'Ashwagandha KSM-66', dosage: '600mg', form: 'powder' as const, time: 'Evening' as const, confidence: 68, rationale: 'HPA axis support — cortisol optimization' },
-  { name: 'Zinc Picolinate', dosage: '30mg', form: 'capsule' as const, time: 'Evening' as const, confidence: 79, rationale: 'Immune support — zinc transporter variants' },
-];
+const fadeUp = {
+  hidden: { opacity: 0, y: 24 },
+  visible: (i: number) => ({
+    opacity: 1,
+    y: 0,
+    transition: { delay: i * 0.1, duration: 0.5, ease: 'easeOut' },
+  }),
+};
 
-type DayStatus = 'completed' | 'partial' | 'missed' | 'upcoming' | 'today';
+/* -------------------------------------------------------------------------- */
+/*  Data                                                                      */
+/* -------------------------------------------------------------------------- */
 
-function buildCalendar(): DayStatus[] {
-  const days: DayStatus[] = [];
-  for (let i = 1; i <= 28; i++) {
-    if (i === 12) days.push('partial');
-    else if (i <= 18) days.push('completed');
-    else if (i === 19) days.push('today');
-    else days.push('upcoming');
-  }
-  return days;
+interface Supplement {
+  name: string;
+  dosage: string;
+  form: string;
 }
 
-const statusColor: Record<DayStatus, string> = {
-  completed: 'bg-emerald-500',
-  partial: 'bg-yellow-500',
-  missed: 'bg-red-500',
-  upcoming: 'bg-white/10',
-  today: 'ring-2 ring-violet-400 bg-violet-500/40',
-};
+interface TimeBlock {
+  label: string;
+  icon: string;
+  iconColor: string;
+  supplements: Supplement[];
+}
 
-const timeIcon: Record<string, string> = {
-  Morning: '\u2600\uFE0F',
-  Afternoon: '\uD83C\uDF24\uFE0F',
-  Evening: '\uD83C\uDF19',
-};
+const timeBlocks: TimeBlock[] = [
+  {
+    label: 'Morning',
+    icon: 'light_mode',
+    iconColor: 'text-amber-400',
+    supplements: [
+      { name: 'MTHFR+', dosage: '2 caps', form: 'capsule' },
+      { name: 'NAD+', dosage: '1 cap', form: 'capsule' },
+      { name: 'Vitamin D3', dosage: '1 softgel', form: 'softgel' },
+    ],
+  },
+  {
+    label: 'Afternoon',
+    icon: 'wb_sunny',
+    iconColor: 'text-orange-400',
+    supplements: [
+      { name: 'FOCUS+', dosage: '2 caps', form: 'capsule' },
+      { name: 'Omega-3', dosage: '2 softgels', form: 'softgel' },
+    ],
+  },
+  {
+    label: 'Evening',
+    icon: 'dark_mode',
+    iconColor: 'text-indigo-400',
+    supplements: [
+      { name: 'RELAX+', dosage: '2 caps', form: 'capsule' },
+      { name: 'Magnesium', dosage: '1 cap', form: 'capsule' },
+    ],
+  },
+];
 
-const formLabel: Record<string, string> = {
-  capsule: 'Capsule',
-  powder: 'Powder',
-  liquid: 'Liquid',
-};
+const weeklyData = [
+  { day: 'Mon', pct: 100 },
+  { day: 'Tue', pct: 100 },
+  { day: 'Wed', pct: 85 },
+  { day: 'Thu', pct: 100 },
+  { day: 'Fri', pct: 70 },
+  { day: 'Sat', pct: 100 },
+  { day: 'Sun', pct: 0 },
+];
 
-/* ------------------------------------------------------------------ */
-/*  Animations                                                         */
-/* ------------------------------------------------------------------ */
-
-const containerVariants = {
-  hidden: {},
-  show: { transition: { staggerChildren: 0.07 } },
-};
-
-const cardVariants = {
-  hidden: { opacity: 0, y: 20 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: 'easeOut' } },
-};
-
-/* ------------------------------------------------------------------ */
-/*  Component                                                          */
-/* ------------------------------------------------------------------ */
+/* -------------------------------------------------------------------------- */
+/*  Component                                                                 */
+/* -------------------------------------------------------------------------- */
 
 export default function ProtocolPage() {
-  const [calendar, setCalendar] = useState<DayStatus[]>(buildCalendar);
+  const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({});
 
-  const streak = calendar.filter((d) => d === 'completed').length;
+  const toggleItem = (block: string, name: string) => {
+    const key = `${block}:${name}`;
+    setCheckedItems((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const totalSupplements = timeBlocks.reduce((sum, b) => sum + b.supplements.length, 0);
+  const checkedCount = Object.values(checkedItems).filter(Boolean).length;
 
   return (
-    <div className="max-w-6xl mx-auto space-y-10">
-      {/* ---- Header ---- */}
-      <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-        <h1 className="text-3xl font-bold text-white">Your Personalized Protocol</h1>
-        <p className="mt-1 text-slate-400">Genetically-optimized supplement plan</p>
-      </motion.div>
-
-      {/* ---- Protocol Cards ---- */}
-      <motion.div variants={containerVariants} initial="hidden" animate="show" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-        {products.map((p) => (
-          <motion.div
-            key={p.name}
-            variants={cardVariants}
-            className="rounded-2xl backdrop-blur-xl bg-white/5 border border-white/10 shadow-xl p-5 flex flex-col gap-3 hover:border-violet-500/30 transition-colors"
-          >
-            {/* Top row */}
-            <div className="flex items-start justify-between">
-              <div>
-                <h3 className="text-lg font-semibold text-white">{p.name}</h3>
-                <p className="text-sm text-slate-400">
-                  {p.dosage} &middot; {formLabel[p.form]}
-                </p>
-              </div>
-              <span className="text-xl" title={p.time}>
-                {timeIcon[p.time]}
-              </span>
-            </div>
-
-            {/* Rationale */}
-            <p className="text-xs text-slate-300 leading-relaxed">{p.rationale}</p>
-
-            {/* Badges */}
-            <div className="flex items-center gap-2 mt-auto flex-wrap">
-              {/* Confidence badge */}
-              <span
-                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold ${
-                  p.confidence >= 80
-                    ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20'
-                    : p.confidence >= 60
-                    ? 'bg-yellow-500/15 text-yellow-400 border border-yellow-500/20'
-                    : 'bg-slate-500/15 text-slate-400 border border-slate-500/20'
-                }`}
-              >
-                {p.confidence}% match
-              </span>
-
-              {/* Genetic Match badge */}
-              {p.confidence > 80 && (
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-violet-500/15 text-violet-300 border border-violet-500/20">
-                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714a2.25 2.25 0 00.659 1.591L19 14.5m-4.75-11.396c.251.023.501.05.75.082M5 14.5l-1.456 1.456a2.25 2.25 0 00-.659 1.591v1.203a2.25 2.25 0 002.25 2.25h1.615m-3.206-5.5h7.711M19 14.5l1.456 1.456a2.25 2.25 0 01.659 1.591v1.203a2.25 2.25 0 01-2.25 2.25h-1.615m3.206-5.5h-7.711m-6.922 5.5h14.172"
-                    />
-                  </svg>
-                  Genetic Match
-                </span>
-              )}
-
-              {/* Time badge */}
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-cyan-500/10 text-cyan-300 border border-cyan-500/20">
-                {p.time}
-              </span>
-            </div>
-          </motion.div>
-        ))}
-      </motion.div>
-
-      {/* ---- Adherence Calendar ---- */}
-      <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.3 }} className="rounded-2xl backdrop-blur-xl bg-white/5 border border-white/10 shadow-xl p-6 space-y-5">
-        <div className="flex items-center justify-between">
+    <div className="max-w-6xl mx-auto flex flex-col gap-6">
+      {/* ------------------------------------------------------------------ */}
+      {/*  Header                                                            */}
+      {/* ------------------------------------------------------------------ */}
+      <motion.div custom={0} variants={fadeUp} initial="hidden" animate="visible">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h2 className="text-xl font-semibold text-white">Adherence Calendar</h2>
-            <p className="text-sm text-slate-400 mt-0.5">4-week tracking overview</p>
+            <h1 className="text-[28px] font-[Syne] font-bold text-white">Your Supplement Protocol</h1>
+            <p className="text-slate-400 mt-1">Genetically-optimized daily supplement plan</p>
           </div>
-          <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/10 border border-emerald-500/20">
-            <span className="text-emerald-400 text-sm font-semibold">{streak}-day streak!</span>
-            <span className="text-emerald-300 text-xs">+{streak * 10} FT earned</span>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-orange-500/15 border border-orange-500/30">
+              <span className="material-symbols-outlined text-orange-400 text-[20px]">local_fire_department</span>
+              <span className="text-sm font-semibold text-orange-400">14-day streak</span>
+            </div>
+            <div className="text-sm text-slate-400">
+              <span className="font-mono font-semibold text-white">{checkedCount}/{totalSupplements}</span> taken today
+            </div>
           </div>
         </div>
+      </motion.div>
 
-        {/* Week labels + grid */}
-        <div className="space-y-2">
-          {[0, 1, 2, 3].map((week) => (
-            <div key={week} className="flex items-center gap-2">
-              <span className="text-xs text-slate-500 w-16">Week {week + 1}</span>
-              <div className="flex gap-2">
-                {calendar.slice(week * 7, week * 7 + 7).map((status, idx) => {
-                  const dayNum = week * 7 + idx + 1;
+      {/* ------------------------------------------------------------------ */}
+      {/*  Time Block Cards                                                  */}
+      {/* ------------------------------------------------------------------ */}
+      <motion.div custom={1} variants={fadeUp} initial="hidden" animate="visible">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {timeBlocks.map((block) => (
+            <div
+              key={block.label}
+              className="rounded-xl backdrop-blur-xl bg-white/5 border border-white/10 p-5"
+            >
+              {/* Block header */}
+              <div className="flex items-center gap-2 mb-4">
+                <span className={`material-symbols-outlined ${block.iconColor} text-[22px]`}>
+                  {block.icon}
+                </span>
+                <h3 className="text-base font-[Syne] font-bold text-white">{block.label}</h3>
+              </div>
+
+              {/* Supplements */}
+              <div className="flex flex-col gap-3">
+                {block.supplements.map((supp) => {
+                  const key = `${block.label}:${supp.name}`;
+                  const isChecked = !!checkedItems[key];
                   return (
-                    <button
-                      key={dayNum}
-                      onClick={() => {
-                        setCalendar((prev) => {
-                          const next = [...prev];
-                          if (status === 'today') next[dayNum - 1] = 'completed';
-                          return next;
-                        });
-                      }}
-                      className={`w-9 h-9 rounded-lg flex items-center justify-center text-xs font-medium transition-colors ${statusColor[status]} ${
-                        status === 'completed'
-                          ? 'text-white'
-                          : status === 'partial'
-                          ? 'text-white'
-                          : status === 'today'
-                          ? 'text-white'
-                          : 'text-slate-500'
-                      }`}
-                      title={`Day ${dayNum} — ${status}`}
+                    <label
+                      key={supp.name}
+                      className="flex items-center gap-3 group cursor-pointer py-1"
                     >
-                      {dayNum}
-                    </button>
+                      {/* Checkbox */}
+                      <div
+                        onClick={() => toggleItem(block.label, supp.name)}
+                        className={`w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${
+                          isChecked
+                            ? 'bg-violet-500 border-violet-500'
+                            : 'border-slate-600 group-hover:border-slate-400'
+                        }`}
+                      >
+                        {isChecked && (
+                          <span className="material-symbols-outlined text-white text-[14px]">check</span>
+                        )}
+                      </div>
+
+                      {/* Supplement info */}
+                      <div className="flex-1 min-w-0">
+                        <p
+                          className={`text-sm transition-all ${
+                            isChecked ? 'line-through text-slate-500' : 'text-slate-200'
+                          }`}
+                        >
+                          {supp.name}
+                        </p>
+                        <p className="text-[10px] text-slate-500">
+                          {supp.dosage} · {supp.form}
+                        </p>
+                      </div>
+
+                      {/* Token reward */}
+                      {isChecked && (
+                        <motion.span
+                          initial={{ opacity: 0, scale: 0.8 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          className="text-[10px] font-semibold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20"
+                        >
+                          +5 FarmaTokens
+                        </motion.span>
+                      )}
+                    </label>
                   );
                 })}
               </div>
             </div>
           ))}
         </div>
+      </motion.div>
 
-        {/* Legend */}
-        <div className="flex items-center gap-4 text-xs text-slate-400">
-          <span className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded bg-emerald-500" /> Completed
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded bg-yellow-500" /> Partial
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded bg-red-500" /> Missed
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded bg-white/10" /> Upcoming
-          </span>
-        </div>
-      </motion.section>
+      {/* ------------------------------------------------------------------ */}
+      {/*  Weekly Adherence Chart                                            */}
+      {/* ------------------------------------------------------------------ */}
+      <motion.div custom={2} variants={fadeUp} initial="hidden" animate="visible">
+        <div className="rounded-xl backdrop-blur-xl bg-white/5 border border-white/10 p-6">
+          <div className="flex items-center justify-between mb-5">
+            <div>
+              <h2 className="text-lg font-[Syne] font-bold text-white">Weekly Adherence</h2>
+              <p className="text-xs text-slate-400 mt-0.5">This week&apos;s compliance overview</p>
+            </div>
+            <div className="text-right">
+              <p className="text-2xl font-mono font-bold text-white">93%</p>
+              <p className="text-xs text-emerald-400">avg compliance</p>
+            </div>
+          </div>
 
-      {/* ---- Bottom CTA ---- */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.45 }} className="rounded-2xl backdrop-blur-xl bg-white/5 border border-white/10 shadow-xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div>
-          <h3 className="text-lg font-semibold text-white">Ready to optimize?</h3>
-          <p className="text-sm text-slate-400">Subscribe to your full protocol and save 20% every month.</p>
+          {/* Bar chart */}
+          <div className="flex items-end gap-3 h-40">
+            {weeklyData.map((d) => (
+              <div key={d.day} className="flex-1 flex flex-col items-center gap-2">
+                <div className="w-full relative flex items-end justify-center" style={{ height: '120px' }}>
+                  <motion.div
+                    className={`w-full max-w-[40px] rounded-t-lg ${
+                      d.pct >= 90
+                        ? 'bg-gradient-to-t from-emerald-600 to-emerald-400'
+                        : d.pct >= 70
+                        ? 'bg-gradient-to-t from-amber-600 to-amber-400'
+                        : d.pct > 0
+                        ? 'bg-gradient-to-t from-red-600 to-red-400'
+                        : 'bg-white/5'
+                    }`}
+                    initial={{ height: 0 }}
+                    animate={{ height: `${Math.max(d.pct, 4)}%` }}
+                    transition={{ duration: 0.6, ease: 'easeOut', delay: 0.2 }}
+                  />
+                  {d.pct > 0 && (
+                    <span className="absolute -top-5 text-[10px] font-mono text-slate-400">
+                      {d.pct}%
+                    </span>
+                  )}
+                </div>
+                <span
+                  className={`text-xs font-medium ${
+                    d.day === 'Sun' ? 'text-slate-500' : 'text-slate-400'
+                  }`}
+                >
+                  {d.day}
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
-        <button className="shrink-0 px-8 py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-violet-600 to-violet-500 hover:from-violet-500 hover:to-violet-400 shadow-lg shadow-violet-500/25 transition-all">
-          Add All to Cart &mdash; Subscribe &amp; Save 20%
-        </button>
+      </motion.div>
+
+      {/* ------------------------------------------------------------------ */}
+      {/*  AI Protocol Optimization                                          */}
+      {/* ------------------------------------------------------------------ */}
+      <motion.div custom={3} variants={fadeUp} initial="hidden" animate="visible">
+        <div className="rounded-xl backdrop-blur-xl bg-gradient-to-br from-violet-500/10 to-cyan-500/10 border border-violet-500/20 p-6">
+          <div className="flex items-start gap-4">
+            <div className="w-10 h-10 rounded-lg bg-violet-500/20 border border-violet-500/30 flex items-center justify-center shrink-0">
+              <span className="material-symbols-outlined text-violet-400">psychology</span>
+            </div>
+            <div>
+              <h3 className="text-base font-[Syne] font-bold text-white mb-2">AI Protocol Optimization</h3>
+              <p className="text-sm text-slate-300 leading-relaxed">
+                Based on your wearable data, your cortisol levels peak between 7:30-8:30 AM. I recommend
+                taking your <span className="text-white font-semibold">MTHFR+</span> and{' '}
+                <span className="text-white font-semibold">NAD+</span> during this window for optimal absorption.
+                Your evening <span className="text-white font-semibold">RELAX+</span> timing looks perfect at 9 PM —
+                it aligns with your melatonin onset detected by your sleep tracker.
+              </p>
+              <div className="flex items-center gap-4 mt-4">
+                <button className="px-4 py-2 rounded-lg text-xs font-semibold bg-violet-500/20 text-violet-300 border border-violet-500/30 hover:bg-violet-500/30 transition-colors">
+                  Apply Suggestion
+                </button>
+                <button className="px-4 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-slate-200 transition-colors">
+                  Dismiss
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       </motion.div>
     </div>
   );
