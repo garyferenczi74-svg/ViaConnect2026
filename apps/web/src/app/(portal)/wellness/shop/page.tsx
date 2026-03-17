@@ -23,7 +23,8 @@ interface Product {
   geneticMatch: boolean;
   subscription: boolean;
   image: string;
-  variant: 'gold' | 'silver';
+  variant: 'gold' | 'silver' | 'red' | 'green' | 'pouch';
+  brand?: string;
 }
 
 const products: Product[] = [
@@ -104,6 +105,83 @@ const products: Product[] = [
     subscription: true,
     image: '/products/bhmt-support.png',
     variant: 'gold',
+  },
+  {
+    id: 6,
+    name: 'Blast +',
+    subtitle: 'Nitric Oxide Support for Peak Performance',
+    capsules: '60 Capsules',
+    dosage: '625 mg',
+    price: '$74.99/mo',
+    rationale: 'Enhanced Blood Flow | Clean Energy | Rapid Recovery',
+    rating: 4.9,
+    reviews: 214,
+    geneticMatch: false,
+    subscription: false,
+    image: '/products/blast.png',
+    variant: 'red',
+  },
+  {
+    id: 7,
+    name: 'Calm+ Adaptogen Complex',
+    subtitle: 'Cellular Vitality | Recovery | Stress Resilience | Longevity',
+    capsules: '60 Capsules',
+    dosage: '325 mg',
+    price: '$54.99/mo',
+    rationale: 'Adaptogen-powered stress resilience',
+    rating: 4.7,
+    reviews: 178,
+    geneticMatch: false,
+    subscription: false,
+    image: '/products/calm.png',
+    variant: 'green',
+  },
+  {
+    id: 8,
+    name: 'Catalyst+',
+    subtitle: 'Vitamin B and Magnesium Blend',
+    capsules: '60 Capsules',
+    dosage: '325 mg',
+    price: '$49.99/mo',
+    rationale: 'Cellular Vitality | Recovery | Stress Resilience | Longevity',
+    rating: 4.8,
+    reviews: 143,
+    geneticMatch: false,
+    subscription: false,
+    image: '/products/catalyst.png',
+    variant: 'green',
+  },
+  {
+    id: 9,
+    name: 'CBS Support +',
+    subtitle: 'Precision Support for Optimal Methylation and Genetic Wellness',
+    capsules: '60 Capsules',
+    dosage: '975 mg',
+    price: '$82.99/mo',
+    originalPrice: '$103.74',
+    rationale: 'Matched to your CBS SNP status',
+    rating: 4.7,
+    reviews: 108,
+    geneticMatch: true,
+    subscription: true,
+    image: '/products/cbs-support.png',
+    variant: 'gold',
+  },
+  {
+    id: 10,
+    name: 'Chaga',
+    subtitle: 'Liposomal Bioavailable Delivery Technology',
+    capsules: '60 Capsules',
+    dosage: '500 mg',
+    price: '$39.99/mo',
+    rationale: 'Immune support & antioxidant defense',
+    rating: 4.9,
+    reviews: 267,
+    geneticMatch: false,
+    subscription: false,
+    image: '/products/chaga.png',
+    variant: 'pouch',
+    brand: 'ViaCura',
   },
 ];
 
@@ -205,38 +283,41 @@ export default function ShopPage() {
           >
             {/* Product Image */}
             <div className={`relative h-52 flex items-center justify-center ${
-              p.variant === 'gold'
-                ? 'bg-gradient-to-b from-amber-950/30 to-slate-950/60'
-                : 'bg-gradient-to-b from-slate-400/20 to-slate-950/60'
+              {
+                gold:   'bg-gradient-to-b from-amber-950/30 to-slate-950/60',
+                silver: 'bg-gradient-to-b from-slate-400/20 to-slate-950/60',
+                red:    'bg-gradient-to-b from-rose-950/30 to-slate-950/60',
+                green:  'bg-gradient-to-b from-emerald-950/30 to-slate-950/60',
+                pouch:  'bg-gradient-to-b from-slate-200/15 to-slate-950/60',
+              }[p.variant]
             }`}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={p.image}
                 alt={p.name}
-                className="h-44 w-auto object-contain drop-shadow-2xl"
+                className={`${p.variant === 'pouch' ? 'h-48 w-auto' : 'h-44 w-auto'} object-contain drop-shadow-2xl`}
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
                   target.style.display = 'none';
-                  target.parentElement!.innerHTML = `<div class="flex flex-col items-center gap-2"><span class="material-symbols-outlined text-[48px] ${p.variant === 'gold' ? 'text-amber-500/40' : 'text-slate-400/40'}">medication</span><span class="text-xs ${p.variant === 'gold' ? 'text-amber-500/50' : 'text-slate-400/50'} font-[Syne]">FARMCEUTICA</span></div>`;
+                  const iconColor = { gold: 'text-amber-500/40', silver: 'text-slate-400/40', red: 'text-rose-400/40', green: 'text-emerald-500/40', pouch: 'text-slate-400/40' }[p.variant];
+                  const labelColor = { gold: 'text-amber-500/50', silver: 'text-slate-400/50', red: 'text-rose-400/50', green: 'text-emerald-500/50', pouch: 'text-slate-400/50' }[p.variant];
+                  target.parentElement!.innerHTML = `<div class="flex flex-col items-center gap-2"><span class="material-symbols-outlined text-[48px] ${iconColor}">medication</span><span class="text-xs ${labelColor} font-[Syne]">${p.brand || 'FARMCEUTICA'}</span></div>`;
                 }}
               />
               {/* Certification badges overlay */}
               <div className="absolute bottom-2 left-3 flex items-center gap-1.5">
-                <span className={`text-[8px] font-medium px-1.5 py-0.5 rounded border ${
-                  p.variant === 'gold'
-                    ? 'text-amber-400/70 border-amber-500/20 bg-amber-500/10'
-                    : 'text-slate-400/70 border-slate-400/20 bg-slate-400/10'
-                }`}>100% Organic</span>
-                <span className={`text-[8px] font-medium px-1.5 py-0.5 rounded border ${
-                  p.variant === 'gold'
-                    ? 'text-amber-400/70 border-amber-500/20 bg-amber-500/10'
-                    : 'text-slate-400/70 border-slate-400/20 bg-slate-400/10'
-                }`}>GMP</span>
-                <span className={`text-[8px] font-medium px-1.5 py-0.5 rounded border ${
-                  p.variant === 'gold'
-                    ? 'text-amber-400/70 border-amber-500/20 bg-amber-500/10'
-                    : 'text-slate-400/70 border-slate-400/20 bg-slate-400/10'
-                }`}>Lab Tested</span>
+                {(() => {
+                  const badgeClass = {
+                    gold:   'text-amber-400/70 border-amber-500/20 bg-amber-500/10',
+                    silver: 'text-slate-400/70 border-slate-400/20 bg-slate-400/10',
+                    red:    'text-rose-400/70 border-rose-500/20 bg-rose-500/10',
+                    green:  'text-emerald-400/70 border-emerald-500/20 bg-emerald-500/10',
+                    pouch:  'text-slate-400/70 border-slate-400/20 bg-slate-400/10',
+                  }[p.variant];
+                  return ['100% Organic', 'GMP', p.variant === 'pouch' ? 'ISO 9001' : 'Lab Tested'].map((label) => (
+                    <span key={label} className={`text-[8px] font-medium px-1.5 py-0.5 rounded border ${badgeClass}`}>{label}</span>
+                  ));
+                })()}
               </div>
             </div>
 
@@ -261,6 +342,9 @@ export default function ShopPage() {
 
               {/* Product name */}
               <div>
+                {p.brand && (
+                  <span className="text-[10px] font-medium tracking-wider uppercase text-slate-500">{p.brand}</span>
+                )}
                 <h3 className="text-base font-bold text-white leading-tight">{p.name}</h3>
                 <p className="text-[11px] text-slate-500 mt-0.5">{p.subtitle}</p>
               </div>
