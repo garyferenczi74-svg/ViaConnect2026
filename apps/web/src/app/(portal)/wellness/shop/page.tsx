@@ -23,7 +23,7 @@ interface Product {
   geneticMatch: boolean;
   subscription: boolean;
   image: string;
-  variant: 'gold' | 'silver' | 'red' | 'green' | 'pouch';
+  variant: 'gold' | 'silver' | 'red' | 'green' | 'pink' | 'pouch';
   brand?: string;
 }
 
@@ -183,6 +183,83 @@ const products: Product[] = [
     variant: 'pouch',
     brand: 'ViaCura',
   },
+  {
+    id: 11,
+    name: 'Clean+',
+    subtitle: 'Advanced Daily Cleanse | Liver | Gut Defense',
+    capsules: '60 Capsules',
+    dosage: '550 mg',
+    price: '$64.99/mo',
+    rationale: 'Cellular renewal for optimal health',
+    rating: 4.7,
+    reviews: 134,
+    geneticMatch: false,
+    subscription: false,
+    image: '/products/clean.png',
+    variant: 'red',
+  },
+  {
+    id: 12,
+    name: 'COMT Support +',
+    subtitle: 'Calm, Clear, and Genetically Aligned',
+    capsules: '60 Capsules',
+    dosage: '980 mg',
+    price: '$86.99/mo',
+    originalPrice: '$108.74',
+    rationale: 'Matched to your COMT SNP status',
+    rating: 4.8,
+    reviews: 189,
+    geneticMatch: true,
+    subscription: true,
+    image: '/products/comt-support.png',
+    variant: 'gold',
+  },
+  {
+    id: 13,
+    name: 'Cordycep',
+    subtitle: 'Liposomal Bioavailable Delivery Technology',
+    capsules: '60 Capsules',
+    dosage: '500 mg',
+    price: '$39.99/mo',
+    rationale: 'Energy, endurance & respiratory support',
+    rating: 4.9,
+    reviews: 231,
+    geneticMatch: false,
+    subscription: false,
+    image: '/products/cordycep.png',
+    variant: 'pouch',
+    brand: 'ViaCura',
+  },
+  {
+    id: 14,
+    name: 'Creatine HCL+',
+    subtitle: 'Dual Delivery Performance Capsules',
+    capsules: '60 Capsules',
+    dosage: '1250 mg',
+    price: '$44.99/mo',
+    rationale: 'Explosive Strength | Endurance | Muscle Recovery',
+    rating: 4.8,
+    reviews: 312,
+    geneticMatch: false,
+    subscription: false,
+    image: '/products/creatine-hcl.png',
+    variant: 'green',
+  },
+  {
+    id: 15,
+    name: 'CycleSync+',
+    subtitle: 'PMS Relief | Cycle Regulation | Estrogen',
+    capsules: '60 Capsules',
+    dosage: '1200 mg',
+    price: '$59.99/mo',
+    rationale: 'Hormonal balance & cycle support',
+    rating: 4.6,
+    reviews: 97,
+    geneticMatch: false,
+    subscription: false,
+    image: '/products/cyclesync.png',
+    variant: 'pink',
+  },
 ];
 
 /* -------------------------------------------------------------------------- */
@@ -288,6 +365,7 @@ export default function ShopPage() {
                 silver: 'bg-gradient-to-b from-slate-400/20 to-slate-950/60',
                 red:    'bg-gradient-to-b from-rose-950/30 to-slate-950/60',
                 green:  'bg-gradient-to-b from-emerald-950/30 to-slate-950/60',
+                pink:   'bg-gradient-to-b from-pink-950/30 to-slate-950/60',
                 pouch:  'bg-gradient-to-b from-slate-200/15 to-slate-950/60',
               }[p.variant]
             }`}>
@@ -299,8 +377,8 @@ export default function ShopPage() {
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
                   target.style.display = 'none';
-                  const iconColor = { gold: 'text-amber-500/40', silver: 'text-slate-400/40', red: 'text-rose-400/40', green: 'text-emerald-500/40', pouch: 'text-slate-400/40' }[p.variant];
-                  const labelColor = { gold: 'text-amber-500/50', silver: 'text-slate-400/50', red: 'text-rose-400/50', green: 'text-emerald-500/50', pouch: 'text-slate-400/50' }[p.variant];
+                  const iconColor = { gold: 'text-amber-500/40', silver: 'text-slate-400/40', red: 'text-rose-400/40', green: 'text-emerald-500/40', pink: 'text-pink-400/40', pouch: 'text-slate-400/40' }[p.variant];
+                  const labelColor = { gold: 'text-amber-500/50', silver: 'text-slate-400/50', red: 'text-rose-400/50', green: 'text-emerald-500/50', pink: 'text-pink-400/50', pouch: 'text-slate-400/50' }[p.variant];
                   target.parentElement!.innerHTML = `<div class="flex flex-col items-center gap-2"><span class="material-symbols-outlined text-[48px] ${iconColor}">medication</span><span class="text-xs ${labelColor} font-[Syne]">${p.brand || 'FARMCEUTICA'}</span></div>`;
                 }}
               />
@@ -312,6 +390,7 @@ export default function ShopPage() {
                     silver: 'text-slate-400/70 border-slate-400/20 bg-slate-400/10',
                     red:    'text-rose-400/70 border-rose-500/20 bg-rose-500/10',
                     green:  'text-emerald-400/70 border-emerald-500/20 bg-emerald-500/10',
+                    pink:   'text-pink-400/70 border-pink-500/20 bg-pink-500/10',
                     pouch:  'text-slate-400/70 border-slate-400/20 bg-slate-400/10',
                   }[p.variant];
                   return ['100% Organic', 'GMP', p.variant === 'pouch' ? 'ISO 9001' : 'Lab Tested'].map((label) => (
