@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ViaConnect™ GeneX360 | Basic Profile</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#05bed6",
+                        "secondary": "#a855f7",
+                        "background-light": "#f5f8f8",
+                        "background-dark": "#0a0f1c",
+                    },
+                    fontFamily: {
+                        "display": ["Inter"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        .glass-card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .gradient-text {
+            background: linear-gradient(to right, #05bed6, #a855f7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .gradient-bg {
+            background: linear-gradient(135deg, #05bed6, #a855f7);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 min-h-screen selection:bg-primary/30">
+<div class="relative flex h-auto min-h-screen w-full flex-col bg-background-light dark:bg-background-dark overflow-x-hidden">
+<header class="flex flex-col items-center pt-8 pb-6 px-4">
+<div class="flex items-center mb-8 justify-center"><img alt="ViaConnect Logo" class="h-auto w-[160px] object-contain drop-shadow-[0_0_15px_rgba(5,190,214,0.3)]" src=""/></div>
+<div class="w-full max-w-2xl px-4">
+<div class="flex justify-between items-end mb-2">
+<span class="text-xs font-semibold uppercase tracking-wider text-primary">Section 1 of 4</span>
+<span class="text-xs text-slate-500 dark:text-slate-400">Basic Profile</span>
+</div>
+<div class="flex gap-2 h-1.5 w-full">
+<div class="flex-1 rounded-full gradient-bg"></div>
+<div class="flex-1 rounded-full bg-slate-200 dark:bg-slate-800"></div>
+<div class="flex-1 rounded-full bg-slate-200 dark:bg-slate-800"></div>
+<div class="flex-1 rounded-full bg-slate-200 dark:bg-slate-800"></div>
+</div>
+</div>
+</header>
+<main class="flex-1 flex flex-col items-center px-4 pb-20">
+<div class="w-full max-w-[640px] glass-card rounded-2xl p-6 md:p-10 shadow-2xl">
+<div class="text-center mb-10">
+<div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-bold uppercase tracking-widest mb-4">
+<span class="material-symbols-outlined text-sm">verified_user</span>
+                        HIPAA COMPLIANT &amp; ENCRYPTED
+                    </div>
+<h2 class="text-3xl font-bold text-white mb-2">Let's Start With the Basics</h2>
+<p class="text-slate-400 text-sm">Tell us a bit about yourself to personalize your GeneX360 experience.</p>
+</div>
+<form class="space-y-6">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<div class="space-y-2">
+<label class="text-sm font-medium text-slate-300 ml-1">First Name</label>
+<input class="w-full bg-slate-900/50 border border-slate-700 rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all text-white placeholder:text-slate-600" placeholder="John" type="text"/>
+</div>
+<div class="space-y-2">
+<label class="text-sm font-medium text-slate-300 ml-1">Last Name</label>
+<input class="w-full bg-slate-900/50 border border-slate-700 rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all text-white placeholder:text-slate-600" placeholder="Doe" type="text"/>
+</div>
+</div>
+<div class="space-y-2">
+<label class="text-sm font-medium text-slate-300 ml-1">Email Address</label>
+<input class="w-full bg-slate-900/50 border border-slate-700 rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all text-white placeholder:text-slate-600" placeholder="john.doe@example.com" type="email"/>
+</div>
+<div class="space-y-2">
+<label class="text-sm font-medium text-slate-300 ml-1">Date of Birth</label>
+<div class="relative">
+<input class="w-full bg-slate-900/50 border border-slate-700 rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all text-white placeholder:text-slate-600" placeholder="DD / MM / YYYY" type="text"/>
+<span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-slate-500">calendar_today</span>
+</div>
+</div>
+<div class="space-y-3">
+<label class="text-sm font-medium text-slate-300 ml-1">Biological Sex</label>
+<div class="grid grid-cols-3 gap-3">
+<label class="relative flex flex-col items-center justify-center p-4 border border-slate-700 rounded-xl cursor-pointer hover:border-primary/50 transition-colors bg-slate-900/30 group">
+<input class="sr-only peer" name="sex" type="radio"/>
+<span class="material-symbols-outlined text-slate-500 peer-checked:text-primary mb-1">male</span>
+<span class="text-xs font-medium text-slate-400 peer-checked:text-white">Male</span>
+<div class="absolute inset-0 border-2 border-transparent peer-checked:border-primary rounded-xl"></div>
+</label>
+<label class="relative flex flex-col items-center justify-center p-4 border border-slate-700 rounded-xl cursor-pointer hover:border-primary/50 transition-colors bg-slate-900/30">
+<input class="sr-only peer" name="sex" type="radio"/>
+<span class="material-symbols-outlined text-slate-500 peer-checked:text-primary mb-1">female</span>
+<span class="text-xs font-medium text-slate-400 peer-checked:text-white">Female</span>
+<div class="absolute inset-0 border-2 border-transparent peer-checked:border-primary rounded-xl"></div>
+</label>
+<label class="relative flex flex-col items-center justify-center p-4 border border-slate-700 rounded-xl cursor-pointer hover:border-primary/50 transition-colors bg-slate-900/30">
+<input class="sr-only peer" name="sex" type="radio"/>
+<span class="material-symbols-outlined text-slate-500 peer-checked:text-primary mb-1">horizontal_rule</span>
+<span class="text-[10px] text-center font-medium text-slate-400 peer-checked:text-white leading-tight">Prefer not to say</span>
+<div class="absolute inset-0 border-2 border-transparent peer-checked:border-primary rounded-xl"></div>
+</label>
+</div>
+</div>
+<div class="relative py-4">
+<div class="absolute inset-0 flex items-center"><div class="w-full border-t border-slate-800"></div></div>
+<div class="relative flex justify-center text-xs uppercase"><span class="bg-slate-900 px-2 text-slate-500">or continue with</span></div>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<button class="flex items-center justify-center gap-2 py-3 px-4 border border-slate-700 rounded-xl hover:bg-slate-800 transition-colors glass-card" type="button">
+<img alt="Google Logo" class="w-5 h-5" data-alt="Google logo icon" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBNFyLTw3OXr_OMatosG7vD1vmwjG3ZpWRit3MkHi8otNXgEly2o1MHlN2ufRElYsXmYxaZqqlAsjkF2Pn2x51tyQHmsB-T-KYaG9ErHYSVvjO_aXTAS-CrJB4tHXbOpS3gUYz2w-sXfmJGPEB3iOWgLl5gNqvI0sAZzfuSftcTMAr5LSb73wcmuiqh1z5vFhNl65lvPtMGAy48q5Iq8nvfV9mvFsvrysd6uCftzEuEakI19lPUiOL9Q-7w8o1WvWCvrQlA53muj4I"/>
+<span class="text-sm font-medium">Google</span>
+</button>
+<button class="flex items-center justify-center gap-2 py-3 px-4 border border-slate-700 rounded-xl hover:bg-slate-800 transition-colors glass-card" type="button">
+<span class="material-symbols-outlined text-xl">ios</span>
+<span class="text-sm font-medium">Apple</span>
+</button>
+</div>
+<p class="text-[11px] text-center text-slate-500 mt-6 italic">
+                        "You'll create a secure password after completing the initial assessment steps."
+                    </p>
+</form>
+</div>
+<div class="w-full max-w-[640px] mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+<div class="md:col-span-2 glass-card rounded-2xl p-6 border-l-4 border-l-primary">
+<h3 class="flex items-center gap-2 text-white font-semibold mb-4">
+<span class="material-symbols-outlined text-primary">auto_awesome</span>
+                        What happens next?
+                    </h3>
+<ul class="space-y-3">
+<li class="flex items-start gap-3 text-sm text-slate-300">
+<span class="material-symbols-outlined text-emerald-500 text-sm mt-0.5">check_circle</span>
+<span>Calculate your baseline Health Score</span>
+</li>
+<li class="flex items-start gap-3 text-sm text-slate-300">
+<span class="material-symbols-outlined text-emerald-500 text-sm mt-0.5">check_circle</span>
+<span>Unlock AI-powered lifestyle recommendations</span>
+</li>
+<li class="flex items-start gap-3 text-sm text-slate-300">
+<span class="material-symbols-outlined text-emerald-500 text-sm mt-0.5">check_circle</span>
+<span>Review GeneX360 genetic insights</span>
+</li>
+<li class="flex items-start gap-3 text-sm text-slate-300">
+<span class="material-symbols-outlined text-emerald-500 text-sm mt-0.5">check_circle</span>
+<span>Receive your customized longevity protocol</span>
+</li>
+</ul>
+</div>
+<div class="flex flex-col justify-end gap-4">
+<button class="gradient-bg hover:opacity-90 text-white font-bold py-4 px-6 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-primary/20 transition-all group">
+                        Continue to Health Assessment
+                        <span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
+</button>
+<div class="text-center">
+<a class="text-slate-400 hover:text-white text-sm transition-colors" href="#">Already have an account? <span class="text-primary font-semibold underline underline-offset-4">Sign In</span></a>
+</div>
+</div>
+</div>
+</main>
+<div class="fixed top-0 left-0 w-full h-full -z-10 pointer-events-none overflow-hidden">
+<div class="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] bg-primary/10 rounded-full blur-[120px]"></div>
+<div class="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] bg-secondary/10 rounded-full blur-[120px]"></div>
+</div>
+</div>
+</body></html>
