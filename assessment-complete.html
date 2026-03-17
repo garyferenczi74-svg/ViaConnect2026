@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Assessment Complete - ViaConnect™ GeneX360</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Syne:wght@700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#05bed6",
+                        "background-light": "#f5f8f8",
+                        "background-dark": "#0f2023",
+                        "accent-violet": "#8b5cf6",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"],
+                        "headline": ["Syne", "sans-serif"],
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "2xl": "1rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        .glass-card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .radial-glow {
+            background: radial-gradient(circle at 50% 20%, rgba(5, 190, 214, 0.15) 0%, transparent 70%);
+        }
+        .cta-gradient {
+            background: linear-gradient(135deg, #05bed6 0%, #8b5cf6 100%);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-background-dark font-display text-slate-100 min-h-screen relative overflow-x-hidden selection:bg-primary/30">
+<!-- Background Effects -->
+<div class="fixed inset-0 radial-glow pointer-events-none"></div>
+<div class="fixed inset-0 opacity-20 pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/stardust.png')]"></div>
+<div class="relative flex flex-col items-center w-full max-w-md mx-auto px-6 pt-10 pb-8">
+<!-- Header Logo -->
+<header class="w-full flex justify-center mb-10">
+<img alt="ViaConnect Logo" class="w-[140px] h-auto" src=""/>
+</header>
+<!-- Main Content Card -->
+<main class="w-full glass-card rounded-2xl p-6 shadow-2xl relative overflow-hidden">
+<!-- Celebration Header -->
+<section class="text-center mb-8">
+<h1 class="font-headline text-3xl text-white mb-2">🎉 Assessment Complete!</h1>
+<p class="text-slate-400 text-sm">52 key biomarkers analyzed across 4 categories</p>
+<!-- Badges Grid -->
+<div class="grid grid-cols-2 gap-3 mt-6">
+<div class="flex items-center gap-2 bg-primary/10 border border-primary/20 rounded-lg p-2">
+<span class="material-symbols-outlined text-primary text-sm shrink-0" style="font-variation-settings: 'FILL' 1">check_circle</span>
+<span class="text-[10px] font-semibold uppercase tracking-wider text-slate-200">Basic Profile</span>
+</div>
+<div class="flex items-center gap-2 bg-primary/10 border border-primary/20 rounded-lg p-2">
+<span class="material-symbols-outlined text-primary text-sm shrink-0" style="font-variation-settings: 'FILL' 1">check_circle</span>
+<span class="text-[10px] font-semibold uppercase tracking-wider text-slate-200">Health Foundation</span>
+</div>
+<div class="flex items-center gap-2 bg-primary/10 border border-primary/20 rounded-lg p-2">
+<span class="material-symbols-outlined text-primary text-sm shrink-0" style="font-variation-settings: 'FILL' 1">check_circle</span>
+<span class="text-[10px] font-semibold uppercase tracking-wider text-slate-200">Genetic &amp; Advanced</span>
+</div>
+<div class="flex items-center gap-2 bg-primary/10 border border-primary/20 rounded-lg p-2">
+<span class="material-symbols-outlined text-primary text-sm shrink-0" style="font-variation-settings: 'FILL' 1">check_circle</span>
+<span class="text-[10px] font-semibold uppercase tracking-wider text-slate-200">Personal Goals</span>
+</div>
+</div>
+</section>
+<!-- Results Teaser (Blurred) -->
+<div class="relative mb-10 overflow-hidden rounded-xl bg-slate-800/50 p-4 border border-white/5">
+<div class="flex justify-between items-end mb-4">
+<div>
+<p class="text-[10px] uppercase tracking-widest text-primary font-bold">Preliminary Insight</p>
+<p class="text-sm font-medium text-slate-300">Your Bio-Score Profile</p>
+</div>
+<span class="material-symbols-outlined text-primary">lock_open</span>
+</div>
+<div class="flex justify-around items-center blur-[4px] select-none">
+<div class="text-center">
+<p class="text-2xl font-bold text-white">67</p>
+<p class="text-[10px] text-slate-400 uppercase">Overall</p>
+</div>
+<div class="text-center">
+<p class="text-2xl font-bold text-white">45</p>
+<p class="text-[10px] text-slate-400 uppercase">Energy</p>
+</div>
+<div class="text-center">
+<p class="text-2xl font-bold text-white">58</p>
+<p class="text-[10px] text-slate-400 uppercase">Cognitive</p>
+</div>
+</div>
+<div class="absolute inset-0 bg-background-dark/40 backdrop-blur-[2px] flex items-center justify-center">
+<p class="text-xs font-semibold text-white/90 bg-white/10 px-3 py-1 rounded-full border border-white/20">Create password to unlock results</p>
+</div>
+</div>
+<!-- Password Form -->
+<form class="space-y-5">
+<div class="space-y-1">
+<p class="text-primary font-semibold">Welcome back, John!</p>
+<p class="text-xs text-slate-500">john.doe@example.com</p>
+</div>
+<div class="space-y-4">
+<div class="relative">
+<label class="text-[11px] font-bold uppercase text-slate-400 mb-1.5 block">Create Password</label>
+<div class="relative">
+<input class="w-full bg-slate-900/50 border border-white/10 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-primary focus:border-transparent text-white" placeholder="Min. 8 characters" type="password" value="Password123"/>
+<button class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-colors" type="button">
+<span class="material-symbols-outlined text-xl">visibility</span>
+</button>
+</div>
+<!-- Strength Indicator -->
+<div class="mt-2 flex gap-1">
+<div class="h-1 flex-1 rounded-full bg-primary"></div>
+<div class="h-1 flex-1 rounded-full bg-primary"></div>
+<div class="h-1 flex-1 rounded-full bg-primary"></div>
+<div class="h-1 flex-1 rounded-full bg-slate-700"></div>
+</div>
+<p class="text-[10px] text-primary mt-1 text-right font-medium">Strong</p>
+</div>
+<div class="relative">
+<label class="text-[11px] font-bold uppercase text-slate-400 mb-1.5 block">Confirm Password</label>
+<input class="w-full bg-slate-900/50 border border-white/10 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-primary focus:border-transparent text-white" placeholder="Re-enter password" type="password"/>
+</div>
+</div>
+<!-- Checkbox -->
+<label class="flex items-start gap-3 cursor-pointer group">
+<div class="relative flex items-center">
+<input checked="" class="rounded border-white/20 bg-slate-900/50 text-primary focus:ring-primary focus:ring-offset-background-dark h-4 w-4" type="checkbox"/>
+</div>
+<span class="text-xs text-slate-400 leading-tight">Send me personalized health insights, supplement recommendations, and GeneX360 updates.</span>
+</label>
+<!-- Primary CTA -->
+<button class="w-full cta-gradient hover:scale-[1.02] active:scale-[0.98] transition-all py-4 rounded-xl font-bold text-white shadow-[0_0_20px_rgba(5,190,214,0.3)] flex items-center justify-center gap-2 mt-4" type="button">
+                    Create Account &amp; View My Results
+                    <span class="material-symbols-outlined">arrow_forward</span>
+</button>
+</form>
+</main>
+<!-- Footer -->
+<footer class="w-full mt-8 text-center space-y-4">
+<p class="text-[10px] text-slate-500 max-w-[280px] mx-auto">
+                By creating an account, you agree to our
+                <a class="text-slate-300 underline underline-offset-2" href="#">Terms of Service</a> and
+                <a class="text-slate-300 underline underline-offset-2" href="#">Privacy Policy</a>.
+            </p>
+<p class="text-sm text-slate-400">
+                Already have an account? <a class="text-primary font-semibold hover:underline" href="#">Sign In</a>
+</p>
+</footer>
+</div>
+<!-- Background Decoration Image -->
+<div class="fixed -bottom-24 -left-24 w-64 h-64 bg-primary/20 blur-[100px] rounded-full"></div>
+<div class="fixed -top-24 -right-24 w-64 h-64 bg-accent-violet/20 blur-[100px] rounded-full"></div>
+</body></html>
