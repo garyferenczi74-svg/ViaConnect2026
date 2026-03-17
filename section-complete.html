@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Section Complete - ViaConnect™ GeneX360</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#05bed6",
+                        "background-light": "#f5f8f8",
+                        "background-dark": "#0a0f1c",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        .glass {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .bg-gradient-cinematic {
+            background: radial-gradient(circle at top right, #0f172a, #0a0f1c);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 min-h-screen">
+<div class="relative flex h-auto min-h-screen w-full flex-col bg-gradient-cinematic overflow-x-hidden p-6 gap-8">
+<!-- Header & Progress -->
+<header class="flex flex-col gap-4 w-full items-center">
+<div class="flex items-center justify-center h-32"><img alt="ViaConnect Logo" class="h-24 w-auto object-contain brightness-110 contrast-110" src=""/></div>
+<div class="w-full max-w-md flex flex-col gap-2">
+<div class="flex justify-between items-end mb-1">
+<span class="text-[10px] uppercase tracking-widest text-primary font-bold">Step 1 of 4</span>
+<span class="text-[10px] text-slate-400 font-medium">GeneX360 Onboarding</span>
+</div>
+<div class="flex gap-1.5 h-1 w-full">
+<div class="flex-1 bg-primary rounded-full"></div>
+<div class="flex-1 bg-slate-800 rounded-full"></div>
+<div class="flex-1 bg-slate-800 rounded-full"></div>
+<div class="flex-1 bg-slate-800 rounded-full"></div>
+</div>
+</div>
+</header>
+<!-- Center Transition Card -->
+<main class="flex-1 flex flex-col gap-8 items-center justify-center py-4">
+<div class="glass w-full max-w-sm rounded-xl p-8 flex flex-col items-center text-center shadow-2xl">
+<div class="w-20 h-20 rounded-full bg-primary/20 flex items-center justify-center mb-6 border border-primary/30">
+<span class="material-symbols-outlined text-primary text-5xl">check_circle</span>
+</div>
+<h1 class="text-2xl font-bold text-white mb-2 leading-tight">Section 1 Complete! ✓</h1>
+<p class="text-slate-400 text-sm">Basic Profile — 8 questions answered</p>
+</div>
+<!-- Score Preview Section -->
+<section class="w-full max-w-md flex flex-col gap-6">
+<div class="flex flex-col gap-1 items-center">
+<p class="text-xs font-semibold uppercase tracking-widest text-primary/80">Analysis Engine Active</p>
+<h2 class="text-lg font-medium text-slate-200">Building your Health Blueprint...</h2>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<!-- Ring 1 -->
+<div class="glass p-4 rounded-xl flex flex-col items-center gap-3">
+<div class="relative w-16 h-16 flex items-center justify-center">
+<svg class="w-full h-full transform -rotate-90">
+<circle class="text-slate-800" cx="32" cy="32" fill="transparent" r="28" stroke="currentColor" stroke-width="4"></circle>
+<circle class="text-primary" cx="32" cy="32" fill="transparent" r="28" stroke="currentColor" stroke-dasharray="175" stroke-dashoffset="130" stroke-width="4"></circle>
+</svg>
+<span class="material-symbols-outlined absolute text-primary text-xl">bolt</span>
+</div>
+<div class="text-center">
+<p class="text-[11px] font-bold text-slate-100 leading-tight">Energy &amp; Vitality</p>
+<p class="text-[9px] text-primary/70 italic">Processing...</p>
+</div>
+</div>
+<!-- Ring 2 -->
+<div class="glass p-4 rounded-xl flex flex-col items-center gap-3">
+<div class="relative w-16 h-16 flex items-center justify-center">
+<svg class="w-full h-full transform -rotate-90">
+<circle class="text-slate-800" cx="32" cy="32" fill="transparent" r="28" stroke="currentColor" stroke-width="4"></circle>
+<circle class="text-primary" cx="32" cy="32" fill="transparent" r="28" stroke="currentColor" stroke-dasharray="175" stroke-dashoffset="110" stroke-width="4"></circle>
+</svg>
+<span class="material-symbols-outlined absolute text-primary text-xl">psychology</span>
+</div>
+<div class="text-center">
+<p class="text-[11px] font-bold text-slate-100 leading-tight">Cognitive Function</p>
+<p class="text-[9px] text-primary/70 italic">Calculating...</p>
+</div>
+</div>
+<!-- Ring 3 -->
+<div class="glass p-4 rounded-xl flex flex-col items-center gap-3">
+<div class="relative w-16 h-16 flex items-center justify-center">
+<svg class="w-full h-full transform -rotate-90">
+<circle class="text-slate-800" cx="32" cy="32" fill="transparent" r="28" stroke="currentColor" stroke-width="4"></circle>
+<circle class="text-primary" cx="32" cy="32" fill="transparent" r="28" stroke="currentColor" stroke-dasharray="175" stroke-dashoffset="150" stroke-width="4"></circle>
+</svg>
+<span class="material-symbols-outlined absolute text-primary text-xl">leaderboard</span>
+</div>
+<div class="text-center">
+<p class="text-[11px] font-bold text-slate-100 leading-tight">Metabolic Health</p>
+<p class="text-[9px] text-primary/70 italic">Syncing...</p>
+</div>
+</div>
+<!-- Ring 4 -->
+<div class="glass p-4 rounded-xl flex flex-col items-center gap-3">
+<div class="relative w-16 h-16 flex items-center justify-center">
+<svg class="w-full h-full transform -rotate-90">
+<circle class="text-slate-800" cx="32" cy="32" fill="transparent" r="28" stroke="currentColor" stroke-width="4"></circle>
+<circle class="text-primary" cx="32" cy="32" fill="transparent" r="28" stroke="currentColor" stroke-dasharray="175" stroke-dashoffset="140" stroke-width="4"></circle>
+</svg>
+<span class="material-symbols-outlined absolute text-primary text-xl">air</span>
+</div>
+<div class="text-center">
+<p class="text-[11px] font-bold text-slate-100 leading-tight">Stress Resilience</p>
+<p class="text-[9px] text-primary/70 italic">Analyzing...</p>
+</div>
+</div>
+</div>
+<p class="text-center text-sm text-slate-400">
+                    Your personalized Health Blueprint is <span class="text-primary font-bold">25% complete</span>
+</p>
+</section>
+<!-- What's Next Preview -->
+<div class="w-full max-w-md mt-4">
+<div class="bg-primary/5 border border-primary/20 rounded-xl p-5 flex flex-col gap-3">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-lg">next_plan</span>
+<span class="text-sm font-bold text-white uppercase tracking-wide">Up Next: Health Foundation</span>
+</div>
+<p class="text-xs text-slate-400 leading-relaxed">
+                        We'll ask about your health concerns, medications, lifestyle, and daily habits to refine your results.
+                    </p>
+<div class="flex items-center gap-4 text-[10px] font-semibold text-primary">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-sm">schedule</span> ~4 minutes</span>
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-sm">list_alt</span> 25 questions</span>
+</div>
+</div>
+</div>
+</main>
+<!-- Navigation -->
+<footer class="mt-auto w-full max-w-md mx-auto flex flex-col gap-3 pb-4">
+<button class="w-full bg-gradient-to-r from-primary to-[#049fb4] hover:opacity-90 text-background-dark font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-primary/20">
+                Continue to Health Foundation
+                <span class="material-symbols-outlined">arrow_forward</span>
+</button>
+<button class="w-full py-3 text-slate-400 font-medium text-sm hover:text-white transition-colors">
+                Save &amp; Continue Later
+            </button>
+</footer>
+</div>
+</body></html>
