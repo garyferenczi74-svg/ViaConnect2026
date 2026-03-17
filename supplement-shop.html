@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>FarmCeutica Supplement Shop</title>
+<!-- Tailwind CSS v3 CDN -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: '#05bed6',
+            brandDark: '#0497ab',
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+          borderRadius: {
+            'custom': '8px',
+          }
+        }
+      }
+    }
+  </script>
+<style data-purpose="custom-styling">
+    body {
+      background: radial-gradient(circle at top, #1a2a2d 0%, #0a0e10 100%);
+      color: #e5e7eb;
+      min-height: 100vh;
+    }
+    .glass-card {
+      background: rgba(255, 255, 255, 0.03);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .pill-button-active {
+      background-color: #05bed6;
+      color: #000;
+    }
+    .pill-button-inactive {
+      background-color: rgba(255, 255, 255, 0.05);
+      color: #9ca3af;
+    }
+    /* Smooth cart animation */
+    #cart-drawer {
+      transition: transform 0.3s ease-in-out;
+    }
+  </style>
+</head>
+<body class="font-sans antialiased pb-24">
+<!-- BEGIN: MainHeader -->
+<header class="pt-8 pb-6 px-4 flex flex-col items-center sticky top-0 z-30 bg-[#0a0e10]/80 backdrop-blur-md">
+<a class="block w-48 mb-6 hover:opacity-80 transition-opacity" href="https://farmceuticawellness.com" target="_blank">
+<img alt="FarmCeutica Logo" class="w-full h-auto" src=""/>
+</a>
+<!-- Filter Tabs -->
+<nav class="w-full flex overflow-x-auto gap-2 no-scrollbar px-2" data-purpose="navigation-tabs">
+<button class="pill-button-active whitespace-nowrap px-4 py-2 rounded-full text-xs font-semibold flex items-center gap-1">
+<span>★</span> My Protocol
+      </button>
+<button class="pill-button-inactive whitespace-nowrap px-4 py-2 rounded-full text-xs font-semibold border border-white/10">
+        All Products
+      </button>
+<button class="pill-button-inactive whitespace-nowrap px-4 py-2 rounded-full text-xs font-semibold border border-white/10">
+        By Goal
+      </button>
+<button class="pill-button-inactive whitespace-nowrap px-4 py-2 rounded-full text-xs font-semibold border border-white/10">
+        By Gene
+      </button>
+<button class="pill-button-inactive whitespace-nowrap px-4 py-2 rounded-full text-xs font-semibold border border-white/10">
+        Subscriptions
+      </button>
+</nav>
+</header>
+<!-- END: MainHeader -->
+<!-- BEGIN: ProductGrid -->
+<main class="px-4 py-4">
+<div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+<!-- Product 1: MTHFR Support+ -->
+<div class="glass-card rounded-custom p-4 flex flex-col relative overflow-hidden" data-purpose="product-card">
+<div class="absolute top-3 right-3 bg-brand/20 text-brand text-[10px] font-bold px-2 py-1 rounded-full border border-brand/30">
+          GENETIC MATCH
+        </div>
+<div class="aspect-square w-full mb-4 flex items-center justify-center p-4">
+<img alt="MTHFR Support+" class="max-h-full object-contain" src=""/>
+</div>
+<h3 class="text-lg font-bold mb-1">MTHFR SUPPORT +</h3>
+<p class="text-xs text-gray-400 mb-4 leading-relaxed">Advanced bioavailable nutraceuticals for peak genetic expression and methylation support.</p>
+<div class="mt-auto">
+<div class="text-xl font-bold mb-4">$89.88<span class="text-sm font-normal text-gray-500">/mo</span></div>
+<div class="flex gap-2">
+<button class="flex-1 bg-white/10 hover:bg-white/20 py-2 rounded-custom text-sm font-medium transition-colors">Add</button>
+<button class="flex-1 bg-brand hover:bg-brandDark text-black py-2 rounded-custom text-sm font-bold transition-colors">Subscribe</button>
+</div>
+</div>
+</div>
+<!-- Product 2: COMT Support+ -->
+<div class="glass-card rounded-custom p-4 flex flex-col relative" data-purpose="product-card">
+<div class="absolute top-3 right-3 bg-brand/20 text-brand text-[10px] font-bold px-2 py-1 rounded-full border border-brand/30">
+          GENETIC MATCH
+        </div>
+<div class="aspect-square w-full mb-4 flex items-center justify-center p-4">
+<img alt="COMT Support+" class="max-h-full object-contain" src=""/>
+</div>
+<h3 class="text-lg font-bold mb-1">COMT SUPPORT +</h3>
+<p class="text-xs text-gray-400 mb-4 leading-relaxed">Calm, clear, and genetically aligned formula for cognitive balance.</p>
+<div class="mt-auto">
+<div class="text-xl font-bold mb-4">$89.88<span class="text-sm font-normal text-gray-500">/mo</span></div>
+<div class="flex gap-2">
+<button class="flex-1 bg-white/10 hover:bg-white/20 py-2 rounded-custom text-sm font-medium transition-colors">Add</button>
+<button class="flex-1 bg-brand hover:bg-brandDark text-black py-2 rounded-custom text-sm font-bold transition-colors">Subscribe</button>
+</div>
+</div>
+</div>
+<!-- Product 3: REPLENISH NAD+ -->
+<div class="glass-card rounded-custom p-4 flex flex-col relative" data-purpose="product-card">
+<div class="absolute top-3 right-3 bg-brand/20 text-brand text-[10px] font-bold px-2 py-1 rounded-full border border-brand/30">
+          GENETIC MATCH
+        </div>
+<div class="aspect-square w-full mb-4 flex items-center justify-center p-4">
+<img alt="REPLENISH NAD+" class="max-h-full object-contain" src=""/>
+</div>
+<h3 class="text-lg font-bold mb-1">REPLENISH NAD +</h3>
+<p class="text-xs text-gray-400 mb-4 leading-relaxed">Advanced cellular energy and longevity optimization for systemic vitality.</p>
+<div class="mt-auto">
+<div class="text-xl font-bold mb-4">$89.88<span class="text-sm font-normal text-gray-500">/mo</span></div>
+<div class="flex gap-2">
+<button class="flex-1 bg-white/10 hover:bg-white/20 py-2 rounded-custom text-sm font-medium transition-colors">Add</button>
+<button class="flex-1 bg-brand hover:bg-brandDark text-black py-2 rounded-custom text-sm font-bold transition-colors">Subscribe</button>
+</div>
+</div>
+</div>
+<!-- Product 4: RELAX+ -->
+<div class="glass-card rounded-custom p-4 flex flex-col relative" data-purpose="product-card">
+<div class="aspect-square w-full mb-4 flex items-center justify-center p-4">
+<img alt="RELAX+" class="max-h-full object-contain" src=""/>
+</div>
+<h3 class="text-lg font-bold mb-1">RELAX +</h3>
+<p class="text-xs text-gray-400 mb-4 leading-relaxed">Advanced neuro-adaptive relief for stress resilience and deep recovery.</p>
+<div class="mt-auto">
+<div class="text-xl font-bold mb-4">$89.88<span class="text-sm font-normal text-gray-500">/mo</span></div>
+<div class="flex gap-2">
+<button class="flex-1 bg-white/10 hover:bg-white/20 py-2 rounded-custom text-sm font-medium transition-colors">Add</button>
+<button class="flex-1 bg-brand hover:bg-brandDark text-black py-2 rounded-custom text-sm font-bold transition-colors">Subscribe</button>
+</div>
+</div>
+</div>
+<!-- Product 5: FOCUS+ -->
+<div class="glass-card rounded-custom p-4 flex flex-col relative" data-purpose="product-card">
+<div class="aspect-square w-full mb-4 flex items-center justify-center p-4">
+<img alt="FOCUS+" class="max-h-full object-contain" src=""/>
+</div>
+<h3 class="text-lg font-bold mb-1">FOCUS +</h3>
+<p class="text-xs text-gray-400 mb-4 leading-relaxed">Advanced nootropic formula for peak mental performance and clarity.</p>
+<div class="mt-auto">
+<div class="text-xl font-bold mb-4">$89.88<span class="text-sm font-normal text-gray-500">/mo</span></div>
+<div class="flex gap-2">
+<button class="flex-1 bg-white/10 hover:bg-white/20 py-2 rounded-custom text-sm font-medium transition-colors">Add</button>
+<button class="flex-1 bg-brand hover:bg-brandDark text-black py-2 rounded-custom text-sm font-bold transition-colors">Subscribe</button>
+</div>
+</div>
+</div>
+<!-- Product 6: Catalyst+ -->
+<div class="glass-card rounded-custom p-4 flex flex-col relative" data-purpose="product-card">
+<div class="aspect-square w-full mb-4 flex items-center justify-center p-4">
+<img alt="Catalyst+" class="max-h-full object-contain" src=""/>
+</div>
+<h3 class="text-lg font-bold mb-1">CATALYST +</h3>
+<p class="text-xs text-gray-400 mb-4 leading-relaxed">Synergistic Vitamin B and Magnesium blend for cellular metabolism.</p>
+<div class="mt-auto">
+<div class="text-xl font-bold mb-4">$89.88<span class="text-sm font-normal text-gray-500">/mo</span></div>
+<div class="flex gap-2">
+<button class="flex-1 bg-white/10 hover:bg-white/20 py-2 rounded-custom text-sm font-medium transition-colors">Add</button>
+<button class="flex-1 bg-brand hover:bg-brandDark text-black py-2 rounded-custom text-sm font-bold transition-colors">Subscribe</button>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- END: ProductGrid -->
+<!-- BEGIN: CartDrawer -->
+<footer class="fixed bottom-0 left-0 right-0 z-50 p-4" data-purpose="bottom-cart-navigation" id="cart-drawer">
+<div class="max-w-md mx-auto bg-brand p-1 rounded-2xl shadow-2xl">
+<div class="bg-black/90 backdrop-blur-xl flex items-center justify-between p-4 rounded-[14px]">
+<div class="flex flex-col">
+<span class="text-brand text-xs font-bold uppercase tracking-wider">Shopping Cart</span>
+<div class="flex items-baseline gap-2">
+<span class="text-white text-lg font-bold">3 items</span>
+<span class="text-gray-400 text-sm">$247.64/month</span>
+</div>
+</div>
+<button class="bg-brand hover:bg-brandDark text-black px-6 py-3 rounded-custom font-bold text-sm shadow-lg transition-all active:scale-95">
+          View Cart &amp; Checkout
+        </button>
+</div>
+</div>
+</footer>
+<!-- END: CartDrawer -->
+<script data-purpose="interactivity">
+    // Simple script to handle scroll appearance of the cart
+    let lastScrollTop = 0;
+    const cartDrawer = document.getElementById('cart-drawer');
+    window.addEventListener('scroll', () => {
+      let st = window.pageYOffset || document.documentElement.scrollTop;
+      if (st > lastScrollTop) {
+        // Scrolling down
+        cartDrawer.style.transform = 'translateY(100px)';
+      } else {
+        // Scrolling up
+        cartDrawer.style.transform = 'translateY(0)';
+      }
+      lastScrollTop = st <= 0 ? 0 : st;
+    }, false);
+  </script>
+</body></html>
