@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ViaConnect™ GeneX360 - Quick Win Insights</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#05bed6",
+                        "background-light": "#f5f8f8",
+                        "background-dark": "#0f2023",
+                        "accent-amber": "#f59e0b",
+                        "accent-green": "#10b981",
+                        "accent-cyan": "#22d3ee",
+                        "accent-red": "#ef4444",
+                    },
+                    fontFamily: {
+                        "display": ["Inter"]
+                    },
+                    borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+<style>
+        .glass-card {
+            background: rgba(24, 49, 53, 0.6);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .celebration-glow {
+            background: radial-gradient(circle at 50% 20%, rgba(5, 189, 214, 0.15) 0%, transparent 60%);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 min-h-screen overflow-x-hidden selection:bg-primary/30">
+<div class="relative flex min-h-screen w-full flex-col bg-background-dark celebration-glow pb-24">
+<!-- Header -->
+<header class="flex items-center p-4 justify-between sticky top-0 z-50 bg-background-dark/80 backdrop-blur-md">
+<div class="flex size-12 shrink-0 items-center">
+<div class="bg-center bg-no-repeat aspect-square bg-contain w-full" data-alt="ViaConnect mobile logo with cyan accents" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuAlh96tC1xiD5KaUdWASjYCoV43_ZF1HMlZkRpnkUhfF375xhBQhjwmr6IHLUeC4axq3Jqimtg7jrLvu7TQfNcaz2LMUkbHUNaIah7dImOd4_MZ6_XWAxgDur1kuxmPgtpLLq6zY3AJu1XELycTyahP_0Vo1bXU4wHwor3M24OZmLslcKipawsyTgQpWHte88dYzgO5Iyngh5phhGoay0KkVJXlkKQGlJ2W5cxzp4IXjRBKQDJsoRqHVXRatHF3m1idR8tMGp0s_hc");'></div>
+</div>
+<div class="flex flex-col items-center">
+<span class="text-[10px] uppercase tracking-[0.2em] text-primary font-bold">ViaConnect™ GeneX360</span>
+<h2 class="text-slate-100 text-sm font-medium leading-tight">Your Results Are Ready</h2>
+</div>
+<div class="flex w-12 items-center justify-end">
+<button class="p-2 text-slate-100 hover:text-primary transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+</div>
+</header>
+<main class="flex-1 w-full max-w-md mx-auto px-4 space-y-6">
+<!-- Hero Welcome -->
+<section class="pt-4">
+<h1 class="text-2xl font-bold leading-tight text-white mb-2">Welcome, John!</h1>
+<p class="text-slate-400 text-sm">Your preliminary health assessment results are calculated based on your profile.</p>
+</section>
+<!-- Health Scores Horizontal Scroll -->
+<section>
+<div class="flex items-center justify-between mb-3 px-1">
+<h3 class="text-xs font-semibold uppercase tracking-wider text-slate-500">Key Health Indicators</h3>
+<span class="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full border border-primary/20">Preliminary</span>
+</div>
+<div class="flex flex-nowrap overflow-x-auto gap-4 pb-4 no-scrollbar -mx-4 px-4">
+<!-- Overall -->
+<div class="flex flex-col items-center gap-2 min-w-[70px]">
+<div class="relative size-16 flex items-center justify-center rounded-full border-4 border-accent-cyan/30">
+<span class="text-lg font-bold text-accent-cyan">67</span>
+<div class="absolute inset-0 rounded-full border-4 border-accent-cyan border-t-transparent -rotate-45"></div>
+</div>
+<p class="text-[11px] font-medium text-slate-300">Overall</p>
+</div>
+<!-- Energy -->
+<div class="flex flex-col items-center gap-2 min-w-[70px]">
+<div class="relative size-16 flex items-center justify-center rounded-full border-4 border-accent-amber/30">
+<span class="text-lg font-bold text-accent-amber">45</span>
+<div class="absolute inset-0 rounded-full border-4 border-accent-amber border-t-transparent rotate-12"></div>
+</div>
+<p class="text-[11px] font-medium text-slate-300">Energy</p>
+</div>
+<!-- Cognitive -->
+<div class="flex flex-col items-center gap-2 min-w-[70px]">
+<div class="relative size-16 flex items-center justify-center rounded-full border-4 border-accent-amber/30">
+<span class="text-lg font-bold text-accent-amber">58</span>
+<div class="absolute inset-0 rounded-full border-4 border-accent-amber border-t-transparent rotate-90"></div>
+</div>
+<p class="text-[11px] font-medium text-slate-300">Cognitive</p>
+</div>
+<!-- Metabolic -->
+<div class="flex flex-col items-center gap-2 min-w-[70px]">
+<div class="relative size-16 flex items-center justify-center rounded-full border-4 border-accent-cyan/30">
+<span class="text-lg font-bold text-accent-cyan">72</span>
+<div class="absolute inset-0 rounded-full border-4 border-accent-cyan border-t-transparent -rotate-90"></div>
+</div>
+<p class="text-[11px] font-medium text-slate-300">Metabolic</p>
+</div>
+<!-- Stress -->
+<div class="flex flex-col items-center gap-2 min-w-[70px]">
+<div class="relative size-16 flex items-center justify-center rounded-full border-4 border-accent-cyan/30">
+<span class="text-lg font-bold text-accent-cyan">63</span>
+<div class="absolute inset-0 rounded-full border-4 border-accent-cyan border-t-transparent rotate-45"></div>
+</div>
+<p class="text-[11px] font-medium text-slate-300">Stress</p>
+</div>
+</div>
+</section>
+<!-- AI Insights Card -->
+<section class="glass-card rounded-xl p-5 relative overflow-hidden">
+<div class="absolute top-0 right-0 p-3 opacity-20">
+<span class="material-symbols-outlined text-5xl text-primary">auto_awesome</span>
+</div>
+<div class="flex items-center gap-2 mb-3">
+<span class="material-symbols-outlined text-primary">psychology</span>
+<h3 class="font-bold text-white">Your Personalized Health Insights</h3>
+</div>
+<p class="text-sm text-slate-300 leading-relaxed mb-4">
+                    Based on your assessment, your focus should be on <span class="text-primary font-semibold">energy optimization</span> and <span class="text-primary font-semibold">methylation support</span>.
+                </p>
+<div class="space-y-2 mb-5">
+<div class="flex items-center gap-2 text-xs">
+<div class="size-2 rounded-full bg-accent-amber"></div>
+<span class="text-slate-400">Methylation Support:</span>
+<span class="text-slate-100 font-medium">Needs Attention</span>
+</div>
+<div class="flex items-center gap-2 text-xs">
+<div class="size-2 rounded-full bg-accent-red"></div>
+<span class="text-slate-400">Energy Production:</span>
+<span class="text-slate-100 font-medium">Priority Focus</span>
+</div>
+<div class="flex items-center gap-2 text-xs">
+<div class="size-2 rounded-full bg-accent-green"></div>
+<span class="text-slate-400">Stress Resilience:</span>
+<span class="text-slate-100 font-medium">Good State</span>
+</div>
+</div>
+<button class="w-full py-2.5 rounded-lg border border-primary/40 text-primary text-sm font-semibold flex items-center justify-center gap-2 hover:bg-primary/10 transition-all">
+                    Read Full Analysis <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</button>
+</section>
+<!-- Supplement Protocol -->
+<section class="space-y-3">
+<div class="flex items-center gap-2 px-1">
+<span class="material-symbols-outlined text-primary">medication</span>
+<h3 class="font-bold text-white">Your Supplement Protocol</h3>
+</div>
+<div class="flex gap-4 overflow-x-auto no-scrollbar -mx-4 px-4 pb-2">
+<!-- Product 1 -->
+<div class="glass-card rounded-xl p-4 min-w-[260px] flex flex-col">
+<div class="flex justify-between items-start mb-3">
+<div>
+<h4 class="font-bold text-white text-sm">MTHFR+ Support</h4>
+<span class="text-[10px] text-slate-400 uppercase tracking-tighter">Methylation Optimization</span>
+</div>
+<div class="bg-primary/20 text-primary text-[10px] px-2 py-0.5 rounded font-bold">92% Match</div>
+</div>
+<div class="space-y-2 mb-4 text-xs">
+<div class="flex justify-between">
+<span class="text-slate-400">Why:</span>
+<span class="text-slate-200">High homocysteine risk</span>
+</div>
+<div class="flex justify-between">
+<span class="text-slate-400">When:</span>
+<span class="text-slate-200">1 Capsule with breakfast</span>
+</div>
+</div>
+<div class="mt-auto pt-3 border-t border-white/5 flex items-center justify-between">
+<span class="text-sm font-bold text-white">$44.99</span>
+<button class="text-primary text-[10px] font-bold uppercase tracking-widest">Details</button>
+</div>
+</div>
+<!-- Product 2 -->
+<div class="glass-card rounded-xl p-4 min-w-[260px] flex flex-col">
+<div class="flex justify-between items-start mb-3">
+<div>
+<h4 class="font-bold text-white text-sm">ENERGY+ Vitality</h4>
+<span class="text-[10px] text-slate-400 uppercase tracking-tighter">Mitochondrial Health</span>
+</div>
+<div class="bg-primary/20 text-primary text-[10px] px-2 py-0.5 rounded font-bold">88% Match</div>
+</div>
+<div class="space-y-2 mb-4 text-xs">
+<div class="flex justify-between">
+<span class="text-slate-400">Why:</span>
+<span class="text-slate-200">NAD+ synthesis pathway</span>
+</div>
+<div class="flex justify-between">
+<span class="text-slate-400">When:</span>
+<span class="text-slate-200">2 Caps morning</span>
+</div>
+</div>
+<div class="mt-auto pt-3 border-t border-white/5 flex items-center justify-between">
+<span class="text-sm font-bold text-white">$44.98</span>
+<button class="text-primary text-[10px] font-bold uppercase tracking-widest">Details</button>
+</div>
+</div>
+</div>
+<div class="glass-card rounded-xl p-4 flex items-center justify-between bg-gradient-to-r from-primary/10 to-transparent">
+<div>
+<p class="text-[10px] text-slate-400 uppercase font-bold tracking-widest">Total Protocol</p>
+<p class="text-lg font-bold text-white">$89.97<span class="text-xs text-slate-400 font-normal">/month</span></p>
+</div>
+<button class="bg-primary hover:bg-primary/90 text-background-dark px-5 py-2.5 rounded-lg font-bold text-sm shadow-lg shadow-primary/20 transition-transform active:scale-95">
+                        Build My Protocol
+                    </button>
+</div>
+</section>
+<!-- GeneX360 Upsell -->
+<section class="relative">
+<div class="glass-card border-violet-500/30 rounded-xl p-5 overflow-hidden group">
+<div class="absolute -right-4 -top-4 size-24 bg-violet-600/20 blur-3xl rounded-full group-hover:bg-violet-600/30 transition-all"></div>
+<div class="relative z-10">
+<div class="flex items-center gap-2 mb-2">
+<span class="material-symbols-outlined text-violet-400">genetics</span>
+<h3 class="font-bold text-white">Unlock 94%+ Confidence</h3>
+</div>
+<p class="text-xs text-slate-400 leading-relaxed mb-4">
+                            Your current results are based on questionnaires. Add <span class="text-violet-400 font-bold">GENEX360™ Genetic Testing</span> to uncover precise cellular pathways.
+                        </p>
+<button class="w-full py-2 rounded-lg border border-violet-500/50 text-violet-400 text-[11px] font-bold uppercase tracking-wider hover:bg-violet-500/10 transition-all">
+                            Upgrade to GENEX360™ →
+                        </button>
+</div>
+</div>
+</section>
+<!-- Disclaimer -->
+<p class="text-[10px] text-slate-500 text-center leading-relaxed px-4">
+                *Preliminary insights derived from subjective health questionnaire data. Supplement recommendations are for informational purposes only. Consult a physician before starting any protocol.
+            </p>
+</main>
+<!-- Fixed Bottom CTA -->
+<footer class="fixed bottom-0 left-0 right-0 p-4 bg-background-dark/95 backdrop-blur-xl border-t border-white/5 z-50">
+<button class="w-full max-w-md mx-auto flex items-center justify-center gap-2 bg-gradient-to-r from-primary to-[#008ba3] text-background-dark py-4 rounded-xl font-black text-sm uppercase tracking-widest shadow-xl shadow-primary/10 active:scale-[0.98] transition-all">
+                Continue to GENEX360™
+                <span class="material-symbols-outlined text-lg">trending_flat</span>
+</button>
+</footer>
+</div>
+<style>
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</body></html>
