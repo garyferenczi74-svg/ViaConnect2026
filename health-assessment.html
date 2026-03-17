@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ViaConnect™ GeneX360 Assessment</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Syne:wght@700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#05bed6",
+                        "background-light": "#f5f8f8",
+                        "background-dark": "#0a0f1c",
+                        "slate-card": "#0f172a",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"],
+                        "header": ["Syne", "sans-serif"],
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "2xl": "1rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            background: radial-gradient(circle at top right, #0f172a, #0a0f1c);
+            min-height: 100vh;
+        }
+        .glass-card {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .selected-card {
+            background: rgba(5, 190, 214, 0.1);
+            border-left: 4px solid #05bed6;
+            box-shadow: 0 0 20px rgba(5, 190, 214, 0.15);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="font-display text-slate-100 antialiased">
+<div class="relative flex flex-col min-h-screen w-full max-w-2xl mx-auto px-4 py-6">
+<!-- Header Section -->
+<header class="flex flex-col items-center mb-8">
+<div class="mb-6">
+<div class="flex items-center justify-center"><img alt="ViaConnect Logo" class="h-24 w-auto object-contain" src="" style="max-width: 240px;"/></div>
+</div>
+<div class="w-full space-y-4">
+<div class="flex justify-between items-end">
+<div class="space-y-1">
+<p class="text-xs uppercase tracking-wider text-slate-400 font-semibold">Section 2 of 4</p>
+<h1 class="text-sm font-medium text-slate-200">Health Foundation • Question 3 of 25</h1>
+</div>
+<div class="flex items-center gap-1.5 text-emerald-400 text-xs font-medium bg-emerald-400/10 px-2 py-1 rounded-full">
+<span class="material-symbols-outlined text-sm">check_circle</span>
+                        Progress saved
+                    </div>
+</div>
+<!-- Multi-segment Progress Bar -->
+<div class="grid grid-cols-4 gap-2 h-1.5 w-full">
+<div class="bg-primary rounded-full"></div>
+<div class="bg-gradient-to-r from-primary to-violet-500 rounded-full"></div>
+<div class="bg-slate-700 rounded-full"></div>
+<div class="bg-slate-700 rounded-full"></div>
+</div>
+</div>
+</header>
+<!-- Main Question Section -->
+<main class="flex-1">
+<div class="glass-card rounded-2xl p-6 mb-6 text-center">
+<h2 class="font-header text-2xl md:text-3xl text-white mb-2 leading-tight">What is your primary health concern?</h2>
+<p class="text-slate-400 text-sm md:text-base">Select the area you'd most like to improve</p>
+</div>
+<!-- Answer Options Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+<!-- Option 1: Selected State -->
+<button class="glass-card selected-card rounded-xl p-5 flex items-center gap-4 text-left transition-all hover:bg-white/5 group">
+<div class="flex size-12 shrink-0 items-center justify-center rounded-lg bg-primary/20 text-primary">
+<span class="material-symbols-outlined text-2xl">bolt</span>
+</div>
+<div class="flex flex-col">
+<span class="text-white font-semibold">Low Energy / Fatigue</span>
+<span class="text-slate-400 text-xs">Feeling drained throughout the day</span>
+</div>
+<span class="material-symbols-outlined ml-auto text-primary">check_circle</span>
+</button>
+<!-- Option 2 -->
+<button class="glass-card rounded-xl p-5 flex items-center gap-4 text-left transition-all hover:bg-white/5 group">
+<div class="flex size-12 shrink-0 items-center justify-center rounded-lg bg-slate-800 text-slate-400 group-hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-2xl">psychology</span>
+</div>
+<div class="flex flex-col">
+<span class="text-white font-semibold">Brain Fog / Focus</span>
+<span class="text-slate-400 text-xs">Difficulty concentrating or memory</span>
+</div>
+</button>
+<!-- Option 3 -->
+<button class="glass-card rounded-xl p-5 flex items-center gap-4 text-left transition-all hover:bg-white/5 group">
+<div class="flex size-12 shrink-0 items-center justify-center rounded-lg bg-slate-800 text-slate-400 group-hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-2xl">potted_plant</span>
+</div>
+<div class="flex flex-col">
+<span class="text-white font-semibold">Stress / Anxiety</span>
+<span class="text-slate-400 text-xs">Managing daily mental pressure</span>
+</div>
+</button>
+<!-- Option 4 -->
+<button class="glass-card rounded-xl p-5 flex items-center gap-4 text-left transition-all hover:bg-white/5 group">
+<div class="flex size-12 shrink-0 items-center justify-center rounded-lg bg-slate-800 text-slate-400 group-hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-2xl">bedtime</span>
+</div>
+<div class="flex flex-col">
+<span class="text-white font-semibold">Sleep Problems</span>
+<span class="text-slate-400 text-xs">Restless nights or insomnia</span>
+</div>
+</button>
+<!-- Option 5 -->
+<button class="glass-card rounded-xl p-5 flex items-center gap-4 text-left transition-all hover:bg-white/5 group">
+<div class="flex size-12 shrink-0 items-center justify-center rounded-lg bg-slate-800 text-slate-400 group-hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-2xl">monitor_weight</span>
+</div>
+<div class="flex flex-col">
+<span class="text-white font-semibold">Weight Management</span>
+<span class="text-slate-400 text-xs">Metabolic health and body goals</span>
+</div>
+</button>
+<!-- Option 6 -->
+<button class="glass-card rounded-xl p-5 flex items-center gap-4 text-left transition-all hover:bg-white/5 group">
+<div class="flex size-12 shrink-0 items-center justify-center rounded-lg bg-slate-800 text-slate-400 group-hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-2xl">shield_with_heart</span>
+</div>
+<div class="flex flex-col">
+<span class="text-white font-semibold">Immune Support</span>
+<span class="text-slate-400 text-xs">Strengthening natural defenses</span>
+</div>
+</button>
+</div>
+<!-- Motivational Element -->
+<div class="glass-card rounded-2xl p-4 flex items-center gap-4 border-primary/20 mb-10">
+<div class="relative size-16 shrink-0 flex items-center justify-center">
+<svg class="size-full -rotate-90">
+<circle class="text-slate-800" cx="32" cy="32" fill="transparent" r="28" stroke="currentColor" stroke-width="4"></circle>
+<circle class="text-primary" cx="32" cy="32" fill="transparent" r="28" stroke="currentColor" stroke-dasharray="176" stroke-dashoffset="102" stroke-width="4"></circle>
+</svg>
+<span class="absolute text-[10px] font-bold text-white uppercase">42%</span>
+</div>
+<div>
+<p class="text-sm font-medium text-slate-100">Great progress!</p>
+<p class="text-xs text-slate-400">Your personalized insights are taking shape based on your unique profile.</p>
+</div>
+</div>
+</main>
+<!-- Footer Navigation -->
+<footer class="mt-auto pt-6 space-y-6">
+<div class="flex items-center justify-between gap-4">
+<button class="flex-1 h-12 rounded-xl border border-slate-700 text-slate-300 font-semibold hover:bg-white/5 transition-colors">
+                    Previous
+                </button>
+<button class="flex-[2] h-12 rounded-xl bg-gradient-to-r from-primary to-[#04a5ba] text-white font-bold shadow-lg shadow-primary/20 hover:opacity-90 transition-opacity">
+                    Next Step
+                </button>
+</div>
+<div class="text-center">
+<button class="text-slate-500 hover:text-primary text-xs font-medium underline underline-offset-4 transition-colors">
+                    Need to take a break? Save &amp; Continue Later
+                </button>
+</div>
+</footer>
+</div>
+<!-- Decorative Gradient Background Elements -->
+<div class="fixed top-0 left-0 -z-10 w-full h-full overflow-hidden pointer-events-none">
+<div class="absolute -top-[10%] -left-[10%] size-96 bg-primary/10 rounded-full blur-[120px]"></div>
+<div class="absolute top-[40%] -right-[10%] size-80 bg-violet-600/10 rounded-full blur-[100px]"></div>
+</div>
+</body></html>
