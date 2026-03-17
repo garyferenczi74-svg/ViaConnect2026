@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ViaConnect™ GeneX360 | Personalized Health Blueprint</title>
+<!-- Tailwind CSS v3 CDN -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'deep-navy': '#0A0F1C',
+            'deep-slate': '#0F172A',
+            'cyan-brand': '#22D3EE',
+            'violet-brand': '#8B5CF6',
+          },
+          backgroundImage: {
+            'main-gradient': 'linear-gradient(180deg, #0A0F1C 0%, #0F172A 100%)',
+            'cta-gradient': 'linear-gradient(90deg, #22D3EE 0%, #8B5CF6 100%)',
+          },
+        }
+      }
+    }
+  </script>
+<!-- Custom Styles -->
+<style data-purpose="animations">
+    @keyframes pulse-glow {
+      0%, 100% { box-shadow: 0 0 15px rgba(34, 211, 238, 0.4); }
+      50% { box-shadow: 0 0 25px rgba(34, 211, 238, 0.7); }
+    }
+    .animate-glow {
+      animation: pulse-glow 3s infinite ease-in-out;
+    }
+    .glass-card {
+      background: rgba(255, 255, 255, 0.03);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .text-gradient {
+      background: linear-gradient(90deg, #22D3EE 0%, #8B5CF6 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+  </style>
+</head>
+<body class="bg-deep-navy text-white font-sans antialiased overflow-x-hidden">
+<!-- BEGIN: Hero Section -->
+<main class="relative min-h-screen flex flex-col items-center justify-between px-6 py-12 overflow-hidden">
+<!-- Background Decoration: DNA Helix & Constellation -->
+<div class="absolute inset-0 z-0 pointer-events-none opacity-20 flex justify-center items-center">
+<!-- Simple SVG DNA Representation -->
+<svg class="w-full max-w-lg h-auto" height="600" viewbox="0 0 100 200" width="300">
+<path d="M30 0 Q 70 50 30 100 Q 70 150 30 200" fill="none" stroke="url(#dna-grad)" stroke-width="0.5"></path>
+<path d="M70 0 Q 30 50 70 100 Q 30 150 70 200" fill="none" stroke="url(#dna-grad)" stroke-width="0.5"></path>
+<!-- Constellation dots -->
+<circle cx="30" cy="20" fill="#22D3EE" r="1.5"></circle>
+<circle cx="70" cy="40" fill="#8B5CF6" r="1.5"></circle>
+<circle cx="30" cy="80" fill="#22D3EE" r="1.5"></circle>
+<circle cx="70" cy="120" fill="#8B5CF6" r="1.5"></circle>
+<circle cx="30" cy="160" fill="#22D3EE" r="1.5"></circle>
+<defs>
+<lineargradient id="dna-grad" x1="0%" x2="0%" y1="0%" y2="100%">
+<stop offset="0%" style="stop-color:#22D3EE"></stop>
+<stop offset="100%" style="stop-color:#8B5CF6"></stop>
+</lineargradient>
+</defs>
+</svg>
+</div>
+<!-- Top Logo -->
+<!-- BEGIN: HeaderLogo -->
+<header class="z-10 w-full flex justify-center mb-10">
+<img alt="ViaConnect Logo" class="w-[160px] h-auto drop-shadow-2xl brightness-125" data-purpose="brand-identity" src=""/>
+</header>
+<!-- END: HeaderLogo -->
+<!-- Main Text Content -->
+<!-- BEGIN: HeroContent -->
+<section class="z-10 text-center flex-grow flex flex-col justify-center items-center max-w-sm" data-purpose="hero-messaging">
+<h1 class="text-4xl font-extrabold tracking-tight leading-tight mb-6">
+        Discover Your <span class="text-gradient">Health Blueprint</span> in 10 Minutes
+      </h1>
+<p class="text-white/70 text-base leading-relaxed mb-10 px-4">
+        Answer science-backed questions. Get precision insights. Access your customized supplement protocol.
+      </p>
+<button class="bg-cta-gradient animate-glow text-white font-bold py-4 px-10 rounded-xl text-lg flex items-center gap-2 transition-transform active:scale-95 shadow-lg shadow-cyan-500/20">
+        Start Your Journey
+        <span class="text-xl">→</span>
+</button>
+</section>
+<!-- END: HeroContent -->
+<!-- Value Proposition Cards -->
+<!-- BEGIN: ValueCards -->
+<section class="z-10 w-full grid grid-cols-3 gap-3 mt-12 mb-10" data-purpose="feature-highlights">
+<!-- Genetic Insights -->
+<div class="glass-card rounded-2xl p-4 flex flex-col items-center text-center">
+<div class="mb-2 text-cyan-brand">
+<svg fill="none" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="m8 3 4 8 5-5 5 15H2L8 3z"></path></svg>
+</div>
+<span class="text-[10px] uppercase tracking-wider font-bold text-white/90 leading-tight">Genetic Insights</span>
+</div>
+<!-- AI Protocol -->
+<div class="glass-card rounded-2xl p-4 flex flex-col items-center text-center">
+<div class="mb-2 text-violet-brand">
+<svg fill="none" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2a10 10 0 1 0 10 10H12V2z"></path><path d="M12 12 2.21 12"></path><path d="M12 12 12 22"></path><path d="m20 7-8 5 8 5"></path><path d="m12 12-8-5"></path><path d="m12 12-8 5"></path></svg>
+</div>
+<span class="text-[10px] uppercase tracking-wider font-bold text-white/90 leading-tight">AI Protocol</span>
+</div>
+<!-- Track Outcomes -->
+<div class="glass-card rounded-2xl p-4 flex flex-col items-center text-center">
+<div class="mb-2 text-cyan-brand">
+<svg fill="none" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M3 3v18h18"></path><path d="m19 9-5 5-4-4-3 3"></path></svg>
+</div>
+<span class="text-[10px] uppercase tracking-wider font-bold text-white/90 leading-tight">Track Outcomes</span>
+</div>
+</section>
+<!-- END: ValueCards -->
+<!-- Footer Trust and Links -->
+<!-- BEGIN: Footer -->
+<footer class="z-10 w-full flex flex-col items-center text-center space-y-6">
+<!-- Trust Bar -->
+<div class="text-[11px] uppercase tracking-widest text-white/40 font-medium px-4">
+        HIPAA Compliant • 10-27x Bioavailability • GMP Certified • 48,000+ Users
+      </div>
+<!-- Practitioner Links -->
+<div class="flex gap-6 text-sm font-medium">
+<a class="text-white/60 hover:text-emerald-400 transition-colors" href="#">Are you a Practitioner?</a>
+<a class="text-white/60 hover:text-amber-400 transition-colors" href="#">Are you a Naturopath?</a>
+</div>
+<!-- Sign In Link -->
+<div class="pt-2">
+<p class="text-white/50 text-sm">
+          Already have an account? <a class="text-white border-b border-white/30 hover:border-white transition-all" href="#">Sign In</a>
+</p>
+</div>
+</footer>
+<!-- END: Footer -->
+</main>
+<!-- END: Hero Section -->
+</body></html>
