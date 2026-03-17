@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Patient Detail - ViaConnect Practitioner Portal</title>
+<!-- Tailwind CSS v3 with Plugins -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Google Fonts: Inter -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<style data-purpose="typography">
+    body {
+      font-family: 'Inter', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+  </style>
+<style data-purpose="custom-utilities">
+    .clinical-shadow {
+      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+    }
+    .status-badge-active {
+      background-color: rgba(16, 185, 129, 0.1);
+      color: #10B981;
+    }
+    .node-red { border: 2px solid #EF4444; color: #EF4444; }
+    .node-amber { border: 2px solid #F59E0B; color: #F59E0B; }
+    .node-emerald { border: 2px solid #10B981; color: #10B981; }
+  </style>
+</head>
+<body class="bg-[#F9FAFB] text-[#111827] min-h-screen pb-12">
+<!-- BEGIN: MainHeader -->
+<header class="sticky top-0 z-50 bg-white border-b border-gray-100 px-4 py-3 flex items-center justify-between">
+<div class="flex items-center space-x-3">
+<button aria-label="Go back" class="p-2 -ml-2 hover:bg-gray-50 rounded-full transition-colors">
+<svg class="text-gray-500" fill="none" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="m15 18-6-6 6-6"></path></svg>
+</button>
+<div>
+<h1 class="text-lg font-semibold leading-tight">Emma Thompson</h1>
+<div class="flex items-center space-x-2 mt-0.5">
+<span class="status-badge-active text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
+            Active · High Adherence
+          </span>
+</div>
+</div>
+</div>
+<button class="p-2 text-gray-400">
+<svg fill="none" height="20" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="20" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg>
+</button>
+</header>
+<!-- END: MainHeader -->
+<main class="max-w-md mx-auto px-4 py-4 space-y-4">
+<!-- BEGIN: PatientSummary -->
+<section class="bg-white rounded-2xl p-5 clinical-shadow border border-gray-50" data-purpose="patient-summary-card">
+<div class="flex items-start space-x-4">
+<div class="relative">
+<img alt="Emma Thompson" class="w-16 h-16 rounded-full object-cover border-2 border-emerald-50" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC74UhVjf84Oh9dTrU0Bit3rLA7NU6RTOM2i0p7qQHPmFNj1i_EMI8mNUv9Ugx9z1m8W5OikBKOwUFDU_QW4lCVHy8NeicHTVAQ16fJQWvjExsl004y4Zhh5dLhTtzLkr6HDlKCHy8bc0x_Tmh8acwtEcIv0-7z5Noe5TuEg9F0MFzICBC8CCC_JYcND3j9-YzxDwmzOYVmPnZgROITCf8ew1wH0tB03oyEZ3FWX9JGYkb3zdJuBLkvgwVtrUl7xXRDnhBRVURvkPo"/>
+<div class="absolute bottom-0 right-0 w-4 h-4 bg-emerald-500 border-2 border-white rounded-full"></div>
+</div>
+<div class="flex-1">
+<div class="grid grid-cols-2 gap-y-3 gap-x-2">
+<div>
+<p class="text-[10px] text-gray-400 font-medium uppercase tracking-tight">Age</p>
+<p class="text-sm font-semibold">34</p>
+</div>
+<div>
+<p class="text-[10px] text-gray-400 font-medium uppercase tracking-tight">Location</p>
+<p class="text-sm font-semibold">New York, NY</p>
+</div>
+<div>
+<p class="text-[10px] text-gray-400 font-medium uppercase tracking-tight">Precision Score</p>
+<p class="text-sm font-bold text-emerald-600">92/100</p>
+</div>
+<div>
+<p class="text-[10px] text-gray-400 font-medium uppercase tracking-tight">Last Visit</p>
+<p class="text-sm font-semibold text-gray-700">Oct 12, 2025</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- END: PatientSummary -->
+<!-- BEGIN: ClinicalAlerts -->
+<section data-purpose="clinical-alerts">
+<h2 class="text-xs font-bold text-gray-400 uppercase tracking-widest px-1 mb-2">Clinical Alerts</h2>
+<div class="space-y-2">
+<!-- Emerald Alert (Positive/Complete) -->
+<div class="flex items-center p-3 bg-emerald-50 border-l-4 border-emerald-500 rounded-r-lg">
+<div class="flex-shrink-0 mr-3 text-emerald-600">
+<svg fill="none" height="20" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" viewbox="0 0 24 24" width="20" xmlns="http://www.w3.org/2000/svg"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+</div>
+<div class="flex-1">
+<p class="text-sm font-bold text-emerald-900">GENEX360 Complete</p>
+<p class="text-xs text-emerald-700">Results Ready for practitioner review</p>
+</div>
+<svg class="text-emerald-400" fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg"><path d="m9 18 6-6-6-6"></path></svg>
+</div>
+<!-- Amber Alert (Action Required) -->
+<div class="flex items-center p-3 bg-amber-50 border-l-4 border-amber-500 rounded-r-lg">
+<div class="flex-shrink-0 mr-3 text-amber-600">
+<svg fill="none" height="20" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" viewbox="0 0 24 24" width="20" xmlns="http://www.w3.org/2000/svg"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" x2="12" y1="9" y2="13"></line><line x1="12" x2="12.01" y1="17" y2="17"></line></svg>
+</div>
+<div class="flex-1">
+<p class="text-sm font-bold text-amber-900">Lab Delay</p>
+<p class="text-xs text-amber-700">Vitamin D Panel pending collection</p>
+</div>
+</div>
+</div>
+</section>
+<!-- END: ClinicalAlerts -->
+<!-- BEGIN: GenomicInsights -->
+<section class="bg-white rounded-2xl p-5 clinical-shadow border border-gray-50" data-purpose="genomic-insights">
+<div class="flex justify-between items-center mb-4">
+<h2 class="text-sm font-bold text-gray-800">Genomic Insights</h2>
+<button class="text-xs font-semibold text-emerald-600">Full Map</button>
+</div>
+<div class="flex justify-around items-center py-2">
+<!-- Node: Red (MTHFR) -->
+<div class="flex flex-col items-center">
+<div class="w-12 h-12 rounded-full flex items-center justify-center node-red bg-red-50 text-[10px] font-black mb-1">MTHFR</div>
+<span class="text-[10px] font-medium text-gray-500">Methylation</span>
+</div>
+<!-- Node: Amber (COMT) -->
+<div class="flex flex-col items-center">
+<div class="w-12 h-12 rounded-full flex items-center justify-center node-amber bg-amber-50 text-[10px] font-black mb-1">COMT</div>
+<span class="text-[10px] font-medium text-gray-500">Dopamine</span>
+</div>
+<!-- Node: Emerald (CYP1A2) -->
+<div class="flex flex-col items-center">
+<div class="w-12 h-12 rounded-full flex items-center justify-center node-emerald bg-emerald-50 text-[10px] font-black mb-1">CYP1A2</div>
+<span class="text-[10px] font-medium text-gray-500">Detox</span>
+</div>
+</div>
+</section>
+<!-- END: GenomicInsights -->
+<!-- BEGIN: ActiveProtocol -->
+<section class="bg-white rounded-2xl p-5 clinical-shadow border border-gray-50" data-purpose="active-protocol">
+<div class="flex justify-between items-center mb-4">
+<h2 class="text-sm font-bold text-gray-800">Active Protocol</h2>
+<div class="text-right">
+<p class="text-[10px] text-gray-400 font-bold uppercase tracking-tight">Compliance</p>
+<p class="text-sm font-bold text-emerald-600">94%</p>
+</div>
+</div>
+<div class="w-full bg-gray-100 h-1.5 rounded-full mb-6 overflow-hidden">
+<div class="bg-emerald-500 h-full w-[94%]"></div>
+</div>
+<div class="space-y-4">
+<div class="flex justify-between items-center pb-3 border-b border-gray-50">
+<div>
+<p class="text-sm font-semibold">Methyl-B12 Complex</p>
+<p class="text-xs text-gray-500">1000mcg • 1x Daily (AM)</p>
+</div>
+<span class="text-[10px] font-bold px-2 py-0.5 bg-gray-100 text-gray-600 rounded uppercase">Rx-302</span>
+</div>
+<div class="flex justify-between items-center">
+<div>
+<p class="text-sm font-semibold">Omega-3 High Potency</p>
+<p class="text-xs text-gray-500">2000mg • 2x Daily (AM/PM)</p>
+</div>
+<span class="text-[10px] font-bold px-2 py-0.5 bg-gray-100 text-gray-600 rounded uppercase">Rx-119</span>
+</div>
+</div>
+</section>
+<!-- END: ActiveProtocol -->
+<!-- BEGIN: BiomarkerTrends -->
+<section class="bg-white rounded-2xl p-5 clinical-shadow border border-gray-50" data-purpose="biomarker-trends">
+<h2 class="text-sm font-bold text-gray-800 mb-4">Biomarker Trends</h2>
+<div class="grid grid-cols-3 gap-4">
+<!-- Vit D -->
+<div class="flex flex-col">
+<span class="text-[10px] font-bold text-gray-400 uppercase mb-1">Vitamin D</span>
+<p class="text-sm font-bold">52 <span class="text-[8px] font-normal text-gray-400">ng/mL</span></p>
+<canvas class="mt-2" height="30" id="sparklineVitD" width="80"></canvas>
+</div>
+<!-- Cortisol -->
+<div class="flex flex-col">
+<span class="text-[10px] font-bold text-gray-400 uppercase mb-1">Cortisol</span>
+<p class="text-sm font-bold text-amber-600">18.2 <span class="text-[8px] font-normal text-gray-400">μg/dL</span></p>
+<canvas class="mt-2" height="30" id="sparklineCortisol" width="80"></canvas>
+</div>
+<!-- HRV -->
+<div class="flex flex-col">
+<span class="text-[10px] font-bold text-gray-400 uppercase mb-1">HRV (Avg)</span>
+<p class="text-sm font-bold">64 <span class="text-[8px] font-normal text-gray-400">ms</span></p>
+<canvas class="mt-2" height="30" id="sparklineHRV" width="80"></canvas>
+</div>
+</div>
+</section>
+<!-- END: BiomarkerTrends -->
+<!-- BEGIN: PractitionerNotes -->
+<section data-purpose="practitioner-notes">
+<h2 class="text-xs font-bold text-gray-400 uppercase tracking-widest px-1 mb-2">Practitioner Notes</h2>
+<div class="bg-white rounded-2xl p-4 clinical-shadow border border-gray-50">
+<textarea class="w-full border-0 focus:ring-0 p-0 text-sm text-gray-600 placeholder:text-gray-300 min-h-[80px] resize-none" placeholder="Add clinical observation or follow-up notes...">Discussed methylation results. Encouraging better sleep hygiene to manage elevated morning cortisol.</textarea>
+<div class="flex justify-end mt-2 pt-2 border-t border-gray-50">
+<p class="text-[10px] text-gray-400">Auto-saved 2m ago</p>
+</div>
+</div>
+</section>
+<!-- END: PractitionerNotes -->
+<!-- BEGIN: Actions -->
+<section class="grid grid-cols-2 gap-3 pt-2" data-purpose="action-buttons">
+<button class="flex items-center justify-center space-x-2 bg-emerald-600 text-white py-3 rounded-xl font-bold text-sm hover:bg-emerald-700 transition-colors shadow-sm">
+<svg fill="none" height="18" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="18" xmlns="http://www.w3.org/2000/svg"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+<span>Message</span>
+</button>
+<button class="flex items-center justify-center space-x-2 bg-white border border-gray-200 text-gray-700 py-3 rounded-xl font-bold text-sm hover:bg-gray-50 transition-colors">
+<svg fill="none" height="18" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="18" xmlns="http://www.w3.org/2000/svg"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+<span>Update Protocol</span>
+</button>
+<button class="flex items-center justify-center space-x-2 bg-white border border-gray-200 text-gray-700 py-3 rounded-xl font-bold text-sm hover:bg-gray-50 transition-colors">
+<svg fill="none" height="18" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="18" xmlns="http://www.w3.org/2000/svg"><path d="M10 2v7.31"></path><path d="M14 9.3V1.99"></path><path d="M8.5 2h7"></path><path d="M14 12v.01"></path><path d="M10 12v.01"></path><path d="M10 15v.01"></path><path d="M14 15v.01"></path><path d="M10 18v.01"></path><path d="M14 18v.01"></path><rect height="20" rx="2" width="12" x="6" y="2"></rect></svg>
+<span>Order Labs</span>
+</button>
+<button class="flex items-center justify-center space-x-2 bg-white border border-gray-200 text-gray-700 py-3 rounded-xl font-bold text-sm hover:bg-gray-50 transition-colors">
+<svg fill="none" height="18" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="18" xmlns="http://www.w3.org/2000/svg"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" x2="12" y1="15" y2="3"></line></svg>
+<span>Export</span>
+</button>
+</section>
+<!-- END: Actions -->
+</main>
+<script data-purpose="sparkline-rendering">
+    /**
+     * Helper to render mini sparkline charts on canvas
+     */
+    function drawSparkline(id, data, color) {
+      const canvas = document.getElementById(id);
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const width = canvas.width;
+      const height = canvas.height;
+
+      ctx.clearRect(0, 0, width, height);
+      ctx.beginPath();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      ctx.lineJoin = 'round';
+      ctx.lineCap = 'round';
+      const stepX = width / (data.length - 1);
+      const min = Math.min(...data);
+      const max = Math.max(...data);
+      const range = max - min || 1;
+      data.forEach((val, i) => {
+        const x = i * stepX;
+        const y = height - ((val - min) / range * (height - 4) + 2);
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+    }
+    // Initialize charts on load
+    window.addEventListener('DOMContentLoaded', () => {
+      drawSparkline('sparklineVitD', [40, 42, 41, 48, 52], '#10B981');
+      drawSparkline('sparklineCortisol', [12, 14, 19, 17, 18.2], '#F59E0B');
+      drawSparkline('sparklineHRV', [58, 62, 60, 65, 64], '#10B981');
+    });
+  </script>
+</body></html>
