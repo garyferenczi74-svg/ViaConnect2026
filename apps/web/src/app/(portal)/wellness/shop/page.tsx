@@ -23,7 +23,7 @@ interface Product {
   geneticMatch: boolean;
   subscription: boolean;
   image: string;
-  variant: 'gold' | 'silver' | 'red' | 'green' | 'pink' | 'pouch';
+  variant: 'gold' | 'silver' | 'red' | 'green' | 'pink' | 'navy' | 'pouch';
   brand?: string;
 }
 
@@ -260,6 +260,82 @@ const products: Product[] = [
     image: '/products/cyclesync.png',
     variant: 'pink',
   },
+  {
+    id: 16,
+    name: 'DAO Support +',
+    subtitle: 'Precision Support for Optimal Detoxification and Genetic Wellness',
+    capsules: '60 Capsules',
+    dosage: '600 mg',
+    price: '$79.99/mo',
+    originalPrice: '$99.99',
+    rationale: 'Matched to your DAO SNP status',
+    rating: 4.8,
+    reviews: 145,
+    geneticMatch: true,
+    subscription: true,
+    image: '/products/dao-support.png',
+    variant: 'gold',
+  },
+  {
+    id: 17,
+    name: 'Desire+',
+    subtitle: 'Female Libido, Hormonal Balance & Vitality Liposomal Capsules',
+    capsules: '60 Capsules',
+    dosage: '215 mg',
+    price: '$54.99/mo',
+    rationale: 'Hormonal vitality & wellness support',
+    rating: 4.7,
+    reviews: 86,
+    geneticMatch: false,
+    subscription: false,
+    image: '/products/desire.png',
+    variant: 'pink',
+  },
+  {
+    id: 18,
+    name: 'DigestiZorb+ Enzyme Complex',
+    subtitle: 'Advanced Bioavailable Nutraceuticals for Peak Wellness',
+    capsules: '60 Capsules',
+    dosage: '550 mg',
+    price: '$49.99/mo',
+    rationale: 'Digestive enzyme support & nutrient absorption',
+    rating: 4.6,
+    reviews: 203,
+    geneticMatch: false,
+    subscription: false,
+    image: '/products/digestizorb.png',
+    variant: 'red',
+  },
+  {
+    id: 19,
+    name: 'Flex+',
+    subtitle: 'Inflammation Support',
+    capsules: '60 Capsules',
+    dosage: '1300 mg',
+    price: '$59.99/mo',
+    rationale: 'Recovery | Joint Mobility | Tissue Repair',
+    rating: 4.8,
+    reviews: 276,
+    geneticMatch: false,
+    subscription: false,
+    image: '/products/flex.png',
+    variant: 'green',
+  },
+  {
+    id: 20,
+    name: 'Focus +',
+    subtitle: 'Advanced Nootropic Formula',
+    capsules: '60 Capsules',
+    dosage: '575 mg',
+    price: '$64.99/mo',
+    rationale: 'Cognitive Clarity | Clean Energy | Peak Mental Performance',
+    rating: 4.9,
+    reviews: 341,
+    geneticMatch: false,
+    subscription: false,
+    image: '/products/focus.png',
+    variant: 'navy',
+  },
 ];
 
 /* -------------------------------------------------------------------------- */
@@ -366,6 +442,7 @@ export default function ShopPage() {
                 red:    'bg-gradient-to-b from-rose-950/30 to-slate-950/60',
                 green:  'bg-gradient-to-b from-emerald-950/30 to-slate-950/60',
                 pink:   'bg-gradient-to-b from-pink-950/30 to-slate-950/60',
+                navy:   'bg-gradient-to-b from-blue-950/40 to-slate-950/60',
                 pouch:  'bg-gradient-to-b from-slate-200/15 to-slate-950/60',
               }[p.variant]
             }`}>
@@ -377,8 +454,8 @@ export default function ShopPage() {
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
                   target.style.display = 'none';
-                  const iconColor = { gold: 'text-amber-500/40', silver: 'text-slate-400/40', red: 'text-rose-400/40', green: 'text-emerald-500/40', pink: 'text-pink-400/40', pouch: 'text-slate-400/40' }[p.variant];
-                  const labelColor = { gold: 'text-amber-500/50', silver: 'text-slate-400/50', red: 'text-rose-400/50', green: 'text-emerald-500/50', pink: 'text-pink-400/50', pouch: 'text-slate-400/50' }[p.variant];
+                  const iconColor = { gold: 'text-amber-500/40', silver: 'text-slate-400/40', red: 'text-rose-400/40', green: 'text-emerald-500/40', pink: 'text-pink-400/40', navy: 'text-blue-400/40', pouch: 'text-slate-400/40' }[p.variant];
+                  const labelColor = { gold: 'text-amber-500/50', silver: 'text-slate-400/50', red: 'text-rose-400/50', green: 'text-emerald-500/50', pink: 'text-pink-400/50', navy: 'text-blue-400/50', pouch: 'text-slate-400/50' }[p.variant];
                   target.parentElement!.innerHTML = `<div class="flex flex-col items-center gap-2"><span class="material-symbols-outlined text-[48px] ${iconColor}">medication</span><span class="text-xs ${labelColor} font-[Syne]">${p.brand || 'FARMCEUTICA'}</span></div>`;
                 }}
               />
@@ -391,6 +468,7 @@ export default function ShopPage() {
                     red:    'text-rose-400/70 border-rose-500/20 bg-rose-500/10',
                     green:  'text-emerald-400/70 border-emerald-500/20 bg-emerald-500/10',
                     pink:   'text-pink-400/70 border-pink-500/20 bg-pink-500/10',
+                    navy:   'text-blue-400/70 border-blue-500/20 bg-blue-500/10',
                     pouch:  'text-slate-400/70 border-slate-400/20 bg-slate-400/10',
                   }[p.variant];
                   return ['100% Organic', 'GMP', p.variant === 'pouch' ? 'ISO 9001' : 'Lab Tested'].map((label) => (
