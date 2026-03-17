@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ViaConnect™ GeneX360 Assessment - Genetic &amp; Advanced</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#05bed6",
+                        "background-light": "#f5f8f8",
+                        "background-dark": "#0f2023",
+                        "accent-violet": "#8b5cf6",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "2xl": "1rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .glass-card-hover:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(5, 190, 214, 0.4);
+        }
+        .bg-cinematic-gradient {
+            background: radial-gradient(circle at top right, #1a3a3e, #0f2023 60%);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-cinematic-gradient text-slate-100 font-display min-h-screen">
+<!-- Top Navigation & Progress -->
+<header class="w-full max-w-4xl mx-auto px-4 pt-6 flex flex-col items-center">
+<div class="flex items-center w-full mb-6 justify-center">
+<div class="flex items-center gap-2"><img alt="ViaConnect Logo" class="h-12 w-auto object-contain" src=""/></div>
+<div class="flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+<span class="material-symbols-outlined text-emerald-400 text-sm">check_circle</span>
+<span class="text-emerald-400 text-xs font-medium uppercase tracking-wider">Progress saved</span>
+</div>
+</div>
+<div class="w-full space-y-2">
+<div class="flex justify-between items-end">
+<div class="flex flex-col">
+<span class="text-xs font-semibold text-primary/80 uppercase tracking-widest">Section 3 of 4</span>
+<span class="text-sm font-medium text-slate-300">Genetic &amp; Advanced Health</span>
+</div>
+<span class="text-xs font-bold text-slate-400">Question 5 of 18</span>
+</div>
+<div class="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
+<div class="h-full bg-primary shadow-[0_0_10px_rgba(5,190,214,0.5)] transition-all duration-500" style="width: 75%;"></div>
+</div>
+</div>
+</header>
+<main class="max-w-4xl mx-auto px-4 py-10 space-y-12 pb-32">
+<!-- Central Question Card -->
+<section class="max-w-2xl mx-auto w-full glass-panel rounded-2xl p-8 shadow-2xl relative overflow-hidden">
+<div class="absolute top-0 left-0 w-1 h-full bg-primary"></div>
+<div class="space-y-4">
+<h1 class="text-2xl font-bold text-white">Do you know your MTHFR status?</h1>
+<p class="text-slate-400 leading-relaxed">
+                    MTHFR is a gene that affects how your body processes B-vitamins and folate. Over 40% of the population carries a variant.
+                    <a class="inline-flex items-center text-primary hover:text-primary/80 font-medium ml-1 transition-colors" href="#">
+                        Learn More <span class="material-symbols-outlined text-sm ml-0.5">open_in_new</span>
+</a>
+</p>
+<div class="grid grid-cols-1 gap-3 pt-6">
+<!-- Option 1 -->
+<button class="flex items-center justify-between p-4 glass-panel rounded-xl glass-card-hover border-l-4 border-l-primary/30 transition-all text-left group">
+<div class="flex items-center gap-4">
+<span class="text-xl">✅</span>
+<span class="font-medium">Yes — Normal</span>
+</div>
+<span class="material-symbols-outlined opacity-0 group-hover:opacity-100 text-primary transition-opacity">radio_button_checked</span>
+</button>
+<!-- Option 2 -->
+<button class="flex items-center justify-between p-4 glass-panel rounded-xl glass-card-hover border-l-4 border-l-yellow-500/30 transition-all text-left group">
+<div class="flex items-center gap-4">
+<span class="text-xl">🟡</span>
+<span class="font-medium">Yes — C677T Heterozygous</span>
+</div>
+<span class="material-symbols-outlined opacity-0 group-hover:opacity-100 text-primary transition-opacity">radio_button_checked</span>
+</button>
+<!-- Option 3 -->
+<button class="flex items-center justify-between p-4 glass-panel rounded-xl glass-card-hover border-l-4 border-l-red-500/30 transition-all text-left group">
+<div class="flex items-center gap-4">
+<span class="text-xl">🔴</span>
+<span class="font-medium">Yes — C677T Homozygous</span>
+</div>
+<span class="material-symbols-outlined opacity-0 group-hover:opacity-100 text-primary transition-opacity">radio_button_checked</span>
+</button>
+<!-- Option 4 -->
+<button class="flex items-center justify-between p-4 glass-panel rounded-xl glass-card-hover border-l-4 border-l-yellow-500/30 transition-all text-left group">
+<div class="flex items-center gap-4">
+<span class="text-xl">🟡</span>
+<span class="font-medium">Yes — A1298C Variant</span>
+</div>
+<span class="material-symbols-outlined opacity-0 group-hover:opacity-100 text-primary transition-opacity">radio_button_checked</span>
+</button>
+<!-- Option 5 -->
+<button class="flex items-center justify-between p-4 glass-panel rounded-xl glass-card-hover border-l-4 border-l-red-500/30 transition-all text-left group">
+<div class="flex items-center gap-4">
+<span class="text-xl">🔴</span>
+<span class="font-medium">Yes — Compound Heterozygous</span>
+</div>
+<span class="material-symbols-outlined opacity-0 group-hover:opacity-100 text-primary transition-opacity">radio_button_checked</span>
+</button>
+<!-- Option 6 (Selected) -->
+<button class="flex items-center justify-between p-4 glass-panel rounded-xl border-l-4 border-l-primary bg-primary/5 shadow-[0_0_15px_rgba(5,190,214,0.1)] transition-all text-left">
+<div class="flex items-center gap-4">
+<span class="text-xl">❓</span>
+<span class="font-medium text-white">I don't know / Not tested</span>
+</div>
+<span class="material-symbols-outlined text-primary">radio_button_checked</span>
+</button>
+</div>
+</div>
+</section>
+<!-- DNA Upload Section -->
+<section class="max-w-2xl mx-auto w-full">
+<div class="glass-panel border-dashed border-primary/40 rounded-2xl p-6 flex flex-col md:flex-row items-center gap-6">
+<div class="size-16 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-primary text-3xl">upload_file</span>
+</div>
+<div class="flex-1 text-center md:text-left">
+<h3 class="font-semibold text-white mb-1">Have previous genetic test results?</h3>
+<p class="text-sm text-slate-400">Upload your 23andMe, AncestryDNA, or MyHeritage data for faster analysis.</p>
+</div>
+<button class="whitespace-nowrap px-6 py-2.5 rounded-lg border border-primary text-primary font-bold hover:bg-primary hover:text-white transition-all">
+                    Upload DNA File
+                </button>
+</div>
+</section>
+<!-- Symptom Checklist -->
+<section class="max-w-2xl mx-auto w-full space-y-6">
+<div class="space-y-1">
+<h2 class="text-xl font-bold text-white">Do you experience any of these symptoms?</h2>
+<p class="text-slate-400 text-sm italic">(Select all that apply)</p>
+</div>
+<div class="flex flex-wrap gap-3">
+<button class="px-5 py-2.5 rounded-full glass-panel border border-slate-700 hover:border-primary/50 text-slate-300 transition-all flex items-center gap-2">
+                    Fatigue <span class="material-symbols-outlined text-sm opacity-40">add</span>
+</button>
+<button class="px-5 py-2.5 rounded-full bg-primary/20 border border-primary/40 text-primary transition-all flex items-center gap-2">
+                    Brain fog <span class="material-symbols-outlined text-sm">check</span>
+</button>
+<button class="px-5 py-2.5 rounded-full bg-primary/20 border border-primary/40 text-primary transition-all flex items-center gap-2">
+                    Anxiety <span class="material-symbols-outlined text-sm">check</span>
+</button>
+<button class="px-5 py-2.5 rounded-full glass-panel border border-slate-700 hover:border-primary/50 text-slate-300 transition-all flex items-center gap-2">
+                    Depression <span class="material-symbols-outlined text-sm opacity-40">add</span>
+</button>
+<button class="px-5 py-2.5 rounded-full glass-panel border border-slate-700 hover:border-primary/50 text-slate-300 transition-all flex items-center gap-2">
+                    Insomnia <span class="material-symbols-outlined text-sm opacity-40">add</span>
+</button>
+<button class="px-5 py-2.5 rounded-full glass-panel border border-slate-700 hover:border-primary/50 text-slate-300 transition-all flex items-center gap-2">
+                    Joint Pain <span class="material-symbols-outlined text-sm opacity-40">add</span>
+</button>
+<button class="px-5 py-2.5 rounded-full glass-panel border border-slate-700 hover:border-primary/50 text-slate-300 transition-all flex items-center gap-2">
+                    Headaches <span class="material-symbols-outlined text-sm opacity-40">add</span>
+</button>
+<button class="px-5 py-2.5 rounded-full glass-panel border border-slate-700 hover:border-primary/50 text-slate-300 transition-all flex items-center gap-2">
+                    Digestive Issues <span class="material-symbols-outlined text-sm opacity-40">add</span>
+</button>
+</div>
+</section>
+</main>
+<!-- Bottom Navigation Footer -->
+<footer class="fixed bottom-0 left-0 w-full glass-panel border-t border-white/10 z-50 py-6">
+<div class="max-w-4xl mx-auto px-4 flex flex-col items-center gap-4">
+<div class="w-full flex justify-between items-center">
+<button class="px-8 py-3 rounded-lg text-slate-400 font-semibold hover:text-white transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined">arrow_back</span> Previous
+                </button>
+<div class="hidden md:flex flex-col items-center">
+<span class="text-xs font-bold text-slate-400 uppercase tracking-widest">67% Complete</span>
+<span class="text-[10px] text-slate-500 uppercase">2 sections remaining</span>
+</div>
+<button class="px-10 py-3 rounded-lg bg-gradient-to-r from-primary to-accent-violet text-white font-bold shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all flex items-center gap-2">
+                    Next Section <span class="material-symbols-outlined">arrow_forward</span>
+</button>
+</div>
+<div class="md:hidden flex flex-col items-center">
+<span class="text-[10px] text-slate-400 uppercase tracking-tighter">67% complete — 2 sections remaining</span>
+</div>
+</div>
+</footer>
+<!-- Background Decoration -->
+<div class="fixed top-0 right-0 -z-10 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[120px]"></div>
+<div class="fixed bottom-0 left-0 -z-10 w-[400px] h-[400px] bg-accent-violet/5 rounded-full blur-[100px]"></div>
+</body></html>
