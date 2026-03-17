@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=JetBrains+Mono:wght@700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#05bed6",
+                        "background-light": "#f5f8f8",
+                        "background-dark": "#0a0f1c",
+                        "accent-violet": "#8b5cf6",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"],
+                        "mono": ["JetBrains Mono", "monospace"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        .glass {
+            background: rgba(30, 41, 59, 0.6);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .gauge-gradient {
+            background: conic-gradient(from 180deg at 50% 50%, #05bed6 0deg, #8b5cf6 313deg, transparent 313deg);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 min-h-screen flex flex-col">
+<!-- Top Navigation Bar -->
+<header class="sticky top-0 z-50 glass px-4 py-3 flex items-center justify-between border-b border-white/10">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-background-dark font-bold">genetics</span>
+</div>
+<h1 class="text-lg font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent-violet">ViaConnect™</h1>
+</div>
+<div class="flex items-center gap-3">
+<button class="p-2 hover:bg-white/10 rounded-full transition-colors">
+<span class="material-symbols-outlined text-slate-400">search</span>
+</button>
+<button class="p-2 hover:bg-white/10 rounded-full transition-colors relative">
+<span class="material-symbols-outlined text-slate-400">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-primary rounded-full border border-background-dark"></span>
+</button>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-primary/50">
+<img class="w-full h-full object-cover" data-alt="User profile avatar portrait" src="https://lh3.googleusercontent.com/aida-public/AB6AXuANunI_Y2scWIOiEApjdbKA4GWjwLzH6v_-s-4wiIXET6XDTDNDHWGgP4dw5qzWwaurf1AiazkukTdOB_0AVrDqbSfhaN_VZ5xdQI5ocmYZM9MzRSELP-P43bdq923AJ1t3Wg4ZnrUg2aNU6LuCITuYxz9MCtaWl3eBWKOh1IvX6ylnj8j39OZ-tKBVyx_D7CPjmVuhN0mmjw3e-Pn9uTi3TFQIu1gUsLQemxGz0yJNdGKH2qLoeKHxPfu1Y3YE9dbCeLfUtHqpnBg"/>
+</div>
+</div>
+</header>
+<!-- Main Content Area (Scrollable) -->
+<main class="flex-1 overflow-y-auto pb-24 bg-gradient-to-b from-background-dark via-[#0d1425] to-background-dark">
+<!-- Row 1: Hero Card (Precision Score) -->
+<section class="p-4">
+<div class="glass rounded-3xl p-8 flex flex-col items-center text-center relative overflow-hidden group">
+<div class="absolute inset-0 bg-primary/5 radial-gradient opacity-50"></div>
+<!-- Circular Gauge -->
+<div class="relative w-48 h-48 flex items-center justify-center mb-6">
+<div class="absolute inset-0 rounded-full border-[12px] border-white/5"></div>
+<div class="absolute inset-0 rounded-full border-[12px] gauge-gradient opacity-90 rotate-[22.5deg]"></div>
+<div class="absolute inset-4 rounded-full bg-background-dark flex flex-col items-center justify-center shadow-2xl">
+<span class="font-mono text-4xl font-bold text-white leading-none">87<span class="text-primary/50 text-xl">/100</span></span>
+<span class="text-[10px] uppercase tracking-widest text-slate-500 mt-1">Optimal Range</span>
+</div>
+<div class="absolute inset-0 bg-primary/20 blur-2xl rounded-full -z-10 group-hover:bg-primary/30 transition-all"></div>
+</div>
+<h2 class="text-xl font-bold mb-1">Your Precision Score</h2>
+<p class="text-slate-400 text-sm mb-6">13 points to unlock: <span class="text-primary font-medium">Complete GENEX360™</span></p>
+<button class="bg-primary text-background-dark font-bold py-3 px-8 rounded-xl shadow-lg shadow-primary/20 active:scale-95 transition-transform w-full">
+                    Improve My Score
+                </button>
+</div>
+</section>
+<!-- Row 2: Quick Actions -->
+<section class="px-4 mb-8">
+<div class="flex gap-3 overflow-x-auto no-scrollbar py-2">
+<button class="flex-none flex items-center gap-2 px-5 py-2.5 glass rounded-full text-sm font-medium hover:bg-primary/20 transition-colors border-primary/20">
+<span class="material-symbols-outlined text-primary text-lg">pill</span> Order Supplements
+                </button>
+<button class="flex-none flex items-center gap-2 px-5 py-2.5 glass rounded-full text-sm font-medium hover:bg-primary/20 transition-colors">
+<span class="material-symbols-outlined text-primary text-lg">biotech</span> View Genomics
+                </button>
+<button class="flex-none flex items-center gap-2 px-5 py-2.5 glass rounded-full text-sm font-medium hover:bg-primary/20 transition-colors">
+<span class="material-symbols-outlined text-primary text-lg">monitoring</span> Track Goals
+                </button>
+<button class="flex-none flex items-center gap-2 px-5 py-2.5 glass rounded-full text-sm font-medium hover:bg-primary/20 transition-colors">
+<span class="material-symbols-outlined text-primary text-lg">smart_toy</span> Chat AI
+                </button>
+</div>
+</section>
+<!-- Row 3: Today's Protocol Card -->
+<section class="px-4 mb-8">
+<div class="flex items-center justify-between mb-4">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">schedule</span>
+<h3 class="font-bold text-lg">Today's Protocol</h3>
+</div>
+<div class="flex items-center gap-1 bg-orange-500/10 text-orange-500 px-3 py-1 rounded-full text-xs font-bold border border-orange-500/20">
+                    🔥 14-day streak
+                </div>
+</div>
+<div class="space-y-3">
+<!-- Morning Block -->
+<div class="glass p-4 rounded-2xl flex items-center justify-between border-l-4 border-l-green-500">
+<div>
+<p class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Morning</p>
+<p class="text-sm font-medium text-slate-200">MTHFR+ (2 caps) · NAD+ (1 cap)</p>
+</div>
+<div class="flex items-center gap-1 text-green-500 font-bold text-sm bg-green-500/10 px-3 py-1.5 rounded-lg">
+<span class="material-symbols-outlined text-lg">check_circle</span> Taken
+                    </div>
+</div>
+<!-- Afternoon Block -->
+<div class="glass p-4 rounded-2xl flex items-center justify-between border-l-4 border-l-primary/30">
+<div>
+<p class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Afternoon</p>
+<p class="text-sm font-medium text-slate-200">FOCUS+ (2 caps) · Omega-3</p>
+</div>
+<button class="text-primary font-bold text-sm border border-primary/30 px-3 py-1.5 rounded-lg active:bg-primary/10">
+                        Mark as Taken
+                    </button>
+</div>
+<!-- Evening Block -->
+<div class="glass p-4 rounded-2xl flex items-center justify-between border-l-4 border-l-primary/30">
+<div>
+<p class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Evening</p>
+<p class="text-sm font-medium text-slate-200">RELAX+ (2 caps) · Magnesium</p>
+</div>
+<button class="text-primary font-bold text-sm border border-primary/30 px-3 py-1.5 rounded-lg active:bg-primary/10">
+                        Mark as Taken
+                    </button>
+</div>
+</div>
+</section>
+<!-- Row 4: Personalized Feed -->
+<section class="px-4 mb-8">
+<h3 class="font-bold text-lg mb-4">Personalized for You</h3>
+<div class="space-y-4">
+<div class="glass rounded-2xl overflow-hidden flex gap-4 p-3 border-white/5">
+<div class="w-20 h-20 rounded-xl overflow-hidden shrink-0">
+<img class="w-full h-full object-cover" data-alt="Microscope and science laboratory equipment" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCU_TEWcMqyffkd4BRE_S__rxigHy9YFpRt61s8uv603YmiOmaP4bizncnf9GFw4pPJnyl-cXn1IEweQgKS8fLCJ5XyDtSvZgZ4R8ls7-X0esIztNfq00XaLBdSmwnTbhKKssbQw1YdUdgCHpqZf230mssPSugR-XLCltiWrEZ_MTXY6FNL24NDJjn2wsVcjaxgxD50Rf6bkUvBBd4lJkqh09ucDgUzR0m1foEBMtIfnFZaPDFQ2uv4t13PrJSrr8BJqPoYDxGaUWE"/>
+</div>
+<div class="flex flex-col justify-between">
+<div class="flex gap-2 mb-1">
+<span class="text-[10px] bg-slate-800 text-slate-300 px-2 py-0.5 rounded uppercase font-bold tracking-tight">PubMed</span>
+</div>
+<h4 class="text-sm font-bold line-clamp-2 leading-snug">New findings on MTHFR polymorphisms and metabolic efficiency</h4>
+<p class="text-[11px] text-slate-500">4 min read · Relevant to your G-profile</p>
+</div>
+</div>
+<div class="glass rounded-2xl overflow-hidden flex gap-4 p-3 border-white/5">
+<div class="w-20 h-20 rounded-xl overflow-hidden shrink-0">
+<img class="w-full h-full object-cover" data-alt="Molecular model of DNA structure" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCykf-VXVNexY4oDfrVq8uUO2oFI5iFu42isTKRLbCakTpIvd9UZtlf-nWWnzOPqYy_aIyy06qqjjgMyziriqv_YCUUW35SCLLXFpTuA5Kp-OUzUM-uJgPsF3l0yjZM_lPxKrdYh-COJH5mz33HBfKPjyQFkgdu-v5E2pLrH7kcyotpcoOT57aupjs0qns90XnT137XaNImqN0Nb91ZtO49g7xp2ziuVYgCJlZa_Zv29Ewv9FrmJhySukRCdQwttpQtKyRtHe4FBuI"/>
+</div>
+<div class="flex flex-col justify-between">
+<div class="flex gap-2 mb-1">
+<span class="text-[10px] bg-indigo-900/50 text-indigo-300 px-2 py-0.5 rounded uppercase font-bold tracking-tight">OpenEvidence</span>
+</div>
+<h4 class="text-sm font-bold line-clamp-2 leading-snug">Meta-analysis of Vitamin D3 optimization in northern climates</h4>
+<p class="text-[11px] text-slate-500">7 min read · Based on current biomarkers</p>
+</div>
+</div>
+<div class="glass rounded-2xl overflow-hidden flex gap-4 p-3 border-primary/20">
+<div class="w-20 h-20 rounded-xl overflow-hidden shrink-0 flex items-center justify-center bg-primary/10">
+<span class="material-symbols-outlined text-primary text-3xl">psychology</span>
+</div>
+<div class="flex flex-col justify-between">
+<div class="flex gap-2 mb-1">
+<span class="text-[10px] bg-primary/20 text-primary px-2 py-0.5 rounded uppercase font-bold tracking-tight">ViaConnect AI</span>
+</div>
+<h4 class="text-sm font-bold line-clamp-2 leading-snug">Why your magnesium intake should peak after high-intensity training</h4>
+<p class="text-[11px] text-slate-500">Personalized insight · Generated 2h ago</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Row 5: Wearable Sync & FarmaTokens -->
+<section class="px-4 grid grid-cols-2 gap-4 mb-8">
+<div class="glass p-4 rounded-2xl relative overflow-hidden">
+<div class="flex items-center justify-between mb-3">
+<span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Vitals</span>
+<span class="material-symbols-outlined text-primary text-lg">circle</span>
+</div>
+<div class="space-y-2">
+<div class="flex flex-col">
+<span class="text-[10px] text-slate-500 uppercase">Sleep</span>
+<span class="text-sm font-bold">7h 42m</span>
+</div>
+<div class="flex flex-col">
+<span class="text-[10px] text-slate-500 uppercase">HRV</span>
+<span class="text-sm font-bold">48ms</span>
+</div>
+<div class="flex items-center gap-2 mt-2">
+<div class="h-1.5 flex-1 bg-white/10 rounded-full overflow-hidden">
+<div class="h-full bg-primary w-[82%]"></div>
+</div>
+<span class="text-xs font-bold text-primary">82%</span>
+</div>
+</div>
+<div class="absolute -bottom-2 -right-2 opacity-10">
+<span class="material-symbols-outlined text-6xl">watch</span>
+</div>
+</div>
+<div class="glass p-4 rounded-2xl relative overflow-hidden">
+<div class="flex items-center justify-between mb-3">
+<span class="text-xs font-bold text-slate-500 uppercase tracking-wider">FarmaTokens</span>
+<span class="text-yellow-500 text-lg">🪙</span>
+</div>
+<div class="flex flex-col h-full justify-between">
+<div>
+<p class="text-2xl font-mono font-bold leading-none">1,247</p>
+<p class="text-[10px] text-slate-500 mt-1">Available Balance</p>
+</div>
+<div class="mt-4">
+<p class="text-[10px] text-slate-400 mb-1 flex justify-between">
+<span>Next Reward</span>
+<span>253 to go</span>
+</p>
+<div class="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
+<div class="h-full bg-gradient-to-r from-yellow-600 to-yellow-400 w-[75%]"></div>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Bottom Navigation Bar -->
+<nav class="fixed bottom-0 left-0 right-0 glass border-t border-white/10 flex items-center justify-around px-2 py-3 z-50 rounded-t-3xl">
+<a class="flex flex-col items-center gap-1 group" href="#">
+<div class="w-12 h-8 flex items-center justify-center bg-primary/20 rounded-full text-primary group-hover:bg-primary/30 transition-all">
+<span class="material-symbols-outlined fill-1">home</span>
+</div>
+<span class="text-[10px] font-bold text-primary uppercase tracking-tighter">Home</span>
+</a>
+<a class="flex flex-col items-center gap-1 group" href="#">
+<div class="w-12 h-8 flex items-center justify-center text-slate-500 group-hover:text-slate-300 transition-all">
+<span class="material-symbols-outlined">genetics</span>
+</div>
+<span class="text-[10px] font-medium text-slate-500 uppercase tracking-tighter">Genomics</span>
+</a>
+<a class="flex flex-col items-center gap-1 group" href="#">
+<div class="w-12 h-8 flex items-center justify-center text-slate-500 group-hover:text-slate-300 transition-all">
+<span class="material-symbols-outlined">assignment</span>
+</div>
+<span class="text-[10px] font-medium text-slate-500 uppercase tracking-tighter">Protocol</span>
+</a>
+<a class="flex flex-col items-center gap-1 group" href="#">
+<div class="w-12 h-8 flex items-center justify-center text-slate-500 group-hover:text-slate-300 transition-all">
+<span class="material-symbols-outlined">shopping_bag</span>
+</div>
+<span class="text-[10px] font-medium text-slate-500 uppercase tracking-tighter">Shop</span>
+</a>
+<a class="flex flex-col items-center gap-1 group" href="#">
+<div class="w-12 h-8 flex items-center justify-center text-slate-500 group-hover:text-slate-300 transition-all">
+<span class="material-symbols-outlined">forum</span>
+</div>
+<span class="text-[10px] font-medium text-slate-500 uppercase tracking-tighter">AI Chat</span>
+</a>
+</nav>
+<style>
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .fill-1 {
+            font-variation-settings: 'FILL' 1;
+        }
+    </style>
+</body></html>
