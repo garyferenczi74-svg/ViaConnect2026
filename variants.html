@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+  <title>ViaConnect Personal Wellness Portal - Genetic Variants</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'via-dark': '#111827',
+            'via-green': '#4ade80',
+            'via-glass': 'rgba(255, 255, 255, 0.05)',
+            'via-border': 'rgba(255, 255, 255, 0.1)',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .glass-card {
+      background: rgba(31, 41, 55, 0.7);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .hide-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .hide-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+</head>
+<body class="bg-via-dark text-white font-sans min-h-screen pb-10">
+
+  <!-- Header -->
+  <header class="p-4 flex items-center space-x-3 sticky top-0 bg-via-dark/90 backdrop-blur-md z-50">
+    <div class="w-10 h-10 bg-via-green rounded-full flex items-center justify-center" data-purpose="brand-logo">
+      <svg class="h-6 w-6 text-via-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-7.714 2.143L11 21l-2.286-6.857L1 12l7.714-2.143L11 3z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+      </svg>
+    </div>
+    <div>
+      <h1 class="text-lg font-bold leading-tight">Personal Wellness Portal</h1>
+      <p class="text-xs text-white/50">ViaConnect™ AI-Powered Health</p>
+    </div>
+  </header>
+
+  <!-- Navigation -->
+  <nav class="px-4 mb-6 overflow-x-auto hide-scrollbar">
+    <div class="flex space-x-2 whitespace-nowrap py-2" data-purpose="tab-navigation">
+      <a class="px-4 py-2 rounded-full text-sm font-medium bg-via-glass border border-via-border" href="index.html">Dashboard</a>
+      <a class="px-4 py-2 rounded-full text-sm font-medium bg-via-glass border border-via-border" href="genetics.html">Genetics</a>
+      <a class="px-4 py-2 rounded-full text-sm font-medium bg-via-green text-via-dark" href="variants.html">Variants</a>
+      <a class="px-4 py-2 rounded-full text-sm font-medium bg-via-glass border border-via-border" href="#">Bio</a>
+      <a class="px-4 py-2 rounded-full text-sm font-medium bg-via-glass border border-via-border" href="#">Plans</a>
+      <a class="px-4 py-2 rounded-full text-sm font-medium bg-via-glass border border-via-border" href="#">Track</a>
+    </div>
+  </nav>
+
+  <!-- Page Content -->
+  <main class="px-4">
+    <section class="mb-6">
+      <h2 class="text-2xl font-bold mb-2">Genetic Variant Analysis</h2>
+      <p class="text-sm text-white/60 leading-relaxed">
+        Explore your DNA variants with detailed SNP analysis, risks, benefits, and personalized recommendations.
+      </p>
+    </section>
+
+    <!-- Search and Filter -->
+    <section class="space-y-4 mb-8">
+      <div class="relative" data-purpose="search-container">
+        <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+          <svg class="h-5 w-5 text-white/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+          </svg>
+        </span>
+        <input class="block w-full bg-via-glass border-via-border rounded-xl py-3 pl-10 pr-3 text-sm focus:ring-via-green focus:border-via-green placeholder-white/30 text-white" placeholder="Search by gene name or RS ID..." type="text" />
+      </div>
+      <div class="flex space-x-2 overflow-x-auto hide-scrollbar py-1" data-purpose="filter-pills">
+        <button class="px-4 py-1.5 rounded-full text-xs font-semibold bg-white text-via-dark">All</button>
+        <button class="px-4 py-1.5 rounded-full text-xs font-semibold border border-via-border bg-via-glass">Methylation</button>
+        <button class="px-4 py-1.5 rounded-full text-xs font-semibold border border-via-border bg-via-glass">Neuro</button>
+        <button class="px-4 py-1.5 rounded-full text-xs font-semibold border border-via-border bg-via-glass">Nutrients</button>
+        <button class="px-4 py-1.5 rounded-full text-xs font-semibold border border-via-border bg-via-glass">Metabolic</button>
+      </div>
+    </section>
+
+    <!-- Variant Grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4" data-purpose="variant-grid">
+      <!-- MTHFR -->
+      <article class="glass-card rounded-xl overflow-hidden border-l-[4px] border-l-red-500 p-4" data-purpose="variant-card">
+        <div class="flex justify-between items-start mb-2">
+          <h3 class="text-lg font-bold">MTHFR</h3>
+          <span class="px-2 py-0.5 bg-red-500/20 text-red-500 text-[10px] font-bold rounded uppercase tracking-wider">High</span>
+        </div>
+        <p class="text-xs text-via-green mb-3">rs1801133 <span class="text-white/70 font-mono ml-1">TT</span></p>
+        <div class="flex flex-wrap gap-1.5 mb-3">
+          <span class="px-2 py-0.5 bg-white/10 text-white/70 text-[10px] rounded">Methylation</span>
+          <span class="px-2 py-0.5 bg-white/10 text-white/70 text-[10px] rounded flex items-center">
+            <svg class="w-2.5 h-2.5 mr-1" fill="currentColor" viewBox="0 0 20 20"><path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM14 11a1 1 0 011 1v1h1a1 1 0 110 2h-1v1a1 1 0 11-2 0v-1h-1a1 1 0 110-2h1v-1a1 1 0 011-1z"></path></svg>
+            5 recommendations
+          </span>
+        </div>
+        <div class="flex items-start space-x-2">
+          <svg class="h-4 w-4 text-via-green flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-7.714 2.143L11 21l-2.286-6.857L1 12l7.714-2.143L11 3z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+          </svg>
+          <p class="text-[11px] text-white/70 leading-relaxed italic">Reduced methylation efficiency may impact folate processing and homocysteine levels.</p>
+        </div>
+      </article>
+
+      <!-- COMT -->
+      <article class="glass-card rounded-xl overflow-hidden border-l-[4px] border-l-red-500 p-4" data-purpose="variant-card">
+        <div class="flex justify-between items-start mb-2">
+          <h3 class="text-lg font-bold">COMT</h3>
+          <span class="px-2 py-0.5 bg-red-500/20 text-red-500 text-[10px] font-bold rounded uppercase tracking-wider">High</span>
+        </div>
+        <p class="text-xs text-via-green mb-3">rs4680 <span class="text-white/70 font-mono ml-1">AA</span></p>
+        <div class="flex flex-wrap gap-1.5">
+          <span class="px-2 py-0.5 bg-white/10 text-white/70 text-[10px] rounded">Neuro</span>
+        </div>
+      </article>
+
+      <!-- VDR -->
+      <article class="glass-card rounded-xl overflow-hidden border-l-[4px] border-l-yellow-500 p-4" data-purpose="variant-card">
+        <div class="flex justify-between items-start mb-2">
+          <h3 class="text-lg font-bold">VDR</h3>
+          <span class="px-2 py-0.5 bg-yellow-500/20 text-yellow-500 text-[10px] font-bold rounded uppercase tracking-wider">Moderate</span>
+        </div>
+        <p class="text-xs text-via-green mb-3">rs731236 <span class="text-white/70 font-mono ml-1">AA</span></p>
+        <div class="flex flex-wrap gap-1.5">
+          <span class="px-2 py-0.5 bg-white/10 text-white/70 text-[10px] rounded">Nutrients</span>
+        </div>
+      </article>
+
+      <!-- APOE -->
+      <article class="glass-card rounded-xl overflow-hidden border-l-[4px] border-l-green-500 p-4" data-purpose="variant-card">
+        <div class="flex justify-between items-start mb-2">
+          <h3 class="text-lg font-bold">APOE</h3>
+          <span class="px-2 py-0.5 bg-green-500/20 text-via-green text-[10px] font-bold rounded uppercase tracking-wider">Low</span>
+        </div>
+        <p class="text-xs text-via-green mb-3">rs429358 <span class="text-white/70 font-mono ml-1">e3/e3</span></p>
+        <div class="flex flex-wrap gap-1.5">
+          <span class="px-2 py-0.5 bg-white/10 text-white/70 text-[10px] rounded">Metabolic</span>
+        </div>
+      </article>
+
+      <!-- FTO -->
+      <article class="glass-card rounded-xl overflow-hidden border-l-[4px] border-l-red-500 p-4" data-purpose="variant-card">
+        <div class="flex justify-between items-start mb-2">
+          <h3 class="text-lg font-bold">FTO</h3>
+          <span class="px-2 py-0.5 bg-red-500/20 text-red-500 text-[10px] font-bold rounded uppercase tracking-wider">High</span>
+        </div>
+        <p class="text-xs text-via-green mb-3">rs9939609 <span class="text-white/70 font-mono ml-1">AA</span></p>
+        <div class="flex flex-wrap gap-1.5">
+          <span class="px-2 py-0.5 bg-white/10 text-white/70 text-[10px] rounded">Metabolic</span>
+        </div>
+      </article>
+    </div>
+  </main>
+
+</body>
+</html>
