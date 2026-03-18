@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Naturopath Dashboard | ViaConnect™ GeneX360</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              dark: '#0A0F1C',
+              amber: '#F59E0B',
+              glass: 'rgba(255, 255, 255, 0.05)',
+              border: 'rgba(245, 158, 11, 0.2)',
+            }
+          },
+          backgroundImage: {
+            'amber-glow': 'radial-gradient(circle at center, rgba(245, 158, 11, 0.15) 0%, transparent 70%)',
+          }
+        }
+      }
+    }
+  </script>
+<style data-purpose="glassmorphism">
+    .glass-card {
+      background: rgba(255, 255, 255, 0.03);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .amber-glass-badge {
+      background: rgba(245, 158, 11, 0.1);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      color: #F59E0B;
+    }
+    .active-amber-glow {
+      box-shadow: 0 0 15px rgba(245, 158, 11, 0.4);
+      border-color: #F59E0B;
+    }
+    body {
+      background-color: #0A0F1C;
+      color: #F3F4F6;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+  </style>
+</head>
+<body class="min-h-screen pb-24">
+<!-- BEGIN: MainHeader -->
+<header class="sticky top-0 z-50 px-4 py-4 glass-card border-b border-white/10 flex justify-between items-center" data-purpose="header">
+<div class="flex flex-col">
+<span class="text-xs text-brand-amber font-medium tracking-widest uppercase">ViaConnect™ GeneX360</span>
+<h1 class="text-xl font-bold">Naturopath Dashboard</h1>
+</div>
+<div class="flex items-center gap-4">
+<!-- Search Icon -->
+<button aria-label="Search" class="p-2 rounded-full hover:bg-white/10 transition-colors">
+<svg class="w-6 h-6" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</button>
+<!-- Profile Avatar -->
+<div class="w-10 h-10 rounded-full border-2 border-brand-amber overflow-hidden">
+<img alt="Naturopath Avatar" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuASNLaVERx2L81iQIhy-GUVMmjMNpQnOXsMc2ze15niDTWVOSHqmCQN7WGUCjZ4EaWyNZfBDm6Hb1Q1eFpzVzn_1Blbm6NoSvAPVhnzulxnWWa9_DgRd5Y-lJouCE8zTJmvxQzz1IqpNDUKVgi_HqbraE2gvmBopUzRFaejMwJhlprS_3yrkKhPXYmlFpHfQJLxIJnK5FrRzjmuwXgP_P9hzYInGJTrfEDaDSuJVqXIAG6LiYIf7TYzBnYs4YkZPWMUVxl9g68vAdM"/>
+</div>
+</div>
+</header>
+<!-- END: MainHeader -->
+<main class="px-4 py-6 space-y-8">
+<!-- BEGIN: Herb-Gene Safety Alerts -->
+<section class="space-y-3" data-purpose="safety-alerts">
+<div class="flex items-center justify-between">
+<h2 class="text-sm font-semibold uppercase tracking-wider text-gray-400">Herb-Gene Safety Alerts</h2>
+<span class="text-xs text-brand-amber">View All (5)</span>
+</div>
+<div class="space-y-2">
+<!-- Critical Alert -->
+<div class="flex items-center gap-3 p-3 rounded-xl border border-red-500/30 bg-red-500/10" data-purpose="critical-alert">
+<div class="flex-shrink-0 w-8 h-8 flex items-center justify-center bg-red-500 rounded-full">
+<svg class="h-5 w-5 text-white" fill="currentColor" viewbox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" fill-rule="evenodd"></path>
+</svg>
+</div>
+<div class="flex-1">
+<p class="text-sm font-bold text-red-100 uppercase">Major Red Alert</p>
+<p class="text-xs text-red-200">St. John's Wort + CYP3A4 fast metabolizer</p>
+</div>
+</div>
+<!-- Moderate Alert -->
+<div class="flex items-center gap-3 p-3 rounded-xl border border-yellow-500/30 bg-yellow-500/10" data-purpose="moderate-alert">
+<div class="flex-shrink-0 w-8 h-8 flex items-center justify-center bg-yellow-500 rounded-full text-black">
+<svg class="h-5 w-5" fill="currentColor" viewbox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" fill-rule="evenodd"></path>
+</svg>
+</div>
+<div class="flex-1">
+<p class="text-sm font-bold text-yellow-100 uppercase">Moderate Yellow Alert</p>
+<p class="text-xs text-yellow-200">Green tea + CYP1A2 slow metabolizer</p>
+</div>
+</div>
+</div>
+</section>
+<!-- END: Herb-Gene Safety Alerts -->
+<!-- BEGIN: Therapeutic Order Tracker -->
+<section class="space-y-4" data-purpose="therapeutic-tracker">
+<h2 class="text-sm font-semibold uppercase tracking-wider text-gray-400">Therapeutic Order Tracker</h2>
+<div class="grid grid-cols-2 gap-3">
+<!-- Phase 1 -->
+<div class="glass-card p-3 rounded-xl flex items-center gap-3 border-green-500/40">
+<div class="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+<svg class="h-4 w-4 text-brand-dark" fill="currentColor" viewbox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" fill-rule="evenodd"></path>
+</svg>
+</div>
+<span class="text-xs font-medium">1: Remove Obstacles</span>
+</div>
+<!-- Phase 2 -->
+<div class="glass-card p-3 rounded-xl flex items-center gap-3 border-green-500/40">
+<div class="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+<svg class="h-4 w-4 text-brand-dark" fill="currentColor" viewbox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" fill-rule="evenodd"></path>
+</svg>
+</div>
+<span class="text-xs font-medium">2: Stimulate Healing</span>
+</div>
+<!-- Phase 3 - ACTIVE -->
+<div class="glass-card p-3 rounded-xl flex items-center gap-3 active-amber-glow">
+<div class="w-6 h-6 bg-brand-amber rounded-full flex items-center justify-center animate-pulse">
+<svg class="h-4 w-4 text-brand-dark" fill="currentColor" viewbox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" fill-rule="evenodd"></path>
+</svg>
+</div>
+<span class="text-xs font-medium text-brand-amber">3: Support Systems</span>
+</div>
+<!-- Phase 4 -->
+<div class="glass-card p-3 rounded-xl flex items-center gap-3 opacity-40">
+<div class="w-6 h-6 border-2 border-white/30 rounded-full"></div>
+<span class="text-xs font-medium">4: Correct Structural</span>
+</div>
+<!-- Phase 5 -->
+<div class="glass-card p-3 rounded-xl flex items-center gap-3 opacity-40">
+<div class="w-6 h-6 border-2 border-white/30 rounded-full"></div>
+<span class="text-xs font-medium">5: Natural Substance</span>
+</div>
+<!-- Phase 6 -->
+<div class="glass-card p-3 rounded-xl flex items-center gap-3 opacity-40">
+<div class="w-6 h-6 border-2 border-white/30 rounded-full"></div>
+<span class="text-xs font-medium">6: Pharmacologic</span>
+</div>
+</div>
+</section>
+<!-- END: Therapeutic Order Tracker -->
+<!-- BEGIN: Patient Grid Section -->
+<section class="space-y-4" data-purpose="active-patients">
+<div class="flex items-center justify-between">
+<h2 class="text-sm font-semibold uppercase tracking-wider text-gray-400">Active Patient Monitoring</h2>
+<span class="text-xs text-brand-amber underline">Manage List</span>
+</div>
+<!-- Patient Item -->
+<div class="glass-card p-4 rounded-2xl space-y-4 relative overflow-hidden">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 rounded-full bg-gradient-to-tr from-brand-amber to-orange-300 p-0.5">
+<img alt="James Wilson" class="w-full h-full rounded-full object-cover border-2 border-brand-dark" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDmI-HCl4khuNdn9rR9PsRhb7nA37gL8CNhlIfAUGGhehltfBeprG--klRSg7fesmBNEXZ0YPVOfMH67hewQEaqrFdYp5ffmlNKDnrsY3J0p3eK-HqMRrwExo2n0VYU_UaAmLaIM-lO5M0TEgiO74KA_6-kFrQxghclS0lLEMkdjjaLnW7X4UOUBIB_F1qfcB8m95u1XugsrZ3XYBfEye8iLwbDcbZJNcNsJR91BicwXAjdPqabnQKMFtMKBX3-Ey3xWBlEOGD40YM"/>
+</div>
+<div>
+<h3 class="font-bold text-lg">James Wilson</h3>
+<p class="text-xs text-gray-400">Last Seen: Oct 24, 2023</p>
+</div>
+</div>
+<div class="text-right">
+<p class="text-[10px] text-gray-400 uppercase tracking-tighter">Precision Score</p>
+<p class="text-xl font-black text-brand-amber">82<span class="text-xs font-normal text-gray-400">/100</span></p>
+</div>
+</div>
+<div class="flex flex-wrap gap-2">
+<span class="amber-glass-badge px-3 py-1 rounded-full text-xs font-medium">Vata-Pitta</span>
+<span class="px-3 py-1 rounded-full text-[10px] font-bold border border-brand-amber/50 text-brand-amber bg-brand-amber/5 uppercase">
+            Phase 3: Support Systems
+          </span>
+</div>
+</div>
+</section>
+<!-- END: Patient Grid Section -->
+<!-- BEGIN: Recent Formulations -->
+<section class="space-y-4" data-purpose="recent-formulations">
+<h2 class="text-sm font-semibold uppercase tracking-wider text-gray-400">Recent Formulations</h2>
+<div class="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
+<!-- Tincture Card -->
+<div class="glass-card flex-shrink-0 w-40 p-4 rounded-xl space-y-3">
+<div class="w-10 h-10 bg-amber-900/40 rounded-lg flex items-center justify-center">
+<svg class="h-6 w-6 text-brand-amber" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.183.187l-.426.213a2 2 0 00-1.036 1.742v.84c0 .548.448.991.996.985a11.966 11.966 0 005.993-1.638 11.964 11.964 0 005.993 1.638c.548.006.996-.437.996-.985v-.84a2 2 0 00-1.036-1.742l-.426-.213z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+<path d="M12 4v8m-3-4l3-3 3 3" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</div>
+<div>
+<p class="text-sm font-bold leading-tight">"Liver Support"</p>
+<p class="text-[10px] text-gray-400">Tincture (100ml)</p>
+</div>
+</div>
+<!-- Capsules Card -->
+<div class="glass-card flex-shrink-0 w-40 p-4 rounded-xl space-y-3">
+<div class="w-10 h-10 bg-amber-900/40 rounded-lg flex items-center justify-center">
+<svg class="h-6 w-6 text-brand-amber" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.183.187l-.426.213a2 2 0 00-1.036 1.742v.84c0 .548.448.991.996.985a11.966 11.966 0 005.993-1.638 11.964 11.964 0 005.993 1.638c.548.006.996-.437.996-.985v-.84a2 2 0 00-1.036-1.742l-.426-.213z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</div>
+<div>
+<p class="text-sm font-bold leading-tight">"Adrenal Restore"</p>
+<p class="text-[10px] text-gray-400">Capsules (60 caps)</p>
+</div>
+</div>
+<!-- Tea Card -->
+<div class="glass-card flex-shrink-0 w-40 p-4 rounded-xl space-y-3">
+<div class="w-10 h-10 bg-amber-900/40 rounded-lg flex items-center justify-center">
+<svg class="h-6 w-6 text-brand-amber" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M13 10V3L4 14h7v7l9-11h-7z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</div>
+<div>
+<p class="text-sm font-bold leading-tight">"Sleep Harmony"</p>
+<p class="text-[10px] text-gray-400">Tea (100g)</p>
+</div>
+</div>
+</div>
+</section>
+<!-- END: Recent Formulations -->
+<!-- BEGIN: Research Digest -->
+<section class="space-y-4" data-purpose="research-digest">
+<h2 class="text-sm font-semibold uppercase tracking-wider text-gray-400">Research Digest</h2>
+<div class="glass-card p-4 rounded-2xl border-l-4 border-brand-amber">
+<div class="flex items-start gap-4">
+<div class="pt-1">
+<svg class="h-5 w-5 text-brand-amber" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</div>
+<div>
+<p class="text-xs text-brand-amber font-bold mb-1">Today's PubMed Highlights</p>
+<p class="text-sm italic text-gray-300">"Withania somnifera and cortisol regulation in chronic stress: A systematic review of gene expression patterns."</p>
+<button class="mt-2 text-[10px] font-bold text-white bg-white/10 px-3 py-1 rounded-full uppercase tracking-widest">Read Full Paper</button>
+</div>
+</div>
+</div>
+</section>
+<!-- END: Research Digest -->
+</main>
+<!-- BEGIN: Bottom Tab Bar -->
+<nav class="fixed bottom-0 left-0 right-0 glass-card border-t border-white/10 px-6 py-3 flex justify-between items-center z-50" data-purpose="bottom-navigation">
+<a class="flex flex-col items-center gap-1 text-brand-amber" href="#">
+<svg class="h-6 w-6" fill="currentColor" viewbox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+<path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"></path>
+</svg>
+<span class="text-[10px] font-bold">Home</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-gray-500 hover:text-white transition-colors" href="#">
+<svg class="h-6 w-6" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+<span class="text-[10px] font-medium">Patients</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-gray-500 hover:text-white transition-colors" href="#">
+<svg class="h-6 w-6" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.183.187l-.426.213a2 2 0 00-1.036 1.742v.84c0 .548.448.991.996.985a11.966 11.966 0 005.993-1.638 11.964 11.964 0 005.993 1.638c.548.006.996-.437.996-.985v-.84a2 2 0 00-1.036-1.742l-.426-.213z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+<span class="text-[10px] font-medium">Formulations</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-gray-500 hover:text-white transition-colors" href="#">
+<svg class="h-6 w-6" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+<span class="text-[10px] font-medium">Herbs</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-gray-500 hover:text-white transition-colors" href="#">
+<svg class="h-6 w-6" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+<span class="text-[10px] font-medium">Research</span>
+</a>
+</nav>
+<!-- END: Bottom Tab Bar -->
+</body></html>
