@@ -12,7 +12,7 @@ import {
   ChevronDown,
   Activity,
 } from "lucide-react";
-import Link from "next/link";
+import PortalHeader from "@/components/wellness/PortalHeader";
 
 /* ────────────────────────────────────────────
    TypeScript Interfaces
@@ -210,19 +210,6 @@ const EVIDENCE_FILTERS = ["All Evidence", "Level A", "Level B", "Level C"];
    Helpers
    ──────────────────────────────────────────── */
 
-const NAV_TABS = [
-  { label: "Dashboard", href: "/wellness" },
-  { label: "Genetics", href: "/wellness/genetics" },
-  { label: "Variants", href: "/wellness/variants" },
-  { label: "Bio", href: "/wellness/bio" },
-  { label: "Plans", href: "/wellness/plans" },
-  { label: "Track", href: "/wellness/track" },
-  { label: "Share", href: "/wellness/share" },
-  { label: "Insights", href: "/wellness/insights" },
-  { label: "Learn", href: "/wellness/learn" },
-  { label: "Research", href: "/wellness/research" },
-];
-
 const evidenceBadge = (level: EvidenceLevel) => {
   const colors: Record<EvidenceLevel, string> = {
     "Level A": "bg-green-500/20 text-green-400 border-green-500/30",
@@ -256,49 +243,7 @@ export default function ResearchPage() {
   return (
     <div className="min-h-screen bg-[#111827] text-white font-sans antialiased">
       {/* ── Header ── */}
-      <header className="sticky top-0 z-50 bg-[#111827]/90 backdrop-blur-md border-b border-gray-800">
-        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link
-              href="/wellness"
-              className="px-3 py-1.5 rounded-full bg-gray-800 text-xs text-gray-300 border border-gray-700 hover:bg-gray-700 transition-colors"
-            >
-              &larr; Return to Main Menu
-            </Link>
-            <div className="w-8 h-8 rounded-full bg-green-400 flex items-center justify-center text-gray-900">
-              <Sparkles className="h-4 w-4" />
-            </div>
-            <div className="hidden sm:block">
-              <h1 className="text-sm font-bold leading-tight">
-                Personal Wellness Portal
-              </h1>
-              <p className="text-[10px] text-gray-400">
-                ViaConnect&trade; AI-Powered Health
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* ── Tab Navigation ── */}
-        <nav className="max-w-6xl mx-auto px-4 pb-2 flex gap-2 overflow-x-auto scrollbar-hide">
-          {NAV_TABS.map((tab) => {
-            const isActive = tab.label === "Research";
-            return (
-              <Link
-                key={tab.label}
-                href={tab.href}
-                className={`whitespace-nowrap px-5 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                  isActive
-                    ? "bg-green-400 text-gray-900 font-bold"
-                    : "bg-gray-800 text-gray-400 hover:bg-gray-700"
-                }`}
-              >
-                {tab.label}
-              </Link>
-            );
-          })}
-        </nav>
-      </header>
+      <PortalHeader activeTab="research" />
 
       {/* ── Main Content ── */}
       <main className="max-w-6xl mx-auto px-4 py-6 space-y-6">
