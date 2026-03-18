@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ViaConnect Learn - Personal Wellness Portal</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<style data-purpose="custom-theme">
+    body { background-color: #111827; color: #f3f4f6; font-family: system-ui, -apple-system, sans-serif; }
+    .glass-card { background: rgba(31, 41, 55, 0.7); backdrop-filter: blur(8px); border: 1px solid rgba(74, 222, 128, 0.1); }
+    .text-purple-accent { color: #a78bfa; }
+    .text-lime-accent { color: #4ade80; }
+    .border-yellow-accent { border-color: #facc15; color: #facc15; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
+</head>
+<body class="min-h-screen pb-20">
+<!-- BEGIN: MainHeader -->
+<header class="p-4 sticky top-0 bg-[#111827]/90 backdrop-blur-md z-50">
+<div class="flex items-center gap-2 mb-4">
+<div class="w-8 h-8 flex items-center justify-center">
+<svg class="w-6 h-6 text-lime-accent" fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M12 2L14.5 9L22 11.5L14.5 14L12 21L9.5 14L2 11.5L9.5 9L12 2Z" fill="currentColor"></path>
+</svg>
+</div>
+<h1 class="text-lg font-bold">Personal Wellness Portal</h1>
+</div>
+<!-- Navigation Pills -->
+<nav class="flex gap-2 overflow-x-auto no-scrollbar">
+<a class="px-5 py-1.5 rounded-full bg-gray-800 text-sm font-medium" href="index.html">Dashboard</a>
+<a class="px-5 py-1.5 rounded-full bg-gray-800 text-sm font-medium" href="genetics.html">Genetics</a>
+<a class="px-5 py-1.5 rounded-full bg-gray-800 text-sm font-medium" href="variants.html">Variants</a>
+<a class="px-5 py-1.5 rounded-full bg-gray-800 text-sm font-medium" href="biomarkers.html">Bio</a>
+<a class="px-5 py-1.5 rounded-full bg-gray-800 text-sm font-medium" href="plans.html">Plans</a>
+<a class="px-5 py-1.5 rounded-full bg-gray-800 text-sm font-medium" href="track.html">Track</a>
+<a class="px-5 py-1.5 rounded-full bg-gray-800 text-sm font-medium" href="share.html">Share</a>
+<a class="px-5 py-1.5 rounded-full bg-gray-800 text-sm font-medium" href="insights.html">Insights</a>
+<a class="px-5 py-1.5 rounded-full bg-lime-400 text-gray-900 text-sm font-bold" href="learn.html">Learn</a>
+<a class="px-5 py-1.5 rounded-full bg-gray-800 text-sm font-medium" href="#">Research</a>
+</nav>
+</header>
+<!-- END: MainHeader -->
+<main class="px-4 space-y-6">
+<!-- BEGIN: TopBanner -->
+<section class="glass-card p-5 rounded-2xl border-l-4 border-lime-400" data-purpose="banner">
+<div class="flex items-start gap-3">
+<svg class="w-5 h-5 text-lime-accent mt-1 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+<div>
+<h2 class="text-lime-accent font-bold text-lg leading-tight">Evidence-Based Precision Medicine</h2>
+<ul class="mt-3 space-y-2 text-sm text-gray-300">
+<li class="flex gap-2"><span>&bull;</span> Phenotype-first approach</li>
+<li class="flex gap-2"><span>&bull;</span> Peer-reviewed clinical guidelines</li>
+<li class="flex gap-2"><span>&bull;</span> Individualized care pathways</li>
+<li class="flex gap-2"><span>&bull;</span> Clinically appropriate use standards</li>
+</ul>
+</div>
+</div>
+</section>
+<!-- END: TopBanner -->
+<!-- BEGIN: AboutSection -->
+<section class="space-y-4">
+<div class="flex flex-col gap-2">
+<h2 class="text-purple-accent text-2xl font-bold">About GENEX360&trade;</h2>
+<div class="flex gap-2">
+<span class="px-2 py-0.5 rounded text-[10px] font-bold border border-yellow-accent uppercase">Evidence: Level B</span>
+<span class="px-2 py-0.5 rounded text-[10px] font-bold border border-yellow-accent uppercase">Clinical Context Required</span>
+</div>
+</div>
+<p class="text-gray-400 text-sm leading-relaxed">
+        GENEX360&trade; is our premier genetic interpretation suite designed to bridge the gap between complex genomic data and actionable clinical insights. We utilize high-fidelity sequencing to identify unique metabolic requirements.
+      </p>
+<!-- Sub-card -->
+<div class="bg-gray-800/50 p-4 rounded-xl border border-gray-700">
+<h3 class="text-lime-accent font-bold mb-3">What GENEX360&trade; Delivers</h3>
+<ul class="text-sm space-y-2 text-gray-300">
+<li class="flex items-center gap-2">
+<svg class="w-4 h-4 text-lime-400" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"></path></svg>
+            Comprehensive Genomic Landscape
+          </li>
+<li class="flex items-center gap-2">
+<svg class="w-4 h-4 text-lime-400" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"></path></svg>
+            Epigenetic Influence Mapping
+          </li>
+<li class="flex items-center gap-2">
+<svg class="w-4 h-4 text-lime-400" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"></path></svg>
+            Actionable Therapeutic Windows
+          </li>
+<li class="flex items-center gap-2">
+<svg class="w-4 h-4 text-lime-400" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"></path></svg>
+            Nutrient-Gene Interactions
+          </li>
+</ul>
+</div>
+</section>
+<!-- END: AboutSection -->
+<!-- BEGIN: FeatureCards -->
+<section class="grid grid-cols-1 gap-3">
+<div class="p-4 rounded-xl bg-gray-800 border-l-2 border-lime-500">
+<h4 class="font-bold text-sm mb-1">Total Systems Biology View</h4>
+<p class="text-xs text-gray-400">Integrated analysis of interconnected pathways.</p>
+</div>
+<div class="p-4 rounded-xl bg-gray-800 border-l-2 border-lime-500">
+<h4 class="font-bold text-sm mb-1">Personalized Protocols</h4>
+<p class="text-xs text-gray-400">Customized health optimization strategies.</p>
+</div>
+<div class="p-4 rounded-xl bg-gray-800 border-l-2 border-lime-500">
+<h4 class="font-bold text-sm mb-1">Early Risk Identification</h4>
+<p class="text-xs text-gray-400">Spotting predispositions before they manifest.</p>
+</div>
+</section>
+<!-- END: FeatureCards -->
+<!-- BEGIN: GeneticProfilesSection -->
+<section class="pt-8 border-t border-gray-800">
+<!-- Profile Tabs -->
+<div class="flex justify-between border-b border-gray-800 mb-6">
+<button class="pb-2 px-1 border-b-2 border-lime-400 text-lime-400 text-xs font-bold uppercase">GENEX-M&trade;</button>
+<button class="pb-2 px-1 border-b-2 border-transparent text-gray-500 text-xs font-bold uppercase">NUTRIGEN-DX&trade;</button>
+<button class="pb-2 px-1 border-b-2 border-transparent text-gray-500 text-xs font-bold uppercase">HormoneIQ&trade;</button>
+</div>
+<!-- Profile Content -->
+<div class="space-y-6">
+<div class="bg-blue-900/30 p-3 rounded-lg flex items-center gap-3">
+<svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+<p class="text-[11px] text-blue-200">Adheres to ACMG &amp; CDC guidelines for genetic testing.</p>
+</div>
+<div>
+<h3 class="text-purple-accent text-xl font-bold">GENEX-M&trade;</h3>
+<p class="text-sm text-gray-400 mb-2">Genetic Methylation &amp; Detox Profile</p>
+<span class="px-2 py-0.5 rounded text-[10px] font-bold border border-yellow-accent uppercase">Evidence: Level B</span>
+</div>
+<!-- Phenotype Card -->
+<div class="bg-gray-800 p-4 rounded-xl">
+<h4 class="text-lime-accent font-bold text-sm mb-2">Phenotype-First Approach</h4>
+<p class="text-xs text-gray-400">Focusing on physical expression and clinical symptoms first to validate genetic findings.</p>
+</div>
+<!-- Pathway Grid -->
+<div class="grid grid-cols-2 gap-3" data-purpose="pathway-grid">
+<div class="bg-gray-800/40 p-3 rounded-lg border border-gray-700">
+<span class="text-[10px] text-purple-400 font-bold uppercase block mb-1">Methylation</span>
+<p class="text-[10px] leading-relaxed text-gray-300">MTHFR | MTR | MTRR<br/>BHMT | SHMT | ACHY</p>
+</div>
+<div class="bg-gray-800/40 p-3 rounded-lg border border-gray-700">
+<span class="text-[10px] text-purple-400 font-bold uppercase block mb-1">Neurotransmitter</span>
+<p class="text-[10px] leading-relaxed text-gray-300">COMT | MAOA | VDR<br/>NOS | DAO</p>
+</div>
+<div class="bg-gray-800/40 p-3 rounded-lg border border-gray-700">
+<span class="text-[10px] text-purple-400 font-bold uppercase block mb-1">Detoxification</span>
+<p class="text-[10px] leading-relaxed text-gray-300">CBS | GST | SOD<br/>SUOX | NAT</p>
+</div>
+<div class="bg-gray-800/40 p-3 rounded-lg border border-gray-700">
+<span class="text-[10px] text-purple-400 font-bold uppercase block mb-1">Nutrient Absorption</span>
+<p class="text-[10px] leading-relaxed text-gray-300">TCN2 | RFC1 | ACAT<br/>ADO</p>
+</div>
+</div>
+<!-- Test Kit Info -->
+<div class="bg-gray-800 p-4 rounded-xl flex items-center justify-between border border-gray-700">
+<div>
+<h4 class="font-bold text-sm">Test Kit &amp; Delivery</h4>
+<p class="text-xs text-gray-500">Standard shipping included</p>
+</div>
+<div class="flex gap-1">
+<div class="w-6 h-6 rounded-full bg-lime-500/20 flex items-center justify-center text-lime-400">
+<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"></path></svg>
+</div>
+<div class="w-6 h-6 rounded-full bg-lime-500/20 flex items-center justify-center text-lime-400">
+<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"></path></svg>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- END: GeneticProfilesSection -->
+</main>
+<!-- BEGIN: BottomNav -->
+<footer class="fixed bottom-0 left-0 right-0 bg-[#111827] border-t border-gray-800 p-2 flex justify-around items-center">
+<a href="index.html" class="flex flex-col items-center p-2 text-gray-500">
+<div class="w-6 h-6 mb-1"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg></div>
+<span class="text-[10px]">Portal</span>
+</a>
+<a href="learn.html" class="flex flex-col items-center p-2 text-lime-400">
+<div class="w-6 h-6 mb-1"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg></div>
+<span class="text-[10px]">Learn</span>
+</a>
+<a href="#" class="flex flex-col items-center p-2 text-gray-500">
+<div class="w-6 h-6 mb-1"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg></div>
+<span class="text-[10px]">Profile</span>
+</a>
+</footer>
+<!-- END: BottomNav -->
+</body></html>
