@@ -59,6 +59,83 @@ export type Database = {
           },
         ]
       }
+      clinical_assessments: {
+        Row: {
+          allergies: string | null
+          biological_sex: string | null
+          completed: boolean | null
+          completed_at: string | null
+          created_at: string | null
+          current_conditions: string[] | null
+          current_medications: string | null
+          current_supplements: string[] | null
+          date_of_birth: string | null
+          diet_type: string | null
+          exercise_frequency: string | null
+          height_cm: number | null
+          id: string
+          previous_herbal_experience: boolean | null
+          primary_goals: string[] | null
+          sleep_hours_avg: number | null
+          stress_level: string | null
+          updated_at: string | null
+          user_id: string
+          weight_kg: number | null
+        }
+        Insert: {
+          allergies?: string | null
+          biological_sex?: string | null
+          completed?: boolean | null
+          completed_at?: string | null
+          created_at?: string | null
+          current_conditions?: string[] | null
+          current_medications?: string | null
+          current_supplements?: string[] | null
+          date_of_birth?: string | null
+          diet_type?: string | null
+          exercise_frequency?: string | null
+          height_cm?: number | null
+          id?: string
+          previous_herbal_experience?: boolean | null
+          primary_goals?: string[] | null
+          sleep_hours_avg?: number | null
+          stress_level?: string | null
+          updated_at?: string | null
+          user_id: string
+          weight_kg?: number | null
+        }
+        Update: {
+          allergies?: string | null
+          biological_sex?: string | null
+          completed?: boolean | null
+          completed_at?: string | null
+          created_at?: string | null
+          current_conditions?: string[] | null
+          current_medications?: string | null
+          current_supplements?: string[] | null
+          date_of_birth?: string | null
+          diet_type?: string | null
+          exercise_frequency?: string | null
+          height_cm?: number | null
+          id?: string
+          previous_herbal_experience?: boolean | null
+          primary_goals?: string[] | null
+          sleep_hours_avg?: number | null
+          stress_level?: string | null
+          updated_at?: string | null
+          user_id?: string
+          weight_kg?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clinical_assessments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       daily_tasks: {
         Row: {
           completed: boolean
@@ -338,6 +415,7 @@ export type Database = {
           created_at: string | null
           full_name: string | null
           id: string
+          onboarding_completed: boolean | null
           role: string | null
           updated_at: string | null
           username: string | null
@@ -347,6 +425,7 @@ export type Database = {
           created_at?: string | null
           full_name?: string | null
           id: string
+          onboarding_completed?: boolean | null
           role?: string | null
           updated_at?: string | null
           username?: string | null
@@ -356,6 +435,7 @@ export type Database = {
           created_at?: string | null
           full_name?: string | null
           id?: string
+          onboarding_completed?: boolean | null
           role?: string | null
           updated_at?: string | null
           username?: string | null
