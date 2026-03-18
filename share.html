@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<title>Share Data - Personal Wellness Portal</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<style data-purpose="glassmorphism-ui">
+    .glass-card {
+      background: rgba(31, 41, 55, 0.7);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(74, 222, 128, 0.3);
+    }
+    .glass-input {
+      background: rgba(17, 24, 39, 0.6);
+      border: 1px solid rgba(74, 222, 128, 0.2);
+    }
+    .hide-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+  </style>
+</head>
+<body class="bg-[#111827] text-white font-sans antialiased min-h-screen">
+<!-- BEGIN: MainHeader -->
+<header class="pt-6 px-4 space-y-4" data-purpose="portal-header">
+<div class="flex items-center justify-between">
+<button onclick="window.location.href='index.html'" class="bg-gray-800/80 text-xs font-medium px-4 py-1.5 rounded-full border border-gray-700 flex items-center gap-2">
+<svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M15 19l-7-7 7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+        Main Menu
+      </button>
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 bg-[#4ade80] rounded-full flex items-center justify-center shadow-[0_0_10px_rgba(74,222,128,0.5)]">
+<svg class="h-4 w-4 text-[#111827]" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2l2.4 7.2h7.6l-6 4.8 2.4 7.2-6-4.8-6 4.8 2.4-7.2-6-4.8h7.6z"></path></svg>
+</div>
+<h1 class="font-bold text-lg tracking-tight">Personal Wellness Portal</h1>
+</div>
+</div>
+<!-- BEGIN: NavigationTabs -->
+<nav class="flex overflow-x-auto gap-2 py-2 hide-scrollbar" data-purpose="pill-navigation">
+<a class="px-4 py-2 rounded-full bg-gray-800 text-sm whitespace-nowrap" href="index.html">Dashboard</a>
+<a class="px-4 py-2 rounded-full bg-gray-800 text-sm whitespace-nowrap" href="genetics.html">Genetics</a>
+<a class="px-4 py-2 rounded-full bg-gray-800 text-sm whitespace-nowrap" href="variants.html">Variants</a>
+<a class="px-4 py-2 rounded-full bg-gray-800 text-sm whitespace-nowrap" href="biomarkers.html">Bio</a>
+<a class="px-4 py-2 rounded-full bg-gray-800 text-sm whitespace-nowrap" href="plans.html">Plans</a>
+<a class="px-4 py-2 rounded-full bg-gray-800 text-sm whitespace-nowrap" href="track.html">Track</a>
+<a class="px-4 py-2 rounded-full bg-[#4ade80] text-[#111827] font-bold text-sm whitespace-nowrap" href="share.html">Share</a>
+<a class="px-4 py-2 rounded-full bg-gray-800 text-sm whitespace-nowrap" href="#">Insights</a>
+</nav>
+<!-- END: NavigationTabs -->
+</header>
+<!-- END: MainHeader -->
+<main class="p-4 space-y-6">
+<!-- BEGIN: ShareActionCard -->
+<section class="glass-card rounded-3xl p-6 shadow-2xl" data-purpose="share-form-container">
+<div class="flex items-center gap-3 mb-4">
+<div class="p-2 bg-[#4ade80]/10 rounded-lg">
+<svg class="h-6 w-6 text-[#4ade80]" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</div>
+<h2 class="text-xl font-bold">Share Data with Healthcare Provider</h2>
+</div>
+<p class="text-gray-400 text-sm leading-relaxed mb-6">
+        Generate a secure, time-limited QR code for practitioner or naturopath access to your health data.
+      </p>
+<form class="space-y-5" onsubmit="return false;">
+<!-- Email Input -->
+<div class="space-y-2">
+<label class="block text-xs font-bold uppercase tracking-wider text-gray-400">Healthcare Provider Email</label>
+<input class="w-full glass-input rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:ring-1 focus:ring-[#4ade80] outline-none transition-all" placeholder="provider@example.com" type="email"/>
+</div>
+<!-- Provider Type Dropdown -->
+<div class="space-y-2">
+<label class="block text-xs font-bold uppercase tracking-wider text-gray-400">Provider Type</label>
+<div class="relative">
+<select class="w-full glass-input rounded-xl px-4 py-3 text-white appearance-none focus:ring-1 focus:ring-[#4ade80] outline-none">
+<option>Practitioner</option>
+<option>Naturopath</option>
+<option>Genetic Counselor</option>
+<option>Specialist</option>
+</select>
+<div class="absolute inset-y-0 right-4 flex items-center pointer-events-none">
+<svg class="w-4 h-4 text-[#4ade80]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</div>
+</div>
+</div>
+<!-- Expiry Dropdown -->
+<div class="space-y-2">
+<label class="block text-xs font-bold uppercase tracking-wider text-gray-400">Expiry Duration</label>
+<div class="relative">
+<select class="w-full glass-input rounded-xl px-4 py-3 text-white appearance-none focus:ring-1 focus:ring-[#4ade80] outline-none">
+<option>24 hours</option>
+<option>48 hours</option>
+<option>7 days</option>
+<option>One-time access</option>
+</select>
+<div class="absolute inset-y-0 right-4 flex items-center pointer-events-none">
+<svg class="w-4 h-4 text-[#4ade80]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</div>
+</div>
+</div>
+<!-- Data Scope Info -->
+<div class="space-y-2">
+<label class="block text-xs font-bold uppercase tracking-wider text-gray-400">Data Scope</label>
+<div class="flex items-center gap-2 py-1">
+<svg class="w-5 h-5 text-[#4ade80]" fill="currentColor" viewBox="0 0 20 20"><path clip-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" fill-rule="evenodd"></path></svg>
+<span class="text-[#4ade80] font-semibold text-sm">Full Access (All Data)</span>
+</div>
+</div>
+<!-- Submit Button -->
+<button class="w-full bg-[#4ade80] hover:bg-[#3dbd6d] text-[#111827] font-bold py-4 rounded-xl flex items-center justify-center gap-3 shadow-[0_4px_20px_rgba(74,222,128,0.3)] active:scale-[0.98] transition-all" type="submit">
+<svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+          Generate Access Code
+        </button>
+</form>
+</section>
+<!-- END: ShareActionCard -->
+<!-- BEGIN: SharingHistoryCard -->
+<section class="glass-card rounded-3xl p-6" data-purpose="history-container">
+<div class="mb-8">
+<h3 class="font-bold text-lg">Sharing History</h3>
+<p class="text-gray-500 text-xs">View and manage your active sharing codes</p>
+</div>
+<div class="flex flex-col items-center justify-center py-10 space-y-3 opacity-60">
+<div class="w-16 h-16 rounded-full border border-dashed border-gray-600 flex items-center justify-center">
+<svg class="h-8 w-8 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</div>
+<p class="text-sm text-gray-500">No sharing codes generated yet</p>
+</div>
+</section>
+<!-- END: SharingHistoryCard -->
+</main>
+<!-- BEGIN: BottomPadding -->
+<div aria-hidden="true" class="h-20"></div>
+<!-- END: BottomPadding -->
+</body></html>
