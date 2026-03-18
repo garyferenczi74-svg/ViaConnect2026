@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ViaConnect™ Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#05bed6",
+                        "background-light": "#f5f8f8",
+                        "background-dark": "#0a0f1c",
+                    },
+                    fontFamily: {
+                        "display": ["Inter"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        .glass {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .glow-cyan {
+            box-shadow: 0 0 20px rgba(5, 190, 214, 0.3);
+        }
+        .bg-gradient-dark {
+            background: linear-gradient(180deg, #0a0f1c 0%, #0f172a 100%);
+        }
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="font-display bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen">
+<div class="relative flex min-h-screen w-full flex-col bg-gradient-dark overflow-x-hidden pb-24">
+<!-- Top Navigation -->
+<div class="flex items-center p-6 pb-2 justify-between sticky top-0 z-20 bg-background-dark/80 backdrop-blur-md">
+<div class="flex flex-col">
+<p class="text-slate-400 text-xs font-medium uppercase tracking-wider">ViaConnect™</p>
+<h2 class="text-white text-2xl font-bold leading-tight tracking-tight">Good morning, Gary</h2>
+</div>
+<div class="flex items-center gap-3">
+<button class="relative flex size-10 items-center justify-center rounded-full glass">
+<span class="material-symbols-outlined text-white text-xl">notifications</span>
+<span class="absolute top-2 right-2 size-2 bg-primary rounded-full"></span>
+</button>
+<div class="size-10 rounded-full border-2 border-primary/30 p-0.5">
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-full" data-alt="Portrait of a smiling professional man" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDXbRjoLQQya3pM6Jlg66BAuzRCB_iwLw57r0e0Vm8tblHyi66Qntf2T0C-okVFLe0MOqnRc_UFBY2nlWqobNUsdzsmWAoL-TUzRjKfJCbWK7fWjZ3uOY4kfcbIRjVfA-wUd0eMPCZTOWxlKdogo4PpyrdMnQvHL6OaaSgvNYTKsF8bWp2SMBtnPFeqzcxA6Ndgg9JCWsxGLUsUGgcfGYqX4cdmPvL8A_Gvse-YPz29TNSqGR7slDkUf2M9HW5NjsLzE3wLDoGMu64");'></div>
+</div>
+</div>
+</div>
+<!-- Hero Stats Section -->
+<div class="flex px-6 py-6 gap-6 items-center">
+<!-- Score Circle -->
+<div class="relative flex flex-col items-center justify-center size-32 shrink-0">
+<svg class="size-full -rotate-90 transform">
+<circle class="text-slate-800" cx="64" cy="64" fill="transparent" r="58" stroke="currentColor" stroke-width="8"></circle>
+<circle class="text-primary glow-cyan" cx="64" cy="64" fill="transparent" r="58" stroke="currentColor" stroke-dasharray="364.4" stroke-dashoffset="47.3" stroke-width="8"></circle>
+</svg>
+<div class="absolute inset-0 flex flex-col items-center justify-center">
+<span class="text-3xl font-bold text-white">87</span>
+<span class="text-[10px] text-slate-400 uppercase font-bold tracking-widest">Score</span>
+</div>
+</div>
+<div class="flex flex-col gap-4 flex-1">
+<div class="glass rounded-2xl p-4 flex flex-col gap-1">
+<p class="text-slate-400 text-xs font-semibold uppercase tracking-wider">FarmaTokens</p>
+<div class="flex items-center gap-2">
+<span class="text-xl">🪙</span>
+<p class="text-white text-2xl font-bold">1,247</p>
+</div>
+</div>
+<div class="glass rounded-2xl p-4 flex items-center justify-between">
+<div>
+<p class="text-slate-400 text-xs font-semibold uppercase tracking-wider">Streak</p>
+<p class="text-white font-bold">🔥 14 days</p>
+</div>
+<span class="material-symbols-outlined text-primary">trending_up</span>
+</div>
+</div>
+</div>
+<!-- Quick Action Pills -->
+<div class="flex gap-3 px-6 overflow-x-auto no-scrollbar py-2">
+<div class="flex h-10 shrink-0 items-center justify-center gap-x-2 rounded-full bg-primary px-5 shadow-lg shadow-primary/20">
+<span class="material-symbols-outlined text-white text-sm">bolt</span>
+<p class="text-white text-sm font-bold">Log Activity</p>
+</div>
+<div class="flex h-10 shrink-0 items-center justify-center gap-x-2 rounded-full glass px-5">
+<span class="material-symbols-outlined text-primary text-sm">fingerprint</span>
+<p class="text-slate-200 text-sm font-medium">Sync Data</p>
+</div>
+<div class="flex h-10 shrink-0 items-center justify-center gap-x-2 rounded-full glass px-5">
+<span class="material-symbols-outlined text-primary text-sm">restaurant</span>
+<p class="text-slate-200 text-sm font-medium">Log Meal</p>
+</div>
+<div class="flex h-10 shrink-0 items-center justify-center gap-x-2 rounded-full glass px-5">
+<span class="material-symbols-outlined text-primary text-sm">science</span>
+<p class="text-slate-200 text-sm font-medium">Lab Results</p>
+</div>
+</div>
+<!-- Today's Protocol -->
+<div class="px-6 pt-8 pb-4">
+<div class="flex items-center justify-between mb-4">
+<h3 class="text-white text-xl font-bold">Today's Protocol</h3>
+<span class="text-primary text-sm font-semibold">View All</span>
+</div>
+<div class="flex flex-col gap-3">
+<div class="glass rounded-2xl p-4 flex items-center justify-between">
+<div class="flex items-center gap-4">
+<div class="flex size-10 items-center justify-center rounded-xl bg-primary/10">
+<span class="material-symbols-outlined text-primary">pill</span>
+</div>
+<div>
+<p class="text-white font-bold">AM Bio-Stack</p>
+<p class="text-slate-400 text-xs">Omega-3, Vitamin D3 + K2</p>
+</div>
+</div>
+<div class="size-6 rounded border-2 border-primary/50 flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-sm font-bold">check</span>
+</div>
+</div>
+<div class="glass rounded-2xl p-4 flex items-center justify-between">
+<div class="flex items-center gap-4">
+<div class="flex size-10 items-center justify-center rounded-xl bg-orange-500/10">
+<span class="material-symbols-outlined text-orange-500">fitness_center</span>
+</div>
+<div>
+<p class="text-white font-bold">Zone 2 Cardio</p>
+<p class="text-slate-400 text-xs">45 minutes at 135 bpm</p>
+</div>
+</div>
+<div class="size-6 rounded border-2 border-slate-700"></div>
+</div>
+</div>
+</div>
+<!-- Health Snapshot -->
+<div class="px-6 pt-4 pb-4">
+<h3 class="text-white text-xl font-bold mb-4">Health Snapshot</h3>
+<div class="grid grid-cols-2 gap-4">
+<div class="glass rounded-2xl p-4">
+<div class="flex items-center justify-between mb-2">
+<span class="material-symbols-outlined text-blue-400">bedtime</span>
+<span class="text-[10px] font-bold text-slate-500 uppercase">Oura</span>
+</div>
+<p class="text-slate-400 text-xs mb-1">Sleep Score</p>
+<p class="text-white text-xl font-bold">92<span class="text-sm font-normal text-slate-500">/100</span></p>
+</div>
+<div class="glass rounded-2xl p-4">
+<div class="flex items-center justify-between mb-2">
+<span class="material-symbols-outlined text-red-400">favorite</span>
+<span class="text-[10px] font-bold text-slate-500 uppercase">Whoop</span>
+</div>
+<p class="text-slate-400 text-xs mb-1">HRV</p>
+<p class="text-white text-xl font-bold">78<span class="text-sm font-normal text-slate-500"> ms</span></p>
+</div>
+<div class="glass rounded-2xl p-4">
+<div class="flex items-center justify-between mb-2">
+<span class="material-symbols-outlined text-green-400">directions_run</span>
+<span class="text-[10px] font-bold text-slate-500 uppercase">Steps</span>
+</div>
+<p class="text-slate-400 text-xs mb-1">Today</p>
+<p class="text-white text-xl font-bold">8,432</p>
+</div>
+<div class="glass rounded-2xl p-4">
+<div class="flex items-center justify-between mb-2">
+<span class="material-symbols-outlined text-primary">battery_charging_full</span>
+<span class="text-[10px] font-bold text-slate-500 uppercase">Recovery</span>
+</div>
+<p class="text-slate-400 text-xs mb-1">Ready State</p>
+<p class="text-white text-xl font-bold">Optimal</p>
+</div>
+</div>
+</div>
+<!-- AI Insight Card -->
+<div class="px-6 pt-4 pb-4">
+<div class="glass rounded-2xl p-6 border-primary/20 bg-primary/5">
+<div class="flex items-center gap-3 mb-3">
+<div class="size-8 rounded-full bg-primary flex items-center justify-center shadow-lg shadow-primary/40">
+<span class="material-symbols-outlined text-white text-sm">lightbulb</span>
+</div>
+<h4 class="text-primary font-bold">AI Health Insight</h4>
+</div>
+<p class="text-slate-200 text-sm leading-relaxed">
+                    Your HRV has been trending up for 3 days. This suggests high metabolic flexibility. We recommend increasing your training intensity by 10% today.
+                </p>
+</div>
+</div>
+<!-- Research Card -->
+<div class="px-6 pt-4 pb-8">
+<h3 class="text-white text-xl font-bold mb-4">Daily Research</h3>
+<div class="glass rounded-2xl overflow-hidden">
+<div class="h-32 w-full bg-cover bg-center" data-alt="Abstract molecular structure in blue light" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuA7rMXIS9XpNDK5jFynUjEBxbofRZAZOPJKvnwkVIA7bPAuhuKlAAdhvGT1HuSP2wDy1lzuWbnjMe3eT5D7tEvxLXoHJtDizf7wYcFPVtLLEEJhJz58iFsA4ted48QzfdEK3Jr400QwuRpbnplfN5yjEVWQcfsXI6u3YxNLVVl2QTUwAZ3tIt9HiFGzTAA-zIoIMEaUuP-K7D1SyUdb9Lk65c146bG75Gxhmzz5dlTALL4N6eLGUttgdEDLYoJk1qOrd7MGNqD--Dw');"></div>
+<div class="p-4">
+<div class="flex items-center gap-2 mb-2">
+<span class="px-2 py-0.5 rounded bg-slate-800 text-slate-400 text-[10px] font-bold uppercase tracking-tight">PubMed Ref: 3491208</span>
+</div>
+<h4 class="text-white font-bold mb-2 leading-snug">Effect of NAD+ Precursors on Mitochondrial Biogenesis and Longevity</h4>
+<p class="text-slate-400 text-xs line-clamp-2">Recent clinical trials demonstrate that NMN supplementation significantly increases systemic NAD+ levels in adults over 45...</p>
+<button class="mt-4 text-primary text-xs font-bold uppercase tracking-widest flex items-center gap-1">
+                        Read Summary <span class="material-symbols-outlined text-xs">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Bottom Tab Bar -->
+<div class="fixed bottom-0 left-0 right-0 z-50 px-4 pb-6">
+<div class="glass rounded-full px-6 py-3 flex items-center justify-between border-white/20">
+<a class="flex flex-col items-center gap-1 text-primary" href="#">
+<span class="material-symbols-outlined text-2xl">home</span>
+<span class="text-[10px] font-bold">Home</span>
+<div class="h-1 w-1 rounded-full bg-primary mt-0.5"></div>
+</a>
+<a class="flex flex-col items-center gap-1 text-slate-500" href="#">
+<span class="material-symbols-outlined text-2xl">genetics</span>
+<span class="text-[10px] font-medium">Genomics</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-slate-500" href="#">
+<span class="material-symbols-outlined text-2xl">assignment</span>
+<span class="text-[10px] font-medium">Protocol</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-slate-500" href="#">
+<span class="material-symbols-outlined text-2xl">shopping_bag</span>
+<span class="text-[10px] font-medium">Shop</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-slate-500" href="#">
+<span class="material-symbols-outlined text-2xl">smart_toy</span>
+<span class="text-[10px] font-medium">AI Chat</span>
+</a>
+</div>
+</div>
+</div>
+</body></html>
