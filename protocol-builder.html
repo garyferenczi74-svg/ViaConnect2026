@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ViaConnect™ GeneX360 | Protocol Builder</title>
+<!-- Tailwind CSS v3 -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Google Fonts: Inter and Clash Display (Fallback) -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              navy: '#0A0F1C',
+              darker: '#05080F',
+              amber: '#F59E0B',
+              glass: 'rgba(255, 255, 255, 0.05)',
+            },
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            display: ['Clash Display', 'Inter', 'sans-serif'],
+          },
+        },
+      },
+    }
+  </script>
+<style data-purpose="custom-animations">
+    @keyframes amberGlow {
+      0%, 100% { box-shadow: 0 0 5px rgba(245, 158, 11, 0.2); }
+      50% { box-shadow: 0 0 15px rgba(245, 158, 11, 0.5); }
+    }
+    .amber-glow { animation: amberGlow 3s infinite; }
+    .glass-card {
+      background: rgba(255, 255, 255, 0.03);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    body {
+      background: radial-gradient(circle at top right, #111827, #0A0F1C);
+      color: #E5E7EB;
+    }
+  </style>
+</head>
+<body class="min-h-screen font-sans">
+<!-- BEGIN: MainHeader -->
+<header class="sticky top-0 z-50 px-4 py-4 glass-card border-b border-white/10" data-purpose="header-section">
+<div class="flex items-center justify-between mb-2">
+<button aria-label="Go back" class="flex items-center text-gray-400 text-sm">
+<svg class="h-5 w-5 mr-1" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M15 19l-7-7 7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+        Back
+      </button>
+<div class="text-xs font-bold tracking-widest text-white/40 uppercase">ViaConnect™ GeneX360</div>
+</div>
+<h1 class="text-2xl font-bold text-brand-amber font-display tracking-tight">Protocol Builder</h1>
+</header>
+<!-- END: MainHeader -->
+<main class="pb-32">
+<!-- BEGIN: HerbSelectionSection -->
+<section class="px-4 mt-6" data-purpose="herb-database">
+<div class="flex items-center justify-between mb-4">
+<h2 class="text-lg font-semibold text-white/90">Herb Database</h2>
+<span class="text-xs text-gray-500">500+ botanicals</span>
+</div>
+<!-- Search and Filter -->
+<div class="space-y-4">
+<div class="relative">
+<input class="w-full bg-brand-glass border-white/10 rounded-xl py-3 pl-11 text-sm text-white focus:border-brand-amber focus:ring-1 focus:ring-brand-amber placeholder:text-gray-500" placeholder="Search 500+ botanicals..." type="text"/>
+<svg class="h-5 w-5 absolute left-4 top-3.5 text-gray-500" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</div>
+<div class="flex overflow-x-auto space-x-2 no-scrollbar pb-2">
+<button class="px-4 py-1.5 rounded-full text-sm font-medium bg-brand-amber text-black shadow-[0_0_10px_rgba(245,158,11,0.4)]">All</button>
+<button class="px-4 py-1.5 rounded-full text-sm font-medium bg-brand-glass border border-white/10 text-gray-400 whitespace-nowrap">Adaptogens</button>
+<button class="px-4 py-1.5 rounded-full text-sm font-medium bg-brand-glass border border-white/10 text-gray-400 whitespace-nowrap">Nervines</button>
+<button class="px-4 py-1.5 rounded-full text-sm font-medium bg-brand-glass border border-white/10 text-gray-400 whitespace-nowrap">Hepatics</button>
+<button class="px-4 py-1.5 rounded-full text-sm font-medium bg-brand-glass border border-white/10 text-gray-400 whitespace-nowrap">Tonics</button>
+</div>
+</div>
+<!-- Herb List -->
+<div class="mt-4 space-y-3">
+<!-- Card 1 -->
+<div class="glass-card p-4 rounded-2xl flex items-center justify-between" data-purpose="herb-card">
+<div>
+<h3 class="font-bold text-white">Ashwagandha</h3>
+<p class="text-xs italic text-gray-400">Withania somnifera</p>
+<div class="flex items-center mt-2 space-x-2">
+<span class="text-[10px] px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-400 border border-blue-500/20 uppercase tracking-tighter">Adaptogen</span>
+<span class="text-brand-amber text-xs">⭐⭐⭐</span>
+</div>
+</div>
+<button class="bg-brand-glass border border-brand-amber/30 text-brand-amber px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-brand-amber hover:text-black transition-colors">
+            + Add
+          </button>
+</div>
+<!-- Card 2 -->
+<div class="glass-card p-4 rounded-2xl flex items-center justify-between" data-purpose="herb-card">
+<div>
+<h3 class="font-bold text-white">Rhodiola</h3>
+<p class="text-xs italic text-gray-400">Rhodiola rosea</p>
+<div class="flex items-center mt-2 space-x-2">
+<span class="text-[10px] px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-400 border border-blue-500/20 uppercase tracking-tighter">Adaptogen</span>
+<span class="text-brand-amber text-xs">⭐⭐⭐</span>
+</div>
+</div>
+<button class="bg-brand-glass border border-brand-amber/30 text-brand-amber px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-brand-amber hover:text-black transition-colors">
+            + Add
+          </button>
+</div>
+<!-- Card 3 -->
+<div class="glass-card p-4 rounded-2xl flex items-center justify-between" data-purpose="herb-card">
+<div>
+<h3 class="font-bold text-white">Milk Thistle</h3>
+<p class="text-xs italic text-gray-400">Silybum marianum</p>
+<div class="flex items-center mt-2 space-x-2">
+<span class="text-[10px] px-2 py-0.5 rounded-md bg-green-500/10 text-green-400 border border-green-500/20 uppercase tracking-tighter">Hepatic</span>
+<span class="text-brand-amber text-xs">⭐⭐⭐</span>
+</div>
+</div>
+<button class="bg-brand-glass border border-brand-amber/30 text-brand-amber px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-brand-amber hover:text-black transition-colors">
+            + Add
+          </button>
+</div>
+</div>
+</section>
+<!-- END: HerbSelectionSection -->
+<!-- BEGIN: FormulationBuilderSection -->
+<section class="px-4 mt-8" data-purpose="formulation-builder">
+<div class="glass-card p-5 rounded-3xl border-brand-amber/20 shadow-xl">
+<div class="flex items-center justify-between mb-4">
+<input class="bg-transparent border-none text-xl font-bold text-white p-0 focus:ring-0 w-full" data-purpose="editable-title" type="text" value="Adrenal Support Protocol"/>
+<svg class="h-4 w-4 text-brand-amber ml-2" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</div>
+<div class="grid grid-cols-2 gap-3 mb-6">
+<div class="space-y-1">
+<label class="text-[10px] uppercase text-gray-500 font-bold ml-1">Patient</label>
+<select class="w-full bg-brand-darker border-white/10 rounded-lg text-xs text-white py-2">
+<option>James Wilson</option>
+<option>Sarah Parker</option>
+</select>
+</div>
+<div class="space-y-1">
+<label class="text-[10px] uppercase text-gray-500 font-bold ml-1">Form Type</label>
+<select class="w-full bg-brand-darker border-white/10 rounded-lg text-xs text-white py-2">
+<option>Tincture</option>
+<option>Encapsulation</option>
+</select>
+</div>
+</div>
+<!-- Formula List -->
+<div class="space-y-2" data-purpose="active-formula-list">
+<div class="grid grid-cols-12 gap-1 text-[10px] uppercase text-gray-500 font-bold px-2 mb-1">
+<div class="col-span-4">Herb</div>
+<div class="col-span-3 text-center">Ratio</div>
+<div class="col-span-2 text-center">ml</div>
+<div class="col-span-3 text-right">%</div>
+</div>
+<!-- Herb Items -->
+<div class="grid grid-cols-12 gap-1 bg-white/5 p-2 rounded-lg items-center text-sm">
+<div class="col-span-4 font-medium truncate">Ashwagandha</div>
+<div class="col-span-3 text-center text-xs">3</div>
+<div class="col-span-2 text-center text-xs">30</div>
+<div class="col-span-3 text-right text-brand-amber font-mono">30%</div>
+</div>
+<div class="grid grid-cols-12 gap-1 bg-white/5 p-2 rounded-lg items-center text-sm">
+<div class="col-span-4 font-medium truncate">Rhodiola</div>
+<div class="col-span-3 text-center text-xs">2</div>
+<div class="col-span-2 text-center text-xs">20</div>
+<div class="col-span-3 text-right text-brand-amber font-mono">20%</div>
+</div>
+<div class="grid grid-cols-12 gap-1 bg-white/5 p-2 rounded-lg items-center text-sm border border-brand-amber/30">
+<div class="col-span-4 font-medium truncate">Licorice</div>
+<div class="col-span-3 text-center text-xs">1</div>
+<div class="col-span-2 text-center text-xs">10</div>
+<div class="col-span-3 text-right text-brand-amber font-mono">10%</div>
+</div>
+<div class="grid grid-cols-12 gap-1 bg-white/5 p-2 rounded-lg items-center text-sm">
+<div class="col-span-4 font-medium truncate">Holy Basil</div>
+<div class="col-span-3 text-center text-xs">2</div>
+<div class="col-span-2 text-center text-xs">20</div>
+<div class="col-span-3 text-right text-brand-amber font-mono">20%</div>
+</div>
+<div class="grid grid-cols-12 gap-1 bg-white/5 p-2 rounded-lg items-center text-sm">
+<div class="col-span-4 font-medium truncate">Schisandra</div>
+<div class="col-span-3 text-center text-xs">2</div>
+<div class="col-span-2 text-center text-xs">20</div>
+<div class="col-span-3 text-right text-brand-amber font-mono">20%</div>
+</div>
+<!-- Total -->
+<div class="grid grid-cols-12 gap-1 mt-4 border-t border-white/10 pt-3 px-2">
+<div class="col-span-7 font-bold text-white">Total Volume</div>
+<div class="col-span-2 text-center text-brand-amber font-bold">100ml</div>
+<div class="col-span-3 text-right text-brand-amber font-bold">100%</div>
+</div>
+</div>
+</div>
+</section>
+<!-- END: FormulationBuilderSection -->
+<!-- BEGIN: SafetyCheckPanel -->
+<section class="px-4 mt-8" data-purpose="safety-check">
+<div class="glass-card p-5 rounded-3xl border-l-4 border-l-brand-amber shadow-lg bg-orange-950/5">
+<div class="flex items-center justify-between mb-4">
+<h2 class="text-sm font-bold uppercase tracking-widest text-brand-amber">Safety Analysis</h2>
+<div class="px-2 py-1 bg-brand-amber text-black text-[10px] font-black rounded amber-glow">SAFE WITH MONITORING</div>
+</div>
+<div class="space-y-3">
+<div class="flex items-start gap-3">
+<div class="bg-brand-amber/20 p-1.5 rounded-full mt-0.5">
+<svg class="h-4 w-4 text-brand-amber" fill="currentColor" viewbox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" fill-rule="evenodd"></path>
+</svg>
+</div>
+<div>
+<p class="text-sm font-bold text-white">Licorice: Blood Pressure</p>
+<p class="text-xs text-gray-400">Monitor BP due to potential glycyrrhizin interaction. Patient has high genetic sensitivity.</p>
+</div>
+</div>
+<div class="flex items-start gap-3">
+<div class="bg-green-500/20 p-1.5 rounded-full mt-0.5">
+<svg class="h-4 w-4 text-green-500" fill="currentColor" viewbox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" fill-rule="evenodd"></path>
+</svg>
+</div>
+<div>
+<p class="text-sm font-bold text-white">Herb-Drug Interaction</p>
+<p class="text-xs text-gray-400">No conflicts found with current medication list (Metformin).</p>
+</div>
+</div>
+<div class="flex items-start gap-3">
+<div class="bg-green-500/20 p-1.5 rounded-full mt-0.5">
+<svg class="h-4 w-4 text-green-500" fill="currentColor" viewbox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" fill-rule="evenodd"></path>
+</svg>
+</div>
+<div>
+<p class="text-sm font-bold text-white">Gene-Herb Conflict</p>
+<p class="text-xs text-gray-400">All botanicals are compatible with patient's CYP2D6 metabolizer profile.</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- END: SafetyCheckPanel -->
+<!-- BEGIN: BottomActions -->
+<div class="fixed bottom-0 left-0 right-0 p-4 glass-card bg-brand-darker/90 backdrop-blur-xl border-t border-white/10 z-[60]" data-purpose="bottom-sticky-actions">
+<div class="max-w-md mx-auto space-y-4">
+<div class="space-y-1">
+<label class="text-[10px] uppercase text-gray-500 font-bold ml-1">Dosage Instructions</label>
+<textarea class="w-full bg-brand-glass border-white/10 rounded-xl text-xs text-white placeholder:text-gray-600 focus:ring-brand-amber" rows="2">30 drops (1.5ml) in warm water, 3x daily before meals. Shake well before use.</textarea>
+</div>
+<div class="flex gap-3">
+<button class="flex-1 py-3 border border-brand-amber/50 text-brand-amber rounded-xl text-sm font-bold hover:bg-brand-amber/10 transition-colors uppercase tracking-wider">
+            Generate Label
+          </button>
+<button class="flex-[1.5] py-3 bg-gradient-to-r from-amber-500 to-orange-600 text-black rounded-xl text-sm font-bold hover:opacity-90 shadow-[0_4px_15px_rgba(245,158,11,0.3)] uppercase tracking-wider">
+            Assign to Patient
+          </button>
+</div>
+</div>
+</div>
+<!-- END: BottomActions -->
+</main>
+</body></html>
