@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Protocol Adherence Monitoring | ViaConnect</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            dark: '#111827',
+            glass: 'rgba(31, 41, 55, 0.7)',
+            brandGreen: '#4ade80',
+          }
+        }
+      }
+    }
+  </script>
+<style data-purpose="custom-glassmorphism">
+    .glass-card {
+      background: rgba(31, 41, 55, 0.6);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
+</head>
+<body class="bg-dark text-gray-100 font-sans min-h-screen">
+<!-- BEGIN: MainHeader -->
+<header class="p-4 border-b border-gray-800" data-purpose="site-header">
+<div class="flex items-center gap-2 mb-1">
+<div class="w-6 h-6 bg-brandGreen rounded-full flex items-center justify-center">
+<svg class="w-4 h-4 text-dark" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3Z"></path></svg>
+</div>
+<h1 class="font-bold text-lg">Personal Wellness Portal</h1>
+</div>
+<p class="text-gray-500 text-xs">ViaConnect&trade; AI-Powered Health</p>
+</header>
+<!-- END: MainHeader -->
+<!-- BEGIN: Navigation -->
+<nav class="overflow-x-auto whitespace-nowrap px-4 py-3 flex gap-2 no-scrollbar" data-purpose="pill-navigation">
+<a class="px-4 py-1.5 rounded-full bg-gray-800 text-sm" href="index.html">Dashboard</a>
+<a class="px-4 py-1.5 rounded-full bg-gray-800 text-sm" href="genetics.html">Genetics</a>
+<a class="px-4 py-1.5 rounded-full bg-gray-800 text-sm" href="variants.html">Variants</a>
+<a class="px-4 py-1.5 rounded-full bg-gray-800 text-sm" href="biomarkers.html">Bio</a>
+<a class="px-4 py-1.5 rounded-full bg-gray-800 text-sm" href="plans.html">Plans</a>
+<a class="px-4 py-1.5 rounded-full bg-brandGreen text-dark font-semibold text-sm" href="track.html">Track</a>
+<a class="px-4 py-1.5 rounded-full bg-gray-800 text-sm" href="#">Share</a>
+<a class="px-4 py-1.5 rounded-full bg-gray-800 text-sm" href="#">Insights</a>
+</nav>
+<!-- END: Navigation -->
+<!-- BEGIN: PageTitle -->
+<main class="px-4 py-6">
+<section class="mb-6">
+<h2 class="text-2xl font-bold mb-1">Protocol Adherence Monitoring</h2>
+<p class="text-gray-400 text-sm">Track your daily progress and build healthy habits.</p>
+</section>
+<!-- END: PageTitle -->
+<!-- BEGIN: TodayProtocolCard -->
+<section class="glass-card border border-brandGreen/30 rounded-2xl p-4 mb-6" data-purpose="daily-checklist-container">
+<div class="flex justify-between items-start mb-4">
+<div>
+<h3 class="font-bold text-lg">Today's Protocol</h3>
+<p class="text-xs text-gray-500">Check off items as you complete them</p>
+</div>
+<div class="text-right">
+<span class="text-red-500 font-bold block">0%</span>
+<span class="text-[10px] text-gray-500 uppercase tracking-wider">0/5 completed</span>
+</div>
+</div>
+<!-- Progress Bar -->
+<div class="w-full bg-gray-800 h-1.5 rounded-full mb-6 overflow-hidden">
+<div class="bg-brandGreen h-full w-[0%]"></div>
+</div>
+<!-- Checklist Items -->
+<div class="space-y-3">
+<!-- Item 1 -->
+<div class="glass-card border border-brandGreen/20 p-3 rounded-xl flex items-center gap-3">
+<div class="w-6 h-6 rounded-full border-2 border-brandGreen/50 flex-shrink-0"></div>
+<div class="flex-grow">
+<h4 class="text-sm font-medium">Methylfolate 800mcg</h4>
+<p class="text-[10px] text-gray-400">Morning</p>
+</div>
+<span class="text-[9px] px-2 py-0.5 rounded-md bg-brandGreen/10 text-brandGreen uppercase font-bold">Supplement</span>
+</div>
+<!-- Item 2 -->
+<div class="glass-card border border-brandGreen/20 p-3 rounded-xl flex items-center gap-3">
+<div class="w-6 h-6 rounded-full border-2 border-brandGreen/50 flex-shrink-0"></div>
+<div class="flex-grow">
+<h4 class="text-sm font-medium">Magnesium Glycinate 400mg</h4>
+<p class="text-[10px] text-gray-400">Evening</p>
+</div>
+<span class="text-[9px] px-2 py-0.5 rounded-md bg-brandGreen/10 text-brandGreen uppercase font-bold">Supplement</span>
+</div>
+<!-- Item 3 -->
+<div class="glass-card border border-brandGreen/20 p-3 rounded-xl flex items-center gap-3">
+<div class="w-6 h-6 rounded-full border-2 border-brandGreen/50 flex-shrink-0"></div>
+<div class="flex-grow">
+<h4 class="text-sm font-medium">Omega-3 2000mg</h4>
+<p class="text-[10px] text-gray-400">With meal</p>
+</div>
+<span class="text-[9px] px-2 py-0.5 rounded-md bg-brandGreen/10 text-brandGreen uppercase font-bold">Supplement</span>
+</div>
+<!-- Item 4 -->
+<div class="glass-card border border-brandGreen/20 p-3 rounded-xl flex items-center gap-3">
+<div class="w-6 h-6 rounded-full border-2 border-brandGreen/50 flex-shrink-0"></div>
+<div class="flex-grow">
+<h4 class="text-sm font-medium">30min Moderate Exercise</h4>
+<p class="text-[10px] text-gray-400">Anytime</p>
+</div>
+<span class="text-[9px] px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-400 uppercase font-bold">Lifestyle</span>
+</div>
+<!-- Item 5 -->
+<div class="glass-card border border-brandGreen/20 p-3 rounded-xl flex items-center gap-3">
+<div class="w-6 h-6 rounded-full border-2 border-brandGreen/50 flex-shrink-0"></div>
+<div class="flex-grow">
+<h4 class="text-sm font-medium">7-9 hours Quality Sleep</h4>
+<p class="text-[10px] text-gray-400">By 10:30 PM</p>
+</div>
+<span class="text-[9px] px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-400 uppercase font-bold">Lifestyle</span>
+</div>
+</div>
+</section>
+<!-- END: TodayProtocolCard -->
+<!-- BEGIN: StatsGrid -->
+<div class="grid grid-cols-2 gap-4">
+<!-- Weekly Adherence -->
+<section class="glass-card p-3 rounded-2xl border border-gray-800">
+<div class="flex items-center gap-1.5 mb-3">
+<svg class="w-4 h-4 text-brandGreen" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+<h3 class="text-xs font-bold">Weekly Adherence</h3>
+</div>
+<div class="flex flex-wrap gap-2 justify-center">
+<div class="flex flex-col items-center gap-1">
+<div class="w-6 h-6 rounded-full bg-brandGreen flex items-center justify-center text-[8px] text-dark font-bold">M</div>
+</div>
+<div class="flex flex-col items-center gap-1">
+<div class="w-6 h-6 rounded-full bg-yellow-400 flex items-center justify-center text-[8px] text-dark font-bold">T</div>
+</div>
+<div class="flex flex-col items-center gap-1">
+<div class="w-6 h-6 rounded-full bg-brandGreen flex items-center justify-center text-[8px] text-dark font-bold">W</div>
+</div>
+<div class="flex flex-col items-center gap-1">
+<div class="w-6 h-6 rounded-full bg-brandGreen flex items-center justify-center text-[8px] text-dark font-bold">T</div>
+</div>
+<div class="flex flex-col items-center gap-1">
+<div class="w-6 h-6 rounded-full bg-pink-500 flex items-center justify-center text-[8px] text-dark font-bold">F</div>
+</div>
+<div class="flex flex-col items-center gap-1">
+<div class="w-6 h-6 rounded-full bg-brandGreen flex items-center justify-center text-[8px] text-dark font-bold">S</div>
+</div>
+<div class="flex flex-col items-center gap-1">
+<div class="w-6 h-6 rounded-full bg-orange-500 flex items-center justify-center text-[8px] text-dark font-bold">S</div>
+</div>
+</div>
+</section>
+<!-- Achievements -->
+<section class="glass-card p-3 rounded-2xl border border-gray-800">
+<div class="flex items-center gap-1.5 mb-3">
+<svg class="w-4 h-4 text-brandGreen" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+<h3 class="text-xs font-bold">Achievements</h3>
+</div>
+<div class="flex gap-2 justify-center">
+<!-- Earned Badge -->
+<div class="relative group" data-purpose="earned-badge">
+<div class="w-10 h-10 rounded-lg bg-brandGreen/20 border border-brandGreen flex items-center justify-center">
+<svg class="w-5 h-5 text-brandGreen" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15.362 5.214A8.252 8.252 0 0112 21 8.25 8.25 0 016.038 7.048 8.287 8.287 0 009 9.6a8.983 8.983 0 013.361-6.867 8.21 8.21 0 003 2.48z"></path></svg>
+</div>
+<span class="block text-[8px] text-center mt-1 text-brandGreen font-bold">7-Day</span>
+</div>
+<!-- Locked Badge -->
+<div class="relative grayscale opacity-40" data-purpose="locked-badge">
+<div class="w-10 h-10 rounded-lg bg-gray-800 border border-gray-700 flex items-center justify-center">
+<svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M16.5 18.75h-9m9 0a3 3 0 013 3h-15a3 3 0 013-3m9 0v-4.5A3.375 3.375 0 0012.75 10.5h-1.5A3.375 3.375 0 007.5 14.25v4.5"></path></svg>
+</div>
+<span class="block text-[8px] text-center mt-1">Perfect</span>
+</div>
+</div>
+</section>
+</div>
+<!-- END: StatsGrid -->
+</main>
+</body></html>
