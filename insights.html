@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<title>AI Insights - Personal Wellness Portal</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<style data-purpose="glassmorphism-ui">
+    .glass-card {
+      background: rgba(31, 41, 55, 0.7);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(74, 222, 128, 0.3);
+    }
+    .glass-muted {
+      background: rgba(31, 41, 55, 0.5);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .hide-scrollbar::-webkit-scrollbar { display: none; }
+    .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
+</head>
+<body class="bg-[#111827] text-white font-sans antialiased min-h-screen">
+
+<!-- Header -->
+<header class="pt-6 px-4 space-y-4" data-purpose="portal-header">
+<div class="flex items-center justify-between">
+<button onclick="window.location.href='index.html'" class="bg-gray-800/80 text-xs font-medium px-4 py-1.5 rounded-full border border-gray-700 flex items-center gap-2">
+<svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+Main Menu
+</button>
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 bg-[#4ade80] rounded-full flex items-center justify-center shadow-[0_0_10px_rgba(74,222,128,0.5)]">
+<svg class="h-4 w-4 text-[#111827]" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l2.4 7.2h7.6l-6 4.8 2.4 7.2-6-4.8-6 4.8 2.4-7.2-6-4.8h7.6z"></path></svg>
+</div>
+<h1 class="font-bold text-lg tracking-tight">Personal Wellness Portal</h1>
+</div>
+</div>
+<!-- Navigation -->
+<nav class="flex overflow-x-auto gap-2 py-2 hide-scrollbar" data-purpose="pill-navigation">
+<a class="px-4 py-2 rounded-full bg-gray-800 text-sm whitespace-nowrap" href="index.html">Dashboard</a>
+<a class="px-4 py-2 rounded-full bg-gray-800 text-sm whitespace-nowrap" href="genetics.html">Genetics</a>
+<a class="px-4 py-2 rounded-full bg-gray-800 text-sm whitespace-nowrap" href="variants.html">Variants</a>
+<a class="px-4 py-2 rounded-full bg-gray-800 text-sm whitespace-nowrap" href="biomarkers.html">Bio</a>
+<a class="px-4 py-2 rounded-full bg-gray-800 text-sm whitespace-nowrap" href="plans.html">Plans</a>
+<a class="px-4 py-2 rounded-full bg-gray-800 text-sm whitespace-nowrap" href="track.html">Track</a>
+<a class="px-4 py-2 rounded-full bg-gray-800 text-sm whitespace-nowrap" href="share.html">Share</a>
+<a class="px-4 py-2 rounded-full bg-[#4ade80] text-[#111827] font-bold text-sm whitespace-nowrap" href="insights.html">Insights</a>
+</nav>
+</header>
+
+<main class="p-4 space-y-6">
+
+<!-- Page Title -->
+<section>
+<h2 class="text-2xl font-bold mb-1">AI Health Insights</h2>
+<p class="text-gray-400 text-sm">Correlations discovered across your genetics, biomarkers, and lifestyle data.</p>
+</section>
+
+<!-- Priority Insights -->
+<section class="space-y-4" data-purpose="priority-insights">
+
+<!-- Critical Insight -->
+<div class="glass-card rounded-2xl overflow-hidden shadow-2xl shadow-[rgba(74,222,128,0.05)]">
+<div class="bg-[#4ade80] px-4 py-3 flex items-center gap-2">
+<svg class="h-5 w-5 text-[#111827]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span class="font-bold text-[#111827]">Priority Insight</span>
+<span class="ml-auto text-[10px] font-bold text-[#111827]/60 uppercase tracking-wider">Today</span>
+</div>
+<div class="p-5">
+<h3 class="font-bold text-lg mb-2">LDL + MTHFR + Homocysteine Correlation</h3>
+<div class="flex flex-wrap gap-2 mb-4">
+<span class="px-2 py-0.5 text-[10px] font-bold bg-red-500/20 text-red-400 rounded uppercase">LDL 128 mg/dL</span>
+<span class="px-2 py-0.5 text-[10px] font-bold bg-yellow-500/20 text-yellow-400 rounded uppercase">MTHFR C677T</span>
+<span class="px-2 py-0.5 text-[10px] font-bold bg-yellow-500/20 text-yellow-400 rounded uppercase">Homocysteine 12.4</span>
+</div>
+<p class="text-sm text-gray-300 leading-relaxed mb-4">
+Your elevated <span class="text-red-400 font-medium">LDL (128 mg/dL)</span> combined with <span class="text-[#4ade80] font-medium">MTHFR C677T heterozygous</span> status is driving homocysteine up to 12.4 &mu;mol/L. This creates a compounding cardiovascular risk pattern. Your current Omega-3 + L-Methylfolate protocol has reduced LDL by <span class="text-[#4ade80] font-medium">7 mg/dL over 4 weeks</span>&mdash;continue and consider adding berberine for accelerated results.
+</p>
+<div class="flex items-center justify-between pt-4 border-t border-gray-800">
+<span class="text-[10px] text-gray-500 italic uppercase tracking-widest">Multi-Source Correlation</span>
+<button class="text-[#4ade80] text-xs font-bold uppercase tracking-widest hover:underline">View Full Analysis &rarr;</button>
+</div>
+</div>
+</div>
+
+<!-- Positive Insight -->
+<div class="glass-card rounded-2xl p-5">
+<div class="flex items-start gap-3 mb-3">
+<div class="p-2 bg-[#4ade80]/10 rounded-lg flex-shrink-0 mt-0.5">
+<svg class="h-5 w-5 text-[#4ade80]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0112 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0112 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</div>
+<div>
+<div class="flex items-center gap-2 mb-1">
+<h3 class="font-bold text-sm">Sleep &amp; HRV Optimization Working</h3>
+<span class="text-[9px] px-2 py-0.5 bg-[#4ade80]/20 text-[#4ade80] rounded font-bold uppercase">Positive</span>
+</div>
+<p class="text-xs text-gray-400 leading-relaxed">Your HRV has increased <span class="text-[#4ade80] font-medium">4% over the past week</span> (64ms &rarr; 68ms), correlating with improved sleep efficiency at 93%. Your CYP1A2 fast-metabolizer status means caffeine before 2 PM isn't affecting sleep&mdash;keep current timing.</p>
+</div>
+</div>
+<div class="flex gap-2">
+<span class="px-2 py-0.5 text-[9px] bg-gray-800 text-gray-400 rounded border border-gray-700">HRV +4%</span>
+<span class="px-2 py-0.5 text-[9px] bg-gray-800 text-gray-400 rounded border border-gray-700">Sleep 93%</span>
+<span class="px-2 py-0.5 text-[9px] bg-gray-800 text-gray-400 rounded border border-gray-700">CYP1A2 A/A</span>
+</div>
+</div>
+
+<!-- Watchlist Insight -->
+<div class="glass-card rounded-2xl p-5">
+<div class="flex items-start gap-3 mb-3">
+<div class="p-2 bg-yellow-500/10 rounded-lg flex-shrink-0 mt-0.5">
+<svg class="h-5 w-5 text-yellow-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" stroke-linecap="round" stroke-linejoin="round"></path><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</div>
+<div>
+<div class="flex items-center gap-2 mb-1">
+<h3 class="font-bold text-sm">Evening Adherence &amp; COMT Variant</h3>
+<span class="text-[9px] px-2 py-0.5 bg-yellow-500/20 text-yellow-400 rounded font-bold uppercase">Watch</span>
+</div>
+<p class="text-xs text-gray-400 leading-relaxed">Your <span class="text-yellow-400 font-medium">evening protocol adherence dropped to 68%</span>, particularly Glycine and sleep hygiene. Your COMT Val/Met variant means dopamine drops faster in the evening, reducing motivation for routine tasks. Try stacking evening supplements with an existing habit (toothbrushing) to boost compliance.</p>
+</div>
+</div>
+<div class="flex gap-2">
+<span class="px-2 py-0.5 text-[9px] bg-gray-800 text-gray-400 rounded border border-gray-700">COMT Val/Met</span>
+<span class="px-2 py-0.5 text-[9px] bg-gray-800 text-gray-400 rounded border border-gray-700">PM Adherence 68%</span>
+<span class="px-2 py-0.5 text-[9px] bg-gray-800 text-gray-400 rounded border border-gray-700">Glycine missed</span>
+</div>
+</div>
+
+<!-- Nutrient Insight -->
+<div class="glass-card rounded-2xl p-5">
+<div class="flex items-start gap-3 mb-3">
+<div class="p-2 bg-blue-500/10 rounded-lg flex-shrink-0 mt-0.5">
+<svg class="h-5 w-5 text-blue-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19 14.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</div>
+<div>
+<div class="flex items-center gap-2 mb-1">
+<h3 class="font-bold text-sm">Vitamin D &amp; VDR Variant Synergy</h3>
+<span class="text-[9px] px-2 py-0.5 bg-blue-500/20 text-blue-400 rounded font-bold uppercase">Info</span>
+</div>
+<p class="text-xs text-gray-400 leading-relaxed">Your VDR variant (rs731236 AA) reduces vitamin D receptor efficiency. Current level at <span class="text-[#4ade80] font-medium">58 ng/mL</span> is good but your genetic profile suggests maintaining &gt;60 ng/mL for optimal immune function. Your D3 + K2 protocol is well-calibrated&mdash;continue at 5000 IU daily.</p>
+</div>
+</div>
+<div class="flex gap-2">
+<span class="px-2 py-0.5 text-[9px] bg-gray-800 text-gray-400 rounded border border-gray-700">VDR rs731236</span>
+<span class="px-2 py-0.5 text-[9px] bg-gray-800 text-gray-400 rounded border border-gray-700">Vit D 58 ng/mL</span>
+<span class="px-2 py-0.5 text-[9px] bg-gray-800 text-gray-400 rounded border border-gray-700">D3+K2 5000 IU</span>
+</div>
+</div>
+</section>
+
+<!-- Trend Correlations -->
+<section class="space-y-3">
+<h3 class="text-sm font-bold uppercase tracking-wider text-[#4ade80]">Trend Correlations</h3>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+<div class="glass-muted rounded-2xl p-4">
+<div class="flex items-center justify-between mb-3">
+<span class="text-xs font-bold text-white">Recovery vs. Sleep</span>
+<span class="text-[9px] px-2 py-0.5 bg-[#4ade80]/20 text-[#4ade80] rounded font-bold">r = 0.87</span>
+</div>
+<div class="space-y-2">
+<div>
+<div class="flex justify-between text-[10px] mb-1"><span class="text-gray-400">Recovery Score</span><span class="text-white">85%</span></div>
+<div class="w-full bg-gray-800 h-1.5 rounded-full"><div class="bg-[#4ade80] h-1.5 rounded-full" style="width:85%"></div></div>
+</div>
+<div>
+<div class="flex justify-between text-[10px] mb-1"><span class="text-gray-400">Sleep Quality</span><span class="text-white">93%</span></div>
+<div class="w-full bg-gray-800 h-1.5 rounded-full"><div class="bg-[#4ade80] h-1.5 rounded-full" style="width:93%"></div></div>
+</div>
+</div>
+<p class="text-[10px] text-gray-500 mt-3">Strong positive correlation detected. Improving sleep quality by 1% predicts ~0.8% recovery gain.</p>
+</div>
+
+<div class="glass-muted rounded-2xl p-4">
+<div class="flex items-center justify-between mb-3">
+<span class="text-xs font-bold text-white">Strain vs. HRV</span>
+<span class="text-[9px] px-2 py-0.5 bg-yellow-500/20 text-yellow-400 rounded font-bold">r = -0.62</span>
+</div>
+<div class="space-y-2">
+<div>
+<div class="flex justify-between text-[10px] mb-1"><span class="text-gray-400">Daily Strain</span><span class="text-white">14.2</span></div>
+<div class="w-full bg-gray-800 h-1.5 rounded-full"><div class="bg-yellow-400 h-1.5 rounded-full" style="width:71%"></div></div>
+</div>
+<div>
+<div class="flex justify-between text-[10px] mb-1"><span class="text-gray-400">HRV</span><span class="text-white">68ms</span></div>
+<div class="w-full bg-gray-800 h-1.5 rounded-full"><div class="bg-[#4ade80] h-1.5 rounded-full" style="width:68%"></div></div>
+</div>
+</div>
+<p class="text-[10px] text-gray-500 mt-3">Moderate negative correlation. High strain days reduce next-day HRV. Rest days after strain &gt;16 recommended.</p>
+</div>
+
+<div class="glass-muted rounded-2xl p-4">
+<div class="flex items-center justify-between mb-3">
+<span class="text-xs font-bold text-white">Adherence vs. LDL Trend</span>
+<span class="text-[9px] px-2 py-0.5 bg-[#4ade80]/20 text-[#4ade80] rounded font-bold">r = -0.74</span>
+</div>
+<div class="space-y-2">
+<div>
+<div class="flex justify-between text-[10px] mb-1"><span class="text-gray-400">Protocol Adherence</span><span class="text-white">87%</span></div>
+<div class="w-full bg-gray-800 h-1.5 rounded-full"><div class="bg-[#4ade80] h-1.5 rounded-full" style="width:87%"></div></div>
+</div>
+<div>
+<div class="flex justify-between text-[10px] mb-1"><span class="text-gray-400">LDL Reduction</span><span class="text-white">-7 mg/dL</span></div>
+<div class="w-full bg-gray-800 h-1.5 rounded-full"><div class="bg-[#4ade80] h-1.5 rounded-full" style="width:54%"></div></div>
+</div>
+</div>
+<p class="text-[10px] text-gray-500 mt-3">Strong correlation between supplement adherence and LDL reduction. Weeks with &gt;90% adherence show 2x faster improvement.</p>
+</div>
+
+<div class="glass-muted rounded-2xl p-4">
+<div class="flex items-center justify-between mb-3">
+<span class="text-xs font-bold text-white">Exercise vs. RHR</span>
+<span class="text-[9px] px-2 py-0.5 bg-[#4ade80]/20 text-[#4ade80] rounded font-bold">r = -0.58</span>
+</div>
+<div class="space-y-2">
+<div>
+<div class="flex justify-between text-[10px] mb-1"><span class="text-gray-400">Zone 2 Sessions/wk</span><span class="text-white">3.2 avg</span></div>
+<div class="w-full bg-gray-800 h-1.5 rounded-full"><div class="bg-[#4ade80] h-1.5 rounded-full" style="width:64%"></div></div>
+</div>
+<div>
+<div class="flex justify-between text-[10px] mb-1"><span class="text-gray-400">Resting HR</span><span class="text-white">58 bpm</span></div>
+<div class="w-full bg-gray-800 h-1.5 rounded-full"><div class="bg-[#4ade80] h-1.5 rounded-full" style="width:42%"></div></div>
+</div>
+</div>
+<p class="text-[10px] text-gray-500 mt-3">Increasing Zone 2 to 4x/week predicted to lower RHR to ~55 bpm within 6 weeks.</p>
+</div>
+</div>
+</section>
+
+<!-- Weekly Summary -->
+<section class="glass-card rounded-2xl p-5 space-y-4">
+<div class="flex items-center justify-between">
+<h3 class="font-bold text-sm uppercase tracking-wider text-white">Weekly Insight Summary</h3>
+<span class="text-[10px] text-gray-500">Mar 11&ndash;18, 2026</span>
+</div>
+<div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+<div class="bg-gray-800/50 rounded-xl p-3 text-center">
+<p class="text-2xl font-bold text-[#4ade80]">12</p>
+<p class="text-[10px] text-gray-500 mt-1">Insights Generated</p>
+</div>
+<div class="bg-gray-800/50 rounded-xl p-3 text-center">
+<p class="text-2xl font-bold text-[#4ade80]">4</p>
+<p class="text-[10px] text-gray-500 mt-1">Actions Taken</p>
+</div>
+<div class="bg-gray-800/50 rounded-xl p-3 text-center">
+<p class="text-2xl font-bold text-yellow-400">2</p>
+<p class="text-[10px] text-gray-500 mt-1">Watchlist Items</p>
+</div>
+<div class="bg-gray-800/50 rounded-xl p-3 text-center">
+<p class="text-2xl font-bold text-[#4ade80]">87%</p>
+<p class="text-[10px] text-gray-500 mt-1">Insight Accuracy</p>
+</div>
+</div>
+</section>
+
+<!-- Disclaimer -->
+<section class="glass-muted rounded-2xl p-4">
+<p class="text-[10px] text-gray-500 leading-relaxed">
+<span class="font-bold text-gray-400">Disclaimer:</span> AI-generated insights are based on correlations in your personal data and published research. They are not medical diagnoses. Always consult your healthcare provider before making clinical decisions. Correlation coefficients (r values) are calculated from your personal data trends over the past 90 days.
+</p>
+</section>
+
+</main>
+
+<div aria-hidden="true" class="h-20"></div>
+</body></html>
