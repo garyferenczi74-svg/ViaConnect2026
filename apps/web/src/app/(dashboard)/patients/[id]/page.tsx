@@ -1,1021 +1,745 @@
 "use client"
 
 import { useState } from "react"
-import Link from "next/link"
 import { useParams } from "next/navigation"
+import Link from "next/link"
 import {
   ArrowLeft,
-  Mail,
-  Phone,
-  MapPin,
-  Calendar,
-  User,
-  Heart,
-  Pill,
-  AlertCircle,
-  Activity,
+  Pencil,
+  FileDown,
   Dna,
-  FileText,
-  ClipboardList,
-  FlaskConical,
-  StickyNote,
-  Plus,
-  ChevronRight,
+  Activity,
   TrendingUp,
   TrendingDown,
-  Minus,
-  Clock,
-  CheckCircle2,
-  XCircle,
+  ClipboardList,
+  Pill,
+  FlaskConical,
+  StickyNote,
   BarChart3,
+  AlertTriangle,
+  Plus,
+  Calendar,
+  Heart,
+  User,
+  FileText,
+  Clock,
+  ChevronRight,
+  CheckCircle2,
+  Shield,
 } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
-import { Separator } from "@/components/ui/separator"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
 
-// ---------------------------------------------------------------------------
-// Mock patient database
-// ---------------------------------------------------------------------------
+// ─── Types ──────────────────────────────────────────────────────────────────
 
-interface MockPatient {
-  id: string
-  firstName: string
-  lastName: string
-  dob: string
-  gender: "Male" | "Female" | "Other"
-  mrn: string
-  email: string
-  phone: string
-  address: string
-  conditions: string[]
-  medications: Array<{ name: string; dosage: string; frequency: string }>
-  supplements: Array<{ name: string; dosage: string; frequency: string }>
-  allergies: string[]
-  vitals: {
-    bp: string
-    hr: string
-    weight: string
-    bmi: string
-    date: string
-  }
-  geneXStatus: "Complete" | "Pending" | "Not Ordered"
-  snps: Array<{
-    gene: string
-    variant: string
-    rsid: string
-    genotype: string
-    phenotype: string
-    significance: "pathogenic" | "likely_pathogenic" | "uncertain" | "likely_benign" | "benign"
-  }>
-  pathwayScores: Array<{
-    pathway: string
-    score: number
-    risk: "Low" | "Moderate" | "High" | "Critical"
-    summary: string
-  }>
-  protocols: Array<{
-    id: string
-    title: string
-    pathway: string
-    status: "active" | "completed" | "draft"
-    startDate: string
-    endDate: string | null
-    progress: number
-  }>
-  labs: Array<{
-    test: string
-    result: string
-    unit: string
-    range: string
-    flag: "normal" | "high" | "low" | "critical"
-    date: string
-  }>
-  notes: Array<{
-    id: string
-    date: string
-    author: string
-    type: string
-    content: string
-  }>
+interface GeneVariant {
+  gene: string
+  variant: string
+  rsid: string
+  genotype: string
+  phenotype: string
+  significance: "pathogenic" | "likely_pathogenic" | "uncertain" | "likely_benign" | "benign"
 }
 
-const PATIENT_DB: Record<string, MockPatient> = {
+interface CYPPhenotype {
+  gene: string
+  phenotype: string
+  level: "normal" | "intermediate" | "poor" | "rapid"
+}
+
+interface Protocol {
+  id: string
+  title: string
+  description: string
+  status: "active" | "pending-review" | "completed" | "draft"
+  daysCurrent: number
+  daysTotal: number
+  pathway: string
+}
+
+interface OutcomeMetric {
+  label: string
+  value: string
+  unit: string
+  change: number
+  baseline: string
+}
+
+interface Medication {
+  name: string
+  dosage: string
+  frequency: string
+  route: string
+  prescriber: string
+  startDate: string
+}
+
+interface Supplement {
+  name: string
+  dosage: string
+  frequency: string
+  protocol: string
+}
+
+interface LabResult {
+  test: string
+  result: string
+  unit: string
+  range: string
+  flag: "normal" | "high" | "low" | "critical"
+  date: string
+  previous?: string
+}
+
+interface ClinicalNote {
+  id: string
+  date: string
+  author: string
+  type: string
+  content: string
+}
+
+interface PatientData {
+  id: string
+  name: string
+  initials: string
+  mrn: string
+  age: number
+  sex: "M" | "F"
+  status: "stable" | "monitoring" | "critical"
+  focus: string
+  cypPhenotypes: CYPPhenotype[]
+  geneVariants: GeneVariant[]
+  protocols: Protocol[]
+  outcomes: OutcomeMetric[]
+  medications: Medication[]
+  supplements: Supplement[]
+  labs: LabResult[]
+  notes: ClinicalNote[]
+  interactions: Array<{ drug: string; supplement: string; severity: "critical" | "moderate" }>
+}
+
+// ─── Mock Data ──────────────────────────────────────────────────────────────
+
+const PATIENT_DB: Record<string, PatientData> = {
   "pt-001": {
     id: "pt-001",
-    firstName: "Maria",
-    lastName: "Gonzalez",
-    dob: "1985-04-12",
-    gender: "Female",
-    mrn: "MRN-2024-00147",
-    email: "maria.gonzalez@email.com",
-    phone: "(415) 555-0182",
-    address: "742 Evergreen Ave, San Francisco, CA 94110",
-    conditions: ["MTHFR C677T homozygous", "Methylation disorder", "Folate deficiency", "Chronic fatigue"],
-    medications: [
-      { name: "Levothyroxine", dosage: "50 mcg", frequency: "Once daily" },
+    name: "Sarah Mitchell",
+    initials: "SM",
+    mrn: "#VM-9928",
+    age: 47,
+    sex: "F",
+    status: "stable",
+    focus: "Metabolic Focus",
+    cypPhenotypes: [
+      { gene: "CYP2C19", phenotype: "Intermediate Metabolizer", level: "intermediate" },
+      { gene: "CYP2D6", phenotype: "Normal Metabolizer", level: "normal" },
+      { gene: "CYP3A4", phenotype: "Normal Metabolizer", level: "normal" },
+      { gene: "CYP1A2", phenotype: "Rapid Metabolizer", level: "rapid" },
     ],
-    supplements: [
-      { name: "L-Methylfolate", dosage: "15 mg", frequency: "Once daily" },
-      { name: "Methylcobalamin (B12)", dosage: "5,000 mcg", frequency: "Once daily" },
-      { name: "Riboflavin (B2)", dosage: "400 mg", frequency: "Once daily" },
-      { name: "Magnesium Glycinate", dosage: "400 mg", frequency: "Twice daily" },
-    ],
-    allergies: ["Penicillin", "Sulfa drugs"],
-    vitals: { bp: "118/76", hr: "72", weight: "143 lbs", bmi: "24.1", date: "2026-03-10" },
-    geneXStatus: "Complete",
-    snps: [
+    geneVariants: [
       { gene: "MTHFR", variant: "C677T", rsid: "rs1801133", genotype: "T/T", phenotype: "Reduced enzyme activity (~30%)", significance: "pathogenic" },
-      { gene: "MTHFR", variant: "A1298C", rsid: "rs1801131", genotype: "A/C", phenotype: "Mildly reduced activity", significance: "likely_benign" },
       { gene: "COMT", variant: "Val158Met", rsid: "rs4680", genotype: "A/G", phenotype: "Intermediate catechol metabolism", significance: "uncertain" },
-      { gene: "CYP2D6", variant: "*4/*1", rsid: "rs3892097", genotype: "G/A", phenotype: "Intermediate metabolizer", significance: "likely_pathogenic" },
+      { gene: "MAOA", variant: "3R", rsid: "rs909525", genotype: "3R/4R", phenotype: "Reduced MAO-A activity", significance: "likely_pathogenic" },
       { gene: "VDR", variant: "Taq1", rsid: "rs731236", genotype: "T/C", phenotype: "Reduced vitamin D receptor expression", significance: "uncertain" },
       { gene: "APOE", variant: "e3/e3", rsid: "rs429358", genotype: "T/T", phenotype: "Normal lipid metabolism", significance: "benign" },
-      { gene: "FTO", variant: "rs9939609", rsid: "rs9939609", genotype: "A/T", phenotype: "Moderate obesity risk increase", significance: "uncertain" },
-    ],
-    pathwayScores: [
-      { pathway: "Methylation", score: 82, risk: "High", summary: "Significantly impaired folate metabolism due to homozygous MTHFR C677T. Requires active folate supplementation." },
-      { pathway: "Detoxification", score: 45, risk: "Moderate", summary: "Intermediate phase II detoxification capacity. Consider glutathione support." },
-      { pathway: "Neurotransmitter", score: 38, risk: "Moderate", summary: "COMT heterozygous status indicates intermediate catecholamine metabolism." },
-      { pathway: "Cardiovascular", score: 22, risk: "Low", summary: "APOE e3/e3 normal variant. Monitor homocysteine given MTHFR status." },
-      { pathway: "Inflammation", score: 55, risk: "Moderate", summary: "Moderate inflammatory pathway activation. Omega-3 and curcumin may be beneficial." },
-      { pathway: "Mitochondrial", score: 30, risk: "Low", summary: "Adequate mitochondrial function markers. CoQ10 support recommended for fatigue." },
     ],
     protocols: [
-      { id: "prot-001", title: "Methylation Optimization Protocol", pathway: "Methylation", status: "active", startDate: "2026-01-15", endDate: "2026-04-15", progress: 65 },
-      { id: "prot-002", title: "Fatigue Recovery Program", pathway: "Mitochondrial", status: "active", startDate: "2026-02-01", endDate: "2026-05-01", progress: 40 },
-      { id: "prot-003", title: "Phase II Detoxification Support", pathway: "Detoxification", status: "completed", startDate: "2025-09-01", endDate: "2025-12-01", progress: 100 },
+      { id: "p1", title: "Methylation Support", description: "Targeting MTHFR variant pathway optimization", status: "active", daysCurrent: 45, daysTotal: 90, pathway: "Methylation" },
+      { id: "p2", title: "Adrenal Recovery", description: "Cortisol rhythm normalization protocol", status: "pending-review", daysCurrent: 0, daysTotal: 60, pathway: "HPA Axis" },
+      { id: "p3", title: "Detox Phase II", description: "Glutathione conjugation support", status: "completed", daysCurrent: 90, daysTotal: 90, pathway: "Detoxification" },
+    ],
+    outcomes: [
+      { label: "AM Cortisol", value: "14.2", unit: "mcg/dL", change: -18, baseline: "17.3" },
+      { label: "Heart Rate Variability", value: "64", unit: "ms", change: 12, baseline: "57" },
+      { label: "Homocysteine", value: "8.2", unit: "umol/L", change: -45, baseline: "14.8" },
+      { label: "Serum Folate", value: "22.4", unit: "ng/mL", change: 68, baseline: "13.3" },
+    ],
+    medications: [
+      { name: "Levothyroxine", dosage: "50 mcg", frequency: "Once daily", route: "Oral", prescriber: "Dr. James Chen", startDate: "2025-06-15" },
+      { name: "Escitalopram", dosage: "10 mg", frequency: "Once daily", route: "Oral", prescriber: "Dr. James Chen", startDate: "2025-09-01" },
+    ],
+    supplements: [
+      { name: "L-Methylfolate", dosage: "15 mg daily", frequency: "Once daily", protocol: "Methylation Support" },
+      { name: "Methylcobalamin (B12)", dosage: "5,000 mcg daily", frequency: "Once daily", protocol: "Methylation Support" },
+      { name: "Riboflavin (B2)", dosage: "400 mg daily", frequency: "Once daily", protocol: "Methylation Support" },
+      { name: "Magnesium Glycinate", dosage: "400 mg", frequency: "Twice daily", protocol: "Adrenal Recovery" },
+      { name: "Curcumin", dosage: "500 mg", frequency: "Twice daily", protocol: "Inflammation" },
     ],
     labs: [
-      { test: "Homocysteine", result: "8.2", unit: "umol/L", range: "5.0-15.0", flag: "normal", date: "2026-03-10" },
+      { test: "Homocysteine", result: "8.2", unit: "umol/L", range: "5.0-15.0", flag: "normal", date: "2026-03-10", previous: "14.8" },
       { test: "Methylmalonic Acid", result: "0.18", unit: "umol/L", range: "0.07-0.27", flag: "normal", date: "2026-03-10" },
-      { test: "Serum Folate", result: "22.4", unit: "ng/mL", range: "3.0-17.0", flag: "high", date: "2026-03-10" },
+      { test: "Serum Folate", result: "22.4", unit: "ng/mL", range: "3.0-17.0", flag: "high", date: "2026-03-10", previous: "13.3" },
       { test: "Vitamin B12", result: "892", unit: "pg/mL", range: "200-900", flag: "normal", date: "2026-03-10" },
-      { test: "Vitamin D, 25-OH", result: "38", unit: "ng/mL", range: "30-100", flag: "normal", date: "2026-03-10" },
+      { test: "Vitamin D, 25-OH", result: "38", unit: "ng/mL", range: "30-100", flag: "normal", date: "2026-03-10", previous: "24" },
       { test: "Ferritin", result: "42", unit: "ng/mL", range: "12-150", flag: "normal", date: "2026-03-10" },
       { test: "TSH", result: "2.8", unit: "mIU/L", range: "0.4-4.0", flag: "normal", date: "2026-03-10" },
-      { test: "hs-CRP", result: "2.4", unit: "mg/L", range: "0.0-3.0", flag: "normal", date: "2026-03-10" },
+      { test: "hs-CRP", result: "2.4", unit: "mg/L", range: "0.0-3.0", flag: "normal", date: "2026-03-10", previous: "4.1" },
     ],
     notes: [
-      { id: "n-001", date: "2026-03-10", author: "Dr. Sarah Mitchell, ND", type: "Follow-up Visit", content: "Patient reports improved energy levels after 8 weeks on methylation protocol. Homocysteine normalized at 8.2. Continue current supplement regimen. Folate levels elevated as expected with L-methylfolate supplementation. Recommend follow-up labs in 6 weeks." },
-      { id: "n-002", date: "2026-02-01", author: "Dr. Sarah Mitchell, ND", type: "Protocol Initiation", content: "Initiated fatigue recovery program targeting mitochondrial support. Added CoQ10 200mg daily and PQQ 20mg daily. Patient educated on dietary modifications including increased cruciferous vegetable intake for detoxification support." },
-      { id: "n-003", date: "2026-01-15", author: "Dr. Sarah Mitchell, ND", type: "Genomic Review", content: "Reviewed GeneX360 panel results with patient. Discussed MTHFR C677T homozygous finding and clinical implications. Started methylation optimization protocol with L-methylfolate 15mg, methylcobalamin 5000mcg, riboflavin 400mg. Baseline homocysteine was 14.8 umol/L." },
-      { id: "n-004", date: "2025-12-15", author: "Dr. James Chen, MD", type: "Referral Note", content: "Patient referred for functional medicine evaluation of chronic fatigue and suspected methylation disorder. Previous workup unremarkable except borderline elevated homocysteine. Recommend comprehensive genomic panel." },
+      { id: "n1", date: "2026-03-10", author: "Dr. Sarah Chen, ND", type: "Follow-up Visit", content: "Patient reports improved energy levels after 8 weeks on methylation protocol. Homocysteine normalized at 8.2 from baseline 14.8. Continue current supplement regimen. Folate levels elevated as expected with L-methylfolate supplementation. Recommend follow-up labs in 6 weeks." },
+      { id: "n2", date: "2026-02-01", author: "Dr. Sarah Chen, ND", type: "Protocol Initiation", content: "Initiated adrenal recovery protocol. Baseline AM cortisol elevated at 17.3 mcg/dL. Started magnesium glycinate 400mg BID and ashwagandha 600mg daily. Patient educated on sleep hygiene and stress management techniques." },
+      { id: "n3", date: "2026-01-15", author: "Dr. Sarah Chen, ND", type: "Genomic Review", content: "Reviewed GeneX360 panel results with patient. Discussed MTHFR C677T homozygous finding and clinical implications. Started methylation optimization protocol with L-methylfolate 15mg, methylcobalamin 5000mcg, riboflavin 400mg. Baseline homocysteine was 14.8 umol/L." },
+    ],
+    interactions: [
+      { drug: "Warfarin", supplement: "Curcumin", severity: "critical" },
     ],
   },
 }
 
-// ---------------------------------------------------------------------------
-// Generate a default patient from the ID
-// ---------------------------------------------------------------------------
-
-function getDefaultPatient(id: string): MockPatient {
+function getDefaultPatient(id: string): PatientData {
   return {
     id,
-    firstName: "Test",
-    lastName: "Patient",
-    dob: "1990-06-15",
-    gender: "Female",
-    mrn: `MRN-2024-${id.replace(/\D/g, "").padStart(5, "0")}`,
-    email: "test.patient@email.com",
-    phone: "(555) 000-0000",
-    address: "100 Main St, Anytown, CA 90210",
-    conditions: ["Hypothyroidism", "Vitamin D deficiency"],
-    medications: [
-      { name: "Levothyroxine", dosage: "75 mcg", frequency: "Once daily" },
+    name: "Test Patient",
+    initials: "TP",
+    mrn: `#VM-${id.replace(/\D/g, "").padStart(4, "0")}`,
+    age: 42,
+    sex: "F",
+    status: "stable",
+    focus: "General Wellness",
+    cypPhenotypes: [
+      { gene: "CYP2D6", phenotype: "Normal Metabolizer", level: "normal" },
+      { gene: "CYP2C19", phenotype: "Normal Metabolizer", level: "normal" },
     ],
-    supplements: [
-      { name: "Vitamin D3", dosage: "5,000 IU", frequency: "Once daily" },
-      { name: "Omega-3 Fish Oil", dosage: "2,000 mg", frequency: "Once daily" },
-    ],
-    allergies: ["None known"],
-    vitals: { bp: "122/78", hr: "68", weight: "155 lbs", bmi: "25.3", date: "2026-03-01" },
-    geneXStatus: "Pending",
-    snps: [
+    geneVariants: [
       { gene: "MTHFR", variant: "C677T", rsid: "rs1801133", genotype: "C/T", phenotype: "Mildly reduced enzyme activity (~65%)", significance: "likely_pathogenic" },
-      { gene: "COMT", variant: "Val158Met", rsid: "rs4680", genotype: "G/G", phenotype: "Fast catechol metabolism (Val/Val)", significance: "benign" },
-      { gene: "CYP2D6", variant: "*1/*1", rsid: "rs3892097", genotype: "G/G", phenotype: "Normal (extensive) metabolizer", significance: "benign" },
-      { gene: "VDR", variant: "Fok1", rsid: "rs2228570", genotype: "C/T", phenotype: "Intermediate vitamin D receptor activity", significance: "uncertain" },
-      { gene: "APOE", variant: "e3/e4", rsid: "rs429358", genotype: "T/C", phenotype: "Elevated cardiovascular & Alzheimer risk", significance: "likely_pathogenic" },
-      { gene: "FTO", variant: "rs9939609", rsid: "rs9939609", genotype: "A/A", phenotype: "Increased obesity risk", significance: "likely_pathogenic" },
-    ],
-    pathwayScores: [
-      { pathway: "Methylation", score: 48, risk: "Moderate", summary: "Heterozygous MTHFR C677T with mildly reduced folate metabolism." },
-      { pathway: "Detoxification", score: 25, risk: "Low", summary: "Adequate detoxification capacity." },
-      { pathway: "Cardiovascular", score: 62, risk: "High", summary: "APOE e3/e4 carrier with elevated lipid risk." },
-      { pathway: "Inflammation", score: 35, risk: "Low", summary: "Low inflammatory marker profile." },
-      { pathway: "Neurotransmitter", score: 20, risk: "Low", summary: "Normal catecholamine metabolism." },
-      { pathway: "Mitochondrial", score: 40, risk: "Moderate", summary: "Mild mitochondrial stress markers." },
+      { gene: "COMT", variant: "Val158Met", rsid: "rs4680", genotype: "G/G", phenotype: "Fast catechol metabolism", significance: "benign" },
     ],
     protocols: [
-      { id: "prot-d01", title: "Thyroid Optimization Protocol", pathway: "Hormonal", status: "active", startDate: "2026-02-10", endDate: "2026-05-10", progress: 35 },
-      { id: "prot-d02", title: "Cardiovascular Risk Mitigation", pathway: "Cardiovascular", status: "draft", startDate: "2026-03-20", endDate: null, progress: 0 },
+      { id: "p1", title: "General Wellness Protocol", description: "Baseline optimization", status: "active", daysCurrent: 30, daysTotal: 90, pathway: "General" },
+    ],
+    outcomes: [
+      { label: "Vitamin D", value: "38", unit: "ng/mL", change: 58, baseline: "24" },
+    ],
+    medications: [],
+    supplements: [
+      { name: "Vitamin D3", dosage: "5,000 IU", frequency: "Once daily", protocol: "General Wellness" },
     ],
     labs: [
-      { test: "TSH", result: "5.2", unit: "mIU/L", range: "0.4-4.0", flag: "high", date: "2026-03-01" },
-      { test: "Free T4", result: "0.9", unit: "ng/dL", range: "0.8-1.8", flag: "normal", date: "2026-03-01" },
-      { test: "Vitamin D, 25-OH", result: "22", unit: "ng/mL", range: "30-100", flag: "low", date: "2026-03-01" },
-      { test: "Total Cholesterol", result: "238", unit: "mg/dL", range: "125-200", flag: "high", date: "2026-03-01" },
-      { test: "LDL", result: "152", unit: "mg/dL", range: "0-100", flag: "high", date: "2026-03-01" },
-      { test: "HDL", result: "54", unit: "mg/dL", range: "40-60", flag: "normal", date: "2026-03-01" },
-      { test: "hs-CRP", result: "1.2", unit: "mg/L", range: "0.0-3.0", flag: "normal", date: "2026-03-01" },
-      { test: "HbA1c", result: "5.4", unit: "%", range: "4.0-5.6", flag: "normal", date: "2026-03-01" },
+      { test: "Vitamin D, 25-OH", result: "38", unit: "ng/mL", range: "30-100", flag: "normal", date: "2026-03-01" },
     ],
     notes: [
-      { id: "n-d01", date: "2026-03-01", author: "Dr. Sarah Mitchell, ND", type: "Initial Evaluation", content: "New patient presenting with fatigue and cold intolerance. TSH mildly elevated at 5.2. Vitamin D insufficient at 22 ng/mL. Started vitamin D3 5,000 IU daily. Ordered GeneX360 panel for comprehensive genomic evaluation. Lipid panel concerning for APOE-related dyslipidemia." },
-      { id: "n-d02", date: "2026-02-10", author: "Dr. Sarah Mitchell, ND", type: "Protocol Initiation", content: "Initiated thyroid optimization protocol. Continue current levothyroxine 75mcg. Added selenium 200mcg and zinc 30mg daily for thyroid support. Dietary guidance: increase iodine-rich foods, reduce goitrogenic vegetables when raw." },
+      { id: "n1", date: "2026-03-01", author: "Dr. Sarah Chen, ND", type: "Initial Evaluation", content: "New patient evaluation. Ordered GeneX360 panel." },
     ],
+    interactions: [],
   }
 }
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
+// ─── Helpers ────────────────────────────────────────────────────────────────
 
-function calculateAge(dob: string): number {
-  const birth = new Date(dob)
-  const today = new Date()
-  let age = today.getFullYear() - birth.getFullYear()
-  const m = today.getMonth() - birth.getMonth()
-  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--
-  return age
+function cypBadgeColor(level: string) {
+  switch (level) {
+    case "normal": return "bg-emerald-400/20 text-emerald-400"
+    case "intermediate": return "bg-yellow-500/20 text-yellow-500"
+    case "poor": return "bg-red-400/20 text-red-400"
+    case "rapid": return "bg-blue-400/20 text-blue-400"
+    default: return "bg-slate-700 text-slate-300"
+  }
+}
+
+function statusConfig(status: string) {
+  switch (status) {
+    case "stable": return { color: "text-emerald-400", bg: "bg-emerald-400", label: "Stable" }
+    case "monitoring": return { color: "text-yellow-400", bg: "bg-yellow-400", label: "Monitoring" }
+    case "critical": return { color: "text-red-400", bg: "bg-red-400", label: "Critical" }
+    default: return { color: "text-slate-400", bg: "bg-slate-400", label: status }
+  }
+}
+
+function labFlagStyle(flag: string) {
+  switch (flag) {
+    case "high": return "text-red-400"
+    case "low": return "text-blue-400"
+    case "critical": return "text-red-400 font-bold"
+    default: return "text-slate-300"
+  }
 }
 
 function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  })
+  return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
 }
 
-function getInitials(first: string, last: string): string {
-  return `${first[0]}${last[0]}`
-}
+// ─── Tab types ──────────────────────────────────────────────────────────────
 
-function significanceBadge(sig: string) {
-  switch (sig) {
-    case "pathogenic":
-      return <Badge variant="destructive">Pathogenic</Badge>
-    case "likely_pathogenic":
-      return <Badge className="border-transparent bg-orange-100 text-orange-800">Likely Pathogenic</Badge>
-    case "uncertain":
-      return <Badge variant="warning">VUS</Badge>
-    case "likely_benign":
-      return <Badge variant="info">Likely Benign</Badge>
-    case "benign":
-      return <Badge variant="success">Benign</Badge>
-    default:
-      return <Badge variant="secondary">{sig}</Badge>
-  }
-}
+type TabId = "protocols" | "medications" | "outcomes" | "labs" | "notes" | "genomics"
 
-function riskBadge(risk: string) {
-  switch (risk) {
-    case "Critical":
-      return <Badge variant="destructive">Critical</Badge>
-    case "High":
-      return <Badge className="border-transparent bg-orange-100 text-orange-800">High Risk</Badge>
-    case "Moderate":
-      return <Badge variant="warning">Moderate</Badge>
-    case "Low":
-      return <Badge variant="success">Low Risk</Badge>
-    default:
-      return <Badge variant="secondary">{risk}</Badge>
-  }
-}
+const TABS: { id: TabId; label: string }[] = [
+  { id: "protocols", label: "Active Protocols" },
+  { id: "medications", label: "Medications" },
+  { id: "outcomes", label: "Outcomes" },
+  { id: "labs", label: "Lab Results" },
+  { id: "notes", label: "Notes" },
+  { id: "genomics", label: "Genomics" },
+]
 
-function riskScoreColor(score: number): string {
-  if (score >= 70) return "text-red-600"
-  if (score >= 50) return "text-orange-500"
-  if (score >= 30) return "text-amber-500"
-  return "text-emerald-600"
-}
-
-function riskBarColor(score: number): string {
-  if (score >= 70) return "bg-red-500"
-  if (score >= 50) return "bg-orange-500"
-  if (score >= 30) return "bg-amber-400"
-  return "bg-emerald-500"
-}
-
-function labFlagBadge(flag: string) {
-  switch (flag) {
-    case "high":
-      return (
-        <span className="inline-flex items-center gap-1 text-xs font-medium text-red-600">
-          <TrendingUp className="h-3 w-3" /> High
-        </span>
-      )
-    case "low":
-      return (
-        <span className="inline-flex items-center gap-1 text-xs font-medium text-blue-600">
-          <TrendingDown className="h-3 w-3" /> Low
-        </span>
-      )
-    case "critical":
-      return (
-        <span className="inline-flex items-center gap-1 text-xs font-medium text-red-700 font-bold">
-          <AlertCircle className="h-3 w-3" /> Critical
-        </span>
-      )
-    default:
-      return (
-        <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-600">
-          <Minus className="h-3 w-3" /> Normal
-        </span>
-      )
-  }
-}
-
-function protocolStatusBadge(status: string) {
-  switch (status) {
-    case "active":
-      return <Badge variant="success">Active</Badge>
-    case "completed":
-      return <Badge variant="secondary">Completed</Badge>
-    case "draft":
-      return <Badge variant="info">Draft</Badge>
-    default:
-      return <Badge variant="outline">{status}</Badge>
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Tab: Overview
-// ---------------------------------------------------------------------------
-
-function OverviewTab({ patient }: { patient: MockPatient }) {
-  return (
-    <div className="grid gap-6 lg:grid-cols-2">
-      {/* Demographics */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <User className="h-4 w-4 text-emerald-600" />
-            Demographics
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <dl className="space-y-3 text-sm">
-            <div className="flex justify-between">
-              <dt className="text-gray-500">Date of Birth</dt>
-              <dd className="font-medium text-gray-900">{formatDate(patient.dob)}</dd>
-            </div>
-            <Separator />
-            <div className="flex justify-between">
-              <dt className="text-gray-500">Gender</dt>
-              <dd className="font-medium text-gray-900">{patient.gender}</dd>
-            </div>
-            <Separator />
-            <div className="flex justify-between">
-              <dt className="text-gray-500">Email</dt>
-              <dd className="font-medium text-gray-900">{patient.email}</dd>
-            </div>
-            <Separator />
-            <div className="flex justify-between">
-              <dt className="text-gray-500">Phone</dt>
-              <dd className="font-medium text-gray-900">{patient.phone}</dd>
-            </div>
-            <Separator />
-            <div className="flex justify-between">
-              <dt className="text-gray-500">Address</dt>
-              <dd className="font-medium text-gray-900 text-right max-w-[220px]">{patient.address}</dd>
-            </div>
-          </dl>
-        </CardContent>
-      </Card>
-
-      {/* Recent Vitals */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Activity className="h-4 w-4 text-emerald-600" />
-            Recent Vitals
-          </CardTitle>
-          <CardDescription>Recorded {formatDate(patient.vitals.date)}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="rounded-lg border border-gray-100 p-3 text-center">
-              <p className="text-xs text-gray-500">Blood Pressure</p>
-              <p className="mt-1 text-xl font-bold text-gray-900">{patient.vitals.bp}</p>
-              <p className="text-xs text-gray-400">mmHg</p>
-            </div>
-            <div className="rounded-lg border border-gray-100 p-3 text-center">
-              <p className="text-xs text-gray-500">Heart Rate</p>
-              <p className="mt-1 text-xl font-bold text-gray-900">{patient.vitals.hr}</p>
-              <p className="text-xs text-gray-400">bpm</p>
-            </div>
-            <div className="rounded-lg border border-gray-100 p-3 text-center">
-              <p className="text-xs text-gray-500">Weight</p>
-              <p className="mt-1 text-xl font-bold text-gray-900">{patient.vitals.weight}</p>
-            </div>
-            <div className="rounded-lg border border-gray-100 p-3 text-center">
-              <p className="text-xs text-gray-500">BMI</p>
-              <p className="mt-1 text-xl font-bold text-gray-900">{patient.vitals.bmi}</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Active Conditions */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Heart className="h-4 w-4 text-emerald-600" />
-            Active Conditions
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ul className="space-y-2">
-            {patient.conditions.map((c) => (
-              <li key={c} className="flex items-center gap-2 text-sm text-gray-700">
-                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500" />
-                {c}
-              </li>
-            ))}
-          </ul>
-        </CardContent>
-      </Card>
-
-      {/* Allergies */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <AlertCircle className="h-4 w-4 text-red-500" />
-            Allergies
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap gap-2">
-            {patient.allergies.map((a) => (
-              <Badge key={a} variant="destructive" className="text-xs">
-                {a}
-              </Badge>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Current Medications */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Pill className="h-4 w-4 text-emerald-600" />
-            Current Medications
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ul className="space-y-3">
-            {patient.medications.map((m) => (
-              <li key={m.name} className="flex items-start justify-between text-sm">
-                <div>
-                  <p className="font-medium text-gray-900">{m.name}</p>
-                  <p className="text-xs text-gray-500">{m.frequency}</p>
-                </div>
-                <Badge variant="outline" className="text-xs">{m.dosage}</Badge>
-              </li>
-            ))}
-          </ul>
-        </CardContent>
-      </Card>
-
-      {/* Current Supplements */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <FlaskConical className="h-4 w-4 text-emerald-600" />
-            Current Supplements
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ul className="space-y-3">
-            {patient.supplements.map((s) => (
-              <li key={s.name} className="flex items-start justify-between text-sm">
-                <div>
-                  <p className="font-medium text-gray-900">{s.name}</p>
-                  <p className="text-xs text-gray-500">{s.frequency}</p>
-                </div>
-                <Badge variant="outline" className="text-xs">{s.dosage}</Badge>
-              </li>
-            ))}
-          </ul>
-        </CardContent>
-      </Card>
-    </div>
-  )
-}
-
-// ---------------------------------------------------------------------------
-// Tab: Genomics
-// ---------------------------------------------------------------------------
-
-function GenomicsTab({ patient }: { patient: MockPatient }) {
-  return (
-    <div className="space-y-6">
-      {/* GeneX360 Summary */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-50">
-                <Dna className="h-5 w-5 text-emerald-600" />
-              </div>
-              <div>
-                <CardTitle className="text-base">GeneX360 Comprehensive Panel</CardTitle>
-                <CardDescription>Provider: ViaGene Diagnostics</CardDescription>
-              </div>
-            </div>
-            <Badge
-              variant={
-                patient.geneXStatus === "Complete"
-                  ? "success"
-                  : patient.geneXStatus === "Pending"
-                    ? "warning"
-                    : "secondary"
-              }
-            >
-              {patient.geneXStatus}
-            </Badge>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-3 gap-4 text-center text-sm">
-            <div className="rounded-lg bg-gray-50 p-3">
-              <p className="text-xs text-gray-500">Variants Analyzed</p>
-              <p className="mt-1 text-lg font-bold text-gray-900">{patient.snps.length}</p>
-            </div>
-            <div className="rounded-lg bg-gray-50 p-3">
-              <p className="text-xs text-gray-500">Pathways Scored</p>
-              <p className="mt-1 text-lg font-bold text-gray-900">{patient.pathwayScores.length}</p>
-            </div>
-            <div className="rounded-lg bg-gray-50 p-3">
-              <p className="text-xs text-gray-500">Actionable Findings</p>
-              <p className="mt-1 text-lg font-bold text-gray-900">
-                {patient.snps.filter((s) => s.significance === "pathogenic" || s.significance === "likely_pathogenic").length}
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Key SNP Results */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Key SNP Results</CardTitle>
-          <CardDescription>Clinically relevant genetic variants</CardDescription>
-        </CardHeader>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Gene</TableHead>
-                <TableHead>Variant</TableHead>
-                <TableHead>Genotype</TableHead>
-                <TableHead className="hidden md:table-cell">Phenotype</TableHead>
-                <TableHead>Clinical Significance</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {patient.snps.map((snp) => (
-                <TableRow key={snp.rsid}>
-                  <TableCell className="font-medium text-gray-900">{snp.gene}</TableCell>
-                  <TableCell>
-                    <div>
-                      <p className="text-sm">{snp.variant}</p>
-                      <p className="text-xs text-gray-400">{snp.rsid}</p>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <code className="rounded bg-gray-100 px-1.5 py-0.5 text-xs font-mono font-semibold">
-                      {snp.genotype}
-                    </code>
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell text-sm text-gray-600 max-w-[240px]">
-                    {snp.phenotype}
-                  </TableCell>
-                  <TableCell>{significanceBadge(snp.significance)}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-
-      {/* Pathway Risk Scores */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Clinical Pathway Risk Scores</CardTitle>
-          <CardDescription>Aggregated risk assessment across metabolic pathways</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {patient.pathwayScores.map((ps) => (
-              <div key={ps.pathway} className="rounded-lg border border-gray-100 p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <h4 className="text-sm font-semibold text-gray-900">{ps.pathway}</h4>
-                  {riskBadge(ps.risk)}
-                </div>
-                <div className="flex items-end gap-2 mb-2">
-                  <span className={`text-2xl font-bold ${riskScoreColor(ps.score)}`}>
-                    {ps.score}
-                  </span>
-                  <span className="text-xs text-gray-400 mb-1">/ 100</span>
-                </div>
-                <div className="h-1.5 w-full rounded-full bg-gray-100 mb-3">
-                  <div
-                    className={`h-1.5 rounded-full ${riskBarColor(ps.score)}`}
-                    style={{ width: `${ps.score}%` }}
-                  />
-                </div>
-                <p className="text-xs text-gray-500 leading-relaxed">{ps.summary}</p>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  )
-}
-
-// ---------------------------------------------------------------------------
-// Tab: Protocols
-// ---------------------------------------------------------------------------
-
-function ProtocolsTab({ patient }: { patient: MockPatient }) {
-  const active = patient.protocols.filter((p) => p.status === "active")
-  const history = patient.protocols.filter((p) => p.status !== "active")
-
-  return (
-    <div className="space-y-6">
-      {/* Active Protocols */}
-      <Card>
-        <CardHeader className="flex-row items-center justify-between space-y-0">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <ClipboardList className="h-4 w-4 text-emerald-600" />
-            Active Protocols
-          </CardTitle>
-          <Button size="sm">
-            <Plus className="h-4 w-4" />
-            New Protocol
-          </Button>
-        </CardHeader>
-        <CardContent>
-          {active.length === 0 ? (
-            <p className="py-8 text-center text-sm text-gray-500">No active protocols.</p>
-          ) : (
-            <div className="space-y-4">
-              {active.map((p) => (
-                <div
-                  key={p.id}
-                  className="rounded-lg border border-gray-100 p-4 hover:bg-gray-50/50 transition-colors"
-                >
-                  <div className="flex items-start justify-between mb-2">
-                    <div>
-                      <h4 className="text-sm font-semibold text-gray-900">{p.title}</h4>
-                      <p className="text-xs text-gray-500">{p.pathway} pathway</p>
-                    </div>
-                    {protocolStatusBadge(p.status)}
-                  </div>
-                  <div className="flex items-center gap-4 mb-3 text-xs text-gray-500">
-                    <span className="flex items-center gap-1">
-                      <Calendar className="h-3 w-3" />
-                      {formatDate(p.startDate)}
-                    </span>
-                    {p.endDate && (
-                      <>
-                        <ChevronRight className="h-3 w-3" />
-                        <span>{formatDate(p.endDate)}</span>
-                      </>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="h-1.5 flex-1 rounded-full bg-gray-100">
-                      <div
-                        className="h-1.5 rounded-full bg-emerald-500"
-                        style={{ width: `${p.progress}%` }}
-                      />
-                    </div>
-                    <span className="text-xs font-medium text-gray-600">{p.progress}%</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Protocol History */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Clock className="h-4 w-4 text-gray-400" />
-            Protocol History
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {history.length === 0 ? (
-            <p className="py-8 text-center text-sm text-gray-500">No previous protocols.</p>
-          ) : (
-            <div className="space-y-3">
-              {history.map((p) => (
-                <div
-                  key={p.id}
-                  className="flex items-center justify-between rounded-lg border border-gray-100 p-4"
-                >
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-900">{p.title}</h4>
-                    <p className="text-xs text-gray-500">
-                      {p.pathway} &bull; {formatDate(p.startDate)}
-                      {p.endDate ? ` - ${formatDate(p.endDate)}` : ""}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {protocolStatusBadge(p.status)}
-                    {p.status === "completed" && (
-                      <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
-  )
-}
-
-// ---------------------------------------------------------------------------
-// Tab: Labs
-// ---------------------------------------------------------------------------
-
-function LabsTab({ patient }: { patient: MockPatient }) {
-  return (
-    <div className="space-y-6">
-      {/* Recent Lab Results */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <FlaskConical className="h-4 w-4 text-emerald-600" />
-            Recent Lab Results
-          </CardTitle>
-          <CardDescription>
-            Last drawn: {patient.labs.length > 0 && patient.labs[0] ? formatDate(patient.labs[0].date) : "N/A"}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Test</TableHead>
-                <TableHead>Result</TableHead>
-                <TableHead className="hidden sm:table-cell">Reference Range</TableHead>
-                <TableHead>Flag</TableHead>
-                <TableHead className="hidden md:table-cell">Date</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {patient.labs.map((lab) => (
-                <TableRow key={lab.test}>
-                  <TableCell className="font-medium text-gray-900">{lab.test}</TableCell>
-                  <TableCell>
-                    <span
-                      className={`font-mono text-sm font-semibold ${
-                        lab.flag === "high" || lab.flag === "critical"
-                          ? "text-red-600"
-                          : lab.flag === "low"
-                            ? "text-blue-600"
-                            : "text-gray-900"
-                      }`}
-                    >
-                      {lab.result}
-                    </span>
-                    <span className="ml-1 text-xs text-gray-400">{lab.unit}</span>
-                  </TableCell>
-                  <TableCell className="hidden sm:table-cell text-xs text-gray-500">
-                    {lab.range} {lab.unit}
-                  </TableCell>
-                  <TableCell>{labFlagBadge(lab.flag)}</TableCell>
-                  <TableCell className="hidden md:table-cell text-xs text-gray-500">
-                    {formatDate(lab.date)}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-
-      {/* Trend Charts Placeholder */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <BarChart3 className="h-4 w-4 text-emerald-600" />
-            Lab Trends
-          </CardTitle>
-          <CardDescription>Track biomarker changes over time</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex h-48 items-center justify-center rounded-lg border-2 border-dashed border-gray-200 bg-gray-50/50">
-            <div className="text-center">
-              <BarChart3 className="mx-auto h-8 w-8 text-gray-300" />
-              <p className="mt-2 text-sm text-gray-500">Trend charts will appear here</p>
-              <p className="text-xs text-gray-400">Requires 2+ lab results for comparison</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  )
-}
-
-// ---------------------------------------------------------------------------
-// Tab: Notes
-// ---------------------------------------------------------------------------
-
-function NotesTab({ patient }: { patient: MockPatient }) {
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-gray-900">
-          Clinical Notes ({patient.notes.length})
-        </h3>
-        <Button size="sm">
-          <Plus className="h-4 w-4" />
-          Add Note
-        </Button>
-      </div>
-
-      <div className="space-y-4">
-        {patient.notes.map((note) => (
-          <Card key={note.id}>
-            <CardHeader className="pb-2">
-              <div className="flex items-start justify-between">
-                <div>
-                  <CardTitle className="text-sm">{note.type}</CardTitle>
-                  <CardDescription className="flex items-center gap-2 mt-1">
-                    <StickyNote className="h-3 w-3" />
-                    {note.author}
-                  </CardDescription>
-                </div>
-                <span className="text-xs text-gray-400">{formatDate(note.date)}</span>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm leading-relaxed text-gray-600">{note.content}</p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-// ---------------------------------------------------------------------------
-// Main Page
-// ---------------------------------------------------------------------------
+// ─── Page Component ─────────────────────────────────────────────────────────
 
 export default function PatientDetailPage() {
   const params = useParams()
   const id = params.id as string
-  const [activeTab, setActiveTab] = useState("overview")
+  const [activeTab, setActiveTab] = useState<TabId>("protocols")
 
   const patient = PATIENT_DB[id] ?? getDefaultPatient(id)
+  const sc = statusConfig(patient.status)
+  const hasInteractions = patient.interactions.length > 0
 
   return (
-    <div className="space-y-6">
-      {/* Back button */}
-      <Link href="/patients">
-        <Button variant="ghost" size="sm" className="gap-1 text-gray-500 hover:text-gray-700">
-          <ArrowLeft className="h-4 w-4" />
-          Back to Patients
-        </Button>
-      </Link>
+    <div className="-m-4 sm:-m-6 lg:-m-8 min-h-screen bg-[#111827] text-slate-100 flex flex-col">
+      {/* ── STICKY PATIENT NAV ───────────────────────────────────── */}
+      <nav className="sticky top-0 z-50 bg-gray-800/70 backdrop-blur-xl border-b border-white/5 px-4 sm:px-6 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Link href="/patients" className="text-slate-400 hover:text-white transition-colors mr-1">
+            <ArrowLeft className="h-5 w-5" />
+          </Link>
+          <div className="size-10 bg-emerald-400/20 rounded-full flex items-center justify-center text-emerald-400 font-bold border border-emerald-400/30 text-sm">
+            {patient.initials}
+          </div>
+          <div>
+            <h1 className="text-lg font-bold leading-none">{patient.name}</h1>
+            <p className="text-xs text-slate-400 mt-1">
+              MRN {patient.mrn} &middot; Age {patient.age} &middot;{" "}
+              <span className={`${sc.color} inline-flex items-center gap-1`}>
+                <span className={`size-1.5 rounded-full ${sc.bg} animate-pulse`} />
+                {sc.label}
+              </span>
+            </p>
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <button className="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-sm font-semibold transition-colors flex items-center gap-2">
+            <Pencil className="h-3.5 w-3.5" /> Edit
+          </button>
+          <button className="px-4 py-2 rounded-lg bg-emerald-400 text-[#111827] hover:bg-emerald-300 text-sm font-bold transition-colors flex items-center gap-2">
+            <FileDown className="h-3.5 w-3.5" /> Export PDF
+          </button>
+        </div>
+      </nav>
 
-      {/* Patient Header */}
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-4">
-              <Avatar className="h-14 w-14">
-                <AvatarFallback className="text-lg">
-                  {getInitials(patient.firstName, patient.lastName)}
-                </AvatarFallback>
-              </Avatar>
-              <div>
-                <h1 className="text-xl font-bold text-gray-900">
-                  {patient.firstName} {patient.lastName}
-                </h1>
-                <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-500">
-                  <span className="flex items-center gap-1">
-                    <Calendar className="h-3.5 w-3.5" />
-                    {formatDate(patient.dob)} ({calculateAge(patient.dob)} yrs)
+      {/* ── MAIN CONTENT ─────────────────────────────────────────── */}
+      <main className="flex-1 p-4 lg:p-6 space-y-6 max-w-7xl mx-auto w-full">
+        {/* Genomic Summary */}
+        <section className="bg-gray-800/70 backdrop-blur-xl border border-white/5 rounded-xl p-5 border-l-4 border-l-purple-400">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Dna className="h-5 w-5 text-purple-400" />
+              <h2 className="font-bold text-lg">Genomic Summary</h2>
+            </div>
+            <span className="px-2.5 py-1 rounded bg-purple-400/10 text-purple-400 text-[10px] font-bold uppercase tracking-wider">
+              {patient.focus}
+            </span>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* CYP450 Phenotypes */}
+            <div className="space-y-2">
+              <p className="text-xs text-slate-400 font-medium">CYP450 Phenotypes</p>
+              <div className="flex flex-wrap gap-2">
+                {patient.cypPhenotypes.map((cyp) => (
+                  <span key={cyp.gene} className={`px-2 py-1 rounded text-xs font-semibold ${cypBadgeColor(cyp.level)}`}>
+                    {cyp.gene}: {cyp.phenotype.split(" ")[0]}
                   </span>
-                  <span className="flex items-center gap-1">
-                    <User className="h-3.5 w-3.5" />
-                    {patient.gender}
+                ))}
+              </div>
+            </div>
+            {/* Gene Variants */}
+            <div className="col-span-2 space-y-2">
+              <p className="text-xs text-slate-400 font-medium">Relevant Gene Variants</p>
+              <div className="flex flex-wrap gap-2">
+                {patient.geneVariants.map((v) => (
+                  <span
+                    key={v.rsid}
+                    className="px-2.5 py-1 rounded-lg border border-purple-400/30 bg-purple-400/5 text-slate-100 text-xs"
+                  >
+                    {v.gene} ({v.variant})
                   </span>
-                  <span className="flex items-center gap-1">
-                    <FileText className="h-3.5 w-3.5" />
-                    {patient.mrn}
-                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Tab Bar */}
+        <div className="flex flex-wrap gap-2 overflow-x-auto pb-2">
+          {TABS.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition-colors ${
+                activeTab === tab.id
+                  ? "bg-emerald-400 text-[#111827] font-bold"
+                  : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Tab Content */}
+        {activeTab === "protocols" && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Active Protocols */}
+            <div className="space-y-4">
+              <h3 className="font-bold flex items-center gap-2">
+                <Activity className="h-4 w-4 text-emerald-400" /> Active Protocols
+              </h3>
+              {patient.protocols.map((protocol) => {
+                const isActive = protocol.status === "active"
+                const progress = protocol.daysTotal > 0 ? (protocol.daysCurrent / protocol.daysTotal) * 100 : 0
+                return (
+                  <div
+                    key={protocol.id}
+                    className={`bg-gray-800/70 backdrop-blur-xl rounded-xl p-5 space-y-4 border transition-all cursor-pointer ${
+                      isActive
+                        ? "border-emerald-400/10 hover:border-emerald-400/30"
+                        : "border-white/5 hover:border-white/10 opacity-80"
+                    }`}
+                  >
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h4 className="font-bold text-lg">{protocol.title}</h4>
+                        <p className="text-sm text-slate-400">{protocol.description}</p>
+                      </div>
+                      <span className={`px-2.5 py-1 rounded text-[10px] font-bold uppercase ${
+                        isActive ? "bg-emerald-400/10 text-emerald-400"
+                        : protocol.status === "completed" ? "bg-slate-700 text-slate-400"
+                        : "bg-slate-700 text-slate-400"
+                      }`}>
+                        {protocol.status === "pending-review" ? "Pending Review" : protocol.status}
+                      </span>
+                    </div>
+                    {isActive && (
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-xs font-medium">
+                          <span className="text-slate-400">Progress</span>
+                          <span>Day {protocol.daysCurrent} / {protocol.daysTotal}</span>
+                        </div>
+                        <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                          <div
+                            className="bg-emerald-400 h-full rounded-full transition-all duration-500"
+                            style={{ width: `${progress}%` }}
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* Outcomes Timeline */}
+            <div className="space-y-4">
+              <h3 className="font-bold flex items-center gap-2">
+                <BarChart3 className="h-4 w-4 text-purple-400" /> Outcomes Timeline
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {patient.outcomes.map((metric) => (
+                  <div key={metric.label} className="bg-gray-800/70 backdrop-blur-xl rounded-xl p-4 border border-white/5 hover:border-white/10 transition-all">
+                    <p className="text-xs font-medium text-slate-400 uppercase tracking-wider">{metric.label}</p>
+                    <div className="mt-2 flex items-baseline gap-2">
+                      <span className="text-2xl font-bold">{metric.value}</span>
+                      <span className="text-xs text-slate-500">{metric.unit}</span>
+                    </div>
+                    <div className={`mt-2 flex items-center gap-1 text-xs font-bold ${metric.change >= 0 ? "text-emerald-400" : "text-emerald-400"}`}>
+                      {metric.change >= 0 ? (
+                        <TrendingUp className="h-3 w-3" />
+                      ) : (
+                        <TrendingDown className="h-3 w-3" />
+                      )}
+                      <span>{metric.change >= 0 ? "+" : ""}{metric.change}% from baseline ({metric.baseline})</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {/* Chart placeholder */}
+              <div className="bg-gray-800/70 backdrop-blur-xl rounded-xl p-4 h-48 flex items-center justify-center border border-dashed border-white/10">
+                <div className="text-center">
+                  <BarChart3 className="mx-auto h-10 w-10 text-slate-600 mb-2" />
+                  <p className="text-slate-500 text-sm">Full Outcome Analytics Chart</p>
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Badge
-                variant={
-                  patient.geneXStatus === "Complete"
-                    ? "success"
-                    : patient.geneXStatus === "Pending"
-                      ? "warning"
-                      : "secondary"
-                }
-              >
-                GeneX360: {patient.geneXStatus}
-              </Badge>
+          </div>
+        )}
+
+        {activeTab === "medications" && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Medications */}
+            <div className="space-y-4">
+              <h3 className="font-bold flex items-center gap-2">
+                <Pill className="h-4 w-4 text-emerald-400" /> Current Medications
+              </h3>
+              {patient.medications.length === 0 ? (
+                <div className="bg-gray-800/70 backdrop-blur-xl rounded-xl p-8 border border-white/5 text-center">
+                  <p className="text-slate-500 text-sm">No active medications</p>
+                </div>
+              ) : (
+                patient.medications.map((med) => (
+                  <div key={med.name} className="bg-gray-800/70 backdrop-blur-xl rounded-xl p-5 border border-white/5 hover:border-white/10 transition-all">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h4 className="font-bold">{med.name}</h4>
+                        <p className="text-sm text-slate-400">{med.dosage} &middot; {med.frequency} &middot; {med.route}</p>
+                      </div>
+                      <span className="px-2.5 py-1 rounded bg-emerald-400/10 text-emerald-400 text-[10px] font-bold uppercase">Active</span>
+                    </div>
+                    <div className="mt-3 flex gap-4 text-xs text-slate-500">
+                      <span className="flex items-center gap-1"><User className="h-3 w-3" /> {med.prescriber}</span>
+                      <span className="flex items-center gap-1"><Calendar className="h-3 w-3" /> Since {formatDate(med.startDate)}</span>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Supplements */}
+            <div className="space-y-4">
+              <h3 className="font-bold flex items-center gap-2">
+                <FlaskConical className="h-4 w-4 text-purple-400" /> Active Supplements
+              </h3>
+              {patient.supplements.map((sup) => (
+                <div key={sup.name} className="bg-gray-800/70 backdrop-blur-xl rounded-xl p-4 border border-white/5 hover:border-white/10 transition-all">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h4 className="font-semibold text-sm">{sup.name}</h4>
+                      <p className="text-xs text-slate-400">{sup.dosage} &middot; {sup.frequency}</p>
+                    </div>
+                    <span className="text-[10px] text-purple-400 bg-purple-400/10 px-2 py-0.5 rounded font-semibold">{sup.protocol}</span>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
-          <div className="mt-4 flex flex-wrap gap-x-5 gap-y-1 text-sm text-gray-500">
-            <span className="flex items-center gap-1.5">
-              <Mail className="h-3.5 w-3.5" />
-              {patient.email}
-            </span>
-            <span className="flex items-center gap-1.5">
-              <Phone className="h-3.5 w-3.5" />
-              {patient.phone}
-            </span>
-            <span className="flex items-center gap-1.5">
-              <MapPin className="h-3.5 w-3.5" />
-              {patient.address}
-            </span>
+        )}
+
+        {activeTab === "outcomes" && (
+          <div className="space-y-6">
+            <h3 className="font-bold flex items-center gap-2">
+              <TrendingUp className="h-4 w-4 text-emerald-400" /> Outcome Metrics
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {patient.outcomes.map((metric) => (
+                <div key={metric.label} className="bg-gray-800/70 backdrop-blur-xl rounded-xl p-5 border border-white/5 hover:border-emerald-400/20 transition-all">
+                  <p className="text-xs font-medium text-slate-400 uppercase tracking-wider">{metric.label}</p>
+                  <div className="mt-3 flex items-baseline gap-2">
+                    <span className="text-3xl font-bold">{metric.value}</span>
+                    <span className="text-xs text-slate-500">{metric.unit}</span>
+                  </div>
+                  <div className={`mt-3 flex items-center gap-1 text-xs font-bold text-emerald-400`}>
+                    {metric.change >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+                    <span>{metric.change >= 0 ? "+" : ""}{metric.change}% from baseline ({metric.baseline})</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            {/* Chart placeholder */}
+            <div className="bg-gray-800/70 backdrop-blur-xl rounded-xl p-6 h-64 flex items-center justify-center border border-dashed border-white/10">
+              <div className="text-center">
+                <BarChart3 className="mx-auto h-12 w-12 text-slate-600 mb-3" />
+                <p className="text-slate-500 text-sm font-medium">Full Outcome Analytics Chart</p>
+                <p className="text-slate-600 text-xs mt-1">Longitudinal tracking across all biomarkers</p>
+              </div>
+            </div>
           </div>
-        </CardContent>
-      </Card>
+        )}
 
-      {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="w-full justify-start">
-          <TabsTrigger value="overview" className="gap-1.5">
-            <Activity className="h-3.5 w-3.5" />
-            Overview
-          </TabsTrigger>
-          <TabsTrigger value="genomics" className="gap-1.5">
-            <Dna className="h-3.5 w-3.5" />
-            Genomics
-          </TabsTrigger>
-          <TabsTrigger value="protocols" className="gap-1.5">
-            <ClipboardList className="h-3.5 w-3.5" />
-            Protocols
-          </TabsTrigger>
-          <TabsTrigger value="labs" className="gap-1.5">
-            <FlaskConical className="h-3.5 w-3.5" />
-            Labs
-          </TabsTrigger>
-          <TabsTrigger value="notes" className="gap-1.5">
-            <StickyNote className="h-3.5 w-3.5" />
-            Notes
-          </TabsTrigger>
-        </TabsList>
+        {activeTab === "labs" && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h3 className="font-bold flex items-center gap-2">
+                <FlaskConical className="h-4 w-4 text-emerald-400" /> Lab Results
+              </h3>
+              <span className="text-xs text-slate-400">
+                Last drawn: {patient.labs[0] ? formatDate(patient.labs[0].date) : "N/A"}
+              </span>
+            </div>
+            <div className="bg-gray-800/70 backdrop-blur-xl rounded-xl border border-white/5 overflow-hidden">
+              <table className="w-full">
+                <thead>
+                  <tr>
+                    <th className="text-left py-3 px-6 bg-slate-800/30 text-slate-400 text-[10px] uppercase tracking-[0.05em] font-medium">Test</th>
+                    <th className="text-left py-3 px-6 bg-slate-800/30 text-slate-400 text-[10px] uppercase tracking-[0.05em] font-medium">Result</th>
+                    <th className="text-left py-3 px-6 bg-slate-800/30 text-slate-400 text-[10px] uppercase tracking-[0.05em] font-medium hidden sm:table-cell">Reference</th>
+                    <th className="text-left py-3 px-6 bg-slate-800/30 text-slate-400 text-[10px] uppercase tracking-[0.05em] font-medium">Flag</th>
+                    <th className="text-left py-3 px-6 bg-slate-800/30 text-slate-400 text-[10px] uppercase tracking-[0.05em] font-medium hidden md:table-cell">Previous</th>
+                  </tr>
+                </thead>
+                <tbody className="text-sm">
+                  {patient.labs.map((lab) => (
+                    <tr key={lab.test} className="border-b border-slate-800/60 last:border-0 hover:bg-slate-800/40 transition-colors">
+                      <td className="py-4 px-6 font-medium">{lab.test}</td>
+                      <td className="py-4 px-6">
+                        <span className={`font-mono font-semibold ${labFlagStyle(lab.flag)}`}>{lab.result}</span>
+                        <span className="text-slate-500 text-xs ml-1">{lab.unit}</span>
+                      </td>
+                      <td className="py-4 px-6 text-slate-500 text-xs hidden sm:table-cell">{lab.range} {lab.unit}</td>
+                      <td className="py-4 px-6">
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${
+                          lab.flag === "normal" ? "bg-emerald-400/10 text-emerald-400"
+                          : lab.flag === "high" ? "bg-red-400/10 text-red-400"
+                          : lab.flag === "low" ? "bg-blue-400/10 text-blue-400"
+                          : "bg-red-400/20 text-red-400"
+                        }`}>
+                          {lab.flag}
+                        </span>
+                      </td>
+                      <td className="py-4 px-6 text-slate-500 text-xs hidden md:table-cell">
+                        {lab.previous ? `${lab.previous} ${lab.unit}` : "—"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
 
-        <TabsContent value="overview">
-          <OverviewTab patient={patient} />
-        </TabsContent>
+        {activeTab === "notes" && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h3 className="font-bold flex items-center gap-2">
+                <StickyNote className="h-4 w-4 text-emerald-400" /> Clinical Notes ({patient.notes.length})
+              </h3>
+              <button className="px-4 py-2 rounded-lg bg-emerald-400 text-[#111827] text-sm font-bold flex items-center gap-2 hover:bg-emerald-300 transition-colors">
+                <Plus className="h-4 w-4" /> Add Note
+              </button>
+            </div>
+            <div className="space-y-4">
+              {patient.notes.map((note) => (
+                <div key={note.id} className="bg-gray-800/70 backdrop-blur-xl rounded-xl p-5 border border-white/5 hover:border-white/10 transition-all">
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <h4 className="font-bold text-sm">{note.type}</h4>
+                      <p className="text-xs text-slate-400 flex items-center gap-1 mt-0.5">
+                        <User className="h-3 w-3" /> {note.author}
+                      </p>
+                    </div>
+                    <span className="text-xs text-slate-500 flex items-center gap-1">
+                      <Clock className="h-3 w-3" /> {formatDate(note.date)}
+                    </span>
+                  </div>
+                  <p className="text-sm text-slate-300 leading-relaxed">{note.content}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
-        <TabsContent value="genomics">
-          <GenomicsTab patient={patient} />
-        </TabsContent>
+        {activeTab === "genomics" && (
+          <div className="space-y-6">
+            {/* CYP450 Panel */}
+            <div className="bg-gray-800/70 backdrop-blur-xl rounded-xl p-5 border border-white/5">
+              <h3 className="font-bold flex items-center gap-2 mb-4">
+                <Shield className="h-4 w-4 text-purple-400" /> CYP450 Metabolizer Panel
+              </h3>
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                {patient.cypPhenotypes.map((cyp) => (
+                  <div key={cyp.gene} className="bg-slate-800/50 rounded-lg p-3">
+                    <p className="text-xs text-slate-400 font-medium">{cyp.gene}</p>
+                    <p className={`text-sm font-bold mt-1 ${
+                      cyp.level === "normal" ? "text-emerald-400"
+                      : cyp.level === "intermediate" ? "text-yellow-400"
+                      : cyp.level === "poor" ? "text-red-400"
+                      : "text-blue-400"
+                    }`}>{cyp.phenotype}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
 
-        <TabsContent value="protocols">
-          <ProtocolsTab patient={patient} />
-        </TabsContent>
+            {/* Variant Table */}
+            <div className="bg-gray-800/70 backdrop-blur-xl rounded-xl border border-white/5 overflow-hidden">
+              <div className="p-5 border-b border-slate-800">
+                <h3 className="font-bold flex items-center gap-2">
+                  <Dna className="h-4 w-4 text-purple-400" /> Gene Variant Results
+                </h3>
+              </div>
+              <table className="w-full">
+                <thead>
+                  <tr>
+                    <th className="text-left py-3 px-6 bg-slate-800/30 text-slate-400 text-[10px] uppercase tracking-[0.05em] font-medium">Gene</th>
+                    <th className="text-left py-3 px-6 bg-slate-800/30 text-slate-400 text-[10px] uppercase tracking-[0.05em] font-medium">Variant</th>
+                    <th className="text-left py-3 px-6 bg-slate-800/30 text-slate-400 text-[10px] uppercase tracking-[0.05em] font-medium">Genotype</th>
+                    <th className="text-left py-3 px-6 bg-slate-800/30 text-slate-400 text-[10px] uppercase tracking-[0.05em] font-medium hidden md:table-cell">Phenotype</th>
+                    <th className="text-left py-3 px-6 bg-slate-800/30 text-slate-400 text-[10px] uppercase tracking-[0.05em] font-medium">Significance</th>
+                  </tr>
+                </thead>
+                <tbody className="text-sm">
+                  {patient.geneVariants.map((v) => (
+                    <tr key={v.rsid} className="border-b border-slate-800/60 last:border-0 hover:bg-slate-800/40 transition-colors">
+                      <td className="py-4 px-6 font-bold">{v.gene}</td>
+                      <td className="py-4 px-6">
+                        <div>
+                          <p>{v.variant}</p>
+                          <p className="text-[10px] text-slate-500">{v.rsid}</p>
+                        </div>
+                      </td>
+                      <td className="py-4 px-6">
+                        <code className="bg-slate-700 px-2 py-0.5 rounded text-xs font-mono font-bold">{v.genotype}</code>
+                      </td>
+                      <td className="py-4 px-6 text-slate-400 text-xs hidden md:table-cell max-w-[240px]">{v.phenotype}</td>
+                      <td className="py-4 px-6">
+                        <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full uppercase ${
+                          v.significance === "pathogenic" ? "bg-red-400/10 text-red-400"
+                          : v.significance === "likely_pathogenic" ? "bg-orange-400/10 text-orange-400"
+                          : v.significance === "uncertain" ? "bg-yellow-400/10 text-yellow-400"
+                          : v.significance === "likely_benign" ? "bg-blue-400/10 text-blue-400"
+                          : "bg-emerald-400/10 text-emerald-400"
+                        }`}>
+                          {v.significance === "likely_pathogenic" ? "Likely Path."
+                          : v.significance === "likely_benign" ? "Likely Benign"
+                          : v.significance === "uncertain" ? "VUS"
+                          : v.significance}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+      </main>
 
-        <TabsContent value="labs">
-          <LabsTab patient={patient} />
-        </TabsContent>
+      {/* ── STICKY INTERACTION ALERT ─────────────────────────────── */}
+      {hasInteractions && patient.interactions[0] && (
+        <div className="sticky bottom-0 z-50 p-4">
+          <div className="bg-red-500/20 backdrop-blur-xl border border-red-500/50 rounded-xl p-4 flex items-center justify-between shadow-2xl max-w-7xl mx-auto">
+            <div className="flex items-center gap-3">
+              <div className="size-10 rounded-lg bg-red-500/20 flex items-center justify-center text-red-400 shrink-0">
+                <AlertTriangle className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-red-400">Drug-Supplement Interaction Detected</p>
+                <p className="text-xs text-slate-300">
+                  Contraindication identified between{" "}
+                  <span className="font-bold underline">{patient.interactions[0].supplement}</span> and{" "}
+                  <span className="font-bold underline">{patient.interactions[0].drug}</span>.
+                </p>
+              </div>
+            </div>
+            <button className="px-3 py-1.5 rounded-lg bg-red-500 text-white text-xs font-bold hover:bg-red-400 transition-colors shrink-0">
+              View Resolution
+            </button>
+          </div>
+        </div>
+      )}
 
-        <TabsContent value="notes">
-          <NotesTab patient={patient} />
-        </TabsContent>
-      </Tabs>
+      {/* ── FAB ──────────────────────────────────────────────────── */}
+      <div className="fixed bottom-24 right-6 flex flex-col gap-3 z-40">
+        <button className="size-12 rounded-full bg-emerald-400 text-[#111827] shadow-lg flex items-center justify-center hover:scale-105 hover:bg-emerald-300 transition-all">
+          <Plus className="h-5 w-5" />
+        </button>
+      </div>
+
+      {/* ── FOOTER ───────────────────────────────────────────────── */}
+      <footer className="mt-auto border-t border-white/5 bg-slate-900/50 p-6">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-slate-500">
+          <p>&copy; 2026 ViaConnect Practitioner Portal. Clinical Decision Support System.</p>
+          <div className="flex gap-4">
+            <Link href="/protocols" className="hover:text-emerald-400 transition-colors">Protocol Library</Link>
+            <Link href="/genex360" className="hover:text-emerald-400 transition-colors">Gene Lexicon</Link>
+            <Link href="/settings" className="hover:text-emerald-400 transition-colors">Privacy Policy</Link>
+          </div>
+        </div>
+      </footer>
     </div>
   )
 }
