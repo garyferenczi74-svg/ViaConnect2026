@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&amp;family=Inter:wght@400;500;600&amp;family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&amp;display=swap" rel="stylesheet"/>
+<script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#4ade80',
+                        'on-primary': '#003919',
+                        surface: '#111827',
+                        'surface-container': '#1f2937',
+                        outline: '#9ca3af'
+                    },
+                    fontFamily: { headline: ['Space Grotesk'], body: ['Inter'] }
+                }
+            }
+        }
+    </script>
+<style>
+        body { background: #111827; color: #f3f4f6; font-family: 'Inter', sans-serif; min-height: 100vh; }
+        .glass { background: rgba(31, 41, 55, 0.7); backdrop-filter: blur(12px); }
+    </style>
+</head>
+<body class="pb-28">
+<header class="sticky top-0 z-50 bg-[#111827]/80 backdrop-blur-md border-b border-white/5 px-6 py-4 flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-on-primary font-bold">AT</div>
+<h1 class="font-headline font-bold text-xl text-primary">Clinical Roster</h1>
+</div>
+<nav class="hidden md:flex gap-6 text-sm font-medium">
+<a class="text-primary border-b-2 border-primary pb-1" href="#">Roster</a>
+<a class="text-outline hover:text-white transition-colors" href="#">Diagnostics</a>
+<a class="text-outline hover:text-white transition-colors" href="#">Bio-Trends</a>
+</nav>
+<button class="material-symbols-outlined text-outline">settings</button>
+</header>
+<main class="max-w-7xl mx-auto px-4 pt-10">
+<div class="flex items-center justify-between mb-8">
+<h2 class="font-headline text-3xl font-bold">Patients</h2>
+<button class="bg-primary text-on-primary px-5 py-2 rounded-full font-bold flex items-center gap-2 hover:opacity-90 active:scale-95 transition-all">
+<span class="material-symbols-outlined text-xl">add</span>New Patient
+            </button>
+</div>
+<div class="relative mb-6">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline">search</span>
+<input class="w-full bg-surface-container/50 border-none rounded-2xl py-3.5 pl-12 pr-16 text-sm focus:ring-1 focus:ring-primary/50" placeholder="Search patients, MRN, or protocol..." type="text"/>
+<kbd class="absolute right-4 top-1/2 -translate-y-1/2 bg-white/10 px-1.5 py-0.5 rounded text-[10px] text-outline">⌘K</kbd>
+</div>
+<div class="flex flex-wrap gap-2 mb-8 items-center text-sm">
+<button class="bg-primary text-on-primary px-4 py-1.5 rounded-full font-medium">All</button>
+<button class="bg-surface-container px-4 py-1.5 rounded-full text-outline hover:text-white">Active</button>
+<button class="bg-surface-container px-4 py-1.5 rounded-full text-outline hover:text-white">Needs Follow-up</button>
+<div class="w-px h-4 bg-white/10 mx-1"></div>
+<button class="bg-surface-container/30 border border-white/5 px-3 py-1.5 rounded-lg flex items-center gap-1">Protocol <span class="material-symbols-outlined text-xs">expand_more</span></button>
+<button class="bg-surface-container/30 border border-white/5 px-3 py-1.5 rounded-lg flex items-center gap-1">Genetic <span class="material-symbols-outlined text-xs">expand_more</span></button>
+</div>
+<div class="bg-surface-container/40 rounded-3xl border border-white/5 overflow-hidden shadow-xl">
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead class="bg-white/5 text-[10px] uppercase tracking-widest text-outline">
+<tr>
+<th class="p-4 w-10"><input class="rounded border-white/10 bg-transparent text-primary focus:ring-0" type="checkbox"/></th>
+<th class="py-4 px-2">Name + Email</th>
+<th class="py-4 px-2">MRN</th>
+<th class="py-4 px-2">Age</th>
+<th class="py-4 px-2">Protocols</th>
+<th class="py-4 px-2">Genetic Status</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-white/5 text-sm">
+<tr class="hover:bg-white/5 transition-colors">
+<td class="p-4"><input checked="" class="rounded border-white/10 bg-transparent text-primary focus:ring-0" type="checkbox"/></td>
+<td class="py-4 px-2">
+<div class="flex items-center gap-3">
+<div class="w-2 h-2 rounded-full bg-primary shadow-[0_0_8px_#4ade80] animate-pulse"></div>
+<div><p class="font-semibold">Elena Vance</p><p class="text-[10px] text-outline">e.vance@bioverse.net</p></div>
+</div>
+</td>
+<td class="py-4 px-2 font-mono text-xs text-outline">MRN-7742</td>
+<td class="py-4 px-2">34</td>
+<td class="py-4 px-2"><span class="bg-primary/10 text-primary px-2 py-0.5 rounded text-[10px] font-bold">3 Active</span></td>
+<td class="py-4 px-2"><span class="bg-primary text-on-primary px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-tighter">GX360 Positive</span></td>
+</tr>
+<tr class="hover:bg-white/5 transition-colors">
+<td class="p-4"><input class="rounded border-white/10 bg-transparent text-primary focus:ring-0" type="checkbox"/></td>
+<td class="py-4 px-2">
+<div class="flex items-center gap-3">
+<div class="w-2 h-2 rounded-full bg-yellow-400"></div>
+<div><p class="font-semibold">Julian Thorne</p><p class="text-[10px] text-outline">j.thorne@genlab.io</p></div>
+</div>
+</td>
+<td class="py-4 px-2 font-mono text-xs text-outline">MRN-1209</td>
+<td class="py-4 px-2">47</td>
+<td class="py-4 px-2"><span class="bg-white/5 text-outline px-2 py-0.5 rounded text-[10px]">1 Active</span></td>
+<td class="py-4 px-2"><span class="bg-yellow-400/20 text-yellow-400 px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-tighter">Pending</span></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="p-4 bg-white/5 flex items-center justify-between text-xs text-outline">
+<p>Showing <span class="text-white">1-50</span> of 147</p>
+<div class="flex gap-1">
+<button class="w-8 h-8 flex items-center justify-center bg-primary text-on-primary rounded-lg font-bold">1</button>
+<button class="w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded-lg">2</button>
+<button class="w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded-lg">3</button>
+</div>
+</div>
+</div>
+</main>
+<div class="fixed bottom-24 left-1/2 -translate-x-1/2 glass border border-white/10 rounded-2xl px-6 py-3 shadow-2xl z-40 flex items-center gap-6 whitespace-nowrap">
+<div class="flex items-center gap-2 pr-6 border-r border-white/10 text-xs font-bold">
+<span class="bg-primary text-on-primary w-5 h-5 rounded-full flex items-center justify-center text-[10px]">1</span> Patient
+        </div>
+<button class="text-xs font-bold text-primary flex items-center gap-1.5"><span class="material-symbols-outlined text-lg">medical_services</span> Assign</button>
+<button class="text-xs font-bold text-outline flex items-center gap-1.5"><span class="material-symbols-outlined text-lg">archive</span> Archive</button>
+</div>
+<nav class="fixed bottom-0 w-full bg-[#111827]/90 backdrop-blur-lg border-t border-white/5 flex justify-around p-3 md:hidden">
+<div class="flex flex-col items-center text-primary"><span class="material-symbols-outlined">person_search</span><span class="text-[9px] uppercase mt-1">Roster</span></div>
+<div class="flex flex-col items-center text-outline"><span class="material-symbols-outlined">analytics</span><span class="text-[9px] uppercase mt-1">Stats</span></div>
+<div class="flex flex-col items-center text-outline"><span class="material-symbols-outlined">genetics</span><span class="text-[9px] uppercase mt-1">DNA</span></div>
+<div class="flex flex-col items-center text-outline"><span class="material-symbols-outlined">account_circle</span><span class="text-[9px] uppercase mt-1">Me</span></div>
+</nav>
+</body></html>
