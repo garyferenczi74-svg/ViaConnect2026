@@ -92,14 +92,30 @@ export const auditLog: AuditLogEntry[] = [
 export const securityEvents: SecurityEvent[] = [
   {
     id: "se1",
-    timestamp: ts(18),
-    severity: "critical",
-    title: "Failed login attempt from unknown IP",
-    description: "3 consecutive failed OAuth2 token refresh attempts from 203.0.113.45. Client certificate mismatch. IP added to watchlist.",
-    source: "API Gateway / Auth Module",
+    timestamp: ts(14),
+    severity: "info",
+    title: "Security Scan Completed",
+    description: "Infrastructure scan detected no critical vulnerabilities.",
+    source: "Vulnerability Scanner v4.2",
   },
   {
     id: "se2",
+    timestamp: ts(42),
+    severity: "warning",
+    title: "Failed Login Attempt",
+    description: "User 'dr.wilson' exceeded attempt limit from IP 192.168.1.42.",
+    source: "Identity & Access Management",
+  },
+  {
+    id: "se3",
+    timestamp: ts(120),
+    severity: "critical",
+    title: "Unauthorized File Access",
+    description: "Attempted retrieval of PHI records from external API node.",
+    source: "Data Loss Prevention Engine",
+  },
+  {
+    id: "se4",
     timestamp: ts(55),
     severity: "warning",
     title: "Unusual data export pattern detected",
@@ -107,7 +123,7 @@ export const securityEvents: SecurityEvent[] = [
     source: "Data Loss Prevention Engine",
   },
   {
-    id: "se3",
+    id: "se5",
     timestamp: ts(68),
     severity: "critical",
     title: "Repeated authentication failure — service account",
@@ -115,23 +131,15 @@ export const securityEvents: SecurityEvent[] = [
     source: "Identity & Access Management",
   },
   {
-    id: "se4",
+    id: "se6",
     timestamp: ts(90),
     severity: "info",
     title: "Security scan completed — no vulnerabilities found",
-    description: "Automated weekly vulnerability scan completed across all 14 endpoints. Zero critical, zero high, 2 informational findings (TLS 1.2 deprecation notices).",
+    description: "Automated weekly vulnerability scan completed across all 14 endpoints. Zero critical, zero high, 2 informational findings.",
     source: "Vulnerability Scanner v4.2",
   },
   {
-    id: "se5",
-    timestamp: ts(120),
-    severity: "warning",
-    title: "Permission escalation review required",
-    description: "Role change from Clinical Intern to Resident for user J. Park requires secondary approval per compliance policy CP-204.",
-    source: "Access Control Module",
-  },
-  {
-    id: "se6",
+    id: "se7",
     timestamp: ts(180),
     severity: "info",
     title: "Firewall rules updated successfully",
@@ -139,7 +147,7 @@ export const securityEvents: SecurityEvent[] = [
     source: "Network Security / Firewall",
   },
   {
-    id: "se7",
+    id: "se8",
     timestamp: ts(240),
     severity: "warning",
     title: "Sensitive data export flagged for review",
@@ -147,20 +155,12 @@ export const securityEvents: SecurityEvent[] = [
     source: "Data Loss Prevention Engine",
   },
   {
-    id: "se8",
+    id: "se9",
     timestamp: ts(280),
     severity: "critical",
     title: "Unknown client certificate presented",
-    description: "Connection from 203.0.113.99 presented an unrecognized client certificate. Connection rejected. Certificate fingerprint logged for investigation.",
+    description: "Connection from 203.0.113.99 presented an unrecognized client certificate. Connection rejected.",
     source: "TLS Gateway / Certificate Authority",
-  },
-  {
-    id: "se9",
-    timestamp: ts(360),
-    severity: "info",
-    title: "SSL certificate rotation completed",
-    description: "All 8 internal service certificates rotated successfully. New certificates valid for 90 days. Zero-downtime rotation confirmed.",
-    source: "PKI Infrastructure",
   },
   {
     id: "se10",
@@ -172,14 +172,50 @@ export const securityEvents: SecurityEvent[] = [
   },
 ];
 
-export const STATUS_STYLES: Record<AuditLogEntry["status"], { bg: string; text: string; label: string }> = {
-  success: { bg: "bg-[#4ade80]/20", text: "text-[#4ade80]", label: "Success" },
-  warning: { bg: "bg-[#fbbf24]/20", text: "text-[#fbbf24]", label: "Warning" },
-  failed: { bg: "bg-[#f87171]/20", text: "text-[#f87171]", label: "Failed" },
+export const STATUS_STYLES: Record<AuditLogEntry["status"], { bg: string; text: string; border: string; label: string }> = {
+  success: { bg: "bg-[#4ade80]/10", text: "text-[#4ade80]", border: "border-[#4ade80]/20", label: "Success" },
+  warning: { bg: "bg-[#ffb657]/10", text: "text-[#ffb657]", border: "border-[#ffb657]/20", label: "Warning" },
+  failed: { bg: "bg-[#a40217]", text: "text-[#68000a]", border: "border-transparent", label: "Failed" },
 };
 
-export const SEVERITY_STYLES: Record<SecurityEvent["severity"], { border: string; bg: string; text: string; dot: string; label: string }> = {
-  critical: { border: "border-l-4 border-[#f87171]", bg: "bg-[#f87171]/5", text: "text-[#f87171]", dot: "bg-[#f87171]", label: "Critical" },
-  warning: { border: "border-l-4 border-[#fbbf24]", bg: "bg-[#fbbf24]/5", text: "text-[#fbbf24]", dot: "bg-[#fbbf24]", label: "Warning" },
-  info: { border: "border-l-4 border-[#4ade80]", bg: "bg-[#4ade80]/5", text: "text-[#4ade80]", dot: "bg-[#4ade80]", label: "Info" },
+export const SEVERITY_STYLES: Record<SecurityEvent["severity"], {
+  border: string;
+  bg: string;
+  text: string;
+  dot: string;
+  label: string;
+  iconBg: string;
+  iconColor: string;
+  iconPath: string;
+}> = {
+  critical: {
+    border: "border-l-4 border-[#a40217]",
+    bg: "bg-[#a40217]/5",
+    text: "text-[#ffb3ad]",
+    dot: "bg-[#f87171]",
+    label: "Critical",
+    iconBg: "rgba(164, 2, 23, 0.1)",
+    iconColor: "#ffb3ad",
+    iconPath: "M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z",
+  },
+  warning: {
+    border: "border-l-4 border-[#ffb657]",
+    bg: "bg-[#ffb657]/5",
+    text: "text-[#ffdab2]",
+    dot: "bg-[#fbbf24]",
+    label: "Warning",
+    iconBg: "rgba(255, 182, 87, 0.1)",
+    iconColor: "#ffdab2",
+    iconPath: "M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z",
+  },
+  info: {
+    border: "border-l-4 border-[#6bfb9a]",
+    bg: "bg-[#6bfb9a]/5",
+    text: "text-[#6bfb9a]",
+    dot: "bg-[#4ade80]",
+    label: "Info",
+    iconBg: "rgba(107, 251, 154, 0.1)",
+    iconColor: "#6bfb9a",
+    iconPath: "M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z",
+  },
 };

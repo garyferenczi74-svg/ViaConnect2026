@@ -40,23 +40,11 @@ export default function AuditLogTable({ entries }: AuditLogTableProps) {
 
   return (
     <div className="glass-card rounded-3xl overflow-hidden">
-      {/* Header */}
-      <div className="p-6 border-b border-[#3d4a3e]/15">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h3 className="text-[#dce2f7]/60 text-xs uppercase tracking-widest font-medium">
-              Audit Log
-            </h3>
-            <p className="text-xl font-bold text-[#dce2f7] mt-1">Activity Trail</p>
-          </div>
-          <span className="text-[10px] font-mono text-[#dce2f7]/40">
-            {filtered.length} entries
-          </span>
-        </div>
-
-        {/* Filters */}
-        <div className="flex flex-wrap gap-3">
-          <div className="relative flex-1 min-w-[200px]">
+      {/* Header with Search */}
+      <div className="p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#3d4a3e]/10">
+        <h3 className="text-xl font-bold">Searchable Audit Log</h3>
+        <div className="flex flex-wrap gap-3 flex-1 md:justify-end">
+          <div className="relative w-full md:w-96">
             <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#dce2f7]/30" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
             </svg>
@@ -64,21 +52,21 @@ export default function AuditLogTable({ entries }: AuditLogTableProps) {
               type="text"
               value={search}
               onChange={(e) => { setSearch(e.target.value); handleFilterChange(); }}
-              placeholder="Search logs..."
-              className="w-full bg-[#0c1322] border border-[#3d4a3e]/30 rounded-xl pl-10 pr-4 py-2.5 text-sm text-[#dce2f7] placeholder-[#dce2f7]/25 focus:outline-none focus:border-[#4ade80]/50 transition-colors"
+              placeholder="Search logs by User, Action, or IP..."
+              className="w-full bg-[#070e1d] border-none rounded-xl py-2 pl-10 pr-4 text-sm text-[#dce2f7] placeholder-[#dce2f7]/25 focus:outline-none focus:ring-1 focus:ring-[#6bfb9a]/40 transition-colors"
             />
           </div>
           <select
             value={selectedUser}
             onChange={(e) => { setSelectedUser(e.target.value); handleFilterChange(); }}
-            className="bg-[#0c1322] border border-[#3d4a3e]/30 rounded-xl px-4 py-2.5 text-sm text-[#dce2f7] focus:outline-none focus:border-[#4ade80]/50 appearance-none min-w-[160px]"
+            className="bg-[#070e1d] border border-[#3d4a3e]/30 rounded-xl px-4 py-2.5 text-sm text-[#dce2f7] focus:outline-none focus:border-[#4ade80]/50 appearance-none min-w-[140px]"
           >
             {users.map((u) => <option key={u} value={u}>{u}</option>)}
           </select>
           <select
             value={selectedAction}
             onChange={(e) => { setSelectedAction(e.target.value); handleFilterChange(); }}
-            className="bg-[#0c1322] border border-[#3d4a3e]/30 rounded-xl px-4 py-2.5 text-sm text-[#dce2f7] focus:outline-none focus:border-[#4ade80]/50 appearance-none min-w-[160px]"
+            className="bg-[#070e1d] border border-[#3d4a3e]/30 rounded-xl px-4 py-2.5 text-sm text-[#dce2f7] focus:outline-none focus:border-[#4ade80]/50 appearance-none min-w-[140px]"
           >
             {actionTypes.map((a) => <option key={a} value={a}>{a}</option>)}
           </select>
@@ -88,38 +76,31 @@ export default function AuditLogTable({ entries }: AuditLogTableProps) {
       {/* Table */}
       <div className="overflow-x-auto">
         <table className="w-full text-left">
-          <thead>
-            <tr className="bg-[#141b2b]/60">
-              <th className="px-6 py-3 text-[10px] font-bold uppercase tracking-widest text-[#dce2f7]/40">Timestamp</th>
-              <th className="px-6 py-3 text-[10px] font-bold uppercase tracking-widest text-[#dce2f7]/40">User</th>
-              <th className="px-6 py-3 text-[10px] font-bold uppercase tracking-widest text-[#dce2f7]/40">Action</th>
-              <th className="px-6 py-3 text-[10px] font-bold uppercase tracking-widest text-[#dce2f7]/40">Resource</th>
-              <th className="px-6 py-3 text-[10px] font-bold uppercase tracking-widest text-[#dce2f7]/40">IP Address</th>
-              <th className="px-6 py-3 text-[10px] font-bold uppercase tracking-widest text-[#dce2f7]/40">Status</th>
+          <thead className="bg-[#323949]/50">
+            <tr>
+              <th className="px-6 py-4 text-[10px] font-mono text-[#bccabb] uppercase tracking-widest">Timestamp</th>
+              <th className="px-6 py-4 text-[10px] font-mono text-[#bccabb] uppercase tracking-widest">User</th>
+              <th className="px-6 py-4 text-[10px] font-mono text-[#bccabb] uppercase tracking-widest">Action</th>
+              <th className="px-6 py-4 text-[10px] font-mono text-[#bccabb] uppercase tracking-widest">Resource</th>
+              <th className="px-6 py-4 text-[10px] font-mono text-[#bccabb] uppercase tracking-widest">IP Address</th>
+              <th className="px-6 py-4 text-[10px] font-mono text-[#bccabb] uppercase tracking-widest text-right">Status</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-[#3d4a3e]/10">
-            {paged.map((entry) => {
+          <tbody className="divide-y divide-[#3d4a3e]/5">
+            {paged.map((entry, idx) => {
               const style = STATUS_STYLES[entry.status];
               return (
-                <tr key={entry.id} className="hover:bg-[#232a3a]/30 transition-colors">
-                  <td className="px-6 py-3.5 text-xs font-mono text-[#dce2f7]/50 whitespace-nowrap">
-                    {formatTimestamp(entry.timestamp)}
-                  </td>
-                  <td className="px-6 py-3.5 text-xs font-bold text-[#dce2f7] whitespace-nowrap">
-                    {entry.user}
-                  </td>
-                  <td className="px-6 py-3.5 text-xs text-[#dce2f7]/60 whitespace-nowrap">
-                    {entry.action}
-                  </td>
-                  <td className="px-6 py-3.5 text-xs text-[#dce2f7]/50 max-w-[250px] truncate">
-                    {entry.resource}
-                  </td>
-                  <td className="px-6 py-3.5 text-xs font-mono text-[#dce2f7]/40 whitespace-nowrap">
-                    {entry.ipAddress}
-                  </td>
-                  <td className="px-6 py-3.5 whitespace-nowrap">
-                    <span className={`text-[10px] font-bold uppercase px-2.5 py-1 rounded-full ${style.bg} ${style.text}`}>
+                <tr
+                  key={entry.id}
+                  className={`hover:bg-[#232a3a] transition-colors ${idx % 2 === 1 ? "bg-[#070e1d]/30" : ""}`}
+                >
+                  <td className="px-6 py-4 text-xs font-mono">{formatTimestamp(entry.timestamp)}</td>
+                  <td className="px-6 py-4 text-sm font-bold">{entry.user}</td>
+                  <td className="px-6 py-4 text-sm text-[#bccabb]">{entry.action}</td>
+                  <td className="px-6 py-4 text-sm text-[#bccabb] max-w-[250px] truncate">{entry.resource}</td>
+                  <td className="px-6 py-4 text-xs font-mono text-[#dce2f7]/40">{entry.ipAddress}</td>
+                  <td className="px-6 py-4 text-right">
+                    <span className={`text-[10px] font-bold uppercase px-3 py-1 rounded-full border ${style.bg} ${style.text} ${style.border}`}>
                       {style.label}
                     </span>
                   </td>
@@ -138,50 +119,37 @@ export default function AuditLogTable({ entries }: AuditLogTableProps) {
       </div>
 
       {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="px-6 py-4 border-t border-[#3d4a3e]/15 flex items-center justify-between">
-          <span className="text-[10px] font-mono text-[#dce2f7]/40">
-            Showing {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, filtered.length)} of {filtered.length}
-          </span>
-          <div className="flex gap-1">
-            <button
-              onClick={() => setPage(Math.max(0, page - 1))}
-              disabled={page === 0}
-              className="w-8 h-8 rounded-lg flex items-center justify-center text-[#dce2f7]/40 hover:text-[#dce2f7] hover:bg-[#232a3a] disabled:opacity-20 transition-colors"
-            >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
-              </svg>
-            </button>
-            {Array.from({ length: totalPages }, (_, i) => (
-              <button
-                key={i}
-                onClick={() => setPage(i)}
-                className={`w-8 h-8 rounded-lg text-xs font-bold transition-colors ${
-                  page === i ? "bg-[#4ade80] text-[#003919]" : "text-[#dce2f7]/40 hover:bg-[#232a3a]"
-                }`}
-              >
-                {i + 1}
-              </button>
-            ))}
-            <button
-              onClick={() => setPage(Math.min(totalPages - 1, page + 1))}
-              disabled={page >= totalPages - 1}
-              className="w-8 h-8 rounded-lg flex items-center justify-center text-[#dce2f7]/40 hover:text-[#dce2f7] hover:bg-[#232a3a] disabled:opacity-20 transition-colors"
-            >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-              </svg>
-            </button>
-          </div>
+      <div className="p-4 border-t border-[#3d4a3e]/10 flex justify-between items-center">
+        <p className="text-[10px] text-[#bccabb] font-mono">
+          PAGE {page + 1} OF {Math.max(1, totalPages)}
+        </p>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setPage(Math.max(0, page - 1))}
+            disabled={page === 0}
+            className="p-1 hover:bg-[#232a3a] rounded transition-colors disabled:opacity-20"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+            </svg>
+          </button>
+          <button
+            onClick={() => setPage(Math.min(totalPages - 1, page + 1))}
+            disabled={page >= totalPages - 1}
+            className="p-1 hover:bg-[#232a3a] rounded transition-colors disabled:opacity-20"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+            </svg>
+          </button>
         </div>
-      )}
+      </div>
 
       <style jsx>{`
         .glass-card {
           background: rgba(46, 53, 69, 0.4);
           backdrop-filter: blur(20px);
-          border: 1px solid rgba(107, 251, 154, 0.15);
+          border: 1px solid rgba(134, 148, 134, 0.15);
         }
       `}</style>
     </div>
