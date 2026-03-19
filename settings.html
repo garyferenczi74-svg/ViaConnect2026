@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=Space+Grotesk:wght@500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet"/>
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: { primary: "#4ade80", background: "#0b0f19", surface: "#111827", "surface-lighter": "#1f2937" },
+                    fontFamily: { sans: ["Inter", "sans-serif"], label: ["Space Grotesk"] }
+                }
+            }
+        }
+    </script>
+<style>
+        .glass { background: rgba(31, 41, 55, 0.4); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.05); }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body class="bg-background text-gray-200 font-sans min-h-screen flex">
+<!-- Sidebar -->
+<aside class="hidden md:flex flex-col w-64 border-r border-gray-800 p-6 shrink-0">
+<div class="flex items-center gap-3 mb-10 text-primary font-bold text-xl tracking-tight">
+<span class="material-symbols-outlined">clinical_notes</span> SONAR HEALTH
+        </div>
+<nav class="space-y-1 flex-1">
+<a class="flex items-center gap-3 p-3 text-gray-400 hover:text-white rounded-lg" href="#"><span class="material-symbols-outlined">grid_view</span> Dashboard</a>
+<a class="flex items-center gap-3 p-3 text-gray-400 hover:text-white rounded-lg" href="#"><span class="material-symbols-outlined">folder_shared</span> Records</a>
+<a class="flex items-center gap-3 p-3 text-primary bg-primary/10 rounded-lg" href="#"><span class="material-symbols-outlined">settings</span> Settings</a>
+</nav>
+<div class="flex items-center gap-3 pt-6 border-t border-gray-800">
+<img class="w-10 h-10 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCectx7m8JbtxzkKfAjkvOMqhirWrt0km4TICn9ClMidORbg-ZNe737EJGXZnyqwsMVgBHmTRz8fiuIgQ1oHOoDFxxxmRcqs-zpkzrDi7lvsw6nnAk2fJuCUfr_nCGrFmkReBNoHf6V1BPv9JzM48nPa3DVjp71A4yK5mq7S5t_MChAoInZEVmtfV5bcnvLa7VebXgHJTNenWh8cZB06_huor3yropNykxr7BfktQiL4LIF3arc0oq51vHN0OOdDG-jnDbpWd4yyrI"/>
+<div class="text-sm"><p class="font-bold">Dr. Vance</p><p class="text-xs text-gray-500">Naturopathic Lead</p></div>
+</div>
+</aside>
+<!-- Main -->
+<main class="flex-1 min-h-screen pb-20 md:pb-10 overflow-y-auto">
+<header class="sticky top-0 z-10 bg-background/80 backdrop-blur-md px-6 py-4 flex justify-between items-center">
+<h1 class="text-xl font-bold">Clinical Settings</h1>
+<div class="flex items-center gap-4">
+<button class="text-gray-400"><span class="material-symbols-outlined">notifications</span></button>
+<div class="w-8 h-8 rounded-full bg-surface-lighter flex items-center justify-center"><span class="material-symbols-outlined text-sm">person</span></div>
+</div>
+</header>
+<div class="max-w-4xl mx-auto p-6 space-y-6">
+<div class="flex gap-4 border-b border-gray-800 pb-2 overflow-x-auto no-scrollbar whitespace-nowrap">
+<button class="px-4 py-2 border-b-2 border-primary text-primary text-sm font-medium">Profile</button>
+<button class="px-4 py-2 text-gray-500 text-sm hover:text-gray-300">Notifications</button>
+<button class="px-4 py-2 text-gray-500 text-sm hover:text-gray-300">Integrations</button>
+<button class="px-4 py-2 text-gray-500 text-sm hover:text-gray-300">Billing</button>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+<!-- Form Section -->
+<div class="lg:col-span-2 space-y-6">
+<section class="glass rounded-2xl p-6">
+<div class="flex items-center gap-6 mb-8">
+<div class="relative">
+<img class="w-24 h-24 rounded-2xl object-cover border-2 border-gray-700" src="https://lh3.googleusercontent.com/aida-public/AB6AXuClSD9W3PCA5-qKv6H-j9M7TcPEpOsfNwJSZRH030CYKAkkIz4fOVeLCRd57wyyueBE-GwYnI3Lz6u5YxxgWlneiPqs3C6ZPtRndOCQ84y-wXTDXzjJLdGpns1EA2oVFAngCJtqIH1abaNYnvlDY0B2RBgTqlUvm35inTCNhYHW_3ESBuLZKVpPA1l0BIMPWeVsUe6LJvkLmP9LCT08LH7lva8gplpv6i0vvNWyOp8xYjYEgjoWCEPAw6qv9rktwdaKlacJfL4mL8c"/>
+<div class="absolute -bottom-2 -right-2 bg-primary p-1.5 rounded-lg text-black"><span class="material-symbols-outlined text-sm block">edit</span></div>
+</div>
+<div><h2 class="text-lg font-bold">Practitioner Profile</h2><p class="text-sm text-gray-500">Public identity and licensure</p></div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm font-label">
+<div class="space-y-1"><label class="text-[10px] uppercase text-gray-500 tracking-wider">Practice Name</label><input class="w-full bg-surface border-0 rounded-lg p-3 text-sm focus:ring-1 focus:ring-primary" value="Vance Integrative Health"/></div>
+<div class="space-y-1"><label class="text-[10px] uppercase text-gray-500 tracking-wider">NPI Number</label><input class="w-full bg-surface border-0 rounded-lg p-3 text-sm focus:ring-1 focus:ring-primary" value="1283749502"/></div>
+<div class="space-y-1"><label class="text-[10px] uppercase text-gray-500 tracking-wider">License ID</label><input class="w-full bg-surface border-0 rounded-lg p-3 text-sm focus:ring-1 focus:ring-primary" value="NP-CA-99382"/></div>
+<div class="space-y-1"><label class="text-[10px] uppercase text-gray-500 tracking-wider">Specialties</label><input class="w-full bg-surface border-0 rounded-lg p-3 text-sm focus:ring-1 focus:ring-primary" value="Endocrinology, GI Health"/></div>
+<div class="md:col-span-2 space-y-1"><label class="text-[10px] uppercase text-gray-500 tracking-wider">Professional Bio</label><textarea class="w-full bg-surface border-0 rounded-lg p-3 text-sm focus:ring-1 focus:ring-primary" rows="3">Specializing in evidence-based naturopathic protocols for complex hormonal dysregulation.</textarea></div>
+</div>
+<button class="w-full mt-6 bg-primary text-black font-bold py-3 rounded-xl flex items-center justify-center gap-2 hover:opacity-90 active:scale-[0.98] transition-all"><span class="material-symbols-outlined">save</span> Save Changes</button>
+</section>
+</div>
+<!-- Right Side -->
+<div class="space-y-6">
+<div class="bg-primary/10 border border-primary/20 p-4 rounded-xl flex gap-3">
+<span class="material-symbols-outlined text-primary">verified</span>
+<div><h3 class="font-bold text-primary text-sm">Verified Partner</h3><p class="text-[11px] text-primary/70">Dr. Vance is a recognized FarmCeutica™ Gold clinical partner.</p></div>
+</div>
+<section class="glass rounded-2xl p-5 space-y-4">
+<h3 class="text-sm font-bold flex justify-between">System Alerts <span class="text-[10px] text-gray-500 uppercase tracking-tighter pt-1">Push &amp; Email</span></h3>
+<div class="space-y-3">
+<div class="flex justify-between items-center"><div class="text-xs"><p class="font-semibold">Interactions</p><p class="text-[10px] text-gray-500">Drug-herb conflict alerts</p></div><div class="w-8 h-4 bg-primary rounded-full relative"><div class="absolute right-0.5 top-0.5 w-3 h-3 bg-white rounded-full"></div></div></div>
+<div class="flex justify-between items-center"><div class="text-xs"><p class="font-semibold">Lab Results</p><p class="text-[10px] text-gray-500">Real-time EHR sync</p></div><div class="w-8 h-4 bg-gray-700 rounded-full relative"><div class="absolute left-0.5 top-0.5 w-3 h-3 bg-gray-500 rounded-full"></div></div></div>
+<div class="flex justify-between items-center"><div class="text-xs"><p class="font-semibold">AI Insights</p><p class="text-[10px] text-gray-500">Protocol optimization</p></div><div class="w-8 h-4 bg-primary rounded-full relative"><div class="absolute right-0.5 top-0.5 w-3 h-3 bg-white rounded-full"></div></div></div>
+</div>
+</section>
+</div>
+</div>
+</div>
+</main>
+<!-- Mobile Nav -->
+<nav class="md:hidden fixed bottom-0 left-0 right-0 bg-background/90 backdrop-blur-xl border-t border-gray-800 p-4 flex justify-around text-gray-500 z-50">
+<span class="material-symbols-outlined">home</span>
+<span class="material-symbols-outlined">group</span>
+<span class="material-symbols-outlined">calendar_today</span>
+<span class="material-symbols-outlined text-primary">settings</span>
+</nav>
+</body></html>
