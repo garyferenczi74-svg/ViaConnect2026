@@ -6,24 +6,23 @@ import { usePathname } from "next/navigation"
 import {
   LayoutDashboard,
   Users,
-  ClipboardList,
-  Leaf,
-  TrendingUp,
-  Brain,
-  TestTube,
-  Shield,
   Calendar,
+  BarChart3,
+  Database,
+  Pill,
+  Brain,
   Settings,
   Search,
   Bell,
   ChevronRight,
   Plus,
   UserPlus,
-  ClipboardPlus,
+  FlaskConical,
   Zap,
   X,
-  LogOut,
-  User,
+  MoreHorizontal,
+  ClipboardList,
+  Home,
 } from "lucide-react"
 
 // ─── Sidebar Context ────────────────────────────────────────────────────────
@@ -38,41 +37,35 @@ const SidebarContext = React.createContext<SidebarContextValue>({
   setCollapsed: () => {},
 })
 
-function useSidebar() {
-  return React.useContext(SidebarContext)
-}
-
-// ─── Nav Items ──────────────────────────────────────────────────────────────
+// ─── Nav Config ─────────────────────────────────────────────────────────────
 
 const NAV_ITEMS = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { label: "Patients", href: "/patients", icon: Users },
-  { label: "Protocols", href: "/protocols", icon: ClipboardList },
-  { label: "Formulary", href: "/interactions", icon: Leaf },
-  { label: "Outcomes", href: "/analytics", icon: TrendingUp },
-  { label: "AI Engine", href: "/genex360", icon: Brain },
-  { label: "Labs/EHR", href: "/ehr", icon: TestTube },
-  { label: "Compliance", href: "/cme", icon: Shield },
-  { label: "Schedule", href: "/protocols/builder", icon: Calendar },
+  { label: "Schedules", href: "/protocols/builder", icon: Calendar },
+  { label: "Analytics", href: "/analytics", icon: BarChart3 },
+  { label: "Records", href: "/ehr", icon: Database },
+  { label: "Pharmacy", href: "/interactions", icon: Pill },
+  { label: "AI Analysis", href: "/genex360", icon: Brain },
   { label: "Settings", href: "/settings", icon: Settings },
 ] as const
 
 const MOBILE_TABS = [
-  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { label: "Patients", href: "/patients", icon: Users },
-  { label: "Protocols", href: "/protocols", icon: ClipboardList },
+  { label: "Home", href: "/dashboard", icon: Home },
+  { label: "Records", href: "/ehr", icon: Database },
+  { label: "Tasks", href: "/protocols", icon: ClipboardList },
   { label: "AI", href: "/genex360", icon: Brain },
-  { label: "More", href: "/settings", icon: Settings },
+  { label: "More", href: "/settings", icon: MoreHorizontal },
 ] as const
 
-const pageTitles: Record<string, string> = {
+const PAGE_TITLES: Record<string, string> = {
   "/dashboard": "Dashboard",
   "/patients": "Patients",
   "/protocols": "Protocols",
-  "/interactions": "Formulary",
-  "/analytics": "Outcomes",
-  "/genex360": "AI Engine",
-  "/ehr": "Labs/EHR",
+  "/interactions": "Pharmacy",
+  "/analytics": "Analytics",
+  "/genex360": "AI Analysis",
+  "/ehr": "Records",
   "/cme": "Compliance",
   "/settings": "Settings",
 }
@@ -81,31 +74,24 @@ const pageTitles: Record<string, string> = {
 
 function Sidebar() {
   const pathname = usePathname()
-  const { collapsed } = useSidebar()
 
   return (
-    <aside
-      className={`fixed left-0 top-0 h-screen bg-gray-900 border-r border-green-400/10 z-40 hidden md:flex flex-col transition-all duration-300 ${
-        collapsed ? "w-16" : "w-64"
-      }`}
-    >
-      {/* Logo */}
-      <div className={`flex items-center h-16 ${collapsed ? "justify-center px-2" : "px-5"} shrink-0`}>
-        <Link href="/dashboard" className="flex items-center gap-2.5 overflow-hidden">
-          <div className="shrink-0 flex items-center justify-center">
-            <Leaf className="h-6 w-6 text-green-400" />
-          </div>
-          {!collapsed && (
-            <div className="flex flex-col leading-none">
-              <span className="text-xl font-bold text-green-400 tracking-tight">ViaConnect</span>
-              <span className="text-xs text-white/40 mt-0.5">Practitioner Portal</span>
-            </div>
-          )}
-        </Link>
+    <aside className="hidden lg:flex flex-col fixed left-0 top-0 h-screen w-64 bg-[#0c1322] pt-20 z-30">
+      {/* Practitioner Info */}
+      <div className="px-6 mb-8 flex flex-col items-start">
+        <h2 className="text-[#6bfb9a] font-bold font-mono text-sm uppercase tracking-wider mb-1">
+          Dr. Julian Vane
+        </h2>
+        <p className="text-[#dce2f7]/60 text-xs font-mono uppercase">Chief Surgeon</p>
+        <div className="mt-4 px-2 py-1 bg-[#6bfb9a]/10 rounded-lg">
+          <span className="text-[10px] text-[#6bfb9a] font-bold tracking-widest uppercase">
+            Nexus-Alpha
+          </span>
+        </div>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto py-4 space-y-0.5">
+      <nav className="flex-1 space-y-1">
         {NAV_ITEMS.map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
           const Icon = item.icon
@@ -113,50 +99,18 @@ function Sidebar() {
             <Link
               key={item.href}
               href={item.href}
-              title={collapsed ? item.label : undefined}
-              className={`group relative flex items-center gap-3 text-sm font-medium transition-colors ${
-                collapsed ? "justify-center mx-2 py-2.5 rounded-lg" : "pl-4 pr-3 py-2.5"
-              } ${
+              className={`flex items-center gap-4 px-6 py-3 transition-all duration-300 ease-in-out ${
                 isActive
-                  ? `bg-green-400/10 text-green-400 ${!collapsed ? "border-l-2 border-green-400" : ""}`
-                  : "text-white/60 hover:text-white hover:bg-gray-800/50"
+                  ? "bg-[#141b2b] text-[#6bfb9a] border-l-4 border-[#4ade80]"
+                  : "text-[#dce2f7]/60 hover:bg-[#232a3a] hover:text-[#dce2f7]"
               }`}
             >
-              <Icon className={`h-5 w-5 shrink-0 ${isActive ? "text-green-400" : ""}`} />
-              {!collapsed && <span>{item.label}</span>}
-              {/* Tooltip for collapsed */}
-              {collapsed && (
-                <span className="absolute left-full ml-2 px-2 py-1 bg-gray-800 text-white text-xs rounded-md whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-50 shadow-lg border border-green-400/10">
-                  {item.label}
-                </span>
-              )}
+              <Icon className="h-5 w-5" />
+              <span className="font-mono text-sm uppercase tracking-wider">{item.label}</span>
             </Link>
           )
         })}
       </nav>
-
-      {/* Practitioner Info */}
-      <div className={`shrink-0 border-t border-green-400/10 ${collapsed ? "p-2" : "p-4"}`}>
-        {collapsed ? (
-          <div className="flex justify-center">
-            <div className="w-10 h-10 rounded-full bg-green-400/20 flex items-center justify-center text-xs font-bold text-green-400">
-              SM
-            </div>
-          </div>
-        ) : (
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-green-400/20 flex items-center justify-center text-xs font-bold text-green-400 shrink-0">
-              SM
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium text-white truncate">Dr. Sarah Mitchell</p>
-              <span className="inline-block text-[10px] font-bold px-1.5 py-0.5 bg-green-400/20 text-green-400 rounded mt-0.5">
-                MD/ND
-              </span>
-            </div>
-          </div>
-        )}
-      </div>
     </aside>
   )
 }
@@ -165,123 +119,60 @@ function Sidebar() {
 
 function TopBar() {
   const pathname = usePathname()
-  const { collapsed } = useSidebar()
-  const [dropdownOpen, setDropdownOpen] = React.useState(false)
-  const dropdownRef = React.useRef<HTMLDivElement>(null)
 
   const currentPage = React.useMemo(() => {
-    const match = Object.entries(pageTitles).find(
-      ([path]) => pathname === path || pathname.startsWith(path + "/")
-    )
-    return match ? match[1] : "Dashboard"
-  }, [pathname])
-
-  // Close dropdown on outside click
-  React.useEffect(() => {
-    function handleClick(e: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setDropdownOpen(false)
-      }
-    }
-    document.addEventListener("mousedown", handleClick)
-    return () => document.removeEventListener("mousedown", handleClick)
-  }, [])
-
-  return (
-    <header
-      className={`fixed top-0 right-0 h-16 z-30 bg-gray-900/80 backdrop-blur-md border-b border-green-400/10 flex items-center gap-4 px-6 transition-all duration-300 ${
-        collapsed ? "left-16" : "left-64"
-      } hidden md:flex`}
-    >
-      {/* Breadcrumb */}
-      <div className="flex items-center gap-1.5 text-sm">
-        <span className="text-white/40">Portal</span>
-        <ChevronRight className="h-3.5 w-3.5 text-white/20" />
-        <span className="text-white font-medium">{currentPage}</span>
-      </div>
-
-      <div className="flex-1" />
-
-      {/* Search */}
-      <button className="flex items-center gap-2 bg-gray-800/50 border border-gray-600/50 rounded-lg w-96 px-4 py-2 text-sm text-white/40 hover:border-green-400/30 transition-colors">
-        <Search className="h-4 w-4" />
-        <span className="flex-1 text-left">Search patients, protocols, supplements...</span>
-        <kbd className="hidden sm:flex items-center gap-0.5 border border-gray-600/50 bg-gray-800 px-1.5 py-0.5 rounded text-[10px] font-mono text-white/30">
-          <span className="text-xs">&#8984;</span>K
-        </kbd>
-      </button>
-
-      <div className="flex-1" />
-
-      {/* Notification Bell */}
-      <button className="relative p-2 text-white/60 hover:text-white transition-colors" aria-label="Notifications">
-        <Bell className="h-5 w-5" />
-        <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-400 rounded-full flex items-center justify-center text-[9px] font-bold text-white">
-          3
-        </span>
-      </button>
-
-      {/* Avatar Dropdown */}
-      <div className="relative" ref={dropdownRef}>
-        <button
-          onClick={() => setDropdownOpen(!dropdownOpen)}
-          className="w-9 h-9 rounded-full bg-green-400/20 border border-green-400/30 flex items-center justify-center text-xs font-bold text-green-400 hover:border-green-400/50 transition-colors"
-        >
-          SM
-        </button>
-        {dropdownOpen && (
-          <div className="absolute right-0 top-full mt-2 w-56 bg-gray-800 border border-green-400/15 rounded-xl shadow-xl overflow-hidden z-50">
-            <div className="px-4 py-3 border-b border-gray-700/50">
-              <p className="text-sm font-medium text-white">Dr. Sarah Mitchell</p>
-              <p className="text-xs text-white/40">sarah.mitchell@viaconnect.health</p>
-            </div>
-            <div className="py-1">
-              <Link href="/settings" onClick={() => setDropdownOpen(false)} className="flex items-center gap-2 px-4 py-2 text-sm text-white/70 hover:bg-gray-700/50 hover:text-white transition-colors">
-                <User className="h-4 w-4" /> Profile
-              </Link>
-              <Link href="/settings" onClick={() => setDropdownOpen(false)} className="flex items-center gap-2 px-4 py-2 text-sm text-white/70 hover:bg-gray-700/50 hover:text-white transition-colors">
-                <Settings className="h-4 w-4" /> Settings
-              </Link>
-            </div>
-            <div className="border-t border-gray-700/50 py-1">
-              <button className="flex items-center gap-2 w-full px-4 py-2 text-sm text-red-400 hover:bg-gray-700/50 transition-colors">
-                <LogOut className="h-4 w-4" /> Sign out
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-    </header>
-  )
-}
-
-// ─── Mobile Top Bar ─────────────────────────────────────────────────────────
-
-function MobileTopBar() {
-  const pathname = usePathname()
-  const currentPage = React.useMemo(() => {
-    const match = Object.entries(pageTitles).find(
+    const match = Object.entries(PAGE_TITLES).find(
       ([path]) => pathname === path || pathname.startsWith(path + "/")
     )
     return match ? match[1] : "Dashboard"
   }, [pathname])
 
   return (
-    <header className="fixed top-0 left-0 right-0 h-14 z-30 bg-gray-900/95 backdrop-blur-md border-b border-green-400/10 flex items-center justify-between px-4 md:hidden">
-      <div className="flex items-center gap-2">
-        <Leaf className="h-5 w-5 text-green-400" />
-        <span className="text-sm font-bold text-green-400">ViaConnect</span>
-      </div>
-      <span className="text-sm font-medium text-white">{currentPage}</span>
-      <div className="flex items-center gap-2">
-        <button className="relative p-1.5 text-white/60" aria-label="Notifications">
-          <Bell className="h-5 w-5" />
-          <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 bg-red-400 rounded-full flex items-center justify-center text-[8px] font-bold text-white">
-            3
+    <header className="fixed top-0 w-full z-50 bg-[#0c1322]/40 backdrop-blur-xl shadow-[0px_20px_40px_rgba(0,0,0,0.4)] flex items-center justify-between px-6 h-16">
+      {/* Left: Logo + Breadcrumbs */}
+      <div className="flex items-center gap-8">
+        <Link href="/dashboard" className="flex items-center gap-2">
+          <ClipboardList className="h-6 w-6 text-[#6bfb9a]" />
+          <span className="text-xl font-black text-[#6bfb9a] tracking-tighter uppercase">
+            ViaConnect
           </span>
+        </Link>
+
+        {/* Breadcrumbs */}
+        <nav className="hidden md:flex items-center gap-2 text-sm text-[#dce2f7]/50">
+          <span>Nexus</span>
+          <ChevronRight className="h-3 w-3" />
+          <span className="text-[#6bfb9a]">{currentPage}</span>
+        </nav>
+      </div>
+
+      {/* Center: Search */}
+      <div className="flex-1 max-w-xl px-8 hidden md:block">
+        <div className="relative group">
+          <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+            <Search className="h-4 w-4 text-[#dce2f7]/40 group-focus-within:text-[#6bfb9a] transition-colors" />
+          </div>
+          <input
+            className="w-full bg-[#2e3545] border-none rounded-xl py-2 pl-10 pr-16 text-sm text-[#dce2f7] placeholder:text-[#dce2f7]/40 focus:ring-1 focus:ring-[#6bfb9a]/40 focus:bg-[#232a3a] focus:outline-none transition-all"
+            placeholder="Search clinical records..."
+            type="text"
+          />
+          <div className="absolute inset-y-0 right-3 flex items-center">
+            <kbd className="hidden md:inline-flex items-center gap-1 px-2 py-0.5 rounded bg-[#0c1322]/50 border border-[#3d4a3e]/20 text-[10px] text-[#dce2f7]/40 font-mono">
+              <span className="text-xs">&#8984;</span>K
+            </kbd>
+          </div>
+        </div>
+      </div>
+
+      {/* Right: Notifications + Avatar */}
+      <div className="flex items-center gap-4">
+        <button className="p-2 rounded-full hover:bg-[#232a3a] transition-colors relative">
+          <Bell className="h-5 w-5 text-[#dce2f7]/70" />
+          <span className="absolute top-2 right-2 w-2 h-2 bg-[#6bfb9a] rounded-full shadow-[0_0_15px_rgba(107,251,154,0.2)]" />
         </button>
-        <div className="w-8 h-8 rounded-full bg-green-400/20 flex items-center justify-center text-[10px] font-bold text-green-400">
-          SM
+        <div className="h-8 w-8 rounded-full overflow-hidden border border-[#6bfb9a]/20 bg-[#232a3a] flex items-center justify-center text-[10px] font-bold text-[#6bfb9a]">
+          JV
         </div>
       </div>
     </header>
@@ -306,15 +197,18 @@ function FAB() {
 
   const items = [
     { label: "New Patient", icon: UserPlus, href: "/patients/new" },
-    { label: "New Protocol", icon: ClipboardPlus, href: "/protocols/builder" },
+    { label: "New Protocol", icon: FlaskConical, href: "/protocols/builder" },
     { label: "Quick Check", icon: Zap, href: "/interactions" },
   ]
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 hidden md:block" ref={fabRef}>
+    <div
+      className="fixed bottom-24 right-6 lg:bottom-10 lg:right-10 z-50 flex flex-col items-end gap-3"
+      ref={fabRef}
+    >
       {/* Expanded Menu */}
       {open && (
-        <div className="absolute bottom-16 right-0 bg-gray-800 border border-green-400/15 rounded-xl shadow-xl overflow-hidden w-48 mb-2">
+        <div className="flex flex-col items-end gap-3 animate-in fade-in slide-in-from-bottom-2 duration-200">
           {items.map((item) => {
             const Icon = item.icon
             return (
@@ -322,39 +216,39 @@ function FAB() {
                 key={item.label}
                 href={item.href}
                 onClick={() => setOpen(false)}
-                className="flex items-center gap-3 px-4 py-3 text-sm text-white/70 hover:bg-gray-700/50 hover:text-green-400 transition-colors"
+                className="bg-[#232a3a]/80 backdrop-blur-[20px] px-4 py-2 rounded-full border border-[#3d4a3e]/20 text-xs font-bold uppercase tracking-wider text-[#dce2f7] hover:bg-[#6bfb9a] hover:text-[#0c1322] transition-all flex items-center gap-2 shadow-2xl"
               >
-                <Icon className="h-4 w-4" />
                 {item.label}
+                <Icon className="h-4 w-4" />
               </Link>
             )
           })}
         </div>
       )}
 
-      {/* FAB Button */}
+      {/* Main FAB */}
       <button
         onClick={() => setOpen(!open)}
-        className={`w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-all duration-200 ${
+        className={`h-16 w-16 rounded-full flex items-center justify-center transition-all active:scale-90 active:duration-200 ${
           open
-            ? "bg-gray-800 border border-green-400/15 text-green-400 rotate-45"
-            : "bg-green-400 text-gray-900 shadow-green-400/20 hover:bg-green-300 hover:shadow-green-400/30"
+            ? "bg-[#232a3a] border border-[#3d4a3e]/20 text-[#6bfb9a]"
+            : "bg-[#6bfb9a] text-[#0c1322] shadow-[0_0_30px_rgba(107,251,154,0.4)]"
         }`}
         aria-label={open ? "Close menu" : "Quick actions"}
       >
-        {open ? <X className="h-6 w-6" /> : <Plus className="h-6 w-6" />}
+        {open ? <X className="h-7 w-7" /> : <Plus className="h-7 w-7 stroke-[3]" />}
       </button>
     </div>
   )
 }
 
-// ─── Mobile Bottom Tab Nav ──────────────────────────────────────────────────
+// ─── Mobile Bottom Nav ──────────────────────────────────────────────────────
 
-function MobileTabNav() {
+function MobileBottomNav() {
   const pathname = usePathname()
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-gray-900/95 backdrop-blur-md border-t border-green-400/10 flex justify-around items-center px-2 pb-4 pt-2 md:hidden">
+    <nav className="lg:hidden fixed bottom-0 left-0 w-full z-50 bg-[#0c1322]/60 backdrop-blur-2xl border-t border-[#3d4a3e]/15 flex justify-around items-center px-4 pb-6 pt-3 rounded-t-3xl shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
       {MOBILE_TABS.map((tab) => {
         const isActive = pathname === tab.href || pathname.startsWith(tab.href + "/")
         const Icon = tab.icon
@@ -362,8 +256,10 @@ function MobileTabNav() {
           <Link
             key={tab.href}
             href={tab.href}
-            className={`flex flex-col items-center gap-0.5 py-1 px-3 rounded-lg transition-colors ${
-              isActive ? "text-green-400" : "text-white/40"
+            className={`flex flex-col items-center justify-center active:scale-90 transition-transform ${
+              isActive
+                ? "bg-[#6bfb9a]/10 text-[#6bfb9a] rounded-xl px-3 py-1"
+                : "text-[#dce2f7]/50 hover:text-[#6bfb9a]"
             }`}
           >
             <Icon className="h-5 w-5" />
@@ -384,46 +280,21 @@ export default function DashboardLayout({
 }) {
   const [collapsed, setCollapsed] = React.useState(false)
 
-  // Auto-collapse on medium screens
-  React.useEffect(() => {
-    function handleResize() {
-      if (window.innerWidth < 1024 && window.innerWidth >= 768) {
-        setCollapsed(true)
-      } else if (window.innerWidth >= 1024) {
-        setCollapsed(false)
-      }
-    }
-    handleResize()
-    window.addEventListener("resize", handleResize)
-    return () => window.removeEventListener("resize", handleResize)
-  }, [])
-
   return (
     <SidebarContext.Provider value={{ collapsed, setCollapsed }}>
-      <div className="min-h-screen bg-[#111827] text-white">
-        {/* Desktop */}
-        <Sidebar />
+      <div className="min-h-screen bg-[#0c1322] text-[#dce2f7] selection:bg-[#6bfb9a]/30">
         <TopBar />
-
-        {/* Mobile */}
-        <MobileTopBar />
+        <Sidebar />
 
         {/* Main Content */}
-        <main
-          className={`transition-all duration-300 ${
-            collapsed ? "md:ml-16" : "md:ml-64"
-          } mt-14 md:mt-16 overflow-y-auto h-[calc(100vh-3.5rem)] md:h-[calc(100vh-4rem)]`}
-        >
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 pb-24 md:pb-8">
+        <main className="lg:ml-64 pt-20 pb-24 md:pb-8 px-6 min-h-screen">
+          <div className="max-w-7xl mx-auto">
             {children}
           </div>
         </main>
 
-        {/* FAB */}
         <FAB />
-
-        {/* Mobile Bottom Nav */}
-        <MobileTabNav />
+        <MobileBottomNav />
       </div>
     </SidebarContext.Provider>
   )
