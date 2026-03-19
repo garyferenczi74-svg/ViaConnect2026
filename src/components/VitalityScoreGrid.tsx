@@ -5,142 +5,124 @@ import { VitalityDimension } from "@/data/assessment";
 interface VitalityScoreGridProps {
   dimensions: VitalityDimension[];
   overallScore: number;
+  mode?: "full" | "overall-only" | "grid-only";
 }
 
-function getScoreColor(score: number, max: number = 10): { stroke: string; text: string; bg: string } {
+function getGaugeColor(score: number, max: number = 10): { stroke: string; textClass: string } {
   const ratio = score / max;
-  if (ratio >= 0.7) return { stroke: "#4ade80", text: "text-[#4ade80]", bg: "bg-[#4ade80]/10" };
-  if (ratio >= 0.4) return { stroke: "#facc15", text: "text-yellow-400", bg: "bg-yellow-400/10" };
-  return { stroke: "#f87171", text: "text-red-400", bg: "bg-red-400/10" };
+  if (ratio >= 0.7) return { stroke: "#6bfb9a", textClass: "text-[#6bfb9a]" };
+  if (ratio >= 0.4) return { stroke: "#ffb657", textClass: "text-[#ffb657]" };
+  return { stroke: "#ffb4ab", textClass: "text-[#ffb4ab]" };
 }
 
-function CircularGauge({
-  score,
-  maxScore,
-  label,
-  size = 80,
-}: {
-  score: number;
-  maxScore: number;
-  label: string;
-  size?: number;
-}) {
-  const { stroke, text } = getScoreColor(score, maxScore);
-  const radius = (size - 10) / 2;
-  const circumference = 2 * Math.PI * radius;
-  const progress = (score / maxScore) * circumference;
-  const center = size / 2;
+function MiniGauge({ score, maxScore, label }: { score: number; maxScore: number; label: string }) {
+  const { stroke, textClass } = getGaugeColor(score, maxScore);
+  const percentage = (score / maxScore) * 100;
 
   return (
-    <div className="flex flex-col items-center gap-2">
-      <div className="relative" style={{ width: size, height: size }}>
-        <svg width={size} height={size} className="-rotate-90">
-          {/* Background track */}
-          <circle
-            cx={center}
-            cy={center}
-            r={radius}
+    <div className="flex flex-col items-center gap-3">
+      <div className="relative w-16 h-16">
+        <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
+          <path
+            d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
             fill="none"
             stroke="#2e3545"
-            strokeWidth={4}
+            strokeWidth="3"
           />
-          {/* Progress arc */}
-          <circle
-            cx={center}
-            cy={center}
-            r={radius}
+          <path
+            d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
             fill="none"
             stroke={stroke}
-            strokeWidth={4}
-            strokeDasharray={`${progress} ${circumference - progress}`}
+            strokeWidth="3"
+            strokeDasharray={`${percentage}, 100`}
             strokeLinecap="round"
-            style={{ transition: "stroke-dasharray 0.8s ease-out" }}
           />
         </svg>
-        {/* Score text */}
-        <div className="absolute inset-0 flex items-center justify-center">
-          <span className={`text-lg font-black ${text}`}>{score}</span>
-        </div>
+        <span className={`absolute inset-0 flex items-center justify-center font-mono text-sm font-bold ${textClass}`}>
+          {score}
+        </span>
       </div>
-      <p className="text-[10px] text-[#bccabb]/70 font-mono uppercase tracking-widest text-center leading-tight">
+      <span className="text-[10px] uppercase text-[#dce2f7]/60 text-center tracking-wide">
         {label}
-      </p>
+      </span>
     </div>
   );
 }
 
 function LargeGauge({ score, maxScore }: { score: number; maxScore: number }) {
-  const { stroke, text } = getScoreColor(score, maxScore);
-  const size = 160;
-  const radius = 65;
-  const circumference = 2 * Math.PI * radius;
-  const progress = (score / maxScore) * circumference;
-  const center = size / 2;
+  const { stroke, textClass } = getGaugeColor(score, maxScore);
+  const percentage = (score / maxScore) * 100;
 
   return (
-    <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
-      <svg width={size} height={size} className="-rotate-90">
+    <div className="relative w-48 h-48">
+      <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
         <circle
-          cx={center}
-          cy={center}
-          r={radius}
-          fill="none"
+          cx="50"
+          cy="50"
+          r="45"
+          fill="transparent"
           stroke="#2e3545"
-          strokeWidth={6}
+          strokeWidth="8"
         />
         <circle
-          cx={center}
-          cy={center}
-          r={radius}
-          fill="none"
+          cx="50"
+          cy="50"
+          r="45"
+          fill="transparent"
           stroke={stroke}
-          strokeWidth={6}
-          strokeDasharray={`${progress} ${circumference - progress}`}
+          strokeWidth="8"
+          strokeDasharray={`${percentage * 2.827} ${282.7 - percentage * 2.827}`}
           strokeLinecap="round"
-          style={{ transition: "stroke-dasharray 0.8s ease-out" }}
+          style={{ transition: "stroke-dasharray 1s ease-out" }}
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className={`text-4xl font-black ${text}`}>{score}</span>
-        <span className="text-[10px] text-[#bccabb]/50 font-mono">/ {maxScore}</span>
+        <span className={`text-5xl font-black ${textClass}`}>{score}</span>
+        <span className="text-xs font-mono text-[#dce2f7]/40 uppercase">Optimal: 85+</span>
       </div>
     </div>
   );
 }
 
-export default function VitalityScoreGrid({ dimensions, overallScore }: VitalityScoreGridProps) {
+export default function VitalityScoreGrid({ dimensions, overallScore, mode = "full" }: VitalityScoreGridProps) {
+  if (mode === "overall-only") {
+    return <LargeGauge score={overallScore} maxScore={100} />;
+  }
+
   return (
-    <div
-      className="rounded-2xl border border-[#3d4a3e]/15 p-6"
-      style={{ background: "rgba(46, 53, 69, 0.4)", backdropFilter: "blur(20px)" }}
-    >
-      <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-[#4ade80] mb-1">
-        Vitality Score Matrix
+    <div className="glass-card p-8 rounded-3xl">
+      <h3 className="text-[#dce2f7]/60 text-xs uppercase tracking-widest mb-8 font-medium">
+        Vitality Matrix
       </h3>
-      <p className="text-[10px] text-[#bccabb]/60 font-mono uppercase tracking-widest mb-6">
-        Multi-Dimensional Health Assessment
-      </p>
 
-      <div className="flex flex-col items-center gap-8">
-        {/* Overall Score */}
-        <div className="text-center">
-          <LargeGauge score={overallScore} maxScore={100} />
-          <p className="text-xs font-bold text-[#dce2f7] mt-2">Overall Vitality</p>
-          <p className="text-[10px] text-[#bccabb]/50 font-mono">Composite Index</p>
-        </div>
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-8">
+        {dimensions.map((dim) => (
+          <MiniGauge key={dim.label} score={dim.score} maxScore={dim.maxScore} label={dim.label} />
+        ))}
+      </div>
 
-        {/* Individual Gauges */}
-        <div className="grid grid-cols-5 gap-6 w-full">
-          {dimensions.map((dim) => (
-            <CircularGauge
-              key={dim.label}
-              score={dim.score}
-              maxScore={dim.maxScore}
-              label={dim.label}
-            />
-          ))}
+      {/* Alert */}
+      <div className="mt-12 p-6 rounded-2xl bg-[#141b2b] border border-[#3d4a3e]/5">
+        <div className="flex gap-4 items-start">
+          <svg className="w-6 h-6 text-[#ffb657] mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+          </svg>
+          <div>
+            <h4 className="text-[#dce2f7] font-bold text-sm">Vitality Alert: Sleep Inconsistency</h4>
+            <p className="text-xs text-[#dce2f7]/60 mt-1 leading-relaxed">
+              System logs indicate circadian disruption in the last 72-hour window. Cortisol levels likely peaking pre-maturely. Suggest 15m &ldquo;Blue-Light-Zero&rdquo; protocol before sleep.
+            </p>
+          </div>
         </div>
       </div>
+
+      <style jsx>{`
+        .glass-card {
+          background: rgba(46, 53, 69, 0.4);
+          backdrop-filter: blur(20px);
+          border: 1px solid rgba(107, 251, 154, 0.15);
+        }
+      `}</style>
     </div>
   );
 }
