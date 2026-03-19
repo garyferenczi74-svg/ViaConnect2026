@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&amp;family=JetBrains+Mono&amp;family=Space+Grotesk:wght@500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet"/>
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: { "surface": "#0c1322", "primary": "#6bfb9a", "on-surface": "#dce2f7", "surface-container-high": "#232a3a" },
+                    fontFamily: { body: ["Inter"], mono: ["JetBrains Mono"] }
+                }
+            }
+        }
+    </script>
+<style> .glass { background: rgba(46, 53, 69, 0.4); backdrop-filter: blur(20px); } </style>
+</head>
+<body class="bg-surface text-on-surface font-body min-h-screen pb-20 md:pb-0">
+<header class="fixed top-0 z-50 w-full px-6 py-4 bg-surface flex justify-between items-center shadow-2xl">
+<div class="flex items-center gap-3 text-primary font-black text-xl tracking-tighter">
+<span class="material-symbols-outlined">security</span> Clinical Nexus
+        </div>
+<div class="flex items-center gap-6">
+<nav class="hidden md:flex gap-6 text-sm font-semibold">
+<span class="text-primary">Dashboard</span>
+<span class="opacity-60">Audit Logs</span>
+<span class="opacity-60">Security</span>
+</nav>
+<div class="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center border border-white/5">
+<span class="material-symbols-outlined text-primary">account_circle</span>
+</div>
+</div>
+</header>
+<aside class="hidden md:flex flex-col h-screen w-64 fixed left-0 top-0 pt-24 bg-[#141b2b] z-40 border-r border-white/5">
+<nav class="flex flex-col gap-1 p-2">
+<div class="bg-surface-container-high text-primary border-l-4 border-primary px-4 py-3 flex gap-3 text-xs font-black uppercase tracking-widest">
+<span class="material-symbols-outlined">dashboard</span> Dashboard
+            </div>
+<div class="opacity-60 px-4 py-3 flex gap-3 text-xs font-black uppercase tracking-widest hover:opacity-100 cursor-pointer">
+<span class="material-symbols-outlined">list_alt</span> Logs
+            </div>
+</nav>
+</aside>
+<main class="pt-24 md:pl-72 px-6 grid grid-cols-1 lg:grid-cols-12 gap-6 pb-12">
+<section class="lg:col-span-12 glass rounded-xl p-8 flex flex-col items-center">
+<div class="relative w-48 h-48 flex items-center justify-center">
+<svg class="w-full h-full -rotate-90">
+<circle cx="96" cy="96" fill="transparent" r="80" stroke="#232a3a" stroke-width="12"></circle>
+<circle cx="96" cy="96" fill="transparent" r="80" stroke="#6bfb9a" stroke-dasharray="502.6" stroke-dashoffset="30" stroke-width="12"></circle>
+</svg>
+<div class="absolute text-center">
+<div class="text-5xl font-black font-mono">94</div>
+<div class="text-[10px] uppercase tracking-[0.2em] font-bold text-primary/70">Score</div>
+</div>
+</div>
+<h3 class="mt-4 text-xl font-bold">Overall Compliance Score</h3>
+<p class="opacity-50 text-xs">HIPAA Regulatory Standard v4.2</p>
+</section>
+<section class="lg:col-span-5 glass rounded-xl p-6 space-y-6">
+<h4 class="text-xs font-bold uppercase tracking-widest text-primary">Breakdown</h4>
+<div class="space-y-4">
+<div>
+<div class="flex justify-between text-xs font-mono mb-1"><span>Encryption</span><span class="text-primary">100%</span></div>
+<div class="h-1.5 bg-surface-container-high rounded-full overflow-hidden"><div class="h-full bg-primary w-full"></div></div>
+</div>
+<div>
+<div class="flex justify-between text-xs font-mono mb-1"><span>Access Control</span><span class="text-primary">96%</span></div>
+<div class="h-1.5 bg-surface-container-high rounded-full overflow-hidden"><div class="h-full bg-primary w-[96%]"></div></div>
+</div>
+<div>
+<div class="flex justify-between text-xs font-mono mb-1"><span>Audit Logging</span><span class="text-primary">92%</span></div>
+<div class="h-1.5 bg-surface-container-high rounded-full overflow-hidden"><div class="h-full bg-primary w-[92%]"></div></div>
+</div>
+<div>
+<div class="flex justify-between text-xs font-mono mb-1"><span>Breach Detection</span><span class="text-[#fbbf24]">88%</span></div>
+<div class="h-1.5 bg-surface-container-high rounded-full overflow-hidden"><div class="h-full bg-[#fbbf24] w-[88%]"></div></div>
+</div>
+<div>
+<div class="flex justify-between text-xs font-mono mb-1"><span>Training</span><span class="text-primary">94%</span></div>
+<div class="h-1.5 bg-surface-container-high rounded-full overflow-hidden"><div class="h-full bg-primary w-[94%]"></div></div>
+</div>
+</div>
+</section>
+<section class="lg:col-span-7 bg-[#141b2b] rounded-xl p-6 border border-white/5">
+<h4 class="text-xs font-bold uppercase tracking-widest opacity-50 mb-6 flex gap-2"><span class="material-symbols-outlined text-sm">history</span> Security Timeline</h4>
+<div class="space-y-4">
+<div class="flex gap-4 p-4 bg-white/5 rounded-lg border-l-4 border-red-500">
+<span class="material-symbols-outlined text-red-400">report</span>
+<div class="flex-1"><p class="text-sm font-bold">Failed Login Attempt</p><p class="text-[10px] opacity-50 font-mono">User: Dr. Aris • 192.168.1.45</p></div>
+<span class="text-[10px] opacity-40 font-mono whitespace-nowrap">2m ago</span>
+</div>
+<div class="flex gap-4 p-4 bg-white/5 rounded-lg border-l-4 border-[#fbbf24]">
+<span class="material-symbols-outlined text-[#fbbf24]">warning</span>
+<div class="flex-1"><p class="text-sm font-bold">Protocol Modified Without Co-sign</p><p class="text-[10px] opacity-50 font-mono">Protocol #P-291 • Dr. Chen</p></div>
+<span class="text-[10px] opacity-40 font-mono whitespace-nowrap">41m ago</span>
+</div>
+<div class="flex gap-4 p-4 bg-white/5 rounded-lg border-l-4 border-primary">
+<span class="material-symbols-outlined text-primary">check_circle</span>
+<div class="flex-1"><p class="text-sm font-bold">System Scan Complete</p><p class="text-[10px] opacity-50 font-mono">0 vulnerabilities detected</p></div>
+<span class="text-[10px] opacity-40 font-mono whitespace-nowrap">1h ago</span>
+</div>
+<div class="flex gap-4 p-4 bg-white/5 rounded-lg border-l-4 border-primary">
+<span class="material-symbols-outlined text-primary">verified_user</span>
+<div class="flex-1"><p class="text-sm font-bold">Nightly Backup Encrypted</p><p class="text-[10px] opacity-50 font-mono">AES-256 • Vault transfer complete</p></div>
+<span class="text-[10px] opacity-40 font-mono whitespace-nowrap">8h ago</span>
+</div>
+</div>
+</section>
+<section class="lg:col-span-12 bg-[#141b2b] rounded-xl overflow-hidden border border-white/5">
+<div class="p-4 flex flex-col md:flex-row justify-between items-center gap-4 border-b border-white/5">
+<h4 class="text-xs font-bold uppercase tracking-widest opacity-50">Audit Logs</h4>
+<div class="relative w-full md:w-64">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 opacity-30 text-lg">search</span>
+<input class="w-full bg-surface-container-high border-none rounded-lg pl-10 pr-4 py-2 text-xs" placeholder="Search logs..."/>
+</div>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left text-xs font-mono">
+<thead class="bg-surface opacity-40 uppercase text-[10px]">
+<tr><th class="px-6 py-4">Timestamp</th><th class="px-6 py-4">User</th><th class="px-6 py-4">Action</th><th class="px-6 py-4">Status</th></tr>
+</thead>
+<tbody class="divide-y divide-white/5">
+<tr class="hover:bg-primary/5 transition-colors">
+<td class="px-6 py-4 opacity-60 whitespace-nowrap">2026-03-19 14:22:01</td>
+<td class="px-6 py-4 text-primary">Dr. Julianne</td>
+<td class="px-6 py-4">View Patient Record</td>
+<td class="px-6 py-4"><span class="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-bold">SUCCESS</span></td>
+</tr>
+<tr class="bg-surface/50">
+<td class="px-6 py-4 opacity-60 whitespace-nowrap">2026-03-19 14:15:12</td>
+<td class="px-6 py-4 text-primary">Dr. Aris</td>
+<td class="px-6 py-4">Auth Login</td>
+<td class="px-6 py-4"><span class="px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 text-[10px] font-bold">FAILED</span></td>
+</tr>
+<tr class="hover:bg-primary/5 transition-colors">
+<td class="px-6 py-4 opacity-60 whitespace-nowrap">2026-03-19 13:58:44</td>
+<td class="px-6 py-4 text-primary">System</td>
+<td class="px-6 py-4">Auto-sync Epic FHIR</td>
+<td class="px-6 py-4"><span class="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-bold">SUCCESS</span></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</main>
+<nav class="fixed bottom-0 w-full z-50 flex justify-around p-3 md:hidden bg-surface/80 backdrop-blur-xl border-t border-white/5">
+<div class="flex flex-col items-center text-primary"><span class="material-symbols-outlined">analytics</span><span class="text-[9px] font-mono">Overview</span></div>
+<div class="flex flex-col items-center opacity-40"><span class="material-symbols-outlined">history</span><span class="text-[9px] font-mono">Logs</span></div>
+<div class="flex flex-col items-center opacity-40"><span class="material-symbols-outlined">verified_user</span><span class="text-[9px] font-mono">Alerts</span></div>
+<div class="flex flex-col items-center opacity-40"><span class="material-symbols-outlined">account_circle</span><span class="text-[9px] font-mono">Profile</span></div>
+</nav>
+</body></html>
