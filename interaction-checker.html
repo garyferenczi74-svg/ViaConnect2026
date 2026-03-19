@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "surface-container-high": "#232a3a",
+                        "surface-tint": "#4de082",
+                        "surface-container-highest": "#2e3545",
+                        "surface": "#0c1322",
+                        "tertiary-fixed-dim": "#cebdff",
+                        "background": "#0c1322",
+                        "on-primary-container": "#005e2d",
+                        "on-secondary-container": "#5a4100",
+                        "on-surface-variant": "#bccabb",
+                        "inverse-on-surface": "#293040",
+                        "tertiary-container": "#ccbaff",
+                        "primary-fixed-dim": "#4de082",
+                        "surface-variant": "#2e3545",
+                        "outline": "#869486",
+                        "error-container": "#93000a",
+                        "surface-container-lowest": "#070e1d",
+                        "on-tertiary": "#381385",
+                        "on-primary": "#003919",
+                        "error": "#ffb4ab",
+                        "tertiary-fixed": "#e8ddff",
+                        "on-secondary": "#402d00",
+                        "outline-variant": "#3d4a3e",
+                        "on-primary-fixed": "#00210c",
+                        "secondary": "#ffc640",
+                        "surface-dim": "#0c1322",
+                        "on-tertiary-fixed-variant": "#4f319c",
+                        "on-secondary-fixed": "#261a00",
+                        "on-secondary-fixed-variant": "#5c4300",
+                        "on-error": "#690005",
+                        "secondary-fixed-dim": "#f9bd22",
+                        "primary-fixed": "#6dfe9c",
+                        "surface-bright": "#323949",
+                        "on-surface": "#dce2f7",
+                        "surface-container": "#191f2f",
+                        "on-background": "#dce2f7",
+                        "on-tertiary-container": "#593ca7",
+                        "on-tertiary-fixed": "#21005e",
+                        "inverse-surface": "#dce2f7",
+                        "on-primary-fixed-variant": "#005227",
+                        "tertiary": "#e6dbff",
+                        "on-error-container": "#ffdad6",
+                        "primary": "#6bfb9a",
+                        "secondary-container": "#e3aa00",
+                        "primary-container": "#4ade80",
+                        "surface-container-low": "#141b2b",
+                        "inverse-primary": "#006d36",
+                        "secondary-fixed": "#ffdf9f"
+                    },
+                    fontFamily: {
+                        "headline": ["Space Grotesk"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .glass-panel { background: rgba(35, 42, 58, 0.4); backdrop-filter: blur(12px); }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface font-body selection:bg-primary/30">
+<!-- TopAppBar -->
+<header class="fixed top-0 z-50 w-full flex justify-between items-center px-6 py-4 bg-[#0c1322] border-none bg-gradient-to-b from-[#0c1322] to-transparent">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-[#4ade80] text-xl" data-icon="clinical_notes">clinical_notes</span>
+<h1 class="font-['Space_Grotesk'] tracking-tighter font-bold text-xl text-[#4ade80]">ViaConnect</h1>
+</div>
+<button class="flex items-center gap-2 px-4 py-2 rounded-xl bg-surface-container-highest hover:bg-surface-variant transition-colors text-sm font-medium border border-outline-variant/20">
+<span class="material-symbols-outlined text-sm" data-icon="person_search">person_search</span>
+            Import from Patient
+        </button>
+</header>
+<main class="pt-24 pb-32 px-6 max-w-5xl mx-auto space-y-8">
+<!-- Input Section: Bento Grid -->
+<div class="grid md:grid-cols-2 gap-6">
+<div class="p-6 rounded-2xl bg-surface-container-low border border-outline-variant/10">
+<div class="flex items-center gap-3 mb-4">
+<span class="material-symbols-outlined text-blue-400" data-icon="pill">pill</span>
+<h2 class="font-headline font-bold tracking-tight">Current Medications</h2>
+</div>
+<div class="space-y-3">
+<div class="bg-surface-container-lowest p-3 rounded-xl border border-outline-variant/5 flex justify-between items-center">
+<span class="text-sm">Levothyroxine 50mcg</span>
+<span class="material-symbols-outlined text-xs text-on-surface-variant" data-icon="close">close</span>
+</div>
+<button class="w-full py-3 rounded-xl border-2 border-dashed border-outline-variant/20 text-on-surface-variant text-sm hover:border-primary/40 transition-all">
+                        + Add Medication
+                    </button>
+</div>
+</div>
+<div class="p-6 rounded-2xl bg-surface-container-low border border-outline-variant/10">
+<div class="flex items-center gap-3 mb-4">
+<span class="material-symbols-outlined text-primary" data-icon="herb">cannabis</span>
+<h2 class="font-headline font-bold tracking-tight">Supplements</h2>
+</div>
+<div class="space-y-3">
+<div class="bg-surface-container-lowest p-3 rounded-xl border border-outline-variant/5 flex justify-between items-center">
+<span class="text-sm">Iron+ (Ferrous Fumarate)</span>
+<span class="material-symbols-outlined text-xs text-on-surface-variant" data-icon="close">close</span>
+</div>
+<button class="w-full py-3 rounded-xl border-2 border-dashed border-outline-variant/20 text-on-surface-variant text-sm hover:border-primary/40 transition-all">
+                        + Add Supplement
+                    </button>
+</div>
+</div>
+</div>
+<!-- Primary Action -->
+<button class="w-full bg-primary hover:bg-primary-container text-on-primary py-4 rounded-2xl font-headline font-bold text-lg shadow-[0_0_30px_rgba(74,222,128,0.2)] transition-all active:scale-[0.98]">
+            Run Interaction Check
+        </button>
+<!-- Results Summary -->
+<div class="flex gap-4 p-4 rounded-2xl bg-surface-container/50 border border-outline-variant/5">
+<div class="flex-1 text-center py-2 rounded-xl bg-error-container/20 border border-error/20">
+<div class="text-error font-headline font-bold text-xl">1</div>
+<div class="text-[10px] uppercase tracking-widest font-semibold text-error/80">Avoid</div>
+</div>
+<div class="flex-1 text-center py-2 rounded-xl bg-secondary-container/10 border border-secondary/20">
+<div class="text-secondary font-headline font-bold text-xl">1</div>
+<div class="text-[10px] uppercase tracking-widest font-semibold text-secondary/80">Monitor</div>
+</div>
+<div class="flex-1 text-center py-2 rounded-xl bg-primary/5 border border-primary/20">
+<div class="text-primary font-headline font-bold text-xl">4</div>
+<div class="text-[10px] uppercase tracking-widest font-semibold text-primary/80">Safe</div>
+</div>
+</div>
+<!-- Detailed Cards -->
+<div class="space-y-4">
+<!-- Expanded Red Card -->
+<div class="rounded-3xl bg-surface-container-high border border-error/30 overflow-hidden shadow-2xl">
+<div class="p-6 flex justify-between items-start bg-gradient-to-r from-error-container/20 to-transparent">
+<div>
+<span class="px-3 py-1 rounded-full bg-error text-on-error text-[10px] font-black tracking-widest uppercase mb-2 inline-block">AVOID</span>
+<h3 class="font-headline font-bold text-lg">Levothyroxine vs Iron+</h3>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="expand_less">expand_less</span>
+</div>
+<div class="px-6 pb-6 space-y-6">
+<div class="grid md:grid-cols-2 gap-6">
+<div class="space-y-2">
+<label class="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Mechanism</label>
+<p class="text-sm leading-relaxed text-on-surface/80">Ferrous ions form insoluble complexes with thyroxine in the gastrointestinal tract, significantly reducing bioavailability and therapeutic efficacy.</p>
+</div>
+<div class="space-y-2">
+<label class="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Mitigation Strategy</label>
+<p class="text-sm leading-relaxed text-on-surface/80 font-medium text-primary">Administer medications at least 4 hours apart. Prioritize early morning fasting for Levothyroxine.</p>
+</div>
+</div>
+<div class="space-y-2">
+<label class="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Clinical Rationale</label>
+<textarea class="w-full bg-surface-container-lowest border border-outline-variant/20 rounded-xl p-3 text-sm focus:ring-1 focus:ring-primary outline-none" placeholder="Enter practitioner notes..." rows="3"></textarea>
+</div>
+</div>
+</div>
+<!-- Collapsed Yellow Card -->
+<div class="p-5 rounded-2xl bg-surface-container-low border border-outline-variant/10 flex justify-between items-center opacity-80 hover:opacity-100 transition-opacity cursor-pointer">
+<div class="flex items-center gap-4">
+<span class="px-2 py-0.5 rounded-lg bg-secondary text-on-secondary text-[9px] font-bold uppercase tracking-wider">MONITOR</span>
+<span class="font-headline font-medium text-sm">Levothyroxine vs Multivitamin (Calcium)</span>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant text-sm" data-icon="expand_more">expand_more</span>
+</div>
+<!-- Collapsed Green Card -->
+<div class="p-5 rounded-2xl bg-surface-container-low border border-outline-variant/10 flex justify-between items-center opacity-60 hover:opacity-100 transition-opacity cursor-pointer">
+<div class="flex items-center gap-4">
+<span class="px-2 py-0.5 rounded-lg bg-primary/20 text-primary text-[9px] font-bold uppercase tracking-wider">SAFE</span>
+<span class="font-headline font-medium text-sm text-on-surface-variant">Levothyroxine vs Omega-3 Fish Oil</span>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant text-sm" data-icon="check_circle" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+</div>
+</main>
+<!-- Sticky Footer -->
+<footer class="fixed bottom-0 left-0 w-full glass-panel border-t border-white/5 px-6 pb-6 pt-4 flex justify-between items-center shadow-[0_-20px_40px_rgba(0,57,25,0.12)]">
+<div class="flex gap-6">
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-error animate-pulse"></div>
+<span class="text-[10px] font-bold uppercase tracking-tighter">1 Critical Conflict</span>
+</div>
+<div class="hidden md:flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-secondary"></div>
+<span class="text-[10px] font-bold uppercase tracking-tighter text-on-surface-variant">1 Minor Interaction</span>
+</div>
+</div>
+<button class="px-8 py-3 rounded-xl bg-primary text-on-primary font-headline font-bold text-sm hover:scale-[1.02] transition-transform">
+            Acknowledge &amp; Save
+        </button>
+</footer>
+</body></html>
