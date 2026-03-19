@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ViaConnect</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=Material+Symbols+Outlined:wght,FILL@400,0..1&amp;display=swap" rel="stylesheet"/>
+<script>
+        tailwind.config = { darkMode: "class", theme: { extend: { colors: { primary: "#4ade80", bg: "#111827", surf: "#1f2937", brd: "#374151" }, fontFamily: { sans: ["Inter", "sans-serif"] } } } }
+    </script>
+<style>
+        .glass { background: rgba(31,41,55,0.7); backdrop-filter: blur(12px); border: 1px solid rgba(74,222,128,0.1); }
+        .pulse { animation: p 2s infinite; } @keyframes p { 0%,100% { box-shadow: 0 0 0 0 rgba(74,222,128,0.4); } 50% { box-shadow: 0 0 0 10px rgba(74,222,128,0); } }
+        .step-line { background: linear-gradient(90deg, #4ade80 43%, #374151 43%); }
+    </style>
+</head>
+<body class="bg-bg text-slate-100 font-sans min-h-screen pb-32">
+<header class="sticky top-0 z-50 bg-bg/80 backdrop-blur-md border-b border-brd px-6 py-4 flex justify-between items-center">
+<div class="flex items-center gap-3"><div class="bg-primary p-1.5 rounded text-bg font-bold"><span class="material-symbols-outlined">medical_services</span></div>
+<h1 class="font-bold">ViaConnect <span class="text-primary/70">Protocol</span></h1></div>
+<div class="flex gap-4 text-xs text-slate-400 items-center"><span>Auto-saved 2m ago</span><span class="material-symbols-outlined cursor-pointer">close</span></div>
+</header>
+<main class="max-w-5xl mx-auto px-6 py-8">
+<!-- Stepper -->
+<div class="relative mb-12 flex justify-between items-center">
+<div class="absolute top-5 inset-x-0 h-0.5 step-line -z-10"></div>
+<!-- Completed -->
+<div class="flex flex-col items-center gap-2"><div class="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-bg"><span class="material-symbols-outlined text-lg">check</span></div><span class="text-[10px] text-primary">Patient</span></div>
+<div class="flex flex-col items-center gap-2"><div class="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-bg"><span class="material-symbols-outlined text-lg">check</span></div><span class="text-[10px] text-primary">Goals</span></div>
+<div class="flex flex-col items-center gap-2"><div class="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-bg"><span class="material-symbols-outlined text-lg">check</span></div><span class="text-[10px] text-primary">Labs</span></div>
+<!-- Active -->
+<div class="flex flex-col items-center gap-2"><div class="w-10 h-10 rounded-full bg-primary pulse flex items-center justify-center text-bg font-bold ring-4 ring-primary/20">4</div><span class="text-[10px] font-bold underline decoration-primary">Template</span></div>
+<!-- Pending -->
+<div class="flex flex-col items-center gap-2"><div class="w-10 h-10 rounded-full bg-surf border border-brd flex items-center justify-center text-slate-500">5</div><span class="text-[10px] text-slate-500">Supps</span></div>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+<div class="lg:col-span-8 space-y-8">
+<section>
+<h2 class="text-2xl font-bold mb-1">Core Protocol Template</h2>
+<p class="text-slate-400 text-sm mb-6">Select a pre-validated baseline.</p>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<div class="glass p-4 rounded-xl border-brd hover:border-primary/50 transition cursor-pointer">
+<div class="flex justify-between mb-3"><span class="material-symbols-outlined text-primary bg-primary/10 p-2 rounded-lg">favorite</span><span class="text-[10px] bg-slate-800 px-2 py-0.5 rounded text-slate-400">8 Items</span></div>
+<h3 class="font-bold text-sm">Cardiovascular</h3><p class="text-xs text-slate-400">Lipid &amp; endothelial support.</p>
+</div>
+<div class="glass p-4 rounded-xl border-2 border-primary bg-primary/5 shadow-lg shadow-primary/5 cursor-pointer">
+<div class="flex justify-between mb-3"><span class="material-symbols-outlined text-primary bg-primary/20 p-2 rounded-lg">shield</span><div class="text-right"><span class="text-[9px] bg-primary text-bg font-bold px-1.5 rounded block mb-1">SELECTED</span><span class="text-[10px] bg-slate-800 px-2 py-0.5 rounded text-slate-300">12 Items</span></div></div>
+<h3 class="font-bold text-sm">Immune Support</h3><p class="text-xs text-slate-300">Defense &amp; modulation protocol.</p>
+</div>
+<div class="glass p-4 rounded-xl border-brd opacity-70"><h3 class="font-bold text-sm">Sleep Optimization</h3><p class="text-xs text-slate-400">5 Supplements</p></div>
+<div class="glass p-4 rounded-xl border-brd opacity-70"><h3 class="font-bold text-sm">Metabolic Health</h3><p class="text-xs text-slate-400">11 Supplements</p></div>
+</div>
+</section>
+<!-- Search Simulation (Step 3/5 Ref) -->
+<section class="glass p-5 rounded-xl border-dashed opacity-75">
+<div class="flex justify-between mb-4 items-center"><span class="text-[10px] font-bold uppercase tracking-tighter text-primary/70">Ref: Supplement Selection</span><span class="text-[9px] bg-slate-800 px-2 py-0.5 rounded">SIMULATED STEP 5</span></div>
+<div class="flex bg-bg border border-brd rounded px-3 py-1.5 mb-3 text-sm"><span class="material-symbols-outlined mr-2 scale-75 text-slate-500">search</span><input class="bg-transparent border-0 p-0 text-xs w-full focus:ring-0" placeholder="Search..."/></div>
+<div class="space-y-2">
+<div class="flex justify-between bg-surf/40 p-2 rounded border border-brd text-xs"><span>Vitamin D3 + K2 (5000 IU)</span><span class="material-symbols-outlined text-sm">more_vert</span></div>
+<div class="flex justify-between bg-surf/40 p-2 rounded border border-brd text-xs"><span>Zinc Picolinate (30 mg)</span><span class="material-symbols-outlined text-sm">more_vert</span></div>
+</div>
+</section>
+</div>
+<!-- Sidebar -->
+<div class="lg:col-span-4 space-y-6">
+<div class="glass p-5 rounded-xl">
+<h3 class="text-xs font-bold mb-4 flex items-center gap-2"><span class="material-symbols-outlined text-primary text-sm">fact_check</span> Interaction Check</h3>
+<div class="space-y-2 text-[10px]">
+<div class="p-2 bg-green-500/10 border border-green-500/20 rounded flex justify-between"><span>Zinc &amp; D3: Synergy</span><span class="text-green-500">SAFE</span></div>
+<div class="p-2 bg-yellow-500/10 border border-yellow-500/20 rounded flex justify-between"><span>Zinc &amp; Copper: Monitor</span><span class="text-yellow-500">INFO</span></div>
+<div class="p-2 bg-red-500/10 border border-red-500/20 rounded flex justify-between"><span>Warfarin &amp; Vit K: AVOID</span><span class="text-red-500 font-bold">WARNING</span></div>
+</div>
+</div>
+<div class="glass p-5 rounded-xl border-primary/20 bg-primary/5">
+<h3 class="text-xs font-bold mb-4">Summary</h3>
+<div class="space-y-3 text-xs">
+<div class="flex justify-between border-b border-brd pb-1 text-slate-400"><span>Template</span><span class="text-primary">Immune</span></div>
+<div class="flex justify-between border-b border-brd pb-1 text-slate-400"><span>Total Supps</span><span class="text-white">12</span></div>
+<div class="pt-2">
+<label class="text-[9px] text-slate-500 block mb-1">ASSIGN TO PATIENT</label>
+<select class="w-full bg-bg border-brd rounded text-xs py-1"><option>James Wilson (ID: 8821)</option></select>
+</div>
+<button class="w-full bg-primary text-bg font-bold py-2.5 rounded-lg mt-2 flex items-center justify-center gap-1 hover:brightness-110 transition">Assign &amp; Notify <span class="material-symbols-outlined text-sm">send</span></button>
+</div>
+</div>
+<div class="relative rounded-xl overflow-hidden h-28 group">
+<img class="w-full h-full object-cover opacity-50 grayscale group-hover:grayscale-0 transition duration-500" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC9DIRCE7uCzx8aF1RdxRDZI6_7929nR_o0cayF5heVed9-TGo5RFFYRzuUztTThJRfckRJ-tqAMwNQoafFFz1p2xgFYPsIlLq6g1xtxZaamHaXzYn1b7xqijDLLuRX9pHYePS1AyfbF0ccyxdPvHX8LAcRDGJqlDXqX35gSGxe6f2mDRftBQLUaQAG50Y1TAG3vCv6Pffdbnk5ODSQUesBnpF8SgJuUyIrAuQVozI_dr8YLn2zGDiKn8XpF-2uKiD5V8Hl9bbSu1k"/>
+<div class="absolute inset-0 bg-gradient-to-t from-bg to-transparent p-3 flex flex-col justify-end">
+<span class="text-[8px] font-bold text-primary bg-bg/60 w-fit px-1 rounded mb-1">INSIGHT</span>
+<p class="text-[9px] leading-tight">Glutathione synergy with Vit C confirmed.</p>
+</div>
+</div>
+</div>
+</div>
+</main>
+<footer class="fixed bottom-0 inset-x-0 bg-bg/95 backdrop-blur-md border-t border-brd p-4 flex justify-between items-center px-6">
+<button class="flex items-center gap-1 text-slate-500 hover:text-white transition text-sm"><span class="material-symbols-outlined">arrow_back</span> Back</button>
+<button class="bg-primary/10 text-primary border border-primary/20 px-8 py-2.5 rounded-lg font-bold flex items-center gap-2 hover:bg-primary hover:text-bg transition">Save &amp; Continue <span class="material-symbols-outlined">arrow_forward</span></button>
+</footer>
+</body></html>
