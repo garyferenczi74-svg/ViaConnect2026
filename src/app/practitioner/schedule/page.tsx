@@ -127,7 +127,7 @@ export default function SchedulePage() {
   return (
     <div className="min-h-screen bg-[#0c1322] text-[#dce2f7]">
       {/* Sidebar */}
-      <aside className="hidden md:flex flex-col h-screen w-72 fixed left-0 top-0 bg-[#141b2b] shadow-2xl z-50 py-8">
+      <aside className="hidden md:flex flex-col h-screen w-64 fixed left-0 top-0 bg-[#141b2b] shadow-[20px_0px_40px_rgba(0,0,0,0.4)] z-40 py-8 px-4 pt-20">
         <div className="px-6 mb-10 flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-[#4ade80]/20 flex items-center justify-center">
             <svg className="w-5 h-5 text-[#6bfb9a]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -185,9 +185,9 @@ export default function SchedulePage() {
       </aside>
 
       {/* Main Content */}
-      <main className="md:ml-72 min-h-screen pb-24 md:pb-12">
+      <main className="md:ml-64 min-h-screen pb-24 pt-24">
         {/* Top Bar */}
-        <header className="sticky top-0 z-40 bg-[#0c1322] flex items-center justify-between px-6 py-4 w-full shadow-[0px_20px_40px_rgba(0,0,0,0.4)]">
+        <header className="bg-[#0c1322] fixed top-0 w-full z-50 flex items-center justify-between px-6 py-4 shadow-none">
           <div className="flex items-center gap-4">
             <div className="md:hidden w-8 h-8 rounded-full bg-[#4ade80]/20 flex items-center justify-center">
               <svg className="w-4 h-4 text-[#6bfb9a]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -223,16 +223,18 @@ export default function SchedulePage() {
             onNewAppointment={handleNewAppointment}
           />
 
-          {/* Calendar + Sidebar */}
-          <div className="flex gap-6">
-            <WeekViewGrid
-              weekDates={weekDates}
-              appointments={weekAppointments}
-              onSlotClick={handleSlotClick}
-              onAppointmentClick={handleAppointmentClick}
-              onDragReschedule={handleDragReschedule}
-            />
-            <div className="hidden lg:block">
+          {/* Bento Grid Layout */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            <div className="lg:col-span-9">
+              <WeekViewGrid
+                weekDates={weekDates}
+                appointments={weekAppointments}
+                onSlotClick={handleSlotClick}
+                onAppointmentClick={handleAppointmentClick}
+                onDragReschedule={handleDragReschedule}
+              />
+            </div>
+            <div className="lg:col-span-3">
               <FollowUpQueue
                 followUps={followUps}
                 onScheduleFollowUp={handleScheduleFollowUp}

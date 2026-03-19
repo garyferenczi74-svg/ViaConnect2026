@@ -18,21 +18,18 @@ interface WeekViewGridProps {
 }
 
 const DAY_NAMES = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-const SLOT_HEIGHT = 60; // px per hour
-const TOTAL_HOURS = HOURS.length; // 11 hours (8-18)
+const SLOT_HEIGHT = 80; // h-20 = 5rem = 80px per hour
 
 export default function WeekViewGrid({
   weekDates,
   appointments,
   onSlotClick,
   onAppointmentClick,
-  onDragReschedule,
 }: WeekViewGridProps) {
   const todayKey = formatDateKey(new Date());
   const scrollRef = useRef<HTMLDivElement>(null);
   const [currentMinuteOffset, setCurrentMinuteOffset] = useState(0);
 
-  // Group appointments by date
   const appointmentsByDate = useMemo(() => {
     const map: Record<string, Appointment[]> = {};
     for (const appt of appointments) {
@@ -42,7 +39,6 @@ export default function WeekViewGrid({
     return map;
   }, [appointments]);
 
-  // Current time tracking
   useEffect(() => {
     const update = () => {
       const now = new Date();
@@ -53,44 +49,62 @@ export default function WeekViewGrid({
     return () => clearInterval(interval);
   }, []);
 
-  // Auto-scroll to current time on mount
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = Math.max(0, (currentMinuteOffset / 60) * SLOT_HEIGHT - 120);
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const showTimeLine = currentMinuteOffset >= 0 && currentMinuteOffset <= TOTAL_HOURS * 60;
+  const showTimeLine = currentMinuteOffset >= 0 && currentMinuteOffset <= HOURS.length * 60;
 
   return (
-    <div className="glass-card rounded-xl overflow-hidden flex-1 min-w-0">
-      {/* Day headers */}
-      <div className="grid border-b border-[#3d4a3e]/20" style={{ gridTemplateColumns: "64px repeat(7, 1fr)" }}>
-        <div className="p-3" />
+    <div className="glass-panel rounded-3xl overflow-hidden border border-[#3d4a3e]/10">
+      {/* Days Header — grid-cols-8 */}
+      <div className="grid grid-cols-8 bg-[#141b2b]/80 border-b border-[#3d4a3e]/10">
+        <div className="p-4 border-r border-[#3d4a3e]/5" />
         {weekDates.map((date, i) => {
           const dateKey = formatDateKey(date);
           const isToday = dateKey === todayKey;
+          const isWeekend = i >= 5;
           return (
-            <div key={i} className={`p-3 text-center border-l border-[#3d4a3e]/10 ${isToday ? "bg-[#4ade80]/5" : ""}`}>
-              <div className={`text-[10px] font-mono uppercase tracking-widest ${isToday ? "text-[#4ade80]" : "text-[#dce2f7]/40"}`}>
+            <div
+              key={i}
+              className={`p-4 text-center border-r border-[#3d4a3e]/5 ${isToday ? "bg-[#6bfb9a]/5" : ""} ${isWeekend ? "text-[#dce2f7]/30" : ""}`}
+            >
+              <p className={`text-[10px] uppercase font-bold tracking-widest ${isToday ? "text-[#6bfb9a]" : isWeekend ? "" : "text-[#dce2f7]/40"}`}>
                 {DAY_NAMES[i]}
-              </div>
-              <div className={`text-lg font-black ${isToday ? "text-[#4ade80]" : "text-[#dce2f7]"}`}>
+              </p>
+              <p className={`text-xl font-black ${isToday ? "text-[#6bfb9a]" : ""}`}>
                 {date.getDate()}
-              </div>
+              </p>
+              {isToday && <div className="w-1.5 h-1.5 bg-[#6bfb9a] rounded-full mx-auto mt-1" />}
             </div>
           );
         })}
       </div>
 
-      {/* Scrollable grid */}
-      <div ref={scrollRef} className="overflow-y-auto" style={{ maxHeight: "calc(100vh - 280px)" }}>
-        <div className="grid" style={{ gridTemplateColumns: "64px repeat(7, 1fr)" }}>
-          {/* Time labels column */}
-          <div>
+      {/* Scrollable time grid */}
+      <div ref={scrollRef} className="relative overflow-y-auto max-h-[600px]" style={{ scrollbarWidth: "thin", scrollbarColor: "#2e3545 transparent" }}>
+        {/* Current time line — spans full width */}
+        {showTimeLine && (
+          <div
+            className="absolute w-full z-20 flex items-center pointer-events-none"
+            style={{ top: (currentMinuteOffset / 60) * SLOT_HEIGHT }}
+          >
+            <div className="w-2 h-2 bg-[#ffb4ab] rounded-full -ml-1" />
+            <div className="h-px bg-[#ffb4ab] w-full" />
+          </div>
+        )}
+
+        {/* Grid: cols-8 layout matching reference */}
+        <div className="grid grid-cols-8 divide-x divide-[#3d4a3e]/5">
+          {/* Hour column */}
+          <div className="col-span-1 bg-[#070e1d]/30">
             {HOURS.map((hour) => (
-              <div key={hour} className="flex items-start justify-end pr-3 pt-1" style={{ height: SLOT_HEIGHT }}>
-                <span className="text-[10px] font-mono text-[#dce2f7]/30">{formatHour(hour)}</span>
+              <div key={hour} className="h-20 p-2 text-right border-b border-[#3d4a3e]/5">
+                <span className="font-mono text-[10px] text-[#dce2f7]/40 uppercase">
+                  {formatHour(hour)}
+                </span>
               </div>
             ))}
           </div>
@@ -99,16 +113,19 @@ export default function WeekViewGrid({
           {weekDates.map((date, colIdx) => {
             const dateKey = formatDateKey(date);
             const isToday = dateKey === todayKey;
+            const isWeekend = colIdx >= 5;
             const dayAppts = appointmentsByDate[dateKey] ?? [];
 
             return (
-              <div key={colIdx} className={`relative border-l border-[#3d4a3e]/10 ${isToday ? "bg-[#4ade80]/[0.03]" : ""}`}>
-                {/* Hour cells */}
+              <div
+                key={colIdx}
+                className={`col-span-1 relative ${isToday ? "bg-[#6bfb9a]/5" : isWeekend ? "bg-[#070e1d]/10" : ""}`}
+              >
+                {/* Hour cells for click targets */}
                 {HOURS.map((hour) => (
                   <div
                     key={hour}
-                    className="border-t border-[#3d4a3e]/10 cursor-pointer hover:bg-[#4ade80]/[0.03] transition-colors"
-                    style={{ height: SLOT_HEIGHT }}
+                    className="h-20 border-b border-[#3d4a3e]/5 cursor-pointer hover:bg-[#6bfb9a]/[0.03] transition-colors"
                     onClick={() => onSlotClick(dateKey, hour, 0)}
                   />
                 ))}
@@ -123,33 +140,20 @@ export default function WeekViewGrid({
                   return (
                     <div
                       key={appt.id}
-                      className={`absolute left-0.5 right-1 rounded-r-lg px-2 py-1.5 cursor-pointer overflow-hidden transition-shadow hover:shadow-lg hover:shadow-black/20 z-10 ${style.bg} ${style.border}`}
-                      style={{ top, height: Math.max(height - 2, 24) }}
+                      className={`absolute left-1 right-1 rounded-r-lg p-2 cursor-pointer overflow-hidden transition-shadow hover:shadow-lg hover:shadow-black/20 z-10 ${style.bg} ${style.border}`}
+                      style={{ top, height: Math.max(height - 2, 28) }}
                       onClick={(e) => { e.stopPropagation(); onAppointmentClick(appt); }}
                     >
-                      <div className={`text-xs font-bold truncate ${style.text}`}>{appt.patientName}</div>
-                      {height >= 40 && (
-                        <div className="text-[10px] text-[#dce2f7]/50 truncate mt-0.5">{appt.protocol}</div>
-                      )}
-                      {height >= 55 && (
-                        <div className="text-[10px] font-mono text-[#dce2f7]/30 mt-0.5">
-                          {formatTimeRange(appt.startHour, appt.startMinute, appt.durationMinutes)}
-                        </div>
+                      <p className={`text-[9px] font-bold uppercase ${style.text}`}>
+                        {style.label}
+                      </p>
+                      <p className="text-xs font-bold truncate">{appt.patientName}</p>
+                      {height >= 60 && appt.protocol && (
+                        <p className="text-[10px] mt-1 opacity-70 truncate">{appt.protocol}</p>
                       )}
                     </div>
                   );
                 })}
-
-                {/* Current time line - only in today's column */}
-                {isToday && showTimeLine && (
-                  <div
-                    className="absolute left-0 right-0 z-20 pointer-events-none flex items-center"
-                    style={{ top: (currentMinuteOffset / 60) * SLOT_HEIGHT }}
-                  >
-                    <div className="w-2.5 h-2.5 rounded-full bg-[#f87171] -ml-1 shrink-0" />
-                    <div className="h-0.5 bg-[#f87171] flex-1" />
-                  </div>
-                )}
               </div>
             );
           })}
@@ -157,25 +161,11 @@ export default function WeekViewGrid({
       </div>
 
       <style jsx>{`
-        .glass-card {
-          background: rgba(46, 53, 69, 0.4);
+        .glass-panel {
+          background: rgba(35, 42, 58, 0.4);
           backdrop-filter: blur(20px);
-          border: 1px solid rgba(107, 251, 154, 0.15);
         }
       `}</style>
     </div>
   );
-}
-
-function formatTimeRange(startHour: number, startMinute: number, durationMinutes: number): string {
-  const start = formatTime(startHour, startMinute);
-  const endTotal = startHour * 60 + startMinute + durationMinutes;
-  const end = formatTime(Math.floor(endTotal / 60), endTotal % 60);
-  return `${start} – ${end}`;
-}
-
-function formatTime(hour: number, minute: number): string {
-  const h = hour > 12 ? hour - 12 : hour === 0 ? 12 : hour;
-  const ampm = hour >= 12 ? "PM" : "AM";
-  return `${h}:${minute.toString().padStart(2, "0")} ${ampm}`;
 }
