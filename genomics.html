@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Genomic Insights</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&amp;family=Inter:wght@400;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&amp;display=swap" rel="stylesheet"/>
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: { extend: { colors: { primary: "#4ade80", secondary: "#ffc640", tertiary: "#cebdff", surface: "#111827", card: "#1f2937" }, fontFamily: { sans: ['Inter'], head: ['Space Grotesk'] } } }
+        }
+    </script>
+<style> .glass { background: rgba(31, 41, 55, 0.6); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.05); } </style>
+</head>
+<body class="bg-surface text-slate-200 font-sans pb-24 pt-20 px-4 max-w-5xl mx-auto">
+<header class="fixed top-0 inset-x-0 z-50 bg-surface/80 backdrop-blur-md px-6 py-4 flex justify-between items-center border-b border-white/5">
+<div class="flex items-center gap-2 text-primary">
+<span class="material-symbols-outlined fill-1">genetics</span>
+<span class="font-head font-bold uppercase tracking-tight">Genomic Insights</span>
+</div>
+<div class="flex items-center gap-3 bg-white/5 px-3 py-1.5 rounded-full">
+<div class="w-8 h-8 rounded-full bg-primary text-surface font-bold text-xs flex items-center justify-center">JV</div>
+<span class="material-symbols-outlined text-slate-400 text-xl cursor-pointer">settings</span>
+</div>
+</header>
+<main class="space-y-8 mt-6">
+<section class="flex flex-col md:flex-row md:items-end justify-between gap-6">
+<div>
+<h2 class="font-head text-4xl font-bold tracking-tighter mb-2">Genomic Profile</h2>
+<div class="flex items-center gap-2 text-sm">
+<span class="text-slate-400">Patient:</span>
+<span class="text-primary font-bold">Jane Smith</span>
+<span class="px-2 py-0.5 bg-white/10 rounded text-[10px] text-secondary font-bold uppercase">ID: JS-9921</span>
+</div>
+</div>
+<div class="flex gap-3">
+<button class="px-5 py-2.5 rounded-xl border border-primary/20 text-primary font-semibold text-sm">Export Report</button>
+<button class="px-5 py-2.5 rounded-xl bg-primary text-surface font-bold text-sm shadow-lg shadow-primary/20">Order New Test</button>
+</div>
+</section>
+<nav class="flex flex-wrap gap-2">
+<button class="px-4 py-1.5 rounded-full bg-indigo-600 text-white font-bold text-xs">GENEX-M</button>
+<button class="px-4 py-1.5 rounded-full bg-card text-slate-400 font-medium text-xs">GENEX-N</button>
+<button class="px-4 py-1.5 rounded-full bg-card text-slate-400 font-medium text-xs">GENEX-C</button>
+<button class="px-4 py-1.5 rounded-full bg-card text-slate-400 font-medium text-xs">GENEX-D</button>
+<button class="px-4 py-1.5 rounded-full bg-card text-slate-400 font-medium text-xs">GeneX360 Complete</button>
+</nav>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+<div class="glass p-5 rounded-2xl border-l-4 border-red-500">
+<div class="flex justify-between items-start mb-4">
+<div><h4 class="font-head text-xl font-bold">MTHFR</h4><p class="text-[9px] text-indigo-300 font-bold uppercase">rs1801133</p></div>
+<span class="text-[9px] font-black text-red-400 uppercase tracking-tighter">High Risk</span>
+</div>
+<div class="text-xs text-slate-400 mb-4">C677T <br/>Genotype: <span class="text-white font-mono">T/T (Homozygous)</span></div>
+<span class="px-2 py-1 bg-red-500/10 text-red-400 text-[10px] font-bold rounded">Loss of Function</span>
+</div>
+<div class="glass p-5 rounded-2xl border-l-4 border-secondary">
+<div class="flex justify-between items-start mb-4">
+<div><h4 class="font-head text-xl font-bold">MTR</h4><p class="text-[9px] text-indigo-300 font-bold uppercase">rs1805087</p></div>
+<span class="text-[9px] font-black text-secondary uppercase tracking-tighter">Mod Risk</span>
+</div>
+<div class="text-xs text-slate-400 mb-4">A2756G <br/>Genotype: <span class="text-white font-mono">A/G (Heterozygous)</span></div>
+<span class="px-2 py-1 bg-secondary/10 text-secondary text-[10px] font-bold rounded">Altered</span>
+</div>
+<div class="glass p-5 rounded-2xl border-l-4 border-primary">
+<div class="flex justify-between items-start mb-4">
+<div><h4 class="font-head text-xl font-bold">CBS</h4><p class="text-[9px] text-indigo-300 font-bold uppercase">rs234706</p></div>
+<span class="text-[9px] font-black text-primary uppercase tracking-tighter">Low Risk</span>
+</div>
+<div class="text-xs text-slate-400 mb-4">C699T <br/>Genotype: <span class="text-white font-mono">C/C (Wild Type)</span></div>
+<span class="px-2 py-1 bg-primary/10 text-primary text-[10px] font-bold rounded">Gain of Function</span>
+</div>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+<div class="glass p-6 rounded-3xl">
+<div class="flex items-center gap-2 mb-6 font-head font-bold uppercase text-sm"><span class="material-symbols-outlined text-secondary">science</span> CYP450 Metabolizer Status</div>
+<div class="space-y-4">
+<div><div class="flex justify-between text-[10px] font-bold mb-1 uppercase"><span>CYP2D6 <small class="text-slate-500">*4/*4</small></span><span class="text-red-400">Poor</span></div><div class="h-1 w-full bg-white/10 rounded-full"><div class="h-full bg-red-500 w-[15%] rounded-full"></div></div></div>
+<div><div class="flex justify-between text-[10px] font-bold mb-1 uppercase"><span>CYP2C19 <small class="text-slate-500">*1/*1</small></span><span class="text-primary">Normal</span></div><div class="h-1 w-full bg-white/10 rounded-full"><div class="h-full bg-primary w-[90%] rounded-full"></div></div></div>
+<div><div class="flex justify-between text-[10px] font-bold mb-1 uppercase"><span>CYP2C9 <small class="text-slate-500">*1/*3</small></span><span class="text-secondary">Intermediate</span></div><div class="h-1 w-full bg-white/10 rounded-full"><div class="h-full bg-secondary w-[55%] rounded-full"></div></div></div>
+</div>
+</div>
+<div class="glass p-6 rounded-3xl">
+<div class="flex items-center gap-2 mb-6 font-head font-bold uppercase text-sm"><span class="material-symbols-outlined text-primary">grid_view</span> Heatmap</div>
+<div class="grid grid-cols-6 gap-2 text-center text-[8px] font-bold uppercase">
+<div class="col-span-1"></div><div>MTHF+</div><div>COMT+</div><div>VDR-D</div><div>NAC-S</div><div>B12-M</div>
+<div class="flex items-center">MTHFR</div><div class="aspect-square bg-primary text-surface rounded-md flex items-center justify-center font-black">92</div><div class="aspect-square bg-primary/20 text-primary rounded-md flex items-center justify-center">12</div><div class="aspect-square bg-primary/40 rounded-md">34</div><div class="aspect-square bg-primary/10 rounded-md">08</div><div class="aspect-square bg-primary/80 text-surface rounded-md flex items-center justify-center">76</div>
+<div class="flex items-center">COMT</div><div class="aspect-square bg-primary/10 rounded-md">05</div><div class="aspect-square bg-primary text-surface rounded-md flex items-center justify-center font-black">88</div><div class="aspect-square bg-primary/10 rounded-md">02</div><div class="aspect-square bg-primary/30 rounded-md">21</div><div class="aspect-square bg-primary/10 rounded-md">04</div>
+</div>
+</div>
+</div>
+<section class="glass rounded-3xl overflow-hidden">
+<div class="px-6 py-4 border-b border-white/5 flex justify-between items-center"><h3 class="font-head font-bold uppercase text-sm tracking-tight">Dosing Recommendations</h3><span class="text-[10px] text-slate-500 uppercase">Oct 24, 2023</span></div>
+<div class="overflow-x-auto"><table class="w-full text-left text-xs"><thead class="bg-white/5 uppercase text-[10px] font-black text-slate-400"><tr><th class="px-6 py-3">Supplement</th><th class="px-6 py-3">Std</th><th class="px-6 py-3">Adj</th><th class="px-6 py-3">Reason</th></tr></thead><tbody class="divide-y divide-white/5">
+<tr><td class="px-6 py-4 font-bold text-white">5-MTHF</td><td class="px-6 py-4 text-slate-400">400mcg</td><td class="px-6 py-4 font-black text-primary">1000mcg</td><td class="px-6 py-4 text-slate-500">MTHFR Homozygous compensation</td></tr>
+<tr><td class="px-6 py-4 font-bold text-white">Vitamin D3</td><td class="px-6 py-4 text-slate-400">2000IU</td><td class="px-6 py-4 font-black text-red-400">5000IU</td><td class="px-6 py-4 text-slate-500">VDR Taq resistance</td></tr>
+</tbody></table></div>
+</section>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<div class="h-32 rounded-3xl p-6 bg-gradient-to-br from-primary/10 to-transparent border border-primary/20 flex justify-between items-end">
+<div><h3 class="font-head text-2xl font-black text-primary tracking-tighter">PeptideIQ</h3><p class="text-xs text-slate-400">Bioregulatory optimization</p></div>
+<span class="material-symbols-outlined text-primary text-3xl">neurology</span>
+</div>
+<div class="h-32 rounded-3xl p-6 bg-gradient-to-br from-indigo-500/10 to-transparent border border-indigo-500/20 flex justify-between items-end">
+<div><h3 class="font-head text-2xl font-black text-indigo-300 tracking-tighter">CannabisIQ</h3><p class="text-xs text-slate-400">ECS system mapping</p></div>
+<span class="material-symbols-outlined text-indigo-300 text-3xl">eco</span>
+</div>
+</div>
+</main>
+<nav class="fixed bottom-0 inset-x-0 bg-surface/90 backdrop-blur-xl border-t border-white/5 flex justify-around p-3 z-50">
+<div class="flex flex-col items-center text-slate-500 text-[9px] uppercase font-bold"><span class="material-symbols-outlined mb-1">group</span>Patients</div>
+<div class="flex flex-col items-center text-primary text-[9px] uppercase font-bold"><span class="material-symbols-outlined fill-1 mb-1">genetics</span>Genomics</div>
+<div class="flex flex-col items-center text-slate-500 text-[9px] uppercase font-bold"><span class="material-symbols-outlined mb-1">pill</span>Protocols</div>
+</nav>
+</body></html>
