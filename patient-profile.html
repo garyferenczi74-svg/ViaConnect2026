@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&amp;family=Inter:wght@400;600&amp;family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,300,0..1,0" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: { surface: "#0c1322", primary: "#6bfb9a", secondary: "#ffc640", tertiary: "#e6dbff", error: "#ffb4ab" },
+                    fontFamily: { headline: ["Space Grotesk"], body: ["Inter"] }
+                }
+            }
+        }
+    </script>
+<style>
+        body { background: #0c1322; color: #dce2f7; font-family: Inter, sans-serif; }
+        .glass { background: rgba(46, 53, 69, 0.4); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.05); }
+    </style>
+</head>
+<body class="pb-20">
+<header class="sticky top-0 z-50 flex items-center justify-between px-6 h-16 bg-surface shadow-lg">
+<span class="text-emerald-400 font-bold font-headline text-xl">Clinical Patient Profile</span>
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-emerald-400">settings</span>
+<div class="w-8 h-8 rounded-full bg-slate-800 border border-primary/20 flex items-center justify-center text-[10px] font-bold text-primary">DR</div>
+</div>
+</header>
+<main class="max-w-7xl mx-auto p-4 space-y-6">
+<!-- Alert -->
+<div class="bg-red-950/30 border border-error/30 p-4 rounded-xl flex flex-col md:flex-row gap-4 justify-between items-center">
+<div class="flex items-center gap-3 text-error">
+<span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1">warning</span>
+<span class="text-sm font-medium">Medication Interaction: Warfarin + Curcumin</span>
+</div>
+<div class="flex gap-2 w-full md:w-auto text-[10px] font-bold uppercase tracking-wider">
+<button class="flex-1 px-4 py-2 bg-error text-red-950 rounded-lg">Review</button>
+<button class="flex-1 px-4 py-2 border border-error/30 text-error rounded-lg">Dismiss</button>
+</div>
+</div>
+<!-- Header -->
+<section class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+<div>
+<div class="flex items-center gap-3">
+<h1 class="text-4xl font-bold font-headline text-white">Jane Smith</h1>
+<span class="px-2 py-0.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-bold uppercase">Active</span>
+</div>
+<p class="text-slate-400 text-sm mt-1">Female • 45 years • MRN: 1042</p>
+</div>
+<div class="flex gap-2 *:px-4 *:py-1.5 *:rounded-full *:border *:border-primary/40 *:text-primary *:text-xs *:font-semibold">
+<button>Edit</button><button>Note</button><button>Schedule</button><button>Share</button>
+</div>
+</section>
+<div class="grid grid-cols-1 md:grid-cols-12 gap-8">
+<!-- Sidebar -->
+<aside class="md:col-span-3 space-y-6">
+<div class="glass p-6 rounded-3xl text-center">
+<div class="w-20 h-20 mx-auto rounded-full border-2 border-primary flex items-center justify-center text-2xl font-bold text-primary mb-3">JS</div>
+<h3 class="font-headline font-bold text-lg">Jane Smith</h3>
+<div class="mt-4 p-3 bg-tertiary/10 rounded-xl border border-tertiary/20 text-[10px] text-tertiary">
+<div class="flex justify-between font-bold mb-1"><span>GX360 COMPLETE</span><span class="material-symbols-outlined text-sm">genetics</span></div>
+<a class="underline" href="#">View Full Report</a>
+</div>
+<div class="grid grid-cols-3 gap-2 mt-6 *:bg-surface *:p-2 *:rounded-lg *:text-[10px]">
+<div><p class="text-slate-500">HGT</p><p class="font-bold text-primary text-sm">5'6"</p></div>
+<div><p class="text-slate-500">WGT</p><p class="font-bold text-primary text-sm">145</p></div>
+<div><p class="text-slate-500">BMI</p><p class="font-bold text-primary text-sm">23.4</p></div>
+</div>
+<div class="mt-6 text-left space-y-4">
+<section>
+<p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Allergies</p>
+<div class="flex gap-3 text-xs text-error"><span class="flex items-center gap-1">● Penicillin</span><span class="flex items-center gap-1">● Shellfish</span></div>
+</section>
+<section>
+<p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Medications</p>
+<div class="space-y-2 *:flex *:items-center *:gap-2 *:p-2 *:bg-white/5 *:rounded-lg *:border *:border-white/5 *:text-xs">
+<div><span class="material-symbols-outlined text-xs text-primary">pill</span>Warfarin 5mg</div>
+<div><span class="material-symbols-outlined text-xs text-primary">pill</span>Levothyroxine 50mcg</div>
+</div>
+</section>
+</div>
+</div>
+</aside>
+<!-- Main Content -->
+<div class="md:col-span-9 space-y-6">
+<nav class="flex gap-2 overflow-x-auto pb-2 *:px-6 *:py-2 *:rounded-full *:text-xs *:font-bold *:whitespace-nowrap">
+<button class="bg-primary text-on-primary">Overview</button>
+<button class="bg-surface-container text-slate-400">Protocols</button>
+<button class="bg-surface-container text-slate-400">Genomics</button>
+<button class="bg-surface-container text-slate-400">Labs</button>
+</nav>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<div class="glass p-6 rounded-3xl flex flex-col items-center">
+<p class="text-[10px] font-bold text-slate-500 uppercase mb-4">Vitality Score</p>
+<div class="relative w-32 h-32">
+<svg class="w-full h-full -rotate-90"><circle cx="64" cy="64" fill="none" r="58" stroke="#191f2f" stroke-width="8"></circle><circle cx="64" cy="64" fill="none" r="58" stroke="#6bfb9a" stroke-dasharray="364" stroke-dashoffset="100" stroke-width="8"></circle></svg>
+<div class="absolute inset-0 flex flex-col items-center justify-center"><span class="text-3xl font-bold">72</span><span class="text-[10px] text-primary">+4 delta</span></div>
+</div>
+</div>
+<div class="glass p-6 rounded-3xl text-center">
+<p class="text-[10px] font-bold text-slate-500 uppercase mb-2">Active Protocols</p>
+<p class="text-7xl font-bold text-primary font-headline">3</p>
+<div class="flex justify-center gap-1 mt-4 *:w-2 *:h-2 *:rounded-full *:bg-primary"><div></div><div></div><div></div></div>
+</div>
+<div class="glass p-6 rounded-3xl">
+<p class="text-[10px] font-bold text-slate-500 uppercase mb-4">Constitutional Type</p>
+<div class="flex justify-between items-center">
+<div><p class="text-xl font-bold text-tertiary">Vata-Pitta</p><p class="text-[10px] text-slate-400">Metabolic dominance: Air/Fire</p></div>
+<span class="material-symbols-outlined text-5xl text-tertiary/40">radar</span>
+</div>
+</div>
+</div>
+<div class="p-6 rounded-3xl border border-tertiary/20 bg-tertiary/5">
+<div class="flex justify-between items-center mb-6">
+<h4 class="font-bold text-tertiary flex items-center gap-2"><span class="material-symbols-outlined">genetics</span> Genomic Insights</h4>
+<span class="text-[10px] text-tertiary/60 font-bold uppercase">3 High-Priority Variants</span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 *:p-4 *:bg-surface *:rounded-2xl *:border-l-4">
+<div class="border-secondary"><p class="text-[10px] font-bold text-secondary mb-1">MTHFR</p><p class="text-xs font-mono">C677T (A/G)</p><p class="text-[10px] text-slate-500 mt-2">Moderate Risk</p></div>
+<div class="border-error"><p class="text-[10px] font-bold text-error mb-1">CYP2D6</p><p class="text-xs font-mono">*4/*4 (Null)</p><p class="text-[10px] text-slate-500 mt-2">Poor Metabolizer</p></div>
+<div class="border-secondary"><p class="text-[10px] font-bold text-secondary mb-1">COMT</p><p class="text-xs font-mono">V158M (A/G)</p><p class="text-[10px] text-slate-500 mt-2">Interm. Clearance</p></div>
+</div>
+</div>
+<div class="glass p-8 rounded-3xl">
+<h4 class="font-bold mb-8 flex items-center gap-2"><span class="material-symbols-outlined text-primary">history</span> Clinical Timeline</h4>
+<div class="ml-4 border-l border-primary/20 space-y-8 *:relative *:pl-8">
+<div><div class="absolute -left-1 w-2 h-2 rounded-full bg-primary shadow-[0_0_8px_#6bfb9a]"></div><p class="text-[10px] font-bold text-primary uppercase">Oct 24, 2023</p><p class="text-sm font-semibold text-white">Initial Consultation: Metabolic Fatigue</p></div>
+<div class="opacity-60"><div class="absolute -left-1 w-2 h-2 rounded-full bg-primary/40"></div><p class="text-[10px] font-bold">Nov 12, 2023</p><p class="text-sm font-semibold">Blood Chem Review: High Cortisol</p></div>
+<div class="opacity-60"><div class="absolute -left-1 w-2 h-2 rounded-full bg-primary/40"></div><p class="text-[10px] font-bold">Dec 05, 2023</p><p class="text-sm font-semibold">GX360 Genomic Panel Initiated</p></div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<nav class="md:hidden fixed bottom-0 inset-x-0 flex justify-around p-4 bg-surface/90 backdrop-blur-md border-t border-white/5 *:flex *:flex-col *:items-center *:text-slate-500 *:text-[10px]">
+<div class="!text-primary"><span class="material-symbols-outlined">analytics</span>Summary</div>
+<div><span class="material-symbols-outlined">monitoring</span>Vitals</div>
+<div><span class="material-symbols-outlined">science</span>Labs</div>
+<div><span class="material-symbols-outlined">description</span>Notes</div>
+</nav>
+</body></html>
