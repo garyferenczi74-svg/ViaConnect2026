@@ -40,6 +40,12 @@ export default function HomePage() {
         <p className="text-gray-400 mt-4 text-lg max-w-2xl mx-auto">
           Precision nutraceuticals powered by your genome. Select your portal to begin.
         </p>
+        <Link
+          href="/onboarding"
+          className="inline-block mt-6 px-8 py-3 bg-green-500 text-white font-semibold rounded-xl hover:bg-green-400 transition-colors text-sm"
+        >
+          Get Started — Create Account
+        </Link>
       </header>
 
       <main className="flex-1 flex items-start justify-center px-4 pb-16">
