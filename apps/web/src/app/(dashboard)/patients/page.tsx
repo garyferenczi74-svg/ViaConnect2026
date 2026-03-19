@@ -1,427 +1,459 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useCallback, useRef, useEffect } from "react"
 import Link from "next/link"
-import { Plus, Eye, ChevronLeft, ChevronRight } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { SearchInput } from "@/components/ui/search-input"
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
+  Search,
+  Plus,
+  ChevronUp,
+  ChevronDown,
+  ArrowUpRight,
+  ArrowDownRight,
+  Minus,
+  ClipboardList,
+  Download,
+  Send,
+  Archive,
+  X,
+} from "lucide-react"
 
-// ---------------------------------------------------------------------------
-// Mock data
-// ---------------------------------------------------------------------------
+// ─── Types ──────────────────────────────────────────────────────────────────
 
-type PatientStatus = "active" | "pending_review" | "inactive"
-type GeneX360Status = "Complete" | "Pending" | "Not Ordered"
+type PatientStatus = "active" | "follow-up" | "concerning" | "archived"
+type GeneticStatus = "GX360" | "Pending" | "Not Tested"
+type OutcomeTrend = "up" | "down" | "flat"
+type SortField = "name" | "mrn" | "age" | "lastVisit" | "protocols" | "genetic"
+type SortDir = "asc" | "desc"
+type FilterChip = "All" | "Active" | "Needs Follow-up" | "Archived"
 
-interface PatientRow {
+interface Patient {
   id: string
-  firstName: string
-  lastName: string
-  dob: string
-  conditions: string[]
+  name: string
+  email: string
+  mrn: string
+  age: number
   lastVisit: string
+  lastVisitTs: number
+  activeProtocols: number
+  outcomeTrend: OutcomeTrend
+  geneticStatus: GeneticStatus
   status: PatientStatus
-  geneXStatus: GeneX360Status
 }
 
-const PATIENTS: PatientRow[] = [
-  {
-    id: "pt-001",
-    firstName: "Maria",
-    lastName: "Gonzalez",
-    dob: "1985-04-12",
-    conditions: ["MTHFR C677T homozygous", "Methylation disorder"],
-    lastVisit: "2026-03-10",
-    status: "active",
-    geneXStatus: "Complete",
-  },
-  {
-    id: "pt-002",
-    firstName: "James",
-    lastName: "Chen",
-    dob: "1972-11-03",
-    conditions: ["Hypothyroidism", "Vitamin D deficiency"],
-    lastVisit: "2026-03-08",
-    status: "active",
-    geneXStatus: "Complete",
-  },
-  {
-    id: "pt-003",
-    firstName: "Aisha",
-    lastName: "Patel",
-    dob: "1990-07-22",
-    conditions: ["COMT Val158Met", "Anxiety disorder"],
-    lastVisit: "2026-02-28",
-    status: "pending_review",
-    geneXStatus: "Pending",
-  },
-  {
-    id: "pt-004",
-    firstName: "Robert",
-    lastName: "Williams",
-    dob: "1968-01-15",
-    conditions: ["APOE e4/e4", "Hyperlipidemia", "Hypertension"],
-    lastVisit: "2026-03-14",
-    status: "active",
-    geneXStatus: "Complete",
-  },
-  {
-    id: "pt-005",
-    firstName: "Yuki",
-    lastName: "Tanaka",
-    dob: "1995-09-30",
-    conditions: ["CYP2D6 poor metabolizer", "Chronic fatigue"],
-    lastVisit: "2026-03-01",
-    status: "active",
-    geneXStatus: "Complete",
-  },
-  {
-    id: "pt-006",
-    firstName: "David",
-    lastName: "Okafor",
-    dob: "1980-06-18",
-    conditions: ["Type 2 diabetes", "FTO rs9939609"],
-    lastVisit: "2026-02-15",
-    status: "inactive",
-    geneXStatus: "Complete",
-  },
-  {
-    id: "pt-007",
-    firstName: "Sarah",
-    lastName: "Mitchell",
-    dob: "1988-12-05",
-    conditions: ["Hashimoto's thyroiditis", "VDR Taq polymorphism"],
-    lastVisit: "2026-03-12",
-    status: "active",
-    geneXStatus: "Pending",
-  },
-  {
-    id: "pt-008",
-    firstName: "Ahmed",
-    lastName: "Hassan",
-    dob: "1975-03-27",
-    conditions: ["Coronary artery disease", "CYP2C19 intermediate metabolizer"],
-    lastVisit: "2026-03-05",
-    status: "pending_review",
-    geneXStatus: "Complete",
-  },
-  {
-    id: "pt-009",
-    firstName: "Elena",
-    lastName: "Rossi",
-    dob: "1992-08-14",
-    conditions: ["Iron deficiency anemia", "Celiac disease"],
-    lastVisit: "2026-02-20",
-    status: "active",
-    geneXStatus: "Not Ordered",
-  },
-  {
-    id: "pt-010",
-    firstName: "Michael",
-    lastName: "Abrams",
-    dob: "1963-05-09",
-    conditions: ["Chronic kidney disease stage 3", "MTHFR A1298C heterozygous"],
-    lastVisit: "2026-03-16",
-    status: "active",
-    geneXStatus: "Complete",
-  },
+// ─── Mock Data ──────────────────────────────────────────────────────────────
+
+const PATIENTS: Patient[] = [
+  { id: "pt-001", name: "Marcus Sterling", email: "m.sterling@mail.com", mrn: "NX-9022", age: 54, lastVisit: "Mar 18, 2026", lastVisitTs: 20260318, activeProtocols: 3, outcomeTrend: "up", geneticStatus: "GX360", status: "concerning" },
+  { id: "pt-002", name: "Elena Vance", email: "e.vance@mail.com", mrn: "NX-4412", age: 38, lastVisit: "Mar 17, 2026", lastVisitTs: 20260317, activeProtocols: 2, outcomeTrend: "up", geneticStatus: "GX360", status: "active" },
+  { id: "pt-003", name: "Sarah Chen", email: "s.chen@clinic.net", mrn: "NX-3819", age: 42, lastVisit: "Mar 17, 2026", lastVisitTs: 20260317, activeProtocols: 1, outcomeTrend: "flat", geneticStatus: "Pending", status: "active" },
+  { id: "pt-004", name: "James Wilson", email: "j.wilson@mail.com", mrn: "NX-7721", age: 58, lastVisit: "Mar 16, 2026", lastVisitTs: 20260316, activeProtocols: 4, outcomeTrend: "up", geneticStatus: "GX360", status: "active" },
+  { id: "pt-005", name: "Amara Osei", email: "a.osei@health.org", mrn: "NX-2834", age: 63, lastVisit: "Mar 16, 2026", lastVisitTs: 20260316, activeProtocols: 2, outcomeTrend: "down", geneticStatus: "GX360", status: "concerning" },
+  { id: "pt-006", name: "Rebecca Lawson", email: "r.lawson@mail.com", mrn: "NX-6201", age: 29, lastVisit: "Mar 15, 2026", lastVisitTs: 20260315, activeProtocols: 1, outcomeTrend: "up", geneticStatus: "Not Tested", status: "active" },
+  { id: "pt-007", name: "Thomas Bergström", email: "t.bergstrom@lab.se", mrn: "NX-4390", age: 48, lastVisit: "Mar 15, 2026", lastVisitTs: 20260315, activeProtocols: 3, outcomeTrend: "up", geneticStatus: "GX360", status: "active" },
+  { id: "pt-008", name: "Priya Nair", email: "p.nair@clinic.in", mrn: "NX-7823", age: 34, lastVisit: "Mar 14, 2026", lastVisitTs: 20260314, activeProtocols: 1, outcomeTrend: "flat", geneticStatus: "Pending", status: "follow-up" },
+  { id: "pt-009", name: "David Okafor", email: "d.okafor@health.ng", mrn: "NX-5102", age: 46, lastVisit: "Mar 14, 2026", lastVisitTs: 20260314, activeProtocols: 2, outcomeTrend: "up", geneticStatus: "GX360", status: "active" },
+  { id: "pt-010", name: "Sophia Martinez", email: "s.martinez@mail.com", mrn: "NX-5567", age: 55, lastVisit: "Mar 13, 2026", lastVisitTs: 20260313, activeProtocols: 3, outcomeTrend: "down", geneticStatus: "GX360", status: "concerning" },
+  { id: "pt-011", name: "Lin Wei", email: "l.wei@hosp.cn", mrn: "NX-8901", age: 36, lastVisit: "Mar 12, 2026", lastVisitTs: 20260312, activeProtocols: 0, outcomeTrend: "flat", geneticStatus: "Not Tested", status: "active" },
+  { id: "pt-012", name: "Carlos Gutierrez", email: "c.gutierrez@med.mx", mrn: "NX-2156", age: 61, lastVisit: "Mar 11, 2026", lastVisitTs: 20260311, activeProtocols: 2, outcomeTrend: "up", geneticStatus: "GX360", status: "follow-up" },
+  { id: "pt-013", name: "Fatima Al-Rashid", email: "f.alrashid@health.ae", mrn: "NX-6734", age: 47, lastVisit: "Mar 10, 2026", lastVisitTs: 20260310, activeProtocols: 1, outcomeTrend: "flat", geneticStatus: "Pending", status: "follow-up" },
+  { id: "pt-014", name: "Daniel Kowalski", email: "d.kowalski@mail.pl", mrn: "NX-1987", age: 53, lastVisit: "Mar 9, 2026", lastVisitTs: 20260309, activeProtocols: 2, outcomeTrend: "up", geneticStatus: "GX360", status: "archived" },
+  { id: "pt-015", name: "Aisha Patel", email: "a.patel@clinic.uk", mrn: "NX-9234", age: 31, lastVisit: "Mar 8, 2026", lastVisitTs: 20260308, activeProtocols: 1, outcomeTrend: "up", geneticStatus: "Not Tested", status: "archived" },
 ]
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
+const FILTER_CHIPS: FilterChip[] = ["All", "Active", "Needs Follow-up", "Archived"]
 
-function calculateAge(dob: string): number {
-  const birth = new Date(dob)
-  const today = new Date()
-  let age = today.getFullYear() - birth.getFullYear()
-  const m = today.getMonth() - birth.getMonth()
-  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--
-  return age
-}
+const TOTAL_PATIENTS = 247
 
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  })
-}
+// ─── Helpers ────────────────────────────────────────────────────────────────
 
-function getInitials(first: string, last: string): string {
-  return `${first[0]}${last[0]}`
-}
-
-const STATUS_LABELS: Record<PatientStatus, string> = {
-  active: "Active",
-  pending_review: "Pending Review",
-  inactive: "Inactive",
-}
-
-const FILTER_OPTIONS: Array<{ value: PatientStatus | "all"; label: string }> = [
-  { value: "all", label: "All" },
-  { value: "active", label: "Active" },
-  { value: "pending_review", label: "Pending Review" },
-  { value: "inactive", label: "Inactive" },
-]
-
-function geneXBadgeVariant(status: GeneX360Status) {
+function statusDot(status: PatientStatus) {
   switch (status) {
-    case "Complete":
-      return "success" as const
-    case "Pending":
-      return "warning" as const
-    case "Not Ordered":
-      return "secondary" as const
+    case "active":
+      return "bg-green-400"
+    case "follow-up":
+      return "bg-yellow-400"
+    case "concerning":
+      return "bg-red-400 animate-pulse"
+    case "archived":
+      return "bg-gray-500"
   }
 }
 
-// ---------------------------------------------------------------------------
-// Page component
-// ---------------------------------------------------------------------------
+function geneticBadge(status: GeneticStatus) {
+  switch (status) {
+    case "GX360":
+      return { bg: "bg-green-400/20", text: "text-green-400" }
+    case "Pending":
+      return { bg: "bg-yellow-400/20", text: "text-yellow-400" }
+    case "Not Tested":
+      return { bg: "bg-gray-600/20", text: "text-gray-400" }
+  }
+}
 
-const PAGE_SIZE = 5
+function trendIcon(trend: OutcomeTrend) {
+  switch (trend) {
+    case "up":
+      return { Icon: ArrowUpRight, color: "text-green-400" }
+    case "down":
+      return { Icon: ArrowDownRight, color: "text-red-400" }
+    case "flat":
+      return { Icon: Minus, color: "text-gray-400" }
+  }
+}
+
+function filterMatch(patient: Patient, chip: FilterChip): boolean {
+  switch (chip) {
+    case "All":
+      return true
+    case "Active":
+      return patient.status === "active" || patient.status === "concerning"
+    case "Needs Follow-up":
+      return patient.status === "follow-up"
+    case "Archived":
+      return patient.status === "archived"
+  }
+}
+
+// ─── Component ──────────────────────────────────────────────────────────────
+
+const PAGE_SIZE = 50
 
 export default function PatientsPage() {
-  const [search, setSearch] = useState("")
-  const [filter, setFilter] = useState<PatientStatus | "all">("all")
+  const [searchInput, setSearchInput] = useState("")
+  const [debouncedSearch, setDebouncedSearch] = useState("")
+  const [activeChip, setActiveChip] = useState<FilterChip>("All")
+  const [sortField, setSortField] = useState<SortField>("name")
+  const [sortDir, setSortDir] = useState<SortDir>("asc")
+  const [selected, setSelected] = useState<Set<string>>(new Set())
   const [page, setPage] = useState(1)
+  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const filtered = useMemo(() => {
-    let list = PATIENTS
+  // Debounced search
+  const handleSearch = useCallback((value: string) => {
+    setSearchInput(value)
+    if (debounceTimer.current) clearTimeout(debounceTimer.current)
+    debounceTimer.current = setTimeout(() => {
+      setDebouncedSearch(value)
+      setPage(1)
+    }, 300)
+  }, [])
 
-    if (filter !== "all") {
-      list = list.filter((p) => p.status === filter)
+  useEffect(() => {
+    return () => {
+      if (debounceTimer.current) clearTimeout(debounceTimer.current)
     }
+  }, [])
 
-    if (search.trim()) {
-      const q = search.toLowerCase()
+  // Filter & sort
+  const filtered = useMemo(() => {
+    let list = PATIENTS.filter((p) => filterMatch(p, activeChip))
+
+    if (debouncedSearch.trim()) {
+      const q = debouncedSearch.toLowerCase()
       list = list.filter(
         (p) =>
-          p.firstName.toLowerCase().includes(q) ||
-          p.lastName.toLowerCase().includes(q) ||
-          p.conditions.some((c) => c.toLowerCase().includes(q))
+          p.name.toLowerCase().includes(q) ||
+          p.email.toLowerCase().includes(q) ||
+          p.mrn.toLowerCase().includes(q)
       )
     }
 
-    return list
-  }, [search, filter])
+    list.sort((a, b) => {
+      let cmp = 0
+      switch (sortField) {
+        case "name": cmp = a.name.localeCompare(b.name); break
+        case "mrn": cmp = a.mrn.localeCompare(b.mrn); break
+        case "age": cmp = a.age - b.age; break
+        case "lastVisit": cmp = a.lastVisitTs - b.lastVisitTs; break
+        case "protocols": cmp = a.activeProtocols - b.activeProtocols; break
+        case "genetic": cmp = a.geneticStatus.localeCompare(b.geneticStatus); break
+      }
+      return sortDir === "asc" ? cmp : -cmp
+    })
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
-  const safePage = Math.min(page, totalPages)
-  const paginated = filtered.slice(
-    (safePage - 1) * PAGE_SIZE,
-    safePage * PAGE_SIZE
-  )
+    return list
+  }, [debouncedSearch, activeChip, sortField, sortDir])
+
+  const totalPages = Math.max(1, Math.ceil(TOTAL_PATIENTS / PAGE_SIZE))
+  const showing = filtered.length
+
+  function toggleSort(field: SortField) {
+    if (sortField === field) setSortDir((d) => (d === "asc" ? "desc" : "asc"))
+    else { setSortField(field); setSortDir("asc") }
+  }
+
+  function toggleSelect(id: string) {
+    setSelected((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  function toggleAll() {
+    if (selected.size === filtered.length) setSelected(new Set())
+    else setSelected(new Set(filtered.map((p) => p.id)))
+  }
+
+  const SortArrow = ({ field }: { field: SortField }) => {
+    if (sortField !== field) return <ChevronUp className="h-3 w-3 opacity-20" />
+    return sortDir === "asc"
+      ? <ChevronUp className="h-3 w-3 text-[#6bfb9a]" />
+      : <ChevronDown className="h-3 w-3 text-[#6bfb9a]" />
+  }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            Patient Management
-          </h1>
-          <p className="mt-1 text-sm text-gray-500">
-            {filtered.length} patient{filtered.length !== 1 ? "s" : ""} found
-          </p>
-        </div>
-        <Link href="/patients/new">
-          <Button>
-            <Plus className="h-4 w-4" />
-            Add Patient
-          </Button>
+    <div className="space-y-0">
+      {/* ── Header ────────────────────────────────────────────── */}
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold">Patients</h1>
+        <Link
+          href="/patients/new"
+          className="bg-[#4ade80] text-gray-900 font-bold text-sm px-5 py-2.5 rounded-lg flex items-center gap-2 hover:bg-[#6bfb9a] transition-colors"
+        >
+          <Plus className="h-4 w-4" />
+          New Patient
         </Link>
       </div>
 
-      {/* Search + Filters */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-        <SearchInput
-          placeholder="Search patients by name or condition..."
-          value={search}
-          onChange={(e) => {
-            setSearch(e.target.value)
-            setPage(1)
-          }}
-          onClear={() => {
-            setSearch("")
-            setPage(1)
-          }}
-          className="w-full sm:max-w-sm"
-        />
-        <div className="flex flex-wrap gap-2">
-          {FILTER_OPTIONS.map((opt) => (
-            <button
-              key={opt.value}
-              type="button"
-              onClick={() => {
-                setFilter(opt.value)
-                setPage(1)
-              }}
-              className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
-                filter === opt.value
-                  ? "border-emerald-500 bg-emerald-50 text-emerald-700"
-                  : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
-              }`}
-            >
-              {opt.label}
-            </button>
-          ))}
+      {/* ── Search Bar ────────────────────────────────────────── */}
+      <div className="mb-4">
+        <div className="bg-gray-800/50 border border-gray-600/50 focus-within:border-[#4ade80]/50 rounded-xl px-4 py-3 flex items-center gap-3 transition-colors">
+          <Search className="h-4 w-4 text-white/40 shrink-0" />
+          <input
+            type="text"
+            value={searchInput}
+            onChange={(e) => handleSearch(e.target.value)}
+            placeholder="Search patients by name, email, or MRN..."
+            className="flex-1 bg-transparent text-sm text-white placeholder:text-white/30 focus:outline-none"
+          />
+          <kbd className="hidden md:inline-flex items-center gap-1 px-2 py-0.5 rounded bg-[#0c1322]/50 border border-[#3d4a3e]/20 text-[10px] text-white/40 font-mono shrink-0">
+            <span className="text-xs">&#8984;</span>K
+          </kbd>
         </div>
       </div>
 
-      {/* Table */}
-      <Card>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Patient</TableHead>
-                <TableHead>DOB / Age</TableHead>
-                <TableHead>Conditions</TableHead>
-                <TableHead>Last Visit</TableHead>
-                <TableHead>GeneX360 Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {paginated.length === 0 ? (
-                <TableRow>
-                  <TableCell
-                    colSpan={6}
-                    className="h-32 text-center text-gray-500"
-                  >
-                    No patients match your search criteria.
-                  </TableCell>
-                </TableRow>
-              ) : (
-                paginated.map((patient) => (
-                  <TableRow key={patient.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-9 w-9">
-                          <AvatarFallback className="text-xs">
-                            {getInitials(patient.firstName, patient.lastName)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="font-medium text-gray-900">
-                            {patient.lastName}, {patient.firstName}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            {STATUS_LABELS[patient.status]}
-                          </p>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <p className="text-sm text-gray-900">
-                        {formatDate(patient.dob)}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {calculateAge(patient.dob)} yrs
-                      </p>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-wrap gap-1">
-                        {patient.conditions.slice(0, 2).map((c) => (
-                          <Badge
-                            key={c}
-                            variant="outline"
-                            className="text-[11px] font-normal"
-                          >
-                            {c}
-                          </Badge>
-                        ))}
-                        {patient.conditions.length > 2 && (
-                          <Badge
-                            variant="secondary"
-                            className="text-[11px] font-normal"
-                          >
-                            +{patient.conditions.length - 2}
-                          </Badge>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-sm text-gray-700">
-                      {formatDate(patient.lastVisit)}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={geneXBadgeVariant(patient.geneXStatus)}>
-                        {patient.geneXStatus}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Link href={`/patients/${patient.id}`}>
-                        <Button variant="ghost" size="sm">
-                          <Eye className="h-4 w-4" />
-                          View
-                        </Button>
-                      </Link>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+      {/* ── Filter Chips ──────────────────────────────────────── */}
+      <div className="flex flex-wrap gap-2 mb-6">
+        {FILTER_CHIPS.map((chip) => (
+          <button
+            key={chip}
+            onClick={() => { setActiveChip(chip); setPage(1); setSelected(new Set()) }}
+            className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
+              activeChip === chip
+                ? "bg-[#4ade80] text-gray-900"
+                : "border border-gray-600/50 text-white/60 hover:text-white hover:border-white/30"
+            }`}
+          >
+            {chip}
+          </button>
+        ))}
 
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between">
-          <p className="text-sm text-gray-500">
-            Showing {(safePage - 1) * PAGE_SIZE + 1}&ndash;
-            {Math.min(safePage * PAGE_SIZE, filtered.length)} of{" "}
-            {filtered.length}
-          </p>
+        {/* Dropdown placeholders */}
+        {["Protocol Type", "Last Visit", "Genetic Status"].map((label) => (
+          <button
+            key={label}
+            className="border border-gray-600/50 text-white/60 rounded-full px-4 py-1.5 text-sm font-medium hover:text-white hover:border-white/30 transition-colors flex items-center gap-1"
+          >
+            {label}
+            <ChevronDown className="h-3 w-3" />
+          </button>
+        ))}
+      </div>
+
+      {/* ── Data Table ────────────────────────────────────────── */}
+      <div className="bg-gray-800/50 backdrop-blur-sm border border-green-400/15 rounded-xl overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="bg-gray-800">
+                {/* Checkbox */}
+                <th className="px-4 py-3 w-10">
+                  <input
+                    type="checkbox"
+                    checked={selected.size === filtered.length && filtered.length > 0}
+                    onChange={toggleAll}
+                    className="h-4 w-4 rounded border-gray-600 bg-transparent text-[#4ade80] focus:ring-[#4ade80]/30 cursor-pointer"
+                  />
+                </th>
+                {/* Status */}
+                <th className="px-3 py-3 w-8" />
+                {/* Sortable columns */}
+                {([
+                  ["name", "Patient"],
+                  ["mrn", "MRN"],
+                  ["age", "Age"],
+                  ["lastVisit", "Last Visit"],
+                  ["protocols", "Protocols"],
+                ] as [SortField, string][]).map(([field, label]) => (
+                  <th
+                    key={field}
+                    onClick={() => toggleSort(field)}
+                    className="px-4 py-3 text-xs text-white/40 uppercase tracking-wider font-medium cursor-pointer hover:text-white/60 transition-colors select-none whitespace-nowrap"
+                  >
+                    <span className="flex items-center gap-1">
+                      {label}
+                      <SortArrow field={field} />
+                    </span>
+                  </th>
+                ))}
+                {/* Outcome Trend */}
+                <th className="px-4 py-3 text-xs text-white/40 uppercase tracking-wider font-medium whitespace-nowrap">
+                  Trend
+                </th>
+                {/* Genetic */}
+                <th
+                  onClick={() => toggleSort("genetic")}
+                  className="px-4 py-3 text-xs text-white/40 uppercase tracking-wider font-medium cursor-pointer hover:text-white/60 transition-colors select-none whitespace-nowrap"
+                >
+                  <span className="flex items-center gap-1">
+                    Genetic
+                    <SortArrow field="genetic" />
+                  </span>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={9} className="py-16 text-center text-white/30 text-sm">
+                    No patients match your search criteria.
+                  </td>
+                </tr>
+              ) : (
+                filtered.map((patient) => {
+                  const isSelected = selected.has(patient.id)
+                  const { Icon: TrendIcon, color: trendColor } = trendIcon(patient.outcomeTrend)
+                  const gBadge = geneticBadge(patient.geneticStatus)
+
+                  return (
+                    <tr
+                      key={patient.id}
+                      className={`border-b border-gray-700/30 hover:bg-gray-700/20 cursor-pointer transition-colors ${
+                        isSelected ? "bg-gray-700/20" : ""
+                      }`}
+                    >
+                      {/* Checkbox */}
+                      <td className="px-4 py-3.5">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => toggleSelect(patient.id)}
+                          onClick={(e) => e.stopPropagation()}
+                          className="h-4 w-4 rounded border-gray-600 bg-transparent text-[#4ade80] focus:ring-[#4ade80]/30 cursor-pointer"
+                        />
+                      </td>
+                      {/* Status dot */}
+                      <td className="px-3 py-3.5">
+                        <span className={`inline-block w-2.5 h-2.5 rounded-full ${statusDot(patient.status)}`} />
+                      </td>
+                      {/* Name + email */}
+                      <td className="px-4 py-3.5">
+                        <Link href={`/patients/${patient.id}`} className="block">
+                          <p className="text-sm font-medium text-white">{patient.name}</p>
+                          <p className="text-xs text-white/30 mt-0.5">{patient.email}</p>
+                        </Link>
+                      </td>
+                      {/* MRN */}
+                      <td className="px-4 py-3.5 font-mono text-xs text-white/60">{patient.mrn}</td>
+                      {/* Age */}
+                      <td className="px-4 py-3.5 text-sm text-white/60">{patient.age}</td>
+                      {/* Last Visit */}
+                      <td className="px-4 py-3.5 text-sm text-white/60 whitespace-nowrap">{patient.lastVisit}</td>
+                      {/* Active Protocols */}
+                      <td className="px-4 py-3.5">
+                        <span className="inline-flex items-center justify-center min-w-[1.5rem] h-6 px-2 rounded-full bg-[#232a3a] text-xs font-bold text-white/70">
+                          {patient.activeProtocols}
+                        </span>
+                      </td>
+                      {/* Outcome Trend */}
+                      <td className="px-4 py-3.5">
+                        <TrendIcon className={`h-4 w-4 ${trendColor}`} />
+                      </td>
+                      {/* Genetic Status */}
+                      <td className="px-4 py-3.5">
+                        <span className={`text-[10px] font-bold px-2.5 py-1 rounded uppercase tracking-wide ${gBadge.bg} ${gBadge.text}`}>
+                          {patient.geneticStatus}
+                        </span>
+                      </td>
+                    </tr>
+                  )
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* ── Bulk Actions Bar ──────────────────────────────────── */}
+      {selected.size > 0 && (
+        <div className="sticky bottom-0 z-40 bg-gray-800 border-t border-green-400/15 px-5 py-3 -mx-6 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-medium">{selected.size} selected</span>
+            <button
+              onClick={() => setSelected(new Set())}
+              className="text-xs text-[#4ade80] hover:underline"
+            >
+              Clear
+            </button>
+          </div>
           <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={safePage <= 1}
-              onClick={() => setPage((p) => p - 1)}
-            >
-              <ChevronLeft className="h-4 w-4" />
-              Previous
-            </Button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
-              <button
-                key={n}
-                type="button"
-                onClick={() => setPage(n)}
-                className={`h-8 w-8 rounded-md text-sm font-medium transition-colors ${
-                  n === safePage
-                    ? "bg-emerald-500 text-white"
-                    : "text-gray-600 hover:bg-gray-100"
-                }`}
-              >
-                {n}
-              </button>
-            ))}
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={safePage >= totalPages}
-              onClick={() => setPage((p) => p + 1)}
-            >
-              Next
-              <ChevronRight className="h-4 w-4" />
-            </Button>
+            <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-700/50 text-xs font-medium text-white/70 hover:text-white hover:bg-gray-700 transition-colors">
+              <ClipboardList className="h-3.5 w-3.5" />
+              Assign Protocol
+            </button>
+            <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-700/50 text-xs font-medium text-white/70 hover:text-white hover:bg-gray-700 transition-colors">
+              <Download className="h-3.5 w-3.5" />
+              Export
+            </button>
+            <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-700/50 text-xs font-medium text-white/70 hover:text-white hover:bg-gray-700 transition-colors">
+              <Send className="h-3.5 w-3.5" />
+              Send Reminders
+            </button>
+            <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-400/10 text-xs font-medium text-red-400 hover:bg-red-400/20 transition-colors">
+              <Archive className="h-3.5 w-3.5" />
+              Archive
+            </button>
           </div>
         </div>
       )}
+
+      {/* ── Pagination ────────────────────────────────────────── */}
+      <div className="flex items-center justify-between pt-4">
+        <p className="text-sm text-white/40">
+          Showing 1&ndash;{showing} of {TOTAL_PATIENTS} patients
+        </p>
+        <div className="flex items-center gap-1.5">
+          <button
+            disabled={page <= 1}
+            onClick={() => setPage((p) => p - 1)}
+            className="px-3 py-1 text-xs rounded-md text-white/40 hover:text-white hover:bg-gray-700/50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          >
+            Prev
+          </button>
+          {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => i + 1).map((n) => (
+            <button
+              key={n}
+              onClick={() => setPage(n)}
+              className={`w-8 h-8 text-xs rounded-md font-medium transition-colors ${
+                page === n
+                  ? "bg-[#4ade80] text-gray-900 font-bold"
+                  : "text-white/40 hover:text-white hover:bg-gray-700/50"
+              }`}
+            >
+              {n}
+            </button>
+          ))}
+          <button
+            disabled={page >= totalPages}
+            onClick={() => setPage((p) => p + 1)}
+            className="px-3 py-1 text-xs rounded-md text-white/40 hover:text-white hover:bg-gray-700/50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          >
+            Next
+          </button>
+        </div>
+      </div>
     </div>
   )
 }
