@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#4ade80",
+                        "accent-purple": "#a78bfa",
+                        "danger": "#ef4444",
+                        "background-light": "#f8f6f6",
+                        "background-dark": "#111827",
+                    },
+                    fontFamily: {
+                        "display": ["Public Sans", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        body { font-family: 'Public Sans', sans-serif; }
+        .custom-scrollbar::-webkit-scrollbar { height: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #374151; border-radius: 10px; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen pb-24">
+<header class="sticky top-0 z-30 bg-background-dark/80 backdrop-blur-md border-b border-slate-800">
+<div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
+<div class="flex items-center gap-4">
+<button class="p-2 hover:bg-slate-800 rounded-full transition-colors">
+<span class="material-symbols-outlined text-slate-400">arrow_back</span>
+</button>
+<div class="flex items-center gap-3">
+<div class="size-10 rounded-full bg-primary/20 border border-primary/40 flex items-center justify-center text-primary font-bold">
+                        SM
+                    </div>
+<div>
+<h1 class="text-lg font-bold leading-tight">Sarah Mitchell</h1>
+<div class="flex items-center gap-2 text-xs text-slate-400">
+<span>MRN: #VM-9928</span>
+<span class="size-1 rounded-full bg-slate-600"></span>
+<div class="flex items-center gap-1">
+<span class="size-2 rounded-full bg-primary shadow-[0_0_8px_rgba(74,222,128,0.5)]"></span>
+<span class="text-primary font-medium">Stable</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="flex gap-2">
+<button class="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-sm font-semibold transition-colors">Edit</button>
+<button class="px-4 py-2 rounded-lg bg-primary text-background-dark text-sm font-bold flex items-center gap-2 hover:bg-primary/90 transition-colors">
+<span class="material-symbols-outlined text-[18px]">picture_as_pdf</span>
+                    Export PDF
+                </button>
+</div>
+</div>
+</header>
+<main class="max-w-5xl mx-auto px-4 py-6 space-y-6">
+<section class="bg-accent-purple/5 border border-accent-purple/20 rounded-xl p-5 relative overflow-hidden">
+<div class="absolute top-0 right-0 p-8 opacity-10">
+<span class="material-symbols-outlined text-8xl text-accent-purple">genetics</span>
+</div>
+<h3 class="text-accent-purple font-bold flex items-center gap-2 mb-4">
+<span class="material-symbols-outlined">genetics</span>
+                Genomic Summary
+            </h3>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10">
+<div>
+<p class="text-xs uppercase tracking-wider text-slate-500 font-bold mb-2">CYP450 Phenotypes</p>
+<div class="flex flex-wrap gap-2">
+<span class="px-3 py-1 rounded-full bg-accent-purple/20 text-accent-purple text-xs font-bold border border-accent-purple/30">Normal Metabolizer</span>
+<span class="px-3 py-1 rounded-full bg-accent-purple text-background-dark text-xs font-bold">Ultra-rapid (2C19)</span>
+</div>
+</div>
+<div>
+<p class="text-xs uppercase tracking-wider text-slate-500 font-bold mb-2">Gene Variants Identified</p>
+<div class="flex flex-wrap gap-2">
+<span class="px-2 py-0.5 rounded bg-primary/10 border border-primary/30 text-primary text-xs font-medium">MTHFR (C677T)</span>
+<span class="px-2 py-0.5 rounded bg-primary/10 border border-primary/30 text-primary text-xs font-medium">COMT (Val158Met)</span>
+<span class="px-2 py-0.5 rounded bg-primary/10 border border-primary/30 text-primary text-xs font-medium">MAOA (3R)</span>
+</div>
+</div>
+</div>
+</section>
+<nav class="flex border-b border-slate-800 overflow-x-auto custom-scrollbar">
+<button class="px-4 py-3 border-b-2 border-primary text-primary text-sm font-bold whitespace-nowrap">Active Protocols</button>
+<button class="px-4 py-3 border-b-2 border-transparent text-slate-500 hover:text-slate-300 text-sm font-medium whitespace-nowrap transition-colors">Medications</button>
+<button class="px-4 py-3 border-b-2 border-transparent text-slate-500 hover:text-slate-300 text-sm font-medium whitespace-nowrap transition-colors">Outcomes</button>
+<button class="px-4 py-3 border-b-2 border-transparent text-slate-500 hover:text-slate-300 text-sm font-medium whitespace-nowrap transition-colors">Lab Results</button>
+<button class="px-4 py-3 border-b-2 border-transparent text-slate-500 hover:text-slate-300 text-sm font-medium whitespace-nowrap transition-colors">Notes</button>
+<button class="px-4 py-3 border-b-2 border-transparent text-slate-500 hover:text-slate-300 text-sm font-medium whitespace-nowrap transition-colors">Genomics</button>
+</nav>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<div class="bg-slate-900/40 border border-slate-800 rounded-xl p-5 flex items-start gap-4">
+<div class="relative size-16 shrink-0">
+<svg class="size-full transform -rotate-90">
+<circle class="text-slate-800" cx="32" cy="32" fill="transparent" r="28" stroke="currentColor" stroke-width="4"></circle>
+<circle class="text-primary" cx="32" cy="32" fill="transparent" r="28" stroke="currentColor" stroke-dasharray="175.9" stroke-dashoffset="17.5" stroke-width="4"></circle>
+</svg>
+<span class="absolute inset-0 flex items-center justify-center text-xs font-bold">90%</span>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-start mb-1">
+<h4 class="font-bold">Methylation Support</h4>
+<span class="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded uppercase font-bold">Daily</span>
+</div>
+<p class="text-sm text-slate-400 mb-3">5-MTHF 5mg + Methyl B12</p>
+<div class="space-y-1">
+<div class="flex justify-between text-[10px] text-slate-500 font-bold">
+<span>DURATION</span>
+<span>Day 45 of 90</span>
+</div>
+<div class="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
+<div class="h-full bg-gradient-to-r from-primary/50 to-primary w-1/2"></div>
+</div>
+</div>
+</div>
+</div>
+<div class="bg-slate-900/40 border border-slate-800 rounded-xl p-5 flex items-start gap-4">
+<div class="relative size-16 shrink-0">
+<svg class="size-full transform -rotate-90">
+<circle class="text-slate-800" cx="32" cy="32" fill="transparent" r="28" stroke="currentColor" stroke-width="4"></circle>
+<circle class="text-primary" cx="32" cy="32" fill="transparent" r="28" stroke="currentColor" stroke-dasharray="175.9" stroke-dashoffset="45" stroke-width="4"></circle>
+</svg>
+<span class="absolute inset-0 flex items-center justify-center text-xs font-bold">75%</span>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-start mb-1">
+<h4 class="font-bold">Adrenal Recovery</h4>
+<span class="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded uppercase font-bold">PM</span>
+</div>
+<p class="text-sm text-slate-400 mb-3">Ashwagandha 600mg + Mag Threonate</p>
+<div class="space-y-1">
+<div class="flex justify-between text-[10px] text-slate-500 font-bold">
+<span>DURATION</span>
+<span>Day 12 of 30</span>
+</div>
+<div class="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
+<div class="h-full bg-gradient-to-r from-primary/50 to-primary w-[40%]"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<section class="space-y-4">
+<h3 class="text-lg font-bold">Outcomes Timeline</h3>
+<div class="flex flex-col gap-4">
+<div class="relative pl-8 border-l-2 border-slate-800 pb-2">
+<div class="absolute -left-[9px] top-0 size-4 rounded-full bg-primary border-4 border-background-dark"></div>
+<div class="flex items-center gap-2 mb-3">
+<span class="text-xs font-bold text-slate-500 uppercase">Current (Day 180)</span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<div class="bg-slate-900/60 border border-slate-800 p-4 rounded-xl flex justify-between items-center">
+<div>
+<p class="text-xs text-slate-500 font-bold uppercase mb-1">Am Cortisol</p>
+<div class="flex items-baseline gap-2">
+<span class="text-xl font-bold">14.2</span>
+<span class="text-[10px] text-slate-400 uppercase">mcg/dL</span>
+</div>
+</div>
+<div class="text-right">
+<div class="flex items-center text-primary text-sm font-bold justify-end">
+<span class="material-symbols-outlined text-sm">arrow_downward</span>
+                                    22%
+                                </div>
+<p class="text-[10px] text-slate-500">vs. Baseline (18.2)</p>
+</div>
+</div>
+<div class="bg-slate-900/60 border border-slate-800 p-4 rounded-xl flex justify-between items-center">
+<div>
+<p class="text-xs text-slate-500 font-bold uppercase mb-1">Avg HRV</p>
+<div class="flex items-baseline gap-2">
+<span class="text-xl font-bold">58</span>
+<span class="text-[10px] text-slate-400 uppercase">ms</span>
+</div>
+</div>
+<div class="text-right">
+<div class="flex items-center text-primary text-sm font-bold justify-end">
+<span class="material-symbols-outlined text-sm">arrow_upward</span>
+                                    15%
+                                </div>
+<p class="text-[10px] text-slate-500">vs. Baseline (50.4)</p>
+</div>
+</div>
+</div>
+</div>
+<div class="relative pl-8 border-l-2 border-slate-800">
+<div class="absolute -left-[9px] top-0 size-4 rounded-full bg-slate-700 border-4 border-background-dark"></div>
+<div class="flex items-center gap-2">
+<span class="text-xs font-bold text-slate-600 uppercase">Baseline</span>
+</div>
+</div>
+</div>
+</section>
+</main>
+<div class="fixed bottom-20 left-1/2 -translate-x-1/2 w-full max-w-lg px-4 z-40">
+<div class="bg-danger/10 border border-danger/30 backdrop-blur-md p-4 rounded-xl shadow-2xl flex items-center gap-4 animate-bounce-subtle">
+<div class="size-10 rounded-full bg-danger/20 flex items-center justify-center text-danger shrink-0">
+<span class="material-symbols-outlined">warning</span>
+</div>
+<div class="flex-1">
+<p class="text-sm font-bold text-slate-100">Drug-Supplement Interaction Detected</p>
+<p class="text-xs text-slate-400">Moderate risk: <span class="text-danger font-medium">Curcumin + Warfarin</span> (Increased bleeding risk)</p>
+</div>
+<button class="p-1 text-slate-500 hover:text-slate-300">
+<span class="material-symbols-outlined text-lg">close</span>
+</button>
+</div>
+</div>
+<nav class="fixed bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur-md border-t border-slate-800 px-4 py-2 z-50">
+<div class="max-w-md mx-auto flex justify-between items-center">
+<a class="flex flex-col items-center gap-1 p-2 text-primary" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1">group</span>
+<span class="text-[10px] font-bold">Patients</span>
+</a>
+<a class="flex flex-col items-center gap-1 p-2 text-slate-500" href="#">
+<span class="material-symbols-outlined">calendar_today</span>
+<span class="text-[10px] font-medium">Schedule</span>
+</a>
+<a class="flex flex-col items-center gap-1 p-2 text-slate-500" href="#">
+<span class="material-symbols-outlined">description</span>
+<span class="text-[10px] font-medium">Protocols</span>
+</a>
+<a class="flex flex-col items-center gap-1 p-2 text-slate-500" href="#">
+<span class="material-symbols-outlined">monitoring</span>
+<span class="text-[10px] font-medium">Analytics</span>
+</a>
+<a class="flex flex-col items-center gap-1 p-2 text-slate-500" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="text-[10px] font-medium">Settings</span>
+</a>
+</div>
+</nav>
+</body></html>
