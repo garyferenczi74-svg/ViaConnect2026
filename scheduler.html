@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Inter:wght@300;400;500;600&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "on-error": "#690005", "tertiary": "#e6dbff", "outline": "#869486", "on-background": "#dce2f7",
+                        "on-primary-container": "#005e2d", "background": "#0c1322", "primary": "#6bfb9a",
+                        "error": "#ffb4ab", "error-container": "#93000a", "primary-container": "#4ade80",
+                        "on-primary": "#003919", "surface-variant": "#2e3545", "surface": "#0c1322",
+                        "on-surface": "#dce2f7", "surface-container": "#191f2f", "secondary": "#ffc640",
+                        "surface-container-low": "#141b2b", "surface-container-high": "#232a3a",
+                        "surface-container-highest": "#2e3545", "outline-variant": "#3d4a3e"
+                    },
+                    fontFamily: { "headline": ["Space Grotesk"], "body": ["Inter"], "label": ["Inter"] }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: #0c1322; }
+        ::-webkit-scrollbar-thumb { background: #2e3545; border-radius: 10px; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface font-body selection:bg-primary/30">
+<!-- TopAppBar -->
+<header class="fixed top-0 left-0 right-0 z-50 flex justify-between items-center w-full px-6 py-4 bg-gradient-to-b from-[#0c1322] to-transparent">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-surface-container-highest border border-outline-variant/20 flex items-center justify-center overflow-hidden">
+<img alt="Practitioner Profile" class="w-full h-full object-cover" data-alt="Professional clinical practitioner profile avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCvAEsRYApyWLnc3igeZKiaUz7e-j_Rw-JWb0ST00U_HxZgLdZ1ua4eH6gDB00OlZxOWPP3jpSbOTHL9Ebt5_2Un3KEQ4u24nGWiVUf0ettKjVQFAOAh8HSmSPtAAKzYgSIvy19pxn1iv7-j8HaWwr2MARcvNYucLkJVorZ8So3O8T9TNXXFatqkNmoq9V-BGVgn-5lZqJ3pW1kJGZywTP8mts6WGJ0N5MocVOoNV22p3NQG14dsD7iHdHgB-c8GMBkGTm09IgArr0"/>
+</div>
+<h1 class="font-headline text-xl font-bold text-primary tracking-tight">Clinical Scheduler</h1>
+</div>
+<div class="flex items-center gap-6">
+<nav class="hidden md:flex items-center gap-8 font-headline text-sm uppercase tracking-widest">
+<a class="text-primary font-bold" href="#">Calendar</a>
+<a class="text-slate-400 hover:text-primary transition-colors duration-300" href="#">Patients</a>
+<a class="text-slate-400 hover:text-primary transition-colors duration-300" href="#">Diagnostics</a>
+</nav>
+<button class="material-symbols-outlined text-slate-400 hover:text-primary transition-all active:scale-95" data-icon="settings">settings</button>
+</div>
+</header>
+<main class="pt-24 pb-20 px-6 flex flex-col lg:flex-row gap-8 max-w-[1600px] mx-auto min-h-screen">
+<!-- Calendar Section -->
+<div class="flex-1 flex flex-col gap-6">
+<!-- Header Controls -->
+<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+<div class="flex p-1 bg-surface-container-low rounded-xl border border-outline-variant/10">
+<button class="px-4 py-1.5 text-xs font-bold rounded-lg bg-primary text-on-primary shadow-lg shadow-primary/10">Week</button>
+<button class="px-4 py-1.5 text-xs font-medium text-slate-400 hover:text-on-surface transition-colors">Day</button>
+<button class="px-4 py-1.5 text-xs font-medium text-slate-400 hover:text-on-surface transition-colors">Month</button>
+</div>
+<button class="flex items-center gap-2 bg-primary px-5 py-2.5 rounded-xl text-on-primary font-bold text-sm hover:brightness-110 transition-all shadow-xl shadow-primary/20 active:scale-95">
+<span class="material-symbols-outlined text-sm" data-icon="add">add</span>
+                    New Appointment
+                </button>
+</div>
+<!-- Calendar Grid -->
+<div class="bg-surface-container-low rounded-3xl border border-outline-variant/5 overflow-hidden flex flex-col h-[700px]">
+<!-- Grid Header -->
+<div class="grid grid-cols-[80px_repeat(7,1fr)] border-b border-outline-variant/10 bg-surface-container-high/50 backdrop-blur-sm">
+<div class="p-4"></div>
+<div class="p-4 text-center border-l border-outline-variant/10"><p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Mon</p><p class="text-lg font-headline font-bold">12</p></div>
+<div class="p-4 text-center border-l border-outline-variant/10 bg-primary/5"><p class="text-[10px] text-primary font-bold uppercase tracking-widest">Tue</p><p class="text-lg font-headline font-bold text-primary">13</p></div>
+<div class="p-4 text-center border-l border-outline-variant/10"><p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Wed</p><p class="text-lg font-headline font-bold">14</p></div>
+<div class="p-4 text-center border-l border-outline-variant/10"><p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Thu</p><p class="text-lg font-headline font-bold">15</p></div>
+<div class="p-4 text-center border-l border-outline-variant/10"><p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Fri</p><p class="text-lg font-headline font-bold">16</p></div>
+<div class="p-4 text-center border-l border-outline-variant/10"><p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Sat</p><p class="text-lg font-headline font-bold">17</p></div>
+<div class="p-4 text-center border-l border-outline-variant/10"><p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Sun</p><p class="text-lg font-headline font-bold">18</p></div>
+</div>
+<!-- Grid Body -->
+<div class="flex-1 overflow-y-auto relative">
+<div class="grid grid-cols-[80px_repeat(7,1fr)] grid-rows-[repeat(10,80px)]">
+<div class="contents">
+<div class="sticky left-0 bg-surface-container-low border-r border-outline-variant/10 flex items-start justify-center pt-2 text-[10px] font-bold text-slate-500">08:00</div>
+<div class="border-b border-l border-outline-variant/5 col-span-7"></div>
+<div class="sticky left-0 bg-surface-container-low border-r border-outline-variant/10 flex items-start justify-center pt-2 text-[10px] font-bold text-slate-500">09:00</div>
+<div class="border-b border-l border-outline-variant/5 col-span-7 relative">
+<div class="absolute top-2 left-2 right-2 h-14 bg-primary/10 border-l-4 border-primary rounded-r-lg p-2 transition-transform hover:scale-[1.02] cursor-pointer">
+<p class="text-[11px] font-bold leading-tight">Jane Doe</p>
+<p class="text-[9px] text-primary/80 uppercase font-bold tracking-wider">Initial Consult • 09:15</p>
+</div>
+</div>
+<div class="sticky left-0 bg-surface-container-low border-r border-outline-variant/10 flex items-start justify-center pt-2 text-[10px] font-bold text-slate-500">10:00</div>
+<div class="border-b border-l border-outline-variant/5 col-span-7"></div>
+<div class="sticky left-0 bg-surface-container-low border-r border-outline-variant/10 flex items-start justify-center pt-2 text-[10px] font-bold text-slate-500">11:00</div>
+<div class="border-b border-l border-outline-variant/5 col-span-7 relative">
+<div class="absolute top-8 left-[calc(14.28%*1+8px)] w-[calc(14.28%-16px)] h-12 bg-tertiary/10 border-l-4 border-[#a78bfa] rounded-r-lg p-2 transition-transform hover:scale-[1.02] cursor-pointer">
+<p class="text-[10px] font-bold truncate">John Smith</p>
+<p class="text-[8px] text-tertiary uppercase font-bold">Follow-up • 11:30</p>
+</div>
+</div>
+<div class="sticky left-0 bg-surface-container-low border-r border-outline-variant/10 flex items-start justify-center pt-2 text-[10px] font-bold text-slate-500">12:00</div>
+<div class="border-b border-l border-outline-variant/5 col-span-7"></div>
+<div class="sticky left-0 bg-surface-container-low border-r border-outline-variant/10 flex items-start justify-center pt-2 text-[10px] font-bold text-slate-500">13:00</div>
+<div class="border-b border-l border-outline-variant/5 col-span-7"></div>
+<div class="sticky left-0 bg-surface-container-low border-r border-outline-variant/10 flex items-start justify-center pt-2 text-[10px] font-bold text-slate-500">14:00</div>
+<div class="border-b border-l border-outline-variant/5 col-span-7 relative">
+<div class="absolute top-0 left-[calc(14.28%*2+8px)] w-[calc(14.28%-16px)] h-20 bg-error/10 border-l-4 border-error rounded-r-lg p-2 z-10">
+<p class="text-[10px] font-bold text-error">Urgent Care</p>
+<p class="text-[8px] text-error/70 uppercase font-black">Acute Reaction • 14:00</p>
+</div>
+</div>
+<div class="sticky left-0 bg-surface-container-low border-r border-outline-variant/10 flex items-start justify-center pt-2 text-[10px] font-bold text-slate-500">15:00</div>
+<div class="border-b border-l border-outline-variant/5 col-span-7"></div>
+<div class="absolute top-[280px] left-[80px] right-0 h-[2px] bg-error z-20 pointer-events-none">
+<div class="absolute -left-1.5 -top-1 w-3 h-3 bg-error rounded-full shadow-[0_0_8px_rgba(255,180,171,0.8)]"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Sidebar Panel -->
+<aside class="w-full lg:w-80 flex flex-col gap-6">
+<div class="bg-surface-container border border-primary/20 rounded-3xl p-5 shadow-2xl shadow-black/40">
+<div class="flex items-center justify-between mb-6">
+<h2 class="font-headline font-bold text-sm tracking-tight">Upcoming Follow-ups</h2>
+<span class="material-symbols-outlined text-primary text-lg" data-icon="clinical_notes">clinical_notes</span>
+</div>
+<div class="space-y-4 max-h-[600px] overflow-y-auto pr-2">
+<div class="flex flex-col gap-1 p-3 rounded-2xl bg-surface-container-low hover:bg-surface-container-high transition-colors border border-outline-variant/5">
+<div class="flex justify-between items-start">
+<span class="text-xs font-bold">Alice Vane</span>
+<span class="px-2 py-0.5 rounded-full bg-error-container text-[8px] font-black text-error uppercase">Overdue</span>
+</div>
+<p class="text-[10px] text-slate-400">GI Protocol Rev. II</p>
+<p class="text-[9px] font-medium text-slate-500 mt-1">Due: Oct 10</p>
+</div>
+<div class="flex flex-col gap-1 p-3 rounded-2xl bg-surface-container-low hover:bg-surface-container-high transition-colors border border-outline-variant/5">
+<div class="flex justify-between items-start">
+<span class="text-xs font-bold">Marc Thorne</span>
+<span class="px-2 py-0.5 rounded-full bg-secondary/10 text-[8px] font-black text-secondary uppercase">Soon</span>
+</div>
+<p class="text-[10px] text-slate-400">Cortisol Management</p>
+<p class="text-[9px] font-medium text-slate-500 mt-1">Due: Oct 14</p>
+</div>
+<div class="flex flex-col gap-1 p-3 rounded-2xl bg-surface-container-low opacity-80 border border-outline-variant/5">
+<div class="flex justify-between items-start">
+<span class="text-xs font-bold">Elena Ross</span>
+<span class="px-2 py-0.5 rounded-full bg-primary/10 text-[8px] font-black text-primary uppercase">Upcoming</span>
+</div>
+<p class="text-[10px] text-slate-400">Iron Panel Review</p>
+<p class="text-[9px] font-medium text-slate-500 mt-1">Due: Oct 18</p>
+</div>
+<div class="flex flex-col gap-1 p-3 rounded-2xl bg-surface-container-low opacity-60 border border-outline-variant/5">
+<div class="flex justify-between items-start">
+<span class="text-xs font-bold">Sam Kent</span>
+<span class="px-2 py-0.5 rounded-full bg-primary/10 text-[8px] font-black text-primary uppercase">Upcoming</span>
+</div>
+<p class="text-[10px] text-slate-400">Lyme Protocol 3</p>
+<p class="text-[9px] font-medium text-slate-500 mt-1">Due: Oct 20</p>
+</div>
+<div class="h-20 border border-dashed border-outline-variant/20 rounded-2xl flex items-center justify-center">
+<span class="text-[10px] text-slate-600 font-bold uppercase tracking-widest">+ 4 more tasks</span>
+</div>
+</div>
+</div>
+</aside>
+</main>
+<!-- Navigation Bar (Mobile) -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-4 pt-2 bg-[#0c1322]/80 backdrop-blur-md border-t border-white/5">
+<div class="flex flex-col items-center text-primary bg-primary/10 rounded-xl px-4 py-1 animate-pulse">
+<span class="material-symbols-outlined" data-icon="event">event</span>
+<span class="text-[10px] font-medium font-body mt-1">Schedule</span>
+</div>
+<div class="flex flex-col items-center text-slate-500">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="text-[10px] font-medium font-body mt-1">Patients</span>
+</div>
+<div class="flex flex-col items-center text-slate-500">
+<span class="material-symbols-outlined" data-icon="mail">mail</span>
+<span class="text-[10px] font-medium font-body mt-1">Inbox</span>
+</div>
+</nav>
+</body></html>
