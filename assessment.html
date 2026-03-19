@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "surface-container": "#191f2f",
+                        "on-surface": "#dce2f7",
+                        "surface-container-highest": "#2e3545",
+                        "outline-variant": "#3d4a3e",
+                        "surface-container-low": "#141b2b",
+                        "primary": "#6bfb9a",
+                        "background": "#0c1322",
+                        "primary-container": "#4ade80",
+                        "surface-container-high": "#232a3a",
+                        "surface": "#0c1322",
+                        "secondary": "#ffc640",
+                        "error": "#ffb4ab",
+                    },
+                    fontFamily: {
+                        "headline": ["Space Grotesk"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface font-body selection:bg-primary/30">
+<header class="bg-[#0c1322] flex justify-between items-center px-6 py-4 w-full sticky top-0 z-50 shadow-[0_20px_40px_rgba(0,57,25,0.12)]">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center overflow-hidden border border-outline-variant/20">
+<img alt="Patient Portrait" class="w-full h-full object-cover" data-alt="Close up portrait of a male patient" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDy8aThnP0eZFr4KdKQaMZp9jjAGvT8mv6jD4QtecZs0uPuGlZYMUom0D_eVmcCIJplL5ebXDoCO7dET2XIkXFN4AODEOj5InJI_F-PJDha0ym5weidqu8XN8HbDFRJLd13EPTvRN_rRu9R8Ot5nfgt-qXwH33vi48lzNmwtadPYEBK4poa12_dT9zNc0e0yCfR0HNfNTXo4DNOeijoPwW37M4EFg5k0rVy0vWR8-qfxFAc5nV4uIBmWai8ZEaBOeHOqsSpaphdSG4"/>
+</div>
+<h1 class="font-headline tracking-tight text-2xl font-bold text-primary-container">Integrative Health Assessment</h1>
+</div>
+<button class="p-2 rounded-xl hover:bg-primary/10 transition-colors text-slate-400 active:scale-95 duration-200">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</header>
+<main class="max-w-7xl mx-auto p-6 pb-32 grid grid-cols-1 lg:grid-cols-12 gap-6">
+<!-- Constitutional Profile (Radar Chart) -->
+<section class="lg:col-span-4 bg-surface-container-low rounded-3xl p-6 border border-outline-variant/10">
+<div class="flex justify-between items-start mb-8">
+<h3 class="font-headline text-lg font-bold uppercase tracking-wider text-primary">Constitutional Profile</h3>
+<span class="bg-[#a78bfa]/20 text-[#a78bfa] text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest border border-[#a78bfa]/30">Vata-Pitta</span>
+</div>
+<div class="relative aspect-square flex items-center justify-center">
+<svg class="w-full h-full transform -rotate-30" viewbox="0 0 100 100">
+<circle cx="50" cy="50" fill="none" r="45" stroke="#3d4a3e" stroke-dasharray="2 2" stroke-width="0.5"></circle>
+<path d="M50 5 L90 27 L90 73 L50 95 L10 73 L10 27 Z" fill="none" stroke="#3d4a3e" stroke-width="0.5"></path>
+<path d="M50 15 L80 32 L80 68 L50 85 L20 68 L20 32 Z" fill="none" opacity="0.5" stroke="#3d4a3e" stroke-width="0.5"></path>
+<!-- Data Area -->
+<path d="M50 20 L85 30 L75 65 L50 80 L25 60 L30 35 Z" fill="#4ade80" fill-opacity="0.2" stroke="#4ade80" stroke-width="2"></path>
+</svg>
+<div class="absolute inset-0 flex flex-col justify-between p-2 font-label text-[9px] uppercase tracking-tighter text-slate-500 font-bold">
+<div class="text-center">Vata</div>
+<div class="flex justify-between w-full px-4"><span>Pitta</span><span>Kapha</span></div>
+<div class="flex justify-between w-full px-4"><span>Structural</span><span>Functional</span></div>
+<div class="text-center">Mental</div>
+</div>
+</div>
+</section>
+<!-- Vitality Score Grid -->
+<section class="lg:col-span-5 bg-surface-container-high rounded-3xl p-6 shadow-xl">
+<h3 class="font-headline text-lg font-bold mb-6 text-on-surface">Vitality Matrix</h3>
+<div class="grid grid-cols-5 gap-4 mb-10">
+<!-- Gauges -->
+<div class="flex flex-col items-center gap-2">
+<div class="w-12 h-12 rounded-full border-4 border-primary/30 flex items-center justify-center text-primary font-bold text-sm">7</div>
+<span class="text-[9px] uppercase font-bold text-slate-400">Energy</span>
+</div>
+<div class="flex flex-col items-center gap-2">
+<div class="w-12 h-12 rounded-full border-4 border-secondary/30 flex items-center justify-center text-secondary font-bold text-sm">4</div>
+<span class="text-[9px] uppercase font-bold text-slate-400">Sleep</span>
+</div>
+<div class="flex flex-col items-center gap-2">
+<div class="w-12 h-12 rounded-full border-4 border-primary/30 flex items-center justify-center text-primary font-bold text-sm">7</div>
+<span class="text-[9px] uppercase font-bold text-slate-400">Digestion</span>
+</div>
+<div class="flex flex-col items-center gap-2">
+<div class="w-12 h-12 rounded-full border-4 border-secondary/30 flex items-center justify-center text-secondary font-bold text-sm">6</div>
+<span class="text-[9px] uppercase font-bold text-slate-400">Immunity</span>
+</div>
+<div class="flex flex-col items-center gap-2">
+<div class="w-12 h-12 rounded-full border-4 border-primary/30 flex items-center justify-center text-primary font-bold text-sm">7</div>
+<span class="text-[9px] uppercase font-bold text-slate-400">Cognition</span>
+</div>
+<div class="flex flex-col items-center gap-2">
+<div class="w-12 h-12 rounded-full border-4 border-secondary/30 flex items-center justify-center text-secondary font-bold text-sm">5</div>
+<span class="text-[9px] uppercase font-bold text-slate-400">Mood</span>
+</div>
+<div class="flex flex-col items-center gap-2">
+<div class="w-12 h-12 rounded-full border-4 border-error/30 flex items-center justify-center text-error font-bold text-sm">3</div>
+<span class="text-[9px] uppercase font-bold text-slate-400">Pain</span>
+</div>
+<div class="flex flex-col items-center gap-2">
+<div class="w-12 h-12 rounded-full border-4 border-secondary/30 flex items-center justify-center text-secondary font-bold text-sm">6</div>
+<span class="text-[9px] uppercase font-bold text-slate-400">Skin</span>
+</div>
+<div class="flex flex-col items-center gap-2">
+<div class="w-12 h-12 rounded-full border-4 border-secondary/30 flex items-center justify-center text-secondary font-bold text-sm">5</div>
+<span class="text-[9px] uppercase font-bold text-slate-400">Hormonal</span>
+</div>
+<div class="flex flex-col items-center gap-2">
+<div class="w-12 h-12 rounded-full border-4 border-primary/30 flex items-center justify-center text-primary font-bold text-sm">8</div>
+<span class="text-[9px] uppercase font-bold text-slate-400">Cardio</span>
+</div>
+</div>
+<div class="bg-surface-container-lowest rounded-2xl p-6 flex items-center justify-between border border-outline-variant/10">
+<div>
+<div class="text-4xl font-headline font-bold text-primary">58<span class="text-lg text-slate-500">/100</span></div>
+<div class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Overall Vitality Score</div>
+</div>
+<div class="h-2 w-32 bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-gradient-to-r from-primary-container to-primary w-[58%]"></div>
+</div>
+</div>
+</section>
+<!-- Body Map -->
+<section class="lg:col-span-3 bg-surface-container-low rounded-3xl p-6 flex flex-col items-center border border-outline-variant/10">
+<h3 class="font-headline text-lg font-bold mb-6 self-start text-on-surface">Systems Map</h3>
+<div class="relative w-full max-w-[200px]">
+<svg class="w-full h-auto opacity-40" viewbox="0 0 100 200">
+<path d="M50 10 C55 10 60 15 60 25 C60 35 55 40 50 40 C45 40 40 35 40 25 C40 15 45 10 50 10 M40 40 L60 40 L65 100 L35 100 Z M35 45 L20 100 M65 45 L80 100 M35 100 L40 190 M65 100 L60 190" fill="none" stroke="white" stroke-width="2"></path>
+<!-- Hotspots -->
+<circle class="animate-pulse shadow-[0_0_15px_#4ade80]" cx="50" cy="25" fill="#4ade80" r="8"></circle>
+<circle cx="50" cy="65" fill="#4ade80" r="6"></circle>
+<circle cx="50" cy="110" fill="#ffc640" r="12"></circle>
+<circle cx="35" cy="130" fill="#ffb4ab" r="5"></circle>
+<circle cx="60" cy="85" fill="#ffc640" r="7"></circle>
+</svg>
+</div>
+<div class="mt-6 w-full space-y-2">
+<div class="flex justify-between text-[10px] font-bold uppercase tracking-widest border-b border-outline-variant/10 pb-1">
+<span class="text-slate-500">Joints</span><span class="text-error">Critical</span>
+</div>
+<div class="flex justify-between text-[10px] font-bold uppercase tracking-widest border-b border-outline-variant/10 pb-1">
+<span class="text-slate-500">GI Tract</span><span class="text-secondary">Congested</span>
+</div>
+<div class="flex justify-between text-[10px] font-bold uppercase tracking-widest">
+<span class="text-slate-500">Brain/Heart</span><span class="text-primary">Optimal</span>
+</div>
+</div>
+</section>
+<!-- Assessment Timeline -->
+<section class="lg:col-span-12 bg-surface-container-low rounded-3xl p-8 border border-outline-variant/10">
+<h3 class="font-headline text-xl font-bold mb-8">Assessment Progress</h3>
+<div class="flex flex-col md:flex-row justify-between items-start gap-8 relative">
+<div class="absolute top-1/2 left-0 w-full h-px bg-outline-variant/20 hidden md:block"></div>
+<div class="relative z-10 flex flex-col items-center md:items-start">
+<div class="w-4 h-4 rounded-full bg-primary ring-4 ring-primary/20 mb-4"></div>
+<div class="text-sm font-bold">OCT 24, 2023</div>
+<div class="text-2xl font-headline text-primary">58</div>
+<div class="text-[10px] text-primary bg-primary/10 px-2 py-0.5 rounded">+4 from last</div>
+</div>
+<div class="relative z-10 flex flex-col items-center md:items-start opacity-60">
+<div class="w-4 h-4 rounded-full bg-outline-variant mb-4"></div>
+<div class="text-sm font-bold text-slate-400">SEP 12, 2023</div>
+<div class="text-2xl font-headline text-slate-300">54</div>
+<div class="text-[10px] text-error bg-error/10 px-2 py-0.5 rounded">-2 drop</div>
+</div>
+<div class="relative z-10 flex flex-col items-center md:items-start opacity-40">
+<div class="w-4 h-4 rounded-full bg-outline-variant mb-4"></div>
+<div class="text-sm font-bold text-slate-500">JUL 05, 2023</div>
+<div class="text-2xl font-headline text-slate-400">56</div>
+<div class="text-[10px] text-slate-500 bg-slate-500/10 px-2 py-0.5 rounded">Baseline</div>
+</div>
+</div>
+</section>
+</main>
+<nav class="fixed bottom-0 left-0 w-full flex justify-around items-center px-4 pb-6 pt-2 bg-[#0c1322]/50 backdrop-blur-xl z-50 rounded-t-2xl shadow-[0_-10px_30px_rgba(0,0,0,0.5)] border-t border-[#3d4a3e]/15">
+<div class="flex flex-col items-center justify-center text-slate-500 hover:text-[#4ade80] transition-all active:scale-90 duration-150 cursor-pointer">
+<span class="material-symbols-outlined">ecg_heart</span>
+<span class="font-['Inter'] text-[10px] uppercase tracking-widest font-bold mt-1">Vitals</span>
+</div>
+<div class="flex flex-col items-center justify-center text-slate-500 hover:text-[#4ade80] transition-all active:scale-90 duration-150 cursor-pointer">
+<span class="material-symbols-outlined">magnification_small</span>
+<span class="font-['Inter'] text-[10px] uppercase tracking-widest font-bold mt-1">Labs</span>
+</div>
+<div class="flex flex-col items-center justify-center bg-[#4ade80]/20 text-[#4ade80] rounded-xl px-4 py-1 active:scale-90 duration-150 cursor-pointer">
+<span class="material-symbols-outlined">assignment</span>
+<span class="font-['Inter'] text-[10px] uppercase tracking-widest font-bold mt-1">Plan</span>
+</div>
+<div class="flex flex-col items-center justify-center text-slate-500 hover:text-[#4ade80] transition-all active:scale-90 duration-150 cursor-pointer">
+<span class="material-symbols-outlined">edit_note</span>
+<span class="font-['Inter'] text-[10px] uppercase tracking-widest font-bold mt-1">Notes</span>
+</div>
+<div class="flex flex-col items-center justify-center text-slate-500 hover:text-[#4ade80] transition-all active:scale-90 duration-150 cursor-pointer">
+<span class="material-symbols-outlined">hub</span>
+<span class="font-['Inter'] text-[10px] uppercase tracking-widest font-bold mt-1">Portal</span>
+</div>
+</nav>
+</body></html>
