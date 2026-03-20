@@ -1,77 +1,309 @@
+// Auto-aligned with Supabase project nnhkcufyqjojdbvdrpky
+// Existing tables (19) + new tables added by migration
+
 export interface Database {
   public: {
     Tables: {
+      // ── EXISTING TABLES (match live DB exactly) ──────────────────────
+
       profiles: {
         Row: {
           id: string;
-          email: string;
+          username: string | null;
           full_name: string | null;
           avatar_url: string | null;
-          portal_type: 'consumer' | 'practitioner' | 'naturopath';
-          membership_tier: 'free' | 'gold' | 'platinum' | 'practitioner';
-          created_at: string;
-          updated_at: string;
+          role: 'patient' | 'practitioner' | 'admin';
+          onboarding_completed: boolean | null;
+          created_at: string | null;
+          updated_at: string | null;
         };
-        Insert: Omit<Database['public']['Tables']['profiles']['Row'], 'created_at' | 'updated_at'>;
-        Update: Partial<Database['public']['Tables']['profiles']['Insert']>;
+        Insert: { id: string } & Partial<Omit<Database['public']['Tables']['profiles']['Row'], 'id'>>;
+        Update: Partial<Database['public']['Tables']['profiles']['Row']>;
       };
+
       genetic_profiles: {
         Row: {
           id: string;
           user_id: string;
-          panel_type: 'GENEX-M' | 'GENEX-P' | 'GENEX-G' | 'GENEX-E' | 'GENEX-C' | 'Complete';
-          status: 'pending' | 'processing' | 'completed';
-          raw_data_url: string | null;
-          processed_at: string | null;
-          created_at: string;
+          cyp2d6_status: string | null;
+          mthfr_status: string | null;
+          comt_status: string | null;
+          additional_genes: Record<string, unknown> | null;
+          source_lab: string | null;
+          report_date: string | null;
+          created_at: string | null;
         };
         Insert: Omit<Database['public']['Tables']['genetic_profiles']['Row'], 'id' | 'created_at'>;
         Update: Partial<Database['public']['Tables']['genetic_profiles']['Insert']>;
       };
-      gene_variants: {
-        Row: {
-          id: string;
-          genetic_profile_id: string;
-          gene_name: string;
-          variant: string;
-          rsid: string;
-          genotype: string;
-          impact: 'positive' | 'neutral' | 'moderate' | 'significant';
-          category: string;
-          created_at: string;
-        };
-        Insert: Omit<Database['public']['Tables']['gene_variants']['Row'], 'id' | 'created_at'>;
-        Update: Partial<Database['public']['Tables']['gene_variants']['Insert']>;
-      };
+
       protocols: {
         Row: {
           id: string;
           user_id: string;
-          name: string;
-          description: string | null;
-          status: 'active' | 'paused' | 'completed';
-          ai_reasoning: string | null;
-          created_by: string;
-          created_at: string;
-          updated_at: string;
+          patient_id: string | null;
+          protocol_name: string;
+          form: 'TINCTURE' | 'ENCAPSULATION' | 'POWDER' | 'TEA' | 'TOPICAL' | 'OTHER';
+          total_volume_ml: number | null;
+          dosage_instructions: string | null;
+          status: 'DRAFT' | 'ACTIVE' | 'COMPLETED' | 'ARCHIVED';
+          created_at: string | null;
+          updated_at: string | null;
         };
         Insert: Omit<Database['public']['Tables']['protocols']['Row'], 'id' | 'created_at' | 'updated_at'>;
         Update: Partial<Database['public']['Tables']['protocols']['Insert']>;
       };
-      protocol_items: {
+
+      protocol_ingredients: {
         Row: {
           id: string;
           protocol_id: string;
-          product_id: string;
-          dosage: string;
-          frequency: string;
-          time_of_day: 'morning' | 'afternoon' | 'evening' | 'bedtime';
-          notes: string | null;
-          sort_order: number;
+          herb_id: string;
+          ratio: string | null;
+          volume_ml: number | null;
+          percentage: number | null;
+          sequence_order: number | null;
+          added_at: string | null;
         };
-        Insert: Omit<Database['public']['Tables']['protocol_items']['Row'], 'id'>;
-        Update: Partial<Database['public']['Tables']['protocol_items']['Insert']>;
+        Insert: Omit<Database['public']['Tables']['protocol_ingredients']['Row'], 'id' | 'added_at'>;
+        Update: Partial<Database['public']['Tables']['protocol_ingredients']['Insert']>;
       };
+
+      herbs: {
+        Row: {
+          id: string;
+          common_name: string;
+          scientific_name: string | null;
+          category: 'ADAPTOGEN' | 'HEPATIC' | 'NERVINE' | 'TONIC' | 'BITTER' | 'CARMINATIVE' | 'DEMULCENT' | 'OTHER' | null;
+          rating: number | null;
+          description: string | null;
+          typical_ratio: string | null;
+          contraindications: string | null;
+          created_at: string | null;
+        };
+        Insert: Omit<Database['public']['Tables']['herbs']['Row'], 'id' | 'created_at'>;
+        Update: Partial<Database['public']['Tables']['herbs']['Insert']>;
+      };
+
+      safety_alerts: {
+        Row: {
+          id: string;
+          protocol_id: string;
+          herb_id: string | null;
+          alert_type: string;
+          severity: 'INFO' | 'WARNING' | 'ALERT' | 'CRITICAL';
+          message: string;
+          recommendation: string | null;
+          requires_monitoring: boolean | null;
+          created_at: string | null;
+        };
+        Insert: Omit<Database['public']['Tables']['safety_alerts']['Row'], 'id' | 'created_at'>;
+        Update: Partial<Database['public']['Tables']['safety_alerts']['Insert']>;
+      };
+
+      farma_tokens: {
+        Row: {
+          id: string;
+          user_id: string;
+          balance: number;
+          lifetime_earned: number;
+          updated_at: string | null;
+        };
+        Insert: Omit<Database['public']['Tables']['farma_tokens']['Row'], 'id' | 'updated_at'>;
+        Update: Partial<Database['public']['Tables']['farma_tokens']['Insert']>;
+      };
+
+      token_transactions: {
+        Row: {
+          id: string;
+          user_id: string;
+          transaction_type: 'EARN' | 'REDEEM' | 'BONUS' | 'ADJUSTMENT';
+          activity_type: string | null;
+          token_amount: number;
+          balance_after: number;
+          description: string | null;
+          created_at: string | null;
+        };
+        Insert: Omit<Database['public']['Tables']['token_transactions']['Row'], 'id' | 'created_at'>;
+        Update: Partial<Database['public']['Tables']['token_transactions']['Insert']>;
+      };
+
+      health_metrics: {
+        Row: {
+          id: string;
+          user_id: string;
+          metric_date: string;
+          sleep_score: number | null;
+          hrv_value: number | null;
+          hrv_source: string | null;
+          steps_count: number | null;
+          recovery_state: 'Optimal' | 'Good' | 'Needs Rest' | null;
+          last_synced: string | null;
+        };
+        Insert: Omit<Database['public']['Tables']['health_metrics']['Row'], 'id'>;
+        Update: Partial<Database['public']['Tables']['health_metrics']['Insert']>;
+      };
+
+      health_scores: {
+        Row: {
+          id: string;
+          user_id: string;
+          score: number;
+          calculation_version: string | null;
+          created_at: string | null;
+        };
+        Insert: Omit<Database['public']['Tables']['health_scores']['Row'], 'id' | 'created_at'>;
+        Update: Partial<Database['public']['Tables']['health_scores']['Insert']>;
+      };
+
+      notifications: {
+        Row: {
+          id: string;
+          user_id: string;
+          notification_type: string;
+          title: string;
+          message: string | null;
+          read: boolean | null;
+          created_at: string | null;
+          expires_at: string | null;
+        };
+        Insert: Omit<Database['public']['Tables']['notifications']['Row'], 'id' | 'created_at'>;
+        Update: Partial<Database['public']['Tables']['notifications']['Insert']>;
+      };
+
+      ai_insights: {
+        Row: {
+          id: string;
+          user_id: string;
+          insight_text: string;
+          insight_type: string | null;
+          pubmed_id: string | null;
+          research_title: string | null;
+          research_summary: string | null;
+          research_url: string | null;
+          relevance_score: number | null;
+          generated_at: string | null;
+        };
+        Insert: Omit<Database['public']['Tables']['ai_insights']['Row'], 'id' | 'generated_at'>;
+        Update: Partial<Database['public']['Tables']['ai_insights']['Insert']>;
+      };
+
+      clinical_assessments: {
+        Row: {
+          id: string;
+          user_id: string;
+          date_of_birth: string | null;
+          biological_sex: 'male' | 'female' | 'intersex' | 'prefer_not_to_say' | null;
+          height_cm: number | null;
+          weight_kg: number | null;
+          primary_goals: string[] | null;
+          current_conditions: string[] | null;
+          current_medications: string | null;
+          allergies: string | null;
+          sleep_hours_avg: number | null;
+          exercise_frequency: 'none' | '1-2_weekly' | '3-4_weekly' | '5+_weekly' | null;
+          stress_level: 'low' | 'moderate' | 'high' | 'very_high' | null;
+          diet_type: 'omnivore' | 'vegetarian' | 'vegan' | 'keto' | 'paleo' | 'mediterranean' | 'other' | null;
+          current_supplements: string[] | null;
+          previous_herbal_experience: boolean | null;
+          completed: boolean | null;
+          completed_at: string | null;
+          created_at: string | null;
+          updated_at: string | null;
+        };
+        Insert: Omit<Database['public']['Tables']['clinical_assessments']['Row'], 'id' | 'created_at' | 'updated_at'>;
+        Update: Partial<Database['public']['Tables']['clinical_assessments']['Insert']>;
+      };
+
+      daily_tasks: {
+        Row: {
+          id: string;
+          user_id: string;
+          protocol_date: string;
+          task_type: 'SUPPLEMENT' | 'EXERCISE' | 'MEAL_LOG' | 'LAB_TEST' | 'CUSTOM';
+          title: string;
+          description: string | null;
+          completed: boolean;
+          completed_at: string | null;
+          created_at: string | null;
+        };
+        Insert: Omit<Database['public']['Tables']['daily_tasks']['Row'], 'id' | 'created_at'>;
+        Update: Partial<Database['public']['Tables']['daily_tasks']['Insert']>;
+      };
+
+      user_streaks: {
+        Row: {
+          id: string;
+          user_id: string;
+          current_streak: number;
+          longest_streak: number;
+          multiplier: number | null;
+          streak_start_date: string | null;
+          last_activity_date: string | null;
+          updated_at: string | null;
+        };
+        Insert: Omit<Database['public']['Tables']['user_streaks']['Row'], 'id' | 'updated_at'>;
+        Update: Partial<Database['public']['Tables']['user_streaks']['Insert']>;
+      };
+
+      user_tiers: {
+        Row: {
+          id: string;
+          user_id: string;
+          tier: 'BRONZE' | 'SILVER' | 'GOLD' | 'PLATINUM';
+          tokens_toward_next_tier: number;
+          achieved_at: string | null;
+          updated_at: string | null;
+        };
+        Insert: Omit<Database['public']['Tables']['user_tiers']['Row'], 'id' | 'achieved_at' | 'updated_at'>;
+        Update: Partial<Database['public']['Tables']['user_tiers']['Insert']>;
+      };
+
+      rewards: {
+        Row: {
+          id: string;
+          reward_name: string;
+          reward_type: string;
+          token_cost: number;
+          description: string | null;
+          available: boolean | null;
+          limit_per_user: number | null;
+          created_at: string | null;
+        };
+        Insert: Omit<Database['public']['Tables']['rewards']['Row'], 'id' | 'created_at'>;
+        Update: Partial<Database['public']['Tables']['rewards']['Insert']>;
+      };
+
+      reward_redemptions: {
+        Row: {
+          id: string;
+          user_id: string;
+          reward_id: string;
+          tokens_spent: number;
+          status: 'PENDING' | 'FULFILLED' | 'EXPIRED' | null;
+          claimed_at: string | null;
+          fulfillment_date: string | null;
+        };
+        Insert: Omit<Database['public']['Tables']['reward_redemptions']['Row'], 'id' | 'claimed_at'>;
+        Update: Partial<Database['public']['Tables']['reward_redemptions']['Insert']>;
+      };
+
+      wearable_integrations: {
+        Row: {
+          id: string;
+          user_id: string;
+          device_type: string;
+          device_name: string | null;
+          last_sync_date: string | null;
+          is_active: boolean | null;
+          connected_at: string | null;
+        };
+        Insert: Omit<Database['public']['Tables']['wearable_integrations']['Row'], 'id' | 'connected_at'>;
+        Update: Partial<Database['public']['Tables']['wearable_integrations']['Insert']>;
+      };
+
+      // ── NEW TABLES (added by migration) ──────────────────────────────
+
       products: {
         Row: {
           id: string;
@@ -88,6 +320,7 @@ export interface Database {
         Insert: Omit<Database['public']['Tables']['products']['Row'], 'id' | 'created_at'>;
         Update: Partial<Database['public']['Tables']['products']['Insert']>;
       };
+
       orders: {
         Row: {
           id: string;
@@ -102,6 +335,7 @@ export interface Database {
         Insert: Omit<Database['public']['Tables']['orders']['Row'], 'id' | 'created_at' | 'updated_at'>;
         Update: Partial<Database['public']['Tables']['orders']['Insert']>;
       };
+
       order_items: {
         Row: {
           id: string;
@@ -113,42 +347,7 @@ export interface Database {
         Insert: Omit<Database['public']['Tables']['order_items']['Row'], 'id'>;
         Update: Partial<Database['public']['Tables']['order_items']['Insert']>;
       };
-      via_tokens: {
-        Row: {
-          id: string;
-          user_id: string;
-          balance: number;
-          lifetime_earned: number;
-          updated_at: string;
-        };
-        Insert: Omit<Database['public']['Tables']['via_tokens']['Row'], 'id' | 'updated_at'>;
-        Update: Partial<Database['public']['Tables']['via_tokens']['Insert']>;
-      };
-      token_transactions: {
-        Row: {
-          id: string;
-          user_id: string;
-          amount: number;
-          type: 'earned' | 'redeemed' | 'expired' | 'bonus';
-          reason: string;
-          reference_id: string | null;
-          created_at: string;
-        };
-        Insert: Omit<Database['public']['Tables']['token_transactions']['Row'], 'id' | 'created_at'>;
-        Update: Partial<Database['public']['Tables']['token_transactions']['Insert']>;
-      };
-      adherence_logs: {
-        Row: {
-          id: string;
-          user_id: string;
-          protocol_item_id: string;
-          taken_at: string;
-          skipped: boolean;
-          notes: string | null;
-        };
-        Insert: Omit<Database['public']['Tables']['adherence_logs']['Row'], 'id'>;
-        Update: Partial<Database['public']['Tables']['adherence_logs']['Insert']>;
-      };
+
       memberships: {
         Row: {
           id: string;
@@ -163,43 +362,7 @@ export interface Database {
         Insert: Omit<Database['public']['Tables']['memberships']['Row'], 'id'>;
         Update: Partial<Database['public']['Tables']['memberships']['Insert']>;
       };
-      practitioner_patients: {
-        Row: {
-          id: string;
-          practitioner_id: string;
-          patient_id: string;
-          status: 'invited' | 'active' | 'archived';
-          created_at: string;
-        };
-        Insert: Omit<Database['public']['Tables']['practitioner_patients']['Row'], 'id' | 'created_at'>;
-        Update: Partial<Database['public']['Tables']['practitioner_patients']['Insert']>;
-      };
-      practitioner_notes: {
-        Row: {
-          id: string;
-          practitioner_id: string;
-          patient_id: string;
-          content: string;
-          is_private: boolean;
-          created_at: string;
-        };
-        Insert: Omit<Database['public']['Tables']['practitioner_notes']['Row'], 'id' | 'created_at'>;
-        Update: Partial<Database['public']['Tables']['practitioner_notes']['Insert']>;
-      };
-      ai_consultations: {
-        Row: {
-          id: string;
-          user_id: string;
-          model: 'claude' | 'grok' | 'gpt4o';
-          prompt: string;
-          response: string;
-          context: Record<string, unknown> | null;
-          tokens_used: number;
-          created_at: string;
-        };
-        Insert: Omit<Database['public']['Tables']['ai_consultations']['Row'], 'id' | 'created_at'>;
-        Update: Partial<Database['public']['Tables']['ai_consultations']['Insert']>;
-      };
+
       kit_registrations: {
         Row: {
           id: string;
@@ -213,55 +376,7 @@ export interface Database {
         Insert: Omit<Database['public']['Tables']['kit_registrations']['Row'], 'id' | 'registered_at' | 'updated_at'>;
         Update: Partial<Database['public']['Tables']['kit_registrations']['Insert']>;
       };
-      notifications: {
-        Row: {
-          id: string;
-          user_id: string;
-          title: string;
-          body: string;
-          type: 'reminder' | 'result' | 'promotion' | 'system';
-          read: boolean;
-          data: Record<string, unknown> | null;
-          created_at: string;
-        };
-        Insert: Omit<Database['public']['Tables']['notifications']['Row'], 'id' | 'created_at'>;
-        Update: Partial<Database['public']['Tables']['notifications']['Insert']>;
-      };
-      health_metrics: {
-        Row: {
-          id: string;
-          user_id: string;
-          metric_type: string;
-          value: number;
-          unit: string;
-          recorded_at: string;
-        };
-        Insert: Omit<Database['public']['Tables']['health_metrics']['Row'], 'id'>;
-        Update: Partial<Database['public']['Tables']['health_metrics']['Insert']>;
-      };
-      supplement_interactions: {
-        Row: {
-          id: string;
-          product_a_id: string;
-          product_b_id: string;
-          interaction_type: 'synergy' | 'caution' | 'contraindicated';
-          description: string;
-        };
-        Insert: Omit<Database['public']['Tables']['supplement_interactions']['Row'], 'id'>;
-        Update: Partial<Database['public']['Tables']['supplement_interactions']['Insert']>;
-      };
-      gene_product_mappings: {
-        Row: {
-          id: string;
-          gene_name: string;
-          variant: string;
-          product_id: string;
-          relevance_score: number;
-          rationale: string;
-        };
-        Insert: Omit<Database['public']['Tables']['gene_product_mappings']['Row'], 'id'>;
-        Update: Partial<Database['public']['Tables']['gene_product_mappings']['Insert']>;
-      };
+
       audit_logs: {
         Row: {
           id: string;
@@ -276,58 +391,44 @@ export interface Database {
         Insert: Omit<Database['public']['Tables']['audit_logs']['Row'], 'id' | 'created_at'>;
         Update: Partial<Database['public']['Tables']['audit_logs']['Insert']>;
       };
-      referral_codes: {
-        Row: {
-          id: string;
-          user_id: string;
-          code: string;
-          uses: number;
-          max_uses: number | null;
-          reward_tokens: number;
-          created_at: string;
-        };
-        Insert: Omit<Database['public']['Tables']['referral_codes']['Row'], 'id' | 'created_at'>;
-        Update: Partial<Database['public']['Tables']['referral_codes']['Insert']>;
-      };
-      content_library: {
-        Row: {
-          id: string;
-          title: string;
-          slug: string;
-          body: string;
-          category: string;
-          tags: string[];
-          portal_access: ('consumer' | 'practitioner' | 'naturopath')[];
-          published: boolean;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: Omit<Database['public']['Tables']['content_library']['Row'], 'id' | 'created_at' | 'updated_at'>;
-        Update: Partial<Database['public']['Tables']['content_library']['Insert']>;
-      };
     };
     Functions: Record<string, never>;
     Enums: {
-      portal_type: 'consumer' | 'practitioner' | 'naturopath';
-      membership_tier: 'free' | 'gold' | 'platinum' | 'practitioner';
-      gene_impact: 'positive' | 'neutral' | 'moderate' | 'significant';
+      alert_severity: 'INFO' | 'WARNING' | 'ALERT' | 'CRITICAL';
+      transaction_type: 'EARN' | 'REDEEM' | 'BONUS' | 'ADJUSTMENT';
+      form_type: 'TINCTURE' | 'ENCAPSULATION' | 'POWDER' | 'TEA' | 'TOPICAL' | 'OTHER';
+      protocol_status: 'DRAFT' | 'ACTIVE' | 'COMPLETED' | 'ARCHIVED';
+      task_type: 'SUPPLEMENT' | 'EXERCISE' | 'MEAL_LOG' | 'LAB_TEST' | 'CUSTOM';
+      tier_level: 'BRONZE' | 'SILVER' | 'GOLD' | 'PLATINUM';
     };
   };
 }
 
-// Convenience type aliases
+// Convenience type aliases — existing tables
 export type Profile = Database['public']['Tables']['profiles']['Row'];
 export type GeneticProfile = Database['public']['Tables']['genetic_profiles']['Row'];
-export type GeneVariant = Database['public']['Tables']['gene_variants']['Row'];
 export type Protocol = Database['public']['Tables']['protocols']['Row'];
-export type ProtocolItem = Database['public']['Tables']['protocol_items']['Row'];
+export type ProtocolIngredient = Database['public']['Tables']['protocol_ingredients']['Row'];
+export type Herb = Database['public']['Tables']['herbs']['Row'];
+export type SafetyAlert = Database['public']['Tables']['safety_alerts']['Row'];
+export type FarmaToken = Database['public']['Tables']['farma_tokens']['Row'];
+export type TokenTransaction = Database['public']['Tables']['token_transactions']['Row'];
+export type HealthMetric = Database['public']['Tables']['health_metrics']['Row'];
+export type HealthScore = Database['public']['Tables']['health_scores']['Row'];
+export type Notification = Database['public']['Tables']['notifications']['Row'];
+export type AiInsight = Database['public']['Tables']['ai_insights']['Row'];
+export type ClinicalAssessment = Database['public']['Tables']['clinical_assessments']['Row'];
+export type DailyTask = Database['public']['Tables']['daily_tasks']['Row'];
+export type UserStreak = Database['public']['Tables']['user_streaks']['Row'];
+export type UserTier = Database['public']['Tables']['user_tiers']['Row'];
+export type Reward = Database['public']['Tables']['rewards']['Row'];
+export type RewardRedemption = Database['public']['Tables']['reward_redemptions']['Row'];
+export type WearableIntegration = Database['public']['Tables']['wearable_integrations']['Row'];
+
+// Convenience type aliases — new tables
 export type Product = Database['public']['Tables']['products']['Row'];
 export type Order = Database['public']['Tables']['orders']['Row'];
-export type ViaToken = Database['public']['Tables']['via_tokens']['Row'];
-export type TokenTransaction = Database['public']['Tables']['token_transactions']['Row'];
-export type AdherenceLog = Database['public']['Tables']['adherence_logs']['Row'];
+export type OrderItem = Database['public']['Tables']['order_items']['Row'];
 export type Membership = Database['public']['Tables']['memberships']['Row'];
-export type AiConsultation = Database['public']['Tables']['ai_consultations']['Row'];
 export type KitRegistration = Database['public']['Tables']['kit_registrations']['Row'];
-export type Notification = Database['public']['Tables']['notifications']['Row'];
 export type AuditLog = Database['public']['Tables']['audit_logs']['Row'];

@@ -4,7 +4,7 @@ import type {
   Profile,
   GeneticProfile,
   Protocol,
-  ViaToken,
+  FarmaToken,
   Product,
 } from './types';
 
@@ -46,13 +46,11 @@ export function useGeneticProfile(userId: string | undefined) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('genetic_profiles')
-        .select('*, gene_variants(*)')
+        .select('*')
         .eq('user_id', userId!)
-        .order('created_at', { ascending: false })
-        .limit(1)
         .single();
       if (error) throw error;
-      return data as GeneticProfile & { gene_variants: unknown[] };
+      return data as GeneticProfile;
     },
   });
 }
@@ -66,7 +64,7 @@ export function useProtocols(userId: string | undefined) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('protocols')
-        .select('*, protocol_items(*, products(*))')
+        .select('*, protocol_ingredients(*, herbs(*))')
         .eq('user_id', userId!)
         .order('created_at', { ascending: false });
       if (error) throw error;
@@ -75,7 +73,7 @@ export function useProtocols(userId: string | undefined) {
   });
 }
 
-// ── ViaTokens ───────────────────────────────────────────────────────────────
+// ── FarmaTokens (ViaTokens) ────────────────────────────────────────────────
 
 export function useTokenBalance(userId: string | undefined) {
   return useQuery({
@@ -83,12 +81,12 @@ export function useTokenBalance(userId: string | undefined) {
     enabled: !!userId,
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('via_tokens')
+        .from('farma_tokens')
         .select('*')
         .eq('user_id', userId!)
         .single();
       if (error) throw error;
-      return data as ViaToken;
+      return data as FarmaToken;
     },
   });
 }
