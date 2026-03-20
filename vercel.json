@@ -3,5 +3,5 @@
   "installCommand": "npm install",
   "outputDirectory": "public",
   "framework": null,
-  "nodeVersion": "18.x"
+  "nodeVersion": "20.x"
 }
