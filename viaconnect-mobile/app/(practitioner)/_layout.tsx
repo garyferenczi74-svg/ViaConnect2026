@@ -1,5 +1,6 @@
 import { Tabs } from 'expo-router';
 import { View, Text } from 'react-native';
+import { ViaConnectLogo } from '../../src/components/ui';
 
 const ACTIVE_GREEN = '#4ADE80';
 const DARK_BG = '#111827';
@@ -45,7 +46,7 @@ export default function PractitionerLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Dashboard',
+          headerTitle: () => <ViaConnectLogo size={100} showWordmark={false} />,
           tabBarIcon: ({ focused }) => <TabIcon icon="📊" label="Dashboard" focused={focused} />,
         }}
       />

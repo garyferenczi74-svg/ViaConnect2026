@@ -1,6 +1,7 @@
 import { View, ActivityIndicator, Text } from 'react-native';
 import { Redirect } from 'expo-router';
 import { useAuthStore } from '../src/lib/auth/store';
+import { ViaConnectLogo } from '../src/components/ui';
 
 export default function HomeScreen() {
   const { session, role, profile, isLoading } = useAuthStore();
@@ -8,8 +9,8 @@ export default function HomeScreen() {
   if (isLoading) {
     return (
       <View className="flex-1 items-center justify-center bg-dark-bg">
-        <ActivityIndicator color="#B75F19" size="large" />
-        <Text className="text-dark-border text-sm mt-4">Loading ViaConnect...</Text>
+        <ViaConnectLogo size={120} />
+        <ActivityIndicator color="#B75F19" size="small" style={{ marginTop: 24 }} />
       </View>
     );
   }

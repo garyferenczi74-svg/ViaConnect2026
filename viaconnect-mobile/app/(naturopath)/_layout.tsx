@@ -1,5 +1,6 @@
 import { Tabs } from 'expo-router';
 import { View, Text } from 'react-native';
+import { ViaConnectLogo } from '../../src/components/ui';
 
 const PLUM = '#6D597A';
 const SAGE = '#76866F';
@@ -46,7 +47,7 @@ export default function NaturopathLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Dashboard',
+          headerTitle: () => <ViaConnectLogo size={100} showWordmark={false} />,
           tabBarIcon: ({ focused }) => <TabIcon icon="🌿" label="Dashboard" focused={focused} />,
         }}
       />

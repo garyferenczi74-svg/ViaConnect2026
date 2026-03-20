@@ -1,5 +1,6 @@
 import { Stack } from 'expo-router';
 import { ProtectedRoute } from '../../src/lib/auth/ProtectedRoute';
+import { ViaConnectLogo } from '../../src/components/ui';
 
 export default function ConsumerLayout() {
   return (
@@ -14,7 +15,7 @@ export default function ConsumerLayout() {
       >
         <Stack.Screen
           name="index"
-          options={{ title: 'Personal Wellness' }}
+          options={{ headerTitle: () => <ViaConnectLogo size={100} showWordmark={false} /> }}
         />
       </Stack>
     </ProtectedRoute>

@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { useRouter, Link } from 'expo-router';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
+import { ViaConnectLogo } from '../../src/components/ui';
 import { supabase } from '../../src/lib/supabase/client';
 import { useAuthStore } from '../../src/lib/auth/store';
 import { BiometricAuth } from '../../src/components/shared/BiometricAuth';
@@ -109,9 +110,8 @@ export default function LoginScreen() {
       >
         {/* Logo / Header */}
         <Animated.View entering={FadeIn.duration(400)} className="items-center mb-10">
-          <Text className="text-4xl font-bold text-white mb-1">ViaConnect</Text>
-          <Text className="text-lg text-copper font-semibold">GeneX360</Text>
-          <Text className="text-sm text-sage mt-2 text-center">
+          <ViaConnectLogo size={160} />
+          <Text className="text-sm text-sage mt-4 text-center">
             One Genome. One Formulation. One Life at a Time.
           </Text>
         </Animated.View>

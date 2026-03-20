@@ -2,6 +2,7 @@ import React, { useCallback } from 'react';
 import { View, Text, Pressable, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import Animated, { FadeIn } from 'react-native-reanimated';
+import { ViaConnectLogo } from '../../../src/components/ui';
 import { CAQWizard } from '../../../src/components/shared/CAQWizard';
 import { useAuthStore } from '../../../src/lib/auth/store';
 import { supabase } from '../../../src/lib/supabase/client';
@@ -160,9 +161,9 @@ function CompletionScreen() {
           </Text>
         </Pressable>
 
-        <Text className="text-dark-border text-xs mt-8">
-          ViaConnect GeneX360
-        </Text>
+        <View className="mt-8">
+          <ViaConnectLogo size={80} showWordmark={false} />
+        </View>
       </Animated.View>
     </View>
   );
