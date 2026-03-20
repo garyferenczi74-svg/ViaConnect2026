@@ -28,7 +28,10 @@ export default function HomeScreen() {
           </Text>
         </Pressable>
 
-        <Pressable className="bg-plum rounded-2xl py-4 px-6 items-center active:opacity-80">
+        <Pressable
+          className="bg-plum rounded-2xl py-4 px-6 items-center active:opacity-80"
+          onPress={() => router.push('/(naturopath)')}
+        >
           <Text className="text-white text-lg font-semibold">
             Naturopath Portal
           </Text>

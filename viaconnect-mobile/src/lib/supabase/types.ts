@@ -755,6 +755,66 @@ export interface Database {
         Relationships: [];
       };
 
+      botanical_formulas: {
+        Row: {
+          id: string;
+          practitioner_id: string;
+          patient_id: string | null;
+          formula_name: string;
+          preparation: 'tincture' | 'tea' | 'capsule' | 'topical' | 'powder';
+          instructions: string | null;
+          notes: string | null;
+          status: 'draft' | 'active' | 'completed' | 'archived';
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          practitioner_id: string;
+          patient_id?: string | null;
+          formula_name: string;
+          preparation: 'tincture' | 'tea' | 'capsule' | 'topical' | 'powder';
+          instructions?: string | null;
+          notes?: string | null;
+          status?: 'draft' | 'active' | 'completed' | 'archived';
+        };
+        Update: {
+          practitioner_id?: string;
+          patient_id?: string | null;
+          formula_name?: string;
+          preparation?: 'tincture' | 'tea' | 'capsule' | 'topical' | 'powder';
+          instructions?: string | null;
+          notes?: string | null;
+          status?: 'draft' | 'active' | 'completed' | 'archived';
+        };
+        Relationships: [];
+      };
+
+      botanical_formula_items: {
+        Row: {
+          id: string;
+          formula_id: string;
+          herb_id: string;
+          dosage: string | null;
+          ratio: string | null;
+          sequence_order: number;
+        };
+        Insert: {
+          formula_id: string;
+          herb_id: string;
+          dosage?: string | null;
+          ratio?: string | null;
+          sequence_order?: number;
+        };
+        Update: {
+          formula_id?: string;
+          herb_id?: string;
+          dosage?: string | null;
+          ratio?: string | null;
+          sequence_order?: number;
+        };
+        Relationships: [];
+      };
+
       audit_logs: {
         Row: {
           id: string;
@@ -826,3 +886,5 @@ export type OrderItem = Database['public']['Tables']['order_items']['Row'];
 export type Membership = Database['public']['Tables']['memberships']['Row'];
 export type KitRegistration = Database['public']['Tables']['kit_registrations']['Row'];
 export type AuditLog = Database['public']['Tables']['audit_logs']['Row'];
+export type BotanicalFormula = Database['public']['Tables']['botanical_formulas']['Row'];
+export type BotanicalFormulaItem = Database['public']['Tables']['botanical_formula_items']['Row'];
