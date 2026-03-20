@@ -23,6 +23,8 @@ export {
   InlineLoader,
 } from './LoadingStates';
 
+export { ViaConnectLogo } from './ViaConnectLogo';
+
 export {
   hapticLight,
   hapticMedium,
