@@ -1,34 +1,91 @@
 {
   "expo": {
-    "name": "viaconnect-mobile",
+    "name": "ViaConnect GeneX360",
     "slug": "viaconnect-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "dark",
+    "scheme": "viaconnect",
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#111827"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.farmceutica.viaconnect",
+      "buildNumber": "1",
+      "infoPlist": {
+        "NSCameraUsageDescription": "ViaConnect uses the camera to scan supplement barcodes and GeneX360 kit QR codes.",
+        "NSFaceIDUsageDescription": "ViaConnect uses Face ID for secure biometric authentication.",
+        "NSPhotoLibraryUsageDescription": "ViaConnect accesses your photo library to upload lab result documents.",
+        "ITSAppUsesNonExemptEncryption": false
+      },
+      "config": {
+        "usesNonExemptEncryption": false
+      }
     },
     "android": {
+      "package": "com.farmceutica.viaconnect",
+      "versionCode": 1,
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#111827",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
+      "permissions": [
+        "CAMERA",
+        "USE_BIOMETRIC",
+        "USE_FINGERPRINT",
+        "VIBRATE",
+        "RECEIVE_BOOT_COMPLETED"
+      ],
       "predictiveBackGestureEnabled": false
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
     },
     "plugins": [
       "expo-router",
-      "expo-secure-store"
-    ]
+      "expo-secure-store",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "ViaConnect needs camera access to scan barcodes and QR codes."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icons/notification-icon.png",
+          "color": "#224852"
+        }
+      ],
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Allow ViaConnect to use Face ID for secure login."
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": ""
+      },
+      "router": {
+        "origin": "https://viaconnect.app"
+      }
+    },
+    "owner": "farmceutica",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "",
+      "fallbackToCacheTimeout": 0
+    }
   }
 }

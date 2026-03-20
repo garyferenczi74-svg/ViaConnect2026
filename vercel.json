@@ -1,7 +1,6 @@
 {
-  "buildCommand": "npm run build",
-  "installCommand": "npm install",
+  "installCommand": "echo 'No dependencies'",
+  "buildCommand": "echo 'Static site'",
   "outputDirectory": "public",
-  "framework": null,
-  "nodeVersion": "18.x"
+  "framework": null
 }
