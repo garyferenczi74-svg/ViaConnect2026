@@ -10,8 +10,7 @@ export default function HomeScreen() {
   return (
     <View className="flex-1 items-center justify-center bg-dark-bg px-6">
       <ViaConnectLogo size={120} />
-      <Text className="text-4xl font-bold text-white mb-2 mt-6">ViaConnect</Text>
-      <Text className="text-lg text-copper mb-1">GeneX360</Text>
+      <Text className="text-lg text-copper mb-1 mt-6">GeneX360</Text>
       <Text className="text-sm text-sage text-center mb-8">
         One Genome. One Formulation. One Life at a Time.
       </Text>
