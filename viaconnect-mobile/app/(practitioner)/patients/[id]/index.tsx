@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { View, Text, ScrollView, Pressable } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
+import Animated, { FadeIn } from 'react-native-reanimated';
+import { AnimatedSection, AnimatedProgressBar, GlassCard, StaggerItem, hapticLight } from '../../../../src/components/ui';
 
 // ── Seed patient details keyed by ID ─────────────────────────────────────────
 
@@ -136,7 +138,7 @@ export default function PatientDetail() {
   return (
     <View className="flex-1 bg-dark-bg">
       {/* Patient Header */}
-      <View className="px-4 pt-4 pb-3 border-b border-dark-border">
+      <Animated.View entering={FadeIn.duration(300)} className="px-4 pt-4 pb-3 border-b border-dark-border">
         <View className="flex-row items-center">
           <View className="w-14 h-14 rounded-full bg-portal-green/20 items-center justify-center mr-3">
             <Text className="text-portal-green text-xl font-bold">{patient.name.charAt(0)}</Text>
@@ -152,7 +154,7 @@ export default function PatientDetail() {
             <Text className="text-dark-border text-[10px]">Vitality</Text>
           </View>
         </View>
-      </View>
+      </Animated.View>
 
       {/* Tab Bar */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} className="border-b border-dark-border">
@@ -161,7 +163,7 @@ export default function PatientDetail() {
             <Pressable
               key={tab.key}
               className={`px-4 py-3 ${activeTab === tab.key ? 'border-b-2 border-portal-green' : ''}`}
-              onPress={() => setActiveTab(tab.key)}
+              onPress={() => { hapticLight(); setActiveTab(tab.key); }}
             >
               <Text
                 className={`text-sm font-semibold ${
@@ -203,18 +205,15 @@ export default function PatientDetail() {
             </View>
 
             {/* Adherence Bar */}
-            <View className="bg-dark-card rounded-2xl p-4 mb-3 border border-dark-border">
+            <GlassCard className="p-4 mb-3">
               <Text className="text-white text-sm font-semibold mb-2">Protocol Adherence</Text>
-              <View className="h-3 bg-dark-border/30 rounded-full overflow-hidden">
-                <View
-                  className={`h-full rounded-full ${
-                    patient.adherence >= 80 ? 'bg-portal-green' : patient.adherence >= 50 ? 'bg-portal-yellow' : 'bg-red-500'
-                  }`}
-                  style={{ width: `${patient.adherence}%` }}
-                />
-              </View>
+              <AnimatedProgressBar
+                progress={patient.adherence}
+                color={patient.adherence >= 80 ? 'bg-portal-green' : patient.adherence >= 50 ? 'bg-portal-yellow' : 'bg-red-500'}
+                height="h-3"
+              />
               <Text className="text-dark-border text-xs mt-1">{patient.adherence}% this month</Text>
-            </View>
+            </GlassCard>
 
             {/* Recent Activity */}
             <View className="bg-dark-card rounded-2xl p-4 border border-dark-border">

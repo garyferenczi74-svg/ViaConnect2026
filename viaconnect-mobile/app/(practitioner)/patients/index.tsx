@@ -1,9 +1,11 @@
 import React, { useState, useMemo } from 'react';
 import { View, Text, TextInput, ScrollView, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
+import Animated, { FadeIn } from 'react-native-reanimated';
 import { PatientCard, LockedFeatureOverlay } from '../../../src/components/shared';
 import type { GeneticFlag } from '../../../src/components/shared';
 import { useEntitlements } from '../../../src/hooks/useEntitlements';
+import { AnimatedSection, hapticLight } from '../../../src/components/ui';
 
 // ── Seed Data ────────────────────────────────────────────────────────────────
 

@@ -1,7 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import { View, Text, ScrollView, TextInput, Pressable } from 'react-native';
+import Animated, { FadeIn } from 'react-native-reanimated';
 import { useEntitlements } from '../../../src/hooks/useEntitlements';
 import { LockedFeatureOverlay } from '../../../src/components/shared';
+import { StaggerItem, AnimatedSection, GlassCard, hapticMedium } from '../../../src/components/ui';
 
 // ── Seed Data ────────────────────────────────────────────────────────────────
 
@@ -129,14 +131,14 @@ export default function GenomicsPanel() {
   return (
     <ScrollView className="flex-1 bg-dark-bg" contentContainerClassName="pb-8">
       {/* Header */}
-      <View className="px-4 pt-12 pb-2">
+      <Animated.View entering={FadeIn.duration(300)} className="px-4 pt-12 pb-2">
         <Text className="text-portal-purple text-sm font-semibold">Genomics Deep Dive</Text>
         <Text className="text-white text-2xl font-bold">Gene & Variant Explorer</Text>
         <Text className="text-dark-border text-sm">Search across all patient genetic data</Text>
-      </View>
+      </Animated.View>
 
       {/* Search */}
-      <View className="px-4 py-2">
+      <AnimatedSection delay={100} className="px-4 py-2">
         <TextInput
           className="bg-dark-card border border-dark-border rounded-xl px-4 py-3 text-white"
           placeholder="Search gene, variant, or patient..."
@@ -145,11 +147,11 @@ export default function GenomicsPanel() {
           onChangeText={setSearch}
           accessibilityLabel="Search genomics"
         />
-      </View>
+      </AnimatedSection>
 
       {/* Population Stats */}
-      <View className="px-4 py-2">
-        <View className="bg-portal-purple/10 rounded-2xl p-4 border border-portal-purple/20">
+      <AnimatedSection delay={200} className="px-4 py-2">
+        <GlassCard className="p-4" style={{ backgroundColor: 'rgba(167, 139, 250, 0.08)' }}>
           <Text className="text-portal-purple text-sm font-bold mb-2">Practice Population Stats</Text>
           <View className="flex-row justify-between">
             <View className="items-center">
@@ -169,18 +171,18 @@ export default function GenomicsPanel() {
               <Text className="text-dark-border text-xs">High Risk</Text>
             </View>
           </View>
-        </View>
-      </View>
+        </GlassCard>
+      </AnimatedSection>
 
       {/* Gene List */}
       <View className="px-4 mt-2">
-        {filtered.map((gene) => {
+        {filtered.map((gene, geneIdx) => {
           const isExpanded = expandedGene === gene.gene;
           return (
-            <View key={gene.gene} className="mb-3">
+            <StaggerItem key={gene.gene} index={geneIdx} stagger={60} className="mb-3">
               <Pressable
-                className="bg-dark-card rounded-2xl p-4 border border-dark-border active:opacity-80"
-                onPress={() => setExpandedGene(isExpanded ? null : gene.gene)}
+                className="bg-white/5 rounded-2xl p-4 border border-white/10 active:opacity-80"
+                onPress={() => { hapticMedium(); setExpandedGene(isExpanded ? null : gene.gene); }}
               >
                 <View className="flex-row items-center justify-between mb-1">
                   <View className="flex-row items-center">
@@ -231,7 +233,7 @@ export default function GenomicsPanel() {
                   })}
                 </View>
               )}
-            </View>
+            </StaggerItem>
           );
         })}
       </View>

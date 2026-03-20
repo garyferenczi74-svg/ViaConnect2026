@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { View, Text, ScrollView, Pressable, Switch } from 'react-native';
+import Animated, { FadeIn } from 'react-native-reanimated';
 import { CustomerCenterButton } from '../../../src/components/shared';
+import { AnimatedSection, AnimatedProgressBar, GlassCard } from '../../../src/components/ui';
 
 // ── Seed Data ────────────────────────────────────────────────────────────────
 
@@ -58,13 +60,13 @@ export default function PractitionerSettings() {
   return (
     <ScrollView className="flex-1 bg-dark-bg" contentContainerClassName="pb-8">
       {/* Header */}
-      <View className="px-4 pt-12 pb-2">
+      <Animated.View entering={FadeIn.duration(300)} className="px-4 pt-12 pb-2">
         <Text className="text-white text-2xl font-bold">Settings</Text>
         <Text className="text-dark-border text-sm">Practice profile & preferences</Text>
-      </View>
+      </Animated.View>
 
       {/* Practice Profile */}
-      <View className="px-4 mt-4">
+      <AnimatedSection delay={100} className="px-4 mt-4">
         <Text className="text-white text-lg font-bold mb-3">Practice Profile</Text>
         <View className="bg-dark-card rounded-2xl p-4 border border-dark-border">
           <View className="flex-row items-center mb-4">
@@ -89,10 +91,10 @@ export default function PractitionerSettings() {
             </View>
           ))}
         </View>
-      </View>
+      </AnimatedSection>
 
       {/* License Verification */}
-      <View className="px-4 mt-4">
+      <AnimatedSection delay={200} className="px-4 mt-4">
         <Text className="text-white text-lg font-bold mb-3">License Verification</Text>
         <View className="bg-portal-green/10 rounded-2xl p-4 border border-portal-green/20">
           <View className="flex-row items-center justify-between mb-2">
@@ -114,10 +116,10 @@ export default function PractitionerSettings() {
             <Text className="text-white text-sm">{PRACTICE_PROFILE.licenseExpiry}</Text>
           </View>
         </View>
-      </View>
+      </AnimatedSection>
 
       {/* Notification Preferences */}
-      <View className="px-4 mt-4">
+      <AnimatedSection delay={300} className="px-4 mt-4">
         <Text className="text-white text-lg font-bold mb-3">Notification Preferences</Text>
         <View className="bg-dark-card rounded-2xl border border-dark-border">
           {([
@@ -144,12 +146,12 @@ export default function PractitionerSettings() {
             </View>
           ))}
         </View>
-      </View>
+      </AnimatedSection>
 
       {/* API Usage */}
-      <View className="px-4 mt-4">
+      <AnimatedSection delay={400} className="px-4 mt-4">
         <Text className="text-white text-lg font-bold mb-3">API Usage</Text>
-        <View className="bg-dark-card rounded-2xl p-4 border border-dark-border">
+        <GlassCard className="p-4">
           {[
             { label: 'AI Clinical Calls', ...API_USAGE.aiCalls, color: 'bg-portal-purple' },
             { label: 'Interaction Checks', ...API_USAGE.interactionChecks, color: 'bg-portal-green' },
@@ -162,16 +164,14 @@ export default function PractitionerSettings() {
                   {item.used} / {item.limit}
                 </Text>
               </View>
-              <View className="h-2 bg-dark-border/30 rounded-full overflow-hidden">
-                <View
-                  className={`h-full rounded-full ${item.color}`}
-                  style={{ width: `${(item.used / item.limit) * 100}%` }}
-                />
-              </View>
+              <AnimatedProgressBar
+                progress={(item.used / item.limit) * 100}
+                color={item.color}
+              />
             </View>
           ))}
-        </View>
-      </View>
+        </GlassCard>
+      </AnimatedSection>
 
       {/* Audit Trail */}
       <View className="px-4 mt-4">

@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, ScrollView, Pressable } from 'react-native';
+import Animated, { FadeIn } from 'react-native-reanimated';
+import { StaggerItem, AnimatedSection, GlassCard, hapticLight } from '../../../src/components/ui';
 
 // ── Seed Data ────────────────────────────────────────────────────────────────
 
@@ -77,18 +79,19 @@ export default function EHRIntegration() {
   return (
     <ScrollView className="flex-1 bg-dark-bg" contentContainerClassName="pb-8">
       {/* Header */}
-      <View className="px-4 pt-12 pb-2">
+      <Animated.View entering={FadeIn.duration(300)} className="px-4 pt-12 pb-2">
         <Text className="text-white text-2xl font-bold">EHR Integration Hub</Text>
         <Text className="text-dark-border text-sm">Lab imports & connected systems</Text>
-      </View>
+      </Animated.View>
 
       {/* Connected Lab Systems */}
-      <View className="px-4 mt-4">
+      <AnimatedSection delay={150} className="px-4 mt-4">
         <Text className="text-white text-lg font-bold mb-3">Connected Lab Systems</Text>
-        {LAB_SYSTEMS.map((system) => {
+        {LAB_SYSTEMS.map((system, sysIdx) => {
           const config = STATUS_CONFIG[system.status];
           return (
-            <View key={system.id} className="bg-dark-card rounded-xl p-4 mb-2 border border-dark-border">
+            <StaggerItem key={system.id} index={sysIdx} stagger={60}>
+            <View className="bg-white/5 rounded-xl p-4 mb-2 border border-white/10">
               <View className="flex-row items-center justify-between mb-1">
                 <View className="flex-1">
                   <Text className="text-white font-semibold">{system.name}</Text>
@@ -108,26 +111,27 @@ export default function EHRIntegration() {
                 </View>
               )}
             </View>
+            </StaggerItem>
           );
         })}
 
-        <Pressable className="bg-dark-card border border-dashed border-dark-border rounded-xl p-4 items-center active:opacity-80 mt-1">
+        <Pressable className="bg-white/5 border border-dashed border-white/10 rounded-xl p-4 items-center active:opacity-80 mt-1">
           <Text className="text-portal-green font-semibold text-sm">+ Connect New Lab System</Text>
         </Pressable>
-      </View>
+      </AnimatedSection>
 
       {/* Upload Section */}
-      <View className="px-4 mt-6">
+      <AnimatedSection delay={300} className="px-4 mt-6">
         <Text className="text-white text-lg font-bold mb-3">Manual Upload</Text>
         <Pressable className="bg-portal-green/10 border border-portal-green/30 rounded-2xl p-6 items-center active:opacity-80">
           <Text className="text-portal-green text-lg mb-1">📄</Text>
           <Text className="text-portal-green font-semibold">Upload Lab Report</Text>
           <Text className="text-dark-border text-xs mt-1">PDF, PNG, or JPG — AI-powered extraction</Text>
         </Pressable>
-      </View>
+      </AnimatedSection>
 
       {/* Recent Imports */}
-      <View className="px-4 mt-6">
+      <AnimatedSection delay={450} className="px-4 mt-6">
         <Text className="text-white text-lg font-bold mb-3">Recent Lab Imports</Text>
         {RECENT_IMPORTS.map((imp) => {
           const isExpanded = expandedImport === imp.id;
@@ -182,7 +186,7 @@ export default function EHRIntegration() {
             </View>
           );
         })}
-      </View>
+      </AnimatedSection>
     </ScrollView>
   );
 }

@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { View, Text, ScrollView, TextInput, Pressable, ActivityIndicator } from 'react-native';
+import Animated, { FadeIn, FadeInUp } from 'react-native-reanimated';
 import { useEntitlements } from '../../../src/hooks/useEntitlements';
 import { LockedFeatureOverlay } from '../../../src/components/shared';
+import { AnimatedSection, GlassCard, hapticLight } from '../../../src/components/ui';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 

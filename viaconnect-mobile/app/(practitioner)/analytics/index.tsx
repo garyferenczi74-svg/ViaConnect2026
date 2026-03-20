@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { View, Text, ScrollView, Pressable, Dimensions } from 'react-native';
 import { LineChart, BarChart, PieChart } from 'react-native-chart-kit';
+import Animated, { FadeIn } from 'react-native-reanimated';
 import { useEntitlements } from '../../../src/hooks/useEntitlements';
 import { LockedFeatureOverlay } from '../../../src/components/shared';
+import { StaggerItem, AnimatedSection, GlassCard, hapticLight } from '../../../src/components/ui';
 
 const SCREEN_WIDTH = Dimensions.get('window').width - 32;
 
@@ -82,10 +84,10 @@ export default function AnalyticsDashboard() {
   return (
     <ScrollView className="flex-1 bg-dark-bg" contentContainerClassName="pb-8">
       {/* Header */}
-      <View className="px-4 pt-12 pb-2">
+      <Animated.View entering={FadeIn.duration(300)} className="px-4 pt-12 pb-2">
         <Text className="text-white text-2xl font-bold">Practice Analytics</Text>
         <Text className="text-dark-border text-sm">Last 6 months · 47 active patients</Text>
-      </View>
+      </Animated.View>
 
       {/* Summary Cards */}
       <View className="flex-row flex-wrap px-3 py-2">
@@ -94,14 +96,14 @@ export default function AnalyticsDashboard() {
           { label: 'Avg Adherence', value: '78%', change: '+12%', color: 'text-portal-green' },
           { label: 'Protocols Active', value: '12', change: '+3', color: 'text-portal-purple' },
           { label: 'Interaction Alerts', value: '3', change: '-2', color: 'text-portal-yellow' },
-        ].map((stat) => (
-          <View key={stat.label} className="w-1/2 p-1">
-            <View className="bg-dark-card rounded-xl p-3 border border-dark-border">
+        ].map((stat, i) => (
+          <StaggerItem key={stat.label} index={i} stagger={80} className="w-1/2 p-1">
+            <GlassCard className="p-3">
               <Text className="text-white text-xl font-bold">{stat.value}</Text>
               <Text className="text-dark-border text-xs">{stat.label}</Text>
               <Text className={`text-xs font-semibold mt-1 ${stat.color}`}>{stat.change}</Text>
-            </View>
-          </View>
+            </GlassCard>
+          </StaggerItem>
         ))}
       </View>
 
@@ -114,7 +116,7 @@ export default function AnalyticsDashboard() {
               className={`rounded-full px-4 py-1.5 ${
                 tab === t.key ? 'bg-portal-green' : 'bg-dark-card border border-dark-border'
               }`}
-              onPress={() => setTab(t.key)}
+              onPress={() => { hapticLight(); setTab(t.key); }}
             >
               <Text className={`text-sm font-semibold ${tab === t.key ? 'text-dark-bg' : 'text-white'}`}>
                 {t.label}

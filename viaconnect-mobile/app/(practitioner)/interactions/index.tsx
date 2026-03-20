@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { View, Text, ScrollView, Pressable, TextInput } from 'react-native';
+import Animated, { FadeIn } from 'react-native-reanimated';
 import { useEntitlements } from '../../../src/hooks/useEntitlements';
 import { LockedFeatureOverlay } from '../../../src/components/shared';
+import { StaggerItem, AnimatedSection, GlassCard, hapticLight, hapticWarning } from '../../../src/components/ui';
 
 // ── CYP450 Reference Data ────────────────────────────────────────────────────
 

@@ -1,6 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { View, Text, ScrollView, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
+import Animated, { FadeIn } from 'react-native-reanimated';
+import { StaggerItem, AnimatedSection, AnimatedProgressBar, hapticLight, hapticSelection } from '../../../src/components/ui';
 
 // ── Seed Data ────────────────────────────────────────────────────────────────
 
@@ -81,7 +83,7 @@ export default function ProtocolsList() {
   return (
     <View className="flex-1 bg-dark-bg">
       {/* Header */}
-      <View className="px-4 pt-12 pb-2 flex-row items-center justify-between">
+      <Animated.View entering={FadeIn.duration(300)} className="px-4 pt-12 pb-2 flex-row items-center justify-between">
         <View>
           <Text className="text-white text-2xl font-bold">Protocols</Text>
           <Text className="text-dark-border text-sm">{SEED_PROTOCOLS.length} total protocols</Text>
@@ -92,7 +94,7 @@ export default function ProtocolsList() {
         >
           <Text className="text-dark-bg font-bold text-sm">+ New</Text>
         </Pressable>
-      </View>
+      </Animated.View>
 
       {/* Filters */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} className="px-4 py-2">
@@ -103,7 +105,7 @@ export default function ProtocolsList() {
               className={`rounded-full px-4 py-1.5 ${
                 filter === f.key ? 'bg-portal-green' : 'bg-dark-card border border-dark-border'
               }`}
-              onPress={() => setFilter(f.key)}
+              onPress={() => { hapticSelection(); setFilter(f.key); }}
             >
               <Text className={`text-sm font-semibold ${filter === f.key ? 'text-dark-bg' : 'text-white'}`}>
                 {f.label}
@@ -179,14 +181,11 @@ export default function ProtocolsList() {
                     <Text className="text-dark-border text-xs">Adherence</Text>
                     <Text className="text-white text-xs font-semibold">{proto.adherence}%</Text>
                   </View>
-                  <View className="h-1.5 bg-dark-border/30 rounded-full overflow-hidden">
-                    <View
-                      className={`h-full rounded-full ${
-                        proto.adherence >= 80 ? 'bg-portal-green' : proto.adherence >= 50 ? 'bg-portal-yellow' : 'bg-red-500'
-                      }`}
-                      style={{ width: `${Math.min(100, proto.adherence)}%` }}
-                    />
-                  </View>
+                  <AnimatedProgressBar
+                    progress={Math.min(100, proto.adherence)}
+                    color={proto.adherence >= 80 ? 'bg-portal-green' : proto.adherence >= 50 ? 'bg-portal-yellow' : 'bg-red-500'}
+                    height="h-1.5"
+                  />
                 </View>
               )}
             </Pressable>
