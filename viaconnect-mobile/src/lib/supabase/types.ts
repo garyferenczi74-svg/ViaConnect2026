@@ -815,6 +815,224 @@ export interface Database {
         Relationships: [];
       };
 
+      genetic_variants: {
+        Row: {
+          id: string;
+          genetic_profile_id: string;
+          user_id: string;
+          rsid: string;
+          gene: string | null;
+          genotype: string;
+          chromosome: string | null;
+          position: number | null;
+          risk_level: 'none' | 'low' | 'moderate' | 'high' | null;
+          clinical_significance: string | null;
+          pathway: string | null;
+          created_at: string;
+        };
+        Insert: {
+          genetic_profile_id: string;
+          user_id: string;
+          rsid: string;
+          gene?: string | null;
+          genotype: string;
+          chromosome?: string | null;
+          position?: number | null;
+          risk_level?: 'none' | 'low' | 'moderate' | 'high' | null;
+          clinical_significance?: string | null;
+          pathway?: string | null;
+        };
+        Update: {
+          genetic_profile_id?: string;
+          user_id?: string;
+          rsid?: string;
+          gene?: string | null;
+          genotype?: string;
+          chromosome?: string | null;
+          position?: number | null;
+          risk_level?: 'none' | 'low' | 'moderate' | 'high' | null;
+          clinical_significance?: string | null;
+          pathway?: string | null;
+        };
+        Relationships: [];
+      };
+
+      supplement_logs: {
+        Row: {
+          id: string;
+          user_id: string;
+          product_id: string | null;
+          supplement_name: string;
+          dosage: string | null;
+          taken_at: string;
+          log_date: string;
+          created_at: string;
+        };
+        Insert: {
+          user_id: string;
+          product_id?: string | null;
+          supplement_name: string;
+          dosage?: string | null;
+          taken_at?: string;
+          log_date?: string;
+        };
+        Update: {
+          user_id?: string;
+          product_id?: string | null;
+          supplement_name?: string;
+          dosage?: string | null;
+          taken_at?: string;
+          log_date?: string;
+        };
+        Relationships: [];
+      };
+
+      recommendations: {
+        Row: {
+          id: string;
+          user_id: string;
+          genetic_profile_id: string | null;
+          assessment_id: string | null;
+          pathway: string;
+          product_id: string | null;
+          product_sku: string | null;
+          product_name: string;
+          dosing: string | null;
+          rationale: string | null;
+          priority: number;
+          status: 'pending_review' | 'approved' | 'rejected' | 'active' | 'completed';
+          reviewed_by: string | null;
+          reviewed_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          user_id: string;
+          genetic_profile_id?: string | null;
+          assessment_id?: string | null;
+          pathway: string;
+          product_id?: string | null;
+          product_sku?: string | null;
+          product_name: string;
+          dosing?: string | null;
+          rationale?: string | null;
+          priority?: number;
+          status?: 'pending_review' | 'approved' | 'rejected' | 'active' | 'completed';
+          reviewed_by?: string | null;
+          reviewed_at?: string | null;
+        };
+        Update: {
+          user_id?: string;
+          genetic_profile_id?: string | null;
+          assessment_id?: string | null;
+          pathway?: string;
+          product_id?: string | null;
+          product_sku?: string | null;
+          product_name?: string;
+          dosing?: string | null;
+          rationale?: string | null;
+          priority?: number;
+          status?: 'pending_review' | 'approved' | 'rejected' | 'active' | 'completed';
+          reviewed_by?: string | null;
+          reviewed_at?: string | null;
+        };
+        Relationships: [];
+      };
+
+      device_tokens: {
+        Row: {
+          id: string;
+          user_id: string;
+          expo_push_token: string;
+          device_type: 'ios' | 'android' | 'web' | null;
+          active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          expo_push_token: string;
+          device_type?: 'ios' | 'android' | 'web' | null;
+          active?: boolean;
+        };
+        Update: {
+          user_id?: string;
+          expo_push_token?: string;
+          device_type?: 'ios' | 'android' | 'web' | null;
+          active?: boolean;
+        };
+        Relationships: [];
+      };
+
+      achievements: {
+        Row: {
+          id: string;
+          user_id: string;
+          achievement_type: string;
+          achievement_name: string;
+          description: string | null;
+          tokens_awarded: number;
+          achieved_at: string;
+        };
+        Insert: {
+          user_id: string;
+          achievement_type: string;
+          achievement_name: string;
+          description?: string | null;
+          tokens_awarded?: number;
+        };
+        Update: {
+          user_id?: string;
+          achievement_type?: string;
+          achievement_name?: string;
+          description?: string | null;
+          tokens_awarded?: number;
+        };
+        Relationships: [];
+      };
+
+      subscriptions: {
+        Row: {
+          id: string;
+          user_id: string;
+          stripe_customer_id: string | null;
+          stripe_subscription_id: string | null;
+          plan_id: string;
+          status: 'active' | 'past_due' | 'canceled' | 'incomplete' | 'trialing';
+          current_period_start: string | null;
+          current_period_end: string | null;
+          cancel_at_period_end: boolean;
+          hsa_fsa_eligible: boolean;
+          truemed_qualification_id: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          stripe_customer_id?: string | null;
+          stripe_subscription_id?: string | null;
+          plan_id: string;
+          status?: 'active' | 'past_due' | 'canceled' | 'incomplete' | 'trialing';
+          current_period_start?: string | null;
+          current_period_end?: string | null;
+          cancel_at_period_end?: boolean;
+          hsa_fsa_eligible?: boolean;
+          truemed_qualification_id?: string | null;
+        };
+        Update: {
+          user_id?: string;
+          stripe_customer_id?: string | null;
+          stripe_subscription_id?: string | null;
+          plan_id?: string;
+          status?: 'active' | 'past_due' | 'canceled' | 'incomplete' | 'trialing';
+          current_period_start?: string | null;
+          current_period_end?: string | null;
+          cancel_at_period_end?: boolean;
+          hsa_fsa_eligible?: boolean;
+          truemed_qualification_id?: string | null;
+        };
+        Relationships: [];
+      };
+
       audit_logs: {
         Row: {
           id: string;
@@ -888,3 +1106,11 @@ export type KitRegistration = Database['public']['Tables']['kit_registrations'][
 export type AuditLog = Database['public']['Tables']['audit_logs']['Row'];
 export type BotanicalFormula = Database['public']['Tables']['botanical_formulas']['Row'];
 export type BotanicalFormulaItem = Database['public']['Tables']['botanical_formula_items']['Row'];
+
+// Convenience type aliases — edge function tables
+export type GeneticVariant = Database['public']['Tables']['genetic_variants']['Row'];
+export type SupplementLog = Database['public']['Tables']['supplement_logs']['Row'];
+export type Recommendation = Database['public']['Tables']['recommendations']['Row'];
+export type DeviceToken = Database['public']['Tables']['device_tokens']['Row'];
+export type Achievement = Database['public']['Tables']['achievements']['Row'];
+export type Subscription = Database['public']['Tables']['subscriptions']['Row'];
