@@ -1,78 +1,98 @@
-import { View, Text, ScrollView, Pressable } from 'react-native';
-import Animated, { FadeIn } from 'react-native-reanimated';
-import { useAuthStore } from '../../src/lib/auth/store';
-import { StaggerItem, AnimatedSection, GlassCard, hapticLight } from '../../src/components/ui';
+import { View, Text, ScrollView } from 'react-native';
+import { useBreakpoint } from '../../src/components/shared/ResponsiveLayout';
 
-export default function ConsumerDashboard() {
-  const { profile } = useAuthStore();
+function VitalityScoreCard() {
+  return (
+    <View className="bg-dark-card rounded-2xl p-5 border border-dark-border">
+      <Text className="text-sage text-sm mb-2">Vitality Score</Text>
+      <Text className="text-5xl font-bold text-copper">87</Text>
+      <Text className="text-sage text-xs mt-1">+3 from last week</Text>
+      <View className="mt-4 h-2 bg-dark-border rounded-full overflow-hidden">
+        <View className="h-full w-[87%] bg-copper rounded-full" />
+      </View>
+    </View>
+  );
+}
+
+function SupplementTrackerCard() {
+  const supplements = [
+    { name: 'MTHFR+', taken: true },
+    { name: 'COMT+', taken: true },
+    { name: 'NAD+', taken: false },
+    { name: 'FOCUS+', taken: false },
+  ];
 
   return (
-    <ScrollView className="flex-1 bg-dark-bg" contentContainerClassName="px-4 py-6">
-      {/* Welcome Header */}
-      <Animated.View entering={FadeIn.duration(300)} className="mb-6">
-        <Text className="text-white text-2xl font-bold">
-          Welcome{profile?.full_name ? `, ${profile.full_name.split(' ')[0]}` : ''}
-        </Text>
-        <Text className="text-sage text-sm mt-1">
-          One Genome. One Formulation. One Life at a Time.
-        </Text>
-      </Animated.View>
-
-      {/* Vitality Score Card — glass */}
-      <StaggerItem index={0}>
-        <GlassCard className="p-5 mb-4">
-          <Text className="text-gray-400 text-xs uppercase tracking-wide mb-2">
-            Vitality Score
+    <View className="bg-dark-card rounded-2xl p-5 border border-dark-border">
+      <Text className="text-sage text-sm mb-3">Today's Supplements</Text>
+      {supplements.map((s) => (
+        <View
+          key={s.name}
+          className="flex-row items-center justify-between py-2 border-b border-dark-border"
+        >
+          <Text className="text-white font-mono text-sm">{s.name}</Text>
+          <Text className={s.taken ? 'text-portal-green' : 'text-sage'}>
+            {s.taken ? '✓ Taken' : '○ Pending'}
           </Text>
-          <View className="flex-row items-end gap-2">
-            <Text className="text-copper text-4xl font-bold">--</Text>
-            <Text className="text-gray-500 text-sm mb-1">/ 100</Text>
-          </View>
-          <Text className="text-gray-500 text-xs mt-2">
-            Complete your genetic profile to unlock your score
-          </Text>
-        </GlassCard>
-      </StaggerItem>
+        </View>
+      ))}
+    </View>
+  );
+}
 
-      {/* Quick Actions */}
-      <AnimatedSection delay={200}>
-        <Text className="text-white text-lg font-semibold mb-3">Quick Actions</Text>
-      </AnimatedSection>
-      <View className="gap-3 mb-6">
-        <StaggerItem index={0} stagger={100}>
-          <Pressable
-            className="bg-teal rounded-xl p-4 active:opacity-80"
-            onPress={() => hapticLight()}
-          >
-            <Text className="text-white font-semibold">Register GENEX360 Kit</Text>
-            <Text className="text-teal-light text-xs mt-0.5">Scan your test kit barcode</Text>
-          </Pressable>
-        </StaggerItem>
-
-        <StaggerItem index={1} stagger={100}>
-          <Pressable
-            className="bg-white/5 border border-white/10 rounded-xl p-4 active:opacity-80"
-            onPress={() => hapticLight()}
-          >
-            <Text className="text-white font-semibold">Browse Supplements</Text>
-            <Text className="text-gray-400 text-xs mt-0.5">27 precision formulations</Text>
-          </Pressable>
-        </StaggerItem>
-
-        <StaggerItem index={2} stagger={100}>
-          <Pressable
-            className="bg-white/5 border border-white/10 rounded-xl p-4 active:opacity-80"
-            onPress={() => hapticLight()}
-          >
-            <Text className="text-white font-semibold">Upload Lab Results</Text>
-            <Text className="text-gray-400 text-xs mt-0.5">AI-powered analysis</Text>
-          </Pressable>
-        </StaggerItem>
+function InsightsCard() {
+  return (
+    <View className="bg-dark-card rounded-2xl p-5 border border-dark-border">
+      <Text className="text-sage text-sm mb-3">AI Insights</Text>
+      <View className="bg-teal/10 rounded-xl p-4 mb-3">
+        <Text className="text-white text-sm">
+          Your COMT gene variant suggests you metabolize catecholamines slowly.
+          COMT+ is optimized for your genotype.
+        </Text>
       </View>
+      <View className="bg-copper/10 rounded-xl p-4">
+        <Text className="text-white text-sm">
+          Sleep quality improved 12% since starting NAD+ — keep it up!
+        </Text>
+      </View>
+    </View>
+  );
+}
 
-      <Text className="text-dark-border text-xs text-center mt-4">
-        FarmCeutica Wellness LLC — Buffalo, NY
+export default function ConsumerDashboard() {
+  const breakpoint = useBreakpoint();
+  const isDesktop = breakpoint === 'desktop';
+
+  return (
+    <ScrollView className="flex-1 bg-dark-bg p-4">
+      <Text className="text-white text-2xl font-bold mb-1">
+        Good morning
       </Text>
+      <Text className="text-sage text-sm mb-6">
+        One Genome. One Formulation. One Life at a Time.
+      </Text>
+
+      {isDesktop ? (
+        // Desktop: 3-column layout
+        <View className="flex-row gap-4">
+          <View className="flex-1">
+            <VitalityScoreCard />
+          </View>
+          <View className="flex-1">
+            <SupplementTrackerCard />
+          </View>
+          <View className="flex-1">
+            <InsightsCard />
+          </View>
+        </View>
+      ) : (
+        // Mobile: stacked cards
+        <View className="gap-4">
+          <VitalityScoreCard />
+          <SupplementTrackerCard />
+          <InsightsCard />
+        </View>
+      )}
     </ScrollView>
   );
 }
