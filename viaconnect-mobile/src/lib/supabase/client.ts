@@ -4,8 +4,10 @@ import { Platform } from 'react-native';
 import { supabaseSecureStorage } from '../auth/secure-session';
 import type { Database } from './types';
 
-const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL ?? '';
-const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '';
+const supabaseUrl =
+  process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
+const supabaseAnonKey =
+  process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-anon-key';
 
 // Use SecureStore on native, skip during SSR (static export)
 const isSSR = typeof window === 'undefined' && Platform.OS === 'web';

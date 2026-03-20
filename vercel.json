@@ -2,5 +2,14 @@
   "installCommand": "echo 'No dependencies'",
   "buildCommand": "echo 'Static site'",
   "outputDirectory": "public",
-  "framework": null
+  "framework": null,
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "X-Frame-Options", "value": "DENY" }
+      ]
+    }
+  ]
 }

@@ -81,6 +81,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     typedRoutes: true,
   },
   extra: {
+    newArchEnabled: true,
     eas: {
       projectId: '',
     },

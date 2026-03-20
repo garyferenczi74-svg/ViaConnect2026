@@ -1,23 +1,25 @@
-import { Stack } from 'expo-router';
-import { ProtectedRoute } from '../../src/lib/auth/ProtectedRoute';
-import { ViaConnectLogo } from '../../src/components/ui';
+import { Slot } from 'expo-router';
+import {
+  DashboardShell,
+  NavItem,
+} from '../../src/components/shared/DashboardShell';
+
+const NAV_ITEMS: NavItem[] = [
+  { label: 'Dashboard', icon: '🏠', href: '/(consumer)' },
+  { label: 'Supplements', icon: '💊', href: '/(consumer)/supplements' },
+  { label: 'Genetics', icon: '🧬', href: '/(consumer)/genetics' },
+  { label: 'Insights', icon: '📊', href: '/(consumer)/insights' },
+  { label: 'Profile', icon: '👤', href: '/(consumer)/profile' },
+];
 
 export default function ConsumerLayout() {
   return (
-    <ProtectedRoute allowedRoles={['consumer']}>
-      <Stack
-        screenOptions={{
-          headerStyle: { backgroundColor: '#224852' },
-          headerTintColor: '#fff',
-          headerTitleStyle: { fontWeight: '600' },
-          contentStyle: { backgroundColor: '#111827' },
-        }}
-      >
-        <Stack.Screen
-          name="index"
-          options={{ headerTitle: () => <ViaConnectLogo size={100} showWordmark={false} /> }}
-        />
-      </Stack>
-    </ProtectedRoute>
+    <DashboardShell
+      navItems={NAV_ITEMS}
+      portalName="Personal Wellness"
+      portalColor="#224852"
+    >
+      <Slot />
+    </DashboardShell>
   );
 }

@@ -1,131 +1,203 @@
-import React from 'react';
-import { View, Text, Pressable, ActivityIndicator } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, Pressable, ScrollView, Platform } from 'react-native';
+import { useRouter, usePathname } from 'expo-router';
+import { useIsDesktop } from './ResponsiveLayout';
 
-// ── Types ────────────────────────────────────────────────────────────────────
+export type NavItem = {
+  label: string;
+  icon: string;
+  href: string;
+};
 
 export type PortalRole = 'consumer' | 'practitioner' | 'naturopath';
 
-export interface TabDef {
-  key: string;
-  label: string;
-  icon: string; // emoji placeholder — replace with icon lib
-}
+export type TabDef = NavItem;
 
-export interface DashboardShellProps {
-  role: PortalRole;
-  activeTab: string;
-  onTabChange: (key: string) => void;
-  notificationCount?: number;
+export type DashboardShellProps = {
   children: React.ReactNode;
-}
-
-// ── Tab Configurations ───────────────────────────────────────────────────────
-
-const TABS: Record<PortalRole, TabDef[]> = {
-  consumer: [
-    { key: 'home', label: 'Home', icon: '🏠' },
-    { key: 'genetics', label: 'Genetics', icon: '🧬' },
-    { key: 'supplements', label: 'Supps', icon: '💊' },
-    { key: 'tokens', label: 'Tokens', icon: '🪙' },
-    { key: 'profile', label: 'Profile', icon: '👤' },
-  ],
-  practitioner: [
-    { key: 'dashboard', label: 'Dashboard', icon: '📊' },
-    { key: 'patients', label: 'Patients', icon: '👥' },
-    { key: 'protocols', label: 'Protocols', icon: '📋' },
-    { key: 'analytics', label: 'Analytics', icon: '📈' },
-    { key: 'settings', label: 'Settings', icon: '⚙️' },
-  ],
-  naturopath: [
-    { key: 'dashboard', label: 'Dashboard', icon: '📊' },
-    { key: 'patients', label: 'Patients', icon: '👥' },
-    { key: 'botanical', label: 'Botanical', icon: '🌿' },
-    { key: 'assessment', label: 'Assess', icon: '📝' },
-    { key: 'settings', label: 'Settings', icon: '⚙️' },
-  ],
+  navItems: NavItem[];
+  portalName: string;
+  portalColor: string;
+  userName?: string;
 };
 
-const ACCENT_COLORS: Record<PortalRole, string> = {
-  consumer: 'text-copper',
-  practitioner: 'text-portal-green',
-  naturopath: 'text-plum',
-};
+/** Sidebar width in pixels */
+const SIDEBAR_EXPANDED = 240;
+const SIDEBAR_COLLAPSED = 64;
 
-const ACTIVE_BG: Record<PortalRole, string> = {
-  consumer: 'bg-copper/10',
-  practitioner: 'bg-portal-green/10',
-  naturopath: 'bg-plum/10',
-};
-
-// ── Component ────────────────────────────────────────────────────────────────
-
-export function DashboardShell({
-  role,
-  activeTab,
-  onTabChange,
-  notificationCount = 0,
-  children,
-}: DashboardShellProps) {
-  const tabs = TABS[role];
-  const accentColor = ACCENT_COLORS[role];
+function SidebarNav({
+  navItems,
+  portalName,
+  portalColor,
+  userName,
+  collapsed,
+  onToggleCollapse,
+}: {
+  navItems: NavItem[];
+  portalName: string;
+  portalColor: string;
+  userName?: string;
+  collapsed: boolean;
+  onToggleCollapse: () => void;
+}) {
+  const router = useRouter();
+  const pathname = usePathname();
 
   return (
-    <View className="flex-1 bg-dark-bg">
-      {/* Content */}
-      <View className="flex-1">{children}</View>
-
-      {/* Tab Bar */}
-      <View className="flex-row bg-dark-card border-t border-dark-border px-2 pb-6 pt-2">
-        {tabs.map((tab) => {
-          const isActive = tab.key === activeTab;
-          const showBadge = tab.key === 'home' || tab.key === 'dashboard';
-
-          return (
-            <Pressable
-              key={tab.key}
-              className={`flex-1 items-center py-2 rounded-xl ${isActive ? ACTIVE_BG[role] : ''}`}
-              onPress={() => onTabChange(tab.key)}
-              accessibilityLabel={`${tab.label} tab`}
-              accessibilityRole="tab"
-              accessibilityState={{ selected: isActive }}
-            >
-              <View className="relative">
-                <Text className="text-lg">{tab.icon}</Text>
-                {showBadge && notificationCount > 0 && (
-                  <View className="absolute -top-1 -right-2 bg-red-500 rounded-full min-w-[16px] h-4 items-center justify-center px-1">
-                    <Text className="text-white text-[10px] font-bold">
-                      {notificationCount > 99 ? '99+' : notificationCount}
-                    </Text>
-                  </View>
-                )}
-              </View>
-              <Text className={`text-xs mt-0.5 ${isActive ? `${accentColor} font-semibold` : 'text-dark-border'}`}>
-                {tab.label}
+    <View
+      className="bg-dark-card border-r border-dark-border h-full justify-between"
+      style={{ width: collapsed ? SIDEBAR_COLLAPSED : SIDEBAR_EXPANDED }}
+    >
+      {/* Logo & Portal Name */}
+      <View>
+        <Pressable
+          onPress={onToggleCollapse}
+          className="px-4 py-5 border-b border-dark-border flex-row items-center"
+        >
+          <View
+            className="w-8 h-8 rounded-lg items-center justify-center"
+            style={{ backgroundColor: portalColor }}
+          >
+            <Text className="text-white font-bold text-sm">V</Text>
+          </View>
+          {!collapsed && (
+            <View className="ml-3">
+              <Text className="text-white font-semibold text-sm">
+                ViaConnect
               </Text>
-            </Pressable>
-          );
-        })}
+              <Text className="text-sage text-xs">{portalName}</Text>
+            </View>
+          )}
+        </Pressable>
+
+        {/* Nav Links */}
+        <ScrollView className="px-2 py-3">
+          {navItems.map((item) => {
+            const isActive = pathname === item.href;
+            return (
+              <Pressable
+                key={item.href}
+                onPress={() => router.push(item.href as any)}
+                className={`flex-row items-center rounded-xl px-3 py-3 mb-1 ${
+                  isActive ? 'bg-teal/20' : 'active:bg-dark-border/50'
+                }`}
+              >
+                <Text
+                  className={`text-lg ${isActive ? 'text-copper' : 'text-sage'}`}
+                >
+                  {item.icon}
+                </Text>
+                {!collapsed && (
+                  <Text
+                    className={`ml-3 text-sm font-medium ${
+                      isActive ? 'text-white' : 'text-sage'
+                    }`}
+                  >
+                    {item.label}
+                  </Text>
+                )}
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+      </View>
+
+      {/* User Info */}
+      <View className="px-3 py-4 border-t border-dark-border flex-row items-center">
+        <View className="w-8 h-8 rounded-full bg-plum items-center justify-center">
+          <Text className="text-white text-xs font-bold">
+            {(userName ?? 'U').charAt(0).toUpperCase()}
+          </Text>
+        </View>
+        {!collapsed && (
+          <Text className="ml-3 text-sage text-sm" numberOfLines={1}>
+            {userName ?? 'User'}
+          </Text>
+        )}
       </View>
     </View>
   );
 }
 
-// ── Skeleton ─────────────────────────────────────────────────────────────────
+function BottomTabBar({
+  navItems,
+  portalColor,
+}: {
+  navItems: NavItem[];
+  portalColor: string;
+}) {
+  const router = useRouter();
+  const pathname = usePathname();
+
+  return (
+    <View className="flex-row bg-dark-card border-t border-dark-border pb-5 pt-2 px-2">
+      {navItems.map((item) => {
+        const isActive = pathname === item.href;
+        return (
+          <Pressable
+            key={item.href}
+            onPress={() => router.push(item.href as any)}
+            className="flex-1 items-center py-1"
+          >
+            <Text
+              className={`text-xl ${isActive ? 'text-copper' : 'text-sage'}`}
+            >
+              {item.icon}
+            </Text>
+            <Text
+              className={`text-[10px] mt-0.5 ${
+                isActive ? 'text-white' : 'text-sage'
+              }`}
+            >
+              {item.label}
+            </Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
 
 export function DashboardShellSkeleton() {
   return (
+    <View className="flex-1 bg-dark-bg items-center justify-center">
+      <View className="w-12 h-12 rounded-xl bg-dark-card animate-pulse" />
+      <View className="w-32 h-4 rounded bg-dark-card mt-4 animate-pulse" />
+    </View>
+  );
+}
+
+export function DashboardShell({
+  children,
+  navItems,
+  portalName,
+  portalColor,
+  userName,
+}: DashboardShellProps) {
+  const isDesktop = useIsDesktop();
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  if (isDesktop) {
+    return (
+      <View className="flex-1 flex-row bg-dark-bg">
+        <SidebarNav
+          navItems={navItems}
+          portalName={portalName}
+          portalColor={portalColor}
+          userName={userName}
+          collapsed={sidebarCollapsed}
+          onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+        />
+        <View className="flex-1">{children}</View>
+      </View>
+    );
+  }
+
+  // Mobile layout: content + bottom tabs
+  return (
     <View className="flex-1 bg-dark-bg">
-      <View className="flex-1 items-center justify-center">
-        <ActivityIndicator color="#B75F19" size="large" />
-      </View>
-      <View className="flex-row bg-dark-card border-t border-dark-border px-2 pb-6 pt-2">
-        {Array.from({ length: 5 }).map((_, i) => (
-          <View key={i} className="flex-1 items-center py-2">
-            <View className="w-6 h-6 rounded-full bg-dark-border animate-pulse" />
-            <View className="w-8 h-2 mt-1 rounded bg-dark-border animate-pulse" />
-          </View>
-        ))}
-      </View>
+      <View className="flex-1">{children}</View>
+      <BottomTabBar navItems={navItems} portalColor={portalColor} />
     </View>
   );
 }
