@@ -14,12 +14,12 @@ export function useAuthGuard() {
   useEffect(() => {
     if (isLoading) return;
 
-    const inAuthGroup = segments[0] === '(auth)';
+    const inAuthGroup = (segments[0] as string) === '(auth)';
 
     if (!session) {
       // Not logged in → push to login (unless already in auth group)
       if (!inAuthGroup) {
-        router.replace('/(auth)/login');
+        router.replace('/(auth)/login' as never);
       }
       return;
     }
@@ -28,7 +28,10 @@ export function useAuthGuard() {
     if (inAuthGroup) {
       // If onboarding not completed (consumer), go to onboarding
       if (role === 'consumer' && profile && !profile.onboarding_completed) {
-        router.replace('/(auth)/onboarding/1');
+        router.replace({
+          pathname: '/(auth)/onboarding/[step]',
+          params: { step: '1' },
+        });
         return;
       }
       redirectToPortal(router, role);
@@ -52,7 +55,7 @@ export function redirectToPortal(
       break;
     case 'consumer':
     default:
-      router.replace('/(consumer)');
+      router.replace('/(consumer)' as never);
       break;
   }
 }

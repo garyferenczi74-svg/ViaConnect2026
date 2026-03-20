@@ -175,7 +175,7 @@ export default function LoginScreen() {
               <Text className="text-gray-300 text-sm">Remember me</Text>
             </Pressable>
 
-            <Link href="/(auth)/forgot-password" asChild>
+            <Link href="/forgot-password" asChild>
               <Pressable>
                 <Text className="text-copper text-sm font-medium">Forgot password?</Text>
               </Pressable>
@@ -251,7 +251,7 @@ export default function LoginScreen() {
         {/* Sign up link */}
         <View className="flex-row justify-center mt-8">
           <Text className="text-gray-400 text-sm">Don't have an account? </Text>
-          <Link href="/(auth)/signup" asChild>
+          <Link href="/signup" asChild>
             <Pressable>
               <Text className="text-copper text-sm font-semibold">Sign Up</Text>
             </Pressable>

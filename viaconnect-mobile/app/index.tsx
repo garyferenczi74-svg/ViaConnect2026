@@ -16,12 +16,19 @@ export default function HomeScreen() {
 
   // Not authenticated → login
   if (!session) {
-    return <Redirect href="/(auth)/login" />;
+    return <Redirect href={'/(auth)/login' as never} />;
   }
 
   // Consumer who hasn't completed onboarding → CAQ
   if (role === 'consumer' && profile && !profile.onboarding_completed) {
-    return <Redirect href="/(auth)/onboarding/1" />;
+    return (
+      <Redirect
+        href={{
+          pathname: '/(auth)/onboarding/[step]',
+          params: { step: '1' },
+        }}
+      />
+    );
   }
 
   // Redirect to correct portal
@@ -32,6 +39,6 @@ export default function HomeScreen() {
       return <Redirect href="/(naturopath)" />;
     case 'consumer':
     default:
-      return <Redirect href="/(consumer)" />;
+      return <Redirect href={'/(consumer)' as never} />;
   }
 }

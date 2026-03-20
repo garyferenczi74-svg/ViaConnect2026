@@ -151,11 +151,14 @@ export default function SignupScreen() {
       }
 
       if (authData.user) {
+        // Map app roles to DB roles: consumer→patient, naturopath→practitioner
+        const dbRole = data.role === 'consumer' ? 'patient' as const : 'practitioner' as const;
+
         // Create profile record
         await supabase.from('profiles').upsert({
           id: authData.user.id,
           full_name: data.fullName,
-          role: data.role === 'consumer' ? 'patient' : data.role,
+          role: dbRole,
           onboarding_completed: false,
         });
 
@@ -196,12 +199,15 @@ export default function SignupScreen() {
 
       // Redirect based on role
       if (data.role === 'consumer') {
-        router.replace('/(auth)/onboarding/1');
+        router.replace({
+          pathname: '/(auth)/onboarding/[step]',
+          params: { step: '1' },
+        });
       } else {
         router.replace(
           data.role === 'practitioner'
             ? '/(practitioner)'
-            : '/(naturopath)',
+            : '/(naturopath)' as never,
         );
       }
     } catch {

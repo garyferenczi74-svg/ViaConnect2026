@@ -36,8 +36,8 @@ export default function OnboardingStepScreen() {
 
       // Navigate to completion screen with score
       router.replace({
-        pathname: '/(auth)/onboarding/complete',
-        params: { score: String(vitalityScore) },
+        pathname: '/(auth)/onboarding/[step]',
+        params: { step: 'complete', score: String(vitalityScore) },
       });
     },
     [user, router],
@@ -110,7 +110,7 @@ export default function OnboardingStepScreen() {
 
 function CompletionScreen() {
   const router = useRouter();
-  const { score } = useLocalSearchParams<{ score?: string }>();
+  const { score } = useLocalSearchParams<{ step: string; score?: string }>();
   const vitalityScore = parseInt(score ?? '0', 10);
 
   const getScoreColor = (s: number) => {
@@ -152,7 +152,7 @@ function CompletionScreen() {
 
         <Pressable
           className="bg-copper rounded-xl px-10 py-4 active:opacity-80"
-          onPress={() => router.replace('/(consumer)')}
+          onPress={() => router.replace('/(consumer)' as never)}
           accessibilityLabel="Go to dashboard"
         >
           <Text className="text-white text-base font-semibold">

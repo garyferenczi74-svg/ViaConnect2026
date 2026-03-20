@@ -27,7 +27,7 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
 
   // Not authenticated → redirect to login
   if (!session) {
-    return <Redirect href="/(auth)/login" />;
+    return <Redirect href={'/(auth)/login' as never} />;
   }
 
   // Role check
@@ -40,7 +40,7 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
         return <Redirect href="/(naturopath)" />;
       case 'consumer':
       default:
-        return <Redirect href="/(consumer)" />;
+        return <Redirect href={'/(consumer)' as never} />;
     }
   }
 

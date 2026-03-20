@@ -136,7 +136,7 @@ export default function ForgotPasswordScreen() {
 
             <Pressable
               className="bg-copper rounded-xl px-8 py-3.5 mt-4 active:opacity-80"
-              onPress={() => router.replace('/(auth)/login')}
+              onPress={() => router.replace('/login')}
               accessibilityLabel="Return to login"
             >
               <Text className="text-white font-semibold">Return to Login</Text>

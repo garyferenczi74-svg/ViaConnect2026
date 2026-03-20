@@ -3,6 +3,7 @@ import { AppState, type AppStateStatus } from 'react-native';
 import { supabase } from '../supabase/client';
 import { useAuthStore } from './store';
 import { secureSession } from './secure-session';
+import type { Profile } from '../supabase/types';
 
 /** HIPAA inactivity timeout: 15 minutes */
 const INACTIVITY_TIMEOUT_MS = 15 * 60 * 1000;
@@ -13,16 +14,13 @@ interface AuthProviderProps {
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  const {
-    setSession,
-    setProfile,
-    setLoading,
-    reset,
-    touchActivity,
-    lastActivity,
-  } = useAuthStore();
+  const setSession = useAuthStore((s) => s.setSession);
+  const setProfile = useAuthStore((s) => s.setProfile);
+  const setLoading = useAuthStore((s) => s.setLoading);
+  const reset = useAuthStore((s) => s.reset);
+  const touchActivity = useAuthStore((s) => s.touchActivity);
 
-  const intervalRef = useRef<ReturnType<typeof setInterval>>();
+  const intervalRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
 
   const fetchProfile = useCallback(
     async (userId: string) => {
@@ -31,7 +29,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         .select('*')
         .eq('id', userId)
         .single();
-      setProfile(data ?? null);
+      setProfile((data as Profile) ?? null);
     },
     [setProfile],
   );
