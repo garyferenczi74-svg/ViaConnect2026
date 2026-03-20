@@ -60,3 +60,6 @@ export type { BarcodeScannerProps } from './BarcodeScanner';
 
 export { BiometricAuth } from './BiometricAuth';
 export type { BiometricAuthProps } from './BiometricAuth';
+
+export { PaywallScreen } from './PaywallScreen';
+export type { PaywallScreenProps } from './PaywallScreen';
