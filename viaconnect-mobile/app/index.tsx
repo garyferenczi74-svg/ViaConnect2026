@@ -1,7 +1,9 @@
 import { View, Text, Pressable } from 'react-native';
-import { Link } from 'expo-router';
+import { useRouter } from 'expo-router';
 
 export default function HomeScreen() {
+  const router = useRouter();
+
   return (
     <View className="flex-1 items-center justify-center bg-dark-bg px-6">
       <Text className="text-4xl font-bold text-white mb-2">ViaConnect</Text>
@@ -17,7 +19,10 @@ export default function HomeScreen() {
           </Text>
         </Pressable>
 
-        <Pressable className="bg-portal-green rounded-2xl py-4 px-6 items-center active:opacity-80">
+        <Pressable
+          className="bg-portal-green rounded-2xl py-4 px-6 items-center active:opacity-80"
+          onPress={() => router.push('/(practitioner)')}
+        >
           <Text className="text-dark-bg text-lg font-semibold">
             Practitioner Portal
           </Text>
