@@ -1,0 +1,73 @@
+name: CI — ViaConnect GeneX360
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  # ──────────────────────────────────────────────────
+  # Root landing page — Vercel deploys automatically
+  # ──────────────────────────────────────────────────
+  root-check:
+    name: Root Landing Page
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify public/index.html exists
+        run: test -f public/index.html
+
+  # ──────────────────────────────────────────────────
+  # Expo Mobile App — TypeScript + Web Export
+  # ──────────────────────────────────────────────────
+  expo-check:
+    name: Expo TypeScript & Web Build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: viaconnect-mobile
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: npm
+          cache-dependency-path: viaconnect-mobile/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: TypeScript check
+        run: npx tsc --noEmit
+
+      - name: Expo web export
+        run: npx expo export --platform web
+
+      - name: Verify dist output
+        run: |
+          test -d dist
+          test -f dist/index.html
+          echo "✓ Web export produced $(find dist -type f | wc -l) files"
+
+      - name: Upload web build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: expo-web-dist
+          path: viaconnect-mobile/dist
+          retention-days: 7
+
+  # ──────────────────────────────────────────────────
+  # Supabase Migrations — validate SQL
+  # ──────────────────────────────────────────────────
+  supabase-check:
+    name: Supabase Migrations
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify migrations exist
+        run: |
+          count=$(find viaconnect-mobile/supabase/migrations -name "*.sql" | wc -l)
+          echo "✓ Found $count migration file(s)"
+          test "$count" -gt 0
