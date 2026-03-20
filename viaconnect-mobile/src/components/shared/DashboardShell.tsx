@@ -9,7 +9,11 @@ export type NavItem = {
   href: string;
 };
 
-type DashboardShellProps = {
+export type PortalRole = 'consumer' | 'practitioner' | 'naturopath';
+
+export type TabDef = NavItem;
+
+export type DashboardShellProps = {
   children: React.ReactNode;
   navItems: NavItem[];
   portalName: string;
@@ -154,7 +158,16 @@ function BottomTabBar({
   );
 }
 
-export default function DashboardShell({
+export function DashboardShellSkeleton() {
+  return (
+    <View className="flex-1 bg-dark-bg items-center justify-center">
+      <View className="w-12 h-12 rounded-xl bg-dark-card animate-pulse" />
+      <View className="w-32 h-4 rounded bg-dark-card mt-4 animate-pulse" />
+    </View>
+  );
+}
+
+export function DashboardShell({
   children,
   navItems,
   portalName,

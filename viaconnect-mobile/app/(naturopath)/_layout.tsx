@@ -1,5 +1,6 @@
 import { Slot } from 'expo-router';
-import DashboardShell, {
+import {
+  DashboardShell,
   NavItem,
 } from '../../src/components/shared/DashboardShell';
 

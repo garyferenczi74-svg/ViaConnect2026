@@ -11,6 +11,9 @@
     "nativewind-env.d.ts"
   ],
   "exclude": [
-    "supabase/functions/**"
+    "supabase/functions/**",
+    "__tests__/**",
+    "e2e/**",
+    "**/__mocks__/**"
   ]
 }
