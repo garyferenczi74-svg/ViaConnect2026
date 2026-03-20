@@ -69,3 +69,5 @@ export type { CustomerCenterButtonProps } from './CustomerCenter';
 
 export { LockedFeatureOverlay } from './LockedFeatureOverlay';
 export type { LockedFeatureOverlayProps } from './LockedFeatureOverlay';
+
+export { default as ViaConnectLogo } from './ViaConnectLogo';
