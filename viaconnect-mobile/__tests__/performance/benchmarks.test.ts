@@ -147,7 +147,7 @@ describe('Performance Benchmarks', () => {
       const iterations = 10000;
 
       for (let i = 0; i < iterations; i++) {
-        const tier = 'practitioner';
+        const tier: string = 'practitioner';
         const _isGoldPlus = tier === 'gold' || tier === 'platinum' || tier === 'practitioner';
         const _isPlatinumPlus = tier === 'platinum' || tier === 'practitioner';
       }
