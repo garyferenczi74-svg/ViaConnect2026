@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { View, Text, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ProtocolBuilder } from '../../../src/components/shared';
+import { ProtocolBuilder, LockedFeatureOverlay } from '../../../src/components/shared';
 import type { CatalogProduct, PatientOption, SelectedProduct } from '../../../src/components/shared';
+import { useEntitlements } from '../../../src/hooks/useEntitlements';
 
 // ── Seed Data ────────────────────────────────────────────────────────────────
 
@@ -36,8 +37,19 @@ const SEED_GENETIC_RECS: CatalogProduct[] = [
 // ── Component ────────────────────────────────────────────────────────────────
 
 export default function ProtocolBuilderScreen() {
+  const { canBuildProtocols } = useEntitlements();
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  if (!canBuildProtocols) {
+    return (
+      <LockedFeatureOverlay
+        requiredTier="practitioner"
+        featureName="Protocol Builder"
+        description="Build personalized supplement protocols with genetic recommendations. Requires Practitioner tier."
+      />
+    );
+  }
 
   const handleSubmit = async (data: {
     patientId: string;

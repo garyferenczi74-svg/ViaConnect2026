@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, ScrollView, TextInput, Pressable, ActivityIndicator } from 'react-native';
+import { useEntitlements } from '../../../src/hooks/useEntitlements';
+import { LockedFeatureOverlay } from '../../../src/components/shared';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -51,11 +53,22 @@ const SEED_MESSAGES: ChatMessage[] = [
 // ── Component ────────────────────────────────────────────────────────────────
 
 export default function AIClinicalSupport() {
+  const { canUseAIAdvisor } = useEntitlements();
   const [messages, setMessages] = useState<ChatMessage[]>(SEED_MESSAGES);
   const [input, setInput] = useState('');
   const [activeModel, setActiveModel] = useState<ModelId>('claude');
   const [isLoading, setIsLoading] = useState(false);
   const [consensusLevel, setConsensusLevel] = useState(92);
+
+  if (!canUseAIAdvisor) {
+    return (
+      <LockedFeatureOverlay
+        requiredTier="platinum"
+        featureName="AI Clinical Support"
+        description="Multi-LLM clinical decision support with Claude, Grok, and GPT-4o. Requires Platinum or higher."
+      />
+    );
+  }
 
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;

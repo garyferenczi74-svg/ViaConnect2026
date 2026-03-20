@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { View, Text, ScrollView, Pressable, Dimensions } from 'react-native';
 import { LineChart, BarChart, PieChart } from 'react-native-chart-kit';
+import { useEntitlements } from '../../../src/hooks/useEntitlements';
+import { LockedFeatureOverlay } from '../../../src/components/shared';
 
 const SCREEN_WIDTH = Dimensions.get('window').width - 32;
 
@@ -64,7 +66,18 @@ const TABS: { key: ChartTab; label: string }[] = [
 // ── Component ────────────────────────────────────────────────────────────────
 
 export default function AnalyticsDashboard() {
+  const { canViewFullAnalytics } = useEntitlements();
   const [tab, setTab] = useState<ChartTab>('outcomes');
+
+  if (!canViewFullAnalytics) {
+    return (
+      <LockedFeatureOverlay
+        requiredTier="platinum"
+        featureName="Practice Analytics"
+        description="Full practice analytics with outcome tracking, adherence rates, and variant distribution. Requires Platinum or higher."
+      />
+    );
+  }
 
   return (
     <ScrollView className="flex-1 bg-dark-bg" contentContainerClassName="pb-8">

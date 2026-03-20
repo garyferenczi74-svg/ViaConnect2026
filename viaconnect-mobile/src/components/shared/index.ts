@@ -63,3 +63,9 @@ export type { BiometricAuthProps } from './BiometricAuth';
 
 export { PaywallScreen } from './PaywallScreen';
 export type { PaywallScreenProps } from './PaywallScreen';
+
+export { CustomerCenterButton } from './CustomerCenter';
+export type { CustomerCenterButtonProps } from './CustomerCenter';
+
+export { LockedFeatureOverlay } from './LockedFeatureOverlay';
+export type { LockedFeatureOverlayProps } from './LockedFeatureOverlay';

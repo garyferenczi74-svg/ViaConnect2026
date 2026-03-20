@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, ScrollView, Pressable, TextInput } from 'react-native';
+import { useEntitlements } from '../../../src/hooks/useEntitlements';
+import { LockedFeatureOverlay } from '../../../src/components/shared';
 
 // ── CYP450 Reference Data ────────────────────────────────────────────────────
 
@@ -76,10 +78,21 @@ type ViewMode = 'checker' | 'cyp450' | 'matrix';
 // ── Component ────────────────────────────────────────────────────────────────
 
 export default function InteractionsScreen() {
+  const { canUseInteractionChecker } = useEntitlements();
   const [viewMode, setViewMode] = useState<ViewMode>('checker');
   const [medication, setMedication] = useState('');
   const [expandedEnzyme, setExpandedEnzyme] = useState<string | null>(null);
   const [matrixFilter, setMatrixFilter] = useState('');
+
+  if (!canUseInteractionChecker) {
+    return (
+      <LockedFeatureOverlay
+        requiredTier="platinum"
+        featureName="Interaction Checker"
+        description="Drug-supplement interaction analysis with CYP450 reference data. Requires Platinum or higher."
+      />
+    );
+  }
 
   const filteredMatrix = INTERACTION_MATRIX.filter(
     (entry) =>

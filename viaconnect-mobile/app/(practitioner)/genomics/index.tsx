@@ -1,5 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { View, Text, ScrollView, TextInput, Pressable } from 'react-native';
+import { useEntitlements } from '../../../src/hooks/useEntitlements';
+import { LockedFeatureOverlay } from '../../../src/components/shared';
 
 // ── Seed Data ────────────────────────────────────────────────────────────────
 
@@ -98,8 +100,19 @@ const RISK_CONFIG = {
 // ── Component ────────────────────────────────────────────────────────────────
 
 export default function GenomicsPanel() {
+  const { canViewFullGenetics } = useEntitlements();
   const [search, setSearch] = useState('');
   const [expandedGene, setExpandedGene] = useState<string | null>(null);
+
+  if (!canViewFullGenetics) {
+    return (
+      <LockedFeatureOverlay
+        requiredTier="gold"
+        featureName="Full Genomics Panel"
+        description="View all 6 genetic panels with variant details. Free users can preview up to 3 variants."
+      />
+    );
+  }
 
   const filtered = useMemo(() => {
     if (!search.trim()) return GENE_DATABASE;

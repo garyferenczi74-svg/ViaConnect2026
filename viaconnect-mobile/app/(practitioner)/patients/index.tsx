@@ -1,8 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import { View, Text, TextInput, ScrollView, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
-import { PatientCard } from '../../../src/components/shared';
+import { PatientCard, LockedFeatureOverlay } from '../../../src/components/shared';
 import type { GeneticFlag } from '../../../src/components/shared';
+import { useEntitlements } from '../../../src/hooks/useEntitlements';
 
 // ── Seed Data ────────────────────────────────────────────────────────────────
 
@@ -116,9 +117,20 @@ const FILTERS: { key: FilterKey; label: string }[] = [
 // ── Component ────────────────────────────────────────────────────────────────
 
 export default function PatientRoster() {
+  const { canManagePatients } = useEntitlements();
   const router = useRouter();
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<FilterKey>('all');
+
+  if (!canManagePatients) {
+    return (
+      <LockedFeatureOverlay
+        requiredTier="practitioner"
+        featureName="Patient Management"
+        description="Full patient roster with genetic profiles, adherence tracking, and consent management. Requires Practitioner tier."
+      />
+    );
+  }
 
   const filtered = useMemo(() => {
     return SEED_PATIENTS.filter((p) => {

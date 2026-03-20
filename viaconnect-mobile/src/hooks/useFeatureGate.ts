@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useEntitlements } from './useEntitlements';
-import type { SubscriptionTier } from '../services/purchases';
+import type { SubscriptionTier } from './useSubscription';
 
 // ── Feature definitions ──────────────────────────────────────────────────
 export type Feature =
@@ -115,7 +115,7 @@ interface FeatureGate {
  * ```
  */
 export function useFeatureGate(): FeatureGate {
-  const { tier, isActive, isLoading } = useEntitlements();
+  const { tier, isSubscribed, isLoading } = useEntitlements();
 
   const allowedFeatures = useMemo(
     () => new Set(TIER_FEATURES[tier]),
@@ -141,7 +141,7 @@ export function useFeatureGate(): FeatureGate {
   return {
     can,
     tier,
-    isPaid: isActive,
+    isPaid: isSubscribed,
     variantLimit: GENETIC_VARIANT_LIMITS[tier],
     tokenMultiplier: TOKEN_MULTIPLIERS[tier],
     isLoading,

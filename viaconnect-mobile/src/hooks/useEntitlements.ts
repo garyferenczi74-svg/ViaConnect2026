@@ -1,110 +1,51 @@
-import { useEffect, useState, useCallback } from 'react';
-import { Platform } from 'react-native';
-import {
-  getCustomerInfo,
-  getTierFromCustomerInfo,
-  onCustomerInfoUpdated,
-  type SubscriptionTier,
-} from '../services/purchases';
-import { useAuthStore } from '../lib/auth/store';
-import { supabase } from '../lib/supabase/client';
+import { useSubscription, type SubscriptionTier } from './useSubscription';
 
-export interface EntitlementState {
+interface FeatureAccess {
+  // Consumer features
+  canViewFullGenetics: boolean;   // Gold+
+  canUseSupplementTracker: boolean; // Gold+
+  canEarnViaTokens: boolean;      // Gold+
+  canUseAIAdvisor: boolean;       // Platinum+
+  canUseInteractionChecker: boolean; // Platinum+
+  canViewFullAnalytics: boolean;  // Platinum+
+  doubleTokenEarning: boolean;    // Platinum+
+
+  // Practitioner features
+  canManagePatients: boolean;     // Practitioner
+  canBuildProtocols: boolean;     // Practitioner
+  canViewPracticeAnalytics: boolean; // Practitioner
+
+  // General
+  maxGeneticVariantsPreview: number; // Free=3, Gold+=unlimited
   tier: SubscriptionTier;
-  isActive: boolean;
-  expiresAt: string | null;
+  isSubscribed: boolean;
   isLoading: boolean;
-  refresh: () => Promise<void>;
 }
 
-/**
- * Hook returning the user's current subscription tier and entitlement status.
- * Listens for real-time changes from RevenueCat on native platforms.
- * Falls back to Supabase membership data on web.
- */
-export function useEntitlements(): EntitlementState {
-  const [tier, setTier] = useState<SubscriptionTier>('free');
-  const [expiresAt, setExpiresAt] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const userId = useAuthStore((s) => s.user?.id);
+export function useEntitlements(): FeatureAccess {
+  const { tier, isSubscribed, isLoading } = useSubscription();
 
-  const refresh = useCallback(async () => {
-    if (!userId) {
-      setTier('free');
-      setExpiresAt(null);
-      setIsLoading(false);
-      return;
-    }
-
-    setIsLoading(true);
-
-    if (Platform.OS !== 'web') {
-      // Native: get from RevenueCat
-      try {
-        const info = await getCustomerInfo();
-        const currentTier = getTierFromCustomerInfo(info);
-        setTier(currentTier);
-
-        const activeEntitlement = info?.entitlements.active
-          ? Object.values(info.entitlements.active)[0]
-          : null;
-        setExpiresAt(activeEntitlement?.expirationDate ?? null);
-      } catch {
-        // Fall back to Supabase
-        await fetchFromSupabase();
-      }
-    } else {
-      // Web: always use Supabase
-      await fetchFromSupabase();
-    }
-
-    setIsLoading(false);
-  }, [userId]);
-
-  const fetchFromSupabase = useCallback(async () => {
-    if (!userId) return;
-
-    const { data } = await supabase
-      .from('memberships')
-      .select('tier, expires_at, status')
-      .eq('user_id', userId)
-      .eq('status', 'active')
-      .single();
-
-    if (data) {
-      setTier(data.tier as SubscriptionTier);
-      setExpiresAt(data.expires_at);
-    } else {
-      setTier('free');
-      setExpiresAt(null);
-    }
-  }, [userId]);
-
-  // Initial load
-  useEffect(() => {
-    refresh();
-  }, [refresh]);
-
-  // Listen for RevenueCat updates on native
-  useEffect(() => {
-    if (Platform.OS === 'web') return;
-
-    const unsub = onCustomerInfoUpdated((info) => {
-      const newTier = getTierFromCustomerInfo(info);
-      setTier(newTier);
-
-      const activeEntitlement = Object.values(info.entitlements.active)[0];
-      setExpiresAt(activeEntitlement?.expirationDate ?? null);
-    });
-
-    return unsub;
-  }, []);
+  const isGoldPlus =
+    tier === 'gold' || tier === 'platinum' || tier === 'practitioner';
+  const isPlatinumPlus = tier === 'platinum' || tier === 'practitioner';
+  const isPractitioner = tier === 'practitioner';
 
   return {
+    canViewFullGenetics: isGoldPlus,
+    canUseSupplementTracker: isGoldPlus,
+    canEarnViaTokens: isGoldPlus,
+    canUseAIAdvisor: isPlatinumPlus,
+    canUseInteractionChecker: isPlatinumPlus,
+    canViewFullAnalytics: isPlatinumPlus,
+    doubleTokenEarning: isPlatinumPlus,
+
+    canManagePatients: isPractitioner,
+    canBuildProtocols: isPractitioner,
+    canViewPracticeAnalytics: isPractitioner,
+
+    maxGeneticVariantsPreview: isGoldPlus ? Infinity : 3,
     tier,
-    isActive: tier !== 'free',
-    expiresAt,
+    isSubscribed,
     isLoading,
-    refresh,
   };
 }

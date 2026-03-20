@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, ScrollView, Pressable, Switch } from 'react-native';
+import { CustomerCenterButton } from '../../../src/components/shared';
 
 // ── Seed Data ────────────────────────────────────────────────────────────────
 
@@ -199,6 +200,12 @@ export default function PractitionerSettings() {
             <Text className="text-white text-sm">{entry.detail}</Text>
           </View>
         ))}
+      </View>
+
+      {/* Manage Subscription */}
+      <View className="px-4 mt-4">
+        <Text className="text-white text-lg font-bold mb-3">Subscription</Text>
+        <CustomerCenterButton />
       </View>
 
       {/* Sign Out */}
