@@ -1,3 +1,5 @@
+import { ToastProvider } from "@/components/ui/Toast";
+
 export default function AuthLayout({
   children,
 }: {
@@ -20,14 +22,17 @@ export default function AuthLayout({
       </div>
 
       {/* Gradient orbs */}
-      <div className="absolute top-0 left-1/4 w-96 h-96 bg-teal/10 rounded-full blur-3xl" />
-      <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-copper/10 rounded-full blur-3xl" />
+      <div className="absolute top-0 left-1/4 w-96 h-96 bg-teal/10 rounded-full blur-3xl animate-pulse" />
+      <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-copper/10 rounded-full blur-3xl animate-pulse" />
 
       <div className="relative z-10 flex min-h-screen items-center justify-center px-4 py-12">
-        <div className="w-full max-w-md">
+        {/* ViaConnect logo */}
+        <div className="w-full max-w-[480px]">
           {children}
         </div>
       </div>
+
+      <ToastProvider />
     </div>
   );
 }
