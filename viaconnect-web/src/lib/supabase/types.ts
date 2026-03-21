@@ -500,6 +500,69 @@ export interface Database {
         };
         Relationships: [];
       };
+
+      subscriptions: {
+        Row: {
+          id: string;
+          user_id: string;
+          stripe_customer_id: string;
+          stripe_subscription_id: string;
+          plan: "gold" | "platinum" | "practitioner";
+          status: "active" | "canceled" | "past_due" | "trialing" | "incomplete";
+          current_period_start: string | null;
+          current_period_end: string | null;
+          cancel_at_period_end: boolean;
+          created_at: string;
+          updated_at: string | null;
+        };
+        Insert: {
+          user_id: string;
+          stripe_customer_id: string;
+          stripe_subscription_id: string;
+          plan: "gold" | "platinum" | "practitioner";
+          status: "active" | "canceled" | "past_due" | "trialing" | "incomplete";
+          current_period_start?: string | null;
+          current_period_end?: string | null;
+          cancel_at_period_end?: boolean;
+        };
+        Update: {
+          plan?: "gold" | "platinum" | "practitioner";
+          status?: "active" | "canceled" | "past_due" | "trialing" | "incomplete";
+          current_period_start?: string | null;
+          current_period_end?: string | null;
+          cancel_at_period_end?: boolean;
+          updated_at?: string | null;
+        };
+        Relationships: [];
+      };
+
+      audit_logs: {
+        Row: {
+          id: string;
+          user_id: string | null;
+          action: string;
+          resource_type: string;
+          resource_id: string | null;
+          metadata: Json | null;
+          ip_address: string | null;
+          created_at: string;
+        };
+        Insert: {
+          user_id?: string | null;
+          action: string;
+          resource_type: string;
+          resource_id?: string | null;
+          metadata?: Json | null;
+          ip_address?: string | null;
+        };
+        Update: {
+          action?: string;
+          resource_type?: string;
+          resource_id?: string | null;
+          metadata?: Json | null;
+        };
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
@@ -522,3 +585,5 @@ export type TokenTransaction = Database["public"]["Tables"]["token_transactions"
 export type Achievement = Database["public"]["Tables"]["achievements"]["Row"];
 export type UserAchievement = Database["public"]["Tables"]["user_achievements"]["Row"];
 export type Order = Database["public"]["Tables"]["orders"]["Row"];
+export type Subscription = Database["public"]["Tables"]["subscriptions"]["Row"];
+export type AuditLog = Database["public"]["Tables"]["audit_logs"]["Row"];
