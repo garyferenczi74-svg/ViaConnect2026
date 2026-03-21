@@ -38,7 +38,7 @@ export function ConsumerNav({ user }: { user: User }) {
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center gap-8">
             <Link href="/dashboard" className="flex items-center gap-1">
-              <span className="text-lg font-bold text-burnt-copper">Via</span>
+              <span className="text-lg font-bold text-copper">Via</span>
               <span className="text-lg font-bold text-white">Connect</span>
             </Link>
             <nav className="hidden md:flex items-center gap-1">

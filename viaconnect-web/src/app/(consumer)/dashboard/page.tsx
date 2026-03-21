@@ -24,13 +24,13 @@ export default async function ConsumerDashboard() {
           title="Genetic Profile"
           description="View your GeneX360 results and SNP analysis"
           href="/genetics"
-          accent="deep-teal"
+          accent="teal"
         />
         <DashCard
           title="My Formulations"
           description="Personalized supplement recommendations"
           href="/formulations"
-          accent="burnt-copper"
+          accent="copper"
         />
         <DashCard
           title="ViaTokens"

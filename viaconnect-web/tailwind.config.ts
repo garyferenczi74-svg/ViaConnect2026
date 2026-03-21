@@ -1,4 +1,5 @@
 import type { Config } from "tailwindcss";
+import plugin from "tailwindcss/plugin";
 
 const config: Config = {
   content: [
@@ -11,42 +12,28 @@ const config: Config = {
       colors: {
         background: "var(--background)",
         foreground: "var(--foreground)",
-        // ViaConnect Brand Tokens
-        "deep-teal": "#224852",
-        "burnt-copper": "#B75F19",
-        sage: "#76866F",
-        plum: "#6D597A",
-        rose: "#9D5858",
-        "practitioner-green": "#4ADE80",
-        "dark-bg": "#111827",
-        brand: {
-          50: "#f0f7f8",
-          100: "#d0e4e8",
-          200: "#a1c9d1",
-          300: "#72aeba",
-          400: "#4a8a96",
-          500: "#224852",
-          600: "#1e3f48",
-          700: "#1a363e",
-          800: "#162d34",
-          900: "#0f2028",
+        teal: { DEFAULT: "#224852", light: "#E8F0F2", dark: "#1A363D" },
+        copper: { DEFAULT: "#B75F19", light: "#FDF0E2" },
+        sage: { DEFAULT: "#76866F", light: "#EFF2EE" },
+        plum: { DEFAULT: "#6D597A", light: "#F0ECF3" },
+        rose: { DEFAULT: "#9D5858" },
+        portal: {
+          green: "#4ADE80",
+          purple: "#A78BFA",
+          yellow: "#FBBF24",
+          pink: "#F472B6",
         },
-        copper: {
-          50: "#fdf5ef",
-          100: "#fae6d0",
-          200: "#f5cda1",
-          300: "#efb472",
-          400: "#d88a3c",
-          500: "#B75F19",
-          600: "#a45416",
-          700: "#8a4713",
-          800: "#703a10",
-          900: "#5c300d",
+        dark: {
+          bg: "#0B1120",
+          card: "#111827",
+          surface: "#1F2937",
+          border: "#374151",
         },
+        cyan: "#22D3EE",
       },
       fontFamily: {
-        sans: ["Inter", "system-ui", "sans-serif"],
-        mono: ["JetBrains Mono", "monospace"],
+        sans: ["Sora", "system-ui", "sans-serif"],
+        mono: ["Space Mono", "JetBrains Mono", "monospace"],
       },
       borderRadius: {
         xl: "1rem",
@@ -54,6 +41,23 @@ const config: Config = {
       },
     },
   },
-  plugins: [],
+  plugins: [
+    plugin(function ({ addUtilities }) {
+      addUtilities({
+        ".glass": {
+          background: "rgba(255,255,255,0.04)",
+          "backdrop-filter": "blur(20px)",
+          "-webkit-backdrop-filter": "blur(20px)",
+          border: "1px solid rgba(255,255,255,0.08)",
+        },
+        ".glass-hover": {
+          "&:hover": {
+            "border-color": "rgba(255,255,255,0.15)",
+            transform: "translateY(-2px)",
+          },
+        },
+      });
+    }),
+  ],
 };
 export default config;

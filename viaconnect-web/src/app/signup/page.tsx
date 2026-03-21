@@ -65,7 +65,7 @@ export default function SignupPage() {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <h1 className="text-2xl font-bold text-white">
-            <span className="text-burnt-copper">Via</span>Connect
+            <span className="text-copper">Via</span>Connect
           </h1>
           <p className="text-gray-400 mt-2">Create your account</p>
         </div>
@@ -87,7 +87,7 @@ export default function SignupPage() {
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
               required
-              className="w-full bg-gray-800 border border-white/10 rounded-lg px-4 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-burnt-copper focus:border-transparent"
+              className="w-full bg-gray-800 border border-white/10 rounded-lg px-4 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-copper focus:border-transparent"
               placeholder="Your full name"
             />
           </div>
@@ -105,7 +105,7 @@ export default function SignupPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full bg-gray-800 border border-white/10 rounded-lg px-4 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-burnt-copper focus:border-transparent"
+              className="w-full bg-gray-800 border border-white/10 rounded-lg px-4 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-copper focus:border-transparent"
               placeholder="you@example.com"
             />
           </div>
@@ -124,7 +124,7 @@ export default function SignupPage() {
               onChange={(e) => setPassword(e.target.value)}
               required
               minLength={8}
-              className="w-full bg-gray-800 border border-white/10 rounded-lg px-4 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-burnt-copper focus:border-transparent"
+              className="w-full bg-gray-800 border border-white/10 rounded-lg px-4 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-copper focus:border-transparent"
               placeholder="Minimum 8 characters"
             />
           </div>
@@ -139,7 +139,7 @@ export default function SignupPage() {
                   key={r.value}
                   className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
                     role === r.value
-                      ? "border-burnt-copper bg-burnt-copper/10"
+                      ? "border-copper bg-copper/10"
                       : "border-white/10 hover:border-white/20"
                   }`}
                 >
@@ -149,7 +149,7 @@ export default function SignupPage() {
                     value={r.value}
                     checked={role === r.value}
                     onChange={() => setRole(r.value)}
-                    className="mt-1 accent-burnt-copper"
+                    className="mt-1 accent-copper"
                   />
                   <div>
                     <span className="text-sm font-medium text-white">
@@ -167,14 +167,14 @@ export default function SignupPage() {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-burnt-copper hover:bg-copper-400 disabled:opacity-50 text-white font-medium py-2.5 rounded-lg transition-colors"
+            className="w-full bg-copper hover:bg-copper/80 disabled:opacity-50 text-white font-medium py-2.5 rounded-lg transition-colors"
           >
             {isLoading ? "Creating account..." : "Create Account"}
           </button>
 
           <p className="text-center text-sm text-gray-400">
             Already have an account?{" "}
-            <Link href="/login" className="text-burnt-copper hover:underline">
+            <Link href="/login" className="text-copper hover:underline">
               Sign in
             </Link>
           </p>

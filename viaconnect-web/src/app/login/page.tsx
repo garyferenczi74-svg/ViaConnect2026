@@ -48,7 +48,7 @@ function LoginForm() {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <h1 className="text-2xl font-bold text-white">
-            <span className="text-burnt-copper">Via</span>Connect
+            <span className="text-copper">Via</span>Connect
           </h1>
           <p className="text-gray-400 mt-2">Sign in to your account</p>
         </div>
@@ -70,7 +70,7 @@ function LoginForm() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full bg-gray-800 border border-white/10 rounded-lg px-4 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-burnt-copper focus:border-transparent"
+              className="w-full bg-gray-800 border border-white/10 rounded-lg px-4 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-copper focus:border-transparent"
               placeholder="you@example.com"
             />
           </div>
@@ -88,7 +88,7 @@ function LoginForm() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="w-full bg-gray-800 border border-white/10 rounded-lg px-4 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-burnt-copper focus:border-transparent"
+              className="w-full bg-gray-800 border border-white/10 rounded-lg px-4 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-copper focus:border-transparent"
               placeholder="Your password"
             />
           </div>
@@ -96,7 +96,7 @@ function LoginForm() {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-burnt-copper hover:bg-copper-400 disabled:opacity-50 text-white font-medium py-2.5 rounded-lg transition-colors"
+            className="w-full bg-copper hover:bg-copper/80 disabled:opacity-50 text-white font-medium py-2.5 rounded-lg transition-colors"
           >
             {isLoading ? "Signing in..." : "Sign In"}
           </button>
@@ -105,7 +105,7 @@ function LoginForm() {
             Don&apos;t have an account?{" "}
             <Link
               href="/signup"
-              className="text-burnt-copper hover:underline"
+              className="text-copper hover:underline"
             >
               Sign up
             </Link>

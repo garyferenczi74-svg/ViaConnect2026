@@ -50,9 +50,9 @@ function DashCard({
   return (
     <a
       href={href}
-      className="block bg-gray-900 border border-white/10 rounded-2xl p-6 hover:border-practitioner-green/30 transition-colors group"
+      className="block bg-gray-900 border border-white/10 rounded-2xl p-6 hover:border-portal-green/30 transition-colors group"
     >
-      <div className="w-2 h-2 rounded-full bg-practitioner-green mb-4 group-hover:scale-125 transition-transform" />
+      <div className="w-2 h-2 rounded-full bg-portal-green mb-4 group-hover:scale-125 transition-transform" />
       <h3 className="text-lg font-semibold text-white">{title}</h3>
       <p className="text-sm text-gray-400 mt-1">{description}</p>
     </a>

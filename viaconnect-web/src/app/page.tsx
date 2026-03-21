@@ -5,9 +5,9 @@ export default function HomePage() {
     <div className="min-h-screen bg-dark-bg text-white flex flex-col">
       <header className="border-b border-white/10 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="text-xl font-bold text-burnt-copper">Via</span>
+          <span className="text-xl font-bold text-copper">Via</span>
           <span className="text-xl font-bold">Connect</span>
-          <span className="text-xs bg-deep-teal/50 text-white px-2 py-0.5 rounded-full ml-2">
+          <span className="text-xs bg-teal/50 text-white px-2 py-0.5 rounded-full ml-2">
             GeneX360
           </span>
         </div>
@@ -20,7 +20,7 @@ export default function HomePage() {
           </Link>
           <Link
             href="/signup"
-            className="text-sm bg-burnt-copper hover:bg-copper-400 text-white px-4 py-2 rounded-lg transition-colors"
+            className="text-sm bg-copper hover:bg-copper/80 text-white px-4 py-2 rounded-lg transition-colors"
           >
             Get Started
           </Link>
@@ -31,7 +31,7 @@ export default function HomePage() {
         <div className="max-w-2xl text-center">
           <h1 className="text-5xl font-bold mb-6 leading-tight">
             One Genome. One Formulation.{" "}
-            <span className="text-burnt-copper">One Life at a Time.</span>
+            <span className="text-copper">One Life at a Time.</span>
           </h1>
           <p className="text-lg text-gray-400 mb-8 leading-relaxed">
             Precision health powered by your unique genetic profile. Discover
@@ -41,7 +41,7 @@ export default function HomePage() {
           <div className="flex gap-4 justify-center">
             <Link
               href="/signup"
-              className="bg-burnt-copper hover:bg-copper-400 text-white px-8 py-3 rounded-xl font-medium transition-colors"
+              className="bg-copper hover:bg-copper/80 text-white px-8 py-3 rounded-xl font-medium transition-colors"
             >
               Start Your Journey
             </Link>

@@ -40,9 +40,9 @@ export function PractitionerNav({ user }: { user: User }) {
               href="/practitioner/dashboard"
               className="flex items-center gap-1"
             >
-              <span className="text-lg font-bold text-burnt-copper">Via</span>
+              <span className="text-lg font-bold text-copper">Via</span>
               <span className="text-lg font-bold text-white">Connect</span>
-              <span className="text-xs bg-practitioner-green/20 text-practitioner-green px-2 py-0.5 rounded-full ml-2">
+              <span className="text-xs bg-portal-green/20 text-portal-green px-2 py-0.5 rounded-full ml-2">
                 PRO
               </span>
             </Link>

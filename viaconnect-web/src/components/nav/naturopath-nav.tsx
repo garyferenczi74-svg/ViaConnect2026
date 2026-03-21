@@ -40,7 +40,7 @@ export function NaturopathNav({ user }: { user: User }) {
               href="/naturopath/dashboard"
               className="flex items-center gap-1"
             >
-              <span className="text-lg font-bold text-burnt-copper">Via</span>
+              <span className="text-lg font-bold text-copper">Via</span>
               <span className="text-lg font-bold text-white">Connect</span>
               <span className="text-xs bg-sage/20 text-sage px-2 py-0.5 rounded-full ml-2">
                 NATURO
