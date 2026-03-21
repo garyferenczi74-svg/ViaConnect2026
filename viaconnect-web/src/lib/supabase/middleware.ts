@@ -45,10 +45,13 @@ export async function updateSession(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
   // Public routes that don't require authentication
-  const publicRoutes = ["/", "/login", "/signup", "/auth/callback", "/auth/confirm"];
-  const isPublicRoute = publicRoutes.some(
-    (route) => pathname === route || pathname.startsWith("/auth/")
-  );
+  const isPublicRoute =
+    pathname === "/" ||
+    pathname.startsWith("/login") ||
+    pathname.startsWith("/signup") ||
+    pathname.startsWith("/forgot-password") ||
+    pathname.startsWith("/api/auth/") ||
+    pathname.startsWith("/api/stripe/webhook");
 
   // If not authenticated and trying to access protected route, redirect to login
   if (!user && !isPublicRoute) {
@@ -63,7 +66,11 @@ export async function updateSession(request: NextRequest) {
     const role = user.user_metadata?.role as string | undefined;
 
     // Redirect authenticated users away from auth pages
-    if (pathname === "/login" || pathname === "/signup") {
+    if (
+      pathname === "/login" ||
+      pathname === "/signup" ||
+      pathname === "/forgot-password"
+    ) {
       const url = request.nextUrl.clone();
       url.pathname = getRoleHomePath(role);
       return NextResponse.redirect(url);
