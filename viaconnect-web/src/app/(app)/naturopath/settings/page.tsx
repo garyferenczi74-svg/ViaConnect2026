@@ -13,6 +13,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { Card, Button, Badge, Input } from "@/components/ui";
+import { PageTransition, StaggerChild } from "@/lib/motion";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -94,17 +95,17 @@ export default function SettingsPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-dark-bg px-6 py-10">
+    <PageTransition className="min-h-screen bg-dark-bg px-6 py-10">
       <div className="mx-auto max-w-4xl">
         {/* Header */}
-        <div className="mb-8">
+        <StaggerChild className="mb-8">
           <h1 className="text-3xl font-bold text-white">Practice Settings</h1>
           <p className="mt-1 text-gray-400">
             Manage your practice profile, credentials, and preferences
           </p>
-        </div>
+        </StaggerChild>
 
-        <div className="space-y-8">
+        <StaggerChild className="space-y-8">
           {/* ─── Practice Profile ─────────────────────────────────────────── */}
           <Card hover={false} className="p-6">
             <div className="flex items-center gap-3 mb-6">
@@ -375,8 +376,8 @@ export default function SettingsPage() {
               </Button>
             </div>
           </Card>
-        </div>
+        </StaggerChild>
       </div>
-    </div>
+    </PageTransition>
   );
 }

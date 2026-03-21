@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import Link from "next/link";
 import { Card, Button, Badge, Avatar, DataTable } from "@/components/ui";
 import type { Column } from "@/components/ui";
+import { PageTransition, StaggerChild } from "@/lib/motion";
 import { Plus, Archive, CheckCircle, Search } from "lucide-react";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -266,10 +267,10 @@ export default function ProtocolsPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-dark-bg p-6 md:p-10">
+    <PageTransition className="min-h-screen bg-dark-bg p-6 md:p-10">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <StaggerChild className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-white">Protocols</h1>
             <p className="text-gray-400 mt-1">
@@ -282,9 +283,10 @@ export default function ProtocolsPage() {
               New Protocol
             </Button>
           </Link>
-        </div>
+        </StaggerChild>
 
         {/* Filter Row */}
+        <StaggerChild>
         <Card hover={false} className="p-4">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
             {/* Status filter pills */}
@@ -320,6 +322,7 @@ export default function ProtocolsPage() {
             </div>
           </div>
         </Card>
+        </StaggerChild>
 
         {/* Select All checkbox row */}
         <div className="flex items-center gap-3 px-1">
@@ -365,12 +368,14 @@ export default function ProtocolsPage() {
         )}
 
         {/* Data Table */}
+        <StaggerChild>
         <DataTable<Protocol>
           columns={columns}
           data={filtered as unknown as (Protocol & Record<string, unknown>)[]}
           pageSize={10}
         />
+        </StaggerChild>
       </div>
-    </div>
+    </PageTransition>
   );
 }

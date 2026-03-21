@@ -14,6 +14,7 @@ import {
   Send,
   Search,
 } from "lucide-react";
+import { PageTransition, StaggerChild } from "@/lib/motion";
 
 const supabase = createClient();
 
@@ -171,15 +172,15 @@ export default function MessagesPage() {
   );
 
   return (
-    <div className="p-6 lg:p-8">
-      <div className="mb-6">
+    <PageTransition className="p-6 lg:p-8">
+      <StaggerChild className="mb-6">
         <h1 className="text-2xl font-bold text-white">Secure Messaging</h1>
         <p className="text-gray-400 text-sm mt-1">
           HIPAA-compliant communication with your practitioner
         </p>
-      </div>
+      </StaggerChild>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-0 h-[calc(100vh-220px)] min-h-[500px]">
+      <StaggerChild className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-0 h-[calc(100vh-220px)] min-h-[500px]">
         {/* LEFT: Conversation List */}
         <div className="border-r border-white/[0.06] flex flex-col bg-white/[0.01] rounded-l-xl overflow-hidden">
           {/* Search */}
@@ -364,7 +365,7 @@ export default function MessagesPage() {
             </>
           )}
         </div>
-      </div>
-    </div>
+      </StaggerChild>
+    </PageTransition>
   );
 }

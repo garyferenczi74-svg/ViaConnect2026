@@ -19,6 +19,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { Card, StatCard, Badge, Button } from "@/components/ui";
+import { PageTransition, StaggerChild } from "@/lib/motion";
 
 // ─── Mock Data ───────────────────────────────────────────────────────────────
 
@@ -89,18 +90,20 @@ const quickActions = [
 
 export default function PractitionerDashboardPage() {
   return (
-    <div className="min-h-screen bg-dark-bg p-6 md:p-10">
+    <PageTransition className="min-h-screen bg-dark-bg p-6 md:p-10">
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold text-white">
-            Dashboard
-          </h1>
-          <p className="text-gray-400 mt-1">Practitioner Portal &mdash; Overview</p>
-        </div>
+        <StaggerChild>
+          <div>
+            <h1 className="text-3xl font-bold text-white">
+              Dashboard
+            </h1>
+            <p className="text-gray-400 mt-1">Practitioner Portal &mdash; Overview</p>
+          </div>
+        </StaggerChild>
 
         {/* ── Stat Cards ──────────────────────────────────────────────── */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <StaggerChild className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard icon={Users} label="Active Patients" value="47" trend="up" trendLabel="+3 this week" />
           <StatCard icon={ClipboardCheck} label="Pending Reviews" value="12" trend="down" trendLabel={"\u22122 from yesterday"} />
           <StatCard
@@ -110,10 +113,10 @@ export default function PractitionerDashboardPage() {
             className="ring-1 ring-portal-yellow/20"
           />
           <StatCard icon={TrendingUp} label="Avg Adherence" value="78%" trend="up" trendLabel="+4% this month" />
-        </div>
+        </StaggerChild>
 
         {/* ── Two-Column Layout ───────────────────────────────────────── */}
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+        <StaggerChild className="grid grid-cols-1 lg:grid-cols-5 gap-6">
           {/* Left Column (3/5) */}
           <div className="lg:col-span-3 space-y-6">
             {/* Today's Schedule */}
@@ -245,8 +248,8 @@ export default function PractitionerDashboardPage() {
               </div>
             </Card>
           </div>
-        </div>
+        </StaggerChild>
       </div>
-    </div>
+    </PageTransition>
   );
 }

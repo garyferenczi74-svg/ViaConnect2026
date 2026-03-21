@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
 import { Bell, Search, Menu, X } from "lucide-react";
 
 // ─── Breadcrumb helpers ──────────────────────────────────────────────────────
@@ -143,8 +144,16 @@ export function Header({
           aria-label="Notifications"
         >
           <Bell className="w-4 h-4" />
-          {/* Unread count badge */}
-          <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-copper" />
+          {/* Animated unread badge */}
+          <AnimatePresence>
+            <motion.span
+              key="bell-badge"
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0 }}
+              className="absolute top-1 right-1 w-2 h-2 rounded-full bg-copper"
+            />
+          </AnimatePresence>
         </button>
       </div>
     </header>

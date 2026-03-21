@@ -2,23 +2,105 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #111827;
-}
+/* ─── Always dark mode ─────────────────────────────────────────────────────── */
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0B1120;
-    --foreground: #f9fafb;
-  }
+:root {
+  --background: #0B1120;
+  --foreground: #f9fafb;
+  color-scheme: dark;
 }
 
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: "Sora", system-ui, sans-serif;
+  font-family: "Inter", system-ui, sans-serif;
 }
+
+/* ─── Dark scrollbars ──────────────────────────────────────────────────────── */
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.08) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* ─── Selection colors (portal-aware) ──────────────────────────────────────── */
+
+::selection {
+  background: rgba(34, 72, 82, 0.5);
+  color: #fff;
+}
+
+/* Consumer portal */
+[data-portal="consumer"] ::selection {
+  background: rgba(34, 211, 238, 0.3);
+}
+
+/* Practitioner portal */
+[data-portal="practitioner"] ::selection {
+  background: rgba(74, 222, 128, 0.3);
+}
+
+/* Naturopath portal */
+[data-portal="naturopath"] ::selection {
+  background: rgba(118, 134, 111, 0.3);
+}
+
+/* ─── Focus rings (portal-accent aware) ────────────────────────────────────── */
+
+:focus-visible {
+  outline: 2px solid rgba(34, 211, 238, 0.5);
+  outline-offset: 2px;
+}
+
+[data-portal="practitioner"] :focus-visible {
+  outline-color: rgba(74, 222, 128, 0.5);
+}
+
+[data-portal="naturopath"] :focus-visible {
+  outline-color: rgba(118, 134, 111, 0.5);
+}
+
+/* ─── Skeleton shimmer ─────────────────────────────────────────────────────── */
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.04) 25%,
+    rgba(255, 255, 255, 0.08) 50%,
+    rgba(255, 255, 255, 0.04) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+/* ─── Utility ──────────────────────────────────────────────────────────────── */
 
 @layer utilities {
   .text-balance {

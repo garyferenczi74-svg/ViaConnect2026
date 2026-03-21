@@ -8,6 +8,7 @@ import {
   DollarSign,
 } from "lucide-react";
 import { Card, StatCard } from "@/components/ui";
+import { PageTransition, StaggerChild } from "@/lib/motion";
 import {
   LineChart,
   BarChart,
@@ -127,10 +128,10 @@ export default function AnalyticsPage() {
   const [range, setRange] = useState<Range>("30D");
 
   return (
-    <div className="min-h-screen bg-dark-bg p-6 md:p-10">
+    <PageTransition className="min-h-screen bg-dark-bg p-6 md:p-10">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <StaggerChild className="flex items-center justify-between">
           <h1 className="text-2xl font-bold text-white">Analytics</h1>
           <div className="flex items-center gap-1 p-1 rounded-lg bg-white/[0.04] border border-white/[0.06]">
             {ranges.map((r) => (
@@ -147,18 +148,18 @@ export default function AnalyticsPage() {
               </button>
             ))}
           </div>
-        </div>
+        </StaggerChild>
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StaggerChild className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard icon={Users} label="Total Patients" value="47" trend="up" trendLabel="+3" />
           <StatCard icon={Activity} label="Avg Adherence" value="78%" trend="up" trendLabel="+4%" />
           <StatCard icon={ClipboardCheck} label="Active Protocols" value="34" trend="up" trendLabel="+7" />
           <StatCard icon={DollarSign} label="Monthly Revenue" value="$12,460" trend="up" trendLabel="+12%" />
-        </div>
+        </StaggerChild>
 
         {/* Charts Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <StaggerChild className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Chart 1 - Patient Outcomes Over Time */}
           <Card hover={false} className="p-5">
             <h3 className="text-sm font-semibold text-white mb-1">Patient Outcomes Over Time</h3>
@@ -277,8 +278,8 @@ export default function AnalyticsPage() {
               </AreaChart>
             </ResponsiveContainer>
           </Card>
-        </div>
+        </StaggerChild>
       </div>
-    </div>
+    </PageTransition>
   );
 }

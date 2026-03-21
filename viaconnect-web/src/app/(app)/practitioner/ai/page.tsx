@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Card, Badge, Button } from "@/components/ui";
+import { PageTransition, StaggerChild } from "@/lib/motion";
 import {
   Send,
   Bot,
@@ -197,20 +198,22 @@ export default function AIAdvisorPage() {
     d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
   return (
-    <div className="min-h-screen bg-dark-bg p-6 md:p-10">
+    <PageTransition className="min-h-screen bg-dark-bg p-6 md:p-10">
       <div className="max-w-[1600px] mx-auto space-y-6">
         {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold text-white">
-            Multi-LLM Clinical Advisor
-          </h1>
-          <p className="text-gray-400 mt-1">
-            AI-powered clinical reasoning with three specialized models
-          </p>
-        </div>
+        <StaggerChild>
+          <div>
+            <h1 className="text-3xl font-bold text-white">
+              Multi-LLM Clinical Advisor
+            </h1>
+            <p className="text-gray-400 mt-1">
+              AI-powered clinical reasoning with three specialized models
+            </p>
+          </div>
+        </StaggerChild>
 
         {/* Two-column layout */}
-        <div className="flex gap-6 items-start">
+        <StaggerChild className="flex gap-6 items-start">
           {/* ── Left Panel (65%) — Chat ── */}
           <div className="w-[65%] flex flex-col glass rounded-2xl overflow-hidden">
             {/* Model selector bar */}
@@ -505,8 +508,8 @@ export default function AIAdvisorPage() {
               </div>
             </Card>
           </div>
-        </div>
+        </StaggerChild>
       </div>
-    </div>
+    </PageTransition>
   );
 }

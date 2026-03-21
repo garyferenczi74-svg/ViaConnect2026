@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
 import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -237,11 +238,13 @@ export function Sidebar({
                 ${collapsed ? "justify-center px-0 py-2.5 mx-1" : "px-3 py-2"}
                 ${isActive ? portal.accentBg : "text-gray-400 hover:text-white hover:bg-white/[0.04]"}`}
             >
-              {/* Active accent bar */}
+              {/* Active accent bar — animated slide */}
               {isActive && (
-                <span
+                <motion.span
+                  layoutId="sidebar-active-indicator"
                   className={`absolute left-0 top-1/2 -translate-y-1/2 w-[3px] rounded-r-full ${portal.accent}`}
                   style={{ height: 20 }}
+                  transition={{ type: "spring", stiffness: 350, damping: 30 }}
                 />
               )}
               <item.icon className="w-[18px] h-[18px] shrink-0" />
@@ -276,37 +279,43 @@ export function Sidebar({
         </button>
 
         {/* Dropdown menu */}
-        {dropdownOpen && (
-          <div
-            className="absolute bottom-16 left-2 right-2 rounded-lg border border-dark-border bg-dark-card shadow-xl overflow-hidden"
-            style={{ minWidth: collapsed ? 180 : undefined, left: collapsed ? 8 : undefined, right: collapsed ? "auto" : undefined }}
-          >
-            <Link
-              href={role === "consumer" ? "/profile" : `/${role}/settings`}
-              onClick={() => setDropdownOpen(false)}
-              className="flex items-center gap-2 px-3 py-2.5 text-sm text-gray-300 hover:text-white hover:bg-white/[0.04] transition-colors"
+        <AnimatePresence>
+          {dropdownOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: 8, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 8, scale: 0.95 }}
+              transition={{ duration: 0.15 }}
+              className="absolute bottom-16 left-2 right-2 rounded-lg border border-dark-border bg-dark-card shadow-xl overflow-hidden"
+              style={{ minWidth: collapsed ? 180 : undefined, left: collapsed ? 8 : undefined, right: collapsed ? "auto" : undefined }}
             >
-              <UserIcon className="w-4 h-4" />
-              Profile
-            </Link>
-            <Link
-              href={role === "consumer" ? "/profile" : `/${role}/settings`}
-              onClick={() => setDropdownOpen(false)}
-              className="flex items-center gap-2 px-3 py-2.5 text-sm text-gray-300 hover:text-white hover:bg-white/[0.04] transition-colors"
-            >
-              <Settings className="w-4 h-4" />
-              Settings
-            </Link>
-            <div className="border-t border-dark-border" />
-            <button
-              onClick={handleSignOut}
-              className="flex items-center gap-2 px-3 py-2.5 text-sm text-rose hover:bg-rose/10 transition-colors w-full"
-            >
-              <LogOut className="w-4 h-4" />
-              Sign Out
-            </button>
-          </div>
-        )}
+              <Link
+                href={role === "consumer" ? "/profile" : `/${role}/settings`}
+                onClick={() => setDropdownOpen(false)}
+                className="flex items-center gap-2 px-3 py-2.5 text-sm text-gray-300 hover:text-white hover:bg-white/[0.04] transition-colors"
+              >
+                <UserIcon className="w-4 h-4" />
+                Profile
+              </Link>
+              <Link
+                href={role === "consumer" ? "/profile" : `/${role}/settings`}
+                onClick={() => setDropdownOpen(false)}
+                className="flex items-center gap-2 px-3 py-2.5 text-sm text-gray-300 hover:text-white hover:bg-white/[0.04] transition-colors"
+              >
+                <Settings className="w-4 h-4" />
+                Settings
+              </Link>
+              <div className="border-t border-dark-border" />
+              <button
+                onClick={handleSignOut}
+                className="flex items-center gap-2 px-3 py-2.5 text-sm text-rose hover:bg-rose/10 transition-colors w-full"
+              >
+                <LogOut className="w-4 h-4" />
+                Sign Out
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </aside>
   );

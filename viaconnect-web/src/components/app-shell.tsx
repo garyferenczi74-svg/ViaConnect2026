@@ -6,6 +6,8 @@ import { Sidebar } from "@/components/layout/Sidebar";
 import { Header } from "@/components/layout/Header";
 import { CommandPalette } from "@/components/layout/CommandPalette";
 import { ToastProvider } from "@/components/ui/Toast";
+import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
+import { useRealtimeSubscriptions, useKeyboardShortcuts } from "@/lib/hooks";
 
 const SIDEBAR_STORAGE_KEY = "viaconnect-sidebar-collapsed";
 
@@ -23,17 +25,30 @@ export function AppShell({
   const [isDesktop, setIsDesktop] = useState(false);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
 
+  // Real-time Supabase subscriptions (tokens, notifications, supplement logs)
+  useRealtimeSubscriptions(user.id);
+
+  // Keyboard shortcuts
+  useKeyboardShortcuts({
+    onCommandPalette: useCallback(() => setCommandPaletteOpen(true), []),
+    onToggleSidebar: useCallback(() => {
+      setSidebarCollapsed((prev) => {
+        const next = !prev;
+        localStorage.setItem(SIDEBAR_STORAGE_KEY, String(next));
+        return next;
+      });
+    }, []),
+  });
+
   useEffect(() => {
-    // Sync initial collapsed state from localStorage
     const stored = localStorage.getItem(SIDEBAR_STORAGE_KEY);
     if (stored === "true") setSidebarCollapsed(true);
 
-    // Track desktop breakpoint (lg = 1024px)
     const mql = window.matchMedia("(min-width: 1024px)");
     setIsDesktop(mql.matches);
     const handler = (e: MediaQueryListEvent) => {
       setIsDesktop(e.matches);
-      if (e.matches) setMobileOpen(false); // close mobile drawer on resize to desktop
+      if (e.matches) setMobileOpen(false);
     };
     mql.addEventListener("change", handler);
     return () => mql.removeEventListener("change", handler);
@@ -50,7 +65,7 @@ export function AppShell({
   const mainMarginLeft = isDesktop ? (sidebarCollapsed ? 72 : 260) : 0;
 
   return (
-    <div className="min-h-screen bg-dark-bg">
+    <div className="min-h-screen bg-dark-bg" data-portal={role}>
       {/* Mobile overlay */}
       {mobileOpen && (
         <div
@@ -79,7 +94,7 @@ export function AppShell({
         />
 
         <main className="flex-1 overflow-y-auto p-4 lg:p-6">
-          {children}
+          <ErrorBoundary>{children}</ErrorBoundary>
         </main>
       </div>
 

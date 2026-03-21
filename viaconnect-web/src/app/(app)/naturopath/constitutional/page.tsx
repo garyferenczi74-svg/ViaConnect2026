@@ -14,6 +14,7 @@ import {
 } from "recharts";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
+import { PageTransition, StaggerChild } from "@/lib/motion";
 
 /* ------------------------------------------------------------------ */
 /*  Mock Data                                                          */
@@ -149,10 +150,10 @@ export default function ConstitutionalPage() {
   const [expandedLevel, setExpandedLevel] = useState<number | null>(null);
 
   return (
-    <div className="min-h-screen bg-dark-bg px-6 py-10">
+    <PageTransition className="min-h-screen bg-dark-bg px-6 py-10">
       <div className="mx-auto max-w-7xl">
         {/* Header */}
-        <div className="mb-8 flex items-center justify-between">
+        <StaggerChild className="mb-8 flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-white">
               Constitutional Typing
@@ -167,11 +168,12 @@ export default function ConstitutionalPage() {
           >
             &larr; Back to Dashboard
           </Link>
-        </div>
+        </StaggerChild>
 
         {/* ============================================================ */}
         {/*  Radar Chart Section                                          */}
         {/* ============================================================ */}
+        <StaggerChild>
         <Card hover={false} className="border border-dark-border p-6 mb-8">
           <div className="flex flex-col items-center">
             <h2 className="text-xl font-semibold text-white mb-1">
@@ -217,6 +219,7 @@ export default function ConstitutionalPage() {
             </ResponsiveContainer>
           </div>
         </Card>
+        </StaggerChild>
 
         {/* ============================================================ */}
         {/*  Two-Column: Prakriti + TCM                                   */}
@@ -475,6 +478,6 @@ export default function ConstitutionalPage() {
           </div>
         </Card>
       </div>
-    </div>
+    </PageTransition>
   );
 }

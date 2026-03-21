@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Search, ChevronDown, ChevronUp, ExternalLink, Dna } from "lucide-react";
 import { Card, Badge, DataTable, Avatar } from "@/components/ui";
 import type { Column } from "@/components/ui";
+import { PageTransition, StaggerChild } from "@/lib/motion";
 
 // ─── Quick Filter Tags ───────────────────────────────────────────────────────
 
@@ -203,17 +204,20 @@ export default function GenomicsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-dark-bg p-6 md:p-10">
+    <PageTransition className="min-h-screen bg-dark-bg p-6 md:p-10">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
+        <StaggerChild>
         <div>
           <h1 className="text-2xl font-bold text-white">Genomics Database</h1>
           <p className="text-gray-400 mt-1">
             Search variants across all patients in your practice
           </p>
         </div>
+        </StaggerChild>
 
         {/* Search Section */}
+        <StaggerChild>
         <Card hover={false} className="p-5">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
@@ -241,8 +245,10 @@ export default function GenomicsPage() {
             ))}
           </div>
         </Card>
+        </StaggerChild>
 
         {/* Results Table */}
+        <StaggerChild>
         <div>
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-sm font-semibold text-white">
@@ -252,8 +258,10 @@ export default function GenomicsPage() {
           </div>
           <DataTable<VariantRow> columns={columns} data={filteredData} pageSize={10} />
         </div>
+        </StaggerChild>
 
         {/* Population Statistics */}
+        <StaggerChild>
         <Card hover={false} className="p-5">
           <h2 className="text-sm font-semibold text-white mb-1">
             Variant Frequency in Your Practice
@@ -280,8 +288,10 @@ export default function GenomicsPage() {
             ))}
           </div>
         </Card>
+        </StaggerChild>
 
         {/* Clinical Evidence Library */}
+        <StaggerChild>
         <div>
           <div className="flex items-center gap-2 mb-4">
             <Dna className="w-5 h-5 text-portal-purple" />
@@ -363,7 +373,8 @@ export default function GenomicsPage() {
             })}
           </div>
         </div>
+        </StaggerChild>
       </div>
-    </div>
+    </PageTransition>
   );
 }

@@ -13,6 +13,7 @@ import {
   Clock,
 } from "lucide-react";
 import { Card, Badge, Button, Avatar } from "@/components/ui";
+import { PageTransition, StaggerChild } from "@/lib/motion";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -172,10 +173,10 @@ export default function ProtocolsPage() {
   }, [filter, search]);
 
   return (
-    <div className="min-h-screen bg-dark-bg px-6 py-10">
+    <PageTransition className="min-h-screen bg-dark-bg px-6 py-10">
       <div className="mx-auto max-w-7xl">
         {/* Header */}
-        <div className="mb-8 flex items-center justify-between">
+        <StaggerChild className="mb-8 flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-white">Protocol Management</h1>
             <p className="mt-1 text-gray-400">
@@ -186,10 +187,10 @@ export default function ProtocolsPage() {
             <Plus className="w-4 h-4 mr-2" />
             New Protocol
           </Button>
-        </div>
+        </StaggerChild>
 
         {/* Filter Pills */}
-        <div className="flex flex-wrap items-center gap-2 mb-5">
+        <StaggerChild className="flex flex-wrap items-center gap-2 mb-5">
           {statusFilters.map((f) => (
             <button
               key={f.value}
@@ -203,10 +204,10 @@ export default function ProtocolsPage() {
               {f.label}
             </button>
           ))}
-        </div>
+        </StaggerChild>
 
         {/* Search */}
-        <div className="relative mb-6">
+        <StaggerChild className="relative mb-6">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
           <input
             type="text"
@@ -215,7 +216,7 @@ export default function ProtocolsPage() {
             onChange={(e) => setSearch(e.target.value)}
             className="w-full h-10 pl-10 pr-4 rounded-lg text-sm text-white placeholder:text-gray-600 outline-none transition-colors bg-white/[0.04] border border-white/[0.08] focus:border-sage/50 focus:ring-1 focus:ring-sage/20"
           />
-        </div>
+        </StaggerChild>
 
         {/* Protocol Cards */}
         {filteredProtocols.length === 0 ? (
@@ -295,6 +296,6 @@ export default function ProtocolsPage() {
           </div>
         )}
       </div>
-    </div>
+    </PageTransition>
   );
 }

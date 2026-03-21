@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { PageTransition, StaggerChild } from "@/lib/motion";
 import {
   Search,
   Leaf,
@@ -378,10 +379,10 @@ export default function BotanicalPage() {
   };
 
   return (
-    <div className="min-h-screen bg-dark-bg px-6 py-10">
+    <PageTransition className="min-h-screen bg-dark-bg px-6 py-10">
       <div className="mx-auto max-w-[1400px]">
         {/* Header */}
-        <div className="mb-8 flex items-center justify-between">
+        <StaggerChild className="mb-8 flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-white">Botanical Database</h1>
             <p className="mt-1 text-gray-400">
@@ -399,10 +400,10 @@ export default function BotanicalPage() {
               &larr; Dashboard
             </Link>
           </div>
-        </div>
+        </StaggerChild>
 
         {/* Main split view */}
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <StaggerChild className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           {/* ─── Left Panel: Search + Results ─── */}
           <div className="flex flex-col gap-4">
             {/* Search bar */}
@@ -639,8 +640,8 @@ export default function BotanicalPage() {
               </Card>
             )}
           </div>
-        </div>
+        </StaggerChild>
       </div>
-    </div>
+    </PageTransition>
   );
 }

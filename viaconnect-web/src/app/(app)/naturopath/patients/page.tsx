@@ -12,6 +12,7 @@ import {
   Avatar,
 } from "@/components/ui";
 import type { Column } from "@/components/ui";
+import { PageTransition, StaggerChild } from "@/lib/motion";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -158,10 +159,10 @@ export default function NaturopathPatientsPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-dark-bg px-6 py-10">
+    <PageTransition className="min-h-screen bg-dark-bg px-6 py-10">
       <div className="mx-auto max-w-7xl">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <StaggerChild className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-3xl font-bold text-white">Patient Roster</h1>
             <p className="mt-1 text-gray-400">
@@ -172,9 +173,10 @@ export default function NaturopathPatientsPage() {
             <Plus className="w-4 h-4 mr-2" />
             Add Patient
           </Button>
-        </div>
+        </StaggerChild>
 
         {/* Search + Filters */}
+        <StaggerChild>
         <Card hover={false} className="p-4 mb-6">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1 relative">
@@ -205,10 +207,13 @@ export default function NaturopathPatientsPage() {
             </div>
           </div>
         </Card>
+        </StaggerChild>
 
         {/* DataTable */}
+        <StaggerChild>
         <DataTable<Patient> columns={columns} data={filtered} pageSize={10} />
+        </StaggerChild>
       </div>
-    </div>
+    </PageTransition>
   );
 }

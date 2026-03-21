@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
+import { PageTransition, StaggerChild } from "@/lib/motion";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -319,12 +320,12 @@ export default function SchedulerPage() {
   );
 
   return (
-    <div className="min-h-screen bg-dark-bg px-6 py-10">
+    <PageTransition className="min-h-screen bg-dark-bg px-6 py-10">
       <div className="mx-auto max-w-7xl">
         {/* ============================================================ */}
         {/*  Header                                                       */}
         {/* ============================================================ */}
-        <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
+        <StaggerChild className="mb-8 flex flex-wrap items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-white">
               Appointment Calendar
@@ -341,10 +342,10 @@ export default function SchedulerPage() {
               &larr; Dashboard
             </Link>
           </div>
-        </div>
+        </StaggerChild>
 
         {/* ---- Controls bar ---- */}
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+        <StaggerChild className="mb-6 flex flex-wrap items-center justify-between gap-4">
           {/* View toggle */}
           <div className="inline-flex rounded-lg border border-white/[0.08] bg-white/[0.03] p-0.5">
             {(["month", "week"] as const).map((v) => (
@@ -394,7 +395,7 @@ export default function SchedulerPage() {
           >
             + New Appointment
           </button>
-        </div>
+        </StaggerChild>
 
         {/* ============================================================ */}
         {/*  Month View                                                   */}
@@ -773,6 +774,6 @@ export default function SchedulerPage() {
           </div>
         </Modal>
       </div>
-    </div>
+    </PageTransition>
   );
 }

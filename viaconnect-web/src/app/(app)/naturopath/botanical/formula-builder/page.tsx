@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Modal } from "@/components/ui/Modal";
+import { PageTransition, StaggerChild } from "@/lib/motion";
 import {
   Search,
   Plus,
@@ -222,9 +223,9 @@ export default function FormulaBuilderPage() {
   };
 
   return (
-    <div className="min-h-screen bg-dark-bg">
+    <PageTransition className="min-h-screen bg-dark-bg">
       {/* Top header bar */}
-      <div className="border-b border-dark-border bg-dark-bg/80 backdrop-blur-sm px-6 py-4">
+      <StaggerChild className="border-b border-dark-border bg-dark-bg/80 backdrop-blur-sm px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Link href="/naturopath/botanical" className="flex items-center gap-1.5 text-sm text-sage hover:text-sage/80">
@@ -241,10 +242,10 @@ export default function FormulaBuilderPage() {
             <Badge variant="info">{selectedHerbs.length} herbs selected</Badge>
           </div>
         </div>
-      </div>
+      </StaggerChild>
 
       {/* Three-panel layout */}
-      <div className="flex h-[calc(100vh-73px)]">
+      <StaggerChild className="flex h-[calc(100vh-73px)]">
         {/* ─── Left Panel: Herb Search ─── */}
         <div className="w-[320px] shrink-0 border-r border-dark-border overflow-y-auto p-4">
           <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-gray-400">Herb Library</h2>
@@ -547,7 +548,7 @@ export default function FormulaBuilderPage() {
             </Button>
           </div>
         </div>
-      </div>
+      </StaggerChild>
 
       {/* ─── Interaction Check Modal ─── */}
       <Modal
@@ -639,6 +640,6 @@ export default function FormulaBuilderPage() {
           </Link>
         </div>
       </Modal>
-    </div>
+    </PageTransition>
   );
 }

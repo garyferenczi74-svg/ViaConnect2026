@@ -29,6 +29,7 @@ import {
   Zap,
   Heart,
 } from "lucide-react";
+import { PageTransition, StaggerChild, MotionCard } from "@/lib/motion";
 
 const supabase = createClient();
 
@@ -169,9 +170,10 @@ export default function TokensPage() {
     : transactions ?? [];
 
   return (
-    <div className="p-6 lg:p-8 space-y-6">
+    <PageTransition className="p-6 lg:p-8 space-y-6">
       {/* Top: Balance + Tier */}
-      <Card className={`p-8 text-center border ${currentTier.border}`}>
+      <StaggerChild>
+      <MotionCard className={`p-8 text-center border ${currentTier.border}`}>
         <div className="flex items-center justify-center gap-2 mb-2">
           <Coins className="w-6 h-6 text-portal-yellow" />
           <span className="text-sm text-gray-400 uppercase tracking-wider">ViaTokens Balance</span>
@@ -199,9 +201,10 @@ export default function TokensPage() {
             <Progress value={progressToNext} color={`${currentTier.bg.replace("/20", "")}`} />
           </div>
         )}
-      </Card>
+      </MotionCard>
+      </StaggerChild>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <StaggerChild className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* LEFT: Achievements */}
         <div className="space-y-4">
           <h2 className="text-lg font-semibold text-white flex items-center gap-2">
@@ -336,10 +339,10 @@ export default function TokensPage() {
             </Card>
           )}
         </div>
-      </div>
+      </StaggerChild>
 
       {/* Bottom: Rewards Redemption */}
-      <div className="space-y-4">
+      <StaggerChild className="space-y-4">
         <h2 className="text-lg font-semibold text-white flex items-center gap-2">
           <Gift className="w-5 h-5 text-plum" />
           Rewards
@@ -348,7 +351,7 @@ export default function TokensPage() {
           {rewards.map((reward) => {
             const canRedeem = balance >= reward.cost;
             return (
-              <Card key={reward.name} className={`p-5 ${canRedeem ? "" : "opacity-60"}`}>
+              <MotionCard key={reward.name} className={`p-5 ${canRedeem ? "" : "opacity-60"}`}>
                 <div className="flex items-start justify-between mb-3">
                   <reward.icon className="w-6 h-6 text-plum" />
                   <span className="text-sm font-bold text-portal-yellow">
@@ -367,11 +370,11 @@ export default function TokensPage() {
                 >
                   {canRedeem ? "Redeem" : "Not enough VT"}
                 </Button>
-              </Card>
+              </MotionCard>
             );
           })}
         </div>
-      </div>
-    </div>
+      </StaggerChild>
+    </PageTransition>
   );
 }

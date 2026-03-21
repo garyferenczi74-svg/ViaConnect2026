@@ -22,6 +22,7 @@ import {
   Package,
   Clock,
 } from "lucide-react";
+import { PageTransition, StaggerChild, MotionCard } from "@/lib/motion";
 
 const supabase = createClient();
 
@@ -172,16 +173,16 @@ export default function SupplementsPage() {
   };
 
   return (
-    <div className="p-6 lg:p-8 space-y-6">
-      <div>
+    <PageTransition className="p-6 lg:p-8 space-y-6">
+      <StaggerChild>
         <h1 className="text-2xl font-bold text-white">Supplement Protocol</h1>
         <p className="text-gray-400 text-sm mt-1">
           Personalized supplement stack — formulated from your GeneX360 results with 10–27x bioavailability.
         </p>
-      </div>
+      </StaggerChild>
 
       {/* Split Layout */}
-      <div className="grid grid-cols-1 xl:grid-cols-[1fr_40%] gap-6">
+      <StaggerChild className="grid grid-cols-1 xl:grid-cols-[1fr_40%] gap-6">
         {/* LEFT: Current Protocol */}
         <div className="space-y-4">
           <h2 className="text-lg font-semibold text-white">Daily Schedule</h2>
@@ -203,7 +204,7 @@ export default function SupplementsPage() {
               if (!items || items.length === 0) return null;
               const TimeIcon = timeIcons[time] ?? Clock;
               return (
-                <Card key={time} className="p-5">
+                <MotionCard key={time} className="p-5">
                   <div className="flex items-center gap-2 mb-4">
                     <TimeIcon className="w-4 h-4 text-copper" />
                     <h3 className="text-sm font-semibold text-white">{timeLabels[time] ?? time}</h3>
@@ -247,7 +248,7 @@ export default function SupplementsPage() {
                       );
                     })}
                   </div>
-                </Card>
+                </MotionCard>
               );
             })
           )}
@@ -331,11 +332,11 @@ export default function SupplementsPage() {
             </div>
           )}
         </div>
-      </div>
+      </StaggerChild>
 
       {/* Order History */}
       {(orders ?? []).length > 0 && (
-        <div className="space-y-4">
+        <StaggerChild className="space-y-4">
           <h2 className="text-lg font-semibold text-white">Order History</h2>
           <Card className="p-0 overflow-hidden">
             <div className="overflow-x-auto">
@@ -371,8 +372,8 @@ export default function SupplementsPage() {
               </table>
             </div>
           </Card>
-        </div>
+        </StaggerChild>
       )}
-    </div>
+    </PageTransition>
   );
 }

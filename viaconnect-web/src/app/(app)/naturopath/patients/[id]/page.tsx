@@ -28,6 +28,7 @@ import {
   TabContent,
   Progress,
 } from "@/components/ui";
+import { PageTransition, StaggerChild } from "@/lib/motion";
 
 // ─── Mock Patient Data ───────────────────────────────────────────────────────
 
@@ -169,9 +170,10 @@ export default function PatientDetailPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-dark-bg px-6 py-10">
+    <PageTransition className="min-h-screen bg-dark-bg px-6 py-10">
       <div className="mx-auto max-w-7xl">
         {/* Breadcrumb */}
+        <StaggerChild>
         <nav className="flex items-center gap-2 text-sm text-gray-500 mb-6">
           <Link href="/naturopath/patients" className="hover:text-sage transition-colors">
             Patients
@@ -179,8 +181,10 @@ export default function PatientDetailPage() {
           <ChevronRight className="w-3.5 h-3.5" />
           <span className="text-white">{patient.name}</span>
         </nav>
+        </StaggerChild>
 
         {/* Patient Header */}
+        <StaggerChild>
         <Card hover={false} className="p-6 mb-8">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="flex items-center gap-5">
@@ -211,8 +215,10 @@ export default function PatientDetailPage() {
             </div>
           </div>
         </Card>
+        </StaggerChild>
 
         {/* Tabs */}
+        <StaggerChild>
         <Tabs defaultValue="overview" tabs={tabList}>
           {/* ──── Overview Tab ──── */}
           <TabContent value="overview">
@@ -518,7 +524,8 @@ export default function PatientDetailPage() {
             </div>
           </TabContent>
         </Tabs>
+        </StaggerChild>
       </div>
-    </div>
+    </PageTransition>
   );
 }

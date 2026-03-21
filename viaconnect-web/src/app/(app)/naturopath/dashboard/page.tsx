@@ -15,6 +15,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { Card, StatCard, Badge } from "@/components/ui";
+import { PageTransition, StaggerChild } from "@/lib/motion";
 
 // ─── Mock Data ───────────────────────────────────────────────────────────────
 
@@ -57,26 +58,26 @@ const severityVariant: Record<string, "warning" | "danger" | "info"> = {
 
 export default function NaturopathDashboardPage() {
   return (
-    <div className="min-h-screen bg-dark-bg px-6 py-10">
+    <PageTransition className="min-h-screen bg-dark-bg px-6 py-10">
       <div className="mx-auto max-w-7xl">
         {/* Header */}
-        <div className="mb-8">
+        <StaggerChild className="mb-8">
           <h1 className="text-3xl font-bold text-white">
             Welcome back, <span className="text-sage">Dr. Thompson</span>
           </h1>
           <p className="mt-1 text-gray-400">Naturopath Portal &mdash; {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}</p>
-        </div>
+        </StaggerChild>
 
         {/* Stat Tiles */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+        <StaggerChild className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-8">
           <StatCard icon={Users} label="Active Patients" value="38" trend="up" trendLabel="+2 this week" />
           <StatCard icon={Leaf} label="Pending Formulas" value="7" trend="down" trendLabel="-1 from yesterday" />
           <StatCard icon={Calendar} label="Appointments Today" value="6" />
           <StatCard icon={Shield} label="Avg Compliance" value="94%" trend="up" trendLabel="+2% this month" />
-        </div>
+        </StaggerChild>
 
         {/* Two-column layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+        <StaggerChild className="grid grid-cols-1 lg:grid-cols-5 gap-6">
           {/* Left column (3/5) */}
           <div className="lg:col-span-3 space-y-6">
             {/* Today's Schedule */}
@@ -187,8 +188,8 @@ export default function NaturopathDashboardPage() {
               </div>
             </Card>
           </div>
-        </div>
+        </StaggerChild>
       </div>
-    </div>
+    </PageTransition>
   );
 }

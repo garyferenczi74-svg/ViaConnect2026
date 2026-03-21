@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { Card, StatCard, Badge, Button, Select, DataTable } from "@/components/ui";
 import type { Column } from "@/components/ui/DataTable";
+import { PageTransition, StaggerChild } from "@/lib/motion";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -196,10 +197,10 @@ export default function CompliancePage() {
   ];
 
   return (
-    <div className="min-h-screen bg-dark-bg px-6 py-10">
+    <PageTransition className="min-h-screen bg-dark-bg px-6 py-10">
       <div className="mx-auto max-w-7xl">
         {/* Header */}
-        <div className="mb-8 flex items-center justify-between">
+        <StaggerChild className="mb-8 flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-white">HIPAA Compliance Dashboard</h1>
             <p className="mt-1 text-gray-400">
@@ -210,10 +211,10 @@ export default function CompliancePage() {
             <Download className="w-4 h-4 mr-2" />
             Export Report
           </Button>
-        </div>
+        </StaggerChild>
 
         {/* Compliance Score + Stats */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        <StaggerChild className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
           {/* Compliance Score Ring */}
           <Card hover={false} className="p-6 flex flex-col items-center justify-center lg:col-span-1">
             <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-400 mb-4">
@@ -271,7 +272,7 @@ export default function CompliancePage() {
             <StatCard icon={Activity} label="Data Access Events (30d)" value="147" />
             <StatCard icon={Users} label="Active Consents" value="36/38 (95%)" />
           </div>
-        </div>
+        </StaggerChild>
 
         {/* Audit Trail Viewer */}
         <Card hover={false} className="p-6 mb-8">
@@ -358,6 +359,6 @@ export default function CompliancePage() {
           </div>
         </Card>
       </div>
-    </div>
+    </PageTransition>
   );
 }

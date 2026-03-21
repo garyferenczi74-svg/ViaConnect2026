@@ -1,0 +1,14 @@
+User-agent: *
+Allow: /
+Disallow: /dashboard
+Disallow: /genetics
+Disallow: /supplements
+Disallow: /tokens
+Disallow: /messages
+Disallow: /profile
+Disallow: /practitioner
+Disallow: /naturopath
+Disallow: /onboarding
+Disallow: /api/
+
+Sitemap: https://viaconnect.health/sitemap.xml

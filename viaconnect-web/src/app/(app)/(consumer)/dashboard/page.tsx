@@ -18,6 +18,7 @@ import {
   MessageSquare,
   FileText,
 } from "lucide-react";
+import { PageTransition, StaggerChild, MotionCard } from "@/lib/motion";
 
 const supabase = createClient();
 
@@ -388,19 +389,19 @@ export default function DashboardPage() {
   const tier = getTier(balance);
 
   return (
-    <div className="p-6 lg:p-8 space-y-6">
+    <PageTransition className="p-6 lg:p-8 space-y-6">
       {/* Welcome */}
-      <div>
+      <StaggerChild>
         <h1 className="text-2xl font-bold text-white">
           Welcome back, <span className="text-copper">{displayName}</span>
         </h1>
         <p className="text-gray-400 text-sm mt-1">
           Personal Wellness Dashboard
         </p>
-      </div>
+      </StaggerChild>
 
       {/* 3-column layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr_320px] gap-6">
+      <StaggerChild className="grid grid-cols-1 lg:grid-cols-[320px_1fr_320px] gap-6">
         {/* LEFT: Vitality Score */}
         <div className="space-y-4">
           <Card className="p-6">
@@ -440,7 +441,7 @@ export default function DashboardPage() {
         {/* RIGHT: Tokens + Insights + Quick Actions */}
         <div className="space-y-4">
           {/* ViaTokens */}
-          <Card className="p-5">
+          <MotionCard className="p-5">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <Coins className="w-4 h-4 text-portal-yellow" />
@@ -464,10 +465,10 @@ export default function DashboardPage() {
             >
               View wallet &rarr;
             </Link>
-          </Card>
+          </MotionCard>
 
           {/* Genetic Insights */}
-          <Card className="p-5">
+          <MotionCard className="p-5">
             <div className="flex items-center gap-2 mb-3">
               <Dna className="w-4 h-4 text-teal" />
               <span className="text-sm font-medium text-white">Genetic Insights</span>
@@ -498,10 +499,10 @@ export default function DashboardPage() {
             >
               View all panels &rarr;
             </Link>
-          </Card>
+          </MotionCard>
 
           {/* Quick Actions */}
-          <Card className="p-5">
+          <MotionCard className="p-5">
             <p className="text-sm font-medium text-white mb-3">Quick Actions</p>
             <div className="space-y-2">
               <Link
@@ -526,9 +527,9 @@ export default function DashboardPage() {
                 View Protocol
               </Link>
             </div>
-          </Card>
+          </MotionCard>
         </div>
-      </div>
-    </div>
+      </StaggerChild>
+    </PageTransition>
   );
 }
