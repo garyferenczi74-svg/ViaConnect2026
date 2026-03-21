@@ -505,32 +505,41 @@ export interface Database {
         Row: {
           id: string;
           user_id: string;
-          stripe_customer_id: string;
+          stripe_customer_id: string | null;
           stripe_subscription_id: string;
-          plan: "gold" | "platinum" | "practitioner";
+          plan_id: string;
+          plan: "gold" | "platinum" | "practitioner" | null;
           status: "active" | "canceled" | "past_due" | "trialing" | "incomplete";
           current_period_start: string | null;
           current_period_end: string | null;
           cancel_at_period_end: boolean;
+          hsa_fsa_eligible: boolean;
+          truemed_qualification_id: string | null;
           created_at: string;
           updated_at: string | null;
         };
         Insert: {
           user_id: string;
-          stripe_customer_id: string;
+          stripe_customer_id?: string | null;
           stripe_subscription_id: string;
-          plan: "gold" | "platinum" | "practitioner";
+          plan_id: string;
+          plan?: "gold" | "platinum" | "practitioner" | null;
           status: "active" | "canceled" | "past_due" | "trialing" | "incomplete";
           current_period_start?: string | null;
           current_period_end?: string | null;
           cancel_at_period_end?: boolean;
+          hsa_fsa_eligible?: boolean;
+          truemed_qualification_id?: string | null;
         };
         Update: {
-          plan?: "gold" | "platinum" | "practitioner";
+          plan_id?: string;
+          plan?: "gold" | "platinum" | "practitioner" | null;
           status?: "active" | "canceled" | "past_due" | "trialing" | "incomplete";
           current_period_start?: string | null;
           current_period_end?: string | null;
           cancel_at_period_end?: boolean;
+          hsa_fsa_eligible?: boolean;
+          truemed_qualification_id?: string | null;
           updated_at?: string | null;
         };
         Relationships: [];
@@ -541,8 +550,11 @@ export interface Database {
           id: string;
           user_id: string | null;
           action: string;
-          resource_type: string;
-          resource_id: string | null;
+          table_name: string | null;
+          record_id: string | null;
+          old_data: Json | null;
+          new_data: Json | null;
+          resource_type: string | null;
           metadata: Json | null;
           ip_address: string | null;
           created_at: string;
@@ -550,15 +562,19 @@ export interface Database {
         Insert: {
           user_id?: string | null;
           action: string;
-          resource_type: string;
-          resource_id?: string | null;
+          table_name?: string | null;
+          record_id?: string | null;
+          old_data?: Json | null;
+          new_data?: Json | null;
+          resource_type?: string | null;
           metadata?: Json | null;
           ip_address?: string | null;
         };
         Update: {
           action?: string;
-          resource_type?: string;
-          resource_id?: string | null;
+          table_name?: string | null;
+          record_id?: string | null;
+          resource_type?: string | null;
           metadata?: Json | null;
         };
         Relationships: [];

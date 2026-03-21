@@ -96,6 +96,7 @@ async function handleCheckoutCompleted(
           ? session.customer
           : (session.customer as unknown as Record<string, unknown>)?.id as string) ?? "",
         stripe_subscription_id: subscription.id,
+        plan_id: items[0]?.price?.id ?? plan,
         plan: plan as "gold" | "platinum" | "practitioner",
         status: subscription.status as
           | "active"
