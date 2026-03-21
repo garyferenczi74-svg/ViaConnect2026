@@ -3,7 +3,7 @@
 
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
-export type DatabaseRole = "patient" | "practitioner" | "admin";
+export type DatabaseRole = "patient" | "practitioner" | "admin" | "naturopath";
 export type UserRole = "consumer" | "practitioner" | "naturopath";
 
 /** Maps the Supabase profiles.role DB value to the app-level UserRole */
@@ -13,6 +13,8 @@ export function mapDatabaseRoleToUserRole(dbRole: DatabaseRole | string): UserRo
       return "practitioner";
     case "admin":
       return "practitioner";
+    case "naturopath":
+      return "naturopath";
     case "patient":
     default:
       return "consumer";

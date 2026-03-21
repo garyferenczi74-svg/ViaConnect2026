@@ -12,7 +12,7 @@ export interface Database {
           username: string | null;
           full_name: string | null;
           avatar_url: string | null;
-          role: 'patient' | 'practitioner' | 'admin';
+          role: 'patient' | 'practitioner' | 'admin' | 'naturopath';
           onboarding_completed: boolean | null;
           created_at: string | null;
           updated_at: string | null;
@@ -22,7 +22,7 @@ export interface Database {
           username?: string | null;
           full_name?: string | null;
           avatar_url?: string | null;
-          role?: 'patient' | 'practitioner' | 'admin';
+          role?: 'patient' | 'practitioner' | 'admin' | 'naturopath';
           onboarding_completed?: boolean | null;
           created_at?: string | null;
           updated_at?: string | null;
@@ -32,7 +32,7 @@ export interface Database {
           username?: string | null;
           full_name?: string | null;
           avatar_url?: string | null;
-          role?: 'patient' | 'practitioner' | 'admin';
+          role?: 'patient' | 'practitioner' | 'admin' | 'naturopath';
           onboarding_completed?: boolean | null;
           created_at?: string | null;
           updated_at?: string | null;

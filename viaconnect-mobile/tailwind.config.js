@@ -42,7 +42,7 @@ module.exports = {
       },
       fontFamily: {
         sans: ['Inter'],
-        mono: ['JetBrainsMono'],
+        mono: ['JetBrains Mono'],
       },
     },
   },
