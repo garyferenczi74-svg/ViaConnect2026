@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import { Sidebar } from "@/components/layout/Sidebar";
-import { Menu, X } from "lucide-react";
+import { Header } from "@/components/layout/Header";
+import { CommandPalette } from "@/components/layout/CommandPalette";
+import { ToastProvider } from "@/components/ui/Toast";
 
 const SIDEBAR_STORAGE_KEY = "viaconnect-sidebar-collapsed";
 
@@ -19,6 +21,7 @@ export function AppShell({
   const [mobileOpen, setMobileOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
 
   useEffect(() => {
     // Sync initial collapsed state from localStorage
@@ -28,9 +31,20 @@ export function AppShell({
     // Track desktop breakpoint (lg = 1024px)
     const mql = window.matchMedia("(min-width: 1024px)");
     setIsDesktop(mql.matches);
-    const handler = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
+    const handler = (e: MediaQueryListEvent) => {
+      setIsDesktop(e.matches);
+      if (e.matches) setMobileOpen(false); // close mobile drawer on resize to desktop
+    };
     mql.addEventListener("change", handler);
     return () => mql.removeEventListener("change", handler);
+  }, []);
+
+  const handleMobileToggle = useCallback(() => {
+    setMobileOpen((prev) => !prev);
+  }, []);
+
+  const handleCommandPaletteOpen = useCallback(() => {
+    setCommandPaletteOpen(true);
   }, []);
 
   const mainMarginLeft = isDesktop ? (sidebarCollapsed ? 72 : 260) : 0;
@@ -58,25 +72,22 @@ export function AppShell({
         className="flex flex-col min-h-screen"
         style={{ marginLeft: mainMarginLeft, transition: "margin-left 200ms ease" }}
       >
-        {/* Top header */}
-        <header className="sticky top-0 z-30 h-14 bg-dark-bg/80 backdrop-blur-sm border-b border-dark-border flex items-center px-4 lg:px-8">
-          <button
-            onClick={() => setMobileOpen(!mobileOpen)}
-            className="text-gray-400 hover:text-white lg:hidden mr-4"
-          >
-            {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-          </button>
-          <div className="flex-1" />
-          <span className="text-xs text-gray-500 hidden sm:block">
-            {user.user_metadata?.full_name ?? user.email}
-          </span>
-        </header>
+        <Header
+          onMobileMenuToggle={handleMobileToggle}
+          mobileMenuOpen={mobileOpen}
+          onCommandPaletteOpen={handleCommandPaletteOpen}
+        />
 
-        {/* Page content */}
-        <main className="flex-1 p-4 lg:p-8">
+        <main className="flex-1 overflow-y-auto p-4 lg:p-6">
           {children}
         </main>
       </div>
+
+      {/* Command Palette */}
+      <CommandPalette open={commandPaletteOpen} onOpenChange={setCommandPaletteOpen} />
+
+      {/* Toast notifications */}
+      <ToastProvider />
     </div>
   );
 }
