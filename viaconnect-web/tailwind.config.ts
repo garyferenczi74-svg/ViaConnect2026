@@ -32,8 +32,8 @@ const config: Config = {
         cyan: "#22D3EE",
       },
       fontFamily: {
-        sans: ["Sora", "system-ui", "sans-serif"],
-        mono: ["Space Mono", "JetBrains Mono", "monospace"],
+        sans: ["Inter", "system-ui", "sans-serif"],
+        mono: ["JetBrains Mono", "monospace"],
       },
       borderRadius: {
         xl: "1rem",
