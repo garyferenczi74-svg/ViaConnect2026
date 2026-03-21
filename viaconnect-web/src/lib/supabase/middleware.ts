@@ -76,7 +76,7 @@ export async function updateSession(request: NextRequest) {
       return NextResponse.redirect(url);
     }
 
-    // Enforce portal access based on role
+    // Enforce portal access based on role — block cross-portal access
     if (pathname.startsWith("/practitioner") && role !== "practitioner") {
       const url = request.nextUrl.clone();
       url.pathname = getRoleHomePath(role);
@@ -84,6 +84,17 @@ export async function updateSession(request: NextRequest) {
     }
 
     if (pathname.startsWith("/naturopath") && role !== "naturopath") {
+      const url = request.nextUrl.clone();
+      url.pathname = getRoleHomePath(role);
+      return NextResponse.redirect(url);
+    }
+
+    // Consumer routes (non-prefixed app routes) are only for consumers
+    const consumerRoutes = ["/dashboard", "/genetics", "/supplements", "/tokens", "/profile", "/messages"];
+    const isConsumerRoute = consumerRoutes.some(
+      (route) => pathname === route || pathname.startsWith(route + "/")
+    );
+    if (isConsumerRoute && role !== "consumer" && role !== undefined) {
       const url = request.nextUrl.clone();
       url.pathname = getRoleHomePath(role);
       return NextResponse.redirect(url);
