@@ -61,6 +61,8 @@ function mapDatabaseRoleToUserRole(
       return 'practitioner';
     case 'admin':
       return 'practitioner';
+    case 'naturopath':
+      return 'naturopath';
     case 'patient':
     default:
       return 'consumer';

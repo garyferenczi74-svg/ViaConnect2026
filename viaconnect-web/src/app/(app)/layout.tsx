@@ -1,6 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
+import { mapDatabaseRoleToUserRole } from "@/lib/supabase/types";
+import type { UserRole } from "@/lib/supabase/types";
 
 export default async function AppLayout({
   children,
@@ -16,7 +18,13 @@ export default async function AppLayout({
     redirect("/login");
   }
 
-  const role = (user.user_metadata?.role as string) ?? "consumer";
+  // Normalize role: handle both app-level (consumer/practitioner/naturopath)
+  // and DB-level (patient/admin) role values from user_metadata
+  const rawRole = (user.user_metadata?.role as string) ?? "consumer";
+  const appRoles: UserRole[] = ["consumer", "practitioner", "naturopath"];
+  const role = appRoles.includes(rawRole as UserRole)
+    ? rawRole
+    : mapDatabaseRoleToUserRole(rawRole);
 
   return (
     <AppShell user={user} role={role}>
