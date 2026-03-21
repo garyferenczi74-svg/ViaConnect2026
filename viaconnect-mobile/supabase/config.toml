@@ -35,6 +35,8 @@ additional_redirect_urls = [
   "https://viaconnectapp.com",
   "viaconnect://auth/callback",
   "http://localhost:8081",
+  "http://localhost:3000/auth/callback",
+  "https://via-connect2026.vercel.app/auth/callback",
 ]
 jwt_expiry = 3600
 enable_refresh_token_rotation = true
