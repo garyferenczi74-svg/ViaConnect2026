@@ -14,6 +14,7 @@ import {
   Progress,
 } from "@/components/ui";
 import type { Column } from "@/components/ui";
+import { PageTransition, StaggerChild } from "@/lib/motion";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -239,10 +240,10 @@ export default function PatientsPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-dark-bg p-6 md:p-10">
+    <PageTransition className="min-h-screen bg-dark-bg p-6 md:p-10">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* ── Header ──────────────────────────────────────────────────── */}
-        <div className="flex items-center justify-between">
+        <StaggerChild className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-white">Patients</h1>
             <p className="text-gray-400 mt-1">Manage your patient roster</p>
@@ -255,9 +256,10 @@ export default function PatientsPage() {
             <UserPlus className="w-4 h-4 mr-2" />
             Add Patient
           </Button>
-        </div>
+        </StaggerChild>
 
         {/* ── Filters ─────────────────────────────────────────────────── */}
+        <StaggerChild>
         <Card hover={false} className="p-4">
           <div className="flex flex-col md:flex-row gap-3">
             <div className="flex-1 relative">
@@ -297,8 +299,10 @@ export default function PatientsPage() {
             </div>
           </div>
         </Card>
+        </StaggerChild>
 
         {/* ── Data Table ──────────────────────────────────────────────── */}
+        <StaggerChild>
         <Card hover={false} className="overflow-hidden p-0">
           <DataTable<Patient>
             columns={columns}
@@ -306,7 +310,8 @@ export default function PatientsPage() {
             pageSize={10}
           />
         </Card>
+        </StaggerChild>
       </div>
-    </div>
+    </PageTransition>
   );
 }

@@ -16,6 +16,7 @@ import {
   DataTable,
 } from "@/components/ui";
 import type { Column } from "@/components/ui";
+import { PageTransition, StaggerChild } from "@/lib/motion";
 import {
   ChevronRight,
   Heart,
@@ -269,7 +270,7 @@ const protocolColumns: Column<ProtocolRow>[] = [
   { key: "productsCount", header: "Products", sortable: true },
 ];
 
-// ─── Page Component ──────────────────────────────────────────────────────────
+// --- Page Component ---
 
 export default function PatientDetailPage() {
   const params = useParams();
@@ -277,9 +278,10 @@ export default function PatientDetailPage() {
   const [messageInput, setMessageInput] = useState("");
 
   return (
-    <div className="min-h-screen bg-dark-bg text-white">
+    <PageTransition className="min-h-screen bg-dark-bg text-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
         {/* Breadcrumb */}
+        <StaggerChild>
         <nav className="flex items-center gap-2 text-sm text-gray-500">
           <Link
             href="/practitioner/patients"
@@ -292,8 +294,10 @@ export default function PatientDetailPage() {
             {patient.firstName} {patient.lastName}
           </span>
         </nav>
+        </StaggerChild>
 
         {/* Patient Header */}
+        <StaggerChild>
         <Card hover={false} className="p-6">
           <div className="flex flex-col sm:flex-row sm:items-center gap-6">
             <Avatar
@@ -340,8 +344,10 @@ export default function PatientDetailPage() {
             </div>
           </div>
         </Card>
+        </StaggerChild>
 
         {/* Tabbed Interface */}
+        <StaggerChild>
         <Tabs defaultValue="overview" tabs={tabsList}>
           {/* ── Tab 1: Overview ─────────────────────────────────────────── */}
           <TabContent value="overview" className="space-y-6 outline-none">
@@ -870,7 +876,8 @@ export default function PatientDetailPage() {
             </Card>
           </TabContent>
         </Tabs>
+        </StaggerChild>
       </div>
-    </div>
+    </PageTransition>
   );
 }

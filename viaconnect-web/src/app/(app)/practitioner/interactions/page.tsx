@@ -15,6 +15,7 @@ import {
   ChevronUp,
 } from "lucide-react";
 import { Card, Badge, Button } from "@/components/ui";
+import { PageTransition, StaggerChild } from "@/lib/motion";
 
 // ─── Data ──────────────────────────────────────────────────────────────────────
 
@@ -283,10 +284,10 @@ export default function InteractionsPage() {
   }, [showResults, medications, supplements]);
 
   return (
-    <div className="min-h-screen bg-dark-bg p-6 md:p-10">
+    <PageTransition className="min-h-screen bg-dark-bg p-6 md:p-10">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <StaggerChild className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-white">Interaction Checker</h1>
             <p className="text-gray-400 mt-1">
@@ -297,10 +298,10 @@ export default function InteractionsPage() {
             <Trash2 className="w-4 h-4 mr-2" />
             Clear All
           </Button>
-        </div>
+        </StaggerChild>
 
         {/* Two-column input */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <StaggerChild className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Left — Medications */}
           <Card className="p-6 space-y-4">
             <div className="flex items-center gap-2">
@@ -430,7 +431,7 @@ export default function InteractionsPage() {
               </div>
             </div>
           </Card>
-        </div>
+        </StaggerChild>
 
         {/* Check Interactions Button */}
         <div className="flex justify-center">
@@ -717,6 +718,6 @@ export default function InteractionsPage() {
           </div>
         </Card>
       </div>
-    </div>
+    </PageTransition>
   );
 }

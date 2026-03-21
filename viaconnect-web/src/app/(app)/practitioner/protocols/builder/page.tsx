@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Card, Button, Badge, Avatar } from "@/components/ui";
+import { PageTransition, StaggerChild } from "@/lib/motion";
 import {
   Check,
   Search,
@@ -576,21 +577,23 @@ export default function ProtocolBuilderPage() {
   // ─── Main Layout ──────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen bg-dark-bg p-6 md:p-8">
+    <PageTransition className="min-h-screen bg-dark-bg p-6 md:p-8">
       <div className="max-w-[1400px] mx-auto space-y-5">
         {/* Breadcrumb */}
-        <div className="flex items-center gap-2 text-sm text-gray-400">
+        <StaggerChild className="flex items-center gap-2 text-sm text-gray-400">
           <Link href="/practitioner/protocols" className="hover:text-portal-green transition-colors">
             Protocols
           </Link>
           <span>/</span>
           <span className="text-white">Builder</span>
-        </div>
+        </StaggerChild>
 
-        <h1 className="text-2xl font-bold text-white">Protocol Builder</h1>
+        <StaggerChild>
+          <h1 className="text-2xl font-bold text-white">Protocol Builder</h1>
+        </StaggerChild>
 
         {/* 3-Panel Layout */}
-        <div className="flex gap-6 items-start">
+        <StaggerChild className="flex gap-6 items-start">
           {/* ── Left Panel: Step Navigation ── */}
           <div className="w-[360px] shrink-0">
             <Card hover={false} className="p-5">
@@ -749,8 +752,8 @@ export default function ProtocolBuilderPage() {
               </div>
             </Card>
           </div>
-        </div>
+        </StaggerChild>
       </div>
-    </div>
+    </PageTransition>
   );
 }

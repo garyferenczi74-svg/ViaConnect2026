@@ -25,6 +25,7 @@ import {
   Trash2,
   AlertTriangle,
 } from "lucide-react";
+import { PageTransition, StaggerChild, MotionCard } from "@/lib/motion";
 
 const supabase = createClient();
 
@@ -142,15 +143,15 @@ export default function ProfilePage() {
   const email = user?.email ?? "";
 
   return (
-    <div className="p-6 lg:p-8 space-y-6">
-      <div>
+    <PageTransition className="p-6 lg:p-8 space-y-6">
+      <StaggerChild>
         <h1 className="text-2xl font-bold text-white">Account Settings</h1>
         <p className="text-gray-400 text-sm mt-1">
           Manage your personal information, subscription, and preferences.
         </p>
-      </div>
+      </StaggerChild>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <StaggerChild className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* LEFT: Personal Info */}
         <div className="space-y-6">
           <Card className="p-6">
@@ -246,7 +247,7 @@ export default function ProfilePage() {
         {/* RIGHT: Settings Cards */}
         <div className="space-y-6">
           {/* Membership */}
-          <Card className="p-6">
+          <MotionCard className="p-6">
             <div className="flex items-center gap-2 mb-4">
               <Crown className="w-5 h-5 text-portal-yellow" />
               <h3 className="text-lg font-semibold text-white">Membership</h3>
@@ -273,10 +274,10 @@ export default function ProfilePage() {
             <Button variant="primary" size="sm" className="w-full mt-4">
               Upgrade Plan
             </Button>
-          </Card>
+          </MotionCard>
 
           {/* Notification Preferences */}
-          <Card className="p-6">
+          <MotionCard className="p-6">
             <div className="flex items-center gap-2 mb-4">
               <Bell className="w-5 h-5 text-gray-400" />
               <h3 className="text-lg font-semibold text-white">Notifications</h3>
@@ -307,7 +308,7 @@ export default function ProfilePage() {
                 );
               })}
             </div>
-          </Card>
+          </MotionCard>
 
           {/* Connected Practitioners */}
           <Card className="p-6">
@@ -382,7 +383,7 @@ export default function ProfilePage() {
             </Button>
           </Card>
         </div>
-      </div>
+      </StaggerChild>
 
       {/* Delete Account Modal */}
       <Modal
@@ -435,6 +436,6 @@ export default function ProfilePage() {
           </div>
         </div>
       </Modal>
-    </div>
+    </PageTransition>
   );
 }

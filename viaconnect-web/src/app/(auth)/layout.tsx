@@ -1,4 +1,11 @@
+import type { Metadata } from "next";
 import { ToastProvider } from "@/components/ui/Toast";
+
+export const metadata: Metadata = {
+  title: "Sign In",
+  description:
+    "Sign in to ViaConnect GeneX360 — your precision health dashboard.",
+};
 
 export default function AuthLayout({
   children,

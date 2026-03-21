@@ -22,6 +22,7 @@ import {
   TrendingUp,
   BarChart3,
 } from "lucide-react";
+import { PageTransition, StaggerChild, MotionCard, ChartReveal } from "@/lib/motion";
 
 const supabase = createClient();
 
@@ -333,17 +334,17 @@ export default function AssessmentPage() {
   const hasAssessment = completedPhases > 0;
 
   return (
-    <div className="p-6 lg:p-8 space-y-6">
+    <PageTransition className="p-6 lg:p-8 space-y-6">
       {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-gray-400">
+      <StaggerChild className="flex items-center gap-2 text-sm text-gray-400">
         <Link href="/dashboard" className="text-copper hover:underline">Dashboard</Link>
         <span>/</span>
         <Link href="/profile" className="text-copper hover:underline">Profile</Link>
         <span>/</span>
         <span className="text-white">Assessment</span>
-      </div>
+      </StaggerChild>
 
-      <div className="flex items-center justify-between">
+      <StaggerChild className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-white">Vitality Score Breakdown</h1>
           <p className="text-gray-400 text-sm mt-1">
@@ -356,7 +357,7 @@ export default function AssessmentPage() {
             Retake Assessment
           </Button>
         </Link>
-      </div>
+      </StaggerChild>
 
       {!hasAssessment && !scoreLoading ? (
         <EmptyState
@@ -371,7 +372,7 @@ export default function AssessmentPage() {
           {/* Score + Radar */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Score Gauge */}
-            <Card className="p-8 text-center">
+            <MotionCard className="p-8 text-center">
               <ScoreGauge score={score} loading={scoreLoading} />
               <div className="mt-4">
                 <Badge
@@ -380,14 +381,16 @@ export default function AssessmentPage() {
                   {score >= 75 ? "Excellent" : score >= 50 ? "Good" : score >= 25 ? "Fair" : "Needs Improvement"}
                 </Badge>
               </div>
-            </Card>
+            </MotionCard>
 
             {/* Radar Chart */}
-            <Card className="p-6">
+            <MotionCard className="p-6">
               <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">
                 Constitutional Type
               </h3>
-              <RadarChart data={constitutionalData} />
+              <ChartReveal>
+                <RadarChart data={constitutionalData} />
+              </ChartReveal>
               <div className="grid grid-cols-5 gap-2 mt-4">
                 {constitutionalTypes.map((ct) => (
                   <div key={ct.key} className="text-center">
@@ -399,7 +402,7 @@ export default function AssessmentPage() {
                   </div>
                 ))}
               </div>
-            </Card>
+            </MotionCard>
           </div>
 
           {/* Contributing Factors */}
@@ -469,6 +472,6 @@ export default function AssessmentPage() {
           </Card>
         </>
       )}
-    </div>
+    </PageTransition>
   );
 }

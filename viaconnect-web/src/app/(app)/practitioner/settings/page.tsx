@@ -12,6 +12,7 @@ import {
   Progress,
 } from "@/components/ui";
 import type { Column } from "@/components/ui";
+import { PageTransition, StaggerChild } from "@/lib/motion";
 import {
   Building2,
   ShieldCheck,
@@ -220,17 +221,20 @@ export default function SettingsPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-dark-bg p-6 md:p-10">
+    <PageTransition className="min-h-screen bg-dark-bg p-6 md:p-10">
       <div className="max-w-5xl mx-auto space-y-6">
         {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold text-white">Practice Settings</h1>
-          <p className="text-gray-400 mt-1">
-            Manage your practice configuration, credentials, and preferences
-          </p>
-        </div>
+        <StaggerChild>
+          <div>
+            <h1 className="text-3xl font-bold text-white">Practice Settings</h1>
+            <p className="text-gray-400 mt-1">
+              Manage your practice configuration, credentials, and preferences
+            </p>
+          </div>
+        </StaggerChild>
 
         {/* ── 1. Practice Profile ── */}
+        <StaggerChild>
         <Card className="p-6 space-y-5">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-lg bg-portal-green/10 flex items-center justify-center">
@@ -287,8 +291,10 @@ export default function SettingsPage() {
             </Button>
           </div>
         </Card>
+        </StaggerChild>
 
         {/* ── 2. License & Credentials ── */}
+        <StaggerChild>
         <Card className="p-6 space-y-5">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-lg bg-portal-purple/10 flex items-center justify-center">
@@ -337,8 +343,10 @@ export default function SettingsPage() {
             </div>
           </div>
         </Card>
+        </StaggerChild>
 
         {/* ── 3. Notification Preferences ── */}
+        <StaggerChild>
         <Card className="p-6 space-y-5">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-lg bg-portal-yellow/10 flex items-center justify-center">
@@ -393,8 +401,10 @@ export default function SettingsPage() {
             </table>
           </div>
         </Card>
+        </StaggerChild>
 
         {/* ── 4. Audit Trail ── */}
+        <StaggerChild>
         <Card className="p-6 space-y-5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -419,8 +429,10 @@ export default function SettingsPage() {
             pageSize={8}
           />
         </Card>
+        </StaggerChild>
 
         {/* ── 5. API Usage Stats ── */}
+        <StaggerChild>
         <Card className="p-6 space-y-5">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-lg bg-copper/10 flex items-center justify-center">
@@ -464,8 +476,10 @@ export default function SettingsPage() {
             </p>
           </div>
         </Card>
+        </StaggerChild>
 
         {/* ── 6. Subscription ── */}
+        <StaggerChild>
         <Card className="p-6 space-y-5">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-lg bg-portal-pink/10 flex items-center justify-center">
@@ -509,7 +523,8 @@ export default function SettingsPage() {
             </Button>
           </div>
         </Card>
+        </StaggerChild>
       </div>
-    </div>
+    </PageTransition>
   );
 }

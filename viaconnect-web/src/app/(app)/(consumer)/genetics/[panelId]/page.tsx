@@ -18,6 +18,7 @@ import {
   ArrowUpDown,
   Plus,
 } from "lucide-react";
+import { PageTransition, StaggerChild, MotionCard } from "@/lib/motion";
 
 const supabase = createClient();
 
@@ -105,24 +106,24 @@ export default function PanelDeepDivePage({
   );
 
   return (
-    <div className="p-6 lg:p-8 space-y-6">
+    <PageTransition className="p-6 lg:p-8 space-y-6">
       {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-gray-400">
+      <StaggerChild className="flex items-center gap-2 text-sm text-gray-400">
         <Link href="/dashboard" className="text-copper hover:underline">Dashboard</Link>
         <span>/</span>
         <Link href="/genetics" className="text-copper hover:underline">GeneX360</Link>
         <span>/</span>
         <span className="text-white">{panel.name}</span>
-      </div>
+      </StaggerChild>
 
-      <div>
+      <StaggerChild>
         <h1 className="text-2xl font-bold text-white">{panel.name} Panel</h1>
         <p className="text-gray-400 text-sm mt-1">{panel.description}</p>
-      </div>
+      </StaggerChild>
 
       {/* Summary Stats */}
       {!isLoading && sorted.length > 0 && (
-        <div className="grid grid-cols-3 gap-4">
+        <StaggerChild className="grid grid-cols-3 gap-4">
           {(["high", "moderate", "low"] as const).map((level) => {
             const count = sorted.filter((v) => v.risk_level === level).length;
             const colors = {
@@ -131,16 +132,17 @@ export default function PanelDeepDivePage({
               low: { bg: "bg-portal-green/10", text: "text-portal-green", border: "border-portal-green/20" },
             };
             return (
-              <Card key={level} className={`p-4 border ${colors[level].border}`}>
+              <MotionCard key={level} className={`p-4 border ${colors[level].border}`}>
                 <p className={`text-2xl font-bold ${colors[level].text}`}>{count}</p>
                 <p className="text-xs text-gray-400 capitalize">{level} Risk</p>
-              </Card>
+              </MotionCard>
             );
           })}
-        </div>
+        </StaggerChild>
       )}
 
       {/* Data Table */}
+      <StaggerChild>
       <Card className="p-0 overflow-hidden">
         {isLoading ? (
           <div className="p-6 space-y-3">
@@ -266,6 +268,7 @@ export default function PanelDeepDivePage({
           </div>
         )}
       </Card>
-    </div>
+      </StaggerChild>
+    </PageTransition>
   );
 }

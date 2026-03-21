@@ -18,6 +18,7 @@ import {
   ShoppingCart,
   ChevronRight,
 } from "lucide-react";
+import { PageTransition, StaggerChild, MotionCard } from "@/lib/motion";
 
 const supabase = createClient();
 
@@ -54,7 +55,7 @@ function GeneCard({
   clinicalSummary: string | null;
 }) {
   return (
-    <Card className="p-4 hover:border-white/[0.15]">
+    <MotionCard className="p-4 hover:border-white/[0.15]">
       <div className="flex items-start justify-between mb-2">
         <div>
           <h4 className="text-sm font-semibold text-white">{gene}</h4>
@@ -81,7 +82,7 @@ function GeneCard({
           <span className="text-[10px] text-copper font-medium">{productName}</span>
         )}
       </div>
-    </Card>
+    </MotionCard>
   );
 }
 
@@ -150,15 +151,15 @@ export default function GeneticsPage() {
   });
 
   return (
-    <div className="p-6 lg:p-8 space-y-6">
-      <div>
+    <PageTransition className="p-6 lg:p-8 space-y-6">
+      <StaggerChild>
         <h1 className="text-2xl font-bold text-white">GeneX360 Results</h1>
         <p className="text-gray-400 text-sm mt-1">
           Comprehensive SNP profiling across core metabolic pathways
         </p>
-      </div>
+      </StaggerChild>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-6">
+      <StaggerChild className="grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-6">
         {/* LEFT: Panel Selector */}
         <div className="space-y-4">
           <Card className="p-4">
@@ -300,7 +301,7 @@ export default function GeneticsPage() {
             </div>
           )}
         </div>
-      </div>
-    </div>
+      </StaggerChild>
+    </PageTransition>
   );
 }

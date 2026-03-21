@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { motion } from "framer-motion";
 import { ChevronUp, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -89,8 +90,11 @@ export function DataTable<T extends Record<string, unknown>>({
               </tr>
             )}
             {paginated.map((row, i) => (
-              <tr
+              <motion.tr
                 key={i}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.2, delay: i * 0.03 }}
                 className="border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors"
               >
                 {columns.map((col) => (
@@ -98,7 +102,7 @@ export function DataTable<T extends Record<string, unknown>>({
                     {col.render ? col.render(row) : (row[col.key] as React.ReactNode)}
                   </td>
                 ))}
-              </tr>
+              </motion.tr>
             ))}
           </tbody>
         </table>

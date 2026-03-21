@@ -22,6 +22,7 @@ import {
   StatCard,
 } from "@/components/ui";
 import type { Column } from "@/components/ui";
+import { PageTransition, StaggerChild } from "@/lib/motion";
 
 // ─── Data ──────────────────────────────────────────────────────────────────────
 
@@ -284,10 +285,10 @@ export default function EHRPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-dark-bg p-6 md:p-10">
+    <PageTransition className="min-h-screen bg-dark-bg p-6 md:p-10">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <StaggerChild className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-white">EHR Integration Hub</h1>
             <p className="text-gray-400 mt-1">
@@ -306,7 +307,7 @@ export default function EHRPage() {
             />
             {syncing ? "Syncing..." : "Sync Now"}
           </Button>
-        </div>
+        </StaggerChild>
 
         {/* Connected Systems */}
         <Card className="p-6 space-y-4" hover={false}>
@@ -581,6 +582,6 @@ export default function EHRPage() {
           </div>
         </Card>
       </div>
-    </div>
+    </PageTransition>
   );
 }
