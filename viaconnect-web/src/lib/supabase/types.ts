@@ -244,6 +244,8 @@ export interface Database {
           price: number;
           image_url: string | null;
           active: boolean;
+          delivery_type: string | null;
+          target_genes: string[] | null;
           created_at: string;
         };
         Insert: {
@@ -255,6 +257,8 @@ export interface Database {
           price: number;
           image_url?: string | null;
           active: boolean;
+          delivery_type?: string | null;
+          target_genes?: string[] | null;
         };
         Update: {
           sku?: string;
@@ -265,6 +269,232 @@ export interface Database {
           price?: number;
           image_url?: string | null;
           active?: boolean;
+          delivery_type?: string | null;
+          target_genes?: string[] | null;
+        };
+        Relationships: [];
+      };
+
+      supplement_logs: {
+        Row: {
+          id: string;
+          user_id: string;
+          product_id: string;
+          logged_at: string;
+          dose: string | null;
+          time_of_day: "morning" | "noon" | "evening" | "bedtime";
+          created_at: string;
+        };
+        Insert: {
+          user_id: string;
+          product_id: string;
+          logged_at?: string;
+          dose?: string | null;
+          time_of_day: "morning" | "noon" | "evening" | "bedtime";
+        };
+        Update: {
+          logged_at?: string;
+          dose?: string | null;
+          time_of_day?: "morning" | "noon" | "evening" | "bedtime";
+        };
+        Relationships: [];
+      };
+
+      user_protocols: {
+        Row: {
+          id: string;
+          user_id: string;
+          product_id: string;
+          dose: string;
+          time_of_day: "morning" | "noon" | "evening" | "bedtime";
+          active: boolean;
+          created_at: string;
+        };
+        Insert: {
+          user_id: string;
+          product_id: string;
+          dose: string;
+          time_of_day: "morning" | "noon" | "evening" | "bedtime";
+          active?: boolean;
+        };
+        Update: {
+          dose?: string;
+          time_of_day?: "morning" | "noon" | "evening" | "bedtime";
+          active?: boolean;
+        };
+        Relationships: [];
+      };
+
+      genetic_variants: {
+        Row: {
+          id: string;
+          user_id: string;
+          panel: string;
+          gene: string;
+          rsid: string;
+          genotype: string;
+          risk_level: "low" | "moderate" | "high";
+          category: string;
+          clinical_summary: string | null;
+          product_id: string | null;
+          created_at: string;
+        };
+        Insert: {
+          user_id: string;
+          panel: string;
+          gene: string;
+          rsid: string;
+          genotype: string;
+          risk_level: "low" | "moderate" | "high";
+          category: string;
+          clinical_summary?: string | null;
+          product_id?: string | null;
+        };
+        Update: {
+          panel?: string;
+          gene?: string;
+          rsid?: string;
+          genotype?: string;
+          risk_level?: "low" | "moderate" | "high";
+          category?: string;
+          clinical_summary?: string | null;
+          product_id?: string | null;
+        };
+        Relationships: [];
+      };
+
+      conversations: {
+        Row: {
+          id: string;
+          patient_id: string;
+          practitioner_id: string;
+          last_message: string | null;
+          last_message_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          patient_id: string;
+          practitioner_id: string;
+          last_message?: string | null;
+          last_message_at?: string | null;
+        };
+        Update: {
+          last_message?: string | null;
+          last_message_at?: string | null;
+        };
+        Relationships: [];
+      };
+
+      messages: {
+        Row: {
+          id: string;
+          conversation_id: string;
+          sender_id: string;
+          content: string;
+          read: boolean;
+          created_at: string;
+        };
+        Insert: {
+          conversation_id: string;
+          sender_id: string;
+          content: string;
+          read?: boolean;
+        };
+        Update: {
+          content?: string;
+          read?: boolean;
+        };
+        Relationships: [];
+      };
+
+      token_transactions: {
+        Row: {
+          id: string;
+          user_id: string;
+          amount: number;
+          action: string;
+          balance_after: number;
+          created_at: string;
+        };
+        Insert: {
+          user_id: string;
+          amount: number;
+          action: string;
+          balance_after: number;
+        };
+        Update: {
+          amount?: number;
+          action?: string;
+          balance_after?: number;
+        };
+        Relationships: [];
+      };
+
+      achievements: {
+        Row: {
+          id: string;
+          name: string;
+          description: string;
+          icon: string | null;
+          token_reward: number;
+          criteria: string;
+          created_at: string;
+        };
+        Insert: {
+          name: string;
+          description: string;
+          icon?: string | null;
+          token_reward: number;
+          criteria: string;
+        };
+        Update: {
+          name?: string;
+          description?: string;
+          icon?: string | null;
+          token_reward?: number;
+          criteria?: string;
+        };
+        Relationships: [];
+      };
+
+      user_achievements: {
+        Row: {
+          id: string;
+          user_id: string;
+          achievement_id: string;
+          unlocked_at: string;
+        };
+        Insert: {
+          user_id: string;
+          achievement_id: string;
+        };
+        Update: {
+          unlocked_at?: string;
+        };
+        Relationships: [];
+      };
+
+      orders: {
+        Row: {
+          id: string;
+          user_id: string;
+          status: "pending" | "processing" | "shipped" | "delivered" | "cancelled";
+          total: number;
+          items: Json;
+          created_at: string;
+          updated_at: string | null;
+        };
+        Insert: {
+          user_id: string;
+          status?: "pending" | "processing" | "shipped" | "delivered" | "cancelled";
+          total: number;
+          items: Json;
+        };
+        Update: {
+          status?: "pending" | "processing" | "shipped" | "delivered" | "cancelled";
+          total?: number;
+          items?: Json;
+          updated_at?: string | null;
         };
         Relationships: [];
       };
@@ -281,3 +511,12 @@ export type AssessmentResult = Database["public"]["Tables"]["assessment_results"
 export type GeneticProfile = Database["public"]["Tables"]["genetic_profiles"]["Row"];
 export type Notification = Database["public"]["Tables"]["notifications"]["Row"];
 export type Product = Database["public"]["Tables"]["products"]["Row"];
+export type SupplementLog = Database["public"]["Tables"]["supplement_logs"]["Row"];
+export type UserProtocol = Database["public"]["Tables"]["user_protocols"]["Row"];
+export type GeneticVariant = Database["public"]["Tables"]["genetic_variants"]["Row"];
+export type Conversation = Database["public"]["Tables"]["conversations"]["Row"];
+export type Message = Database["public"]["Tables"]["messages"]["Row"];
+export type TokenTransaction = Database["public"]["Tables"]["token_transactions"]["Row"];
+export type Achievement = Database["public"]["Tables"]["achievements"]["Row"];
+export type UserAchievement = Database["public"]["Tables"]["user_achievements"]["Row"];
+export type Order = Database["public"]["Tables"]["orders"]["Row"];
