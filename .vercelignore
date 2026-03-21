@@ -3,4 +3,3 @@ node_modules/
 .git/
 __tests__/
 e2e/
-*.md
