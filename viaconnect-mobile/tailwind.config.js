@@ -11,6 +11,7 @@ module.exports = {
         teal: {
           DEFAULT: '#224852',
           light: '#E8F0F2',
+          dark: '#1A363D',
         },
         copper: {
           DEFAULT: '#B75F19',
@@ -32,10 +33,12 @@ module.exports = {
           pink: '#F472B6',
         },
         dark: {
-          bg: '#111827',
-          card: '#1F2937',
+          bg: '#0B1120',
+          card: '#111827',
+          surface: '#1F2937',
           border: '#374151',
         },
+        cyan: '#22D3EE',
       },
       fontFamily: {
         sans: ['Inter'],

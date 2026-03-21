@@ -1,7 +1,10 @@
 import { create } from "zustand";
 import type { User } from "@supabase/supabase-js";
 
-export type UserRole = "consumer" | "practitioner" | "naturopath";
+// Re-export UserRole from shared types for backwards compatibility
+export type { UserRole } from "@/lib/supabase/types";
+import type { UserRole } from "@/lib/supabase/types";
+import { mapDatabaseRoleToUserRole } from "@/lib/supabase/types";
 
 interface AuthState {
   user: User | null;
@@ -17,11 +20,18 @@ export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   role: "consumer",
   isLoading: true,
-  setUser: (user) =>
-    set({
-      user,
-      role: (user?.user_metadata?.role as UserRole) ?? "consumer",
-    }),
+  setUser: (user) => {
+    // user_metadata.role may be the app-level role (consumer/practitioner/naturopath)
+    // or the DB-level role (patient/practitioner/admin) — handle both
+    const rawRole = user?.user_metadata?.role as string | undefined;
+    let role: UserRole = "consumer";
+    if (rawRole === "consumer" || rawRole === "practitioner" || rawRole === "naturopath") {
+      role = rawRole;
+    } else if (rawRole) {
+      role = mapDatabaseRoleToUserRole(rawRole);
+    }
+    set({ user, role });
+  },
   setRole: (role) => set({ role }),
   setLoading: (isLoading) => set({ isLoading }),
   reset: () => set({ user: null, role: "consumer", isLoading: false }),

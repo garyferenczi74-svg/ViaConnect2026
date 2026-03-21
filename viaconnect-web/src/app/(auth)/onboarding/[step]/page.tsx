@@ -218,7 +218,8 @@ export default function OnboardingStepPage() {
   }
 
   // Save phase to Supabase
-  async function savePhase(phaseId: string, data: unknown) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  async function savePhase(phaseId: string, data: any) {
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;

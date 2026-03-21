@@ -63,7 +63,9 @@ export async function updateSession(request: NextRequest) {
 
   // If authenticated, enforce role-based routing
   if (user) {
-    const role = user.user_metadata?.role as string | undefined;
+    // Normalize role: DB uses patient/admin, app uses consumer/practitioner/naturopath
+    const rawRole = user.user_metadata?.role as string | undefined;
+    const role = normalizeRole(rawRole);
 
     // Redirect authenticated users away from auth pages
     if (
@@ -102,6 +104,14 @@ export async function updateSession(request: NextRequest) {
   }
 
   return response;
+}
+
+/** Normalize DB roles (patient/admin) to app roles (consumer/practitioner/naturopath) */
+function normalizeRole(raw: string | undefined): string | undefined {
+  if (!raw) return undefined;
+  if (raw === "patient") return "consumer";
+  if (raw === "admin") return "practitioner";
+  return raw; // consumer, practitioner, naturopath pass through
 }
 
 function getRoleHomePath(role: string | undefined): string {
