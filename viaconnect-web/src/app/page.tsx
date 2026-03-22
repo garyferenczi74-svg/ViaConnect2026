@@ -33,8 +33,17 @@ export default function HomePage() {
         </nav>
       </header>
 
-      <main className="flex-1 flex items-center justify-center px-6">
+      <main className="flex-1 flex items-center justify-center px-6 pt-12">
         <div className="max-w-2xl text-center">
+          <div className="flex justify-center mb-8">
+            <Image
+              src="/logo.svg"
+              alt="ViaConnect"
+              width={200}
+              height={220}
+              priority
+            />
+          </div>
           <h1 className="text-5xl font-bold mb-6 leading-tight">
             One Genome. One Formulation.{" "}
             <span className="text-copper">One Life at a Time.</span>
