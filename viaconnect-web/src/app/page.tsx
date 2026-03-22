@@ -1,10 +1,95 @@
+"use client";
+
+import { useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import gsap from "gsap";
 
 export default function HomePage() {
+  const headerRef = useRef<HTMLElement>(null);
+  const logoRef = useRef<HTMLDivElement>(null);
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  const subtextRef = useRef<HTMLParagraphElement>(null);
+  const ctaRef = useRef<HTMLDivElement>(null);
+  const footerRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const ctx = gsap.context(() => {
+      const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
+
+      // Header slides down
+      tl.from(headerRef.current, {
+        y: -40,
+        opacity: 0,
+        duration: 0.6,
+      });
+
+      // Logo scales in with a gentle pulse
+      tl.from(
+        logoRef.current,
+        {
+          scale: 0.6,
+          opacity: 0,
+          duration: 1,
+          ease: "back.out(1.4)",
+        },
+        "-=0.2"
+      );
+
+      // Heading fades up
+      tl.from(
+        headingRef.current,
+        {
+          y: 30,
+          opacity: 0,
+          duration: 0.8,
+        },
+        "-=0.4"
+      );
+
+      // Subtext fades up
+      tl.from(
+        subtextRef.current,
+        {
+          y: 20,
+          opacity: 0,
+          duration: 0.7,
+        },
+        "-=0.3"
+      );
+
+      // CTA buttons stagger in
+      tl.from(
+        ctaRef.current?.children ?? [],
+        {
+          y: 20,
+          opacity: 0,
+          duration: 0.5,
+          stagger: 0.15,
+        },
+        "-=0.3"
+      );
+
+      // Footer fades in
+      tl.from(
+        footerRef.current,
+        {
+          opacity: 0,
+          duration: 0.5,
+        },
+        "-=0.2"
+      );
+    });
+
+    return () => ctx.revert();
+  }, []);
+
   return (
     <div className="min-h-screen bg-dark-bg text-white flex flex-col">
-      <header className="border-b border-white/10 px-6 py-4 flex items-center justify-between">
+      <header
+        ref={headerRef}
+        className="border-b border-white/10 px-6 py-4 flex items-center justify-between"
+      >
         <div className="flex items-center gap-3">
           <Image
             src="/logo.svg"
@@ -35,7 +120,7 @@ export default function HomePage() {
 
       <main className="flex-1 flex items-center justify-center px-6 pt-12">
         <div className="max-w-2xl text-center">
-          <div className="flex justify-center mb-8">
+          <div ref={logoRef} className="flex justify-center mb-8">
             <Image
               src="/logo.svg"
               alt="ViaConnect"
@@ -44,16 +129,22 @@ export default function HomePage() {
               priority
             />
           </div>
-          <h1 className="text-5xl font-bold mb-6 leading-tight">
+          <h1
+            ref={headingRef}
+            className="text-5xl font-bold mb-6 leading-tight"
+          >
             One Genome. One Formulation.{" "}
             <span className="text-copper">One Life at a Time.</span>
           </h1>
-          <p className="text-lg text-gray-400 mb-8 leading-relaxed">
+          <p
+            ref={subtextRef}
+            className="text-lg text-gray-400 mb-8 leading-relaxed"
+          >
             Precision health powered by your unique genetic profile. Discover
             personalized supplement formulations with 10&ndash;27x
             bioavailability.
           </p>
-          <div className="flex gap-4 justify-center">
+          <div ref={ctaRef} className="flex gap-4 justify-center">
             <Link
               href="/signup"
               className="bg-copper hover:bg-copper/80 text-white px-8 py-3 rounded-xl font-medium transition-colors"
@@ -70,7 +161,10 @@ export default function HomePage() {
         </div>
       </main>
 
-      <footer className="border-t border-white/10 px-6 py-4 text-center text-sm text-gray-500">
+      <footer
+        ref={footerRef}
+        className="border-t border-white/10 px-6 py-4 text-center text-sm text-gray-500"
+      >
         &copy; {new Date().getFullYear()} FarmCeutica Wellness LLC, Buffalo NY.
         All rights reserved.
       </footer>
