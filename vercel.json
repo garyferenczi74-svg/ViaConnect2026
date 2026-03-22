@@ -1,6 +1,6 @@
 {
   "framework": "nextjs",
-  "installCommand": "npm install && cd viaconnect-web && npm install",
+  "installCommand": "cd viaconnect-web && npm install",
   "buildCommand": "cd viaconnect-web && npm run build",
   "outputDirectory": "viaconnect-web/.next",
   "headers": [
