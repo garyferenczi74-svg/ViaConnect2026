@@ -4,6 +4,9 @@ import { AppShell } from "@/components/app-shell";
 import { mapDatabaseRoleToUserRole } from "@/lib/supabase/types";
 import type { UserRole } from "@/lib/supabase/types";
 
+// All (app) routes require authentication — never statically generate them
+export const dynamic = "force-dynamic";
+
 export default async function AppLayout({
   children,
 }: {
