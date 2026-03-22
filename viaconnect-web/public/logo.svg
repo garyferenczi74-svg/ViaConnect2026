@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 440" fill="none">
+  <defs>
+    <linearGradient id="copper-grad" x1="50%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%" stop-color="#C97A2E"/>
+      <stop offset="100%" stop-color="#7A3B10"/>
+    </linearGradient>
+    <linearGradient id="text-grad" x1="50%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%" stop-color="#D4893A"/>
+      <stop offset="50%" stop-color="#B75F19"/>
+      <stop offset="100%" stop-color="#6B3410"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Outer circle -->
+  <circle cx="200" cy="195" r="170" stroke="url(#copper-grad)" stroke-width="3" fill="none"/>
+
+  <!-- Node dots on circle (top, left, bottom, right) -->
+  <circle cx="200" cy="25" r="10" stroke="url(#copper-grad)" stroke-width="2.5" fill="none"/>
+  <circle cx="30" cy="195" r="10" stroke="url(#copper-grad)" stroke-width="2.5" fill="none"/>
+  <circle cx="200" cy="365" r="10" stroke="url(#copper-grad)" stroke-width="2.5" fill="none"/>
+  <circle cx="370" cy="195" r="10" stroke="url(#copper-grad)" stroke-width="2.5" fill="none"/>
+
+  <!-- Human silhouette (simplified) -->
+  <!-- Head -->
+  <ellipse cx="200" cy="85" rx="28" ry="30" fill="url(#copper-grad)"/>
+
+  <!-- Torso / Body outline -->
+  <path d="M160 120 C155 130, 140 155, 135 180 C130 210, 138 250, 145 275 C150 295, 155 310, 165 335 L175 335 C170 310, 163 290, 160 270 C155 245, 150 220, 155 195 C158 175, 165 155, 172 140 L200 135 L228 140 C235 155, 242 175, 245 195 C250 220, 245 245, 240 270 C237 290, 230 310, 225 335 L235 335 C245 310, 250 295, 255 275 C262 250, 270 210, 265 180 C260 155, 245 130, 240 120 Z" fill="url(#copper-grad)"/>
+
+  <!-- Arms -->
+  <path d="M155 150 C140 165, 120 195, 110 225 C105 240, 108 255, 115 260 L120 255 C115 245, 113 235, 118 220 C125 195, 140 170, 155 158 Z" fill="url(#copper-grad)"/>
+  <path d="M245 150 C260 165, 280 195, 290 225 C295 240, 292 255, 285 260 L280 255 C285 245, 287 235, 282 220 C275 195, 260 170, 245 158 Z" fill="url(#copper-grad)"/>
+
+  <!-- DNA Helix strands running through body center -->
+  <!-- Left strand -->
+  <path d="M185 105 C175 125, 215 150, 185 175 C175 190, 215 215, 185 240 C175 255, 215 280, 185 305 C175 320, 200 335, 190 345" stroke="#1a1a1a" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <!-- Right strand -->
+  <path d="M215 105 C225 125, 185 150, 215 175 C225 190, 185 215, 215 240 C225 255, 185 280, 215 305 C225 320, 200 335, 210 345" stroke="#1a1a1a" stroke-width="3" fill="none" stroke-linecap="round"/>
+
+  <!-- DNA rungs -->
+  <line x1="188" y1="120" x2="212" y2="120" stroke="#1a1a1a" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="183" y1="135" x2="217" y2="135" stroke="#1a1a1a" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="185" y1="150" x2="215" y2="150" stroke="#1a1a1a" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="190" y1="165" x2="210" y2="165" stroke="#1a1a1a" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="183" y1="180" x2="217" y2="180" stroke="#1a1a1a" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="187" y1="195" x2="213" y2="195" stroke="#1a1a1a" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="185" y1="210" x2="215" y2="210" stroke="#1a1a1a" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="183" y1="225" x2="217" y2="225" stroke="#1a1a1a" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="188" y1="240" x2="212" y2="240" stroke="#1a1a1a" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="183" y1="255" x2="217" y2="255" stroke="#1a1a1a" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="185" y1="270" x2="215" y2="270" stroke="#1a1a1a" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="190" y1="285" x2="210" y2="285" stroke="#1a1a1a" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="183" y1="300" x2="217" y2="300" stroke="#1a1a1a" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="187" y1="315" x2="213" y2="315" stroke="#1a1a1a" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="190" y1="330" x2="210" y2="330" stroke="#1a1a1a" stroke-width="2.5" stroke-linecap="round"/>
+
+  <!-- ViaConnect text -->
+  <text x="200" y="425" text-anchor="middle" font-family="Arial Black, Arial, sans-serif" font-size="52" font-weight="900" fill="url(#text-grad)" letter-spacing="1">ViaConnect</text>
+</svg>

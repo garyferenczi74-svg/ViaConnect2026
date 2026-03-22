@@ -1,13 +1,19 @@
+import Image from "next/image";
 import Link from "next/link";
 
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-dark-bg text-white flex flex-col">
       <header className="border-b border-white/10 px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="text-xl font-bold text-copper">Via</span>
-          <span className="text-xl font-bold">Connect</span>
-          <span className="text-xs bg-teal/50 text-white px-2 py-0.5 rounded-full ml-2">
+        <div className="flex items-center gap-3">
+          <Image
+            src="/logo.svg"
+            alt="ViaConnect"
+            width={48}
+            height={48}
+            priority
+          />
+          <span className="text-xs bg-teal/50 text-white px-2 py-0.5 rounded-full">
             GeneX360
           </span>
         </div>
