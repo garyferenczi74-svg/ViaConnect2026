@@ -288,9 +288,7 @@ export default function SignupPage() {
     <>
       {/* Logo */}
       <div className="text-center mb-6">
-        <h1 className="text-3xl font-bold text-white">
-          <span className="text-copper">Via</span>Connect
-        </h1>
+        <img src="/logo.png" alt="ViaConnect™" className="h-16 w-auto mx-auto mb-3" />
         <p className="text-gray-400 mt-2 text-sm">Create your account</p>
       </div>
 

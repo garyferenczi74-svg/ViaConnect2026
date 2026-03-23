@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, Pressable, ScrollView, Platform } from 'react-native';
+import { View, Text, Pressable, ScrollView, Platform, Image } from 'react-native';
 import { useRouter, usePathname } from 'expo-router';
 import { useIsDesktop } from './ResponsiveLayout';
 
@@ -54,12 +54,11 @@ function SidebarNav({
           onPress={onToggleCollapse}
           className="px-4 py-5 border-b border-dark-border flex-row items-center"
         >
-          <View
-            className="w-8 h-8 rounded-lg items-center justify-center"
-            style={{ backgroundColor: portalColor }}
-          >
-            <Text className="text-white font-bold text-sm">V</Text>
-          </View>
+          <Image
+            source={require('../../../../assets/icon.png')}
+            className="w-8 h-8 rounded-lg"
+            resizeMode="contain"
+          />
           {!collapsed && (
             <View className="ml-3">
               <Text className="text-white font-semibold text-sm">

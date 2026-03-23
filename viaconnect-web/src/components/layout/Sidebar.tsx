@@ -188,12 +188,11 @@ export function Sidebar({
       {/* ── Top: Logo + Collapse Toggle ── */}
       <div className="flex items-center h-16 px-4" style={{ justifyContent: collapsed ? "center" : "space-between" }}>
         <Link href={portal.homeHref} className="flex items-center gap-1.5 min-w-0">
-          {/* Icon mark — always visible */}
-          <span className="text-lg font-bold text-copper leading-none">V</span>
+          {/* Logo — always visible */}
+          <img src="/logo.png" alt="ViaConnect™" className="h-8 w-8 rounded object-contain" />
           {!collapsed && (
             <>
-              <span className="text-lg font-bold text-copper leading-none -ml-0.5">ia</span>
-              <span className="text-lg font-bold text-white leading-none">Connect</span>
+              <span className="text-lg font-bold text-white leading-none">ViaConnect</span>
               {portal.badge && (
                 <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ml-1.5 ${portal.badge.bg}`}>
                   {portal.badge.label}
