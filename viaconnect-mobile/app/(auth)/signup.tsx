@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -55,6 +55,8 @@ export default function SignupScreen() {
   const [step, setStep] = useState<SignupStep>(1);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [resendCooldown, setResendCooldown] = useState(0);
+
   const [data, setData] = useState<SignupData>({
     email: '',
     password: '',
@@ -189,7 +191,7 @@ export default function SignupScreen() {
       const { error: verifyError } = await supabase.auth.verifyOtp({
         email: data.email.trim(),
         token: data.otp,
-        type: 'email',
+        type: 'signup',
       });
 
       if (verifyError) {
@@ -216,6 +218,49 @@ export default function SignupScreen() {
       setIsLoading(false);
     }
   }, [data.otp, data.email, data.role, router]);
+
+  const handleResendCode = useCallback(async () => {
+    if (resendCooldown > 0) return;
+
+    setError(null);
+    setIsLoading(true);
+
+    try {
+      const { error: resendError } = await supabase.auth.resend({
+        type: 'signup',
+        email: data.email.trim(),
+      });
+
+      if (resendError) {
+        setError(resendError.message);
+        return;
+      }
+
+      // Start 60-second cooldown
+      setResendCooldown(60);
+    } catch {
+      setError('Failed to resend code. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [data.email, resendCooldown]);
+
+  // Cooldown timer
+  const cooldownRef = useRef<ReturnType<typeof setInterval>>();
+  useEffect(() => {
+    if (resendCooldown > 0) {
+      cooldownRef.current = setInterval(() => {
+        setResendCooldown((prev) => {
+          if (prev <= 1) {
+            clearInterval(cooldownRef.current);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+      return () => clearInterval(cooldownRef.current);
+    }
+  }, [resendCooldown]);
 
   const handleNext = async () => {
     if (!validateStep()) return;
@@ -504,8 +549,15 @@ export default function SignupScreen() {
               accessibilityLabel="Verification code"
             />
 
-            <Pressable className="items-center py-2">
-              <Text className="text-copper text-sm">Resend Code</Text>
+            <Pressable
+              className="items-center py-2"
+              onPress={handleResendCode}
+              disabled={resendCooldown > 0 || isLoading}
+              accessibilityLabel="Resend verification code"
+            >
+              <Text className={`text-sm ${resendCooldown > 0 ? 'text-gray-500' : 'text-copper'}`}>
+                {resendCooldown > 0 ? `Resend Code (${resendCooldown}s)` : 'Resend Code'}
+              </Text>
             </Pressable>
           </Animated.View>
         )}
