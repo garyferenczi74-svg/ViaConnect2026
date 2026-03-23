@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
@@ -143,6 +143,23 @@ export default function SignupPage() {
 
   // Step 5 — OTP
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const cooldownRef = useRef<ReturnType<typeof setInterval>>();
+
+  useEffect(() => {
+    if (resendCooldown > 0) {
+      cooldownRef.current = setInterval(() => {
+        setResendCooldown((prev) => {
+          if (prev <= 1) {
+            clearInterval(cooldownRef.current);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+      return () => clearInterval(cooldownRef.current);
+    }
+  }, [resendCooldown]);
 
   function validate(): boolean {
     setErrors({});
@@ -279,6 +296,23 @@ export default function SignupPage() {
       router.push(role === "practitioner" ? "/practitioner/dashboard" : "/naturopath/dashboard");
     }
     router.refresh();
+  }
+
+  async function handleResendCode() {
+    if (resendCooldown > 0) return;
+    setIsLoading(true);
+    const supabase = createClient();
+    const { error } = await supabase.auth.resend({
+      type: "signup",
+      email,
+    });
+    setIsLoading(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success("Verification code resent!");
+    setResendCooldown(60);
   }
 
   const inputClass = "w-full h-10 bg-dark-surface border border-dark-border rounded-lg px-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-copper/50 focus:border-copper/50 transition-colors";
@@ -457,7 +491,14 @@ export default function SignupPage() {
             </button>
             <p className="text-xs text-gray-500">
               Didn&apos;t receive the code?{" "}
-              <button className="text-copper hover:underline">Resend</button>
+              <button
+                type="button"
+                onClick={handleResendCode}
+                disabled={resendCooldown > 0 || isLoading}
+                className={resendCooldown > 0 ? "text-gray-500" : "text-copper hover:underline"}
+              >
+                {resendCooldown > 0 ? `Resend (${resendCooldown}s)` : "Resend"}
+              </button>
             </p>
           </div>
         )}
