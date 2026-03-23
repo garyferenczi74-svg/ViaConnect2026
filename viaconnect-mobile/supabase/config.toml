@@ -50,7 +50,26 @@ enable_anonymous_sign_ins = false
 [auth.email]
 enable_signup = true
 double_confirm_changes = true
-enable_confirmations = true
+# Disabled: we handle OTP verification via custom send-otp Edge Function + SendGrid HTTP API.
+# This prevents Supabase from trying to send its own confirmation email via SMTP.
+enable_confirmations = false
+
+[auth.email.smtp]
+enabled = true
+host = "env(SMTP_HOST)"
+port = 587
+user = "env(SMTP_USER)"
+pass = "env(SMTP_PASS)"
+admin_email = "noreply@viaconnect.health"
+sender_name = "ViaConnect GeneX360"
+
+[auth.email.template.confirmation]
+subject = "Your ViaConnect Verification Code"
+content_path = "./supabase/templates/confirmation.html"
+
+[auth.email.template.recovery]
+subject = "Reset Your ViaConnect Password"
+content_path = "./supabase/templates/reset-password.html"
 
 [auth.external.apple]
 enabled = false
