@@ -364,19 +364,30 @@ export default function SignupPage() {
 
       <Stepper current={step} />
 
-      <div className="glass rounded-2xl p-8">
+      <form
+        className="glass rounded-2xl p-8"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (step === 5) {
+            handleVerifyOtp();
+          } else {
+            handleNext();
+          }
+        }}
+        autoComplete="on"
+      >
         {/* ── Step 1: Email + Password ── */}
         {step === 1 && (
           <div className="space-y-5">
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-1.5">Email</label>
-              <input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} className={errors.email ? errorInputClass : inputClass} placeholder="you@example.com" />
+              <input id="email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} className={errors.email ? errorInputClass : inputClass} placeholder="you@example.com" />
               {errors.email && <p className="text-xs text-rose mt-1">{errors.email}</p>}
             </div>
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-1.5">Password</label>
               <div className="relative">
-                <input id="password" type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} className={errors.password ? errorInputClass + " pr-10" : inputClass + " pr-10"} placeholder="Minimum 8 characters" />
+                <input id="password" type={showPassword ? "text" : "password"} autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} className={errors.password ? errorInputClass + " pr-10" : inputClass + " pr-10"} placeholder="Minimum 8 characters" />
                 <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300">
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -385,7 +396,7 @@ export default function SignupPage() {
             </div>
             <div>
               <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-300 mb-1.5">Confirm Password</label>
-              <input id="confirmPassword" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className={errors.confirmPassword ? errorInputClass : inputClass} placeholder="Re-enter your password" />
+              <input id="confirmPassword" type="password" autoComplete="new-password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className={errors.confirmPassword ? errorInputClass : inputClass} placeholder="Re-enter your password" />
               {errors.confirmPassword && <p className="text-xs text-rose mt-1">{errors.confirmPassword}</p>}
             </div>
           </div>
@@ -399,6 +410,7 @@ export default function SignupPage() {
               const isSelected = role === r.value;
               return (
                 <button
+                  type="button"
                   key={r.value}
                   onClick={() => setRole(r.value)}
                   className={`w-full text-left p-4 rounded-xl border-2 transition-all ${
@@ -542,6 +554,7 @@ export default function SignupPage() {
           <div className="flex items-center justify-between mt-6 pt-4 border-t border-white/[0.06]">
             {step > 1 ? (
               <button
+                type="button"
                 onClick={handleBack}
                 className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-white transition-colors"
               >
@@ -554,7 +567,7 @@ export default function SignupPage() {
               </Link>
             )}
             <button
-              onClick={handleNext}
+              type="submit"
               disabled={isLoading}
               className="flex items-center gap-1.5 h-9 px-5 bg-gradient-to-r from-copper to-copper/80 hover:from-copper/90 hover:to-copper/70 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-all"
             >
@@ -576,7 +589,7 @@ export default function SignupPage() {
             </button>
           </div>
         )}
-      </div>
+      </form>
     </>
   );
 }
