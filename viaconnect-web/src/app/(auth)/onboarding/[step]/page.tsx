@@ -34,11 +34,13 @@ const HEALTH_CONCERNS = [
   "Hormonal Imbalance", "Immune Support", "Cardiovascular Health",
   "Stress Management", "Anxiety", "Depression", "Joint Health",
   "Metabolic Syndrome", "Autoimmune", "Detoxification",
+  "None of the Above",
 ];
 
 const FAMILY_HISTORY = [
   "Heart Disease", "Diabetes", "Cancer", "Alzheimer's",
   "Autoimmune Disorders", "Mental Health", "Obesity", "High Blood Pressure",
+  "None of the Above",
 ];
 
 // ─── Lifestyle Options ──────────────────────────────────────────────────────
@@ -217,6 +219,16 @@ export default function OnboardingStepPage() {
     setter(arr.includes(val) ? arr.filter((v) => v !== val) : [...arr, val]);
   }
 
+  // Toggle chip with "None of the Above" mutual exclusivity
+  function toggleChipExclusive(arr: string[], val: string, setter: (v: string[]) => void) {
+    if (val === "None of the Above") {
+      setter(arr.includes("None of the Above") ? [] : ["None of the Above"]);
+    } else {
+      const filtered = arr.filter((v) => v !== "None of the Above");
+      setter(filtered.includes(val) ? filtered.filter((v) => v !== val) : [...filtered, val]);
+    }
+  }
+
   // Save phase to Supabase
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async function savePhase(phaseId: string, data: any) {
@@ -364,7 +376,7 @@ export default function OnboardingStepPage() {
                 {HEALTH_CONCERNS.map((c) => (
                   <button
                     key={c}
-                    onClick={() => toggleChip(demographics.concerns, c, (v) => setDemographics({ ...demographics, concerns: v }))}
+                    onClick={() => toggleChipExclusive(demographics.concerns, c, (v) => setDemographics({ ...demographics, concerns: v }))}
                     className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
                       demographics.concerns.includes(c)
                         ? "bg-copper/15 text-copper border-copper/30"
@@ -384,7 +396,7 @@ export default function OnboardingStepPage() {
                 {FAMILY_HISTORY.map((c) => (
                   <button
                     key={c}
-                    onClick={() => toggleChip(demographics.familyHistory, c, (v) => setDemographics({ ...demographics, familyHistory: v }))}
+                    onClick={() => toggleChipExclusive(demographics.familyHistory, c, (v) => setDemographics({ ...demographics, familyHistory: v }))}
                     className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
                       demographics.familyHistory.includes(c)
                         ? "bg-plum/15 text-plum-light border-plum/30"
