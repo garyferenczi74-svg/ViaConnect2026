@@ -207,6 +207,8 @@ export default function SignupPage() {
   async function handleSignup() {
     setIsLoading(true);
     const supabase = createClient();
+
+    // 1. Create the Supabase auth account
     const { error } = await supabase.auth.signUp({
       email,
       password,
@@ -229,7 +231,24 @@ export default function SignupPage() {
       return;
     }
 
-    toast.success("Verification code sent! Check your email (and spam folder).");
+    // 2. Send verification code via our own SendGrid Edge Function
+    try {
+      const { data: sendResult, error: sendError } = await supabase.functions.invoke(
+        "send-verification-code",
+        { body: { email } }
+      );
+
+      if (sendError) {
+        toast.error("Account created but verification email failed. Use 'Resend code' on the next screen.");
+      } else if (sendResult && !sendResult.success) {
+        toast.error(sendResult.error || "Failed to send verification email. Use 'Resend code' on the next screen.");
+      } else {
+        toast.success("Verification code sent! Check your email.");
+      }
+    } catch {
+      toast.error("Account created but verification email failed. Use 'Resend code' on the next screen.");
+    }
+
     setIsLoading(false);
     setStep(5);
   }
@@ -262,15 +281,28 @@ export default function SignupPage() {
     }
     setIsLoading(true);
     const supabase = createClient();
-    const { error } = await supabase.auth.verifyOtp({
+
+    // Verify via our custom Edge Function (checks code + confirms user)
+    const { data: verifyResult, error: verifyError } = await supabase.functions.invoke(
+      "verify-email-code",
+      { body: { email, code } }
+    );
+
+    if (verifyError || (verifyResult && !verifyResult.success)) {
+      toast.error(verifyResult?.error || verifyError?.message || "Invalid verification code");
+      setIsLoading(false);
+      return;
+    }
+
+    // Sign in with the now-confirmed account
+    const { error: signInError } = await supabase.auth.signInWithPassword({
       email,
-      token: code,
-      type: "signup",
+      password,
     });
 
-    if (error) {
-      toast.error(error.message);
-      setIsLoading(false);
+    if (signInError) {
+      toast.error("Account verified but sign-in failed. Please log in manually.");
+      router.push("/login");
       return;
     }
 
@@ -287,19 +319,16 @@ export default function SignupPage() {
     if (resendCooldown > 0) return;
     setIsLoading(true);
     const supabase = createClient();
-    const { error } = await supabase.auth.resend({
-      type: "signup",
-      email,
-      options: {
-        emailRedirectTo: `${window.location.origin}/api/auth/callback`,
-      },
-    });
+    const { data: sendResult, error: sendError } = await supabase.functions.invoke(
+      "send-verification-code",
+      { body: { email } }
+    );
     setIsLoading(false);
-    if (error) {
-      toast.error(error.message);
+    if (sendError || (sendResult && !sendResult.success)) {
+      toast.error(sendResult?.error || sendError?.message || "Failed to resend code");
       return;
     }
-    toast.success("Verification code resent! Check your inbox and spam folder.");
+    toast.success("New verification code sent! Check your inbox.");
     setResendCooldown(60);
     const interval = setInterval(() => {
       setResendCooldown((prev) => {
