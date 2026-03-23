@@ -63,6 +63,14 @@ pass = "env(SMTP_PASS)"
 admin_email = "noreply@viaconnect.health"
 sender_name = "ViaConnect GeneX360"
 
+[auth.email.template.confirmation]
+subject = "Your ViaConnect Verification Code"
+content_path = "./supabase/templates/confirmation.html"
+
+[auth.email.template.recovery]
+subject = "Reset Your ViaConnect Password"
+content_path = "./supabase/templates/reset-password.html"
+
 [auth.external.apple]
 enabled = false
 
