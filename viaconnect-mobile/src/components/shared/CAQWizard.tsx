@@ -193,8 +193,12 @@ export function CAQWizard({ userId, onComplete }: CAQWizardProps) {
     const goalCount = ((answers['primary_goals'] as string[]) ?? []).length;
     const goalScore = Math.min(100, goalCount * 20); // 20% weight
 
+    // Condition score from current_conditions (30% weight)
+    const conditionCount = ((answers['current_conditions'] as string[]) ?? []).length;
+    const conditionScore = Math.max(0, 100 - conditionCount * 15);
+
     const totalScore = Math.round(
-      symptomScore * 0.3 + symptomScore * 0.3 + lifestyleScore * 0.2 + goalScore * 0.2,
+      symptomScore * 0.3 + conditionScore * 0.3 + lifestyleScore * 0.2 + goalScore * 0.2,
     );
     return Math.min(100, Math.max(0, totalScore));
   };
@@ -228,6 +232,10 @@ export function CAQWizard({ userId, onComplete }: CAQWizardProps) {
           { onConflict: 'user_id' },
         );
         await supabase.from('health_scores').insert({ user_id: userId, score });
+        await supabase.from('profiles').update({
+          assessment_completed: true,
+          vitality_score: score,
+        }).eq('id', userId);
       } catch { /* best-effort */ }
       setIsSaving(false);
       onComplete(score);

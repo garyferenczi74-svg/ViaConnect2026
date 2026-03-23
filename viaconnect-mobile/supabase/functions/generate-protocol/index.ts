@@ -291,17 +291,20 @@ serve(async (req) => {
     }
 
     // 7. Write recommendations to DB
-    const recInserts = recommendations.map((r) => ({
+    const recInserts = recommendations.map((r, idx) => ({
       user_id: userId,
-      genetic_profile_id: (geneticData as Record<string, string>)?.id ?? null,
-      assessment_id: (assessmentData as Record<string, string>)?.id ?? null,
-      pathway: r.pathway,
-      product_sku: r.product_sku,
+      sku: r.product_sku,
       product_name: r.product_name,
-      dosing: r.dosing,
-      rationale: r.rationale,
-      priority: r.priority,
-      status: 'pending_review',
+      category: r.pathway,
+      reason: r.rationale,
+      confidence_level: geneticData ? 'combined' : 'questionnaire',
+      confidence_score: geneticData ? 82 : 68,
+      priority_rank: idx + 1,
+      dosage: r.dosing,
+      frequency: 'daily',
+      source: geneticData ? 'genetic' : 'caq',
+      assessment_id: (assessmentData as Record<string, string>)?.id ?? null,
+      status: 'recommended',
     }));
 
     if (recInserts.length > 0) {

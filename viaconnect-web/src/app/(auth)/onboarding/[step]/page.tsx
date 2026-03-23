@@ -257,6 +257,11 @@ export default function OnboardingStepPage() {
               data: { vitality_score: vitalityScore, constitutional_type: constitutionalType, completed_at: new Date().toISOString() },
               updated_at: new Date().toISOString(),
             }, { onConflict: "user_id,phase" });
+            await supabase.from("profiles").update({
+              assessment_completed: true,
+              vitality_score: vitalityScore,
+              constitutional_type: constitutionalType,
+            }).eq("id", user.id);
           }
           toast.success(`Your Vitality Score: ${vitalityScore}/100`, { duration: 5000 });
           router.push("/dashboard");
