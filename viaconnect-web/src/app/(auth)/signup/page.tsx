@@ -281,6 +281,24 @@ export default function SignupPage() {
     router.refresh();
   }
 
+  async function handleResendOtp() {
+    setIsLoading(true);
+    const supabase = createClient();
+    const { error } = await supabase.auth.resend({
+      type: "signup",
+      email,
+      options: {
+        emailRedirectTo: `${window.location.origin}/api/auth/callback`,
+      },
+    });
+    setIsLoading(false);
+    if (error) {
+      toast.error(error.message);
+    } else {
+      toast.success("Verification code resent! Check your inbox.");
+    }
+  }
+
   const inputClass = "w-full h-10 bg-dark-surface border border-dark-border rounded-lg px-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-copper/50 focus:border-copper/50 transition-colors";
   const errorInputClass = "w-full h-10 bg-dark-surface border border-rose/40 rounded-lg px-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-rose/30 focus:border-rose transition-colors";
 
@@ -457,7 +475,7 @@ export default function SignupPage() {
             </button>
             <p className="text-xs text-gray-500">
               Didn&apos;t receive the code?{" "}
-              <button className="text-copper hover:underline">Resend</button>
+              <button onClick={handleResendOtp} disabled={isLoading} className="text-copper hover:underline disabled:opacity-50">Resend</button>
             </p>
           </div>
         )}

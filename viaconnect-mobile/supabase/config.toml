@@ -50,6 +50,20 @@ enable_anonymous_sign_ins = false
 enable_signup = true
 double_confirm_changes = true
 enable_confirmations = true
+otp_length = 6
+otp_expiry = 600
+
+[auth.email.smtp]
+# Configure custom SMTP to bypass Supabase's built-in email rate limits.
+# Set these values in Supabase Dashboard > Auth > SMTP Settings, or
+# as environment variables: SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_SENDER_NAME.
+# Using the same SendGrid account already configured for notifications:
+# host = "smtp.sendgrid.net"
+# port = 587
+# user = "apikey"
+# pass = "env(SENDGRID_API_KEY)"
+# sender_name = "ViaConnect GeneX360"
+# admin_email = "no-reply@viaconnectapp.com"
 
 [auth.external.apple]
 enabled = false

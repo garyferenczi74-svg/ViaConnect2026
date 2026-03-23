@@ -176,6 +176,28 @@ export default function SignupScreen() {
     }
   }, [data, needsLicenseStep]);
 
+  const handleResendOTP = useCallback(async () => {
+    setError(null);
+    setIsLoading(true);
+    try {
+      const { error: resendError } = await supabase.auth.resend({
+        type: 'signup',
+        email: data.email.trim(),
+      });
+      if (resendError) {
+        setError(resendError.message);
+      } else {
+        setError(null);
+        // Brief success indication via clearing the OTP field
+        updateField('otp', '');
+      }
+    } catch {
+      setError('Failed to resend code. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [data.email, updateField]);
+
   const handleVerifyOTP = useCallback(async () => {
     if (data.otp.length < 6) {
       setError('Please enter the 6-digit code.');
@@ -189,7 +211,7 @@ export default function SignupScreen() {
       const { error: verifyError } = await supabase.auth.verifyOtp({
         email: data.email.trim(),
         token: data.otp,
-        type: 'email',
+        type: 'signup',
       });
 
       if (verifyError) {
@@ -504,7 +526,12 @@ export default function SignupScreen() {
               accessibilityLabel="Verification code"
             />
 
-            <Pressable className="items-center py-2">
+            <Pressable
+              className="items-center py-2 active:opacity-60"
+              onPress={handleResendOTP}
+              disabled={isLoading}
+              accessibilityLabel="Resend verification code"
+            >
               <Text className="text-copper text-sm">Resend Code</Text>
             </Pressable>
           </Animated.View>
