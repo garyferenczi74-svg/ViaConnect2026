@@ -143,6 +143,7 @@ export default function SignupPage() {
 
   // Step 5 — OTP
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
+  const [resendCooldown, setResendCooldown] = useState(0);
 
   function validate(): boolean {
     setErrors({});
@@ -228,6 +229,7 @@ export default function SignupPage() {
       return;
     }
 
+    toast.success("Verification code sent! Check your email (and spam folder).");
     setIsLoading(false);
     setStep(5);
   }
@@ -279,6 +281,35 @@ export default function SignupPage() {
       router.push(role === "practitioner" ? "/practitioner/dashboard" : "/naturopath/dashboard");
     }
     router.refresh();
+  }
+
+  async function handleResendOtp() {
+    if (resendCooldown > 0) return;
+    setIsLoading(true);
+    const supabase = createClient();
+    const { error } = await supabase.auth.resend({
+      type: "signup",
+      email,
+      options: {
+        emailRedirectTo: `${window.location.origin}/api/auth/callback`,
+      },
+    });
+    setIsLoading(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success("Verification code resent! Check your inbox and spam folder.");
+    setResendCooldown(60);
+    const interval = setInterval(() => {
+      setResendCooldown((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
   }
 
   const inputClass = "w-full h-10 bg-dark-surface border border-dark-border rounded-lg px-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-copper/50 focus:border-copper/50 transition-colors";
@@ -456,8 +487,14 @@ export default function SignupPage() {
               )}
             </button>
             <p className="text-xs text-gray-500">
-              Didn&apos;t receive the code?{" "}
-              <button className="text-copper hover:underline">Resend</button>
+              Didn&apos;t receive the code? Check your spam folder.{" "}
+              <button
+                onClick={handleResendOtp}
+                disabled={resendCooldown > 0 || isLoading}
+                className="text-copper hover:underline disabled:opacity-50 disabled:no-underline"
+              >
+                {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : "Resend code"}
+              </button>
             </p>
           </div>
         )}
