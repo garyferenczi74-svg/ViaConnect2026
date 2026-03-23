@@ -147,7 +147,9 @@ export default function SignupScreen() {
         },
       });
 
-      if (authError) {
+      // 422 = user already registered (e.g. from a previous attempt).
+      // Proceed to send OTP so they can still verify.
+      if (authError && !authError.message.includes('already registered')) {
         setError(authError.message);
         return;
       }
@@ -167,8 +169,8 @@ export default function SignupScreen() {
 
       // Send OTP via our custom Edge Function (SendGrid HTTP API)
       const { data: otpResult, error: otpError } = await supabase.functions.invoke(
-        'send-otp/send',
-        { body: { email: data.email.trim(), type: 'signup' } },
+        'send-otp',
+        { body: { action: 'send', email: data.email.trim(), type: 'signup' } },
       );
 
       if (otpError || !otpResult?.success) {
@@ -199,8 +201,8 @@ export default function SignupScreen() {
     try {
       // Verify OTP via our custom Edge Function
       const { data: verifyResult, error: verifyError } = await supabase.functions.invoke(
-        'send-otp/verify',
-        { body: { email: data.email.trim(), token: data.otp, type: 'signup' } },
+        'send-otp',
+        { body: { action: 'verify', email: data.email.trim(), token: data.otp, type: 'signup' } },
       );
 
       if (verifyError || !verifyResult?.success) {
@@ -249,8 +251,8 @@ export default function SignupScreen() {
     try {
       // Resend OTP via our custom Edge Function (SendGrid HTTP API)
       const { data: otpResult, error: otpError } = await supabase.functions.invoke(
-        'send-otp/send',
-        { body: { email: data.email.trim(), type: 'signup' } },
+        'send-otp',
+        { body: { action: 'send', email: data.email.trim(), type: 'signup' } },
       );
 
       if (otpError || !otpResult?.success) {

@@ -1,18 +1,28 @@
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
-import { handleCors } from '../_shared/cors.ts';
-import { ok, err } from '../_shared/response.ts';
 import { getSupabaseAdmin } from '../_shared/supabase-admin.ts';
 import { z } from '../_shared/validate.ts';
 
-const SendOTPSchema = z.object({
-  email: z.string().email(),
-  type: z.enum(['signup', 'recovery']),
-});
+// ── Inline CORS (self-contained, no sub-path issues) ────────────────────
+const corsHeaders: Record<string, string> = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers':
+    'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+};
 
-const VerifyOTPSchema = z.object({
+function json(data: unknown, status = 200): Response {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
+}
+
+// ── Schemas ─────────────────────────────────────────────────────────────
+const RequestSchema = z.object({
+  action: z.enum(['send', 'verify']),
   email: z.string().email(),
-  token: z.string().length(6),
   type: z.enum(['signup', 'recovery']),
+  token: z.string().length(6).optional(),
 });
 
 // ── Generate a 6-digit OTP ──────────────────────────────────────────────
@@ -27,9 +37,9 @@ async function sendViaSendGrid(
   to: string,
   subject: string,
   htmlBody: string,
-): Promise<{ sent: boolean; error?: string }> {
+): Promise<{ sent: boolean; error?: string; statusCode?: number }> {
   const apiKey = Deno.env.get('SENDGRID_API_KEY');
-  if (!apiKey) return { sent: false, error: 'SENDGRID_API_KEY not configured' };
+  if (!apiKey) return { sent: false, error: 'SENDGRID_API_KEY not set in Supabase secrets' };
 
   // Use the same verified sender as send-notification
   const fromEmail = Deno.env.get('SENDGRID_FROM_EMAIL') || 'notifications@farmceutica.com';
@@ -54,7 +64,7 @@ async function sendViaSendGrid(
   }
 
   const errorText = await res.text();
-  return { sent: false, error: `SendGrid ${res.status}: ${errorText}` };
+  return { sent: false, error: `SendGrid ${res.status}: ${errorText}`, statusCode: res.status };
 }
 
 // ── Branded OTP email HTML ──────────────────────────────────────────────
@@ -65,8 +75,7 @@ function otpEmailHtml(otp: string, type: 'signup' | 'recovery'): string {
       ? 'Enter this 6-digit code in the app to complete your registration:'
       : 'Enter this 6-digit code in the app to reset your password:';
 
-  return `
-<!DOCTYPE html>
+  return `<!DOCTYPE html>
 <html>
 <body style="margin:0;padding:0;background-color:#111827;font-family:'Inter',Helvetica,Arial,sans-serif;">
   <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#111827;padding:40px 20px;">
@@ -103,34 +112,36 @@ function otpEmailHtml(otp: string, type: 'signup' | 'recovery'): string {
 }
 
 serve(async (req) => {
-  const corsResponse = handleCors(req);
-  if (corsResponse) return corsResponse;
-
-  const url = new URL(req.url);
-  const action = url.pathname.split('/').pop(); // "send" or "verify"
-  const admin = getSupabaseAdmin();
+  // Handle CORS preflight
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders });
+  }
 
   try {
-    // ── POST /send-otp/send ───────────────────────────────────────────
+    const body = await req.json();
+    const parsed = RequestSchema.safeParse(body);
+    if (!parsed.success) {
+      return json(
+        { success: false, error: parsed.error.issues[0].message },
+        400,
+      );
+    }
+
+    const { action, email, type, token } = parsed.data;
+    const admin = getSupabaseAdmin();
+
+    // ── ACTION: send ──────────────────────────────────────────────────
     if (action === 'send') {
-      const body = await req.json();
-      const parsed = SendOTPSchema.safeParse(body);
-      if (!parsed.success) {
-        return err(parsed.error.issues[0].message, 'VALIDATION_ERROR');
-      }
-      const { email, type } = parsed.data;
-
-      // Generate OTP and expiry
       const otp = generateOTP();
-      const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString(); // 10 min
+      const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
 
-      // Store OTP in DB (upsert so resend replaces the old one)
+      // Store OTP (upsert so resend replaces the old one)
       const { error: dbError } = await admin
         .from('email_otps')
         .upsert(
           {
             email: email.toLowerCase(),
-            otp_hash: otp, // In production, hash this; for now, store directly
+            otp_hash: otp,
             type,
             expires_at: expiresAt,
             attempts: 0,
@@ -139,10 +150,12 @@ serve(async (req) => {
         );
 
       if (dbError) {
-        return err(`Failed to store OTP: ${dbError.message}`, 'DB_ERROR', 500);
+        return json(
+          { success: false, error: `DB error: ${dbError.message}` },
+          500,
+        );
       }
 
-      // Send via SendGrid HTTP API
       const subject =
         type === 'signup'
           ? 'Your ViaConnect Verification Code'
@@ -151,22 +164,18 @@ serve(async (req) => {
       const result = await sendViaSendGrid(email, subject, otpEmailHtml(otp, type));
 
       if (!result.sent) {
-        return err(result.error ?? 'Email delivery failed', 'EMAIL_ERROR', 500);
+        return json({ success: false, error: result.error }, 500);
       }
 
-      return ok({ sent: true, message: `Verification code sent to ${email}` });
+      return json({ success: true, data: { message: `Code sent to ${email}` } });
     }
 
-    // ── POST /send-otp/verify ─────────────────────────────────────────
+    // ── ACTION: verify ────────────────────────────────────────────────
     if (action === 'verify') {
-      const body = await req.json();
-      const parsed = VerifyOTPSchema.safeParse(body);
-      if (!parsed.success) {
-        return err(parsed.error.issues[0].message, 'VALIDATION_ERROR');
+      if (!token) {
+        return json({ success: false, error: 'Token is required for verify' }, 400);
       }
-      const { email, token, type } = parsed.data;
 
-      // Look up OTP
       const { data: otpRecord, error: lookupError } = await admin
         .from('email_otps')
         .select('*')
@@ -175,27 +184,22 @@ serve(async (req) => {
         .single();
 
       if (lookupError || !otpRecord) {
-        return err('No verification code found. Please request a new one.', 'OTP_NOT_FOUND');
+        return json(
+          { success: false, error: 'No verification code found. Please request a new one.' },
+          400,
+        );
       }
 
       // Check expiry
       if (new Date(otpRecord.expires_at) < new Date()) {
-        await admin
-          .from('email_otps')
-          .delete()
-          .eq('email', email.toLowerCase())
-          .eq('type', type);
-        return err('Code expired. Please request a new one.', 'OTP_EXPIRED');
+        await admin.from('email_otps').delete().eq('email', email.toLowerCase()).eq('type', type);
+        return json({ success: false, error: 'Code expired. Please request a new one.' }, 400);
       }
 
-      // Check attempts (max 5)
+      // Max 5 attempts
       if (otpRecord.attempts >= 5) {
-        await admin
-          .from('email_otps')
-          .delete()
-          .eq('email', email.toLowerCase())
-          .eq('type', type);
-        return err('Too many attempts. Please request a new code.', 'OTP_MAX_ATTEMPTS');
+        await admin.from('email_otps').delete().eq('email', email.toLowerCase()).eq('type', type);
+        return json({ success: false, error: 'Too many attempts. Please request a new code.' }, 400);
       }
 
       // Increment attempts
@@ -205,21 +209,16 @@ serve(async (req) => {
         .eq('email', email.toLowerCase())
         .eq('type', type);
 
-      // Verify
+      // Check code
       if (otpRecord.otp_hash !== token) {
-        return err('Invalid code. Please try again.', 'OTP_INVALID');
+        return json({ success: false, error: 'Invalid code. Please try again.' }, 400);
       }
 
-      // OTP is valid — clean up
-      await admin
-        .from('email_otps')
-        .delete()
-        .eq('email', email.toLowerCase())
-        .eq('type', type);
+      // Valid — clean up
+      await admin.from('email_otps').delete().eq('email', email.toLowerCase()).eq('type', type);
 
-      // For signup: confirm the user's email in Supabase Auth
+      // Confirm user's email in Supabase Auth
       if (type === 'signup') {
-        // Find user by email and update email_confirmed_at
         const { data: users } = await admin.auth.admin.listUsers();
         const user = users?.users?.find(
           (u) => u.email?.toLowerCase() === email.toLowerCase(),
@@ -231,14 +230,13 @@ serve(async (req) => {
         }
       }
 
-      return ok({ verified: true });
+      return json({ success: true, data: { verified: true } });
     }
 
-    return err('Invalid action. Use /send or /verify', 'INVALID_ACTION');
+    return json({ success: false, error: 'Invalid action' }, 400);
   } catch (e) {
-    return err(
-      e instanceof Error ? e.message : 'Internal server error',
-      'INTERNAL_ERROR',
+    return json(
+      { success: false, error: e instanceof Error ? e.message : 'Internal error' },
       500,
     );
   }
