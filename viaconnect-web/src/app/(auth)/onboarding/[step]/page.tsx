@@ -403,17 +403,17 @@ export default function OnboardingStepPage() {
         {stepId === "2" && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {SYMPTOM_CATEGORIES.map((cat) => (
-              <div key={cat} className="flex items-center gap-3 p-3 rounded-lg bg-dark-surface/50">
-                <span className="text-sm text-gray-300 min-w-[120px]">{cat}</span>
+              <div key={cat} className="flex items-center gap-3 p-3 rounded-lg bg-dark-surface/50 min-w-0 overflow-hidden">
+                <span className="text-sm text-gray-300 w-[120px] shrink-0 truncate">{cat}</span>
                 <input
                   type="range"
                   min={0}
                   max={10}
                   value={symptoms[cat]}
                   onChange={(e) => setSymptoms({ ...symptoms, [cat]: parseInt(e.target.value) })}
-                  className="flex-1 accent-copper h-1.5"
+                  className="flex-1 min-w-0 accent-copper h-1.5"
                 />
-                <span className={`text-xs font-mono w-6 text-right ${
+                <span className={`text-xs font-mono w-6 shrink-0 text-right ${
                   symptoms[cat] >= 7 ? "text-rose" : symptoms[cat] >= 4 ? "text-copper" : "text-portal-green"
                 }`}>
                   {symptoms[cat]}
