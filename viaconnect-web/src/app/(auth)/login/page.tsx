@@ -66,6 +66,31 @@ function LoginForm() {
     });
 
     if (error) {
+      // If email not confirmed, auto-confirm and retry
+      if (error.message.toLowerCase().includes("email not confirmed")) {
+        try {
+          const { error: confirmError } = await supabase.functions.invoke(
+            "auto-confirm-signup",
+            { body: { email } }
+          );
+          if (!confirmError) {
+            // Retry sign-in after confirming
+            const { data: retryData, error: retryError } = await supabase.auth.signInWithPassword({
+              email,
+              password,
+            });
+            if (!retryError && retryData?.user) {
+              const retryRole = retryData.user?.user_metadata?.role as string | undefined;
+              const dest = redirectTo || getRoleHomePath(retryRole);
+              router.push(dest);
+              router.refresh();
+              return;
+            }
+          }
+        } catch {
+          // Fall through to error toast
+        }
+      }
       toast.error(error.message);
       setIsLoading(false);
       return;

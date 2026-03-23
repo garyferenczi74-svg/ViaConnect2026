@@ -221,7 +221,6 @@ export default function SignupPage() {
           location: location || undefined,
           license_number: role !== "consumer" ? licenseNumber : undefined,
         },
-        emailRedirectTo: `${window.location.origin}/api/auth/callback`,
       },
     });
 
@@ -231,26 +230,49 @@ export default function SignupPage() {
       return;
     }
 
-    // 2. Send verification code via our own SendGrid Edge Function
+    // 2. Auto-confirm the user's email via Edge Function (bypasses broken Supabase email)
     try {
-      const { data: sendResult, error: sendError } = await supabase.functions.invoke(
-        "send-verification-code",
+      const { data: confirmResult, error: confirmError } = await supabase.functions.invoke(
+        "auto-confirm-signup",
         { body: { email } }
       );
 
-      if (sendError) {
-        toast.error("Account created but verification email failed. Use 'Resend code' on the next screen.");
-      } else if (sendResult && !sendResult.success) {
-        toast.error(sendResult.error || "Failed to send verification email. Use 'Resend code' on the next screen.");
-      } else {
-        toast.success("Verification code sent! Check your email.");
+      if (confirmError || (confirmResult && !confirmResult.success)) {
+        console.error("Auto-confirm failed:", confirmError || confirmResult?.error);
+        toast.error("Account created but confirmation failed. Please try logging in.");
+        setIsLoading(false);
+        return;
       }
-    } catch {
-      toast.error("Account created but verification email failed. Use 'Resend code' on the next screen.");
+    } catch (e) {
+      console.error("Auto-confirm exception:", e);
+      toast.error("Account created but confirmation failed. Please try logging in.");
+      setIsLoading(false);
+      return;
     }
 
+    // 3. Sign in immediately with the confirmed account
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (signInError) {
+      console.error("Auto sign-in failed:", signInError.message);
+      toast.error("Account created! Please log in with your credentials.");
+      setIsLoading(false);
+      router.push("/login");
+      return;
+    }
+
+    toast.success("Account created successfully!");
     setIsLoading(false);
-    setStep(5);
+
+    if (role === "consumer") {
+      router.push("/onboarding/1");
+    } else {
+      router.push(role === "practitioner" ? "/practitioner/dashboard" : "/naturopath/dashboard");
+    }
+    router.refresh();
   }
 
   function handleOtpChange(index: number, value: string) {
