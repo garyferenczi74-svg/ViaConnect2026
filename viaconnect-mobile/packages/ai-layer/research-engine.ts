@@ -76,6 +76,7 @@ export interface ResearchRequest {
   includeGenetics?: boolean;
   geneticProfile?: Record<string, unknown> | null;
   userRole?: 'consumer' | 'practitioner' | 'naturopath';
+  ncbiApiKey?: string;
 }
 
 // ── Source Configuration ───────────────────────────────────────────────────
@@ -217,6 +218,23 @@ export async function queryGrok(
 export async function queryPubMed(
   request: ResearchRequest,
 ): Promise<SourceResult> {
+  // Fetch NCBI API key from server (keeps secret server-side)
+  if (!request.ncbiApiKey) {
+    try {
+      const keyRes = await fetch('/api/research/stream', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ source: 'pubmed', query: request.query }),
+      });
+      if (keyRes.ok) {
+        const { ncbiApiKey } = await keyRes.json();
+        if (ncbiApiKey) request = { ...request, ncbiApiKey };
+      }
+    } catch {
+      // Continue without API key (lower rate limit)
+    }
+  }
+
   const entities = extractMedicalEntities(request.query);
   const searchTerms = [
     ...entities.conditions,
@@ -240,9 +258,12 @@ export async function queryPubMed(
     dateFilter = `&mindate=${fromDate}&maxdate=${toDate}&datetype=pdat`;
   }
 
+  // NCBI API key increases rate limit from 3 to 10 req/s
+  const apiKeyParam = request.ncbiApiKey ? `&api_key=${request.ncbiApiKey}` : '';
+
   // Step 1: esearch
   const searchUrl =
-    `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=${encodeURIComponent(searchTerms)}&retmax=10&retmode=json&sort=relevance${dateFilter}`;
+    `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=${encodeURIComponent(searchTerms)}&retmax=10&retmode=json&sort=relevance${dateFilter}${apiKeyParam}`;
 
   const searchRes = await fetch(searchUrl);
   if (!searchRes.ok) throw new Error('PubMed search failed');
@@ -255,7 +276,7 @@ export async function queryPubMed(
 
   // Step 2: efetch for summaries
   const fetchUrl =
-    `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&id=${ids.join(',')}&retmode=json`;
+    `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&id=${ids.join(',')}&retmode=json${apiKeyParam}`;
   const fetchRes = await fetch(fetchUrl);
   if (!fetchRes.ok) throw new Error('PubMed fetch failed');
   const fetchData = await fetchRes.json();

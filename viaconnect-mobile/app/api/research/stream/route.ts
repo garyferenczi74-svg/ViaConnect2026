@@ -18,7 +18,7 @@ const NCBI_API_KEY = process.env.NCBI_API_KEY ?? '';
 
 interface RequestBody {
   query: string;
-  source?: 'claude' | 'grok' | 'web';
+  source?: 'claude' | 'grok' | 'web' | 'pubmed';
   systemPrompt?: string;
   includeGenetics?: boolean;
   geneticProfile?: Record<string, unknown> | null;
@@ -236,10 +236,19 @@ export async function POST(request: Request): Promise<Response> {
         });
       }
 
+      case 'pubmed': {
+        // Return the NCBI API key to the client-side research engine
+        // so PubMed E-utilities calls include it for higher rate limits
+        return new Response(
+          JSON.stringify({ ncbiApiKey: NCBI_API_KEY || null }),
+          { headers: { 'Content-Type': 'application/json' } },
+        );
+      }
+
       default: {
         return new Response(
           JSON.stringify({
-            error: `Unknown source: ${source}. Use 'claude', 'grok', or 'web'.`,
+            error: `Unknown source: ${source}. Use 'claude', 'grok', 'web', or 'pubmed'.`,
           }),
           {
             status: 400,
