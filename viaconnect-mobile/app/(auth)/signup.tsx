@@ -163,9 +163,18 @@ export default function SignupScreen() {
           role: dbRole,
           onboarding_completed: false,
         });
+      }
 
-        // For practitioners/naturopaths, store license info
-        // (handled in a future verification edge function)
+      // Send OTP via our custom Edge Function (SendGrid HTTP API)
+      const { data: otpResult, error: otpError } = await supabase.functions.invoke(
+        'send-otp/send',
+        { body: { email: data.email.trim(), type: 'signup' } },
+      );
+
+      if (otpError || !otpResult?.success) {
+        const msg = otpResult?.error || otpError?.message || 'Failed to send verification email';
+        setError(msg);
+        return;
       }
 
       // Move to OTP verification step
@@ -188,14 +197,26 @@ export default function SignupScreen() {
     setIsLoading(true);
 
     try {
-      const { error: verifyError } = await supabase.auth.verifyOtp({
+      // Verify OTP via our custom Edge Function
+      const { data: verifyResult, error: verifyError } = await supabase.functions.invoke(
+        'send-otp/verify',
+        { body: { email: data.email.trim(), token: data.otp, type: 'signup' } },
+      );
+
+      if (verifyError || !verifyResult?.success) {
+        const msg = verifyResult?.error || verifyError?.message || 'Verification failed';
+        setError(msg);
+        return;
+      }
+
+      // Re-sign in to get a confirmed session
+      const { error: signInError } = await supabase.auth.signInWithPassword({
         email: data.email.trim(),
-        token: data.otp,
-        type: 'signup',
+        password: data.password,
       });
 
-      if (verifyError) {
-        setError(verifyError.message);
+      if (signInError) {
+        setError(signInError.message);
         return;
       }
 
@@ -217,7 +238,7 @@ export default function SignupScreen() {
     } finally {
       setIsLoading(false);
     }
-  }, [data.otp, data.email, data.role, router]);
+  }, [data.otp, data.email, data.password, data.role, router]);
 
   const handleResendCode = useCallback(async () => {
     if (resendCooldown > 0) return;
@@ -226,13 +247,15 @@ export default function SignupScreen() {
     setIsLoading(true);
 
     try {
-      const { error: resendError } = await supabase.auth.resend({
-        type: 'signup',
-        email: data.email.trim(),
-      });
+      // Resend OTP via our custom Edge Function (SendGrid HTTP API)
+      const { data: otpResult, error: otpError } = await supabase.functions.invoke(
+        'send-otp/send',
+        { body: { email: data.email.trim(), type: 'signup' } },
+      );
 
-      if (resendError) {
-        setError(resendError.message);
+      if (otpError || !otpResult?.success) {
+        const msg = otpResult?.error || otpError?.message || 'Failed to resend code';
+        setError(msg);
         return;
       }
 

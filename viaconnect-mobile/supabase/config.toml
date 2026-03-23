@@ -50,9 +50,9 @@ enable_anonymous_sign_ins = false
 [auth.email]
 enable_signup = true
 double_confirm_changes = true
-enable_confirmations = true
-otp_length = 6
-otp_expiry = 600
+# Disabled: we handle OTP verification via custom send-otp Edge Function + SendGrid HTTP API.
+# This prevents Supabase from trying to send its own confirmation email via SMTP.
+enable_confirmations = false
 
 [auth.email.smtp]
 enabled = true
