@@ -1,0 +1,288 @@
+﻿{
+    "GeneratedAt":  "2026-03-24T17:29:08.5084098-06:00",
+    "ReportTitle":  "FarmCeutica Executive P\u0026L Dashboard",
+    "ActiveScenario":  "Balanced",
+    "ProfitAndLoss":  {
+                          "Scenario":  "Balanced",
+                          "ChannelMix":  {
+                                             "Wholesale":  0.3,
+                                             "Distributor":  0.2,
+                                             "DTC":  0.5
+                                         },
+                          "Monthly":  {
+                                          "GrossRevenue":  1976038.28,
+                                          "IndividualSKURevenue":  1362829.80,
+                                          "BundleRevenue":  613208.48,
+                                          "COGS":  289684.70,
+                                          "GrossProfit":  1555080.48,
+                                          "GrossMarginPct":  78.7,
+                                          "VariableCosts":  416434.79,
+                                          "NetOperatingProfit":  1138645.69,
+                                          "NetMarginPct":  57.6
+                                      },
+                          "Annual":  {
+                                         "GrossRevenue":  23712459.36,
+                                         "NetOperatingProfit":  13663748.28,
+                                         "NetMarginPct":  57.6
+                                     }
+                      },
+    "PortfolioScorecard":  {
+                               "TotalSKUs":  62,
+                               "TierDistribution":  {
+                                                        "Star":  9,
+                                                        "Core":  48,
+                                                        "Watch":  4,
+                                                        "Sunset":  1
+                                                    },
+                               "PortfolioHealthScore":  69,
+                               "AvgDTCMargin":  83.6,
+                               "AvgCOGSRatio":  16.4,
+                               "ChannelViability":  {
+                                                        "DTC":  {
+                                                                    "Viable":  61,
+                                                                    "Total":  62,
+                                                                    "Pct":  98.4
+                                                                },
+                                                        "Wholesale":  {
+                                                                          "Viable":  57,
+                                                                          "Total":  62,
+                                                                          "Pct":  91.9
+                                                                      },
+                                                        "Distributor":  {
+                                                                            "Viable":  56,
+                                                                            "Total":  62,
+                                                                            "Pct":  90.3
+                                                                        }
+                                                    },
+                               "MSRPRange":  {
+                                                 "Min":  48.88,
+                                                 "Max":  688.88,
+                                                 "Avg":  129.89
+                                             }
+                           },
+    "StrategicKPIs":  {
+                          "RevenueConcentration":  {
+                                                       "Top10SKUsRevShare":  "32.0%",
+                                                       "Interpretation":  "HEALTHY - well distributed"
+                                                   },
+                          "CategoryRevenueMix":  [
+                                                     {
+                                                         "Category":  "Advanced",
+                                                         "MonthlyRevenue":  534006.40,
+                                                         "Share":  39.2,
+                                                         "NetMarginPct":  52.6
+                                                     },
+                                                     {
+                                                         "Category":  "Base",
+                                                         "MonthlyRevenue":  284585.60,
+                                                         "Share":  20.9,
+                                                         "NetMarginPct":  57.6
+                                                     },
+                                                     {
+                                                         "Category":  "Children",
+                                                         "MonthlyRevenue":  29578.00,
+                                                         "Share":  2.2,
+                                                         "NetMarginPct":  53.4
+                                                     },
+                                                     {
+                                                         "Category":  "Mushroom",
+                                                         "MonthlyRevenue":  73157.00,
+                                                         "Share":  5.4,
+                                                         "NetMarginPct":  49.7
+                                                     },
+                                                     {
+                                                         "Category":  "SNP",
+                                                         "MonthlyRevenue":  239367.00,
+                                                         "Share":  17.6,
+                                                         "NetMarginPct":  49.6
+                                                     },
+                                                     {
+                                                         "Category":  "Testing",
+                                                         "MonthlyRevenue":  107241.00,
+                                                         "Share":  7.9,
+                                                         "NetMarginPct":  -2.2
+                                                     },
+                                                     {
+                                                         "Category":  "Women",
+                                                         "MonthlyRevenue":  94894.80,
+                                                         "Share":  7.0,
+                                                         "NetMarginPct":  46.0
+                                                     }
+                                                 ],
+                          "PricingHealth":  {
+                                                "SKUsWithMarginAlerts":  6,
+                                                "SKUsRecentlyRepriced":  10,
+                                                "AlertRate":  "9.7%"
+                                            },
+                          "COGSRisk":  {
+                                           "SKUsFlaggedForReview":  16,
+                                           "RiskRate":  "25.8%"
+                                       },
+                          "BundleOpportunity":  {
+                                                    "TotalBundles":  15,
+                                                    "PremiumBundles":  4,
+                                                    "AnnualBundleRevenue":  7358501.76,
+                                                    "BundleRevenueAsShareOfTotal":  "31.0%"
+                                                }
+                      },
+    "ChannelEconomics":  [
+                             {
+                                 "Channel":  "DTC",
+                                 "MonthlyRevenue":  959750.00,
+                                 "RevenueShare":  "70.4%",
+                                 "MonthlyNetProfit":  445403.92,
+                                 "NetMarginPct":  46.4,
+                                 "WaterfallMarginRange":  {
+                                                              "Avg":  46.1,
+                                                              "Min":  4,
+                                                              "Max":  56.5
+                                                          }
+                             },
+                             {
+                                 "Channel":  "Wholesale",
+                                 "MonthlyRevenue":  287925.00,
+                                 "RevenueShare":  "21.1%",
+                                 "MonthlyNetProfit":  162149.61,
+                                 "NetMarginPct":  56.3,
+                                 "WaterfallMarginRange":  {
+                                                              "Avg":  53.8,
+                                                              "Min":  -48.4,
+                                                              "Max":  76.4
+                                                          }
+                             },
+                             {
+                                 "Channel":  "Distributor",
+                                 "MonthlyRevenue":  115154.80,
+                                 "RevenueShare":  "8.4%",
+                                 "MonthlyNetProfit":  49156.78,
+                                 "NetMarginPct":  42.7,
+                                 "WaterfallMarginRange":  {
+                                                              "Avg":  38.4,
+                                                              "Min":  -131.9,
+                                                              "Max":  76.2
+                                                          }
+                             }
+                         ],
+    "ScenarioComparison":  [
+                               {
+                                   "Scenario":  "DTC Heavy",
+                                   "Active":  false,
+                                   "MonthlyRevenue":  1708113.62,
+                                   "MonthlyNetProfit":  805827.78,
+                                   "BlendedMargin":  "47.2%",
+                                   "AnnualRevenue":  20497363.44,
+                                   "AnnualNetProfit":  9669933.36
+                               },
+                               {
+                                   "Scenario":  "Balanced",
+                                   "Active":  true,
+                                   "MonthlyRevenue":  1362829.80,
+                                   "MonthlyNetProfit":  656710.31,
+                                   "BlendedMargin":  "48.2%",
+                                   "AnnualRevenue":  16353957.60,
+                                   "AnnualNetProfit":  7880523.72
+                               },
+                               {
+                                   "Scenario":  "Wholesale Push",
+                                   "Active":  false,
+                                   "MonthlyRevenue":  1123486.14,
+                                   "MonthlyNetProfit":  569350.04,
+                                   "BlendedMargin":  "50.7%",
+                                   "AnnualRevenue":  13481833.68,
+                                   "AnnualNetProfit":  6832200.48
+                               },
+                               {
+                                   "Scenario":  "Distributor Scale",
+                                   "Active":  false,
+                                   "MonthlyRevenue":  959712.00,
+                                   "MonthlyNetProfit":  463203.94,
+                                   "BlendedMargin":  "48.3%",
+                                   "AnnualRevenue":  11516544.00,
+                                   "AnnualNetProfit":  5558447.28
+                               },
+                               {
+                                   "Scenario":  "Pure DTC",
+                                   "Active":  false,
+                                   "MonthlyRevenue":  1919500.00,
+                                   "MonthlyNetProfit":  890807.84,
+                                   "BlendedMargin":  "46.4%",
+                                   "AnnualRevenue":  23034000.00,
+                                   "AnnualNetProfit":  10689694.08
+                               }
+                           ],
+    "RiskRegister":  [
+                         {
+                             "Category":  "Portfolio",
+                             "Severity":  "HIGH",
+                             "Risk":  " SKU(s) classified as Sunset",
+                             "Detail":  "60 EpiGenDX",
+                             "Action":  "Evaluate discontinuation or major repricing"
+                         },
+                         {
+                             "Category":  "Portfolio",
+                             "Severity":  "MEDIUM",
+                             "Risk":  "4 SKUs in Watch tier",
+                             "Detail":  "57 Genetic Methylation Testing; 58 Genetic Nutrition Test; 59 Dutch Hormone Test; 62 30 Day Custom Vitamin Package",
+                             "Action":  "Monitor monthly; reprice or reformulate if no improvement"
+                         },
+                         {
+                             "Category":  "Supply Chain",
+                             "Severity":  "HIGH",
+                             "Risk":  "16 SKUs with COGS changes exceeding 10%",
+                             "Detail":  "BOM recalculation flagged significant cost shifts",
+                             "Action":  "Renegotiate supplier contracts; lock pricing for 90 days"
+                         },
+                         {
+                             "Category":  "Channel Strategy",
+                             "Severity":  "HIGH",
+                             "Risk":  "Testing SKUs structurally unprofitable in Wholesale/Distributor",
+                             "Detail":  "6 Testing SKUs show negative margins at wholesale/distributor pricing",
+                             "Action":  "Restrict Testing to DTC-only; consider Test+Treat bundles for margin recovery"
+                         },
+                         {
+                             "Category":  "Pricing",
+                             "Severity":  "MEDIUM",
+                             "Risk":  "6 SKUs below margin floor thresholds",
+                             "Detail":  "DTC margin \u003c 70% or Wholesale margin \u003c 50%",
+                             "Action":  "Execute price increases or negotiate COGS reductions"
+                         }
+                     ],
+    "TopRecommendations":  [
+                               {
+                                   "Priority":  1,
+                                   "Area":  "Revenue Growth",
+                                   "Recommendation":  "Launch top 4 PREMIUM bundles (NeuroCalm, Cognitive Elite, Longevity, Metabolic)",
+                                   "Impact":  "Estimated +.9M annual gross profit at 87%+ margins"
+                               },
+                               {
+                                   "Priority":  2,
+                                   "Area":  "Portfolio Optimization",
+                                   "Recommendation":  "Discontinue or restructure EpiGenDX (SKU 60) - only Sunset-tier product",
+                                   "Impact":  "Eliminate negative-margin channel exposure; redirect resources to Stars"
+                               },
+                               {
+                                   "Priority":  3,
+                                   "Area":  "Channel Strategy",
+                                   "Recommendation":  "Restrict Testing category to DTC-only sales",
+                                   "Impact":  "Prevent + annual wholesale/distributor losses"
+                               },
+                               {
+                                   "Priority":  4,
+                                   "Area":  "Pricing",
+                                   "Recommendation":  "Execute MSRP increases on 5 Watch-tier Testing SKUs",
+                                   "Impact":  "Improve DTC margins from 33-68% range toward 70% floor"
+                               },
+                               {
+                                   "Priority":  5,
+                                   "Area":  "Supply Chain",
+                                   "Recommendation":  "Renegotiate raw material contracts for 16 flagged SKUs",
+                                   "Impact":  "Potential COGS reduction across flagged products"
+                               },
+                               {
+                                   "Priority":  6,
+                                   "Area":  "Marketing",
+                                   "Recommendation":  "Increase ad spend allocation to 9 Star-tier SKUs",
+                                   "Impact":  "Stars average 80.5 composite score with 88%+ DTC margins - highest ROI"
+                               }
+                           ]
+}
