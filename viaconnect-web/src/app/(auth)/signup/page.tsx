@@ -142,7 +142,7 @@ export default function SignupPage() {
   const [licenseNumber, setLicenseNumber] = useState("");
 
   // Step 5 — OTP
-  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
+  const [otp, setOtp] = useState(["", "", "", "", "", "", "", ""]);
   const [resendCooldown, setResendCooldown] = useState(0);
   const cooldownRef = useRef<ReturnType<typeof setInterval>>();
 
@@ -224,7 +224,7 @@ export default function SignupPage() {
     setIsLoading(true);
     const supabase = createClient();
 
-    // Supabase sends a 6-digit confirmation code automatically when
+    // Supabase sends a confirmation code automatically when
     // "Confirm email" is enabled in the dashboard.
     const { error } = await supabase.auth.signUp({
       email,
@@ -278,8 +278,8 @@ export default function SignupPage() {
 
   async function handleVerifyOtp() {
     const code = otp.join("");
-    if (code.length < 6) {
-      toast.error("Please enter the full 6-digit code");
+    if (code.length < 8) {
+      toast.error("Please enter the full 8-digit code");
       return;
     }
     setIsLoading(true);
@@ -482,7 +482,7 @@ export default function SignupPage() {
             <div>
               <p className="text-lg font-semibold text-white">Verify your email</p>
               <p className="text-sm text-gray-400 mt-1">
-                We sent a 6-digit code to <span className="text-white">{email}</span>
+                We sent an 8-digit code to <span className="text-white">{email}</span>
               </p>
             </div>
             <div className="flex justify-center gap-2">
@@ -496,13 +496,13 @@ export default function SignupPage() {
                   value={digit}
                   onChange={(e) => handleOtpChange(i, e.target.value)}
                   onKeyDown={(e) => handleOtpKeyDown(i, e)}
-                  className="w-11 h-12 text-center text-lg font-bold bg-dark-surface border border-dark-border rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-copper focus:border-copper transition-colors"
+                  className="w-9 h-11 text-center text-lg font-bold bg-dark-surface border border-dark-border rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-copper focus:border-copper transition-colors"
                 />
               ))}
             </div>
             <button
               onClick={handleVerifyOtp}
-              disabled={isLoading || otp.join("").length < 6}
+              disabled={isLoading || otp.join("").length < 8}
               className="w-full h-10 bg-gradient-to-r from-copper to-copper/80 hover:from-copper/90 hover:to-copper/70 disabled:opacity-50 text-white font-medium rounded-lg transition-all flex items-center justify-center gap-2"
             >
               {isLoading ? (

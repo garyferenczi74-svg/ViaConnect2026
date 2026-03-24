@@ -136,7 +136,7 @@ export default function SignupScreen() {
     setIsLoading(true);
 
     try {
-      // Supabase sends a 6-digit confirmation code automatically when
+      // Supabase sends a confirmation code automatically when
       // enable_confirmations = true in the dashboard.
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: data.email.trim(),
@@ -183,8 +183,8 @@ export default function SignupScreen() {
   }, [data, needsLicenseStep]);
 
   const handleVerifyOTP = useCallback(async () => {
-    if (data.otp.length < 6) {
-      setError('Please enter the 6-digit code.');
+    if (data.otp.length < 8) {
+      setError('Please enter the 8-digit code.');
       return;
     }
 
@@ -540,7 +540,7 @@ export default function SignupScreen() {
             <View className="items-center py-4">
               <Text className="text-5xl mb-4">📬</Text>
               <Text className="text-gray-300 text-center text-sm">
-                We sent a 6-digit verification code to{'\n'}
+                We sent an 8-digit verification code to{'\n'}
                 <Text className="text-copper font-semibold">{data.email}</Text>
               </Text>
             </View>
@@ -548,11 +548,11 @@ export default function SignupScreen() {
             <TextInput
               className="bg-dark-card border border-dark-border rounded-xl px-6 py-4 text-white text-center text-2xl font-mono tracking-[8px]"
               value={data.otp}
-              onChangeText={(v) => updateField('otp', v.replace(/[^0-9]/g, '').slice(0, 6))}
-              placeholder="000000"
+              onChangeText={(v) => updateField('otp', v.replace(/[^0-9]/g, '').slice(0, 8))}
+              placeholder="00000000"
               placeholderTextColor="#4B5563"
               keyboardType="number-pad"
-              maxLength={6}
+              maxLength={8}
               autoFocus
               accessibilityLabel="Verification code"
             />
