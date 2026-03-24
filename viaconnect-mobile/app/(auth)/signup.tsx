@@ -136,6 +136,8 @@ export default function SignupScreen() {
     setIsLoading(true);
 
     try {
+      // Supabase sends a 6-digit confirmation code automatically when
+      // enable_confirmations = true in the dashboard.
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: data.email.trim(),
         password: data.password,
@@ -147,14 +149,17 @@ export default function SignupScreen() {
         },
       });
 
-      // 422 = user already registered (e.g. from a previous attempt).
-      // Proceed to send OTP so they can still verify.
-      if (authError && !authError.message.includes('already registered')) {
-        setError(authError.message);
-        return;
+      if (authError) {
+        // If user already registered but unconfirmed, resend the code
+        if (authError.message.includes('already registered')) {
+          await supabase.auth.resend({ type: 'signup', email: data.email.trim() });
+        } else {
+          setError(authError.message);
+          return;
+        }
       }
 
-      if (authData.user) {
+      if (authData?.user) {
         // Map app roles to DB roles: consumer→patient, naturopath→practitioner
         const dbRole = data.role === 'consumer' ? 'patient' as const : 'practitioner' as const;
 
@@ -165,18 +170,6 @@ export default function SignupScreen() {
           role: dbRole,
           onboarding_completed: false,
         });
-      }
-
-      // Send OTP via our custom Edge Function (SendGrid HTTP API)
-      const { data: otpResult, error: otpError } = await supabase.functions.invoke(
-        'send-otp',
-        { body: { action: 'send', email: data.email.trim(), type: 'signup' } },
-      );
-
-      if (otpError || !otpResult?.success) {
-        const msg = otpResult?.error || otpError?.message || 'Failed to send verification email';
-        setError(msg);
-        return;
       }
 
       // Move to OTP verification step
@@ -199,28 +192,19 @@ export default function SignupScreen() {
     setIsLoading(true);
 
     try {
-      // Verify OTP via our custom Edge Function
-      const { data: verifyResult, error: verifyError } = await supabase.functions.invoke(
-        'send-otp',
-        { body: { action: 'verify', email: data.email.trim(), token: data.otp, type: 'signup' } },
-      );
-
-      if (verifyError || !verifyResult?.success) {
-        const msg = verifyResult?.error || verifyError?.message || 'Verification failed';
-        setError(msg);
-        return;
-      }
-
-      // Re-sign in to get a confirmed session
-      const { error: signInError } = await supabase.auth.signInWithPassword({
+      // Verify with Supabase's built-in OTP verification
+      const { error: verifyError } = await supabase.auth.verifyOtp({
         email: data.email.trim(),
-        password: data.password,
+        token: data.otp,
+        type: 'signup',
       });
 
-      if (signInError) {
-        setError(signInError.message);
+      if (verifyError) {
+        setError(verifyError.message);
         return;
       }
+
+      // verifyOtp automatically signs the user in — no need to call signInWithPassword
 
       // Redirect based on role
       if (data.role === 'consumer') {
@@ -240,7 +224,7 @@ export default function SignupScreen() {
     } finally {
       setIsLoading(false);
     }
-  }, [data.otp, data.email, data.password, data.role, router]);
+  }, [data.otp, data.email, data.role, router]);
 
   const handleResendCode = useCallback(async () => {
     if (resendCooldown > 0) return;
@@ -249,15 +233,14 @@ export default function SignupScreen() {
     setIsLoading(true);
 
     try {
-      // Resend OTP via our custom Edge Function (SendGrid HTTP API)
-      const { data: otpResult, error: otpError } = await supabase.functions.invoke(
-        'send-otp',
-        { body: { action: 'send', email: data.email.trim(), type: 'signup' } },
-      );
+      // Resend via Supabase's built-in email
+      const { error: resendError } = await supabase.auth.resend({
+        type: 'signup',
+        email: data.email.trim(),
+      });
 
-      if (otpError || !otpResult?.success) {
-        const msg = otpResult?.error || otpError?.message || 'Failed to resend code';
-        setError(msg);
+      if (resendError) {
+        setError(resendError.message);
         return;
       }
 

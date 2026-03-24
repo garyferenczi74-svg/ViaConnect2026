@@ -224,7 +224,8 @@ export default function SignupPage() {
     setIsLoading(true);
     const supabase = createClient();
 
-    // 1. Create the user account
+    // Supabase sends a 6-digit confirmation code automatically when
+    // "Confirm email" is enabled in the dashboard.
     const { error } = await supabase.auth.signUp({
       email,
       password,
@@ -240,25 +241,15 @@ export default function SignupPage() {
       },
     });
 
-    // 422 = user already registered (e.g. from a previous attempt).
-    // Proceed to send OTP so they can still verify.
-    if (error && !error.message.includes("already registered")) {
-      toast.error(error.message);
-      setIsLoading(false);
-      return;
-    }
-
-    // 2. Send OTP via custom Edge Function (SendGrid HTTP API)
-    const { data: otpResult, error: otpError } = await supabase.functions.invoke(
-      "send-otp",
-      { body: { action: "send", email: email.trim(), type: "signup" } },
-    );
-
-    if (otpError || !otpResult?.success) {
-      const msg = otpResult?.error || otpError?.message || "Failed to send verification email";
-      toast.error(msg);
-      setIsLoading(false);
-      return;
+    if (error) {
+      // If user already registered but unconfirmed, resend the code
+      if (error.message.includes("already registered")) {
+        await supabase.auth.resend({ type: "signup", email: email.trim() });
+      } else {
+        toast.error(error.message);
+        setIsLoading(false);
+        return;
+      }
     }
 
     setIsLoading(false);
@@ -294,31 +285,20 @@ export default function SignupPage() {
     setIsLoading(true);
     const supabase = createClient();
 
-    // Verify OTP via custom Edge Function
-    const { data: verifyResult, error: verifyError } = await supabase.functions.invoke(
-      "send-otp",
-      { body: { action: "verify", email: email.trim(), token: code, type: "signup" } },
-    );
-
-    if (verifyError || !verifyResult?.success) {
-      const msg = verifyResult?.error || verifyError?.message || "Verification failed";
-      toast.error(msg);
-      setIsLoading(false);
-      return;
-    }
-
-    // Re-sign in to get a confirmed session
-    const { error: signInError } = await supabase.auth.signInWithPassword({
+    // Verify with Supabase's built-in OTP verification
+    const { error: verifyError } = await supabase.auth.verifyOtp({
       email: email.trim(),
-      password,
+      token: code,
+      type: "signup",
     });
 
-    if (signInError) {
-      toast.error(signInError.message);
+    if (verifyError) {
+      toast.error(verifyError.message);
       setIsLoading(false);
       return;
     }
 
+    // verifyOtp automatically signs the user in — no need to call signInWithPassword
     toast.success("Account verified!");
     if (role === "consumer") {
       router.push("/onboarding/1");
@@ -333,16 +313,15 @@ export default function SignupPage() {
     setIsLoading(true);
     const supabase = createClient();
 
-    // Resend OTP via custom Edge Function (SendGrid HTTP API)
-    const { data: otpResult, error: otpError } = await supabase.functions.invoke(
-      "send-otp",
-      { body: { action: "send", email: email.trim(), type: "signup" } },
-    );
+    // Resend via Supabase's built-in email
+    const { error: resendError } = await supabase.auth.resend({
+      type: "signup",
+      email: email.trim(),
+    });
 
     setIsLoading(false);
-    if (otpError || !otpResult?.success) {
-      const msg = otpResult?.error || otpError?.message || "Failed to resend code";
-      toast.error(msg);
+    if (resendError) {
+      toast.error(resendError.message);
       return;
     }
     toast.success("Verification code resent!");
