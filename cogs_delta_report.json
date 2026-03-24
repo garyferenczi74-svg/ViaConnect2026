@@ -1,0 +1,162 @@
+﻿[
+    {
+        "SKU":  "01",
+        "Name":  "BHB Ketone Salts",
+        "OldCOGS":  5.43,
+        "NewCOGS":  6.73,
+        "Delta":  1.30,
+        "PctChange":  "23.9%",
+        "NewDTCMargin":  90.2,
+        "FLAG":  "REVIEW"
+    },
+    {
+        "SKU":  "02",
+        "Name":  "MethylB Complete+ B Complex",
+        "OldCOGS":  4.6,
+        "NewCOGS":  6.68,
+        "Delta":  2.08,
+        "PctChange":  "45.2%",
+        "NewDTCMargin":  86.3,
+        "FLAG":  "REVIEW"
+    },
+    {
+        "SKU":  "03",
+        "Name":  "Electrolyte Blend",
+        "OldCOGS":  5.52,
+        "NewCOGS":  6.69,
+        "Delta":  1.17,
+        "PctChange":  "21.2%",
+        "NewDTCMargin":  86.3,
+        "FLAG":  "REVIEW"
+    },
+    {
+        "SKU":  "05",
+        "Name":  "Magnesium Synergy Matrix",
+        "OldCOGS":  3.92,
+        "NewCOGS":  6.73,
+        "Delta":  2.81,
+        "PctChange":  "71.7%",
+        "NewDTCMargin":  88.6,
+        "FLAG":  "REVIEW"
+    },
+    {
+        "SKU":  "09",
+        "Name":  "Creatine HCL+",
+        "OldCOGS":  10.86,
+        "NewCOGS":  6.78,
+        "Delta":  -4.08,
+        "PctChange":  "-37.6%",
+        "NewDTCMargin":  93.1,
+        "FLAG":  "REVIEW"
+    },
+    {
+        "SKU":  "12",
+        "Name":  "Balance+ Gut Repair",
+        "OldCOGS":  12.29,
+        "NewCOGS":  6.76,
+        "Delta":  -5.53,
+        "PctChange":  "-45.0%",
+        "NewDTCMargin":  93.2,
+        "FLAG":  "REVIEW"
+    },
+    {
+        "SKU":  "17",
+        "Name":  "Teloprime+ Telomere Support",
+        "OldCOGS":  24.15,
+        "NewCOGS":  6.9,
+        "Delta":  -17.25,
+        "PctChange":  "-71.4%",
+        "NewDTCMargin":  96.3,
+        "FLAG":  "REVIEW"
+    },
+    {
+        "SKU":  "19",
+        "Name":  "FOCUS+ Nootropic Formula",
+        "OldCOGS":  19.41,
+        "NewCOGS":  6.89,
+        "Delta":  -12.52,
+        "PctChange":  "-64.5%",
+        "NewDTCMargin":  95.7,
+        "FLAG":  "REVIEW"
+    },
+    {
+        "SKU":  "23",
+        "Name":  "NeuroCalm BH4+ (Advanced)",
+        "OldCOGS":  8.02,
+        "NewCOGS":  6.94,
+        "Delta":  -1.08,
+        "PctChange":  "-13.5%",
+        "NewDTCMargin":  95.6,
+        "FLAG":  "REVIEW"
+    },
+    {
+        "SKU":  "25",
+        "Name":  "DESIRE+ Female Hormonal",
+        "OldCOGS":  11.78,
+        "NewCOGS":  6.74,
+        "Delta":  -5.04,
+        "PctChange":  "-42.8%",
+        "NewDTCMargin":  92.4,
+        "FLAG":  "REVIEW"
+    },
+    {
+        "SKU":  "32",
+        "Name":  "ACAT+ Mitochondrial Support",
+        "OldCOGS":  12.21,
+        "NewCOGS":  6.84,
+        "Delta":  -5.37,
+        "PctChange":  "-44.0%",
+        "NewDTCMargin":  93.7,
+        "FLAG":  "REVIEW"
+    },
+    {
+        "SKU":  "41",
+        "Name":  "MTHFR+ Folate Metabolism",
+        "OldCOGS":  18.46,
+        "NewCOGS":  6.7,
+        "Delta":  -11.76,
+        "PctChange":  "-63.7%",
+        "NewDTCMargin":  94.4,
+        "FLAG":  "REVIEW"
+    },
+    {
+        "SKU":  "52",
+        "Name":  "Chaga Mushroom Capsules",
+        "OldCOGS":  9.77,
+        "NewCOGS":  6.8,
+        "Delta":  -2.97,
+        "PctChange":  "-30.4%",
+        "NewDTCMargin":  88.5,
+        "FLAG":  "REVIEW"
+    },
+    {
+        "SKU":  "54",
+        "Name":  "Lions Mane Mushroom Capsules",
+        "OldCOGS":  7.61,
+        "NewCOGS":  6.8,
+        "Delta":  -0.81,
+        "PctChange":  "-10.6%",
+        "NewDTCMargin":  88.5,
+        "FLAG":  "REVIEW"
+    },
+    {
+        "SKU":  "57",
+        "Name":  "Genetic Methylation Testing",
+        "OldCOGS":  159.88,
+        "NewCOGS":  6.8,
+        "Delta":  -153.08,
+        "PctChange":  "-95.7%",
+        "NewDTCMargin":  97.6,
+        "FLAG":  "REVIEW"
+    },
+    {
+        "SKU":  "59",
+        "Name":  "Dutch Hormone Test",
+        "OldCOGS":  198.88,
+        "NewCOGS":  6.84,
+        "Delta":  -192.04,
+        "PctChange":  "-96.6%",
+        "NewDTCMargin":  98.7,
+        "FLAG":  "REVIEW"
+    }
+]
