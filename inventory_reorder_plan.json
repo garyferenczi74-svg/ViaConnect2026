@@ -1,0 +1,3130 @@
+﻿{
+    "GeneratedAt":  "2026-03-24T17:47:54.0412571-06:00",
+    "SupplyChainAssumptions":  {
+                                   "DemandCV":  {
+                                                    "Advanced":  0.2,
+                                                    "Women":  0.25,
+                                                    "Base":  0.15,
+                                                    "Children":  0.2,
+                                                    "SNP":  0.3,
+                                                    "Mushroom":  0.15,
+                                                    "Testing":  0.35
+                                                },
+                                   "OrderingCost":  350,
+                                   "DaysPerMonth":  30,
+                                   "MOQ":  {
+                                               "Advanced":  250,
+                                               "Women":  250,
+                                               "Base":  500,
+                                               "Children":  500,
+                                               "SNP":  200,
+                                               "Mushroom":  500,
+                                               "Testing":  50
+                                           },
+                                   "ShelfLife":  {
+                                                     "Advanced":  24,
+                                                     "Women":  24,
+                                                     "Base":  24,
+                                                     "Children":  18,
+                                                     "SNP":  24,
+                                                     "Mushroom":  18,
+                                                     "Testing":  12
+                                                 },
+                                   "ZScore95":  1.65,
+                                   "HoldingCostPct":  0.25,
+                                   "LeadTimeDays":  {
+                                                        "Advanced":  28,
+                                                        "Women":  28,
+                                                        "Base":  21,
+                                                        "Children":  21,
+                                                        "SNP":  35,
+                                                        "Mushroom":  28,
+                                                        "Testing":  7
+                                                    },
+                                   "ServiceLevel":  0.95
+                               },
+    "PortfolioSummary":  {
+                             "TotalSKUs":  62,
+                             "TotalAvgInventoryValue":  592750.84,
+                             "TotalAnnualHoldingCost":  148187.71,
+                             "TotalAnnualPOCount":  273,
+                             "TotalAnnualOrderingCost":  95550,
+                             "POUrgencyDistribution":  [
+                                                           {
+                                                               "Urgency":  "STABLE",
+                                                               "Count":  20
+                                                           },
+                                                           {
+                                                               "Urgency":  "PLANNED",
+                                                               "Count":  26
+                                                           },
+                                                           {
+                                                               "Urgency":  "SOON",
+                                                               "Count":  11
+                                                           },
+                                                           {
+                                                               "Urgency":  "URGENT",
+                                                               "Count":  5
+                                                           }
+                                                       ],
+                             "StockoutRiskDistribution":  [
+                                                              {
+                                                                  "Risk":  "LOW",
+                                                                  "Count":  32
+                                                              },
+                                                              {
+                                                                  "Risk":  "MEDIUM",
+                                                                  "Count":  10
+                                                              },
+                                                              {
+                                                                  "Risk":  "HIGH",
+                                                                  "Count":  20
+                                                              }
+                                                          ],
+                             "CategorySummary":  [
+                                                     {
+                                                         "Category":  "Base",
+                                                         "SKUCount":  8,
+                                                         "AvgInventoryValue":  43994.88,
+                                                         "AnnualHoldingCost":  10998.72,
+                                                         "AvgInventoryTurns":  4.8
+                                                     },
+                                                     {
+                                                         "Category":  "Advanced",
+                                                         "SKUCount":  16,
+                                                         "AvgInventoryValue":  149278.89,
+                                                         "AnnualHoldingCost":  37319.72,
+                                                         "AvgInventoryTurns":  7
+                                                     },
+                                                     {
+                                                         "Category":  "Women",
+                                                         "SKUCount":  4,
+                                                         "AvgInventoryValue":  39503.03,
+                                                         "AnnualHoldingCost":  9875.75,
+                                                         "AvgInventoryTurns":  6.2
+                                                     },
+                                                     {
+                                                         "Category":  "Children",
+                                                         "SKUCount":  3,
+                                                         "AvgInventoryValue":  10095.02,
+                                                         "AnnualHoldingCost":  2523.75,
+                                                         "AvgInventoryTurns":  2.6
+                                                     },
+                                                     {
+                                                         "Category":  "SNP",
+                                                         "SKUCount":  20,
+                                                         "AvgInventoryValue":  123250.16,
+                                                         "AnnualHoldingCost":  30812.55,
+                                                         "AvgInventoryTurns":  4.4
+                                                     },
+                                                     {
+                                                         "Category":  "Mushroom",
+                                                         "SKUCount":  5,
+                                                         "AvgInventoryValue":  22379.18,
+                                                         "AnnualHoldingCost":  5594.8,
+                                                         "AvgInventoryTurns":  3.8
+                                                     },
+                                                     {
+                                                         "Category":  "Testing",
+                                                         "SKUCount":  6,
+                                                         "AvgInventoryValue":  204249.68,
+                                                         "AnnualHoldingCost":  51062.42,
+                                                         "AvgInventoryTurns":  15.2
+                                                     }
+                                                 ],
+                             "Top10ByInventoryValue":  [
+                                                           {
+                                                               "SKU":  "60",
+                                                               "Name":  "EpiGenDX",
+                                                               "AvgInventoryValue":  47521.92,
+                                                               "InventoryTurns":  15.9,
+                                                               "StockoutRisk":  "MEDIUM"
+                                                           },
+                                                           {
+                                                               "SKU":  "61",
+                                                               "Name":  "Combo Test (Meth+Nutr+Dutch)",
+                                                               "AvgInventoryValue":  44086,
+                                                               "InventoryTurns":  18.9,
+                                                               "StockoutRisk":  "MEDIUM"
+                                                           },
+                                                           {
+                                                               "SKU":  "58",
+                                                               "Name":  "Genetic Nutrition Test",
+                                                               "AvgInventoryValue":  36391.92,
+                                                               "InventoryTurns":  15.9,
+                                                               "StockoutRisk":  "MEDIUM"
+                                                           },
+                                                           {
+                                                               "SKU":  "59",
+                                                               "Name":  "Dutch Hormone Test",
+                                                               "AvgInventoryValue":  31621.92,
+                                                               "InventoryTurns":  15.9,
+                                                               "StockoutRisk":  "MEDIUM"
+                                                           },
+                                                           {
+                                                               "SKU":  "57",
+                                                               "Name":  "Genetic Methylation Testing",
+                                                               "AvgInventoryValue":  29417.92,
+                                                               "InventoryTurns":  13.8,
+                                                               "StockoutRisk":  "MEDIUM"
+                                                           },
+                                                           {
+                                                               "SKU":  "62",
+                                                               "Name":  "30 Day Custom Vitamin Package",
+                                                               "AvgInventoryValue":  15210,
+                                                               "InventoryTurns":  10.8,
+                                                               "StockoutRisk":  "MEDIUM"
+                                                           },
+                                                           {
+                                                               "SKU":  "20",
+                                                               "Name":  "RISE+ Male Testosterone",
+                                                               "AvgInventoryValue":  12858.04,
+                                                               "InventoryTurns":  7.6,
+                                                               "StockoutRisk":  "LOW"
+                                                           },
+                                                           {
+                                                               "SKU":  "27",
+                                                               "Name":  "Revitalizher Postnatal+",
+                                                               "AvgInventoryValue":  12457.46,
+                                                               "InventoryTurns":  6.9,
+                                                               "StockoutRisk":  "MEDIUM"
+                                                           },
+                                                           {
+                                                               "SKU":  "19",
+                                                               "Name":  "FOCUS+ Nootropic Formula",
+                                                               "AvgInventoryValue":  12150.66,
+                                                               "InventoryTurns":  7.6,
+                                                               "StockoutRisk":  "LOW"
+                                                           },
+                                                           {
+                                                               "SKU":  "17",
+                                                               "Name":  "Teloprime+ Telomere Support",
+                                                               "AvgInventoryValue":  12099.15,
+                                                               "InventoryTurns":  9.4,
+                                                               "StockoutRisk":  "LOW"
+                                                           }
+                                                       ],
+                             "UrgentReorders":  [
+                                                    {
+                                                        "SKU":  "10",
+                                                        "Name":  "CATALYST+ Energy Multivitamin",
+                                                        "Urgency":  "SOON",
+                                                        "DaysUntilReorder":  10,
+                                                        "OrderQty":  1000,
+                                                        "OrderValue":  13580.00
+                                                    },
+                                                    {
+                                                        "SKU":  "11",
+                                                        "Name":  "Replenish NAD+",
+                                                        "Urgency":  "SOON",
+                                                        "DaysUntilReorder":  10,
+                                                        "OrderQty":  1000,
+                                                        "OrderValue":  14030.00
+                                                    },
+                                                    {
+                                                        "SKU":  "14",
+                                                        "Name":  "NeuroCalm+ (Calm+)",
+                                                        "Urgency":  "SOON",
+                                                        "DaysUntilReorder":  10,
+                                                        "OrderQty":  1000,
+                                                        "OrderValue":  17610.00
+                                                    },
+                                                    {
+                                                        "SKU":  "16",
+                                                        "Name":  "Clean+ Detox \u0026 Liver Health",
+                                                        "Urgency":  "SOON",
+                                                        "DaysUntilReorder":  10,
+                                                        "OrderQty":  1000,
+                                                        "OrderValue":  14980.00
+                                                    },
+                                                    {
+                                                        "SKU":  "17",
+                                                        "Name":  "Teloprime+ Telomere Support",
+                                                        "Urgency":  "URGENT",
+                                                        "DaysUntilReorder":  1,
+                                                        "OrderQty":  750,
+                                                        "OrderValue":  18112.50
+                                                    },
+                                                    {
+                                                        "SKU":  "19",
+                                                        "Name":  "FOCUS+ Nootropic Formula",
+                                                        "Urgency":  "SOON",
+                                                        "DaysUntilReorder":  10,
+                                                        "OrderQty":  1000,
+                                                        "OrderValue":  19410.00
+                                                    },
+                                                    {
+                                                        "SKU":  "20",
+                                                        "Name":  "RISE+ Male Testosterone",
+                                                        "Urgency":  "SOON",
+                                                        "DaysUntilReorder":  10,
+                                                        "OrderQty":  1000,
+                                                        "OrderValue":  20540.00
+                                                    },
+                                                    {
+                                                        "SKU":  "22",
+                                                        "Name":  "IRON+ Red Blood Cell Support",
+                                                        "Urgency":  "SOON",
+                                                        "DaysUntilReorder":  10,
+                                                        "OrderQty":  1000,
+                                                        "OrderValue":  14130.00
+                                                    },
+                                                    {
+                                                        "SKU":  "24",
+                                                        "Name":  "Histamine Relief Protocol",
+                                                        "Urgency":  "SOON",
+                                                        "DaysUntilReorder":  10,
+                                                        "OrderQty":  1000,
+                                                        "OrderValue":  15010.00
+                                                    },
+                                                    {
+                                                        "SKU":  "27",
+                                                        "Name":  "Revitalizher Postnatal+",
+                                                        "Urgency":  "SOON",
+                                                        "DaysUntilReorder":  12,
+                                                        "OrderQty":  750,
+                                                        "OrderValue":  19185.00
+                                                    },
+                                                    {
+                                                        "SKU":  "28",
+                                                        "Name":  "Thrive+ Post-Natal GLP-1",
+                                                        "Urgency":  "SOON",
+                                                        "DaysUntilReorder":  12,
+                                                        "OrderQty":  750,
+                                                        "OrderValue":  16222.50
+                                                    },
+                                                    {
+                                                        "SKU":  "57",
+                                                        "Name":  "Genetic Methylation Testing",
+                                                        "Urgency":  "SOON",
+                                                        "DaysUntilReorder":  11,
+                                                        "OrderQty":  250,
+                                                        "OrderValue":  39970.00
+                                                    },
+                                                    {
+                                                        "SKU":  "58",
+                                                        "Name":  "Genetic Nutrition Test",
+                                                        "Urgency":  "URGENT",
+                                                        "DaysUntilReorder":  7,
+                                                        "OrderQty":  200,
+                                                        "OrderValue":  45776.00
+                                                    },
+                                                    {
+                                                        "SKU":  "59",
+                                                        "Name":  "Dutch Hormone Test",
+                                                        "Urgency":  "URGENT",
+                                                        "DaysUntilReorder":  7,
+                                                        "OrderQty":  200,
+                                                        "OrderValue":  39776.00
+                                                    },
+                                                    {
+                                                        "SKU":  "60",
+                                                        "Name":  "EpiGenDX",
+                                                        "Urgency":  "URGENT",
+                                                        "DaysUntilReorder":  7,
+                                                        "OrderQty":  200,
+                                                        "OrderValue":  59776.00
+                                                    },
+                                                    {
+                                                        "SKU":  "61",
+                                                        "Name":  "Combo Test (Meth+Nutr+Dutch)",
+                                                        "Urgency":  "URGENT",
+                                                        "DaysUntilReorder":  4,
+                                                        "OrderQty":  150,
+                                                        "OrderValue":  49350
+                                                    }
+                                                ]
+                         },
+    "SKUs":  [
+                 {
+                     "SKU":  "01",
+                     "Name":  "BHB Ketone Salts",
+                     "Category":  "Base",
+                     "COGS":  5.43,
+                     "Demand":  {
+                                    "AvgMonthlyUnits":  420,
+                                    "PeakMonthlyUnits":  483,
+                                    "AnnualUnits":  5040,
+                                    "DailyUnits":  14,
+                                    "DemandCV":  0.15
+                                },
+                     "SupplyChain":  {
+                                         "LeadTimeDays":  21,
+                                         "MOQ":  500,
+                                         "ShelfLifeMonths":  24
+                                     },
+                     "InventoryLevels":  {
+                                             "SafetyStock":  87,
+                                             "ReorderPoint":  381,
+                                             "EOQ":  2000,
+                                             "MaxStock":  2087,
+                                             "AvgInventory":  1087,
+                                             "WeeksOfSupply":  11.1
+                                         },
+                     "Financials":  {
+                                        "AvgInventoryValue":  5902.41,
+                                        "AnnualHoldingCost":  1475.60,
+                                        "AnnualOrderingCost":  1050,
+                                        "TotalInventoryCost":  2525.60,
+                                        "InventoryTurns":  4.6,
+                                        "OrdersPerYear":  3
+                                    },
+                     "Risk":  {
+                                  "StockoutRisk":  "LOW",
+                                  "ShelfLifeRisk":  "LOW",
+                                  "MonthsOfStockAtMax":  5.0
+                              },
+                     "NextPO":  {
+                                    "Urgency":  "STABLE",
+                                    "DaysUntilReorder":  50,
+                                    "OrderQuantity":  2000,
+                                    "OrderValue":  10860.00
+                                }
+                 },
+                 {
+                     "SKU":  "02",
+                     "Name":  "MethylB Complete+ B Complex",
+                     "Category":  "Base",
+                     "COGS":  4.6,
+                     "Demand":  {
+                                    "AvgMonthlyUnits":  420,
+                                    "PeakMonthlyUnits":  483,
+                                    "AnnualUnits":  5040,
+                                    "DailyUnits":  14,
+                                    "DemandCV":  0.15
+                                },
+                     "SupplyChain":  {
+                                         "LeadTimeDays":  21,
+                                         "MOQ":  500,
+                                         "ShelfLifeMonths":  24
+                                     },
+                     "InventoryLevels":  {
+                                             "SafetyStock":  87,
+                                             "ReorderPoint":  381,
+                                             "EOQ":  2000,
+                                             "MaxStock":  2087,
+                                             "AvgInventory":  1087,
+                                             "WeeksOfSupply":  11.1
+                                         },
+                     "Financials":  {
+                                        "AvgInventoryValue":  5000.2,
+                                        "AnnualHoldingCost":  1250.05,
+                                        "AnnualOrderingCost":  1050,
+                                        "TotalInventoryCost":  2300.05,
+                                        "InventoryTurns":  4.6,
+                                        "OrdersPerYear":  3
+                                    },
+                     "Risk":  {
+                                  "StockoutRisk":  "LOW",
+                                  "ShelfLifeRisk":  "LOW",
+                                  "MonthsOfStockAtMax":  5.0
+                              },
+                     "NextPO":  {
+                                    "Urgency":  "STABLE",
+                                    "DaysUntilReorder":  50,
+                                    "OrderQuantity":  2000,
+                                    "OrderValue":  9200.0
+                                }
+                 },
+                 {
+                     "SKU":  "03",
+                     "Name":  "Electrolyte Blend",
+                     "Category":  "Base",
+                     "COGS":  5.52,
+                     "Demand":  {
+                                    "AvgMonthlyUnits":  420,
+                                    "PeakMonthlyUnits":  483,
+                                    "AnnualUnits":  5040,
+                                    "DailyUnits":  14,
+                                    "DemandCV":  0.15
+                                },
+                     "SupplyChain":  {
+                                         "LeadTimeDays":  21,
+                                         "MOQ":  500,
+                                         "ShelfLifeMonths":  24
+                                     },
+                     "InventoryLevels":  {
+                                             "SafetyStock":  87,
+                                             "ReorderPoint":  381,
+                                             "EOQ":  2000,
+                                             "MaxStock":  2087,
+                                             "AvgInventory":  1087,
+                                             "WeeksOfSupply":  11.1
+                                         },
+                     "Financials":  {
+                                        "AvgInventoryValue":  6000.24,
+                                        "AnnualHoldingCost":  1500.06,
+                                        "AnnualOrderingCost":  1050,
+                                        "TotalInventoryCost":  2550.06,
+                                        "InventoryTurns":  4.6,
+                                        "OrdersPerYear":  3
+                                    },
+                     "Risk":  {
+                                  "StockoutRisk":  "LOW",
+                                  "ShelfLifeRisk":  "LOW",
+                                  "MonthsOfStockAtMax":  5.0
+                              },
+                     "NextPO":  {
+                                    "Urgency":  "STABLE",
+                                    "DaysUntilReorder":  50,
+                                    "OrderQuantity":  2000,
+                                    "OrderValue":  11040.00
+                                }
+                 },
+                 {
+                     "SKU":  "04",
+                     "Name":  "GLP-1 Activator Complex",
+                     "Category":  "Base",
+                     "COGS":  7.68,
+                     "Demand":  {
+                                    "AvgMonthlyUnits":  420,
+                                    "PeakMonthlyUnits":  483,
+                                    "AnnualUnits":  5040,
+                                    "DailyUnits":  14,
+                                    "DemandCV":  0.15
+                                },
+                     "SupplyChain":  {
+                                         "LeadTimeDays":  21,
+                                         "MOQ":  500,
+                                         "ShelfLifeMonths":  24
+                                     },
+                     "InventoryLevels":  {
+                                             "SafetyStock":  87,
+                                             "ReorderPoint":  381,
+                                             "EOQ":  1500,
+                                             "MaxStock":  1587,
+                                             "AvgInventory":  837,
+                                             "WeeksOfSupply":  8.5
+                                         },
+                     "Financials":  {
+                                        "AvgInventoryValue":  6428.16,
+                                        "AnnualHoldingCost":  1607.04,
+                                        "AnnualOrderingCost":  1400,
+                                        "TotalInventoryCost":  3007.04,
+                                        "InventoryTurns":  6.0,
+                                        "OrdersPerYear":  4
+                                    },
+                     "Risk":  {
+                                  "StockoutRisk":  "LOW",
+                                  "ShelfLifeRisk":  "LOW",
+                                  "MonthsOfStockAtMax":  3.8
+                              },
+                     "NextPO":  {
+                                    "Urgency":  "STABLE",
+                                    "DaysUntilReorder":  33,
+                                    "OrderQuantity":  1500,
+                                    "OrderValue":  11520.00
+                                }
+                 },
+                 {
+                     "SKU":  "05",
+                     "Name":  "Magnesium Synergy Matrix",
+                     "Category":  "Base",
+                     "COGS":  3.92,
+                     "Demand":  {
+                                    "AvgMonthlyUnits":  420,
+                                    "PeakMonthlyUnits":  483,
+                                    "AnnualUnits":  5040,
+                                    "DailyUnits":  14,
+                                    "DemandCV":  0.15
+                                },
+                     "SupplyChain":  {
+                                         "LeadTimeDays":  21,
+                                         "MOQ":  500,
+                                         "ShelfLifeMonths":  24
+                                     },
+                     "InventoryLevels":  {
+                                             "SafetyStock":  87,
+                                             "ReorderPoint":  381,
+                                             "EOQ":  2000,
+                                             "MaxStock":  2087,
+                                             "AvgInventory":  1087,
+                                             "WeeksOfSupply":  11.1
+                                         },
+                     "Financials":  {
+                                        "AvgInventoryValue":  4261.04,
+                                        "AnnualHoldingCost":  1065.26,
+                                        "AnnualOrderingCost":  1050,
+                                        "TotalInventoryCost":  2115.26,
+                                        "InventoryTurns":  4.6,
+                                        "OrdersPerYear":  3
+                                    },
+                     "Risk":  {
+                                  "StockoutRisk":  "LOW",
+                                  "ShelfLifeRisk":  "LOW",
+                                  "MonthsOfStockAtMax":  5.0
+                              },
+                     "NextPO":  {
+                                    "Urgency":  "STABLE",
+                                    "DaysUntilReorder":  50,
+                                    "OrderQuantity":  2000,
+                                    "OrderValue":  7840.00
+                                }
+                 },
+                 {
+                     "SKU":  "06",
+                     "Name":  "NeuroCalm BH4 Complex",
+                     "Category":  "Base",
+                     "COGS":  5.84,
+                     "Demand":  {
+                                    "AvgMonthlyUnits":  420,
+                                    "PeakMonthlyUnits":  483,
+                                    "AnnualUnits":  5040,
+                                    "DailyUnits":  14,
+                                    "DemandCV":  0.15
+                                },
+                     "SupplyChain":  {
+                                         "LeadTimeDays":  21,
+                                         "MOQ":  500,
+                                         "ShelfLifeMonths":  24
+                                     },
+                     "InventoryLevels":  {
+                                             "SafetyStock":  87,
+                                             "ReorderPoint":  381,
+                                             "EOQ":  2000,
+                                             "MaxStock":  2087,
+                                             "AvgInventory":  1087,
+                                             "WeeksOfSupply":  11.1
+                                         },
+                     "Financials":  {
+                                        "AvgInventoryValue":  6348.08,
+                                        "AnnualHoldingCost":  1587.02,
+                                        "AnnualOrderingCost":  1050,
+                                        "TotalInventoryCost":  2637.02,
+                                        "InventoryTurns":  4.6,
+                                        "OrdersPerYear":  3
+                                    },
+                     "Risk":  {
+                                  "StockoutRisk":  "LOW",
+                                  "ShelfLifeRisk":  "LOW",
+                                  "MonthsOfStockAtMax":  5.0
+                              },
+                     "NextPO":  {
+                                    "Urgency":  "STABLE",
+                                    "DaysUntilReorder":  50,
+                                    "OrderQuantity":  2000,
+                                    "OrderValue":  11680.00
+                                }
+                 },
+                 {
+                     "SKU":  "07",
+                     "Name":  "Omega-3 DHA/EPA (Algal)",
+                     "Category":  "Base",
+                     "COGS":  4.74,
+                     "Demand":  {
+                                    "AvgMonthlyUnits":  420,
+                                    "PeakMonthlyUnits":  483,
+                                    "AnnualUnits":  5040,
+                                    "DailyUnits":  14,
+                                    "DemandCV":  0.15
+                                },
+                     "SupplyChain":  {
+                                         "LeadTimeDays":  21,
+                                         "MOQ":  500,
+                                         "ShelfLifeMonths":  24
+                                     },
+                     "InventoryLevels":  {
+                                             "SafetyStock":  87,
+                                             "ReorderPoint":  381,
+                                             "EOQ":  2000,
+                                             "MaxStock":  2087,
+                                             "AvgInventory":  1087,
+                                             "WeeksOfSupply":  11.1
+                                         },
+                     "Financials":  {
+                                        "AvgInventoryValue":  5152.38,
+                                        "AnnualHoldingCost":  1288.10,
+                                        "AnnualOrderingCost":  1050,
+                                        "TotalInventoryCost":  2338.10,
+                                        "InventoryTurns":  4.6,
+                                        "OrdersPerYear":  3
+                                    },
+                     "Risk":  {
+                                  "StockoutRisk":  "LOW",
+                                  "ShelfLifeRisk":  "LOW",
+                                  "MonthsOfStockAtMax":  5.0
+                              },
+                     "NextPO":  {
+                                    "Urgency":  "STABLE",
+                                    "DaysUntilReorder":  50,
+                                    "OrderQuantity":  2000,
+                                    "OrderValue":  9480.00
+                                }
+                 },
+                 {
+                     "SKU":  "08",
+                     "Name":  "ToxiBind Matrix",
+                     "Category":  "Base",
+                     "COGS":  4.51,
+                     "Demand":  {
+                                    "AvgMonthlyUnits":  420,
+                                    "PeakMonthlyUnits":  483,
+                                    "AnnualUnits":  5040,
+                                    "DailyUnits":  14,
+                                    "DemandCV":  0.15
+                                },
+                     "SupplyChain":  {
+                                         "LeadTimeDays":  21,
+                                         "MOQ":  500,
+                                         "ShelfLifeMonths":  24
+                                     },
+                     "InventoryLevels":  {
+                                             "SafetyStock":  87,
+                                             "ReorderPoint":  381,
+                                             "EOQ":  2000,
+                                             "MaxStock":  2087,
+                                             "AvgInventory":  1087,
+                                             "WeeksOfSupply":  11.1
+                                         },
+                     "Financials":  {
+                                        "AvgInventoryValue":  4902.37,
+                                        "AnnualHoldingCost":  1225.59,
+                                        "AnnualOrderingCost":  1050,
+                                        "TotalInventoryCost":  2275.59,
+                                        "InventoryTurns":  4.6,
+                                        "OrdersPerYear":  3
+                                    },
+                     "Risk":  {
+                                  "StockoutRisk":  "LOW",
+                                  "ShelfLifeRisk":  "LOW",
+                                  "MonthsOfStockAtMax":  5.0
+                              },
+                     "NextPO":  {
+                                    "Urgency":  "STABLE",
+                                    "DaysUntilReorder":  50,
+                                    "OrderQuantity":  2000,
+                                    "OrderValue":  9020.00
+                                }
+                 },
+                 {
+                     "SKU":  "09",
+                     "Name":  "Creatine HCL+",
+                     "Category":  "Advanced",
+                     "COGS":  10.86,
+                     "Demand":  {
+                                    "AvgMonthlyUnits":  394,
+                                    "PeakMonthlyUnits":  453,
+                                    "AnnualUnits":  4728,
+                                    "DailyUnits":  13.1,
+                                    "DemandCV":  0.2
+                                },
+                     "SupplyChain":  {
+                                         "LeadTimeDays":  28,
+                                         "MOQ":  250,
+                                         "ShelfLifeMonths":  24
+                                     },
+                     "InventoryLevels":  {
+                                             "SafetyStock":  126,
+                                             "ReorderPoint":  493,
+                                             "EOQ":  1250,
+                                             "MaxStock":  1376,
+                                             "AvgInventory":  751,
+                                             "WeeksOfSupply":  8.2
+                                         },
+                     "Financials":  {
+                                        "AvgInventoryValue":  8155.86,
+                                        "AnnualHoldingCost":  2038.96,
+                                        "AnnualOrderingCost":  1400,
+                                        "TotalInventoryCost":  3438.96,
+                                        "InventoryTurns":  6.3,
+                                        "OrdersPerYear":  4
+                                    },
+                     "Risk":  {
+                                  "StockoutRisk":  "LOW",
+                                  "ShelfLifeRisk":  "LOW",
+                                  "MonthsOfStockAtMax":  3.5
+                              },
+                     "NextPO":  {
+                                    "Urgency":  "PLANNED",
+                                    "DaysUntilReorder":  20,
+                                    "OrderQuantity":  1250,
+                                    "OrderValue":  13575.00
+                                }
+                 },
+                 {
+                     "SKU":  "10",
+                     "Name":  "CATALYST+ Energy Multivitamin",
+                     "Category":  "Advanced",
+                     "COGS":  13.58,
+                     "Demand":  {
+                                    "AvgMonthlyUnits":  394,
+                                    "PeakMonthlyUnits":  453,
+                                    "AnnualUnits":  4728,
+                                    "DailyUnits":  13.1,
+                                    "DemandCV":  0.2
+                                },
+                     "SupplyChain":  {
+                                         "LeadTimeDays":  28,
+                                         "MOQ":  250,
+                                         "ShelfLifeMonths":  24
+                                     },
+                     "InventoryLevels":  {
+                                             "SafetyStock":  126,
+                                             "ReorderPoint":  493,
+                                             "EOQ":  1000,
+                                             "MaxStock":  1126,
+                                             "AvgInventory":  626,
+                                             "WeeksOfSupply":  6.8
+                                         },
+                     "Financials":  {
+                                        "AvgInventoryValue":  8501.08,
+                                        "AnnualHoldingCost":  2125.27,
+                                        "AnnualOrderingCost":  1750,
+                                        "TotalInventoryCost":  3875.27,
+                                        "InventoryTurns":  7.6,
+                                        "OrdersPerYear":  5
+                                    },
+                     "Risk":  {
+                                  "StockoutRisk":  "LOW",
+                                  "ShelfLifeRisk":  "LOW",
+                                  "MonthsOfStockAtMax":  2.9
+                              },
+                     "NextPO":  {
+                                    "Urgency":  "SOON",
+                                    "DaysUntilReorder":  10,
+                                    "OrderQuantity":  1000,
+                                    "OrderValue":  13580.00
+                                }
+                 },
+                 {
+                     "SKU":  "11",
+                     "Name":  "Replenish NAD+",
+                     "Category":  "Advanced",
+                     "COGS":  14.03,
+                     "Demand":  {
+                                    "AvgMonthlyUnits":  394,
+                                    "PeakMonthlyUnits":  453,
+                                    "AnnualUnits":  4728,
+                                    "DailyUnits":  13.1,
+                                    "DemandCV":  0.2
+                                },
+                     "SupplyChain":  {
+                                         "LeadTimeDays":  28,
+                                         "MOQ":  250,
+                                         "ShelfLifeMonths":  24
+                                     },
+                     "InventoryLevels":  {
+                                             "SafetyStock":  126,
+                                             "ReorderPoint":  493,
+                                             "EOQ":  1000,
+                                             "MaxStock":  1126,
+                                             "AvgInventory":  626,
+                                             "WeeksOfSupply":  6.8
+                                         },
+                     "Financials":  {
+                                        "AvgInventoryValue":  8782.78,
+                                        "AnnualHoldingCost":  2195.70,
+                                        "AnnualOrderingCost":  1750,
+                                        "TotalInventoryCost":  3945.70,
+                                        "InventoryTurns":  7.6,
+                                        "OrdersPerYear":  5
+                                    },
+                     "Risk":  {
+                                  "StockoutRisk":  "LOW",
+                                  "ShelfLifeRisk":  "LOW",
+                                  "MonthsOfStockAtMax":  2.9
+                              },
+                     "NextPO":  {
+                                    "Urgency":  "SOON",
+                                    "DaysUntilReorder":  10,
+                                    "OrderQuantity":  1000,
+                                    "OrderValue":  14030.00
+                                }
+                 },
+                 {
+                     "SKU":  "12",
+                     "Name":  "Balance+ Gut Repair",
+                     "Category":  "Advanced",
+                     "COGS":  12.29,
+                     "Demand":  {
+                                    "AvgMonthlyUnits":  394,
+                                    "PeakMonthlyUnits":  453,
+                                    "AnnualUnits":  4728,
+                                    "DailyUnits":  13.1,
+                                    "DemandCV":  0.2
+                                },
+                     "SupplyChain":  {
+                                         "LeadTimeDays":  28,
+                                         "MOQ":  250,
+                                         "ShelfLifeMonths":  24
+                                     },
+                     "InventoryLevels":  {
+                                             "SafetyStock":  126,
+                                             "ReorderPoint":  493,
+                                             "EOQ":  1250,
+                                             "MaxStock":  1376,
+                                             "AvgInventory":  751,
+                                             "WeeksOfSupply":  8.2
+                                         },
+                     "Financials":  {
+                                        "AvgInventoryValue":  9229.79,
+                                        "AnnualHoldingCost":  2307.45,
+                                        "AnnualOrderingCost":  1400,
+                                        "TotalInventoryCost":  3707.45,
+                                        "InventoryTurns":  6.3,
+                                        "OrdersPerYear":  4
+                                    },
+                     "Risk":  {
+                                  "StockoutRisk":  "LOW",
+                                  "ShelfLifeRisk":  "LOW",
+                                  "MonthsOfStockAtMax":  3.5
+                              },
+                     "NextPO":  {
+                                    "Urgency":  "PLANNED",
+                                    "DaysUntilReorder":  20,
+                                    "OrderQuantity":  1250,
+                                    "OrderValue":  15362.50
+                                }
+                 },
+                 {
+                     "SKU":  "13",
+                     "Name":  "BLAST+ Nitric Oxide Stack",
+                     "Category":  "Advanced",
+                     "COGS":  11.81,
+                     "Demand":  {
+                                    "AvgMonthlyUnits":  394,
+                                    "PeakMonthlyUnits":  453,
+                                    "AnnualUnits":  4728,
+                                    "DailyUnits":  13.1,
+                                    "DemandCV":  0.2
+                                },
+                     "SupplyChain":  {
+                                         "LeadTimeDays":  28,
+                                         "MOQ":  250,
+                                         "ShelfLifeMonths":  24
+                                     },
+                     "InventoryLevels":  {
+                                             "SafetyStock":  126,
+                                             "ReorderPoint":  493,
+                                             "EOQ":  1250,
+                                             "MaxStock":  1376,
+                                             "AvgInventory":  751,
+                                             "WeeksOfSupply":  8.2
+                                         },
+                     "Financials":  {
+                                        "AvgInventoryValue":  8869.31,
+                                        "AnnualHoldingCost":  2217.33,
+                                        "AnnualOrderingCost":  1400,
+                                        "TotalInventoryCost":  3617.33,
+                                        "InventoryTurns":  6.3,
+                                        "OrdersPerYear":  4
+                                    },
+                     "Risk":  {
+                                  "StockoutRisk":  "LOW",
+                                  "ShelfLifeRisk":  "LOW",
+                                  "MonthsOfStockAtMax":  3.5
+                              },
+                     "NextPO":  {
+                                    "Urgency":  "PLANNED",
+                                    "DaysUntilReorder":  20,
+                                    "OrderQuantity":  1250,
+                                    "OrderValue":  14762.50
+                                }
+                 },
+                 {
+                     "SKU":  "14",
+                     "Name":  "NeuroCalm+ (Calm+)",
+                     "Category":  "Advanced",
+                     "COGS":  17.61,
+                     "Demand":  {
+                                    "AvgMonthlyUnits":  394,
+                                    "PeakMonthlyUnits":  453,
+                                    "AnnualUnits":  4728,
+                                    "DailyUnits":  13.1,
+                                    "DemandCV":  0.2
+                                },
+                     "SupplyChain":  {
+                                         "LeadTimeDays":  28,
+                                         "MOQ":  250,
+                                         "ShelfLifeMonths":  24
+                                     },
+                     "InventoryLevels":  {
+                                             "SafetyStock":  126,
+                                             "ReorderPoint":  493,
+                                             "EOQ":  1000,
+                                             "MaxStock":  1126,
+                                             "AvgInventory":  626,
+                                             "WeeksOfSupply":  6.8
+                                         },
+                     "Financials":  {
+                                        "AvgInventoryValue":  11023.86,
+                                        "AnnualHoldingCost":  2755.96,
+                                        "AnnualOrderingCost":  1750,
+                                        "TotalInventoryCost":  4505.96,
+                                        "InventoryTurns":  7.6,
+                                        "OrdersPerYear":  5
+                                    },
+                     "Risk":  {
+                                  "StockoutRisk":  "LOW",
+                                  "ShelfLifeRisk":  "LOW",
+                                  "MonthsOfStockAtMax":  2.9
+                              },
+                     "NextPO":  {
+                                    "Urgency":  "SOON",
+                                    "DaysUntilReorder":  10,
+                                    "OrderQuantity":  1000,
+                                    "OrderValue":  17610.00
+                                }
+                 },
+                 {
+                     "SKU":  "15",
+                     "Name":  "RELAX+ Sleep Support",
+                     "Category":  "Advanced",
+                     "COGS":  10.42,
+                     "Demand":  {
+                                    "AvgMonthlyUnits":  394,
+                                    "PeakMonthlyUnits":  453,
+                                    "AnnualUnits":  4728,
+                                    "DailyUnits":  13.1,
+                                    "DemandCV":  0.2
+                                },
+                     "SupplyChain":  {
+                                         "LeadTimeDays":  28,
+                                         "MOQ":  250,
+                                         "ShelfLifeMonths":  24
+                                     },
+                     "InventoryLevels":  {
+                                             "SafetyStock":  126,
+                                             "ReorderPoint":  493,
+                                             "EOQ":  1250,
+                                             "MaxStock":  1376,
+                                             "AvgInventory":  751,
+                                             "WeeksOfSupply":  8.2
+                                         },
+                     "Financials":  {
+                                        "AvgInventoryValue":  7825.42,
+                                        "AnnualHoldingCost":  1956.36,
+                                        "AnnualOrderingCost":  1400,
+                                        "TotalInventoryCost":  3356.36,
+                                        "InventoryTurns":  6.3,
+                                        "OrdersPerYear":  4
+                                    },
+                     "Risk":  {
+                                  "StockoutRisk":  "LOW",
+                                  "ShelfLifeRisk":  "LOW",
+                                  "MonthsOfStockAtMax":  3.5
+                              },
+                     "NextPO":  {
+                                    "Urgency":  "PLANNED",
+                                    "DaysUntilReorder":  20,
+                                    "OrderQuantity":  1250,
+                                    "OrderValue":  13025.00
+                                }
+                 },
+                 {
+                     "SKU":  "16",
+                     "Name":  "Clean+ Detox \u0026 Liver Health",
+                     "Category":  "Advanced",
+                     "COGS":  14.98,
+                     "Demand":  {
+                                    "AvgMonthlyUnits":  394,
+                                    "PeakMonthlyUnits":  453,
+                                    "AnnualUnits":  4728,
+                                    "DailyUnits":  13.1,
+                                    "DemandCV":  0.2
+                                },
+                     "SupplyChain":  {
+                                         "LeadTimeDays":  28,
+                                         "MOQ":  250,
+                                         "ShelfLifeMonths":  24
+                                     },
+                     "InventoryLevels":  {
+                                             "SafetyStock":  126,
+                                             "ReorderPoint":  493,
+                                             "EOQ":  1000,
+                                             "MaxStock":  1126,
+                                             "AvgInventory":  626,
+                                             "WeeksOfSupply":  6.8
+                                         },
+                     "Financials":  {
+                                        "AvgInventoryValue":  9377.48,
+                                        "AnnualHoldingCost":  2344.37,
+                                        "AnnualOrderingCost":  1750,
+                                        "TotalInventoryCost":  4094.37,
+                                        "InventoryTurns":  7.6,
+                                        "OrdersPerYear":  5
+                                    },
+                     "Risk":  {
+                                  "StockoutRisk":  "LOW",
+                                  "ShelfLifeRisk":  "LOW",
+                                  "MonthsOfStockAtMax":  2.9
+                              },
+                     "NextPO":  {
+                                    "Urgency":  "SOON",
+                                    "DaysUntilReorder":  10,
+                                    "OrderQuantity":  1000,
+                                    "OrderValue":  14980.00
+                                }
+                 },
+                 {
+                     "SKU":  "17",
+                     "Name":  "Teloprime+ Telomere Support",
+                     "Category":  "Advanced",
+                     "COGS":  24.15,
+                     "Demand":  {
+                                    "AvgMonthlyUnits":  394,
+                                    "PeakMonthlyUnits":  453,
+                                    "AnnualUnits":  4728,
+                                    "DailyUnits":  13.1,
+                                    "DemandCV":  0.2
+                                },
+                     "SupplyChain":  {
+                                         "LeadTimeDays":  28,
+                                         "MOQ":  250,
+                                         "ShelfLifeMonths":  24
+                                     },
+                     "InventoryLevels":  {
+                                             "SafetyStock":  126,
+                                             "ReorderPoint":  493,
+                                             "EOQ":  750,
+                                             "MaxStock":  876,
+                                             "AvgInventory":  501,
+                                             "WeeksOfSupply":  5.5
+                                         },
+                     "Financials":  {
+                                        "AvgInventoryValue":  12099.15,
+                                        "AnnualHoldingCost":  3024.79,
+                                        "AnnualOrderingCost":  2450,
+                                        "TotalInventoryCost":  5474.79,
+                                        "InventoryTurns":  9.4,
+                                        "OrdersPerYear":  7
+                                    },
+                     "Risk":  {
+                                  "StockoutRisk":  "LOW",
+                                  "ShelfLifeRisk":  "LOW",
+                                  "MonthsOfStockAtMax":  2.2
+                              },
+                     "NextPO":  {
+                                    "Urgency":  "URGENT",
+                                    "DaysUntilReorder":  1,
+                                    "OrderQuantity":  750,
+                                    "OrderValue":  18112.50
+                                }
+                 },
+                 {
+                     "SKU":  "18",
+                     "Name":  "DigestiZorb+ Enzyme Complex",
+                     "Category":  "Advanced",
+                     "COGS":  5.58,
+                     "Demand":  {
+                                    "AvgMonthlyUnits":  394,
+                                    "PeakMonthlyUnits":  453,
+                                    "AnnualUnits":  4728,
+                                    "DailyUnits":  13.1,
+                                    "DemandCV":  0.2
+                                },
+                     "SupplyChain":  {
+                                         "LeadTimeDays":  28,
+                                         "MOQ":  250,
+                                         "ShelfLifeMonths":  24
+                                     },
+                     "InventoryLevels":  {
+                                             "SafetyStock":  126,
+                                             "ReorderPoint":  493,
+                                             "EOQ":  1750,
+                                             "MaxStock":  1876,
+                                             "AvgInventory":  1001,
+                                             "WeeksOfSupply":  10.9
+                                         },
+                     "Financials":  {
+                                        "AvgInventoryValue":  5585.58,
+                                        "AnnualHoldingCost":  1396.40,
+                                        "AnnualOrderingCost":  1050,
+                                        "TotalInventoryCost":  2446.40,
+                                        "InventoryTurns":  4.7,
+                                        "OrdersPerYear":  3
+                                    },
+                     "Risk":  {
+                                  "StockoutRisk":  "LOW",
+                                  "ShelfLifeRisk":  "LOW",
+                                  "MonthsOfStockAtMax":  4.8
+                              },
+                     "NextPO":  {
+                                    "Urgency":  "STABLE",
+                                    "DaysUntilReorder":  39,
+                                    "OrderQuantity":  1750,
+                                    "OrderValue":  9765.00
+                                }
+                 },
+                 {
+                     "SKU":  "19",
+                     "Name":  "FOCUS+ Nootropic Formula",
+                     "Category":  "Advanced",
+                     "COGS":  19.41,
+                     "Demand":  {
+                                    "AvgMonthlyUnits":  394,
+                                    "PeakMonthlyUnits":  453,
+                                    "AnnualUnits":  4728,
+                                    "DailyUnits":  13.1,
+                                    "DemandCV":  0.2
+                                },
+                     "SupplyChain":  {
+                                         "LeadTimeDays":  28,
+                                         "MOQ":  250,
+                                         "ShelfLifeMonths":  24
+                                     },
+                     "InventoryLevels":  {
+                                             "SafetyStock":  126,
+                                             "ReorderPoint":  493,
+                                             "EOQ":  1000,
+                                             "MaxStock":  1126,
+                                             "AvgInventory":  626,
+                                             "WeeksOfSupply":  6.8
+                                         },
+                     "Financials":  {
+                                        "AvgInventoryValue":  12150.66,
+                                        "AnnualHoldingCost":  3037.66,
+                                        "AnnualOrderingCost":  1750,
+                                        "TotalInventoryCost":  4787.66,
+                                        "InventoryTurns":  7.6,
+                                        "OrdersPerYear":  5
+                                    },
+                     "Risk":  {
+                                  "StockoutRisk":  "LOW",
+                                  "ShelfLifeRisk":  "LOW",
+                                  "MonthsOfStockAtMax":  2.9
+                              },
+                     "NextPO":  {
+                                    "Urgency":  "SOON",
+                                    "DaysUntilReorder":  10,
+                                    "OrderQuantity":  1000,
+                                    "OrderValue":  19410.00
+                                }
+                 },
+                 {
+                     "SKU":  "20",
+                     "Name":  "RISE+ Male Testosterone",
+                     "Category":  "Advanced",
+                     "COGS":  20.54,
+                     "Demand":  {
+                                    "AvgMonthlyUnits":  394,
+                                    "PeakMonthlyUnits":  453,
+                                    "AnnualUnits":  4728,
+                                    "DailyUnits":  13.1,
+                                    "DemandCV":  0.2
+                                },
+                     "SupplyChain":  {
+                                         "LeadTimeDays":  28,
+                                         "MOQ":  250,
+                                         "ShelfLifeMonths":  24
+                                     },
+                     "InventoryLevels":  {
+                                             "SafetyStock":  126,
+                                             "ReorderPoint":  493,
+                                             "EOQ":  1000,
+                                             "MaxStock":  1126,
+                                             "AvgInventory":  626,
+                                             "WeeksOfSupply":  6.8
+                                         },
+                     "Financials":  {
+                                        "AvgInventoryValue":  12858.04,
+                                        "AnnualHoldingCost":  3214.51,
+                                        "AnnualOrderingCost":  1750,
+                                        "TotalInventoryCost":  4964.51,
+                                        "InventoryTurns":  7.6,
+                                        "OrdersPerYear":  5
+                                    },
+                     "Risk":  {
+                                  "StockoutRisk":  "LOW",
+                                  "ShelfLifeRisk":  "LOW",
+                                  "MonthsOfStockAtMax":  2.9
+                              },
+                     "NextPO":  {
+                                    "Urgency":  "SOON",
+                                    "DaysUntilReorder":  10,
+                                    "OrderQuantity":  1000,
+                                    "OrderValue":  20540.00
+                                }
+                 },
+                 {
+                     "SKU":  "21",
+                     "Name":  "FLEX+ Joint \u0026 Inflammation",
+                     "Category":  "Advanced",
+                     "COGS":  12.72,
+                     "Demand":  {
+                                    "AvgMonthlyUnits":  394,
+                                    "PeakMonthlyUnits":  453,
+                                    "AnnualUnits":  4728,
+                                    "DailyUnits":  13.1,
+                                    "DemandCV":  0.2
+                                },
+                     "SupplyChain":  {
+                                         "LeadTimeDays":  28,
+                                         "MOQ":  250,
+                                         "ShelfLifeMonths":  24
+                                     },
+                     "InventoryLevels":  {
+                                             "SafetyStock":  126,
+                                             "ReorderPoint":  493,
+                                             "EOQ":  1250,
+                                             "MaxStock":  1376,
+                                             "AvgInventory":  751,
+                                             "WeeksOfSupply":  8.2
+                                         },
+                     "Financials":  {
+                                        "AvgInventoryValue":  9552.72,
+                                        "AnnualHoldingCost":  2388.18,
+                                        "AnnualOrderingCost":  1400,
+                                        "TotalInventoryCost":  3788.18,
+                                        "InventoryTurns":  6.3,
+                                        "OrdersPerYear":  4
+                                    },
+                     "Risk":  {
+                                  "StockoutRisk":  "LOW",
+                                  "ShelfLifeRisk":  "LOW",
+                                  "MonthsOfStockAtMax":  3.5
+                              },
+                     "NextPO":  {
+                                    "Urgency":  "PLANNED",
+                                    "DaysUntilReorder":  20,
+                                    "OrderQuantity":  1250,
+                                    "OrderValue":  15900.00
+                                }
+                 },
+                 {
+                     "SKU":  "22",
+                     "Name":  "IRON+ Red Blood Cell Support",
+                     "Category":  "Advanced",
+                     "COGS":  14.13,
+                     "Demand":  {
+                                    "AvgMonthlyUnits":  394,
+                                    "PeakMonthlyUnits":  453,
+                                    "AnnualUnits":  4728,
+                                    "DailyUnits":  13.1,
+                                    "DemandCV":  0.2
+                                },
+                     "SupplyChain":  {
+                                         "LeadTimeDays":  28,
+                                         "MOQ":  250,
+                                         "ShelfLifeMonths":  24
+                                     },
+                     "InventoryLevels":  {
+                                             "SafetyStock":  126,
+                                             "ReorderPoint":  493,
+                                             "EOQ":  1000,
+                                             "MaxStock":  1126,
+                                             "AvgInventory":  626,
+                                             "WeeksOfSupply":  6.8
+                                         },
+                     "Financials":  {
+                                        "AvgInventoryValue":  8845.38,
+                                        "AnnualHoldingCost":  2211.34,
+                                        "AnnualOrderingCost":  1750,
+                                        "TotalInventoryCost":  3961.34,
+                                        "InventoryTurns":  7.6,
+                                        "OrdersPerYear":  5
+                                    },
+                     "Risk":  {
+                                  "StockoutRisk":  "LOW",
+                                  "ShelfLifeRisk":  "LOW",
+                                  "MonthsOfStockAtMax":  2.9
+                              },
+                     "NextPO":  {
+                                    "Urgency":  "SOON",
+                                    "DaysUntilReorder":  10,
+                                    "OrderQuantity":  1000,
+                                    "OrderValue":  14130.00
+                                }
+                 },
+                 {
+                     "SKU":  "23",
+                     "Name":  "NeuroCalm BH4+ (Advanced)",
+                     "Category":  "Advanced",
+                     "COGS":  8.02,
+                     "Demand":  {
+                                    "AvgMonthlyUnits":  394,
+                                    "PeakMonthlyUnits":  453,
+                                    "AnnualUnits":  4728,
+                                    "DailyUnits":  13.1,
+                                    "DemandCV":  0.2
+                                },
+                     "SupplyChain":  {
+                                         "LeadTimeDays":  28,
+                                         "MOQ":  250,
+                                         "ShelfLifeMonths":  24
+                                     },
+                     "InventoryLevels":  {
+                                             "SafetyStock":  126,
+                                             "ReorderPoint":  493,
+                                             "EOQ":  1500,
+                                             "MaxStock":  1626,
+                                             "AvgInventory":  876,
+                                             "WeeksOfSupply":  9.6
+                                         },
+                     "Financials":  {
+                                        "AvgInventoryValue":  7025.52,
+                                        "AnnualHoldingCost":  1756.38,
+                                        "AnnualOrderingCost":  1400,
+                                        "TotalInventoryCost":  3156.38,
+                                        "InventoryTurns":  5.4,
+                                        "OrdersPerYear":  4
+                                    },
+                     "Risk":  {
+                                  "StockoutRisk":  "LOW",
+                                  "ShelfLifeRisk":  "LOW",
+                                  "MonthsOfStockAtMax":  4.1
+                              },
+                     "NextPO":  {
+                                    "Urgency":  "PLANNED",
+                                    "DaysUntilReorder":  29,
+                                    "OrderQuantity":  1500,
+                                    "OrderValue":  12030.00
+                                }
+                 },
+                 {
+                     "SKU":  "24",
+                     "Name":  "Histamine Relief Protocol",
+                     "Category":  "Advanced",
+                     "COGS":  15.01,
+                     "Demand":  {
+                                    "AvgMonthlyUnits":  394,
+                                    "PeakMonthlyUnits":  453,
+                                    "AnnualUnits":  4728,
+                                    "DailyUnits":  13.1,
+                                    "DemandCV":  0.2
+                                },
+                     "SupplyChain":  {
+                                         "LeadTimeDays":  28,
+                                         "MOQ":  250,
+                                         "ShelfLifeMonths":  24
+                                     },
+                     "InventoryLevels":  {
+                                             "SafetyStock":  126,
+                                             "ReorderPoint":  493,
+                                             "EOQ":  1000,
+                                             "MaxStock":  1126,
+                                             "AvgInventory":  626,
+                                             "WeeksOfSupply":  6.8
+                                         },
+                     "Financials":  {
+                                        "AvgInventoryValue":  9396.26,
+                                        "AnnualHoldingCost":  2349.06,
+                                        "AnnualOrderingCost":  1750,
+                                        "TotalInventoryCost":  4099.06,
+                                        "InventoryTurns":  7.6,
+                                        "OrdersPerYear":  5
+                                    },
+                     "Risk":  {
+                                  "StockoutRisk":  "LOW",
+                                  "ShelfLifeRisk":  "LOW",
+                                  "MonthsOfStockAtMax":  2.9
+                              },
+                     "NextPO":  {
+                                    "Urgency":  "SOON",
+                                    "DaysUntilReorder":  10,
+                                    "OrderQuantity":  1000,
+                                    "OrderValue":  15010.00
+                                }
+                 },
+                 {
+                     "SKU":  "25",
+                     "Name":  "DESIRE+ Female Hormonal",
+                     "Category":  "Women",
+                     "COGS":  11.78,
+                     "Demand":  {
+                                    "AvgMonthlyUnits":  280,
+                                    "PeakMonthlyUnits":  322,
+                                    "AnnualUnits":  3360,
+                                    "DailyUnits":  9.3,
+                                    "DemandCV":  0.25
+                                },
+                     "SupplyChain":  {
+                                         "LeadTimeDays":  28,
+                                         "MOQ":  250,
+                                         "ShelfLifeMonths":  24
+                                     },
+                     "InventoryLevels":  {
+                                             "SafetyStock":  112,
+                                             "ReorderPoint":  373,
+                                             "EOQ":  1000,
+                                             "MaxStock":  1112,
+                                             "AvgInventory":  612,
+                                             "WeeksOfSupply":  9.4
+                                         },
+                     "Financials":  {
+                                        "AvgInventoryValue":  7209.36,
+                                        "AnnualHoldingCost":  1802.34,
+                                        "AnnualOrderingCost":  1400,
+                                        "TotalInventoryCost":  3202.34,
+                                        "InventoryTurns":  5.5,
+                                        "OrdersPerYear":  4
+                                    },
+                     "Risk":  {
+                                  "StockoutRisk":  "MEDIUM",
+                                  "ShelfLifeRisk":  "LOW",
+                                  "MonthsOfStockAtMax":  4.0
+                              },
+                     "NextPO":  {
+                                    "Urgency":  "PLANNED",
+                                    "DaysUntilReorder":  26,
+                                    "OrderQuantity":  1000,
+                                    "OrderValue":  11780.00
+                                }
+                 },
+                 {
+                     "SKU":  "26",
+                     "Name":  "Grow+ Pre-Natal Formula",
+                     "Category":  "Women",
+                     "COGS":  15.2,
+                     "Demand":  {
+                                    "AvgMonthlyUnits":  280,
+                                    "PeakMonthlyUnits":  322,
+                                    "AnnualUnits":  3360,
+                                    "DailyUnits":  9.3,
+                                    "DemandCV":  0.25
+                                },
+                     "SupplyChain":  {
+                                         "LeadTimeDays":  28,
+                                         "MOQ":  250,
+                                         "ShelfLifeMonths":  24
+                                     },
+                     "InventoryLevels":  {
+                                             "SafetyStock":  112,
+                                             "ReorderPoint":  373,
+                                             "EOQ":  1000,
+                                             "MaxStock":  1112,
+                                             "AvgInventory":  612,
+                                             "WeeksOfSupply":  9.4
+                                         },
+                     "Financials":  {
+                                        "AvgInventoryValue":  9302.4,
+                                        "AnnualHoldingCost":  2325.60,
+                                        "AnnualOrderingCost":  1400,
+                                        "TotalInventoryCost":  3725.60,
+                                        "InventoryTurns":  5.5,
+                                        "OrdersPerYear":  4
+                                    },
+                     "Risk":  {
+                                  "StockoutRisk":  "MEDIUM",
+                                  "ShelfLifeRisk":  "LOW",
+                                  "MonthsOfStockAtMax":  4.0
+                              },
+                     "NextPO":  {
+                                    "Urgency":  "PLANNED",
+                                    "DaysUntilReorder":  26,
+                                    "OrderQuantity":  1000,
+                                    "OrderValue":  15200.0
+                                }
+                 },
+                 {
+                     "SKU":  "27",
+                     "Name":  "Revitalizher Postnatal+",
+                     "Category":  "Women",
+                     "COGS":  25.58,
+                     "Demand":  {
+                                    "AvgMonthlyUnits":  280,
+                                    "PeakMonthlyUnits":  322,
+                                    "AnnualUnits":  3360,
+                                    "DailyUnits":  9.3,
+                                    "DemandCV":  0.25
+                                },
+                     "SupplyChain":  {
+                                         "LeadTimeDays":  28,
+                                         "MOQ":  250,
+                                         "ShelfLifeMonths":  24
+                                     },
+                     "InventoryLevels":  {
+                                             "SafetyStock":  112,
+                                             "ReorderPoint":  373,
+                                             "EOQ":  750,
+                                             "MaxStock":  862,
+                                             "AvgInventory":  487,
+                                             "WeeksOfSupply":  7.5
+                                         },
+                     "Financials":  {
+                                        "AvgInventoryValue":  12457.46,
+                                        "AnnualHoldingCost":  3114.36,
+                                        "AnnualOrderingCost":  1750,
+                                        "TotalInventoryCost":  4864.36,
+                                        "InventoryTurns":  6.9,
+                                        "OrdersPerYear":  5
+                                    },
+                     "Risk":  {
+                                  "StockoutRisk":  "MEDIUM",
+                                  "ShelfLifeRisk":  "LOW",
+                                  "MonthsOfStockAtMax":  3.1
+                              },
+                     "NextPO":  {
+                                    "Urgency":  "SOON",
+                                    "DaysUntilReorder":  12,
+                                    "OrderQuantity":  750,
+                                    "OrderValue":  19185.00
+                                }
+                 },
+                 {
+                     "SKU":  "28",
+                     "Name":  "Thrive+ Post-Natal GLP-1",
+                     "Category":  "Women",
+                     "COGS":  21.63,
+                     "Demand":  {
+                                    "AvgMonthlyUnits":  280,
+                                    "PeakMonthlyUnits":  322,
+                                    "AnnualUnits":  3360,
+                                    "DailyUnits":  9.3,
+                                    "DemandCV":  0.25
+                                },
+                     "SupplyChain":  {
+                                         "LeadTimeDays":  28,
+                                         "MOQ":  250,
+                                         "ShelfLifeMonths":  24
+                                     },
+                     "InventoryLevels":  {
+                                             "SafetyStock":  112,
+                                             "ReorderPoint":  373,
+                                             "EOQ":  750,
+                                             "MaxStock":  862,
+                                             "AvgInventory":  487,
+                                             "WeeksOfSupply":  7.5
+                                         },
+                     "Financials":  {
+                                        "AvgInventoryValue":  10533.81,
+                                        "AnnualHoldingCost":  2633.45,
+                                        "AnnualOrderingCost":  1750,
+                                        "TotalInventoryCost":  4383.45,
+                                        "InventoryTurns":  6.9,
+                                        "OrdersPerYear":  5
+                                    },
+                     "Risk":  {
+                                  "StockoutRisk":  "MEDIUM",
+                                  "ShelfLifeRisk":  "LOW",
+                                  "MonthsOfStockAtMax":  3.1
+                              },
+                     "NextPO":  {
+                                    "Urgency":  "SOON",
+                                    "DaysUntilReorder":  12,
+                                    "OrderQuantity":  750,
+                                    "OrderValue":  16222.50
+                                }
+                 },
+                 {
+                     "SKU":  "29",
+                     "Name":  "Sproutables Infant Tincture",
+                     "Category":  "Children",
+                     "COGS":  4.85,
+                     "Demand":  {
+                                    "AvgMonthlyUnits":  117,
+                                    "PeakMonthlyUnits":  135,
+                                    "AnnualUnits":  1404,
+                                    "DailyUnits":  3.9,
+                                    "DemandCV":  0.2
+                                },
+                     "SupplyChain":  {
+                                         "LeadTimeDays":  21,
+                                         "MOQ":  500,
+                                         "ShelfLifeMonths":  18
+                                     },
+                     "InventoryLevels":  {
+                                             "SafetyStock":  33,
+                                             "ReorderPoint":  115,
+                                             "EOQ":  1000,
+                                             "MaxStock":  1033,
+                                             "AvgInventory":  533,
+                                             "WeeksOfSupply":  19.5
+                                         },
+                     "Financials":  {
+                                        "AvgInventoryValue":  2585.05,
+                                        "AnnualHoldingCost":  646.26,
+                                        "AnnualOrderingCost":  700,
+                                        "TotalInventoryCost":  1346.26,
+                                        "InventoryTurns":  2.6,
+                                        "OrdersPerYear":  2
+                                    },
+                     "Risk":  {
+                                  "StockoutRisk":  "LOW",
+                                  "ShelfLifeRisk":  "LOW",
+                                  "MonthsOfStockAtMax":  8.8
+                              },
+                     "NextPO":  {
+                                    "Urgency":  "STABLE",
+                                    "DaysUntilReorder":  107,
+                                    "OrderQuantity":  1000,
+                                    "OrderValue":  4850.00
+                                }
+                 },
+                 {
+                     "SKU":  "30",
+                     "Name":  "Sproutables Toddler Tablets",
+                     "Category":  "Children",
+                     "COGS":  6.74,
+                     "Demand":  {
+                                    "AvgMonthlyUnits":  117,
+                                    "PeakMonthlyUnits":  135,
+                                    "AnnualUnits":  1404,
+                                    "DailyUnits":  3.9,
+                                    "DemandCV":  0.2
+                                },
+                     "SupplyChain":  {
+                                         "LeadTimeDays":  21,
+                                         "MOQ":  500,
+                                         "ShelfLifeMonths":  18
+                                     },
+                     "InventoryLevels":  {
+                                             "SafetyStock":  33,
+                                             "ReorderPoint":  115,
+                                             "EOQ":  1000,
+                                             "MaxStock":  1033,
+                                             "AvgInventory":  533,
+                                             "WeeksOfSupply":  19.5
+                                         },
+                     "Financials":  {
+                                        "AvgInventoryValue":  3592.42,
+                                        "AnnualHoldingCost":  898.10,
+                                        "AnnualOrderingCost":  700,
+                                        "TotalInventoryCost":  1598.10,
+                                        "InventoryTurns":  2.6,
+                                        "OrdersPerYear":  2
+                                    },
+                     "Risk":  {
+                                  "StockoutRisk":  "LOW",
+                                  "ShelfLifeRisk":  "LOW",
+                                  "MonthsOfStockAtMax":  8.8
+                              },
+                     "NextPO":  {
+                                    "Urgency":  "STABLE",
+                                    "DaysUntilReorder":  107,
+                                    "OrderQuantity":  1000,
+                                    "OrderValue":  6740.00
+                                }
+                 },
+                 {
+                     "SKU":  "31",
+                     "Name":  "Sproutables Children Gummies",
+                     "Category":  "Children",
+                     "COGS":  7.35,
+                     "Demand":  {
+                                    "AvgMonthlyUnits":  117,
+                                    "PeakMonthlyUnits":  135,
+                                    "AnnualUnits":  1404,
+                                    "DailyUnits":  3.9,
+                                    "DemandCV":  0.2
+                                },
+                     "SupplyChain":  {
+                                         "LeadTimeDays":  21,
+                                         "MOQ":  500,
+                                         "ShelfLifeMonths":  18
+                                     },
+                     "InventoryLevels":  {
+                                             "SafetyStock":  33,
+                                             "ReorderPoint":  115,
+                                             "EOQ":  1000,
+                                             "MaxStock":  1033,
+                                             "AvgInventory":  533,
+                                             "WeeksOfSupply":  19.5
+                                         },
+                     "Financials":  {
+                                        "AvgInventoryValue":  3917.55,
+                                        "AnnualHoldingCost":  979.39,
+                                        "AnnualOrderingCost":  700,
+                                        "TotalInventoryCost":  1679.39,
+                                        "InventoryTurns":  2.6,
+                                        "OrdersPerYear":  2
+                                    },
+                     "Risk":  {
+                                  "StockoutRisk":  "LOW",
+                                  "ShelfLifeRisk":  "LOW",
+                                  "MonthsOfStockAtMax":  8.8
+                              },
+                     "NextPO":  {
+                                    "Urgency":  "STABLE",
+                                    "DaysUntilReorder":  107,
+                                    "OrderQuantity":  1000,
+                                    "OrderValue":  7350.00
+                                }
+                 },
+                 {
+                     "SKU":  "32",
+                     "Name":  "ACAT+ Mitochondrial Support",
+                     "Category":  "SNP",
+                     "COGS":  12.21,
+                     "Demand":  {
+                                    "AvgMonthlyUnits":  142,
+                                    "PeakMonthlyUnits":  163,
+                                    "AnnualUnits":  1704,
+                                    "DailyUnits":  4.7,
+                                    "DemandCV":  0.3
+                                },
+                     "SupplyChain":  {
+                                         "LeadTimeDays":  35,
+                                         "MOQ":  200,
+                                         "ShelfLifeMonths":  24
+                                     },
+                     "InventoryLevels":  {
+                                             "SafetyStock":  77,
+                                             "ReorderPoint":  242,
+                                             "EOQ":  800,
+                                             "MaxStock":  877,
+                                             "AvgInventory":  477,
+                                             "WeeksOfSupply":  14.5
+                                         },
+                     "Financials":  {
+                                        "AvgInventoryValue":  5824.17,
+                                        "AnnualHoldingCost":  1456.04,
+                                        "AnnualOrderingCost":  1050,
+                                        "TotalInventoryCost":  2506.04,
+                                        "InventoryTurns":  3.6,
+                                        "OrdersPerYear":  3
+                                    },
+                     "Risk":  {
+                                  "StockoutRisk":  "HIGH",
+                                  "ShelfLifeRisk":  "LOW",
+                                  "MonthsOfStockAtMax":  6.2
+                              },
+                     "NextPO":  {
+                                    "Urgency":  "STABLE",
+                                    "DaysUntilReorder":  50,
+                                    "OrderQuantity":  800,
+                                    "OrderValue":  9768.00
+                                }
+                 },
+                 {
+                     "SKU":  "33",
+                     "Name":  "ACHY+ Acetylcholine Support",
+                     "Category":  "SNP",
+                     "COGS":  18.5,
+                     "Demand":  {
+                                    "AvgMonthlyUnits":  142,
+                                    "PeakMonthlyUnits":  163,
+                                    "AnnualUnits":  1704,
+                                    "DailyUnits":  4.7,
+                                    "DemandCV":  0.3
+                                },
+                     "SupplyChain":  {
+                                         "LeadTimeDays":  35,
+                                         "MOQ":  200,
+                                         "ShelfLifeMonths":  24
+                                     },
+                     "InventoryLevels":  {
+                                             "SafetyStock":  77,
+                                             "ReorderPoint":  242,
+                                             "EOQ":  600,
+                                             "MaxStock":  677,
+                                             "AvgInventory":  377,
+                                             "WeeksOfSupply":  11.5
+                                         },
+                     "Financials":  {
+                                        "AvgInventoryValue":  6974.5,
+                                        "AnnualHoldingCost":  1743.62,
+                                        "AnnualOrderingCost":  1050,
+                                        "TotalInventoryCost":  2793.62,
+                                        "InventoryTurns":  4.5,
+                                        "OrdersPerYear":  3
+                                    },
+                     "Risk":  {
+                                  "StockoutRisk":  "HIGH",
+                                  "ShelfLifeRisk":  "LOW",
+                                  "MonthsOfStockAtMax":  4.8
+                              },
+                     "NextPO":  {
+                                    "Urgency":  "PLANNED",
+                                    "DaysUntilReorder":  29,
+                                    "OrderQuantity":  600,
+                                    "OrderValue":  11100.0
+                                }
+                 },
+                 {
+                     "SKU":  "34",
+                     "Name":  "ADO Support+ Purine Metabolism",
+                     "Category":  "SNP",
+                     "COGS":  13.54,
+                     "Demand":  {
+                                    "AvgMonthlyUnits":  142,
+                                    "PeakMonthlyUnits":  163,
+                                    "AnnualUnits":  1704,
+                                    "DailyUnits":  4.7,
+                                    "DemandCV":  0.3
+                                },
+                     "SupplyChain":  {
+                                         "LeadTimeDays":  35,
+                                         "MOQ":  200,
+                                         "ShelfLifeMonths":  24
+                                     },
+                     "InventoryLevels":  {
+                                             "SafetyStock":  77,
+                                             "ReorderPoint":  242,
+                                             "EOQ":  600,
+                                             "MaxStock":  677,
+                                             "AvgInventory":  377,
+                                             "WeeksOfSupply":  11.5
+                                         },
+                     "Financials":  {
+                                        "AvgInventoryValue":  5104.58,
+                                        "AnnualHoldingCost":  1276.14,
+                                        "AnnualOrderingCost":  1050,
+                                        "TotalInventoryCost":  2326.14,
+                                        "InventoryTurns":  4.5,
+                                        "OrdersPerYear":  3
+                                    },
+                     "Risk":  {
+                                  "StockoutRisk":  "HIGH",
+                                  "ShelfLifeRisk":  "LOW",
+                                  "MonthsOfStockAtMax":  4.8
+                              },
+                     "NextPO":  {
+                                    "Urgency":  "PLANNED",
+                                    "DaysUntilReorder":  29,
+                                    "OrderQuantity":  600,
+                                    "OrderValue":  8124.00
+                                }
+                 },
+                 {
+                     "SKU":  "35",
+                     "Name":  "BHMT+ Methylation Support",
+                     "Category":  "SNP",
+                     "COGS":  14.13,
+                     "Demand":  {
+                                    "AvgMonthlyUnits":  142,
+                                    "PeakMonthlyUnits":  163,
+                                    "AnnualUnits":  1704,
+                                    "DailyUnits":  4.7,
+                                    "DemandCV":  0.3
+                                },
+                     "SupplyChain":  {
+                                         "LeadTimeDays":  35,
+                                         "MOQ":  200,
+                                         "ShelfLifeMonths":  24
+                                     },
+                     "InventoryLevels":  {
+                                             "SafetyStock":  77,
+                                             "ReorderPoint":  242,
+                                             "EOQ":  600,
+                                             "MaxStock":  677,
+                                             "AvgInventory":  377,
+                                             "WeeksOfSupply":  11.5
+                                         },
+                     "Financials":  {
+                                        "AvgInventoryValue":  5327.01,
+                                        "AnnualHoldingCost":  1331.75,
+                                        "AnnualOrderingCost":  1050,
+                                        "TotalInventoryCost":  2381.75,
+                                        "InventoryTurns":  4.5,
+                                        "OrdersPerYear":  3
+                                    },
+                     "Risk":  {
+                                  "StockoutRisk":  "HIGH",
+                                  "ShelfLifeRisk":  "LOW",
+                                  "MonthsOfStockAtMax":  4.8
+                              },
+                     "NextPO":  {
+                                    "Urgency":  "PLANNED",
+                                    "DaysUntilReorder":  29,
+                                    "OrderQuantity":  600,
+                                    "OrderValue":  8478.00
+                                }
+                 },
+                 {
+                     "SKU":  "36",
+                     "Name":  "CBS Support+ Sulfur Pathway",
+                     "Category":  "SNP",
+                     "COGS":  12.92,
+                     "Demand":  {
+                                    "AvgMonthlyUnits":  142,
+                                    "PeakMonthlyUnits":  163,
+                                    "AnnualUnits":  1704,
+                                    "DailyUnits":  4.7,
+                                    "DemandCV":  0.3
+                                },
+                     "SupplyChain":  {
+                                         "LeadTimeDays":  35,
+                                         "MOQ":  200,
+                                         "ShelfLifeMonths":  24
+                                     },
+                     "InventoryLevels":  {
+                                             "SafetyStock":  77,
+                                             "ReorderPoint":  242,
+                                             "EOQ":  800,
+                                             "MaxStock":  877,
+                                             "AvgInventory":  477,
+                                             "WeeksOfSupply":  14.5
+                                         },
+                     "Financials":  {
+                                        "AvgInventoryValue":  6162.84,
+                                        "AnnualHoldingCost":  1540.71,
+                                        "AnnualOrderingCost":  1050,
+                                        "TotalInventoryCost":  2590.71,
+                                        "InventoryTurns":  3.6,
+                                        "OrdersPerYear":  3
+                                    },
+                     "Risk":  {
+                                  "StockoutRisk":  "HIGH",
+                                  "ShelfLifeRisk":  "LOW",
+                                  "MonthsOfStockAtMax":  6.2
+                              },
+                     "NextPO":  {
+                                    "Urgency":  "STABLE",
+                                    "DaysUntilReorder":  50,
+                                    "OrderQuantity":  800,
+                                    "OrderValue":  10336.00
+                                }
+                 },
+                 {
+                     "SKU":  "37",
+                     "Name":  "COMT+ Neurotransmitter Balance",
+                     "Category":  "SNP",
+                     "COGS":  15.13,
+                     "Demand":  {
+                                    "AvgMonthlyUnits":  142,
+                                    "PeakMonthlyUnits":  163,
+                                    "AnnualUnits":  1704,
+                                    "DailyUnits":  4.7,
+                                    "DemandCV":  0.3
+                                },
+                     "SupplyChain":  {
+                                         "LeadTimeDays":  35,
+                                         "MOQ":  200,
+                                         "ShelfLifeMonths":  24
+                                     },
+                     "InventoryLevels":  {
+                                             "SafetyStock":  77,
+                                             "ReorderPoint":  242,
+                                             "EOQ":  600,
+                                             "MaxStock":  677,
+                                             "AvgInventory":  377,
+                                             "WeeksOfSupply":  11.5
+                                         },
+                     "Financials":  {
+                                        "AvgInventoryValue":  5704.01,
+                                        "AnnualHoldingCost":  1426.00,
+                                        "AnnualOrderingCost":  1050,
+                                        "TotalInventoryCost":  2476.00,
+                                        "InventoryTurns":  4.5,
+                                        "OrdersPerYear":  3
+                                    },
+                     "Risk":  {
+                                  "StockoutRisk":  "HIGH",
+                                  "ShelfLifeRisk":  "LOW",
+                                  "MonthsOfStockAtMax":  4.8
+                              },
+                     "NextPO":  {
+                                    "Urgency":  "PLANNED",
+                                    "DaysUntilReorder":  29,
+                                    "OrderQuantity":  600,
+                                    "OrderValue":  9078.00
+                                }
+                 },
+                 {
+                     "SKU":  "38",
+                     "Name":  "DAO+ Histamine Balance",
+                     "Category":  "SNP",
+                     "COGS":  14.83,
+                     "Demand":  {
+                                    "AvgMonthlyUnits":  142,
+                                    "PeakMonthlyUnits":  163,
+                                    "AnnualUnits":  1704,
+                                    "DailyUnits":  4.7,
+                                    "DemandCV":  0.3
+                                },
+                     "SupplyChain":  {
+                                         "LeadTimeDays":  35,
+                                         "MOQ":  200,
+                                         "ShelfLifeMonths":  24
+                                     },
+                     "InventoryLevels":  {
+                                             "SafetyStock":  77,
+                                             "ReorderPoint":  242,
+                                             "EOQ":  600,
+                                             "MaxStock":  677,
+                                             "AvgInventory":  377,
+                                             "WeeksOfSupply":  11.5
+                                         },
+                     "Financials":  {
+                                        "AvgInventoryValue":  5590.91,
+                                        "AnnualHoldingCost":  1397.73,
+                                        "AnnualOrderingCost":  1050,
+                                        "TotalInventoryCost":  2447.73,
+                                        "InventoryTurns":  4.5,
+                                        "OrdersPerYear":  3
+                                    },
+                     "Risk":  {
+                                  "StockoutRisk":  "HIGH",
+                                  "ShelfLifeRisk":  "LOW",
+                                  "MonthsOfStockAtMax":  4.8
+                              },
+                     "NextPO":  {
+                                    "Urgency":  "PLANNED",
+                                    "DaysUntilReorder":  29,
+                                    "OrderQuantity":  600,
+                                    "OrderValue":  8898.00
+                                }
+                 },
+                 {
+                     "SKU":  "39",
+                     "Name":  "GST+ Cellular Detox",
+                     "Category":  "SNP",
+                     "COGS":  20.47,
+                     "Demand":  {
+                                    "AvgMonthlyUnits":  142,
+                                    "PeakMonthlyUnits":  163,
+                                    "AnnualUnits":  1704,
+                                    "DailyUnits":  4.7,
+                                    "DemandCV":  0.3
+                                },
+                     "SupplyChain":  {
+                                         "LeadTimeDays":  35,
+                                         "MOQ":  200,
+                                         "ShelfLifeMonths":  24
+                                     },
+                     "InventoryLevels":  {
+                                             "SafetyStock":  77,
+                                             "ReorderPoint":  242,
+                                             "EOQ":  600,
+                                             "MaxStock":  677,
+                                             "AvgInventory":  377,
+                                             "WeeksOfSupply":  11.5
+                                         },
+                     "Financials":  {
+                                        "AvgInventoryValue":  7717.19,
+                                        "AnnualHoldingCost":  1929.30,
+                                        "AnnualOrderingCost":  1050,
+                                        "TotalInventoryCost":  2979.30,
+                                        "InventoryTurns":  4.5,
+                                        "OrdersPerYear":  3
+                                    },
+                     "Risk":  {
+                                  "StockoutRisk":  "HIGH",
+                                  "ShelfLifeRisk":  "LOW",
+                                  "MonthsOfStockAtMax":  4.8
+                              },
+                     "NextPO":  {
+                                    "Urgency":  "PLANNED",
+                                    "DaysUntilReorder":  29,
+                                    "OrderQuantity":  600,
+                                    "OrderValue":  12282.00
+                                }
+                 },
+                 {
+                     "SKU":  "40",
+                     "Name":  "MAOA+ Neurochemical Balance",
+                     "Category":  "SNP",
+                     "COGS":  20.35,
+                     "Demand":  {
+                                    "AvgMonthlyUnits":  142,
+                                    "PeakMonthlyUnits":  163,
+                                    "AnnualUnits":  1704,
+                                    "DailyUnits":  4.7,
+                                    "DemandCV":  0.3
+                                },
+                     "SupplyChain":  {
+                                         "LeadTimeDays":  35,
+                                         "MOQ":  200,
+                                         "ShelfLifeMonths":  24
+                                     },
+                     "InventoryLevels":  {
+                                             "SafetyStock":  77,
+                                             "ReorderPoint":  242,
+                                             "EOQ":  600,
+                                             "MaxStock":  677,
+                                             "AvgInventory":  377,
+                                             "WeeksOfSupply":  11.5
+                                         },
+                     "Financials":  {
+                                        "AvgInventoryValue":  7671.95,
+                                        "AnnualHoldingCost":  1917.99,
+                                        "AnnualOrderingCost":  1050,
+                                        "TotalInventoryCost":  2967.99,
+                                        "InventoryTurns":  4.5,
+                                        "OrdersPerYear":  3
+                                    },
+                     "Risk":  {
+                                  "StockoutRisk":  "HIGH",
+                                  "ShelfLifeRisk":  "LOW",
+                                  "MonthsOfStockAtMax":  4.8
+                              },
+                     "NextPO":  {
+                                    "Urgency":  "PLANNED",
+                                    "DaysUntilReorder":  29,
+                                    "OrderQuantity":  600,
+                                    "OrderValue":  12210.00
+                                }
+                 },
+                 {
+                     "SKU":  "41",
+                     "Name":  "MTHFR+ Folate Metabolism",
+                     "Category":  "SNP",
+                     "COGS":  18.46,
+                     "Demand":  {
+                                    "AvgMonthlyUnits":  142,
+                                    "PeakMonthlyUnits":  163,
+                                    "AnnualUnits":  1704,
+                                    "DailyUnits":  4.7,
+                                    "DemandCV":  0.3
+                                },
+                     "SupplyChain":  {
+                                         "LeadTimeDays":  35,
+                                         "MOQ":  200,
+                                         "ShelfLifeMonths":  24
+                                     },
+                     "InventoryLevels":  {
+                                             "SafetyStock":  77,
+                                             "ReorderPoint":  242,
+                                             "EOQ":  600,
+                                             "MaxStock":  677,
+                                             "AvgInventory":  377,
+                                             "WeeksOfSupply":  11.5
+                                         },
+                     "Financials":  {
+                                        "AvgInventoryValue":  6959.42,
+                                        "AnnualHoldingCost":  1739.86,
+                                        "AnnualOrderingCost":  1050,
+                                        "TotalInventoryCost":  2789.86,
+                                        "InventoryTurns":  4.5,
+                                        "OrdersPerYear":  3
+                                    },
+                     "Risk":  {
+                                  "StockoutRisk":  "HIGH",
+                                  "ShelfLifeRisk":  "LOW",
+                                  "MonthsOfStockAtMax":  4.8
+                              },
+                     "NextPO":  {
+                                    "Urgency":  "PLANNED",
+                                    "DaysUntilReorder":  29,
+                                    "OrderQuantity":  600,
+                                    "OrderValue":  11076.00
+                                }
+                 },
+                 {
+                     "SKU":  "42",
+                     "Name":  "MTR+ Methylation Matrix",
+                     "Category":  "SNP",
+                     "COGS":  16.54,
+                     "Demand":  {
+                                    "AvgMonthlyUnits":  142,
+                                    "PeakMonthlyUnits":  163,
+                                    "AnnualUnits":  1704,
+                                    "DailyUnits":  4.7,
+                                    "DemandCV":  0.3
+                                },
+                     "SupplyChain":  {
+                                         "LeadTimeDays":  35,
+                                         "MOQ":  200,
+                                         "ShelfLifeMonths":  24
+                                     },
+                     "InventoryLevels":  {
+                                             "SafetyStock":  77,
+                                             "ReorderPoint":  242,
+                                             "EOQ":  600,
+                                             "MaxStock":  677,
+                                             "AvgInventory":  377,
+                                             "WeeksOfSupply":  11.5
+                                         },
+                     "Financials":  {
+                                        "AvgInventoryValue":  6235.58,
+                                        "AnnualHoldingCost":  1558.90,
+                                        "AnnualOrderingCost":  1050,
+                                        "TotalInventoryCost":  2608.90,
+                                        "InventoryTurns":  4.5,
+                                        "OrdersPerYear":  3
+                                    },
+                     "Risk":  {
+                                  "StockoutRisk":  "HIGH",
+                                  "ShelfLifeRisk":  "LOW",
+                                  "MonthsOfStockAtMax":  4.8
+                              },
+                     "NextPO":  {
+                                    "Urgency":  "PLANNED",
+                                    "DaysUntilReorder":  29,
+                                    "OrderQuantity":  600,
+                                    "OrderValue":  9924.00
+                                }
+                 },
+                 {
+                     "SKU":  "43",
+                     "Name":  "MTRR+ Methylcobalamin Regen",
+                     "Category":  "SNP",
+                     "COGS":  16.26,
+                     "Demand":  {
+                                    "AvgMonthlyUnits":  142,
+                                    "PeakMonthlyUnits":  163,
+                                    "AnnualUnits":  1704,
+                                    "DailyUnits":  4.7,
+                                    "DemandCV":  0.3
+                                },
+                     "SupplyChain":  {
+                                         "LeadTimeDays":  35,
+                                         "MOQ":  200,
+                                         "ShelfLifeMonths":  24
+                                     },
+                     "InventoryLevels":  {
+                                             "SafetyStock":  77,
+                                             "ReorderPoint":  242,
+                                             "EOQ":  600,
+                                             "MaxStock":  677,
+                                             "AvgInventory":  377,
+                                             "WeeksOfSupply":  11.5
+                                         },
+                     "Financials":  {
+                                        "AvgInventoryValue":  6130.02,
+                                        "AnnualHoldingCost":  1532.50,
+                                        "AnnualOrderingCost":  1050,
+                                        "TotalInventoryCost":  2582.50,
+                                        "InventoryTurns":  4.5,
+                                        "OrdersPerYear":  3
+                                    },
+                     "Risk":  {
+                                  "StockoutRisk":  "HIGH",
+                                  "ShelfLifeRisk":  "LOW",
+                                  "MonthsOfStockAtMax":  4.8
+                              },
+                     "NextPO":  {
+                                    "Urgency":  "PLANNED",
+                                    "DaysUntilReorder":  29,
+                                    "OrderQuantity":  600,
+                                    "OrderValue":  9756.00
+                                }
+                 },
+                 {
+                     "SKU":  "44",
+                     "Name":  "NAT Support+ Acetylation",
+                     "Category":  "SNP",
+                     "COGS":  19.39,
+                     "Demand":  {
+                                    "AvgMonthlyUnits":  142,
+                                    "PeakMonthlyUnits":  163,
+                                    "AnnualUnits":  1704,
+                                    "DailyUnits":  4.7,
+                                    "DemandCV":  0.3
+                                },
+                     "SupplyChain":  {
+                                         "LeadTimeDays":  35,
+                                         "MOQ":  200,
+                                         "ShelfLifeMonths":  24
+                                     },
+                     "InventoryLevels":  {
+                                             "SafetyStock":  77,
+                                             "ReorderPoint":  242,
+                                             "EOQ":  600,
+                                             "MaxStock":  677,
+                                             "AvgInventory":  377,
+                                             "WeeksOfSupply":  11.5
+                                         },
+                     "Financials":  {
+                                        "AvgInventoryValue":  7310.03,
+                                        "AnnualHoldingCost":  1827.51,
+                                        "AnnualOrderingCost":  1050,
+                                        "TotalInventoryCost":  2877.51,
+                                        "InventoryTurns":  4.5,
+                                        "OrdersPerYear":  3
+                                    },
+                     "Risk":  {
+                                  "StockoutRisk":  "HIGH",
+                                  "ShelfLifeRisk":  "LOW",
+                                  "MonthsOfStockAtMax":  4.8
+                              },
+                     "NextPO":  {
+                                    "Urgency":  "PLANNED",
+                                    "DaysUntilReorder":  29,
+                                    "OrderQuantity":  600,
+                                    "OrderValue":  11634.00
+                                }
+                 },
+                 {
+                     "SKU":  "45",
+                     "Name":  "NOS+ Vascular Integrity",
+                     "Category":  "SNP",
+                     "COGS":  16.68,
+                     "Demand":  {
+                                    "AvgMonthlyUnits":  142,
+                                    "PeakMonthlyUnits":  163,
+                                    "AnnualUnits":  1704,
+                                    "DailyUnits":  4.7,
+                                    "DemandCV":  0.3
+                                },
+                     "SupplyChain":  {
+                                         "LeadTimeDays":  35,
+                                         "MOQ":  200,
+                                         "ShelfLifeMonths":  24
+                                     },
+                     "InventoryLevels":  {
+                                             "SafetyStock":  77,
+                                             "ReorderPoint":  242,
+                                             "EOQ":  600,
+                                             "MaxStock":  677,
+                                             "AvgInventory":  377,
+                                             "WeeksOfSupply":  11.5
+                                         },
+                     "Financials":  {
+                                        "AvgInventoryValue":  6288.36,
+                                        "AnnualHoldingCost":  1572.09,
+                                        "AnnualOrderingCost":  1050,
+                                        "TotalInventoryCost":  2622.09,
+                                        "InventoryTurns":  4.5,
+                                        "OrdersPerYear":  3
+                                    },
+                     "Risk":  {
+                                  "StockoutRisk":  "HIGH",
+                                  "ShelfLifeRisk":  "LOW",
+                                  "MonthsOfStockAtMax":  4.8
+                              },
+                     "NextPO":  {
+                                    "Urgency":  "PLANNED",
+                                    "DaysUntilReorder":  29,
+                                    "OrderQuantity":  600,
+                                    "OrderValue":  10008.00
+                                }
+                 },
+                 {
+                     "SKU":  "46",
+                     "Name":  "RFC1 Support+ Folate Transport",
+                     "Category":  "SNP",
+                     "COGS":  14.88,
+                     "Demand":  {
+                                    "AvgMonthlyUnits":  142,
+                                    "PeakMonthlyUnits":  163,
+                                    "AnnualUnits":  1704,
+                                    "DailyUnits":  4.7,
+                                    "DemandCV":  0.3
+                                },
+                     "SupplyChain":  {
+                                         "LeadTimeDays":  35,
+                                         "MOQ":  200,
+                                         "ShelfLifeMonths":  24
+                                     },
+                     "InventoryLevels":  {
+                                             "SafetyStock":  77,
+                                             "ReorderPoint":  242,
+                                             "EOQ":  600,
+                                             "MaxStock":  677,
+                                             "AvgInventory":  377,
+                                             "WeeksOfSupply":  11.5
+                                         },
+                     "Financials":  {
+                                        "AvgInventoryValue":  5609.76,
+                                        "AnnualHoldingCost":  1402.44,
+                                        "AnnualOrderingCost":  1050,
+                                        "TotalInventoryCost":  2452.44,
+                                        "InventoryTurns":  4.5,
+                                        "OrdersPerYear":  3
+                                    },
+                     "Risk":  {
+                                  "StockoutRisk":  "HIGH",
+                                  "ShelfLifeRisk":  "LOW",
+                                  "MonthsOfStockAtMax":  4.8
+                              },
+                     "NextPO":  {
+                                    "Urgency":  "PLANNED",
+                                    "DaysUntilReorder":  29,
+                                    "OrderQuantity":  600,
+                                    "OrderValue":  8928.00
+                                }
+                 },
+                 {
+                     "SKU":  "47",
+                     "Name":  "SHMT+ Glycine-Folate Balance",
+                     "Category":  "SNP",
+                     "COGS":  11.98,
+                     "Demand":  {
+                                    "AvgMonthlyUnits":  142,
+                                    "PeakMonthlyUnits":  163,
+                                    "AnnualUnits":  1704,
+                                    "DailyUnits":  4.7,
+                                    "DemandCV":  0.3
+                                },
+                     "SupplyChain":  {
+                                         "LeadTimeDays":  35,
+                                         "MOQ":  200,
+                                         "ShelfLifeMonths":  24
+                                     },
+                     "InventoryLevels":  {
+                                             "SafetyStock":  77,
+                                             "ReorderPoint":  242,
+                                             "EOQ":  800,
+                                             "MaxStock":  877,
+                                             "AvgInventory":  477,
+                                             "WeeksOfSupply":  14.5
+                                         },
+                     "Financials":  {
+                                        "AvgInventoryValue":  5714.46,
+                                        "AnnualHoldingCost":  1428.62,
+                                        "AnnualOrderingCost":  1050,
+                                        "TotalInventoryCost":  2478.62,
+                                        "InventoryTurns":  3.6,
+                                        "OrdersPerYear":  3
+                                    },
+                     "Risk":  {
+                                  "StockoutRisk":  "HIGH",
+                                  "ShelfLifeRisk":  "LOW",
+                                  "MonthsOfStockAtMax":  6.2
+                              },
+                     "NextPO":  {
+                                    "Urgency":  "STABLE",
+                                    "DaysUntilReorder":  50,
+                                    "OrderQuantity":  800,
+                                    "OrderValue":  9584.00
+                                }
+                 },
+                 {
+                     "SKU":  "48",
+                     "Name":  "SOD+ Antioxidant Defense",
+                     "Category":  "SNP",
+                     "COGS":  16.25,
+                     "Demand":  {
+                                    "AvgMonthlyUnits":  142,
+                                    "PeakMonthlyUnits":  163,
+                                    "AnnualUnits":  1704,
+                                    "DailyUnits":  4.7,
+                                    "DemandCV":  0.3
+                                },
+                     "SupplyChain":  {
+                                         "LeadTimeDays":  35,
+                                         "MOQ":  200,
+                                         "ShelfLifeMonths":  24
+                                     },
+                     "InventoryLevels":  {
+                                             "SafetyStock":  77,
+                                             "ReorderPoint":  242,
+                                             "EOQ":  600,
+                                             "MaxStock":  677,
+                                             "AvgInventory":  377,
+                                             "WeeksOfSupply":  11.5
+                                         },
+                     "Financials":  {
+                                        "AvgInventoryValue":  6126.25,
+                                        "AnnualHoldingCost":  1531.56,
+                                        "AnnualOrderingCost":  1050,
+                                        "TotalInventoryCost":  2581.56,
+                                        "InventoryTurns":  4.5,
+                                        "OrdersPerYear":  3
+                                    },
+                     "Risk":  {
+                                  "StockoutRisk":  "HIGH",
+                                  "ShelfLifeRisk":  "LOW",
+                                  "MonthsOfStockAtMax":  4.8
+                              },
+                     "NextPO":  {
+                                    "Urgency":  "PLANNED",
+                                    "DaysUntilReorder":  29,
+                                    "OrderQuantity":  600,
+                                    "OrderValue":  9750.00
+                                }
+                 },
+                 {
+                     "SKU":  "49",
+                     "Name":  "SUOX+ Sulfite Clearance",
+                     "Category":  "SNP",
+                     "COGS":  14.44,
+                     "Demand":  {
+                                    "AvgMonthlyUnits":  142,
+                                    "PeakMonthlyUnits":  163,
+                                    "AnnualUnits":  1704,
+                                    "DailyUnits":  4.7,
+                                    "DemandCV":  0.3
+                                },
+                     "SupplyChain":  {
+                                         "LeadTimeDays":  35,
+                                         "MOQ":  200,
+                                         "ShelfLifeMonths":  24
+                                     },
+                     "InventoryLevels":  {
+                                             "SafetyStock":  77,
+                                             "ReorderPoint":  242,
+                                             "EOQ":  600,
+                                             "MaxStock":  677,
+                                             "AvgInventory":  377,
+                                             "WeeksOfSupply":  11.5
+                                         },
+                     "Financials":  {
+                                        "AvgInventoryValue":  5443.88,
+                                        "AnnualHoldingCost":  1360.97,
+                                        "AnnualOrderingCost":  1050,
+                                        "TotalInventoryCost":  2410.97,
+                                        "InventoryTurns":  4.5,
+                                        "OrdersPerYear":  3
+                                    },
+                     "Risk":  {
+                                  "StockoutRisk":  "HIGH",
+                                  "ShelfLifeRisk":  "LOW",
+                                  "MonthsOfStockAtMax":  4.8
+                              },
+                     "NextPO":  {
+                                    "Urgency":  "PLANNED",
+                                    "DaysUntilReorder":  29,
+                                    "OrderQuantity":  600,
+                                    "OrderValue":  8664.00
+                                }
+                 },
+                 {
+                     "SKU":  "50",
+                     "Name":  "TCN2+ B12 Transport",
+                     "Category":  "SNP",
+                     "COGS":  14.78,
+                     "Demand":  {
+                                    "AvgMonthlyUnits":  142,
+                                    "PeakMonthlyUnits":  163,
+                                    "AnnualUnits":  1704,
+                                    "DailyUnits":  4.7,
+                                    "DemandCV":  0.3
+                                },
+                     "SupplyChain":  {
+                                         "LeadTimeDays":  35,
+                                         "MOQ":  200,
+                                         "ShelfLifeMonths":  24
+                                     },
+                     "InventoryLevels":  {
+                                             "SafetyStock":  77,
+                                             "ReorderPoint":  242,
+                                             "EOQ":  600,
+                                             "MaxStock":  677,
+                                             "AvgInventory":  377,
+                                             "WeeksOfSupply":  11.5
+                                         },
+                     "Financials":  {
+                                        "AvgInventoryValue":  5572.06,
+                                        "AnnualHoldingCost":  1393.02,
+                                        "AnnualOrderingCost":  1050,
+                                        "TotalInventoryCost":  2443.02,
+                                        "InventoryTurns":  4.5,
+                                        "OrdersPerYear":  3
+                                    },
+                     "Risk":  {
+                                  "StockoutRisk":  "HIGH",
+                                  "ShelfLifeRisk":  "LOW",
+                                  "MonthsOfStockAtMax":  4.8
+                              },
+                     "NextPO":  {
+                                    "Urgency":  "PLANNED",
+                                    "DaysUntilReorder":  29,
+                                    "OrderQuantity":  600,
+                                    "OrderValue":  8868.00
+                                }
+                 },
+                 {
+                     "SKU":  "51",
+                     "Name":  "VDR+ Receptor Activation",
+                     "Category":  "SNP",
+                     "COGS":  15.34,
+                     "Demand":  {
+                                    "AvgMonthlyUnits":  142,
+                                    "PeakMonthlyUnits":  163,
+                                    "AnnualUnits":  1704,
+                                    "DailyUnits":  4.7,
+                                    "DemandCV":  0.3
+                                },
+                     "SupplyChain":  {
+                                         "LeadTimeDays":  35,
+                                         "MOQ":  200,
+                                         "ShelfLifeMonths":  24
+                                     },
+                     "InventoryLevels":  {
+                                             "SafetyStock":  77,
+                                             "ReorderPoint":  242,
+                                             "EOQ":  600,
+                                             "MaxStock":  677,
+                                             "AvgInventory":  377,
+                                             "WeeksOfSupply":  11.5
+                                         },
+                     "Financials":  {
+                                        "AvgInventoryValue":  5783.18,
+                                        "AnnualHoldingCost":  1445.80,
+                                        "AnnualOrderingCost":  1050,
+                                        "TotalInventoryCost":  2495.80,
+                                        "InventoryTurns":  4.5,
+                                        "OrdersPerYear":  3
+                                    },
+                     "Risk":  {
+                                  "StockoutRisk":  "HIGH",
+                                  "ShelfLifeRisk":  "LOW",
+                                  "MonthsOfStockAtMax":  4.8
+                              },
+                     "NextPO":  {
+                                    "Urgency":  "PLANNED",
+                                    "DaysUntilReorder":  29,
+                                    "OrderQuantity":  600,
+                                    "OrderValue":  9204.00
+                                }
+                 },
+                 {
+                     "SKU":  "52",
+                     "Name":  "Chaga Mushroom Capsules",
+                     "Category":  "Mushroom",
+                     "COGS":  9.77,
+                     "Demand":  {
+                                    "AvgMonthlyUnits":  172,
+                                    "PeakMonthlyUnits":  198,
+                                    "AnnualUnits":  2064,
+                                    "DailyUnits":  5.7,
+                                    "DemandCV":  0.15
+                                },
+                     "SupplyChain":  {
+                                         "LeadTimeDays":  28,
+                                         "MOQ":  500,
+                                         "ShelfLifeMonths":  18
+                                     },
+                     "InventoryLevels":  {
+                                             "SafetyStock":  42,
+                                             "ReorderPoint":  202,
+                                             "EOQ":  1000,
+                                             "MaxStock":  1042,
+                                             "AvgInventory":  542,
+                                             "WeeksOfSupply":  13.6
+                                         },
+                     "Financials":  {
+                                        "AvgInventoryValue":  5295.34,
+                                        "AnnualHoldingCost":  1323.84,
+                                        "AnnualOrderingCost":  1050,
+                                        "TotalInventoryCost":  2373.84,
+                                        "InventoryTurns":  3.8,
+                                        "OrdersPerYear":  3
+                                    },
+                     "Risk":  {
+                                  "StockoutRisk":  "LOW",
+                                  "ShelfLifeRisk":  "LOW",
+                                  "MonthsOfStockAtMax":  6.1
+                              },
+                     "NextPO":  {
+                                    "Urgency":  "STABLE",
+                                    "DaysUntilReorder":  60,
+                                    "OrderQuantity":  1000,
+                                    "OrderValue":  9770.00
+                                }
+                 },
+                 {
+                     "SKU":  "53",
+                     "Name":  "Cordyceps Mushroom Capsules",
+                     "Category":  "Mushroom",
+                     "COGS":  9.77,
+                     "Demand":  {
+                                    "AvgMonthlyUnits":  172,
+                                    "PeakMonthlyUnits":  198,
+                                    "AnnualUnits":  2064,
+                                    "DailyUnits":  5.7,
+                                    "DemandCV":  0.15
+                                },
+                     "SupplyChain":  {
+                                         "LeadTimeDays":  28,
+                                         "MOQ":  500,
+                                         "ShelfLifeMonths":  18
+                                     },
+                     "InventoryLevels":  {
+                                             "SafetyStock":  42,
+                                             "ReorderPoint":  202,
+                                             "EOQ":  1000,
+                                             "MaxStock":  1042,
+                                             "AvgInventory":  542,
+                                             "WeeksOfSupply":  13.6
+                                         },
+                     "Financials":  {
+                                        "AvgInventoryValue":  5295.34,
+                                        "AnnualHoldingCost":  1323.84,
+                                        "AnnualOrderingCost":  1050,
+                                        "TotalInventoryCost":  2373.84,
+                                        "InventoryTurns":  3.8,
+                                        "OrdersPerYear":  3
+                                    },
+                     "Risk":  {
+                                  "StockoutRisk":  "LOW",
+                                  "ShelfLifeRisk":  "LOW",
+                                  "MonthsOfStockAtMax":  6.1
+                              },
+                     "NextPO":  {
+                                    "Urgency":  "STABLE",
+                                    "DaysUntilReorder":  60,
+                                    "OrderQuantity":  1000,
+                                    "OrderValue":  9770.00
+                                }
+                 },
+                 {
+                     "SKU":  "54",
+                     "Name":  "Lions Mane Mushroom Capsules",
+                     "Category":  "Mushroom",
+                     "COGS":  7.61,
+                     "Demand":  {
+                                    "AvgMonthlyUnits":  172,
+                                    "PeakMonthlyUnits":  198,
+                                    "AnnualUnits":  2064,
+                                    "DailyUnits":  5.7,
+                                    "DemandCV":  0.15
+                                },
+                     "SupplyChain":  {
+                                         "LeadTimeDays":  28,
+                                         "MOQ":  500,
+                                         "ShelfLifeMonths":  18
+                                     },
+                     "InventoryLevels":  {
+                                             "SafetyStock":  42,
+                                             "ReorderPoint":  202,
+                                             "EOQ":  1000,
+                                             "MaxStock":  1042,
+                                             "AvgInventory":  542,
+                                             "WeeksOfSupply":  13.6
+                                         },
+                     "Financials":  {
+                                        "AvgInventoryValue":  4124.62,
+                                        "AnnualHoldingCost":  1031.16,
+                                        "AnnualOrderingCost":  1050,
+                                        "TotalInventoryCost":  2081.16,
+                                        "InventoryTurns":  3.8,
+                                        "OrdersPerYear":  3
+                                    },
+                     "Risk":  {
+                                  "StockoutRisk":  "LOW",
+                                  "ShelfLifeRisk":  "LOW",
+                                  "MonthsOfStockAtMax":  6.1
+                              },
+                     "NextPO":  {
+                                    "Urgency":  "STABLE",
+                                    "DaysUntilReorder":  60,
+                                    "OrderQuantity":  1000,
+                                    "OrderValue":  7610.00
+                                }
+                 },
+                 {
+                     "SKU":  "55",
+                     "Name":  "Reishi Mushroom Capsules",
+                     "Category":  "Mushroom",
+                     "COGS":  7.07,
+                     "Demand":  {
+                                    "AvgMonthlyUnits":  172,
+                                    "PeakMonthlyUnits":  198,
+                                    "AnnualUnits":  2064,
+                                    "DailyUnits":  5.7,
+                                    "DemandCV":  0.15
+                                },
+                     "SupplyChain":  {
+                                         "LeadTimeDays":  28,
+                                         "MOQ":  500,
+                                         "ShelfLifeMonths":  18
+                                     },
+                     "InventoryLevels":  {
+                                             "SafetyStock":  42,
+                                             "ReorderPoint":  202,
+                                             "EOQ":  1000,
+                                             "MaxStock":  1042,
+                                             "AvgInventory":  542,
+                                             "WeeksOfSupply":  13.6
+                                         },
+                     "Financials":  {
+                                        "AvgInventoryValue":  3831.94,
+                                        "AnnualHoldingCost":  957.98,
+                                        "AnnualOrderingCost":  1050,
+                                        "TotalInventoryCost":  2007.98,
+                                        "InventoryTurns":  3.8,
+                                        "OrdersPerYear":  3
+                                    },
+                     "Risk":  {
+                                  "StockoutRisk":  "LOW",
+                                  "ShelfLifeRisk":  "LOW",
+                                  "MonthsOfStockAtMax":  6.1
+                              },
+                     "NextPO":  {
+                                    "Urgency":  "STABLE",
+                                    "DaysUntilReorder":  60,
+                                    "OrderQuantity":  1000,
+                                    "OrderValue":  7070.00
+                                }
+                 },
+                 {
+                     "SKU":  "56",
+                     "Name":  "Turkey Tail Mushroom Capsules",
+                     "Category":  "Mushroom",
+                     "COGS":  7.07,
+                     "Demand":  {
+                                    "AvgMonthlyUnits":  172,
+                                    "PeakMonthlyUnits":  198,
+                                    "AnnualUnits":  2064,
+                                    "DailyUnits":  5.7,
+                                    "DemandCV":  0.15
+                                },
+                     "SupplyChain":  {
+                                         "LeadTimeDays":  28,
+                                         "MOQ":  500,
+                                         "ShelfLifeMonths":  18
+                                     },
+                     "InventoryLevels":  {
+                                             "SafetyStock":  42,
+                                             "ReorderPoint":  202,
+                                             "EOQ":  1000,
+                                             "MaxStock":  1042,
+                                             "AvgInventory":  542,
+                                             "WeeksOfSupply":  13.6
+                                         },
+                     "Financials":  {
+                                        "AvgInventoryValue":  3831.94,
+                                        "AnnualHoldingCost":  957.98,
+                                        "AnnualOrderingCost":  1050,
+                                        "TotalInventoryCost":  2007.98,
+                                        "InventoryTurns":  3.8,
+                                        "OrdersPerYear":  3
+                                    },
+                     "Risk":  {
+                                  "StockoutRisk":  "LOW",
+                                  "ShelfLifeRisk":  "LOW",
+                                  "MonthsOfStockAtMax":  6.1
+                              },
+                     "NextPO":  {
+                                    "Urgency":  "STABLE",
+                                    "DaysUntilReorder":  60,
+                                    "OrderQuantity":  1000,
+                                    "OrderValue":  7070.00
+                                }
+                 },
+                 {
+                     "SKU":  "57",
+                     "Name":  "Genetic Methylation Testing",
+                     "Category":  "Testing",
+                     "COGS":  159.88,
+                     "Demand":  {
+                                    "AvgMonthlyUnits":  211,
+                                    "PeakMonthlyUnits":  243,
+                                    "AnnualUnits":  2532,
+                                    "DailyUnits":  7,
+                                    "DemandCV":  0.35
+                                },
+                     "SupplyChain":  {
+                                         "LeadTimeDays":  7,
+                                         "MOQ":  50,
+                                         "ShelfLifeMonths":  12
+                                     },
+                     "InventoryLevels":  {
+                                             "SafetyStock":  59,
+                                             "ReorderPoint":  108,
+                                             "EOQ":  250,
+                                             "MaxStock":  309,
+                                             "AvgInventory":  184,
+                                             "WeeksOfSupply":  3.8
+                                         },
+                     "Financials":  {
+                                        "AvgInventoryValue":  29417.92,
+                                        "AnnualHoldingCost":  7354.48,
+                                        "AnnualOrderingCost":  3850,
+                                        "TotalInventoryCost":  11204.48,
+                                        "InventoryTurns":  13.8,
+                                        "OrdersPerYear":  11
+                                    },
+                     "Risk":  {
+                                  "StockoutRisk":  "MEDIUM",
+                                  "ShelfLifeRisk":  "LOW",
+                                  "MonthsOfStockAtMax":  1.5
+                              },
+                     "NextPO":  {
+                                    "Urgency":  "SOON",
+                                    "DaysUntilReorder":  11,
+                                    "OrderQuantity":  250,
+                                    "OrderValue":  39970.00
+                                }
+                 },
+                 {
+                     "SKU":  "58",
+                     "Name":  "Genetic Nutrition Test",
+                     "Category":  "Testing",
+                     "COGS":  228.88,
+                     "Demand":  {
+                                    "AvgMonthlyUnits":  211,
+                                    "PeakMonthlyUnits":  243,
+                                    "AnnualUnits":  2532,
+                                    "DailyUnits":  7,
+                                    "DemandCV":  0.35
+                                },
+                     "SupplyChain":  {
+                                         "LeadTimeDays":  7,
+                                         "MOQ":  50,
+                                         "ShelfLifeMonths":  12
+                                     },
+                     "InventoryLevels":  {
+                                             "SafetyStock":  59,
+                                             "ReorderPoint":  108,
+                                             "EOQ":  200,
+                                             "MaxStock":  259,
+                                             "AvgInventory":  159,
+                                             "WeeksOfSupply":  3.2
+                                         },
+                     "Financials":  {
+                                        "AvgInventoryValue":  36391.92,
+                                        "AnnualHoldingCost":  9097.98,
+                                        "AnnualOrderingCost":  4550,
+                                        "TotalInventoryCost":  13647.98,
+                                        "InventoryTurns":  15.9,
+                                        "OrdersPerYear":  13
+                                    },
+                     "Risk":  {
+                                  "StockoutRisk":  "MEDIUM",
+                                  "ShelfLifeRisk":  "LOW",
+                                  "MonthsOfStockAtMax":  1.2
+                              },
+                     "NextPO":  {
+                                    "Urgency":  "URGENT",
+                                    "DaysUntilReorder":  7,
+                                    "OrderQuantity":  200,
+                                    "OrderValue":  45776.00
+                                }
+                 },
+                 {
+                     "SKU":  "59",
+                     "Name":  "Dutch Hormone Test",
+                     "Category":  "Testing",
+                     "COGS":  198.88,
+                     "Demand":  {
+                                    "AvgMonthlyUnits":  211,
+                                    "PeakMonthlyUnits":  243,
+                                    "AnnualUnits":  2532,
+                                    "DailyUnits":  7,
+                                    "DemandCV":  0.35
+                                },
+                     "SupplyChain":  {
+                                         "LeadTimeDays":  7,
+                                         "MOQ":  50,
+                                         "ShelfLifeMonths":  12
+                                     },
+                     "InventoryLevels":  {
+                                             "SafetyStock":  59,
+                                             "ReorderPoint":  108,
+                                             "EOQ":  200,
+                                             "MaxStock":  259,
+                                             "AvgInventory":  159,
+                                             "WeeksOfSupply":  3.2
+                                         },
+                     "Financials":  {
+                                        "AvgInventoryValue":  31621.92,
+                                        "AnnualHoldingCost":  7905.48,
+                                        "AnnualOrderingCost":  4550,
+                                        "TotalInventoryCost":  12455.48,
+                                        "InventoryTurns":  15.9,
+                                        "OrdersPerYear":  13
+                                    },
+                     "Risk":  {
+                                  "StockoutRisk":  "MEDIUM",
+                                  "ShelfLifeRisk":  "LOW",
+                                  "MonthsOfStockAtMax":  1.2
+                              },
+                     "NextPO":  {
+                                    "Urgency":  "URGENT",
+                                    "DaysUntilReorder":  7,
+                                    "OrderQuantity":  200,
+                                    "OrderValue":  39776.00
+                                }
+                 },
+                 {
+                     "SKU":  "60",
+                     "Name":  "EpiGenDX",
+                     "Category":  "Testing",
+                     "COGS":  298.88,
+                     "Demand":  {
+                                    "AvgMonthlyUnits":  211,
+                                    "PeakMonthlyUnits":  243,
+                                    "AnnualUnits":  2532,
+                                    "DailyUnits":  7,
+                                    "DemandCV":  0.35
+                                },
+                     "SupplyChain":  {
+                                         "LeadTimeDays":  7,
+                                         "MOQ":  50,
+                                         "ShelfLifeMonths":  12
+                                     },
+                     "InventoryLevels":  {
+                                             "SafetyStock":  59,
+                                             "ReorderPoint":  108,
+                                             "EOQ":  200,
+                                             "MaxStock":  259,
+                                             "AvgInventory":  159,
+                                             "WeeksOfSupply":  3.2
+                                         },
+                     "Financials":  {
+                                        "AvgInventoryValue":  47521.92,
+                                        "AnnualHoldingCost":  11880.48,
+                                        "AnnualOrderingCost":  4550,
+                                        "TotalInventoryCost":  16430.48,
+                                        "InventoryTurns":  15.9,
+                                        "OrdersPerYear":  13
+                                    },
+                     "Risk":  {
+                                  "StockoutRisk":  "MEDIUM",
+                                  "ShelfLifeRisk":  "LOW",
+                                  "MonthsOfStockAtMax":  1.2
+                              },
+                     "NextPO":  {
+                                    "Urgency":  "URGENT",
+                                    "DaysUntilReorder":  7,
+                                    "OrderQuantity":  200,
+                                    "OrderValue":  59776.00
+                                }
+                 },
+                 {
+                     "SKU":  "61",
+                     "Name":  "Combo Test (Meth+Nutr+Dutch)",
+                     "Category":  "Testing",
+                     "COGS":  329,
+                     "Demand":  {
+                                    "AvgMonthlyUnits":  211,
+                                    "PeakMonthlyUnits":  243,
+                                    "AnnualUnits":  2532,
+                                    "DailyUnits":  7,
+                                    "DemandCV":  0.35
+                                },
+                     "SupplyChain":  {
+                                         "LeadTimeDays":  7,
+                                         "MOQ":  50,
+                                         "ShelfLifeMonths":  12
+                                     },
+                     "InventoryLevels":  {
+                                             "SafetyStock":  59,
+                                             "ReorderPoint":  108,
+                                             "EOQ":  150,
+                                             "MaxStock":  209,
+                                             "AvgInventory":  134,
+                                             "WeeksOfSupply":  2.7
+                                         },
+                     "Financials":  {
+                                        "AvgInventoryValue":  44086,
+                                        "AnnualHoldingCost":  11021.50,
+                                        "AnnualOrderingCost":  5950,
+                                        "TotalInventoryCost":  16971.50,
+                                        "InventoryTurns":  18.9,
+                                        "OrdersPerYear":  17
+                                    },
+                     "Risk":  {
+                                  "StockoutRisk":  "MEDIUM",
+                                  "ShelfLifeRisk":  "LOW",
+                                  "MonthsOfStockAtMax":  1.0
+                              },
+                     "NextPO":  {
+                                    "Urgency":  "URGENT",
+                                    "DaysUntilReorder":  4,
+                                    "OrderQuantity":  150,
+                                    "OrderValue":  49350
+                                }
+                 },
+                 {
+                     "SKU":  "62",
+                     "Name":  "30 Day Custom Vitamin Package",
+                     "Category":  "Testing",
+                     "COGS":  65,
+                     "Demand":  {
+                                    "AvgMonthlyUnits":  211,
+                                    "PeakMonthlyUnits":  243,
+                                    "AnnualUnits":  2532,
+                                    "DailyUnits":  7,
+                                    "DemandCV":  0.35
+                                },
+                     "SupplyChain":  {
+                                         "LeadTimeDays":  7,
+                                         "MOQ":  50,
+                                         "ShelfLifeMonths":  12
+                                     },
+                     "InventoryLevels":  {
+                                             "SafetyStock":  59,
+                                             "ReorderPoint":  108,
+                                             "EOQ":  350,
+                                             "MaxStock":  409,
+                                             "AvgInventory":  234,
+                                             "WeeksOfSupply":  4.8
+                                         },
+                     "Financials":  {
+                                        "AvgInventoryValue":  15210,
+                                        "AnnualHoldingCost":  3802.50,
+                                        "AnnualOrderingCost":  2800,
+                                        "TotalInventoryCost":  6602.50,
+                                        "InventoryTurns":  10.8,
+                                        "OrdersPerYear":  8
+                                    },
+                     "Risk":  {
+                                  "StockoutRisk":  "MEDIUM",
+                                  "ShelfLifeRisk":  "LOW",
+                                  "MonthsOfStockAtMax":  1.9
+                              },
+                     "NextPO":  {
+                                    "Urgency":  "PLANNED",
+                                    "DaysUntilReorder":  18,
+                                    "OrderQuantity":  350,
+                                    "OrderValue":  22750
+                                }
+                 }
+             ]
+}
