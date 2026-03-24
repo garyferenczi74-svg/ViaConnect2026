@@ -1,0 +1,115 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FarmCeutica Executive Report - March 24, 2026</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #1e293b; background: #f8fafc; line-height: 1.5; }
+  .container { max-width: 1100px; margin: 0 auto; padding: 24px; }
+  .header { background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%); color: white; padding: 40px 32px; border-radius: 12px; margin-bottom: 24px; }
+  .header h1 { font-size: 28px; font-weight: 700; }
+  .header .subtitle { opacity: 0.8; margin-top: 4px; }
+  .header .scenario { margin-top: 8px; font-size: 14px; opacity: 0.7; }
+  .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+  .kpi-card { background: white; border-radius: 10px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+  .kpi-card .kpi-label { font-size: 12px; text-transform: uppercase; color: #64748b; font-weight: 600; letter-spacing: 0.5px; }
+  .kpi-card .kpi-value { font-size: 28px; font-weight: 700; color: #0f172a; margin-top: 4px; }
+  .kpi-card .kpi-sub { font-size: 13px; color: #64748b; margin-top: 2px; }
+  .section { background: white; border-radius: 10px; padding: 24px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+  .section h2 { font-size: 18px; font-weight: 700; color: #0f172a; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid #e2e8f0; }
+  .section h3 { font-size: 15px; font-weight: 600; color: #475569; margin: 16px 0 8px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; padding: 8px 10px; background: #f1f5f9; color: #475569; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
+  td { padding: 8px 10px; border-bottom: 1px solid #f1f5f9; }
+  .num { text-align: right; font-variant-numeric: tabular-nums; }
+  .bar-bg { background: #e2e8f0; border-radius: 4px; height: 8px; width: 100px; display: inline-block; }
+  .bar-fill { height: 8px; border-radius: 4px; }
+  .risk-high { background: #fecaca; color: #991b1b; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+  .risk-med { background: #fef3c7; color: #92400e; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+  .risk-low { background: #d1fae5; color: #065f46; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+  .chart-bar-wrap { display: flex; align-items: center; margin-bottom: 6px; gap: 8px; }
+  .chart-label { width: 36px; font-size: 11px; color: #64748b; text-align: right; flex-shrink: 0; }
+  .chart-bar-bg { flex: 1; background: #e2e8f0; border-radius: 4px; height: 18px; }
+  .chart-bar { height: 18px; border-radius: 4px; background: linear-gradient(90deg, #3b82f6, #6366f1); }
+  .chart-val { width: 60px; font-size: 11px; color: #475569; flex-shrink: 0; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .footer { text-align: center; color: #94a3b8; font-size: 12px; margin-top: 24px; padding: 16px; }
+  @media print { body { background: white; } .container { padding: 0; } .section { box-shadow: none; border: 1px solid #e2e8f0; } }
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>FarmCeutica Executive Report</h1>
+  <div class="subtitle">March 24, 2026</div>
+  <div class="scenario">Scenario: Balanced | Pipeline: 11/11 steps passed</div>
+</div>
+
+<div class="kpi-grid">
+  <div class="kpi-card"><div class="kpi-label">Annual Revenue</div><div class="kpi-value">$23.7M</div><div class="kpi-sub">Individual + Bundles</div></div>
+  <div class="kpi-card"><div class="kpi-label">Net Profit</div><div class="kpi-value">$13.7M</div><div class="kpi-sub">57.6% margin</div></div>
+  <div class="kpi-card"><div class="kpi-label">Portfolio Health</div><div class="kpi-value">69<span style="font-size:16px;color:#64748b">/100</span></div><div class="kpi-sub">9 Stars / 62 SKUs</div></div>
+  <div class="kpi-card"><div class="kpi-label">Active Risks</div><div class="kpi-value">5</div><div class="kpi-sub">15 bundles designed</div></div>
+</div>
+
+<div class="two-col">
+<div class="section">
+  <h2>Tier Distribution</h2>
+  <table><tr><th>Tier</th><th class="num">SKUs</th><th>Distribution</th><th class="num">%</th></tr><tr><td>Star</td><td class='num'>9</td><td><div class='bar-bg'><div class='bar-fill' style='width:15%;background:#22c55e'></div></div></td><td class='num'>15%</td></tr><tr><td>Core</td><td class='num'>48</td><td><div class='bar-bg'><div class='bar-fill' style='width:77%;background:#3b82f6'></div></div></td><td class='num'>77%</td></tr><tr><td>Watch</td><td class='num'>4</td><td><div class='bar-bg'><div class='bar-fill' style='width:6%;background:#eab308'></div></div></td><td class='num'>6%</td></tr><tr><td>Sunset</td><td class='num'>1</td><td><div class='bar-bg'><div class='bar-fill' style='width:2%;background:#ef4444'></div></div></td><td class='num'>2%</td></tr></table>
+</div>
+<div class="section">
+  <h2>Channel Economics (Monthly)</h2>
+  <table><tr><th>Channel</th><th class="num">Revenue</th><th class="num">Share</th><th class="num">Net Profit</th><th class="num">Margin</th></tr><tr><td>DTC</td><td class='num'>$960K</td><td class='num'>70.4%</td><td class='num'>$445K</td><td class='num'>46.4%</td></tr><tr><td>Wholesale</td><td class='num'>$288K</td><td class='num'>21.1%</td><td class='num'>$162K</td><td class='num'>56.3%</td></tr><tr><td>Distributor</td><td class='num'>$115K</td><td class='num'>8.4%</td><td class='num'>$49K</td><td class='num'>42.7%</td></tr></table>
+</div>
+</div>
+
+<div class="section">
+  <h2>12-Month Revenue Forecast</h2>
+  <div style="margin-bottom:12px">
+    <span style="font-size:13px;color:#64748b">Mar 2026 - Feb 2027 | Growth: 81.0% M1-M12</span>
+  </div>
+  <div class='chart-bar-wrap'><span class='chart-label'>Mar</span><div class='chart-bar-bg'><div class='chart-bar' style='width:54%'></div></div><span class='chart-val'>$1.6M</span></div><div class='chart-bar-wrap'><span class='chart-label'>Apr</span><div class='chart-bar-bg'><div class='chart-bar' style='width:59%'></div></div><span class='chart-val'>$1.7M</span></div><div class='chart-bar-wrap'><span class='chart-label'>May</span><div class='chart-bar-bg'><div class='chart-bar' style='width:62%'></div></div><span class='chart-val'>$1.8M</span></div><div class='chart-bar-wrap'><span class='chart-label'>Jun</span><div class='chart-bar-bg'><div class='chart-bar' style='width:65%'></div></div><span class='chart-val'>$1.9M</span></div><div class='chart-bar-wrap'><span class='chart-label'>Jul</span><div class='chart-bar-bg'><div class='chart-bar' style='width:65%'></div></div><span class='chart-val'>$1.9M</span></div><div class='chart-bar-wrap'><span class='chart-label'>Aug</span><div class='chart-bar-bg'><div class='chart-bar' style='width:70%'></div></div><span class='chart-val'>$2.1M</span></div><div class='chart-bar-wrap'><span class='chart-label'>Sep</span><div class='chart-bar-bg'><div class='chart-bar' style='width:78%'></div></div><span class='chart-val'>$2.3M</span></div><div class='chart-bar-wrap'><span class='chart-label'>Oct</span><div class='chart-bar-bg'><div class='chart-bar' style='width:85%'></div></div><span class='chart-val'>$2.5M</span></div><div class='chart-bar-wrap'><span class='chart-label'>Nov</span><div class='chart-bar-bg'><div class='chart-bar' style='width:89%'></div></div><span class='chart-val'>$2.6M</span></div><div class='chart-bar-wrap'><span class='chart-label'>Dec</span><div class='chart-bar-bg'><div class='chart-bar' style='width:95%'></div></div><span class='chart-val'>$2.8M</span></div><div class='chart-bar-wrap'><span class='chart-label'>Jan</span><div class='chart-bar-bg'><div class='chart-bar' style='width:100%'></div></div><span class='chart-val'>$2.9M</span></div><div class='chart-bar-wrap'><span class='chart-label'>Feb</span><div class='chart-bar-bg'><div class='chart-bar' style='width:98%'></div></div><span class='chart-val'>$2.9M</span></div>
+</div>
+
+<div class="section">
+  <h2>Quarterly Outlook</h2>
+  <table><tr><th>Quarter</th><th class="num">Revenue</th><th class="num">Net Profit</th><th class="num">Margin</th></tr><tr><td>Q1</td><td class='num'>$5.1M</td><td class='num'>$3.7M</td><td class='num'>71.2%</td></tr><tr><td>Q2</td><td class='num'>$5.9M</td><td class='num'>$5.0M</td><td class='num'>85%</td></tr><tr><td>Q3</td><td class='num'>$7.4M</td><td class='num'>$6.1M</td><td class='num'>82.5%</td></tr><tr><td>Q4</td><td class='num'>$8.6M</td><td class='num'>$6.9M</td><td class='num'>80.1%</td></tr>
+  <tr style="font-weight:700;border-top:2px solid #cbd5e1"><td>Full Year</td><td class="num">$27.0M</td><td class="num">$21.6M</td><td class="num">80.2%</td></tr></table>
+</div>
+
+<div class="section">
+  <h2>Star SKUs (Promote & Invest)</h2>
+  <table><tr><th>SKU</th><th>Product</th><th class="num">Score</th><th class="num">DTC Margin</th><th class="num">Channels</th></tr><tr><td>23</td><td>NeuroCalm BH4+ (Advanced)</td><td class='num'>84.2</td><td class='num'>95%</td><td class='num'>3/3</td></tr><tr><td>06</td><td>NeuroCalm BH4 Complex</td><td class='num'>83.0</td><td class='num'>93.4%</td><td class='num'>3/3</td></tr><tr><td>17</td><td>Teloprime+ Telomere Support</td><td class='num'>82.2</td><td class='num'>87.2%</td><td class='num'>3/3</td></tr><tr><td>04</td><td>GLP-1 Activator Complex</td><td class='num'>81.8</td><td class='num'>91.4%</td><td class='num'>3/3</td></tr><tr><td>24</td><td>Histamine Relief Protocol</td><td class='num'>81.3</td><td class='num'>90.6%</td><td class='num'>3/3</td></tr><tr><td>19</td><td>FOCUS+ Nootropic Formula</td><td class='num'>79.6</td><td class='num'>87.8%</td><td class='num'>3/3</td></tr><tr><td>01</td><td>BHB Ketone Salts</td><td class='num'>78.7</td><td class='num'>92.1%</td><td class='num'>3/3</td></tr><tr><td>05</td><td>Magnesium Synergy Matrix</td><td class='num'>77.6</td><td class='num'>93.3%</td><td class='num'>3/3</td></tr><tr><td>14</td><td>NeuroCalm+ (Calm+)</td><td class='num'>75.8</td><td class='num'>86.3%</td><td class='num'>3/3</td></tr></table>
+</div>
+
+<div class="section">
+  <h2>Top 5 Bundles by Gross Profit</h2>
+  <table><tr><th>Bundle</th><th class="num">Quality</th><th class="num">Price</th><th class="num">Margin</th><th class="num">Annual Rev</th><th class="num">Gross Profit</th></tr><tr><td>NeuroCalm Complete Protocol</td><td class='num'>PREMIUM</td><td class='num'>$381.73</td><td class='num'>89.0%</td><td class='num'>$618K</td><td class='num'>$551K</td></tr><tr><td>Complete Assessment Package</td><td class='num'>STRONG</td><td class='num'>$693.33</td><td class='num'>50.6%</td><td class='num'>$998K</td><td class='num'>$506K</td></tr><tr><td>Cognitive Elite Bundle</td><td class='num'>PREMIUM</td><td class='num'>$320.14</td><td class='num'>89.1%</td><td class='num'>$511K</td><td class='num'>$455K</td></tr><tr><td>Longevity Foundation Pack</td><td class='num'>PREMIUM</td><td class='num'>$331.80</td><td class='num'>85.9%</td><td class='num'>$526K</td><td class='num'>$451K</td></tr><tr><td>Methylation Master Protocol</td><td class='num'>STANDARD</td><td class='num'>$381.73</td><td class='num'>82.9%</td><td class='num'>$536K</td><td class='num'>$444K</td></tr></table>
+</div>
+
+<div class="section">
+  <h2>Risk Register</h2>
+  <table><tr><th>Severity</th><th>Category</th><th>Risk</th><th>Action</th></tr><tr><td><span class='risk-high'>HIGH</span></td><td>Portfolio</td><td> SKU(s) classified as Sunset</td><td>Evaluate discontinuation or major repricing</td></tr><tr><td><span class='risk-med'>MEDIUM</span></td><td>Portfolio</td><td>4 SKUs in Watch tier</td><td>Monitor monthly; reprice or reformulate if no improvement</td></tr><tr><td><span class='risk-high'>HIGH</span></td><td>Supply Chain</td><td>16 SKUs with COGS changes exceeding 10%</td><td>Renegotiate supplier contracts; lock pricing for 90 days</td></tr><tr><td><span class='risk-high'>HIGH</span></td><td>Channel Strategy</td><td>Testing SKUs structurally unprofitable in Wholesale/Distributor</td><td>Restrict Testing to DTC-only; consider Test+Treat bundles for margin recovery</td></tr><tr><td><span class='risk-med'>MEDIUM</span></td><td>Pricing</td><td>6 SKUs below margin floor thresholds</td><td>Execute price increases or negotiate COGS reductions</td></tr></table>
+</div>
+
+<div class="section">
+  <h2>Strategic Recommendations</h2>
+  <table><tr><th class="num">#</th><th>Area</th><th>Recommendation</th><th>Impact</th></tr><tr><td class='num'>1</td><td>Revenue Growth</td><td>Launch top 4 PREMIUM bundles (NeuroCalm, Cognitive Elite, Longevity, Metabolic)</td><td>Estimated +.9M annual gross profit at 87%+ margins</td></tr><tr><td class='num'>2</td><td>Portfolio Optimization</td><td>Discontinue or restructure EpiGenDX (SKU 60) - only Sunset-tier product</td><td>Eliminate negative-margin channel exposure; redirect resources to Stars</td></tr><tr><td class='num'>3</td><td>Channel Strategy</td><td>Restrict Testing category to DTC-only sales</td><td>Prevent + annual wholesale/distributor losses</td></tr><tr><td class='num'>4</td><td>Pricing</td><td>Execute MSRP increases on 5 Watch-tier Testing SKUs</td><td>Improve DTC margins from 33-68% range toward 70% floor</td></tr><tr><td class='num'>5</td><td>Supply Chain</td><td>Renegotiate raw material contracts for 16 flagged SKUs</td><td>Potential COGS reduction across flagged products</td></tr><tr><td class='num'>6</td><td>Marketing</td><td>Increase ad spend allocation to 9 Star-tier SKUs</td><td>Stars average 80.5 composite score with 88%+ DTC margins - highest ROI</td></tr></table>
+</div>
+
+<div class="section">
+  <h2>Inventory Alerts</h2>
+  <p style="font-size:13px;color:#64748b;margin-bottom:12px">Avg inventory value: $593K | Annual holding: $148K</p>
+  <table><tr><th>SKU</th><th>Product</th><th>Urgency</th><th class="num">Days Left</th><th class="num">Order Qty</th><th class="num">Value</th></tr><tr><td>10</td><td>CATALYST+ Energy Multivitamin</td><td><span class='risk-med'>SOON</span></td><td class='num'>10d</td><td class='num'>1000</td><td class='num'>$13580.00</td></tr><tr><td>11</td><td>Replenish NAD+</td><td><span class='risk-med'>SOON</span></td><td class='num'>10d</td><td class='num'>1000</td><td class='num'>$14030.00</td></tr><tr><td>14</td><td>NeuroCalm+ (Calm+)</td><td><span class='risk-med'>SOON</span></td><td class='num'>10d</td><td class='num'>1000</td><td class='num'>$17610.00</td></tr><tr><td>16</td><td>Clean+ Detox & Liver Health</td><td><span class='risk-med'>SOON</span></td><td class='num'>10d</td><td class='num'>1000</td><td class='num'>$14980.00</td></tr><tr><td>17</td><td>Teloprime+ Telomere Support</td><td><span class='risk-high'>URGENT</span></td><td class='num'>1d</td><td class='num'>750</td><td class='num'>$18112.50</td></tr><tr><td>19</td><td>FOCUS+ Nootropic Formula</td><td><span class='risk-med'>SOON</span></td><td class='num'>10d</td><td class='num'>1000</td><td class='num'>$19410.00</td></tr><tr><td>20</td><td>RISE+ Male Testosterone</td><td><span class='risk-med'>SOON</span></td><td class='num'>10d</td><td class='num'>1000</td><td class='num'>$20540.00</td></tr><tr><td>22</td><td>IRON+ Red Blood Cell Support</td><td><span class='risk-med'>SOON</span></td><td class='num'>10d</td><td class='num'>1000</td><td class='num'>$14130.00</td></tr><tr><td>24</td><td>Histamine Relief Protocol</td><td><span class='risk-med'>SOON</span></td><td class='num'>10d</td><td class='num'>1000</td><td class='num'>$15010.00</td></tr><tr><td>27</td><td>Revitalizher Postnatal+</td><td><span class='risk-med'>SOON</span></td><td class='num'>12d</td><td class='num'>750</td><td class='num'>$19185.00</td></tr><tr><td>28</td><td>Thrive+ Post-Natal GLP-1</td><td><span class='risk-med'>SOON</span></td><td class='num'>12d</td><td class='num'>750</td><td class='num'>$16222.50</td></tr><tr><td>57</td><td>Genetic Methylation Testing</td><td><span class='risk-med'>SOON</span></td><td class='num'>11d</td><td class='num'>250</td><td class='num'>$39970.00</td></tr><tr><td>58</td><td>Genetic Nutrition Test</td><td><span class='risk-high'>URGENT</span></td><td class='num'>7d</td><td class='num'>200</td><td class='num'>$45776.00</td></tr><tr><td>59</td><td>Dutch Hormone Test</td><td><span class='risk-high'>URGENT</span></td><td class='num'>7d</td><td class='num'>200</td><td class='num'>$39776.00</td></tr><tr><td>60</td><td>EpiGenDX</td><td><span class='risk-high'>URGENT</span></td><td class='num'>7d</td><td class='num'>200</td><td class='num'>$59776.00</td></tr><tr><td>61</td><td>Combo Test (Meth+Nutr+Dutch)</td><td><span class='risk-high'>URGENT</span></td><td class='num'>4d</td><td class='num'>150</td><td class='num'>$49350</td></tr></table>
+</div>
+
+<div class="footer">
+  Generated by FarmCeutica Toolchain v2.0 | March 24, 2026 | <p>Last run: <strong>20260324-175300</strong> | 11/11 passed | 4.6s | 8 files changed</p>
+</div>
+
+</div>
+</body>
+</html>
