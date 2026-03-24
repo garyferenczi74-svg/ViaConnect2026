@@ -1,0 +1,1094 @@
+﻿{
+    "GeneratedAt":  "2026-03-24T17:15:53.3859262-06:00",
+    "DiscountTiers":  {
+                          "3-Pack":  0.15,
+                          "2-Pack":  0.1,
+                          "4-Pack":  0.18,
+                          "5-Pack+":  0.2
+                      },
+    "BundleUpliftAssumption":  "25% volume uplift",
+    "PortfolioSummary":  {
+                             "TotalBundles":  15,
+                             "TotalAnnualBundleRevenue":  7358501.76,
+                             "TotalAnnualGrossProfit":  5783224.56,
+                             "MonthlyRevenueUplift":  15985.92,
+                             "StrategyBreakdown":  [
+                                                       {
+                                                           "Strategy":  "Star Anchor",
+                                                           "BundleCount":  4,
+                                                           "AnnualRevenue":  2051756.76,
+                                                           "AvgBundlePrice":  321.05,
+                                                           "AvgDTCMargin":  88
+                                                       },
+                                                       {
+                                                           "Strategy":  "Cross-Category",
+                                                           "BundleCount":  4,
+                                                           "AnnualRevenue":  1493034.48,
+                                                           "AvgBundlePrice":  250.53,
+                                                           "AvgDTCMargin":  84.7
+                                                       },
+                                                       {
+                                                           "Strategy":  "Category Depth",
+                                                           "BundleCount":  3,
+                                                           "AnnualRevenue":  1267502.76,
+                                                           "AvgBundlePrice":  295.46,
+                                                           "AvgDTCMargin":  84.1
+                                                       },
+                                                       {
+                                                           "Strategy":  "Performance",
+                                                           "BundleCount":  2,
+                                                           "AnnualRevenue":  957948,
+                                                           "AvgBundlePrice":  315.4,
+                                                           "AvgDTCMargin":  84.6
+                                                       },
+                                                       {
+                                                           "Strategy":  "Test + Treat",
+                                                           "BundleCount":  2,
+                                                           "AnnualRevenue":  1588259.76,
+                                                           "AvgBundlePrice":  578.53,
+                                                           "AvgDTCMargin":  54
+                                                       }
+                                                   ],
+                             "Top5Bundles":  [
+                                                 {
+                                                     "BundleName":  "NeuroCalm Complete Protocol",
+                                                     "BundlePrice":  381.73,
+                                                     "DTCMargin":  89.0,
+                                                     "AnnualRevenue":  618402.60,
+                                                     "AnnualGrossProfit":  550540.80,
+                                                     "QualityFlag":  "PREMIUM"
+                                                 },
+                                                 {
+                                                     "BundleName":  "Complete Assessment Package",
+                                                     "BundlePrice":  693.33,
+                                                     "DTCMargin":  50.6,
+                                                     "AnnualRevenue":  998395.20,
+                                                     "AnnualGrossProfit":  505540.80,
+                                                     "QualityFlag":  "STRONG"
+                                                 },
+                                                 {
+                                                     "BundleName":  "Cognitive Elite Bundle",
+                                                     "BundlePrice":  320.14,
+                                                     "DTCMargin":  89.1,
+                                                     "AnnualRevenue":  510943.44,
+                                                     "AnnualGrossProfit":  455019.60,
+                                                     "QualityFlag":  "PREMIUM"
+                                                 },
+                                                 {
+                                                     "BundleName":  "Longevity Foundation Pack",
+                                                     "BundlePrice":  331.80,
+                                                     "DTCMargin":  85.9,
+                                                     "AnnualRevenue":  525571.20,
+                                                     "AnnualGrossProfit":  451376.64,
+                                                     "QualityFlag":  "PREMIUM"
+                                                 },
+                                                 {
+                                                     "BundleName":  "Methylation Master Protocol",
+                                                     "BundlePrice":  381.73,
+                                                     "DTCMargin":  82.9,
+                                                     "AnnualRevenue":  535948.92,
+                                                     "AnnualGrossProfit":  444141.36,
+                                                     "QualityFlag":  "STANDARD"
+                                                 }
+                                             ]
+                         },
+    "Bundles":  [
+                    {
+                        "BundleName":  "NeuroCalm Complete Protocol",
+                        "Strategy":  "Star Anchor",
+                        "Description":  "Full neurological support stack built around top-scoring NeuroCalm line",
+                        "TargetAudience":  "Anxiety, stress, sleep optimization",
+                        "Components":  [
+                                           {
+                                               "SKU":  "06",
+                                               "Name":  "NeuroCalm BH4 Complex",
+                                               "MSRP":  88.88,
+                                               "COGS":  5.84,
+                                               "Tier":  "Star",
+                                               "Score":  83.0
+                                           },
+                                           {
+                                               "SKU":  "14",
+                                               "Name":  "NeuroCalm+ (Calm+)",
+                                               "MSRP":  128.88,
+                                               "COGS":  17.61,
+                                               "Tier":  "Star",
+                                               "Score":  75.8
+                                           },
+                                           {
+                                               "SKU":  "23",
+                                               "Name":  "NeuroCalm BH4+ (Advanced)",
+                                               "MSRP":  158.88,
+                                               "COGS":  8.02,
+                                               "Tier":  "Star",
+                                               "Score":  84.2
+                                           },
+                                           {
+                                               "SKU":  "15",
+                                               "Name":  "RELAX+ Sleep Support",
+                                               "MSRP":  88.88,
+                                               "COGS":  10.42,
+                                               "Tier":  "Core",
+                                               "Score":  72.8
+                                           }
+                                       ],
+                        "SKUCount":  4,
+                        "StarCount":  3,
+                        "AvgCompositeScore":  79.0,
+                        "QualityFlag":  "PREMIUM",
+                        "Pricing":  {
+                                        "IndividualTotal":  465.52,
+                                        "DiscountRate":  "18%",
+                                        "BundlePrice":  381.73,
+                                        "CustomerSavings":  83.79,
+                                        "BundleDTCMargin":  89.0,
+                                        "BundleWSPrice":  190.86,
+                                        "BundleWSMargin":  78.1,
+                                        "TotalCOGS":  41.89
+                                    },
+                        "Projection":  {
+                                           "MonthlyBundleUnits":  135,
+                                           "MonthlyRevenue":  51533.55,
+                                           "MonthlyGrossProfit":  45878.40,
+                                           "UnbundledUnits":  108,
+                                           "UnbundledRevenue":  50276.16,
+                                           "UnbundledGrossProfit":  45752.04,
+                                           "RevenueUplift":  1257.39,
+                                           "RevenueUpliftPct":  2.5,
+                                           "GrossProfitUplift":  126.36,
+                                           "AnnualBundleRevenue":  618402.60,
+                                           "AnnualGrossProfit":  550540.80
+                                       }
+                    },
+                    {
+                        "BundleName":  "Metabolic Activation Stack",
+                        "Strategy":  "Star Anchor",
+                        "Description":  "GLP-1 + ketone + electrolyte support for metabolic health",
+                        "TargetAudience":  "Weight management, metabolic optimization, keto",
+                        "Components":  [
+                                           {
+                                               "SKU":  "04",
+                                               "Name":  "GLP-1 Activator Complex",
+                                               "MSRP":  88.88,
+                                               "COGS":  7.68,
+                                               "Tier":  "Star",
+                                               "Score":  81.8
+                                           },
+                                           {
+                                               "SKU":  "01",
+                                               "Name":  "BHB Ketone Salts",
+                                               "MSRP":  68.88,
+                                               "COGS":  5.43,
+                                               "Tier":  "Star",
+                                               "Score":  78.7
+                                           },
+                                           {
+                                               "SKU":  "03",
+                                               "Name":  "Electrolyte Blend",
+                                               "MSRP":  48.88,
+                                               "COGS":  5.52,
+                                               "Tier":  "Core",
+                                               "Score":  73.0
+                                           },
+                                           {
+                                               "SKU":  "09",
+                                               "Name":  "Creatine HCL+",
+                                               "MSRP":  98.88,
+                                               "COGS":  10.86,
+                                               "Tier":  "Core",
+                                               "Score":  74.3
+                                           }
+                                       ],
+                        "SKUCount":  4,
+                        "StarCount":  2,
+                        "AvgCompositeScore":  77.0,
+                        "QualityFlag":  "PREMIUM",
+                        "Pricing":  {
+                                        "IndividualTotal":  305.52,
+                                        "DiscountRate":  "18%",
+                                        "BundlePrice":  250.53,
+                                        "CustomerSavings":  54.99,
+                                        "BundleDTCMargin":  88.2,
+                                        "BundleWSPrice":  125.26,
+                                        "BundleWSMargin":  76.5,
+                                        "TotalCOGS":  29.49
+                                    },
+                        "Projection":  {
+                                           "MonthlyBundleUnits":  132,
+                                           "MonthlyRevenue":  33069.96,
+                                           "MonthlyGrossProfit":  29177.28,
+                                           "UnbundledUnits":  106,
+                                           "UnbundledRevenue":  32385.12,
+                                           "UnbundledGrossProfit":  29259.18,
+                                           "RevenueUplift":  684.84,
+                                           "RevenueUpliftPct":  2.1,
+                                           "GrossProfitUplift":  -81.90,
+                                           "AnnualBundleRevenue":  396839.52,
+                                           "AnnualGrossProfit":  350127.36
+                                       }
+                    },
+                    {
+                        "BundleName":  "Cognitive Elite Bundle",
+                        "Strategy":  "Star Anchor",
+                        "Description":  "Premium nootropic stack for peak mental performance",
+                        "TargetAudience":  "Executives, students, cognitive performance",
+                        "Components":  [
+                                           {
+                                               "SKU":  "19",
+                                               "Name":  "FOCUS+ Nootropic Formula",
+                                               "MSRP":  158.88,
+                                               "COGS":  19.41,
+                                               "Tier":  "Star",
+                                               "Score":  79.6
+                                           },
+                                           {
+                                               "SKU":  "23",
+                                               "Name":  "NeuroCalm BH4+ (Advanced)",
+                                               "MSRP":  158.88,
+                                               "COGS":  8.02,
+                                               "Tier":  "Star",
+                                               "Score":  84.2
+                                           },
+                                           {
+                                               "SKU":  "54",
+                                               "Name":  "Lions Mane Mushroom Capsules",
+                                               "MSRP":  58.88,
+                                               "COGS":  7.61,
+                                               "Tier":  "Core",
+                                               "Score":  68.4
+                                           }
+                                       ],
+                        "SKUCount":  3,
+                        "StarCount":  2,
+                        "AvgCompositeScore":  77.4,
+                        "QualityFlag":  "PREMIUM",
+                        "Pricing":  {
+                                        "IndividualTotal":  376.64,
+                                        "DiscountRate":  "15%",
+                                        "BundlePrice":  320.14,
+                                        "CustomerSavings":  56.50,
+                                        "BundleDTCMargin":  89.1,
+                                        "BundleWSPrice":  160.07,
+                                        "BundleWSMargin":  78.1,
+                                        "TotalCOGS":  35.04
+                                    },
+                        "Projection":  {
+                                           "MonthlyBundleUnits":  133,
+                                           "MonthlyRevenue":  42578.62,
+                                           "MonthlyGrossProfit":  37918.30,
+                                           "UnbundledUnits":  106,
+                                           "UnbundledRevenue":  39923.84,
+                                           "UnbundledGrossProfit":  36209.60,
+                                           "RevenueUplift":  2654.78,
+                                           "RevenueUpliftPct":  6.6,
+                                           "GrossProfitUplift":  1708.70,
+                                           "AnnualBundleRevenue":  510943.44,
+                                           "AnnualGrossProfit":  455019.60
+                                       }
+                    },
+                    {
+                        "BundleName":  "Longevity Foundation Pack",
+                        "Strategy":  "Star Anchor",
+                        "Description":  "Anti-aging essentials anchored by telomere and NAD+ support",
+                        "TargetAudience":  "Anti-aging, healthspan optimization",
+                        "Components":  [
+                                           {
+                                               "SKU":  "17",
+                                               "Name":  "Teloprime+ Telomere Support",
+                                               "MSRP":  188.88,
+                                               "COGS":  24.15,
+                                               "Tier":  "Star",
+                                               "Score":  82.2
+                                           },
+                                           {
+                                               "SKU":  "11",
+                                               "Name":  "Replenish NAD+",
+                                               "MSRP":  108,
+                                               "COGS":  14.03,
+                                               "Tier":  "Core",
+                                               "Score":  74.0
+                                           },
+                                           {
+                                               "SKU":  "05",
+                                               "Name":  "Magnesium Synergy Matrix",
+                                               "MSRP":  58.88,
+                                               "COGS":  3.92,
+                                               "Tier":  "Star",
+                                               "Score":  77.6
+                                           },
+                                           {
+                                               "SKU":  "07",
+                                               "Name":  "Omega-3 DHA/EPA (Algal)",
+                                               "MSRP":  48.88,
+                                               "COGS":  4.74,
+                                               "Tier":  "Core",
+                                               "Score":  73.9
+                                           }
+                                       ],
+                        "SKUCount":  4,
+                        "StarCount":  2,
+                        "AvgCompositeScore":  76.9,
+                        "QualityFlag":  "PREMIUM",
+                        "Pricing":  {
+                                        "IndividualTotal":  404.64,
+                                        "DiscountRate":  "18%",
+                                        "BundlePrice":  331.80,
+                                        "CustomerSavings":  72.84,
+                                        "BundleDTCMargin":  85.9,
+                                        "BundleWSPrice":  165.90,
+                                        "BundleWSMargin":  71.8,
+                                        "TotalCOGS":  46.84
+                                    },
+                        "Projection":  {
+                                           "MonthlyBundleUnits":  132,
+                                           "MonthlyRevenue":  43797.60,
+                                           "MonthlyGrossProfit":  37614.72,
+                                           "UnbundledUnits":  106,
+                                           "UnbundledRevenue":  42891.84,
+                                           "UnbundledGrossProfit":  37926.80,
+                                           "RevenueUplift":  905.76,
+                                           "RevenueUpliftPct":  2.1,
+                                           "GrossProfitUplift":  -312.08,
+                                           "AnnualBundleRevenue":  525571.20,
+                                           "AnnualGrossProfit":  451376.64
+                                       }
+                    },
+                    {
+                        "BundleName":  "Women\u0027s Vitality Essentials",
+                        "Strategy":  "Cross-Category",
+                        "Description":  "Hormonal balance + foundational nutrition for women",
+                        "TargetAudience":  "Women 30-55, hormonal health",
+                        "Components":  [
+                                           {
+                                               "SKU":  "25",
+                                               "Name":  "DESIRE+ Female Hormonal",
+                                               "MSRP":  88.88,
+                                               "COGS":  11.78,
+                                               "Tier":  "Core",
+                                               "Score":  70.1
+                                           },
+                                           {
+                                               "SKU":  "05",
+                                               "Name":  "Magnesium Synergy Matrix",
+                                               "MSRP":  58.88,
+                                               "COGS":  3.92,
+                                               "Tier":  "Star",
+                                               "Score":  77.6
+                                           },
+                                           {
+                                               "SKU":  "07",
+                                               "Name":  "Omega-3 DHA/EPA (Algal)",
+                                               "MSRP":  48.88,
+                                               "COGS":  4.74,
+                                               "Tier":  "Core",
+                                               "Score":  73.9
+                                           },
+                                           {
+                                               "SKU":  "02",
+                                               "Name":  "MethylB Complete+ B Complex",
+                                               "MSRP":  48.88,
+                                               "COGS":  4.6,
+                                               "Tier":  "Core",
+                                               "Score":  74.2
+                                           }
+                                       ],
+                        "SKUCount":  4,
+                        "StarCount":  1,
+                        "AvgCompositeScore":  74.0,
+                        "QualityFlag":  "STRONG",
+                        "Pricing":  {
+                                        "IndividualTotal":  245.52,
+                                        "DiscountRate":  "18%",
+                                        "BundlePrice":  201.33,
+                                        "CustomerSavings":  44.19,
+                                        "BundleDTCMargin":  87.6,
+                                        "BundleWSPrice":  100.66,
+                                        "BundleWSMargin":  75.1,
+                                        "TotalCOGS":  25.04
+                                    },
+                        "Projection":  {
+                                           "MonthlyBundleUnits":  127,
+                                           "MonthlyRevenue":  25568.91,
+                                           "MonthlyGrossProfit":  22388.83,
+                                           "UnbundledUnits":  102,
+                                           "UnbundledRevenue":  25043.04,
+                                           "UnbundledGrossProfit":  22488.96,
+                                           "RevenueUplift":  525.87,
+                                           "RevenueUpliftPct":  2.1,
+                                           "GrossProfitUplift":  -100.13,
+                                           "AnnualBundleRevenue":  306826.92,
+                                           "AnnualGrossProfit":  268665.96
+                                       }
+                    },
+                    {
+                        "BundleName":  "Prenatal to Postnatal Journey",
+                        "Strategy":  "Cross-Category",
+                        "Description":  "Complete maternal support from conception through recovery",
+                        "TargetAudience":  "Expecting and new mothers",
+                        "Components":  [
+                                           {
+                                               "SKU":  "26",
+                                               "Name":  "Grow+ Pre-Natal Formula",
+                                               "MSRP":  98.88,
+                                               "COGS":  15.2,
+                                               "Tier":  "Core",
+                                               "Score":  69.7
+                                           },
+                                           {
+                                               "SKU":  "27",
+                                               "Name":  "Revitalizher Postnatal+",
+                                               "MSRP":  128.88,
+                                               "COGS":  25.58,
+                                               "Tier":  "Core",
+                                               "Score":  69.4
+                                           },
+                                           {
+                                               "SKU":  "28",
+                                               "Name":  "Thrive+ Post-Natal GLP-1",
+                                               "MSRP":  128.88,
+                                               "COGS":  21.63,
+                                               "Tier":  "Core",
+                                               "Score":  71.3
+                                           },
+                                           {
+                                               "SKU":  "02",
+                                               "Name":  "MethylB Complete+ B Complex",
+                                               "MSRP":  48.88,
+                                               "COGS":  4.6,
+                                               "Tier":  "Core",
+                                               "Score":  74.2
+                                           }
+                                       ],
+                        "SKUCount":  4,
+                        "StarCount":  0,
+                        "AvgCompositeScore":  71.2,
+                        "QualityFlag":  "STANDARD",
+                        "Pricing":  {
+                                        "IndividualTotal":  405.52,
+                                        "DiscountRate":  "18%",
+                                        "BundlePrice":  332.53,
+                                        "CustomerSavings":  72.99,
+                                        "BundleDTCMargin":  79.8,
+                                        "BundleWSPrice":  166.26,
+                                        "BundleWSMargin":  59.7,
+                                        "TotalCOGS":  67.01
+                                    },
+                        "Projection":  {
+                                           "MonthlyBundleUnits":  122,
+                                           "MonthlyRevenue":  40568.66,
+                                           "MonthlyGrossProfit":  32393.44,
+                                           "UnbundledUnits":  98,
+                                           "UnbundledRevenue":  39740.96,
+                                           "UnbundledGrossProfit":  33173.98,
+                                           "RevenueUplift":  827.70,
+                                           "RevenueUpliftPct":  2.1,
+                                           "GrossProfitUplift":  -780.54,
+                                           "AnnualBundleRevenue":  486823.92,
+                                           "AnnualGrossProfit":  388721.28
+                                       }
+                    },
+                    {
+                        "BundleName":  "Family Wellness Pack",
+                        "Strategy":  "Cross-Category",
+                        "Description":  "Something for every family member - adults and kids",
+                        "TargetAudience":  "Families with children",
+                        "Components":  [
+                                           {
+                                               "SKU":  "10",
+                                               "Name":  "CATALYST+ Energy Multivitamin",
+                                               "MSRP":  98.88,
+                                               "COGS":  13.58,
+                                               "Tier":  "Core",
+                                               "Score":  72.7
+                                           },
+                                           {
+                                               "SKU":  "05",
+                                               "Name":  "Magnesium Synergy Matrix",
+                                               "MSRP":  58.88,
+                                               "COGS":  3.92,
+                                               "Tier":  "Star",
+                                               "Score":  77.6
+                                           },
+                                           {
+                                               "SKU":  "31",
+                                               "Name":  "Sproutables Children Gummies",
+                                               "MSRP":  58.88,
+                                               "COGS":  7.35,
+                                               "Tier":  "Core",
+                                               "Score":  67.6
+                                           },
+                                           {
+                                               "SKU":  "07",
+                                               "Name":  "Omega-3 DHA/EPA (Algal)",
+                                               "MSRP":  48.88,
+                                               "COGS":  4.74,
+                                               "Tier":  "Core",
+                                               "Score":  73.9
+                                           }
+                                       ],
+                        "SKUCount":  4,
+                        "StarCount":  1,
+                        "AvgCompositeScore":  73.0,
+                        "QualityFlag":  "STRONG",
+                        "Pricing":  {
+                                        "IndividualTotal":  265.52,
+                                        "DiscountRate":  "18%",
+                                        "BundlePrice":  217.73,
+                                        "CustomerSavings":  47.79,
+                                        "BundleDTCMargin":  86.4,
+                                        "BundleWSPrice":  108.86,
+                                        "BundleWSMargin":  72.8,
+                                        "TotalCOGS":  29.59
+                                    },
+                        "Projection":  {
+                                           "MonthlyBundleUnits":  125,
+                                           "MonthlyRevenue":  27216.25,
+                                           "MonthlyGrossProfit":  23517.50,
+                                           "UnbundledUnits":  100,
+                                           "UnbundledRevenue":  26552.00,
+                                           "UnbundledGrossProfit":  23593.00,
+                                           "RevenueUplift":  664.25,
+                                           "RevenueUpliftPct":  2.5,
+                                           "GrossProfitUplift":  -75.50,
+                                           "AnnualBundleRevenue":  326595.00,
+                                           "AnnualGrossProfit":  282210.00
+                                       }
+                    },
+                    {
+                        "BundleName":  "Detox \u0026 Repair Protocol",
+                        "Strategy":  "Cross-Category",
+                        "Description":  "Comprehensive detoxification and gut restoration",
+                        "TargetAudience":  "Detox protocols, gut health recovery",
+                        "Components":  [
+                                           {
+                                               "SKU":  "08",
+                                               "Name":  "ToxiBind Matrix",
+                                               "MSRP":  48.88,
+                                               "COGS":  4.51,
+                                               "Tier":  "Core",
+                                               "Score":  74.3
+                                           },
+                                           {
+                                               "SKU":  "16",
+                                               "Name":  "Clean+ Detox \u0026 Liver Health",
+                                               "MSRP":  108.88,
+                                               "COGS":  14.98,
+                                               "Tier":  "Core",
+                                               "Score":  73.7
+                                           },
+                                           {
+                                               "SKU":  "12",
+                                               "Name":  "Balance+ Gut Repair",
+                                               "MSRP":  98.88,
+                                               "COGS":  12.29,
+                                               "Tier":  "Core",
+                                               "Score":  73.5
+                                           },
+                                           {
+                                               "SKU":  "18",
+                                               "Name":  "DigestiZorb+ Enzyme Complex",
+                                               "MSRP":  48.88,
+                                               "COGS":  5.58,
+                                               "Tier":  "Core",
+                                               "Score":  69.1
+                                           }
+                                       ],
+                        "SKUCount":  4,
+                        "StarCount":  0,
+                        "AvgCompositeScore":  72.6,
+                        "QualityFlag":  "STANDARD",
+                        "Pricing":  {
+                                        "IndividualTotal":  305.52,
+                                        "DiscountRate":  "18%",
+                                        "BundlePrice":  250.53,
+                                        "CustomerSavings":  54.99,
+                                        "BundleDTCMargin":  85.1,
+                                        "BundleWSPrice":  125.26,
+                                        "BundleWSMargin":  70.2,
+                                        "TotalCOGS":  37.36
+                                    },
+                        "Projection":  {
+                                           "MonthlyBundleUnits":  124,
+                                           "MonthlyRevenue":  31065.72,
+                                           "MonthlyGrossProfit":  26433.08,
+                                           "UnbundledUnits":  99,
+                                           "UnbundledRevenue":  30246.48,
+                                           "UnbundledGrossProfit":  26547.84,
+                                           "RevenueUplift":  819.24,
+                                           "RevenueUpliftPct":  2.7,
+                                           "GrossProfitUplift":  -114.76,
+                                           "AnnualBundleRevenue":  372788.64,
+                                           "AnnualGrossProfit":  317196.96
+                                       }
+                    },
+                    {
+                        "BundleName":  "Mushroom Immunity Stack",
+                        "Strategy":  "Category Depth",
+                        "Description":  "All five functional mushroom varieties for comprehensive immune support",
+                        "TargetAudience":  "Immune support, functional mushroom enthusiasts",
+                        "Components":  [
+                                           {
+                                               "SKU":  "52",
+                                               "Name":  "Chaga Mushroom Capsules",
+                                               "MSRP":  58.88,
+                                               "COGS":  9.77,
+                                               "Tier":  "Core",
+                                               "Score":  66.2
+                                           },
+                                           {
+                                               "SKU":  "53",
+                                               "Name":  "Cordyceps Mushroom Capsules",
+                                               "MSRP":  58.88,
+                                               "COGS":  9.77,
+                                               "Tier":  "Core",
+                                               "Score":  66.2
+                                           },
+                                           {
+                                               "SKU":  "54",
+                                               "Name":  "Lions Mane Mushroom Capsules",
+                                               "MSRP":  58.88,
+                                               "COGS":  7.61,
+                                               "Tier":  "Core",
+                                               "Score":  68.4
+                                           },
+                                           {
+                                               "SKU":  "55",
+                                               "Name":  "Reishi Mushroom Capsules",
+                                               "MSRP":  58.88,
+                                               "COGS":  7.07,
+                                               "Tier":  "Core",
+                                               "Score":  69.0
+                                           },
+                                           {
+                                               "SKU":  "56",
+                                               "Name":  "Turkey Tail Mushroom Capsules",
+                                               "MSRP":  58.88,
+                                               "COGS":  7.07,
+                                               "Tier":  "Core",
+                                               "Score":  69.0
+                                           }
+                                       ],
+                        "SKUCount":  5,
+                        "StarCount":  0,
+                        "AvgCompositeScore":  67.8,
+                        "QualityFlag":  "STANDARD",
+                        "Pricing":  {
+                                        "IndividualTotal":  294.40,
+                                        "DiscountRate":  "20%",
+                                        "BundlePrice":  235.52,
+                                        "CustomerSavings":  58.88,
+                                        "BundleDTCMargin":  82.5,
+                                        "BundleWSPrice":  117.76,
+                                        "BundleWSMargin":  64.9,
+                                        "TotalCOGS":  41.29
+                                    },
+                        "Projection":  {
+                                           "MonthlyBundleUnits":  116,
+                                           "MonthlyRevenue":  27320.32,
+                                           "MonthlyGrossProfit":  22530.68,
+                                           "UnbundledUnits":  93,
+                                           "UnbundledRevenue":  27379.20,
+                                           "UnbundledGrossProfit":  23539.23,
+                                           "RevenueUplift":  -58.88,
+                                           "RevenueUpliftPct":  -0.2,
+                                           "GrossProfitUplift":  -1008.55,
+                                           "AnnualBundleRevenue":  327843.84,
+                                           "AnnualGrossProfit":  270368.16
+                                       }
+                    },
+                    {
+                        "BundleName":  "Methylation Master Protocol",
+                        "Strategy":  "Category Depth",
+                        "Description":  "Core methylation SNP support panel",
+                        "TargetAudience":  "Patients with methylation SNPs",
+                        "Components":  [
+                                           {
+                                               "SKU":  "41",
+                                               "Name":  "MTHFR+ Folate Metabolism",
+                                               "MSRP":  118.88,
+                                               "COGS":  18.46,
+                                               "Tier":  "Core",
+                                               "Score":  67.7
+                                           },
+                                           {
+                                               "SKU":  "42",
+                                               "Name":  "MTR+ Methylation Matrix",
+                                               "MSRP":  118.88,
+                                               "COGS":  16.54,
+                                               "Tier":  "Core",
+                                               "Score":  68.6
+                                           },
+                                           {
+                                               "SKU":  "43",
+                                               "Name":  "MTRR+ Methylcobalamin Regen",
+                                               "MSRP":  118.88,
+                                               "COGS":  16.26,
+                                               "Tier":  "Core",
+                                               "Score":  68.8
+                                           },
+                                           {
+                                               "SKU":  "35",
+                                               "Name":  "BHMT+ Methylation Support",
+                                               "MSRP":  108.88,
+                                               "COGS":  14.13,
+                                               "Tier":  "Core",
+                                               "Score":  68.6
+                                           }
+                                       ],
+                        "SKUCount":  4,
+                        "StarCount":  0,
+                        "AvgCompositeScore":  68.4,
+                        "QualityFlag":  "STANDARD",
+                        "Pricing":  {
+                                        "IndividualTotal":  465.52,
+                                        "DiscountRate":  "18%",
+                                        "BundlePrice":  381.73,
+                                        "CustomerSavings":  83.79,
+                                        "BundleDTCMargin":  82.9,
+                                        "BundleWSPrice":  190.86,
+                                        "BundleWSMargin":  65.7,
+                                        "TotalCOGS":  65.39
+                                    },
+                        "Projection":  {
+                                           "MonthlyBundleUnits":  117,
+                                           "MonthlyRevenue":  44662.41,
+                                           "MonthlyGrossProfit":  37011.78,
+                                           "UnbundledUnits":  94,
+                                           "UnbundledRevenue":  43758.88,
+                                           "UnbundledGrossProfit":  37612.22,
+                                           "RevenueUplift":  903.53,
+                                           "RevenueUpliftPct":  2.1,
+                                           "GrossProfitUplift":  -600.44,
+                                           "AnnualBundleRevenue":  535948.92,
+                                           "AnnualGrossProfit":  444141.36
+                                       }
+                    },
+                    {
+                        "BundleName":  "Histamine Freedom Protocol",
+                        "Strategy":  "Category Depth",
+                        "Description":  "Complete histamine management from SNP to symptom relief",
+                        "TargetAudience":  "Histamine intolerance, mast cell patients",
+                        "Components":  [
+                                           {
+                                               "SKU":  "24",
+                                               "Name":  "Histamine Relief Protocol",
+                                               "MSRP":  158.88,
+                                               "COGS":  15.01,
+                                               "Tier":  "Star",
+                                               "Score":  81.3
+                                           },
+                                           {
+                                               "SKU":  "38",
+                                               "Name":  "DAO+ Histamine Balance",
+                                               "MSRP":  108.88,
+                                               "COGS":  14.83,
+                                               "Tier":  "Core",
+                                               "Score":  68.4
+                                           },
+                                           {
+                                               "SKU":  "18",
+                                               "Name":  "DigestiZorb+ Enzyme Complex",
+                                               "MSRP":  48.88,
+                                               "COGS":  5.58,
+                                               "Tier":  "Core",
+                                               "Score":  69.1
+                                           }
+                                       ],
+                        "SKUCount":  3,
+                        "StarCount":  1,
+                        "AvgCompositeScore":  72.9,
+                        "QualityFlag":  "STRONG",
+                        "Pricing":  {
+                                        "IndividualTotal":  316.64,
+                                        "DiscountRate":  "15%",
+                                        "BundlePrice":  269.14,
+                                        "CustomerSavings":  47.50,
+                                        "BundleDTCMargin":  86.8,
+                                        "BundleWSPrice":  134.57,
+                                        "BundleWSMargin":  73.7,
+                                        "TotalCOGS":  35.42
+                                    },
+                        "Projection":  {
+                                           "MonthlyBundleUnits":  125,
+                                           "MonthlyRevenue":  33642.50,
+                                           "MonthlyGrossProfit":  29215.00,
+                                           "UnbundledUnits":  100,
+                                           "UnbundledRevenue":  31664.00,
+                                           "UnbundledGrossProfit":  28122.00,
+                                           "RevenueUplift":  1978.50,
+                                           "RevenueUpliftPct":  6.2,
+                                           "GrossProfitUplift":  1093.00,
+                                           "AnnualBundleRevenue":  403710.00,
+                                           "AnnualGrossProfit":  350580.00
+                                       }
+                    },
+                    {
+                        "BundleName":  "Athletic Performance Max",
+                        "Strategy":  "Performance",
+                        "Description":  "Strength, endurance, and recovery stack for athletes",
+                        "TargetAudience":  "Athletes, fitness enthusiasts",
+                        "Components":  [
+                                           {
+                                               "SKU":  "09",
+                                               "Name":  "Creatine HCL+",
+                                               "MSRP":  98.88,
+                                               "COGS":  10.86,
+                                               "Tier":  "Core",
+                                               "Score":  74.3
+                                           },
+                                           {
+                                               "SKU":  "13",
+                                               "Name":  "BLAST+ Nitric Oxide Stack",
+                                               "MSRP":  98,
+                                               "COGS":  11.81,
+                                               "Tier":  "Core",
+                                               "Score":  73.6
+                                           },
+                                           {
+                                               "SKU":  "21",
+                                               "Name":  "FLEX+ Joint \u0026 Inflammation",
+                                               "MSRP":  98.88,
+                                               "COGS":  12.72,
+                                               "Tier":  "Core",
+                                               "Score":  73.1
+                                           },
+                                           {
+                                               "SKU":  "03",
+                                               "Name":  "Electrolyte Blend",
+                                               "MSRP":  48.88,
+                                               "COGS":  5.52,
+                                               "Tier":  "Core",
+                                               "Score":  73.0
+                                           }
+                                       ],
+                        "SKUCount":  4,
+                        "StarCount":  0,
+                        "AvgCompositeScore":  73.5,
+                        "QualityFlag":  "STANDARD",
+                        "Pricing":  {
+                                        "IndividualTotal":  344.64,
+                                        "DiscountRate":  "18%",
+                                        "BundlePrice":  282.60,
+                                        "CustomerSavings":  62.04,
+                                        "BundleDTCMargin":  85.5,
+                                        "BundleWSPrice":  141.30,
+                                        "BundleWSMargin":  71.0,
+                                        "TotalCOGS":  40.91
+                                    },
+                        "Projection":  {
+                                           "MonthlyBundleUnits":  126,
+                                           "MonthlyRevenue":  35607.60,
+                                           "MonthlyGrossProfit":  30452.94,
+                                           "UnbundledUnits":  101,
+                                           "UnbundledRevenue":  34808.64,
+                                           "UnbundledGrossProfit":  30676.73,
+                                           "RevenueUplift":  798.96,
+                                           "RevenueUpliftPct":  2.3,
+                                           "GrossProfitUplift":  -223.79,
+                                           "AnnualBundleRevenue":  427291.20,
+                                           "AnnualGrossProfit":  365435.28
+                                       }
+                    },
+                    {
+                        "BundleName":  "Men\u0027s Optimization Stack",
+                        "Strategy":  "Performance",
+                        "Description":  "Testosterone, nitric oxide, and energy for men",
+                        "TargetAudience":  "Men 35-60, vitality and performance",
+                        "Components":  [
+                                           {
+                                               "SKU":  "20",
+                                               "Name":  "RISE+ Male Testosterone",
+                                               "MSRP":  128.88,
+                                               "COGS":  20.54,
+                                               "Tier":  "Core",
+                                               "Score":  74.4
+                                           },
+                                           {
+                                               "SKU":  "13",
+                                               "Name":  "BLAST+ Nitric Oxide Stack",
+                                               "MSRP":  98,
+                                               "COGS":  11.81,
+                                               "Tier":  "Core",
+                                               "Score":  73.6
+                                           },
+                                           {
+                                               "SKU":  "10",
+                                               "Name":  "CATALYST+ Energy Multivitamin",
+                                               "MSRP":  98.88,
+                                               "COGS":  13.58,
+                                               "Tier":  "Core",
+                                               "Score":  72.7
+                                           },
+                                           {
+                                               "SKU":  "09",
+                                               "Name":  "Creatine HCL+",
+                                               "MSRP":  98.88,
+                                               "COGS":  10.86,
+                                               "Tier":  "Core",
+                                               "Score":  74.3
+                                           }
+                                       ],
+                        "SKUCount":  4,
+                        "StarCount":  0,
+                        "AvgCompositeScore":  73.8,
+                        "QualityFlag":  "STANDARD",
+                        "Pricing":  {
+                                        "IndividualTotal":  424.64,
+                                        "DiscountRate":  "18%",
+                                        "BundlePrice":  348.20,
+                                        "CustomerSavings":  76.44,
+                                        "BundleDTCMargin":  83.7,
+                                        "BundleWSPrice":  174.10,
+                                        "BundleWSMargin":  67.4,
+                                        "TotalCOGS":  56.79
+                                    },
+                        "Projection":  {
+                                           "MonthlyBundleUnits":  127,
+                                           "MonthlyRevenue":  44221.40,
+                                           "MonthlyGrossProfit":  37009.07,
+                                           "UnbundledUnits":  102,
+                                           "UnbundledRevenue":  43313.28,
+                                           "UnbundledGrossProfit":  37520.70,
+                                           "RevenueUplift":  908.12,
+                                           "RevenueUpliftPct":  2.1,
+                                           "GrossProfitUplift":  -511.63,
+                                           "AnnualBundleRevenue":  530656.80,
+                                           "AnnualGrossProfit":  444108.84
+                                       }
+                    },
+                    {
+                        "BundleName":  "Methylation Test \u0026 Treat",
+                        "Strategy":  "Test + Treat",
+                        "Description":  "Genetic methylation test with matched supplement protocol",
+                        "TargetAudience":  "New patients seeking personalized protocol",
+                        "Components":  [
+                                           {
+                                               "SKU":  "57",
+                                               "Name":  "Genetic Methylation Testing",
+                                               "MSRP":  288.88,
+                                               "COGS":  159.88,
+                                               "Tier":  "Watch",
+                                               "Score":  37.0
+                                           },
+                                           {
+                                               "SKU":  "41",
+                                               "Name":  "MTHFR+ Folate Metabolism",
+                                               "MSRP":  118.88,
+                                               "COGS":  18.46,
+                                               "Tier":  "Core",
+                                               "Score":  67.7
+                                           },
+                                           {
+                                               "SKU":  "02",
+                                               "Name":  "MethylB Complete+ B Complex",
+                                               "MSRP":  48.88,
+                                               "COGS":  4.6,
+                                               "Tier":  "Core",
+                                               "Score":  74.2
+                                           },
+                                           {
+                                               "SKU":  "35",
+                                               "Name":  "BHMT+ Methylation Support",
+                                               "MSRP":  108.88,
+                                               "COGS":  14.13,
+                                               "Tier":  "Core",
+                                               "Score":  68.6
+                                           }
+                                       ],
+                        "SKUCount":  4,
+                        "StarCount":  0,
+                        "AvgCompositeScore":  61.9,
+                        "QualityFlag":  "MIXED",
+                        "Pricing":  {
+                                        "IndividualTotal":  565.52,
+                                        "DiscountRate":  "18%",
+                                        "BundlePrice":  463.73,
+                                        "CustomerSavings":  101.79,
+                                        "BundleDTCMargin":  57.5,
+                                        "BundleWSPrice":  231.86,
+                                        "BundleWSMargin":  15.0,
+                                        "TotalCOGS":  197.07
+                                    },
+                        "Projection":  {
+                                           "MonthlyBundleUnits":  106,
+                                           "MonthlyRevenue":  49155.38,
+                                           "MonthlyGrossProfit":  28265.96,
+                                           "UnbundledUnits":  85,
+                                           "UnbundledRevenue":  48069.20,
+                                           "UnbundledGrossProfit":  31318.25,
+                                           "RevenueUplift":  1086.18,
+                                           "RevenueUpliftPct":  2.3,
+                                           "GrossProfitUplift":  -3052.29,
+                                           "AnnualBundleRevenue":  589864.56,
+                                           "AnnualGrossProfit":  339191.52
+                                       }
+                    },
+                    {
+                        "BundleName":  "Complete Assessment Package",
+                        "Strategy":  "Test + Treat",
+                        "Description":  "Full genetic + hormone testing with foundational supplements",
+                        "TargetAudience":  "Comprehensive health optimization seekers",
+                        "Components":  [
+                                           {
+                                               "SKU":  "61",
+                                               "Name":  "Combo Test (Meth+Nutr+Dutch)",
+                                               "MSRP":  688.88,
+                                               "COGS":  329,
+                                               "Tier":  "Core",
+                                               "Score":  55.2
+                                           },
+                                           {
+                                               "SKU":  "05",
+                                               "Name":  "Magnesium Synergy Matrix",
+                                               "MSRP":  58.88,
+                                               "COGS":  3.92,
+                                               "Tier":  "Star",
+                                               "Score":  77.6
+                                           },
+                                           {
+                                               "SKU":  "07",
+                                               "Name":  "Omega-3 DHA/EPA (Algal)",
+                                               "MSRP":  48.88,
+                                               "COGS":  4.74,
+                                               "Tier":  "Core",
+                                               "Score":  73.9
+                                           },
+                                           {
+                                               "SKU":  "02",
+                                               "Name":  "MethylB Complete+ B Complex",
+                                               "MSRP":  48.88,
+                                               "COGS":  4.6,
+                                               "Tier":  "Core",
+                                               "Score":  74.2
+                                           }
+                                       ],
+                        "SKUCount":  4,
+                        "StarCount":  1,
+                        "AvgCompositeScore":  70.2,
+                        "QualityFlag":  "STRONG",
+                        "Pricing":  {
+                                        "IndividualTotal":  845.52,
+                                        "DiscountRate":  "18%",
+                                        "BundlePrice":  693.33,
+                                        "CustomerSavings":  152.19,
+                                        "BundleDTCMargin":  50.6,
+                                        "BundleWSPrice":  346.66,
+                                        "BundleWSMargin":  1.3,
+                                        "TotalCOGS":  342.26
+                                    },
+                        "Projection":  {
+                                           "MonthlyBundleUnits":  120,
+                                           "MonthlyRevenue":  83199.60,
+                                           "MonthlyGrossProfit":  42128.40,
+                                           "UnbundledUnits":  96,
+                                           "UnbundledRevenue":  81169.92,
+                                           "UnbundledGrossProfit":  48312.96,
+                                           "RevenueUplift":  2029.68,
+                                           "RevenueUpliftPct":  2.5,
+                                           "GrossProfitUplift":  -6184.56,
+                                           "AnnualBundleRevenue":  998395.20,
+                                           "AnnualGrossProfit":  505540.80
+                                       }
+                    }
+                ]
+}
