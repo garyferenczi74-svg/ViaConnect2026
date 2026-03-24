@@ -1,0 +1,3159 @@
+﻿{
+    "GeneratedAt":  "2026-03-24T17:10:31.1689203-06:00",
+    "ScoringWeights":  {
+                           "DTCMargin":  0.2,
+                           "PricePoint":  0.15,
+                           "COGSEfficiency":  0.15,
+                           "WaterfallHealth":  0.2,
+                           "RevenueWeight":  0.15,
+                           "ChannelBreadth":  0.15
+                       },
+    "TierThresholds":  [
+                           {
+                               "Values":  [
+                                              "Watch"
+                                          ],
+                               "Count":  4,
+                               "Group":  [
+                                             {
+                                                 "SKU":  "57",
+                                                 "Name":  "Genetic Methylation Testing",
+                                                 "Category":  "Testing",
+                                                 "MSRP":  288.88,
+                                                 "COGS":  159.88,
+                                                 "DTCMargin":  44.7,
+                                                 "COGSRatio":  55.3,
+                                                 "ViableChannels":  1,
+                                                 "ChannelViability":  {
+                                                                          "Wholesale":  {
+                                                                                            "NetMarginPct":  -24.2,
+                                                                                            "Viable":  false
+                                                                                        },
+                                                                          "Distributor":  {
+                                                                                              "NetMarginPct":  -91.5,
+                                                                                              "Viable":  false
+                                                                                          },
+                                                                          "DTC":  {
+                                                                                      "NetMarginPct":  16.2,
+                                                                                      "Viable":  true
+                                                                                  }
+                                                                      },
+                                                 "Scores":  {
+                                                                "DTCMargin":  47.1,
+                                                                "ChannelBreadth":  33.3,
+                                                                "COGSEfficiency":  18.1,
+                                                                "WaterfallHealth":  51,
+                                                                "RevenueContribution":  22.9,
+                                                                "PricePoint":  41.9
+                                                            },
+                                                 "CompositeScore":  37.0,
+                                                 "Tier":  "Watch",
+                                                 "Actions":  [
+                                                                 "REPRICE - DTC margin below 70% floor",
+                                                                 "CHANNEL REVIEW - viable in fewer than 2 channels",
+                                                                 "RENEGOTIATE SUPPLY - COGS ratio exceeds 40%"
+                                                             ]
+                                             },
+                                             {
+                                                 "SKU":  "58",
+                                                 "Name":  "Genetic Nutrition Test",
+                                                 "Category":  "Testing",
+                                                 "MSRP":  388.88,
+                                                 "COGS":  228.88,
+                                                 "DTCMargin":  41.1,
+                                                 "COGSRatio":  58.9,
+                                                 "ViableChannels":  1,
+                                                 "ChannelViability":  {
+                                                                          "Wholesale":  {
+                                                                                            "NetMarginPct":  -31.2,
+                                                                                            "Viable":  false
+                                                                                        },
+                                                                          "Distributor":  {
+                                                                                              "NetMarginPct":  -103.2,
+                                                                                              "Viable":  false
+                                                                                          },
+                                                                          "DTC":  {
+                                                                                      "NetMarginPct":  12.6,
+                                                                                      "Viable":  true
+                                                                                  }
+                                                                      },
+                                                 "Scores":  {
+                                                                "DTCMargin":  43.3,
+                                                                "ChannelBreadth":  33.3,
+                                                                "COGSEfficiency":  12.7,
+                                                                "WaterfallHealth":  48,
+                                                                "RevenueContribution":  30.9,
+                                                                "PricePoint":  56.5
+                                                            },
+                                                 "CompositeScore":  38.3,
+                                                 "Tier":  "Watch",
+                                                 "Actions":  [
+                                                                 "REPRICE - DTC margin below 70% floor",
+                                                                 "CHANNEL REVIEW - viable in fewer than 2 channels",
+                                                                 "RENEGOTIATE SUPPLY - COGS ratio exceeds 40%"
+                                                             ]
+                                             },
+                                             {
+                                                 "SKU":  "59",
+                                                 "Name":  "Dutch Hormone Test",
+                                                 "Category":  "Testing",
+                                                 "MSRP":  508.88,
+                                                 "COGS":  198.88,
+                                                 "DTCMargin":  60.9,
+                                                 "COGSRatio":  39.1,
+                                                 "ViableChannels":  1,
+                                                 "ChannelViability":  {
+                                                                          "Wholesale":  {
+                                                                                            "NetMarginPct":  8.3,
+                                                                                            "Viable":  false
+                                                                                        },
+                                                                          "Distributor":  {
+                                                                                              "NetMarginPct":  -37.3,
+                                                                                              "Viable":  false
+                                                                                          },
+                                                                          "DTC":  {
+                                                                                      "NetMarginPct":  32.4,
+                                                                                      "Viable":  true
+                                                                                  }
+                                                                      },
+                                                 "Scores":  {
+                                                                "DTCMargin":  64.1,
+                                                                "ChannelBreadth":  33.3,
+                                                                "COGSEfficiency":  42.1,
+                                                                "WaterfallHealth":  66,
+                                                                "RevenueContribution":  40.4,
+                                                                "PricePoint":  73.9
+                                                            },
+                                                 "CompositeScore":  54.5,
+                                                 "Tier":  "Watch",
+                                                 "Actions":  [
+                                                                 "REPRICE - DTC margin below 70% floor",
+                                                                 "CHANNEL REVIEW - viable in fewer than 2 channels"
+                                                             ]
+                                             },
+                                             {
+                                                 "SKU":  "62",
+                                                 "Name":  "30 Day Custom Vitamin Package",
+                                                 "Category":  "Testing",
+                                                 "MSRP":  198.88,
+                                                 "COGS":  65,
+                                                 "DTCMargin":  67.3,
+                                                 "COGSRatio":  32.7,
+                                                 "ViableChannels":  2,
+                                                 "ChannelViability":  {
+                                                                          "Wholesale":  {
+                                                                                            "NetMarginPct":  21.1,
+                                                                                            "Viable":  true
+                                                                                        },
+                                                                          "Distributor":  {
+                                                                                              "NetMarginPct":  -16.0,
+                                                                                              "Viable":  false
+                                                                                          },
+                                                                          "DTC":  {
+                                                                                      "NetMarginPct":  38.8,
+                                                                                      "Viable":  true
+                                                                                  }
+                                                                      },
+                                                 "Scores":  {
+                                                                "DTCMargin":  70.8,
+                                                                "ChannelBreadth":  66.7,
+                                                                "COGSEfficiency":  51.6,
+                                                                "WaterfallHealth":  72,
+                                                                "RevenueContribution":  15.8,
+                                                                "PricePoint":  28.9
+                                                            },
+                                                 "CompositeScore":  53.0,
+                                                 "Tier":  "Watch",
+                                                 "Actions":  [
+                                                                 "REPRICE - DTC margin below 70% floor"
+                                                             ]
+                                             }
+                                         ],
+                               "Name":  "Watch"
+                           },
+                           {
+                               "Values":  [
+                                              "Sunset"
+                                          ],
+                               "Count":  1,
+                               "Group":  [
+                                             {
+                                                 "SKU":  "60",
+                                                 "Name":  "EpiGenDX",
+                                                 "Category":  "Testing",
+                                                 "MSRP":  443,
+                                                 "COGS":  298.88,
+                                                 "DTCMargin":  32.5,
+                                                 "COGSRatio":  67.5,
+                                                 "ViableChannels":  0,
+                                                 "ChannelViability":  {
+                                                                          "Wholesale":  {
+                                                                                            "NetMarginPct":  -48.4,
+                                                                                            "Viable":  false
+                                                                                        },
+                                                                          "Distributor":  {
+                                                                                              "NetMarginPct":  -131.9,
+                                                                                              "Viable":  false
+                                                                                          },
+                                                                          "DTC":  {
+                                                                                      "NetMarginPct":  4.0,
+                                                                                      "Viable":  false
+                                                                                  }
+                                                                      },
+                                                 "Scores":  {
+                                                                "DTCMargin":  34.2,
+                                                                "ChannelBreadth":  0,
+                                                                "COGSEfficiency":  0,
+                                                                "WaterfallHealth":  40,
+                                                                "RevenueContribution":  35.2,
+                                                                "PricePoint":  64.3
+                                                            },
+                                                 "CompositeScore":  29.8,
+                                                 "Tier":  "Sunset",
+                                                 "Actions":  [
+                                                                 "EVALUATE DISCONTINUATION - margin and channel viability are critically low"
+                                                             ]
+                                             }
+                                         ],
+                               "Name":  "Sunset"
+                           },
+                           {
+                               "Values":  [
+                                              "Core"
+                                          ],
+                               "Count":  1,
+                               "Group":  [
+                                             {
+                                                 "SKU":  "61",
+                                                 "Name":  "Combo Test (Meth+Nutr+Dutch)",
+                                                 "Category":  "Testing",
+                                                 "MSRP":  688.88,
+                                                 "COGS":  329,
+                                                 "DTCMargin":  52.2,
+                                                 "COGSRatio":  47.8,
+                                                 "ViableChannels":  1,
+                                                 "ChannelViability":  {
+                                                                          "Wholesale":  {
+                                                                                            "NetMarginPct":  -9.0,
+                                                                                            "Viable":  false
+                                                                                        },
+                                                                          "Distributor":  {
+                                                                                              "NetMarginPct":  -66.2,
+                                                                                              "Viable":  false
+                                                                                          },
+                                                                          "DTC":  {
+                                                                                      "NetMarginPct":  23.7,
+                                                                                      "Viable":  true
+                                                                                  }
+                                                                      },
+                                                 "Scores":  {
+                                                                "DTCMargin":  54.9,
+                                                                "ChannelBreadth":  33.3,
+                                                                "COGSEfficiency":  29.2,
+                                                                "WaterfallHealth":  58,
+                                                                "RevenueContribution":  54.7,
+                                                                "PricePoint":  100
+                                                            },
+                                                 "CompositeScore":  55.2,
+                                                 "Tier":  "Core",
+                                                 "Actions":  [
+                                                                 "REPRICE - DTC margin below 70% floor",
+                                                                 "CHANNEL REVIEW - viable in fewer than 2 channels",
+                                                                 "RENEGOTIATE SUPPLY - COGS ratio exceeds 40%"
+                                                             ]
+                                             }
+                                         ],
+                               "Name":  "Core"
+                           }
+                       ],
+    "PortfolioSummary":  {
+                             "TotalSKUs":  62,
+                             "TierDistribution":  [
+                                                      {
+                                                          "Tier":  "Star",
+                                                          "SKUCount":  9,
+                                                          "AvgCompositeScore":  80.5,
+                                                          "AvgDTCMargin":  90.8,
+                                                          "MonthlyRevenue":  399140.80,
+                                                          "RevenueSharePct":  29.3
+                                                      },
+                                                      {
+                                                          "Tier":  "Core",
+                                                          "SKUCount":  48,
+                                                          "AvgCompositeScore":  69.7,
+                                                          "AvgDTCMargin":  85.9,
+                                                          "MonthlyRevenue":  885794.24,
+                                                          "RevenueSharePct":  65.0
+                                                      },
+                                                      {
+                                                          "Tier":  "Watch",
+                                                          "SKUCount":  4,
+                                                          "AvgCompositeScore":  45.7,
+                                                          "AvgDTCMargin":  53.5,
+                                                          "MonthlyRevenue":  59022.96,
+                                                          "RevenueSharePct":  4.3
+                                                      },
+                                                      {
+                                                          "Tier":  "Sunset",
+                                                          "SKUCount":  1,
+                                                          "AvgCompositeScore":  29.8,
+                                                          "AvgDTCMargin":  32.5,
+                                                          "MonthlyRevenue":  18871.8,
+                                                          "RevenueSharePct":  1.4
+                                                      }
+                                                  ],
+                             "CategoryHealth":  [
+                                                    {
+                                                        "Category":  "Base",
+                                                        "SKUCount":  8,
+                                                        "AvgScore":  77.1,
+                                                        "MinScore":  73,
+                                                        "MaxScore":  83,
+                                                        "Stars":  4,
+                                                        "Core":  4,
+                                                        "Watch":  0,
+                                                        "Sunset":  0
+                                                    },
+                                                    {
+                                                        "Category":  "Advanced",
+                                                        "SKUCount":  16,
+                                                        "AvgScore":  75.5,
+                                                        "MinScore":  69.1,
+                                                        "MaxScore":  84.2,
+                                                        "Stars":  5,
+                                                        "Core":  11,
+                                                        "Watch":  0,
+                                                        "Sunset":  0
+                                                    },
+                                                    {
+                                                        "Category":  "Women",
+                                                        "SKUCount":  4,
+                                                        "AvgScore":  70.1,
+                                                        "MinScore":  69.4,
+                                                        "MaxScore":  71.3,
+                                                        "Stars":  0,
+                                                        "Core":  4,
+                                                        "Watch":  0,
+                                                        "Sunset":  0
+                                                    },
+                                                    {
+                                                        "Category":  "Children",
+                                                        "SKUCount":  3,
+                                                        "AvgScore":  68.1,
+                                                        "MinScore":  67.6,
+                                                        "MaxScore":  68.4,
+                                                        "Stars":  0,
+                                                        "Core":  3,
+                                                        "Watch":  0,
+                                                        "Sunset":  0
+                                                    },
+                                                    {
+                                                        "Category":  "SNP",
+                                                        "SKUCount":  20,
+                                                        "AvgScore":  68.2,
+                                                        "MinScore":  66.3,
+                                                        "MaxScore":  69.9,
+                                                        "Stars":  0,
+                                                        "Core":  20,
+                                                        "Watch":  0,
+                                                        "Sunset":  0
+                                                    },
+                                                    {
+                                                        "Category":  "Mushroom",
+                                                        "SKUCount":  5,
+                                                        "AvgScore":  67.8,
+                                                        "MinScore":  66.2,
+                                                        "MaxScore":  69,
+                                                        "Stars":  0,
+                                                        "Core":  5,
+                                                        "Watch":  0,
+                                                        "Sunset":  0
+                                                    },
+                                                    {
+                                                        "Category":  "Testing",
+                                                        "SKUCount":  6,
+                                                        "AvgScore":  44.6,
+                                                        "MinScore":  29.8,
+                                                        "MaxScore":  55.2,
+                                                        "Stars":  0,
+                                                        "Core":  1,
+                                                        "Watch":  4,
+                                                        "Sunset":  1
+                                                    }
+                                                ],
+                             "ActionSummary":  [
+                                                   {
+                                                       "Action":  "BUNDLE CANDIDATE",
+                                                       "Count":  56
+                                                   },
+                                                   {
+                                                       "Action":  "PROMOTE",
+                                                       "Count":  9
+                                                   },
+                                                   {
+                                                       "Action":  "REPRICE",
+                                                       "Count":  5
+                                                   },
+                                                   {
+                                                       "Action":  "CHANNEL REVIEW",
+                                                       "Count":  4
+                                                   },
+                                                   {
+                                                       "Action":  "RENEGOTIATE SUPPLY",
+                                                       "Count":  3
+                                                   },
+                                                   {
+                                                       "Action":  "EVALUATE DISCONTINUATION",
+                                                       "Count":  1
+                                                   }
+                                               ]
+                         },
+    "Recommendations":  {
+                            "Promote":  [
+                                            {
+                                                "SKU":  "23",
+                                                "Name":  "NeuroCalm BH4+ (Advanced)",
+                                                "CompositeScore":  84.2,
+                                                "Tier":  "Star"
+                                            },
+                                            {
+                                                "SKU":  "06",
+                                                "Name":  "NeuroCalm BH4 Complex",
+                                                "CompositeScore":  83.0,
+                                                "Tier":  "Star"
+                                            },
+                                            {
+                                                "SKU":  "17",
+                                                "Name":  "Teloprime+ Telomere Support",
+                                                "CompositeScore":  82.2,
+                                                "Tier":  "Star"
+                                            },
+                                            {
+                                                "SKU":  "04",
+                                                "Name":  "GLP-1 Activator Complex",
+                                                "CompositeScore":  81.8,
+                                                "Tier":  "Star"
+                                            },
+                                            {
+                                                "SKU":  "24",
+                                                "Name":  "Histamine Relief Protocol",
+                                                "CompositeScore":  81.3,
+                                                "Tier":  "Star"
+                                            },
+                                            {
+                                                "SKU":  "19",
+                                                "Name":  "FOCUS+ Nootropic Formula",
+                                                "CompositeScore":  79.6,
+                                                "Tier":  "Star"
+                                            },
+                                            {
+                                                "SKU":  "01",
+                                                "Name":  "BHB Ketone Salts",
+                                                "CompositeScore":  78.7,
+                                                "Tier":  "Star"
+                                            },
+                                            {
+                                                "SKU":  "05",
+                                                "Name":  "Magnesium Synergy Matrix",
+                                                "CompositeScore":  77.6,
+                                                "Tier":  "Star"
+                                            },
+                                            {
+                                                "SKU":  "14",
+                                                "Name":  "NeuroCalm+ (Calm+)",
+                                                "CompositeScore":  75.8,
+                                                "Tier":  "Star"
+                                            }
+                                        ],
+                            "Reprice":  [
+                                            {
+                                                "SKU":  "57",
+                                                "Name":  "Genetic Methylation Testing",
+                                                "DTCMargin":  44.7,
+                                                "CompositeScore":  37.0
+                                            },
+                                            {
+                                                "SKU":  "58",
+                                                "Name":  "Genetic Nutrition Test",
+                                                "DTCMargin":  41.1,
+                                                "CompositeScore":  38.3
+                                            },
+                                            {
+                                                "SKU":  "59",
+                                                "Name":  "Dutch Hormone Test",
+                                                "DTCMargin":  60.9,
+                                                "CompositeScore":  54.5
+                                            },
+                                            {
+                                                "SKU":  "61",
+                                                "Name":  "Combo Test (Meth+Nutr+Dutch)",
+                                                "DTCMargin":  52.2,
+                                                "CompositeScore":  55.2
+                                            },
+                                            {
+                                                "SKU":  "62",
+                                                "Name":  "30 Day Custom Vitamin Package",
+                                                "DTCMargin":  67.3,
+                                                "CompositeScore":  53.0
+                                            }
+                                        ],
+                            "Sunset":  {
+                                           "SKU":  "60",
+                                           "Name":  "EpiGenDX",
+                                           "CompositeScore":  29.8,
+                                           "DTCMargin":  32.5,
+                                           "COGSRatio":  67.5,
+                                           "ViableChannels":  0
+                                       },
+                            "BundleCandidates":  [
+                                                     {
+                                                         "SKU":  "01",
+                                                         "Name":  "BHB Ketone Salts",
+                                                         "CompositeScore":  78.7,
+                                                         "ViableChannels":  3
+                                                     },
+                                                     {
+                                                         "SKU":  "02",
+                                                         "Name":  "MethylB Complete+ B Complex",
+                                                         "CompositeScore":  74.2,
+                                                         "ViableChannels":  3
+                                                     },
+                                                     {
+                                                         "SKU":  "03",
+                                                         "Name":  "Electrolyte Blend",
+                                                         "CompositeScore":  73.0,
+                                                         "ViableChannels":  3
+                                                     },
+                                                     {
+                                                         "SKU":  "04",
+                                                         "Name":  "GLP-1 Activator Complex",
+                                                         "CompositeScore":  81.8,
+                                                         "ViableChannels":  3
+                                                     },
+                                                     {
+                                                         "SKU":  "05",
+                                                         "Name":  "Magnesium Synergy Matrix",
+                                                         "CompositeScore":  77.6,
+                                                         "ViableChannels":  3
+                                                     },
+                                                     {
+                                                         "SKU":  "06",
+                                                         "Name":  "NeuroCalm BH4 Complex",
+                                                         "CompositeScore":  83.0,
+                                                         "ViableChannels":  3
+                                                     },
+                                                     {
+                                                         "SKU":  "07",
+                                                         "Name":  "Omega-3 DHA/EPA (Algal)",
+                                                         "CompositeScore":  73.9,
+                                                         "ViableChannels":  3
+                                                     },
+                                                     {
+                                                         "SKU":  "08",
+                                                         "Name":  "ToxiBind Matrix",
+                                                         "CompositeScore":  74.3,
+                                                         "ViableChannels":  3
+                                                     },
+                                                     {
+                                                         "SKU":  "09",
+                                                         "Name":  "Creatine HCL+",
+                                                         "CompositeScore":  74.3,
+                                                         "ViableChannels":  3
+                                                     },
+                                                     {
+                                                         "SKU":  "10",
+                                                         "Name":  "CATALYST+ Energy Multivitamin",
+                                                         "CompositeScore":  72.7,
+                                                         "ViableChannels":  3
+                                                     },
+                                                     {
+                                                         "SKU":  "11",
+                                                         "Name":  "Replenish NAD+",
+                                                         "CompositeScore":  74.0,
+                                                         "ViableChannels":  3
+                                                     },
+                                                     {
+                                                         "SKU":  "12",
+                                                         "Name":  "Balance+ Gut Repair",
+                                                         "CompositeScore":  73.5,
+                                                         "ViableChannels":  3
+                                                     },
+                                                     {
+                                                         "SKU":  "13",
+                                                         "Name":  "BLAST+ Nitric Oxide Stack",
+                                                         "CompositeScore":  73.6,
+                                                         "ViableChannels":  3
+                                                     },
+                                                     {
+                                                         "SKU":  "14",
+                                                         "Name":  "NeuroCalm+ (Calm+)",
+                                                         "CompositeScore":  75.8,
+                                                         "ViableChannels":  3
+                                                     },
+                                                     {
+                                                         "SKU":  "15",
+                                                         "Name":  "RELAX+ Sleep Support",
+                                                         "CompositeScore":  72.8,
+                                                         "ViableChannels":  3
+                                                     },
+                                                     {
+                                                         "SKU":  "16",
+                                                         "Name":  "Clean+ Detox \u0026 Liver Health",
+                                                         "CompositeScore":  73.7,
+                                                         "ViableChannels":  3
+                                                     },
+                                                     {
+                                                         "SKU":  "17",
+                                                         "Name":  "Teloprime+ Telomere Support",
+                                                         "CompositeScore":  82.2,
+                                                         "ViableChannels":  3
+                                                     },
+                                                     {
+                                                         "SKU":  "18",
+                                                         "Name":  "DigestiZorb+ Enzyme Complex",
+                                                         "CompositeScore":  69.1,
+                                                         "ViableChannels":  3
+                                                     },
+                                                     {
+                                                         "SKU":  "19",
+                                                         "Name":  "FOCUS+ Nootropic Formula",
+                                                         "CompositeScore":  79.6,
+                                                         "ViableChannels":  3
+                                                     },
+                                                     {
+                                                         "SKU":  "20",
+                                                         "Name":  "RISE+ Male Testosterone",
+                                                         "CompositeScore":  74.4,
+                                                         "ViableChannels":  3
+                                                     },
+                                                     {
+                                                         "SKU":  "21",
+                                                         "Name":  "FLEX+ Joint \u0026 Inflammation",
+                                                         "CompositeScore":  73.1,
+                                                         "ViableChannels":  3
+                                                     },
+                                                     {
+                                                         "SKU":  "22",
+                                                         "Name":  "IRON+ Red Blood Cell Support",
+                                                         "CompositeScore":  74.0,
+                                                         "ViableChannels":  3
+                                                     },
+                                                     {
+                                                         "SKU":  "23",
+                                                         "Name":  "NeuroCalm BH4+ (Advanced)",
+                                                         "CompositeScore":  84.2,
+                                                         "ViableChannels":  3
+                                                     },
+                                                     {
+                                                         "SKU":  "24",
+                                                         "Name":  "Histamine Relief Protocol",
+                                                         "CompositeScore":  81.3,
+                                                         "ViableChannels":  3
+                                                     },
+                                                     {
+                                                         "SKU":  "25",
+                                                         "Name":  "DESIRE+ Female Hormonal",
+                                                         "CompositeScore":  70.1,
+                                                         "ViableChannels":  3
+                                                     },
+                                                     {
+                                                         "SKU":  "26",
+                                                         "Name":  "Grow+ Pre-Natal Formula",
+                                                         "CompositeScore":  69.7,
+                                                         "ViableChannels":  3
+                                                     },
+                                                     {
+                                                         "SKU":  "27",
+                                                         "Name":  "Revitalizher Postnatal+",
+                                                         "CompositeScore":  69.4,
+                                                         "ViableChannels":  3
+                                                     },
+                                                     {
+                                                         "SKU":  "28",
+                                                         "Name":  "Thrive+ Post-Natal GLP-1",
+                                                         "CompositeScore":  71.3,
+                                                         "ViableChannels":  3
+                                                     },
+                                                     {
+                                                         "SKU":  "29",
+                                                         "Name":  "Sproutables Infant Tincture",
+                                                         "CompositeScore":  68.4,
+                                                         "ViableChannels":  3
+                                                     },
+                                                     {
+                                                         "SKU":  "30",
+                                                         "Name":  "Sproutables Toddler Tablets",
+                                                         "CompositeScore":  68.3,
+                                                         "ViableChannels":  3
+                                                     },
+                                                     {
+                                                         "SKU":  "31",
+                                                         "Name":  "Sproutables Children Gummies",
+                                                         "CompositeScore":  67.6,
+                                                         "ViableChannels":  3
+                                                     },
+                                                     {
+                                                         "SKU":  "32",
+                                                         "Name":  "ACAT+ Mitochondrial Support",
+                                                         "CompositeScore":  69.8,
+                                                         "ViableChannels":  3
+                                                     },
+                                                     {
+                                                         "SKU":  "33",
+                                                         "Name":  "ACHY+ Acetylcholine Support",
+                                                         "CompositeScore":  66.3,
+                                                         "ViableChannels":  3
+                                                     },
+                                                     {
+                                                         "SKU":  "34",
+                                                         "Name":  "ADO Support+ Purine Metabolism",
+                                                         "CompositeScore":  69.1,
+                                                         "ViableChannels":  3
+                                                     },
+                                                     {
+                                                         "SKU":  "35",
+                                                         "Name":  "BHMT+ Methylation Support",
+                                                         "CompositeScore":  68.6,
+                                                         "ViableChannels":  3
+                                                     },
+                                                     {
+                                                         "SKU":  "36",
+                                                         "Name":  "CBS Support+ Sulfur Pathway",
+                                                         "CompositeScore":  69.3,
+                                                         "ViableChannels":  3
+                                                     },
+                                                     {
+                                                         "SKU":  "37",
+                                                         "Name":  "COMT+ Neurotransmitter Balance",
+                                                         "CompositeScore":  68.0,
+                                                         "ViableChannels":  3
+                                                     },
+                                                     {
+                                                         "SKU":  "38",
+                                                         "Name":  "DAO+ Histamine Balance",
+                                                         "CompositeScore":  68.4,
+                                                         "ViableChannels":  3
+                                                     },
+                                                     {
+                                                         "SKU":  "39",
+                                                         "Name":  "GST+ Cellular Detox",
+                                                         "CompositeScore":  66.6,
+                                                         "ViableChannels":  3
+                                                     },
+                                                     {
+                                                         "SKU":  "40",
+                                                         "Name":  "MAOA+ Neurochemical Balance",
+                                                         "CompositeScore":  66.6,
+                                                         "ViableChannels":  3
+                                                     },
+                                                     {
+                                                         "SKU":  "41",
+                                                         "Name":  "MTHFR+ Folate Metabolism",
+                                                         "CompositeScore":  67.7,
+                                                         "ViableChannels":  3
+                                                     },
+                                                     {
+                                                         "SKU":  "42",
+                                                         "Name":  "MTR+ Methylation Matrix",
+                                                         "CompositeScore":  68.6,
+                                                         "ViableChannels":  3
+                                                     },
+                                                     {
+                                                         "SKU":  "43",
+                                                         "Name":  "MTRR+ Methylcobalamin Regen",
+                                                         "CompositeScore":  68.8,
+                                                         "ViableChannels":  3
+                                                     },
+                                                     {
+                                                         "SKU":  "44",
+                                                         "Name":  "NAT Support+ Acetylation",
+                                                         "CompositeScore":  67.1,
+                                                         "ViableChannels":  3
+                                                     },
+                                                     {
+                                                         "SKU":  "45",
+                                                         "Name":  "NOS+ Vascular Integrity",
+                                                         "CompositeScore":  68.5,
+                                                         "ViableChannels":  3
+                                                     },
+                                                     {
+                                                         "SKU":  "46",
+                                                         "Name":  "RFC1 Support+ Folate Transport",
+                                                         "CompositeScore":  68.3,
+                                                         "ViableChannels":  3
+                                                     },
+                                                     {
+                                                         "SKU":  "47",
+                                                         "Name":  "SHMT+ Glycine-Folate Balance",
+                                                         "CompositeScore":  69.9,
+                                                         "ViableChannels":  3
+                                                     },
+                                                     {
+                                                         "SKU":  "48",
+                                                         "Name":  "SOD+ Antioxidant Defense",
+                                                         "CompositeScore":  67.4,
+                                                         "ViableChannels":  3
+                                                     },
+                                                     {
+                                                         "SKU":  "49",
+                                                         "Name":  "SUOX+ Sulfite Clearance",
+                                                         "CompositeScore":  68.5,
+                                                         "ViableChannels":  3
+                                                     },
+                                                     {
+                                                         "SKU":  "50",
+                                                         "Name":  "TCN2+ B12 Transport",
+                                                         "CompositeScore":  68.4,
+                                                         "ViableChannels":  3
+                                                     },
+                                                     {
+                                                         "SKU":  "51",
+                                                         "Name":  "VDR+ Receptor Activation",
+                                                         "CompositeScore":  68.0,
+                                                         "ViableChannels":  3
+                                                     },
+                                                     {
+                                                         "SKU":  "52",
+                                                         "Name":  "Chaga Mushroom Capsules",
+                                                         "CompositeScore":  66.2,
+                                                         "ViableChannels":  3
+                                                     },
+                                                     {
+                                                         "SKU":  "53",
+                                                         "Name":  "Cordyceps Mushroom Capsules",
+                                                         "CompositeScore":  66.2,
+                                                         "ViableChannels":  3
+                                                     },
+                                                     {
+                                                         "SKU":  "54",
+                                                         "Name":  "Lions Mane Mushroom Capsules",
+                                                         "CompositeScore":  68.4,
+                                                         "ViableChannels":  3
+                                                     },
+                                                     {
+                                                         "SKU":  "55",
+                                                         "Name":  "Reishi Mushroom Capsules",
+                                                         "CompositeScore":  69.0,
+                                                         "ViableChannels":  3
+                                                     },
+                                                     {
+                                                         "SKU":  "56",
+                                                         "Name":  "Turkey Tail Mushroom Capsules",
+                                                         "CompositeScore":  69.0,
+                                                         "ViableChannels":  3
+                                                     }
+                                                 ]
+                        },
+    "SKUs":  [
+                 {
+                     "SKU":  "01",
+                     "Name":  "BHB Ketone Salts",
+                     "Category":  "Base",
+                     "MSRP":  68.88,
+                     "COGS":  5.43,
+                     "DTCMargin":  92.1,
+                     "COGSRatio":  7.9,
+                     "ViableChannels":  3,
+                     "ChannelViability":  {
+                                              "Wholesale":  {
+                                                                "NetMarginPct":  70.7,
+                                                                "Viable":  true
+                                                            },
+                                              "Distributor":  {
+                                                                  "NetMarginPct":  66.7,
+                                                                  "Viable":  true
+                                                              },
+                                              "DTC":  {
+                                                          "NetMarginPct":  53.6,
+                                                          "Viable":  true
+                                                      }
+                                          },
+                     "Scores":  {
+                                    "DTCMargin":  96.9,
+                                    "ChannelBreadth":  100,
+                                    "COGSEfficiency":  88.3,
+                                    "WaterfallHealth":  93,
+                                    "RevenueContribution":  72.9,
+                                    "PricePoint":  10.0
+                                },
+                     "CompositeScore":  78.7,
+                     "Tier":  "Star",
+                     "Actions":  [
+                                     "PROMOTE - increase marketing spend and inventory priority",
+                                     "BUNDLE CANDIDATE - strong across all channels"
+                                 ]
+                 },
+                 {
+                     "SKU":  "02",
+                     "Name":  "MethylB Complete+ B Complex",
+                     "Category":  "Base",
+                     "MSRP":  48.88,
+                     "COGS":  4.6,
+                     "DTCMargin":  90.6,
+                     "COGSRatio":  9.4,
+                     "ViableChannels":  3,
+                     "ChannelViability":  {
+                                              "Wholesale":  {
+                                                                "NetMarginPct":  67.7,
+                                                                "Viable":  true
+                                                            },
+                                              "Distributor":  {
+                                                                  "NetMarginPct":  61.6,
+                                                                  "Viable":  true
+                                                              },
+                                              "DTC":  {
+                                                          "NetMarginPct":  52.1,
+                                                          "Viable":  true
+                                                      }
+                                          },
+                     "Scores":  {
+                                    "DTCMargin":  95.4,
+                                    "ChannelBreadth":  100,
+                                    "COGSEfficiency":  86.1,
+                                    "WaterfallHealth":  92,
+                                    "RevenueContribution":  51.8,
+                                    "PricePoint":  7.1
+                                },
+                     "CompositeScore":  74.2,
+                     "Tier":  "Core",
+                     "Actions":  [
+                                     "BUNDLE CANDIDATE - strong across all channels"
+                                 ]
+                 },
+                 {
+                     "SKU":  "03",
+                     "Name":  "Electrolyte Blend",
+                     "Category":  "Base",
+                     "MSRP":  48.88,
+                     "COGS":  5.52,
+                     "DTCMargin":  88.7,
+                     "COGSRatio":  11.3,
+                     "ViableChannels":  3,
+                     "ChannelViability":  {
+                                              "Wholesale":  {
+                                                                "NetMarginPct":  63.9,
+                                                                "Viable":  true
+                                                            },
+                                              "Distributor":  {
+                                                                  "NetMarginPct":  55.3,
+                                                                  "Viable":  true
+                                                              },
+                                              "DTC":  {
+                                                          "NetMarginPct":  50.2,
+                                                          "Viable":  true
+                                                      }
+                                          },
+                     "Scores":  {
+                                    "DTCMargin":  93.4,
+                                    "ChannelBreadth":  100,
+                                    "COGSEfficiency":  83.3,
+                                    "WaterfallHealth":  90,
+                                    "RevenueContribution":  51.8,
+                                    "PricePoint":  7.1
+                                },
+                     "CompositeScore":  73.0,
+                     "Tier":  "Core",
+                     "Actions":  [
+                                     "BUNDLE CANDIDATE - strong across all channels"
+                                 ]
+                 },
+                 {
+                     "SKU":  "04",
+                     "Name":  "GLP-1 Activator Complex",
+                     "Category":  "Base",
+                     "MSRP":  88.88,
+                     "COGS":  7.68,
+                     "DTCMargin":  91.4,
+                     "COGSRatio":  8.6,
+                     "ViableChannels":  3,
+                     "ChannelViability":  {
+                                              "Wholesale":  {
+                                                                "NetMarginPct":  69.2,
+                                                                "Viable":  true
+                                                            },
+                                              "Distributor":  {
+                                                                  "NetMarginPct":  64.2,
+                                                                  "Viable":  true
+                                                              },
+                                              "DTC":  {
+                                                          "NetMarginPct":  52.9,
+                                                          "Viable":  true
+                                                      }
+                                          },
+                     "Scores":  {
+                                    "DTCMargin":  96.2,
+                                    "ChannelBreadth":  100,
+                                    "COGSEfficiency":  87.3,
+                                    "WaterfallHealth":  92,
+                                    "RevenueContribution":  94.1,
+                                    "PricePoint":  12.9
+                                },
+                     "CompositeScore":  81.8,
+                     "Tier":  "Star",
+                     "Actions":  [
+                                     "PROMOTE - increase marketing spend and inventory priority",
+                                     "BUNDLE CANDIDATE - strong across all channels"
+                                 ]
+                 },
+                 {
+                     "SKU":  "05",
+                     "Name":  "Magnesium Synergy Matrix",
+                     "Category":  "Base",
+                     "MSRP":  58.88,
+                     "COGS":  3.92,
+                     "DTCMargin":  93.3,
+                     "COGSRatio":  6.7,
+                     "ViableChannels":  3,
+                     "ChannelViability":  {
+                                              "Wholesale":  {
+                                                                "NetMarginPct":  73.2,
+                                                                "Viable":  true
+                                                            },
+                                              "Distributor":  {
+                                                                  "NetMarginPct":  70.8,
+                                                                  "Viable":  true
+                                                              },
+                                              "DTC":  {
+                                                          "NetMarginPct":  54.8,
+                                                          "Viable":  true
+                                                      }
+                                          },
+                     "Scores":  {
+                                    "DTCMargin":  98.2,
+                                    "ChannelBreadth":  100,
+                                    "COGSEfficiency":  90.1,
+                                    "WaterfallHealth":  94,
+                                    "RevenueContribution":  62.3,
+                                    "PricePoint":  8.5
+                                },
+                     "CompositeScore":  77.6,
+                     "Tier":  "Star",
+                     "Actions":  [
+                                     "PROMOTE - increase marketing spend and inventory priority",
+                                     "BUNDLE CANDIDATE - strong across all channels"
+                                 ]
+                 },
+                 {
+                     "SKU":  "06",
+                     "Name":  "NeuroCalm BH4 Complex",
+                     "Category":  "Base",
+                     "MSRP":  88.88,
+                     "COGS":  5.84,
+                     "DTCMargin":  93.4,
+                     "COGSRatio":  6.6,
+                     "ViableChannels":  3,
+                     "ChannelViability":  {
+                                              "Wholesale":  {
+                                                                "NetMarginPct":  73.4,
+                                                                "Viable":  true
+                                                            },
+                                              "Distributor":  {
+                                                                  "NetMarginPct":  71.1,
+                                                                  "Viable":  true
+                                                              },
+                                              "DTC":  {
+                                                          "NetMarginPct":  54.9,
+                                                          "Viable":  true
+                                                      }
+                                          },
+                     "Scores":  {
+                                    "DTCMargin":  98.3,
+                                    "ChannelBreadth":  100,
+                                    "COGSEfficiency":  90.2,
+                                    "WaterfallHealth":  94,
+                                    "RevenueContribution":  94.1,
+                                    "PricePoint":  12.9
+                                },
+                     "CompositeScore":  83.0,
+                     "Tier":  "Star",
+                     "Actions":  [
+                                     "PROMOTE - increase marketing spend and inventory priority",
+                                     "BUNDLE CANDIDATE - strong across all channels"
+                                 ]
+                 },
+                 {
+                     "SKU":  "07",
+                     "Name":  "Omega-3 DHA/EPA (Algal)",
+                     "Category":  "Base",
+                     "MSRP":  48.88,
+                     "COGS":  4.74,
+                     "DTCMargin":  90.3,
+                     "COGSRatio":  9.7,
+                     "ViableChannels":  3,
+                     "ChannelViability":  {
+                                              "Wholesale":  {
+                                                                "NetMarginPct":  67.1,
+                                                                "Viable":  true
+                                                            },
+                                              "Distributor":  {
+                                                                  "NetMarginPct":  60.6,
+                                                                  "Viable":  true
+                                                              },
+                                              "DTC":  {
+                                                          "NetMarginPct":  51.8,
+                                                          "Viable":  true
+                                                      }
+                                          },
+                     "Scores":  {
+                                    "DTCMargin":  95.1,
+                                    "ChannelBreadth":  100,
+                                    "COGSEfficiency":  85.6,
+                                    "WaterfallHealth":  91,
+                                    "RevenueContribution":  51.8,
+                                    "PricePoint":  7.1
+                                },
+                     "CompositeScore":  73.9,
+                     "Tier":  "Core",
+                     "Actions":  [
+                                     "BUNDLE CANDIDATE - strong across all channels"
+                                 ]
+                 },
+                 {
+                     "SKU":  "08",
+                     "Name":  "ToxiBind Matrix",
+                     "Category":  "Base",
+                     "MSRP":  48.88,
+                     "COGS":  4.51,
+                     "DTCMargin":  90.8,
+                     "COGSRatio":  9.2,
+                     "ViableChannels":  3,
+                     "ChannelViability":  {
+                                              "Wholesale":  {
+                                                                "NetMarginPct":  68.0,
+                                                                "Viable":  true
+                                                            },
+                                              "Distributor":  {
+                                                                  "NetMarginPct":  62.2,
+                                                                  "Viable":  true
+                                                              },
+                                              "DTC":  {
+                                                          "NetMarginPct":  52.3,
+                                                          "Viable":  true
+                                                      }
+                                          },
+                     "Scores":  {
+                                    "DTCMargin":  95.6,
+                                    "ChannelBreadth":  100,
+                                    "COGSEfficiency":  86.4,
+                                    "WaterfallHealth":  92,
+                                    "RevenueContribution":  51.8,
+                                    "PricePoint":  7.1
+                                },
+                     "CompositeScore":  74.3,
+                     "Tier":  "Core",
+                     "Actions":  [
+                                     "BUNDLE CANDIDATE - strong across all channels"
+                                 ]
+                 },
+                 {
+                     "SKU":  "09",
+                     "Name":  "Creatine HCL+",
+                     "Category":  "Advanced",
+                     "MSRP":  98.88,
+                     "COGS":  10.86,
+                     "DTCMargin":  89,
+                     "COGSRatio":  11,
+                     "ViableChannels":  3,
+                     "ChannelViability":  {
+                                              "Wholesale":  {
+                                                                "NetMarginPct":  64.5,
+                                                                "Viable":  true
+                                                            },
+                                              "Distributor":  {
+                                                                  "NetMarginPct":  56.4,
+                                                                  "Viable":  true
+                                                              },
+                                              "DTC":  {
+                                                          "NetMarginPct":  50.5,
+                                                          "Viable":  true
+                                                      }
+                                          },
+                     "Scores":  {
+                                    "DTCMargin":  93.7,
+                                    "ChannelBreadth":  100,
+                                    "COGSEfficiency":  83.7,
+                                    "WaterfallHealth":  90,
+                                    "RevenueContribution":  52.4,
+                                    "PricePoint":  14.4
+                                },
+                     "CompositeScore":  74.3,
+                     "Tier":  "Core",
+                     "Actions":  [
+                                     "BUNDLE CANDIDATE - strong across all channels"
+                                 ]
+                 },
+                 {
+                     "SKU":  "10",
+                     "Name":  "CATALYST+ Energy Multivitamin",
+                     "Category":  "Advanced",
+                     "MSRP":  98.88,
+                     "COGS":  13.58,
+                     "DTCMargin":  86.3,
+                     "COGSRatio":  13.7,
+                     "ViableChannels":  3,
+                     "ChannelViability":  {
+                                              "Wholesale":  {
+                                                                "NetMarginPct":  59.0,
+                                                                "Viable":  true
+                                                            },
+                                              "Distributor":  {
+                                                                  "NetMarginPct":  47.2,
+                                                                  "Viable":  true
+                                                              },
+                                              "DTC":  {
+                                                          "NetMarginPct":  47.8,
+                                                          "Viable":  true
+                                                      }
+                                          },
+                     "Scores":  {
+                                    "DTCMargin":  90.8,
+                                    "ChannelBreadth":  100,
+                                    "COGSEfficiency":  79.7,
+                                    "WaterfallHealth":  88,
+                                    "RevenueContribution":  52.4,
+                                    "PricePoint":  14.4
+                                },
+                     "CompositeScore":  72.7,
+                     "Tier":  "Core",
+                     "Actions":  [
+                                     "BUNDLE CANDIDATE - strong across all channels"
+                                 ]
+                 },
+                 {
+                     "SKU":  "11",
+                     "Name":  "Replenish NAD+",
+                     "Category":  "Advanced",
+                     "MSRP":  108,
+                     "COGS":  14.03,
+                     "DTCMargin":  87,
+                     "COGSRatio":  13,
+                     "ViableChannels":  3,
+                     "ChannelViability":  {
+                                              "Wholesale":  {
+                                                                "NetMarginPct":  60.5,
+                                                                "Viable":  true
+                                                            },
+                                              "Distributor":  {
+                                                                  "NetMarginPct":  49.7,
+                                                                  "Viable":  true
+                                                              },
+                                              "DTC":  {
+                                                          "NetMarginPct":  48.5,
+                                                          "Viable":  true
+                                                      }
+                                          },
+                     "Scores":  {
+                                    "DTCMargin":  91.6,
+                                    "ChannelBreadth":  100,
+                                    "COGSEfficiency":  80.7,
+                                    "WaterfallHealth":  88,
+                                    "RevenueContribution":  57.2,
+                                    "PricePoint":  15.7
+                                },
+                     "CompositeScore":  74.0,
+                     "Tier":  "Core",
+                     "Actions":  [
+                                     "BUNDLE CANDIDATE - strong across all channels"
+                                 ]
+                 },
+                 {
+                     "SKU":  "12",
+                     "Name":  "Balance+ Gut Repair",
+                     "Category":  "Advanced",
+                     "MSRP":  98.88,
+                     "COGS":  12.29,
+                     "DTCMargin":  87.6,
+                     "COGSRatio":  12.4,
+                     "ViableChannels":  3,
+                     "ChannelViability":  {
+                                              "Wholesale":  {
+                                                                "NetMarginPct":  61.7,
+                                                                "Viable":  true
+                                                            },
+                                              "Distributor":  {
+                                                                  "NetMarginPct":  51.6,
+                                                                  "Viable":  true
+                                                              },
+                                              "DTC":  {
+                                                          "NetMarginPct":  49.1,
+                                                          "Viable":  true
+                                                      }
+                                          },
+                     "Scores":  {
+                                    "DTCMargin":  92.2,
+                                    "ChannelBreadth":  100,
+                                    "COGSEfficiency":  81.6,
+                                    "WaterfallHealth":  89,
+                                    "RevenueContribution":  52.4,
+                                    "PricePoint":  14.4
+                                },
+                     "CompositeScore":  73.5,
+                     "Tier":  "Core",
+                     "Actions":  [
+                                     "BUNDLE CANDIDATE - strong across all channels"
+                                 ]
+                 },
+                 {
+                     "SKU":  "13",
+                     "Name":  "BLAST+ Nitric Oxide Stack",
+                     "Category":  "Advanced",
+                     "MSRP":  98,
+                     "COGS":  11.81,
+                     "DTCMargin":  88,
+                     "COGSRatio":  12.1,
+                     "ViableChannels":  3,
+                     "ChannelViability":  {
+                                              "Wholesale":  {
+                                                                "NetMarginPct":  62.4,
+                                                                "Viable":  true
+                                                            },
+                                              "Distributor":  {
+                                                                  "NetMarginPct":  52.9,
+                                                                  "Viable":  true
+                                                              },
+                                              "DTC":  {
+                                                          "NetMarginPct":  49.4,
+                                                          "Viable":  true
+                                                      }
+                                          },
+                     "Scores":  {
+                                    "DTCMargin":  92.6,
+                                    "ChannelBreadth":  100,
+                                    "COGSEfficiency":  82.1,
+                                    "WaterfallHealth":  89,
+                                    "RevenueContribution":  51.9,
+                                    "PricePoint":  14.2
+                                },
+                     "CompositeScore":  73.6,
+                     "Tier":  "Core",
+                     "Actions":  [
+                                     "BUNDLE CANDIDATE - strong across all channels"
+                                 ]
+                 },
+                 {
+                     "SKU":  "14",
+                     "Name":  "NeuroCalm+ (Calm+)",
+                     "Category":  "Advanced",
+                     "MSRP":  128.88,
+                     "COGS":  17.61,
+                     "DTCMargin":  86.3,
+                     "COGSRatio":  13.7,
+                     "ViableChannels":  3,
+                     "ChannelViability":  {
+                                              "Wholesale":  {
+                                                                "NetMarginPct":  59.2,
+                                                                "Viable":  true
+                                                            },
+                                              "Distributor":  {
+                                                                  "NetMarginPct":  47.4,
+                                                                  "Viable":  true
+                                                              },
+                                              "DTC":  {
+                                                          "NetMarginPct":  47.8,
+                                                          "Viable":  true
+                                                      }
+                                          },
+                     "Scores":  {
+                                    "DTCMargin":  90.8,
+                                    "ChannelBreadth":  100,
+                                    "COGSEfficiency":  79.7,
+                                    "WaterfallHealth":  88,
+                                    "RevenueContribution":  68.2,
+                                    "PricePoint":  18.7
+                                },
+                     "CompositeScore":  75.8,
+                     "Tier":  "Star",
+                     "Actions":  [
+                                     "PROMOTE - increase marketing spend and inventory priority",
+                                     "BUNDLE CANDIDATE - strong across all channels"
+                                 ]
+                 },
+                 {
+                     "SKU":  "15",
+                     "Name":  "RELAX+ Sleep Support",
+                     "Category":  "Advanced",
+                     "MSRP":  88.88,
+                     "COGS":  10.42,
+                     "DTCMargin":  88.3,
+                     "COGSRatio":  11.7,
+                     "ViableChannels":  3,
+                     "ChannelViability":  {
+                                              "Wholesale":  {
+                                                                "NetMarginPct":  63.1,
+                                                                "Viable":  true
+                                                            },
+                                              "Distributor":  {
+                                                                  "NetMarginPct":  53.9,
+                                                                  "Viable":  true
+                                                              },
+                                              "DTC":  {
+                                                          "NetMarginPct":  49.8,
+                                                          "Viable":  true
+                                                      }
+                                          },
+                     "Scores":  {
+                                    "DTCMargin":  92.9,
+                                    "ChannelBreadth":  100,
+                                    "COGSEfficiency":  82.7,
+                                    "WaterfallHealth":  89,
+                                    "RevenueContribution":  47.1,
+                                    "PricePoint":  12.9
+                                },
+                     "CompositeScore":  72.8,
+                     "Tier":  "Core",
+                     "Actions":  [
+                                     "BUNDLE CANDIDATE - strong across all channels"
+                                 ]
+                 },
+                 {
+                     "SKU":  "16",
+                     "Name":  "Clean+ Detox \u0026 Liver Health",
+                     "Category":  "Advanced",
+                     "MSRP":  108.88,
+                     "COGS":  14.98,
+                     "DTCMargin":  86.2,
+                     "COGSRatio":  13.8,
+                     "ViableChannels":  3,
+                     "ChannelViability":  {
+                                              "Wholesale":  {
+                                                                "NetMarginPct":  59.0,
+                                                                "Viable":  true
+                                                            },
+                                              "Distributor":  {
+                                                                  "NetMarginPct":  47.1,
+                                                                  "Viable":  true
+                                                              },
+                                              "DTC":  {
+                                                          "NetMarginPct":  47.7,
+                                                          "Viable":  true
+                                                      }
+                                          },
+                     "Scores":  {
+                                    "DTCMargin":  90.7,
+                                    "ChannelBreadth":  100,
+                                    "COGSEfficiency":  79.6,
+                                    "WaterfallHealth":  88,
+                                    "RevenueContribution":  57.6,
+                                    "PricePoint":  15.8
+                                },
+                     "CompositeScore":  73.7,
+                     "Tier":  "Core",
+                     "Actions":  [
+                                     "BUNDLE CANDIDATE - strong across all channels"
+                                 ]
+                 },
+                 {
+                     "SKU":  "17",
+                     "Name":  "Teloprime+ Telomere Support",
+                     "Category":  "Advanced",
+                     "MSRP":  188.88,
+                     "COGS":  24.15,
+                     "DTCMargin":  87.2,
+                     "COGSRatio":  12.8,
+                     "ViableChannels":  3,
+                     "ChannelViability":  {
+                                              "Wholesale":  {
+                                                                "NetMarginPct":  60.9,
+                                                                "Viable":  true
+                                                            },
+                                              "Distributor":  {
+                                                                  "NetMarginPct":  50.4,
+                                                                  "Viable":  true
+                                                              },
+                                              "DTC":  {
+                                                          "NetMarginPct":  48.7,
+                                                          "Viable":  true
+                                                      }
+                                          },
+                     "Scores":  {
+                                    "DTCMargin":  91.8,
+                                    "ChannelBreadth":  100,
+                                    "COGSEfficiency":  81.0,
+                                    "WaterfallHealth":  88,
+                                    "RevenueContribution":  100,
+                                    "PricePoint":  27.4
+                                },
+                     "CompositeScore":  82.2,
+                     "Tier":  "Star",
+                     "Actions":  [
+                                     "PROMOTE - increase marketing spend and inventory priority",
+                                     "BUNDLE CANDIDATE - strong across all channels"
+                                 ]
+                 },
+                 {
+                     "SKU":  "18",
+                     "Name":  "DigestiZorb+ Enzyme Complex",
+                     "Category":  "Advanced",
+                     "MSRP":  48.88,
+                     "COGS":  5.58,
+                     "DTCMargin":  88.6,
+                     "COGSRatio":  11.4,
+                     "ViableChannels":  3,
+                     "ChannelViability":  {
+                                              "Wholesale":  {
+                                                                "NetMarginPct":  63.7,
+                                                                "Viable":  true
+                                                            },
+                                              "Distributor":  {
+                                                                  "NetMarginPct":  54.9,
+                                                                  "Viable":  true
+                                                              },
+                                              "DTC":  {
+                                                          "NetMarginPct":  50.1,
+                                                          "Viable":  true
+                                                      }
+                                          },
+                     "Scores":  {
+                                    "DTCMargin":  93.3,
+                                    "ChannelBreadth":  100,
+                                    "COGSEfficiency":  83.1,
+                                    "WaterfallHealth":  90,
+                                    "RevenueContribution":  25.9,
+                                    "PricePoint":  7.1
+                                },
+                     "CompositeScore":  69.1,
+                     "Tier":  "Core",
+                     "Actions":  [
+                                     "BUNDLE CANDIDATE - strong across all channels"
+                                 ]
+                 },
+                 {
+                     "SKU":  "19",
+                     "Name":  "FOCUS+ Nootropic Formula",
+                     "Category":  "Advanced",
+                     "MSRP":  158.88,
+                     "COGS":  19.41,
+                     "DTCMargin":  87.8,
+                     "COGSRatio":  12.2,
+                     "ViableChannels":  3,
+                     "ChannelViability":  {
+                                              "Wholesale":  {
+                                                                "NetMarginPct":  62.1,
+                                                                "Viable":  true
+                                                            },
+                                              "Distributor":  {
+                                                                  "NetMarginPct":  52.3,
+                                                                  "Viable":  true
+                                                              },
+                                              "DTC":  {
+                                                          "NetMarginPct":  49.3,
+                                                          "Viable":  true
+                                                      }
+                                          },
+                     "Scores":  {
+                                    "DTCMargin":  92.4,
+                                    "ChannelBreadth":  100,
+                                    "COGSEfficiency":  81.9,
+                                    "WaterfallHealth":  89,
+                                    "RevenueContribution":  84.1,
+                                    "PricePoint":  23.1
+                                },
+                     "CompositeScore":  79.6,
+                     "Tier":  "Star",
+                     "Actions":  [
+                                     "PROMOTE - increase marketing spend and inventory priority",
+                                     "BUNDLE CANDIDATE - strong across all channels"
+                                 ]
+                 },
+                 {
+                     "SKU":  "20",
+                     "Name":  "RISE+ Male Testosterone",
+                     "Category":  "Advanced",
+                     "MSRP":  128.88,
+                     "COGS":  20.54,
+                     "DTCMargin":  84.1,
+                     "COGSRatio":  15.9,
+                     "ViableChannels":  3,
+                     "ChannelViability":  {
+                                              "Wholesale":  {
+                                                                "NetMarginPct":  54.6,
+                                                                "Viable":  true
+                                                            },
+                                              "Distributor":  {
+                                                                  "NetMarginPct":  39.9,
+                                                                  "Viable":  true
+                                                              },
+                                              "DTC":  {
+                                                          "NetMarginPct":  45.6,
+                                                          "Viable":  true
+                                                      }
+                                          },
+                     "Scores":  {
+                                    "DTCMargin":  88.5,
+                                    "ChannelBreadth":  100,
+                                    "COGSEfficiency":  76.4,
+                                    "WaterfallHealth":  86,
+                                    "RevenueContribution":  68.2,
+                                    "PricePoint":  18.7
+                                },
+                     "CompositeScore":  74.4,
+                     "Tier":  "Core",
+                     "Actions":  [
+                                     "BUNDLE CANDIDATE - strong across all channels"
+                                 ]
+                 },
+                 {
+                     "SKU":  "21",
+                     "Name":  "FLEX+ Joint \u0026 Inflammation",
+                     "Category":  "Advanced",
+                     "MSRP":  98.88,
+                     "COGS":  12.72,
+                     "DTCMargin":  87.1,
+                     "COGSRatio":  12.9,
+                     "ViableChannels":  3,
+                     "ChannelViability":  {
+                                              "Wholesale":  {
+                                                                "NetMarginPct":  60.8,
+                                                                "Viable":  true
+                                                            },
+                                              "Distributor":  {
+                                                                  "NetMarginPct":  50.1,
+                                                                  "Viable":  true
+                                                              },
+                                              "DTC":  {
+                                                          "NetMarginPct":  48.6,
+                                                          "Viable":  true
+                                                      }
+                                          },
+                     "Scores":  {
+                                    "DTCMargin":  91.7,
+                                    "ChannelBreadth":  100,
+                                    "COGSEfficiency":  80.9,
+                                    "WaterfallHealth":  88,
+                                    "RevenueContribution":  52.4,
+                                    "PricePoint":  14.4
+                                },
+                     "CompositeScore":  73.1,
+                     "Tier":  "Core",
+                     "Actions":  [
+                                     "BUNDLE CANDIDATE - strong across all channels"
+                                 ]
+                 },
+                 {
+                     "SKU":  "22",
+                     "Name":  "IRON+ Red Blood Cell Support",
+                     "Category":  "Advanced",
+                     "MSRP":  108.88,
+                     "COGS":  14.13,
+                     "DTCMargin":  87,
+                     "COGSRatio":  13,
+                     "ViableChannels":  3,
+                     "ChannelViability":  {
+                                              "Wholesale":  {
+                                                                "NetMarginPct":  60.5,
+                                                                "Viable":  true
+                                                            },
+                                              "Distributor":  {
+                                                                  "NetMarginPct":  49.7,
+                                                                  "Viable":  true
+                                                              },
+                                              "DTC":  {
+                                                          "NetMarginPct":  48.5,
+                                                          "Viable":  true
+                                                      }
+                                          },
+                     "Scores":  {
+                                    "DTCMargin":  91.6,
+                                    "ChannelBreadth":  100,
+                                    "COGSEfficiency":  80.7,
+                                    "WaterfallHealth":  88,
+                                    "RevenueContribution":  57.6,
+                                    "PricePoint":  15.8
+                                },
+                     "CompositeScore":  74.0,
+                     "Tier":  "Core",
+                     "Actions":  [
+                                     "BUNDLE CANDIDATE - strong across all channels"
+                                 ]
+                 },
+                 {
+                     "SKU":  "23",
+                     "Name":  "NeuroCalm BH4+ (Advanced)",
+                     "Category":  "Advanced",
+                     "MSRP":  158.88,
+                     "COGS":  8.02,
+                     "DTCMargin":  95,
+                     "COGSRatio":  5,
+                     "ViableChannels":  3,
+                     "ChannelViability":  {
+                                              "Wholesale":  {
+                                                                "NetMarginPct":  76.4,
+                                                                "Viable":  true
+                                                            },
+                                              "Distributor":  {
+                                                                  "NetMarginPct":  76.2,
+                                                                  "Viable":  true
+                                                              },
+                                              "DTC":  {
+                                                          "NetMarginPct":  56.5,
+                                                          "Viable":  true
+                                                      }
+                                          },
+                     "Scores":  {
+                                    "DTCMargin":  100,
+                                    "ChannelBreadth":  100,
+                                    "COGSEfficiency":  92.6,
+                                    "WaterfallHealth":  96,
+                                    "RevenueContribution":  84.1,
+                                    "PricePoint":  23.1
+                                },
+                     "CompositeScore":  84.2,
+                     "Tier":  "Star",
+                     "Actions":  [
+                                     "PROMOTE - increase marketing spend and inventory priority",
+                                     "BUNDLE CANDIDATE - strong across all channels"
+                                 ]
+                 },
+                 {
+                     "SKU":  "24",
+                     "Name":  "Histamine Relief Protocol",
+                     "Category":  "Advanced",
+                     "MSRP":  158.88,
+                     "COGS":  15.01,
+                     "DTCMargin":  90.6,
+                     "COGSRatio":  9.4,
+                     "ViableChannels":  3,
+                     "ChannelViability":  {
+                                              "Wholesale":  {
+                                                                "NetMarginPct":  67.6,
+                                                                "Viable":  true
+                                                            },
+                                              "Distributor":  {
+                                                                  "NetMarginPct":  61.5,
+                                                                  "Viable":  true
+                                                              },
+                                              "DTC":  {
+                                                          "NetMarginPct":  52.1,
+                                                          "Viable":  true
+                                                      }
+                                          },
+                     "Scores":  {
+                                    "DTCMargin":  95.4,
+                                    "ChannelBreadth":  100,
+                                    "COGSEfficiency":  86.1,
+                                    "WaterfallHealth":  91,
+                                    "RevenueContribution":  84.1,
+                                    "PricePoint":  23.1
+                                },
+                     "CompositeScore":  81.3,
+                     "Tier":  "Star",
+                     "Actions":  [
+                                     "PROMOTE - increase marketing spend and inventory priority",
+                                     "BUNDLE CANDIDATE - strong across all channels"
+                                 ]
+                 },
+                 {
+                     "SKU":  "25",
+                     "Name":  "DESIRE+ Female Hormonal",
+                     "Category":  "Women",
+                     "MSRP":  88.88,
+                     "COGS":  11.78,
+                     "DTCMargin":  86.7,
+                     "COGSRatio":  13.3,
+                     "ViableChannels":  3,
+                     "ChannelViability":  {
+                                              "Wholesale":  {
+                                                                "NetMarginPct":  60.0,
+                                                                "Viable":  true
+                                                            },
+                                              "Distributor":  {
+                                                                  "NetMarginPct":  48.8,
+                                                                  "Viable":  true
+                                                              },
+                                              "DTC":  {
+                                                          "NetMarginPct":  48.2,
+                                                          "Viable":  true
+                                                      }
+                                          },
+                     "Scores":  {
+                                    "DTCMargin":  91.3,
+                                    "ChannelBreadth":  100,
+                                    "COGSEfficiency":  80.3,
+                                    "WaterfallHealth":  88,
+                                    "RevenueContribution":  35.3,
+                                    "PricePoint":  12.9
+                                },
+                     "CompositeScore":  70.1,
+                     "Tier":  "Core",
+                     "Actions":  [
+                                     "BUNDLE CANDIDATE - strong across all channels"
+                                 ]
+                 },
+                 {
+                     "SKU":  "26",
+                     "Name":  "Grow+ Pre-Natal Formula",
+                     "Category":  "Women",
+                     "MSRP":  98.88,
+                     "COGS":  15.2,
+                     "DTCMargin":  84.6,
+                     "COGSRatio":  15.4,
+                     "ViableChannels":  3,
+                     "ChannelViability":  {
+                                              "Wholesale":  {
+                                                                "NetMarginPct":  55.8,
+                                                                "Viable":  true
+                                                            },
+                                              "Distributor":  {
+                                                                  "NetMarginPct":  41.7,
+                                                                  "Viable":  true
+                                                              },
+                                              "DTC":  {
+                                                          "NetMarginPct":  46.1,
+                                                          "Viable":  true
+                                                      }
+                                          },
+                     "Scores":  {
+                                    "DTCMargin":  89.1,
+                                    "ChannelBreadth":  100,
+                                    "COGSEfficiency":  77.2,
+                                    "WaterfallHealth":  86,
+                                    "RevenueContribution":  39.3,
+                                    "PricePoint":  14.4
+                                },
+                     "CompositeScore":  69.7,
+                     "Tier":  "Core",
+                     "Actions":  [
+                                     "BUNDLE CANDIDATE - strong across all channels"
+                                 ]
+                 },
+                 {
+                     "SKU":  "27",
+                     "Name":  "Revitalizher Postnatal+",
+                     "Category":  "Women",
+                     "MSRP":  128.88,
+                     "COGS":  25.58,
+                     "DTCMargin":  80.2,
+                     "COGSRatio":  19.8,
+                     "ViableChannels":  3,
+                     "ChannelViability":  {
+                                              "Wholesale":  {
+                                                                "NetMarginPct":  46.8,
+                                                                "Viable":  true
+                                                            },
+                                              "Distributor":  {
+                                                                  "NetMarginPct":  26.8,
+                                                                  "Viable":  true
+                                                              },
+                                              "DTC":  {
+                                                          "NetMarginPct":  41.7,
+                                                          "Viable":  true
+                                                      }
+                                          },
+                     "Scores":  {
+                                    "DTCMargin":  84.4,
+                                    "ChannelBreadth":  100,
+                                    "COGSEfficiency":  70.7,
+                                    "WaterfallHealth":  82,
+                                    "RevenueContribution":  51.2,
+                                    "PricePoint":  18.7
+                                },
+                     "CompositeScore":  69.4,
+                     "Tier":  "Core",
+                     "Actions":  [
+                                     "BUNDLE CANDIDATE - strong across all channels"
+                                 ]
+                 },
+                 {
+                     "SKU":  "28",
+                     "Name":  "Thrive+ Post-Natal GLP-1",
+                     "Category":  "Women",
+                     "MSRP":  128.88,
+                     "COGS":  21.63,
+                     "DTCMargin":  83.2,
+                     "COGSRatio":  16.8,
+                     "ViableChannels":  3,
+                     "ChannelViability":  {
+                                              "Wholesale":  {
+                                                                "NetMarginPct":  52.9,
+                                                                "Viable":  true
+                                                            },
+                                              "Distributor":  {
+                                                                  "NetMarginPct":  37.0,
+                                                                  "Viable":  true
+                                                              },
+                                              "DTC":  {
+                                                          "NetMarginPct":  44.7,
+                                                          "Viable":  true
+                                                      }
+                                          },
+                     "Scores":  {
+                                    "DTCMargin":  87.6,
+                                    "ChannelBreadth":  100,
+                                    "COGSEfficiency":  75.1,
+                                    "WaterfallHealth":  85,
+                                    "RevenueContribution":  51.2,
+                                    "PricePoint":  18.7
+                                },
+                     "CompositeScore":  71.3,
+                     "Tier":  "Core",
+                     "Actions":  [
+                                     "BUNDLE CANDIDATE - strong across all channels"
+                                 ]
+                 },
+                 {
+                     "SKU":  "29",
+                     "Name":  "Sproutables Infant Tincture",
+                     "Category":  "Children",
+                     "MSRP":  48.88,
+                     "COGS":  4.85,
+                     "DTCMargin":  90.1,
+                     "COGSRatio":  9.9,
+                     "ViableChannels":  3,
+                     "ChannelViability":  {
+                                              "Wholesale":  {
+                                                                "NetMarginPct":  66.7,
+                                                                "Viable":  true
+                                                            },
+                                              "Distributor":  {
+                                                                  "NetMarginPct":  59.9,
+                                                                  "Viable":  true
+                                                              },
+                                              "DTC":  {
+                                                          "NetMarginPct":  51.6,
+                                                          "Viable":  true
+                                                      }
+                                          },
+                     "Scores":  {
+                                    "DTCMargin":  94.8,
+                                    "ChannelBreadth":  100,
+                                    "COGSEfficiency":  85.3,
+                                    "WaterfallHealth":  91,
+                                    "RevenueContribution":  16.2,
+                                    "PricePoint":  7.1
+                                },
+                     "CompositeScore":  68.4,
+                     "Tier":  "Core",
+                     "Actions":  [
+                                     "BUNDLE CANDIDATE - strong across all channels"
+                                 ]
+                 },
+                 {
+                     "SKU":  "30",
+                     "Name":  "Sproutables Toddler Tablets",
+                     "Category":  "Children",
+                     "MSRP":  58.88,
+                     "COGS":  6.74,
+                     "DTCMargin":  88.6,
+                     "COGSRatio":  11.4,
+                     "ViableChannels":  3,
+                     "ChannelViability":  {
+                                              "Wholesale":  {
+                                                                "NetMarginPct":  63.6,
+                                                                "Viable":  true
+                                                            },
+                                              "Distributor":  {
+                                                                  "NetMarginPct":  54.8,
+                                                                  "Viable":  true
+                                                              },
+                                              "DTC":  {
+                                                          "NetMarginPct":  50.1,
+                                                          "Viable":  true
+                                                      }
+                                          },
+                     "Scores":  {
+                                    "DTCMargin":  93.3,
+                                    "ChannelBreadth":  100,
+                                    "COGSEfficiency":  83.1,
+                                    "WaterfallHealth":  90,
+                                    "RevenueContribution":  19.5,
+                                    "PricePoint":  8.5
+                                },
+                     "CompositeScore":  68.3,
+                     "Tier":  "Core",
+                     "Actions":  [
+                                     "BUNDLE CANDIDATE - strong across all channels"
+                                 ]
+                 },
+                 {
+                     "SKU":  "31",
+                     "Name":  "Sproutables Children Gummies",
+                     "Category":  "Children",
+                     "MSRP":  58.88,
+                     "COGS":  7.35,
+                     "DTCMargin":  87.5,
+                     "COGSRatio":  12.5,
+                     "ViableChannels":  3,
+                     "ChannelViability":  {
+                                              "Wholesale":  {
+                                                                "NetMarginPct":  61.5,
+                                                                "Viable":  true
+                                                            },
+                                              "Distributor":  {
+                                                                  "NetMarginPct":  51.4,
+                                                                  "Viable":  true
+                                                              },
+                                              "DTC":  {
+                                                          "NetMarginPct":  49.0,
+                                                          "Viable":  true
+                                                      }
+                                          },
+                     "Scores":  {
+                                    "DTCMargin":  92.1,
+                                    "ChannelBreadth":  100,
+                                    "COGSEfficiency":  81.5,
+                                    "WaterfallHealth":  89,
+                                    "RevenueContribution":  19.5,
+                                    "PricePoint":  8.5
+                                },
+                     "CompositeScore":  67.6,
+                     "Tier":  "Core",
+                     "Actions":  [
+                                     "BUNDLE CANDIDATE - strong across all channels"
+                                 ]
+                 },
+                 {
+                     "SKU":  "32",
+                     "Name":  "ACAT+ Mitochondrial Support",
+                     "Category":  "SNP",
+                     "MSRP":  108.88,
+                     "COGS":  12.21,
+                     "DTCMargin":  88.8,
+                     "COGSRatio":  11.2,
+                     "ViableChannels":  3,
+                     "ChannelViability":  {
+                                              "Wholesale":  {
+                                                                "NetMarginPct":  64.1,
+                                                                "Viable":  true
+                                                            },
+                                              "Distributor":  {
+                                                                  "NetMarginPct":  55.6,
+                                                                  "Viable":  true
+                                                              },
+                                              "DTC":  {
+                                                          "NetMarginPct":  50.3,
+                                                          "Viable":  true
+                                                      }
+                                          },
+                     "Scores":  {
+                                    "DTCMargin":  93.5,
+                                    "ChannelBreadth":  100,
+                                    "COGSEfficiency":  83.4,
+                                    "WaterfallHealth":  90,
+                                    "RevenueContribution":  21.6,
+                                    "PricePoint":  15.8
+                                },
+                     "CompositeScore":  69.8,
+                     "Tier":  "Core",
+                     "Actions":  [
+                                     "BUNDLE CANDIDATE - strong across all channels"
+                                 ]
+                 },
+                 {
+                     "SKU":  "33",
+                     "Name":  "ACHY+ Acetylcholine Support",
+                     "Category":  "SNP",
+                     "MSRP":  108.88,
+                     "COGS":  18.5,
+                     "DTCMargin":  83,
+                     "COGSRatio":  17,
+                     "ViableChannels":  3,
+                     "ChannelViability":  {
+                                              "Wholesale":  {
+                                                                "NetMarginPct":  52.5,
+                                                                "Viable":  true
+                                                            },
+                                              "Distributor":  {
+                                                                  "NetMarginPct":  36.3,
+                                                                  "Viable":  true
+                                                              },
+                                              "DTC":  {
+                                                          "NetMarginPct":  44.5,
+                                                          "Viable":  true
+                                                      }
+                                          },
+                     "Scores":  {
+                                    "DTCMargin":  87.4,
+                                    "ChannelBreadth":  100,
+                                    "COGSEfficiency":  74.8,
+                                    "WaterfallHealth":  85,
+                                    "RevenueContribution":  21.6,
+                                    "PricePoint":  15.8
+                                },
+                     "CompositeScore":  66.3,
+                     "Tier":  "Core",
+                     "Actions":  [
+                                     "BUNDLE CANDIDATE - strong across all channels"
+                                 ]
+                 },
+                 {
+                     "SKU":  "34",
+                     "Name":  "ADO Support+ Purine Metabolism",
+                     "Category":  "SNP",
+                     "MSRP":  108.88,
+                     "COGS":  13.54,
+                     "DTCMargin":  87.6,
+                     "COGSRatio":  12.4,
+                     "ViableChannels":  3,
+                     "ChannelViability":  {
+                                              "Wholesale":  {
+                                                                "NetMarginPct":  61.6,
+                                                                "Viable":  true
+                                                            },
+                                              "Distributor":  {
+                                                                  "NetMarginPct":  51.5,
+                                                                  "Viable":  true
+                                                              },
+                                              "DTC":  {
+                                                          "NetMarginPct":  49.1,
+                                                          "Viable":  true
+                                                      }
+                                          },
+                     "Scores":  {
+                                    "DTCMargin":  92.2,
+                                    "ChannelBreadth":  100,
+                                    "COGSEfficiency":  81.6,
+                                    "WaterfallHealth":  89,
+                                    "RevenueContribution":  21.6,
+                                    "PricePoint":  15.8
+                                },
+                     "CompositeScore":  69.1,
+                     "Tier":  "Core",
+                     "Actions":  [
+                                     "BUNDLE CANDIDATE - strong across all channels"
+                                 ]
+                 },
+                 {
+                     "SKU":  "35",
+                     "Name":  "BHMT+ Methylation Support",
+                     "Category":  "SNP",
+                     "MSRP":  108.88,
+                     "COGS":  14.13,
+                     "DTCMargin":  87,
+                     "COGSRatio":  13,
+                     "ViableChannels":  3,
+                     "ChannelViability":  {
+                                              "Wholesale":  {
+                                                                "NetMarginPct":  60.5,
+                                                                "Viable":  true
+                                                            },
+                                              "Distributor":  {
+                                                                  "NetMarginPct":  49.7,
+                                                                  "Viable":  true
+                                                              },
+                                              "DTC":  {
+                                                          "NetMarginPct":  48.5,
+                                                          "Viable":  true
+                                                      }
+                                          },
+                     "Scores":  {
+                                    "DTCMargin":  91.6,
+                                    "ChannelBreadth":  100,
+                                    "COGSEfficiency":  80.7,
+                                    "WaterfallHealth":  88,
+                                    "RevenueContribution":  21.6,
+                                    "PricePoint":  15.8
+                                },
+                     "CompositeScore":  68.6,
+                     "Tier":  "Core",
+                     "Actions":  [
+                                     "BUNDLE CANDIDATE - strong across all channels"
+                                 ]
+                 },
+                 {
+                     "SKU":  "36",
+                     "Name":  "CBS Support+ Sulfur Pathway",
+                     "Category":  "SNP",
+                     "MSRP":  108.88,
+                     "COGS":  12.92,
+                     "DTCMargin":  88.1,
+                     "COGSRatio":  11.9,
+                     "ViableChannels":  3,
+                     "ChannelViability":  {
+                                              "Wholesale":  {
+                                                                "NetMarginPct":  62.8,
+                                                                "Viable":  true
+                                                            },
+                                              "Distributor":  {
+                                                                  "NetMarginPct":  53.4,
+                                                                  "Viable":  true
+                                                              },
+                                              "DTC":  {
+                                                          "NetMarginPct":  49.6,
+                                                          "Viable":  true
+                                                      }
+                                          },
+                     "Scores":  {
+                                    "DTCMargin":  92.7,
+                                    "ChannelBreadth":  100,
+                                    "COGSEfficiency":  82.4,
+                                    "WaterfallHealth":  89,
+                                    "RevenueContribution":  21.6,
+                                    "PricePoint":  15.8
+                                },
+                     "CompositeScore":  69.3,
+                     "Tier":  "Core",
+                     "Actions":  [
+                                     "BUNDLE CANDIDATE - strong across all channels"
+                                 ]
+                 },
+                 {
+                     "SKU":  "37",
+                     "Name":  "COMT+ Neurotransmitter Balance",
+                     "Category":  "SNP",
+                     "MSRP":  108.88,
+                     "COGS":  15.13,
+                     "DTCMargin":  86.1,
+                     "COGSRatio":  13.9,
+                     "ViableChannels":  3,
+                     "ChannelViability":  {
+                                              "Wholesale":  {
+                                                                "NetMarginPct":  58.7,
+                                                                "Viable":  true
+                                                            },
+                                              "Distributor":  {
+                                                                  "NetMarginPct":  46.7,
+                                                                  "Viable":  true
+                                                              },
+                                              "DTC":  {
+                                                          "NetMarginPct":  47.6,
+                                                          "Viable":  true
+                                                      }
+                                          },
+                     "Scores":  {
+                                    "DTCMargin":  90.6,
+                                    "ChannelBreadth":  100,
+                                    "COGSEfficiency":  79.4,
+                                    "WaterfallHealth":  87,
+                                    "RevenueContribution":  21.6,
+                                    "PricePoint":  15.8
+                                },
+                     "CompositeScore":  68.0,
+                     "Tier":  "Core",
+                     "Actions":  [
+                                     "BUNDLE CANDIDATE - strong across all channels"
+                                 ]
+                 },
+                 {
+                     "SKU":  "38",
+                     "Name":  "DAO+ Histamine Balance",
+                     "Category":  "SNP",
+                     "MSRP":  108.88,
+                     "COGS":  14.83,
+                     "DTCMargin":  86.4,
+                     "COGSRatio":  13.6,
+                     "ViableChannels":  3,
+                     "ChannelViability":  {
+                                              "Wholesale":  {
+                                                                "NetMarginPct":  59.3,
+                                                                "Viable":  true
+                                                            },
+                                              "Distributor":  {
+                                                                  "NetMarginPct":  47.6,
+                                                                  "Viable":  true
+                                                              },
+                                              "DTC":  {
+                                                          "NetMarginPct":  47.9,
+                                                          "Viable":  true
+                                                      }
+                                          },
+                     "Scores":  {
+                                    "DTCMargin":  90.9,
+                                    "ChannelBreadth":  100,
+                                    "COGSEfficiency":  79.9,
+                                    "WaterfallHealth":  88,
+                                    "RevenueContribution":  21.6,
+                                    "PricePoint":  15.8
+                                },
+                     "CompositeScore":  68.4,
+                     "Tier":  "Core",
+                     "Actions":  [
+                                     "BUNDLE CANDIDATE - strong across all channels"
+                                 ]
+                 },
+                 {
+                     "SKU":  "39",
+                     "Name":  "GST+ Cellular Detox",
+                     "Category":  "SNP",
+                     "MSRP":  118.88,
+                     "COGS":  20.47,
+                     "DTCMargin":  82.8,
+                     "COGSRatio":  17.2,
+                     "ViableChannels":  3,
+                     "ChannelViability":  {
+                                              "Wholesale":  {
+                                                                "NetMarginPct":  52.1,
+                                                                "Viable":  true
+                                                            },
+                                              "Distributor":  {
+                                                                  "NetMarginPct":  35.6,
+                                                                  "Viable":  true
+                                                              },
+                                              "DTC":  {
+                                                          "NetMarginPct":  44.3,
+                                                          "Viable":  true
+                                                      }
+                                          },
+                     "Scores":  {
+                                    "DTCMargin":  87.2,
+                                    "ChannelBreadth":  100,
+                                    "COGSEfficiency":  74.5,
+                                    "WaterfallHealth":  84,
+                                    "RevenueContribution":  23.6,
+                                    "PricePoint":  17.3
+                                },
+                     "CompositeScore":  66.6,
+                     "Tier":  "Core",
+                     "Actions":  [
+                                     "BUNDLE CANDIDATE - strong across all channels"
+                                 ]
+                 },
+                 {
+                     "SKU":  "40",
+                     "Name":  "MAOA+ Neurochemical Balance",
+                     "Category":  "SNP",
+                     "MSRP":  118.88,
+                     "COGS":  20.35,
+                     "DTCMargin":  82.9,
+                     "COGSRatio":  17.1,
+                     "ViableChannels":  3,
+                     "ChannelViability":  {
+                                              "Wholesale":  {
+                                                                "NetMarginPct":  52.3,
+                                                                "Viable":  true
+                                                            },
+                                              "Distributor":  {
+                                                                  "NetMarginPct":  35.9,
+                                                                  "Viable":  true
+                                                              },
+                                              "DTC":  {
+                                                          "NetMarginPct":  44.4,
+                                                          "Viable":  true
+                                                      }
+                                          },
+                     "Scores":  {
+                                    "DTCMargin":  87.3,
+                                    "ChannelBreadth":  100,
+                                    "COGSEfficiency":  74.7,
+                                    "WaterfallHealth":  84,
+                                    "RevenueContribution":  23.6,
+                                    "PricePoint":  17.3
+                                },
+                     "CompositeScore":  66.6,
+                     "Tier":  "Core",
+                     "Actions":  [
+                                     "BUNDLE CANDIDATE - strong across all channels"
+                                 ]
+                 },
+                 {
+                     "SKU":  "41",
+                     "Name":  "MTHFR+ Folate Metabolism",
+                     "Category":  "SNP",
+                     "MSRP":  118.88,
+                     "COGS":  18.46,
+                     "DTCMargin":  84.5,
+                     "COGSRatio":  15.5,
+                     "ViableChannels":  3,
+                     "ChannelViability":  {
+                                              "Wholesale":  {
+                                                                "NetMarginPct":  55.5,
+                                                                "Viable":  true
+                                                            },
+                                              "Distributor":  {
+                                                                  "NetMarginPct":  41.2,
+                                                                  "Viable":  true
+                                                              },
+                                              "DTC":  {
+                                                          "NetMarginPct":  46.0,
+                                                          "Viable":  true
+                                                      }
+                                          },
+                     "Scores":  {
+                                    "DTCMargin":  88.9,
+                                    "ChannelBreadth":  100,
+                                    "COGSEfficiency":  77.0,
+                                    "WaterfallHealth":  86,
+                                    "RevenueContribution":  23.6,
+                                    "PricePoint":  17.3
+                                },
+                     "CompositeScore":  67.7,
+                     "Tier":  "Core",
+                     "Actions":  [
+                                     "BUNDLE CANDIDATE - strong across all channels"
+                                 ]
+                 },
+                 {
+                     "SKU":  "42",
+                     "Name":  "MTR+ Methylation Matrix",
+                     "Category":  "SNP",
+                     "MSRP":  118.88,
+                     "COGS":  16.54,
+                     "DTCMargin":  86.1,
+                     "COGSRatio":  13.9,
+                     "ViableChannels":  3,
+                     "ChannelViability":  {
+                                              "Wholesale":  {
+                                                                "NetMarginPct":  58.7,
+                                                                "Viable":  true
+                                                            },
+                                              "Distributor":  {
+                                                                  "NetMarginPct":  46.6,
+                                                                  "Viable":  true
+                                                              },
+                                              "DTC":  {
+                                                          "NetMarginPct":  47.6,
+                                                          "Viable":  true
+                                                      }
+                                          },
+                     "Scores":  {
+                                    "DTCMargin":  90.6,
+                                    "ChannelBreadth":  100,
+                                    "COGSEfficiency":  79.4,
+                                    "WaterfallHealth":  87,
+                                    "RevenueContribution":  23.6,
+                                    "PricePoint":  17.3
+                                },
+                     "CompositeScore":  68.6,
+                     "Tier":  "Core",
+                     "Actions":  [
+                                     "BUNDLE CANDIDATE - strong across all channels"
+                                 ]
+                 },
+                 {
+                     "SKU":  "43",
+                     "Name":  "MTRR+ Methylcobalamin Regen",
+                     "Category":  "SNP",
+                     "MSRP":  118.88,
+                     "COGS":  16.26,
+                     "DTCMargin":  86.3,
+                     "COGSRatio":  13.7,
+                     "ViableChannels":  3,
+                     "ChannelViability":  {
+                                              "Wholesale":  {
+                                                                "NetMarginPct":  59.2,
+                                                                "Viable":  true
+                                                            },
+                                              "Distributor":  {
+                                                                  "NetMarginPct":  47.4,
+                                                                  "Viable":  true
+                                                              },
+                                              "DTC":  {
+                                                          "NetMarginPct":  47.8,
+                                                          "Viable":  true
+                                                      }
+                                          },
+                     "Scores":  {
+                                    "DTCMargin":  90.8,
+                                    "ChannelBreadth":  100,
+                                    "COGSEfficiency":  79.7,
+                                    "WaterfallHealth":  88,
+                                    "RevenueContribution":  23.6,
+                                    "PricePoint":  17.3
+                                },
+                     "CompositeScore":  68.8,
+                     "Tier":  "Core",
+                     "Actions":  [
+                                     "BUNDLE CANDIDATE - strong across all channels"
+                                 ]
+                 },
+                 {
+                     "SKU":  "44",
+                     "Name":  "NAT Support+ Acetylation",
+                     "Category":  "SNP",
+                     "MSRP":  118.88,
+                     "COGS":  19.39,
+                     "DTCMargin":  83.7,
+                     "COGSRatio":  16.3,
+                     "ViableChannels":  3,
+                     "ChannelViability":  {
+                                              "Wholesale":  {
+                                                                "NetMarginPct":  53.9,
+                                                                "Viable":  true
+                                                            },
+                                              "Distributor":  {
+                                                                  "NetMarginPct":  38.6,
+                                                                  "Viable":  true
+                                                              },
+                                              "DTC":  {
+                                                          "NetMarginPct":  45.2,
+                                                          "Viable":  true
+                                                      }
+                                          },
+                     "Scores":  {
+                                    "DTCMargin":  88.1,
+                                    "ChannelBreadth":  100,
+                                    "COGSEfficiency":  75.9,
+                                    "WaterfallHealth":  85,
+                                    "RevenueContribution":  23.6,
+                                    "PricePoint":  17.3
+                                },
+                     "CompositeScore":  67.1,
+                     "Tier":  "Core",
+                     "Actions":  [
+                                     "BUNDLE CANDIDATE - strong across all channels"
+                                 ]
+                 },
+                 {
+                     "SKU":  "45",
+                     "Name":  "NOS+ Vascular Integrity",
+                     "Category":  "SNP",
+                     "MSRP":  118.88,
+                     "COGS":  16.68,
+                     "DTCMargin":  86,
+                     "COGSRatio":  14,
+                     "ViableChannels":  3,
+                     "ChannelViability":  {
+                                              "Wholesale":  {
+                                                                "NetMarginPct":  58.4,
+                                                                "Viable":  true
+                                                            },
+                                              "Distributor":  {
+                                                                  "NetMarginPct":  46.2,
+                                                                  "Viable":  true
+                                                              },
+                                              "DTC":  {
+                                                          "NetMarginPct":  47.5,
+                                                          "Viable":  true
+                                                      }
+                                          },
+                     "Scores":  {
+                                    "DTCMargin":  90.5,
+                                    "ChannelBreadth":  100,
+                                    "COGSEfficiency":  79.3,
+                                    "WaterfallHealth":  87,
+                                    "RevenueContribution":  23.6,
+                                    "PricePoint":  17.3
+                                },
+                     "CompositeScore":  68.5,
+                     "Tier":  "Core",
+                     "Actions":  [
+                                     "BUNDLE CANDIDATE - strong across all channels"
+                                 ]
+                 },
+                 {
+                     "SKU":  "46",
+                     "Name":  "RFC1 Support+ Folate Transport",
+                     "Category":  "SNP",
+                     "MSRP":  108.88,
+                     "COGS":  14.88,
+                     "DTCMargin":  86.3,
+                     "COGSRatio":  13.7,
+                     "ViableChannels":  3,
+                     "ChannelViability":  {
+                                              "Wholesale":  {
+                                                                "NetMarginPct":  59.2,
+                                                                "Viable":  true
+                                                            },
+                                              "Distributor":  {
+                                                                  "NetMarginPct":  47.4,
+                                                                  "Viable":  true
+                                                              },
+                                              "DTC":  {
+                                                          "NetMarginPct":  47.8,
+                                                          "Viable":  true
+                                                      }
+                                          },
+                     "Scores":  {
+                                    "DTCMargin":  90.8,
+                                    "ChannelBreadth":  100,
+                                    "COGSEfficiency":  79.7,
+                                    "WaterfallHealth":  88,
+                                    "RevenueContribution":  21.6,
+                                    "PricePoint":  15.8
+                                },
+                     "CompositeScore":  68.3,
+                     "Tier":  "Core",
+                     "Actions":  [
+                                     "BUNDLE CANDIDATE - strong across all channels"
+                                 ]
+                 },
+                 {
+                     "SKU":  "47",
+                     "Name":  "SHMT+ Glycine-Folate Balance",
+                     "Category":  "SNP",
+                     "MSRP":  108.88,
+                     "COGS":  11.98,
+                     "DTCMargin":  89,
+                     "COGSRatio":  11,
+                     "ViableChannels":  3,
+                     "ChannelViability":  {
+                                              "Wholesale":  {
+                                                                "NetMarginPct":  64.5,
+                                                                "Viable":  true
+                                                            },
+                                              "Distributor":  {
+                                                                  "NetMarginPct":  56.3,
+                                                                  "Viable":  true
+                                                              },
+                                              "DTC":  {
+                                                          "NetMarginPct":  50.5,
+                                                          "Viable":  true
+                                                      }
+                                          },
+                     "Scores":  {
+                                    "DTCMargin":  93.7,
+                                    "ChannelBreadth":  100,
+                                    "COGSEfficiency":  83.7,
+                                    "WaterfallHealth":  90,
+                                    "RevenueContribution":  21.6,
+                                    "PricePoint":  15.8
+                                },
+                     "CompositeScore":  69.9,
+                     "Tier":  "Core",
+                     "Actions":  [
+                                     "BUNDLE CANDIDATE - strong across all channels"
+                                 ]
+                 },
+                 {
+                     "SKU":  "48",
+                     "Name":  "SOD+ Antioxidant Defense",
+                     "Category":  "SNP",
+                     "MSRP":  108.88,
+                     "COGS":  16.25,
+                     "DTCMargin":  85.1,
+                     "COGSRatio":  14.9,
+                     "ViableChannels":  3,
+                     "ChannelViability":  {
+                                              "Wholesale":  {
+                                                                "NetMarginPct":  56.6,
+                                                                "Viable":  true
+                                                            },
+                                              "Distributor":  {
+                                                                  "NetMarginPct":  43.2,
+                                                                  "Viable":  true
+                                                              },
+                                              "DTC":  {
+                                                          "NetMarginPct":  46.6,
+                                                          "Viable":  true
+                                                      }
+                                          },
+                     "Scores":  {
+                                    "DTCMargin":  89.6,
+                                    "ChannelBreadth":  100,
+                                    "COGSEfficiency":  77.9,
+                                    "WaterfallHealth":  86,
+                                    "RevenueContribution":  21.6,
+                                    "PricePoint":  15.8
+                                },
+                     "CompositeScore":  67.4,
+                     "Tier":  "Core",
+                     "Actions":  [
+                                     "BUNDLE CANDIDATE - strong across all channels"
+                                 ]
+                 },
+                 {
+                     "SKU":  "49",
+                     "Name":  "SUOX+ Sulfite Clearance",
+                     "Category":  "SNP",
+                     "MSRP":  108.88,
+                     "COGS":  14.44,
+                     "DTCMargin":  86.7,
+                     "COGSRatio":  13.3,
+                     "ViableChannels":  3,
+                     "ChannelViability":  {
+                                              "Wholesale":  {
+                                                                "NetMarginPct":  60.0,
+                                                                "Viable":  true
+                                                            },
+                                              "Distributor":  {
+                                                                  "NetMarginPct":  48.8,
+                                                                  "Viable":  true
+                                                              },
+                                              "DTC":  {
+                                                          "NetMarginPct":  48.2,
+                                                          "Viable":  true
+                                                      }
+                                          },
+                     "Scores":  {
+                                    "DTCMargin":  91.3,
+                                    "ChannelBreadth":  100,
+                                    "COGSEfficiency":  80.3,
+                                    "WaterfallHealth":  88,
+                                    "RevenueContribution":  21.6,
+                                    "PricePoint":  15.8
+                                },
+                     "CompositeScore":  68.5,
+                     "Tier":  "Core",
+                     "Actions":  [
+                                     "BUNDLE CANDIDATE - strong across all channels"
+                                 ]
+                 },
+                 {
+                     "SKU":  "50",
+                     "Name":  "TCN2+ B12 Transport",
+                     "Category":  "SNP",
+                     "MSRP":  108.88,
+                     "COGS":  14.78,
+                     "DTCMargin":  86.4,
+                     "COGSRatio":  13.6,
+                     "ViableChannels":  3,
+                     "ChannelViability":  {
+                                              "Wholesale":  {
+                                                                "NetMarginPct":  59.3,
+                                                                "Viable":  true
+                                                            },
+                                              "Distributor":  {
+                                                                  "NetMarginPct":  47.7,
+                                                                  "Viable":  true
+                                                              },
+                                              "DTC":  {
+                                                          "NetMarginPct":  47.9,
+                                                          "Viable":  true
+                                                      }
+                                          },
+                     "Scores":  {
+                                    "DTCMargin":  90.9,
+                                    "ChannelBreadth":  100,
+                                    "COGSEfficiency":  79.9,
+                                    "WaterfallHealth":  88,
+                                    "RevenueContribution":  21.6,
+                                    "PricePoint":  15.8
+                                },
+                     "CompositeScore":  68.4,
+                     "Tier":  "Core",
+                     "Actions":  [
+                                     "BUNDLE CANDIDATE - strong across all channels"
+                                 ]
+                 },
+                 {
+                     "SKU":  "51",
+                     "Name":  "VDR+ Receptor Activation",
+                     "Category":  "SNP",
+                     "MSRP":  108.88,
+                     "COGS":  15.34,
+                     "DTCMargin":  85.9,
+                     "COGSRatio":  14.1,
+                     "ViableChannels":  3,
+                     "ChannelViability":  {
+                                              "Wholesale":  {
+                                                                "NetMarginPct":  58.3,
+                                                                "Viable":  true
+                                                            },
+                                              "Distributor":  {
+                                                                  "NetMarginPct":  46.0,
+                                                                  "Viable":  true
+                                                              },
+                                              "DTC":  {
+                                                          "NetMarginPct":  47.4,
+                                                          "Viable":  true
+                                                      }
+                                          },
+                     "Scores":  {
+                                    "DTCMargin":  90.4,
+                                    "ChannelBreadth":  100,
+                                    "COGSEfficiency":  79.1,
+                                    "WaterfallHealth":  87,
+                                    "RevenueContribution":  21.6,
+                                    "PricePoint":  15.8
+                                },
+                     "CompositeScore":  68.0,
+                     "Tier":  "Core",
+                     "Actions":  [
+                                     "BUNDLE CANDIDATE - strong across all channels"
+                                 ]
+                 },
+                 {
+                     "SKU":  "52",
+                     "Name":  "Chaga Mushroom Capsules",
+                     "Category":  "Mushroom",
+                     "MSRP":  58.88,
+                     "COGS":  9.77,
+                     "DTCMargin":  83.4,
+                     "COGSRatio":  16.6,
+                     "ViableChannels":  3,
+                     "ChannelViability":  {
+                                              "Wholesale":  {
+                                                                "NetMarginPct":  53.3,
+                                                                "Viable":  true
+                                                            },
+                                              "Distributor":  {
+                                                                  "NetMarginPct":  37.7,
+                                                                  "Viable":  true
+                                                              },
+                                              "DTC":  {
+                                                          "NetMarginPct":  44.9,
+                                                          "Viable":  true
+                                                      }
+                                          },
+                     "Scores":  {
+                                    "DTCMargin":  87.8,
+                                    "ChannelBreadth":  100,
+                                    "COGSEfficiency":  75.4,
+                                    "WaterfallHealth":  85,
+                                    "RevenueContribution":  27.3,
+                                    "PricePoint":  8.5
+                                },
+                     "CompositeScore":  66.2,
+                     "Tier":  "Core",
+                     "Actions":  [
+                                     "BUNDLE CANDIDATE - strong across all channels"
+                                 ]
+                 },
+                 {
+                     "SKU":  "53",
+                     "Name":  "Cordyceps Mushroom Capsules",
+                     "Category":  "Mushroom",
+                     "MSRP":  58.88,
+                     "COGS":  9.77,
+                     "DTCMargin":  83.4,
+                     "COGSRatio":  16.6,
+                     "ViableChannels":  3,
+                     "ChannelViability":  {
+                                              "Wholesale":  {
+                                                                "NetMarginPct":  53.3,
+                                                                "Viable":  true
+                                                            },
+                                              "Distributor":  {
+                                                                  "NetMarginPct":  37.7,
+                                                                  "Viable":  true
+                                                              },
+                                              "DTC":  {
+                                                          "NetMarginPct":  44.9,
+                                                          "Viable":  true
+                                                      }
+                                          },
+                     "Scores":  {
+                                    "DTCMargin":  87.8,
+                                    "ChannelBreadth":  100,
+                                    "COGSEfficiency":  75.4,
+                                    "WaterfallHealth":  85,
+                                    "RevenueContribution":  27.3,
+                                    "PricePoint":  8.5
+                                },
+                     "CompositeScore":  66.2,
+                     "Tier":  "Core",
+                     "Actions":  [
+                                     "BUNDLE CANDIDATE - strong across all channels"
+                                 ]
+                 },
+                 {
+                     "SKU":  "54",
+                     "Name":  "Lions Mane Mushroom Capsules",
+                     "Category":  "Mushroom",
+                     "MSRP":  58.88,
+                     "COGS":  7.61,
+                     "DTCMargin":  87.1,
+                     "COGSRatio":  12.9,
+                     "ViableChannels":  3,
+                     "ChannelViability":  {
+                                              "Wholesale":  {
+                                                                "NetMarginPct":  60.7,
+                                                                "Viable":  true
+                                                            },
+                                              "Distributor":  {
+                                                                  "NetMarginPct":  49.9,
+                                                                  "Viable":  true
+                                                              },
+                                              "DTC":  {
+                                                          "NetMarginPct":  48.6,
+                                                          "Viable":  true
+                                                      }
+                                          },
+                     "Scores":  {
+                                    "DTCMargin":  91.7,
+                                    "ChannelBreadth":  100,
+                                    "COGSEfficiency":  80.9,
+                                    "WaterfallHealth":  88,
+                                    "RevenueContribution":  27.3,
+                                    "PricePoint":  8.5
+                                },
+                     "CompositeScore":  68.4,
+                     "Tier":  "Core",
+                     "Actions":  [
+                                     "BUNDLE CANDIDATE - strong across all channels"
+                                 ]
+                 },
+                 {
+                     "SKU":  "55",
+                     "Name":  "Reishi Mushroom Capsules",
+                     "Category":  "Mushroom",
+                     "MSRP":  58.88,
+                     "COGS":  7.07,
+                     "DTCMargin":  88,
+                     "COGSRatio":  12,
+                     "ViableChannels":  3,
+                     "ChannelViability":  {
+                                              "Wholesale":  {
+                                                                "NetMarginPct":  62.5,
+                                                                "Viable":  true
+                                                            },
+                                              "Distributor":  {
+                                                                  "NetMarginPct":  52.9,
+                                                                  "Viable":  true
+                                                              },
+                                              "DTC":  {
+                                                          "NetMarginPct":  49.5,
+                                                          "Viable":  true
+                                                      }
+                                          },
+                     "Scores":  {
+                                    "DTCMargin":  92.6,
+                                    "ChannelBreadth":  100,
+                                    "COGSEfficiency":  82.2,
+                                    "WaterfallHealth":  89,
+                                    "RevenueContribution":  27.3,
+                                    "PricePoint":  8.5
+                                },
+                     "CompositeScore":  69.0,
+                     "Tier":  "Core",
+                     "Actions":  [
+                                     "BUNDLE CANDIDATE - strong across all channels"
+                                 ]
+                 },
+                 {
+                     "SKU":  "56",
+                     "Name":  "Turkey Tail Mushroom Capsules",
+                     "Category":  "Mushroom",
+                     "MSRP":  58.88,
+                     "COGS":  7.07,
+                     "DTCMargin":  88,
+                     "COGSRatio":  12,
+                     "ViableChannels":  3,
+                     "ChannelViability":  {
+                                              "Wholesale":  {
+                                                                "NetMarginPct":  62.5,
+                                                                "Viable":  true
+                                                            },
+                                              "Distributor":  {
+                                                                  "NetMarginPct":  52.9,
+                                                                  "Viable":  true
+                                                              },
+                                              "DTC":  {
+                                                          "NetMarginPct":  49.5,
+                                                          "Viable":  true
+                                                      }
+                                          },
+                     "Scores":  {
+                                    "DTCMargin":  92.6,
+                                    "ChannelBreadth":  100,
+                                    "COGSEfficiency":  82.2,
+                                    "WaterfallHealth":  89,
+                                    "RevenueContribution":  27.3,
+                                    "PricePoint":  8.5
+                                },
+                     "CompositeScore":  69.0,
+                     "Tier":  "Core",
+                     "Actions":  [
+                                     "BUNDLE CANDIDATE - strong across all channels"
+                                 ]
+                 },
+                 {
+                     "SKU":  "57",
+                     "Name":  "Genetic Methylation Testing",
+                     "Category":  "Testing",
+                     "MSRP":  288.88,
+                     "COGS":  159.88,
+                     "DTCMargin":  44.7,
+                     "COGSRatio":  55.3,
+                     "ViableChannels":  1,
+                     "ChannelViability":  {
+                                              "Wholesale":  {
+                                                                "NetMarginPct":  -24.2,
+                                                                "Viable":  false
+                                                            },
+                                              "Distributor":  {
+                                                                  "NetMarginPct":  -91.5,
+                                                                  "Viable":  false
+                                                              },
+                                              "DTC":  {
+                                                          "NetMarginPct":  16.2,
+                                                          "Viable":  true
+                                                      }
+                                          },
+                     "Scores":  {
+                                    "DTCMargin":  47.1,
+                                    "ChannelBreadth":  33.3,
+                                    "COGSEfficiency":  18.1,
+                                    "WaterfallHealth":  51,
+                                    "RevenueContribution":  22.9,
+                                    "PricePoint":  41.9
+                                },
+                     "CompositeScore":  37.0,
+                     "Tier":  "Watch",
+                     "Actions":  [
+                                     "REPRICE - DTC margin below 70% floor",
+                                     "CHANNEL REVIEW - viable in fewer than 2 channels",
+                                     "RENEGOTIATE SUPPLY - COGS ratio exceeds 40%"
+                                 ]
+                 },
+                 {
+                     "SKU":  "58",
+                     "Name":  "Genetic Nutrition Test",
+                     "Category":  "Testing",
+                     "MSRP":  388.88,
+                     "COGS":  228.88,
+                     "DTCMargin":  41.1,
+                     "COGSRatio":  58.9,
+                     "ViableChannels":  1,
+                     "ChannelViability":  {
+                                              "Wholesale":  {
+                                                                "NetMarginPct":  -31.2,
+                                                                "Viable":  false
+                                                            },
+                                              "Distributor":  {
+                                                                  "NetMarginPct":  -103.2,
+                                                                  "Viable":  false
+                                                              },
+                                              "DTC":  {
+                                                          "NetMarginPct":  12.6,
+                                                          "Viable":  true
+                                                      }
+                                          },
+                     "Scores":  {
+                                    "DTCMargin":  43.3,
+                                    "ChannelBreadth":  33.3,
+                                    "COGSEfficiency":  12.7,
+                                    "WaterfallHealth":  48,
+                                    "RevenueContribution":  30.9,
+                                    "PricePoint":  56.5
+                                },
+                     "CompositeScore":  38.3,
+                     "Tier":  "Watch",
+                     "Actions":  [
+                                     "REPRICE - DTC margin below 70% floor",
+                                     "CHANNEL REVIEW - viable in fewer than 2 channels",
+                                     "RENEGOTIATE SUPPLY - COGS ratio exceeds 40%"
+                                 ]
+                 },
+                 {
+                     "SKU":  "59",
+                     "Name":  "Dutch Hormone Test",
+                     "Category":  "Testing",
+                     "MSRP":  508.88,
+                     "COGS":  198.88,
+                     "DTCMargin":  60.9,
+                     "COGSRatio":  39.1,
+                     "ViableChannels":  1,
+                     "ChannelViability":  {
+                                              "Wholesale":  {
+                                                                "NetMarginPct":  8.3,
+                                                                "Viable":  false
+                                                            },
+                                              "Distributor":  {
+                                                                  "NetMarginPct":  -37.3,
+                                                                  "Viable":  false
+                                                              },
+                                              "DTC":  {
+                                                          "NetMarginPct":  32.4,
+                                                          "Viable":  true
+                                                      }
+                                          },
+                     "Scores":  {
+                                    "DTCMargin":  64.1,
+                                    "ChannelBreadth":  33.3,
+                                    "COGSEfficiency":  42.1,
+                                    "WaterfallHealth":  66,
+                                    "RevenueContribution":  40.4,
+                                    "PricePoint":  73.9
+                                },
+                     "CompositeScore":  54.5,
+                     "Tier":  "Watch",
+                     "Actions":  [
+                                     "REPRICE - DTC margin below 70% floor",
+                                     "CHANNEL REVIEW - viable in fewer than 2 channels"
+                                 ]
+                 },
+                 {
+                     "SKU":  "60",
+                     "Name":  "EpiGenDX",
+                     "Category":  "Testing",
+                     "MSRP":  443,
+                     "COGS":  298.88,
+                     "DTCMargin":  32.5,
+                     "COGSRatio":  67.5,
+                     "ViableChannels":  0,
+                     "ChannelViability":  {
+                                              "Wholesale":  {
+                                                                "NetMarginPct":  -48.4,
+                                                                "Viable":  false
+                                                            },
+                                              "Distributor":  {
+                                                                  "NetMarginPct":  -131.9,
+                                                                  "Viable":  false
+                                                              },
+                                              "DTC":  {
+                                                          "NetMarginPct":  4.0,
+                                                          "Viable":  false
+                                                      }
+                                          },
+                     "Scores":  {
+                                    "DTCMargin":  34.2,
+                                    "ChannelBreadth":  0,
+                                    "COGSEfficiency":  0,
+                                    "WaterfallHealth":  40,
+                                    "RevenueContribution":  35.2,
+                                    "PricePoint":  64.3
+                                },
+                     "CompositeScore":  29.8,
+                     "Tier":  "Sunset",
+                     "Actions":  [
+                                     "EVALUATE DISCONTINUATION - margin and channel viability are critically low"
+                                 ]
+                 },
+                 {
+                     "SKU":  "61",
+                     "Name":  "Combo Test (Meth+Nutr+Dutch)",
+                     "Category":  "Testing",
+                     "MSRP":  688.88,
+                     "COGS":  329,
+                     "DTCMargin":  52.2,
+                     "COGSRatio":  47.8,
+                     "ViableChannels":  1,
+                     "ChannelViability":  {
+                                              "Wholesale":  {
+                                                                "NetMarginPct":  -9.0,
+                                                                "Viable":  false
+                                                            },
+                                              "Distributor":  {
+                                                                  "NetMarginPct":  -66.2,
+                                                                  "Viable":  false
+                                                              },
+                                              "DTC":  {
+                                                          "NetMarginPct":  23.7,
+                                                          "Viable":  true
+                                                      }
+                                          },
+                     "Scores":  {
+                                    "DTCMargin":  54.9,
+                                    "ChannelBreadth":  33.3,
+                                    "COGSEfficiency":  29.2,
+                                    "WaterfallHealth":  58,
+                                    "RevenueContribution":  54.7,
+                                    "PricePoint":  100
+                                },
+                     "CompositeScore":  55.2,
+                     "Tier":  "Core",
+                     "Actions":  [
+                                     "REPRICE - DTC margin below 70% floor",
+                                     "CHANNEL REVIEW - viable in fewer than 2 channels",
+                                     "RENEGOTIATE SUPPLY - COGS ratio exceeds 40%"
+                                 ]
+                 },
+                 {
+                     "SKU":  "62",
+                     "Name":  "30 Day Custom Vitamin Package",
+                     "Category":  "Testing",
+                     "MSRP":  198.88,
+                     "COGS":  65,
+                     "DTCMargin":  67.3,
+                     "COGSRatio":  32.7,
+                     "ViableChannels":  2,
+                     "ChannelViability":  {
+                                              "Wholesale":  {
+                                                                "NetMarginPct":  21.1,
+                                                                "Viable":  true
+                                                            },
+                                              "Distributor":  {
+                                                                  "NetMarginPct":  -16.0,
+                                                                  "Viable":  false
+                                                              },
+                                              "DTC":  {
+                                                          "NetMarginPct":  38.8,
+                                                          "Viable":  true
+                                                      }
+                                          },
+                     "Scores":  {
+                                    "DTCMargin":  70.8,
+                                    "ChannelBreadth":  66.7,
+                                    "COGSEfficiency":  51.6,
+                                    "WaterfallHealth":  72,
+                                    "RevenueContribution":  15.8,
+                                    "PricePoint":  28.9
+                                },
+                     "CompositeScore":  53.0,
+                     "Tier":  "Watch",
+                     "Actions":  [
+                                     "REPRICE - DTC margin below 70% floor"
+                                 ]
+                 }
+             ]
+}
