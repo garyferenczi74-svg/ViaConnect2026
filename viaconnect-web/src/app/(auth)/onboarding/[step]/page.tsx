@@ -39,6 +39,7 @@ const HEALTH_CONCERNS = [
 const FAMILY_HISTORY = [
   "Heart Disease", "Diabetes", "Cancer", "Alzheimer's",
   "Autoimmune Disorders", "Mental Health", "Obesity", "High Blood Pressure",
+  "None of the Above",
 ];
 
 // ─── Lifestyle Options ──────────────────────────────────────────────────────
@@ -384,7 +385,16 @@ export default function OnboardingStepPage() {
                 {FAMILY_HISTORY.map((c) => (
                   <button
                     key={c}
-                    onClick={() => toggleChip(demographics.familyHistory, c, (v) => setDemographics({ ...demographics, familyHistory: v }))}
+                    onClick={() => {
+                      if (c === "None of the Above") {
+                        // Selecting "None" clears all other selections
+                        setDemographics({ ...demographics, familyHistory: demographics.familyHistory.includes(c) ? [] : [c] });
+                      } else {
+                        // Selecting a condition removes "None of the Above"
+                        const filtered = demographics.familyHistory.filter((v) => v !== "None of the Above");
+                        toggleChip(filtered, c, (v) => setDemographics({ ...demographics, familyHistory: v }));
+                      }
+                    }}
                     className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
                       demographics.familyHistory.includes(c)
                         ? "bg-plum/15 text-plum-light border-plum/30"
