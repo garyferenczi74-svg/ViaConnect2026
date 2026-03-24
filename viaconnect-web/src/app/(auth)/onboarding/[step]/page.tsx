@@ -411,21 +411,45 @@ export default function OnboardingStepPage() {
 
         {/* ── Phase 2: Symptoms ── */}
         {stepId === "2" && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div
+            className="grid grid-cols-1 md:grid-cols-2 gap-4"
+            style={{ overflow: "hidden" }}
+          >
             {SYMPTOM_CATEGORIES.map((cat) => (
-              <div key={cat} className="flex items-center gap-3 p-3 rounded-lg bg-dark-surface/50 min-w-0 overflow-hidden">
-                <span className="text-sm text-gray-300 w-[120px] min-w-[100px] shrink-0 truncate">{cat}</span>
+              <div
+                key={cat}
+                className="flex items-center gap-3 p-3 rounded-lg bg-dark-surface/50"
+                style={{ minWidth: 0, overflow: "hidden" }}
+              >
+                <span
+                  className="text-sm text-gray-300"
+                  style={{
+                    width: 100,
+                    minWidth: 100,
+                    maxWidth: 100,
+                    flexShrink: 0,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {cat}
+                </span>
                 <input
                   type="range"
                   min={0}
                   max={10}
                   value={symptoms[cat]}
                   onChange={(e) => setSymptoms({ ...symptoms, [cat]: parseInt(e.target.value) })}
-                  className="flex-1 min-w-0 accent-copper h-1.5"
+                  className="accent-copper h-1.5"
+                  style={{ flex: "1 1 0%", minWidth: 0 }}
                 />
-                <span className={`text-xs font-mono w-6 shrink-0 text-right ${
-                  symptoms[cat] >= 7 ? "text-rose" : symptoms[cat] >= 4 ? "text-copper" : "text-portal-green"
-                }`}>
+                <span
+                  className={`text-xs font-mono text-right ${
+                    symptoms[cat] >= 7 ? "text-rose" : symptoms[cat] >= 4 ? "text-copper" : "text-portal-green"
+                  }`}
+                  style={{ width: 24, flexShrink: 0 }}
+                >
                   {symptoms[cat]}
                 </span>
               </div>
