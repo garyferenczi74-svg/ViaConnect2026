@@ -1,0 +1,65 @@
+﻿{
+    "RunId":  "20260324-175300",
+    "Timestamp":  "2026-03-24T17:53:00.6314062-06:00",
+    "Duration":  "4.6s",
+    "Passed":  11,
+    "Failed":  0,
+    "Changes":  [
+                    {
+                        "Step":  3,
+                        "Name":  "Margin Waterfall",
+                        "File":  "margin_waterfall.json",
+                        "ChangeType":  "MODIFIED",
+                        "Detail":  "Regenerated at 2026-03-24T17:53:01.5743769-06:00; 62 SKUs processed; 12 alerts"
+                    },
+                    {
+                        "Step":  5,
+                        "Name":  "Channel Mix Simulator",
+                        "File":  "channel_mix_results.json",
+                        "ChangeType":  "MODIFIED",
+                        "Detail":  "Regenerated at 2026-03-24T17:53:02.2777025-06:00"
+                    },
+                    {
+                        "Step":  6,
+                        "Name":  "SKU Rationalization",
+                        "File":  "sku_rationalization.json",
+                        "ChangeType":  "MODIFIED",
+                        "Detail":  "Regenerated at 2026-03-24T17:53:02.8920349-06:00; 62 SKUs processed"
+                    },
+                    {
+                        "Step":  7,
+                        "Name":  "Bundle Optimizer",
+                        "File":  "bundle_optimization.json",
+                        "ChangeType":  "MODIFIED",
+                        "Detail":  "Regenerated at 2026-03-24T17:53:03.2182006-06:00"
+                    },
+                    {
+                        "Step":  8,
+                        "Name":  "Executive Dashboard",
+                        "File":  "executive_dashboard.json",
+                        "ChangeType":  "MODIFIED",
+                        "Detail":  "Regenerated at 2026-03-24T17:53:03.7254320-06:00"
+                    },
+                    {
+                        "Step":  9,
+                        "Name":  "12-Month Forecast",
+                        "File":  "forecast_12month.json",
+                        "ChangeType":  "MODIFIED",
+                        "Detail":  "Regenerated at 2026-03-24T17:53:04.1278302-06:00"
+                    },
+                    {
+                        "Step":  10,
+                        "Name":  "Unit Economics",
+                        "File":  "unit_economics.json",
+                        "ChangeType":  "MODIFIED",
+                        "Detail":  "Regenerated at 2026-03-24T17:53:04.5727860-06:00; 62 SKUs processed"
+                    },
+                    {
+                        "Step":  11,
+                        "Name":  "Inventory Planner",
+                        "File":  "inventory_reorder_plan.json",
+                        "ChangeType":  "MODIFIED",
+                        "Detail":  "Regenerated at 2026-03-24T17:53:05.1211997-06:00; 62 SKUs processed"
+                    }
+                ]
+}

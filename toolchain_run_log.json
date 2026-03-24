@@ -1,0 +1,115 @@
+﻿{
+    "RunId":  "20260324-175300",
+    "StartedAt":  "2026-03-24T17:53:00.6314062-06:00",
+    "CompletedAt":  "2026-03-24T17:53:05.1893711-06:00",
+    "TotalDuration":  "4.6s",
+    "DryRun":  false,
+    "Summary":  {
+                    "TotalSteps":  11,
+                    "Passed":  11,
+                    "Failed":  0,
+                    "Skipped":  0
+                },
+    "Steps":  [
+                  {
+                      "Step":  1,
+                      "Name":  "Master SKU Loader",
+                      "Status":  "PASSED",
+                      "Duration":  "0.3s",
+                      "OutputFiles":  [
+                                          "farmceutica_master_skus.json"
+                                      ]
+                  },
+                  {
+                      "Step":  2,
+                      "Name":  "COGS Recalculation",
+                      "Status":  "PASSED",
+                      "Duration":  "0.3s",
+                      "OutputFiles":  [
+                                          "cogs_delta_report.json"
+                                      ]
+                  },
+                  {
+                      "Step":  3,
+                      "Name":  "Margin Waterfall",
+                      "Status":  "PASSED",
+                      "Duration":  "0.3s",
+                      "OutputFiles":  [
+                                          "margin_waterfall.json"
+                                      ]
+                  },
+                  {
+                      "Step":  4,
+                      "Name":  "Pricing Tier Calculator",
+                      "Status":  "PASSED",
+                      "Duration":  "0.3s",
+                      "OutputFiles":  [
+                                          "updated_pricing_tiers.json"
+                                      ]
+                  },
+                  {
+                      "Step":  5,
+                      "Name":  "Channel Mix Simulator",
+                      "Status":  "PASSED",
+                      "Duration":  "0.5s",
+                      "OutputFiles":  [
+                                          "channel_mix_results.json"
+                                      ]
+                  },
+                  {
+                      "Step":  6,
+                      "Name":  "SKU Rationalization",
+                      "Status":  "PASSED",
+                      "Duration":  "0.5s",
+                      "OutputFiles":  [
+                                          "sku_rationalization.json"
+                                      ]
+                  },
+                  {
+                      "Step":  7,
+                      "Name":  "Bundle Optimizer",
+                      "Status":  "PASSED",
+                      "Duration":  "0.3s",
+                      "OutputFiles":  [
+                                          "bundle_optimization.json"
+                                      ]
+                  },
+                  {
+                      "Step":  8,
+                      "Name":  "Executive Dashboard",
+                      "Status":  "PASSED",
+                      "Duration":  "0.5s",
+                      "OutputFiles":  [
+                                          "executive_dashboard.json"
+                                      ]
+                  },
+                  {
+                      "Step":  9,
+                      "Name":  "12-Month Forecast",
+                      "Status":  "PASSED",
+                      "Duration":  "0.4s",
+                      "OutputFiles":  [
+                                          "forecast_12month.json"
+                                      ]
+                  },
+                  {
+                      "Step":  10,
+                      "Name":  "Unit Economics",
+                      "Status":  "PASSED",
+                      "Duration":  "0.4s",
+                      "OutputFiles":  [
+                                          "unit_economics.json"
+                                      ]
+                  },
+                  {
+                      "Step":  11,
+                      "Name":  "Inventory Planner",
+                      "Status":  "PASSED",
+                      "Duration":  "0.5s",
+                      "OutputFiles":  [
+                                          "inventory_reorder_plan.json"
+                                      ]
+                  }
+              ],
+    "FilesChanged":  8
+}
