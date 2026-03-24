@@ -150,9 +150,9 @@ serve(async (req) => {
         );
 
       if (dbError) {
+        console.error('DB error:', dbError.message);
         return json(
           { success: false, error: `DB error: ${dbError.message}` },
-          500,
         );
       }
 
@@ -164,7 +164,8 @@ serve(async (req) => {
       const result = await sendViaSendGrid(email, subject, otpEmailHtml(otp, type));
 
       if (!result.sent) {
-        return json({ success: false, error: result.error }, 500);
+        console.error('SendGrid error:', result.error);
+        return json({ success: false, error: result.error });
       }
 
       return json({ success: true, data: { message: `Code sent to ${email}` } });
@@ -235,9 +236,9 @@ serve(async (req) => {
 
     return json({ success: false, error: 'Invalid action' }, 400);
   } catch (e) {
+    console.error('send-otp error:', e instanceof Error ? e.message : e);
     return json(
       { success: false, error: e instanceof Error ? e.message : 'Internal error' },
-      500,
     );
   }
 });
