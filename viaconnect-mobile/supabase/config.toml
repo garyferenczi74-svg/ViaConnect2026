@@ -54,8 +54,10 @@ double_confirm_changes = true
 # Verify with supabase.auth.verifyOtp({ email, token, type: 'signup' }).
 enable_confirmations = true
 
+# Custom SMTP disabled — using Supabase built-in email for now.
+# Re-enable with a verified sender when ready for production volume.
 [auth.email.smtp]
-enabled = true
+enabled = false
 host = "env(SMTP_HOST)"
 port = 587
 user = "env(SMTP_USER)"
