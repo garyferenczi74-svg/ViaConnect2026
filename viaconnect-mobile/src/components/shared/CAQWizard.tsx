@@ -37,7 +37,7 @@ const PHASES: { title: string; subtitle: string; questions: QuestionDef[] }[] = 
       { key: 'weight_kg', label: 'Weight (kg)', type: 'number', required: true },
       { key: 'blood_type', label: 'Blood Type (if known)', type: 'select', options: ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', 'Unknown'] },
       { key: 'ethnicity', label: 'Ethnicity', type: 'text' },
-      { key: 'family_history', label: 'Family Health History', type: 'text' },
+      { key: 'family_history', label: 'Family Health History', type: 'multiselect', options: ['Heart Disease', 'Diabetes', 'Cancer', 'Alzheimer\'s', 'Autoimmune Disorders', 'Mental Health', 'Obesity', 'High Blood Pressure', 'None of the Above'] },
       { key: 'surgeries', label: 'Previous Surgeries', type: 'text' },
       { key: 'chronic_conditions', label: 'Chronic Conditions', type: 'multiselect', options: ['Diabetes', 'Hypertension', 'Thyroid', 'Autoimmune', 'Heart Disease', 'None'] },
       { key: 'allergies', label: 'Known Allergies', type: 'text' },
@@ -166,9 +166,16 @@ export function CAQWizard({ userId, onComplete }: CAQWizardProps) {
   const toggleMultiselect = useCallback((key: string, option: string) => {
     setAnswers((prev) => {
       const current = (prev[key] as string[]) ?? [];
-      const next = current.includes(option)
-        ? current.filter((o) => o !== option)
-        : [...current, option];
+      if (option === 'None of the Above') {
+        // Toggle "None" — clears all others when selected
+        const next = current.includes(option) ? [] : [option];
+        return { ...prev, [key]: next };
+      }
+      // Selecting a condition removes "None of the Above"
+      const filtered = current.filter((o) => o !== 'None of the Above');
+      const next = filtered.includes(option)
+        ? filtered.filter((o) => o !== option)
+        : [...filtered, option];
       return { ...prev, [key]: next };
     });
   }, []);
