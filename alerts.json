@@ -1,0 +1,77 @@
+﻿{
+    "GeneratedAt":  "2026-03-24T20:04:59.7364362-06:00",
+    "OverallStatus":  "RED",
+    "ChecksPerformed":  24,
+    "Summary":  {
+                    "Critical":  2,
+                    "Warning":  6,
+                    "Info":  0,
+                    "Total":  8
+                },
+    "Alerts":  [
+                   {
+                       "Severity":  "CRITICAL",
+                       "Category":  "Risk",
+                       "Title":  "3 HIGH severity risks active",
+                       "Detail":  "Multiple critical risks require attention",
+                       "Action":  "Convene risk review meeting this week",
+                       "Timestamp":  "2026-03-24T20:04:59.6120928-06:00"
+                   },
+                   {
+                       "Severity":  "CRITICAL",
+                       "Category":  "Inventory",
+                       "Title":  "5 SKU(s) need URGENT reorder",
+                       "Detail":  "17 Teloprime+ Telomere Support; 58 Genetic Nutrition Test; 59 Dutch Hormone Test; 60 EpiGenDX; 61 Combo Test (Meth+Nutr+Dutch)",
+                       "Action":  "Place purchase orders today",
+                       "Timestamp":  "2026-03-24T20:04:59.6860987-06:00"
+                   },
+                   {
+                       "Severity":  "WARNING",
+                       "Category":  "Inventory",
+                       "Title":  "20 SKUs at HIGH stockout risk",
+                       "Detail":  "Demand variability or lead time concerns",
+                       "Action":  "Review safety stock levels for high-risk SKUs",
+                       "Timestamp":  "2026-03-24T20:04:59.6890988-06:00"
+                   },
+                   {
+                       "Severity":  "WARNING",
+                       "Category":  "Pricing",
+                       "Title":  "6 SKUs below margin floor",
+                       "Detail":  "Products failing DTC \u003e70% or WS \u003e50% thresholds",
+                       "Action":  "Prioritize repricing for worst offenders",
+                       "Timestamp":  "2026-03-24T20:04:59.7254360-06:00"
+                   },
+                   {
+                       "Severity":  "WARNING",
+                       "Category":  "Costs",
+                       "Title":  "16 SKUs with \u003e10% COGS change",
+                       "Detail":  "Significant raw material cost movement",
+                       "Action":  "Lock supplier pricing; renegotiate top-spend ingredients",
+                       "Timestamp":  "2026-03-24T20:04:59.7284359-06:00"
+                   },
+                   {
+                       "Severity":  "WARNING",
+                       "Category":  "Cash Flow",
+                       "Title":  "Stress test: cash runs out in 1 months at -30% revenue",
+                       "Detail":  "Insufficient buffer for downturn",
+                       "Action":  "Build 6-month operating reserve",
+                       "Timestamp":  "2026-03-24T20:04:59.6600926-06:00"
+                   },
+                   {
+                       "Severity":  "WARNING",
+                       "Category":  "Portfolio",
+                       "Title":  "1 SKU(s) in Sunset tier",
+                       "Detail":  "Products failing viability thresholds",
+                       "Action":  "Evaluate discontinuation within 30 days",
+                       "Timestamp":  "2026-03-24T20:04:59.6060929-06:00"
+                   },
+                   {
+                       "Severity":  "WARNING",
+                       "Category":  "Inventory",
+                       "Title":  "11 SKUs need reorder SOON",
+                       "Detail":  "Multiple products approaching reorder point",
+                       "Action":  "Batch PO review within 5 business days",
+                       "Timestamp":  "2026-03-24T20:04:59.6870997-06:00"
+                   }
+               ]
+}
