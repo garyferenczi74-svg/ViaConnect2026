@@ -1,0 +1,1567 @@
+﻿{
+    "GeneratedAt":  "2026-03-24T19:05:31.8637956-06:00",
+    "Assumptions":  {
+                        "ARPC":  95,
+                        "ExpansionRate":  "2%",
+                        "ReactivationRate":  "3%",
+                        "RetentionCurve":  [
+                                               "100%",
+                                               "62%",
+                                               "48%",
+                                               "40%",
+                                               "35%",
+                                               "31%",
+                                               "28%",
+                                               "26%",
+                                               "24%",
+                                               "23%",
+                                               "22%",
+                                               "21%",
+                                               "20%"
+                                           ]
+                    },
+    "KeyMetrics":  {
+                       "BlendedCAC":  34.15,
+                       "AvgCohortLTV":  510.65,
+                       "LTVtoCACRatio":  15.0,
+                       "CACPaybackMonth":  1,
+                       "M1Retention":  "62%",
+                       "M6Retention":  "28%",
+                       "M12Retention":  "20%"
+                   },
+    "AcquisitionChannels":  [
+                                {
+                                    "Channel":  "Email",
+                                    "MixPct":  "10%",
+                                    "CAC":  8,
+                                    "MonthlyCustomers":  65,
+                                    "MonthlySpend":  520,
+                                    "LTVtoCAC":  63.8,
+                                    "Verdict":  "EXCELLENT"
+                                },
+                                {
+                                    "Channel":  "Influencer",
+                                    "MixPct":  "8%",
+                                    "CAC":  65,
+                                    "MonthlyCustomers":  52,
+                                    "MonthlySpend":  3380,
+                                    "LTVtoCAC":  7.9,
+                                    "Verdict":  "EXCELLENT"
+                                },
+                                {
+                                    "Channel":  "Organic",
+                                    "MixPct":  "15%",
+                                    "CAC":  0,
+                                    "MonthlyCustomers":  98,
+                                    "MonthlySpend":  0,
+                                    "LTVtoCAC":  999,
+                                    "Verdict":  "EXCELLENT"
+                                },
+                                {
+                                    "Channel":  "PaidSearch",
+                                    "MixPct":  "20%",
+                                    "CAC":  42,
+                                    "MonthlyCustomers":  130,
+                                    "MonthlySpend":  5460,
+                                    "LTVtoCAC":  12.2,
+                                    "Verdict":  "EXCELLENT"
+                                },
+                                {
+                                    "Channel":  "PaidSocial",
+                                    "MixPct":  "30%",
+                                    "CAC":  55,
+                                    "MonthlyCustomers":  195,
+                                    "MonthlySpend":  10725,
+                                    "LTVtoCAC":  9.3,
+                                    "Verdict":  "EXCELLENT"
+                                },
+                                {
+                                    "Channel":  "Practitioner",
+                                    "MixPct":  "7%",
+                                    "CAC":  25,
+                                    "MonthlyCustomers":  46,
+                                    "MonthlySpend":  1150,
+                                    "LTVtoCAC":  20.4,
+                                    "Verdict":  "EXCELLENT"
+                                },
+                                {
+                                    "Channel":  "Referral",
+                                    "MixPct":  "10%",
+                                    "CAC":  15,
+                                    "MonthlyCustomers":  65,
+                                    "MonthlySpend":  975,
+                                    "LTVtoCAC":  34.0,
+                                    "Verdict":  "EXCELLENT"
+                                }
+                            ],
+    "RevenueBySource":  [
+                            {
+                                "Month":  1,
+                                "ExistingCustomerRevenue":  271599.30,
+                                "NewCustomerRevenue":  61750,
+                                "TotalRevenue":  333349.30,
+                                "ExistingRevenuePct":  "81.5%",
+                                "ExistingActiveCustomers":  2715,
+                                "NewCustomers":  650
+                            },
+                            {
+                                "Month":  2,
+                                "ExistingCustomerRevenue":  250676.50,
+                                "NewCustomerRevenue":  59375,
+                                "TotalRevenue":  310051.50,
+                                "ExistingRevenuePct":  "80.8%",
+                                "ExistingActiveCustomers":  2517,
+                                "NewCustomers":  625
+                            },
+                            {
+                                "Month":  3,
+                                "ExistingCustomerRevenue":  230610.60,
+                                "NewCustomerRevenue":  57000,
+                                "TotalRevenue":  287610.60,
+                                "ExistingRevenuePct":  "80.2%",
+                                "ExistingActiveCustomers":  2325,
+                                "NewCustomers":  600
+                            },
+                            {
+                                "Month":  4,
+                                "ExistingCustomerRevenue":  210841.10,
+                                "NewCustomerRevenue":  55100,
+                                "TotalRevenue":  265941.10,
+                                "ExistingRevenuePct":  "79.3%",
+                                "ExistingActiveCustomers":  2135,
+                                "NewCustomers":  580
+                            },
+                            {
+                                "Month":  5,
+                                "ExistingCustomerRevenue":  191630.20,
+                                "NewCustomerRevenue":  53200,
+                                "TotalRevenue":  244830.20,
+                                "ExistingRevenuePct":  "78.3%",
+                                "ExistingActiveCustomers":  1949,
+                                "NewCustomers":  560
+                            },
+                            {
+                                "Month":  6,
+                                "ExistingCustomerRevenue":  172159.00,
+                                "NewCustomerRevenue":  51300,
+                                "TotalRevenue":  223459.00,
+                                "ExistingRevenuePct":  "77.0%",
+                                "ExistingActiveCustomers":  1759,
+                                "NewCustomers":  540
+                            },
+                            {
+                                "Month":  7,
+                                "ExistingCustomerRevenue":  152737.20,
+                                "NewCustomerRevenue":  49400,
+                                "TotalRevenue":  202137.20,
+                                "ExistingRevenuePct":  "75.6%",
+                                "ExistingActiveCustomers":  1568,
+                                "NewCustomers":  520
+                            },
+                            {
+                                "Month":  8,
+                                "ExistingCustomerRevenue":  132878.40,
+                                "NewCustomerRevenue":  47500,
+                                "TotalRevenue":  180378.40,
+                                "ExistingRevenuePct":  "73.7%",
+                                "ExistingActiveCustomers":  1370,
+                                "NewCustomers":  500
+                            },
+                            {
+                                "Month":  9,
+                                "ExistingCustomerRevenue":  112310.90,
+                                "NewCustomerRevenue":  45600,
+                                "TotalRevenue":  157910.90,
+                                "ExistingRevenuePct":  "71.1%",
+                                "ExistingActiveCustomers":  1164,
+                                "NewCustomers":  480
+                            },
+                            {
+                                "Month":  10,
+                                "ExistingCustomerRevenue":  90909.30,
+                                "NewCustomerRevenue":  43700,
+                                "TotalRevenue":  134609.30,
+                                "ExistingRevenuePct":  "67.5%",
+                                "ExistingActiveCustomers":  947,
+                                "NewCustomers":  460
+                            },
+                            {
+                                "Month":  11,
+                                "ExistingCustomerRevenue":  67326.50,
+                                "NewCustomerRevenue":  41800,
+                                "TotalRevenue":  109126.50,
+                                "ExistingRevenuePct":  "61.7%",
+                                "ExistingActiveCustomers":  705,
+                                "NewCustomers":  440
+                            },
+                            {
+                                "Month":  12,
+                                "ExistingCustomerRevenue":  39900.0,
+                                "NewCustomerRevenue":  39900,
+                                "TotalRevenue":  79800.0,
+                                "ExistingRevenuePct":  "50.0%",
+                                "ExistingActiveCustomers":  420,
+                                "NewCustomers":  420
+                            }
+                        ],
+    "RetentionImprovementScenarios":  [
+                                          {
+                                              "RetentionImprovement":  "0%",
+                                              "ProjectedLTV":  494.25,
+                                              "LTVDelta":  -16.40,
+                                              "AnnualRevenueImpact":  -127920.00
+                                          },
+                                          {
+                                              "RetentionImprovement":  "5%",
+                                              "ProjectedLTV":  514.21,
+                                              "LTVDelta":  3.56,
+                                              "AnnualRevenueImpact":  27768.00
+                                          },
+                                          {
+                                              "RetentionImprovement":  "10%",
+                                              "ProjectedLTV":  534.17,
+                                              "LTVDelta":  23.52,
+                                              "AnnualRevenueImpact":  183456.00
+                                          },
+                                          {
+                                              "RetentionImprovement":  "15%",
+                                              "ProjectedLTV":  554.13,
+                                              "LTVDelta":  43.48,
+                                              "AnnualRevenueImpact":  339144.00
+                                          },
+                                          {
+                                              "RetentionImprovement":  "20%",
+                                              "ProjectedLTV":  574.10,
+                                              "LTVDelta":  63.45,
+                                              "AnnualRevenueImpact":  494910.00
+                                          }
+                                      ],
+    "CohortMatrix":  [
+                         {
+                             "CohortIndex":  0,
+                             "Label":  "Cohort M-0",
+                             "InitialSize":  650,
+                             "MonthsSinceAcquisition":  0,
+                             "M1Retention":  "62%",
+                             "M6Retention":  "28%",
+                             "M12Retention":  "20%",
+                             "TotalRevenue":  331935.7,
+                             "CohortLTV":  510.67,
+                             "MonthlyDetail":  [
+                                                   {
+                                                       "Month":  0,
+                                                       "ActiveCustomers":  650,
+                                                       "RetentionRate":  1,
+                                                       "Revenue":  61750.0,
+                                                       "Reactivated":  0
+                                                   },
+                                                   {
+                                                       "Month":  1,
+                                                       "ActiveCustomers":  410,
+                                                       "RetentionRate":  0.62,
+                                                       "Revenue":  39516.20,
+                                                       "Reactivated":  7,
+                                                       "Projected":  true
+                                                   },
+                                                   {
+                                                       "Month":  2,
+                                                       "ActiveCustomers":  322,
+                                                       "RetentionRate":  0.48,
+                                                       "Revenue":  31490.60,
+                                                       "Reactivated":  10,
+                                                       "Projected":  true
+                                                   },
+                                                   {
+                                                       "Month":  3,
+                                                       "ActiveCustomers":  272,
+                                                       "RetentionRate":  0.4,
+                                                       "Revenue":  26980.00,
+                                                       "Reactivated":  12,
+                                                       "Projected":  true
+                                                   },
+                                                   {
+                                                       "Month":  4,
+                                                       "ActiveCustomers":  241,
+                                                       "RetentionRate":  0.35,
+                                                       "Revenue":  24257.30,
+                                                       "Reactivated":  13,
+                                                       "Projected":  true
+                                                   },
+                                                   {
+                                                       "Month":  5,
+                                                       "ActiveCustomers":  215,
+                                                       "RetentionRate":  0.31,
+                                                       "Revenue":  21973.5,
+                                                       "Reactivated":  13,
+                                                       "Projected":  true
+                                                   },
+                                                   {
+                                                       "Month":  6,
+                                                       "ActiveCustomers":  196,
+                                                       "RetentionRate":  0.28,
+                                                       "Revenue":  20295.80,
+                                                       "Reactivated":  14,
+                                                       "Projected":  true
+                                                   },
+                                                   {
+                                                       "Month":  7,
+                                                       "ActiveCustomers":  183,
+                                                       "RetentionRate":  0.26,
+                                                       "Revenue":  19233.70,
+                                                       "Reactivated":  14,
+                                                       "Projected":  true
+                                                   },
+                                                   {
+                                                       "Month":  8,
+                                                       "ActiveCustomers":  171,
+                                                       "RetentionRate":  0.24,
+                                                       "Revenue":  18188.70,
+                                                       "Reactivated":  15,
+                                                       "Projected":  true
+                                                   },
+                                                   {
+                                                       "Month":  9,
+                                                       "ActiveCustomers":  165,
+                                                       "RetentionRate":  0.23,
+                                                       "Revenue":  17812.50,
+                                                       "Reactivated":  15,
+                                                       "Projected":  true
+                                                   },
+                                                   {
+                                                       "Month":  10,
+                                                       "ActiveCustomers":  158,
+                                                       "RetentionRate":  0.22,
+                                                       "Revenue":  17299.5,
+                                                       "Reactivated":  15,
+                                                       "Projected":  true
+                                                   },
+                                                   {
+                                                       "Month":  11,
+                                                       "ActiveCustomers":  151,
+                                                       "RetentionRate":  0.21,
+                                                       "Revenue":  16759.90,
+                                                       "Reactivated":  15,
+                                                       "Projected":  true
+                                                   },
+                                                   {
+                                                       "Month":  12,
+                                                       "ActiveCustomers":  146,
+                                                       "RetentionRate":  0.2,
+                                                       "Revenue":  16378.00,
+                                                       "Reactivated":  16,
+                                                       "Projected":  true
+                                                   }
+                                               ]
+                         },
+                         {
+                             "CohortIndex":  1,
+                             "Label":  "Cohort M-1",
+                             "InitialSize":  625,
+                             "MonthsSinceAcquisition":  1,
+                             "M1Retention":  "62%",
+                             "M6Retention":  "28%",
+                             "M12Retention":  "20%",
+                             "TotalRevenue":  319247.5,
+                             "CohortLTV":  510.8,
+                             "MonthlyDetail":  [
+                                                   {
+                                                       "Month":  0,
+                                                       "ActiveCustomers":  625,
+                                                       "RetentionRate":  1,
+                                                       "Revenue":  59375.0,
+                                                       "Reactivated":  0
+                                                   },
+                                                   {
+                                                       "Month":  1,
+                                                       "ActiveCustomers":  395,
+                                                       "RetentionRate":  0.62,
+                                                       "Revenue":  38062.70,
+                                                       "Reactivated":  7
+                                                   },
+                                                   {
+                                                       "Month":  2,
+                                                       "ActiveCustomers":  310,
+                                                       "RetentionRate":  0.48,
+                                                       "Revenue":  30305.00,
+                                                       "Reactivated":  10,
+                                                       "Projected":  true
+                                                   },
+                                                   {
+                                                       "Month":  3,
+                                                       "ActiveCustomers":  261,
+                                                       "RetentionRate":  0.4,
+                                                       "Revenue":  25906.50,
+                                                       "Reactivated":  11,
+                                                       "Projected":  true
+                                                   },
+                                                   {
+                                                       "Month":  4,
+                                                       "ActiveCustomers":  231,
+                                                       "RetentionRate":  0.35,
+                                                       "Revenue":  23267.40,
+                                                       "Reactivated":  12,
+                                                       "Projected":  true
+                                                   },
+                                                   {
+                                                       "Month":  5,
+                                                       "ActiveCustomers":  207,
+                                                       "RetentionRate":  0.31,
+                                                       "Revenue":  21137.5,
+                                                       "Reactivated":  13,
+                                                       "Projected":  true
+                                                   },
+                                                   {
+                                                       "Month":  6,
+                                                       "ActiveCustomers":  189,
+                                                       "RetentionRate":  0.28,
+                                                       "Revenue":  19551.00,
+                                                       "Reactivated":  14,
+                                                       "Projected":  true
+                                                   },
+                                                   {
+                                                       "Month":  7,
+                                                       "ActiveCustomers":  176,
+                                                       "RetentionRate":  0.26,
+                                                       "Revenue":  18475.60,
+                                                       "Reactivated":  14,
+                                                       "Projected":  true
+                                                   },
+                                                   {
+                                                       "Month":  8,
+                                                       "ActiveCustomers":  164,
+                                                       "RetentionRate":  0.24,
+                                                       "Revenue":  17461.00,
+                                                       "Reactivated":  14,
+                                                       "Projected":  true
+                                                   },
+                                                   {
+                                                       "Month":  9,
+                                                       "ActiveCustomers":  158,
+                                                       "RetentionRate":  0.23,
+                                                       "Revenue":  17073.40,
+                                                       "Reactivated":  14,
+                                                       "Projected":  true
+                                                   },
+                                                   {
+                                                       "Month":  10,
+                                                       "ActiveCustomers":  153,
+                                                       "RetentionRate":  0.22,
+                                                       "Revenue":  16729.5,
+                                                       "Reactivated":  15,
+                                                       "Projected":  true
+                                                   },
+                                                   {
+                                                       "Month":  11,
+                                                       "ActiveCustomers":  146,
+                                                       "RetentionRate":  0.21,
+                                                       "Revenue":  16180.40,
+                                                       "Reactivated":  15,
+                                                       "Projected":  true
+                                                   },
+                                                   {
+                                                       "Month":  12,
+                                                       "ActiveCustomers":  140,
+                                                       "RetentionRate":  0.2,
+                                                       "Revenue":  15722.50,
+                                                       "Reactivated":  15,
+                                                       "Projected":  true
+                                                   }
+                                               ]
+                         },
+                         {
+                             "CohortIndex":  2,
+                             "Label":  "Cohort M-2",
+                             "InitialSize":  600,
+                             "MonthsSinceAcquisition":  2,
+                             "M1Retention":  "62%",
+                             "M6Retention":  "28%",
+                             "M12Retention":  "20%",
+                             "TotalRevenue":  306323.7,
+                             "CohortLTV":  510.54,
+                             "MonthlyDetail":  [
+                                                   {
+                                                       "Month":  0,
+                                                       "ActiveCustomers":  600,
+                                                       "RetentionRate":  1,
+                                                       "Revenue":  57000.0,
+                                                       "Reactivated":  0
+                                                   },
+                                                   {
+                                                       "Month":  1,
+                                                       "ActiveCustomers":  379,
+                                                       "RetentionRate":  0.62,
+                                                       "Revenue":  36512.30,
+                                                       "Reactivated":  7
+                                                   },
+                                                   {
+                                                       "Month":  2,
+                                                       "ActiveCustomers":  297,
+                                                       "RetentionRate":  0.48,
+                                                       "Revenue":  29052.90,
+                                                       "Reactivated":  9
+                                                   },
+                                                   {
+                                                       "Month":  3,
+                                                       "ActiveCustomers":  251,
+                                                       "RetentionRate":  0.4,
+                                                       "Revenue":  24899.50,
+                                                       "Reactivated":  11,
+                                                       "Projected":  true
+                                                   },
+                                                   {
+                                                       "Month":  4,
+                                                       "ActiveCustomers":  222,
+                                                       "RetentionRate":  0.35,
+                                                       "Revenue":  22344.00,
+                                                       "Reactivated":  12,
+                                                       "Projected":  true
+                                                   },
+                                                   {
+                                                       "Month":  5,
+                                                       "ActiveCustomers":  198,
+                                                       "RetentionRate":  0.31,
+                                                       "Revenue":  20235.0,
+                                                       "Reactivated":  12,
+                                                       "Projected":  true
+                                                   },
+                                                   {
+                                                       "Month":  6,
+                                                       "ActiveCustomers":  181,
+                                                       "RetentionRate":  0.28,
+                                                       "Revenue":  18739.70,
+                                                       "Reactivated":  13,
+                                                       "Projected":  true
+                                                   },
+                                                   {
+                                                       "Month":  7,
+                                                       "ActiveCustomers":  169,
+                                                       "RetentionRate":  0.26,
+                                                       "Revenue":  17759.30,
+                                                       "Reactivated":  13,
+                                                       "Projected":  true
+                                                   },
+                                                   {
+                                                       "Month":  8,
+                                                       "ActiveCustomers":  158,
+                                                       "RetentionRate":  0.24,
+                                                       "Revenue":  16799.80,
+                                                       "Reactivated":  14,
+                                                       "Projected":  true
+                                                   },
+                                                   {
+                                                       "Month":  9,
+                                                       "ActiveCustomers":  152,
+                                                       "RetentionRate":  0.23,
+                                                       "Revenue":  16400.80,
+                                                       "Reactivated":  14,
+                                                       "Projected":  true
+                                                   },
+                                                   {
+                                                       "Month":  10,
+                                                       "ActiveCustomers":  146,
+                                                       "RetentionRate":  0.22,
+                                                       "Revenue":  15979.0,
+                                                       "Reactivated":  14,
+                                                       "Projected":  true
+                                                   },
+                                                   {
+                                                       "Month":  11,
+                                                       "ActiveCustomers":  140,
+                                                       "RetentionRate":  0.21,
+                                                       "Revenue":  15534.40,
+                                                       "Reactivated":  14,
+                                                       "Projected":  true
+                                                   },
+                                                   {
+                                                       "Month":  12,
+                                                       "ActiveCustomers":  134,
+                                                       "RetentionRate":  0.2,
+                                                       "Revenue":  15067.00,
+                                                       "Reactivated":  14,
+                                                       "Projected":  true
+                                                   }
+                                               ]
+                         },
+                         {
+                             "CohortIndex":  3,
+                             "Label":  "Cohort M-3",
+                             "InitialSize":  580,
+                             "MonthsSinceAcquisition":  3,
+                             "M1Retention":  "62%",
+                             "M6Retention":  "28%",
+                             "M12Retention":  "20%",
+                             "TotalRevenue":  296173.9,
+                             "CohortLTV":  510.64,
+                             "MonthlyDetail":  [
+                                                   {
+                                                       "Month":  0,
+                                                       "ActiveCustomers":  580,
+                                                       "RetentionRate":  1,
+                                                       "Revenue":  55100.0,
+                                                       "Reactivated":  0
+                                                   },
+                                                   {
+                                                       "Month":  1,
+                                                       "ActiveCustomers":  367,
+                                                       "RetentionRate":  0.62,
+                                                       "Revenue":  35349.50,
+                                                       "Reactivated":  7
+                                                   },
+                                                   {
+                                                       "Month":  2,
+                                                       "ActiveCustomers":  287,
+                                                       "RetentionRate":  0.48,
+                                                       "Revenue":  28064.90,
+                                                       "Reactivated":  9
+                                                   },
+                                                   {
+                                                       "Month":  3,
+                                                       "ActiveCustomers":  242,
+                                                       "RetentionRate":  0.4,
+                                                       "Revenue":  24027.40,
+                                                       "Reactivated":  10
+                                                   },
+                                                   {
+                                                       "Month":  4,
+                                                       "ActiveCustomers":  214,
+                                                       "RetentionRate":  0.35,
+                                                       "Revenue":  21559.30,
+                                                       "Reactivated":  11,
+                                                       "Projected":  true
+                                                   },
+                                                   {
+                                                       "Month":  5,
+                                                       "ActiveCustomers":  192,
+                                                       "RetentionRate":  0.31,
+                                                       "Revenue":  19608.0,
+                                                       "Reactivated":  12,
+                                                       "Projected":  true
+                                                   },
+                                                   {
+                                                       "Month":  6,
+                                                       "ActiveCustomers":  175,
+                                                       "RetentionRate":  0.28,
+                                                       "Revenue":  18101.30,
+                                                       "Reactivated":  13,
+                                                       "Projected":  true
+                                                   },
+                                                   {
+                                                       "Month":  7,
+                                                       "ActiveCustomers":  164,
+                                                       "RetentionRate":  0.26,
+                                                       "Revenue":  17217.80,
+                                                       "Reactivated":  13,
+                                                       "Projected":  true
+                                                   },
+                                                   {
+                                                       "Month":  8,
+                                                       "ActiveCustomers":  152,
+                                                       "RetentionRate":  0.24,
+                                                       "Revenue":  16182.30,
+                                                       "Reactivated":  13,
+                                                       "Projected":  true
+                                                   },
+                                                   {
+                                                       "Month":  9,
+                                                       "ActiveCustomers":  146,
+                                                       "RetentionRate":  0.23,
+                                                       "Revenue":  15773.80,
+                                                       "Reactivated":  13,
+                                                       "Projected":  true
+                                                   },
+                                                   {
+                                                       "Month":  10,
+                                                       "ActiveCustomers":  142,
+                                                       "RetentionRate":  0.22,
+                                                       "Revenue":  15523.0,
+                                                       "Reactivated":  14,
+                                                       "Projected":  true
+                                                   },
+                                                   {
+                                                       "Month":  11,
+                                                       "ActiveCustomers":  136,
+                                                       "RetentionRate":  0.21,
+                                                       "Revenue":  15070.80,
+                                                       "Reactivated":  14,
+                                                       "Projected":  true
+                                                   },
+                                                   {
+                                                       "Month":  12,
+                                                       "ActiveCustomers":  130,
+                                                       "RetentionRate":  0.2,
+                                                       "Revenue":  14595.80,
+                                                       "Reactivated":  14,
+                                                       "Projected":  true
+                                                   }
+                                               ]
+                         },
+                         {
+                             "CohortIndex":  4,
+                             "Label":  "Cohort M-4",
+                             "InitialSize":  560,
+                             "MonthsSinceAcquisition":  4,
+                             "M1Retention":  "62%",
+                             "M6Retention":  "28%",
+                             "M12Retention":  "20%",
+                             "TotalRevenue":  285997.5,
+                             "CohortLTV":  510.71,
+                             "MonthlyDetail":  [
+                                                   {
+                                                       "Month":  0,
+                                                       "ActiveCustomers":  560,
+                                                       "RetentionRate":  1,
+                                                       "Revenue":  53200.0,
+                                                       "Reactivated":  0
+                                                   },
+                                                   {
+                                                       "Month":  1,
+                                                       "ActiveCustomers":  353,
+                                                       "RetentionRate":  0.62,
+                                                       "Revenue":  34023.30,
+                                                       "Reactivated":  6
+                                                   },
+                                                   {
+                                                       "Month":  2,
+                                                       "ActiveCustomers":  278,
+                                                       "RetentionRate":  0.48,
+                                                       "Revenue":  27175.70,
+                                                       "Reactivated":  9
+                                                   },
+                                                   {
+                                                       "Month":  3,
+                                                       "ActiveCustomers":  234,
+                                                       "RetentionRate":  0.4,
+                                                       "Revenue":  23221.80,
+                                                       "Reactivated":  10
+                                                   },
+                                                   {
+                                                       "Month":  4,
+                                                       "ActiveCustomers":  207,
+                                                       "RetentionRate":  0.35,
+                                                       "Revenue":  20841.10,
+                                                       "Reactivated":  11
+                                                   },
+                                                   {
+                                                       "Month":  5,
+                                                       "ActiveCustomers":  186,
+                                                       "RetentionRate":  0.31,
+                                                       "Revenue":  18981.0,
+                                                       "Reactivated":  12,
+                                                       "Projected":  true
+                                                   },
+                                                   {
+                                                       "Month":  6,
+                                                       "ActiveCustomers":  169,
+                                                       "RetentionRate":  0.28,
+                                                       "Revenue":  17502.80,
+                                                       "Reactivated":  12,
+                                                       "Projected":  true
+                                                   },
+                                                   {
+                                                       "Month":  7,
+                                                       "ActiveCustomers":  158,
+                                                       "RetentionRate":  0.26,
+                                                       "Revenue":  16609.80,
+                                                       "Reactivated":  12,
+                                                       "Projected":  true
+                                                   },
+                                                   {
+                                                       "Month":  8,
+                                                       "ActiveCustomers":  147,
+                                                       "RetentionRate":  0.24,
+                                                       "Revenue":  15631.30,
+                                                       "Reactivated":  13,
+                                                       "Projected":  true
+                                                   },
+                                                   {
+                                                       "Month":  9,
+                                                       "ActiveCustomers":  142,
+                                                       "RetentionRate":  0.23,
+                                                       "Revenue":  15325.40,
+                                                       "Reactivated":  13,
+                                                       "Projected":  true
+                                                   },
+                                                   {
+                                                       "Month":  10,
+                                                       "ActiveCustomers":  136,
+                                                       "RetentionRate":  0.22,
+                                                       "Revenue":  14886.5,
+                                                       "Reactivated":  13,
+                                                       "Projected":  true
+                                                   },
+                                                   {
+                                                       "Month":  11,
+                                                       "ActiveCustomers":  131,
+                                                       "RetentionRate":  0.21,
+                                                       "Revenue":  14540.70,
+                                                       "Reactivated":  13,
+                                                       "Projected":  true
+                                                   },
+                                                   {
+                                                       "Month":  12,
+                                                       "ActiveCustomers":  125,
+                                                       "RetentionRate":  0.2,
+                                                       "Revenue":  14058.10,
+                                                       "Reactivated":  13,
+                                                       "Projected":  true
+                                                   }
+                                               ]
+                         },
+                         {
+                             "CohortIndex":  5,
+                             "Label":  "Cohort M-5",
+                             "InitialSize":  540,
+                             "MonthsSinceAcquisition":  5,
+                             "M1Retention":  "62%",
+                             "M6Retention":  "28%",
+                             "M12Retention":  "20%",
+                             "TotalRevenue":  275629.2,
+                             "CohortLTV":  510.42,
+                             "MonthlyDetail":  [
+                                                   {
+                                                       "Month":  0,
+                                                       "ActiveCustomers":  540,
+                                                       "RetentionRate":  1,
+                                                       "Revenue":  51300.0,
+                                                       "Reactivated":  0
+                                                   },
+                                                   {
+                                                       "Month":  1,
+                                                       "ActiveCustomers":  341,
+                                                       "RetentionRate":  0.62,
+                                                       "Revenue":  32860.50,
+                                                       "Reactivated":  6
+                                                   },
+                                                   {
+                                                       "Month":  2,
+                                                       "ActiveCustomers":  267,
+                                                       "RetentionRate":  0.48,
+                                                       "Revenue":  26121.20,
+                                                       "Reactivated":  8
+                                                   },
+                                                   {
+                                                       "Month":  3,
+                                                       "ActiveCustomers":  226,
+                                                       "RetentionRate":  0.4,
+                                                       "Revenue":  22416.20,
+                                                       "Reactivated":  10
+                                                   },
+                                                   {
+                                                       "Month":  4,
+                                                       "ActiveCustomers":  200,
+                                                       "RetentionRate":  0.35,
+                                                       "Revenue":  20122.90,
+                                                       "Reactivated":  11
+                                                   },
+                                                   {
+                                                       "Month":  5,
+                                                       "ActiveCustomers":  178,
+                                                       "RetentionRate":  0.31,
+                                                       "Revenue":  18183.0,
+                                                       "Reactivated":  11
+                                                   },
+                                                   {
+                                                       "Month":  6,
+                                                       "ActiveCustomers":  163,
+                                                       "RetentionRate":  0.28,
+                                                       "Revenue":  16864.40,
+                                                       "Reactivated":  12,
+                                                       "Projected":  true
+                                                   },
+                                                   {
+                                                       "Month":  7,
+                                                       "ActiveCustomers":  152,
+                                                       "RetentionRate":  0.26,
+                                                       "Revenue":  15960.00,
+                                                       "Reactivated":  12,
+                                                       "Projected":  true
+                                                   },
+                                                   {
+                                                       "Month":  8,
+                                                       "ActiveCustomers":  142,
+                                                       "RetentionRate":  0.24,
+                                                       "Revenue":  15124.00,
+                                                       "Reactivated":  12,
+                                                       "Projected":  true
+                                                   },
+                                                   {
+                                                       "Month":  9,
+                                                       "ActiveCustomers":  136,
+                                                       "RetentionRate":  0.23,
+                                                       "Revenue":  14698.40,
+                                                       "Reactivated":  12,
+                                                       "Projected":  true
+                                                   },
+                                                   {
+                                                       "Month":  10,
+                                                       "ActiveCustomers":  132,
+                                                       "RetentionRate":  0.22,
+                                                       "Revenue":  14430.5,
+                                                       "Reactivated":  13,
+                                                       "Projected":  true
+                                                   },
+                                                   {
+                                                       "Month":  11,
+                                                       "ActiveCustomers":  126,
+                                                       "RetentionRate":  0.21,
+                                                       "Revenue":  13961.20,
+                                                       "Reactivated":  13,
+                                                       "Projected":  true
+                                                   },
+                                                   {
+                                                       "Month":  12,
+                                                       "ActiveCustomers":  121,
+                                                       "RetentionRate":  0.2,
+                                                       "Revenue":  13586.90,
+                                                       "Reactivated":  13,
+                                                       "Projected":  true
+                                                   }
+                                               ]
+                         },
+                         {
+                             "CohortIndex":  6,
+                             "Label":  "Cohort M-6",
+                             "InitialSize":  520,
+                             "MonthsSinceAcquisition":  6,
+                             "M1Retention":  "62%",
+                             "M6Retention":  "28%",
+                             "M12Retention":  "20%",
+                             "TotalRevenue":  265452.8,
+                             "CohortLTV":  510.49,
+                             "MonthlyDetail":  [
+                                                   {
+                                                       "Month":  0,
+                                                       "ActiveCustomers":  520,
+                                                       "RetentionRate":  1,
+                                                       "Revenue":  49400.0,
+                                                       "Reactivated":  0
+                                                   },
+                                                   {
+                                                       "Month":  1,
+                                                       "ActiveCustomers":  328,
+                                                       "RetentionRate":  0.62,
+                                                       "Revenue":  31600.80,
+                                                       "Reactivated":  6
+                                                   },
+                                                   {
+                                                       "Month":  2,
+                                                       "ActiveCustomers":  258,
+                                                       "RetentionRate":  0.48,
+                                                       "Revenue":  25232.00,
+                                                       "Reactivated":  8
+                                                   },
+                                                   {
+                                                       "Month":  3,
+                                                       "ActiveCustomers":  217,
+                                                       "RetentionRate":  0.4,
+                                                       "Revenue":  21544.10,
+                                                       "Reactivated":  9
+                                                   },
+                                                   {
+                                                       "Month":  4,
+                                                       "ActiveCustomers":  192,
+                                                       "RetentionRate":  0.35,
+                                                       "Revenue":  19338.20,
+                                                       "Reactivated":  10
+                                                   },
+                                                   {
+                                                       "Month":  5,
+                                                       "ActiveCustomers":  172,
+                                                       "RetentionRate":  0.31,
+                                                       "Revenue":  17556.0,
+                                                       "Reactivated":  11
+                                                   },
+                                                   {
+                                                       "Month":  6,
+                                                       "ActiveCustomers":  157,
+                                                       "RetentionRate":  0.28,
+                                                       "Revenue":  16265.90,
+                                                       "Reactivated":  11
+                                                   },
+                                                   {
+                                                       "Month":  7,
+                                                       "ActiveCustomers":  147,
+                                                       "RetentionRate":  0.26,
+                                                       "Revenue":  15418.50,
+                                                       "Reactivated":  12,
+                                                       "Projected":  true
+                                                   },
+                                                   {
+                                                       "Month":  8,
+                                                       "ActiveCustomers":  137,
+                                                       "RetentionRate":  0.24,
+                                                       "Revenue":  14573.00,
+                                                       "Reactivated":  12,
+                                                       "Projected":  true
+                                                   },
+                                                   {
+                                                       "Month":  9,
+                                                       "ActiveCustomers":  132,
+                                                       "RetentionRate":  0.23,
+                                                       "Revenue":  14250.00,
+                                                       "Reactivated":  12,
+                                                       "Projected":  true
+                                                   },
+                                                   {
+                                                       "Month":  10,
+                                                       "ActiveCustomers":  126,
+                                                       "RetentionRate":  0.22,
+                                                       "Revenue":  13794.0,
+                                                       "Reactivated":  12,
+                                                       "Projected":  true
+                                                   },
+                                                   {
+                                                       "Month":  11,
+                                                       "ActiveCustomers":  121,
+                                                       "RetentionRate":  0.21,
+                                                       "Revenue":  13431.10,
+                                                       "Reactivated":  12,
+                                                       "Projected":  true
+                                                   },
+                                                   {
+                                                       "Month":  12,
+                                                       "ActiveCustomers":  116,
+                                                       "RetentionRate":  0.2,
+                                                       "Revenue":  13049.20,
+                                                       "Reactivated":  12,
+                                                       "Projected":  true
+                                                   }
+                                               ]
+                         },
+                         {
+                             "CohortIndex":  7,
+                             "Label":  "Cohort M-7",
+                             "InitialSize":  500,
+                             "MonthsSinceAcquisition":  7,
+                             "M1Retention":  "62%",
+                             "M6Retention":  "28%",
+                             "M12Retention":  "20%",
+                             "TotalRevenue":  255369.5,
+                             "CohortLTV":  510.74,
+                             "MonthlyDetail":  [
+                                                   {
+                                                       "Month":  0,
+                                                       "ActiveCustomers":  500,
+                                                       "RetentionRate":  1,
+                                                       "Revenue":  47500.0,
+                                                       "Reactivated":  0
+                                                   },
+                                                   {
+                                                       "Month":  1,
+                                                       "ActiveCustomers":  316,
+                                                       "RetentionRate":  0.62,
+                                                       "Revenue":  30438.00,
+                                                       "Reactivated":  6
+                                                   },
+                                                   {
+                                                       "Month":  2,
+                                                       "ActiveCustomers":  248,
+                                                       "RetentionRate":  0.48,
+                                                       "Revenue":  24244.00,
+                                                       "Reactivated":  8
+                                                   },
+                                                   {
+                                                       "Month":  3,
+                                                       "ActiveCustomers":  209,
+                                                       "RetentionRate":  0.4,
+                                                       "Revenue":  20738.50,
+                                                       "Reactivated":  9
+                                                   },
+                                                   {
+                                                       "Month":  4,
+                                                       "ActiveCustomers":  185,
+                                                       "RetentionRate":  0.35,
+                                                       "Revenue":  18620.00,
+                                                       "Reactivated":  10
+                                                   },
+                                                   {
+                                                       "Month":  5,
+                                                       "ActiveCustomers":  165,
+                                                       "RetentionRate":  0.31,
+                                                       "Revenue":  16862.5,
+                                                       "Reactivated":  10
+                                                   },
+                                                   {
+                                                       "Month":  6,
+                                                       "ActiveCustomers":  151,
+                                                       "RetentionRate":  0.28,
+                                                       "Revenue":  15627.50,
+                                                       "Reactivated":  11
+                                                   },
+                                                   {
+                                                       "Month":  7,
+                                                       "ActiveCustomers":  141,
+                                                       "RetentionRate":  0.26,
+                                                       "Revenue":  14810.50,
+                                                       "Reactivated":  11
+                                                   },
+                                                   {
+                                                       "Month":  8,
+                                                       "ActiveCustomers":  131,
+                                                       "RetentionRate":  0.24,
+                                                       "Revenue":  13955.50,
+                                                       "Reactivated":  11,
+                                                       "Projected":  true
+                                                   },
+                                                   {
+                                                       "Month":  9,
+                                                       "ActiveCustomers":  127,
+                                                       "RetentionRate":  0.23,
+                                                       "Revenue":  13689.50,
+                                                       "Reactivated":  12,
+                                                       "Projected":  true
+                                                   },
+                                                   {
+                                                       "Month":  10,
+                                                       "ActiveCustomers":  122,
+                                                       "RetentionRate":  0.22,
+                                                       "Revenue":  13338.0,
+                                                       "Reactivated":  12,
+                                                       "Projected":  true
+                                                   },
+                                                   {
+                                                       "Month":  11,
+                                                       "ActiveCustomers":  117,
+                                                       "RetentionRate":  0.21,
+                                                       "Revenue":  12967.50,
+                                                       "Reactivated":  12,
+                                                       "Projected":  true
+                                                   },
+                                                   {
+                                                       "Month":  12,
+                                                       "ActiveCustomers":  112,
+                                                       "RetentionRate":  0.2,
+                                                       "Revenue":  12578.00,
+                                                       "Reactivated":  12,
+                                                       "Projected":  true
+                                                   }
+                                               ]
+                         },
+                         {
+                             "CohortIndex":  8,
+                             "Label":  "Cohort M-8",
+                             "InitialSize":  480,
+                             "MonthsSinceAcquisition":  8,
+                             "M1Retention":  "62%",
+                             "M6Retention":  "28%",
+                             "M12Retention":  "20%",
+                             "TotalRevenue":  245086.7,
+                             "CohortLTV":  510.6,
+                             "MonthlyDetail":  [
+                                                   {
+                                                       "Month":  0,
+                                                       "ActiveCustomers":  480,
+                                                       "RetentionRate":  1,
+                                                       "Revenue":  45600.0,
+                                                       "Reactivated":  0
+                                                   },
+                                                   {
+                                                       "Month":  1,
+                                                       "ActiveCustomers":  303,
+                                                       "RetentionRate":  0.62,
+                                                       "Revenue":  29208.70,
+                                                       "Reactivated":  5
+                                                   },
+                                                   {
+                                                       "Month":  2,
+                                                       "ActiveCustomers":  238,
+                                                       "RetentionRate":  0.48,
+                                                       "Revenue":  23256.00,
+                                                       "Reactivated":  8
+                                                   },
+                                                   {
+                                                       "Month":  3,
+                                                       "ActiveCustomers":  201,
+                                                       "RetentionRate":  0.4,
+                                                       "Revenue":  19932.90,
+                                                       "Reactivated":  9
+                                                   },
+                                                   {
+                                                       "Month":  4,
+                                                       "ActiveCustomers":  177,
+                                                       "RetentionRate":  0.35,
+                                                       "Revenue":  17835.30,
+                                                       "Reactivated":  9
+                                                   },
+                                                   {
+                                                       "Month":  5,
+                                                       "ActiveCustomers":  159,
+                                                       "RetentionRate":  0.31,
+                                                       "Revenue":  16235.5,
+                                                       "Reactivated":  10
+                                                   },
+                                                   {
+                                                       "Month":  6,
+                                                       "ActiveCustomers":  144,
+                                                       "RetentionRate":  0.28,
+                                                       "Revenue":  14922.60,
+                                                       "Reactivated":  10
+                                                   },
+                                                   {
+                                                       "Month":  7,
+                                                       "ActiveCustomers":  136,
+                                                       "RetentionRate":  0.26,
+                                                       "Revenue":  14269.00,
+                                                       "Reactivated":  11
+                                                   },
+                                                   {
+                                                       "Month":  8,
+                                                       "ActiveCustomers":  126,
+                                                       "RetentionRate":  0.24,
+                                                       "Revenue":  13404.50,
+                                                       "Reactivated":  11
+                                                   },
+                                                   {
+                                                       "Month":  9,
+                                                       "ActiveCustomers":  121,
+                                                       "RetentionRate":  0.23,
+                                                       "Revenue":  13062.50,
+                                                       "Reactivated":  11,
+                                                       "Projected":  true
+                                                   },
+                                                   {
+                                                       "Month":  10,
+                                                       "ActiveCustomers":  117,
+                                                       "RetentionRate":  0.22,
+                                                       "Revenue":  12815.5,
+                                                       "Reactivated":  11,
+                                                       "Projected":  true
+                                                   },
+                                                   {
+                                                       "Month":  11,
+                                                       "ActiveCustomers":  112,
+                                                       "RetentionRate":  0.21,
+                                                       "Revenue":  12437.40,
+                                                       "Reactivated":  11,
+                                                       "Projected":  true
+                                                   },
+                                                   {
+                                                       "Month":  12,
+                                                       "ActiveCustomers":  108,
+                                                       "RetentionRate":  0.2,
+                                                       "Revenue":  12106.80,
+                                                       "Reactivated":  12,
+                                                       "Projected":  true
+                                                   }
+                                               ]
+                         },
+                         {
+                             "CohortIndex":  9,
+                             "Label":  "Cohort M-9",
+                             "InitialSize":  460,
+                             "MonthsSinceAcquisition":  9,
+                             "M1Retention":  "62%",
+                             "M6Retention":  "28%",
+                             "M12Retention":  "20%",
+                             "TotalRevenue":  234976.8,
+                             "CohortLTV":  510.82,
+                             "MonthlyDetail":  [
+                                                   {
+                                                       "Month":  0,
+                                                       "ActiveCustomers":  460,
+                                                       "RetentionRate":  1,
+                                                       "Revenue":  43700.0,
+                                                       "Reactivated":  0
+                                                   },
+                                                   {
+                                                       "Month":  1,
+                                                       "ActiveCustomers":  290,
+                                                       "RetentionRate":  0.62,
+                                                       "Revenue":  27949.00,
+                                                       "Reactivated":  5
+                                                   },
+                                                   {
+                                                       "Month":  2,
+                                                       "ActiveCustomers":  228,
+                                                       "RetentionRate":  0.48,
+                                                       "Revenue":  22300.30,
+                                                       "Reactivated":  7
+                                                   },
+                                                   {
+                                                       "Month":  3,
+                                                       "ActiveCustomers":  192,
+                                                       "RetentionRate":  0.4,
+                                                       "Revenue":  19060.80,
+                                                       "Reactivated":  8
+                                                   },
+                                                   {
+                                                       "Month":  4,
+                                                       "ActiveCustomers":  170,
+                                                       "RetentionRate":  0.35,
+                                                       "Revenue":  17117.10,
+                                                       "Reactivated":  9
+                                                   },
+                                                   {
+                                                       "Month":  5,
+                                                       "ActiveCustomers":  153,
+                                                       "RetentionRate":  0.31,
+                                                       "Revenue":  15608.5,
+                                                       "Reactivated":  10
+                                                   },
+                                                   {
+                                                       "Month":  6,
+                                                       "ActiveCustomers":  139,
+                                                       "RetentionRate":  0.28,
+                                                       "Revenue":  14390.60,
+                                                       "Reactivated":  10
+                                                   },
+                                                   {
+                                                       "Month":  7,
+                                                       "ActiveCustomers":  130,
+                                                       "RetentionRate":  0.26,
+                                                       "Revenue":  13661.00,
+                                                       "Reactivated":  10
+                                                   },
+                                                   {
+                                                       "Month":  8,
+                                                       "ActiveCustomers":  120,
+                                                       "RetentionRate":  0.24,
+                                                       "Revenue":  12787.00,
+                                                       "Reactivated":  10
+                                                   },
+                                                   {
+                                                       "Month":  9,
+                                                       "ActiveCustomers":  117,
+                                                       "RetentionRate":  0.23,
+                                                       "Revenue":  12614.10,
+                                                       "Reactivated":  11
+                                                   },
+                                                   {
+                                                       "Month":  10,
+                                                       "ActiveCustomers":  112,
+                                                       "RetentionRate":  0.22,
+                                                       "Revenue":  12245.5,
+                                                       "Reactivated":  11,
+                                                       "Projected":  true
+                                                   },
+                                                   {
+                                                       "Month":  11,
+                                                       "ActiveCustomers":  108,
+                                                       "RetentionRate":  0.21,
+                                                       "Revenue":  11973.80,
+                                                       "Reactivated":  11,
+                                                       "Projected":  true
+                                                   },
+                                                   {
+                                                       "Month":  12,
+                                                       "ActiveCustomers":  103,
+                                                       "RetentionRate":  0.2,
+                                                       "Revenue":  11569.10,
+                                                       "Reactivated":  11,
+                                                       "Projected":  true
+                                                   }
+                                               ]
+                         },
+                         {
+                             "CohortIndex":  10,
+                             "Label":  "Cohort M-10",
+                             "InitialSize":  440,
+                             "MonthsSinceAcquisition":  10,
+                             "M1Retention":  "62%",
+                             "M6Retention":  "28%",
+                             "M12Retention":  "20%",
+                             "TotalRevenue":  224608.5,
+                             "CohortLTV":  510.47,
+                             "MonthlyDetail":  [
+                                                   {
+                                                       "Month":  0,
+                                                       "ActiveCustomers":  440,
+                                                       "RetentionRate":  1,
+                                                       "Revenue":  41800.0,
+                                                       "Reactivated":  0
+                                                   },
+                                                   {
+                                                       "Month":  1,
+                                                       "ActiveCustomers":  278,
+                                                       "RetentionRate":  0.62,
+                                                       "Revenue":  26786.20,
+                                                       "Reactivated":  5
+                                                   },
+                                                   {
+                                                       "Month":  2,
+                                                       "ActiveCustomers":  218,
+                                                       "RetentionRate":  0.48,
+                                                       "Revenue":  21312.30,
+                                                       "Reactivated":  7
+                                                   },
+                                                   {
+                                                       "Month":  3,
+                                                       "ActiveCustomers":  184,
+                                                       "RetentionRate":  0.4,
+                                                       "Revenue":  18255.20,
+                                                       "Reactivated":  8
+                                                   },
+                                                   {
+                                                       "Month":  4,
+                                                       "ActiveCustomers":  163,
+                                                       "RetentionRate":  0.35,
+                                                       "Revenue":  16398.90,
+                                                       "Reactivated":  9
+                                                   },
+                                                   {
+                                                       "Month":  5,
+                                                       "ActiveCustomers":  145,
+                                                       "RetentionRate":  0.31,
+                                                       "Revenue":  14810.5,
+                                                       "Reactivated":  9
+                                                   },
+                                                   {
+                                                       "Month":  6,
+                                                       "ActiveCustomers":  133,
+                                                       "RetentionRate":  0.28,
+                                                       "Revenue":  13752.20,
+                                                       "Reactivated":  10
+                                                   },
+                                                   {
+                                                       "Month":  7,
+                                                       "ActiveCustomers":  124,
+                                                       "RetentionRate":  0.26,
+                                                       "Revenue":  13011.20,
+                                                       "Reactivated":  10
+                                                   },
+                                                   {
+                                                       "Month":  8,
+                                                       "ActiveCustomers":  116,
+                                                       "RetentionRate":  0.24,
+                                                       "Revenue":  12346.20,
+                                                       "Reactivated":  10
+                                                   },
+                                                   {
+                                                       "Month":  9,
+                                                       "ActiveCustomers":  111,
+                                                       "RetentionRate":  0.23,
+                                                       "Revenue":  11987.10,
+                                                       "Reactivated":  10
+                                                   },
+                                                   {
+                                                       "Month":  10,
+                                                       "ActiveCustomers":  107,
+                                                       "RetentionRate":  0.22,
+                                                       "Revenue":  11723.0,
+                                                       "Reactivated":  10
+                                                   },
+                                                   {
+                                                       "Month":  11,
+                                                       "ActiveCustomers":  102,
+                                                       "RetentionRate":  0.21,
+                                                       "Revenue":  11327.80,
+                                                       "Reactivated":  10,
+                                                       "Projected":  true
+                                                   },
+                                                   {
+                                                       "Month":  12,
+                                                       "ActiveCustomers":  99,
+                                                       "RetentionRate":  0.2,
+                                                       "Revenue":  11097.90,
+                                                       "Reactivated":  11,
+                                                       "Projected":  true
+                                                   }
+                                               ]
+                         },
+                         {
+                             "CohortIndex":  11,
+                             "Label":  "Cohort M-11",
+                             "InitialSize":  420,
+                             "MonthsSinceAcquisition":  11,
+                             "M1Retention":  "62%",
+                             "M6Retention":  "28%",
+                             "M12Retention":  "20%",
+                             "TotalRevenue":  214565.1,
+                             "CohortLTV":  510.87,
+                             "MonthlyDetail":  [
+                                                   {
+                                                       "Month":  0,
+                                                       "ActiveCustomers":  420,
+                                                       "RetentionRate":  1,
+                                                       "Revenue":  39900.0,
+                                                       "Reactivated":  0
+                                                   },
+                                                   {
+                                                       "Month":  1,
+                                                       "ActiveCustomers":  265,
+                                                       "RetentionRate":  0.62,
+                                                       "Revenue":  25526.50,
+                                                       "Reactivated":  5
+                                                   },
+                                                   {
+                                                       "Month":  2,
+                                                       "ActiveCustomers":  209,
+                                                       "RetentionRate":  0.48,
+                                                       "Revenue":  20423.10,
+                                                       "Reactivated":  7
+                                                   },
+                                                   {
+                                                       "Month":  3,
+                                                       "ActiveCustomers":  176,
+                                                       "RetentionRate":  0.4,
+                                                       "Revenue":  17449.60,
+                                                       "Reactivated":  8
+                                                   },
+                                                   {
+                                                       "Month":  4,
+                                                       "ActiveCustomers":  155,
+                                                       "RetentionRate":  0.35,
+                                                       "Revenue":  15614.20,
+                                                       "Reactivated":  8
+                                                   },
+                                                   {
+                                                       "Month":  5,
+                                                       "ActiveCustomers":  139,
+                                                       "RetentionRate":  0.31,
+                                                       "Revenue":  14183.5,
+                                                       "Reactivated":  9
+                                                   },
+                                                   {
+                                                       "Month":  6,
+                                                       "ActiveCustomers":  127,
+                                                       "RetentionRate":  0.28,
+                                                       "Revenue":  13153.70,
+                                                       "Reactivated":  9
+                                                   },
+                                                   {
+                                                       "Month":  7,
+                                                       "ActiveCustomers":  118,
+                                                       "RetentionRate":  0.26,
+                                                       "Revenue":  12403.20,
+                                                       "Reactivated":  9
+                                                   },
+                                                   {
+                                                       "Month":  8,
+                                                       "ActiveCustomers":  111,
+                                                       "RetentionRate":  0.24,
+                                                       "Revenue":  11795.20,
+                                                       "Reactivated":  10
+                                                   },
+                                                   {
+                                                       "Month":  9,
+                                                       "ActiveCustomers":  107,
+                                                       "RetentionRate":  0.23,
+                                                       "Revenue":  11538.70,
+                                                       "Reactivated":  10
+                                                   },
+                                                   {
+                                                       "Month":  10,
+                                                       "ActiveCustomers":  102,
+                                                       "RetentionRate":  0.22,
+                                                       "Revenue":  11153.0,
+                                                       "Reactivated":  10
+                                                   },
+                                                   {
+                                                       "Month":  11,
+                                                       "ActiveCustomers":  98,
+                                                       "RetentionRate":  0.21,
+                                                       "Revenue":  10864.20,
+                                                       "Reactivated":  10
+                                                   },
+                                                   {
+                                                       "Month":  12,
+                                                       "ActiveCustomers":  94,
+                                                       "RetentionRate":  0.2,
+                                                       "Revenue":  10560.20,
+                                                       "Reactivated":  10,
+                                                       "Projected":  true
+                                                   }
+                                               ]
+                         }
+                     ]
+}
