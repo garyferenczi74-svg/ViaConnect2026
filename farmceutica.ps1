@@ -21,7 +21,7 @@ $Banner = @"
 
   ╔═══════════════════════════════════════════════╗
   ║   FarmCeutica Toolchain CLI v$Version           ║
-  ║   23 scripts · 62 SKUs · 7 categories        ║
+  ║   24 scripts · 62 SKUs · 7 categories        ║
   ╚═══════════════════════════════════════════════╝
 
 "@
@@ -32,6 +32,7 @@ $Commands = [ordered]@{
     "run"        = @{ Script="toolchain_orchestrator.ps1"; Desc="Run full 11-step pipeline"; Category="Pipeline" }
     "run-dry"    = @{ Script="toolchain_orchestrator.ps1"; Args=@("-DryRun"); Desc="Dry run (validate without executing)"; Category="Pipeline" }
     "validate"   = @{ Script="data_integrity_checker.ps1"; Desc="Run 46 cross-file integrity checks"; Category="Pipeline" }
+    "alerts"     = @{ Script="alert_engine.ps1"; Desc="Monitor 24 KPI checks, flag critical issues"; Category="Pipeline" }
     "report"     = @{ Script="report_generator.ps1"; Desc="Generate HTML executive report"; Category="Pipeline" }
 
     # Data & Costs
