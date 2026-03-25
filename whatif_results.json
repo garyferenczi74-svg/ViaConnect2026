@@ -1,0 +1,1028 @@
+﻿{
+    "GeneratedAt":  "2026-03-24T18:01:22.3064686-06:00",
+    "ScenariosModeled":  12,
+    "Baseline":  {
+                     "Label":  "Baseline (Balanced)",
+                     "SKUCount":  62,
+                     "MonthlyUnits":  19860,
+                     "MonthlyRevenue":  1362829.80,
+                     "MonthlyCOGS":  289684.70,
+                     "MonthlyNetProfit":  656710.64,
+                     "GrossMarginPct":  78.7,
+                     "NetMarginPct":  48.2,
+                     "AnnualRevenue":  16353957.60,
+                     "AnnualNetProfit":  7880527.67,
+                     "Categories":  [
+                                        {
+                                            "Category":  "Advanced",
+                                            "SKUs":  16,
+                                            "MonthlyRevenue":  534006.40,
+                                            "MonthlyNetProfit":  280776.54
+                                        },
+                                        {
+                                            "Category":  "Base",
+                                            "SKUs":  8,
+                                            "MonthlyRevenue":  284585.60,
+                                            "MonthlyNetProfit":  163833.46
+                                        },
+                                        {
+                                            "Category":  "Children",
+                                            "SKUs":  3,
+                                            "MonthlyRevenue":  29578.00,
+                                            "MonthlyNetProfit":  15804.90
+                                        },
+                                        {
+                                            "Category":  "Mushroom",
+                                            "SKUs":  5,
+                                            "MonthlyRevenue":  73157.00,
+                                            "MonthlyNetProfit":  36351.07
+                                        },
+                                        {
+                                            "Category":  "SNP",
+                                            "SKUs":  20,
+                                            "MonthlyRevenue":  239367.00,
+                                            "MonthlyNetProfit":  118662.64
+                                        },
+                                        {
+                                            "Category":  "Testing",
+                                            "SKUs":  6,
+                                            "MonthlyRevenue":  107241.00,
+                                            "MonthlyNetProfit":  -2359.18
+                                        },
+                                        {
+                                            "Category":  "Women",
+                                            "SKUs":  4,
+                                            "MonthlyRevenue":  94894.80,
+                                            "MonthlyNetProfit":  43641.20
+                                        }
+                                    ]
+                 },
+    "ComparisonMatrix":  [
+                             {
+                                 "Scenario":  "BASELINE",
+                                 "Impact":  "-",
+                                 "AnnualRevenue":  16353957.60,
+                                 "AnnualNetProfit":  7880527.67,
+                                 "NetMarginPct":  "48.2%",
+                                 "SKUs":  62,
+                                 "RevDelta":  "-",
+                                 "NetDelta":  "-"
+                             },
+                             {
+                                 "Scenario":  "COGS +15% Across Board",
+                                 "Impact":  "NEGATIVE",
+                                 "AnnualRevenue":  16353957.60,
+                                 "AnnualNetProfit":  7359071.27,
+                                 "NetMarginPct":  "45.0%",
+                                 "SKUs":  62,
+                                 "RevDelta":  "0%",
+                                 "NetDelta":  "-6.6%"
+                             },
+                             {
+                                 "Scenario":  "COGS +25% SNP Only",
+                                 "Impact":  "NEGATIVE",
+                                 "AnnualRevenue":  16353957.60,
+                                 "AnnualNetProfit":  7737823.67,
+                                 "NetMarginPct":  "47.3%",
+                                 "SKUs":  62,
+                                 "RevDelta":  "0%",
+                                 "NetDelta":  "-1.8%"
+                             },
+                             {
+                                 "Scenario":  "Drop All Testing SKUs",
+                                 "Impact":  "POSITIVE",
+                                 "AnnualRevenue":  15067065.60,
+                                 "AnnualNetProfit":  7908837.82,
+                                 "NetMarginPct":  "52.5%",
+                                 "SKUs":  56,
+                                 "RevDelta":  "-7.9%",
+                                 "NetDelta":  "0.4%"
+                             },
+                             {
+                                 "Scenario":  "Drop Sunset + Watch SKUs",
+                                 "Impact":  "POSITIVE",
+                                 "AnnualRevenue":  15419220.48,
+                                 "AnnualNetProfit":  7916506.92,
+                                 "NetMarginPct":  "51.3%",
+                                 "SKUs":  57,
+                                 "RevDelta":  "-5.7%",
+                                 "NetDelta":  "0.5%"
+                             },
+                             {
+                                 "Scenario":  "MSRP +10% All Products",
+                                 "Impact":  "POSITIVE",
+                                 "AnnualRevenue":  17989490.16,
+                                 "AnnualNetProfit":  9016275.26,
+                                 "NetMarginPct":  "50.1%",
+                                 "SKUs":  62,
+                                 "RevDelta":  "10.0%",
+                                 "NetDelta":  "14.4%"
+                             },
+                             {
+                                 "Scenario":  "MSRP +20% Testing Only",
+                                 "Impact":  "POSITIVE",
+                                 "AnnualRevenue":  16611351.12,
+                                 "AnnualNetProfit":  8059272.17,
+                                 "NetMarginPct":  "48.5%",
+                                 "SKUs":  62,
+                                 "RevDelta":  "1.6%",
+                                 "NetDelta":  "2.3%"
+                             },
+                             {
+                                 "Scenario":  "Pivot to 90% DTC",
+                                 "Impact":  "MIXED",
+                                 "AnnualRevenue":  21791354.16,
+                                 "AnnualNetProfit":  10199519.21,
+                                 "NetMarginPct":  "46.8%",
+                                 "SKUs":  62,
+                                 "RevDelta":  "33.2%",
+                                 "NetDelta":  "29.4%"
+                             },
+                             {
+                                 "Scenario":  "Wholesale Expansion",
+                                 "Impact":  "MIXED",
+                                 "AnnualRevenue":  14838265.92,
+                                 "AnnualNetProfit":  7418132.50,
+                                 "NetMarginPct":  "50.0%",
+                                 "SKUs":  62,
+                                 "RevDelta":  "-9.3%",
+                                 "NetDelta":  "-5.9%"
+                             },
+                             {
+                                 "Scenario":  "Volume +50% Star SKUs",
+                                 "Impact":  "MIXED",
+                                 "AnnualRevenue":  16353957.60,
+                                 "AnnualNetProfit":  7880527.67,
+                                 "NetMarginPct":  "48.2%",
+                                 "SKUs":  62,
+                                 "RevDelta":  "0%",
+                                 "NetDelta":  "0%"
+                             },
+                             {
+                                 "Scenario":  "Recession: Volume -30%",
+                                 "Impact":  "MIXED",
+                                 "AnnualRevenue":  11443061.04,
+                                 "AnnualNetProfit":  5515623.26,
+                                 "NetMarginPct":  "48.2%",
+                                 "SKUs":  62,
+                                 "RevDelta":  "-30.0%",
+                                 "NetDelta":  "-30.0%"
+                             },
+                             {
+                                 "Scenario":  "Best Case Combo",
+                                 "Impact":  "POSITIVE",
+                                 "AnnualRevenue":  24755942.52,
+                                 "AnnualNetProfit":  12302938.70,
+                                 "NetMarginPct":  "49.7%",
+                                 "SKUs":  62,
+                                 "RevDelta":  "51.4%",
+                                 "NetDelta":  "56.1%"
+                             },
+                             {
+                                 "Scenario":  "Worst Case Combo",
+                                 "Impact":  "NEGATIVE",
+                                 "AnnualRevenue":  9045796.80,
+                                 "AnnualNetProfit":  3808215.26,
+                                 "NetMarginPct":  "42.1%",
+                                 "SKUs":  62,
+                                 "RevDelta":  "-44.7%",
+                                 "NetDelta":  "-51.7%"
+                             }
+                         ],
+    "BestCase":  {
+                     "Scenario":  "Best Case Combo",
+                     "AnnualNetProfit":  12302938.70,
+                     "NetMarginPct":  49.7,
+                     "UpsideVsBaseline":  "56.1%"
+                 },
+    "WorstCase":  {
+                      "Scenario":  "Worst Case Combo",
+                      "AnnualNetProfit":  3808215.26,
+                      "NetMarginPct":  42.1,
+                      "DownsideVsBaseline":  "-51.7%"
+                  },
+    "Scenarios":  [
+                      {
+                          "Scenario":  "COGS +15% Across Board",
+                          "Type":  "COGS_SHIFT",
+                          "Description":  "Raw material costs increase 15% due to supply chain disruption",
+                          "Impact":  "NEGATIVE",
+                          "Result":  {
+                                         "Label":  "COGS +15% Across Board",
+                                         "SKUCount":  62,
+                                         "MonthlyUnits":  19860,
+                                         "MonthlyRevenue":  1362829.80,
+                                         "MonthlyCOGS":  333139.40,
+                                         "MonthlyNetProfit":  613255.94,
+                                         "GrossMarginPct":  75.6,
+                                         "NetMarginPct":  45.0,
+                                         "AnnualRevenue":  16353957.60,
+                                         "AnnualNetProfit":  7359071.27,
+                                         "Categories":  [
+                                                            {
+                                                                "Category":  "Advanced",
+                                                                "SKUs":  16,
+                                                                "MonthlyRevenue":  534006.40,
+                                                                "MonthlyNetProfit":  267272.54
+                                                            },
+                                                            {
+                                                                "Category":  "Base",
+                                                                "SKUs":  8,
+                                                                "MonthlyRevenue":  284585.60,
+                                                                "MonthlyNetProfit":  158761.46
+                                                            },
+                                                            {
+                                                                "Category":  "Children",
+                                                                "SKUs":  3,
+                                                                "MonthlyRevenue":  29578.00,
+                                                                "MonthlyNetProfit":  15094.90
+                                                            },
+                                                            {
+                                                                "Category":  "Mushroom",
+                                                                "SKUs":  5,
+                                                                "MonthlyRevenue":  73157.00,
+                                                                "MonthlyNetProfit":  34181.07
+                                                            },
+                                                            {
+                                                                "Category":  "SNP",
+                                                                "SKUs":  20,
+                                                                "MonthlyRevenue":  239367.00,
+                                                                "MonthlyNetProfit":  111527.14
+                                                            },
+                                                            {
+                                                                "Category":  "Testing",
+                                                                "SKUs":  6,
+                                                                "MonthlyRevenue":  107241.00,
+                                                                "MonthlyNetProfit":  -13883.38
+                                                            },
+                                                            {
+                                                                "Category":  "Women",
+                                                                "SKUs":  4,
+                                                                "MonthlyRevenue":  94894.80,
+                                                                "MonthlyNetProfit":  40302.20
+                                                            }
+                                                        ]
+                                     },
+                          "VsBaseline":  {
+                                             "RevenueChange":  0.00,
+                                             "RevenueChangePct":  "0%",
+                                             "NetProfitChange":  -521456.40,
+                                             "NetProfitChangePct":  "-6.6%",
+                                             "MarginChange":  "-3.2pp"
+                                         }
+                      },
+                      {
+                          "Scenario":  "COGS +25% SNP Only",
+                          "Type":  "COGS_SHIFT",
+                          "Description":  "Specialty SNP ingredient costs spike 25%",
+                          "Impact":  "NEGATIVE",
+                          "Result":  {
+                                         "Label":  "COGS +25% SNP Only",
+                                         "SKUCount":  62,
+                                         "MonthlyUnits":  19860,
+                                         "MonthlyRevenue":  1362829.80,
+                                         "MonthlyCOGS":  301576.70,
+                                         "MonthlyNetProfit":  644818.64,
+                                         "GrossMarginPct":  77.9,
+                                         "NetMarginPct":  47.3,
+                                         "AnnualRevenue":  16353957.60,
+                                         "AnnualNetProfit":  7737823.67,
+                                         "Categories":  [
+                                                            {
+                                                                "Category":  "Advanced",
+                                                                "SKUs":  16,
+                                                                "MonthlyRevenue":  534006.40,
+                                                                "MonthlyNetProfit":  280776.54
+                                                            },
+                                                            {
+                                                                "Category":  "Base",
+                                                                "SKUs":  8,
+                                                                "MonthlyRevenue":  284585.60,
+                                                                "MonthlyNetProfit":  163833.46
+                                                            },
+                                                            {
+                                                                "Category":  "Children",
+                                                                "SKUs":  3,
+                                                                "MonthlyRevenue":  29578.00,
+                                                                "MonthlyNetProfit":  15804.90
+                                                            },
+                                                            {
+                                                                "Category":  "Mushroom",
+                                                                "SKUs":  5,
+                                                                "MonthlyRevenue":  73157.00,
+                                                                "MonthlyNetProfit":  36351.07
+                                                            },
+                                                            {
+                                                                "Category":  "SNP",
+                                                                "SKUs":  20,
+                                                                "MonthlyRevenue":  239367.00,
+                                                                "MonthlyNetProfit":  106770.64
+                                                            },
+                                                            {
+                                                                "Category":  "Testing",
+                                                                "SKUs":  6,
+                                                                "MonthlyRevenue":  107241.00,
+                                                                "MonthlyNetProfit":  -2359.18
+                                                            },
+                                                            {
+                                                                "Category":  "Women",
+                                                                "SKUs":  4,
+                                                                "MonthlyRevenue":  94894.80,
+                                                                "MonthlyNetProfit":  43641.20
+                                                            }
+                                                        ]
+                                     },
+                          "VsBaseline":  {
+                                             "RevenueChange":  0.00,
+                                             "RevenueChangePct":  "0%",
+                                             "NetProfitChange":  -142704.00,
+                                             "NetProfitChangePct":  "-1.8%",
+                                             "MarginChange":  "-0.9pp"
+                                         }
+                      },
+                      {
+                          "Scenario":  "Drop All Testing SKUs",
+                          "Type":  "SKU_REMOVAL",
+                          "Description":  "Discontinue entire Testing category (6 SKUs)",
+                          "Impact":  "POSITIVE",
+                          "Result":  {
+                                         "Label":  "Drop All Testing SKUs",
+                                         "SKUCount":  56,
+                                         "MonthlyUnits":  19500,
+                                         "MonthlyRevenue":  1255588.80,
+                                         "MonthlyCOGS":  212853.50,
+                                         "MonthlyNetProfit":  659069.82,
+                                         "GrossMarginPct":  83.0,
+                                         "NetMarginPct":  52.5,
+                                         "AnnualRevenue":  15067065.60,
+                                         "AnnualNetProfit":  7908837.82,
+                                         "Categories":  [
+                                                            {
+                                                                "Category":  "Advanced",
+                                                                "SKUs":  16,
+                                                                "MonthlyRevenue":  534006.40,
+                                                                "MonthlyNetProfit":  280776.54
+                                                            },
+                                                            {
+                                                                "Category":  "Base",
+                                                                "SKUs":  8,
+                                                                "MonthlyRevenue":  284585.60,
+                                                                "MonthlyNetProfit":  163833.46
+                                                            },
+                                                            {
+                                                                "Category":  "Children",
+                                                                "SKUs":  3,
+                                                                "MonthlyRevenue":  29578.00,
+                                                                "MonthlyNetProfit":  15804.90
+                                                            },
+                                                            {
+                                                                "Category":  "Mushroom",
+                                                                "SKUs":  5,
+                                                                "MonthlyRevenue":  73157.00,
+                                                                "MonthlyNetProfit":  36351.07
+                                                            },
+                                                            {
+                                                                "Category":  "SNP",
+                                                                "SKUs":  20,
+                                                                "MonthlyRevenue":  239367.00,
+                                                                "MonthlyNetProfit":  118662.64
+                                                            },
+                                                            {
+                                                                "Category":  "Women",
+                                                                "SKUs":  4,
+                                                                "MonthlyRevenue":  94894.80,
+                                                                "MonthlyNetProfit":  43641.20
+                                                            }
+                                                        ]
+                                     },
+                          "VsBaseline":  {
+                                             "RevenueChange":  -1286892.00,
+                                             "RevenueChangePct":  "-7.9%",
+                                             "NetProfitChange":  28310.15,
+                                             "NetProfitChangePct":  "0.4%",
+                                             "MarginChange":  "4.3pp"
+                                         }
+                      },
+                      {
+                          "Scenario":  "Drop Sunset + Watch SKUs",
+                          "Type":  "SKU_REMOVAL",
+                          "Description":  "Remove EpiGenDX (Sunset) and 4 Watch-tier SKUs",
+                          "Impact":  "POSITIVE",
+                          "Result":  {
+                                         "Label":  "Drop Sunset + Watch SKUs",
+                                         "SKUCount":  57,
+                                         "MonthlyUnits":  19560,
+                                         "MonthlyRevenue":  1284935.04,
+                                         "MonthlyCOGS":  232593.50,
+                                         "MonthlyNetProfit":  659708.91,
+                                         "GrossMarginPct":  81.9,
+                                         "NetMarginPct":  51.3,
+                                         "AnnualRevenue":  15419220.48,
+                                         "AnnualNetProfit":  7916506.92,
+                                         "Categories":  [
+                                                            {
+                                                                "Category":  "Advanced",
+                                                                "SKUs":  16,
+                                                                "MonthlyRevenue":  534006.40,
+                                                                "MonthlyNetProfit":  280776.54
+                                                            },
+                                                            {
+                                                                "Category":  "Base",
+                                                                "SKUs":  8,
+                                                                "MonthlyRevenue":  284585.60,
+                                                                "MonthlyNetProfit":  163833.46
+                                                            },
+                                                            {
+                                                                "Category":  "Children",
+                                                                "SKUs":  3,
+                                                                "MonthlyRevenue":  29578.00,
+                                                                "MonthlyNetProfit":  15804.90
+                                                            },
+                                                            {
+                                                                "Category":  "Mushroom",
+                                                                "SKUs":  5,
+                                                                "MonthlyRevenue":  73157.00,
+                                                                "MonthlyNetProfit":  36351.07
+                                                            },
+                                                            {
+                                                                "Category":  "SNP",
+                                                                "SKUs":  20,
+                                                                "MonthlyRevenue":  239367.00,
+                                                                "MonthlyNetProfit":  118662.64
+                                                            },
+                                                            {
+                                                                "Category":  "Testing",
+                                                                "SKUs":  1,
+                                                                "MonthlyRevenue":  29346.24,
+                                                                "MonthlyNetProfit":  639.09
+                                                            },
+                                                            {
+                                                                "Category":  "Women",
+                                                                "SKUs":  4,
+                                                                "MonthlyRevenue":  94894.80,
+                                                                "MonthlyNetProfit":  43641.20
+                                                            }
+                                                        ]
+                                     },
+                          "VsBaseline":  {
+                                             "RevenueChange":  -934737.12,
+                                             "RevenueChangePct":  "-5.7%",
+                                             "NetProfitChange":  35979.25,
+                                             "NetProfitChangePct":  "0.5%",
+                                             "MarginChange":  "3.1pp"
+                                         }
+                      },
+                      {
+                          "Scenario":  "MSRP +10% All Products",
+                          "Type":  "PRICE_CHANGE",
+                          "Description":  "Across-the-board 10% price increase",
+                          "Impact":  "POSITIVE",
+                          "Result":  {
+                                         "Label":  "MSRP +10% All Products",
+                                         "SKUCount":  62,
+                                         "MonthlyUnits":  19860,
+                                         "MonthlyRevenue":  1499124.18,
+                                         "MonthlyCOGS":  289684.70,
+                                         "MonthlyNetProfit":  751356.27,
+                                         "GrossMarginPct":  80.7,
+                                         "NetMarginPct":  50.1,
+                                         "AnnualRevenue":  17989490.16,
+                                         "AnnualNetProfit":  9016275.26,
+                                         "Categories":  [
+                                                            {
+                                                                "Category":  "Advanced",
+                                                                "SKUs":  16,
+                                                                "MonthlyRevenue":  587410.40,
+                                                                "MonthlyNetProfit":  317861.60
+                                                            },
+                                                            {
+                                                                "Category":  "Base",
+                                                                "SKUs":  8,
+                                                                "MonthlyRevenue":  313048.00,
+                                                                "MonthlyNetProfit":  183598.06
+                                                            },
+                                                            {
+                                                                "Category":  "Children",
+                                                                "SKUs":  3,
+                                                                "MonthlyRevenue":  32536.25,
+                                                                "MonthlyNetProfit":  17859.14
+                                                            },
+                                                            {
+                                                                "Category":  "Mushroom",
+                                                                "SKUs":  5,
+                                                                "MonthlyRevenue":  80473.75,
+                                                                "MonthlyNetProfit":  41431.89
+                                                            },
+                                                            {
+                                                                "Category":  "SNP",
+                                                                "SKUs":  20,
+                                                                "MonthlyRevenue":  263305.50,
+                                                                "MonthlyNetProfit":  135286.07
+                                                            },
+                                                            {
+                                                                "Category":  "Testing",
+                                                                "SKUs":  6,
+                                                                "MonthlyRevenue":  117965.28,
+                                                                "MonthlyNetProfit":  5088.12
+                                                            },
+                                                            {
+                                                                "Category":  "Women",
+                                                                "SKUs":  4,
+                                                                "MonthlyRevenue":  104385.00,
+                                                                "MonthlyNetProfit":  50231.40
+                                                            }
+                                                        ]
+                                     },
+                          "VsBaseline":  {
+                                             "RevenueChange":  1635532.56,
+                                             "RevenueChangePct":  "10.0%",
+                                             "NetProfitChange":  1135747.59,
+                                             "NetProfitChangePct":  "14.4%",
+                                             "MarginChange":  "1.9pp"
+                                         }
+                      },
+                      {
+                          "Scenario":  "MSRP +20% Testing Only",
+                          "Type":  "PRICE_CHANGE",
+                          "Description":  "Aggressive repricing of Testing category",
+                          "Impact":  "POSITIVE",
+                          "Result":  {
+                                         "Label":  "MSRP +20% Testing Only",
+                                         "SKUCount":  62,
+                                         "MonthlyUnits":  19860,
+                                         "MonthlyRevenue":  1384279.26,
+                                         "MonthlyCOGS":  289684.70,
+                                         "MonthlyNetProfit":  671606.01,
+                                         "GrossMarginPct":  79.1,
+                                         "NetMarginPct":  48.5,
+                                         "AnnualRevenue":  16611351.12,
+                                         "AnnualNetProfit":  8059272.17,
+                                         "Categories":  [
+                                                            {
+                                                                "Category":  "Advanced",
+                                                                "SKUs":  16,
+                                                                "MonthlyRevenue":  534006.40,
+                                                                "MonthlyNetProfit":  280776.54
+                                                            },
+                                                            {
+                                                                "Category":  "Base",
+                                                                "SKUs":  8,
+                                                                "MonthlyRevenue":  284585.60,
+                                                                "MonthlyNetProfit":  163833.46
+                                                            },
+                                                            {
+                                                                "Category":  "Children",
+                                                                "SKUs":  3,
+                                                                "MonthlyRevenue":  29578.00,
+                                                                "MonthlyNetProfit":  15804.90
+                                                            },
+                                                            {
+                                                                "Category":  "Mushroom",
+                                                                "SKUs":  5,
+                                                                "MonthlyRevenue":  73157.00,
+                                                                "MonthlyNetProfit":  36351.07
+                                                            },
+                                                            {
+                                                                "Category":  "SNP",
+                                                                "SKUs":  20,
+                                                                "MonthlyRevenue":  239367.00,
+                                                                "MonthlyNetProfit":  118662.64
+                                                            },
+                                                            {
+                                                                "Category":  "Testing",
+                                                                "SKUs":  6,
+                                                                "MonthlyRevenue":  128690.46,
+                                                                "MonthlyNetProfit":  12536.20
+                                                            },
+                                                            {
+                                                                "Category":  "Women",
+                                                                "SKUs":  4,
+                                                                "MonthlyRevenue":  94894.80,
+                                                                "MonthlyNetProfit":  43641.20
+                                                            }
+                                                        ]
+                                     },
+                          "VsBaseline":  {
+                                             "RevenueChange":  257393.52,
+                                             "RevenueChangePct":  "1.6%",
+                                             "NetProfitChange":  178744.50,
+                                             "NetProfitChangePct":  "2.3%",
+                                             "MarginChange":  "0.3pp"
+                                         }
+                      },
+                      {
+                          "Scenario":  "Pivot to 90% DTC",
+                          "Type":  "CHANNEL_SHIFT",
+                          "Description":  "Shift heavily to direct-to-consumer, minimize wholesale/distributor",
+                          "Impact":  "MIXED",
+                          "Result":  {
+                                         "Label":  "Pivot to 90% DTC",
+                                         "SKUCount":  62,
+                                         "MonthlyUnits":  19860,
+                                         "MonthlyRevenue":  1815946.18,
+                                         "MonthlyCOGS":  289684.70,
+                                         "MonthlyNetProfit":  849959.93,
+                                         "GrossMarginPct":  84.0,
+                                         "NetMarginPct":  46.8,
+                                         "AnnualRevenue":  21791354.16,
+                                         "AnnualNetProfit":  10199519.21,
+                                         "Categories":  [
+                                                            {
+                                                                "Category":  "Advanced",
+                                                                "SKUs":  16,
+                                                                "MonthlyRevenue":  711512.64,
+                                                                "MonthlyNetProfit":  356466.93
+                                                            },
+                                                            {
+                                                                "Category":  "Base",
+                                                                "SKUs":  8,
+                                                                "MonthlyRevenue":  379186.56,
+                                                                "MonthlyNetProfit":  204173.47
+                                                            },
+                                                            {
+                                                                "Category":  "Children",
+                                                                "SKUs":  3,
+                                                                "MonthlyRevenue":  39410.30,
+                                                                "MonthlyNetProfit":  19997.65
+                                                            },
+                                                            {
+                                                                "Category":  "Mushroom",
+                                                                "SKUs":  5,
+                                                                "MonthlyRevenue":  97475.70,
+                                                                "MonthlyNetProfit":  46721.16
+                                                            },
+                                                            {
+                                                                "Category":  "SNP",
+                                                                "SKUs":  20,
+                                                                "MonthlyRevenue":  318934.20,
+                                                                "MonthlyNetProfit":  152591.05
+                                                            },
+                                                            {
+                                                                "Category":  "Testing",
+                                                                "SKUs":  6,
+                                                                "MonthlyRevenue":  142988.30,
+                                                                "MonthlyNetProfit":  12917.87
+                                                            },
+                                                            {
+                                                                "Category":  "Women",
+                                                                "SKUs":  4,
+                                                                "MonthlyRevenue":  126438.48,
+                                                                "MonthlyNetProfit":  57091.80
+                                                            }
+                                                        ]
+                                     },
+                          "VsBaseline":  {
+                                             "RevenueChange":  5437396.56,
+                                             "RevenueChangePct":  "33.2%",
+                                             "NetProfitChange":  2318991.54,
+                                             "NetProfitChangePct":  "29.4%",
+                                             "MarginChange":  "-1.4pp"
+                                         }
+                      },
+                      {
+                          "Scenario":  "Wholesale Expansion",
+                          "Type":  "CHANNEL_SHIFT",
+                          "Description":  "Expand into practitioner wholesale channel aggressively",
+                          "Impact":  "MIXED",
+                          "Result":  {
+                                         "Label":  "Wholesale Expansion",
+                                         "SKUCount":  62,
+                                         "MonthlyUnits":  19838,
+                                         "MonthlyRevenue":  1236522.16,
+                                         "MonthlyCOGS":  289345.27,
+                                         "MonthlyNetProfit":  618177.71,
+                                         "GrossMarginPct":  76.6,
+                                         "NetMarginPct":  50.0,
+                                         "AnnualRevenue":  14838265.92,
+                                         "AnnualNetProfit":  7418132.50,
+                                         "Categories":  [
+                                                            {
+                                                                "Category":  "Advanced",
+                                                                "SKUs":  16,
+                                                                "MonthlyRevenue":  485119.20,
+                                                                "MonthlyNetProfit":  265960.66
+                                                            },
+                                                            {
+                                                                "Category":  "Base",
+                                                                "SKUs":  8,
+                                                                "MonthlyRevenue":  258532.80,
+                                                                "MonthlyNetProfit":  155938.26
+                                                            },
+                                                            {
+                                                                "Category":  "Children",
+                                                                "SKUs":  3,
+                                                                "MonthlyRevenue":  26978.56,
+                                                                "MonthlyNetProfit":  15039.88
+                                                            },
+                                                            {
+                                                                "Category":  "Mushroom",
+                                                                "SKUs":  5,
+                                                                "MonthlyRevenue":  66268.40,
+                                                                "MonthlyNetProfit":  34231.21
+                                                            },
+                                                            {
+                                                                "Category":  "SNP",
+                                                                "SKUs":  20,
+                                                                "MonthlyRevenue":  215992.60,
+                                                                "MonthlyNetProfit":  111333.98
+                                                            },
+                                                            {
+                                                                "Category":  "Testing",
+                                                                "SKUs":  6,
+                                                                "MonthlyRevenue":  97423.20,
+                                                                "MonthlyNetProfit":  -5334.69
+                                                            },
+                                                            {
+                                                                "Category":  "Women",
+                                                                "SKUs":  4,
+                                                                "MonthlyRevenue":  86207.40,
+                                                                "MonthlyNetProfit":  41008.40
+                                                            }
+                                                        ]
+                                     },
+                          "VsBaseline":  {
+                                             "RevenueChange":  -1515691.68,
+                                             "RevenueChangePct":  "-9.3%",
+                                             "NetProfitChange":  -462395.17,
+                                             "NetProfitChangePct":  "-5.9%",
+                                             "MarginChange":  "1.8pp"
+                                         }
+                      },
+                      {
+                          "Scenario":  "Volume +50% Star SKUs",
+                          "Type":  "VOLUME_SHIFT",
+                          "Description":  "Double down on marketing for Star-tier products",
+                          "Impact":  "MIXED",
+                          "Result":  {
+                                         "Label":  "Volume +50% Star SKUs",
+                                         "SKUCount":  62,
+                                         "MonthlyUnits":  19860,
+                                         "MonthlyRevenue":  1362829.80,
+                                         "MonthlyCOGS":  289684.70,
+                                         "MonthlyNetProfit":  656710.64,
+                                         "GrossMarginPct":  78.7,
+                                         "NetMarginPct":  48.2,
+                                         "AnnualRevenue":  16353957.60,
+                                         "AnnualNetProfit":  7880527.67,
+                                         "Categories":  [
+                                                            {
+                                                                "Category":  "Advanced",
+                                                                "SKUs":  16,
+                                                                "MonthlyRevenue":  534006.40,
+                                                                "MonthlyNetProfit":  280776.54
+                                                            },
+                                                            {
+                                                                "Category":  "Base",
+                                                                "SKUs":  8,
+                                                                "MonthlyRevenue":  284585.60,
+                                                                "MonthlyNetProfit":  163833.46
+                                                            },
+                                                            {
+                                                                "Category":  "Children",
+                                                                "SKUs":  3,
+                                                                "MonthlyRevenue":  29578.00,
+                                                                "MonthlyNetProfit":  15804.90
+                                                            },
+                                                            {
+                                                                "Category":  "Mushroom",
+                                                                "SKUs":  5,
+                                                                "MonthlyRevenue":  73157.00,
+                                                                "MonthlyNetProfit":  36351.07
+                                                            },
+                                                            {
+                                                                "Category":  "SNP",
+                                                                "SKUs":  20,
+                                                                "MonthlyRevenue":  239367.00,
+                                                                "MonthlyNetProfit":  118662.64
+                                                            },
+                                                            {
+                                                                "Category":  "Testing",
+                                                                "SKUs":  6,
+                                                                "MonthlyRevenue":  107241.00,
+                                                                "MonthlyNetProfit":  -2359.18
+                                                            },
+                                                            {
+                                                                "Category":  "Women",
+                                                                "SKUs":  4,
+                                                                "MonthlyRevenue":  94894.80,
+                                                                "MonthlyNetProfit":  43641.20
+                                                            }
+                                                        ]
+                                     },
+                          "VsBaseline":  {
+                                             "RevenueChange":  0.00,
+                                             "RevenueChangePct":  "0%",
+                                             "NetProfitChange":  0.00,
+                                             "NetProfitChangePct":  "0%",
+                                             "MarginChange":  "0.0pp"
+                                         }
+                      },
+                      {
+                          "Scenario":  "Recession: Volume -30%",
+                          "Type":  "VOLUME_SHIFT",
+                          "Description":  "Economic downturn reduces demand 30% across all products",
+                          "Impact":  "MIXED",
+                          "Result":  {
+                                         "Label":  "Recession: Volume -30%",
+                                         "SKUCount":  62,
+                                         "MonthlyUnits":  13902,
+                                         "MonthlyRevenue":  953588.42,
+                                         "MonthlyCOGS":  202779.29,
+                                         "MonthlyNetProfit":  459635.27,
+                                         "GrossMarginPct":  78.7,
+                                         "NetMarginPct":  48.2,
+                                         "AnnualRevenue":  11443061.04,
+                                         "AnnualNetProfit":  5515623.26,
+                                         "Categories":  [
+                                                            {
+                                                                "Category":  "Advanced",
+                                                                "SKUs":  16,
+                                                                "MonthlyRevenue":  373804.48,
+                                                                "MonthlyNetProfit":  196543.58
+                                                            },
+                                                            {
+                                                                "Category":  "Base",
+                                                                "SKUs":  8,
+                                                                "MonthlyRevenue":  199209.92,
+                                                                "MonthlyNetProfit":  114683.42
+                                                            },
+                                                            {
+                                                                "Category":  "Children",
+                                                                "SKUs":  3,
+                                                                "MonthlyRevenue":  20746.26,
+                                                                "MonthlyNetProfit":  11078.64
+                                                            },
+                                                            {
+                                                                "Category":  "Mushroom",
+                                                                "SKUs":  5,
+                                                                "MonthlyRevenue":  51136.30,
+                                                                "MonthlyNetProfit":  25418.88
+                                                            },
+                                                            {
+                                                                "Category":  "SNP",
+                                                                "SKUs":  20,
+                                                                "MonthlyRevenue":  166995.00,
+                                                                "MonthlyNetProfit":  82858.76
+                                                            },
+                                                            {
+                                                                "Category":  "Testing",
+                                                                "SKUs":  6,
+                                                                "MonthlyRevenue":  75270.10,
+                                                                "MonthlyNetProfit":  -1496.85
+                                                            },
+                                                            {
+                                                                "Category":  "Women",
+                                                                "SKUs":  4,
+                                                                "MonthlyRevenue":  66426.36,
+                                                                "MonthlyNetProfit":  30548.84
+                                                            }
+                                                        ]
+                                     },
+                          "VsBaseline":  {
+                                             "RevenueChange":  -4910896.56,
+                                             "RevenueChangePct":  "-30.0%",
+                                             "NetProfitChange":  -2364904.41,
+                                             "NetProfitChangePct":  "-30.0%",
+                                             "MarginChange":  "0.0pp"
+                                         }
+                      },
+                      {
+                          "Scenario":  "Best Case Combo",
+                          "Type":  "COMBINED",
+                          "Description":  "Price +8%, COGS -5%, volume +20%, shift to 70% DTC",
+                          "Impact":  "POSITIVE",
+                          "Result":  {
+                                         "Label":  "Best Case Combo",
+                                         "SKUCount":  62,
+                                         "MonthlyUnits":  23826,
+                                         "MonthlyRevenue":  2062995.21,
+                                         "MonthlyCOGS":  329017.61,
+                                         "MonthlyNetProfit":  1025244.89,
+                                         "GrossMarginPct":  84.1,
+                                         "NetMarginPct":  49.7,
+                                         "AnnualRevenue":  24755942.52,
+                                         "AnnualNetProfit":  12302938.70,
+                                         "Categories":  [
+                                                            {
+                                                                "Category":  "Advanced",
+                                                                "SKUs":  16,
+                                                                "MonthlyRevenue":  809055.36,
+                                                                "MonthlyNetProfit":  428489.22
+                                                            },
+                                                            {
+                                                                "Category":  "Base",
+                                                                "SKUs":  8,
+                                                                "MonthlyRevenue":  431174.40,
+                                                                "MonthlyNetProfit":  244555.62
+                                                            },
+                                                            {
+                                                                "Category":  "Children",
+                                                                "SKUs":  3,
+                                                                "MonthlyRevenue":  44813.70,
+                                                                "MonthlyNetProfit":  24023.73
+                                                            },
+                                                            {
+                                                                "Category":  "Mushroom",
+                                                                "SKUs":  5,
+                                                                "MonthlyRevenue":  110840.10,
+                                                                "MonthlyNetProfit":  56291.20
+                                                            },
+                                                            {
+                                                                "Category":  "SNP",
+                                                                "SKUs":  20,
+                                                                "MonthlyRevenue":  362658.24,
+                                                                "MonthlyNetProfit":  183866.97
+                                                            },
+                                                            {
+                                                                "Category":  "Testing",
+                                                                "SKUs":  6,
+                                                                "MonthlyRevenue":  160680.93,
+                                                                "MonthlyNetProfit":  19003.04
+                                                            },
+                                                            {
+                                                                "Category":  "Women",
+                                                                "SKUs":  4,
+                                                                "MonthlyRevenue":  143772.48,
+                                                                "MonthlyNetProfit":  69015.12
+                                                            }
+                                                        ]
+                                     },
+                          "VsBaseline":  {
+                                             "RevenueChange":  8401984.92,
+                                             "RevenueChangePct":  "51.4%",
+                                             "NetProfitChange":  4422411.03,
+                                             "NetProfitChangePct":  "56.1%",
+                                             "MarginChange":  "1.5pp"
+                                         }
+                      },
+                      {
+                          "Scenario":  "Worst Case Combo",
+                          "Type":  "COMBINED",
+                          "Description":  "COGS +20%, volume -25%, forced into distributor-heavy mix",
+                          "Impact":  "NEGATIVE",
+                          "Result":  {
+                                         "Label":  "Worst Case Combo",
+                                         "SKUCount":  62,
+                                         "MonthlyUnits":  14879,
+                                         "MonthlyRevenue":  753816.40,
+                                         "MonthlyCOGS":  258939.99,
+                                         "MonthlyNetProfit":  317351.27,
+                                         "GrossMarginPct":  65.6,
+                                         "NetMarginPct":  42.1,
+                                         "AnnualRevenue":  9045796.80,
+                                         "AnnualNetProfit":  3808215.26,
+                                         "Categories":  [
+                                                            {
+                                                                "Category":  "Advanced",
+                                                                "SKUs":  16,
+                                                                "MonthlyRevenue":  296142.00,
+                                                                "MonthlyNetProfit":  145355.22
+                                                            },
+                                                            {
+                                                                "Category":  "Base",
+                                                                "SKUs":  8,
+                                                                "MonthlyRevenue":  157818.00,
+                                                                "MonthlyNetProfit":  90240.03
+                                                            },
+                                                            {
+                                                                "Category":  "Children",
+                                                                "SKUs":  3,
+                                                                "MonthlyRevenue":  16446.24,
+                                                                "MonthlyNetProfit":  8300.12
+                                                            },
+                                                            {
+                                                                "Category":  "Mushroom",
+                                                                "SKUs":  5,
+                                                                "MonthlyRevenue":  40712.90,
+                                                                "MonthlyNetProfit":  18084.54
+                                                            },
+                                                            {
+                                                                "Category":  "SNP",
+                                                                "SKUs":  20,
+                                                                "MonthlyRevenue":  132154.40,
+                                                                "MonthlyNetProfit":  58416.20
+                                                            },
+                                                            {
+                                                                "Category":  "Testing",
+                                                                "SKUs":  6,
+                                                                "MonthlyRevenue":  58151.50,
+                                                                "MonthlyNetProfit":  -23154.03
+                                                            },
+                                                            {
+                                                                "Category":  "Women",
+                                                                "SKUs":  4,
+                                                                "MonthlyRevenue":  52391.36,
+                                                                "MonthlyNetProfit":  20109.19
+                                                            }
+                                                        ]
+                                     },
+                          "VsBaseline":  {
+                                             "RevenueChange":  -7308160.80,
+                                             "RevenueChangePct":  "-44.7%",
+                                             "NetProfitChange":  -4072312.41,
+                                             "NetProfitChangePct":  "-51.7%",
+                                             "MarginChange":  "-6.1pp"
+                                         }
+                      }
+                  ]
+}
