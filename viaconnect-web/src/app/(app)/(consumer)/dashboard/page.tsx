@@ -1,12 +1,14 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
-import type { SupplementLog, UserProtocol, Product, GeneticVariant } from "@/lib/supabase/types";
+import type { GeneticVariant } from "@/lib/supabase/types";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Skeleton } from "@/components/ui/Skeleton";
+import VitalityScoreGauge from "@/components/VitalityScoreGauge";
+import SupplementProtocol from "@/components/SupplementProtocol";
 import Link from "next/link";
 import toast from "react-hot-toast";
 import {
@@ -127,77 +129,56 @@ function Sparkline({ data }: { data: number[] }) {
   );
 }
 
-// --- Supplement Checklist ---
+// --- Supplement Checklist (reads from recommendations table) ---
 function SupplementTracker({
   userId,
 }: {
   userId: string;
 }) {
-  const queryClient = useQueryClient();
-  const today = new Date().toISOString().split("T")[0];
+  const [isGenerating, setIsGenerating] = useState(false);
 
-  const { data: protocol, isLoading: protocolLoading } = useQuery({
-    queryKey: ["user-protocol", userId],
+  const { data: recommendations, isLoading: recsLoading, refetch } = useQuery({
+    queryKey: ["recommendations", userId],
     queryFn: async () => {
       const { data } = await supabase
-        .from("user_protocols")
-        .select("*, product:products(*)")
-        .eq("user_id", userId)
-        .eq("active", true)
-        .order("time_of_day");
-      return (data ?? []) as (UserProtocol & { product: Product | null })[];
-    },
-  });
-
-  const { data: logs } = useQuery({
-    queryKey: ["supplement-logs", userId, today],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("supplement_logs")
+        .from("recommendations")
         .select("*")
         .eq("user_id", userId)
-        .gte("logged_at", `${today}T00:00:00`)
-        .lte("logged_at", `${today}T23:59:59`);
-      return (data ?? []) as SupplementLog[];
+        .eq("status", "recommended")
+        .order("priority_rank");
+      return (data ?? []) as Array<{
+        id: string; sku: string; product_name: string; category: string | null;
+        reason: string; confidence_score: number; confidence_level: string;
+        priority_rank: number; dosage: string | null; frequency: string | null;
+        time_of_day: string | null; monthly_price: number | null; source: string;
+      }>;
     },
   });
 
-  const logMutation = useMutation({
-    mutationFn: async ({
-      productId,
-      timeOfDay,
-      dose,
-    }: {
-      productId: string;
-      timeOfDay: string;
-      dose: string;
-    }) => {
-      const { error } = await supabase.from("supplement_logs").insert({
-        user_id: userId,
-        product_id: productId,
-        time_of_day: timeOfDay as "morning" | "noon" | "evening" | "bedtime",
-        dose,
-        logged_at: new Date().toISOString(),
+  const handleGenerate = useCallback(async () => {
+    setIsGenerating(true);
+    try {
+      toast.loading("Generating your protocol...", { id: "gen-recs" });
+      const res = await fetch("/api/recommendations/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
       });
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["supplement-logs"] });
-      queryClient.invalidateQueries({ queryKey: ["farma-tokens"] });
-      toast.success("+5 ViaTokens earned!");
-    },
-    onError: () => {
-      toast.error("Failed to log supplement");
-    },
-  });
+      if (res.ok) {
+        const data = await res.json();
+        toast.success(`${data.recommendations_count} supplements recommended!`, { id: "gen-recs" });
+        refetch();
+      } else {
+        toast.error("Could not generate recommendations", { id: "gen-recs" });
+      }
+    } catch {
+      toast.error("Failed to generate protocol", { id: "gen-recs" });
+    } finally {
+      setIsGenerating(false);
+    }
+  }, [refetch]);
 
-  const loggedIds = new Set((logs ?? []).map((l: SupplementLog) => l.product_id));
-
-  // Weekly streak
-  const streakDays = ["M", "T", "W", "T", "F", "S", "S"];
-  const dayOfWeek = new Date().getDay();
-
-  if (protocolLoading) {
+  if (recsLoading) {
     return (
       <div className="space-y-3">
         {[1, 2, 3].map((i) => (
@@ -207,98 +188,93 @@ function SupplementTracker({
     );
   }
 
-  const items = protocol ?? [];
+  const items = recommendations ?? [];
 
   if (items.length === 0) {
     return (
       <div className="text-center py-8">
         <FlaskConical className="w-10 h-10 text-gray-600 mx-auto mb-3" />
         <p className="text-gray-400 text-sm">No supplements in your protocol yet.</p>
-        <Link href="/supplements" className="text-copper text-sm hover:underline mt-2 inline-block">
+        <button
+          onClick={handleGenerate}
+          disabled={isGenerating}
+          className="mt-3 px-5 py-2 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 text-white text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-50"
+        >
+          {isGenerating ? "Generating..." : "Generate My Protocol"}
+        </button>
+        <Link href="/supplements" className="text-copper text-sm hover:underline mt-3 block">
           Browse supplements
         </Link>
       </div>
     );
   }
 
+  // Group by time_of_day
+  const groups: Record<string, typeof items> = {};
+  for (const item of items) {
+    const tod = item.time_of_day || "morning";
+    if (!groups[tod]) groups[tod] = [];
+    groups[tod].push(item);
+  }
+
+  const timeOrder = ["morning", "afternoon", "evening"];
+  const timeLabels: Record<string, string> = {
+    morning: "Morning",
+    afternoon: "Afternoon",
+    evening: "Evening",
+  };
+  const timeColors: Record<string, string> = {
+    morning: "text-amber-400",
+    afternoon: "text-cyan-400",
+    evening: "text-purple-400",
+  };
+
   return (
     <div className="space-y-4">
-      <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">
-        Today&apos;s Supplements
-      </h3>
-      <div className="space-y-2">
-        {items.map((item) => {
-          const product = item.product;
-          const checked = loggedIds.has(item.product_id);
-          const timeLabels: Record<string, string> = {
-            morning: "AM",
-            noon: "Noon",
-            evening: "PM",
-            bedtime: "Night",
-          };
-          return (
-            <button
-              key={item.id}
-              onClick={() => {
-                if (!checked) {
-                  logMutation.mutate({
-                    productId: item.product_id,
-                    timeOfDay: item.time_of_day,
-                    dose: item.dose,
-                  });
-                }
-              }}
-              disabled={checked}
-              className={`w-full flex items-center gap-3 p-3 rounded-xl border transition-all text-left ${
-                checked
-                  ? "border-portal-green/20 bg-portal-green/5"
-                  : "border-white/[0.08] bg-white/[0.02] hover:bg-white/[0.04]"
-              }`}
-            >
-              {checked ? (
-                <CheckCircle2 className="w-5 h-5 text-portal-green flex-shrink-0" />
-              ) : (
-                <Circle className="w-5 h-5 text-gray-600 flex-shrink-0" />
-              )}
-              <div className="flex-1 min-w-0">
-                <p className={`text-sm font-medium truncate ${checked ? "text-gray-500 line-through" : "text-white"}`}>
-                  {product?.short_name ?? product?.name ?? "Supplement"}
-                </p>
-                <p className="text-xs text-gray-500">{item.dose}</p>
-              </div>
-              <Badge variant={checked ? "active" : "neutral"}>
-                {timeLabels[item.time_of_day] ?? item.time_of_day}
-              </Badge>
-            </button>
-          );
-        })}
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">
+          Your Protocol
+        </h3>
+        <span className="text-xs text-gray-500">{items.length} supplements</span>
       </div>
-
-      {/* Weekly streak */}
-      <div className="pt-4 border-t border-white/[0.06]">
-        <p className="text-xs text-gray-500 mb-2">Weekly Streak</p>
-        <div className="flex gap-2">
-          {streakDays.map((d, i) => {
-            const adjustedDay = i === 6 ? 0 : i + 1;
-            const isPast = adjustedDay < dayOfWeek;
-            const isToday = adjustedDay === dayOfWeek;
-            return (
-              <div
-                key={i}
-                className={`flex-1 h-8 rounded-lg flex items-center justify-center text-xs font-medium ${
-                  isToday
-                    ? "bg-copper/20 text-copper border border-copper/30"
-                    : isPast
-                      ? "bg-portal-green/10 text-portal-green"
-                      : "bg-white/[0.03] text-gray-600"
-                }`}
-              >
-                {d}
-              </div>
-            );
-          })}
-        </div>
-      </div>
+      {timeOrder.map((tod) => {
+        const group = groups[tod];
+        if (!group || group.length === 0) return null;
+        return (
+          <div key={tod}>
+            <p className={`text-xs font-semibold mb-2 ${timeColors[tod] || "text-gray-400"}`}>
+              {timeLabels[tod] || tod}
+            </p>
+            <div className="space-y-2">
+              {group.map((item) => (
+                <div
+                  key={item.id}
+                  className="flex items-center gap-3 p-3 rounded-xl border border-white/[0.08] bg-white/[0.02]"
+                >
+                  <Circle className="w-5 h-5 text-gray-600 flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-white truncate">
+                      {item.product_name}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {item.dosage || "As directed"} &middot; {item.frequency || "daily"}
+                    </p>
+                  </div>
+                  {item.monthly_price && (
+                    <span className="text-xs text-gray-500">${item.monthly_price}/mo</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })}
+      <Link
+        href="/checkout"
+        className="block w-full text-center py-2.5 rounded-lg bg-copper/10 text-copper text-sm font-medium hover:bg-copper/20 transition-colors"
+      >
+        Order Protocol &rarr;
+      </Link>
     </div>
   );
 }
@@ -323,13 +299,11 @@ export default function DashboardPage() {
     queryKey: ["health-score", userId],
     queryFn: async () => {
       const { data } = await supabase
-        .from("health_scores")
-        .select("*")
-        .eq("user_id", userId!)
-        .order("created_at", { ascending: false })
-        .limit(1)
+        .from("profiles")
+        .select("vitality_score, assessment_completed")
+        .eq("id", userId!)
         .single();
-      return data as { id: string; score: number; created_at: string | null } | null;
+      return data as { vitality_score: number | null; assessment_completed: boolean | null } | null;
     },
     enabled: !!userId,
   });
@@ -375,7 +349,7 @@ export default function DashboardPage() {
     enabled: !!userId,
   });
 
-  const score = healthScore?.score ?? 0;
+  const score = healthScore?.vitality_score ?? 0;
   const sparkData = (scoreHistory ?? []).map((s) => s.score);
   const balance = tokens?.balance ?? 0;
 
@@ -389,7 +363,7 @@ export default function DashboardPage() {
   const tier = getTier(balance);
 
   return (
-    <PageTransition className="p-6 lg:p-8 space-y-6">
+    <PageTransition className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-[1440px] mx-auto">
       {/* Welcome */}
       <StaggerChild>
         <h1 className="text-2xl font-bold text-white">
@@ -401,31 +375,23 @@ export default function DashboardPage() {
       </StaggerChild>
 
       {/* 3-column layout */}
-      <StaggerChild className="grid grid-cols-1 lg:grid-cols-[320px_1fr_320px] gap-6">
+      <StaggerChild className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-[300px_1fr_300px] gap-4 sm:gap-6">
         {/* LEFT: Vitality Score */}
         <div className="space-y-4">
-          <Card className="p-6">
-            <VitalityGauge score={score} loading={scoreLoading} />
+          <Card className="p-4 sm:p-6">
+            <VitalityScoreGauge />
             {sparkData.length > 1 && (
-              <div className="mt-6">
+              <div className="mt-4 sm:mt-6">
                 <p className="text-xs text-gray-500 mb-2">30-Day Trend</p>
                 <Sparkline data={sparkData} />
-              </div>
-            )}
-            {!scoreLoading && score === 0 && (
-              <div className="mt-4 text-center">
-                <p className="text-gray-500 text-xs">Complete your assessment to unlock your score</p>
-                <Link href="/profile/assessment" className="text-copper text-xs hover:underline mt-1 inline-block">
-                  Take Assessment
-                </Link>
               </div>
             )}
           </Card>
         </div>
 
-        {/* CENTER: Supplement Tracker */}
+        {/* CENTER: Supplement Tracker + Protocol */}
         <div className="space-y-4">
-          <Card className="p-6">
+          <Card className="p-4 sm:p-6">
             {userId ? (
               <SupplementTracker userId={userId} />
             ) : (
@@ -436,10 +402,13 @@ export default function DashboardPage() {
               </div>
             )}
           </Card>
+          <Card className="p-4 sm:p-6">
+            <SupplementProtocol />
+          </Card>
         </div>
 
         {/* RIGHT: Tokens + Insights + Quick Actions */}
-        <div className="space-y-4">
+        <div className="space-y-4 md:col-span-2 xl:col-span-1">
           {/* ViaTokens */}
           <MotionCard className="p-5">
             <div className="flex items-center justify-between mb-3">

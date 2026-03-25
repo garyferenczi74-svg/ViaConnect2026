@@ -257,6 +257,14 @@ export default function OnboardingStepPage() {
               data: { vitality_score: vitalityScore, constitutional_type: constitutionalType, completed_at: new Date().toISOString() },
               updated_at: new Date().toISOString(),
             }, { onConflict: "user_id,phase" });
+
+            // Write vitality score and completion flag to profiles table
+            // (this is what the dashboard gauge reads)
+            await supabase.from("profiles").update({
+              vitality_score: vitalityScore,
+              assessment_completed: true,
+              updated_at: new Date().toISOString(),
+            }).eq("id", user.id);
           }
           toast.success(`Your Vitality Score: ${vitalityScore}/100`, { duration: 5000 });
 
