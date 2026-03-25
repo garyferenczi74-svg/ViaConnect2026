@@ -107,10 +107,10 @@ const NATUROPATH: PortalConfig = {
 const ADMIN: PortalConfig = {
   nav: [
     { href: "/admin", label: "Admin Dashboard", icon: LayoutDashboard },
-    { href: "/admin", label: "Board Metrics", icon: BarChart3 },
-    { href: "/admin", label: "SKU Portfolio", icon: Pill },
-    { href: "/admin", label: "Alerts & Risks", icon: AlertTriangle },
-    { href: "/admin", label: "Inventory", icon: ClipboardList },
+    { href: "/admin/board", label: "Board Metrics", icon: BarChart3 },
+    { href: "/admin/skus", label: "SKU Portfolio", icon: Pill },
+    { href: "/admin/alerts", label: "Alerts & Risks", icon: AlertTriangle },
+    { href: "/admin/inventory", label: "Inventory", icon: ClipboardList },
     { href: "/profile", label: "Profile", icon: UserIcon },
     { href: "/practitioner/settings", label: "Settings", icon: Settings },
   ],
