@@ -10,6 +10,7 @@ import {
   LayoutDashboard,
   Dna,
   Pill,
+  ShoppingBag,
   Coins,
   MessageSquare,
   User as UserIcon,
@@ -48,8 +49,10 @@ const CONSUMER: PortalConfig = {
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { href: "/genetics", label: "Genetics", icon: Dna },
     { href: "/supplements", label: "Supplements", icon: Pill },
+    { href: "/shop", label: "Shop", icon: ShoppingBag },
     { href: "/tokens", label: "ViaTokens", icon: Coins },
     { href: "/messages", label: "Messages", icon: MessageSquare },
+    { href: "/ai", label: "AI Advisor", icon: Brain },
     { href: "/profile", label: "Profile", icon: UserIcon },
   ],
   accent: "bg-teal",
@@ -66,7 +69,9 @@ const PRACTITIONER: PortalConfig = {
     { href: "/practitioner/analytics", label: "Analytics", icon: BarChart3 },
     { href: "/practitioner/genomics", label: "Genomics", icon: Dna },
     { href: "/practitioner/interactions", label: "Interactions", icon: AlertTriangle },
+    { href: "/practitioner/scheduler", label: "Scheduler", icon: Calendar },
     { href: "/practitioner/ehr", label: "EHR Hub", icon: FileText },
+    { href: "/practitioner/compliance", label: "Compliance", icon: Shield },
     { href: "/practitioner/ai", label: "AI Advisor", icon: Brain },
     { href: "/practitioner/settings", label: "Settings", icon: Settings },
   ],
@@ -84,7 +89,9 @@ const NATUROPATH: PortalConfig = {
     { href: "/naturopath/constitutional", label: "Constitutional", icon: Activity },
     { href: "/naturopath/protocols", label: "Protocols", icon: ClipboardList },
     { href: "/naturopath/scheduler", label: "Scheduler", icon: Calendar },
+    { href: "/naturopath/interactions", label: "Interactions", icon: AlertTriangle },
     { href: "/naturopath/compliance", label: "Compliance", icon: Shield },
+    { href: "/naturopath/ai", label: "AI Advisor", icon: Brain },
     { href: "/naturopath/settings", label: "Settings", icon: Settings },
   ],
   accent: "bg-sage",
@@ -187,15 +194,17 @@ export function Sidebar({
     >
       {/* ── Top: Logo + Collapse Toggle ── */}
       <div className="flex items-center h-16 px-4" style={{ justifyContent: collapsed ? "center" : "space-between" }}>
-        <Link href={portal.homeHref} className="flex items-center gap-1.5 min-w-0">
-          {/* Icon mark — always visible */}
-          <span className="text-lg font-bold text-copper leading-none">V</span>
-          {!collapsed && (
+        <Link href={portal.homeHref} className="flex items-center min-w-0">
+          {/* Logo text */}
+          {collapsed ? (
+            <span className="text-lg font-bold text-copper leading-none">V</span>
+          ) : (
             <>
-              <span className="text-lg font-bold text-copper leading-none -ml-0.5">ia</span>
-              <span className="text-lg font-bold text-white leading-none">Connect</span>
+              <span className="text-lg font-bold leading-none">
+                <span className="text-copper">Via</span><span className="text-white">Connect</span>
+              </span>
               {portal.badge && (
-                <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ml-1.5 ${portal.badge.bg}`}>
+                <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ml-2 ${portal.badge.bg}`}>
                   {portal.badge.label}
                 </span>
               )}
