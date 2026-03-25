@@ -21,7 +21,7 @@ $Banner = @"
 
   ╔═══════════════════════════════════════════════╗
   ║   FarmCeutica Toolchain CLI v$Version           ║
-  ║   21 scripts · 62 SKUs · 7 categories        ║
+  ║   22 scripts · 62 SKUs · 7 categories        ║
   ╚═══════════════════════════════════════════════╝
 
 "@
@@ -53,6 +53,7 @@ $Commands = [ordered]@{
     "unit-econ"  = @{ Script="breakeven_unit_economics.ps1"; Desc="Breakeven, LTV, CAC payback per SKU"; Category="Finance" }
     "inventory"  = @{ Script="inventory_reorder_planner.ps1"; Desc="EOQ, safety stock, reorder points"; Category="Operations" }
     "suppliers"  = @{ Script="supplier_scorecard.ps1"; Desc="Vendor risk scoring & procurement analysis"; Category="Operations" }
+    "commissions" = @{ Script="commission_payout_engine.ps1"; Desc="Partner commissions & payout modeling"; Category="Operations" }
     "subs"       = @{ Script="subscription_mrr_analyzer.ps1"; Desc="5-tier MRR model, churn impact, cohort LTV"; Category="Finance" }
     "cashflow"   = @{ Script="cashflow_working_capital.ps1"; Desc="Cash flow, working capital, stress test"; Category="Finance" }
     "cohorts"    = @{ Script="cohort_retention_analyzer.ps1"; Desc="Cohort retention curves, LTV, channel CAC"; Category="Finance" }
