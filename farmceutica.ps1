@@ -21,7 +21,7 @@ $Banner = @"
 
   ╔═══════════════════════════════════════════════╗
   ║   FarmCeutica Toolchain CLI v$Version           ║
-  ║   19 scripts · 62 SKUs · 7 categories        ║
+  ║   20 scripts · 62 SKUs · 7 categories        ║
   ╚═══════════════════════════════════════════════╝
 
 "@
@@ -55,6 +55,7 @@ $Commands = [ordered]@{
     "suppliers"  = @{ Script="supplier_scorecard.ps1"; Desc="Vendor risk scoring & procurement analysis"; Category="Operations" }
     "subs"       = @{ Script="subscription_mrr_analyzer.ps1"; Desc="5-tier MRR model, churn impact, cohort LTV"; Category="Finance" }
     "cashflow"   = @{ Script="cashflow_working_capital.ps1"; Desc="Cash flow, working capital, stress test"; Category="Finance" }
+    "cohorts"    = @{ Script="cohort_retention_analyzer.ps1"; Desc="Cohort retention curves, LTV, channel CAC"; Category="Finance" }
 
     # Utilities
     "status"     = @{ Builtin=$true; Desc="Show pipeline file status & freshness"; Category="Utility" }
