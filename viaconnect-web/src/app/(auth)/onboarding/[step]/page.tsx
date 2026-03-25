@@ -98,9 +98,11 @@ type LifestyleData = {
   sunExposure: string;
 };
 
+type SupplementEntry = { name: string; mg: string };
+
 type MedicationsData = {
   medications: string[];
-  supplements: string[];
+  supplements: SupplementEntry[];
   allergies: string[];
   adverseReactions: string;
 };
@@ -198,6 +200,7 @@ export default function OnboardingStepPage() {
   });
   const [medSearch, setMedSearch] = useState("");
   const [suppInput, setSuppInput] = useState("");
+  const [suppMgInput, setSuppMgInput] = useState("");
   const [allergyInput, setAllergyInput] = useState("");
 
   // Phase 5 state
@@ -480,23 +483,25 @@ export default function OnboardingStepPage() {
 
         {/* ── Phase 2: Symptoms ── */}
         {stepId === "2" && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {SYMPTOM_CATEGORIES.map((cat) => (
-              <div key={cat} className="flex items-center gap-3 p-3 rounded-lg bg-dark-surface/50">
-                <span className="text-sm text-gray-300 min-w-[120px]">{cat}</span>
+              <div key={cat} className="flex flex-col gap-1.5 p-3 rounded-lg bg-dark-surface/50 border border-white/[0.04]">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-300">{cat}</span>
+                  <span className={`text-xs font-mono font-semibold ${
+                    symptoms[cat] >= 7 ? "text-rose" : symptoms[cat] >= 4 ? "text-copper" : "text-portal-green"
+                  }`}>
+                    {symptoms[cat]}/10
+                  </span>
+                </div>
                 <input
                   type="range"
                   min={0}
                   max={10}
                   value={symptoms[cat]}
                   onChange={(e) => setSymptoms({ ...symptoms, [cat]: parseInt(e.target.value) })}
-                  className="flex-1 accent-copper h-1.5"
+                  className="w-full accent-copper h-1.5"
                 />
-                <span className={`text-xs font-mono w-6 text-right ${
-                  symptoms[cat] >= 7 ? "text-rose" : symptoms[cat] >= 4 ? "text-copper" : "text-portal-green"
-                }`}>
-                  {symptoms[cat]}
-                </span>
               </div>
             ))}
           </div>
@@ -625,18 +630,34 @@ export default function OnboardingStepPage() {
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && suppInput.trim()) {
                       e.preventDefault();
-                      setMedications({ ...medications, supplements: [...medications.supplements, suppInput.trim()] });
-                      setSuppInput("");
+                      setMedications({ ...medications, supplements: [...medications.supplements, { name: suppInput.trim(), mg: suppMgInput.trim() || "unknown" }] });
+                      setSuppInput(""); setSuppMgInput("");
                     }
                   }}
                   className={inputClass}
-                  placeholder="Type supplement name and press Enter"
+                  placeholder="Supplement name"
                 />
+                <div className="relative shrink-0 w-24">
+                  <input
+                    value={suppMgInput}
+                    onChange={(e) => setSuppMgInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && suppInput.trim()) {
+                        e.preventDefault();
+                        setMedications({ ...medications, supplements: [...medications.supplements, { name: suppInput.trim(), mg: suppMgInput.trim() || "unknown" }] });
+                        setSuppInput(""); setSuppMgInput("");
+                      }
+                    }}
+                    className={inputClass}
+                    placeholder="mg"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-600">mg</span>
+                </div>
                 <button
                   onClick={() => {
                     if (suppInput.trim()) {
-                      setMedications({ ...medications, supplements: [...medications.supplements, suppInput.trim()] });
-                      setSuppInput("");
+                      setMedications({ ...medications, supplements: [...medications.supplements, { name: suppInput.trim(), mg: suppMgInput.trim() || "unknown" }] });
+                      setSuppInput(""); setSuppMgInput("");
                     }
                   }}
                   className="shrink-0 w-10 h-10 flex items-center justify-center rounded-lg bg-dark-surface border border-dark-border text-gray-400 hover:text-white hover:bg-white/[0.04] transition-colors"
@@ -644,16 +665,18 @@ export default function OnboardingStepPage() {
                   <Plus className="w-4 h-4" />
                 </button>
               </div>
-              <div className="flex flex-wrap gap-2 mt-2">
-                {medications.supplements.map((s) => (
-                  <span key={s} className="flex items-center gap-1 text-xs bg-teal/10 text-teal-light px-2.5 py-1 rounded-full border border-teal/20">
-                    {s}
-                    <button onClick={() => setMedications({ ...medications, supplements: medications.supplements.filter((x) => x !== s) })}>
-                      <X className="w-3 h-3 text-gray-500 hover:text-white" />
-                    </button>
-                  </span>
-                ))}
-              </div>
+              {medications.supplements.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {medications.supplements.map((s, i) => (
+                    <span key={`${s.name}-${i}`} className="flex items-center gap-1 text-xs bg-teal/10 text-teal-light px-2.5 py-1 rounded-full border border-teal/20">
+                      {s.name} <span className="text-teal/60">{s.mg !== "unknown" ? `${s.mg}mg` : ""}</span>
+                      <button onClick={() => setMedications({ ...medications, supplements: medications.supplements.filter((_, idx) => idx !== i) })}>
+                        <X className="w-3 h-3 text-gray-500 hover:text-white" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Allergies */}
@@ -800,7 +823,7 @@ export default function OnboardingStepPage() {
 
         {/* ── Complete: Welcome + Results + Membership ── */}
         {stepId === "complete" && (
-          <OnboardingComplete symptoms={symptoms} lifestyle={lifestyle} goals={goals} />
+          <OnboardingComplete />
         )}
 
         {/* ── Navigation (hidden on complete page) ── */}
@@ -886,7 +909,7 @@ const MEMBERSHIP_TIERS = [
     accent: "border-amber-500/50",
     bg: "bg-amber-500/5",
     ctaBg: "bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-dark-bg font-semibold",
-    popular: true,
+    popular: false,
   },
   {
     name: "Platinum",
@@ -906,44 +929,51 @@ const MEMBERSHIP_TIERS = [
     accent: "border-purple-500/50",
     bg: "bg-purple-500/5",
     ctaBg: "bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-400 hover:to-purple-500 text-white font-semibold",
-    popular: false,
+    popular: true,
   },
 ];
 
-function OnboardingComplete({
-  symptoms,
-  lifestyle,
-  goals,
-}: {
-  symptoms: SymptomsData;
-  lifestyle: LifestyleData;
-  goals: GoalsData;
-}) {
+function OnboardingComplete() {
   const router = useRouter();
   const [displayName, setDisplayName] = useState("there");
   const [vitalityScore, setVitalityScore] = useState(0);
   const [animatedScore, setAnimatedScore] = useState(0);
   const [selectedTier, setSelectedTier] = useState<string | null>(null);
+  const [savedSymptoms, setSavedSymptoms] = useState<SymptomsData>({});
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const supabase = createClient();
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user) {
-        const name = user.user_metadata?.full_name ?? user.email?.split("@")[0] ?? "there";
-        setDisplayName(name.split(" ")[0]);
-      }
-    });
-    supabase.auth.getUser().then(async ({ data: { user } }) => {
+    async function loadData() {
+      const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
+
+      const name = user.user_metadata?.full_name ?? user.email?.split("@")[0] ?? "there";
+      setDisplayName(name.split(" ")[0]);
+
+      // Load vitality score from profiles
       const { data: profile } = await supabase
         .from("profiles")
         .select("vitality_score")
         .eq("id", user.id)
         .single();
-      const score = profile?.vitality_score || calculateVitalityScore(symptoms, lifestyle, goals);
-      setVitalityScore(score);
-    });
-  }, [symptoms, lifestyle, goals]);
+      if (profile?.vitality_score) setVitalityScore(profile.vitality_score);
+
+      // Load saved symptom data from assessment_results phase 2
+      const { data: phase2 } = await supabase
+        .from("assessment_results")
+        .select("data")
+        .eq("user_id", user.id)
+        .eq("phase", 2)
+        .single();
+      if (phase2?.data) {
+        setSavedSymptoms(phase2.data as SymptomsData);
+      }
+
+      setLoading(false);
+    }
+    loadData();
+  }, []);
 
   // Animate score
   useEffect(() => {
@@ -958,9 +988,9 @@ function OnboardingComplete({
     requestAnimationFrame(tick);
   }, [vitalityScore]);
 
-  // Compute sub-scores from symptom data (invert: 0=worst, 10=worst symptom → 100=best health, 0=worst health)
+  // Compute sub-scores from saved symptom data (invert: 0=no symptom=100 health, 10=severe=0 health)
   function getHealthScore(symptomKey: string): number {
-    const raw = symptoms[symptomKey] ?? 5;
+    const raw = savedSymptoms[symptomKey] ?? 5;
     return Math.round(100 - raw * 10);
   }
 
@@ -978,6 +1008,15 @@ function OnboardingComplete({
       router.push("/dashboard");
       router.refresh();
     }, 1500);
+  }
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 gap-4">
+        <Loader2 className="w-8 h-8 text-copper animate-spin" />
+        <p className="text-gray-400 text-sm">Loading your results...</p>
+      </div>
+    );
   }
 
   return (
@@ -1032,22 +1071,22 @@ function OnboardingComplete({
       </div>
 
       {/* Divider */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-4 mt-4">
         <div className="flex-1 h-px bg-white/[0.06]" />
-        <span className="text-xs text-gray-500 uppercase tracking-wider">Choose Your Plan</span>
+        <span className="text-xs text-gray-500 uppercase tracking-wider whitespace-nowrap flex-shrink-0">Choose Your Plan</span>
         <div className="flex-1 h-px bg-white/[0.06]" />
       </div>
 
       {/* Membership Tiers */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mt-2">
         {MEMBERSHIP_TIERS.map((tier) => (
           <div
             key={tier.name}
-            className={`relative rounded-xl border ${tier.accent} ${tier.bg} p-5 flex flex-col transition-all hover:scale-[1.02] hover:shadow-lg`}
+            className={`relative rounded-xl border ${tier.accent} ${tier.bg} p-5 pt-7 flex flex-col transition-all hover:scale-[1.02] hover:shadow-lg overflow-hidden`}
           >
             {tier.popular && (
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-amber-500 text-dark-bg text-[10px] font-bold uppercase">
+              <div className="absolute top-0 left-0 right-0 flex justify-center" style={{ transform: "translateY(-1px)" }}>
+                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-b-lg bg-amber-500 text-dark-bg text-[10px] font-bold uppercase">
                   <Star className="w-3 h-3" /> Most Popular
                 </span>
               </div>

@@ -31,6 +31,7 @@ interface Replacement {
 export default function SupplementProtocol() {
   const [recs, setRecs] = useState<Rec[]>([]);
   const [replacements, setReplacements] = useState<Replacement[]>([]);
+  const [currentSupplements, setCurrentSupplements] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
 
@@ -53,7 +54,7 @@ export default function SupplementProtocol() {
       .order('priority_rank', { ascending: true });
     setRecs(data || []);
 
-    // Fetch supplement replacements from assessment summary (phase 0)
+    // Fetch supplement replacements and current supplements from assessment data
     const { data: summary } = await supabase
       .from('assessment_results')
       .select('data')
@@ -62,6 +63,22 @@ export default function SupplementProtocol() {
       .single();
     if (summary?.data?.supplement_replacements) {
       setReplacements(summary.data.supplement_replacements);
+    }
+    if (summary?.data?.current_supplements) {
+      setCurrentSupplements(summary.data.current_supplements);
+    }
+
+    // Fallback: load current supplements from Phase 4 if not in summary
+    if (!summary?.data?.current_supplements) {
+      const { data: phase4 } = await supabase
+        .from('assessment_results')
+        .select('data')
+        .eq('user_id', user.id)
+        .eq('phase', 4)
+        .single();
+      if (phase4?.data?.supplements) {
+        setCurrentSupplements(phase4.data.supplements);
+      }
     }
 
     setLoading(false);
@@ -110,26 +127,76 @@ export default function SupplementProtocol() {
 
   if (recs.length === 0) {
     return (
-      <div className="text-center py-6 sm:py-8">
-        <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-4">
-          <span className="text-xl sm:text-2xl">{'\uD83E\uDDEA'}</span>
+      <div className="space-y-5">
+        {/* Current supplements from questionnaire */}
+        {currentSupplements.length > 0 && (
+          <div>
+            <h3 className="text-white font-semibold text-sm sm:text-base mb-2">
+              Your Current Supplements
+            </h3>
+            <p className="text-white/40 text-[10px] sm:text-xs mb-3">
+              From your onboarding questionnaire
+            </p>
+            <div className="space-y-1.5">
+              {currentSupplements.map((supp) => {
+                const replacement = replacements.find(
+                  (r) => r.current_supplement.toLowerCase() === supp.toLowerCase()
+                );
+                return (
+                  <div
+                    key={supp}
+                    className="flex items-center justify-between p-2.5 sm:p-3 rounded-lg bg-white/[0.03] border border-white/[0.06]"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-white/[0.06] flex items-center justify-center text-[10px] sm:text-xs font-bold text-white/40 flex-shrink-0">
+                        {supp.charAt(0).toUpperCase()}
+                      </div>
+                      <span className="text-white text-xs sm:text-sm truncate">{supp}</span>
+                    </div>
+                    {replacement && (
+                      <span className="text-emerald-400 text-[10px] sm:text-xs font-medium whitespace-nowrap flex-shrink-0 ml-2">
+                        {'\u2192'} {replacement.replacement_name}
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Generate */}
+        <div className="text-center py-4 sm:py-6">
+          {currentSupplements.length === 0 && (
+            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-4">
+              <span className="text-xl sm:text-2xl">{'\uD83E\uDDEA'}</span>
+            </div>
+          )}
+          <p className="text-white/50 text-xs sm:text-sm mb-4">
+            {currentSupplements.length > 0
+              ? 'Generate your personalized FarmCeutica protocol based on your assessment'
+              : 'No supplements in your protocol yet.'}
+          </p>
+          <button
+            onClick={handleGenerate}
+            disabled={generating}
+            className="px-5 py-2 sm:px-6 sm:py-2.5 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-600 text-white text-xs sm:text-sm font-semibold hover:opacity-90 disabled:opacity-50 transition-opacity"
+          >
+            {generating ? '\u23F3 Analyzing Your Profile...' : '\u26A1 Generate My Protocol'}
+          </button>
         </div>
-        <p className="text-white/50 text-xs sm:text-sm mb-4">
-          No supplements in your protocol yet.
-        </p>
-        <button
-          onClick={handleGenerate}
-          disabled={generating}
-          className="px-5 py-2 sm:px-6 sm:py-2.5 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-600 text-white text-xs sm:text-sm font-semibold hover:opacity-90 disabled:opacity-50 transition-opacity"
-        >
-          {generating ? '\u23F3 Analyzing Your Profile...' : '\u26A1 Generate My Protocol'}
-        </button>
-        <a
-          href="/supplements"
-          className="block mt-2 text-white/40 text-xs hover:text-white/60 transition-colors"
-        >
-          Browse Supplements
-        </a>
+
+        {/* Shop link */}
+        <div className="pt-4 border-t border-white/[0.06] text-center">
+          <a
+            href="https://farmceuticawellness.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-copper text-xs sm:text-sm font-medium hover:text-copper/80 transition-colors"
+          >
+            Shop FarmCeutica &rarr;
+          </a>
+        </div>
       </div>
     );
   }

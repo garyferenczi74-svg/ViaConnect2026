@@ -48,11 +48,11 @@ type PortalConfig = {
 const CONSUMER: PortalConfig = {
   nav: [
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+    { href: "/analytics", label: "Analytics", icon: BarChart3 },
     { href: "/genetics", label: "Genetics", icon: Dna },
     { href: "/genetics/upload", label: "Upload DNA", icon: Upload },
     { href: "/supplements", label: "Supplements", icon: Pill },
     { href: "/shop", label: "Shop", icon: ShoppingBag },
-    { href: "/analytics", label: "Analytics", icon: BarChart3 },
     { href: "/tokens", label: "ViaTokens", icon: Coins },
     { href: "/messages", label: "Messages", icon: MessageSquare },
     { href: "/ai", label: "AI Advisor", icon: Brain },
