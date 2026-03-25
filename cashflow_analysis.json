@@ -1,0 +1,434 @@
+﻿{
+    "GeneratedAt":  "2026-03-24T18:23:31.5153120-06:00",
+    "Assumptions":  {
+                        "OpeningCash":  500000,
+                        "MonthlyFixedOpEx":  165000,
+                        "VariableOpExPct":  "5%",
+                        "EstimatedTaxRate":  "22%",
+                        "CreditLineLimit":  250000,
+                        "CreditLineRate":  "8%",
+                        "OpExBreakdown":  {
+                                              "Payroll":  85000,
+                                              "Utilities":  3000,
+                                              "Legal_Compliance":  6000,
+                                              "Software_SaaS":  8500,
+                                              "Marketing_Fixed":  35000,
+                                              "Accounting":  5000,
+                                              "Insurance":  4500,
+                                              "Miscellaneous":  6000,
+                                              "Rent_Warehouse":  12000
+                                          }
+                    },
+    "AnnualSummary":  {
+                          "OpeningCash":  500000,
+                          "EndingCash":  14461090.26,
+                          "TotalInflows":  27299567.67,
+                          "TotalOutflows":  13338477.41,
+                          "FreeCashFlow":  13961090.26,
+                          "TotalCapEx":  80000,
+                          "TotalTaxPaid":  4331460,
+                          "CreditLineEndBalance":  0,
+                          "LowestCashPoint":  {
+                                                  "Month":  1,
+                                                  "Cash":  1052763.97
+                                              }
+                      },
+    "WorkingCapitalMetrics":  {
+                                  "DSO":  "10.2 days",
+                                  "CashConversionCycle":  "-15.5 days",
+                                  "AvgMonthlyReceivables":  771475.17,
+                                  "MonthlyInventoryInvestment":  98791.81,
+                                  "AvgSupplierPaymentDays":  27
+                              },
+    "StressTest":  {
+                       "Scenario":  "Revenue -30%",
+                       "MonthsBeforeCashNegative":  1,
+                       "Interpretation":  "Cash runs out in month 1 at -30% revenue"
+                   },
+    "MonthlyCashFlow":  [
+                            {
+                                "Month":  1,
+                                "Label":  "Mar 2026",
+                                "Inflows":  {
+                                                "DTCCollection":  1120724.72,
+                                                "WholesaleCollection":  0,
+                                                "DistributorCollection":  0,
+                                                "SubscriptionPrepay":  79596.93,
+                                                "Total":  1200321.65
+                                            },
+                                "Outflows":  {
+                                                 "COGS":  304168.94,
+                                                 "InventoryPurchases":  98791.81,
+                                                 "FixedOpEx":  165000,
+                                                 "VariableOpEx":  79596.93,
+                                                 "CapEx":  0,
+                                                 "TaxPayment":  0,
+                                                 "Total":  647557.68
+                                             },
+                                "NetCashFlow":  552763.97,
+                                "CreditLine":  {
+                                                   "Balance":  0,
+                                                   "Interest":  0,
+                                                   "Action":  ""
+                                               },
+                                "CashPosition":  1052763.97,
+                                "ReceivablesBalance":  469621.86,
+                                "CumulativeNetCash":  552763.97,
+                                "MonthsRunway":  1.6,
+                                "HealthFlag":  "TIGHT",
+                                "CapExNote":  ""
+                            },
+                            {
+                                "Month":  2,
+                                "Label":  "Apr 2026",
+                                "Inflows":  {
+                                                "DTCCollection":  1208591.63,
+                                                "WholesaleCollection":  335899.03,
+                                                "DistributorCollection":  66861.42,
+                                                "SubscriptionPrepay":  85837.47,
+                                                "Total":  1697189.55
+                                            },
+                                "Outflows":  {
+                                                 "COGS":  299270.37,
+                                                 "InventoryPurchases":  100767.65,
+                                                 "FixedOpEx":  165000,
+                                                 "VariableOpEx":  85837.47,
+                                                 "CapEx":  25000,
+                                                 "TaxPayment":  0,
+                                                 "Total":  675875.49
+                                             },
+                                "NetCashFlow":  1021314.06,
+                                "CreditLine":  {
+                                                   "Balance":  0,
+                                                   "Interest":  0,
+                                                   "Action":  ""
+                                               },
+                                "CashPosition":  2074078.03,
+                                "ReceivablesBalance":  573302.51,
+                                "CumulativeNetCash":  1574078.03,
+                                "MonthsRunway":  3.1,
+                                "HealthFlag":  "HEALTHY",
+                                "CapExNote":  "Warehouse equipment upgrade"
+                            },
+                            {
+                                "Month":  3,
+                                "Label":  "May 2026",
+                                "Inflows":  {
+                                                "DTCCollection":  1283499.78,
+                                                "WholesaleCollection":  362234.14,
+                                                "DistributorCollection":  133722.84,
+                                                "SubscriptionPrepay":  91157.65,
+                                                "Total":  1870614.41
+                                            },
+                                "Outflows":  {
+                                                 "COGS":  293714.56,
+                                                 "InventoryPurchases":  102743.48,
+                                                 "FixedOpEx":  165000,
+                                                 "VariableOpEx":  91157.65,
+                                                 "CapEx":  0,
+                                                 "TaxPayment":  686264,
+                                                 "Total":  1338879.69
+                                             },
+                                "NetCashFlow":  531734.72,
+                                "CreditLine":  {
+                                                   "Balance":  0,
+                                                   "Interest":  0,
+                                                   "Action":  ""
+                                               },
+                                "CashPosition":  2605812.75,
+                                "ReceivablesBalance":  615175.69,
+                                "CumulativeNetCash":  2105812.75,
+                                "MonthsRunway":  1.9,
+                                "HealthFlag":  "TIGHT",
+                                "CapExNote":  ""
+                            },
+                            {
+                                "Month":  4,
+                                "Label":  "Jun 2026",
+                                "Inflows":  {
+                                                "DTCCollection":  1345307.24,
+                                                "WholesaleCollection":  384685.30,
+                                                "DistributorCollection":  144206.96,
+                                                "SubscriptionPrepay":  95547.39,
+                                                "Total":  1969746.89
+                                            },
+                                "Outflows":  {
+                                                 "COGS":  287463.39,
+                                                 "InventoryPurchases":  104719.32,
+                                                 "FixedOpEx":  165000,
+                                                 "VariableOpEx":  95547.39,
+                                                 "CapEx":  0,
+                                                 "TaxPayment":  0,
+                                                 "Total":  652730.10
+                                             },
+                                "NetCashFlow":  1317016.79,
+                                "CreditLine":  {
+                                                   "Balance":  0,
+                                                   "Interest":  0,
+                                                   "Action":  ""
+                                               },
+                                "CashPosition":  3922829.54,
+                                "ReceivablesBalance":  650013.03,
+                                "CumulativeNetCash":  3422829.54,
+                                "MonthsRunway":  6.0,
+                                "HealthFlag":  "HEALTHY",
+                                "CapExNote":  ""
+                            },
+                            {
+                                "Month":  5,
+                                "Label":  "Jul 2026",
+                                "Inflows":  {
+                                                "DTCCollection":  1348085.84,
+                                                "WholesaleCollection":  403209.98,
+                                                "DistributorCollection":  153144.86,
+                                                "SubscriptionPrepay":  95744.73,
+                                                "Total":  2000185.41
+                                            },
+                                "Outflows":  {
+                                                 "COGS":  290376.10,
+                                                 "InventoryPurchases":  106695.15,
+                                                 "FixedOpEx":  165000,
+                                                 "VariableOpEx":  95744.73,
+                                                 "CapEx":  15000,
+                                                 "TaxPayment":  0,
+                                                 "Total":  672815.98
+                                             },
+                                "NetCashFlow":  1327369.43,
+                                "CreditLine":  {
+                                                   "Balance":  0,
+                                                   "Interest":  0,
+                                                   "Action":  ""
+                                               },
+                                "CashPosition":  5250198.97,
+                                "ReceivablesBalance":  658552.11,
+                                "CumulativeNetCash":  4750198.97,
+                                "MonthsRunway":  7.8,
+                                "HealthFlag":  "HEALTHY",
+                                "CapExNote":  "Label compliance system"
+                            },
+                            {
+                                "Month":  6,
+                                "Label":  "Aug 2026",
+                                "Inflows":  {
+                                                "DTCCollection":  1448022.21,
+                                                "WholesaleCollection":  404042.77,
+                                                "DistributorCollection":  160519.61,
+                                                "SubscriptionPrepay":  102842.49,
+                                                "Total":  2115427.08
+                                            },
+                                "Outflows":  {
+                                                 "COGS":  313620.31,
+                                                 "InventoryPurchases":  108670.99,
+                                                 "FixedOpEx":  165000,
+                                                 "VariableOpEx":  102842.49,
+                                                 "CapEx":  0,
+                                                 "TaxPayment":  969048,
+                                                 "Total":  1659181.79
+                                             },
+                                "NetCashFlow":  456245.29,
+                                "CreditLine":  {
+                                                   "Balance":  0,
+                                                   "Interest":  0,
+                                                   "Action":  ""
+                                               },
+                                "CashPosition":  5706444.26,
+                                "ReceivablesBalance":  700760.40,
+                                "CumulativeNetCash":  5206444.26,
+                                "MonthsRunway":  3.4,
+                                "HealthFlag":  "HEALTHY",
+                                "CapExNote":  ""
+                            },
+                            {
+                                "Month":  7,
+                                "Label":  "Sep 2026",
+                                "Inflows":  {
+                                                "DTCCollection":  1617382.54,
+                                                "WholesaleCollection":  433995.29,
+                                                "DistributorCollection":  160851.15,
+                                                "SubscriptionPrepay":  114870.92,
+                                                "Total":  2327099.90
+                                            },
+                                "Outflows":  {
+                                                 "COGS":  352171.74,
+                                                 "InventoryPurchases":  110646.83,
+                                                 "FixedOpEx":  165000,
+                                                 "VariableOpEx":  114870.92,
+                                                 "CapEx":  0,
+                                                 "TaxPayment":  0,
+                                                 "Total":  742689.49
+                                             },
+                                "NetCashFlow":  1584410.41,
+                                "CreditLine":  {
+                                                   "Balance":  0,
+                                                   "Interest":  0,
+                                                   "Action":  ""
+                                               },
+                                "CashPosition":  7290854.67,
+                                "ReceivablesBalance":  783652.38,
+                                "CumulativeNetCash":  6790854.67,
+                                "MonthsRunway":  9.8,
+                                "HealthFlag":  "HEALTHY",
+                                "CapExNote":  ""
+                            },
+                            {
+                                "Month":  8,
+                                "Label":  "Oct 2026",
+                                "Inflows":  {
+                                                "DTCCollection":  1745421.45,
+                                                "WholesaleCollection":  484755.28,
+                                                "DistributorCollection":  172775.38,
+                                                "SubscriptionPrepay":  123964.59,
+                                                "Total":  2526916.70
+                                            },
+                                "Outflows":  {
+                                                 "COGS":  382016.36,
+                                                 "InventoryPurchases":  112622.66,
+                                                 "FixedOpEx":  165000,
+                                                 "VariableOpEx":  123964.59,
+                                                 "CapEx":  40000,
+                                                 "TaxPayment":  0,
+                                                 "Total":  823603.61
+                                             },
+                                "NetCashFlow":  1703313.09,
+                                "CreditLine":  {
+                                                   "Balance":  0,
+                                                   "Interest":  0,
+                                                   "Action":  ""
+                                               },
+                                "CashPosition":  8994167.76,
+                                "ReceivablesBalance":  857512.81,
+                                "CumulativeNetCash":  8494167.76,
+                                "MonthsRunway":  10.9,
+                                "HealthFlag":  "HEALTHY",
+                                "CapExNote":  "New product line tooling"
+                            },
+                            {
+                                "Month":  9,
+                                "Label":  "Nov 2026",
+                                "Inflows":  {
+                                                "DTCCollection":  1841664.07,
+                                                "WholesaleCollection":  523130.58,
+                                                "DistributorCollection":  192983.14,
+                                                "SubscriptionPrepay":  130800.00,
+                                                "Total":  2688577.79
+                                            },
+                                "Outflows":  {
+                                                 "COGS":  405933.20,
+                                                 "InventoryPurchases":  114598.50,
+                                                 "FixedOpEx":  165000,
+                                                 "VariableOpEx":  130800.00,
+                                                 "CapEx":  0,
+                                                 "TaxPayment":  1218324,
+                                                 "Total":  2034655.70
+                                             },
+                                "NetCashFlow":  653922.09,
+                                "CreditLine":  {
+                                                   "Balance":  0,
+                                                   "Interest":  0,
+                                                   "Action":  ""
+                                               },
+                                "CashPosition":  9648089.85,
+                                "ReceivablesBalance":  913119.12,
+                                "CumulativeNetCash":  9148089.85,
+                                "MonthsRunway":  4.7,
+                                "HealthFlag":  "HEALTHY",
+                                "CapExNote":  ""
+                            },
+                            {
+                                "Month":  10,
+                                "Label":  "Dec 2026",
+                                "Inflows":  {
+                                                "DTCCollection":  1959749.47,
+                                                "WholesaleCollection":  551976.02,
+                                                "DistributorCollection":  208260.51,
+                                                "SubscriptionPrepay":  139186.75,
+                                                "Total":  2859172.75
+                                            },
+                                "Outflows":  {
+                                                 "COGS":  434897.59,
+                                                 "InventoryPurchases":  116574.34,
+                                                 "FixedOpEx":  165000,
+                                                 "VariableOpEx":  139186.75,
+                                                 "CapEx":  0,
+                                                 "TaxPayment":  0,
+                                                 "Total":  855658.68
+                                             },
+                                "NetCashFlow":  2003514.07,
+                                "CreditLine":  {
+                                                   "Balance":  0,
+                                                   "Interest":  0,
+                                                   "Action":  ""
+                                               },
+                                "CashPosition":  11651603.92,
+                                "ReceivablesBalance":  974084.43,
+                                "CumulativeNetCash":  11151603.92,
+                                "MonthsRunway":  13.6,
+                                "HealthFlag":  "HEALTHY",
+                                "CapExNote":  ""
+                            },
+                            {
+                                "Month":  11,
+                                "Label":  "Jan 2027",
+                                "Inflows":  {
+                                                "DTCCollection":  2065356.89,
+                                                "WholesaleCollection":  587368.09,
+                                                "DistributorCollection":  219744.01,
+                                                "SubscriptionPrepay":  146687.28,
+                                                "Total":  3019156.27
+                                            },
+                                "Outflows":  {
+                                                 "COGS":  461322.86,
+                                                 "InventoryPurchases":  118550.17,
+                                                 "FixedOpEx":  165000,
+                                                 "VariableOpEx":  146687.28,
+                                                 "CapEx":  0,
+                                                 "TaxPayment":  0,
+                                                 "Total":  891560.31
+                                             },
+                                "NetCashFlow":  2127595.96,
+                                "CreditLine":  {
+                                                   "Balance":  0,
+                                                   "Interest":  0,
+                                                   "Action":  ""
+                                               },
+                                "CashPosition":  13779199.88,
+                                "ReceivablesBalance":  1032427.28,
+                                "CumulativeNetCash":  13279199.88,
+                                "MonthsRunway":  15.5,
+                                "HealthFlag":  "HEALTHY",
+                                "CapExNote":  ""
+                            },
+                            {
+                                "Month":  12,
+                                "Label":  "Feb 2027",
+                                "Inflows":  {
+                                                "DTCCollection":  2028253.14,
+                                                "WholesaleCollection":  619020.32,
+                                                "DistributorCollection":  233833.74,
+                                                "SubscriptionPrepay":  144052.07,
+                                                "Total":  3025159.27
+                                            },
+                                "Outflows":  {
+                                                 "COGS":  455866.81,
+                                                 "InventoryPurchases":  120526.01,
+                                                 "FixedOpEx":  165000,
+                                                 "VariableOpEx":  144052.07,
+                                                 "CapEx":  0,
+                                                 "TaxPayment":  1457824,
+                                                 "Total":  2343268.89
+                                             },
+                                "NetCashFlow":  681890.38,
+                                "CreditLine":  {
+                                                   "Balance":  0,
+                                                   "Interest":  0,
+                                                   "Action":  ""
+                                               },
+                                "CashPosition":  14461090.26,
+                                "ReceivablesBalance":  1029480.43,
+                                "CumulativeNetCash":  13961090.26,
+                                "MonthsRunway":  6.2,
+                                "HealthFlag":  "HEALTHY",
+                                "CapExNote":  ""
+                            }
+                        ]
+}
