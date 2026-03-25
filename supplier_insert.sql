@@ -1,0 +1,11 @@
+﻿INSERT INTO public.supplier_scorecard (supplier,region,lead_time_days,quality_certs,payment_terms,ingredient_count,sku_count,sku_exposure_pct,annual_spend,spend_share_pct,score_cost_concentration,score_lead_time,score_sku_exposure,score_regional_risk,score_cert_strength,score_payment_terms,composite_score,risk_tier,recommendations) VALUES
+('BioPerine/Sabinsa','India',28,ARRAY['GMP','Patent','GRAS'],'Net 30',5,3,18.8,2166.37,26.5,47,55,44,45,90,60,53.3,'ELEVATED',ARRAY['DIVERSIFY - over 25% of spend concentrated here','REGIONAL RISK - consider nearshore alternative']),
+('Albion Minerals','USA',21,ARRAY['GMP','GRAS','Chelate Patent'],'Net 30',11,5,31.2,1009.52,12.4,75,70,6,90,90,60,62.4,'MODERATE',ARRAY['DUAL SOURCE - 5 SKUs dependent; qualify alternate supplier']),
+('Cognizin/Kyowa','Japan',35,ARRAY['GMP','Patent','Clinical Grade'],'Net 60',4,2,12.5,950.32,11.6,77,35,62,65,90,90,66.4,'MODERATE',ARRAY['BUFFER STOCK - 5+ week lead time requires extra safety stock']),
+('Nammex Inc','Canada/China',35,ARRAY['GMP','Organic','Beta-Glucan Verified'],'Net 45',5,3,18.8,882.34,10.8,78,35,44,60,90,75,60.8,'MODERATE',ARRAY['BUFFER STOCK - 5+ week lead time requires extra safety stock']),
+('Kyowa Hakko Bio','Japan',35,ARRAY['GMP','ISO 22000','GRAS'],'Net 60',4,3,18.8,766.50,9.4,81,35,44,65,90,90,63.8,'MODERATE',ARRAY['BUFFER STOCK - 5+ week lead time requires extra safety stock']),
+('Verdure Sciences','India/USA',28,ARRAY['GMP','Organic','Fair Trade'],'Net 30',8,3,18.8,629.37,7.7,85,55,44,60,90,60,65.0,'MODERATE',ARRAY['MAINTAIN - supplier relationship performing well']),
+('Precision Analytics','USA',7,ARRAY['CLIA','CAP'],'Net 15',3,2,12.5,620.34,7.6,85,95,62,90,60,40,76.2,'LOW',ARRAY['MAINTAIN - supplier relationship performing well']),
+('VitaGenix Europe','Germany',28,ARRAY['GMP','ISO 9001','EU Pharma'],'Net 45',11,4,25,561.58,6.9,86,55,25,70,90,75,64.5,'MODERATE',ARRAY['MAINTAIN - supplier relationship performing well']),
+('KetoSynth Labs','USA',14,ARRAY['GMP','NSF'],'Net 30',3,1,6.2,419.33,5.1,90,85,81,90,60,60,81.2,'LOW',ARRAY['MAINTAIN - supplier relationship performing well']),
+('DSM Nutritional','Switzerland',21,ARRAY['GMP','ISO 9001','USP Grade'],'Net 45',3,2,12.5,161.13,2.0,96,70,62,70,90,75,77.4,'LOW',ARRAY['MAINTAIN - supplier relationship performing well']);

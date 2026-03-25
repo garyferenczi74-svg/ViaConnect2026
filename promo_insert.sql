@@ -1,0 +1,13 @@
+﻿INSERT INTO public.promotion_roi (promotion,code,type,discount,duration,applies_to,skus_affected,baseline_revenue,promo_revenue,revenue_delta,baseline_gross_profit,promo_gross_profit,gp_delta,marketing_cost,commission_cost,baseline_units,promo_units,volume_lift,breakeven_lift,exceeds_breakeven,net_new_customers,effective_cac,roi,rating) VALUES
+('Buy 3 Get 1 Free','B3G1','Bundle','25%','14 days','ALL',62,889926.24,1206717.12,316790.88,755489.28,956458.76,200969.48,2000,0,9240,16632,'80%','50.0%',true,208,9.62,10048.4,'EXCELLENT'),
+('Subscribe & Save Extra 5%','SUBSAVE5','Subscription','5%','30 days','ALL',62,1906984.80,1998041.40,91056.60,1618905.60,1684361.40,65455.80,1500,0,19800,21960,'10%','7.0%',true,1485,1.01,4363.7,'EXCELLENT'),
+('10% Off Sitewide','SAVE10','Percentage','10%','7 days','ALL',62,444963.12,554068.62,109105.50,377744.64,456775.18,79030.54,2500,0,4620,6321,'35%','15.0%',true,139,17.99,3161.2,'EXCELLENT'),
+('20% Off Advanced Line','ADVANCED20','Percentage','20%','14 days','Advanced',16,342218.24,421176.00,78957.76,301242.76,355636.80,54394.04,2500,0,2912,4480,'50%','29.0%',true,131,19.08,2175.8,'EXCELLENT'),
+('BOGO 50% Off','BOGO50','BOGO','25%','3 days','ALL',62,190698.48,286047.72,95349.24,161890.56,224931.88,63041.32,3500,0,1980,3960,'100%','50.0%',true,119,29.41,1801.2,'EXCELLENT'),
+('Holiday Bundle 20%','HOLIDAY20','Seasonal','20%','10 days','ALL',62,635661.60,821952.00,186290.40,539635.20,661292.00,121656.80,8000,0,6600,10770,'65%','36.0%',true,495,16.16,1520.7,'EXCELLENT'),
+('Flash Sale 30% (48hr)','FLASH30','Flash','30%','2 days','ALL',62,127132.32,219955.28,92822.96,107927.04,167442.06,59515.02,5000,0,1320,3272,'150%','66.0%',true,119,42.02,1190.3,'EXCELLENT'),
+('Star SKUs 15% Off','STARS15','Tier','15%','7 days','Star',9,130033.68,160706.35,30672.67,118049.05,141264.24,23215.19,2000,0,1211,1757,'45%','20.0%',true,64,31.25,1160.8,'EXCELLENT'),
+('25% Off SNP Category','GENETIC25','Percentage','25%','14 days','SNP',20,157332.00,188798.40,31466.40,135136.40,150785.44,15649.04,2500,0,1400,2240,'60%','41.0%',true,52,48.08,626.0,'EXCELLENT'),
+('Mushroom Monday 20%','SHROOM20','Category','20%','1 days','Mushroom',5,3532.80,4710.00,1177.20,3037.32,2384.20,-653.12,1500,0,60,100,'70%','30.0%',true,2,750,0,'NEGATIVE'),
+('15% First Order','WELCOME15','Percentage','15%','30 days','ALL',62,1906984.80,1867282.50,-39702.30,1618905.60,1541116.70,-77788.90,2500,0,19800,22950,'15%','25.0%',false,1336,31.59,0,'NEGATIVE'),
+('Influencer 20% Code','CREATOR20','Influencer','20%','30 days','ALL',62,1906984.80,1849575.00,-57409.80,1618905.60,1327589.00,-291316.60,1000,184957.50,19800,24390,'25%','36.0%',false,2376,102.43,0,'NEGATIVE');

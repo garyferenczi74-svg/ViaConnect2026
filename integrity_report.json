@@ -1,6 +1,6 @@
 ﻿{
-    "GeneratedAt":  "2026-03-24T18:26:53.1925626-06:00",
-    "Duration":  "0.45s",
+    "GeneratedAt":  "2026-03-24T18:43:32.6384267-06:00",
+    "Duration":  "0.44s",
     "OverallStatus":  "PASS",
     "Summary":  {
                     "TotalChecks":  46,
@@ -315,7 +315,7 @@
                           "Category":  "Freshness",
                           "Check":  "Waterfall data age",
                           "Status":  "PASS",
-                          "Detail":  "0.6 hours old",
+                          "Detail":  "0.8 hours old",
                           "Expected":  null,
                           "Actual":  null
                       },
@@ -323,7 +323,7 @@
                           "Category":  "Freshness",
                           "Check":  "Rational data age",
                           "Status":  "PASS",
-                          "Detail":  "0.6 hours old",
+                          "Detail":  "0.8 hours old",
                           "Expected":  null,
                           "Actual":  null
                       },
@@ -331,7 +331,7 @@
                           "Category":  "Freshness",
                           "Check":  "Dashboard data age",
                           "Status":  "PASS",
-                          "Detail":  "0.6 hours old",
+                          "Detail":  "0.8 hours old",
                           "Expected":  null,
                           "Actual":  null
                       },
@@ -339,7 +339,7 @@
                           "Category":  "Freshness",
                           "Check":  "Forecast data age",
                           "Status":  "PASS",
-                          "Detail":  "0.6 hours old",
+                          "Detail":  "0.8 hours old",
                           "Expected":  null,
                           "Actual":  null
                       },
@@ -347,7 +347,7 @@
                           "Category":  "Freshness",
                           "Check":  "UnitEcon data age",
                           "Status":  "PASS",
-                          "Detail":  "0.6 hours old",
+                          "Detail":  "0.8 hours old",
                           "Expected":  null,
                           "Actual":  null
                       },

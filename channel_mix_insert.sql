@@ -1,0 +1,6 @@
+﻿INSERT INTO public.channel_mix_scenarios (scenario,description,dtc_mix,ws_mix,dist_mix,monthly_units,monthly_revenue,monthly_cogs,monthly_gross_profit,monthly_variable_costs,monthly_net_profit,blended_net_margin_pct,annual_revenue,annual_net_profit,dtc_revenue_share,ws_revenue_share,dist_revenue_share) VALUES
+('DTC Heavy','80% DTC, 15% Wholesale, 5% Distributor - direct-to-consumer focused',0.8,0.15,0.05,19860,1708113.62,289684.70,1418428.92,612601.14,805827.78,47.2,20497363.44,9669933.36,89.9,8.4,1.7),
+('Balanced','50% DTC, 30% Wholesale, 20% Distributor - diversified channel strategy',0.5,0.3,0.2,19860,1362829.80,289684.70,1073145.10,416434.79,656710.31,48.2,16353957.60,7880523.72,70.4,21.1,8.4),
+('Wholesale Push','25% DTC, 55% Wholesale, 20% Distributor - practitioner/retail expansion',0.25,0.55,0.2,19860,1123486.14,289684.70,833801.44,264451.40,569350.04,50.7,13481833.68,6832200.48,42.8,46.9,10.2),
+('Distributor Scale','20% DTC, 30% Wholesale, 50% Distributor - mass market distribution',0.2,0.3,0.5,19860,959712.00,289684.70,670027.30,206823.36,463203.94,48.3,11516544.00,5558447.28,40.0,30.0,30.0),
+('Pure DTC','100% DTC, 0% Wholesale, 0% Distributor - maximum margin, no channel partners',1,0,0,19860,1919500.00,289684.70,1629815.30,739007.46,890807.84,46.4,23034000.00,10689694.08,100,0,0);
