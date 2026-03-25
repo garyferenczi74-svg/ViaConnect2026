@@ -260,9 +260,9 @@ function SupplementTracker({
                       {item.dosage || "As directed"} &middot; {item.frequency || "daily"}
                     </p>
                   </div>
-                  {item.monthly_price && (
-                    <span className="text-xs text-gray-500">${item.monthly_price}/mo</span>
-                  )}
+                  <Badge variant="neutral">
+                    {item.confidence_score}%
+                  </Badge>
                 </div>
               ))}
             </div>
@@ -270,10 +270,10 @@ function SupplementTracker({
         );
       })}
       <Link
-        href="/checkout"
+        href="/supplements"
         className="block w-full text-center py-2.5 rounded-lg bg-copper/10 text-copper text-sm font-medium hover:bg-copper/20 transition-colors"
       >
-        Order Protocol &rarr;
+        Shop FarmCeutica &rarr;
       </Link>
     </div>
   );
