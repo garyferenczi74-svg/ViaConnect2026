@@ -472,6 +472,28 @@ export default function AssessmentPage() {
           </Card>
         </>
       )}
+
+      {/* CTA: View Protocol & Order */}
+      {assessments && assessments.length > 0 && (
+        <StaggerChild>
+          <Card className="p-6 bg-gradient-to-r from-cyan-500/10 to-purple-500/10 border-cyan-500/30">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-white">Your Personalized Protocol is Ready</h3>
+                <p className="text-sm text-slate-400 mt-1">Based on your assessment, we've matched supplements to your needs.</p>
+              </div>
+              <div className="flex gap-3">
+                <Link href="/supplements">
+                  <Button variant="secondary" size="sm">View Protocol</Button>
+                </Link>
+                <Link href="/checkout">
+                  <Button size="sm">Order Now</Button>
+                </Link>
+              </div>
+            </div>
+          </Card>
+        </StaggerChild>
+      )}
     </PageTransition>
   );
 }

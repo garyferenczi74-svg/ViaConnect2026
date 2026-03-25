@@ -259,7 +259,26 @@ export default function OnboardingStepPage() {
             }, { onConflict: "user_id,phase" });
           }
           toast.success(`Your Vitality Score: ${vitalityScore}/100`, { duration: 5000 });
-          router.push("/dashboard");
+
+          // Generate personalized supplement recommendations
+          try {
+            toast.loading("Generating your personalized protocol...", { id: "recs" });
+            const res = await fetch("/api/recommendations/generate", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({}),
+            });
+            if (res.ok) {
+              const data = await res.json();
+              toast.success(`${data.recommendations_count} supplements recommended for you!`, { id: "recs", duration: 4000 });
+            } else {
+              toast.dismiss("recs");
+            }
+          } catch {
+            toast.dismiss("recs");
+          }
+
+          router.push("/profile/assessment");
           router.refresh();
           return;
         }
