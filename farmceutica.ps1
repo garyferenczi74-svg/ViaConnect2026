@@ -21,7 +21,7 @@ $Banner = @"
 
   ╔═══════════════════════════════════════════════╗
   ║   FarmCeutica Toolchain CLI v$Version           ║
-  ║   24 scripts · 62 SKUs · 7 categories        ║
+  ║   25 scripts · 62 SKUs · 7 categories        ║
   ╚═══════════════════════════════════════════════╝
 
 "@
@@ -34,6 +34,7 @@ $Commands = [ordered]@{
     "validate"   = @{ Script="data_integrity_checker.ps1"; Desc="Run 46 cross-file integrity checks"; Category="Pipeline" }
     "alerts"     = @{ Script="alert_engine.ps1"; Desc="Monitor 24 KPI checks, flag critical issues"; Category="Pipeline" }
     "report"     = @{ Script="report_generator.ps1"; Desc="Generate HTML executive report"; Category="Pipeline" }
+    "export"     = @{ Script="data_exporter.ps1"; Desc="Export 17 CSVs for Excel/Sheets/BI"; Category="Pipeline" }
 
     # Data & Costs
     "master"     = @{ Script="farmceutica_master_skus.ps1"; Desc="Regenerate master SKU data (62 SKUs)"; Category="Data" }
