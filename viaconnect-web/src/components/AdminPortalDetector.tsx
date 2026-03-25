@@ -27,8 +27,8 @@ export function AdminPortalDetector({
   else if (pathname.startsWith("/naturopath")) activeRole = "naturopath";
   else if (pathname.startsWith("/admin")) activeRole = "admin";
 
-  // Admin portal uses consumer shell (no sidebar needed — full-width dashboard)
-  const shellRole = activeRole === "admin" ? "consumer" : activeRole;
+  // Admin sees unified sidebar with all portals
+  const shellRole = "admin";
 
   return (
     <AppShell user={user} role={shellRole}>

@@ -104,8 +104,39 @@ const NATUROPATH: PortalConfig = {
   homeHref: "/naturopath/dashboard",
 };
 
+const ADMIN: PortalConfig = {
+  nav: [
+    // Consumer
+    { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+    { href: "/genetics", label: "Genetics", icon: Dna },
+    { href: "/genetics/upload", label: "Upload DNA", icon: Upload },
+    { href: "/supplements", label: "Supplements", icon: Pill },
+    { href: "/tokens", label: "ViaTokens", icon: Coins },
+    { href: "/messages", label: "Messages", icon: MessageSquare },
+    // Practitioner
+    { href: "/practitioner/dashboard", label: "Practitioner", icon: Users },
+    { href: "/practitioner/patients", label: "Patients", icon: ClipboardList },
+    { href: "/practitioner/protocols", label: "Protocols", icon: FileText },
+    { href: "/practitioner/compliance", label: "Compliance", icon: Shield },
+    { href: "/practitioner/ai", label: "AI Advisor", icon: Brain },
+    // Naturopath
+    { href: "/naturopath/dashboard", label: "Naturopath", icon: Leaf },
+    { href: "/naturopath/botanical", label: "Botanical", icon: Activity },
+    { href: "/naturopath/patients", label: "Naturo Patients", icon: Users },
+    // Admin
+    { href: "/profile", label: "Profile", icon: UserIcon },
+    { href: "/practitioner/settings", label: "Settings", icon: Settings },
+  ],
+  accent: "bg-copper",
+  accentBg: "bg-copper/10 text-copper",
+  badge: { label: "ADMIN", bg: "bg-copper/20 text-copper" },
+  homeHref: "/dashboard",
+};
+
 function getPortal(role: string): PortalConfig {
   switch (role) {
+    case "admin":
+      return ADMIN;
     case "practitioner":
       return PRACTITIONER;
     case "naturopath":

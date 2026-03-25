@@ -25,7 +25,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     // or the DB-level role (patient/practitioner/admin) — handle both
     const rawRole = user?.user_metadata?.role as string | undefined;
     let role: UserRole = "consumer";
-    if (rawRole === "consumer" || rawRole === "practitioner" || rawRole === "naturopath") {
+    if (rawRole === "consumer" || rawRole === "practitioner" || rawRole === "naturopath" || rawRole === "admin") {
       role = rawRole;
     } else if (rawRole) {
       role = mapDatabaseRoleToUserRole(rawRole);
