@@ -160,8 +160,18 @@ export function calculateVitalityScore(caq: CAQResponses): number {
 }
 
 export async function generateRecommendations(supabase: SupabaseClient, userId: string, caq: CAQResponses, geneticProfile?: GeneticProfile): Promise<ProductMatch[]> {
-  const { data: products, error } = await supabase.from('product_catalog').select('*').eq('active', true);
-  if (error || !products) throw new Error('Could not load product catalog');
+  // Use enriched view to get financial toolchain data (tier, score, margins)
+  // Falls back to product_catalog if view unavailable
+  let products: any[] | null = null;
+  const { data: enriched, error: enrichedErr } = await supabase
+    .from('product_catalog_enriched').select('*').eq('active', true);
+  if (!enrichedErr && enriched) {
+    products = enriched;
+  } else {
+    const { data: fallback, error } = await supabase.from('product_catalog').select('*').eq('active', true);
+    if (error || !fallback) throw new Error('Could not load product catalog');
+    products = fallback;
+  }
 
   const symptomTags: string[] = [];
   if (caq.symptoms) { for (const [sym, sev] of Object.entries(caq.symptoms)) { if (sev >= 4) symptomTags.push(...(SYMPTOM_TO_TAGS[sym] || [])); } }
@@ -181,11 +191,27 @@ export async function generateRecommendations(supabase: SupabaseClient, userId: 
     const totalMatches = mSym.length + mLife.length + mGoal.length + mGen.length;
     if (totalMatches < 2) continue;
 
-    const matchScore = (mSym.length*25)+(mGoal.length*20)+(mLife.length*10)+(mGen.length*35)+((product.priority_weight||50)/5);
+    // Base match score from tag matching
+    let matchScore = (mSym.length*25)+(mGoal.length*20)+(mLife.length*10)+(mGen.length*35)+((product.priority_weight||50)/5);
+
+    // Boost from financial toolchain data (Star SKUs get priority)
+    const tier = product.rationalization_tier;
+    if (tier === 'Star') matchScore += 20;       // Star products boosted
+    else if (tier === 'Core') matchScore += 5;    // Core gets slight boost
+    else if (tier === 'Watch') matchScore -= 10;  // Watch deprioritized
+    else if (tier === 'Sunset') continue;          // Never recommend Sunset SKUs
+
+    // Composite score bonus (products scoring >75 get additional boost)
+    const compositeScore = product.composite_score ? Number(product.composite_score) : 0;
+    if (compositeScore > 75) matchScore += Math.round((compositeScore - 75) / 5);
+
     let confidenceLevel: 'questionnaire'|'genetic'|'combined' = 'questionnaire';
     let confidenceScore = 55 + Math.min(23, totalMatches * 3);
     if (hasGenetics && mGen.length > 0) { confidenceLevel = 'combined'; confidenceScore = 90 + Math.min(8, mGen.length*2); }
     else if (hasGenetics) { confidenceLevel = 'genetic'; confidenceScore = 85; }
+
+    // Boost confidence if product is Star-tier (validated by financial analysis)
+    if (tier === 'Star') confidenceScore = Math.min(98, confidenceScore + 3);
 
     const dosage = DOSAGE_MAP[product.sku] || {dosage:'2 capsules',frequency:'daily',time_of_day:'morning' as const};
     scored.push({
