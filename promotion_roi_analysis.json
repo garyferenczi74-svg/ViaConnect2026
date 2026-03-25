@@ -1,0 +1,461 @@
+﻿{
+    "GeneratedAt":  "2026-03-24T18:53:52.0772852-06:00",
+    "PromotionsModeled":  12,
+    "Summary":  {
+                    "Excellent":  9,
+                    "Strong":  0,
+                    "Negative":  3,
+                    "BestPromo":  {
+                                      "Name":  "Buy 3 Get 1 Free",
+                                      "ROI":  10048.4,
+                                      "Rating":  "EXCELLENT"
+                                  },
+                    "WorstPromo":  {
+                                       "Name":  "Influencer 20% Code",
+                                       "ROI":  0,
+                                       "Rating":  "NEGATIVE"
+                                   }
+                },
+    "DiscountSensitivity":  [
+                                {
+                                    "Discount":  "5%",
+                                    "BaseMargin":  "75.2%",
+                                    "DiscountedMargin":  "73.9%",
+                                    "MarginErosion":  "1.3pp",
+                                    "BreakevenLiftNeeded":  "7.1%"
+                                },
+                                {
+                                    "Discount":  "10%",
+                                    "BaseMargin":  "75.2%",
+                                    "DiscountedMargin":  "72.4%",
+                                    "MarginErosion":  "2.8pp",
+                                    "BreakevenLiftNeeded":  "15.3%"
+                                },
+                                {
+                                    "Discount":  "15%",
+                                    "BaseMargin":  "75.2%",
+                                    "DiscountedMargin":  "70.8%",
+                                    "MarginErosion":  "4.4pp",
+                                    "BreakevenLiftNeeded":  "24.9%"
+                                },
+                                {
+                                    "Discount":  "20%",
+                                    "BaseMargin":  "75.2%",
+                                    "DiscountedMargin":  "69%",
+                                    "MarginErosion":  "6.2pp",
+                                    "BreakevenLiftNeeded":  "36.3%"
+                                },
+                                {
+                                    "Discount":  "25%",
+                                    "BaseMargin":  "75.2%",
+                                    "DiscountedMargin":  "66.9%",
+                                    "MarginErosion":  "8.3pp",
+                                    "BreakevenLiftNeeded":  "49.8%"
+                                },
+                                {
+                                    "Discount":  "30%",
+                                    "BaseMargin":  "75.2%",
+                                    "DiscountedMargin":  "64.5%",
+                                    "MarginErosion":  "10.7pp",
+                                    "BreakevenLiftNeeded":  "66.4%"
+                                }
+                            ],
+    "Promotions":  [
+                       {
+                           "Promotion":  "Buy 3 Get 1 Free",
+                           "Code":  "B3G1",
+                           "Type":  "Bundle",
+                           "Discount":  "25%",
+                           "Duration":  "14 days",
+                           "AppliesTo":  "ALL",
+                           "SKUsAffected":  62,
+                           "Economics":  {
+                                             "BaselineRevenue":  889926.24,
+                                             "PromoRevenue":  1206717.12,
+                                             "RevenueDelta":  316790.88,
+                                             "BaselineGrossProfit":  755489.28,
+                                             "PromoGrossProfit":  956458.76,
+                                             "GrossProfitDelta":  200969.48,
+                                             "MarketingCost":  2000,
+                                             "CommissionCost":  0
+                                         },
+                           "VolumeImpact":  {
+                                                "BaselineUnits":  9240,
+                                                "PromoUnits":  16632,
+                                                "VolumeLift":  "80%",
+                                                "BreakevenLiftRequired":  "50.0%",
+                                                "ExceedsBreakeven":  true
+                                            },
+                           "Acquisition":  {
+                                               "NetNewCustomers":  208,
+                                               "EffectiveCAC":  9.62,
+                                               "AcquisitionBoost":  "15%"
+                                           },
+                           "ROI":  10048.4,
+                           "Rating":  "EXCELLENT"
+                       },
+                       {
+                           "Promotion":  "Subscribe \u0026 Save Extra 5%",
+                           "Code":  "SUBSAVE5",
+                           "Type":  "Subscription",
+                           "Discount":  "5%",
+                           "Duration":  "30 days",
+                           "AppliesTo":  "ALL",
+                           "SKUsAffected":  62,
+                           "Economics":  {
+                                             "BaselineRevenue":  1906984.80,
+                                             "PromoRevenue":  1998041.40,
+                                             "RevenueDelta":  91056.60,
+                                             "BaselineGrossProfit":  1618905.60,
+                                             "PromoGrossProfit":  1684361.40,
+                                             "GrossProfitDelta":  65455.80,
+                                             "MarketingCost":  1500,
+                                             "CommissionCost":  0
+                                         },
+                           "VolumeImpact":  {
+                                                "BaselineUnits":  19800,
+                                                "PromoUnits":  21960,
+                                                "VolumeLift":  "10%",
+                                                "BreakevenLiftRequired":  "7.0%",
+                                                "ExceedsBreakeven":  true
+                                            },
+                           "Acquisition":  {
+                                               "NetNewCustomers":  1485,
+                                               "EffectiveCAC":  1.01,
+                                               "AcquisitionBoost":  "50%"
+                                           },
+                           "ROI":  4363.7,
+                           "Rating":  "EXCELLENT"
+                       },
+                       {
+                           "Promotion":  "10% Off Sitewide",
+                           "Code":  "SAVE10",
+                           "Type":  "Percentage",
+                           "Discount":  "10%",
+                           "Duration":  "7 days",
+                           "AppliesTo":  "ALL",
+                           "SKUsAffected":  62,
+                           "Economics":  {
+                                             "BaselineRevenue":  444963.12,
+                                             "PromoRevenue":  554068.62,
+                                             "RevenueDelta":  109105.50,
+                                             "BaselineGrossProfit":  377744.64,
+                                             "PromoGrossProfit":  456775.18,
+                                             "GrossProfitDelta":  79030.54,
+                                             "MarketingCost":  2500,
+                                             "CommissionCost":  0
+                                         },
+                           "VolumeImpact":  {
+                                                "BaselineUnits":  4620,
+                                                "PromoUnits":  6321,
+                                                "VolumeLift":  "35%",
+                                                "BreakevenLiftRequired":  "15.0%",
+                                                "ExceedsBreakeven":  true
+                                            },
+                           "Acquisition":  {
+                                               "NetNewCustomers":  139,
+                                               "EffectiveCAC":  17.99,
+                                               "AcquisitionBoost":  "20%"
+                                           },
+                           "ROI":  3161.2,
+                           "Rating":  "EXCELLENT"
+                       },
+                       {
+                           "Promotion":  "20% Off Advanced Line",
+                           "Code":  "ADVANCED20",
+                           "Type":  "Percentage",
+                           "Discount":  "20%",
+                           "Duration":  "14 days",
+                           "AppliesTo":  "Advanced",
+                           "SKUsAffected":  16,
+                           "Economics":  {
+                                             "BaselineRevenue":  342218.24,
+                                             "PromoRevenue":  421176.00,
+                                             "RevenueDelta":  78957.76,
+                                             "BaselineGrossProfit":  301242.76,
+                                             "PromoGrossProfit":  355636.80,
+                                             "GrossProfitDelta":  54394.04,
+                                             "MarketingCost":  2500,
+                                             "CommissionCost":  0
+                                         },
+                           "VolumeImpact":  {
+                                                "BaselineUnits":  2912,
+                                                "PromoUnits":  4480,
+                                                "VolumeLift":  "50%",
+                                                "BreakevenLiftRequired":  "29.0%",
+                                                "ExceedsBreakeven":  true
+                                            },
+                           "Acquisition":  {
+                                               "NetNewCustomers":  131,
+                                               "EffectiveCAC":  19.08,
+                                               "AcquisitionBoost":  "30%"
+                                           },
+                           "ROI":  2175.8,
+                           "Rating":  "EXCELLENT"
+                       },
+                       {
+                           "Promotion":  "BOGO 50% Off",
+                           "Code":  "BOGO50",
+                           "Type":  "BOGO",
+                           "Discount":  "25%",
+                           "Duration":  "3 days",
+                           "AppliesTo":  "ALL",
+                           "SKUsAffected":  62,
+                           "Economics":  {
+                                             "BaselineRevenue":  190698.48,
+                                             "PromoRevenue":  286047.72,
+                                             "RevenueDelta":  95349.24,
+                                             "BaselineGrossProfit":  161890.56,
+                                             "PromoGrossProfit":  224931.88,
+                                             "GrossProfitDelta":  63041.32,
+                                             "MarketingCost":  3500,
+                                             "CommissionCost":  0
+                                         },
+                           "VolumeImpact":  {
+                                                "BaselineUnits":  1980,
+                                                "PromoUnits":  3960,
+                                                "VolumeLift":  "100%",
+                                                "BreakevenLiftRequired":  "50.0%",
+                                                "ExceedsBreakeven":  true
+                                            },
+                           "Acquisition":  {
+                                               "NetNewCustomers":  119,
+                                               "EffectiveCAC":  29.41,
+                                               "AcquisitionBoost":  "40%"
+                                           },
+                           "ROI":  1801.2,
+                           "Rating":  "EXCELLENT"
+                       },
+                       {
+                           "Promotion":  "Holiday Bundle 20%",
+                           "Code":  "HOLIDAY20",
+                           "Type":  "Seasonal",
+                           "Discount":  "20%",
+                           "Duration":  "10 days",
+                           "AppliesTo":  "ALL",
+                           "SKUsAffected":  62,
+                           "Economics":  {
+                                             "BaselineRevenue":  635661.60,
+                                             "PromoRevenue":  821952.00,
+                                             "RevenueDelta":  186290.40,
+                                             "BaselineGrossProfit":  539635.20,
+                                             "PromoGrossProfit":  661292.00,
+                                             "GrossProfitDelta":  121656.80,
+                                             "MarketingCost":  8000,
+                                             "CommissionCost":  0
+                                         },
+                           "VolumeImpact":  {
+                                                "BaselineUnits":  6600,
+                                                "PromoUnits":  10770,
+                                                "VolumeLift":  "65%",
+                                                "BreakevenLiftRequired":  "36.0%",
+                                                "ExceedsBreakeven":  true
+                                            },
+                           "Acquisition":  {
+                                               "NetNewCustomers":  495,
+                                               "EffectiveCAC":  16.16,
+                                               "AcquisitionBoost":  "50%"
+                                           },
+                           "ROI":  1520.7,
+                           "Rating":  "EXCELLENT"
+                       },
+                       {
+                           "Promotion":  "Flash Sale 30% (48hr)",
+                           "Code":  "FLASH30",
+                           "Type":  "Flash",
+                           "Discount":  "30%",
+                           "Duration":  "2 days",
+                           "AppliesTo":  "ALL",
+                           "SKUsAffected":  62,
+                           "Economics":  {
+                                             "BaselineRevenue":  127132.32,
+                                             "PromoRevenue":  219955.28,
+                                             "RevenueDelta":  92822.96,
+                                             "BaselineGrossProfit":  107927.04,
+                                             "PromoGrossProfit":  167442.06,
+                                             "GrossProfitDelta":  59515.02,
+                                             "MarketingCost":  5000,
+                                             "CommissionCost":  0
+                                         },
+                           "VolumeImpact":  {
+                                                "BaselineUnits":  1320,
+                                                "PromoUnits":  3272,
+                                                "VolumeLift":  "150%",
+                                                "BreakevenLiftRequired":  "66.0%",
+                                                "ExceedsBreakeven":  true
+                                            },
+                           "Acquisition":  {
+                                               "NetNewCustomers":  119,
+                                               "EffectiveCAC":  42.02,
+                                               "AcquisitionBoost":  "60%"
+                                           },
+                           "ROI":  1190.3,
+                           "Rating":  "EXCELLENT"
+                       },
+                       {
+                           "Promotion":  "Star SKUs 15% Off",
+                           "Code":  "STARS15",
+                           "Type":  "Tier",
+                           "Discount":  "15%",
+                           "Duration":  "7 days",
+                           "AppliesTo":  "Star",
+                           "SKUsAffected":  9,
+                           "Economics":  {
+                                             "BaselineRevenue":  130033.68,
+                                             "PromoRevenue":  160706.35,
+                                             "RevenueDelta":  30672.67,
+                                             "BaselineGrossProfit":  118049.05,
+                                             "PromoGrossProfit":  141264.24,
+                                             "GrossProfitDelta":  23215.19,
+                                             "MarketingCost":  2000,
+                                             "CommissionCost":  0
+                                         },
+                           "VolumeImpact":  {
+                                                "BaselineUnits":  1211,
+                                                "PromoUnits":  1757,
+                                                "VolumeLift":  "45%",
+                                                "BreakevenLiftRequired":  "20.0%",
+                                                "ExceedsBreakeven":  true
+                                            },
+                           "Acquisition":  {
+                                               "NetNewCustomers":  64,
+                                               "EffectiveCAC":  31.25,
+                                               "AcquisitionBoost":  "35%"
+                                           },
+                           "ROI":  1160.8,
+                           "Rating":  "EXCELLENT"
+                       },
+                       {
+                           "Promotion":  "25% Off SNP Category",
+                           "Code":  "GENETIC25",
+                           "Type":  "Percentage",
+                           "Discount":  "25%",
+                           "Duration":  "14 days",
+                           "AppliesTo":  "SNP",
+                           "SKUsAffected":  20,
+                           "Economics":  {
+                                             "BaselineRevenue":  157332.00,
+                                             "PromoRevenue":  188798.40,
+                                             "RevenueDelta":  31466.40,
+                                             "BaselineGrossProfit":  135136.40,
+                                             "PromoGrossProfit":  150785.44,
+                                             "GrossProfitDelta":  15649.04,
+                                             "MarketingCost":  2500,
+                                             "CommissionCost":  0
+                                         },
+                           "VolumeImpact":  {
+                                                "BaselineUnits":  1400,
+                                                "PromoUnits":  2240,
+                                                "VolumeLift":  "60%",
+                                                "BreakevenLiftRequired":  "41.0%",
+                                                "ExceedsBreakeven":  true
+                                            },
+                           "Acquisition":  {
+                                               "NetNewCustomers":  52,
+                                               "EffectiveCAC":  48.08,
+                                               "AcquisitionBoost":  "25%"
+                                           },
+                           "ROI":  626.0,
+                           "Rating":  "EXCELLENT"
+                       },
+                       {
+                           "Promotion":  "Mushroom Monday 20%",
+                           "Code":  "SHROOM20",
+                           "Type":  "Category",
+                           "Discount":  "20%",
+                           "Duration":  "1 days",
+                           "AppliesTo":  "Mushroom",
+                           "SKUsAffected":  5,
+                           "Economics":  {
+                                             "BaselineRevenue":  3532.80,
+                                             "PromoRevenue":  4710.00,
+                                             "RevenueDelta":  1177.20,
+                                             "BaselineGrossProfit":  3037.32,
+                                             "PromoGrossProfit":  2384.20,
+                                             "GrossProfitDelta":  -653.12,
+                                             "MarketingCost":  1500,
+                                             "CommissionCost":  0
+                                         },
+                           "VolumeImpact":  {
+                                                "BaselineUnits":  60,
+                                                "PromoUnits":  100,
+                                                "VolumeLift":  "70%",
+                                                "BreakevenLiftRequired":  "30.0%",
+                                                "ExceedsBreakeven":  true
+                                            },
+                           "Acquisition":  {
+                                               "NetNewCustomers":  2,
+                                               "EffectiveCAC":  750,
+                                               "AcquisitionBoost":  "20%"
+                                           },
+                           "ROI":  0,
+                           "Rating":  "NEGATIVE"
+                       },
+                       {
+                           "Promotion":  "15% First Order",
+                           "Code":  "WELCOME15",
+                           "Type":  "Percentage",
+                           "Discount":  "15%",
+                           "Duration":  "30 days",
+                           "AppliesTo":  "ALL",
+                           "SKUsAffected":  62,
+                           "Economics":  {
+                                             "BaselineRevenue":  1906984.80,
+                                             "PromoRevenue":  1867282.50,
+                                             "RevenueDelta":  -39702.30,
+                                             "BaselineGrossProfit":  1618905.60,
+                                             "PromoGrossProfit":  1541116.70,
+                                             "GrossProfitDelta":  -77788.90,
+                                             "MarketingCost":  2500,
+                                             "CommissionCost":  0
+                                         },
+                           "VolumeImpact":  {
+                                                "BaselineUnits":  19800,
+                                                "PromoUnits":  22950,
+                                                "VolumeLift":  "15%",
+                                                "BreakevenLiftRequired":  "25.0%",
+                                                "ExceedsBreakeven":  false
+                                            },
+                           "Acquisition":  {
+                                               "NetNewCustomers":  1336,
+                                               "EffectiveCAC":  31.59,
+                                               "AcquisitionBoost":  "45%"
+                                           },
+                           "ROI":  0,
+                           "Rating":  "NEGATIVE"
+                       },
+                       {
+                           "Promotion":  "Influencer 20% Code",
+                           "Code":  "CREATOR20",
+                           "Type":  "Influencer",
+                           "Discount":  "20%",
+                           "Duration":  "30 days",
+                           "AppliesTo":  "ALL",
+                           "SKUsAffected":  62,
+                           "Economics":  {
+                                             "BaselineRevenue":  1906984.80,
+                                             "PromoRevenue":  1849575.00,
+                                             "RevenueDelta":  -57409.80,
+                                             "BaselineGrossProfit":  1618905.60,
+                                             "PromoGrossProfit":  1327589.00,
+                                             "GrossProfitDelta":  -291316.60,
+                                             "MarketingCost":  1000,
+                                             "CommissionCost":  184957.50
+                                         },
+                           "VolumeImpact":  {
+                                                "BaselineUnits":  19800,
+                                                "PromoUnits":  24390,
+                                                "VolumeLift":  "25%",
+                                                "BreakevenLiftRequired":  "36.0%",
+                                                "ExceedsBreakeven":  false
+                                            },
+                           "Acquisition":  {
+                                               "NetNewCustomers":  2376,
+                                               "EffectiveCAC":  102.43,
+                                               "AcquisitionBoost":  "80%"
+                                           },
+                           "ROI":  0,
+                           "Rating":  "NEGATIVE"
+                       }
+                   ]
+}

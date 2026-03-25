@@ -21,7 +21,7 @@ $Banner = @"
 
   ╔═══════════════════════════════════════════════╗
   ║   FarmCeutica Toolchain CLI v$Version           ║
-  ║   18 scripts · 62 SKUs · 7 categories        ║
+  ║   19 scripts · 62 SKUs · 7 categories        ║
   ╚═══════════════════════════════════════════════╝
 
 "@
@@ -45,6 +45,7 @@ $Commands = [ordered]@{
     "rational"   = @{ Script="sku_rationalization_engine.ps1"; Desc="Score & classify SKUs (Star/Core/Watch/Sunset)"; Category="Strategy" }
     "bundles"    = @{ Script="bundle_promotion_optimizer.ps1"; Desc="Design 15 bundles with uplift projections"; Category="Strategy" }
     "whatif"     = @{ Script="whatif_scenario_engine.ps1"; Desc="Run 12 what-if scenarios vs baseline"; Category="Strategy" }
+    "promos"     = @{ Script="promotion_roi_calculator.ps1"; Desc="Promotion ROI & discount sensitivity"; Category="Strategy" }
 
     # Finance & Operations
     "dashboard"  = @{ Script="executive_dashboard_generator.ps1"; Desc="Consolidate P&L, KPIs, risks, recs"; Category="Finance" }
