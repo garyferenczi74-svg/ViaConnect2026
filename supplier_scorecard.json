@@ -1,0 +1,855 @@
+﻿{
+    "GeneratedAt":  "2026-03-24T18:08:38.1439120-06:00",
+    "ScoringWeights":  {
+                           "SKUExposure":  0.2,
+                           "RegionalRisk":  0.15,
+                           "LeadTimeRisk":  0.2,
+                           "CostConcentration":  0.25,
+                           "PaymentTerms":  0.1,
+                           "CertStrength":  0.1
+                       },
+    "ProcurementSummary":  {
+                               "TotalSuppliers":  10,
+                               "TotalAnnualSpend":  8166.8,
+                               "HHI":  1390,
+                               "ConcentrationRisk":  "LOW - well diversified",
+                               "RiskDistribution":  [
+                                                        {
+                                                            "Tier":  "ELEVATED",
+                                                            "Count":  1
+                                                        },
+                                                        {
+                                                            "Tier":  "MODERATE",
+                                                            "Count":  6
+                                                        },
+                                                        {
+                                                            "Tier":  "LOW",
+                                                            "Count":  3
+                                                        }
+                                                    ],
+                               "RegionalDistribution":  [
+                                                            {
+                                                                "Region":  "India",
+                                                                "Suppliers":  1,
+                                                                "AnnualSpend":  2166.37
+                                                            },
+                                                            {
+                                                                "Region":  "USA",
+                                                                "Suppliers":  3,
+                                                                "AnnualSpend":  2049.19
+                                                            },
+                                                            {
+                                                                "Region":  "Japan",
+                                                                "Suppliers":  2,
+                                                                "AnnualSpend":  1716.82
+                                                            },
+                                                            {
+                                                                "Region":  "Canada/China",
+                                                                "Suppliers":  1,
+                                                                "AnnualSpend":  882.34
+                                                            },
+                                                            {
+                                                                "Region":  "India/USA",
+                                                                "Suppliers":  1,
+                                                                "AnnualSpend":  629.37
+                                                            },
+                                                            {
+                                                                "Region":  "Germany",
+                                                                "Suppliers":  1,
+                                                                "AnnualSpend":  561.58
+                                                            },
+                                                            {
+                                                                "Region":  "Switzerland",
+                                                                "Suppliers":  1,
+                                                                "AnnualSpend":  161.13
+                                                            }
+                                                        ],
+                               "Top3BySpend":  [
+                                                   {
+                                                       "Supplier":  "BioPerine/Sabinsa",
+                                                       "AnnualSpend":  2166.37,
+                                                       "SpendShare":  "26.5%",
+                                                       "RiskTier":  "ELEVATED"
+                                                   },
+                                                   {
+                                                       "Supplier":  "Albion Minerals",
+                                                       "AnnualSpend":  1009.52,
+                                                       "SpendShare":  "12.4%",
+                                                       "RiskTier":  "MODERATE"
+                                                   },
+                                                   {
+                                                       "Supplier":  "Cognizin/Kyowa",
+                                                       "AnnualSpend":  950.32,
+                                                       "SpendShare":  "11.6%",
+                                                       "RiskTier":  "MODERATE"
+                                                   }
+                                               ]
+                           },
+    "Suppliers":  [
+                      {
+                          "Supplier":  "BioPerine/Sabinsa",
+                          "Region":  "India",
+                          "LeadTimeDays":  28,
+                          "QualityCerts":  [
+                                               "GMP",
+                                               "Patent",
+                                               "GRAS"
+                                           ],
+                          "PaymentTerms":  "Net 30",
+                          "IngredientCount":  5,
+                          "SKUCount":  3,
+                          "SKUExposurePct":  18.8,
+                          "AnnualSpend":  2166.37,
+                          "SpendSharePct":  26.5,
+                          "Scores":  {
+                                         "CostConcentration":  47,
+                                         "LeadTimeRisk":  55,
+                                         "SKUExposure":  44,
+                                         "RegionalRisk":  45,
+                                         "CertStrength":  90,
+                                         "PaymentTerms":  60
+                                     },
+                          "CompositeScore":  53.3,
+                          "RiskTier":  "ELEVATED",
+                          "Recommendations":  [
+                                                  "DIVERSIFY - over 25% of spend concentrated here",
+                                                  "REGIONAL RISK - consider nearshore alternative"
+                                              ],
+                          "Ingredients":  [
+                                              {
+                                                  "Ingredient":  "AstraGin",
+                                                  "SKU":  "09",
+                                                  "MgPerCapsule":  25,
+                                                  "CostPerKg":  850,
+                                                  "CostPerUnit":  0.0212,
+                                                  "AnnualCost":  100.23
+                                              },
+                                              {
+                                                  "Ingredient":  "Astragaloside IV",
+                                                  "SKU":  "17",
+                                                  "MgPerCapsule":  25,
+                                                  "CostPerKg":  4200,
+                                                  "CostPerUnit":  0.1050,
+                                                  "AnnualCost":  496.44
+                                              },
+                                              {
+                                                  "Ingredient":  "Cycloastragenol",
+                                                  "SKU":  "17",
+                                                  "MgPerCapsule":  10,
+                                                  "CostPerKg":  8500,
+                                                  "CostPerUnit":  0.0850,
+                                                  "AnnualCost":  401.88
+                                              },
+                                              {
+                                                  "Ingredient":  "Resveratrol",
+                                                  "SKU":  "17",
+                                                  "MgPerCapsule":  150,
+                                                  "CostPerKg":  380,
+                                                  "CostPerUnit":  0.0570,
+                                                  "AnnualCost":  269.50
+                                              },
+                                              {
+                                                  "Ingredient":  "Sapropterin (BH4)",
+                                                  "SKU":  "23",
+                                                  "MgPerCapsule":  50,
+                                                  "CostPerKg":  3800,
+                                                  "CostPerUnit":  0.1900,
+                                                  "AnnualCost":  898.32
+                                              }
+                                          ]
+                      },
+                      {
+                          "Supplier":  "Albion Minerals",
+                          "Region":  "USA",
+                          "LeadTimeDays":  21,
+                          "QualityCerts":  [
+                                               "GMP",
+                                               "GRAS",
+                                               "Chelate Patent"
+                                           ],
+                          "PaymentTerms":  "Net 30",
+                          "IngredientCount":  11,
+                          "SKUCount":  5,
+                          "SKUExposurePct":  31.2,
+                          "AnnualSpend":  1009.52,
+                          "SpendSharePct":  12.4,
+                          "Scores":  {
+                                         "CostConcentration":  75,
+                                         "LeadTimeRisk":  70,
+                                         "SKUExposure":  6,
+                                         "RegionalRisk":  90,
+                                         "CertStrength":  90,
+                                         "PaymentTerms":  60
+                                     },
+                          "CompositeScore":  62.4,
+                          "RiskTier":  "MODERATE",
+                          "Recommendations":  [
+                                                  "DUAL SOURCE - 5 SKUs dependent; qualify alternate supplier"
+                                              ],
+                          "Ingredients":  [
+                                              {
+                                                  "Ingredient":  "Sodium Citrate",
+                                                  "SKU":  "03",
+                                                  "MgPerCapsule":  200,
+                                                  "CostPerKg":  28,
+                                                  "CostPerUnit":  0.0056,
+                                                  "AnnualCost":  28.22
+                                              },
+                                              {
+                                                  "Ingredient":  "Potassium Citrate",
+                                                  "SKU":  "03",
+                                                  "MgPerCapsule":  300,
+                                                  "CostPerKg":  35,
+                                                  "CostPerUnit":  0.0105,
+                                                  "AnnualCost":  52.92
+                                              },
+                                              {
+                                                  "Ingredient":  "Magnesium Malate",
+                                                  "SKU":  "03",
+                                                  "MgPerCapsule":  150,
+                                                  "CostPerKg":  65,
+                                                  "CostPerUnit":  0.0098,
+                                                  "AnnualCost":  49.39
+                                              },
+                                              {
+                                                  "Ingredient":  "Calcium Lactate",
+                                                  "SKU":  "03",
+                                                  "MgPerCapsule":  100,
+                                                  "CostPerKg":  22,
+                                                  "CostPerUnit":  0.0022,
+                                                  "AnnualCost":  11.09
+                                              },
+                                              {
+                                                  "Ingredient":  "Trace Mineral Complex",
+                                                  "SKU":  "03",
+                                                  "MgPerCapsule":  50,
+                                                  "CostPerKg":  180,
+                                                  "CostPerUnit":  0.0090,
+                                                  "AnnualCost":  45.36
+                                              },
+                                              {
+                                                  "Ingredient":  "Magnesium Glycinate",
+                                                  "SKU":  "05",
+                                                  "MgPerCapsule":  300,
+                                                  "CostPerKg":  85,
+                                                  "CostPerUnit":  0.0255,
+                                                  "AnnualCost":  128.52
+                                              },
+                                              {
+                                                  "Ingredient":  "Magnesium Taurate",
+                                                  "SKU":  "05",
+                                                  "MgPerCapsule":  200,
+                                                  "CostPerKg":  95,
+                                                  "CostPerUnit":  0.0190,
+                                                  "AnnualCost":  95.76
+                                              },
+                                              {
+                                                  "Ingredient":  "Magnesium Threonate",
+                                                  "SKU":  "05",
+                                                  "MgPerCapsule":  150,
+                                                  "CostPerKg":  220,
+                                                  "CostPerUnit":  0.0330,
+                                                  "AnnualCost":  166.32
+                                              },
+                                              {
+                                                  "Ingredient":  "Zinc Carnosine",
+                                                  "SKU":  "12",
+                                                  "MgPerCapsule":  75,
+                                                  "CostPerKg":  420,
+                                                  "CostPerUnit":  0.0315,
+                                                  "AnnualCost":  148.93
+                                              },
+                                              {
+                                                  "Ingredient":  "PQQ Disodium Salt",
+                                                  "SKU":  "23",
+                                                  "MgPerCapsule":  20,
+                                                  "CostPerKg":  2200,
+                                                  "CostPerUnit":  0.0440,
+                                                  "AnnualCost":  208.03
+                                              },
+                                              {
+                                                  "Ingredient":  "PQQ Disodium Salt",
+                                                  "SKU":  "32",
+                                                  "MgPerCapsule":  20,
+                                                  "CostPerKg":  2200,
+                                                  "CostPerUnit":  0.0440,
+                                                  "AnnualCost":  74.98
+                                              }
+                                          ]
+                      },
+                      {
+                          "Supplier":  "Cognizin/Kyowa",
+                          "Region":  "Japan",
+                          "LeadTimeDays":  35,
+                          "QualityCerts":  [
+                                               "GMP",
+                                               "Patent",
+                                               "Clinical Grade"
+                                           ],
+                          "PaymentTerms":  "Net 60",
+                          "IngredientCount":  4,
+                          "SKUCount":  2,
+                          "SKUExposurePct":  12.5,
+                          "AnnualSpend":  950.32,
+                          "SpendSharePct":  11.6,
+                          "Scores":  {
+                                         "CostConcentration":  77,
+                                         "LeadTimeRisk":  35,
+                                         "SKUExposure":  62,
+                                         "RegionalRisk":  65,
+                                         "CertStrength":  90,
+                                         "PaymentTerms":  90
+                                     },
+                          "CompositeScore":  66.4,
+                          "RiskTier":  "MODERATE",
+                          "Recommendations":  [
+                                                  "BUFFER STOCK - 5+ week lead time requires extra safety stock"
+                                              ],
+                          "Ingredients":  [
+                                              {
+                                                  "Ingredient":  "Alpha-GPC",
+                                                  "SKU":  "19",
+                                                  "MgPerCapsule":  300,
+                                                  "CostPerKg":  185,
+                                                  "CostPerUnit":  0.0555,
+                                                  "AnnualCost":  262.40
+                                              },
+                                              {
+                                                  "Ingredient":  "Phosphatidylserine",
+                                                  "SKU":  "19",
+                                                  "MgPerCapsule":  100,
+                                                  "CostPerKg":  480,
+                                                  "CostPerUnit":  0.0480,
+                                                  "AnnualCost":  226.94
+                                              },
+                                              {
+                                                  "Ingredient":  "Citicoline",
+                                                  "SKU":  "19",
+                                                  "MgPerCapsule":  250,
+                                                  "CostPerKg":  210,
+                                                  "CostPerUnit":  0.0525,
+                                                  "AnnualCost":  248.22
+                                              },
+                                              {
+                                                  "Ingredient":  "NADH",
+                                                  "SKU":  "23",
+                                                  "MgPerCapsule":  10,
+                                                  "CostPerKg":  4500,
+                                                  "CostPerUnit":  0.0450,
+                                                  "AnnualCost":  212.76
+                                              }
+                                          ]
+                      },
+                      {
+                          "Supplier":  "Nammex Inc",
+                          "Region":  "Canada/China",
+                          "LeadTimeDays":  35,
+                          "QualityCerts":  [
+                                               "GMP",
+                                               "Organic",
+                                               "Beta-Glucan Verified"
+                                           ],
+                          "PaymentTerms":  "Net 45",
+                          "IngredientCount":  5,
+                          "SKUCount":  3,
+                          "SKUExposurePct":  18.8,
+                          "AnnualSpend":  882.34,
+                          "SpendSharePct":  10.8,
+                          "Scores":  {
+                                         "CostConcentration":  78,
+                                         "LeadTimeRisk":  35,
+                                         "SKUExposure":  44,
+                                         "RegionalRisk":  60,
+                                         "CertStrength":  90,
+                                         "PaymentTerms":  75
+                                     },
+                          "CompositeScore":  60.8,
+                          "RiskTier":  "MODERATE",
+                          "Recommendations":  [
+                                                  "BUFFER STOCK - 5+ week lead time requires extra safety stock"
+                                              ],
+                          "Ingredients":  [
+                                              {
+                                                  "Ingredient":  "Lions Mane Extract 10:1",
+                                                  "SKU":  "19",
+                                                  "MgPerCapsule":  250,
+                                                  "CostPerKg":  220,
+                                                  "CostPerUnit":  0.0550,
+                                                  "AnnualCost":  260.04
+                                              },
+                                              {
+                                                  "Ingredient":  "Chaga Extract 10:1",
+                                                  "SKU":  "52",
+                                                  "MgPerCapsule":  500,
+                                                  "CostPerKg":  180,
+                                                  "CostPerUnit":  0.0900,
+                                                  "AnnualCost":  185.76
+                                              },
+                                              {
+                                                  "Ingredient":  "Chaga Beta-Glucans",
+                                                  "SKU":  "52",
+                                                  "MgPerCapsule":  200,
+                                                  "CostPerKg":  310,
+                                                  "CostPerUnit":  0.0620,
+                                                  "AnnualCost":  127.97
+                                              },
+                                              {
+                                                  "Ingredient":  "Lions Mane Extract 10:1",
+                                                  "SKU":  "54",
+                                                  "MgPerCapsule":  500,
+                                                  "CostPerKg":  195,
+                                                  "CostPerUnit":  0.0975,
+                                                  "AnnualCost":  201.24
+                                              },
+                                              {
+                                                  "Ingredient":  "Hericenones/Erinacines",
+                                                  "SKU":  "54",
+                                                  "MgPerCapsule":  100,
+                                                  "CostPerKg":  520,
+                                                  "CostPerUnit":  0.0520,
+                                                  "AnnualCost":  107.33
+                                              }
+                                          ]
+                      },
+                      {
+                          "Supplier":  "Kyowa Hakko Bio",
+                          "Region":  "Japan",
+                          "LeadTimeDays":  35,
+                          "QualityCerts":  [
+                                               "GMP",
+                                               "ISO 22000",
+                                               "GRAS"
+                                           ],
+                          "PaymentTerms":  "Net 60",
+                          "IngredientCount":  4,
+                          "SKUCount":  3,
+                          "SKUExposurePct":  18.8,
+                          "AnnualSpend":  766.50,
+                          "SpendSharePct":  9.4,
+                          "Scores":  {
+                                         "CostConcentration":  81,
+                                         "LeadTimeRisk":  35,
+                                         "SKUExposure":  44,
+                                         "RegionalRisk":  65,
+                                         "CertStrength":  90,
+                                         "PaymentTerms":  90
+                                     },
+                          "CompositeScore":  63.8,
+                          "RiskTier":  "MODERATE",
+                          "Recommendations":  [
+                                                  "BUFFER STOCK - 5+ week lead time requires extra safety stock"
+                                              ],
+                          "Ingredients":  [
+                                              {
+                                                  "Ingredient":  "Creatine HCL",
+                                                  "SKU":  "09",
+                                                  "MgPerCapsule":  750,
+                                                  "CostPerKg":  120,
+                                                  "CostPerUnit":  0.0900,
+                                                  "AnnualCost":  425.52
+                                              },
+                                              {
+                                                  "Ingredient":  "Betaine Anhydrous",
+                                                  "SKU":  "09",
+                                                  "MgPerCapsule":  500,
+                                                  "CostPerKg":  45,
+                                                  "CostPerUnit":  0.0225,
+                                                  "AnnualCost":  106.38
+                                              },
+                                              {
+                                                  "Ingredient":  "L-Glutamine",
+                                                  "SKU":  "12",
+                                                  "MgPerCapsule":  500,
+                                                  "CostPerKg":  65,
+                                                  "CostPerUnit":  0.0325,
+                                                  "AnnualCost":  153.66
+                                              },
+                                              {
+                                                  "Ingredient":  "Acetyl-L-Carnitine",
+                                                  "SKU":  "32",
+                                                  "MgPerCapsule":  500,
+                                                  "CostPerKg":  95,
+                                                  "CostPerUnit":  0.0475,
+                                                  "AnnualCost":  80.94
+                                              }
+                                          ]
+                      },
+                      {
+                          "Supplier":  "Verdure Sciences",
+                          "Region":  "India/USA",
+                          "LeadTimeDays":  28,
+                          "QualityCerts":  [
+                                               "GMP",
+                                               "Organic",
+                                               "Fair Trade"
+                                           ],
+                          "PaymentTerms":  "Net 30",
+                          "IngredientCount":  8,
+                          "SKUCount":  3,
+                          "SKUExposurePct":  18.8,
+                          "AnnualSpend":  629.37,
+                          "SpendSharePct":  7.7,
+                          "Scores":  {
+                                         "CostConcentration":  85,
+                                         "LeadTimeRisk":  55,
+                                         "SKUExposure":  44,
+                                         "RegionalRisk":  60,
+                                         "CertStrength":  90,
+                                         "PaymentTerms":  60
+                                     },
+                          "CompositeScore":  65.0,
+                          "RiskTier":  "MODERATE",
+                          "Recommendations":  [
+                                                  "MAINTAIN - supplier relationship performing well"
+                                              ],
+                          "Ingredients":  [
+                                              {
+                                                  "Ingredient":  "DGL Licorice Extract",
+                                                  "SKU":  "12",
+                                                  "MgPerCapsule":  200,
+                                                  "CostPerKg":  95,
+                                                  "CostPerUnit":  0.0190,
+                                                  "AnnualCost":  89.83
+                                              },
+                                              {
+                                                  "Ingredient":  "Marshmallow Root",
+                                                  "SKU":  "12",
+                                                  "MgPerCapsule":  150,
+                                                  "CostPerKg":  78,
+                                                  "CostPerUnit":  0.0117,
+                                                  "AnnualCost":  55.32
+                                              },
+                                              {
+                                                  "Ingredient":  "Slippery Elm Bark",
+                                                  "SKU":  "12",
+                                                  "MgPerCapsule":  150,
+                                                  "CostPerKg":  82,
+                                                  "CostPerUnit":  0.0123,
+                                                  "AnnualCost":  58.15
+                                              },
+                                              {
+                                                  "Ingredient":  "Bacopa Monnieri",
+                                                  "SKU":  "19",
+                                                  "MgPerCapsule":  200,
+                                                  "CostPerKg":  145,
+                                                  "CostPerUnit":  0.0290,
+                                                  "AnnualCost":  137.11
+                                              },
+                                              {
+                                                  "Ingredient":  "Maca Root Extract",
+                                                  "SKU":  "25",
+                                                  "MgPerCapsule":  300,
+                                                  "CostPerKg":  75,
+                                                  "CostPerUnit":  0.0225,
+                                                  "AnnualCost":  75.60
+                                              },
+                                              {
+                                                  "Ingredient":  "Shatavari Extract",
+                                                  "SKU":  "25",
+                                                  "MgPerCapsule":  250,
+                                                  "CostPerKg":  88,
+                                                  "CostPerUnit":  0.0220,
+                                                  "AnnualCost":  73.92
+                                              },
+                                              {
+                                                  "Ingredient":  "Vitex (Chasteberry)",
+                                                  "SKU":  "25",
+                                                  "MgPerCapsule":  200,
+                                                  "CostPerKg":  110,
+                                                  "CostPerUnit":  0.0220,
+                                                  "AnnualCost":  73.92
+                                              },
+                                              {
+                                                  "Ingredient":  "DIM",
+                                                  "SKU":  "25",
+                                                  "MgPerCapsule":  100,
+                                                  "CostPerKg":  195,
+                                                  "CostPerUnit":  0.0195,
+                                                  "AnnualCost":  65.52
+                                              }
+                                          ]
+                      },
+                      {
+                          "Supplier":  "Precision Analytics",
+                          "Region":  "USA",
+                          "LeadTimeDays":  7,
+                          "QualityCerts":  [
+                                               "CLIA",
+                                               "CAP"
+                                           ],
+                          "PaymentTerms":  "Net 15",
+                          "IngredientCount":  3,
+                          "SKUCount":  2,
+                          "SKUExposurePct":  12.5,
+                          "AnnualSpend":  620.34,
+                          "SpendSharePct":  7.6,
+                          "Scores":  {
+                                         "CostConcentration":  85,
+                                         "LeadTimeRisk":  95,
+                                         "SKUExposure":  62,
+                                         "RegionalRisk":  90,
+                                         "CertStrength":  60,
+                                         "PaymentTerms":  40
+                                     },
+                          "CompositeScore":  76.2,
+                          "RiskTier":  "LOW",
+                          "Recommendations":  [
+                                                  "MAINTAIN - supplier relationship performing well"
+                                              ],
+                          "Ingredients":  [
+                                              {
+                                                  "Ingredient":  "Lab Processing Fee",
+                                                  "SKU":  "57",
+                                                  "MgPerCapsule":  1,
+                                                  "CostPerKg":  55000,
+                                                  "CostPerUnit":  0.0550,
+                                                  "AnnualCost":  139.26
+                                              },
+                                              {
+                                                  "Ingredient":  "Dutch Complete Kit",
+                                                  "SKU":  "59",
+                                                  "MgPerCapsule":  1,
+                                                  "CostPerKg":  120000,
+                                                  "CostPerUnit":  0.1200,
+                                                  "AnnualCost":  303.84
+                                              },
+                                              {
+                                                  "Ingredient":  "Lab Processing Fee",
+                                                  "SKU":  "59",
+                                                  "MgPerCapsule":  1,
+                                                  "CostPerKg":  70000,
+                                                  "CostPerUnit":  0.0700,
+                                                  "AnnualCost":  177.24
+                                              }
+                                          ]
+                      },
+                      {
+                          "Supplier":  "VitaGenix Europe",
+                          "Region":  "Germany",
+                          "LeadTimeDays":  28,
+                          "QualityCerts":  [
+                                               "GMP",
+                                               "ISO 9001",
+                                               "EU Pharma"
+                                           ],
+                          "PaymentTerms":  "Net 45",
+                          "IngredientCount":  11,
+                          "SKUCount":  4,
+                          "SKUExposurePct":  25,
+                          "AnnualSpend":  561.58,
+                          "SpendSharePct":  6.9,
+                          "Scores":  {
+                                         "CostConcentration":  86,
+                                         "LeadTimeRisk":  55,
+                                         "SKUExposure":  25,
+                                         "RegionalRisk":  70,
+                                         "CertStrength":  90,
+                                         "PaymentTerms":  75
+                                     },
+                          "CompositeScore":  64.5,
+                          "RiskTier":  "MODERATE",
+                          "Recommendations":  [
+                                                  "MAINTAIN - supplier relationship performing well"
+                                              ],
+                          "Ingredients":  [
+                                              {
+                                                  "Ingredient":  "Methylcobalamin",
+                                                  "SKU":  "02",
+                                                  "MgPerCapsule":  0.5,
+                                                  "CostPerKg":  12000,
+                                                  "CostPerUnit":  0.0060,
+                                                  "AnnualCost":  30.24
+                                              },
+                                              {
+                                                  "Ingredient":  "Methylfolate (5-MTHF)",
+                                                  "SKU":  "02",
+                                                  "MgPerCapsule":  0.4,
+                                                  "CostPerKg":  18000,
+                                                  "CostPerUnit":  0.0072,
+                                                  "AnnualCost":  36.29
+                                              },
+                                              {
+                                                  "Ingredient":  "Pyridoxal-5-Phosphate",
+                                                  "SKU":  "02",
+                                                  "MgPerCapsule":  25,
+                                                  "CostPerKg":  320,
+                                                  "CostPerUnit":  0.0080,
+                                                  "AnnualCost":  40.32
+                                              },
+                                              {
+                                                  "Ingredient":  "Riboflavin-5-Phosphate",
+                                                  "SKU":  "02",
+                                                  "MgPerCapsule":  20,
+                                                  "CostPerKg":  280,
+                                                  "CostPerUnit":  0.0056,
+                                                  "AnnualCost":  28.22
+                                              },
+                                              {
+                                                  "Ingredient":  "Thiamine HCL",
+                                                  "SKU":  "02",
+                                                  "MgPerCapsule":  50,
+                                                  "CostPerKg":  150,
+                                                  "CostPerUnit":  0.0075,
+                                                  "AnnualCost":  37.80
+                                              },
+                                              {
+                                                  "Ingredient":  "5-MTHF",
+                                                  "SKU":  "23",
+                                                  "MgPerCapsule":  0.8,
+                                                  "CostPerKg":  18000,
+                                                  "CostPerUnit":  0.0144,
+                                                  "AnnualCost":  68.08
+                                              },
+                                              {
+                                                  "Ingredient":  "L-Methylfolate",
+                                                  "SKU":  "41",
+                                                  "MgPerCapsule":  1,
+                                                  "CostPerKg":  22000,
+                                                  "CostPerUnit":  0.0220,
+                                                  "AnnualCost":  37.49
+                                              },
+                                              {
+                                                  "Ingredient":  "Folinic Acid",
+                                                  "SKU":  "41",
+                                                  "MgPerCapsule":  0.8,
+                                                  "CostPerKg":  15000,
+                                                  "CostPerUnit":  0.0120,
+                                                  "AnnualCost":  20.45
+                                              },
+                                              {
+                                                  "Ingredient":  "Riboflavin-5-Phosphate",
+                                                  "SKU":  "41",
+                                                  "MgPerCapsule":  25,
+                                                  "CostPerKg":  280,
+                                                  "CostPerUnit":  0.0070,
+                                                  "AnnualCost":  11.93
+                                              },
+                                              {
+                                                  "Ingredient":  "B12 (Methylcobalamin)",
+                                                  "SKU":  "41",
+                                                  "MgPerCapsule":  0.5,
+                                                  "CostPerKg":  12000,
+                                                  "CostPerUnit":  0.0060,
+                                                  "AnnualCost":  10.22
+                                              },
+                                              {
+                                                  "Ingredient":  "Methylation Panel Kit",
+                                                  "SKU":  "57",
+                                                  "MgPerCapsule":  1,
+                                                  "CostPerKg":  95000,
+                                                  "CostPerUnit":  0.0950,
+                                                  "AnnualCost":  240.54
+                                              }
+                                          ]
+                      },
+                      {
+                          "Supplier":  "KetoSynth Labs",
+                          "Region":  "USA",
+                          "LeadTimeDays":  14,
+                          "QualityCerts":  [
+                                               "GMP",
+                                               "NSF"
+                                           ],
+                          "PaymentTerms":  "Net 30",
+                          "IngredientCount":  3,
+                          "SKUCount":  1,
+                          "SKUExposurePct":  6.2,
+                          "AnnualSpend":  419.33,
+                          "SpendSharePct":  5.1,
+                          "Scores":  {
+                                         "CostConcentration":  90,
+                                         "LeadTimeRisk":  85,
+                                         "SKUExposure":  81,
+                                         "RegionalRisk":  90,
+                                         "CertStrength":  60,
+                                         "PaymentTerms":  60
+                                     },
+                          "CompositeScore":  81.2,
+                          "RiskTier":  "LOW",
+                          "Recommendations":  [
+                                                  "MAINTAIN - supplier relationship performing well"
+                                              ],
+                          "Ingredients":  [
+                                              {
+                                                  "Ingredient":  "Beta-Hydroxybutyrate Calcium",
+                                                  "SKU":  "01",
+                                                  "MgPerCapsule":  800,
+                                                  "CostPerKg":  45,
+                                                  "CostPerUnit":  0.0360,
+                                                  "AnnualCost":  181.44
+                                              },
+                                              {
+                                                  "Ingredient":  "Beta-Hydroxybutyrate Sodium",
+                                                  "SKU":  "01",
+                                                  "MgPerCapsule":  600,
+                                                  "CostPerKg":  42,
+                                                  "CostPerUnit":  0.0252,
+                                                  "AnnualCost":  127.01
+                                              },
+                                              {
+                                                  "Ingredient":  "Beta-Hydroxybutyrate Magnesium",
+                                                  "SKU":  "01",
+                                                  "MgPerCapsule":  400,
+                                                  "CostPerKg":  55,
+                                                  "CostPerUnit":  0.0220,
+                                                  "AnnualCost":  110.88
+                                              }
+                                          ]
+                      },
+                      {
+                          "Supplier":  "DSM Nutritional",
+                          "Region":  "Switzerland",
+                          "LeadTimeDays":  21,
+                          "QualityCerts":  [
+                                               "GMP",
+                                               "ISO 9001",
+                                               "USP Grade"
+                                           ],
+                          "PaymentTerms":  "Net 45",
+                          "IngredientCount":  3,
+                          "SKUCount":  2,
+                          "SKUExposurePct":  12.5,
+                          "AnnualSpend":  161.13,
+                          "SpendSharePct":  2.0,
+                          "Scores":  {
+                                         "CostConcentration":  96,
+                                         "LeadTimeRisk":  70,
+                                         "SKUExposure":  62,
+                                         "RegionalRisk":  70,
+                                         "CertStrength":  90,
+                                         "PaymentTerms":  75
+                                     },
+                          "CompositeScore":  77.4,
+                          "RiskTier":  "LOW",
+                          "Recommendations":  [
+                                                  "MAINTAIN - supplier relationship performing well"
+                                              ],
+                          "Ingredients":  [
+                                              {
+                                                  "Ingredient":  "Vitamin D3",
+                                                  "SKU":  "17",
+                                                  "MgPerCapsule":  0.05,
+                                                  "CostPerKg":  5000,
+                                                  "CostPerUnit":  0.0002,
+                                                  "AnnualCost":  0.95
+                                              },
+                                              {
+                                                  "Ingredient":  "CoQ10 (Ubiquinol)",
+                                                  "SKU":  "32",
+                                                  "MgPerCapsule":  100,
+                                                  "CostPerKg":  650,
+                                                  "CostPerUnit":  0.0650,
+                                                  "AnnualCost":  110.76
+                                              },
+                                              {
+                                                  "Ingredient":  "Alpha-Lipoic Acid",
+                                                  "SKU":  "32",
+                                                  "MgPerCapsule":  200,
+                                                  "CostPerKg":  145,
+                                                  "CostPerUnit":  0.0290,
+                                                  "AnnualCost":  49.42
+                                              }
+                                          ]
+                      }
+                  ]
+}
