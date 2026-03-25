@@ -1,10 +1,10 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { ArrowLeft, ArrowRight, Loader2, Plus, X, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight, Loader2, Plus, X, Sparkles, Zap, Brain, Moon, Flame, Heart, CheckCircle2, Crown, Star } from "lucide-react";
 import toast from "react-hot-toast";
 
 // ─── Phase Definitions ──────────────────────────────────────────────────────
@@ -15,6 +15,7 @@ const PHASES = [
   { id: "3", title: "Lifestyle", description: "Daily habits and routines" },
   { id: "4", title: "Medications", description: "Current medications, supplements, and allergies" },
   { id: "5", title: "Goals", description: "Wellness goals and preferences" },
+  { id: "complete", title: "Welcome", description: "Your personalized results" },
 ];
 
 // ─── Symptom Categories ─────────────────────────────────────────────────────
@@ -209,7 +210,7 @@ export default function OnboardingStepPage() {
     ).slice(0, 5);
   }, [medSearch, medications.medications]);
 
-  const isLast = currentIndex === PHASES.length - 1;
+  const isLast = stepId === "5"; // Phase 5 is last questionnaire phase; "complete" is the results page
   const prevHref = currentIndex > 0 ? `/onboarding/${PHASES[currentIndex - 1].id}` : null;
 
   // Toggle chip
@@ -286,8 +287,7 @@ export default function OnboardingStepPage() {
             toast.dismiss("recs");
           }
 
-          router.push("/profile/assessment");
-          router.refresh();
+          router.push("/onboarding/complete");
           return;
         }
       }
@@ -317,27 +317,29 @@ export default function OnboardingStepPage() {
         <p className="text-gray-400 mt-1 text-sm">Clinical Assessment Questionnaire</p>
       </div>
 
-      {/* Full-width progress bar */}
+      {/* Full-width progress bar (5 questionnaire phases only) */}
       <div className="flex gap-1.5 mb-6">
-        {PHASES.map((s, i) => (
+        {PHASES.filter(s => s.id !== "complete").map((s, i) => (
           <div
             key={s.id}
             className={`h-1.5 flex-1 rounded-full transition-colors duration-300 ${
-              i <= currentIndex ? "bg-copper" : "bg-dark-border"
+              i <= currentIndex || stepId === "complete" ? "bg-copper" : "bg-dark-border"
             }`}
           />
         ))}
       </div>
 
-      <div className="glass rounded-2xl p-6 lg:p-8">
-        {/* Phase header */}
-        <div className="mb-6">
-          <p className="text-xs text-copper font-semibold uppercase tracking-wider">
-            Phase {phase.id} of {PHASES.length}
-          </p>
-          <h2 className="text-xl font-bold text-white mt-1">{phase.title}</h2>
-          <p className="text-sm text-gray-400 mt-0.5">{phase.description}</p>
-        </div>
+      <div className={`glass rounded-2xl ${stepId === "complete" ? "p-6 lg:p-8 max-w-4xl mx-auto" : "p-6 lg:p-8"}`}>
+        {/* Phase header (hidden on complete page — it has its own) */}
+        {stepId !== "complete" && (
+          <div className="mb-6">
+            <p className="text-xs text-copper font-semibold uppercase tracking-wider">
+              Phase {phase.id} of 5
+            </p>
+            <h2 className="text-xl font-bold text-white mt-1">{phase.title}</h2>
+            <p className="text-sm text-gray-400 mt-0.5">{phase.description}</p>
+          </div>
+        )}
 
         {/* ── Phase 1: Demographics ── */}
         {stepId === "1" && (
@@ -746,39 +748,308 @@ export default function OnboardingStepPage() {
           </div>
         )}
 
-        {/* ── Navigation ── */}
-        <div className="flex items-center justify-between mt-6 pt-4 border-t border-white/[0.06]">
-          {prevHref ? (
-            <Link href={prevHref} className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-white transition-colors">
-              <ArrowLeft className="w-4 h-4" />
-              Back
-            </Link>
-          ) : (
-            <div />
-          )}
-          <button
-            onClick={handleNext}
-            disabled={isLoading}
-            className="flex items-center gap-1.5 h-9 px-5 bg-gradient-to-r from-copper to-copper/80 hover:from-copper/90 hover:to-copper/70 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-all"
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Saving...
-              </>
-            ) : isLast ? (
-              <>
-                <Sparkles className="w-4 h-4" />
-                Calculate Vitality Score
-              </>
+        {/* ── Complete: Welcome + Results + Membership ── */}
+        {stepId === "complete" && (
+          <OnboardingComplete symptoms={symptoms} lifestyle={lifestyle} goals={goals} />
+        )}
+
+        {/* ── Navigation (hidden on complete page) ── */}
+        {stepId !== "complete" && (
+          <div className="flex items-center justify-between mt-6 pt-4 border-t border-white/[0.06]">
+            {prevHref ? (
+              <Link href={prevHref} className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-white transition-colors">
+                <ArrowLeft className="w-4 h-4" />
+                Back
+              </Link>
             ) : (
-              <>
-                Continue
-                <ArrowRight className="w-4 h-4" />
-              </>
+              <div />
             )}
-          </button>
+            <button
+              onClick={handleNext}
+              disabled={isLoading}
+              className="flex items-center gap-1.5 h-9 px-5 bg-gradient-to-r from-copper to-copper/80 hover:from-copper/90 hover:to-copper/70 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-all"
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Saving...
+                </>
+              ) : isLast ? (
+                <>
+                  <Sparkles className="w-4 h-4" />
+                  Calculate Vitality Score
+                </>
+              ) : (
+                <>
+                  Continue
+                  <ArrowRight className="w-4 h-4" />
+                </>
+              )}
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Onboarding Complete Component ──────────────────────────────────────────
+
+const HEALTH_INDICATORS = [
+  { key: "energy", label: "Energy", icon: Zap, color: "#FBBF24", symptomKey: "Energy" },
+  { key: "cognitive", label: "Cognitive", icon: Brain, color: "#A78BFA", symptomKey: "Cognition" },
+  { key: "sleep", label: "Sleep", icon: Moon, color: "#22D3EE", symptomKey: "Sleep" },
+  { key: "metabolic", label: "Metabolic", icon: Flame, color: "#F472B6", symptomKey: "Metabolic" },
+  { key: "stress", label: "Stress", icon: Heart, color: "#4ADE80", symptomKey: "Stress" },
+] as const;
+
+const MEMBERSHIP_TIERS = [
+  {
+    name: "Free",
+    price: "$0",
+    period: "/forever",
+    features: [
+      "Vitality Score assessment",
+      "Basic supplement recommendations",
+      "Community access",
+      "Educational content",
+    ],
+    cta: "Get Started Free",
+    accent: "border-gray-600",
+    bg: "bg-white/[0.02]",
+    ctaBg: "bg-white/[0.08] hover:bg-white/[0.12] text-white",
+    popular: false,
+  },
+  {
+    name: "Gold",
+    price: "$8.88",
+    period: "/month",
+    features: [
+      "Everything in Free",
+      "Personalized protocol builder",
+      "Monthly AI wellness check-in",
+      "ViaTokens rewards (2x earn rate)",
+      "Priority practitioner messaging",
+      "Protocol adherence tracking",
+    ],
+    cta: "Start Gold Membership",
+    accent: "border-amber-500/50",
+    bg: "bg-amber-500/5",
+    ctaBg: "bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-dark-bg font-semibold",
+    popular: true,
+  },
+  {
+    name: "Platinum",
+    price: "$28.88",
+    period: "/month",
+    features: [
+      "Everything in Gold",
+      "GeneX360 genetic panel discount (20% off)",
+      "Unlimited AI Advisor access (all 3 models)",
+      "ViaTokens rewards (5x earn rate)",
+      "Dedicated practitioner matching",
+      "Quarterly wellness review calls",
+      "Early access to new formulations",
+      "Free shipping on all orders",
+    ],
+    cta: "Start Platinum Membership",
+    accent: "border-purple-500/50",
+    bg: "bg-purple-500/5",
+    ctaBg: "bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-400 hover:to-purple-500 text-white font-semibold",
+    popular: false,
+  },
+];
+
+function OnboardingComplete({
+  symptoms,
+  lifestyle,
+  goals,
+}: {
+  symptoms: SymptomsData;
+  lifestyle: LifestyleData;
+  goals: GoalsData;
+}) {
+  const router = useRouter();
+  const [displayName, setDisplayName] = useState("there");
+  const [vitalityScore, setVitalityScore] = useState(0);
+  const [animatedScore, setAnimatedScore] = useState(0);
+  const [selectedTier, setSelectedTier] = useState<string | null>(null);
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) {
+        const name = user.user_metadata?.full_name ?? user.email?.split("@")[0] ?? "there";
+        setDisplayName(name.split(" ")[0]);
+      }
+    });
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (!user) return;
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("vitality_score")
+        .eq("id", user.id)
+        .single();
+      const score = profile?.vitality_score || calculateVitalityScore(symptoms, lifestyle, goals);
+      setVitalityScore(score);
+    });
+  }, [symptoms, lifestyle, goals]);
+
+  // Animate score
+  useEffect(() => {
+    if (vitalityScore === 0) return;
+    const duration = 2000;
+    const start = Date.now();
+    function tick() {
+      const progress = Math.min((Date.now() - start) / duration, 1);
+      setAnimatedScore(Math.round(vitalityScore * (1 - Math.pow(1 - progress, 3))));
+      if (progress < 1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  }, [vitalityScore]);
+
+  // Compute sub-scores from symptom data (invert: 0=worst, 10=worst symptom → 100=best health, 0=worst health)
+  function getHealthScore(symptomKey: string): number {
+    const raw = symptoms[symptomKey] ?? 5;
+    return Math.round(100 - raw * 10);
+  }
+
+  const scoreColor =
+    vitalityScore >= 80 ? "#4ADE80" : vitalityScore >= 60 ? "#22D3EE" : vitalityScore >= 40 ? "#FBBF24" : "#F87171";
+  const r = 80;
+  const circ = 2 * Math.PI * r;
+  const offset = circ - (animatedScore / 100) * circ;
+
+  function handleSelectTier(tierName: string) {
+    setSelectedTier(tierName);
+    // For now, just navigate to dashboard. Stripe integration will come later.
+    toast.success(`${tierName} membership selected!`, { duration: 3000 });
+    setTimeout(() => {
+      router.push("/dashboard");
+      router.refresh();
+    }, 1500);
+  }
+
+  return (
+    <div className="space-y-8 -mt-2">
+      {/* Welcome Header */}
+      <div className="text-center">
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-copper/10 border border-copper/20 mb-4">
+          <CheckCircle2 className="w-4 h-4 text-copper" />
+          <span className="text-xs font-medium text-copper">Assessment Complete</span>
         </div>
+        <h2 className="text-2xl sm:text-3xl font-bold text-white">
+          Welcome, <span className="text-copper">{displayName}</span>!
+        </h2>
+        <p className="text-gray-400 text-sm mt-2 max-w-md mx-auto">
+          Your personalized wellness profile is ready. Here&apos;s a snapshot of your key health indicators.
+        </p>
+      </div>
+
+      {/* Vitality Score Gauge */}
+      <div className="flex flex-col items-center">
+        <div className="relative w-[180px] h-[180px]">
+          <svg viewBox="0 0 180 180" className="w-full h-full -rotate-90">
+            <circle cx="90" cy="90" r={r} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="10" strokeLinecap="round" />
+            <circle cx="90" cy="90" r={r} fill="none" stroke={scoreColor} strokeWidth="10" strokeLinecap="round"
+              strokeDasharray={circ} strokeDashoffset={offset}
+              style={{ transition: "stroke-dashoffset 2s cubic-bezier(0.4,0,0.2,1)", filter: `drop-shadow(0 0 12px ${scoreColor}50)` }}
+            />
+          </svg>
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <span className="text-4xl font-bold" style={{ color: scoreColor }}>{animatedScore}</span>
+            <span className="text-[10px] text-gray-500 mt-0.5">Vitality Score</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Health Indicators */}
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+        {HEALTH_INDICATORS.map((ind) => {
+          const Icon = ind.icon;
+          const score = getHealthScore(ind.symptomKey);
+          return (
+            <div key={ind.key} className="flex flex-col items-center p-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+              <Icon className="w-5 h-5 mb-2" style={{ color: ind.color }} />
+              <span className="text-lg font-bold text-white">{score}</span>
+              <span className="text-[10px] text-gray-500 mt-0.5">{ind.label}</span>
+              <div className="w-full h-1 rounded-full bg-white/[0.06] mt-2">
+                <div className="h-full rounded-full" style={{ width: `${score}%`, backgroundColor: ind.color }} />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Divider */}
+      <div className="flex items-center gap-4">
+        <div className="flex-1 h-px bg-white/[0.06]" />
+        <span className="text-xs text-gray-500 uppercase tracking-wider">Choose Your Plan</span>
+        <div className="flex-1 h-px bg-white/[0.06]" />
+      </div>
+
+      {/* Membership Tiers */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {MEMBERSHIP_TIERS.map((tier) => (
+          <div
+            key={tier.name}
+            className={`relative rounded-xl border ${tier.accent} ${tier.bg} p-5 flex flex-col transition-all hover:scale-[1.02] hover:shadow-lg`}
+          >
+            {tier.popular && (
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-amber-500 text-dark-bg text-[10px] font-bold uppercase">
+                  <Star className="w-3 h-3" /> Most Popular
+                </span>
+              </div>
+            )}
+
+            <div className="mb-4">
+              <div className="flex items-center gap-2 mb-2">
+                {tier.name === "Gold" && <Crown className="w-4 h-4 text-amber-400" />}
+                {tier.name === "Platinum" && <Crown className="w-4 h-4 text-purple-400" />}
+                <h3 className="text-lg font-bold text-white">{tier.name}</h3>
+              </div>
+              <div className="flex items-baseline gap-1">
+                <span className="text-3xl font-bold text-white">{tier.price}</span>
+                <span className="text-sm text-gray-500">{tier.period}</span>
+              </div>
+            </div>
+
+            <ul className="space-y-2.5 mb-6 flex-1">
+              {tier.features.map((f) => (
+                <li key={f} className="flex items-start gap-2">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-copper mt-0.5 flex-shrink-0" />
+                  <span className="text-xs text-gray-300">{f}</span>
+                </li>
+              ))}
+            </ul>
+
+            <button
+              onClick={() => handleSelectTier(tier.name)}
+              disabled={selectedTier !== null}
+              className={`w-full py-2.5 rounded-lg text-sm transition-all disabled:opacity-50 ${tier.ctaBg}`}
+            >
+              {selectedTier === tier.name ? (
+                <span className="flex items-center justify-center gap-2">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Setting up...
+                </span>
+              ) : (
+                tier.cta
+              )}
+            </button>
+          </div>
+        ))}
+      </div>
+
+      {/* Skip */}
+      <div className="text-center pb-4">
+        <button
+          onClick={() => { router.push("/dashboard"); router.refresh(); }}
+          className="text-xs text-gray-600 hover:text-gray-400 transition-colors"
+        >
+          Skip for now &mdash; go to dashboard
+        </button>
       </div>
     </div>
   );
