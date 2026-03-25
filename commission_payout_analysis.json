@@ -1,0 +1,289 @@
+﻿{
+    "GeneratedAt":  "2026-03-24T19:32:47.0836909-06:00",
+    "ProgramSummary":  {
+                           "TotalPartners":  425,
+                           "MonthlyPartnerRevenue":  985800.00,
+                           "MonthlyPayouts":  171399.40,
+                           "AnnualPartnerRevenue":  11829600.00,
+                           "AnnualPayouts":  2056792.80,
+                           "PayoutAsRevenueShare":  "17.4%",
+                           "ProgramROI":  "475.1%",
+                           "TypeBreakdown":  [
+                                                 {
+                                                     "Type":  "Affiliate",
+                                                     "Partners":  250,
+                                                     "AnnualRevenue":  3601800,
+                                                     "AnnualPayouts":  337800,
+                                                     "AnnualGrossProfit":  2722200,
+                                                     "EffectiveRate":  "9.4%"
+                                                 },
+                                                 {
+                                                     "Type":  "Influencer",
+                                                     "Partners":  30,
+                                                     "AnnualRevenue":  1999800,
+                                                     "AnnualPayouts":  378000,
+                                                     "AnnualGrossProfit":  1331550,
+                                                     "EffectiveRate":  "18.9%"
+                                                 },
+                                                 {
+                                                     "Type":  "Practitioner",
+                                                     "Partners":  145,
+                                                     "AnnualRevenue":  6228000,
+                                                     "AnnualPayouts":  1340992.8,
+                                                     "AnnualGrossProfit":  4321987.2,
+                                                     "EffectiveRate":  "21.5%"
+                                                 }
+                                             ]
+                       },
+    "PayoutForecast12Month":  [
+                                  {
+                                      "Month":  1,
+                                      "Revenue":  985800.00,
+                                      "Payouts":  171399.40,
+                                      "NetAfterPayouts":  814400.60
+                                  },
+                                  {
+                                      "Month":  2,
+                                      "Revenue":  1035090.00,
+                                      "Payouts":  179969.37,
+                                      "NetAfterPayouts":  855120.63
+                                  },
+                                  {
+                                      "Month":  3,
+                                      "Revenue":  1086844.50,
+                                      "Payouts":  188967.84,
+                                      "NetAfterPayouts":  897876.66
+                                  },
+                                  {
+                                      "Month":  4,
+                                      "Revenue":  1141186.72,
+                                      "Payouts":  198416.23,
+                                      "NetAfterPayouts":  942770.49
+                                  },
+                                  {
+                                      "Month":  5,
+                                      "Revenue":  1198246.06,
+                                      "Payouts":  208337.04,
+                                      "NetAfterPayouts":  989909.02
+                                  },
+                                  {
+                                      "Month":  6,
+                                      "Revenue":  1258158.36,
+                                      "Payouts":  218753.89,
+                                      "NetAfterPayouts":  1039404.47
+                                  },
+                                  {
+                                      "Month":  7,
+                                      "Revenue":  1321066.28,
+                                      "Payouts":  229691.59,
+                                      "NetAfterPayouts":  1091374.69
+                                  },
+                                  {
+                                      "Month":  8,
+                                      "Revenue":  1387119.60,
+                                      "Payouts":  241176.17,
+                                      "NetAfterPayouts":  1145943.43
+                                  },
+                                  {
+                                      "Month":  9,
+                                      "Revenue":  1456475.58,
+                                      "Payouts":  253234.98,
+                                      "NetAfterPayouts":  1203240.60
+                                  },
+                                  {
+                                      "Month":  10,
+                                      "Revenue":  1529299.36,
+                                      "Payouts":  265896.73,
+                                      "NetAfterPayouts":  1263402.63
+                                  },
+                                  {
+                                      "Month":  11,
+                                      "Revenue":  1605764.32,
+                                      "Payouts":  279191.56,
+                                      "NetAfterPayouts":  1326572.76
+                                  },
+                                  {
+                                      "Month":  12,
+                                      "Revenue":  1686052.54,
+                                      "Payouts":  293151.14,
+                                      "NetAfterPayouts":  1392901.40
+                                  }
+                              ],
+    "PartnerTiers":  [
+                         {
+                             "Tier":  "Affiliate Basic",
+                             "Type":  "Affiliate",
+                             "Partners":  200,
+                             "PerPartner":  {
+                                                "AvgMonthlyReferrals":  4,
+                                                "AvgOrderValue":  95,
+                                                "MonthlyReferralRevenue":  380,
+                                                "MonthlyRecurringRevenue":  403.75,
+                                                "TotalMonthlyRevenue":  783.75,
+                                                "FirstOrderCommission":  38.0,
+                                                "RecurringCommission":  20.19,
+                                                "FlatFee":  0,
+                                                "Bonus":  0,
+                                                "TotalPayout":  58.19,
+                                                "ROI":  "1246.9%"
+                                            },
+                             "TierTotals":  {
+                                                "MonthlyRevenue":  156750.00,
+                                                "MonthlyPayouts":  11638.00,
+                                                "MonthlyCOGS":  25800.00,
+                                                "MonthlyGrossProfit":  119312.00,
+                                                "GrossMarginAfterComm":  "76.1%",
+                                                "EffectiveCommRate":  "7.4%",
+                                                "AnnualRevenue":  1881000.00,
+                                                "AnnualPayouts":  139656.00,
+                                                "AnnualGrossProfit":  1431744.00
+                                            },
+                             "CommissionRates":  {
+                                                     "FirstOrder":  "10%",
+                                                     "Recurring":  "5%",
+                                                     "CookieDays":  30
+                                                 },
+                             "PartnerSatisfaction":  "LOW"
+                         },
+                         {
+                             "Tier":  "Affiliate Pro",
+                             "Type":  "Affiliate",
+                             "Partners":  50,
+                             "PerPartner":  {
+                                                "AvgMonthlyReferrals":  12,
+                                                "AvgOrderValue":  120,
+                                                "MonthlyReferralRevenue":  1440,
+                                                "MonthlyRecurringRevenue":  1428.00,
+                                                "TotalMonthlyRevenue":  2868.00,
+                                                "FirstOrderCommission":  216.00,
+                                                "RecurringCommission":  114.24,
+                                                "FlatFee":  0,
+                                                "Bonus":  0,
+                                                "TotalPayout":  330.24,
+                                                "ROI":  "768.5%"
+                                            },
+                             "TierTotals":  {
+                                                "MonthlyRevenue":  143400.00,
+                                                "MonthlyPayouts":  16512.00,
+                                                "MonthlyCOGS":  19350.00,
+                                                "MonthlyGrossProfit":  107538.00,
+                                                "GrossMarginAfterComm":  "75.0%",
+                                                "EffectiveCommRate":  "11.5%",
+                                                "AnnualRevenue":  1720800.00,
+                                                "AnnualPayouts":  198144.00,
+                                                "AnnualGrossProfit":  1290456.00
+                                            },
+                             "CommissionRates":  {
+                                                     "FirstOrder":  "15%",
+                                                     "Recurring":  "8%",
+                                                     "CookieDays":  60
+                                                 },
+                             "PartnerSatisfaction":  "MODERATE"
+                         },
+                         {
+                             "Tier":  "Influencer",
+                             "Type":  "Influencer",
+                             "Partners":  30,
+                             "PerPartner":  {
+                                                "AvgMonthlyReferrals":  25,
+                                                "AvgOrderValue":  110,
+                                                "MonthlyReferralRevenue":  2750,
+                                                "MonthlyRecurringRevenue":  2805.00,
+                                                "TotalMonthlyRevenue":  5555.00,
+                                                "FirstOrderCommission":  550.0,
+                                                "RecurringCommission":  0.00,
+                                                "FlatFee":  500,
+                                                "Bonus":  0,
+                                                "TotalPayout":  1050.00,
+                                                "ROI":  "429.0%"
+                                            },
+                             "TierTotals":  {
+                                                "MonthlyRevenue":  166650.00,
+                                                "MonthlyPayouts":  31500.00,
+                                                "MonthlyCOGS":  24187.50,
+                                                "MonthlyGrossProfit":  110962.50,
+                                                "GrossMarginAfterComm":  "66.6%",
+                                                "EffectiveCommRate":  "18.9%",
+                                                "AnnualRevenue":  1999800.00,
+                                                "AnnualPayouts":  378000.00,
+                                                "AnnualGrossProfit":  1331550.00
+                                            },
+                             "CommissionRates":  {
+                                                     "FirstOrder":  "20%",
+                                                     "Recurring":  "0%",
+                                                     "CookieDays":  14
+                                                 },
+                             "PartnerSatisfaction":  "HIGH"
+                         },
+                         {
+                             "Tier":  "Practitioner Standard",
+                             "Type":  "Practitioner",
+                             "Partners":  120,
+                             "PerPartner":  {
+                                                "AvgMonthlyReferrals":  8,
+                                                "AvgOrderValue":  155,
+                                                "MonthlyReferralRevenue":  1240,
+                                                "MonthlyRecurringRevenue":  1317.50,
+                                                "TotalMonthlyRevenue":  2557.50,
+                                                "FirstOrderCommission":  248.0,
+                                                "RecurringCommission":  197.62,
+                                                "FlatFee":  0,
+                                                "Bonus":  0,
+                                                "TotalPayout":  445.62,
+                                                "ROI":  "473.9%"
+                                            },
+                             "TierTotals":  {
+                                                "MonthlyRevenue":  306900.00,
+                                                "MonthlyPayouts":  53474.40,
+                                                "MonthlyCOGS":  30960.00,
+                                                "MonthlyGrossProfit":  222465.60,
+                                                "GrossMarginAfterComm":  "72.5%",
+                                                "EffectiveCommRate":  "17.4%",
+                                                "AnnualRevenue":  3682800.00,
+                                                "AnnualPayouts":  641692.80,
+                                                "AnnualGrossProfit":  2669587.20
+                                            },
+                             "CommissionRates":  {
+                                                     "FirstOrder":  "20%",
+                                                     "Recurring":  "15%",
+                                                     "CookieDays":  90
+                                                 },
+                             "PartnerSatisfaction":  "MODERATE"
+                         },
+                         {
+                             "Tier":  "Practitioner Elite",
+                             "Type":  "Practitioner",
+                             "Partners":  25,
+                             "PerPartner":  {
+                                                "AvgMonthlyReferrals":  20,
+                                                "AvgOrderValue":  210,
+                                                "MonthlyReferralRevenue":  4200,
+                                                "MonthlyRecurringRevenue":  4284.00,
+                                                "TotalMonthlyRevenue":  8484.00,
+                                                "FirstOrderCommission":  1050.00,
+                                                "RecurringCommission":  856.80,
+                                                "FlatFee":  0,
+                                                "Bonus":  424.20,
+                                                "TotalPayout":  2331.00,
+                                                "ROI":  "264.0%"
+                                            },
+                             "TierTotals":  {
+                                                "MonthlyRevenue":  212100.00,
+                                                "MonthlyPayouts":  58275.00,
+                                                "MonthlyCOGS":  16125.00,
+                                                "MonthlyGrossProfit":  137700.00,
+                                                "GrossMarginAfterComm":  "64.9%",
+                                                "EffectiveCommRate":  "27.5%",
+                                                "AnnualRevenue":  2545200.00,
+                                                "AnnualPayouts":  699300.00,
+                                                "AnnualGrossProfit":  1652400.00
+                                            },
+                             "CommissionRates":  {
+                                                     "FirstOrder":  "25%",
+                                                     "Recurring":  "20%",
+                                                     "CookieDays":  120
+                                                 },
+                             "PartnerSatisfaction":  "HIGH"
+                         }
+                     ]
+}
