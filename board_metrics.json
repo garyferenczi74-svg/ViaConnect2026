@@ -1,0 +1,165 @@
+﻿{
+    "GeneratedAt":  "2026-03-24T19:36:15.0927677-06:00",
+    "ReportPeriod":  "Q1 2026",
+    "ReportDate":  "March 2026",
+    "BoardMetrics":  {
+                         "ARR":  {
+                                     "Value":  13673531.28,
+                                     "Display":  "$13,673,531",
+                                     "Definition":  "Monthly Recurring Revenue x 12",
+                                     "Benchmark":  "Series A target: \u003e ARR"
+                                 },
+                         "MRR":  {
+                                     "Value":  1139460.94,
+                                     "Display":  "$1,139,461",
+                                     "Definition":  "Total monthly recurring subscription revenue"
+                                 },
+                         "MRR_Growth_MoM":  {
+                                                "Value":  -6.3,
+                                                "Display":  "-6.3%",
+                                                "Definition":  "Average month-over-month MRR growth",
+                                                "Benchmark":  "Healthy: \u003e5% MoM; Elite: \u003e10% MoM"
+                                            },
+                         "Gross_Margin":  {
+                                              "Value":  78.7,
+                                              "Display":  "78.7%",
+                                              "Definition":  "Revenue minus COGS / Revenue",
+                                              "Benchmark":  "Supplement industry: 65-80%; FarmCeutica target: \u003e75%"
+                                          },
+                         "Net_Revenue_Retention":  {
+                                                       "Value":  24.8,
+                                                       "Display":  "24.8%",
+                                                       "Definition":  "Revenue from existing customers after 12 months / starting revenue",
+                                                       "Benchmark":  "Good: \u003e100%; Best-in-class: \u003e120%"
+                                                   },
+                         "LTV_to_CAC":  {
+                                            "Value":  15.0,
+                                            "Display":  "15.0x",
+                                            "Definition":  "Customer Lifetime Value / Customer Acquisition Cost",
+                                            "Benchmark":  "Healthy: \u003e3x; Excellent: \u003e5x"
+                                        },
+                         "CAC_Payback_Months":  {
+                                                    "Value":  1,
+                                                    "Display":  "1 months",
+                                                    "Definition":  "Months to recover customer acquisition cost",
+                                                    "Benchmark":  "Good: \u003c12mo; Excellent: \u003c6mo"
+                                                },
+                         "Rule_of_40":  {
+                                            "Value":  138.6,
+                                            "Display":  "138.6",
+                                            "Definition":  "Revenue growth rate + profit margin",
+                                            "Benchmark":  "Target: \u003e40; Elite SaaS/DTC: \u003e60"
+                                        },
+                         "Monthly_FCF":  {
+                                             "Value":  1163424.19,
+                                             "Display":  "$1,163,424",
+                                             "Definition":  "Monthly free cash flow (positive = generating cash)",
+                                             "Benchmark":  "Cash flow positive is the target"
+                                         },
+                         "Cash_Runway_Months":  {
+                                                    "Value":  88,
+                                                    "Display":  "88 months",
+                                                    "Definition":  "Ending cash / monthly operating expenses",
+                                                    "Benchmark":  "\u003e18 months for fundraising comfort"
+                                                },
+                         "Active_Customers":  {
+                                                  "Value":  8500,
+                                                  "Display":  "8,500",
+                                                  "Definition":  "Total active paying customers"
+                                              },
+                         "ARPU_Monthly":  {
+                                              "Value":  134.05,
+                                              "Display":  "$134.05",
+                                              "Definition":  "MRR / Active Customers",
+                                              "Benchmark":  "Supplement DTC: -/mo"
+                                          },
+                         "Total_Revenue_Pipeline":  {
+                                                        "Value":  32861633.04,
+                                                        "Display":  "$32,861,633",
+                                                        "Definition":  "ARR + Bundle Revenue + Partner Revenue"
+                                                    },
+                         "Portfolio_Health":  {
+                                                  "Value":  69,
+                                                  "Display":  "69/100",
+                                                  "Definition":  "Weighted composite across margin, channels, and viability",
+                                                  "Benchmark":  "\u003e70 = healthy portfolio"
+                                              },
+                         "Revenue_Per_SKU":  {
+                                                 "Value":  382459.02,
+                                                 "Display":  "$382,459",
+                                                 "Definition":  "Annual revenue / Total SKUs",
+                                                 "Benchmark":  "Higher = more efficient catalog"
+                                             }
+                     },
+    "InvestorHighlights":  [
+                               "ARR of $13.7M with 8500 active customers",
+                               "LTV:CAC of 15.0x with 1-month payback - capital efficient growth",
+                               "Gross margin of 78.7% - premium supplement economics",
+                               "Rule of 40 score: 138.6 - exceeds benchmark significantly",
+                               "Cash flow positive: $1,163,424/month FCF, 88 months runway",
+                               "62 SKUs across 7 categories, 9 Star-tier products driving growth",
+                               "Partner program: 425 affiliates/practitioners generating $11.8M annually at 475% ROI"
+                           ],
+    "RiskFactors":  [
+                        "Net revenue retention below 100% - expansion revenue not offsetting churn",
+                        "1 SKU(s) in Sunset tier requiring discontinuation decision",
+                        "5 operational risks identified in risk register"
+                    ],
+    "DataSources":  [
+                        {
+                            "Source":  "cf",
+                            "File":  "cashflow_analysis.json",
+                            "Loaded":  true
+                        },
+                        {
+                            "Source":  "forecast",
+                            "File":  "forecast_12month.json",
+                            "Loaded":  true
+                        },
+                        {
+                            "Source":  "comm",
+                            "File":  "commission_payout_analysis.json",
+                            "Loaded":  true
+                        },
+                        {
+                            "Source":  "master",
+                            "File":  "farmceutica_master_skus.json",
+                            "Loaded":  true
+                        },
+                        {
+                            "Source":  "whatif",
+                            "File":  "whatif_results.json",
+                            "Loaded":  true
+                        },
+                        {
+                            "Source":  "subs",
+                            "File":  "subscription_mrr_analysis.json",
+                            "Loaded":  true
+                        },
+                        {
+                            "Source":  "cohort",
+                            "File":  "cohort_retention_analysis.json",
+                            "Loaded":  true
+                        },
+                        {
+                            "Source":  "bundles",
+                            "File":  "bundle_optimization.json",
+                            "Loaded":  true
+                        },
+                        {
+                            "Source":  "rational",
+                            "File":  "sku_rationalization.json",
+                            "Loaded":  true
+                        },
+                        {
+                            "Source":  "inventory",
+                            "File":  "inventory_reorder_plan.json",
+                            "Loaded":  true
+                        },
+                        {
+                            "Source":  "dash",
+                            "File":  "executive_dashboard.json",
+                            "Loaded":  true
+                        }
+                    ]
+}
