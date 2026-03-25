@@ -1,0 +1,387 @@
+﻿{
+    "GeneratedAt":  "2026-03-24T18:26:53.1925626-06:00",
+    "Duration":  "0.45s",
+    "OverallStatus":  "PASS",
+    "Summary":  {
+                    "TotalChecks":  46,
+                    "Passed":  46,
+                    "Failed":  0,
+                    "Warnings":  0
+                },
+    "FailedChecks":  {
+
+                     },
+    "WarningChecks":  {
+
+                      },
+    "AllChecks":  [
+                      {
+                          "Category":  "FilePresence",
+                          "Check":  "Rational file exists",
+                          "Status":  "PASS",
+                          "Detail":  "sku_rationalization.json",
+                          "Expected":  null,
+                          "Actual":  null
+                      },
+                      {
+                          "Category":  "FilePresence",
+                          "Check":  "Master file exists",
+                          "Status":  "PASS",
+                          "Detail":  "farmceutica_master_skus.json",
+                          "Expected":  null,
+                          "Actual":  null
+                      },
+                      {
+                          "Category":  "FilePresence",
+                          "Check":  "CashFlow file exists",
+                          "Status":  "PASS",
+                          "Detail":  "cashflow_analysis.json",
+                          "Expected":  null,
+                          "Actual":  null
+                      },
+                      {
+                          "Category":  "FilePresence",
+                          "Check":  "Inventory file exists",
+                          "Status":  "PASS",
+                          "Detail":  "inventory_reorder_plan.json",
+                          "Expected":  null,
+                          "Actual":  null
+                      },
+                      {
+                          "Category":  "FilePresence",
+                          "Check":  "Supplier file exists",
+                          "Status":  "PASS",
+                          "Detail":  "supplier_scorecard.json",
+                          "Expected":  null,
+                          "Actual":  null
+                      },
+                      {
+                          "Category":  "FilePresence",
+                          "Check":  "Bundles file exists",
+                          "Status":  "PASS",
+                          "Detail":  "bundle_optimization.json",
+                          "Expected":  null,
+                          "Actual":  null
+                      },
+                      {
+                          "Category":  "FilePresence",
+                          "Check":  "UnitEcon file exists",
+                          "Status":  "PASS",
+                          "Detail":  "unit_economics.json",
+                          "Expected":  null,
+                          "Actual":  null
+                      },
+                      {
+                          "Category":  "FilePresence",
+                          "Check":  "Waterfall file exists",
+                          "Status":  "PASS",
+                          "Detail":  "margin_waterfall.json",
+                          "Expected":  null,
+                          "Actual":  null
+                      },
+                      {
+                          "Category":  "FilePresence",
+                          "Check":  "WhatIf file exists",
+                          "Status":  "PASS",
+                          "Detail":  "whatif_results.json",
+                          "Expected":  null,
+                          "Actual":  null
+                      },
+                      {
+                          "Category":  "FilePresence",
+                          "Check":  "Forecast file exists",
+                          "Status":  "PASS",
+                          "Detail":  "forecast_12month.json",
+                          "Expected":  null,
+                          "Actual":  null
+                      },
+                      {
+                          "Category":  "FilePresence",
+                          "Check":  "ChannelMix file exists",
+                          "Status":  "PASS",
+                          "Detail":  "channel_mix_results.json",
+                          "Expected":  null,
+                          "Actual":  null
+                      },
+                      {
+                          "Category":  "FilePresence",
+                          "Check":  "SubMRR file exists",
+                          "Status":  "PASS",
+                          "Detail":  "subscription_mrr_analysis.json",
+                          "Expected":  null,
+                          "Actual":  null
+                      },
+                      {
+                          "Category":  "FilePresence",
+                          "Check":  "Dashboard file exists",
+                          "Status":  "PASS",
+                          "Detail":  "executive_dashboard.json",
+                          "Expected":  null,
+                          "Actual":  null
+                      },
+                      {
+                          "Category":  "FilePresence",
+                          "Check":  "COGSDelta file exists",
+                          "Status":  "PASS",
+                          "Detail":  "cogs_delta_report.json",
+                          "Expected":  null,
+                          "Actual":  null
+                      },
+                      {
+                          "Category":  "FilePresence",
+                          "Check":  "Pricing file exists",
+                          "Status":  "PASS",
+                          "Detail":  "updated_pricing_tiers.json",
+                          "Expected":  null,
+                          "Actual":  null
+                      },
+                      {
+                          "Category":  "SKUCount",
+                          "Check":  "Master SKU count",
+                          "Status":  "PASS",
+                          "Detail":  "62 SKUs in master",
+                          "Expected":  62,
+                          "Actual":  62
+                      },
+                      {
+                          "Category":  "SKUCount",
+                          "Check":  "Pricing tier count matches master",
+                          "Status":  "PASS",
+                          "Detail":  "Pricing has 62 SKUs",
+                          "Expected":  62,
+                          "Actual":  62
+                      },
+                      {
+                          "Category":  "SKUCount",
+                          "Check":  "Rationalization count matches master",
+                          "Status":  "PASS",
+                          "Detail":  "Rationalization has 62 SKUs",
+                          "Expected":  62,
+                          "Actual":  62
+                      },
+                      {
+                          "Category":  "SKUCount",
+                          "Check":  "Waterfall count matches master",
+                          "Status":  "PASS",
+                          "Detail":  "Waterfall has 62 SKUs",
+                          "Expected":  62,
+                          "Actual":  62
+                      },
+                      {
+                          "Category":  "SKUCount",
+                          "Check":  "Unit economics SKU count",
+                          "Status":  "PASS",
+                          "Detail":  "Unit econ covers 62 unique SKUs",
+                          "Expected":  62,
+                          "Actual":  62
+                      },
+                      {
+                          "Category":  "SKUCount",
+                          "Check":  "Inventory plan SKU count",
+                          "Status":  "PASS",
+                          "Detail":  "Inventory covers 62 SKUs",
+                          "Expected":  62,
+                          "Actual":  62
+                      },
+                      {
+                          "Category":  "SKUCount",
+                          "Check":  "Subscription analysis SKU count",
+                          "Status":  "PASS",
+                          "Detail":  "Subscription covers 62 SKUs",
+                          "Expected":  62,
+                          "Actual":  62
+                      },
+                      {
+                          "Category":  "SKUIntegrity",
+                          "Check":  "Rationalization SKU IDs match master",
+                          "Status":  "PASS",
+                          "Detail":  "Missing: 0, Orphaned: 0",
+                          "Expected":  null,
+                          "Actual":  null
+                      },
+                      {
+                          "Category":  "SKUIntegrity",
+                          "Check":  "Bundle components reference valid SKUs",
+                          "Status":  "PASS",
+                          "Detail":  "Orphaned bundle SKUs: 0",
+                          "Expected":  null,
+                          "Actual":  null
+                      },
+                      {
+                          "Category":  "MarginConsistency",
+                          "Check":  "Waterfall net margin \u003c= master DTC margin",
+                          "Status":  "PASS",
+                          "Detail":  "0 SKUs with waterfall margin exceeding master (expected: waterfall includes more costs)",
+                          "Expected":  null,
+                          "Actual":  null
+                      },
+                      {
+                          "Category":  "MarginConsistency",
+                          "Check":  "Master DTC margin formula verification",
+                          "Status":  "PASS",
+                          "Detail":  "0 SKUs with margin calc error \u003e0.5pp",
+                          "Expected":  null,
+                          "Actual":  null
+                      },
+                      {
+                          "Category":  "PricingIntegrity",
+                          "Check":  "WS=50% and Dist=30% of MSRP",
+                          "Status":  "PASS",
+                          "Detail":  "0 SKUs with pricing tier calc errors",
+                          "Expected":  null,
+                          "Actual":  null
+                      },
+                      {
+                          "Category":  "RationalizationIntegrity",
+                          "Check":  "All SKUs assigned a tier",
+                          "Status":  "PASS",
+                          "Detail":  "Star:9 Core:48 Watch:4 Sunset:1",
+                          "Expected":  62,
+                          "Actual":  62
+                      },
+                      {
+                          "Category":  "RationalizationIntegrity",
+                          "Check":  "Composite scores within 0-100",
+                          "Status":  "PASS",
+                          "Detail":  "0 SKUs out of range",
+                          "Expected":  null,
+                          "Actual":  null
+                      },
+                      {
+                          "Category":  "ForecastIntegrity",
+                          "Check":  "12 months projected",
+                          "Status":  "PASS",
+                          "Detail":  "Found 12 months",
+                          "Expected":  12,
+                          "Actual":  12
+                      },
+                      {
+                          "Category":  "ForecastIntegrity",
+                          "Check":  "No negative revenue months",
+                          "Status":  "PASS",
+                          "Detail":  "0 months with zero/negative revenue",
+                          "Expected":  null,
+                          "Actual":  null
+                      },
+                      {
+                          "Category":  "ForecastIntegrity",
+                          "Check":  "Cumulative revenue never decreases",
+                          "Status":  "PASS",
+                          "Detail":  "0 instances of cumulative decline",
+                          "Expected":  null,
+                          "Actual":  null
+                      },
+                      {
+                          "Category":  "BundleIntegrity",
+                          "Check":  "No Sunset SKUs in bundles",
+                          "Status":  "PASS",
+                          "Detail":  "0 Sunset SKU references in bundles",
+                          "Expected":  null,
+                          "Actual":  null
+                      },
+                      {
+                          "Category":  "BundleIntegrity",
+                          "Check":  "All bundles priced below component total",
+                          "Status":  "PASS",
+                          "Detail":  "0 bundles with bundle \u003e= individual price",
+                          "Expected":  null,
+                          "Actual":  null
+                      },
+                      {
+                          "Category":  "CashFlowIntegrity",
+                          "Check":  "12 months of cash flow",
+                          "Status":  "PASS",
+                          "Detail":  "12 months found",
+                          "Expected":  12,
+                          "Actual":  12
+                      },
+                      {
+                          "Category":  "CashFlowIntegrity",
+                          "Check":  "No CRITICAL cash months",
+                          "Status":  "PASS",
+                          "Detail":  "0 months at CRITICAL",
+                          "Expected":  null,
+                          "Actual":  null
+                      },
+                      {
+                          "Category":  "CrossFileConsistency",
+                          "Check":  "Dashboard revenue matches channel mix scenario",
+                          "Status":  "PASS",
+                          "Detail":  "Diff: $0.00",
+                          "Expected":  null,
+                          "Actual":  null
+                      },
+                      {
+                          "Category":  "Freshness",
+                          "Check":  "Waterfall data age",
+                          "Status":  "PASS",
+                          "Detail":  "0.6 hours old",
+                          "Expected":  null,
+                          "Actual":  null
+                      },
+                      {
+                          "Category":  "Freshness",
+                          "Check":  "Rational data age",
+                          "Status":  "PASS",
+                          "Detail":  "0.6 hours old",
+                          "Expected":  null,
+                          "Actual":  null
+                      },
+                      {
+                          "Category":  "Freshness",
+                          "Check":  "Dashboard data age",
+                          "Status":  "PASS",
+                          "Detail":  "0.6 hours old",
+                          "Expected":  null,
+                          "Actual":  null
+                      },
+                      {
+                          "Category":  "Freshness",
+                          "Check":  "Forecast data age",
+                          "Status":  "PASS",
+                          "Detail":  "0.6 hours old",
+                          "Expected":  null,
+                          "Actual":  null
+                      },
+                      {
+                          "Category":  "Freshness",
+                          "Check":  "UnitEcon data age",
+                          "Status":  "PASS",
+                          "Detail":  "0.6 hours old",
+                          "Expected":  null,
+                          "Actual":  null
+                      },
+                      {
+                          "Category":  "DataSanity",
+                          "Check":  "No zero/negative COGS",
+                          "Status":  "PASS",
+                          "Detail":  "0 SKUs",
+                          "Expected":  null,
+                          "Actual":  null
+                      },
+                      {
+                          "Category":  "DataSanity",
+                          "Check":  "No zero/negative MSRP",
+                          "Status":  "PASS",
+                          "Detail":  "0 SKUs",
+                          "Expected":  null,
+                          "Actual":  null
+                      },
+                      {
+                          "Category":  "DataSanity",
+                          "Check":  "COGS \u003c MSRP for all SKUs",
+                          "Status":  "PASS",
+                          "Detail":  "0 SKUs where COGS \u003e= MSRP",
+                          "Expected":  null,
+                          "Actual":  null
+                      },
+                      {
+                          "Category":  "DataSanity",
+                          "Check":  "All 7 categories present",
+                          "Status":  "PASS",
+                          "Detail":  "Missing: ",
+                          "Expected":  7,
+                          "Actual":  7
+                      }
+                  ]
+}
