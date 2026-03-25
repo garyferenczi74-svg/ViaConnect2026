@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
 import type { GeneticVariant } from "@/lib/supabase/types";
 import { Card } from "@/components/ui/Card";
@@ -19,6 +19,15 @@ import {
   FlaskConical,
   MessageSquare,
   FileText,
+  Share2,
+  UserCheck,
+  Leaf,
+  Shield,
+  Eye,
+  EyeOff,
+  Send,
+  Check,
+  Loader2,
 } from "lucide-react";
 import { PageTransition, StaggerChild, MotionCard } from "@/lib/motion";
 
@@ -269,12 +278,355 @@ function SupplementTracker({
           </div>
         );
       })}
-      <Link
-        href="/supplements"
+      <a
+        href="https://farmceuticawellness.com"
+        target="_blank"
+        rel="noopener noreferrer"
         className="block w-full text-center py-2.5 rounded-lg bg-copper/10 text-copper text-sm font-medium hover:bg-copper/20 transition-colors"
       >
         Shop FarmCeutica &rarr;
-      </Link>
+      </a>
+    </div>
+  );
+}
+
+// --- Share Data with Providers ---
+type ShareCategory = "vitality_score" | "supplement_protocol" | "genetic_data" | "symptom_profile" | "adherence_data";
+
+type SharePermission = {
+  id: string;
+  provider_id: string;
+  provider_name: string;
+  provider_role: "practitioner" | "naturopath";
+  category: ShareCategory;
+  granted: boolean;
+  granted_at: string | null;
+};
+
+const SHARE_CATEGORIES: { id: ShareCategory; label: string; description: string; icon: React.ElementType; color: string }[] = [
+  { id: "vitality_score", label: "Vitality Score", description: "Current score and 30-day trend", icon: CheckCircle2, color: "text-portal-green" },
+  { id: "supplement_protocol", label: "Supplement Protocol", description: "Active supplements, dosage, and schedule", icon: FlaskConical, color: "text-copper" },
+  { id: "genetic_data", label: "Genetic Data", description: "GeneX360 results, SNP variants, and risk levels", icon: Dna, color: "text-teal" },
+  { id: "symptom_profile", label: "Symptom Profile", description: "CAQ symptom severity and health concerns", icon: FileText, color: "text-plum" },
+  { id: "adherence_data", label: "Adherence Data", description: "Daily logging history and streak data", icon: UserCheck, color: "text-portal-yellow" },
+];
+
+function ShareWithProviders({ userId }: { userId: string }) {
+  const queryClient = useQueryClient();
+  const [expandedProvider, setExpandedProvider] = useState<string | null>(null);
+
+  // Fetch connected providers (practitioners + naturopaths linked to this patient)
+  const { data: providers, isLoading: providersLoading } = useQuery({
+    queryKey: ["connected-providers", userId],
+    queryFn: async () => {
+      // Get practitioners from conversations
+      const { data: convos } = await supabase
+        .from("conversations")
+        .select("practitioner_id")
+        .eq("patient_id", userId);
+
+      const practitionerIds = Array.from(new Set((convos ?? []).map((c) => c.practitioner_id)));
+
+      if (practitionerIds.length === 0) return [];
+
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, full_name, role")
+        .in("id", practitionerIds);
+
+      return (profiles ?? []).map((p) => ({
+        id: p.id,
+        name: p.full_name ?? "Provider",
+        role: (p.role === "naturopath" ? "naturopath" : "practitioner") as "practitioner" | "naturopath",
+      }));
+    },
+  });
+
+  // Fetch existing share permissions
+  const { data: permissions } = useQuery({
+    queryKey: ["share-permissions", userId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("audit_logs")
+        .select("id, user_id, action, metadata, created_at")
+        .eq("user_id", userId)
+        .eq("action", "data_share_permission")
+        .order("created_at", { ascending: false });
+
+      // Parse permissions from audit logs
+      type AuditRow = { id: string; user_id: string | null; action: string; metadata: Record<string, unknown> | null; created_at: string };
+      const permMap = new Map<string, SharePermission>();
+      ((data ?? []) as AuditRow[]).forEach((log) => {
+        const meta = log.metadata;
+        if (meta?.provider_id && meta?.category) {
+          const key = `${meta.provider_id}-${meta.category}`;
+          if (!permMap.has(key)) {
+            permMap.set(key, {
+              id: log.id,
+              provider_id: meta.provider_id as string,
+              provider_name: (meta.provider_name as string) ?? "Provider",
+              provider_role: (meta.provider_role as "practitioner" | "naturopath") ?? "practitioner",
+              category: meta.category as ShareCategory,
+              granted: (meta.granted as boolean) ?? false,
+              granted_at: log.created_at,
+            });
+          }
+        }
+      });
+      return Array.from(permMap.values());
+    },
+  });
+
+  // Toggle share permission
+  const togglePermission = useMutation({
+    mutationFn: async ({
+      providerId,
+      providerName,
+      providerRole,
+      category,
+      granted,
+    }: {
+      providerId: string;
+      providerName: string;
+      providerRole: "practitioner" | "naturopath";
+      category: ShareCategory;
+      granted: boolean;
+    }) => {
+      const { error } = await supabase.from("audit_logs").insert({
+        user_id: userId,
+        action: "data_share_permission",
+        resource_type: "data_sharing",
+        metadata: {
+          provider_id: providerId,
+          provider_name: providerName,
+          provider_role: providerRole,
+          category,
+          granted,
+        },
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["share-permissions", userId] });
+      toast.success("Sharing permission updated");
+    },
+    onError: () => toast.error("Failed to update sharing permission"),
+  });
+
+  // Share all with a provider
+  const shareAll = useMutation({
+    mutationFn: async ({
+      providerId,
+      providerName,
+      providerRole,
+    }: {
+      providerId: string;
+      providerName: string;
+      providerRole: "practitioner" | "naturopath";
+    }) => {
+      const inserts = SHARE_CATEGORIES.map((cat) => ({
+        user_id: userId,
+        action: "data_share_permission",
+        resource_type: "data_sharing",
+        metadata: {
+          provider_id: providerId,
+          provider_name: providerName,
+          provider_role: providerRole,
+          category: cat.id,
+          granted: true,
+        },
+      }));
+      const { error } = await supabase.from("audit_logs").insert(inserts);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["share-permissions", userId] });
+      toast.success("All data shared with provider");
+    },
+    onError: () => toast.error("Failed to share data"),
+  });
+
+  function isGranted(providerId: string, category: ShareCategory): boolean {
+    return (permissions ?? []).some(
+      (p) => p.provider_id === providerId && p.category === category && p.granted
+    );
+  }
+
+  function grantedCount(providerId: string): number {
+    return SHARE_CATEGORIES.filter((cat) => isGranted(providerId, cat.id)).length;
+  }
+
+  if (providersLoading) {
+    return (
+      <div className="space-y-3">
+        <Skeleton className="h-16 w-full" />
+        <Skeleton className="h-16 w-full" />
+      </div>
+    );
+  }
+
+  const providerList = providers ?? [];
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Share2 className="w-4 h-4 text-teal" />
+          <h3 className="text-sm font-semibold text-white">Share Data with Providers</h3>
+        </div>
+        <Badge variant="neutral">{providerList.length} connected</Badge>
+      </div>
+
+      <p className="text-xs text-gray-500">
+        Control which wellness data your practitioners and naturopaths can access.
+        Toggle categories per provider for granular privacy control.
+      </p>
+
+      {providerList.length === 0 ? (
+        <div className="text-center py-6 rounded-lg border border-white/[0.06] bg-white/[0.02]">
+          <UserCheck className="w-8 h-8 text-gray-600 mx-auto mb-2" />
+          <p className="text-sm text-gray-400">No connected providers yet</p>
+          <p className="text-xs text-gray-600 mt-1">
+            Message a practitioner or naturopath to get started
+          </p>
+          <Link
+            href="/messages"
+            className="inline-flex items-center gap-1 mt-3 text-xs text-copper hover:underline"
+          >
+            <MessageSquare className="w-3 h-3" />
+            Go to Messages
+          </Link>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {providerList.map((provider) => {
+            const shared = grantedCount(provider.id);
+            const isExpanded = expandedProvider === provider.id;
+            const isPending = togglePermission.isPending || shareAll.isPending;
+
+            return (
+              <div
+                key={provider.id}
+                className="rounded-xl border border-white/[0.06] bg-white/[0.02] overflow-hidden"
+              >
+                {/* Provider Header */}
+                <button
+                  onClick={() => setExpandedProvider(isExpanded ? null : provider.id)}
+                  className="w-full flex items-center gap-3 p-3.5 hover:bg-white/[0.02] transition-colors"
+                >
+                  <div
+                    className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold ${
+                      provider.role === "naturopath"
+                        ? "bg-sage/15 text-sage"
+                        : "bg-portal-green/15 text-portal-green"
+                    }`}
+                  >
+                    {provider.name
+                      .split(" ")
+                      .map((w) => w[0])
+                      .join("")
+                      .slice(0, 2)
+                      .toUpperCase()}
+                  </div>
+                  <div className="flex-1 min-w-0 text-left">
+                    <p className="text-sm font-medium text-white truncate">{provider.name}</p>
+                    <p className="text-[10px] text-gray-500 capitalize">{provider.role}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge
+                      variant={shared === SHARE_CATEGORIES.length ? "active" : shared > 0 ? "pending" : "neutral"}
+                    >
+                      {shared}/{SHARE_CATEGORIES.length} shared
+                    </Badge>
+                    <svg
+                      className={`w-4 h-4 text-gray-500 transition-transform ${isExpanded ? "rotate-180" : ""}`}
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
+                </button>
+
+                {/* Expanded Category Toggles */}
+                {isExpanded && (
+                  <div className="border-t border-white/[0.06] px-3.5 py-3 space-y-2">
+                    {/* Share All Button */}
+                    {shared < SHARE_CATEGORIES.length && (
+                      <button
+                        onClick={() =>
+                          shareAll.mutate({
+                            providerId: provider.id,
+                            providerName: provider.name,
+                            providerRole: provider.role,
+                          })
+                        }
+                        disabled={isPending}
+                        className="w-full flex items-center justify-center gap-1.5 py-2 rounded-lg bg-teal/10 text-teal text-xs font-medium hover:bg-teal/20 transition-colors disabled:opacity-50"
+                      >
+                        {isPending ? (
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                        ) : (
+                          <Send className="w-3 h-3" />
+                        )}
+                        Share All Data
+                      </button>
+                    )}
+
+                    {/* Individual Category Toggles */}
+                    {SHARE_CATEGORIES.map((cat) => {
+                      const Icon = cat.icon;
+                      const granted = isGranted(provider.id, cat.id);
+                      return (
+                        <div
+                          key={cat.id}
+                          className="flex items-center gap-3 py-2 px-1"
+                        >
+                          <Icon className={`w-4 h-4 flex-shrink-0 ${cat.color}`} />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-medium text-white">{cat.label}</p>
+                            <p className="text-[10px] text-gray-600">{cat.description}</p>
+                          </div>
+                          <button
+                            onClick={() =>
+                              togglePermission.mutate({
+                                providerId: provider.id,
+                                providerName: provider.name,
+                                providerRole: provider.role,
+                                category: cat.id,
+                                granted: !granted,
+                              })
+                            }
+                            disabled={isPending}
+                            className={`relative w-10 h-5 rounded-full transition-colors ${
+                              granted ? "bg-portal-green" : "bg-white/[0.1]"
+                            } ${isPending ? "opacity-50" : ""}`}
+                          >
+                            <span
+                              className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-transform ${
+                                granted ? "translate-x-5" : "translate-x-0.5"
+                              }`}
+                            />
+                          </button>
+                        </div>
+                      );
+                    })}
+
+                    {/* Privacy note */}
+                    <div className="flex items-start gap-2 pt-2 border-t border-white/[0.04]">
+                      <Shield className="w-3 h-3 text-gray-600 mt-0.5 flex-shrink-0" />
+                      <p className="text-[10px] text-gray-600">
+                        Your data is encrypted and shared securely. You can revoke access at any time.
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
@@ -499,6 +851,15 @@ export default function DashboardPage() {
           </MotionCard>
         </div>
       </StaggerChild>
+
+      {/* Share Data with Providers */}
+      {userId && (
+        <StaggerChild>
+          <MotionCard className="p-5">
+            <ShareWithProviders userId={userId} />
+          </MotionCard>
+        </StaggerChild>
+      )}
     </PageTransition>
   );
 }

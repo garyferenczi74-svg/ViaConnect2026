@@ -83,25 +83,35 @@ export async function updateSession(request: NextRequest) {
       return NextResponse.redirect(url);
     }
 
+    // Admin role has access to ALL portals (consumer, practitioner, naturopath, admin)
+    const isAdmin = rawRole === "admin";
+
+    // Admin-only routes
+    if (pathname.startsWith("/admin") && !isAdmin) {
+      const url = request.nextUrl.clone();
+      url.pathname = getRoleHomePath(role);
+      return NextResponse.redirect(url);
+    }
+
     // Enforce portal access based on role — block cross-portal access
-    if (pathname.startsWith("/practitioner") && role !== "practitioner") {
+    if (pathname.startsWith("/practitioner") && role !== "practitioner" && !isAdmin) {
       const url = request.nextUrl.clone();
       url.pathname = getRoleHomePath(role);
       return NextResponse.redirect(url);
     }
 
-    if (pathname.startsWith("/naturopath") && role !== "naturopath") {
+    if (pathname.startsWith("/naturopath") && role !== "naturopath" && !isAdmin) {
       const url = request.nextUrl.clone();
       url.pathname = getRoleHomePath(role);
       return NextResponse.redirect(url);
     }
 
-    // Consumer routes (non-prefixed app routes) are only for consumers
-    const consumerRoutes = ["/dashboard", "/genetics", "/supplements", "/tokens", "/profile", "/messages"];
+    // Consumer routes (non-prefixed app routes) are only for consumers (and admins)
+    const consumerRoutes = ["/dashboard", "/genetics", "/supplements", "/tokens", "/profile", "/messages", "/ai"];
     const isConsumerRoute = consumerRoutes.some(
       (route) => pathname === route || pathname.startsWith(route + "/")
     );
-    if (isConsumerRoute && role !== "consumer" && role !== undefined) {
+    if (isConsumerRoute && role !== "consumer" && !isAdmin && role !== undefined) {
       const url = request.nextUrl.clone();
       url.pathname = getRoleHomePath(role);
       return NextResponse.redirect(url);
@@ -115,7 +125,7 @@ export async function updateSession(request: NextRequest) {
 function normalizeRole(raw: string | undefined): string | undefined {
   if (!raw) return undefined;
   if (raw === "patient") return "consumer";
-  if (raw === "admin") return "practitioner";
+  if (raw === "admin") return "consumer"; // Admin defaults to consumer portal; has access to all
   return raw; // consumer, practitioner, naturopath pass through
 }
 

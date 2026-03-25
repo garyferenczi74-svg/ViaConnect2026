@@ -181,6 +181,39 @@ export async function generateRecommendations(supabase: SupabaseClient, userId: 
   const geneticTags = geneticProfile ? extractGeneticTags(geneticProfile) : [];
   const hasGenetics = geneticTags.length > 0;
 
+  // Build a set of SKUs that replace the user's current supplements
+  // (used to boost products the user is already taking in generic form)
+  const currentSuppReplacementSkus = new Set<string>();
+  if (caq.current_supplements?.length) {
+    const SUPP_SKU_MAP: Record<string, string> = {
+      'vitamin d': 'FC-VDR-001', 'vitamin d3': 'FC-VDR-001', 'd3': 'FC-VDR-001',
+      'b complex': 'FC-MTHFR-001', 'b12': 'FC-MTHFR-001', 'folic acid': 'FC-MTHFR-001', 'folate': 'FC-MTHFR-001',
+      'magnesium': 'FC-COMT-001', 'magnesium glycinate': 'FC-RELAX-001', 'magnesium citrate': 'FC-RELAX-001',
+      'fish oil': 'FC-APOE-001', 'omega 3': 'FC-APOE-001', 'omega-3': 'FC-APOE-001',
+      'coq10': 'FC-RISE-001', 'ubiquinol': 'FC-RISE-001',
+      'probiotic': 'FC-BALANCE-001', 'probiotics': 'FC-BALANCE-001',
+      'turmeric': 'FC-FLEX-001', 'curcumin': 'FC-FLEX-001',
+      'iron': 'FC-IRON-001', 'ashwagandha': 'FC-CALM-001',
+      'creatine': 'FC-CREATINE-001', 'nac': 'FC-CLEAN-001',
+      'melatonin': 'FC-RELAX-001', 'multivitamin': 'FC-RISE-001',
+      'bcaa': 'FC-AMINO-001', 'amino acids': 'FC-AMINO-001',
+      'pre workout': 'FC-BLAST-001', 'pre-workout': 'FC-BLAST-001',
+      'digestive enzymes': 'FC-DIGEST-001', 'berberine': 'FC-SHRED-001',
+      'lions mane': 'FC-FOCUS-001', "lion's mane": 'FC-FOCUS-001',
+      'nmn': 'FC-NAD-001', 'resveratrol': 'FC-NAD-001',
+      'zinc': 'FC-DESIRE-001', '5-htp': 'FC-MAOA-001',
+      'milk thistle': 'FC-CLEAN-001',
+    };
+    for (const supp of caq.current_supplements) {
+      const norm = supp.toLowerCase().trim();
+      const sku = SUPP_SKU_MAP[norm];
+      if (sku) { currentSuppReplacementSkus.add(sku); continue; }
+      for (const [key, val] of Object.entries(SUPP_SKU_MAP)) {
+        if (norm.includes(key) || key.includes(norm)) { currentSuppReplacementSkus.add(val); break; }
+      }
+    }
+  }
+
   const scored: ProductMatch[] = [];
   for (const product of products) {
     if (hasContraindication(product.sku, caq)) continue;
@@ -188,11 +221,17 @@ export async function generateRecommendations(supabase: SupabaseClient, userId: 
     const mLife = (product.lifestyle_tags||[]).filter((t:string) => lifestyleTags.includes(t));
     const mGoal = (product.goal_tags||[]).filter((t:string) => goalTags.includes(t));
     const mGen = (product.genetic_tags||[]).filter((t:string) => geneticTags.includes(t));
+    const isReplacement = currentSuppReplacementSkus.has(product.sku);
     const totalMatches = mSym.length + mLife.length + mGoal.length + mGen.length;
-    if (totalMatches < 2) continue;
+
+    // Allow replacement products through even with fewer tag matches
+    if (totalMatches < 2 && !isReplacement) continue;
 
     // Base match score from tag matching
     let matchScore = (mSym.length*25)+(mGoal.length*20)+(mLife.length*10)+(mGen.length*35)+((product.priority_weight||50)/5);
+
+    // Boost products that replace user's current supplements (they already take this category)
+    if (isReplacement) matchScore += 30;
 
     // Boost from financial toolchain data (Star SKUs get priority)
     const tier = product.rationalization_tier;
