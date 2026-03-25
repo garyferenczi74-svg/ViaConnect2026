@@ -1,0 +1,301 @@
+﻿{
+    "GeneratedAt":  "2026-03-24T19:20:05.2214826-06:00",
+    "SnapshotDate":  "2026-03-24",
+    "HistoryDepth":  1,
+    "PriorSnapshotDate":  "None",
+    "OverallTrend":  "STABLE",
+    "SignalSummary":  {
+                          "Positive":  0,
+                          "Negative":  0,
+                          "Neutral":  25
+                      },
+    "CurrentSnapshot":  {
+                            "AvgCOGSRatio":  16.4,
+                            "FreeCashFlow":  13961090.26,
+                            "NetMarginPct":  57.6,
+                            "WatchSKUs":  4,
+                            "AnnualHoldingCost":  148187.71,
+                            "AnnualBundleRevenue":  7358501.7600000007,
+                            "PortfolioHealthScore":  69,
+                            "SunsetSKUs":  1,
+                            "AnnualRevenue":  23712459.36,
+                            "AvgDTCMargin":  83.6,
+                            "CurrentMRR":  1139460.94,
+                            "RiskCount":  5,
+                            "SupplierCount":  10,
+                            "IntegrityTotal":  46,
+                            "ForecastGrowthPct":  81.0,
+                            "LTVtoCACRatio":  15.0,
+                            "IntegrityFailed":  0,
+                            "AnnualNetProfit":  13663748.28,
+                            "CurrentARR":  13673531.28,
+                            "CohortLTV":  510.65,
+                            "BlendedCAC":  34.15,
+                            "CashConversionCycleDays":  -15.5,
+                            "StarSKUs":  9,
+                            "TotalSKUs":  62,
+                            "TotalSubscribers":  19549,
+                            "ForecastPeakMonthRevenue":  2933745.58,
+                            "IntegrityPassed":  46,
+                            "HighRiskSuppliers":  null,
+                            "ForecastAnnualRevenue":  27005765.59,
+                            "EndingCash":  14461090.26,
+                            "InventoryValue":  592750.84,
+                            "ActiveCustomers":  8500,
+                            "TotalBundles":  15,
+                            "SupplierHHI":  1390,
+                            "UrgentReorders":  5
+                        },
+    "Trends":  [
+                   {
+                       "KPI":  "Annual Revenue",
+                       "Key":  "AnnualRevenue",
+                       "Current":  23712459.36,
+                       "Prior":  null,
+                       "Delta":  null,
+                       "DeltaPct":  "-",
+                       "Direction":  "FLAT",
+                       "Signal":  "NEUTRAL"
+                   },
+                   {
+                       "KPI":  "Net Profit",
+                       "Key":  "AnnualNetProfit",
+                       "Current":  13663748.28,
+                       "Prior":  null,
+                       "Delta":  null,
+                       "DeltaPct":  "-",
+                       "Direction":  "FLAT",
+                       "Signal":  "NEUTRAL"
+                   },
+                   {
+                       "KPI":  "Net Margin",
+                       "Key":  "NetMarginPct",
+                       "Current":  57.6,
+                       "Prior":  null,
+                       "Delta":  null,
+                       "DeltaPct":  "-",
+                       "Direction":  "FLAT",
+                       "Signal":  "NEUTRAL"
+                   },
+                   {
+                       "KPI":  "Portfolio Health",
+                       "Key":  "PortfolioHealthScore",
+                       "Current":  69,
+                       "Prior":  null,
+                       "Delta":  null,
+                       "DeltaPct":  "-",
+                       "Direction":  "FLAT",
+                       "Signal":  "NEUTRAL"
+                   },
+                   {
+                       "KPI":  "MRR",
+                       "Key":  "CurrentMRR",
+                       "Current":  1139460.94,
+                       "Prior":  null,
+                       "Delta":  null,
+                       "DeltaPct":  "-",
+                       "Direction":  "FLAT",
+                       "Signal":  "NEUTRAL"
+                   },
+                   {
+                       "KPI":  "ARR",
+                       "Key":  "CurrentARR",
+                       "Current":  13673531.28,
+                       "Prior":  null,
+                       "Delta":  null,
+                       "DeltaPct":  "-",
+                       "Direction":  "FLAT",
+                       "Signal":  "NEUTRAL"
+                   },
+                   {
+                       "KPI":  "Subscribers",
+                       "Key":  "TotalSubscribers",
+                       "Current":  19549,
+                       "Prior":  null,
+                       "Delta":  null,
+                       "DeltaPct":  "-",
+                       "Direction":  "FLAT",
+                       "Signal":  "NEUTRAL"
+                   },
+                   {
+                       "KPI":  "Active Customers",
+                       "Key":  "ActiveCustomers",
+                       "Current":  8500,
+                       "Prior":  null,
+                       "Delta":  null,
+                       "DeltaPct":  "-",
+                       "Direction":  "FLAT",
+                       "Signal":  "NEUTRAL"
+                   },
+                   {
+                       "KPI":  "Cohort LTV",
+                       "Key":  "CohortLTV",
+                       "Current":  510.65,
+                       "Prior":  null,
+                       "Delta":  null,
+                       "DeltaPct":  "-",
+                       "Direction":  "FLAT",
+                       "Signal":  "NEUTRAL"
+                   },
+                   {
+                       "KPI":  "LTV:CAC",
+                       "Key":  "LTVtoCACRatio",
+                       "Current":  15.0,
+                       "Prior":  null,
+                       "Delta":  null,
+                       "DeltaPct":  "-",
+                       "Direction":  "FLAT",
+                       "Signal":  "NEUTRAL"
+                   },
+                   {
+                       "KPI":  "Free Cash Flow",
+                       "Key":  "FreeCashFlow",
+                       "Current":  13961090.26,
+                       "Prior":  null,
+                       "Delta":  null,
+                       "DeltaPct":  "-",
+                       "Direction":  "FLAT",
+                       "Signal":  "NEUTRAL"
+                   },
+                   {
+                       "KPI":  "Ending Cash",
+                       "Key":  "EndingCash",
+                       "Current":  14461090.26,
+                       "Prior":  null,
+                       "Delta":  null,
+                       "DeltaPct":  "-",
+                       "Direction":  "FLAT",
+                       "Signal":  "NEUTRAL"
+                   },
+                   {
+                       "KPI":  "Star SKUs",
+                       "Key":  "StarSKUs",
+                       "Current":  9,
+                       "Prior":  null,
+                       "Delta":  null,
+                       "DeltaPct":  "-",
+                       "Direction":  "FLAT",
+                       "Signal":  "NEUTRAL"
+                   },
+                   {
+                       "KPI":  "Watch SKUs",
+                       "Key":  "WatchSKUs",
+                       "Current":  4,
+                       "Prior":  null,
+                       "Delta":  null,
+                       "DeltaPct":  "-",
+                       "Direction":  "FLAT",
+                       "Signal":  "NEUTRAL"
+                   },
+                   {
+                       "KPI":  "Sunset SKUs",
+                       "Key":  "SunsetSKUs",
+                       "Current":  1,
+                       "Prior":  null,
+                       "Delta":  null,
+                       "DeltaPct":  "-",
+                       "Direction":  "FLAT",
+                       "Signal":  "NEUTRAL"
+                   },
+                   {
+                       "KPI":  "Active Risks",
+                       "Key":  "RiskCount",
+                       "Current":  5,
+                       "Prior":  null,
+                       "Delta":  null,
+                       "DeltaPct":  "-",
+                       "Direction":  "FLAT",
+                       "Signal":  "NEUTRAL"
+                   },
+                   {
+                       "KPI":  "Urgent Reorders",
+                       "Key":  "UrgentReorders",
+                       "Current":  5,
+                       "Prior":  null,
+                       "Delta":  null,
+                       "DeltaPct":  "-",
+                       "Direction":  "FLAT",
+                       "Signal":  "NEUTRAL"
+                   },
+                   {
+                       "KPI":  "Avg DTC Margin",
+                       "Key":  "AvgDTCMargin",
+                       "Current":  83.6,
+                       "Prior":  null,
+                       "Delta":  null,
+                       "DeltaPct":  "-",
+                       "Direction":  "FLAT",
+                       "Signal":  "NEUTRAL"
+                   },
+                   {
+                       "KPI":  "Avg COGS Ratio",
+                       "Key":  "AvgCOGSRatio",
+                       "Current":  16.4,
+                       "Prior":  null,
+                       "Delta":  null,
+                       "DeltaPct":  "-",
+                       "Direction":  "FLAT",
+                       "Signal":  "NEUTRAL"
+                   },
+                   {
+                       "KPI":  "Inventory Value",
+                       "Key":  "InventoryValue",
+                       "Current":  592750.84,
+                       "Prior":  null,
+                       "Delta":  null,
+                       "DeltaPct":  "-",
+                       "Direction":  "FLAT",
+                       "Signal":  "NEUTRAL"
+                   },
+                   {
+                       "KPI":  "Supplier HHI",
+                       "Key":  "SupplierHHI",
+                       "Current":  1390,
+                       "Prior":  null,
+                       "Delta":  null,
+                       "DeltaPct":  "-",
+                       "Direction":  "FLAT",
+                       "Signal":  "NEUTRAL"
+                   },
+                   {
+                       "KPI":  "Integrity Passed",
+                       "Key":  "IntegrityPassed",
+                       "Current":  46,
+                       "Prior":  null,
+                       "Delta":  null,
+                       "DeltaPct":  "-",
+                       "Direction":  "FLAT",
+                       "Signal":  "NEUTRAL"
+                   },
+                   {
+                       "KPI":  "Integrity Failed",
+                       "Key":  "IntegrityFailed",
+                       "Current":  0,
+                       "Prior":  null,
+                       "Delta":  null,
+                       "DeltaPct":  "-",
+                       "Direction":  "FLAT",
+                       "Signal":  "NEUTRAL"
+                   },
+                   {
+                       "KPI":  "12mo Forecast Rev",
+                       "Key":  "ForecastAnnualRevenue",
+                       "Current":  27005765.59,
+                       "Prior":  null,
+                       "Delta":  null,
+                       "DeltaPct":  "-",
+                       "Direction":  "FLAT",
+                       "Signal":  "NEUTRAL"
+                   },
+                   {
+                       "KPI":  "Bundle Revenue",
+                       "Key":  "AnnualBundleRevenue",
+                       "Current":  7358501.7600000007,
+                       "Prior":  null,
+                       "Delta":  null,
+                       "DeltaPct":  "-",
+                       "Direction":  "FLAT",
+                       "Signal":  "NEUTRAL"
+                   }
+               ]
+}
