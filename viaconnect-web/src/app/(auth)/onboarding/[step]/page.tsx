@@ -173,6 +173,10 @@ export default function OnboardingStepPage() {
     name: "", age: "", sex: "", height: "", weight: "",
     ethnicity: "", bloodType: "", concerns: [], familyHistory: [],
   });
+  const [heightUnit, setHeightUnit] = useState<"cm" | "ft">("ft");
+  const [weightUnit, setWeightUnit] = useState<"kg" | "lbs">("lbs");
+  const [heightFt, setHeightFt] = useState("");
+  const [heightIn, setHeightIn] = useState("");
 
   // Phase 2 state
   const [symptoms, setSymptoms] = useState<SymptomsData>(() => {
@@ -373,12 +377,44 @@ export default function OnboardingStepPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1.5">Height (cm)</label>
-                <input type="number" value={demographics.height} onChange={(e) => setDemographics({ ...demographics, height: e.target.value })} className={inputClass} placeholder="175" />
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-sm font-medium text-gray-300">Height</label>
+                  <div className="flex items-center gap-1 p-0.5 rounded-md bg-dark-surface border border-dark-border">
+                    <button type="button" onClick={() => { setHeightUnit("ft"); }} className={`text-[10px] px-2 py-0.5 rounded transition-colors ${heightUnit === "ft" ? "bg-copper/20 text-copper" : "text-gray-500"}`}>ft/in</button>
+                    <button type="button" onClick={() => { setHeightUnit("cm"); }} className={`text-[10px] px-2 py-0.5 rounded transition-colors ${heightUnit === "cm" ? "bg-copper/20 text-copper" : "text-gray-500"}`}>cm</button>
+                  </div>
+                </div>
+                {heightUnit === "cm" ? (
+                  <input type="number" value={demographics.height} onChange={(e) => setDemographics({ ...demographics, height: e.target.value })} className={inputClass} placeholder="175" />
+                ) : (
+                  <div className="flex gap-2">
+                    <div className="flex-1 relative">
+                      <input type="number" value={heightFt} onChange={(e) => { setHeightFt(e.target.value); const cm = Math.round(((parseFloat(e.target.value) || 0) * 30.48) + ((parseFloat(heightIn) || 0) * 2.54)); setDemographics({ ...demographics, height: String(cm || "") }); }} className={inputClass} placeholder="5" />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-600">ft</span>
+                    </div>
+                    <div className="flex-1 relative">
+                      <input type="number" value={heightIn} onChange={(e) => { setHeightIn(e.target.value); const cm = Math.round(((parseFloat(heightFt) || 0) * 30.48) + ((parseFloat(e.target.value) || 0) * 2.54)); setDemographics({ ...demographics, height: String(cm || "") }); }} className={inputClass} placeholder="10" />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-600">in</span>
+                    </div>
+                  </div>
+                )}
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1.5">Weight (kg)</label>
-                <input type="number" value={demographics.weight} onChange={(e) => setDemographics({ ...demographics, weight: e.target.value })} className={inputClass} placeholder="70" />
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-sm font-medium text-gray-300">Weight</label>
+                  <div className="flex items-center gap-1 p-0.5 rounded-md bg-dark-surface border border-dark-border">
+                    <button type="button" onClick={() => setWeightUnit("lbs")} className={`text-[10px] px-2 py-0.5 rounded transition-colors ${weightUnit === "lbs" ? "bg-copper/20 text-copper" : "text-gray-500"}`}>lbs</button>
+                    <button type="button" onClick={() => setWeightUnit("kg")} className={`text-[10px] px-2 py-0.5 rounded transition-colors ${weightUnit === "kg" ? "bg-copper/20 text-copper" : "text-gray-500"}`}>kg</button>
+                  </div>
+                </div>
+                {weightUnit === "kg" ? (
+                  <input type="number" value={demographics.weight} onChange={(e) => setDemographics({ ...demographics, weight: e.target.value })} className={inputClass} placeholder="70" />
+                ) : (
+                  <div className="relative">
+                    <input type="number" value={demographics.weight ? String(Math.round(parseFloat(demographics.weight) * 2.20462)) : ""} onChange={(e) => { const lbs = parseFloat(e.target.value) || 0; setDemographics({ ...demographics, weight: String(Math.round(lbs / 2.20462) || "") }); }} className={inputClass} placeholder="154" />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-600">lbs</span>
+                  </div>
+                )}
               </div>
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-300 mb-1.5">Ethnicity</label>
@@ -413,7 +449,11 @@ export default function OnboardingStepPage() {
                 {FAMILY_HISTORY.map((c) => (
                   <button
                     key={c}
-                    onClick={() => toggleChip(demographics.familyHistory, c, (v) => setDemographics({ ...demographics, familyHistory: v }))}
+                    onClick={() => {
+                      // If selecting a condition, remove "None of the above" if present
+                      const filtered = demographics.familyHistory.filter((v) => v !== "None");
+                      toggleChip(filtered.includes(c) ? filtered : filtered, c, (v) => setDemographics({ ...demographics, familyHistory: v.includes(c) ? v.filter((x) => x !== c) : [...v, c] }));
+                    }}
                     className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
                       demographics.familyHistory.includes(c)
                         ? "bg-plum/15 text-plum-light border-plum/30"
@@ -423,6 +463,16 @@ export default function OnboardingStepPage() {
                     {c}
                   </button>
                 ))}
+                <button
+                  onClick={() => setDemographics({ ...demographics, familyHistory: demographics.familyHistory.includes("None") ? [] : ["None"] })}
+                  className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
+                    demographics.familyHistory.includes("None")
+                      ? "bg-portal-green/15 text-portal-green border-portal-green/30"
+                      : "bg-dark-surface text-gray-400 border-dark-border hover:border-white/20"
+                  }`}
+                >
+                  None of the above
+                </button>
               </div>
             </div>
           </div>
