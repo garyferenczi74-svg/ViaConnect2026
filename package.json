@@ -1,21 +1,13 @@
 {
   "name": "via-connect-2026",
   "version": "1.0.0",
-  "description": "ViaConnect 2026 - connecting users across various platforms seamlessly",
-  "main": "index.js",
+  "description": "ViaConnect 2026 - FarmCeutica precision health platform",
   "scripts": {
-    "start": "node index.js",
     "build": "cd viaconnect-web && npm install && npm run build",
-    "test": "echo 'No tests specified' && exit 0"
+    "dev": "cd viaconnect-web && npm run dev",
+    "start": "cd viaconnect-web && npm start"
   },
-  "keywords": [],
-  "license": "MIT",
   "engines": {
     "node": ">=18.0.0"
-  },
-  "dependencies": {
-    "next": "14.2.35",
-    "react": "^18",
-    "react-dom": "^18"
   }
 }
