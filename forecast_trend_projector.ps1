@@ -21,15 +21,21 @@ $Dashboard = Get-Content $DashboardFile | ConvertFrom-Json
 $ChannelMix = Get-Content $ChannelMixFile | ConvertFrom-Json
 $Bundles = Get-Content $BundleFile | ConvertFrom-Json
 
-# --- Growth Assumptions ---
+# --- Launch & Growth Assumptions ---
+$Launch = @{
+    LaunchMonth          = 4        # Month 4 of forecast = June 2026
+    PreLaunchMonths      = 3        # Mar, Apr, May = pre-launch (no revenue)
+    LaunchRampMonths     = 3        # 3-month ramp to full volume after launch
+    PaymentDelayDays     = 30       # 30-day payment terms - first cash in July
+}
 $Growth = @{
-    BaseMonthlyGrowthPct = 3.0      # 3% MoM organic growth
+    BaseMonthlyGrowthPct = 3.0      # 3% MoM organic growth (post-launch)
     DTCGrowthPct         = 4.0      # DTC grows faster (digital acquisition)
     WholesaleGrowthPct   = 2.5      # Wholesale moderate
     DistributorGrowthPct = 1.5      # Distributor slowest
     COGSInflationPct     = 0.3      # 0.3% monthly COGS inflation
-    BundleRampMonths     = 4        # Months to reach full bundle volume
-    NewSKULaunchMonth    = 6        # Hypothetical new SKU launch in month 6
+    BundleRampMonths     = 6        # Months post-launch to reach full bundle volume
+    NewSKULaunchMonth    = 9        # New SKU launch month 9 of forecast (Nov 2026)
     NewSKUMonthlyRev     = 15000    # New SKU monthly revenue estimate
 }
 
@@ -86,55 +92,80 @@ $cumulativeRev = [decimal]0
 $cumulativeNet = [decimal]0
 $milestones = @()
 
+$prelaunchCostMonthly = 45000  # Pre-launch: marketing prep, inventory buildup, compliance
+
 for ($m = 1; $m -le 12; $m++) {
     $calMonth = (($startMonth + $m - 2) % 12) + 1
     $calYear = $startYear + [math]::Floor(($startMonth + $m - 2) / 12)
     $monthLabel = (Get-Date -Year $calYear -Month $calMonth -Day 1).ToString("MMM yyyy")
 
     $seasonIdx = [decimal]$Seasonality["$calMonth"]
-    $growthMultiplier = [math]::Pow(1 + $Growth.BaseMonthlyGrowthPct / 100, $m - 1)
+    $isPreLaunch = ($m -lt $Launch.LaunchMonth)
+    $monthsPostLaunch = [math]::Max(0, $m - $Launch.LaunchMonth)
+    $phase = if ($isPreLaunch) { "PRE-LAUNCH" } elseif ($monthsPostLaunch -le $Launch.LaunchRampMonths) { "RAMP-UP" } else { "GROWTH" }
 
-    # Channel-specific growth
-    $dtcGrowth = [math]::Pow(1 + $Growth.DTCGrowthPct / 100, $m - 1)
-    $wsGrowth = [math]::Pow(1 + $Growth.WholesaleGrowthPct / 100, $m - 1)
-    $distGrowth = [math]::Pow(1 + $Growth.DistributorGrowthPct / 100, $m - 1)
+    if ($isPreLaunch) {
+        # PRE-LAUNCH: No revenue, only pre-launch costs
+        $dtcRev = [decimal]0; $wsRev = [decimal]0; $distRev = [decimal]0
+        $skuRevenue = [decimal]0; $bundleRev = [decimal]0; $bundleGross = [decimal]0; $newSKURev = [decimal]0
+        $totalRevenue = [decimal]0
+        $cogs = [decimal]0
+        $varCosts = [decimal]0
+        $grossProfit = [decimal]0
+        $netProfit = -$prelaunchCostMonthly
+        $netMarginPct = 0
+    } else {
+        # POST-LAUNCH: Revenue with ramp and growth
+        # Launch ramp: linear from 30% to 100% over LaunchRampMonths
+        $launchRampPct = if ($monthsPostLaunch -le $Launch.LaunchRampMonths) {
+            0.30 + (0.70 * $monthsPostLaunch / $Launch.LaunchRampMonths)
+        } else { 1.0 }
 
-    $dtcRev = [math]::Round($baseDTCRev * $dtcGrowth * $seasonIdx, 2)
-    $wsRev = [math]::Round($baseWSRev * $wsGrowth * $seasonIdx, 2)
-    $distRev = [math]::Round($baseDistRev * $distGrowth * $seasonIdx, 2)
-    $skuRevenue = [math]::Round($dtcRev + $wsRev + $distRev, 2)
+        # Growth only counts months since launch
+        $growthMultiplier = [math]::Pow(1 + $Growth.BaseMonthlyGrowthPct / 100, $monthsPostLaunch)
+        $dtcGrowth = [math]::Pow(1 + $Growth.DTCGrowthPct / 100, $monthsPostLaunch)
+        $wsGrowth = [math]::Pow(1 + $Growth.WholesaleGrowthPct / 100, $monthsPostLaunch)
+        $distGrowth = [math]::Pow(1 + $Growth.DistributorGrowthPct / 100, $monthsPostLaunch)
 
-    # Bundle ramp (linear ramp over N months to full volume)
-    $bundleRampPct = [math]::Min(1.0, $m / $Growth.BundleRampMonths)
-    $bundleRev = [math]::Round($totalBundleMonthlyTarget * $bundleRampPct * $seasonIdx, 2)
-    $bundleGross = [math]::Round($bundleRev * $bundleGrossMarginPct, 2)
+        $dtcRev = [math]::Round($baseDTCRev * $dtcGrowth * $seasonIdx * $launchRampPct, 2)
+        $wsRev = [math]::Round($baseWSRev * $wsGrowth * $seasonIdx * $launchRampPct, 2)
+        $distRev = [math]::Round($baseDistRev * $distGrowth * $seasonIdx * $launchRampPct, 2)
+        $skuRevenue = [math]::Round($dtcRev + $wsRev + $distRev, 2)
 
-    # New SKU launch
-    $newSKURev = [decimal]0
-    if ($m -ge $Growth.NewSKULaunchMonth) {
-        $monthsSinceLaunch = $m - $Growth.NewSKULaunchMonth + 1
-        $launchRamp = [math]::Min(1.0, $monthsSinceLaunch / 3)  # 3-month ramp
-        $newSKURev = [math]::Round($Growth.NewSKUMonthlyRev * $launchRamp * $seasonIdx, 2)
+        # Bundle ramp (months post-launch)
+        $bundleRampPct = [math]::Min(1.0, $monthsPostLaunch / $Growth.BundleRampMonths)
+        $bundleRev = [math]::Round($totalBundleMonthlyTarget * $bundleRampPct * $seasonIdx * $launchRampPct, 2)
+        $bundleGross = [math]::Round($bundleRev * $bundleGrossMarginPct, 2)
+
+        # New SKU launch
+        $newSKURev = [decimal]0
+        if ($m -ge $Growth.NewSKULaunchMonth) {
+            $monthsSinceNewSKU = $m - $Growth.NewSKULaunchMonth + 1
+            $newRamp = [math]::Min(1.0, $monthsSinceNewSKU / 3)
+            $newSKURev = [math]::Round($Growth.NewSKUMonthlyRev * $newRamp * $seasonIdx, 2)
+        }
+
+        $totalRevenue = [math]::Round($skuRevenue + $bundleRev + $newSKURev, 2)
+
+        # COGS with inflation
+        $cogsInflation = [math]::Pow(1 + $Growth.COGSInflationPct / 100, $monthsPostLaunch)
+        $cogs = [math]::Round($baseCOGS * $growthMultiplier * $seasonIdx * $launchRampPct * $cogsInflation, 2)
+
+        # Variable costs scale with revenue
+        $varCostRatio = if ($baseMonthlyRev -gt 0) { $baseVarCosts / $baseMonthlyRev } else { 0.30 }
+        $varCosts = [math]::Round($skuRevenue * $varCostRatio, 2)
+
+        $grossProfit = [math]::Round($totalRevenue - $cogs, 2)
+        $netProfit = [math]::Round($grossProfit - $varCosts + $bundleGross, 2)
+        $netMarginPct = if ($totalRevenue -gt 0) { [math]::Round(($netProfit / $totalRevenue) * 100, 1) } else { 0 }
     }
-
-    $totalRevenue = [math]::Round($skuRevenue + $bundleRev + $newSKURev, 2)
-
-    # COGS with inflation
-    $cogsInflation = [math]::Pow(1 + $Growth.COGSInflationPct / 100, $m - 1)
-    $cogs = [math]::Round($baseCOGS * $growthMultiplier * $seasonIdx * $cogsInflation, 2)
-
-    # Variable costs scale with revenue
-    $varCostRatio = if ($baseMonthlyRev -gt 0) { $baseVarCosts / $baseMonthlyRev } else { 0.30 }
-    $varCosts = [math]::Round($skuRevenue * $varCostRatio, 2)
-
-    $grossProfit = [math]::Round($totalRevenue - $cogs, 2)
-    $netProfit = [math]::Round($grossProfit - $varCosts + $bundleGross, 2)
-    $netMarginPct = if ($totalRevenue -gt 0) { [math]::Round(($netProfit / $totalRevenue) * 100, 1) } else { 0 }
 
     # Category projections
     $catProjections = @()
     foreach ($cat in $baseCatRevenue.Keys) {
-        $catRev = [math]::Round($baseCatRevenue[$cat] * $growthMultiplier * $seasonIdx, 2)
+        $catRev = if ($isPreLaunch) { 0 } else {
+            [math]::Round($baseCatRevenue[$cat] * $growthMultiplier * $seasonIdx * $launchRampPct, 2)
+        }
         $catProjections += [PSCustomObject]@{ Category = $cat; Revenue = $catRev }
     }
 
@@ -142,16 +173,19 @@ for ($m = 1; $m -le 12; $m++) {
     $cumulativeNet += $netProfit
 
     # Milestone detection
+    if ($m -eq $Launch.LaunchMonth) {
+        $milestones += [PSCustomObject]@{ Month = $m; Label = $monthLabel; Milestone = 'PRODUCT LAUNCH - June 2026' }
+    }
+    if ($m -eq $Launch.LaunchMonth + 1) {
+        $milestones += [PSCustomObject]@{ Month = $m; Label = $monthLabel; Milestone = 'First revenue collected (30-day terms)' }
+    }
     if ($cumulativeRev -ge 5000000 -and ($cumulativeRev - $totalRevenue) -lt 5000000) {
         $milestones += [PSCustomObject]@{ Month = $m; Label = $monthLabel; Milestone = 'Cumulative revenue passes $5M' }
     }
     if ($cumulativeRev -ge 10000000 -and ($cumulativeRev - $totalRevenue) -lt 10000000) {
         $milestones += [PSCustomObject]@{ Month = $m; Label = $monthLabel; Milestone = 'Cumulative revenue passes $10M' }
     }
-    if ($cumulativeRev -ge 20000000 -and ($cumulativeRev - $totalRevenue) -lt 20000000) {
-        $milestones += [PSCustomObject]@{ Month = $m; Label = $monthLabel; Milestone = 'Cumulative revenue passes $20M' }
-    }
-    if ($m -eq $Growth.BundleRampMonths) {
+    if ($m -eq $Launch.LaunchMonth + $Growth.BundleRampMonths) {
         $milestones += [PSCustomObject]@{ Month = $m; Label = $monthLabel; Milestone = "Bundle portfolio at full volume" }
     }
     if ($m -eq $Growth.NewSKULaunchMonth) {
@@ -162,6 +196,7 @@ for ($m = 1; $m -le 12; $m++) {
         Month = $m
         Label = $monthLabel
         CalendarMonth = $calMonth
+        Phase = $phase
         SeasonalityIndex = $seasonIdx
         Revenue = [PSCustomObject]@{
             Total = $totalRevenue
@@ -192,9 +227,11 @@ $annualRevenue = [math]::Round($cumulativeRev, 2)
 $annualNet = [math]::Round($cumulativeNet, 2)
 $annualMargin = [math]::Round(($annualNet / $annualRevenue) * 100, 1)
 
-$month1Rev = $MonthlyForecast[0].Revenue.Total
+# Use launch month as baseline for growth calc (pre-launch months have $0)
+$launchMonthIdx = $Launch.LaunchMonth - 1
+$launchMonthRev = $MonthlyForecast[$launchMonthIdx].Revenue.Total
 $month12Rev = $MonthlyForecast[11].Revenue.Total
-$totalGrowthPct = [math]::Round((($month12Rev - $month1Rev) / $month1Rev) * 100, 1)
+$totalGrowthPct = if ($launchMonthRev -gt 0) { [math]::Round((($month12Rev - $launchMonthRev) / $launchMonthRev) * 100, 1) } else { 0 }
 
 $peakMonth = $MonthlyForecast | Sort-Object { $_.Revenue.Total } -Descending | Select-Object -First 1
 $troughMonth = $MonthlyForecast | Sort-Object { $_.Revenue.Total } | Select-Object -First 1
@@ -220,9 +257,11 @@ $sensitivity = @()
 foreach ($rate in @(0, 1.5, 3.0, 5.0, 7.0)) {
     $sensRev = [decimal]0
     for ($m = 1; $m -le 12; $m++) {
+        if ($m -lt $Launch.LaunchMonth) { continue }  # Skip pre-launch
         $calMonth = (($startMonth + $m - 2) % 12) + 1
         $si = [decimal]$Seasonality["$calMonth"]
-        $gm = [math]::Pow(1 + $rate / 100, $m - 1)
+        $mpl = $m - $Launch.LaunchMonth
+        $gm = [math]::Pow(1 + $rate / 100, $mpl)
         $sensRev += $baseMonthlyRev * $gm * $si
     }
     $sensitivity += [PSCustomObject]@{

@@ -1,15 +1,15 @@
 ﻿{
-    "GeneratedAt":  "2026-03-24T17:53:04.1278302-06:00",
+    "GeneratedAt":  "2026-03-24T20:26:11.8880507-06:00",
     "ForecastPeriod":  "Mar 2026 - Feb 2027",
     "GrowthAssumptions":  {
-                              "BundleRampMonths":  4,
+                              "BundleRampMonths":  6,
                               "DTCGrowthPct":  4,
                               "NewSKUMonthlyRev":  15000,
                               "BaseMonthlyGrowthPct":  3,
                               "DistributorGrowthPct":  1.5,
                               "WholesaleGrowthPct":  2.5,
                               "COGSInflationPct":  0.3,
-                              "NewSKULaunchMonth":  6
+                              "NewSKULaunchMonth":  9
                           },
     "SeasonalityIndex":  {
                              "7":  0.88,
@@ -26,103 +26,108 @@
                              "8":  0.92
                          },
     "AnnualSummary":  {
-                          "TotalRevenue":  27005765.59,
-                          "TotalNetProfit":  21647460.37,
-                          "NetMarginPct":  80.2,
-                          "Month1Revenue":  1591938.52,
-                          "Month12Revenue":  2881041.39,
-                          "TotalGrowthPct":  81.0,
+                          "TotalRevenue":  16395173.59,
+                          "TotalNetProfit":  12439534.39,
+                          "NetMarginPct":  75.9,
+                          "Month1Revenue":  null,
+                          "Month12Revenue":  2664444.54,
+                          "TotalGrowthPct":  624.1,
                           "PeakMonth":  {
                                             "Label":  "Jan 2027",
-                                            "Revenue":  2933745.58
+                                            "Revenue":  2715414.86
                                         },
                           "TroughMonth":  {
-                                              "Label":  "Mar 2026",
-                                              "Revenue":  1591938.52
+                                              "Label":  "May 2026",
+                                              "Revenue":  0
                                           }
                       },
     "QuarterlyRollup":  [
                             {
                                 "Quarter":  "Q1",
                                 "Months":  "Mar 2026, Apr 2026, May 2026",
-                                "Revenue":  5131841.09,
-                                "NetProfit":  3653803.81,
-                                "NetMarginPct":  71.2
+                                "Revenue":  0,
+                                "NetProfit":  -135000,
+                                "NetMarginPct":  0
                             },
                             {
                                 "Quarter":  "Q2",
                                 "Months":  "Jun 2026, Jul 2026, Aug 2026",
-                                "Revenue":  5882692.18,
-                                "NetProfit":  5002226.02,
-                                "NetMarginPct":  85
+                                "Revenue":  2251154.8,
+                                "NetProfit":  1336252.78,
+                                "NetMarginPct":  59.4
                             },
                             {
                                 "Quarter":  "Q3",
                                 "Months":  "Sep 2026, Oct 2026, Nov 2026",
-                                "Revenue":  7392710.31,
-                                "NetProfit":  6101388.8,
-                                "NetMarginPct":  82.5
+                                "Revenue":  6191050.81,
+                                "NetProfit":  4672439.98,
+                                "NetMarginPct":  75.5
                             },
                             {
                                 "Quarter":  "Q4",
                                 "Months":  "Dec 2026, Jan 2027, Feb 2027",
-                                "Revenue":  8598522.01,
-                                "NetProfit":  6890041.74,
-                                "NetMarginPct":  80.1
+                                "Revenue":  7952967.98,
+                                "NetProfit":  6565841.63,
+                                "NetMarginPct":  82.6
                             }
                         ],
     "SensitivityAnalysis":  [
                                 {
                                     "GrowthRate":  "0%",
-                                    "AnnualRevenue":  16626523.56,
+                                    "AnnualRevenue":  12538034.16,
                                     "VsBaseline":  "-"
                                 },
                                 {
                                     "GrowthRate":  "1.5%",
-                                    "AnnualRevenue":  18120567.25,
+                                    "AnnualRevenue":  13362142.49,
                                     "VsBaseline":  "-"
                                 },
                                 {
                                     "GrowthRate":  "3%",
-                                    "AnnualRevenue":  19776469.97,
+                                    "AnnualRevenue":  14247153.37,
                                     "VsBaseline":  "BASELINE"
                                 },
                                 {
                                     "GrowthRate":  "5%",
-                                    "AnnualRevenue":  22266396.69,
-                                    "VsBaseline":  "12.6%"
+                                    "AnnualRevenue":  15529260.56,
+                                    "VsBaseline":  "9.0%"
                                 },
                                 {
                                     "GrowthRate":  "7%",
-                                    "AnnualRevenue":  25121204.27,
-                                    "VsBaseline":  "27.0%"
+                                    "AnnualRevenue":  16937949.48,
+                                    "VsBaseline":  "18.9%"
                                 }
                             ],
     "Milestones":  [
                        {
-                           "Month":  3,
-                           "Label":  "May 2026",
+                           "Month":  4,
+                           "Label":  "Jun 2026",
+                           "Milestone":  "PRODUCT LAUNCH - June 2026"
+                       },
+                       {
+                           "Month":  5,
+                           "Label":  "Jul 2026",
+                           "Milestone":  "First revenue collected (30-day terms)"
+                       },
+                       {
+                           "Month":  8,
+                           "Label":  "Oct 2026",
                            "Milestone":  "Cumulative revenue passes $5M"
                        },
                        {
-                           "Month":  4,
-                           "Label":  "Jun 2026",
-                           "Milestone":  "Bundle portfolio at full volume"
-                       },
-                       {
-                           "Month":  6,
-                           "Label":  "Aug 2026",
-                           "Milestone":  "Cumulative revenue passes $10M"
-                       },
-                       {
-                           "Month":  6,
-                           "Label":  "Aug 2026",
+                           "Month":  9,
+                           "Label":  "Nov 2026",
                            "Milestone":  "New SKU launch"
                        },
                        {
                            "Month":  10,
                            "Label":  "Dec 2026",
-                           "Milestone":  "Cumulative revenue passes $20M"
+                           "Milestone":  "Cumulative revenue passes $10M"
+                       },
+                       {
+                           "Month":  10,
+                           "Label":  "Dec 2026",
+                           "Milestone":  "Bundle portfolio at full volume"
                        }
                    ],
     "MonthlyForecast":  [
@@ -130,55 +135,56 @@
                                 "Month":  1,
                                 "Label":  "Mar 2026",
                                 "CalendarMonth":  3,
+                                "Phase":  "PRE-LAUNCH",
                                 "SeasonalityIndex":  1.05,
                                 "Revenue":  {
-                                                "Total":  1591938.52,
-                                                "IndividualSKUs":  1430971.29,
-                                                "Bundles":  160967.23,
+                                                "Total":  0,
+                                                "IndividualSKUs":  0,
+                                                "Bundles":  0,
                                                 "NewSKUs":  0
                                             },
                                 "Channels":  {
-                                                 "DTC":  1007737.50,
-                                                 "Wholesale":  302321.25,
-                                                 "Distributor":  120912.54
+                                                 "DTC":  0,
+                                                 "Wholesale":  0,
+                                                 "Distributor":  0
                                              },
                                 "Costs":  {
-                                              "COGS":  304168.94,
-                                              "VariableCosts":  437256.53
+                                              "COGS":  0,
+                                              "VariableCosts":  0
                                           },
-                                "GrossProfit":  1287769.58,
-                                "NetProfit":  977021.09,
-                                "NetMarginPct":  61.4,
-                                "CumulativeRevenue":  1591938.52,
-                                "CumulativeNetProfit":  977021.09,
+                                "GrossProfit":  0,
+                                "NetProfit":  -45000,
+                                "NetMarginPct":  0,
+                                "CumulativeRevenue":  0,
+                                "CumulativeNetProfit":  -45000,
                                 "Categories":  [
                                                    {
                                                        "Category":  "Advanced",
-                                                       "Revenue":  560706.72
+                                                       "Revenue":  0
                                                    },
                                                    {
                                                        "Category":  "Mushroom",
-                                                       "Revenue":  76814.85
+                                                       "Revenue":  0
                                                    },
                                                    {
                                                        "Category":  "Base",
-                                                       "Revenue":  298814.88
+                                                       "Revenue":  0
                                                    },
                                                    {
                                                        "Category":  "SNP",
-                                                       "Revenue":  251335.35
+                                                       "Revenue":  0
                                                    },
                                                    {
                                                        "Category":  "Testing",
-                                                       "Revenue":  112603.05
+                                                       "Revenue":  0
                                                    },
                                                    {
                                                        "Category":  "Children",
-                                                       "Revenue":  31056.90
+                                                       "Revenue":  0
                                                    },
                                                    {
                                                        "Category":  "Women",
-                                                       "Revenue":  99639.54
+                                                       "Revenue":  0
                                                    }
                                                ]
                             },
@@ -186,55 +192,56 @@
                                 "Month":  2,
                                 "Label":  "Apr 2026",
                                 "CalendarMonth":  4,
+                                "Phase":  "PRE-LAUNCH",
                                 "SeasonalityIndex":  1,
                                 "Revenue":  {
-                                                "Total":  1716749.48,
-                                                "IndividualSKUs":  1410145.24,
-                                                "Bundles":  306604.24,
+                                                "Total":  0,
+                                                "IndividualSKUs":  0,
+                                                "Bundles":  0,
                                                 "NewSKUs":  0
                                             },
                                 "Channels":  {
-                                                 "DTC":  998140.00,
-                                                 "Wholesale":  295123.12,
-                                                 "Distributor":  116882.12
+                                                 "DTC":  0,
+                                                 "Wholesale":  0,
+                                                 "Distributor":  0
                                              },
                                 "Costs":  {
-                                              "COGS":  299270.37,
-                                              "VariableCosts":  430892.79
+                                              "COGS":  0,
+                                              "VariableCosts":  0
                                           },
-                                "GrossProfit":  1417479.11,
-                                "NetProfit":  1227554.01,
-                                "NetMarginPct":  71.5,
-                                "CumulativeRevenue":  3308688.00,
-                                "CumulativeNetProfit":  2204575.10,
+                                "GrossProfit":  0,
+                                "NetProfit":  -45000,
+                                "NetMarginPct":  0,
+                                "CumulativeRevenue":  0,
+                                "CumulativeNetProfit":  -90000,
                                 "Categories":  [
                                                    {
                                                        "Category":  "Advanced",
-                                                       "Revenue":  550026.59
+                                                       "Revenue":  0
                                                    },
                                                    {
                                                        "Category":  "Mushroom",
-                                                       "Revenue":  75351.71
+                                                       "Revenue":  0
                                                    },
                                                    {
                                                        "Category":  "Base",
-                                                       "Revenue":  293123.17
+                                                       "Revenue":  0
                                                    },
                                                    {
                                                        "Category":  "SNP",
-                                                       "Revenue":  246548.01
+                                                       "Revenue":  0
                                                    },
                                                    {
                                                        "Category":  "Testing",
-                                                       "Revenue":  110458.23
+                                                       "Revenue":  0
                                                    },
                                                    {
                                                        "Category":  "Children",
-                                                       "Revenue":  30465.34
+                                                       "Revenue":  0
                                                    },
                                                    {
                                                        "Category":  "Women",
-                                                       "Revenue":  97741.64
+                                                       "Revenue":  0
                                                    }
                                                ]
                             },
@@ -242,55 +249,56 @@
                                 "Month":  3,
                                 "Label":  "May 2026",
                                 "CalendarMonth":  5,
+                                "Phase":  "PRE-LAUNCH",
                                 "SeasonalityIndex":  0.95,
                                 "Revenue":  {
-                                                "Total":  1823153.09,
-                                                "IndividualSKUs":  1386242.05,
-                                                "Bundles":  436911.04,
+                                                "Total":  0,
+                                                "IndividualSKUs":  0,
+                                                "Bundles":  0,
                                                 "NewSKUs":  0
                                             },
                                 "Channels":  {
-                                                 "DTC":  986162.32,
-                                                 "Wholesale":  287376.14,
-                                                 "Distributor":  112703.59
+                                                 "DTC":  0,
+                                                 "Wholesale":  0,
+                                                 "Distributor":  0
                                              },
                                 "Costs":  {
-                                              "COGS":  293714.56,
-                                              "VariableCosts":  423588.78
+                                              "COGS":  0,
+                                              "VariableCosts":  0
                                           },
-                                "GrossProfit":  1529438.53,
-                                "NetProfit":  1449228.71,
-                                "NetMarginPct":  79.5,
-                                "CumulativeRevenue":  5131841.09,
-                                "CumulativeNetProfit":  3653803.81,
+                                "GrossProfit":  0,
+                                "NetProfit":  -45000,
+                                "NetMarginPct":  0,
+                                "CumulativeRevenue":  0,
+                                "CumulativeNetProfit":  -135000,
                                 "Categories":  [
                                                    {
                                                        "Category":  "Advanced",
-                                                       "Revenue":  538201.02
+                                                       "Revenue":  0
                                                    },
                                                    {
                                                        "Category":  "Mushroom",
-                                                       "Revenue":  73731.65
+                                                       "Revenue":  0
                                                    },
                                                    {
                                                        "Category":  "Base",
-                                                       "Revenue":  286821.02
+                                                       "Revenue":  0
                                                    },
                                                    {
                                                        "Category":  "SNP",
-                                                       "Revenue":  241247.23
+                                                       "Revenue":  0
                                                    },
                                                    {
                                                        "Category":  "Testing",
-                                                       "Revenue":  108083.38
+                                                       "Revenue":  0
                                                    },
                                                    {
                                                        "Category":  "Children",
-                                                       "Revenue":  29810.34
+                                                       "Revenue":  0
                                                    },
                                                    {
                                                        "Category":  "Women",
-                                                       "Revenue":  95640.20
+                                                       "Revenue":  0
                                                    }
                                                ]
                             },
@@ -298,55 +306,56 @@
                                 "Month":  4,
                                 "Label":  "Jun 2026",
                                 "CalendarMonth":  6,
+                                "Phase":  "RAMP-UP",
                                 "SeasonalityIndex":  0.9,
                                 "Revenue":  {
-                                                "Total":  1910947.79,
-                                                "IndividualSKUs":  1359060.16,
-                                                "Bundles":  551887.63,
+                                                "Total":  367964.05,
+                                                "IndividualSKUs":  367964.05,
+                                                "Bundles":  0.00,
                                                 "NewSKUs":  0
                                             },
                                 "Channels":  {
-                                                 "DTC":  971629.40,
-                                                 "Wholesale":  279057.36,
-                                                 "Distributor":  108373.40
+                                                 "DTC":  259132.50,
+                                                 "Wholesale":  77739.75,
+                                                 "Distributor":  31091.80
                                              },
                                 "Costs":  {
-                                              "COGS":  287463.39,
-                                              "VariableCosts":  415282.92
+                                              "COGS":  78214.87,
+                                              "VariableCosts":  112437.39
                                           },
-                                "GrossProfit":  1623484.40,
-                                "NetProfit":  1641943.32,
-                                "NetMarginPct":  85.9,
-                                "CumulativeRevenue":  7042788.88,
-                                "CumulativeNetProfit":  5295747.13,
+                                "GrossProfit":  289749.18,
+                                "NetProfit":  177311.79,
+                                "NetMarginPct":  48.2,
+                                "CumulativeRevenue":  367964.05,
+                                "CumulativeNetProfit":  42311.79,
                                 "Categories":  [
                                                    {
                                                        "Category":  "Advanced",
-                                                       "Revenue":  525170.89
+                                                       "Revenue":  144181.73
                                                    },
                                                    {
                                                        "Category":  "Mushroom",
-                                                       "Revenue":  71946.57
+                                                       "Revenue":  19752.39
                                                    },
                                                    {
                                                        "Category":  "Base",
-                                                       "Revenue":  279876.93
+                                                       "Revenue":  76838.11
                                                    },
                                                    {
                                                        "Category":  "SNP",
-                                                       "Revenue":  235406.51
+                                                       "Revenue":  64629.09
                                                    },
                                                    {
                                                        "Category":  "Testing",
-                                                       "Revenue":  105466.62
+                                                       "Revenue":  28955.07
                                                    },
                                                    {
                                                        "Category":  "Children",
-                                                       "Revenue":  29088.61
+                                                       "Revenue":  7986.06
                                                    },
                                                    {
                                                        "Category":  "Women",
-                                                       "Revenue":  93324.70
+                                                       "Revenue":  25621.60
                                                    }
                                                ]
                             },
@@ -354,55 +363,56 @@
                                 "Month":  5,
                                 "Label":  "Jul 2026",
                                 "CalendarMonth":  7,
+                                "Phase":  "RAMP-UP",
                                 "SeasonalityIndex":  0.88,
                                 "Revenue":  {
-                                                "Total":  1914894.66,
-                                                "IndividualSKUs":  1375271.20,
-                                                "Bundles":  539623.46,
+                                                "Total":  709794.70,
+                                                "IndividualSKUs":  661828.17,
+                                                "Bundles":  47966.53,
                                                 "NewSKUs":  0
                                             },
                                 "Channels":  {
-                                                 "DTC":  988039.14,
-                                                 "Wholesale":  279677.49,
-                                                 "Distributor":  107554.57
+                                                 "DTC":  468460.37,
+                                                 "Wholesale":  138511.12,
+                                                 "Distributor":  54856.68
                                              },
                                 "Costs":  {
-                                              "COGS":  290376.10,
-                                              "VariableCosts":  420236.46
+                                              "COGS":  140457.56,
+                                              "VariableCosts":  202232.35
                                           },
-                                "GrossProfit":  1624518.56,
-                                "NetProfit":  1628385.23,
-                                "NetMarginPct":  85.0,
-                                "CumulativeRevenue":  8957683.54,
-                                "CumulativeNetProfit":  6924132.36,
+                                "GrossProfit":  569337.14,
+                                "NetProfit":  404802.85,
+                                "NetMarginPct":  57.0,
+                                "CumulativeRevenue":  1077758.75,
+                                "CumulativeNetProfit":  447114.64,
                                 "Categories":  [
                                                    {
                                                        "Category":  "Advanced",
-                                                       "Revenue":  528905.44
+                                                       "Revenue":  258145.81
                                                    },
                                                    {
                                                        "Category":  "Mushroom",
-                                                       "Revenue":  72458.19
+                                                       "Revenue":  35365.07
                                                    },
                                                    {
                                                        "Category":  "Base",
-                                                       "Revenue":  281867.17
+                                                       "Revenue":  137572.47
                                                    },
                                                    {
                                                        "Category":  "SNP",
-                                                       "Revenue":  237080.51
+                                                       "Revenue":  115713.20
                                                    },
                                                    {
                                                        "Category":  "Testing",
-                                                       "Revenue":  106216.61
+                                                       "Revenue":  51841.73
                                                    },
                                                    {
                                                        "Category":  "Children",
-                                                       "Revenue":  29295.46
+                                                       "Revenue":  14298.40
                                                    },
                                                    {
                                                        "Category":  "Women",
-                                                       "Revenue":  93988.34
+                                                       "Revenue":  45873.41
                                                    }
                                                ]
                             },
@@ -410,55 +420,56 @@
                                 "Month":  6,
                                 "Label":  "Aug 2026",
                                 "CalendarMonth":  8,
+                                "Phase":  "RAMP-UP",
                                 "SeasonalityIndex":  0.92,
                                 "Revenue":  {
-                                                "Total":  2056849.73,
-                                                "IndividualSKUs":  1488097.93,
-                                                "Bundles":  564151.80,
-                                                "NewSKUs":  4600.00
+                                                "Total":  1173396.05,
+                                                "IndividualSKUs":  1029223.92,
+                                                "Bundles":  144172.13,
+                                                "NewSKUs":  0
                                             },
                                 "Channels":  {
-                                                 "DTC":  1074268.01,
-                                                 "Wholesale":  299699.85,
-                                                 "Distributor":  114130.07
+                                                 "DTC":  732182.27,
+                                                 "Wholesale":  213364.18,
+                                                 "Distributor":  83677.47
                                              },
                                 "Costs":  {
-                                              "COGS":  313620.31,
-                                              "VariableCosts":  454712.50
+                                              "COGS":  218070.18,
+                                              "VariableCosts":  314496.09
                                           },
-                                "GrossProfit":  1743229.42,
-                                "NetProfit":  1731897.47,
-                                "NetMarginPct":  84.2,
-                                "CumulativeRevenue":  11014533.27,
-                                "CumulativeNetProfit":  8656029.83,
+                                "GrossProfit":  955325.87,
+                                "NetProfit":  754138.14,
+                                "NetMarginPct":  64.3,
+                                "CumulativeRevenue":  2251154.80,
+                                "CumulativeNetProfit":  1201252.78,
                                 "Categories":  [
                                                    {
                                                        "Category":  "Advanced",
-                                                       "Revenue":  569534.99
+                                                       "Revenue":  399590.65
                                                    },
                                                    {
                                                        "Category":  "Mushroom",
-                                                       "Revenue":  78024.29
+                                                       "Revenue":  54742.51
                                                    },
                                                    {
                                                        "Category":  "Base",
-                                                       "Revenue":  303519.69
+                                                       "Revenue":  212952.03
                                                    },
                                                    {
                                                        "Category":  "SNP",
-                                                       "Revenue":  255292.60
+                                                       "Revenue":  179115.49
                                                    },
                                                    {
                                                        "Category":  "Testing",
-                                                       "Revenue":  114375.97
+                                                       "Revenue":  80247.17
                                                    },
                                                    {
                                                        "Category":  "Children",
-                                                       "Revenue":  31545.89
+                                                       "Revenue":  22132.87
                                                    },
                                                    {
                                                        "Category":  "Women",
-                                                       "Revenue":  101208.35
+                                                       "Revenue":  71008.65
                                                    }
                                                ]
                             },
@@ -466,55 +477,56 @@
                                 "Month":  7,
                                 "Label":  "Sep 2026",
                                 "CalendarMonth":  9,
+                                "Phase":  "RAMP-UP",
                                 "SeasonalityIndex":  1,
                                 "Revenue":  {
-                                                "Total":  2297418.38,
-                                                "IndividualSKUs":  1674209.90,
-                                                "Bundles":  613208.48,
-                                                "NewSKUs":  10000
+                                                "Total":  1816671.07,
+                                                "IndividualSKUs":  1510066.83,
+                                                "Bundles":  306604.24,
+                                                "NewSKUs":  0
                                             },
                                 "Channels":  {
-                                                 "DTC":  1214389.93,
-                                                 "Wholesale":  333904.73,
-                                                 "Distributor":  125915.24
+                                                 "DTC":  1079588.22,
+                                                 "Wholesale":  310063.73,
+                                                 "Distributor":  120414.88
                                              },
                                 "Costs":  {
-                                              "COGS":  352171.74,
-                                              "VariableCosts":  511582.04
+                                              "COGS":  319403.77,
+                                              "VariableCosts":  461425.46
                                           },
-                                "GrossProfit":  1945246.64,
-                                "NetProfit":  1915599.98,
-                                "NetMarginPct":  83.4,
-                                "CumulativeRevenue":  13311951.65,
-                                "CumulativeNetProfit":  10571629.81,
+                                "GrossProfit":  1497267.30,
+                                "NetProfit":  1276809.53,
+                                "NetMarginPct":  70.3,
+                                "CumulativeRevenue":  4067825.87,
+                                "CumulativeNetProfit":  2478062.31,
                                 "Categories":  [
                                                    {
                                                        "Category":  "Advanced",
-                                                       "Revenue":  637631.57
+                                                       "Revenue":  583523.21
                                                    },
                                                    {
                                                        "Category":  "Mushroom",
-                                                       "Revenue":  87353.28
+                                                       "Revenue":  79940.63
                                                    },
                                                    {
                                                        "Category":  "Base",
-                                                       "Revenue":  339810.09
+                                                       "Revenue":  310974.37
                                                    },
                                                    {
                                                        "Category":  "SNP",
-                                                       "Revenue":  285816.72
+                                                       "Revenue":  261562.78
                                                    },
                                                    {
                                                        "Category":  "Testing",
-                                                       "Revenue":  128051.36
+                                                       "Revenue":  117185.14
                                                    },
                                                    {
                                                        "Category":  "Children",
-                                                       "Revenue":  35317.68
+                                                       "Revenue":  32320.68
                                                    },
                                                    {
                                                        "Category":  "Women",
-                                                       "Revenue":  113309.35
+                                                       "Revenue":  103694.11
                                                    }
                                                ]
                             },
@@ -522,55 +534,56 @@
                                 "Month":  8,
                                 "Label":  "Oct 2026",
                                 "CalendarMonth":  10,
+                                "Phase":  "GROWTH",
                                 "SeasonalityIndex":  1.05,
                                 "Revenue":  {
-                                                "Total":  2479291.83,
-                                                "IndividualSKUs":  1819672.93,
-                                                "Bundles":  643868.90,
-                                                "NewSKUs":  15750.00
+                                                "Total":  2070194.53,
+                                                "IndividualSKUs":  1640948.59,
+                                                "Bundles":  429245.94,
+                                                "NewSKUs":  0
                                             },
                                 "Channels":  {
-                                                 "DTC":  1326113.80,
-                                                 "Wholesale":  359364.96,
-                                                 "Distributor":  134194.17
+                                                 "DTC":  1178910.34,
+                                                 "Wholesale":  333706.09,
+                                                 "Distributor":  128332.16
                                              },
                                 "Costs":  {
-                                              "COGS":  382016.36,
-                                              "VariableCosts":  556030.63
+                                              "COGS":  346471.48,
+                                              "VariableCosts":  501418.51
                                           },
-                                "GrossProfit":  2097275.47,
-                                "NetProfit":  2047276.99,
-                                "NetMarginPct":  82.6,
-                                "CumulativeRevenue":  15791243.48,
-                                "CumulativeNetProfit":  12618906.80,
+                                "GrossProfit":  1723723.05,
+                                "NetProfit":  1559659.31,
+                                "NetMarginPct":  75.3,
+                                "CumulativeRevenue":  6138020.40,
+                                "CumulativeNetProfit":  4037721.62,
                                 "Categories":  [
                                                    {
                                                        "Category":  "Advanced",
-                                                       "Revenue":  689598.54
+                                                       "Revenue":  631080.35
                                                    },
                                                    {
                                                        "Category":  "Mushroom",
-                                                       "Revenue":  94472.58
+                                                       "Revenue":  86455.79
                                                    },
                                                    {
                                                        "Category":  "Base",
-                                                       "Revenue":  367504.61
+                                                       "Revenue":  336318.78
                                                    },
                                                    {
                                                        "Category":  "SNP",
-                                                       "Revenue":  309110.78
+                                                       "Revenue":  282880.15
                                                    },
                                                    {
                                                        "Category":  "Testing",
-                                                       "Revenue":  138487.55
+                                                       "Revenue":  126735.72
                                                    },
                                                    {
                                                        "Category":  "Children",
-                                                       "Revenue":  38196.07
+                                                       "Revenue":  34954.81
                                                    },
                                                    {
                                                        "Category":  "Women",
-                                                       "Revenue":  122544.07
+                                                       "Revenue":  112145.18
                                                    }
                                                ]
                             },
@@ -578,55 +591,56 @@
                                 "Month":  9,
                                 "Label":  "Nov 2026",
                                 "CalendarMonth":  11,
+                                "Phase":  "GROWTH",
                                 "SeasonalityIndex":  1.08,
                                 "Revenue":  {
-                                                "Total":  2616000.10,
-                                                "IndividualSKUs":  1937534.94,
-                                                "Bundles":  662265.16,
-                                                "NewSKUs":  16200.00
+                                                "Total":  2304185.21,
+                                                "IndividualSKUs":  1746897.58,
+                                                "Bundles":  551887.63,
+                                                "NewSKUs":  5400.00
                                             },
                                 "Channels":  {
-                                                 "DTC":  1418562.88,
-                                                 "Wholesale":  378873.35,
-                                                 "Distributor":  140098.71
+                                                 "DTC":  1261097.23,
+                                                 "Wholesale":  351821.57,
+                                                 "Distributor":  133978.78
                                              },
                                 "Costs":  {
-                                              "COGS":  405933.20,
-                                              "VariableCosts":  592045.28
+                                              "COGS":  368162.97,
+                                              "VariableCosts":  533792.94
                                           },
-                                "GrossProfit":  2210066.90,
-                                "NetProfit":  2138511.83,
-                                "NetMarginPct":  81.7,
-                                "CumulativeRevenue":  18407243.58,
-                                "CumulativeNetProfit":  14757418.63,
+                                "GrossProfit":  1936022.24,
+                                "NetProfit":  1835971.14,
+                                "NetMarginPct":  79.7,
+                                "CumulativeRevenue":  8442205.61,
+                                "CumulativeNetProfit":  5873692.76,
                                 "Categories":  [
                                                    {
                                                        "Category":  "Advanced",
-                                                       "Revenue":  730580.40
+                                                       "Revenue":  668584.56
                                                    },
                                                    {
                                                        "Category":  "Mushroom",
-                                                       "Revenue":  100086.95
+                                                       "Revenue":  91593.73
                                                    },
                                                    {
                                                        "Category":  "Base",
-                                                       "Revenue":  389344.89
+                                                       "Revenue":  356305.72
                                                    },
                                                    {
                                                        "Category":  "SNP",
-                                                       "Revenue":  327480.79
+                                                       "Revenue":  299691.31
                                                    },
                                                    {
                                                        "Category":  "Testing",
-                                                       "Revenue":  146717.67
+                                                       "Revenue":  134267.45
                                                    },
                                                    {
                                                        "Category":  "Children",
-                                                       "Revenue":  40466.01
+                                                       "Revenue":  37032.13
                                                    },
                                                    {
                                                        "Category":  "Women",
-                                                       "Revenue":  129826.69
+                                                       "Revenue":  118809.81
                                                    }
                                                ]
                             },
@@ -634,55 +648,56 @@
                                 "Month":  10,
                                 "Label":  "Dec 2026",
                                 "CalendarMonth":  12,
+                                "Phase":  "GROWTH",
                                 "SeasonalityIndex":  1.12,
                                 "Revenue":  {
-                                                "Total":  2783735.04,
-                                                "IndividualSKUs":  2080141.54,
+                                                "Total":  2573108.58,
+                                                "IndividualSKUs":  1875115.08,
                                                 "Bundles":  686793.50,
-                                                "NewSKUs":  16800.00
+                                                "NewSKUs":  11200.00
                                             },
                                 "Channels":  {
-                                                 "DTC":  1529946.33,
-                                                 "Wholesale":  402728.34,
-                                                 "Distributor":  147466.87
+                                                 "DTC":  1360116.72,
+                                                 "Wholesale":  373973.29,
+                                                 "Distributor":  141025.07
                                              },
                                 "Costs":  {
-                                              "COGS":  434897.59,
-                                              "VariableCosts":  635621.05
+                                              "COGS":  394432.35,
+                                              "VariableCosts":  572971.88
                                           },
-                                "GrossProfit":  2348837.45,
-                                "NetProfit":  2252984.03,
-                                "NetMarginPct":  80.9,
-                                "CumulativeRevenue":  21190978.62,
-                                "CumulativeNetProfit":  17010402.66,
+                                "GrossProfit":  2178676.23,
+                                "NetProfit":  2145471.98,
+                                "NetMarginPct":  83.4,
+                                "CumulativeRevenue":  11015314.19,
+                                "CumulativeNetProfit":  8019164.74,
                                 "Categories":  [
                                                    {
                                                        "Category":  "Advanced",
-                                                       "Revenue":  780368.10
+                                                       "Revenue":  714147.36
                                                    },
                                                    {
                                                        "Category":  "Mushroom",
-                                                       "Revenue":  106907.69
+                                                       "Revenue":  97835.68
                                                    },
                                                    {
                                                        "Category":  "Base",
-                                                       "Revenue":  415878.02
+                                                       "Revenue":  380587.30
                                                    },
                                                    {
                                                        "Category":  "SNP",
-                                                       "Revenue":  349798.00
+                                                       "Revenue":  320114.72
                                                    },
                                                    {
                                                        "Category":  "Testing",
-                                                       "Revenue":  156716.20
+                                                       "Revenue":  143417.53
                                                    },
                                                    {
                                                        "Category":  "Children",
-                                                       "Revenue":  43223.69
+                                                       "Revenue":  39555.80
                                                    },
                                                    {
                                                        "Category":  "Women",
-                                                       "Revenue":  138674.13
+                                                       "Revenue":  126906.48
                                                    }
                                                ]
                             },
@@ -690,55 +705,56 @@
                                 "Month":  11,
                                 "Label":  "Jan 2027",
                                 "CalendarMonth":  1,
+                                "Phase":  "GROWTH",
                                 "SeasonalityIndex":  1.15,
                                 "Revenue":  {
-                                                "Total":  2933745.58,
-                                                "IndividualSKUs":  2211305.83,
+                                                "Total":  2715414.86,
+                                                "IndividualSKUs":  1992975.11,
                                                 "Bundles":  705189.75,
                                                 "NewSKUs":  17250.00
                                             },
                                 "Channels":  {
-                                                 "DTC":  1633764.12,
-                                                 "Wholesale":  423853.59,
-                                                 "Distributor":  153688.12
+                                                 "DTC":  1452410.35,
+                                                 "Wholesale":  393590.20,
+                                                 "Distributor":  146974.56
                                              },
                                 "Costs":  {
-                                              "COGS":  461322.86,
-                                              "VariableCosts":  675700.43
+                                              "COGS":  418398.87,
+                                              "VariableCosts":  608985.93
                                           },
-                                "GrossProfit":  2472422.72,
-                                "NetProfit":  2350947.98,
-                                "NetMarginPct":  80.1,
-                                "CumulativeRevenue":  24124724.20,
-                                "CumulativeNetProfit":  19361350.64,
+                                "GrossProfit":  2297015.99,
+                                "NetProfit":  2242255.75,
+                                "NetMarginPct":  82.6,
+                                "CumulativeRevenue":  13730729.05,
+                                "CumulativeNetProfit":  10261420.49,
                                 "Categories":  [
                                                    {
                                                        "Category":  "Advanced",
-                                                       "Revenue":  825308.94
+                                                       "Revenue":  755274.59
                                                    },
                                                    {
                                                        "Category":  "Mushroom",
-                                                       "Revenue":  113064.42
+                                                       "Revenue":  103469.96
                                                    },
                                                    {
                                                        "Category":  "Base",
-                                                       "Revenue":  439828.14
+                                                       "Revenue":  402505.05
                                                    },
                                                    {
                                                        "Category":  "SNP",
-                                                       "Revenue":  369942.62
+                                                       "Revenue":  338549.90
                                                    },
                                                    {
                                                        "Category":  "Testing",
-                                                       "Revenue":  165741.38
+                                                       "Revenue":  151676.84
                                                    },
                                                    {
                                                        "Category":  "Children",
-                                                       "Revenue":  45712.91
+                                                       "Revenue":  41833.79
                                                    },
                                                    {
                                                        "Category":  "Women",
-                                                       "Revenue":  146660.28
+                                                       "Revenue":  134214.93
                                                    }
                                                ]
                             },
@@ -746,55 +762,56 @@
                                 "Month":  12,
                                 "Label":  "Feb 2027",
                                 "CalendarMonth":  2,
+                                "Phase":  "GROWTH",
                                 "SeasonalityIndex":  1.1,
                                 "Revenue":  {
-                                                "Total":  2881041.39,
-                                                "IndividualSKUs":  2190012.06,
+                                                "Total":  2664444.54,
+                                                "IndividualSKUs":  1973415.21,
                                                 "Bundles":  674529.33,
                                                 "NewSKUs":  16500.0
                                             },
                                 "Channels":  {
-                                                 "DTC":  1625240.13,
-                                                 "Wholesale":  415560.81,
-                                                 "Distributor":  149211.12
+                                                 "DTC":  1444832.56,
+                                                 "Wholesale":  385889.52,
+                                                 "Distributor":  142693.13
                                              },
                                 "Costs":  {
-                                              "COGS":  455866.81,
-                                              "VariableCosts":  669193.77
+                                              "COGS":  413450.48,
+                                              "VariableCosts":  603009.08
                                           },
-                                "GrossProfit":  2425174.58,
-                                "NetProfit":  2286109.73,
-                                "NetMarginPct":  79.4,
-                                "CumulativeRevenue":  27005765.59,
-                                "CumulativeNetProfit":  21647460.37,
+                                "GrossProfit":  2250994.06,
+                                "NetProfit":  2178113.90,
+                                "NetMarginPct":  81.7,
+                                "CumulativeRevenue":  16395173.59,
+                                "CumulativeNetProfit":  12439534.39,
                                 "Categories":  [
                                                    {
                                                        "Category":  "Advanced",
-                                                       "Revenue":  813108.72
+                                                       "Revenue":  744109.66
                                                    },
                                                    {
                                                        "Category":  "Mushroom",
-                                                       "Revenue":  111393.04
+                                                       "Revenue":  101940.41
                                                    },
                                                    {
                                                        "Category":  "Base",
-                                                       "Revenue":  433326.33
+                                                       "Revenue":  396554.98
                                                    },
                                                    {
                                                        "Category":  "SNP",
-                                                       "Revenue":  364473.90
+                                                       "Revenue":  333545.25
                                                    },
                                                    {
                                                        "Category":  "Testing",
-                                                       "Revenue":  163291.29
+                                                       "Revenue":  149434.66
                                                    },
                                                    {
                                                        "Category":  "Children",
-                                                       "Revenue":  45037.16
+                                                       "Revenue":  41215.38
                                                    },
                                                    {
                                                        "Category":  "Women",
-                                                       "Revenue":  144492.26
+                                                       "Revenue":  132230.88
                                                    }
                                                ]
                             }

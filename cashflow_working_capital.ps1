@@ -28,10 +28,14 @@ $OpAssumptions = @{
     # Starting cash position
     OpeningCash = 500000
 
-    # Revenue collection timing
-    DTC_CollectionDays = 0          # Instant (Stripe/Shopify)
+    # Revenue collection timing - ALL channels Net 30
+    DTC_CollectionDays = 30         # Net 30 payment terms
     Wholesale_CollectionDays = 30   # Net 30 invoicing
-    Distributor_CollectionDays = 45 # Net 45 invoicing
+    Distributor_CollectionDays = 30 # Net 30 invoicing
+
+    # Launch timing
+    LaunchMonth = 4                 # Month 4 of forecast = June 2026
+    PreLaunchMonths = 3             # Mar, Apr, May = pre-launch (no revenue)
 
     # Channel revenue split (from Balanced scenario)
     DTC_RevShare = 0.704
@@ -111,30 +115,28 @@ for ($m = 1; $m -le 12; $m++) {
     $totalRevenue = [decimal]$fMonth.Revenue.Total
 
     # --- INFLOWS ---
+    # ALL channels: Net 30 payment terms - collect prior month's revenue
+    # Pre-launch months and month 1 post-launch collect nothing (no prior sales)
 
-    # DTC revenue collected immediately
-    $dtcCollection = [math]::Round($totalRevenue * $OpAssumptions.DTC_RevShare, 2)
+    $priorMonthRevenue = if ($m -gt 1) { [decimal]$Forecast.MonthlyForecast[$m - 2].Revenue.Total } else { 0 }
 
-    # Wholesale: collected with 30-day lag (previous month's WS revenue)
-    $wsCollection = if ($m -gt 1) {
-        [math]::Round([decimal]$Forecast.MonthlyForecast[$m - 2].Revenue.Total * $OpAssumptions.WS_RevShare, 2)
-    } else { 0 }
+    # DTC collected from prior month (Net 30)
+    $dtcCollection = [math]::Round($priorMonthRevenue * $OpAssumptions.DTC_RevShare, 2)
 
-    # Distributor: collected with 45-day lag (~1.5 months, simplified to prior month)
-    $distCollection = if ($m -gt 2) {
-        [math]::Round([decimal]$Forecast.MonthlyForecast[$m - 3].Revenue.Total * $OpAssumptions.Dist_RevShare, 2)
-    } elseif ($m -gt 1) {
-        [math]::Round([decimal]$Forecast.MonthlyForecast[$m - 2].Revenue.Total * $OpAssumptions.Dist_RevShare * 0.5, 2)
-    } else { 0 }
+    # Wholesale collected from prior month (Net 30)
+    $wsCollection = [math]::Round($priorMonthRevenue * $OpAssumptions.WS_RevShare, 2)
 
-    # Subscription prepayment boost
+    # Distributor collected from prior month (Net 30)
+    $distCollection = [math]::Round($priorMonthRevenue * $OpAssumptions.Dist_RevShare, 2)
+
+    # Subscription prepayment boost (only on current month revenue if post-launch)
     $subPrepay = [math]::Round($totalRevenue * $OpAssumptions.SubPrepaymentBoost, 2)
 
     $totalInflows = [math]::Round($dtcCollection + $wsCollection + $distCollection + $subPrepay, 2)
 
-    # Update receivables
-    $newReceivables = [math]::Round($totalRevenue * ($OpAssumptions.WS_RevShare + $OpAssumptions.Dist_RevShare), 2)
-    $collectedReceivables = $wsCollection + $distCollection
+    # Update receivables (current month's revenue is outstanding until next month)
+    $newReceivables = [math]::Round($totalRevenue, 2)
+    $collectedReceivables = [math]::Round($priorMonthRevenue, 2)
     $receivablesBalance = [math]::Round($receivablesBalance + $newReceivables - $collectedReceivables, 2)
 
     # --- OUTFLOWS ---
