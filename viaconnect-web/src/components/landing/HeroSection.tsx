@@ -111,7 +111,7 @@ export function HeroSection() {
                                     <Link
                                         href="/signup"
                                         className="inline-flex h-12 w-full sm:w-auto items-center justify-center rounded-full bg-[#b75e18] pl-5 pr-3 text-base font-medium text-white shadow-[0_0_20px_rgba(183,94,24,0.4)] transition-all duration-300 hover:bg-[#d4741f] hover:shadow-[0_0_30px_rgba(183,94,24,0.6)]">
-                                        <span className="text-nowrap">Start Your Assessment</span>
+                                        <span className="text-nowrap">Your Journey Starts Here</span>
                                         <ChevronRight className="ml-1" />
                                     </Link>
                                     <Link
