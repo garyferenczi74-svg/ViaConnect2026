@@ -1,0 +1,49 @@
+/* ViaConnect GeneX360 — Glass Morphism + Atmosphere Utilities */
+/* Primary accent: BURNT COPPER #b75e18 */
+
+.glass {
+  background: rgba(18, 27, 55, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-hover:hover {
+  background: rgba(22, 33, 65, 0.85);
+  border-color: rgba(183, 94, 24, 0.15);
+}
+
+.glass-highlight {
+  background: rgba(183, 94, 24, 0.08);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(183, 94, 24, 0.15);
+}
+
+.glow-amber {
+  box-shadow: 0 0 20px rgba(183, 94, 24, 0.3);
+}
+
+.glow-amber-lg {
+  box-shadow: 0 0 40px rgba(183, 94, 24, 0.2), 0 0 80px rgba(183, 94, 24, 0.1);
+}
+
+.atmosphere-purple {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 50vw;
+  height: 50vh;
+  background: radial-gradient(ellipse at top right, rgba(120, 60, 180, 0.15), transparent 60%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
