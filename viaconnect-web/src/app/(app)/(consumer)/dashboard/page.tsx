@@ -7,12 +7,11 @@ import {
   HealthSnapshot,
   AIInsightCard,
   DailyResearch,
-  BottomTabBar,
 } from '@/components/dashboard';
 
 export default function DashboardPage() {
   return (
-    <div className="relative min-h-screen w-full bg-gradient-to-b from-[#0d1225] to-[#141c35] text-white overflow-x-hidden pb-24">
+    <div className="relative min-h-screen w-full bg-gradient-to-b from-[#0d1225] to-[#141c35] text-white overflow-x-hidden">
       {/* Purple atmosphere glow — decorative only */}
       <div className="atmosphere-purple" />
 
@@ -26,8 +25,6 @@ export default function DashboardPage() {
         <AIInsightCard />
         <DailyResearch />
       </div>
-
-      <BottomTabBar />
     </div>
   );
 }

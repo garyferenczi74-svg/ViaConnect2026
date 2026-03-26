@@ -1,6 +1,50 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+
+function getGreeting(): string {
+  const hour = new Date().getHours();
+  if (hour < 12) return 'Good morning';
+  if (hour < 18) return 'Good afternoon';
+  return 'Good evening';
+}
+
+function useTypewriter(lines: string[], charDelay = 45, lineDelay = 600) {
+  const [display, setDisplay] = useState('');
+  const [lineIndex, setLineIndex] = useState(0);
+  const [charIndex, setCharIndex] = useState(0);
+  const [done, setDone] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout>>();
+
+  useEffect(() => {
+    if (lineIndex >= lines.length) {
+      setDone(true);
+      return;
+    }
+
+    const currentLine = lines[lineIndex];
+
+    if (charIndex <= currentLine.length) {
+      timerRef.current = setTimeout(() => {
+        // Build full display: all previous lines + current partial line
+        const prev = lines.slice(0, lineIndex).join('\n');
+        const partial = currentLine.slice(0, charIndex);
+        setDisplay(prev ? prev + '\n' + partial : partial);
+        setCharIndex((c) => c + 1);
+      }, charDelay);
+    } else {
+      // Line finished — pause then move to next
+      timerRef.current = setTimeout(() => {
+        setLineIndex((l) => l + 1);
+        setCharIndex(0);
+      }, lineDelay);
+    }
+
+    return () => clearTimeout(timerRef.current);
+  }, [lineIndex, charIndex, lines, charDelay, lineDelay]);
+
+  return { display, done };
+}
 
 const portalTabs = [
   { label: 'ADMIN', isAdmin: true },
@@ -10,6 +54,10 @@ const portalTabs = [
 ];
 
 export default function TopNav() {
+  const message = `${getGreeting()}, Gary.`;
+
+  const { display, done } = useTypewriter([message], 40, 500);
+
   return (
     <nav
       className="sticky top-0 z-50 w-full"
@@ -19,59 +67,23 @@ export default function TopNav() {
         WebkitBackdropFilter: 'blur(24px)',
       }}
     >
-      {/* ROW 1 — Portal Tabs */}
-      <div className="flex items-center gap-2 px-6 pt-4 pb-3">
-        {portalTabs.map((tab) => {
-          if (tab.isAdmin) {
-            return (
-              <button
-                key={tab.label}
-                className="text-sm font-bold tracking-wide mr-1"
-                style={{ color: '#b75e18' }}
-              >
-                {tab.label}
-              </button>
-            );
-          }
-          if (tab.isActive) {
-            return (
-              <button
-                key={tab.label}
-                className="glass text-sm font-semibold text-white rounded-full px-4 py-1.5"
-              >
-                {tab.label}
-              </button>
-            );
-          }
-          return (
-            <button
-              key={tab.label}
-              className="text-sm font-medium px-3 py-1.5"
-              style={{ color: '#cbd5e1' }}
-            >
-              {tab.label}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* ROW 2 — Greeting Bar */}
-      <div className="flex items-center justify-between px-6 pb-4">
-        {/* Left — Brand + Greeting */}
-        <div>
-          <p
-            className="font-bold uppercase tracking-widest"
-            style={{ fontSize: '11px', color: '#94a3b8' }}
-          >
-            ViaConnect&trade;
+      {/* Greeting Bar */}
+      <div className="flex items-center justify-between px-6 pt-4 pb-4">
+        {/* Left — Typewriter Greeting */}
+        <div className="min-w-0 flex-1">
+          <p className="text-sm leading-relaxed" style={{ color: '#94a3b8' }}>
+            {display}
+            {!done && (
+              <span
+                className="inline-block w-[2px] h-[1em] ml-0.5 align-text-bottom animate-pulse"
+                style={{ background: '#b75e18' }}
+              />
+            )}
           </p>
-          <h1 className="text-2xl font-bold text-white leading-tight">
-            Good morning, Gary
-          </h1>
         </div>
 
         {/* Right — Bell + Avatar */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-shrink-0">
           {/* Notification Bell */}
           <button
             className="relative flex items-center justify-center w-10 h-10 rounded-full glass-hover transition-colors"
