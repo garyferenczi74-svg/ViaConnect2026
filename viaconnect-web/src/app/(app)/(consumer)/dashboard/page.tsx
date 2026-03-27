@@ -222,9 +222,9 @@ export default function ConsumerDashboard() {
         />
       </section>
 
-      {/* ── ViaTokens ─────────────────────────────────────────────────── */}
+      {/* ── Helix Rewards ─────────────────────────────────────────────── */}
       <section className="px-4 lg:px-6 pb-8">
-        <p className="text-overline mb-4">ViaTokens</p>
+        <p className="text-overline mb-4">Helix Rewards</p>
         <GlassCard variant="default" hover={false} className="flex flex-col gap-4">
           <div className="flex items-center gap-3">
             <div
@@ -236,8 +236,8 @@ export default function ConsumerDashboard() {
             <div>
               <p className="text-caption" style={{ color: 'var(--text-secondary)' }}>Balance</p>
               <p className="text-display-md text-white" style={{ fontSize: '32px', fontWeight: 700 }}>
-                1,245
-                <span className="text-body-sm ml-1" style={{ color: 'var(--text-tertiary)' }}>VT</span>
+                2,847
+                <span className="text-body-sm ml-1" style={{ color: 'var(--text-tertiary)' }}>Helix$</span>
               </p>
             </div>
           </div>
@@ -260,7 +260,7 @@ export default function ConsumerDashboard() {
           <VCButton variant="secondary" size="sm">
             <div className="flex items-center gap-2">
               <Gift size={14} />
-              Visit Reward Store
+              Helix Rewards Hub
             </div>
           </VCButton>
         </GlassCard>

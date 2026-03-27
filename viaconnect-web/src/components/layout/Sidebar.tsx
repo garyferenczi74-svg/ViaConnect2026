@@ -57,7 +57,7 @@ const CONSUMER: PortalConfig = {
     { href: "/supplements", label: "Supplements", icon: Pill },
     { href: "/wearables", label: "Wearables", icon: Activity },
     { href: "/shop", label: "Shop", icon: ShoppingBag },
-    { href: "/tokens", label: "ViaTokens", icon: Coins },
+    { href: "/helix", label: "Helix Rewards", icon: Dna },
     { href: "/messages", label: "Messages", icon: MessageSquare },
     { href: "/plugins", label: "Plugins", icon: Plug },
     { href: "/media-sources", label: "Research Hub", icon: Newspaper },
