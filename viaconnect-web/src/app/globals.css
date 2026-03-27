@@ -2,18 +2,104 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ─── Always dark mode ─────────────────────────────────────────────────────── */
+/* ─── ViaConnect GeneX360 — Master Design System V2.2 ─────────────────────── */
 
 :root {
-  --background: #0B1120;
+  /* === LEGACY (preserved for existing pages) === */
+  --background: #0D1520;
   --foreground: #f9fafb;
   color-scheme: dark;
+
+  /* === PRIMARY — NAVY === */
+  --navy-900: #0D1520;
+  --navy-800: #131D2E;
+  --navy-700: #1A2744;
+  --navy-600: #243352;
+  --navy-500: #2E4060;
+
+  /* === ACCENT — TEAL === */
+  --teal-500: #2DA5A0;
+  --teal-400: #3BBFB9;
+  --teal-300: #5ED4CF;
+  --teal-600: #1F8A85;
+  --teal-100: #E0F5F4;
+
+  /* === ACCENT — ORANGE === */
+  --orange-500: #B75E18;
+  --orange-400: #D4721F;
+  --orange-300: #E8944A;
+  --orange-600: #994E14;
+  --orange-100: #FDF0E4;
+
+  /* === TEXT === */
+  --text-primary: #FFFFFF;
+  --text-secondary: #A0AEC0;
+  --text-tertiary: #718096;
+  --text-dark: #1A202C;
+  --text-heading-orange: #B75E18;
+
+  /* === STATUS === */
+  --green-500: #27AE60;
+  --green-100: #E8F5E9;
+  --red-500: #E74C3C;
+  --red-100: #FFEBEE;
+  --amber-500: #F39C12;
+  --amber-100: #FFF8E1;
+
+  /* === SURFACES === */
+  --glass-bg: rgba(26, 39, 68, 0.65);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-blur: 16px;
+  --card-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  --gradient-card: linear-gradient(135deg, rgba(45, 165, 160, 0.15) 0%, rgba(183, 94, 24, 0.10) 100%);
+  --gradient-hero: linear-gradient(180deg, #0D1520 0%, #1A2744 50%, #131D2E 100%);
+
+  /* === SPACING (8px base) === */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+  --space-24: 96px;
+
+  /* === PORTAL (default = consumer) === */
+  --portal-accent: var(--teal-500);
+  --portal-accent-hover: var(--teal-400);
+  --portal-heading: var(--orange-500);
 }
+
+/* === Portal-Specific Accent Overrides === */
+
+[data-portal="consumer"] {
+  --portal-accent: var(--teal-500);
+  --portal-accent-hover: var(--teal-400);
+  --portal-heading: var(--orange-500);
+}
+
+[data-portal="practitioner"] {
+  --portal-accent: #4A90D9;
+  --portal-accent-hover: #5BA0E9;
+  --portal-heading: var(--orange-500);
+}
+
+[data-portal="naturopath"] {
+  --portal-accent: #7BAE7F;
+  --portal-accent-hover: #8FC293;
+  --portal-heading: #C4944A;
+}
+
+/* ─── Base Styles ──────────────────────────────────────────────────────────── */
 
 body {
   color: var(--foreground);
-  background: var(--background);
-  font-family: "Inter", system-ui, sans-serif;
+  background: var(--navy-900);
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
 /* ─── Dark scrollbars ──────────────────────────────────────────────────────── */
@@ -23,87 +109,129 @@ body {
   scrollbar-color: rgba(255, 255, 255, 0.08) transparent;
 }
 
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.08);
-  border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.15);
-}
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.08); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.15); }
 
 /* ─── Selection colors (portal-aware) ──────────────────────────────────────── */
 
-::selection {
-  background: rgba(34, 72, 82, 0.5);
-  color: #fff;
-}
-
-/* Consumer portal */
-[data-portal="consumer"] ::selection {
-  background: rgba(34, 211, 238, 0.3);
-}
-
-/* Practitioner portal */
-[data-portal="practitioner"] ::selection {
-  background: rgba(74, 222, 128, 0.3);
-}
-
-/* Naturopath portal */
-[data-portal="naturopath"] ::selection {
-  background: rgba(118, 134, 111, 0.3);
-}
+::selection { background: rgba(45, 165, 160, 0.4); color: #fff; }
+[data-portal="consumer"] ::selection { background: rgba(45, 165, 160, 0.3); }
+[data-portal="practitioner"] ::selection { background: rgba(74, 144, 217, 0.3); }
+[data-portal="naturopath"] ::selection { background: rgba(123, 174, 127, 0.3); }
 
 /* ─── Focus rings (portal-accent aware) ────────────────────────────────────── */
 
-:focus-visible {
-  outline: 2px solid rgba(34, 211, 238, 0.5);
-  outline-offset: 2px;
+:focus-visible { outline: 2px solid rgba(45, 165, 160, 0.5); outline-offset: 2px; }
+[data-portal="practitioner"] :focus-visible { outline-color: rgba(74, 144, 217, 0.5); }
+[data-portal="naturopath"] :focus-visible { outline-color: rgba(123, 174, 127, 0.5); }
+
+/* ─── Typography Tokens ────────────────────────────────────────────────────── */
+
+.text-display-xl { font-size: 72px; font-weight: 800; line-height: 1.0; }
+.text-display-lg { font-size: 56px; font-weight: 800; line-height: 1.1; }
+.text-display-md { font-size: 44px; font-weight: 700; line-height: 1.15; }
+.text-heading-1 { font-size: 36px; font-weight: 700; line-height: 1.2; color: var(--text-heading-orange); letter-spacing: 0.5px; }
+.text-heading-2 { font-size: 28px; font-weight: 700; line-height: 1.3; color: var(--text-heading-orange); }
+.text-heading-3 { font-size: 22px; font-weight: 600; line-height: 1.35; }
+.text-body-lg { font-size: 18px; font-weight: 400; line-height: 1.6; }
+.text-body-md { font-size: 16px; font-weight: 400; line-height: 1.5; }
+.text-body-sm { font-size: 14px; font-weight: 400; line-height: 1.5; }
+.text-caption { font-size: 12px; font-weight: 500; line-height: 1.4; }
+.text-overline {
+  font-size: 11px; font-weight: 700; line-height: 1.3;
+  text-transform: uppercase; letter-spacing: 1.5px;
+  color: var(--portal-heading);
+}
+.text-mono-md { font-size: 14px; font-weight: 500; line-height: 1.4; font-family: "JetBrains Mono", "Fira Code", monospace; }
+
+/* ─── Glass Morphism System ────────────────────────────────────────────────── */
+
+.glass-v2 {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  box-shadow: var(--card-shadow);
 }
 
-[data-portal="practitioner"] :focus-visible {
-  outline-color: rgba(74, 222, 128, 0.5);
+.glass-v2-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+  border-color: rgba(255, 255, 255, 0.12);
 }
 
-[data-portal="naturopath"] :focus-visible {
-  outline-color: rgba(118, 134, 111, 0.5);
+.glass-v2-gradient {
+  background: var(--glass-bg);
+  background-image: var(--gradient-card);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  box-shadow: var(--card-shadow);
+}
+
+.glass-v2-insight {
+  background: rgba(45, 165, 160, 0.08);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid rgba(45, 165, 160, 0.15);
+  border-radius: 16px;
 }
 
 /* ─── Skeleton shimmer ─────────────────────────────────────────────────────── */
 
 @keyframes shimmer {
-  0% {
-    background-position: -200% 0;
-  }
-  100% {
-    background-position: 200% 0;
-  }
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
 }
 
 .skeleton-shimmer {
-  background: linear-gradient(
-    90deg,
-    rgba(255, 255, 255, 0.04) 25%,
-    rgba(255, 255, 255, 0.08) 50%,
-    rgba(255, 255, 255, 0.04) 75%
-  );
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.04) 25%, rgba(255, 255, 255, 0.08) 50%, rgba(255, 255, 255, 0.04) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s ease-in-out infinite;
 }
 
+/* ─── Score Pulse ──────────────────────────────────────────────────────────── */
+
+@keyframes score-pulse {
+  0%, 100% { filter: drop-shadow(0 0 8px rgba(45, 165, 160, 0.4)); }
+  50% { filter: drop-shadow(0 0 20px rgba(45, 165, 160, 0.6)); }
+}
+
+.score-glow { animation: score-pulse 2s ease-in-out infinite; }
+
+/* ─── ViaTokens Float ──────────────────────────────────────────────────────── */
+
+@keyframes token-float {
+  0% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-40px); }
+}
+
+.token-float { animation: token-float 1s ease-out forwards; }
+
+/* ─── Scroll reveal ────────────────────────────────────────────────────────── */
+
+.reveal-on-scroll {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.reveal-on-scroll.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ─── No scrollbar ─────────────────────────────────────────────────────────── */
+
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
 /* ─── Utility ──────────────────────────────────────────────────────────────── */
 
 @layer utilities {
-  .text-balance {
-    text-wrap: balance;
-  }
+  .text-balance { text-wrap: balance; }
 }

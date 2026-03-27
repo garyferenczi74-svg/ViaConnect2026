@@ -47,7 +47,6 @@ function useTypewriter(lines: string[], charDelay = 45, lineDelay = 600) {
 }
 
 const portalTabs = [
-  { label: 'ADMIN', isAdmin: true },
   { label: 'Consumer', isActive: true },
   { label: 'Practitioner' },
   { label: 'Naturopath' },
@@ -71,7 +70,7 @@ export default function TopNav() {
       <div className="flex items-center justify-between px-6 pt-4 pb-4">
         {/* Left — Typewriter Greeting */}
         <div className="min-w-0 flex-1">
-          <p className="text-sm leading-relaxed" style={{ color: '#94a3b8' }}>
+          <p className="text-2xl leading-relaxed" style={{ color: '#94a3b8' }}>
             {display}
             {!done && (
               <span

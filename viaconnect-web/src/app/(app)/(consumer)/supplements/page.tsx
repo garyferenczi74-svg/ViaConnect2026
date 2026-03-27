@@ -21,6 +21,10 @@ import {
   Plus,
   Package,
   Clock,
+  ArrowRight,
+  Sparkles,
+  RefreshCw,
+  Pill,
 } from "lucide-react";
 import { PageTransition, StaggerChild, MotionCard } from "@/lib/motion";
 
@@ -121,6 +125,30 @@ export default function SupplementsPage() {
     enabled: !!userId,
   });
 
+  // Current supplements from onboarding (Phase 4: Medications) + AI replacements (Phase 0: Results)
+  const { data: assessmentData } = useQuery({
+    queryKey: ["assessment-supplements", userId],
+    queryFn: async () => {
+      // Phase 4 has current supplements, Phase 0 has AI-generated replacements
+      const { data } = await supabase
+        .from("assessment_results")
+        .select("phase, data")
+        .eq("user_id", userId!)
+        .in("phase", [0, 4]);
+      const phase4 = data?.find((d: { phase: number }) => d.phase === 4);
+      const phase0 = data?.find((d: { phase: number }) => d.phase === 0);
+      const currentSupps = (phase4?.data as Record<string, unknown>)?.supplements as Array<{ name: string; dosage?: string }> | undefined;
+      const replacements = (phase0?.data as Record<string, unknown>)?.supplement_replacements as Array<{
+        original: string;
+        replacement_sku: string;
+        replacement_name: string;
+        reason: string;
+      }> | undefined;
+      return { currentSupplements: currentSupps ?? [], replacements: replacements ?? [] };
+    },
+    enabled: !!userId,
+  });
+
   // Add to protocol
   const addToProtocol = useMutation({
     mutationFn: async ({ productId, timeOfDay }: { productId: string; timeOfDay: string }) => {
@@ -180,6 +208,96 @@ export default function SupplementsPage() {
           Personalized supplement stack — formulated from your GeneX360 results with 10–27x bioavailability.
         </p>
       </StaggerChild>
+
+      {/* ── Your Current Supplements + AI Upgrade Recommendations ──────── */}
+      {assessmentData && assessmentData.currentSupplements.length > 0 && (
+        <StaggerChild className="space-y-4">
+          <div className="flex items-center gap-2">
+            <Pill className="w-5 h-5 text-teal" />
+            <h2 className="text-lg font-semibold text-white">Your Current Supplements</h2>
+            <Badge variant="neutral">{assessmentData.currentSupplements.length} items</Badge>
+          </div>
+          <p className="text-gray-400 text-sm">
+            These are the vitamins and nutrients you reported during your assessment. As you run low, our AI recommends precision-formulated FarmCeutica replacements with 10–27x bioavailability.
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {assessmentData.currentSupplements.map((supp, i) => {
+              const replacement = assessmentData.replacements.find(
+                (r) => r.original.toLowerCase() === supp.name.toLowerCase()
+              );
+              return (
+                <MotionCard key={i} className="p-4">
+                  <div className="flex items-start gap-3">
+                    {/* Current supplement info */}
+                    <div className="w-9 h-9 rounded-lg bg-white/[0.06] flex items-center justify-center flex-shrink-0">
+                      <Pill className="w-4 h-4 text-gray-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-white font-medium">{supp.name}</p>
+                      {supp.dosage && (
+                        <p className="text-xs text-gray-500 mt-0.5">{supp.dosage}</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* AI Replacement Recommendation */}
+                  {replacement ? (
+                    <div className="mt-3 p-3 rounded-lg bg-teal/[0.06] border border-teal/[0.12]">
+                      <div className="flex items-center gap-1.5 mb-1.5">
+                        <Sparkles className="w-3.5 h-3.5 text-teal" />
+                        <span className="text-[10px] font-semibold text-teal uppercase tracking-wider">
+                          AI Upgrade Available
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm text-white font-semibold">
+                            {replacement.replacement_name}
+                          </p>
+                          <p className="text-xs text-gray-400 mt-0.5 line-clamp-2">
+                            {replacement.reason}
+                          </p>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="primary"
+                          className="ml-3 flex-shrink-0 gap-1"
+                          onClick={() => {
+                            // Find product by SKU or name and add to protocol
+                            const product = (products ?? []).find(
+                              (p) =>
+                                p.sku === replacement.replacement_sku ||
+                                p.short_name === replacement.replacement_name
+                            );
+                            if (product && userId) {
+                              addToProtocol.mutate({ productId: product.id, timeOfDay: "morning" });
+                            } else {
+                              toast.success(`${replacement.replacement_name} — coming soon to your protocol!`);
+                            }
+                          }}
+                        >
+                          <RefreshCw className="w-3 h-3" />
+                          Switch
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="mt-3 p-2.5 rounded-lg bg-white/[0.02] border border-white/[0.06]">
+                      <div className="flex items-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5 text-gray-500" />
+                        <span className="text-xs text-gray-500">
+                          No precision upgrade available yet
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </MotionCard>
+              );
+            })}
+          </div>
+        </StaggerChild>
+      )}
 
       {/* Split Layout */}
       <StaggerChild className="grid grid-cols-1 xl:grid-cols-[1fr_40%] gap-6">

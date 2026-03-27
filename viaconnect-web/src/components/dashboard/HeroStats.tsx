@@ -9,7 +9,7 @@ const OFFSET = CIRCUMFERENCE - (SCORE / 100) * CIRCUMFERENCE;
 
 export default function HeroStats() {
   return (
-    <section className="flex items-center gap-5 px-6 pt-6 pb-2">
+    <section className="flex items-start justify-between px-6 pt-6 pb-2">
       {/* Genome Score Ring */}
       <div className="relative flex-shrink-0" style={{ width: 128, height: 128 }}>
         <svg
@@ -57,40 +57,15 @@ export default function HeroStats() {
         </div>
       </div>
 
-      {/* Right — Stat Cards */}
-      <div className="flex flex-col gap-3 flex-1 min-w-0">
-        {/* FarmaTokens Card */}
-        <div
-          className="glass rounded-2xl px-4 py-3"
-        >
-          <p
-            className="font-bold uppercase tracking-widest"
-            style={{ fontSize: '10px', color: '#94a3b8' }}
-          >
-            <span className="mr-1">🪙</span> FarmaTokens
-          </p>
-          <p className="text-2xl font-bold text-white mt-0.5">1,247</p>
+      {/* Right — Pill Stat Cards (matches Log Activity button size) */}
+      <div className="flex flex-col gap-2 flex-shrink-0">
+        <div className="glass h-10 rounded-full px-5 flex items-center justify-center gap-2">
+          <span style={{ fontSize: '14px' }}>🪙</span>
+          <span className="text-sm font-bold text-white">1,247</span>
         </div>
-
-        {/* Streak Card */}
-        <div
-          className="glass rounded-2xl px-4 py-3 flex items-center justify-between"
-        >
-          <div>
-            <p
-              className="font-bold uppercase tracking-widest"
-              style={{ fontSize: '10px', color: '#94a3b8' }}
-            >
-              <span className="mr-1">🔥</span> Streak
-            </p>
-            <p className="text-lg font-bold text-white mt-0.5">14 days</p>
-          </div>
-          <span
-            className="material-symbols-outlined"
-            style={{ fontSize: '24px', color: '#b75e18' }}
-          >
-            trending_up
-          </span>
+        <div className="glass h-10 rounded-full px-5 flex items-center justify-center gap-2">
+          <span style={{ fontSize: '14px' }}>🔥</span>
+          <span className="text-sm font-bold text-white">14 days</span>
         </div>
       </div>
     </section>
