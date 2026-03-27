@@ -3,253 +3,193 @@
 import Link from "next/link";
 import {
   Users,
-  ClipboardCheck,
+  FlaskConical,
   AlertTriangle,
   TrendingUp,
-  Clock,
-  FileText,
-  UserPlus,
-  ShieldAlert,
-  Brain,
-  Activity,
-  CheckCircle,
-  Pill,
-  FlaskConical,
-  MessageSquare,
-  ArrowRight,
+  Video,
 } from "lucide-react";
-import { Card, StatCard, Badge, Button } from "@/components/ui";
-import { PageTransition, StaggerChild } from "@/lib/motion";
 
 // ─── Mock Data ───────────────────────────────────────────────────────────────
 
-const appointments = [
-  { id: 1, time: "9:00 AM", patient: "Sarah Mitchell", type: "Follow-up", status: "confirmed" as const },
-  { id: 2, time: "10:30 AM", patient: "James Robertson", type: "Genetic Review", status: "confirmed" as const },
-  { id: 3, time: "12:00 PM", patient: "Anika Patel", type: "Initial Consult", status: "pending" as const },
-  { id: 4, time: "2:00 PM", patient: "Marcus Thompson", type: "Protocol Review", status: "confirmed" as const },
-  { id: 5, time: "3:30 PM", patient: "Emily Zhao", type: "Follow-up", status: "cancelled" as const },
-];
-
-const statusBadge: Record<string, { variant: "active" | "pending" | "danger"; label: string }> = {
-  confirmed: { variant: "active", label: "Confirmed" },
-  pending: { variant: "pending", label: "Pending" },
-  cancelled: { variant: "danger", label: "Cancelled" },
-};
-
-const recentActivity = [
-  { id: 1, icon: FileText, description: "Protocol approved for Sarah Mitchell — MTHFR+ stack", time: "12 min ago" },
-  { id: 2, icon: Pill, description: "New interaction flag: James Robertson — CoQ10 + Warfarin", time: "34 min ago" },
-  { id: 3, icon: CheckCircle, description: "Anika Patel completed adherence check-in (92%)", time: "1 hr ago" },
-  { id: 4, icon: FlaskConical, description: "Genetic panel results received for Marcus Thompson", time: "2 hr ago" },
-  { id: 5, icon: MessageSquare, description: "Emily Zhao sent a message regarding supplement timing", time: "3 hr ago" },
-  { id: 6, icon: UserPlus, description: "New patient registration: David Nguyen", time: "5 hr ago" },
+const stats = [
+  { value: "42", label: "Active Patients", icon: Users, color: "text-[#4A90D9]" },
+  { value: "7", label: "Pending Results", icon: FlaskConical, color: "text-amber-400" },
+  { value: "3", label: "Alerts Today", icon: AlertTriangle, color: "text-red-400" },
+  { value: "89%", label: "Avg Compliance", icon: TrendingUp, color: "text-emerald-400" },
 ];
 
 const alerts = [
   {
     id: 1,
-    type: "danger" as const,
-    icon: ShieldAlert,
-    title: "Drug-Supplement Interaction",
-    description: "James Robertson: CoQ10 may reduce Warfarin efficacy",
-    action: "/practitioner/interactions",
+    severity: "warning" as const,
+    borderColor: "border-l-amber-400",
+    patient: "John D.",
+    message: "HRV dropped 28% in 24hrs. COMT fast metabolizer.",
+    badges: ["COMT AG"],
+    actions: [
+      { label: "View Patient", href: "#" },
+      { label: "Send Message", href: "#" },
+    ],
   },
   {
     id: 2,
-    type: "warning" as const,
-    icon: Activity,
-    title: "Low Adherence Alert",
-    description: "Emily Zhao adherence dropped to 34% this week",
-    action: "/practitioner/patients/5",
+    severity: "critical" as const,
+    borderColor: "border-l-red-400",
+    patient: "Maria S.",
+    message: "Missed 5 consecutive supplement doses. MTHFR CT.",
+    badges: ["MTHFR CT"],
+    actions: [
+      { label: "View Patient", href: "#" },
+      { label: "Call", href: "#" },
+    ],
   },
   {
     id: 3,
-    type: "pending" as const,
-    icon: ClipboardCheck,
-    title: "Pending Consent",
-    description: "David Nguyen has not signed genetic testing consent",
-    action: "/practitioner/patients/12",
+    severity: "info" as const,
+    borderColor: "border-l-[#4A90D9]",
+    patient: "Alex T.",
+    message: "New GeneX360 results ready for review.",
+    badges: [],
+    actions: [{ label: "Review Results", href: "#" }],
   },
 ];
 
-const protocolQueue = [
-  { id: 1, patient: "Anika Patel", supplements: 4, created: "Today" },
-  { id: 2, patient: "Marcus Thompson", supplements: 6, created: "Yesterday" },
-  { id: 3, patient: "David Nguyen", supplements: 3, created: "2 days ago" },
-];
-
-const quickActions = [
-  { label: "New Protocol", icon: FileText, href: "/practitioner/protocols/builder", color: "text-portal-green" },
-  { label: "Add Patient", icon: UserPlus, href: "/practitioner/patients?action=add", color: "text-portal-purple" },
-  { label: "Check Interactions", icon: AlertTriangle, href: "/practitioner/interactions", color: "text-portal-yellow" },
-  { label: "AI Advisor", icon: Brain, href: "/practitioner/ai", color: "text-portal-pink" },
+const recentResults = [
+  { patient: "John D.", panel: "GeneX-M", date: "3/24", status: "Ready", statusColor: "bg-emerald-500/15 text-emerald-400" },
+  { patient: "Sarah K.", panel: "GeneX360", date: "3/22", status: "Ready", statusColor: "bg-emerald-500/15 text-emerald-400" },
+  { patient: "Mike R.", panel: "PeptideIQ", date: "3/20", status: "Pending", statusColor: "bg-amber-500/15 text-amber-400" },
 ];
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export default function PractitionerDashboardPage() {
   return (
-    <PageTransition className="min-h-screen bg-dark-bg p-6 md:p-10">
-      <div className="max-w-7xl mx-auto space-y-8">
+    <div className="min-h-screen bg-dark-bg p-4 md:p-8">
+      <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
-        <StaggerChild>
-          <div>
-            <h1 className="text-3xl font-bold text-white">
-              Dashboard
-            </h1>
-            <p className="text-gray-400 mt-1">Practitioner Portal &mdash; Overview</p>
-          </div>
-        </StaggerChild>
+        <div>
+          <h1 className="text-heading-2 text-[#B75E18]">Practitioner Dashboard</h1>
+          <p className="text-sm text-secondary mt-1">Precision Wellness Medical Group</p>
+        </div>
 
-        {/* ── Stat Cards ──────────────────────────────────────────────── */}
-        <StaggerChild className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard icon={Users} label="Active Patients" value="47" trend="up" trendLabel="+3 this week" />
-          <StatCard icon={ClipboardCheck} label="Pending Reviews" value="12" trend="down" trendLabel={"\u22122 from yesterday"} />
-          <StatCard
-            icon={AlertTriangle}
-            label="Interaction Flags"
-            value="5"
-            className="ring-1 ring-portal-yellow/20"
-          />
-          <StatCard icon={TrendingUp} label="Avg Adherence" value="78%" trend="up" trendLabel="+4% this month" />
-        </StaggerChild>
-
-        {/* ── Two-Column Layout ───────────────────────────────────────── */}
-        <StaggerChild className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-          {/* Left Column (3/5) */}
-          <div className="lg:col-span-3 space-y-6">
-            {/* Today's Schedule */}
-            <Card hover={false} className="p-5">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-portal-green" />
-                  Today&apos;s Schedule
-                </h2>
-                <Link href="/practitioner/patients" className="text-xs text-portal-green hover:underline">
-                  View all
-                </Link>
+        {/* ── Top Stats Row ──────────────────────────────────────────── */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          {stats.map((stat) => (
+            <div key={stat.label} className="glass-v2 p-3 flex items-center gap-3">
+              <div className="w-9 h-9 rounded-lg bg-white/[0.04] flex items-center justify-center shrink-0">
+                <stat.icon className={`w-4 h-4 ${stat.color}`} />
               </div>
-
-              <div className="space-y-1">
-                {appointments.map((appt) => {
-                  const badge = statusBadge[appt.status];
-                  return (
-                    <div
-                      key={appt.id}
-                      className="flex items-center gap-4 rounded-lg px-3 py-3 hover:bg-white/[0.02] transition-colors"
-                    >
-                      <span className="text-sm font-mono text-gray-500 w-20 shrink-0">{appt.time}</span>
-                      <span className="text-sm font-medium text-white flex-1 truncate">{appt.patient}</span>
-                      <span className="text-xs text-gray-400 hidden sm:block w-28 truncate">{appt.type}</span>
-                      <Badge variant={badge.variant}>{badge.label}</Badge>
-                    </div>
-                  );
-                })}
+              <div>
+                <p className="text-2xl font-bold text-white leading-tight">{stat.value}</p>
+                <p className="text-xs text-secondary">{stat.label}</p>
               </div>
-            </Card>
+            </div>
+          ))}
+        </div>
 
-            {/* Recent Activity */}
-            <Card hover={false} className="p-5">
-              <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                <Activity className="w-4 h-4 text-portal-purple" />
-                Recent Activity
-              </h2>
-
-              <div className="space-y-1">
-                {recentActivity.map((item) => (
-                  <div
-                    key={item.id}
-                    className="flex items-start gap-3 rounded-lg px-3 py-3 hover:bg-white/[0.02] transition-colors"
-                  >
-                    <div className="w-7 h-7 rounded-md bg-white/[0.04] flex items-center justify-center shrink-0 mt-0.5">
-                      <item.icon className="w-3.5 h-3.5 text-gray-400" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm text-gray-300 leading-snug">{item.description}</p>
-                      <p className="text-[11px] text-gray-600 mt-0.5">{item.time}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </Card>
-          </div>
-
-          {/* Right Column (2/5) */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Quick Actions */}
-            <Card hover={false} className="p-5">
-              <h2 className="text-lg font-semibold text-white mb-4">Quick Actions</h2>
-              <div className="grid grid-cols-2 gap-3">
-                {quickActions.map((action) => (
-                  <Link key={action.label} href={action.href}>
-                    <div className="flex flex-col items-center gap-2 rounded-lg bg-white/[0.03] border border-white/[0.06] p-4 hover:bg-white/[0.06] transition-colors cursor-pointer">
-                      <action.icon className={`w-5 h-5 ${action.color}`} />
-                      <span className="text-xs font-medium text-gray-300">{action.label}</span>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </Card>
-
-            {/* Alerts */}
-            <Card hover={false} className="p-5">
-              <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4 text-portal-yellow" />
-                Alerts Requiring Attention
-              </h2>
-
-              <div className="space-y-3">
-                {alerts.map((alert) => (
-                  <Link key={alert.id} href={alert.action}>
-                    <div className="flex items-start gap-3 rounded-lg bg-white/[0.02] border border-white/[0.06] p-3 hover:bg-white/[0.04] transition-colors cursor-pointer">
-                      <div className="shrink-0 mt-0.5">
-                        <alert.icon className={`w-4 h-4 ${
-                          alert.type === "danger" ? "text-rose" : alert.type === "warning" ? "text-portal-yellow" : "text-portal-purple"
-                        }`} />
+        {/* ── Patient Alerts ─────────────────────────────────────────── */}
+        <section>
+          <p className="text-overline mb-3">PATIENT ALERTS</p>
+          <div className="space-y-2">
+            {alerts.map((alert) => (
+              <div
+                key={alert.id}
+                className={`glass-v2 p-3 border-l-[3px] ${alert.borderColor}`}
+              >
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-white">
+                      <span className="font-semibold">{alert.patient}</span>
+                      {" — "}
+                      {alert.message}
+                    </p>
+                    {alert.badges.length > 0 && (
+                      <div className="flex gap-1.5 mt-1.5">
+                        {alert.badges.map((badge) => (
+                          <span
+                            key={badge}
+                            className="inline-block rounded-full bg-[#4A90D9]/10 text-[#4A90D9] text-[10px] font-mono px-2 py-0.5"
+                          >
+                            {badge}
+                          </span>
+                        ))}
                       </div>
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium text-white">{alert.title}</p>
-                        <p className="text-xs text-gray-400 mt-0.5 leading-snug">{alert.description}</p>
-                      </div>
-                      <ArrowRight className="w-3.5 h-3.5 text-gray-600 shrink-0 mt-1" />
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </Card>
-
-            {/* Protocol Approval Queue */}
-            <Card hover={false} className="p-5">
-              <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                <ClipboardCheck className="w-4 h-4 text-portal-green" />
-                Protocol Approval Queue
-              </h2>
-
-              <div className="space-y-3">
-                {protocolQueue.map((proto) => (
-                  <div
-                    key={proto.id}
-                    className="flex items-center justify-between rounded-lg bg-white/[0.02] border border-white/[0.06] p-3"
-                  >
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-white truncate">{proto.patient}</p>
-                      <p className="text-[11px] text-gray-500 mt-0.5">
-                        {proto.supplements} supplements &middot; {proto.created}
-                      </p>
-                    </div>
-                    <Link href={`/practitioner/protocols/builder?patient=${proto.id}`}>
-                      <Button variant="secondary" size="sm">
-                        Review
-                      </Button>
-                    </Link>
+                    )}
                   </div>
-                ))}
+                  <div className="flex gap-3 shrink-0">
+                    {alert.actions.map((action) => (
+                      <Link
+                        key={action.label}
+                        href={action.href}
+                        className="text-xs text-[#4A90D9] hover:underline"
+                      >
+                        {action.label}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
               </div>
-            </Card>
+            ))}
           </div>
-        </StaggerChild>
+        </section>
+
+        {/* ── Recent Results ─────────────────────────────────────────── */}
+        <section>
+          <p className="text-overline mb-3">RECENT RESULTS</p>
+          <div className="glass-v2 p-0 overflow-hidden">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="border-b border-white/[0.06]">
+                  <th className="text-xs text-secondary uppercase font-medium py-2 px-3">Patient</th>
+                  <th className="text-xs text-secondary uppercase font-medium py-2 px-3">Panel</th>
+                  <th className="text-xs text-secondary uppercase font-medium py-2 px-3">Date</th>
+                  <th className="text-xs text-secondary uppercase font-medium py-2 px-3">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {recentResults.map((row, i) => (
+                  <tr
+                    key={row.patient}
+                    className={i % 2 === 1 ? "bg-white/[0.02]" : ""}
+                  >
+                    <td className="text-xs text-white py-2 px-3">{row.patient}</td>
+                    <td className="text-xs text-gray-300 py-2 px-3">{row.panel}</td>
+                    <td className="text-xs text-gray-400 py-2 px-3">{row.date}</td>
+                    <td className="text-xs py-2 px-3">
+                      <span className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-medium ${row.statusColor}`}>
+                        {row.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        {/* ── Quick Actions ──────────────────────────────────────────── */}
+        <section>
+          <p className="text-overline mb-3">QUICK ACTIONS</p>
+          <div className="flex flex-wrap gap-3">
+            <Link href="#">
+              <button className="px-4 py-2 rounded-lg text-sm font-medium text-white bg-gradient-to-r from-[#4A90D9] to-[#3A7BC8] hover:opacity-90 transition-opacity">
+                + New Patient
+              </button>
+            </Link>
+            <Link href="#">
+              <button className="px-4 py-2 rounded-lg text-sm font-medium text-[#4A90D9] border border-[#4A90D9]/30 bg-transparent hover:bg-[#4A90D9]/10 transition-colors">
+                Order Panel
+              </button>
+            </Link>
+            <Link href="#">
+              <button className="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/[0.04] transition-colors flex items-center gap-2">
+                <Video className="w-4 h-4" />
+                Start Video Call
+              </button>
+            </Link>
+          </div>
+        </section>
       </div>
-    </PageTransition>
+    </div>
   );
 }

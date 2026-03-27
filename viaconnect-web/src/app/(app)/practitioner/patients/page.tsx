@@ -2,128 +2,65 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { Search, UserPlus } from "lucide-react";
-import {
-  Card,
-  Button,
-  Badge,
-  Avatar,
-  DataTable,
-  Select,
-  Progress,
-} from "@/components/ui";
-import type { Column } from "@/components/ui";
-import { PageTransition, StaggerChild } from "@/lib/motion";
+import { Search, UserPlus, ChevronLeft, ChevronRight } from "lucide-react";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-type RiskLevel = "low" | "moderate" | "high" | "critical";
-type ConsentStatus = "active" | "pending" | "expired";
+type PatientStatus = "alert" | "warning" | "good";
 
 type Patient = {
   id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  avatarUrl: string | null;
-  lastVisit: string;          // ISO date
-  consentStatus: ConsentStatus;
-  riskLevel: RiskLevel;
-  adherence: number;          // 0-100
-  vitalityScore: number;      // 0-100
-  [key: string]: unknown;
+  name: string;
+  age: number;
+  variants: string[];
+  compliance: number;
+  panels: string;
+  lastVisit: string;
+  status: PatientStatus;
 };
 
 // ─── Mock Data ───────────────────────────────────────────────────────────────
 
 const PATIENTS: Patient[] = [
-  { id: "1", firstName: "Sarah", lastName: "Mitchell", email: "sarah.mitchell@email.com", avatarUrl: null, lastVisit: "2026-03-19", consentStatus: "active", riskLevel: "low", adherence: 92, vitalityScore: 84 },
-  { id: "2", firstName: "James", lastName: "Robertson", email: "j.robertson@email.com", avatarUrl: null, lastVisit: "2026-03-18", consentStatus: "active", riskLevel: "high", adherence: 58, vitalityScore: 45 },
-  { id: "3", firstName: "Anika", lastName: "Patel", email: "anika.patel@email.com", avatarUrl: null, lastVisit: "2026-03-17", consentStatus: "active", riskLevel: "moderate", adherence: 74, vitalityScore: 62 },
-  { id: "4", firstName: "Marcus", lastName: "Thompson", email: "marcus.t@email.com", avatarUrl: null, lastVisit: "2026-03-15", consentStatus: "pending", riskLevel: "moderate", adherence: 67, vitalityScore: 55 },
-  { id: "5", firstName: "Emily", lastName: "Zhao", email: "emily.zhao@email.com", avatarUrl: null, lastVisit: "2026-03-14", consentStatus: "active", riskLevel: "critical", adherence: 34, vitalityScore: 28 },
-  { id: "6", firstName: "David", lastName: "Nguyen", email: "d.nguyen@email.com", avatarUrl: null, lastVisit: "2026-03-10", consentStatus: "pending", riskLevel: "low", adherence: 88, vitalityScore: 76 },
-  { id: "7", firstName: "Olivia", lastName: "Garcia", email: "olivia.garcia@email.com", avatarUrl: null, lastVisit: "2026-03-08", consentStatus: "active", riskLevel: "low", adherence: 95, vitalityScore: 91 },
-  { id: "8", firstName: "Rashid", lastName: "Al-Farsi", email: "rashid.af@email.com", avatarUrl: null, lastVisit: "2026-02-28", consentStatus: "expired", riskLevel: "high", adherence: 42, vitalityScore: 38 },
-  { id: "9", firstName: "Catherine", lastName: "O'Brien", email: "c.obrien@email.com", avatarUrl: null, lastVisit: "2026-03-20", consentStatus: "active", riskLevel: "low", adherence: 89, vitalityScore: 82 },
-  { id: "10", firstName: "Tyler", lastName: "Brooks", email: "tyler.b@email.com", avatarUrl: null, lastVisit: "2026-03-12", consentStatus: "active", riskLevel: "moderate", adherence: 71, vitalityScore: 60 },
-  { id: "11", firstName: "Mei-Lin", lastName: "Chen", email: "meiling.chen@email.com", avatarUrl: null, lastVisit: "2026-02-20", consentStatus: "expired", riskLevel: "critical", adherence: 22, vitalityScore: 19 },
-  { id: "12", firstName: "Jordan", lastName: "Williams", email: "j.williams@email.com", avatarUrl: null, lastVisit: "2026-03-16", consentStatus: "pending", riskLevel: "moderate", adherence: 63, vitalityScore: 51 },
+  { id: "1", name: "John Davis", age: 45, variants: ["MTHFR CT", "COMT AG"], compliance: 78, panels: "3/6", lastVisit: "Mar 24", status: "alert" },
+  { id: "2", name: "Sarah Kim", age: 32, variants: ["VDR TT", "CYP1A2 AA"], compliance: 94, panels: "4/6", lastVisit: "Mar 22", status: "good" },
+  { id: "3", name: "Maria Santos", age: 58, variants: ["MTHFR TT", "APOE E4"], compliance: 45, panels: "2/6", lastVisit: "Mar 20", status: "warning" },
+  { id: "4", name: "Alex Thompson", age: 29, variants: ["COMT GG", "MAOA TT"], compliance: 88, panels: "6/6", lastVisit: "Mar 18", status: "good" },
+  { id: "5", name: "Lisa Chen", age: 41, variants: ["FTO AA", "BDNF Val66Met"], compliance: 91, panels: "5/6", lastVisit: "Mar 15", status: "good" },
+  { id: "6", name: "Mike Rodriguez", age: 53, variants: ["CYP2D6 PM", "MTHFR CT"], compliance: 62, panels: "1/6", lastVisit: "Mar 10", status: "warning" },
 ];
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-function initials(first: string, last: string) {
-  return `${first[0]}${last[0]}`;
-}
-
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-}
-
-function daysSince(iso: string) {
-  return Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000);
-}
-
-const riskBadge: Record<RiskLevel, "active" | "pending" | "warning" | "danger"> = {
-  low: "active",
-  moderate: "pending",
-  high: "warning",
-  critical: "danger",
+const statusConfig: Record<PatientStatus, { dot: string; label: string }> = {
+  alert: { dot: "bg-red-400", label: "Alert" },
+  warning: { dot: "bg-amber-400", label: "Warning" },
+  good: { dot: "bg-emerald-400", label: "Good" },
 };
 
-const consentBadge: Record<ConsentStatus, "active" | "pending" | "danger"> = {
-  active: "active",
-  pending: "pending",
-  expired: "danger",
-};
-
-function vitalityColor(score: number) {
-  if (score > 70) return "text-portal-green";
-  if (score >= 40) return "text-portal-yellow";
-  return "text-rose";
+function complianceColor(pct: number): string {
+  if (pct >= 80) return "text-emerald-400";
+  if (pct >= 60) return "text-amber-400";
+  return "text-red-400";
 }
 
-function adherenceBarColor(pct: number) {
-  if (pct >= 75) return "bg-portal-green";
-  if (pct >= 50) return "bg-portal-yellow";
-  return "bg-rose";
-}
+type FilterKey = "all" | "high-alert" | "low-compliance" | "pending-results" | "GENEX-M" | "GeneX360" | "PeptideIQ";
 
-// ─── Filter Options ──────────────────────────────────────────────────────────
-
-const riskOptions = [
-  { value: "all", label: "All Risk Levels" },
-  { value: "low", label: "Low" },
-  { value: "moderate", label: "Moderate" },
-  { value: "high", label: "High" },
-  { value: "critical", label: "Critical" },
-];
-
-const consentOptions = [
-  { value: "all", label: "All Consent" },
-  { value: "active", label: "Active" },
-  { value: "pending", label: "Pending" },
-  { value: "expired", label: "Expired" },
-];
-
-const visitOptions = [
-  { value: "all", label: "All Visits" },
-  { value: "7", label: "Last 7 days" },
-  { value: "30", label: "Last 30 days" },
-  { value: "90", label: "Last 90 days" },
+const FILTERS: { key: FilterKey; label: string }[] = [
+  { key: "all", label: "All" },
+  { key: "high-alert", label: "High Alert" },
+  { key: "low-compliance", label: "Low Compliance" },
+  { key: "pending-results", label: "Pending Results" },
+  { key: "GENEX-M", label: "GENEX-M" },
+  { key: "GeneX360", label: "GeneX360" },
+  { key: "PeptideIQ", label: "PeptideIQ" },
 ];
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export default function PatientsPage() {
-  void useRouter(); // available for row navigation
-
   const [search, setSearch] = useState("");
-  const [riskFilter, setRiskFilter] = useState("all");
-  const [consentFilter, setConsentFilter] = useState("all");
-  const [visitFilter, setVisitFilter] = useState("all");
+  const [activeFilter, setActiveFilter] = useState<FilterKey>("all");
 
   const filtered = useMemo(() => {
     let list = PATIENTS;
@@ -131,187 +68,157 @@ export default function PatientsPage() {
     // Text search
     if (search.trim()) {
       const q = search.toLowerCase();
-      list = list.filter(
-        (p) =>
-          `${p.firstName} ${p.lastName}`.toLowerCase().includes(q) ||
-          p.email.toLowerCase().includes(q)
-      );
+      list = list.filter((p) => p.name.toLowerCase().includes(q));
     }
 
-    // Risk level
-    if (riskFilter !== "all") {
-      list = list.filter((p) => p.riskLevel === riskFilter);
-    }
-
-    // Consent
-    if (consentFilter !== "all") {
-      list = list.filter((p) => p.consentStatus === consentFilter);
-    }
-
-    // Last visit range
-    if (visitFilter !== "all") {
-      const days = parseInt(visitFilter, 10);
-      list = list.filter((p) => daysSince(p.lastVisit) <= days);
+    // Filter pills
+    switch (activeFilter) {
+      case "high-alert":
+        list = list.filter((p) => p.status === "alert");
+        break;
+      case "low-compliance":
+        list = list.filter((p) => p.compliance < 70);
+        break;
+      case "pending-results":
+        // Mock: show patients with fewer completed panels
+        list = list.filter((p) => parseInt(p.panels) < 3);
+        break;
+      case "GENEX-M":
+      case "GeneX360":
+      case "PeptideIQ":
+        // Mock: show all for panel filters
+        break;
+      default:
+        break;
     }
 
     return list;
-  }, [search, riskFilter, consentFilter, visitFilter]);
-
-  // ── Column Definitions ──────────────────────────────────────────────────
-
-  const columns: Column<Patient>[] = [
-    {
-      key: "lastName",
-      header: "Name",
-      sortable: true,
-      render: (row) => (
-        <div className="flex items-center gap-3">
-          <Avatar fallback={initials(row.firstName, row.lastName)} size="sm" />
-          <div className="min-w-0">
-            <p className="text-sm font-medium text-white truncate">
-              {row.firstName} {row.lastName}
-            </p>
-            <p className="text-[11px] text-gray-500 truncate">{row.email}</p>
-          </div>
-        </div>
-      ),
-    },
-    {
-      key: "lastVisit",
-      header: "Last Visit",
-      sortable: true,
-      render: (row) => <span className="text-sm text-gray-300">{formatDate(row.lastVisit)}</span>,
-    },
-    {
-      key: "consentStatus",
-      header: "Consent",
-      sortable: false,
-      render: (row) => (
-        <Badge variant={consentBadge[row.consentStatus]}>
-          {row.consentStatus.charAt(0).toUpperCase() + row.consentStatus.slice(1)}
-        </Badge>
-      ),
-    },
-    {
-      key: "riskLevel",
-      header: "Risk Level",
-      sortable: false,
-      render: (row) => (
-        <Badge variant={riskBadge[row.riskLevel]}>
-          {row.riskLevel.charAt(0).toUpperCase() + row.riskLevel.slice(1)}
-        </Badge>
-      ),
-    },
-    {
-      key: "adherence",
-      header: "Adherence",
-      sortable: true,
-      render: (row) => (
-        <div className="flex items-center gap-2 min-w-[120px]">
-          <Progress value={row.adherence} color={adherenceBarColor(row.adherence)} className="flex-1" />
-          <span className="text-xs text-gray-400 w-8 text-right">{row.adherence}%</span>
-        </div>
-      ),
-    },
-    {
-      key: "vitalityScore",
-      header: "Vitality",
-      sortable: true,
-      render: (row) => (
-        <span className={`text-sm font-semibold ${vitalityColor(row.vitalityScore)}`}>
-          {row.vitalityScore}
-        </span>
-      ),
-    },
-    {
-      key: "actions",
-      header: "",
-      render: (row) => (
-        <Link
-          href={`/practitioner/patients/${row.id}`}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <Button variant="ghost" size="sm" className="text-portal-green">
-            View
-          </Button>
-        </Link>
-      ),
-    },
-  ];
+  }, [search, activeFilter]);
 
   return (
-    <PageTransition className="min-h-screen bg-dark-bg p-6 md:p-10">
-      <div className="max-w-7xl mx-auto space-y-6">
-        {/* ── Header ──────────────────────────────────────────────────── */}
-        <StaggerChild className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-white">Patients</h1>
-            <p className="text-gray-400 mt-1">Manage your patient roster</p>
-          </div>
-          <Button
-            variant="secondary"
-            size="md"
-            className="!bg-portal-green/15 !text-portal-green !border-portal-green/30 hover:!bg-portal-green/25"
-          >
-            <UserPlus className="w-4 h-4 mr-2" />
-            Add Patient
-          </Button>
-        </StaggerChild>
+    <div className="min-h-screen bg-dark-bg p-4 md:p-8">
+      <div className="max-w-7xl mx-auto space-y-5">
+        {/* ── Header ───────────────────────────────────────────────── */}
+        <div className="flex items-center justify-between">
+          <h1 className="text-heading-2 text-[#B75E18]">Patients</h1>
+          <Link href="#">
+            <button className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white bg-gradient-to-r from-[#4A90D9] to-[#3A7BC8] hover:opacity-90 transition-opacity">
+              <UserPlus className="w-4 h-4" />
+              + Add Patient
+            </button>
+          </Link>
+        </div>
 
-        {/* ── Filters ─────────────────────────────────────────────────── */}
-        <StaggerChild>
-        <Card hover={false} className="p-4">
-          <div className="flex flex-col md:flex-row gap-3">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search patients..."
-                className="w-full h-10 pl-9 pr-3 rounded-lg text-sm text-white placeholder:text-gray-600 outline-none transition-colors
-                  bg-white/[0.04] border border-white/[0.08] focus:border-copper/50 focus:ring-1 focus:ring-copper/20"
-              />
-            </div>
-            <div className="w-full md:w-44">
-              <Select
-                value={riskFilter}
-                onValueChange={setRiskFilter}
-                options={riskOptions}
-                placeholder="Risk Level"
-              />
-            </div>
-            <div className="w-full md:w-44">
-              <Select
-                value={consentFilter}
-                onValueChange={setConsentFilter}
-                options={consentOptions}
-                placeholder="Consent Status"
-              />
-            </div>
-            <div className="w-full md:w-44">
-              <Select
-                value={visitFilter}
-                onValueChange={setVisitFilter}
-                options={visitOptions}
-                placeholder="Last Visit"
-              />
-            </div>
-          </div>
-        </Card>
-        </StaggerChild>
-
-        {/* ── Data Table ──────────────────────────────────────────────── */}
-        <StaggerChild>
-        <Card hover={false} className="overflow-hidden p-0">
-          <DataTable<Patient>
-            columns={columns}
-            data={filtered}
-            pageSize={10}
+        {/* ── Search Bar ───────────────────────────────────────────── */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search patients..."
+            className="w-full h-10 pl-9 pr-3 rounded-lg text-sm text-white placeholder:text-gray-600 outline-none transition-colors
+              bg-white/[0.04] border border-white/[0.08] backdrop-blur-sm focus:border-[#4A90D9]/50 focus:ring-1 focus:ring-[#4A90D9]/20"
           />
-        </Card>
-        </StaggerChild>
+        </div>
+
+        {/* ── Filter Pills ─────────────────────────────────────────── */}
+        <div className="flex flex-wrap gap-2">
+          {FILTERS.map((filter) => (
+            <button
+              key={filter.key}
+              onClick={() => setActiveFilter(filter.key)}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                activeFilter === filter.key
+                  ? "bg-[#4A90D9]/15 text-[#4A90D9]"
+                  : "bg-white/[0.04] text-gray-400 hover:bg-white/[0.06] hover:text-gray-300"
+              }`}
+            >
+              {filter.label}
+            </button>
+          ))}
+        </div>
+
+        {/* ── Patient Table ────────────────────────────────────────── */}
+        <div className="glass-v2 p-0 overflow-hidden">
+          <table className="w-full text-left">
+            <thead>
+              <tr className="border-b border-white/[0.06]">
+                <th className="text-xs text-secondary uppercase font-medium py-2 px-3">Name</th>
+                <th className="text-xs text-secondary uppercase font-medium py-2 px-3">Age</th>
+                <th className="text-xs text-secondary uppercase font-medium py-2 px-3">Key Variants</th>
+                <th className="text-xs text-secondary uppercase font-medium py-2 px-3">Compliance</th>
+                <th className="text-xs text-secondary uppercase font-medium py-2 px-3">Panels</th>
+                <th className="text-xs text-secondary uppercase font-medium py-2 px-3">Last Visit</th>
+                <th className="text-xs text-secondary uppercase font-medium py-2 px-3">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((patient, i) => {
+                const status = statusConfig[patient.status];
+                return (
+                  <Link
+                    key={patient.id}
+                    href="#"
+                    className="contents"
+                  >
+                    <tr
+                      className={`hover:bg-white/[0.03] cursor-pointer transition-colors ${
+                        i % 2 === 1 ? "bg-white/[0.02]" : ""
+                      }`}
+                    >
+                      <td className="text-xs font-medium text-white py-2 px-3">{patient.name}</td>
+                      <td className="text-xs text-gray-300 py-2 px-3">{patient.age}</td>
+                      <td className="text-xs py-2 px-3">
+                        <div className="flex flex-wrap gap-1">
+                          {patient.variants.map((v) => (
+                            <span
+                              key={v}
+                              className="inline-block rounded-full bg-blue-500/10 text-[#4A90D9] text-[10px] font-mono px-2 py-0.5"
+                            >
+                              {v}
+                            </span>
+                          ))}
+                        </div>
+                      </td>
+                      <td className="text-xs py-2 px-3">
+                        <span className={`font-medium ${complianceColor(patient.compliance)}`}>
+                          {patient.compliance}%
+                        </span>
+                      </td>
+                      <td className="text-xs text-gray-300 py-2 px-3">{patient.panels}</td>
+                      <td className="text-xs text-gray-400 py-2 px-3">{patient.lastVisit}</td>
+                      <td className="text-xs py-2 px-3">
+                        <div className="flex items-center gap-1.5">
+                          <span className={`w-2 h-2 rounded-full ${status.dot}`} />
+                          <span className="text-gray-300">{status.label}</span>
+                        </div>
+                      </td>
+                    </tr>
+                  </Link>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+
+        {/* ── Pagination ───────────────────────────────────────────── */}
+        <div className="flex items-center justify-between">
+          <p className="text-xs text-secondary">
+            Showing 1-{filtered.length} of 42 patients
+          </p>
+          <div className="flex gap-2">
+            <button className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs text-gray-400 bg-white/[0.04] border border-white/[0.06] hover:bg-white/[0.06] transition-colors">
+              <ChevronLeft className="w-3 h-3" />
+              Previous
+            </button>
+            <button className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs text-gray-400 bg-white/[0.04] border border-white/[0.06] hover:bg-white/[0.06] transition-colors">
+              Next
+              <ChevronRight className="w-3 h-3" />
+            </button>
+          </div>
+        </div>
       </div>
-    </PageTransition>
+    </div>
   );
 }
