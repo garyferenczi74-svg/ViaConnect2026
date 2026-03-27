@@ -20,7 +20,7 @@ const PORTAL_NAV: Record<string, NavItem[]> = {
     { href: '/supplements', label: 'Supplements', icon: Pill },
     { href: '/wearables', label: 'Wearables', icon: Activity },
     { href: '/shop', label: 'Shop', icon: ShoppingBag },
-    { href: '/tokens', label: 'ViaTokens', icon: Coins },
+    { href: '/helix/arena', label: 'Helix Rewards', icon: Coins },
     { href: '/messages', label: 'Messages', icon: MessageSquare },
     { href: '/plugins', label: 'Plugins', icon: Plug },
     { href: '/media-sources', label: 'Research', icon: Newspaper },
