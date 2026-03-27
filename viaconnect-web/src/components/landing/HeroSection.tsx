@@ -41,15 +41,15 @@ function HeroHeader() {
                 className="group fixed z-20 w-full px-2">
                 <div className={cn('mx-auto mt-2 max-w-6xl px-6 transition-all duration-300 lg:px-12', isScrolled && 'bg-[#0d1225]/80 max-w-4xl rounded-3xl border border-white/5 backdrop-blur-2xl lg:px-5')}>
                     <div className="relative flex flex-wrap items-center justify-between gap-6 py-3 md:gap-0 md:py-4">
-                        <div className="flex w-full justify-between lg:w-auto">
+                        <div className="flex w-full items-center justify-between lg:w-auto">
                             <Link href="/" aria-label="home">
                                 <Logo />
                             </Link>
                             <button
                                 onClick={() => setMenuState(!menuState)}
                                 aria-label={menuState ? 'Close Menu' : 'Open Menu'}
-                                className="relative z-20 -mr-6 block p-6 lg:hidden">
-                                <div aria-hidden="true" className="m-auto size-6 text-white">
+                                className="relative z-20 flex items-center justify-center w-10 h-10 rounded-lg lg:hidden hover:bg-white/10 transition-colors">
+                                <div aria-hidden="true" className="size-5 text-white">
                                     {menuState ? <X /> : <Menu />}
                                 </div>
                             </button>
