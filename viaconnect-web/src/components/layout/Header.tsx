@@ -93,14 +93,10 @@ export function Header({
         borderBottomColor: "rgba(255,255,255,0.06)",
       }}
     >
-      {/* Mobile hamburger */}
-      <button
-        onClick={onMobileMenuToggle}
-        className="text-gray-400 hover:text-white lg:hidden mr-3 transition-colors"
-        aria-label="Toggle menu"
-      >
-        {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-      </button>
+      {/* ViaConnect logo on mobile */}
+      <span className="lg:hidden mr-3 text-sm font-bold tracking-tight">
+        <span className="text-[#B75E18]">Via</span><span className="text-white">Connect</span>
+      </span>
 
       {/* Breadcrumbs */}
       <nav className="flex items-center gap-1.5 text-sm min-w-0 flex-1">

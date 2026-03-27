@@ -74,16 +74,14 @@ export function AppShell({
           transition: "margin-left 200ms ease",
         }}
       >
-        {/* Desktop: Header with breadcrumbs */}
-        {mounted && isDesktop && (
-          <Header
-            onMobileMenuToggle={() => {}}
-            mobileMenuOpen={false}
-            onCommandPaletteOpen={handleCommandPaletteOpen}
-          />
-        )}
+        {/* Header — always visible (logo, breadcrumbs, search, bell) */}
+        <Header
+          onMobileMenuToggle={() => {}}
+          mobileMenuOpen={false}
+          onCommandPaletteOpen={handleCommandPaletteOpen}
+        />
 
-        {/* Mobile: Horizontal scrolling nav bar (replaces sidebar) */}
+        {/* Mobile only: horizontal scrolling nav bar below header */}
         {mounted && !isDesktop && (
           <MobileNavBar role={role} />
         )}

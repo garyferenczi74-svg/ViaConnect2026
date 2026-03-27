@@ -73,7 +73,7 @@ export function MobileNavBar({ role }: { role: string }) {
   };
 
   return (
-    <div className="sticky top-0 z-30 lg:hidden"
+    <div className="z-30 lg:hidden"
       style={{
         background: 'rgba(13, 21, 32, 0.9)',
         backdropFilter: 'blur(16px)',
