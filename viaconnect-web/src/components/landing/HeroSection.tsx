@@ -104,19 +104,22 @@ export function HeroSection() {
                                 <h1 className="mt-8 max-w-2xl text-balance text-4xl sm:text-5xl md:text-6xl lg:mt-16 xl:text-7xl font-bold text-white leading-[1.1]">
                                     Precision Health<br className="hidden sm:block" /> Powered by Your DNA
                                 </h1>
-                                <p className="mt-6 sm:mt-8 max-w-2xl text-balance text-base sm:text-lg text-slate-300">
+                                <p className="mt-8 sm:mt-10 max-w-2xl text-balance text-base sm:text-lg text-slate-300 leading-relaxed">
                                     One Genome  One Formulation  One Life at a Time
                                 </p>
-                                <div className="mt-8 sm:mt-12 flex flex-col items-center justify-center gap-3 sm:flex-row lg:justify-start">
+                                <p className="mt-4 max-w-md mx-auto lg:mx-0 text-sm sm:text-base text-slate-400 leading-relaxed text-balance">
+                                    Precision health insights from your DNA, delivered through formulations engineered for your unique genome
+                                </p>
+                                <div className="mt-10 sm:mt-14 flex flex-col items-center justify-center gap-4 sm:flex-row lg:justify-start">
                                     <Link
                                         href="/signup"
-                                        className="inline-flex h-12 w-full sm:w-auto items-center justify-center rounded-full bg-[#b75e18] pl-5 pr-3 text-base font-medium text-white shadow-[0_0_20px_rgba(183,94,24,0.4)] transition-all duration-300 hover:bg-[#d4741f] hover:shadow-[0_0_30px_rgba(183,94,24,0.6)]">
+                                        className="inline-flex h-14 sm:h-12 w-full sm:w-auto items-center justify-center rounded-full bg-[#b75e18] pl-6 pr-4 text-base font-semibold text-white shadow-[0_0_20px_rgba(183,94,24,0.4)] transition-all duration-300 hover:bg-[#d4741f] hover:shadow-[0_0_30px_rgba(183,94,24,0.6)]">
                                         <span className="text-nowrap">Your Journey Starts Here</span>
                                         <ChevronRight className="ml-1" />
                                     </Link>
                                     <Link
                                         href="/genex360"
-                                        className="inline-flex h-12 w-full sm:w-auto items-center justify-center rounded-full border border-white/20 px-5 text-base font-medium text-white backdrop-blur-sm transition-all duration-300 hover:border-white/30 hover:bg-white/10">
+                                        className="inline-flex h-14 sm:h-12 w-full sm:w-auto items-center justify-center rounded-full border border-white/20 px-6 text-base font-semibold text-white backdrop-blur-sm transition-all duration-300 hover:border-white/30 hover:bg-white/10">
                                         <span className="text-nowrap">Explore GeneX360</span>
                                     </Link>
                                 </div>
