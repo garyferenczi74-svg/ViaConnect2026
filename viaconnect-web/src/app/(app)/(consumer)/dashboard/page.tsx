@@ -191,9 +191,9 @@ export default function ConsumerDashboard() {
         </div>
       </section>
 
-      {/* ── Genetic Insight of the Day ────────────────────────────────── */}
+      {/* ── Insights of the Day ────────────────────────────────── */}
       <section className="px-4 lg:px-6 pb-6">
-        <p className="text-overline mb-4">Genetic Insight of the Day</p>
+        <p className="text-overline mb-4">Insights of the Day</p>
         <GeneticInsightCard
           gene="MTHFR"
           variant="C677T"
