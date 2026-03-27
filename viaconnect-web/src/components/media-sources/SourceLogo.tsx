@@ -20,13 +20,14 @@ export function SourceLogo({ source, size = 48, className }: SourceLogoProps) {
   const [imgError, setImgError] = useState(false);
 
   const borderRadius = source.logoType === 'round' ? '50%' : 14;
+  const isSvg = source.logoUrl?.endsWith('.svg');
 
   const containerStyle: React.CSSProperties = {
     width: size,
     height: size,
     borderRadius,
-    background: `linear-gradient(135deg, ${source.color}26, ${source.color}40)`,
-    border: `1.5px solid ${source.color}40`,
+    background: `linear-gradient(135deg, ${source.color}15, ${source.color}30)`,
+    border: `1.5px solid ${source.color}30`,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -37,22 +38,25 @@ export function SourceLogo({ source, size = 48, className }: SourceLogoProps) {
   if (source.logoUrl && !imgError) {
     return (
       <div style={containerStyle} className={className}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={source.logoUrl}
           alt={source.name}
           onError={() => setImgError(true)}
+          loading="lazy"
           style={{
-            width: size * 0.65,
-            height: size * 0.65,
+            width: isSvg ? size * 0.55 : size * 0.75,
+            height: isSvg ? size * 0.55 : size * 0.75,
             objectFit: 'contain',
-            borderRadius: 4,
+            borderRadius: isSvg ? 0 : 6,
+            imageRendering: 'auto',
           }}
         />
       </div>
     );
   }
 
-  // Fallback: initials / icon text
+  // Fallback: styled initials
   return (
     <div style={containerStyle} className={className}>
       <span
@@ -61,6 +65,7 @@ export function SourceLogo({ source, size = 48, className }: SourceLogoProps) {
           fontWeight: 800,
           color: source.color,
           lineHeight: 1,
+          letterSpacing: '-0.5px',
         }}
       >
         {source.icon}
