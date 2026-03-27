@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
+import { ViaConnectLogo, DNAHelixIcon } from "@/components/ui/ViaConnectLogo";
 import {
   LayoutDashboard,
   Dna,
@@ -224,20 +225,17 @@ export function Sidebar({
       {/* ── Top: Logo + Collapse Toggle ── */}
       <div className="flex items-center h-16 px-4" style={{ justifyContent: collapsed ? "center" : "space-between" }}>
         <Link href={portal.homeHref} className="flex items-center min-w-0">
-          {/* Logo text */}
           {collapsed ? (
-            <span className="text-lg font-bold text-copper leading-none">V</span>
+            <DNAHelixIcon size={24} />
           ) : (
-            <>
-              <span className="text-lg font-bold leading-none">
-                <span className="text-copper">Via</span><span className="text-white">Connect</span>
-              </span>
+            <span className="flex items-center gap-2">
+              <ViaConnectLogo size="md" />
               {portal.badge && (
-                <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ml-2 ${portal.badge.bg}`}>
+                <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${portal.badge.bg}`}>
                   {portal.badge.label}
                 </span>
               )}
-            </>
+            </span>
           )}
         </Link>
         {!collapsed && (

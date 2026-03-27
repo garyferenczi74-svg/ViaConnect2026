@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Bell, Search, Menu, X } from "lucide-react";
+import { ViaConnectLogo } from "@/components/ui/ViaConnectLogo";
 
 // ─── Breadcrumb helpers ──────────────────────────────────────────────────────
 
@@ -94,8 +95,8 @@ export function Header({
       }}
     >
       {/* ViaConnect logo on mobile */}
-      <span className="lg:hidden mr-3 text-sm font-bold tracking-tight">
-        <span className="text-[#B75E18]">Via</span><span className="text-white">Connect</span>
+      <span className="lg:hidden mr-3">
+        <ViaConnectLogo size="sm" />
       </span>
 
       {/* Breadcrumbs */}
