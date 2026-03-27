@@ -4,6 +4,7 @@ import { AppShell } from "@/components/app-shell";
 import { mapDatabaseRoleToUserRole } from "@/lib/supabase/types";
 import type { UserRole } from "@/lib/supabase/types";
 import { AdminPortalDetector } from "@/components/AdminPortalDetector";
+import { MobileNavWrapper } from "@/components/MobileNavWrapper";
 
 // All (app) routes require authentication — never statically generate them
 export const dynamic = "force-dynamic";
@@ -43,7 +44,9 @@ export default async function AppLayout({
 
   return (
     <AppShell user={user} role={role}>
-      {children}
+      <MobileNavWrapper role={role}>
+        {children}
+      </MobileNavWrapper>
     </AppShell>
   );
 }

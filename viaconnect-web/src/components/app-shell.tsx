@@ -81,14 +81,9 @@ export function AppShell({
           onCommandPaletteOpen={handleCommandPaletteOpen}
         />
 
-        {/* Mobile only: horizontal scrolling nav bar below header */}
-        {mounted && !isDesktop && (
-          <MobileNavBar role={role} />
-        )}
-
         {/* Page content */}
-        <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 lg:p-6">
-          <ErrorBoundary>{children}</ErrorBoundary>
+        <main className="flex-1 overflow-y-auto overflow-x-hidden">
+          {children}
         </main>
       </div>
 
@@ -97,3 +92,4 @@ export function AppShell({
     </div>
   );
 }
+

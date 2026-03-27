@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
+import { MobileNavBar } from "@/components/layout/MobileNavBar";
 import type { User } from "@supabase/supabase-js";
 import Link from "next/link";
 
@@ -21,17 +22,15 @@ export function AdminPortalDetector({
 }) {
   const pathname = usePathname();
 
-  // Detect which portal the admin is currently viewing based on URL
   let activePortal: string = "consumer";
   if (pathname.startsWith("/practitioner")) activePortal = "practitioner";
   else if (pathname.startsWith("/naturopath")) activePortal = "naturopath";
   else if (pathname.startsWith("/admin")) activePortal = "admin";
 
-  // Pass the detected portal role to AppShell so sidebar switches per portal
   return (
     <AppShell user={user} role={activePortal}>
-      {/* Admin Portal Switcher Tabs */}
-      <div className="sticky top-0 z-40 flex items-center gap-1.5 px-4 py-2 bg-dark-bg/80 backdrop-blur-sm border-b border-copper/20">
+      {/* 1. Portal Switcher Tabs */}
+      <div className="sticky top-16 z-40 flex items-center gap-1.5 px-4 py-2 bg-dark-bg/80 backdrop-blur-sm border-b border-copper/20">
         {PORTALS.map((p) => {
           const isActive = activePortal === p.key;
           return (
@@ -49,7 +48,14 @@ export function AdminPortalDetector({
           );
         })}
       </div>
-      {children}
+
+      {/* 2. Mobile Nav Bar — between portal tabs and page content */}
+      <MobileNavBar role={activePortal} />
+
+      {/* 3. Page content with padding */}
+      <div className="p-4 lg:p-6">
+        {children}
+      </div>
     </AppShell>
   );
 }
