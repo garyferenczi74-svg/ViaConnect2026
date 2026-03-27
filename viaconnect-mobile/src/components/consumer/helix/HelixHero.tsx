@@ -129,8 +129,9 @@ export function HelixHero() {
   return (
     <Animated.View entering={FadeInUp.duration(500).springify().damping(18)}>
       {/* Title */}
-      <Text className="text-3xl font-extrabold text-copper tracking-tight">
-        Helix Rewards<Text className="text-teal">™</Text>
+      <Text className="text-3xl font-extrabold tracking-tight">
+        <Text className="text-copper">Helix</Text>{' '}
+        <Text className="text-white">Rewards</Text>
       </Text>
       <Text className="text-xs font-bold uppercase tracking-[3px] text-white/30 mt-1">
         Earn <Text className="text-teal">·</Text> Compete{' '}

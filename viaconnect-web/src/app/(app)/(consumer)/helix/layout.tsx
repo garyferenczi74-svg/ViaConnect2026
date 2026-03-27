@@ -108,10 +108,11 @@ export default function HelixLayout({ children }: { children: React.ReactNode })
             {/* Left side - Title & tagline */}
             <div className="flex-1 min-w-[300px]">
               <h1
-                className="font-extrabold tracking-[-1.5px] text-[#B75E18]"
+                className="font-extrabold tracking-[-1.5px]"
                 style={{ fontSize: 'clamp(36px, 5vw, 62px)' }}
               >
-                Helix Rewards<span className="text-[#2DA5A0]">&trade;</span>
+                <span className="text-[#B75E18]">Helix</span>{' '}
+                <span className="text-white">Rewards</span>
               </h1>
               <p
                 className="font-bold uppercase tracking-[4px] text-white/35 mt-3"
