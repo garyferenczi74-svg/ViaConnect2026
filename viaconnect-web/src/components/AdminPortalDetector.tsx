@@ -30,7 +30,7 @@ export function AdminPortalDetector({
   return (
     <AppShell user={user} role={activePortal}>
       {/* 1. Portal Switcher Tabs */}
-      <div className="sticky top-16 z-40 flex items-center gap-1.5 px-4 py-2 bg-dark-bg/80 backdrop-blur-sm border-b border-copper/20">
+      <div className="flex items-center gap-1.5 px-4 py-2 bg-dark-bg/80 border-b border-copper/20">
         {PORTALS.map((p) => {
           const isActive = activePortal === p.key;
           return (
