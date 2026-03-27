@@ -8,6 +8,8 @@ import { LeaderboardBar } from '@/components/helix/LeaderboardBar';
 import { ChallengeCard } from '@/components/helix/ChallengeCard';
 import { MessageBubble } from '@/components/helix/MessageBubble';
 import { HelixIcon } from '@/components/helix/HelixIcon';
+import { Swords, MessageCircle, Flame, Activity, Footprints, Pill, Salad, Dumbbell, Target, HeartHandshake } from 'lucide-react';
+import { HelixIconWrapper } from '@/components/helix/HelixIcons';
 
 /* ------------------------------------------------------------------ */
 /*  Data                                                               */
@@ -47,18 +49,18 @@ const INITIAL_MESSAGES: ChatMessage[] = [
 ];
 
 const QUICK_REACTIONS = [
-  '🔥 Let\'s go!',
-  '💪 Crushing it!',
-  '👏 Great work!',
-  '🏃 Keep moving!',
+  { icon: Flame, text: "🔥 Let's go!" },
+  { icon: Dumbbell, text: "💪 Crushing it!" },
+  { icon: HeartHandshake, text: "👏 Great work!" },
+  { icon: Footprints, text: "🏃 Keep moving!" },
 ];
 
 const ACTIVE_CHALLENGES = [
-  { emoji: '👟', title: '10K Steps Sprint',  description: 'Hit 10,000 steps every day for a week', helix: 500,  active: true, progress: 71, participants: 5 },
-  { emoji: '💊', title: 'Perfect Protocol',  description: 'Take all supplements on time for 14 days', helix: 750,  active: true, progress: 43, participants: 3 },
-  { emoji: '🥗', title: 'Clean Plate Club',  description: 'Log every meal for 21 days straight', helix: 600,  active: true, progress: 85, participants: 4 },
-  { emoji: '💪', title: 'Iron Week',         description: 'Complete 5 workouts in 7 days', helix: 800,  active: true, progress: 60, participants: 2 },
-  { emoji: '🎯', title: 'Biomarker Blitz',   description: 'Record all biomarkers for 30 days', helix: 900,  active: true, progress: 40, participants: 3 },
+  { type: 'steps',       title: '10K Steps Sprint',  description: 'Hit 10,000 steps every day for a week', helix: 500,  active: true, progress: 71, participants: 5 },
+  { type: 'supplements', title: 'Perfect Protocol',  description: 'Take all supplements on time for 14 days', helix: 750,  active: true, progress: 43, participants: 3 },
+  { type: 'nutrition',   title: 'Clean Plate Club',  description: 'Log every meal for 21 days straight', helix: 600,  active: true, progress: 85, participants: 4 },
+  { type: 'workout',     title: 'Iron Week',         description: 'Complete 5 workouts in 7 days', helix: 800,  active: true, progress: 60, participants: 2 },
+  { type: 'markers',     title: 'Biomarker Blitz',   description: 'Record all biomarkers for 30 days', helix: 900,  active: true, progress: 40, participants: 3 },
 ];
 
 const ONLINE_USERS = [
@@ -108,11 +110,14 @@ export default function ArenaPage() {
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h2 className="text-[20px] font-extrabold text-[#B75E18]">⚔️ Weekly Arena</h2>
+              <h2 className="flex items-center gap-2 text-[20px] font-extrabold text-[#B75E18]">
+                <Swords size={20} strokeWidth={1.5} className="text-[#B75E18]" />
+                Weekly Arena
+              </h2>
               <p className="text-[11px] text-white/35 font-semibold mt-1">Resets in 3d 14h 22m</p>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-[#2DA5A0] animate-pulse" />
+              <Activity size={12} strokeWidth={2} className="text-[#2DA5A0] animate-pulse" />
               <span className="text-[10px] font-bold uppercase tracking-wider text-[#2DA5A0]">
                 LIVE
               </span>
@@ -182,7 +187,10 @@ export default function ArenaPage() {
         <GlassCard>
           {/* Chat header */}
           <div className="flex items-center justify-between mb-5">
-            <h2 className="text-[20px] font-extrabold text-[#B75E18]">💬 Squad Chat</h2>
+            <h2 className="flex items-center gap-2 text-[20px] font-extrabold text-[#B75E18]">
+              <MessageCircle size={20} strokeWidth={1.5} className="text-[#B75E18]" />
+              Squad Chat
+            </h2>
             <div className="flex -space-x-2">
               {ONLINE_USERS.map((u) => (
                 <div
@@ -236,11 +244,12 @@ export default function ArenaPage() {
           <div className="flex flex-wrap gap-2">
             {QUICK_REACTIONS.map((reaction) => (
               <button
-                key={reaction}
-                onClick={() => sendMessage(reaction)}
-                className="px-3 py-1.5 rounded-full text-[11px] font-semibold bg-white/[0.04] border border-white/[0.06] text-white/50 hover:bg-white/[0.08] hover:text-white/70 transition-colors"
+                key={reaction.text}
+                onClick={() => sendMessage(reaction.text)}
+                className="flex items-center px-3 py-1.5 rounded-full text-[11px] font-semibold bg-white/[0.04] border border-white/[0.06] text-white/50 hover:bg-white/[0.08] hover:text-white/70 transition-colors"
               >
-                {reaction}
+                <reaction.icon size={12} strokeWidth={1.5} className="text-white/30 mr-1" />
+                {reaction.text}
               </button>
             ))}
           </div>
@@ -249,12 +258,15 @@ export default function ArenaPage() {
 
       {/* Active Challenges Strip */}
       <div>
-        <h2 className="text-[20px] font-extrabold text-[#B75E18] mb-4">🔥 Active Challenges</h2>
+        <h2 className="flex items-center gap-2 text-[20px] font-extrabold text-[#B75E18] mb-4">
+          <Flame size={20} strokeWidth={1.5} className="text-[#B75E18]" />
+          Active Challenges
+        </h2>
         <div className="flex gap-4 overflow-x-auto pb-3 snap-x snap-mandatory scrollbar-hide">
           {ACTIVE_CHALLENGES.map((ch, i) => (
             <div key={ch.title} className="snap-start flex-shrink-0 w-[280px]">
               <ChallengeCard
-                emoji={ch.emoji}
+                type={ch.type}
                 title={ch.title}
                 description={ch.description}
                 helix={ch.helix}

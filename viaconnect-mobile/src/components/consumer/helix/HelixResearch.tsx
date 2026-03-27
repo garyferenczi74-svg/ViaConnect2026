@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, Pressable } from 'react-native';
 import Animated, { FadeInUp, FadeInRight } from 'react-native-reanimated';
+import { Microscope, ShieldCheck, CircleCheckBig } from 'lucide-react';
 import { GlassCard } from '../../ui/GlassCard';
 import { StaggerItem } from '../../ui/animations';
 import { HelixIcon } from './HelixIcon';
@@ -69,13 +70,16 @@ export function HelixResearch() {
       <GlassCard className="p-5 mb-4">
         {/* Badge */}
         <View className="flex-row items-center px-3 py-1.5 rounded-full bg-teal/10 border border-teal/20 self-start mb-4">
-          <Text className="text-[10px]">🔒</Text>
+          <ShieldCheck size={12} strokeWidth={1.5} color="#2DA5A0" />
           <Text className="text-[9px] font-bold text-teal uppercase tracking-wider ml-1.5">
             100% Anonymous & Encrypted
           </Text>
         </View>
 
-        <Text className="text-lg font-extrabold text-copper mb-2">🔬 Share for Science</Text>
+        <View className="flex-row items-center mb-2">
+          <Microscope size={20} strokeWidth={1.5} color="#B75E18" />
+          <Text className="text-lg font-extrabold text-copper ml-2">Share for Science</Text>
+        </View>
         <Text className="text-[12px] text-white/35 leading-5 mb-4">
           Opt in to share anonymized health data with researchers. Your contributions
           help advance precision wellness science while earning monthly Helix rewards.
@@ -127,11 +131,16 @@ export function HelixResearch() {
 
       {/* Privacy Guarantee */}
       <GlassCard className="p-5">
-        <Text className="text-[15px] font-extrabold text-white mb-3">🛡️ Privacy Guarantee</Text>
+        <View className="flex-row items-center mb-3">
+          <ShieldCheck size={18} strokeWidth={1.5} color="#B75E18" />
+          <Text className="text-[15px] font-extrabold text-white ml-2">Privacy Guarantee</Text>
+        </View>
         {PRIVACY.map((item, i) => (
           <StaggerItem key={i} index={i} stagger={60}>
             <View className="flex-row items-start mb-2.5">
-              <Text className="text-teal text-sm mr-2 mt-0.5">✓</Text>
+              <View className="mr-2 mt-0.5">
+                <CircleCheckBig size={14} strokeWidth={2} color="#2DA5A0" />
+              </View>
               <Text className="flex-1 text-[12px] text-white/40 leading-5">{item}</Text>
             </View>
           </StaggerItem>

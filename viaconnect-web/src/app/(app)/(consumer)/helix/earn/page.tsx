@@ -1,32 +1,33 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { Pill, Footprints, Salad, CircleCheckBig, Trophy, Megaphone, Microscope, BarChart3, Circle } from 'lucide-react';
+import { HelixIconWrapper, StreakFlameIcon } from '@/components/helix/HelixIcons';
 import { GlassCard } from '@/components/helix/GlassCard';
 import { HelixIcon } from '@/components/helix/HelixIcon';
-import { DailyActionRow } from '@/components/helix/DailyActionRow';
 
 /* ------------------------------------------------------------------ */
 /*  Data                                                               */
 /* ------------------------------------------------------------------ */
 
 const EARN_CATEGORIES = [
-  { emoji: '💊', label: 'Daily Supplements', helix: '+25/day',       description: 'Log each supplement dose on time' },
-  { emoji: '👟', label: 'Steps & Activity',  helix: '+10-50/day',    description: 'Earn more as your step count climbs' },
-  { emoji: '🥗', label: 'Nutrition Logging',  helix: '+15/day',      description: 'Track breakfast, lunch, and dinner' },
-  { emoji: '✅', label: 'Daily Check-in',     helix: '+10/day',      description: 'Complete your wellness pulse check' },
-  { emoji: '🏆', label: 'Challenge Wins',     helix: '+100-1,000',   description: 'Finish challenges to earn big' },
-  { emoji: '🔥', label: 'Streak Bonuses',     helix: '2x multiplier', description: 'Keep your streak alive for double Helix' },
-  { emoji: '📢', label: 'Refer Friends',      helix: '+500/referral', description: 'Invite friends to ViaConnect' },
-  { emoji: '🔬', label: 'Share for Science',  helix: '+200/month',   description: 'Contribute anonymous data to research' },
+  { icon: Pill, label: 'Daily Supplements', helix: '+25/day', description: 'Log each supplement dose on time', glow: 'teal' as const },
+  { icon: Footprints, label: 'Steps & Activity', helix: '+10-50/day', description: 'Earn more as your step count climbs', glow: 'teal' as const },
+  { icon: Salad, label: 'Nutrition Logging', helix: '+15/day', description: 'Track breakfast, lunch, and dinner', glow: 'teal' as const },
+  { icon: CircleCheckBig, label: 'Daily Check-in', helix: '+10/day', description: 'Complete your wellness pulse check', glow: 'teal' as const },
+  { icon: Trophy, label: 'Challenge Wins', helix: '+100-1,000', description: 'Finish challenges to earn big', glow: 'orange' as const },
+  { icon: StreakFlameIcon, label: 'Streak Bonuses', helix: '2x multiplier', description: 'Keep your streak alive for double Helix', glow: 'orange' as const },
+  { icon: Megaphone, label: 'Refer Friends', helix: '+500/referral', description: 'Invite friends to ViaConnect', glow: 'orange' as const },
+  { icon: Microscope, label: 'Share for Science', helix: '+200/month', description: 'Contribute anonymous data to research', glow: 'teal' as const },
 ];
 
 const DAILY_ACTIONS = [
-  { emoji: '💊', label: 'Morning Supplements',    helix: 25, completed: true },
-  { emoji: '👟', label: '10K Steps',              helix: 50, completed: true },
-  { emoji: '🥗', label: 'Meal Logging',           helix: 15, completed: true },
-  { emoji: '💊', label: 'Afternoon Supplements',  helix: 25, completed: true },
-  { emoji: '✅', label: 'Wellness Check-in',      helix: 10, completed: false },
-  { emoji: '💊', label: 'Evening Supplements',    helix: 25, completed: false },
+  { icon: Pill, label: 'Morning Supplements', helix: 25, completed: true },
+  { icon: Footprints, label: '10K Steps', helix: 50, completed: true },
+  { icon: Salad, label: 'Meal Logging', helix: 15, completed: true },
+  { icon: Pill, label: 'Afternoon Supplements', helix: 25, completed: true },
+  { icon: CircleCheckBig, label: 'Wellness Check-in', helix: 10, completed: false },
+  { icon: Pill, label: 'Evening Supplements', helix: 25, completed: false },
 ];
 
 /* ------------------------------------------------------------------ */
@@ -68,9 +69,9 @@ export default function EarnPage() {
             />
 
             {/* Icon box */}
-            <div className="flex-shrink-0 w-14 h-14 rounded-2xl bg-[#B75E18]/[0.08] flex items-center justify-center text-2xl">
-              {cat.emoji}
-            </div>
+            <HelixIconWrapper size="lg" glow={cat.glow}>
+              <cat.icon size={24} strokeWidth={1.5} className="text-white/60" />
+            </HelixIconWrapper>
 
             {/* Text */}
             <div className="flex-1 min-w-0">
@@ -88,19 +89,47 @@ export default function EarnPage() {
       {/* Daily Activity Tracker */}
       <GlassCard glow>
         <h3 className="text-[20px] font-extrabold text-[#B75E18] mb-5">
-          📊 Today&apos;s Helix Activity
+          <BarChart3 size={20} strokeWidth={1.5} className="text-[#B75E18] inline" />{' '}
+          Today&apos;s Helix Activity
         </h3>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
           {DAILY_ACTIONS.map((action, i) => (
-            <DailyActionRow
+            <motion.div
               key={action.label}
-              emoji={action.emoji}
-              label={action.label}
-              helix={action.helix}
-              completed={action.completed}
-              index={i}
-            />
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.08, duration: 0.4, ease: 'easeOut' }}
+              className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${
+                action.completed
+                  ? 'bg-[#2DA5A0]/10 border border-[#2DA5A0]/15'
+                  : 'bg-white/[0.02] border border-white/[0.04]'
+              }`}
+            >
+              <action.icon size={16} strokeWidth={1.5} className="text-white/50" />
+              {action.completed ? (
+                <CircleCheckBig size={14} strokeWidth={2} className="text-[#2DA5A0]" />
+              ) : (
+                <Circle size={14} strokeWidth={1.5} className="text-white/20" />
+              )}
+              <span
+                className={`flex-1 text-[13px] font-medium ${
+                  action.completed ? 'text-white' : 'text-white/35'
+                }`}
+              >
+                {action.label}
+              </span>
+              <div className="flex items-center gap-1">
+                <HelixIcon size={12} />
+                <span
+                  className={`text-[13px] font-bold ${
+                    action.completed ? 'text-[#2DA5A0]' : 'text-white/25'
+                  }`}
+                >
+                  +{action.helix}
+                </span>
+              </div>
+            </motion.div>
           ))}
         </div>
 

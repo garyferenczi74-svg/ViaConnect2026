@@ -1,7 +1,9 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { Dna, Pill, Gift, ShoppingBag, Star } from 'lucide-react';
 import { RewardCard } from '@/components/helix/RewardCard';
+import { ConsultIcon } from '@/components/helix/HelixIcons';
 
 /* ------------------------------------------------------------------ */
 /*  Data                                                               */
@@ -10,12 +12,12 @@ import { RewardCard } from '@/components/helix/RewardCard';
 const USER_BALANCE = 4350;
 
 const REWARDS = [
-  { emoji: '🧬', name: 'GeneX360 Retest',    description: 'Full genetic health panel retest with updated insights and recommendations', cost: 5000 },
-  { emoji: '💊', name: 'Free Month Supply',   description: 'One month of your personalized supplement protocol, completely free', cost: 3500 },
-  { emoji: '🎁', name: 'Product Upgrade',     description: 'Upgrade to premium-tier supplements with enhanced bioavailability', cost: 2000 },
-  { emoji: '👨‍⚕️', name: '1:1 Consult',         description: '30-minute private session with a certified health practitioner', cost: 4000 },
-  { emoji: '🛍️', name: 'Merch Drop',          description: 'Exclusive ViaConnect branded wellness gear and accessories', cost: 1500 },
-  { emoji: '⭐', name: 'VIP Early Access',    description: 'Be first to try new products, features, and health programs', cost: 2500 },
+  { icon: Dna,         glow: 'teal' as const,   name: 'GeneX360 Retest',    description: 'Full genetic health panel retest with updated insights and recommendations', cost: 5000 },
+  { icon: Pill,        glow: 'teal' as const,   name: 'Free Month Supply',   description: 'One month of your personalized supplement protocol, completely free', cost: 3500 },
+  { icon: Gift,        glow: 'orange' as const, name: 'Product Upgrade',     description: 'Upgrade to premium-tier supplements with enhanced bioavailability', cost: 2000 },
+  { icon: ConsultIcon, glow: 'teal' as const,   name: '1:1 Consult',         description: '30-minute private session with a certified health practitioner', cost: 4000 },
+  { icon: ShoppingBag, glow: 'orange' as const, name: 'Merch Drop',          description: 'Exclusive ViaConnect branded wellness gear and accessories', cost: 1500 },
+  { icon: Star,        glow: 'orange' as const, name: 'VIP Early Access',    description: 'Be first to try new products, features, and health programs', cost: 2500 },
 ];
 
 /* ------------------------------------------------------------------ */
@@ -42,7 +44,8 @@ export default function RedeemPage() {
         {REWARDS.map((rw, i) => (
           <RewardCard
             key={rw.name}
-            emoji={rw.emoji}
+            icon={rw.icon}
+            glow={rw.glow}
             name={rw.name}
             description={rw.description}
             cost={rw.cost}

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
+import { Microscope, ShieldCheck, CircleCheckBig } from 'lucide-react';
 import { GlassCard } from '@/components/helix/GlassCard';
 import { HelixIcon } from '@/components/helix/HelixIcon';
 import { ResearchToggle } from '@/components/helix/ResearchToggle';
@@ -53,14 +54,15 @@ export default function ResearchPage() {
         <GlassCard glow>
           {/* Security badge */}
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#2DA5A0]/10 border border-[#2DA5A0]/20 mb-5">
-            <span className="text-xs">🔒</span>
+            <ShieldCheck size={12} strokeWidth={1.5} className="text-[#2DA5A0]" />
             <span className="text-[10px] font-bold uppercase tracking-wider text-[#2DA5A0]">
               100% Anonymous & Encrypted
             </span>
           </div>
 
-          <h2 className="text-[20px] font-extrabold text-[#B75E18] mb-2">
-            🔬 Share for Science
+          <h2 className="flex items-center gap-2 text-[20px] font-extrabold text-[#B75E18] mb-2">
+            <Microscope size={20} strokeWidth={1.5} className="text-[#B75E18]" />
+            Share for Science
           </h2>
           <p className="text-[13px] text-white/40 leading-relaxed mb-6">
             Opt in to share anonymized health data with researchers. Your contributions
@@ -117,8 +119,9 @@ export default function ResearchPage() {
 
           {/* Privacy Guarantee */}
           <GlassCard>
-            <h3 className="text-[16px] font-extrabold text-white mb-4">
-              🛡️ Privacy Guarantee
+            <h3 className="flex items-center gap-2 text-[16px] font-extrabold text-white mb-4">
+              <ShieldCheck size={20} strokeWidth={1.5} className="text-white" />
+              Privacy Guarantee
             </h3>
             <div className="flex flex-col gap-3">
               {PRIVACY_ITEMS.map((item, i) => (
@@ -129,7 +132,7 @@ export default function ResearchPage() {
                   transition={{ delay: i * 0.1, duration: 0.5 }}
                   className="flex items-start gap-3"
                 >
-                  <span className="text-[#2DA5A0] text-sm flex-shrink-0 mt-0.5">✓</span>
+                  <CircleCheckBig size={14} strokeWidth={1.5} className="text-[#2DA5A0] flex-shrink-0 mt-0.5" />
                   <p className="text-[13px] text-white/50 leading-relaxed">{item}</p>
                 </motion.div>
               ))}

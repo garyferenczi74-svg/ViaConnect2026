@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, Pressable, TextInput, ScrollView, FlatList } from 'react-native';
 import Animated, { FadeInUp, FadeInRight } from 'react-native-reanimated';
 import Svg, { Circle } from 'react-native-svg';
+import { Swords, MessageCircle, Flame, Activity, Footprints, Pill, Salad, Dumbbell, Target, HeartHandshake } from 'lucide-react';
 import { GlassCard } from '../../ui/GlassCard';
 import { AnimatedProgressBar, StaggerItem } from '../../ui/animations';
 import { HelixIcon } from './HelixIcon';
@@ -43,15 +44,28 @@ const INITIAL_MSGS: ChatMsg[] = [
   { id: 6, sender: 'Sarah K.',   text: 'Day 12 for me! The 2x multiplier is 🔥', time: '2:41 PM', isSent: false },
 ];
 
-const QUICK_REACTIONS = ['🔥 Let\'s go!', '💪 Crushing it!', '👏 Great work!', '🏃 Keep moving!'];
+const QUICK_REACTIONS = [
+  { icon: Flame, text: "Let's go!" },
+  { icon: Dumbbell, text: 'Crushing it!' },
+  { icon: HeartHandshake, text: 'Great work!' },
+  { icon: Footprints, text: 'Keep moving!' },
+];
 
 const CHALLENGES = [
-  { emoji: '👟', title: '10K Steps Sprint',  helix: 500,  progress: 71, participants: 5 },
-  { emoji: '💊', title: 'Perfect Protocol',  helix: 750,  progress: 43, participants: 3 },
-  { emoji: '🥗', title: 'Clean Plate Club',  helix: 600,  progress: 85, participants: 4 },
-  { emoji: '💪', title: 'Iron Week',         helix: 800,  progress: 60, participants: 2 },
-  { emoji: '🎯', title: 'Biomarker Blitz',   helix: 900,  progress: 40, participants: 3 },
+  { type: 'steps',       title: '10K Steps Sprint',  helix: 500,  progress: 71, participants: 5 },
+  { type: 'supplements', title: 'Perfect Protocol',  helix: 750,  progress: 43, participants: 3 },
+  { type: 'nutrition',   title: 'Clean Plate Club',  helix: 600,  progress: 85, participants: 4 },
+  { type: 'workout',     title: 'Iron Week',         helix: 800,  progress: 60, participants: 2 },
+  { type: 'markers',     title: 'Biomarker Blitz',   helix: 900,  progress: 40, participants: 3 },
 ];
+
+const CHALLENGE_ICONS: Record<string, any> = {
+  steps: Footprints,
+  supplements: Pill,
+  nutrition: Salad,
+  workout: Dumbbell,
+  markers: Target,
+};
 
 /* ------------------------------------------------------------------ */
 /*  Sub-components                                                     */
@@ -205,13 +219,15 @@ function ChatBubble({ msg }: { msg: ChatMsg }) {
 }
 
 function MiniChallengeCard({ ch, index }: { ch: (typeof CHALLENGES)[0]; index: number }) {
+  const ChIcon = CHALLENGE_ICONS[ch.type];
   return (
     <StaggerItem index={index} stagger={60}>
       <GlassCard className="p-4 mr-3" style={{ width: 220 }}>
         <View className="flex-row items-center justify-between mb-2">
-          <Text style={{ fontSize: 28 }}>{ch.emoji}</Text>
-          <View className="px-2 py-0.5 rounded-full bg-teal/15 border border-teal/25">
-            <Text className="text-[9px] font-bold text-teal uppercase">LIVE</Text>
+          <ChIcon size={28} strokeWidth={1.5} color="rgba(255,255,255,0.7)" />
+          <View className="flex-row items-center px-2 py-0.5 rounded-full bg-teal/15 border border-teal/25">
+            <Activity size={10} strokeWidth={2} color="#2DA5A0" />
+            <Text className="text-[9px] font-bold text-teal uppercase ml-1">LIVE</Text>
           </View>
         </View>
         <Text className="text-[14px] font-extrabold text-white mb-2">{ch.title}</Text>
@@ -262,12 +278,15 @@ export function HelixArena() {
       <GlassCard className="p-5 mb-4">
         <View className="flex-row items-center justify-between mb-4">
           <View>
-            <Text className="text-lg font-extrabold text-copper">⚔️ Weekly Arena</Text>
+            <View className="flex-row items-center">
+              <Swords size={20} strokeWidth={1.5} color="#B75E18" />
+              <Text className="text-lg font-extrabold text-copper ml-2">Weekly Arena</Text>
+            </View>
             <Text className="text-[10px] text-white/30 font-semibold mt-0.5">Resets in 3d 14h</Text>
           </View>
           <View className="flex-row items-center">
-            <View className="w-2 h-2 rounded-full bg-teal mr-1.5" />
-            <Text className="text-[9px] font-bold text-teal uppercase tracking-wider">LIVE</Text>
+            <Activity size={12} strokeWidth={2} color="#2DA5A0" />
+            <Text className="text-[9px] font-bold text-teal uppercase tracking-wider ml-1.5">LIVE</Text>
           </View>
         </View>
 
@@ -287,7 +306,10 @@ export function HelixArena() {
       {/* Squad Chat */}
       <GlassCard className="p-5 mb-4">
         <View className="flex-row items-center justify-between mb-4">
-          <Text className="text-lg font-extrabold text-copper">💬 Squad Chat</Text>
+          <View className="flex-row items-center">
+            <MessageCircle size={20} strokeWidth={1.5} color="#B75E18" />
+            <Text className="text-lg font-extrabold text-copper ml-2">Squad Chat</Text>
+          </View>
           <View className="flex-row">
             {['SK', 'MR', 'JL'].map((init, i) => (
               <View
@@ -342,18 +364,22 @@ export function HelixArena() {
         <View className="flex-row flex-wrap gap-2 mt-3">
           {QUICK_REACTIONS.map((r) => (
             <Pressable
-              key={r}
-              onPress={() => sendMessage(r)}
-              className="px-3 py-1.5 rounded-full bg-white/5 border border-white/5"
+              key={r.text}
+              onPress={() => sendMessage(r.text)}
+              className="flex-row items-center px-3 py-1.5 rounded-full bg-white/5 border border-white/5"
             >
-              <Text className="text-[10px] font-semibold text-white/40">{r}</Text>
+              <r.icon size={12} strokeWidth={1.5} color="rgba(255,255,255,0.4)" />
+              <Text className="text-[10px] font-semibold text-white/40 ml-1">{r.text}</Text>
             </Pressable>
           ))}
         </View>
       </GlassCard>
 
       {/* Active Challenges */}
-      <Text className="text-lg font-extrabold text-copper mb-3">🔥 Active Challenges</Text>
+      <View className="flex-row items-center mb-3">
+        <Flame size={20} strokeWidth={1.5} color="#B75E18" />
+        <Text className="text-lg font-extrabold text-copper ml-2">Active Challenges</Text>
+      </View>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-2">
         {CHALLENGES.map((ch, i) => (
           <MiniChallengeCard key={ch.title} ch={ch} index={i} />

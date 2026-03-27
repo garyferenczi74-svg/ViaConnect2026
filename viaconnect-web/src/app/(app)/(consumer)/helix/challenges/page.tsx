@@ -8,14 +8,14 @@ import { ChallengeCard } from '@/components/helix/ChallengeCard';
 /* ------------------------------------------------------------------ */
 
 const CHALLENGES = [
-  { emoji: '👟', title: '10K Steps Sprint',  description: 'Hit 10,000 steps every day for a week. Walking, running, or hiking — every step counts toward the goal.', helix: 500,   active: true,  progress: 71, participants: 5 },
-  { emoji: '💊', title: 'Perfect Protocol',  description: 'Take all supplements on time for 14 consecutive days. Morning, afternoon, and evening doses.', helix: 750,   active: true,  progress: 43, participants: 3 },
-  { emoji: '🥗', title: 'Clean Plate Club',  description: 'Log every meal for 21 days straight. Breakfast, lunch, dinner, and snacks all count.', helix: 600,   active: true,  progress: 85, participants: 4 },
-  { emoji: '💪', title: 'Iron Week',         description: 'Complete 5 full workouts in 7 days. Strength, cardio, or flexibility training all qualify.', helix: 800,   active: true,  progress: 60, participants: 2 },
-  { emoji: '⚖️', title: 'Goal Crusher',      description: 'Hit your target weight goal within 60 days. Consistent tracking and healthy habits are key.', helix: 1000,  active: false, progress: 35, participants: 6 },
-  { emoji: '✅', title: 'Daily Pulse',        description: 'Complete your daily wellness check-in for 30 consecutive days without missing one.', helix: 450,   active: false, progress: 52, participants: 2 },
-  { emoji: '🎯', title: 'Biomarker Blitz',   description: 'Record all required biomarkers for 30 days. Blood pressure, glucose, and more.', helix: 900,   active: true,  progress: 40, participants: 3 },
-  { emoji: '😴', title: 'Dream Machine',     description: 'Log 7+ hours of quality sleep for 14 consecutive nights. Better sleep, better health.', helix: 550,   active: false, progress: 30, participants: 2 },
+  { type: 'steps',       title: '10K Steps Sprint',  description: 'Hit 10,000 steps every day for a week. Walking, running, or hiking — every step counts toward the goal.', helix: 500,   active: true,  progress: 71, participants: 5 },
+  { type: 'supplements', title: 'Perfect Protocol',  description: 'Take all supplements on time for 14 consecutive days. Morning, afternoon, and evening doses.', helix: 750,   active: true,  progress: 43, participants: 3 },
+  { type: 'nutrition',   title: 'Clean Plate Club',  description: 'Log every meal for 21 days straight. Breakfast, lunch, dinner, and snacks all count.', helix: 600,   active: true,  progress: 85, participants: 4 },
+  { type: 'workout',     title: 'Iron Week',         description: 'Complete 5 full workouts in 7 days. Strength, cardio, or flexibility training all qualify.', helix: 800,   active: true,  progress: 60, participants: 2 },
+  { type: 'weight',      title: 'Goal Crusher',      description: 'Hit your target weight goal within 60 days. Consistent tracking and healthy habits are key.', helix: 1000,  active: false, progress: 35, participants: 6 },
+  { type: 'checkin',     title: 'Daily Pulse',        description: 'Complete your daily wellness check-in for 30 consecutive days without missing one.', helix: 450,   active: false, progress: 52, participants: 2 },
+  { type: 'markers',     title: 'Biomarker Blitz',   description: 'Record all required biomarkers for 30 days. Blood pressure, glucose, and more.', helix: 900,   active: true,  progress: 40, participants: 3 },
+  { type: 'sleep',       title: 'Dream Machine',     description: 'Log 7+ hours of quality sleep for 14 consecutive nights. Better sleep, better health.', helix: 550,   active: false, progress: 30, participants: 2 },
 ];
 
 /* ------------------------------------------------------------------ */
@@ -42,7 +42,7 @@ export default function ChallengesPage() {
         {CHALLENGES.map((ch, i) => (
           <ChallengeCard
             key={ch.title}
-            emoji={ch.emoji}
+            type={ch.type}
             title={ch.title}
             description={ch.description}
             helix={ch.helix}

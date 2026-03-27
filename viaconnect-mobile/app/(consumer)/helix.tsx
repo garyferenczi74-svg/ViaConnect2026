@@ -1,6 +1,7 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { View, Text, ScrollView, Pressable } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
+import { Swords, Trophy, Dna, Gift, Megaphone, Microscope } from 'lucide-react';
 import { HelixHero } from '../../src/components/consumer/helix/HelixHero';
 import { HelixArena } from '../../src/components/consumer/helix/HelixArena';
 import { HelixChallenges } from '../../src/components/consumer/helix/HelixChallenges';
@@ -10,12 +11,12 @@ import { HelixRefer } from '../../src/components/consumer/helix/HelixRefer';
 import { HelixResearch } from '../../src/components/consumer/helix/HelixResearch';
 
 const TABS = [
-  { key: 'arena',      label: 'Arena',      emoji: '⚔️' },
-  { key: 'challenges', label: 'Challenges', emoji: '🏆' },
-  { key: 'earn',       label: 'Earn',       emoji: '🧬' },
-  { key: 'redeem',     label: 'Redeem',     emoji: '🎁' },
-  { key: 'refer',      label: 'Refer',      emoji: '📢' },
-  { key: 'research',   label: 'Research',   emoji: '🔬' },
+  { key: 'arena',      label: 'Arena',      icon: Swords },
+  { key: 'challenges', label: 'Challenges', icon: Trophy },
+  { key: 'earn',       label: 'Earn',       icon: Dna },
+  { key: 'redeem',     label: 'Redeem',     icon: Gift },
+  { key: 'refer',      label: 'Refer',      icon: Megaphone },
+  { key: 'research',   label: 'Research',   icon: Microscope },
 ] as const;
 
 type TabKey = (typeof TABS)[number]['key'];
@@ -68,9 +69,9 @@ export default function HelixRewardsScreen() {
                     : 'border border-transparent'
                 }`}
               >
-                <Text className="text-sm mr-1">{tab.emoji}</Text>
+                <tab.icon size={16} strokeWidth={1.5} color={isActive ? '#B75E18' : 'rgba(255,255,255,0.35)'} />
                 <Text
-                  className={`text-sm font-semibold ${
+                  className={`text-sm font-semibold ml-1.5 ${
                     isActive ? 'text-copper' : 'text-white/35'
                   }`}
                 >

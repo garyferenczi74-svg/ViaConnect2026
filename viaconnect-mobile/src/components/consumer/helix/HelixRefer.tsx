@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, Pressable, Platform } from 'react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
+import { Megaphone, Send, CircleCheckBig, Dna as DnaIcon, Clock, Star, Gem, Trophy, Crown } from 'lucide-react';
 import { GlassCard } from '../../ui/GlassCard';
 import { StaggerItem } from '../../ui/animations';
 import { HelixIcon } from './HelixIcon';
@@ -13,10 +14,10 @@ const REFERRAL_STATS = [
 ];
 
 const MILESTONES = [
-  { count: 5,  label: '5 Referrals',  emoji: '🌟' },
-  { count: 10, label: '10 Referrals', emoji: '💎' },
-  { count: 25, label: '25 Referrals', emoji: '🏆' },
-  { count: 50, label: '50 Referrals', emoji: '👑' },
+  { count: 5,  label: '5 Referrals',  icon: Star },
+  { count: 10, label: '10 Referrals', icon: Gem },
+  { count: 25, label: '25 Referrals', icon: Trophy },
+  { count: 50, label: '50 Referrals', icon: Crown },
 ];
 
 const FRIENDS_JOINED = 6;
@@ -40,9 +41,12 @@ export function HelixRefer() {
     <View>
       {/* Invite Card */}
       <GlassCard className="p-5 mb-4">
-        <Text className="text-lg font-extrabold text-copper mb-2">
-          📢 Invite & Earn Together
-        </Text>
+        <View className="flex-row items-center mb-2">
+          <Megaphone size={20} strokeWidth={1.5} color="#B75E18" />
+          <Text className="text-lg font-extrabold text-copper ml-2">
+            Invite & Earn Together
+          </Text>
+        </View>
         <Text className="text-[12px] text-white/35 leading-5 mb-5">
           Share your unique referral code with friends and family. When they join
           ViaConnect, you both earn Helix rewards.
@@ -127,6 +131,7 @@ export function HelixRefer() {
         <View className="flex-row gap-2">
           {MILESTONES.map((m, i) => {
             const achieved = FRIENDS_JOINED >= m.count;
+            const MIcon = m.icon;
             return (
               <StaggerItem key={m.count} index={i} stagger={80}>
                 <View
@@ -136,10 +141,15 @@ export function HelixRefer() {
                       : 'bg-white/[0.02] border-white/5 opacity-40'
                   }`}
                 >
-                  <Text style={{ fontSize: 20, marginBottom: 4 }}>{m.emoji}</Text>
+                  <View style={{ marginBottom: 4 }}>
+                    <MIcon size={22} strokeWidth={1.5} color={achieved ? '#2DA5A0' : 'rgba(255,255,255,0.4)'} />
+                  </View>
                   <Text className="text-[9px] font-bold text-white/40 text-center">{m.label}</Text>
                   {achieved && (
-                    <Text className="text-[8px] font-bold text-teal mt-1">✓ Done</Text>
+                    <View className="flex-row items-center mt-1">
+                      <CircleCheckBig size={10} strokeWidth={2} color="#2DA5A0" />
+                      <Text className="text-[8px] font-bold text-teal ml-0.5">Done</Text>
+                    </View>
                   )}
                 </View>
               </StaggerItem>

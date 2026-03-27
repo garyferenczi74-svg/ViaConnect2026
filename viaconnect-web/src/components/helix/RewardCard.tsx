@@ -1,10 +1,13 @@
 'use client';
 
+import React from 'react';
 import { motion } from 'framer-motion';
 import { HelixIcon } from './HelixIcon';
+import { HelixIconWrapper } from './HelixIcons';
 
 interface RewardCardProps {
-  emoji: string;
+  icon: React.ElementType;
+  glow: 'teal' | 'orange';
   name: string;
   description: string;
   cost: number;
@@ -12,7 +15,7 @@ interface RewardCardProps {
   index?: number;
 }
 
-export function RewardCard({ emoji, name, description, cost, userBalance, index = 0 }: RewardCardProps) {
+export function RewardCard({ icon: Icon, glow, name, description, cost, userBalance, index = 0 }: RewardCardProps) {
   const canAfford = userBalance >= cost;
 
   return (
@@ -31,7 +34,11 @@ export function RewardCard({ emoji, name, description, cost, userBalance, index 
         style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent)' }}
       />
 
-      <span className="text-5xl mb-4">{emoji}</span>
+      <div className="mb-4">
+        <HelixIconWrapper size="md" glow={glow}>
+          <Icon size={32} strokeWidth={1.5} className="text-white/60" />
+        </HelixIconWrapper>
+      </div>
       <h3 className="text-[16px] font-extrabold text-white mb-1">{name}</h3>
       <p className="text-xs text-white/50 mb-4 flex-1">{description}</p>
 

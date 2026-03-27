@@ -1,39 +1,59 @@
 import React from 'react';
 import { View, Text } from 'react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
+import { Footprints, Pill, Salad, Dumbbell, Scale, CircleCheckBig, Target, Moon, Activity, Clock } from 'lucide-react';
 import { GlassCard } from '../../ui/GlassCard';
 import { AnimatedProgressBar, StaggerItem } from '../../ui/animations';
 import { HelixIcon } from './HelixIcon';
 
+const CHALLENGE_ICONS: Record<string, any> = {
+  steps: Footprints,
+  supplements: Pill,
+  nutrition: Salad,
+  workout: Dumbbell,
+  weight: Scale,
+  checkin: CircleCheckBig,
+  markers: Target,
+  sleep: Moon,
+};
+
 const CHALLENGES = [
-  { emoji: '👟', title: '10K Steps Sprint',  desc: 'Hit 10,000 steps every day for a week.',           helix: 500,  active: true,  progress: 71, participants: 5 },
-  { emoji: '💊', title: 'Perfect Protocol',  desc: 'Take all supplements on time for 14 days.',        helix: 750,  active: true,  progress: 43, participants: 3 },
-  { emoji: '🥗', title: 'Clean Plate Club',  desc: 'Log every meal for 21 days straight.',             helix: 600,  active: true,  progress: 85, participants: 4 },
-  { emoji: '💪', title: 'Iron Week',         desc: 'Complete 5 full workouts in 7 days.',              helix: 800,  active: true,  progress: 60, participants: 2 },
-  { emoji: '⚖️', title: 'Goal Crusher',      desc: 'Hit your target weight goal within 60 days.',     helix: 1000, active: false, progress: 35, participants: 6 },
-  { emoji: '✅', title: 'Daily Pulse',        desc: 'Complete daily wellness check-in for 30 days.',   helix: 450,  active: false, progress: 52, participants: 2 },
-  { emoji: '🎯', title: 'Biomarker Blitz',   desc: 'Record all biomarkers for 30 days.',              helix: 900,  active: true,  progress: 40, participants: 3 },
-  { emoji: '😴', title: 'Dream Machine',     desc: 'Log 7+ hours of sleep for 14 nights.',            helix: 550,  active: false, progress: 30, participants: 2 },
+  { type: 'steps',       title: '10K Steps Sprint',  desc: 'Hit 10,000 steps every day for a week.',           helix: 500,  active: true,  progress: 71, participants: 5 },
+  { type: 'supplements', title: 'Perfect Protocol',  desc: 'Take all supplements on time for 14 days.',        helix: 750,  active: true,  progress: 43, participants: 3 },
+  { type: 'nutrition',   title: 'Clean Plate Club',  desc: 'Log every meal for 21 days straight.',             helix: 600,  active: true,  progress: 85, participants: 4 },
+  { type: 'workout',     title: 'Iron Week',         desc: 'Complete 5 full workouts in 7 days.',              helix: 800,  active: true,  progress: 60, participants: 2 },
+  { type: 'weight',      title: 'Goal Crusher',      desc: 'Hit your target weight goal within 60 days.',     helix: 1000, active: false, progress: 35, participants: 6 },
+  { type: 'checkin',     title: 'Daily Pulse',        desc: 'Complete daily wellness check-in for 30 days.',   helix: 450,  active: false, progress: 52, participants: 2 },
+  { type: 'markers',     title: 'Biomarker Blitz',   desc: 'Record all biomarkers for 30 days.',              helix: 900,  active: true,  progress: 40, participants: 3 },
+  { type: 'sleep',       title: 'Dream Machine',     desc: 'Log 7+ hours of sleep for 14 nights.',            helix: 550,  active: false, progress: 30, participants: 2 },
 ];
 
 function ChallengeCard({ ch, index }: { ch: (typeof CHALLENGES)[0]; index: number }) {
   const avatarColors = ['#2DA5A0', '#B75E18', '#FFD700', '#C0C0C0'];
   const showAvatars = Math.min(ch.participants, 4);
   const overflow = ch.participants - showAvatars;
+  const ChIcon = CHALLENGE_ICONS[ch.type];
 
   return (
     <StaggerItem index={index} stagger={60}>
       <GlassCard className="p-5 mb-3">
         {/* Header */}
         <View className="flex-row items-start justify-between mb-2">
-          <Text style={{ fontSize: 32 }}>{ch.emoji}</Text>
+          <View className="w-12 h-12 rounded-[14px] bg-white/5 border border-white/[0.06] items-center justify-center">
+            <ChIcon size={28} strokeWidth={1.5} color="rgba(255,255,255,0.7)" />
+          </View>
           <View
-            className={`px-2 py-1 rounded-full ${
+            className={`flex-row items-center px-2 py-1 rounded-full ${
               ch.active ? 'bg-teal/15 border border-teal/25' : 'bg-copper/15 border border-copper/25'
             }`}
           >
+            {ch.active ? (
+              <Activity size={10} strokeWidth={2} color="#2DA5A0" />
+            ) : (
+              <Clock size={10} strokeWidth={2} color="#B75E18" />
+            )}
             <Text
-              className={`text-[9px] font-bold uppercase tracking-wider ${
+              className={`text-[9px] font-bold uppercase tracking-wider ml-1 ${
                 ch.active ? 'text-teal' : 'text-copper'
               }`}
             >

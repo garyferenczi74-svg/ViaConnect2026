@@ -2,6 +2,9 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import {
+  Swords, Trophy, Dna, Gift, Megaphone, Microscope,
+} from 'lucide-react';
 import { ParticleBG } from '@/components/helix/ParticleBG';
 import { GlassCard } from '@/components/helix/GlassCard';
 import { HelixIcon } from '@/components/helix/HelixIcon';
@@ -12,13 +15,13 @@ import { AnimatedNumber } from '@/components/helix/AnimatedNumber';
 /* ------------------------------------------------------------------ */
 
 const NAV_ITEMS = [
-  { label: 'Arena',      emoji: '⚔️',  href: '/helix/arena' },
-  { label: 'Challenges', emoji: '🏆', href: '/helix/challenges' },
-  { label: 'Earn',       emoji: '🧬', href: '/helix/earn' },
-  { label: 'Redeem',     emoji: '🎁', href: '/helix/redeem' },
-  { label: 'Refer',      emoji: '📢', href: '/helix/refer' },
-  { label: 'Research',   emoji: '🔬', href: '/helix/research' },
-] as const;
+  { label: 'Arena',      icon: Swords,     href: '/helix/arena' },
+  { label: 'Challenges', icon: Trophy,     href: '/helix/challenges' },
+  { label: 'Earn',       icon: Dna,        href: '/helix/earn' },
+  { label: 'Redeem',     icon: Gift,       href: '/helix/redeem' },
+  { label: 'Refer',      icon: Megaphone,  href: '/helix/refer' },
+  { label: 'Research',   icon: Microscope, href: '/helix/research' },
+];
 
 const USER_BALANCE = 4350;
 const USER_STREAK = 14;
@@ -196,7 +199,7 @@ export default function HelixLayout({ children }: { children: React.ReactNode })
                       : 'text-white/40 border border-transparent hover:bg-white/[0.04] hover:text-white/60'
                   }`}
                 >
-                  <span className="text-base">{item.emoji}</span>
+                  <item.icon size={16} strokeWidth={1.5} />
                   {item.label}
                 </Link>
               );

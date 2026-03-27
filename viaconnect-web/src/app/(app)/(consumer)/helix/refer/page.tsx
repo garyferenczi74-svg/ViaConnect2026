@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
+import { Megaphone, Send, CircleCheckBig, Dna, Clock, Star, Gem, Trophy, Crown } from 'lucide-react';
 import { GlassCard } from '@/components/helix/GlassCard';
 import { HelixIcon } from '@/components/helix/HelixIcon';
 import { ReferralCode } from '@/components/helix/ReferralCode';
@@ -11,17 +12,17 @@ import { ReferralCode } from '@/components/helix/ReferralCode';
 /* ------------------------------------------------------------------ */
 
 const REFERRAL_STATS = [
-  { label: 'Invites Sent',  value: 12 },
-  { label: 'Friends Joined', value: 6 },
-  { label: 'Helix Earned',  value: 4500, isTeal: true },
-  { label: 'Pending',       value: 3 },
+  { label: 'Invites Sent',  value: 12, icon: Send },
+  { label: 'Friends Joined', value: 6, icon: CircleCheckBig },
+  { label: 'Helix Earned',  value: 4500, icon: Dna, isTeal: true },
+  { label: 'Pending',       value: 3, icon: Clock },
 ];
 
 const MILESTONES = [
-  { count: 5,  label: '5 Referrals',  emoji: '🌟' },
-  { count: 10, label: '10 Referrals', emoji: '💎' },
-  { count: 25, label: '25 Referrals', emoji: '🏆' },
-  { count: 50, label: '50 Referrals', emoji: '👑' },
+  { count: 5,  label: '5 Referrals',  icon: Star },
+  { count: 10, label: '10 Referrals', icon: Gem },
+  { count: 25, label: '25 Referrals', icon: Trophy },
+  { count: 50, label: '50 Referrals', icon: Crown },
 ];
 
 const FRIENDS_JOINED = 6;
@@ -44,8 +45,9 @@ export default function ReferPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Left Card — Invite & Earn */}
         <GlassCard glow>
-          <h2 className="text-[20px] font-extrabold text-[#B75E18] mb-2">
-            📢 Invite & Earn Together
+          <h2 className="flex items-center gap-2 text-[20px] font-extrabold text-[#B75E18] mb-2">
+            <Megaphone size={20} strokeWidth={1.5} className="text-[#B75E18]" />
+            Invite & Earn Together
           </h2>
           <p className="text-[13px] text-white/40 leading-relaxed mb-6">
             Share your unique referral code with friends and family. When they join ViaConnect,
@@ -104,7 +106,10 @@ export default function ReferPage() {
             <div className="flex flex-col gap-3">
               {REFERRAL_STATS.map((stat) => (
                 <div key={stat.label} className="flex items-center justify-between py-2 border-b border-white/[0.04] last:border-0">
-                  <span className="text-[13px] text-white/40 font-medium">{stat.label}</span>
+                  <div className="flex items-center gap-2">
+                    <stat.icon size={14} strokeWidth={1.5} className="text-white/30" />
+                    <span className="text-[13px] text-white/40 font-medium">{stat.label}</span>
+                  </div>
                   <div className="flex items-center gap-1">
                     {stat.isTeal && <HelixIcon size={13} />}
                     <span className={`text-[16px] font-extrabold ${stat.isTeal ? 'text-[#2DA5A0]' : 'text-white'}`}>
@@ -118,7 +123,10 @@ export default function ReferPage() {
 
           {/* Milestones */}
           <GlassCard>
-            <h3 className="text-[16px] font-extrabold text-white mb-4">Referral Milestones</h3>
+            <h3 className="flex items-center gap-2 text-[16px] font-extrabold text-white mb-4">
+              <Trophy size={18} strokeWidth={1.5} className="text-[#2DA5A0]" />
+              Referral Milestones
+            </h3>
             <div className="grid grid-cols-4 gap-3">
               {MILESTONES.map((m) => {
                 const achieved = FRIENDS_JOINED >= m.count;
@@ -134,10 +142,10 @@ export default function ReferPage() {
                         : 'bg-white/[0.02] border-white/[0.04] opacity-40'
                     }`}
                   >
-                    <span className="text-2xl mb-1">{m.emoji}</span>
-                    <span className="text-[10px] font-bold text-white/50 text-center">{m.label}</span>
+                    <m.icon size={22} strokeWidth={1.5} className={achieved ? 'text-[#2DA5A0]' : 'text-white/40'} />
+                    <span className="text-[10px] font-bold text-white/50 text-center mt-1.5">{m.label}</span>
                     {achieved && (
-                      <span className="text-[9px] font-bold text-[#2DA5A0] mt-1">✓ Done</span>
+                      <span className="text-[9px] font-bold text-[#2DA5A0] mt-1">Done</span>
                     )}
                   </motion.div>
                 );
