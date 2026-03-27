@@ -1,64 +1,22 @@
 'use client';
 
-const GLASS =
-  'bg-[rgba(26,39,68,0.55)] backdrop-blur-[24px] border border-white/[0.08] rounded-2xl';
+import { motion } from 'framer-motion';
+import { ChallengeCard } from '@/components/helix/ChallengeCard';
 
 /* ------------------------------------------------------------------ */
-/*  Data                                                               */
+/*  Data — All 8 Challenges                                            */
 /* ------------------------------------------------------------------ */
 
 const CHALLENGES = [
-  {
-    emoji: '👟',
-    title: '10K Steps Challenge',
-    duration: '7 days',
-    reward: 500,
-    progress: '4/7 days completed',
-    percent: 57,
-    participants: 23,
-  },
-  {
-    emoji: '💊',
-    title: 'Supplement Streak',
-    duration: '14 days',
-    reward: 750,
-    progress: '9/14 days',
-    percent: 64,
-    participants: 23,
-  },
-  {
-    emoji: '🥗',
-    title: 'Meal Logger',
-    duration: '21 days',
-    reward: 1000,
-    progress: '12/63 meals',
-    percent: 19,
-    participants: 23,
-  },
+  { emoji: '👟', title: '10K Steps Sprint',  description: 'Hit 10,000 steps every day for a week. Walking, running, or hiking — every step counts toward the goal.', helix: 500,   active: true,  progress: 71, participants: 5 },
+  { emoji: '💊', title: 'Perfect Protocol',  description: 'Take all supplements on time for 14 consecutive days. Morning, afternoon, and evening doses.', helix: 750,   active: true,  progress: 43, participants: 3 },
+  { emoji: '🥗', title: 'Clean Plate Club',  description: 'Log every meal for 21 days straight. Breakfast, lunch, dinner, and snacks all count.', helix: 600,   active: true,  progress: 85, participants: 4 },
+  { emoji: '💪', title: 'Iron Week',         description: 'Complete 5 full workouts in 7 days. Strength, cardio, or flexibility training all qualify.', helix: 800,   active: true,  progress: 60, participants: 2 },
+  { emoji: '⚖️', title: 'Goal Crusher',      description: 'Hit your target weight goal within 60 days. Consistent tracking and healthy habits are key.', helix: 1000,  active: false, progress: 35, participants: 6 },
+  { emoji: '✅', title: 'Daily Pulse',        description: 'Complete your daily wellness check-in for 30 consecutive days without missing one.', helix: 450,   active: false, progress: 52, participants: 2 },
+  { emoji: '🎯', title: 'Biomarker Blitz',   description: 'Record all required biomarkers for 30 days. Blood pressure, glucose, and more.', helix: 900,   active: true,  progress: 40, participants: 3 },
+  { emoji: '😴', title: 'Dream Machine',     description: 'Log 7+ hours of quality sleep for 14 consecutive nights. Better sleep, better health.', helix: 550,   active: false, progress: 30, participants: 2 },
 ];
-
-/* ------------------------------------------------------------------ */
-/*  Helpers                                                            */
-/* ------------------------------------------------------------------ */
-
-function Overline({ children }: { children: React.ReactNode }) {
-  return (
-    <p className="text-xs font-bold uppercase tracking-widest text-[#B75E18] mb-3">
-      {children}
-    </p>
-  );
-}
-
-function ProgressBar({ percent, className = '' }: { percent: number; className?: string }) {
-  return (
-    <div className={`w-full h-2 rounded-full bg-[#1A2744] ${className}`}>
-      <div
-        className="h-2 rounded-full bg-[#2DA5A0] transition-all duration-500"
-        style={{ width: `${percent}%` }}
-      />
-    </div>
-  );
-}
 
 /* ------------------------------------------------------------------ */
 /*  Page                                                               */
@@ -66,29 +24,35 @@ function ProgressBar({ percent, className = '' }: { percent: number; className?:
 
 export default function ChallengesPage() {
   return (
-    <div className="flex flex-col gap-4">
-      <Overline>Active Challenges</Overline>
-      {CHALLENGES.map((ch) => (
-        <div key={ch.title} className={`${GLASS} p-4 flex flex-col gap-3`}>
-          <div className="flex items-start gap-3">
-            <span className="text-2xl">{ch.emoji}</span>
-            <div className="flex-1">
-              <p className="text-sm font-bold text-white">{ch.title}</p>
-              <p className="text-xs text-[#2DA5A0]">
-                {ch.duration} &middot; {ch.reward.toLocaleString()} Helix$
-              </p>
-            </div>
-          </div>
-          <div>
-            <div className="flex justify-between text-xs mb-1">
-              <span className="text-white/70">{ch.progress}</span>
-              <span className="text-[#2DA5A0] font-bold">{ch.percent}%</span>
-            </div>
-            <ProgressBar percent={ch.percent} />
-          </div>
-          <p className="text-xs text-tertiary">{ch.participants} participants</p>
-        </div>
-      ))}
+    <div className="flex flex-col gap-6">
+      {/* Header */}
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <h2 className="text-[22px] font-extrabold text-[#B75E18]">All Challenges</h2>
+        <p className="text-[14px] text-white/40 mt-1">
+          Join challenges, earn bonus Helix, and compete with your squad
+        </p>
+      </motion.div>
+
+      {/* Challenge grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        {CHALLENGES.map((ch, i) => (
+          <ChallengeCard
+            key={ch.title}
+            emoji={ch.emoji}
+            title={ch.title}
+            description={ch.description}
+            helix={ch.helix}
+            active={ch.active}
+            progress={ch.progress}
+            participants={ch.participants}
+            index={i}
+          />
+        ))}
+      </div>
     </div>
   );
 }

@@ -1,91 +1,45 @@
 'use client';
 
 import { useState } from 'react';
-import { Shield, Lock, UserX, LogOut } from 'lucide-react';
-
-const GLASS =
-  'bg-[rgba(26,39,68,0.55)] backdrop-blur-[24px] border border-white/[0.08] rounded-2xl';
+import { motion } from 'framer-motion';
+import { GlassCard } from '@/components/helix/GlassCard';
+import { HelixIcon } from '@/components/helix/HelixIcon';
+import { ResearchToggle } from '@/components/helix/ResearchToggle';
 
 /* ------------------------------------------------------------------ */
 /*  Data                                                               */
 /* ------------------------------------------------------------------ */
 
 const RESEARCH_TOGGLES = [
-  {
-    id: 'supplement',
-    label: 'Supplement Adherence',
-    desc: 'Share daily supplement completion data',
-  },
-  {
-    id: 'biomarker',
-    label: 'Biomarker Trends',
-    desc: 'Share bloodwork & biomarker changes over time',
-  },
-  {
-    id: 'lifestyle',
-    label: 'Lifestyle Metrics',
-    desc: 'Share steps, sleep, and activity data',
-  },
-  {
-    id: 'genomic',
-    label: 'Genomic Outcomes',
-    desc: 'Share anonymized genetic health correlations',
-  },
+  { id: 'supplement', label: 'Supplement Adherence Data', description: 'Share your daily supplement completion and timing data', defaultOn: true },
+  { id: 'biomarker',  label: 'Biomarker Trends',         description: 'Share bloodwork and biomarker changes over time', defaultOn: true },
+  { id: 'lifestyle',  label: 'Lifestyle Metrics',        description: 'Share steps, sleep quality, and activity patterns', defaultOn: false },
+  { id: 'genomic',    label: 'Genomic Outcome Correlation', description: 'Share anonymized genetic health outcome correlations', defaultOn: false },
+];
+
+const HOW_IT_HELPS = [
+  { num: '01', text: 'Identifies which supplement protocols produce the best biomarker improvements' },
+  { num: '02', text: 'Helps researchers understand lifestyle factors that accelerate health outcomes' },
+  { num: '03', text: 'Enables personalized recommendations based on aggregate population data' },
+  { num: '04', text: 'Contributes to peer-reviewed studies advancing precision wellness science' },
 ];
 
 const PRIVACY_ITEMS = [
-  { icon: Shield, text: 'HIPAA-compliant data handling' },
-  { icon: Lock, text: 'End-to-end encryption' },
-  { icon: UserX, text: 'Data is never sold to third parties' },
-  { icon: LogOut, text: 'Withdraw anytime with full data deletion' },
+  'All data is HIPAA-compliant and encrypted end-to-end',
+  'Your identity is never attached to shared data — fully anonymized',
+  'You can withdraw consent at any time with complete data deletion',
+  'Data is never sold to third parties or used for advertising',
 ];
-
-/* ------------------------------------------------------------------ */
-/*  Helpers                                                            */
-/* ------------------------------------------------------------------ */
-
-function Overline({ children }: { children: React.ReactNode }) {
-  return (
-    <p className="text-xs font-bold uppercase tracking-widest text-[#B75E18] mb-3">
-      {children}
-    </p>
-  );
-}
-
-function Toggle({
-  on,
-  onToggle,
-}: {
-  on: boolean;
-  onToggle: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onToggle}
-      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-        on ? 'bg-[#2DA5A0]' : 'bg-[#1A2744]'
-      }`}
-    >
-      <span
-        className={`inline-block h-4 w-4 rounded-full bg-white transition-transform ${
-          on ? 'translate-x-6' : 'translate-x-1'
-        }`}
-      />
-    </button>
-  );
-}
 
 /* ------------------------------------------------------------------ */
 /*  Page                                                               */
 /* ------------------------------------------------------------------ */
 
 export default function ResearchPage() {
-  const [toggles, setToggles] = useState<Record<string, boolean>>({
-    supplement: false,
-    biomarker: false,
-    lifestyle: false,
-    genomic: false,
+  const [toggles, setToggles] = useState<Record<string, boolean>>(() => {
+    const initial: Record<string, boolean> = {};
+    RESEARCH_TOGGLES.forEach((t) => { initial[t.id] = t.defaultOn; });
+    return initial;
   });
 
   const handleToggle = (id: string) => {
@@ -93,45 +47,95 @@ export default function ResearchPage() {
   };
 
   return (
-    <div className="flex flex-col gap-5">
-      <Overline>Share for Science</Overline>
+    <div className="flex flex-col gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Left Card — Research Consent */}
+        <GlassCard glow>
+          {/* Security badge */}
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#2DA5A0]/10 border border-[#2DA5A0]/20 mb-5">
+            <span className="text-xs">🔒</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-[#2DA5A0]">
+              100% Anonymous & Encrypted
+            </span>
+          </div>
 
-      {/* Anonymous badge */}
-      <span className="inline-flex self-start items-center px-3 py-1 rounded-full text-xs font-bold bg-[#2DA5A0]/20 text-[#2DA5A0] border border-[#2DA5A0]/30">
-        100% Anonymous &amp; Encrypted
-      </span>
+          <h2 className="text-[20px] font-extrabold text-[#B75E18] mb-2">
+            🔬 Share for Science
+          </h2>
+          <p className="text-[13px] text-white/40 leading-relaxed mb-6">
+            Opt in to share anonymized health data with researchers. Your contributions
+            help advance precision wellness science while earning you monthly Helix rewards.
+          </p>
 
-      {/* Toggles */}
-      <div className={`${GLASS} p-4 flex flex-col gap-4`}>
-        {RESEARCH_TOGGLES.map((item) => (
-          <div key={item.id} className="flex items-center gap-3">
-            <Toggle on={toggles[item.id]} onToggle={() => handleToggle(item.id)} />
-            <div className="flex-1">
-              <p className="text-sm text-white font-medium">{item.label}</p>
-              <p className="text-xs text-tertiary">{item.desc}</p>
+          {/* Toggle switches */}
+          <div className="flex flex-col divide-y divide-white/[0.04]">
+            {RESEARCH_TOGGLES.map((toggle) => (
+              <ResearchToggle
+                key={toggle.id}
+                label={toggle.label}
+                description={toggle.description}
+                enabled={toggles[toggle.id]}
+                onToggle={() => handleToggle(toggle.id)}
+              />
+            ))}
+          </div>
+
+          {/* Enrollment CTA */}
+          <div className="mt-6 pt-5 border-t border-white/[0.06]">
+            <div className="flex items-center justify-center gap-2 mb-4">
+              <HelixIcon size={18} />
+              <span className="text-[18px] font-extrabold text-[#2DA5A0]">+200 Helix/month</span>
             </div>
+            <button className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#2DA5A0] to-[#35bdb7] text-white text-sm font-bold hover:opacity-90 transition-opacity">
+              Enroll Now
+            </button>
           </div>
-        ))}
-      </div>
+        </GlassCard>
 
-      {/* Reward note */}
-      <p className="text-sm font-bold text-[#2DA5A0] text-center">
-        +200 Helix$/month when enrolled
-      </p>
+        {/* Right Column — Two stacked cards */}
+        <div className="flex flex-col gap-6">
+          {/* How Your Data Helps */}
+          <GlassCard>
+            <h3 className="text-[16px] font-extrabold text-white mb-5">How Your Data Helps</h3>
+            <div className="flex flex-col gap-4">
+              {HOW_IT_HELPS.map((item, i) => (
+                <motion.div
+                  key={item.num}
+                  initial={{ opacity: 0, x: -12 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.1, duration: 0.5 }}
+                  className="flex gap-3"
+                >
+                  <span className="text-[14px] font-extrabold text-[#B75E18] flex-shrink-0 w-6">
+                    {item.num}
+                  </span>
+                  <p className="text-[13px] text-white/50 leading-relaxed">{item.text}</p>
+                </motion.div>
+              ))}
+            </div>
+          </GlassCard>
 
-      {/* Enroll button */}
-      <button className="w-full py-3 rounded-xl bg-gradient-to-r from-[#2DA5A0] to-[#2DA5A0]/70 text-white text-sm font-bold hover:opacity-90 transition-opacity">
-        Enroll in Research
-      </button>
-
-      {/* Privacy */}
-      <div className={`${GLASS} p-4 flex flex-col gap-3`}>
-        {PRIVACY_ITEMS.map((item) => (
-          <div key={item.text} className="flex items-center gap-3">
-            <item.icon className="w-4 h-4 text-[#2DA5A0] flex-shrink-0" />
-            <span className="text-xs text-white/70">{item.text}</span>
-          </div>
-        ))}
+          {/* Privacy Guarantee */}
+          <GlassCard>
+            <h3 className="text-[16px] font-extrabold text-white mb-4">
+              🛡️ Privacy Guarantee
+            </h3>
+            <div className="flex flex-col gap-3">
+              {PRIVACY_ITEMS.map((item, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, x: -12 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.1, duration: 0.5 }}
+                  className="flex items-start gap-3"
+                >
+                  <span className="text-[#2DA5A0] text-sm flex-shrink-0 mt-0.5">✓</span>
+                  <p className="text-[13px] text-white/50 leading-relaxed">{item}</p>
+                </motion.div>
+              ))}
+            </div>
+          </GlassCard>
+        </div>
       </div>
     </div>
   );

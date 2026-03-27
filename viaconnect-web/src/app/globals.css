@@ -225,6 +225,20 @@ body {
   transform: translateY(0);
 }
 
+/* ─── Helix Rewards Animations ───────────────────────────────────────────── */
+
+@keyframes floatParticle {
+  0% { transform: translate(0, 0) scale(1); }
+  100% { transform: translate(30px, -40px) scale(1.5); }
+}
+
+/* Instrument Sans for Helix Rewards */
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap');
+
+.font-instrument {
+  font-family: 'Instrument Sans', sans-serif;
+}
+
 /* ─── No scrollbar ─────────────────────────────────────────────────────────── */
 
 .no-scrollbar::-webkit-scrollbar { display: none; }

@@ -1,54 +1,33 @@
 'use client';
 
-import { Check, Circle } from 'lucide-react';
-
-const GLASS =
-  'bg-[rgba(26,39,68,0.55)] backdrop-blur-[24px] border border-white/[0.08] rounded-2xl';
+import { motion } from 'framer-motion';
+import { GlassCard } from '@/components/helix/GlassCard';
+import { HelixIcon } from '@/components/helix/HelixIcon';
+import { DailyActionRow } from '@/components/helix/DailyActionRow';
 
 /* ------------------------------------------------------------------ */
 /*  Data                                                               */
 /* ------------------------------------------------------------------ */
 
-interface DailyAction {
-  emoji: string;
-  name: string;
-  helix: number;
-  completed: boolean;
-}
-
-const DAILY_ACTIONS: DailyAction[] = [
-  { emoji: '💊', name: 'Morning Supplements', helix: 25, completed: true },
-  { emoji: '📋', name: 'Daily Check-in', helix: 10, completed: true },
-  { emoji: '👟', name: '5K Steps', helix: 10, completed: true },
-  { emoji: '💊', name: 'Afternoon Supplements', helix: 25, completed: false },
-  { emoji: '🥗', name: 'Lunch Log', helix: 15, completed: false },
-  { emoji: '👟', name: '10K Steps', helix: 30, completed: false },
-  { emoji: '💪', name: 'Workout', helix: 35, completed: false },
-  { emoji: '💊', name: 'Evening Supplements', helix: 25, completed: false },
+const EARN_CATEGORIES = [
+  { emoji: '💊', label: 'Daily Supplements', helix: '+25/day',       description: 'Log each supplement dose on time' },
+  { emoji: '👟', label: 'Steps & Activity',  helix: '+10-50/day',    description: 'Earn more as your step count climbs' },
+  { emoji: '🥗', label: 'Nutrition Logging',  helix: '+15/day',      description: 'Track breakfast, lunch, and dinner' },
+  { emoji: '✅', label: 'Daily Check-in',     helix: '+10/day',      description: 'Complete your wellness pulse check' },
+  { emoji: '🏆', label: 'Challenge Wins',     helix: '+100-1,000',   description: 'Finish challenges to earn big' },
+  { emoji: '🔥', label: 'Streak Bonuses',     helix: '2x multiplier', description: 'Keep your streak alive for double Helix' },
+  { emoji: '📢', label: 'Refer Friends',      helix: '+500/referral', description: 'Invite friends to ViaConnect' },
+  { emoji: '🔬', label: 'Share for Science',  helix: '+200/month',   description: 'Contribute anonymous data to research' },
 ];
 
-const CATEGORIES = [
-  { emoji: '💊', name: 'Daily Supplements', reward: '+75/day' },
-  { emoji: '👟', name: 'Steps', reward: '+10-50' },
-  { emoji: '🥗', name: 'Nutrition', reward: '+45/day' },
-  { emoji: '✅', name: 'Check-in', reward: '+10' },
-  { emoji: '💪', name: 'Workout', reward: '+35' },
-  { emoji: '🏆', name: 'Challenges', reward: '+100-1000' },
-  { emoji: '🤝', name: 'Referrals', reward: '+500' },
-  { emoji: '🔬', name: 'Research', reward: '+200/mo' },
+const DAILY_ACTIONS = [
+  { emoji: '💊', label: 'Morning Supplements',    helix: 25, completed: true },
+  { emoji: '👟', label: '10K Steps',              helix: 50, completed: true },
+  { emoji: '🥗', label: 'Meal Logging',           helix: 15, completed: true },
+  { emoji: '💊', label: 'Afternoon Supplements',  helix: 25, completed: true },
+  { emoji: '✅', label: 'Wellness Check-in',      helix: 10, completed: false },
+  { emoji: '💊', label: 'Evening Supplements',    helix: 25, completed: false },
 ];
-
-/* ------------------------------------------------------------------ */
-/*  Helpers                                                            */
-/* ------------------------------------------------------------------ */
-
-function Overline({ children }: { children: React.ReactNode }) {
-  return (
-    <p className="text-xs font-bold uppercase tracking-widest text-[#B75E18] mb-3">
-      {children}
-    </p>
-  );
-}
 
 /* ------------------------------------------------------------------ */
 /*  Page                                                               */
@@ -59,50 +38,82 @@ export default function EarnPage() {
   const possible = DAILY_ACTIONS.reduce((s, a) => s + a.helix, 0);
 
   return (
-    <div className="flex flex-col gap-6">
-      {/* Today's activity */}
-      <div>
-        <Overline>Today&apos;s Helix Activity</Overline>
-        <div className="flex flex-col gap-2">
-          {DAILY_ACTIONS.map((action) => (
+    <div className="flex flex-col gap-8">
+      {/* Header */}
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <h2 className="text-[22px] font-extrabold text-[#B75E18]">Ways to Earn Helix</h2>
+        <p className="text-[14px] text-white/40 mt-1">
+          Every healthy action earns redeemable Helix credits
+        </p>
+      </motion.div>
+
+      {/* Earning categories grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {EARN_CATEGORIES.map((cat, i) => (
+          <motion.div
+            key={cat.label}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.08, duration: 0.5, ease: 'easeOut' }}
+            className="relative overflow-hidden rounded-[20px] p-6 bg-[rgba(26,39,68,0.55)] backdrop-blur-[24px] backdrop-saturate-[160%] border border-white/[0.08] hover:border-white/[0.14] hover:shadow-[0_20px_60px_rgba(0,0,0,0.3)] transition-all duration-300 hover:-translate-y-0.5 flex items-start gap-4"
+          >
+            {/* Rim light */}
             <div
-              key={action.name}
-              className={`${GLASS} p-3 flex items-center gap-3`}
-            >
-              <span className="text-lg">{action.emoji}</span>
-              <span className="text-sm text-white flex-1">{action.name}</span>
-              <span className="text-sm font-bold text-[#2DA5A0]">+{action.helix}</span>
-              {action.completed ? (
-                <Check className="w-5 h-5 text-[#2DA5A0]" />
-              ) : (
-                <Circle className="w-5 h-5 text-white/20" />
-              )}
+              className="absolute top-0 left-0 right-0 h-px pointer-events-none"
+              style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent)' }}
+            />
+
+            {/* Icon box */}
+            <div className="flex-shrink-0 w-14 h-14 rounded-2xl bg-[#B75E18]/[0.08] flex items-center justify-center text-2xl">
+              {cat.emoji}
             </div>
+
+            {/* Text */}
+            <div className="flex-1 min-w-0">
+              <p className="text-[15px] font-extrabold text-white">{cat.label}</p>
+              <div className="flex items-center gap-1 mt-1">
+                <HelixIcon size={13} />
+                <span className="text-[14px] font-bold text-[#2DA5A0]">{cat.helix}</span>
+              </div>
+              <p className="text-[12px] text-white/40 mt-1 leading-relaxed">{cat.description}</p>
+            </div>
+          </motion.div>
+        ))}
+      </div>
+
+      {/* Daily Activity Tracker */}
+      <GlassCard glow>
+        <h3 className="text-[20px] font-extrabold text-[#B75E18] mb-5">
+          📊 Today&apos;s Helix Activity
+        </h3>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          {DAILY_ACTIONS.map((action, i) => (
+            <DailyActionRow
+              key={action.label}
+              emoji={action.emoji}
+              label={action.label}
+              helix={action.helix}
+              completed={action.completed}
+              index={i}
+            />
           ))}
         </div>
 
         {/* Summary */}
-        <div className={`${GLASS} p-3 mt-3 text-center`}>
-          <span className="text-sm text-white">
-            Today: <span className="font-bold text-[#2DA5A0]">+{earned} earned</span> /{' '}
-            {possible} possible
-          </span>
+        <div className="mt-5 pt-4 border-t border-white/[0.06] text-center">
+          <p className="text-[14px] text-white/55">
+            Today&apos;s earnings:{' '}
+            <span className="font-extrabold text-[#2DA5A0]">+{earned} Helix</span>
+            {' / '}
+            <span className="text-white/35">{possible} possible</span>
+          </p>
         </div>
-      </div>
-
-      {/* Categories */}
-      <div>
-        <Overline>Earning Categories</Overline>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {CATEGORIES.map((cat) => (
-            <div key={cat.name} className={`${GLASS} p-4 text-center`}>
-              <span className="text-2xl">{cat.emoji}</span>
-              <p className="text-sm text-white mt-2 font-medium">{cat.name}</p>
-              <p className="text-xs text-[#2DA5A0] font-bold mt-1">{cat.reward}</p>
-            </div>
-          ))}
-        </div>
-      </div>
+      </GlassCard>
     </div>
   );
 }

@@ -1,102 +1,270 @@
 'use client';
 
-const GLASS =
-  'bg-[rgba(26,39,68,0.55)] backdrop-blur-[24px] border border-white/[0.08] rounded-2xl';
+import { useState, useRef, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { GlassCard } from '@/components/helix/GlassCard';
+import { AvatarRing } from '@/components/helix/AvatarRing';
+import { LeaderboardBar } from '@/components/helix/LeaderboardBar';
+import { ChallengeCard } from '@/components/helix/ChallengeCard';
+import { MessageBubble } from '@/components/helix/MessageBubble';
+import { HelixIcon } from '@/components/helix/HelixIcon';
 
 /* ------------------------------------------------------------------ */
 /*  Data                                                               */
 /* ------------------------------------------------------------------ */
 
-const PODIUM = [
-  { rank: 1, name: 'Sarah K.', helix: 4280, medal: '🥇', borderColor: '#FFD700', isYou: false },
-  { rank: 2, name: 'You', helix: 2847, medal: '🥈', borderColor: '#C0C0C0', isYou: true },
-  { rank: 3, name: 'Mike R.', helix: 2195, medal: '🥉', borderColor: '#CD7F32', isYou: false },
+const PODIUM_USERS = [
+  { rank: 2, name: 'Marcus T.', initials: 'MT', helix: 3920, color: '#C0C0C0' },
+  { rank: 1, name: 'Sarah K.',  initials: 'SK', helix: 4280, color: '#FFD700' },
+  { rank: 3, name: 'Mike R.',   initials: 'MR', helix: 2195, color: '#CD7F32' },
 ];
 
-const RANKED_LIST = [
-  { rank: 4, name: 'Jessica L.', helix: 2010 },
-  { rank: 5, name: 'David T.', helix: 1875 },
-  { rank: 6, name: 'Amanda W.', helix: 1640 },
-  { rank: 7, name: 'Chris P.', helix: 1520 },
-  { rank: 8, name: 'Rachel N.', helix: 1390 },
-  { rank: 9, name: 'Tom B.', helix: 1205 },
-  { rank: 10, name: 'Laura G.', helix: 1100 },
+const RANKED_USERS = [
+  { rank: 1, name: 'Sarah K.',   initials: 'SK', helix: 4280, color: '#FFD700', isYou: false },
+  { rank: 2, name: 'You',        initials: 'GF', helix: 4350, color: '#2DA5A0', isYou: true },
+  { rank: 3, name: 'Mike R.',    initials: 'MR', helix: 2195, color: '#CD7F32', isYou: false },
+  { rank: 4, name: 'Jessica L.', initials: 'JL', helix: 2010, color: '#8B5CF6', isYou: false },
+  { rank: 5, name: 'David T.',   initials: 'DT', helix: 1875, color: '#F472B6', isYou: false },
+  { rank: 6, name: 'Amanda W.',  initials: 'AW', helix: 1640, color: '#2DA5A0', isYou: false },
+  { rank: 7, name: 'Chris P.',   initials: 'CP', helix: 1520, color: '#B75E18', isYou: false },
+];
+
+interface ChatMessage {
+  id: number;
+  sender: string;
+  text: string;
+  timestamp: string;
+  isSent: boolean;
+}
+
+const INITIAL_MESSAGES: ChatMessage[] = [
+  { id: 1, sender: 'Sarah K.',  text: 'Just hit 4K Helix this week! 🎉', timestamp: '2:34 PM', isSent: false },
+  { id: 2, sender: 'You',       text: 'Nice! I\'m right behind you 💪', timestamp: '2:35 PM', isSent: true },
+  { id: 3, sender: 'Mike R.',   text: 'The steps challenge is brutal today', timestamp: '2:36 PM', isSent: false },
+  { id: 4, sender: 'You',       text: 'Already at 8K, pushing for 10K before lunch', timestamp: '2:37 PM', isSent: true },
+  { id: 5, sender: 'Jessica L.', text: 'Who else is doing the supplement streak?', timestamp: '2:40 PM', isSent: false },
+  { id: 6, sender: 'Sarah K.',  text: 'Day 12 for me! The 2x multiplier is 🔥', timestamp: '2:41 PM', isSent: false },
+];
+
+const QUICK_REACTIONS = [
+  '🔥 Let\'s go!',
+  '💪 Crushing it!',
+  '👏 Great work!',
+  '🏃 Keep moving!',
+];
+
+const ACTIVE_CHALLENGES = [
+  { emoji: '👟', title: '10K Steps Sprint',  description: 'Hit 10,000 steps every day for a week', helix: 500,  active: true, progress: 71, participants: 5 },
+  { emoji: '💊', title: 'Perfect Protocol',  description: 'Take all supplements on time for 14 days', helix: 750,  active: true, progress: 43, participants: 3 },
+  { emoji: '🥗', title: 'Clean Plate Club',  description: 'Log every meal for 21 days straight', helix: 600,  active: true, progress: 85, participants: 4 },
+  { emoji: '💪', title: 'Iron Week',         description: 'Complete 5 workouts in 7 days', helix: 800,  active: true, progress: 60, participants: 2 },
+  { emoji: '🎯', title: 'Biomarker Blitz',   description: 'Record all biomarkers for 30 days', helix: 900,  active: true, progress: 40, participants: 3 },
+];
+
+const ONLINE_USERS = [
+  { initials: 'SK', color: '#FFD700' },
+  { initials: 'MR', color: '#CD7F32' },
+  { initials: 'JL', color: '#8B5CF6' },
 ];
 
 /* ------------------------------------------------------------------ */
-/*  Helpers                                                            */
-/* ------------------------------------------------------------------ */
-
-function Overline({ children }: { children: React.ReactNode }) {
-  return (
-    <p className="text-xs font-bold uppercase tracking-widest text-[#B75E18] mb-3">
-      {children}
-    </p>
-  );
-}
-
-function ProgressBar({ percent, className = '' }: { percent: number; className?: string }) {
-  return (
-    <div className={`w-full h-2 rounded-full bg-[#1A2744] ${className}`}>
-      <div
-        className="h-2 rounded-full bg-[#2DA5A0] transition-all duration-500"
-        style={{ width: `${percent}%` }}
-      />
-    </div>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/*  Page                                                               */
+/*  Arena Page                                                         */
 /* ------------------------------------------------------------------ */
 
 export default function ArenaPage() {
-  const maxHelix = PODIUM[0].helix;
+  const [messages, setMessages] = useState<ChatMessage[]>(INITIAL_MESSAGES);
+  const [input, setInput] = useState('');
+  const chatEndRef = useRef<HTMLDivElement>(null);
+  const maxHelix = 4350;
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  const sendMessage = (text: string) => {
+    if (!text.trim()) return;
+    const newMsg: ChatMessage = {
+      id: Date.now(),
+      sender: 'You',
+      text: text.trim(),
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      isSent: true,
+    };
+    setMessages((prev) => [...prev, newMsg]);
+    setInput('');
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage(input);
+    }
+  };
 
   return (
-    <div className="flex flex-col gap-6">
-      <div>
-        <Overline>Weekly Leaderboard</Overline>
-        <p className="text-xs text-tertiary mb-4">Resets in 3d 14h</p>
-
-        {/* Podium */}
-        <div className="grid grid-cols-3 gap-3 mb-6">
-          {PODIUM.map((entry) => (
-            <div
-              key={entry.rank}
-              className={`${GLASS} p-4 text-center border-t-2 ${
-                entry.isYou ? '!border-[#2DA5A0]' : ''
-              }`}
-              style={
-                !entry.isYou
-                  ? { borderTopColor: entry.borderColor }
-                  : undefined
-              }
-            >
-              <span className="text-2xl">{entry.medal}</span>
-              <p className="text-sm font-bold text-white mt-2">{entry.name}</p>
-              <p className="text-lg font-extrabold text-[#2DA5A0]">
-                {entry.helix.toLocaleString()}
-              </p>
-              <p className="text-xs text-tertiary">Helix$</p>
+    <div className="flex flex-col gap-8">
+      {/* Two-column grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Column 1 — Leaderboard */}
+        <GlassCard glow>
+          {/* Header */}
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-[20px] font-extrabold text-[#B75E18]">⚔️ Weekly Arena</h2>
+              <p className="text-[11px] text-white/35 font-semibold mt-1">Resets in 3d 14h 22m</p>
             </div>
-          ))}
-        </div>
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-[#2DA5A0] animate-pulse" />
+              <span className="text-[10px] font-bold uppercase tracking-wider text-[#2DA5A0]">
+                LIVE
+              </span>
+            </div>
+          </div>
 
-        {/* Full list */}
-        <div className="flex flex-col gap-2">
-          {RANKED_LIST.map((entry) => (
-            <div key={entry.rank} className={`${GLASS} p-3 flex items-center gap-3`}>
-              <span className="text-sm font-bold text-white/50 w-6 text-center">
-                {entry.rank}
-              </span>
-              <span className="text-sm text-white flex-1">{entry.name}</span>
-              <span className="text-sm font-bold text-[#2DA5A0]">
-                {entry.helix.toLocaleString()}
-              </span>
-              <div className="w-20">
-                <ProgressBar percent={(entry.helix / maxHelix) * 100} />
+          {/* Podium Display: 2nd | 1st | 3rd */}
+          <div className="flex items-end justify-center gap-4 mb-8">
+            {PODIUM_USERS.map((user) => {
+              const heights: Record<number, number> = { 1: 110, 2: 90, 3: 75 };
+              const medalColors: Record<number, string> = { 1: '#FFD700', 2: '#C0C0C0', 3: '#CD7F32' };
+              return (
+                <motion.div
+                  key={user.rank}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: user.rank * 0.15, duration: 0.6 }}
+                  className="flex flex-col items-center"
+                >
+                  <AvatarRing
+                    initials={user.initials}
+                    color={user.color}
+                    helix={user.helix}
+                    rank={user.rank}
+                    size={user.rank === 1 ? 64 : 52}
+                  />
+                  <span className="text-[12px] font-bold text-white mt-2">{user.name}</span>
+                  <div className="flex items-center gap-1 mt-0.5">
+                    <HelixIcon size={11} />
+                    <span className="text-[11px] font-extrabold text-white/55">
+                      {user.helix.toLocaleString()}
+                    </span>
+                  </div>
+                  {/* Podium bar */}
+                  <div
+                    className="w-16 rounded-t-lg mt-2"
+                    style={{
+                      height: heights[user.rank],
+                      background: `linear-gradient(180deg, ${medalColors[user.rank]}44, ${medalColors[user.rank]}11)`,
+                      borderTop: `2px solid ${medalColors[user.rank]}66`,
+                    }}
+                  />
+                </motion.div>
+              );
+            })}
+          </div>
+
+          {/* Ranked list */}
+          <div className="flex flex-col gap-1.5">
+            {RANKED_USERS.map((user, i) => (
+              <LeaderboardBar
+                key={user.rank}
+                rank={user.rank}
+                name={user.name}
+                initials={user.initials}
+                helix={user.helix}
+                maxHelix={maxHelix}
+                color={user.color}
+                isYou={user.isYou}
+                index={i}
+              />
+            ))}
+          </div>
+        </GlassCard>
+
+        {/* Column 2 — Squad Chat */}
+        <GlassCard>
+          {/* Chat header */}
+          <div className="flex items-center justify-between mb-5">
+            <h2 className="text-[20px] font-extrabold text-[#B75E18]">💬 Squad Chat</h2>
+            <div className="flex -space-x-2">
+              {ONLINE_USERS.map((u) => (
+                <div
+                  key={u.initials}
+                  className="w-7 h-7 rounded-full border-2 border-[rgba(26,39,68,0.55)] flex items-center justify-center text-[9px] font-bold text-white"
+                  style={{ background: u.color }}
+                >
+                  {u.initials}
+                </div>
+              ))}
+              <div className="w-7 h-7 rounded-full border-2 border-[rgba(26,39,68,0.55)] bg-white/10 flex items-center justify-center text-[9px] font-bold text-white/40">
+                +4
               </div>
+            </div>
+          </div>
+
+          {/* Message feed */}
+          <div className="h-[320px] overflow-y-auto pr-1 mb-4 scrollbar-hide">
+            {messages.map((msg, i) => (
+              <MessageBubble
+                key={msg.id}
+                text={msg.text}
+                sender={msg.sender}
+                timestamp={msg.timestamp}
+                isSent={msg.isSent}
+                index={i}
+              />
+            ))}
+            <div ref={chatEndRef} />
+          </div>
+
+          {/* Input area */}
+          <div className="flex gap-2 mb-3">
+            <input
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Type a message..."
+              className="flex-1 px-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-[13px] text-white placeholder-white/25 outline-none focus:border-[#2DA5A0]/40 transition-colors"
+            />
+            <button
+              onClick={() => sendMessage(input)}
+              className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#2DA5A0] to-[#35bdb7] text-white text-sm font-bold hover:opacity-90 transition-opacity"
+            >
+              Send
+            </button>
+          </div>
+
+          {/* Quick reactions */}
+          <div className="flex flex-wrap gap-2">
+            {QUICK_REACTIONS.map((reaction) => (
+              <button
+                key={reaction}
+                onClick={() => sendMessage(reaction)}
+                className="px-3 py-1.5 rounded-full text-[11px] font-semibold bg-white/[0.04] border border-white/[0.06] text-white/50 hover:bg-white/[0.08] hover:text-white/70 transition-colors"
+              >
+                {reaction}
+              </button>
+            ))}
+          </div>
+        </GlassCard>
+      </div>
+
+      {/* Active Challenges Strip */}
+      <div>
+        <h2 className="text-[20px] font-extrabold text-[#B75E18] mb-4">🔥 Active Challenges</h2>
+        <div className="flex gap-4 overflow-x-auto pb-3 snap-x snap-mandatory scrollbar-hide">
+          {ACTIVE_CHALLENGES.map((ch, i) => (
+            <div key={ch.title} className="snap-start flex-shrink-0 w-[280px]">
+              <ChallengeCard
+                emoji={ch.emoji}
+                title={ch.title}
+                description={ch.description}
+                helix={ch.helix}
+                active={ch.active}
+                progress={ch.progress}
+                participants={ch.participants}
+                index={i}
+              />
             </div>
           ))}
         </div>
