@@ -208,7 +208,7 @@ export function Sidebar({
 
   // Don't render with wrong width before hydration
   if (!mounted) {
-    return <aside className="w-[260px] shrink-0" />;
+    return <aside className="hidden lg:block w-[260px] shrink-0" />;
   }
 
   return (

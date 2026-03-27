@@ -6,7 +6,7 @@ import type { User } from "@supabase/supabase-js";
 import Link from "next/link";
 
 const PORTALS = [
-  { key: "consumer", label: "Consumer", href: "/dashboard", color: "bg-teal/20 text-teal" },
+  { key: "consumer", label: "Personal Wellness", href: "/dashboard", color: "bg-teal/20 text-teal" },
   { key: "practitioner", label: "Practitioner", href: "/practitioner/dashboard", color: "bg-portal-green/20 text-portal-green" },
   { key: "naturopath", label: "Naturopath", href: "/naturopath/dashboard", color: "bg-sage/20 text-sage" },
   { key: "admin", label: "Admin", href: "/admin", color: "bg-copper/20 text-copper" },

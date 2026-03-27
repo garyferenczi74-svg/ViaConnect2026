@@ -47,7 +47,7 @@ function useTypewriter(lines: string[], charDelay = 45, lineDelay = 600) {
 }
 
 const portalTabs = [
-  { label: 'Consumer', isActive: true },
+  { label: 'Personal Wellness', isActive: true },
   { label: 'Practitioner' },
   { label: 'Naturopath' },
 ];
