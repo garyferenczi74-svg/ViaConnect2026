@@ -254,14 +254,7 @@ export function HelixArena() {
     setInput('');
   };
 
-  const isFirstRender = useRef(true);
-  useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
-      return;
-    }
-    setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
-  }, [messages]);
+  // Chat scroll is manual — no auto-scroll
 
   return (
     <View>
@@ -324,7 +317,6 @@ export function HelixArena() {
           renderItem={({ item }) => <ChatBubble msg={item} />}
           style={{ height: 260 }}
           showsVerticalScrollIndicator={false}
-          onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: true })}
         />
 
         {/* Input */}

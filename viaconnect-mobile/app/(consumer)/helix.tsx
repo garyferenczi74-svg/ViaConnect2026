@@ -36,7 +36,6 @@ export default function HelixRewardsScreen() {
 
   const switchTab = useCallback((key: TabKey) => {
     setActiveTab(key);
-    scrollRef.current?.scrollTo({ y: 0, animated: true });
   }, []);
 
   return (

@@ -77,9 +77,7 @@ export default function ArenaPage() {
   const chatEndRef = useRef<HTMLDivElement>(null);
   const maxHelix = 4350;
 
-  useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  // Chat scroll is manual — no auto-scroll
 
   const sendMessage = (text: string) => {
     if (!text.trim()) return;
