@@ -8,6 +8,7 @@ import { ProtocolCard } from '@/components/ui/ProtocolCard';
 import { GeneticInsightCard } from '@/components/ui/GeneticInsightCard';
 import { VCButton } from '@/components/ui/VCButton';
 import { PluginCTA } from '@/components/ui/PluginCTA';
+import { ProactiveInsightCard } from '@/components/ui/ProactiveInsightCard';
 import { Coins, Flame, Gift, TrendingUp } from 'lucide-react';
 
 /* ─── Typewriter Hook ──────────────────────────────────────────────────────── */
@@ -144,6 +145,21 @@ export default function ConsumerDashboard() {
             variant="hero"
           />
         </div>
+      </section>
+
+      {/* ── AI Proactive Insight ─────────────────────────────────────── */}
+      <section className="px-4 lg:px-6 pb-2">
+        <ProactiveInsightCard
+          type="plan_adjustment"
+          title="AI adjusted your plan for today"
+          summary="NAD+ moved to morning based on poor sleep + COMT variant. Recovery score 52/100 — moderate activity recommended."
+          urgency="attention"
+          actions={[
+            { label: 'View Changes', route: '/supplements' },
+            { label: 'Ask AI Why', route: '/ai' },
+          ]}
+          geneticBadge={{ gene: 'COMT', variant: 'Val158Met' }}
+        />
       </section>
 
       {/* ── Today's Precision Actions ─────────────────────────────────── */}
