@@ -3,11 +3,23 @@
 import React, { useState } from 'react';
 import { ArrowRightCircle } from 'lucide-react';
 import { MediaSource } from './sourceData';
+import { SourceLogo } from './SourceLogo';
 import TagPill from './TagPill';
 import ToggleSwitch from './ToggleSwitch';
 
+interface CuratedEntry {
+  name: string;
+  handle?: string;
+  description?: string;
+}
+
 interface SourceCardProps {
-  source: MediaSource;
+  source: MediaSource & {
+    logoUrl?: string | null;
+    logoType?: 'square' | 'wide' | 'round';
+    curatedAccounts?: CuratedEntry[];
+    curatedCommunities?: CuratedEntry[];
+  };
   isActive: boolean;
   onToggle: () => void;
   onPreview: () => void;
@@ -15,6 +27,19 @@ interface SourceCardProps {
 
 export default function SourceCard({ source, isActive, onToggle, onPreview }: SourceCardProps) {
   const [hovered, setHovered] = useState(false);
+
+  const isPlatform = !!(source.curatedAccounts || source.curatedCommunities);
+  const curatedItems = source.curatedAccounts || source.curatedCommunities || [];
+  const visibleItems = curatedItems.slice(0, 3);
+  const remainingCount = curatedItems.length - 3;
+
+  const logoSource = {
+    color: source.color,
+    icon: source.icon,
+    logoUrl: source.logoUrl ?? null,
+    logoType: source.logoType ?? 'square',
+    name: source.name,
+  };
 
   return (
     <div
@@ -57,24 +82,8 @@ export default function SourceCard({ source, isActive, onToggle, onPreview }: So
 
       {/* Header Row */}
       <div className="flex gap-3 items-start mb-3">
-        {/* Icon Circle */}
-        <div
-          className="flex items-center justify-center shrink-0"
-          style={{
-            width: 48,
-            height: 48,
-            borderRadius: 14,
-            background: `linear-gradient(135deg, ${source.color}33, ${source.color}59)`,
-            border: `1.5px solid ${source.color}4D`,
-          }}
-        >
-          <span
-            className="text-[14px] font-extrabold"
-            style={{ color: source.color }}
-          >
-            {source.icon}
-          </span>
-        </div>
+        {/* Logo */}
+        <SourceLogo source={logoSource} size={isPlatform ? 64 : 48} />
 
         {/* Name & Category */}
         <div>
@@ -92,6 +101,43 @@ export default function SourceCard({ source, isActive, onToggle, onPreview }: So
       <p className="text-[14px] leading-[1.55] text-[#A0AEC0] mb-3.5">
         {source.description}
       </p>
+
+      {/* Platform: Curated Accounts / Communities */}
+      {isPlatform && visibleItems.length > 0 && (
+        <div className="mb-3.5 space-y-1.5">
+          {visibleItems.map((item, idx) => (
+            <div
+              key={idx}
+              className="flex items-center gap-2 rounded-lg px-3 py-1.5"
+              style={{
+                background: `${source.color}0D`,
+                border: `1px solid ${source.color}1A`,
+              }}
+            >
+              <span
+                className="text-[12px] font-bold"
+                style={{ color: source.color }}
+              >
+                {item.handle || item.name}
+              </span>
+              {item.description && (
+                <span className="text-[11px] text-[#718096] truncate">
+                  {item.description}
+                </span>
+              )}
+            </div>
+          ))}
+          {remainingCount > 0 && (
+            <button
+              onClick={onPreview}
+              className="text-[12px] font-semibold pl-3 hover:underline"
+              style={{ color: source.color }}
+            >
+              + {remainingCount} more
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Tags */}
       <div className="flex flex-wrap gap-1.5">

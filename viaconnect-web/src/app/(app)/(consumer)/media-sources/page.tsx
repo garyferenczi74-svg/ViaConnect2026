@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Layers, Zap, Check, Save, Search } from 'lucide-react';
 import SourceCard from '@/components/media-sources/SourceCard';
 import PreviewModal from '@/components/media-sources/PreviewModal';
@@ -41,6 +41,16 @@ export default function ConsumerMediaSourcesPage() {
     setIsSaved(true);
     setTimeout(() => setIsSaved(false), 2500);
   };
+
+  // Category counts for filter pills
+  const categoryCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    counts['All'] = SOURCES.length;
+    for (const source of SOURCES) {
+      counts[source.category] = (counts[source.category] || 0) + 1;
+    }
+    return counts;
+  }, []);
 
   const filteredSources = SOURCES.filter((source) => {
     const matchesCategory = categoryFilter === 'All' || source.category === categoryFilter;
@@ -115,7 +125,7 @@ export default function ConsumerMediaSourcesPage() {
               className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold"
               style={{ background: 'rgba(45,165,160,0.15)', color: '#2DA5A0' }}
             >
-              {activeSources.length} of 12 sources activated
+              {activeSources.length} of {SOURCES.length} sources activated
             </span>
             <span className="text-[#A0AEC0] text-sm hidden sm:inline">
               Last synced: just now
@@ -138,12 +148,12 @@ export default function ConsumerMediaSourcesPage() {
 
       {/* Filter Bar */}
       <div className="max-w-7xl mx-auto mb-6">
-        <div className="flex flex-wrap items-center gap-3">
-          {['All', ...CATEGORIES].map((cat) => (
+        <div className="flex items-center gap-3 overflow-x-auto no-scrollbar -mx-4 px-4 md:mx-0 md:px-0 md:flex-wrap md:overflow-visible">
+          {CATEGORIES.map((cat) => (
             <button
               key={cat}
               onClick={() => setCategoryFilter(cat)}
-              className="px-4 py-1.5 rounded-full text-sm font-medium border transition-all duration-200"
+              className="px-4 py-1.5 rounded-full text-sm font-medium border transition-all duration-200 whitespace-nowrap flex-shrink-0"
               style={
                 categoryFilter === cat
                   ? {
@@ -158,10 +168,15 @@ export default function ConsumerMediaSourcesPage() {
                     }
               }
             >
-              {cat}
+              {cat}{' '}
+              <span
+                className="ml-1 text-xs opacity-70"
+              >
+                ({categoryCounts[cat] || 0})
+              </span>
             </button>
           ))}
-          <div className="relative ml-auto">
+          <div className="relative ml-auto flex-shrink-0">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#A0AEC0]" />
             <input
               type="text"
