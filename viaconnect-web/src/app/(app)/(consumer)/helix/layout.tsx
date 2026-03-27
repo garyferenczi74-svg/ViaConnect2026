@@ -103,17 +103,6 @@ export default function HelixLayout({ children }: { children: React.ReactNode })
 
           {/* ═══ HERO SECTION ═══ */}
 
-          {/* Brand tag row */}
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#B75E18]/15 border border-[#B75E18]/25">
-              <HelixIcon size={16} />
-              <span className="text-[11px] font-bold text-[#B75E18] uppercase tracking-wider">
-                ViaConnect&trade;
-              </span>
-            </div>
-            <div className="flex-1 h-px bg-gradient-to-r from-[#B75E18]/30 via-[#2DA5A0]/20 to-transparent" />
-          </div>
-
           {/* Hero content */}
           <div className="flex flex-wrap gap-12 items-center">
             {/* Left side - Title & tagline */}

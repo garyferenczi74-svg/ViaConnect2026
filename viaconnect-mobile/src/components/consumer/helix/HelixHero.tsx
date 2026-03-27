@@ -128,17 +128,6 @@ function StatColumn({
 export function HelixHero() {
   return (
     <Animated.View entering={FadeInUp.duration(500).springify().damping(18)}>
-      {/* Brand tag */}
-      <View className="flex-row items-center mb-4">
-        <View className="flex-row items-center px-3 py-1.5 rounded-full bg-copper/15 border border-copper/25">
-          <HelixIcon size={14} />
-          <Text className="text-[10px] font-bold text-copper uppercase tracking-wider ml-1.5">
-            ViaConnect™
-          </Text>
-        </View>
-        <View className="flex-1 h-px bg-copper/20 ml-3" />
-      </View>
-
       {/* Title */}
       <Text className="text-3xl font-extrabold text-copper tracking-tight">
         Helix Rewards<Text className="text-teal">™</Text>
