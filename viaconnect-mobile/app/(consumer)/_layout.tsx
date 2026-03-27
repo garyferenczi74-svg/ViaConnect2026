@@ -6,9 +6,9 @@ import {
 
 const NAV_ITEMS: NavItem[] = [
   { label: 'Dashboard', icon: '🏠', href: '/(consumer)' },
+  { label: 'Helix', icon: '🏆', href: '/(consumer)/helix' },
   { label: 'Supplements', icon: '💊', href: '/(consumer)/supplements' },
   { label: 'Genetics', icon: '🧬', href: '/(consumer)/genetics' },
-  { label: 'Insights', icon: '📊', href: '/(consumer)/insights' },
   { label: 'Profile', icon: '👤', href: '/(consumer)/profile' },
 ];
 
