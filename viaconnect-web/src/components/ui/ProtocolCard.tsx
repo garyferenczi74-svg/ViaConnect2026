@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { Check } from 'lucide-react';
 
 interface Supplement {
@@ -18,16 +19,29 @@ interface ProtocolCardProps {
 
 export function ProtocolCard({
   name,
-  supplements,
-  compliance,
+  supplements: initialSupplements,
+  compliance: initialCompliance,
   streak,
   tokensEarned,
 }: ProtocolCardProps) {
+  const [supplements, setSupplements] = useState(initialSupplements);
+
+  const takenCount = supplements.filter((s) => s.taken).length;
+  const compliance = supplements.length > 0
+    ? Math.round((takenCount / supplements.length) * 100)
+    : initialCompliance;
+
   const radius = 16;
   const circumference = 2 * Math.PI * radius;
   const progress = (compliance / 100) * circumference;
   const strokeColor =
     compliance >= 70 ? '#27AE60' : compliance >= 40 ? '#F2994A' : '#E74C3C';
+
+  function toggleSupplement(index: number) {
+    setSupplements((prev) =>
+      prev.map((s, i) => (i === index ? { ...s, taken: !s.taken } : s))
+    );
+  }
 
   return (
     <div className="glass-v2 p-6">
@@ -62,6 +76,7 @@ export function ProtocolCard({
               strokeDashoffset={circumference - progress}
               strokeLinecap="round"
               transform="rotate(-90 20 20)"
+              style={{ transition: 'stroke-dashoffset 400ms ease, stroke 400ms ease' }}
             />
           </svg>
           <span
@@ -75,10 +90,14 @@ export function ProtocolCard({
       {/* Supplement list */}
       <div className="flex flex-col gap-2">
         {supplements.map((supplement, index) => (
-          <div key={index} className="flex items-center gap-3">
+          <button
+            key={index}
+            onClick={() => toggleSupplement(index)}
+            className="flex items-center gap-3 w-full text-left py-1 rounded-lg transition-colors hover:bg-white/[0.03]"
+          >
             {/* Checkbox */}
             <div
-              className="flex items-center justify-center shrink-0"
+              className="flex items-center justify-center shrink-0 transition-all duration-200"
               style={{
                 width: 20,
                 height: 20,
@@ -107,7 +126,7 @@ export function ProtocolCard({
             <span className="text-xs text-gray-500 ml-auto">
               {supplement.dosage}
             </span>
-          </div>
+          </button>
         ))}
       </div>
 
