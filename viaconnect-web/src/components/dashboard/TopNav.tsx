@@ -53,7 +53,7 @@ const portalTabs = [
 ];
 
 export default function TopNav() {
-  const message = `${getGreeting()}, Gary.`;
+  const message = `${getGreeting()}, Gary`;
 
   const { display, done } = useTypewriter([message], 40, 500);
 

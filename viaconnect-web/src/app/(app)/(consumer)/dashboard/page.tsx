@@ -84,7 +84,7 @@ const DAILY_SCORES = [
 /* ─── Dashboard Page ───────────────────────────────────────────────────────── */
 
 export default function ConsumerDashboard() {
-  const greeting = `${getGreeting()}, Gary.`;
+  const greeting = `${getGreeting()}, Gary`;
   const { display, done } = useTypewriter(greeting, 40);
 
   return (
@@ -127,7 +127,7 @@ export default function ConsumerDashboard() {
 
       {/* ── Plugin CTAs ─────────────────────────────────────────────── */}
       <section className="px-4 lg:px-6 pb-2">
-        <div className="flex gap-3">
+        <div className="flex flex-col sm:flex-row gap-3">
           <PluginCTA
             type="wearable"
             navigateTo="/plugins/wearables"

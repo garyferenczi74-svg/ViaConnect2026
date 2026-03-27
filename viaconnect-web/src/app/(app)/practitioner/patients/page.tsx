@@ -140,8 +140,8 @@ export default function PatientsPage() {
         </div>
 
         {/* ── Patient Table ────────────────────────────────────────── */}
-        <div className="glass-v2 p-0 overflow-hidden">
-          <table className="w-full text-left">
+        <div className="glass-v2 p-0 overflow-x-auto">
+          <table className="w-full text-left min-w-[700px]">
             <thead>
               <tr className="border-b border-white/[0.06]">
                 <th className="text-xs text-secondary uppercase font-medium py-2 px-3">Name</th>
