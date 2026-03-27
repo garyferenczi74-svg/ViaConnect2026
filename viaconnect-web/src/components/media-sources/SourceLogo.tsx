@@ -42,9 +42,10 @@ export function SourceLogo({ source, size = 48, className }: SourceLogoProps) {
           alt={source.name}
           onError={() => setImgError(true)}
           style={{
-            width: size * 0.7,
-            height: size * 0.7,
+            width: size * 0.65,
+            height: size * 0.65,
             objectFit: 'contain',
+            borderRadius: 4,
           }}
         />
       </div>
