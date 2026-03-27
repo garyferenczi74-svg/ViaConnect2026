@@ -224,8 +224,7 @@ export default function SignupPage() {
     setIsLoading(true);
     const supabase = createClient();
 
-    // Create the user account — Supabase's built-in SMTP sends the
-    // confirmation email automatically with a 6-digit OTP token
+    // Create the user account (email confirmation disabled — we handle it via Edge Function)
     const { error } = await supabase.auth.signUp({
       email: email.trim(),
       password,
@@ -244,6 +243,20 @@ export default function SignupPage() {
     // 422 = user already registered — still allow them to verify
     if (error && !error.message.includes("already registered")) {
       toast.error(error.message);
+      setIsLoading(false);
+      return;
+    }
+
+    // Send OTP via the custom Edge Function (SendGrid)
+    const { data: otpData, error: otpError } = await supabase.functions.invoke(
+      "send-otp",
+      {
+        body: { action: "send", email: email.trim().toLowerCase(), type: "signup" },
+      },
+    );
+
+    if (otpError || !otpData?.success) {
+      toast.error(otpData?.error || otpError?.message || "Failed to send verification code");
       setIsLoading(false);
       return;
     }
@@ -281,18 +294,27 @@ export default function SignupPage() {
     setIsLoading(true);
     const supabase = createClient();
 
-    // Verify using Supabase Auth's native OTP verification
-    const { error: verifyError } = await supabase.auth.verifyOtp({
-      email: email.trim(),
-      token: code,
-      type: "signup",
-    });
+    // Verify via the custom Edge Function
+    const { data: verifyData, error: verifyError } = await supabase.functions.invoke(
+      "send-otp",
+      {
+        body: {
+          action: "verify",
+          email: email.trim().toLowerCase(),
+          type: "signup",
+          token: code,
+        },
+      },
+    );
 
-    if (verifyError) {
-      toast.error(verifyError.message || "Verification failed");
+    if (verifyError || !verifyData?.success) {
+      toast.error(verifyData?.error || verifyError?.message || "Verification failed");
       setIsLoading(false);
       return;
     }
+
+    // Re-fetch session now that email is confirmed
+    await supabase.auth.refreshSession();
 
     toast.success("Account verified!");
     if (role === "consumer") {
@@ -308,15 +330,17 @@ export default function SignupPage() {
     setIsLoading(true);
     const supabase = createClient();
 
-    // Resend via Supabase Auth's built-in SMTP
-    const { error } = await supabase.auth.resend({
-      type: "signup",
-      email: email.trim(),
-    });
+    // Resend via the custom Edge Function (SendGrid)
+    const { data: resendData, error } = await supabase.functions.invoke(
+      "send-otp",
+      {
+        body: { action: "send", email: email.trim().toLowerCase(), type: "signup" },
+      },
+    );
 
     setIsLoading(false);
-    if (error) {
-      toast.error(error.message || "Failed to resend code");
+    if (error || !resendData?.success) {
+      toast.error(resendData?.error || error?.message || "Failed to resend code");
       return;
     }
     toast.success("Verification code resent!");
