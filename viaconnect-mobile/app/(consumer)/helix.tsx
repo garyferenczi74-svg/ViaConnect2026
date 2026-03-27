@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { View, Text, ScrollView, Pressable } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { HelixHero } from '../../src/components/consumer/helix/HelixHero';
@@ -32,10 +32,17 @@ const TAB_CONTENT: Record<TabKey, React.ComponentType> = {
 export default function HelixRewardsScreen() {
   const [activeTab, setActiveTab] = useState<TabKey>('arena');
   const ActiveContent = TAB_CONTENT[activeTab];
+  const scrollRef = useRef<ScrollView>(null);
+
+  const switchTab = useCallback((key: TabKey) => {
+    setActiveTab(key);
+    scrollRef.current?.scrollTo({ y: 0, animated: true });
+  }, []);
 
   return (
     <View className="flex-1 bg-dark-bg">
       <ScrollView
+        ref={scrollRef}
         className="flex-1"
         contentContainerClassName="px-4 pt-6 pb-12"
         showsVerticalScrollIndicator={false}
@@ -55,7 +62,7 @@ export default function HelixRewardsScreen() {
             return (
               <Pressable
                 key={tab.key}
-                onPress={() => setActiveTab(tab.key)}
+                onPress={() => switchTab(tab.key)}
                 className={`flex-row items-center px-4 py-2.5 rounded-full ${
                   isActive
                     ? 'bg-copper/15 border border-copper/30'
