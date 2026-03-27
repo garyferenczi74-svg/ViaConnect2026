@@ -14,10 +14,12 @@ const menuItems = [
     { name: 'About', href: '#about' },
 ]
 
-import { ViaConnectLogo } from '@/components/ui/ViaConnectLogo'
-
 const Logo = () => {
-    return <ViaConnectLogo size="lg" />
+    return (
+        <span className="text-xl font-bold tracking-tight">
+            <span className="text-[#b75e18]">Via</span><span className="text-white">Connect</span>
+        </span>
+    )
 }
 
 function HeroHeader() {
