@@ -73,11 +73,9 @@ export function MobileNavBar({ role }: { role: string }) {
   };
 
   return (
-    <div className="z-30 lg:hidden"
+    <div className="relative z-0 lg:hidden"
       style={{
-        background: 'rgba(13, 21, 32, 0.9)',
-        backdropFilter: 'blur(16px)',
-        WebkitBackdropFilter: 'blur(16px)',
+        background: '#0D1520',
         borderBottom: '1px solid rgba(255,255,255,0.06)',
       }}
     >
