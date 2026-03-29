@@ -107,9 +107,9 @@ export default function HelixLayout({ children }: { children: React.ReactNode })
           {/* ═══ HERO SECTION ═══ */}
 
           {/* Hero content */}
-          <div className="flex flex-wrap gap-12 items-center">
+          <div className="flex flex-col sm:flex-row flex-wrap gap-6 sm:gap-12 items-center">
             {/* Left side - Title & tagline */}
-            <div className="flex-1 min-w-[300px]">
+            <div className="flex-1 min-w-0 sm:min-w-[300px]">
               <h1
                 className="font-extrabold tracking-[-1.5px]"
                 style={{ fontSize: 'clamp(36px, 5vw, 62px)' }}
@@ -186,17 +186,17 @@ export default function HelixLayout({ children }: { children: React.ReactNode })
           </div>
 
           {/* ═══ TAB NAVIGATION ═══ */}
-          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0" style={{ WebkitOverflowScrolling: 'touch' }}>
             {NAV_ITEMS.map((item) => {
               const isActive = pathname === item.href;
               return (
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`flex-shrink-0 flex items-center gap-1.5 px-5 py-2.5 rounded-full text-sm font-semibold transition-all duration-200 ${
+                  className={`flex-shrink-0 flex items-center gap-1.5 px-4 sm:px-5 py-2.5 min-h-[44px] rounded-full text-sm font-semibold transition-all duration-200 ${
                     isActive
                       ? 'bg-[#B75E18]/15 text-[#B75E18] border border-[#B75E18]/30'
-                      : 'text-white/40 border border-transparent hover:bg-white/[0.04] hover:text-white/60'
+                      : 'text-white/40 border border-white/[0.06] hover:bg-white/[0.04] hover:text-white/60'
                   }`}
                 >
                   <item.icon size={16} strokeWidth={1.5} />
