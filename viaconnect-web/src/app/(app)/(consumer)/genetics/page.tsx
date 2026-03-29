@@ -436,10 +436,10 @@ export default function GeneticsPage() {
         {/* ─── Upload Your DNA Test ─── */}
         <section className="space-y-4">
           <p className="text-overline font-semibold uppercase tracking-widest" style={{ color: "#B75E18" }}>
-            Upload Your DNA Test Here
+            Upload Your Genetic Testing and Lab Results
           </p>
           <p className="text-sm text-white/40">
-            Including tests from other companies (23andMe, AncestryDNA, MyHeritage, Nebula Genomics, or any raw DNA file)
+            Upload results from 23andMe, AncestryDNA, MyHeritage, Nebula Genomics, or any raw DNA file
           </p>
           <div
             className="glass-v2 rounded-xl border-2 border-dashed border-white/10 p-6 md:p-8 text-center cursor-pointer hover:border-white/20 hover:bg-white/[0.03] transition-all"
