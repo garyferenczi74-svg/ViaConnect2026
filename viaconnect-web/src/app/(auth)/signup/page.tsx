@@ -18,6 +18,8 @@ import {
   Shield,
 } from "lucide-react";
 import toast from "react-hot-toast";
+import { InterstitialScreen } from "@/components/onboarding/InterstitialScreen";
+import { INTERSTITIALS } from "@/config/onboarding";
 import { z } from "zod";
 
 // ─── Schemas ────────────────────────────────────────────────────────────────
@@ -33,9 +35,8 @@ const step1Schema = z.object({
 
 const step3Schema = z.object({
   fullName: z.string().min(2, "Name is required"),
-  dob: z.string().min(1, "Date of birth is required"),
-  phone: z.string().optional(),
-  location: z.string().optional(),
+  phone: z.string().min(10, "Valid phone number required"),
+  location: z.string().min(2, "Location is required"),
 });
 
 const step4Schema = z.object({
@@ -117,11 +118,19 @@ function Stepper({ current }: { current: number }) {
 
 // ─── Main Component ─────────────────────────────────────────────────────────
 
+// Map: after completing step N, show interstitial index M before advancing
+const STEP_INTERSTITIALS: Record<number, number> = {
+  1: 0, // After email/password → Welcome interstitial
+  2: 1, // After portal selection → Science interstitial
+  3: 2, // After profile basics → Privacy interstitial
+};
+
 export default function SignupPage() {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [activeInterstitial, setActiveInterstitial] = useState<number | null>(null);
 
   // Step 1
   const [email, setEmail] = useState("");
@@ -134,7 +143,6 @@ export default function SignupPage() {
 
   // Step 3
   const [fullName, setFullName] = useState("");
-  const [dob, setDob] = useState("");
   const [phone, setPhone] = useState("");
   const [location, setLocation] = useState("");
 
@@ -175,7 +183,7 @@ export default function SignupPage() {
       }
     }
     if (step === 3) {
-      const result = step3Schema.safeParse({ fullName, dob, phone, location });
+      const result = step3Schema.safeParse({ fullName, phone: phone.replace(/\D/g, ""), location });
       if (!result.success) {
         const fieldErrors: Record<string, string> = {};
         result.error.issues.forEach((issue) => {
@@ -198,13 +206,33 @@ export default function SignupPage() {
   async function handleNext() {
     if (!validate()) return;
 
-    // Skip license step for consumers
+    // Skip license step for consumers — show privacy interstitial first
     if (step === 3 && role === "consumer") {
-      await handleSignup();
+      setActiveInterstitial(2); // Privacy interstitial
       return;
     }
     if (step === 4) {
       await handleSignup();
+      return;
+    }
+
+    // Show interstitial between steps if one exists
+    const interstitialIdx = STEP_INTERSTITIALS[step];
+    if (interstitialIdx !== undefined) {
+      setActiveInterstitial(interstitialIdx);
+      return;
+    }
+
+    setStep((s) => s + 1);
+  }
+
+  function handleInterstitialContinue() {
+    const wasInterstitial = activeInterstitial;
+    setActiveInterstitial(null);
+
+    // After privacy interstitial for consumers, trigger signup
+    if (wasInterstitial === 2 && role === "consumer") {
+      handleSignup();
       return;
     }
 
@@ -232,7 +260,6 @@ export default function SignupPage() {
         data: {
           full_name: fullName,
           role,
-          dob,
           phone: phone || undefined,
           location: location || undefined,
           license_number: role !== "consumer" ? licenseNumber : undefined,
@@ -295,7 +322,7 @@ export default function SignupPage() {
 
     toast.success("Account verified!");
     if (role === "consumer") {
-      router.push("/onboarding/1");
+      router.push("/onboarding/i-caq-intro");
     } else {
       router.push(role === "practitioner" ? "/practitioner/dashboard" : "/naturopath/dashboard");
     }
@@ -325,8 +352,18 @@ export default function SignupPage() {
   const inputClass = "w-full h-10 bg-dark-surface border border-dark-border rounded-lg px-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-copper/50 focus:border-copper/50 transition-colors";
   const errorInputClass = "w-full h-10 bg-dark-surface border border-rose/40 rounded-lg px-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-rose/30 focus:border-rose transition-colors";
 
+  // Render interstitial overlay when active
+  if (activeInterstitial !== null) {
+    return (
+      <InterstitialScreen
+        config={INTERSTITIALS[activeInterstitial]}
+        onContinue={handleInterstitialContinue}
+      />
+    );
+  }
+
   return (
-    <>
+    <div className="max-w-[480px] mx-auto">
       {/* Logo */}
       <div className="text-center mb-6">
         <h1 className="text-3xl font-bold text-white">
@@ -418,25 +455,57 @@ export default function SignupPage() {
         {/* ── Step 3: Profile Basics ── */}
         {step === 3 && (
           <div className="space-y-5">
-            <div>
-              <label htmlFor="fullName" className="block text-sm font-medium text-gray-300 mb-1.5">Full Name</label>
-              <input id="fullName" type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} className={errors.fullName ? errorInputClass : inputClass} placeholder="Your full name" />
-              {errors.fullName && <p className="text-xs text-rose mt-1">{errors.fullName}</p>}
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label htmlFor="dob" className="block text-sm font-medium text-gray-300 mb-1.5">Date of Birth</label>
-                <input id="dob" type="date" value={dob} onChange={(e) => setDob(e.target.value)} className={errors.dob ? errorInputClass : inputClass} />
-                {errors.dob && <p className="text-xs text-rose mt-1">{errors.dob}</p>}
-              </div>
-              <div>
-                <label htmlFor="phone" className="block text-sm font-medium text-gray-300 mb-1.5">Phone <span className="text-gray-600">(optional)</span></label>
-                <input id="phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} className={inputClass} placeholder="+1 (555) 000-0000" />
-              </div>
+            <div className="mb-1">
+              <h3 className="text-lg font-semibold text-white">Tell Us About Yourself</h3>
+              <p className="text-sm text-gray-400 mt-0.5">Basic contact information to set up your account</p>
             </div>
             <div>
-              <label htmlFor="location" className="block text-sm font-medium text-gray-300 mb-1.5">Location <span className="text-gray-600">(optional)</span></label>
-              <input id="location" type="text" value={location} onChange={(e) => setLocation(e.target.value)} className={inputClass} placeholder="City, State" />
+              <label htmlFor="fullName" className="block text-sm font-medium text-white/70 mb-1.5">Full Name *</label>
+              <input
+                id="fullName"
+                type="text"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                className={`w-full px-4 py-3 rounded-xl bg-white/5 border ${errors.fullName ? "border-red-400/50 focus:ring-red-400/30" : "border-white/10 focus:border-teal-400/50 focus:ring-teal-400/30"} text-white placeholder:text-white/30 focus:ring-1 focus:outline-none transition-all`}
+                placeholder="Enter your full name"
+                required
+                minLength={2}
+              />
+              {errors.fullName && <p className="text-xs text-red-400 mt-1">{errors.fullName}</p>}
+            </div>
+            <div>
+              <label htmlFor="phone" className="block text-sm font-medium text-white/70 mb-1.5">Phone Number *</label>
+              <input
+                id="phone"
+                type="tel"
+                value={phone}
+                onChange={(e) => {
+                  // Auto-format phone: (555) 555-5555
+                  const digits = e.target.value.replace(/\D/g, "").slice(0, 10);
+                  let formatted = digits;
+                  if (digits.length > 6) formatted = `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+                  else if (digits.length > 3) formatted = `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+                  else if (digits.length > 0) formatted = `(${digits}`;
+                  setPhone(formatted);
+                }}
+                className={`w-full px-4 py-3 rounded-xl bg-white/5 border ${errors.phone ? "border-red-400/50 focus:ring-red-400/30" : "border-white/10 focus:border-teal-400/50 focus:ring-teal-400/30"} text-white placeholder:text-white/30 focus:ring-1 focus:outline-none transition-all`}
+                placeholder="(555) 555-5555"
+                required
+              />
+              {errors.phone && <p className="text-xs text-red-400 mt-1">{errors.phone}</p>}
+            </div>
+            <div>
+              <label htmlFor="location" className="block text-sm font-medium text-white/70 mb-1.5">Location *</label>
+              <input
+                id="location"
+                type="text"
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                className={`w-full px-4 py-3 rounded-xl bg-white/5 border ${errors.location ? "border-red-400/50 focus:ring-red-400/30" : "border-white/10 focus:border-teal-400/50 focus:ring-teal-400/30"} text-white placeholder:text-white/30 focus:ring-1 focus:outline-none transition-all`}
+                placeholder="Start typing your city..."
+                required
+              />
+              {errors.location && <p className="text-xs text-red-400 mt-1">{errors.location}</p>}
             </div>
           </div>
         )}
@@ -563,6 +632,6 @@ export default function SignupPage() {
           </div>
         )}
       </form>
-    </>
+    </div>
   );
 }

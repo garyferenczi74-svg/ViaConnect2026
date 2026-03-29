@@ -89,7 +89,7 @@ function LoginForm() {
   }
 
   return (
-    <>
+    <div className="max-w-[480px] mx-auto">
       {/* Logo */}
       <div className="text-center mb-8">
         <h1 className="text-3xl font-bold text-white">
@@ -214,6 +214,6 @@ function LoginForm() {
           </Link>
         </p>
       </div>
-    </>
+    </div>
   );
 }

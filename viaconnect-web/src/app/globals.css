@@ -2,6 +2,51 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ─── Interstitial Gradient Animation ────────────────────────────────────── */
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+.animate-gradient-shift {
+  animation: gradient-shift 8s ease infinite;
+}
+
+/* ─── Symptom Slider ─────────────────────────────────────────────────────── */
+.symptom-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #2DA5A0;
+  cursor: pointer;
+  box-shadow: 0 0 8px rgba(45, 165, 160, 0.4);
+  border: 2px solid rgba(255,255,255,0.2);
+  transition: box-shadow 0.2s ease;
+}
+.symptom-slider::-webkit-slider-thumb:hover {
+  box-shadow: 0 0 16px rgba(45, 165, 160, 0.6);
+}
+.symptom-slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #2DA5A0;
+  cursor: pointer;
+  box-shadow: 0 0 8px rgba(45, 165, 160, 0.4);
+  border: 2px solid rgba(255,255,255,0.2);
+}
+.symptom-slider::-webkit-slider-runnable-track {
+  height: 8px;
+  border-radius: 9999px;
+}
+.symptom-slider::-moz-range-track {
+  height: 8px;
+  border-radius: 9999px;
+  background: transparent;
+}
+
 /* ─── ViaConnect GeneX360 — Master Design System V2.2 ─────────────────────── */
 
 :root {
