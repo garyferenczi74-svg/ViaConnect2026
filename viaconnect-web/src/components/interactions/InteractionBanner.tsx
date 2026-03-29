@@ -102,7 +102,7 @@ export function InteractionBanner({ interactions, onFindPractitioner }: Interact
           {/* CTAs */}
           <div className="flex flex-wrap gap-3">
             <button type="button" onClick={onFindPractitioner}
-              className="px-4 py-2 rounded-lg bg-teal-400/10 border border-teal-400/30 text-teal-400 text-sm font-medium hover:bg-teal-400/15 transition-all flex items-center gap-2">
+              className="px-4 py-2.5 min-h-[44px] rounded-lg bg-teal-400/10 border border-teal-400/30 text-teal-400 text-sm font-medium hover:bg-teal-400/15 transition-all flex items-center gap-2">
               <Phone className="w-4 h-4" /> Find a Practitioner
             </button>
             <button type="button" onClick={() => setExpanded(!expanded)}

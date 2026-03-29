@@ -2,6 +2,18 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ─── Mobile: Prevent horizontal overflow ────────────────────────────────── */
+html, body {
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+
+/* ─── Safe area padding (iPhone notch / home indicator) ──────────────────── */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+  .pt-safe { padding-top: env(safe-area-inset-top); }
+}
+
 /* ─── Scrollbar Hide ─────────────────────────────────────────────────────── */
 .scrollbar-hide {
   -ms-overflow-style: none;

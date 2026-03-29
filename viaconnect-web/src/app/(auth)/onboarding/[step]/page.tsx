@@ -1449,14 +1449,14 @@ export default function OnboardingStepPage() {
                     )}
 
                     {productPhotos.length === 0 ? (
-                      <div className="flex gap-3 justify-center">
-                        <label className="flex items-center gap-2 px-4 py-2 rounded-xl bg-teal-400/10 border border-teal-400/30 text-teal-400 text-sm font-medium cursor-pointer hover:bg-teal-400/15 transition-all">
+                      <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                        <label className="flex items-center justify-center gap-2 px-4 py-2.5 min-h-[44px] rounded-xl bg-teal-400/10 border border-teal-400/30 text-teal-400 text-sm font-medium cursor-pointer hover:bg-teal-400/15 transition-all">
                           <Camera className="w-4 h-4" /> Take Photo
                           <input type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => {
                             if (e.target.files?.[0]) setProductPhotos([e.target.files[0]]);
                           }} />
                         </label>
-                        <label className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white/60 text-sm font-medium cursor-pointer hover:border-white/20 transition-all">
+                        <label className="flex items-center justify-center gap-2 px-4 py-2.5 min-h-[44px] rounded-xl bg-white/5 border border-white/10 text-white/60 text-sm font-medium cursor-pointer hover:border-white/20 transition-all">
                           <FolderOpen className="w-4 h-4" /> Upload File
                           <input type="file" accept="image/jpeg,image/png,image/heic,image/webp" multiple className="hidden" onChange={(e) => {
                             if (e.target.files) setProductPhotos([...productPhotos, ...Array.from(e.target.files)].slice(0, 3));

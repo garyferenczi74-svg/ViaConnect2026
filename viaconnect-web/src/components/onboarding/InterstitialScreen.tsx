@@ -18,7 +18,7 @@ function ProgressDots({ current, total }: { current: number; total: number }) {
           <div
             key={i}
             className={`rounded-full transition-all duration-300 ${
-              isCompleted ? "w-2.5 h-2.5 bg-orange-500" : "w-2 h-2 bg-white/20"
+              isCompleted ? "w-1.5 h-1.5 sm:w-2.5 sm:h-2.5 bg-orange-500" : "w-1 h-1 sm:w-2 sm:h-2 bg-white/20"
             } ${isCurrent ? "ring-2 ring-orange-500/30" : ""}`}
           />
         );
@@ -54,7 +54,7 @@ function FloatingPills() {
   ];
 
   return (
-    <div className="relative w-72 h-72 mx-auto my-6">
+    <div className="relative w-56 h-56 sm:w-72 sm:h-72 mx-auto my-4 sm:my-6">
       {[1, 2, 3].map((ring) => (
         <div
           key={ring}
@@ -78,7 +78,7 @@ function FloatingPills() {
           transition={{ delay: 0.4 + i * 0.2, duration: 0.5 }}
           className={`absolute ${pill.cls}`}
         >
-          <span className="inline-block px-4 py-2 rounded-full bg-white text-black text-sm font-medium shadow-lg whitespace-nowrap">
+          <span className="inline-block px-3 py-1.5 sm:px-4 sm:py-2 rounded-full bg-white text-black text-xs sm:text-sm font-medium shadow-lg whitespace-nowrap">
             {pill.label}
           </span>
         </motion.div>
@@ -182,7 +182,7 @@ export function InterstitialScreen({ config, onContinue, celebrationMode }: Inte
           transition={{ duration: 0.8, ease: "easeOut", delay: celebrationMode ? 0.8 : 0.3 }}
           className="text-center mb-8"
         >
-          <h1 className="text-3xl md:text-4xl font-light text-white leading-relaxed tracking-tight">
+          <h1 className="text-xl sm:text-3xl md:text-4xl font-light text-white leading-relaxed tracking-tight px-2">
             {config.quote}
           </h1>
           {config.subtext && !celebrationMode && (

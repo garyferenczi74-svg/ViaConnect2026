@@ -46,7 +46,7 @@ export function DailyScoreSlider({ scores }: { scores: DailyScoreWidget[] }) {
         {scores.map((s) => (
           <div
             key={s.id}
-            className="flex-shrink-0 w-[140px] snap-start rounded-2xl p-4 bg-white/[0.04] border border-white/[0.08] backdrop-blur-sm flex flex-col items-center gap-2 transition-all hover:border-white/15 hover:bg-white/[0.06]"
+            className="flex-shrink-0 w-[120px] sm:w-[140px] snap-start rounded-2xl p-3 sm:p-4 bg-white/[0.04] border border-white/[0.08] backdrop-blur-sm flex flex-col items-center gap-1.5 sm:gap-2 transition-all hover:border-white/15 hover:bg-white/[0.06]"
           >
             <span className="text-2xl">{s.icon}</span>
             <span className={`text-2xl font-bold ${getScoreColor(s.score)}`}>{s.score}</span>

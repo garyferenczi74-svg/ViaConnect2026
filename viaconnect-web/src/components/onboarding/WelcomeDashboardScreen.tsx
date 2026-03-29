@@ -68,7 +68,7 @@ export function WelcomeDashboardScreen() {
             Welcome to ViaConnect&trade;
           </motion.p>
 
-          <h1 className="text-4xl md:text-5xl font-light text-white leading-tight mb-4">
+          <h1 className="text-2xl sm:text-4xl md:text-5xl font-light text-white leading-tight mb-4">
             Your Journey Starts Here
             {firstName && (
               <motion.span

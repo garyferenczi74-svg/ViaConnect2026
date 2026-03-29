@@ -3,6 +3,9 @@ import { Providers } from "@/lib/providers";
 import "./globals.css";
 
 export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
   themeColor: "#0B1120",
   colorScheme: "dark",
 };
