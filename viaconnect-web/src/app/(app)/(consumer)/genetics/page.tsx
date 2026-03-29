@@ -35,12 +35,13 @@ interface SNPVariant {
 /* ───────────────────────── data ───────────────────────── */
 
 const panels: Panel[] = [
-  { code: "GENEX-M", name: "Methylation", category: "Methylation", price: "$288.88", status: "complete" },
-  { code: "GENEX-C", name: "Cardiovascular", category: "Cardiovascular", price: "$388.88", status: "complete" },
-  { code: "PeptideIQ", name: "Peptide Response", category: "Peptide Response", price: "$488.88", status: "incomplete" },
-  { code: "CannabisIQ", name: "Cannabis Wellness", category: "Cannabis Wellness", price: "$288.88", status: "incomplete" },
-  { code: "GENEX-N", name: "Neurological", category: "Neurological", price: "$388.88", status: "incomplete" },
-  { code: "GeneX360 Complete", name: "All 6 Panels", category: "Complete", price: "$988.88", status: "partial", partialLabel: "2/6" },
+  { code: "GeneX360\u2122 Complete", name: "All 6 Panels", category: "Complete", price: "$988.88", status: "partial", partialLabel: "2/6" },
+  { code: "GeneX-M\u2122", name: "Methylation", category: "Methylation", price: "$288.88", status: "complete" },
+  { code: "NutrigenDX\u2122", name: "Nutrition", category: "Nutrition", price: "$288.88", status: "incomplete" },
+  { code: "HormoneIQ\u2122", name: "Complete Hormone", category: "Hormone", price: "$388.88", status: "incomplete" },
+  { code: "EpigenHQ\u2122", name: "Biological Age Analysis", category: "Epigenetics", price: "$388.88", status: "incomplete" },
+  { code: "PeptideIQ\u2122", name: "Peptide Genetic Testing", category: "Peptide Response", price: "$488.88", status: "incomplete" },
+  { code: "CannabisIQ\u2122", name: "Cannabinoid Genetics", category: "Cannabis", price: "$288.88", status: "incomplete" },
 ];
 
 const categories = [
@@ -206,7 +207,7 @@ export default function GeneticsPage() {
             Your Genome
           </h1>
           <p className="text-body-sm text-secondary mt-1">
-            Explore your genetic blueprint — powered by GeneX360
+            Explore your genetic blueprint — powered by GENEX360&trade;
           </p>
         </header>
 
@@ -216,7 +217,7 @@ export default function GeneticsPage() {
             className="text-overline font-semibold uppercase tracking-widest"
             style={{ color: "#B75E18" }}
           >
-            GeneX360 Panels
+            GENEX360&trade; Panels
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -432,23 +433,41 @@ export default function GeneticsPage() {
           })}
         </div>
 
+        {/* ─── Upload Your DNA Test ─── */}
+        <section className="space-y-4">
+          <p className="text-overline font-semibold uppercase tracking-widest" style={{ color: "#B75E18" }}>
+            Upload Your DNA Test Here
+          </p>
+          <p className="text-sm text-white/40">
+            Including tests from other companies (23andMe, AncestryDNA, MyHeritage, Nebula Genomics, or any raw DNA file)
+          </p>
+          <div
+            className="glass-v2 rounded-xl border-2 border-dashed border-white/10 p-6 md:p-8 text-center cursor-pointer hover:border-white/20 hover:bg-white/[0.03] transition-all"
+            onClick={() => document.getElementById("dna-file-input")?.click()}
+          >
+            <Dna className="w-10 h-10 text-white/20 mx-auto mb-3" />
+            <p className="text-sm text-white/60 mb-1">Drag &amp; drop your DNA file or click to browse</p>
+            <p className="text-xs text-white/25">Supported formats: .txt, .csv, .zip, .gz, .tsv, .vcf</p>
+            <input id="dna-file-input" type="file" className="hidden" accept=".txt,.csv,.zip,.gz,.tsv,.vcf" />
+          </div>
+        </section>
+
         {/* ─── Bottom CTA ─── */}
         <div
           className="glass-v2 glass-v2-insight rounded-xl p-6 text-center space-y-4"
           style={{ border: "1px solid rgba(255,255,255,0.08)" }}
         >
           <p className="text-body-sm text-secondary leading-relaxed">
-            🧬 Want deeper insights? Order additional GeneX360 panels to unlock
-            more of your genetic blueprint.
+            Want deeper insights? Order additional GENEX360&trade; panels to unlock more of your genetic blueprint.
           </p>
           <button
-            className="inline-flex items-center gap-2 rounded-lg px-6 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+            className="inline-flex items-center gap-2 rounded-lg px-6 py-2.5 min-h-[44px] text-sm font-semibold text-white transition-opacity hover:opacity-90"
             style={{
               background:
                 "linear-gradient(135deg, #B75E18 0%, #934a12 100%)",
             }}
           >
-            Explore Panels
+            View GENEX360&trade; Panels
             <ArrowRight className="h-4 w-4" />
           </button>
         </div>

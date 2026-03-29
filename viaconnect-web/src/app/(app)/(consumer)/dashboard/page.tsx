@@ -106,7 +106,7 @@ export default function ConsumerDashboard() {
               )}
             </h1>
             <p className="text-body-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
-              Your Genetic Optimization Score
+              Your Bio Optimization Score
             </p>
           </div>
         </div>
@@ -117,7 +117,7 @@ export default function ConsumerDashboard() {
         <ScoreDisplay
           value={87}
           maxValue={100}
-          label="Genetic Optimization"
+          label="Bio Optimization"
           trend="up"
           trendValue="+3 from yesterday"
           color="teal"
