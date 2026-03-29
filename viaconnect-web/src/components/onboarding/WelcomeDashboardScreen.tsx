@@ -101,7 +101,7 @@ export function WelcomeDashboardScreen() {
         >
           {[
             "Health profile analyzed",
-            "Vitality Score calculated",
+            "Bio Optimization Score calculated",
             "AI protocols generated",
             "Dashboard personalized",
           ].map((item, i) => (

@@ -201,7 +201,7 @@ export default function AnalyticsPage() {
     });
   }, []);
 
-  // Vitality score history
+  // Bio Optimization score history
   const { data: scoreHistory, isLoading: scoreLoading } = useQuery({
     queryKey: ["analytics-scores", userId],
     queryFn: async () => {
@@ -222,10 +222,10 @@ export default function AnalyticsPage() {
     queryFn: async () => {
       const { data } = await supabase
         .from("profiles")
-        .select("vitality_score, assessment_completed, created_at")
+        .select("bio_optimization_score, assessment_completed, created_at")
         .eq("id", userId!)
         .single();
-      return data as { vitality_score: number | null; assessment_completed: boolean | null; created_at: string | null } | null;
+      return data as { bio_optimization_score: number | null; assessment_completed: boolean | null; created_at: string | null } | null;
     },
     enabled: !!userId,
   });
@@ -338,7 +338,7 @@ export default function AnalyticsPage() {
 
   // ─── Computed values ─────────────────────────────────────────────────────
 
-  const currentScore = profileData?.vitality_score ?? 0;
+  const currentScore = profileData?.bio_optimization_score ?? 0;
   const scores = (scoreHistory ?? []).map((s) => s.score);
   const scoreTrend = scores.length >= 2 ? scores[scores.length - 1] - scores[scores.length - 2] : 0;
 
@@ -464,7 +464,7 @@ export default function AnalyticsPage() {
             )}
           </div>
           <p className="text-3xl font-bold text-white">{currentScore}</p>
-          <p className="text-xs text-gray-500 mt-1">Vitality Score</p>
+          <p className="text-xs text-gray-500 mt-1">Bio Optimization</p>
         </MotionCard>
 
         <MotionCard className="p-5">
@@ -496,11 +496,11 @@ export default function AnalyticsPage() {
 
       {/* ── Row 2: Vitality Trend + Adherence Trend ── */}
       <StaggerChild className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Vitality Score Trend */}
+        {/* Bio Optimization Trend */}
         <Card className="p-5">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className="text-sm font-semibold text-white">Vitality Score Trend</h3>
+              <h3 className="text-sm font-semibold text-white">Bio Optimization Trend</h3>
               <p className="text-xs text-gray-500 mt-0.5">Last {scores.length} data points</p>
             </div>
             <Badge variant={currentScore >= 60 ? "active" : currentScore >= 40 ? "pending" : "danger"}>

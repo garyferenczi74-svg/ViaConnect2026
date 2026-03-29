@@ -2,7 +2,7 @@
 import { useState, useCallback } from 'react';
 
 interface CompletionResult {
-  success: boolean; vitality_score: number; recommendations_count: number;
+  success: boolean; bio_optimization_score: number; recommendations_count: number;
   recommendations: Array<{ product_name: string; reason: string; confidence_score: number; dosage: string; time_of_day: string; monthly_price: number; priority_rank: number; }>;
 }
 

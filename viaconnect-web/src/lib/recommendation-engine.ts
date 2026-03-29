@@ -139,7 +139,7 @@ function generateReason(mSym: string[], mGoal: string[], mGen: string[], mLife: 
   return parts.join('. ') + '.';
 }
 
-export function calculateVitalityScore(caq: CAQResponses): number {
+export function calculateBioOptimizationScore(caq: CAQResponses): number {
   let score = 50;
   const symptoms = caq.symptoms || {};
   const keys = Object.keys(symptoms);
@@ -285,11 +285,11 @@ export async function saveRecommendations(supabase: SupabaseClient, userId: stri
   await supabase.from('profiles').update({ assessment_completed: true }).eq('id', userId);
 }
 
-export async function runPostCAQPipeline(supabase: SupabaseClient, userId: string, caq: CAQResponses, assessmentId?: string): Promise<{vitalityScore: number; recommendations: ProductMatch[]}> {
-  const vitalityScore = calculateVitalityScore(caq);
-  await supabase.from('profiles').update({ vitality_score: vitalityScore, assessment_completed: true, updated_at: new Date().toISOString() }).eq('id', userId);
+export async function runPostCAQPipeline(supabase: SupabaseClient, userId: string, caq: CAQResponses, assessmentId?: string): Promise<{bioScore: number; recommendations: ProductMatch[]}> {
+  const bioScore = calculateBioOptimizationScore(caq);
+  await supabase.from('profiles').update({ bio_optimization_score: bioScore, assessment_completed: true, updated_at: new Date().toISOString() }).eq('id', userId);
   const { data: geneticData } = await supabase.from('genetic_profiles').select('*').eq('user_id', userId).single();
   const recommendations = await generateRecommendations(supabase, userId, caq, geneticData || undefined);
   await saveRecommendations(supabase, userId, recommendations, assessmentId);
-  return { vitalityScore, recommendations };
+  return { bioScore, recommendations };
 }

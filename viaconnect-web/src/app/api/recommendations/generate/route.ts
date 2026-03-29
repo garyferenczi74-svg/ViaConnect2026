@@ -258,7 +258,7 @@ export async function POST(request: NextRequest) {
         user_id: user.id,
         phase: 0,
         data: {
-          vitality_score: result.vitalityScore,
+          bio_optimization_score: result.bioScore,
           completed_at: new Date().toISOString(),
           current_supplements: caqResponses.current_supplements,
           supplement_replacements: replacements,
@@ -269,7 +269,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      vitality_score: result.vitalityScore,
+      bio_optimization_score: result.bioScore,
       recommendations_count: result.recommendations.length,
       recommendations: result.recommendations.map(r => ({
         product_name: r.product_name,

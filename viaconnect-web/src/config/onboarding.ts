@@ -78,7 +78,7 @@ export const INTERSTITIALS: InterstitialConfig[] = [
       overlayOpacity: 0.45,
     },
     featureCard: {
-      category: "YOUR VITALITY SCORE",
+      category: "YOUR BIO OPTIMIZATION SCORE",
       title: "Real-Time Health Snapshot",
       description:
         "A dynamic score across 5 dimensions: Energy, Cognitive, Sleep, Metabolic, and Stress, that evolves as you do.",

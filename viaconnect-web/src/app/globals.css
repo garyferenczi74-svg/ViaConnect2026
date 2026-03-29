@@ -2,6 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ─── Scrollbar Hide ─────────────────────────────────────────────────────── */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
 /* ─── Interstitial Gradient Animation ────────────────────────────────────── */
 @keyframes gradient-shift {
   0% { background-position: 0% 50%; }

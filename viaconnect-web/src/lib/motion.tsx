@@ -144,7 +144,7 @@ export function AnimatedCounter({
   );
 }
 
-// ─── Animated gauge (Vitality Score) ─────────────────────────────────────────
+// ─── Animated gauge (Bio Optimization) ─────────────────────────────────────────
 
 export function AnimatedGauge({
   score,

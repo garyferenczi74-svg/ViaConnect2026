@@ -11,6 +11,7 @@ import { WelcomeDashboardScreen } from "@/components/onboarding/WelcomeDashboard
 import { CAQ_INTERSTITIALS } from "@/config/caq-interstitials";
 import { SEED_INGREDIENTS, FARMCEUTICA_CATEGORIES, normalizeIngredientName } from "@/config/farmceutica-ingredients";
 import { InteractionBanner } from "@/components/interactions/InteractionBanner";
+import { emitDataEvent } from "@/lib/ai/emit-event";
 
 // ─── Phase Definitions ──────────────────────────────────────────────────────
 // Interstitial steps use "i-<id>" as their step ID
@@ -305,9 +306,9 @@ type GoalsData = {
   communicationPref: string;
 };
 
-// ─── Vitality Score Calculator ──────────────────────────────────────────────
+// ─── Bio Optimization Score Calculator ──────────────────────────────────────────────
 
-function calculateVitalityScore(
+function calculateBioOptimizationScore(
   symptoms: SymptomsData,
   lifestyle: LifestyleData,
   goals: GoalsData
@@ -387,7 +388,7 @@ export default function OnboardingStepPage() {
   const [symptomsNeuro, setSymptomsNeuro] = useState<SymptomPhaseData>(() => initSymptomPhase(NEUROLOGICAL_SYMPTOMS));
   const [symptomsEmotional, setSymptomsEmotional] = useState<SymptomPhaseData>(() => initSymptomPhase(EMOTIONAL_SYMPTOMS));
 
-  // Legacy symptoms for vitality score calculation (derived from new data)
+  // Legacy symptoms for bio optimization score calculation (derived from new data)
   const symptoms: SymptomsData = {
     Energy: 10 - (symptomsPhysical.fatigue_severity?.score ?? 0),
     Sleep: 10 - (symptomsNeuro.sleep_quality_severity?.score ?? 0),
@@ -541,27 +542,24 @@ export default function OnboardingStepPage() {
         case "4": await savePhase("4", { ...medications, userSupplements }); break;
         case "3": {
           await savePhase("3", { ...lifestyle, goals: goals.goals, supplementForm: goals.supplementForm, budgetRange: goals.budgetRange });
-          // Calculate vitality score
-          const vitalityScore = calculateVitalityScore(symptoms, lifestyle, goals);
-          const constitutionalType = determineConstitutionalType(symptoms);
-          // Save summary
-          const supabase = createClient();
-          const { data: { user } } = await supabase.auth.getUser();
-          if (user) {
-            await supabase.from("assessment_results").upsert({
-              user_id: user.id,
-              phase: 0,
-              data: { vitality_score: vitalityScore, constitutional_type: constitutionalType, completed_at: new Date().toISOString() },
-              updated_at: new Date().toISOString(),
-            }, { onConflict: "user_id,phase" });
 
-            await supabase.from("profiles").update({
-              vitality_score: vitalityScore,
-              assessment_completed: true,
-              updated_at: new Date().toISOString(),
-            }).eq("id", user.id);
+          // Calculate Bio Optimization Score via API (analyzes all CAQ phases)
+          let bioScore = 0;
+          try {
+            const bioRes = await fetch("/api/ai/calculate-bio-optimization", { method: "POST" });
+            if (bioRes.ok) {
+              const bioData = await bioRes.json();
+              bioScore = bioData.score || 0;
+            }
+          } catch { /* fallback: legacy formula */
+            bioScore = calculateBioOptimizationScore(symptoms, lifestyle, goals);
+            const supabase = createClient();
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+              await supabase.from("profiles").update({ bio_optimization_score: bioScore, assessment_completed: true }).eq("id", user.id);
+            }
           }
-          toast.success(`Your Vitality Score: ${vitalityScore}/100`, { duration: 5000 });
+          toast.success(`Your Bio Optimization Score: ${bioScore}/100`, { duration: 5000 });
 
           try {
             toast.loading("Generating your personalized protocol...", { id: "recs" });
@@ -1261,6 +1259,7 @@ export default function OnboardingStepPage() {
                         onClick={() => {
                           setMedications({ ...medications, medications: [...medications.medications, med] });
                           setMedSearch("");
+                          createClient().auth.getUser().then(({ data: { user } }) => { if (user) emitDataEvent(user.id, "medication_added", { name: med }); });
                         }}
                         className="w-full text-left px-3 py-2.5 text-sm text-gray-300 hover:bg-white/[0.04] hover:text-white transition-colors border-b border-white/[0.03] last:border-0"
                       >
@@ -2148,7 +2147,7 @@ export default function OnboardingStepPage() {
               ) : isLast ? (
                 <>
                   <Sparkles className="w-4 h-4" />
-                  Calculate Vitality Score
+                  Calculate Bio Optimization
                 </>
               ) : (
                 <>
@@ -2180,7 +2179,7 @@ const MEMBERSHIP_TIERS = [
     price: "0",
     billingCycle: "forever",
     features: [
-      "Vitality Score assessment",
+      "Bio Optimization assessment",
       "Basic supplement recommendations",
       "Community access",
       "Educational content",
@@ -2228,7 +2227,7 @@ const MEMBERSHIP_TIERS = [
 function OnboardingComplete() {
   const router = useRouter();
   const [displayName, setDisplayName] = useState("there");
-  const [vitalityScore, setVitalityScore] = useState(0);
+  const [bioScore, setBioScore] = useState(0);
   const [animatedScore, setAnimatedScore] = useState(0);
   const [selectedTier, setSelectedTier] = useState<string | null>(null);
   const [savedSymptoms, setSavedSymptoms] = useState<SymptomsData>({});
@@ -2243,13 +2242,13 @@ function OnboardingComplete() {
       const name = user.user_metadata?.full_name ?? user.email?.split("@")[0] ?? "there";
       setDisplayName(name.split(" ")[0]);
 
-      // Load vitality score from profiles
+      // Load bio optimization score from profiles
       const { data: profile } = await supabase
         .from("profiles")
-        .select("vitality_score")
+        .select("bio_optimization_score")
         .eq("id", user.id)
         .single();
-      if (profile?.vitality_score) setVitalityScore(profile.vitality_score);
+      if (profile?.bio_optimization_score) setBioScore(profile.bio_optimization_score);
 
       // Load saved symptom data from assessment_results phase 2
       const { data: phase2 } = await supabase
@@ -2269,16 +2268,16 @@ function OnboardingComplete() {
 
   // Animate score
   useEffect(() => {
-    if (vitalityScore === 0) return;
+    if (bioScore === 0) return;
     const duration = 2000;
     const start = Date.now();
     function tick() {
       const progress = Math.min((Date.now() - start) / duration, 1);
-      setAnimatedScore(Math.round(vitalityScore * (1 - Math.pow(1 - progress, 3))));
+      setAnimatedScore(Math.round(bioScore * (1 - Math.pow(1 - progress, 3))));
       if (progress < 1) requestAnimationFrame(tick);
     }
     requestAnimationFrame(tick);
-  }, [vitalityScore]);
+  }, [bioScore]);
 
   // Compute sub-scores from saved symptom data (1=bad, 10=good → scale to 0-100)
   function getHealthScore(symptomKey: string): number {
@@ -2287,7 +2286,7 @@ function OnboardingComplete() {
   }
 
   const scoreColor =
-    vitalityScore >= 80 ? "#4ADE80" : vitalityScore >= 60 ? "#22D3EE" : vitalityScore >= 40 ? "#FBBF24" : "#F87171";
+    bioScore >= 80 ? "#4ADE80" : bioScore >= 60 ? "#22D3EE" : bioScore >= 40 ? "#FBBF24" : "#F87171";
   const r = 80;
   const circ = 2 * Math.PI * r;
   const offset = circ - (animatedScore / 100) * circ;
@@ -2325,7 +2324,7 @@ function OnboardingComplete() {
         </p>
       </div>
 
-      {/* Vitality Score Gauge */}
+      {/* Bio Optimization Gauge */}
       <div className="flex flex-col items-center">
         <div className="relative w-[180px] h-[180px]">
           <svg viewBox="0 0 180 180" className="w-full h-full -rotate-90">
@@ -2337,7 +2336,7 @@ function OnboardingComplete() {
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             <span className="text-4xl font-bold" style={{ color: scoreColor }}>{animatedScore}</span>
-            <span className="text-[10px] text-gray-500 mt-0.5">Vitality Score</span>
+            <span className="text-[10px] text-gray-500 mt-0.5">Bio Optimization</span>
           </div>
         </div>
       </div>

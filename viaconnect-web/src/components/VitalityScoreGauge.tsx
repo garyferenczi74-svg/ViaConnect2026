@@ -18,23 +18,23 @@ export default function VitalityScoreGauge() {
       if (!user) return;
       const { data: profile } = await supabase
         .from('profiles')
-        .select('vitality_score, assessment_completed')
+        .select('bio_optimization_score, assessment_completed')
         .eq('id', user.id)
         .single();
-      setScore(profile?.vitality_score || 0);
+      setScore(profile?.bio_optimization_score || 0);
       setCompleted(profile?.assessment_completed || false);
       setLoading(false);
     }
     load();
 
     const channel = supabase
-      .channel('vitality-live')
+      .channel('bio-optimization-live')
       .on(
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'profiles' },
         (payload) => {
-          if (payload.new.vitality_score !== undefined) {
-            setScore(payload.new.vitality_score);
+          if (payload.new.bio_optimization_score !== undefined) {
+            setScore(payload.new.bio_optimization_score);
             setCompleted(payload.new.assessment_completed ?? false);
           }
         }
@@ -115,7 +115,7 @@ export default function VitalityScoreGauge() {
               fill="rgba(255,255,255,0.3)"
               fontSize="12"
             >
-              Vitality Score
+              Bio Optimization
             </text>
           </svg>
         </div>
@@ -165,7 +165,7 @@ export default function VitalityScoreGauge() {
           <span className="text-4xl sm:text-5xl font-bold" style={{ color }}>
             {animatedScore}
           </span>
-          <span className="text-white/50 text-[10px] sm:text-xs mt-1">Vitality Score</span>
+          <span className="text-white/50 text-[10px] sm:text-xs mt-1">Bio Optimization</span>
         </div>
       </div>
       <span

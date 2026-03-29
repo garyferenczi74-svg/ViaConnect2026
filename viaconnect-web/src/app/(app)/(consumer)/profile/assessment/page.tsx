@@ -208,7 +208,7 @@ function ScoreGauge({ score, loading }: { score: number; loading: boolean }) {
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <span className="text-4xl font-bold text-white">{animatedScore}</span>
-        <span className="text-[10px] text-gray-400 mt-1">Vitality Score</span>
+        <span className="text-[10px] text-gray-400 mt-1">Bio Optimization</span>
       </div>
     </div>
   );
@@ -346,7 +346,7 @@ export default function AssessmentPage() {
 
       <StaggerChild className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Vitality Score Breakdown</h1>
+          <h1 className="text-2xl font-bold text-white">Bio Optimization Breakdown</h1>
           <p className="text-gray-400 text-sm mt-1">
             Comprehensive view of your health assessment factors
           </p>
@@ -363,7 +363,7 @@ export default function AssessmentPage() {
         <EmptyState
           icon={Activity}
           title="No assessment completed"
-          description="Complete your Clinical Assessment Questionnaire to unlock your Vitality Score breakdown."
+          description="Complete your Clinical Assessment Questionnaire to unlock your Bio Optimization breakdown."
           actionLabel="Start Assessment"
           onAction={() => { window.location.href = "/onboarding/1"; }}
         />

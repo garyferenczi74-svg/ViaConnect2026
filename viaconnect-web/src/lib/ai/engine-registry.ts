@@ -1,0 +1,68 @@
+// AI Engine Registry — documents all engines and their data requirements
+
+export const AI_ENGINES = {
+  A: {
+    id: "bio_optimization_calculator",
+    name: "Bio Optimization Calculator",
+    endpoint: "/api/ai/calculate-bio-optimization",
+    trigger: ["caq_completion", "daily_cron", "data_change"],
+    reads: ["demographics", "health_concerns", "family_history", "symptoms_all", "medications", "supplements", "allergies", "lifestyle", "daily_scores", "wearable", "helix_data", "genetic_data"],
+    writes: ["profiles.bio_optimization_score", "bio_optimization_history", "wellness_analytics"],
+  },
+  B: {
+    id: "protocol_generation",
+    name: "Protocol Generation Engine",
+    endpoint: "/api/ai/generate-protocol",
+    trigger: ["caq_completion", "supplement_change", "interaction_override"],
+    reads: ["all_caq", "bio_optimization_score", "interactions", "supplements", "purchase_history", "farmceutica_catalog", "genetic_variants"],
+    writes: ["user_protocols", "medication_interactions", "wellness_analytics"],
+  },
+  C: {
+    id: "interaction_checking",
+    name: "Interaction Checking Engine",
+    endpoint: "/api/ai/check-interactions",
+    trigger: ["medication_added", "supplement_added", "protocol_generated"],
+    reads: ["medications", "supplements", "ai_protocol", "allergies", "demographics", "delivery_methods", "dosages", "cyp450_profile"],
+    writes: ["medication_interactions", "user_notifications", "user_protocols"],
+  },
+  D: {
+    id: "wellness_analytics",
+    name: "Wellness Analytics Engine",
+    endpoint: "/api/ai/generate-wellness-analytics",
+    trigger: ["caq_completion", "daily_cron", "manual_refresh", "data_change"],
+    reads: ["everything"],
+    writes: ["wellness_analytics", "analytics_category_history"],
+  },
+  E: {
+    id: "product_lookup",
+    name: "Product Lookup Engine",
+    endpoint: "/api/ai/product-lookup",
+    trigger: ["user_search"],
+    reads: ["search_query", "product_lookup_cache"],
+    writes: ["product_lookup_cache"],
+  },
+  F: {
+    id: "product_photo_id",
+    name: "Product Photo Identification",
+    endpoint: "/api/ai/identify-product-photo",
+    trigger: ["photo_upload"],
+    reads: ["user_photos"],
+    writes: ["product_lookup_cache", "user_supplements"],
+  },
+  G: {
+    id: "ai_advisor_chat",
+    name: "AI Advisor Chat",
+    endpoint: "/api/ai/chat",
+    trigger: ["user_message"],
+    reads: ["everything"],
+    writes: ["ai_conversations"],
+  },
+  H: {
+    id: "helix_challenge",
+    name: "Helix Challenge Engine",
+    endpoint: "/api/helix/generate-challenge",
+    trigger: ["user_joins", "challenge_completed"],
+    reads: ["bio_optimization_score", "daily_scores", "supplement_adherence", "wearable", "health_concerns"],
+    writes: ["helix_challenges", "helix_leaderboard", "helix_transactions", "daily_scores", "bio_optimization_history"],
+  },
+} as const;

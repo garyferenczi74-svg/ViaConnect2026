@@ -163,7 +163,7 @@ export default function AnalyticsPage() {
           {/* Chart 1 - Patient Outcomes Over Time */}
           <Card hover={false} className="p-5">
             <h3 className="text-sm font-semibold text-white mb-1">Patient Outcomes Over Time</h3>
-            <p className="text-xs text-gray-500 mb-4">Vitality score &amp; adherence rate trends</p>
+            <p className="text-xs text-gray-500 mb-4">Bio Optimization score &amp; adherence rate trends</p>
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={outcomesData}>
                 <CartesianGrid {...gridProps} />
@@ -174,7 +174,7 @@ export default function AnalyticsPage() {
                 <Line
                   type="monotone"
                   dataKey="vitality"
-                  name="Vitality Score"
+                  name="Bio Optimization"
                   stroke="#4ADE80"
                   strokeWidth={2}
                   dot={false}

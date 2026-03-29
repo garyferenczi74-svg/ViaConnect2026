@@ -202,7 +202,7 @@ export default function NaturopathAnalyticsPage() {
                 <YAxis {...axisProps} domain={[30, 100]} />
                 <RTooltip {...tooltipStyle} />
                 <Legend wrapperStyle={{ fontSize: 12, color: "#9CA3AF" }} />
-                <Line type="monotone" dataKey="vitality" name="Vitality Score" stroke="#76866F" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
+                <Line type="monotone" dataKey="vitality" name="Bio Optimization" stroke="#76866F" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
                 <Line type="monotone" dataKey="adherence" name="Adherence Rate" stroke="#A78BFA" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
                 <Line type="monotone" dataKey="constitutional" name="Constitutional Balance" stroke="#22D3EE" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
               </LineChart>
