@@ -1308,78 +1308,106 @@ export default function OnboardingStepPage() {
               <label className="block text-base font-semibold text-white mb-1">What You Are Currently Taking</label>
               <p className="text-sm text-white/40 mb-3">Add every supplement, vitamin, and mineral you take regularly</p>
 
-              {/* Search Input */}
+              {/* Search Input — reacts on EVERY keystroke including first */}
               {!showDosageModal && !userSupplements.some(s => s.name === "None") && (
                 <div className="relative mb-3">
-                  <Sparkles className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
+                  <Sparkles className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-teal-400/50 pointer-events-none" />
                   <input
                     type="text"
                     value={suppSearchQuery}
-                    onChange={(e) => {
-                      setSuppSearchQuery(e.target.value);
-                      const q = e.target.value.toLowerCase().trim();
-                      if (q.length < 2) { setSuppSearchResults([]); return; }
-                      const matches = SEED_INGREDIENTS.filter(
-                        (i) => i.search_name.toLowerCase().includes(q) || i.name.toLowerCase().includes(q) || i.category.toLowerCase().includes(q)
-                      ).slice(0, 8);
-                      setSuppSearchResults(matches);
-                    }}
+                    onChange={(e) => setSuppSearchQuery(e.target.value)}
+                    onFocus={() => { if (suppSearchQuery.trim()) setSuppSearchResults([]); }}
                     placeholder="Search your current vitamins and minerals by brand or ingredient"
-                    className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-white/5 border border-white/10 text-sm text-white placeholder:text-white/30 focus:border-teal-400/50 focus:ring-1 focus:ring-teal-400/30 focus:outline-none"
+                    className="w-full pl-12 pr-4 py-3.5 rounded-xl bg-white/5 border border-teal-400/30 text-base text-white placeholder:text-white/30 focus:border-teal-400/60 focus:ring-1 focus:ring-teal-400/30 focus:outline-none transition-all"
+                    autoComplete="off"
+                    spellCheck={false}
                   />
                 </div>
               )}
 
-              {/* Search Results */}
-              {!showDosageModal && suppSearchQuery.length >= 2 && (
-                <div className="rounded-lg bg-[#1E2D4A] border border-white/10 shadow-xl max-h-52 overflow-y-auto mb-3">
-                  {suppSearchResults.map((item) => (
-                    <button key={item.name} type="button"
-                      onClick={() => {
-                        setShowDosageModal(item.name);
-                        setDosageForm({ deliveryMethod: item.delivery_method === "Liposomal" ? "liposomal_delivery" : item.delivery_method === "Micellar" ? "micellar_delivery" : "standard_actives", dosage: "", unit: "mg", frequency: "", reason: "" });
-                        setSuppSearchQuery(""); setSuppSearchResults([]);
-                      }}
-                      className="w-full text-left px-3 py-2.5 hover:bg-white/5 border-b border-white/5 last:border-0 transition-colors flex items-center justify-between">
-                      <span className="text-sm text-white/90">{item.search_name}</span>
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-teal-400/10 border border-teal-400/20 text-teal-400/60">{item.delivery_method}</span>
-                    </button>
-                  ))}
-                  <button type="button"
-                    onClick={() => {
-                      setShowDosageModal(suppSearchQuery.trim());
-                      setDosageForm({ deliveryMethod: "", dosage: "", unit: "mg", frequency: "", reason: "" });
-                      setSuppSearchQuery(""); setSuppSearchResults([]);
-                      setAiLookupResult(null); setAiLookupError("");
-                    }}
-                    className="w-full text-left px-3 py-2.5 text-sm font-medium text-copper hover:bg-copper/5 transition-colors flex items-center gap-2 border-t border-white/10">
-                    <Plus className="w-3.5 h-3.5" />
-                    Add &quot;{suppSearchQuery.trim()}&quot; manually
-                  </button>
-                  {suppSearchResults.length === 0 && (
+              {/* Search Results — instant client-side filtering, alphabetical */}
+              {!showDosageModal && suppSearchQuery.trim().length > 0 && (() => {
+                const q = suppSearchQuery.toLowerCase().trim();
+                const filtered = SEED_INGREDIENTS
+                  .filter((i) => {
+                    const name = i.search_name.toLowerCase();
+                    return name.startsWith(q) || name.split(/[\s\-\(\)\/]+/).some(word => word.startsWith(q));
+                  })
+                  .sort((a, b) => {
+                    const aStarts = a.search_name.toLowerCase().startsWith(q) ? 0 : 1;
+                    const bStarts = b.search_name.toLowerCase().startsWith(q) ? 0 : 1;
+                    if (aStarts !== bStarts) return aStarts - bStarts;
+                    return a.search_name.localeCompare(b.search_name);
+                  })
+                  .slice(0, 15);
+                return (
+                  <div className="rounded-xl bg-[#1E2D4A] border border-white/10 shadow-2xl shadow-black/40 max-h-[320px] overflow-y-auto mb-3 z-50 relative">
+                    {filtered.map((item) => {
+                      // Highlight matching text
+                      const name = item.search_name;
+                      const lowerName = name.toLowerCase();
+                      let matchIdx = lowerName.indexOf(q);
+                      if (matchIdx === -1) {
+                        const words = lowerName.split(/[\s\-\(\)\/]+/);
+                        let pos = 0;
+                        for (const word of words) {
+                          const wIdx = lowerName.indexOf(word, pos);
+                          if (word.startsWith(q)) { matchIdx = wIdx; break; }
+                          pos = wIdx + word.length;
+                        }
+                      }
+                      return (
+                        <button key={item.name} type="button"
+                          onClick={() => {
+                            setShowDosageModal(item.name);
+                            setDosageForm({ deliveryMethod: item.delivery_method === "Liposomal" ? "liposomal_delivery" : item.delivery_method === "Micellar" ? "micellar_delivery" : "standard_actives", dosage: "", unit: "mg", frequency: "", reason: "" });
+                            setSuppSearchQuery("");
+                          }}
+                          className="w-full text-left px-4 py-3 hover:bg-white/5 active:bg-white/10 border-b border-white/[0.03] last:border-0 transition-colors flex items-center justify-between gap-3">
+                          <span className="text-sm text-white/90 flex-1">
+                            {matchIdx >= 0 ? <>{name.slice(0, matchIdx)}<span className="text-teal-400 font-medium">{name.slice(matchIdx, matchIdx + q.length)}</span>{name.slice(matchIdx + q.length)}</> : name}
+                          </span>
+                          <span className="text-[10px] px-2 py-0.5 rounded-full flex-shrink-0 bg-teal-400/10 border border-teal-400/20 text-teal-400/60">{item.delivery_method}</span>
+                        </button>
+                      );
+                    })}
+                    {/* Manual add */}
                     <button type="button"
-                      onClick={async () => {
-                        const q = suppSearchQuery.trim();
-                        setAiLookupLoading(true); setAiLookupError(""); setAiLookupResult(null);
-                        setSuppSearchQuery(""); setSuppSearchResults([]);
-                        try {
-                          const res = await fetch("/api/ai/product-lookup", {
-                            method: "POST", headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ query: q }),
-                          });
-                          const data = await res.json();
-                          if (data.found && data.product) { setAiLookupResult(data.product); }
-                          else { setAiLookupError(data.error || "Product not found"); }
-                        } catch { setAiLookupError("Search failed. Try manual entry."); }
-                        setAiLookupLoading(false);
+                      onClick={() => {
+                        setShowDosageModal(suppSearchQuery.trim());
+                        setDosageForm({ deliveryMethod: "", dosage: "", unit: "mg", frequency: "", reason: "" });
+                        setSuppSearchQuery("");
+                        setAiLookupResult(null); setAiLookupError("");
                       }}
-                      className="w-full text-left px-3 py-2.5 text-sm font-medium text-teal-400 hover:bg-teal-400/5 transition-colors flex items-center gap-2 border-t border-white/10">
-                      <Sparkles className="w-3.5 h-3.5" />
-                      Search with AI for full ingredient breakdown
+                      className="w-full text-left px-4 py-3 text-sm font-medium text-copper hover:bg-copper/5 transition-colors flex items-center gap-2 border-t border-white/10">
+                      <Plus className="w-3.5 h-3.5" />
+                      Add &quot;{suppSearchQuery.trim()}&quot; manually
                     </button>
-                  )}
-                </div>
-              )}
+                    {filtered.length === 0 && (
+                      <button type="button"
+                        onClick={async () => {
+                          const qAi = suppSearchQuery.trim();
+                          setAiLookupLoading(true); setAiLookupError(""); setAiLookupResult(null);
+                          setSuppSearchQuery("");
+                          try {
+                            const res = await fetch("/api/ai/product-lookup", {
+                              method: "POST", headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ query: qAi }),
+                            });
+                            const data = await res.json();
+                            if (data.found && data.product) { setAiLookupResult(data.product); }
+                            else { setAiLookupError(data.error || "Product not found"); }
+                          } catch { setAiLookupError("Search failed. Try manual entry."); }
+                          setAiLookupLoading(false);
+                        }}
+                        className="w-full text-left px-4 py-3 text-sm font-medium text-teal-400 hover:bg-teal-400/5 transition-colors flex items-center gap-2 border-t border-white/10">
+                        <Sparkles className="w-3.5 h-3.5" />
+                        Search all supplement brands with AI
+                      </button>
+                    )}
+                  </div>
+                );
+              })()}
 
               {/* "or" Divider + Photo Upload */}
               {!showDosageModal && !aiLookupResult && !aiLookupLoading && !photoAnalyzing && !userSupplements.some(s => s.name === "None") && (
