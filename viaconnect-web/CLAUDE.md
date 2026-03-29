@@ -1,0 +1,71 @@
+# ViaConnect GeneX360 — Claude Code Directives
+
+## Project
+- **Company:** FarmCeutica Wellness LLC
+- **Product:** ViaConnect GeneX360
+- **Stack:** Next.js 14+ / React / Tailwind CSS / Framer Motion / Vercel / Supabase
+- **Supabase Project:** ViaConnect2026 (ID: nnhkcufyqjojdbvdrpky, us-east-2)
+- **GitHub:** ViaConnect2026 under garyferenczi74-svg
+- **Design System:** Deep Navy #1A2744, Teal #2DA5A0, Orange #B75E18, Instrument Sans typography, glassmorphism cards
+
+---
+
+## PERMANENT PROTECTIONS
+
+### 1. Supabase Email Templates — DO NOT TOUCH
+- DO NOT modify `supabase/config.toml` (email section)
+- DO NOT modify `supabase/templates/*.html`
+- DO NOT modify any auth.email configuration
+- DO NOT modify any SMTP or email provider settings
+- DO NOT create any migration that alters auth.config or auth.email
+- **Status:** Working perfectly. Confirmation, password reset, and magic link emails all function correctly.
+- **Only Gary can lift this restriction by directly asking.**
+
+### 2. package.json — DO NOT TOUCH
+- DO NOT add, remove, upgrade, or change ANY dependency or script
+- DO NOT modify package-lock.json
+- DO NOT run: npm install, npm update, npm audit fix, npm dedupe, or any command that modifies node_modules
+- **If a new package is genuinely needed:** STOP, tell Gary what package and why, wait for explicit approval.
+- **Only Gary can lift this restriction by directly asking.**
+
+### 3. Existing Supabase Migrations — DO NOT TOUCH
+- DO NOT rename, edit, delete, or reorder existing migration files
+- New migrations are OK (append-only) — CREATE tables, ADD columns, CREATE indexes
+- New migrations must not conflict with or undo existing migrations
+- **Only Gary can lift this restriction by directly asking.**
+
+---
+
+## DESKTOP + MOBILE SYNCHRONISM (Standing Rule)
+
+Every component, page, and feature must be developed for BOTH desktop AND mobile simultaneously. No desktop-first then patch-mobile-later.
+
+### Required Responsive Patterns
+| Element | Mobile (< 640px) | Tablet (640-1024px) | Desktop (> 1024px) |
+|---------|-------------------|---------------------|---------------------|
+| Grid layouts | grid-cols-1 | sm:grid-cols-2 | md:grid-cols-3+ |
+| Padding | p-4 | sm:p-6 | md:p-8 |
+| Text sizes | text-sm / text-base | sm:text-base | md:text-lg |
+| Headings | text-xl | sm:text-2xl | md:text-3xl |
+| Buttons | w-full | sm:w-auto | Same |
+| Form inputs | w-full text-base | Same | Same |
+| Side-by-side fields | Stacked (flex-col) | sm:flex-row | Same |
+| Touch targets | min-h-[44px] | Same | Can be smaller |
+
+### Global Mobile Requirements
+- **Touch targets:** Every button, link, interactive element minimum 44x44px on mobile
+- **Font size:** All inputs use `text-base` (16px) to prevent iOS Safari auto-zoom
+- **No horizontal overflow:** Use `overflow-x-auto` on scrollable containers, not on page body
+- **Safe area:** Account for iPhone notch/home indicator with `pb-safe`
+
+### Quality Gate (Every Future Prompt)
+- [ ] Every grid uses responsive classes (grid-cols-1 sm:grid-cols-2 md:grid-cols-3)
+- [ ] Every form field is w-full on mobile
+- [ ] Every button has min-h-[44px] touch target
+- [ ] All inputs use text-base (16px minimum)
+- [ ] No horizontal overflow on mobile
+- [ ] Side-by-side fields stack on mobile (flex-col sm:flex-row)
+- [ ] Tested at 375px AND 1440px viewports
+- [ ] Supabase email templates NOT touched
+- [ ] package.json NOT touched
+- [ ] Existing migrations NOT modified
