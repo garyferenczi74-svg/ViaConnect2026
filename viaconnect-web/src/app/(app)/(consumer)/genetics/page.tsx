@@ -207,7 +207,7 @@ export default function GeneticsPage() {
             Your Genome
           </h1>
           <p className="text-body-sm text-secondary mt-1">
-            Explore your genetic blueprint — powered by GENEX360&trade;
+            Upload your DNA test and lab results here
           </p>
         </header>
 
@@ -436,10 +436,10 @@ export default function GeneticsPage() {
         {/* ─── Upload Your DNA Test ─── */}
         <section className="space-y-4">
           <p className="text-overline font-semibold uppercase tracking-widest" style={{ color: "#B75E18" }}>
-            Upload Your Genetic Testing and Lab Results
+            Upload Your DNA Test Here
           </p>
           <p className="text-sm text-white/40">
-            Upload results from 23andMe, AncestryDNA, MyHeritage, Nebula Genomics, or any raw DNA file
+            Including tests from other companies (23andMe, AncestryDNA, MyHeritage, Nebula Genomics, or any raw DNA file)
           </p>
           <div
             className="glass-v2 rounded-xl border-2 border-dashed border-white/10 p-6 md:p-8 text-center cursor-pointer hover:border-white/20 hover:bg-white/[0.03] transition-all"
@@ -450,6 +450,28 @@ export default function GeneticsPage() {
             <p className="text-xs text-white/25">Supported formats: .txt, .csv, .zip, .gz, .tsv, .vcf</p>
             <input id="dna-file-input" type="file" className="hidden" accept=".txt,.csv,.zip,.gz,.tsv,.vcf" />
           </div>
+        </section>
+
+        {/* ─── Upload Lab Results ─── */}
+        <section className="space-y-4">
+          <p className="text-overline font-semibold uppercase tracking-widest" style={{ color: "#B75E18" }}>
+            Upload Lab Results
+          </p>
+          <p className="text-sm text-white/40">
+            Blood panels, biomarkers, and lab reports
+          </p>
+          <div
+            className="glass-v2 rounded-xl border-2 border-dashed border-white/10 p-6 md:p-8 text-center cursor-pointer hover:border-white/20 hover:bg-white/[0.03] transition-all"
+            onClick={() => document.getElementById("lab-file-input")?.click()}
+          >
+            <Search className="w-10 h-10 text-white/20 mx-auto mb-3" />
+            <p className="text-sm text-white/60 mb-1">Drop your raw data file here or click to browse</p>
+            <p className="text-xs text-white/25">Supported: PDF, CSV, Excel, or photo of lab report (.jpg, .png, .heic)</p>
+            <input id="lab-file-input" type="file" className="hidden" accept=".pdf,.csv,.xlsx,.xls,.jpg,.jpeg,.png,.heic,.txt" multiple />
+          </div>
+          <p className="text-[10px] text-white/15">
+            Your lab data is encrypted and never shared without your consent. Lab results enhance your Bio Optimization score and Wellness Analytics.
+          </p>
         </section>
 
         {/* ─── Bottom CTA ─── */}
