@@ -21,7 +21,7 @@ const PORTAL_NAV: Record<string, NavItem[]> = {
     { href: '/plugins', label: 'Plugins', icon: Plug },
     { href: '/wearables', label: 'Wearables Data', icon: Activity },
     { href: '/helix/arena', label: 'Helix Rewards', icon: Coins },
-    { href: '/messages', label: 'Messages', icon: MessageSquare },
+    { href: '/messages', label: 'Connect', icon: MessageSquare },
     { href: '/media-sources', label: 'Research', icon: Newspaper },
     { href: '/ai', label: 'AI', icon: Brain },
     { href: '/shop', label: 'Shop', icon: ShoppingBag },
