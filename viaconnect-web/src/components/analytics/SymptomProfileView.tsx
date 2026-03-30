@@ -5,8 +5,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   ChevronDown, TrendingUp, Search, Info, RefreshCw, Check, ArrowRight,
   ShieldAlert, Stethoscope, Leaf, Activity, Brain, Heart, Flame,
-  Shield, Zap, Bone, Droplets,
+  Shield, Zap, Bone, Droplets, ShieldCheck,
 } from "lucide-react";
+import { ExecutiveSummaryHero } from "./ExecutiveSummaryHero";
+import { BodySystemMap } from "./BodySystemMap";
+import { ActionPlanChecklist } from "./ActionPlanChecklist";
 import type { LucideIcon } from "lucide-react";
 
 /* ═══ TYPES ═══ */
@@ -49,11 +52,19 @@ export function SymptomProfileView({ data, caqCompleted }: { data: SymptomProfil
         </a>
       </div>
 
-      {/* 1. EXECUTIVE SUMMARY */}
-      <div className="flex flex-col sm:flex-row items-start gap-6">
-        <BurdenGauge score={data.overallBurdenScore} />
-        <div className="flex-1"><h3 className="text-lg font-semibold text-white mb-1">Symptom Burden: {data.burdenTier}</h3><p className="text-sm text-white/50 leading-relaxed">{data.executiveSummary}</p></div>
+      {/* Trust badge */}
+      <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/[0.03] border border-white/8">
+        <ShieldCheck className="w-3 h-3 text-teal-400/50" strokeWidth={1.5} />
+        <span className="text-[10px] text-white/30 font-medium">Backed by 14 specialty lenses</span>
       </div>
+
+      {/* 1. EXECUTIVE SUMMARY — Hero Card */}
+      <ExecutiveSummaryHero
+        executiveSummary={data.executiveSummary}
+        masterPatterns={data.masterPatterns || []}
+        overallBurdenScore={data.overallBurdenScore}
+        burdenTier={data.burdenTier}
+      />
 
       {/* 2. MASTER PATTERNS */}
       {data.masterPatterns?.length > 0 && (<div><h4 className="text-xs text-white/20 uppercase tracking-wider font-semibold mb-4">Master Patterns Identified</h4><div className="space-y-4">{data.masterPatterns.map((p, i) => <MasterPatternCard key={i} pattern={p} index={i + 1} total={data.masterPatterns.length} />)}</div></div>)}
@@ -61,8 +72,10 @@ export function SymptomProfileView({ data, caqCompleted }: { data: SymptomProfil
       {/* 3. TOP SYMPTOMS */}
       {data.topSymptoms?.length > 0 && (<div><h4 className="text-xs text-white/20 uppercase tracking-wider font-semibold mb-4">Top Symptoms by Severity</h4><div className="space-y-2">{data.topSymptoms.map((s, i) => <TopSymptomCard key={i} symptom={s} rank={i + 1} />)}</div></div>)}
 
-      {/* 4. SYSTEM-BY-SYSTEM */}
-      {data.systemBySystemAnalysis && (<div><h4 className="text-xs text-white/20 uppercase tracking-wider font-semibold mb-4">Body Systems Overview</h4><div className="grid grid-cols-1 sm:grid-cols-2 gap-2">{Object.entries(data.systemBySystemAnalysis).map(([key, sys]) => { const cfg = SYS_ICONS[key]; if (!cfg) return null; const pct = sys.status === "optimal" ? 90 : sys.status === "suboptimal" ? 55 : sys.status === "compromised" ? 30 : 0; return (<div key={key} className="rounded-xl bg-white/[0.02] border border-white/5 p-3 flex items-center gap-3"><PIcon icon={cfg.icon} color={cfg.color} /><div className="flex-1 min-w-0"><div className="flex items-center justify-between mb-1"><span className="text-xs font-medium text-white/60">{cfg.label}</span><span className={`text-[9px] px-2 py-0.5 rounded-full capitalize ${sys.status === "optimal" ? "bg-teal-400/10 text-teal-400" : sys.status === "compromised" ? "bg-red-400/10 text-red-400" : sys.status === "suboptimal" ? "bg-yellow-400/10 text-yellow-400" : "bg-white/5 text-white/20"}`}>{sys.status.replace("_", " ")}</span></div><div className="h-1.5 rounded-full bg-white/5 overflow-hidden"><div className={`h-full rounded-full ${STATUS_COLORS[sys.status] || "bg-white/10"}`} style={{ width: `${pct}%` }} /></div></div></div>); })}</div></div>)}
+      {/* 4. INTERACTIVE BODY SYSTEM MAP */}
+      {data.systemBySystemAnalysis && (
+        <BodySystemMap systems={data.systemBySystemAnalysis} />
+      )}
 
       {/* 5. LIFESTYLE CORRELATIONS */}
       {data.lifestyleCorrelations?.length > 0 && (<div><h4 className="text-xs text-white/20 uppercase tracking-wider font-semibold mb-4">Lifestyle Correlations</h4><div className="space-y-3">{data.lifestyleCorrelations.map((c: { factor: string; currentStatus: string; symptomImpact: string; impact: string; specificRecommendation: string }, i: number) => (<div key={i} className="rounded-xl bg-white/[0.02] border border-white/[0.08] p-4 md:p-5"><div className="flex items-center justify-between mb-2"><span className="text-sm font-medium text-white capitalize">{c.factor}</span><span className={`text-[9px] px-2 py-0.5 rounded-full uppercase font-semibold ${c.impact === "high" ? "bg-red-400/10 text-red-400" : "bg-yellow-400/10 text-yellow-400"}`}>{c.impact} impact</span></div><p className="text-xs text-white/40 mb-2">{c.symptomImpact}</p><div className="rounded-lg bg-teal-400/5 border border-teal-400/10 p-3"><p className="text-xs text-teal-400/80">{c.specificRecommendation}</p></div></div>))}</div></div>)}
@@ -70,8 +83,13 @@ export function SymptomProfileView({ data, caqCompleted }: { data: SymptomProfil
       {/* 6. EASTERN MEDICINE */}
       {data.easternMedicineInsights && (<div className="rounded-xl bg-white/[0.02] border border-white/[0.08] p-5 md:p-6 space-y-4"><div className="flex items-center gap-3 mb-2"><PIcon icon={Leaf} color="#34D399" size="md" /><h4 className="text-base font-semibold text-white">Eastern Medicine Perspective</h4></div><div className="grid grid-cols-1 sm:grid-cols-2 gap-4"><div><p className="text-[10px] text-white/20 uppercase tracking-wider font-semibold mb-1">TCM Pattern</p><p className="text-sm font-medium text-emerald-400 mb-1">{data.easternMedicineInsights.tcmPattern}</p><p className="text-xs text-white/35 leading-relaxed">{data.easternMedicineInsights.tcmExplanation}</p></div><div><p className="text-[10px] text-white/20 uppercase tracking-wider font-semibold mb-1">Ayurvedic Assessment</p><p className="text-sm font-medium text-amber-400 mb-1">{data.easternMedicineInsights.doshaAssessment}</p><p className="text-xs text-white/35 leading-relaxed">{data.easternMedicineInsights.doshaExplanation}</p></div></div>{data.easternMedicineInsights.recommendedPractices?.length > 0 && (<div className="pt-3 border-t border-white/5"><p className="text-[10px] text-white/20 uppercase tracking-wider font-semibold mb-2">Recommended Practices</p><div className="space-y-1.5">{data.easternMedicineInsights.recommendedPractices.map((p, i) => <p key={i} className="text-xs text-white/40 flex items-start gap-2"><span className="w-1 h-1 rounded-full bg-emerald-400/40 mt-1.5 flex-shrink-0" />{p}</p>)}</div></div>)}</div>)}
 
-      {/* 7. ACTION PLAN */}
-      {data.actionPlan && (<div><h4 className="text-xs text-white/20 uppercase tracking-wider font-semibold mb-4">Your Action Plan</h4><div className="space-y-4">{[{ label: "Start Today", items: data.actionPlan.immediate, color: "#EF4444" }, { label: "This Week", items: data.actionPlan.thisWeek, color: "#F59E0B" }, { label: "This Month", items: data.actionPlan.thisMonth, color: "#60A5FA" }, { label: "Ongoing", items: data.actionPlan.ongoing, color: "#2DA5A0" }].filter(g => g.items?.length > 0).map((group) => (<div key={group.label}><div className="flex items-center gap-2 mb-2"><div className="w-2 h-2 rounded-full" style={{ backgroundColor: group.color }} /><span className="text-xs font-semibold text-white/50">{group.label}</span></div><div className="space-y-2 ml-4">{group.items.map((item, i) => (<div key={i} className="rounded-xl bg-white/[0.02] border border-white/5 p-4"><p className="text-sm text-white/70 mb-1">{item.action}</p><p className="text-xs text-white/30">{item.rationale}</p><div className="flex gap-2 mt-2"><span className={`text-[9px] px-2 py-0.5 rounded-full ${item.category === "supplement" ? "bg-teal-400/10 text-teal-400" : item.category === "lifestyle" ? "bg-green-400/10 text-green-400" : item.category === "lab_work" ? "bg-blue-400/10 text-blue-400" : item.category === "practitioner" ? "bg-purple-400/10 text-purple-400" : "bg-orange-400/10 text-orange-400"}`}>{item.category.replace("_", " ")}</span><span className="text-[9px] px-2 py-0.5 rounded-full bg-white/5 text-white/20">{item.expectedTimeframe}</span></div></div>))}</div></div>))}</div></div>)}
+      {/* 7. ACTION PLAN — Interactive Checklist */}
+      {data.actionPlan && (
+        <div>
+          <h4 className="text-xs text-white/20 uppercase tracking-wider font-semibold mb-4">Your Action Plan</h4>
+          <ActionPlanChecklist actionPlan={data.actionPlan} />
+        </div>
+      )}
 
       {/* 8. DISCLAIMER */}
       <div className="rounded-xl bg-orange-400/5 border border-orange-400/15 p-5 md:p-6">

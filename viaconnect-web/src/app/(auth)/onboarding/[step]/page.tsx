@@ -4,7 +4,10 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { ArrowLeft, ArrowRight, Loader2, Plus, X, Sparkles, Zap, Brain, Moon, Flame, Heart, CheckCircle2, Crown, Star, Calendar, ChevronDown, Info, Camera, FolderOpen } from "lucide-react";
+import { ArrowLeft, ArrowRight, Loader2, Plus, X, Sparkles, Zap, Brain, Moon, Flame, Heart, CheckCircle2, Crown, Star, Calendar, ChevronDown, Info, Camera, FolderOpen, SkipForward, BrainCircuit } from "lucide-react";
+import { ProgressMotivator } from "@/components/caq/ProgressMotivator";
+import { CONVERSATIONAL_LABELS } from "@/config/caq-conversational-labels";
+import { SMART_PLACEHOLDERS, DEFAULT_PLACEHOLDER } from "@/config/caq-smart-placeholders";
 import toast from "react-hot-toast";
 import { InterstitialScreen } from "@/components/onboarding/InterstitialScreen";
 import { WelcomeDashboardScreen } from "@/components/onboarding/WelcomeDashboardScreen";
@@ -362,6 +365,7 @@ export default function OnboardingStepPage() {
   const phase = PHASES[currentIndex];
 
   const [isLoading, setIsLoading] = useState(false);
+  const [showProcessing, setShowProcessing] = useState(false);
 
   // Phase 1 state
   const [demographics, setDemographics] = useState<DemographicsData>({
@@ -562,7 +566,6 @@ export default function OnboardingStepPage() {
           toast.success(`Your Bio Optimization Score: ${bioScore}/100`, { duration: 5000 });
 
           try {
-            toast.loading("Generating your personalized protocol...", { id: "recs" });
             const res = await fetch("/api/recommendations/generate", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -570,15 +573,12 @@ export default function OnboardingStepPage() {
             });
             if (res.ok) {
               const data = await res.json();
-              toast.success(`${data.recommendations_count} supplements recommended for you!`, { id: "recs", duration: 4000 });
-            } else {
-              toast.dismiss("recs");
+              toast.success(`${data.recommendations_count} supplements recommended for you!`, { duration: 4000 });
             }
-          } catch {
-            toast.dismiss("recs");
-          }
+          } catch { /* protocol generation optional */ }
 
-          router.push(`/onboarding/${PHASES[currentIndex + 1].id}`);
+          // Show Ultrathink processing animation
+          setShowProcessing(true);
           return;
         }
       }
@@ -609,6 +609,41 @@ export default function OnboardingStepPage() {
     return <WelcomeDashboardScreen />;
   }
 
+  // Auto-navigate after processing animation
+  useEffect(() => {
+    if (!showProcessing) return;
+    const timer = setTimeout(() => {
+      router.push(`/onboarding/${PHASES[currentIndex + 1].id}`);
+    }, 10000);
+    return () => clearTimeout(timer);
+  }, [showProcessing, currentIndex, router]);
+
+  // Render Ultrathink processing animation (after last CAQ phase)
+  if (showProcessing) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center">
+        <div className="animate-spin" style={{ animationDuration: "8s" }}>
+          <svg className="w-16 h-16 text-teal-400/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1} strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 3v18M6 9l6-6 6 6M6 15l6 6 6-6" />
+          </svg>
+        </div>
+        <div className="mt-8 space-y-3">
+          {[
+            { text: "Absorbing your assessment data...", delay: "0s" },
+            { text: "Cross-referencing 14 specialty lenses...", delay: "2.5s" },
+            { text: "Identifying your master patterns...", delay: "5s" },
+            { text: "Generating your personalized blueprint...", delay: "7.5s" },
+          ].map((step, i) => (
+            <div key={i} className="flex items-center gap-3 animate-fade-in" style={{ animationDelay: step.delay, opacity: 0, animationFillMode: "forwards" }}>
+              <Brain className="w-4 h-4 text-teal-400" strokeWidth={1.5} />
+              <span className="text-sm text-white/60">{step.text}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   // Render interstitial screen (full-bleed, no form chrome)
   if (isInterstitial && interstitialConfig) {
     return (
@@ -634,17 +669,10 @@ export default function OnboardingStepPage() {
         <p className="text-gray-400 mt-1 text-sm">Clinical Assessment Questionnaire</p>
       </div>
 
-      {/* Full-width progress bar (form phases only) */}
-      <div className="flex gap-1.5 mb-6">
-        {formPhases.map((s, i) => (
-          <div
-            key={s.id}
-            className={`h-1.5 flex-1 rounded-full transition-colors duration-300 ${
-              i <= currentFormIndex || stepId === "complete" ? "bg-copper" : "bg-dark-border"
-            }`}
-          />
-        ))}
-      </div>
+      {/* Animated progress bar with motivation */}
+      {stepId !== "complete" && (
+        <ProgressMotivator currentPhase={currentFormIndex + 1} totalPhases={formPhases.length} />
+      )}
 
       <div className={`glass rounded-2xl ${stepId === "complete" ? "p-6 lg:p-8" : "p-6 lg:p-8"}`}>
         {/* Phase header (hidden on complete page — it has its own) */}
@@ -1062,7 +1090,9 @@ export default function OnboardingStepPage() {
                   return (
                     <div key={symptom.id} className="rounded-xl border border-white/5 bg-white/[0.02] p-5 hover:border-white/10 transition-colors">
                       <div className="mb-4">
-                        <h3 className="text-base font-medium text-white/90">{symptom.label}</h3>
+                        <h3 className="text-base font-medium text-white/90">
+                          {CONVERSATIONAL_LABELS[symptom.id]?.conversational || symptom.label}
+                        </h3>
                         <p className="text-xs text-white/35 mt-0.5">{symptom.description}</p>
                       </div>
                       {/* Slider */}
@@ -1098,10 +1128,17 @@ export default function OnboardingStepPage() {
                               setData((prev) => ({ ...prev, [symptom.id]: { ...prev[symptom.id], description: e.target.value } }));
                             }
                           }}
-                          placeholder="e.g., gets worse after meals, started 6 months ago..."
+                          placeholder={SMART_PLACEHOLDERS[symptom.id] || DEFAULT_PLACEHOLDER}
                           rows={2}
                           className="w-full px-4 py-2.5 rounded-lg bg-white/[0.03] border border-white/5 text-sm text-white/70 placeholder:text-white/20 resize-none focus:border-teal-400/30 focus:ring-1 focus:ring-teal-400/20 focus:outline-none transition-all"
                         />
+                        {/* Pulsing brain indicator */}
+                        {entry.description.trim().length > 0 && (
+                          <div className="flex items-center gap-1.5 mt-2">
+                            <BrainCircuit className="w-3.5 h-3.5 text-teal-400/60 animate-pulse" strokeWidth={1.5} />
+                            <span className="text-[10px] text-teal-400/40 font-medium">Ultrathink is absorbing your insight</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   );

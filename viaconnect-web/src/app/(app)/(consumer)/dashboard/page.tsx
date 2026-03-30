@@ -9,7 +9,9 @@ import { GeneticInsightCard } from '@/components/ui/GeneticInsightCard';
 import { VCButton } from '@/components/ui/VCButton';
 import { PluginCTA } from '@/components/ui/PluginCTA';
 import { ProactiveInsightCard } from '@/components/ui/ProactiveInsightCard';
-import { Coins, Flame, Gift, TrendingUp, Pill, Check, ArrowRight, Sunrise, Sun, Moon, Clock, RefreshCw } from 'lucide-react';
+import { Coins, Flame, Gift, TrendingUp, Pill, Check, ArrowRight, Sunrise, Sun, Moon, Clock, RefreshCw, Lightbulb } from 'lucide-react';
+import { QuickReassessmentCard } from '@/components/dashboard/QuickReassessmentCard';
+import { DailyUltrathinkTip } from '@/components/dashboard/DailyUltrathinkTip';
 import type { LucideIcon } from 'lucide-react';
 
 /* ─── Typewriter Hook ──────────────────────────────────────────────────────── */
@@ -375,6 +377,19 @@ export default function ConsumerDashboard() {
             </div>
           </VCButton>
         </GlassCard>
+      </section>
+
+      {/* ── Daily Ultrathink Tip ────────────────────────────────────── */}
+      <section className="px-4 lg:px-6">
+        <DailyUltrathinkTip tip={{
+          content: "Your symptom pattern suggests morning cortisol may be a factor. Try 10 minutes of sunlight exposure within 30 minutes of waking to support your circadian rhythm.",
+          sourcePattern: "HPA axis + circadian"
+        }} />
+      </section>
+
+      {/* ── 30-Day Check-In ────────────────────────────────────────── */}
+      <section className="px-4 lg:px-6">
+        <QuickReassessmentCard daysElapsed={21} />
       </section>
 
       {/* ── Retake Assessment ─────────────────────────────────────────── */}
