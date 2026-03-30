@@ -5,6 +5,7 @@ import { GlassCard } from '@/components/ui/GlassCard';
 import { ScoreDisplay } from '@/components/ui/ScoreDisplay';
 import { ActionCard } from '@/components/ui/ActionCard';
 import { ProtocolCard } from '@/components/ui/ProtocolCard';
+import { SupplementProtocolSection } from '@/components/protocol/SupplementProtocolSection';
 import { GeneticInsightCard } from '@/components/ui/GeneticInsightCard';
 import { VCButton } from '@/components/ui/VCButton';
 import { PluginCTA } from '@/components/ui/PluginCTA';
@@ -217,19 +218,43 @@ export default function ConsumerDashboard() {
         />
       </section>
 
-      {/* ── Supplement Protocol ────────────────────────────────────────── */}
+      {/* ── Supplement Protocol (3-Tab Premium Section) ──────────────── */}
       <section className="px-4 lg:px-6 pb-6">
-        <p className="text-overline mb-4">Active Protocol</p>
-        <ProtocolCard
-          name="Morning Stack"
+        <SupplementProtocolSection
           supplements={[
-            { name: 'MTHFR+', dosage: '1000mcg', taken: true },
-            { name: 'NAD+', dosage: '250mg', taken: false },
-            { name: 'FOCUS+', dosage: '2 capsules', taken: false },
+            { id: '1', productName: 'BioB Fusion\u2122 Methylated B Complex', dosage: '1 capsule', deliveryMethod: 'Liposomal', priority: 'essential', takenToday: true },
+            { id: '2', productName: 'Liposomal Vitamin D3 + K2 (MK-7)', dosage: '5000 IU', deliveryMethod: 'Liposomal', priority: 'essential', takenToday: false },
+            { id: '3', productName: 'Algal Omega-3 DHA/EPA', dosage: '1000mg', priority: 'essential', takenToday: false },
           ]}
-          compliance={67}
-          streak={12}
-          tokensEarned={60}
+          protocol={{
+            morning: [
+              { id: '1', productName: 'BioB Fusion\u2122 Methylated B Complex', dosage: '1 capsule', deliveryMethod: 'Liposomal', priority: 'essential', dataSourceTag: 'caq', takenToday: true },
+              { id: '2', productName: 'Liposomal Vitamin D3 + K2 (MK-7)', dosage: '5000 IU', deliveryMethod: 'Liposomal', priority: 'essential', dataSourceTag: 'caq', takenToday: false },
+              { id: '3', productName: 'Algal Omega-3 DHA/EPA', dosage: '1000mg', priority: 'essential', dataSourceTag: 'caq', takenToday: false },
+            ],
+            afternoon: [
+              { id: '4', productName: 'Liposomal CoQ10 (Ubiquinol)', dosage: '200mg', deliveryMethod: 'Liposomal', priority: 'recommended', dataSourceTag: 'caq', takenToday: false },
+            ],
+            evening: [
+              { id: '5', productName: 'Liposomal Magnesium L-Threonate', dosage: '400mg', deliveryMethod: 'Liposomal', priority: 'essential', dataSourceTag: 'caq', takenToday: false },
+              { id: '6', productName: 'Melatonin (Extended Release)', dosage: '3mg', priority: 'optional', dataSourceTag: 'caq', takenToday: false },
+            ],
+            asNeeded: [
+              { id: '7', productName: 'L-Theanine', dosage: '200mg', priority: 'optional', dataSourceTag: 'caq', takenToday: false },
+            ],
+            gapAnalysis: { gaps: [{ nutrient: 'Vitamin D', deficit: '38% below target' }, { nutrient: 'Omega-3', deficit: '55% gap' }] },
+            recommendations: [
+              { id: 'r1', productName: 'Liposomal NAC (N-Acetyl Cysteine)', dosage: '600mg', timing: 'Morning', deliveryMethod: 'Liposomal', priority: 'recommended', reason: 'Glutathione precursor for detoxification and antioxidant defense', evidenceLevel: 'strong', dataSourceTag: 'caq' },
+              { id: 'r2', productName: 'Micellar Ashwagandha (KSM-66\u00ae)', dosage: '600mg', timing: 'Afternoon', deliveryMethod: 'Micellar', priority: 'recommended', reason: 'Adaptogenic stress support based on elevated stress scores', evidenceLevel: 'strong', dataSourceTag: 'caq' },
+            ],
+          }}
+          medications={[
+            { id: 'm1', name: 'None' },
+          ]}
+          allergies={['None']}
+          adverseReactions=""
+          interactions={[]}
+          tier={1}
         />
       </section>
 
