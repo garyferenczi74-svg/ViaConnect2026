@@ -4,6 +4,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { BookOpen, GraduationCap, ChevronDown, Award } from "lucide-react";
 import type { ExpertAuthority } from "@/config/expert-authorities";
+import { DOMAIN_CONFIG } from "@/config/expert-authorities";
 
 export function ExpertAuthorityBadge({ experts }: { experts: ExpertAuthority[] }) {
   const [expanded, setExpanded] = useState(false);
@@ -31,9 +32,11 @@ export function ExpertAuthorityBadge({ experts }: { experts: ExpertAuthority[] }
                       <p className="text-[10px] text-white/25 mt-0.5">{expert.specialty} · {expert.country}</p>
                       {expert.notableWork && <p className="text-[10px] text-white/20 mt-1 italic leading-relaxed">{expert.notableWork}</p>}
                     </div>
-                    <span className={`text-[8px] px-1.5 py-0.5 rounded-full flex-shrink-0 uppercase tracking-wider font-semibold ${expert.domain === "nutritional_genomics" ? "bg-teal-400/10 text-teal-400/50 border border-teal-400/10" : "bg-purple-400/10 text-purple-400/50 border border-purple-400/10"}`}>
-                      {expert.domain === "nutritional_genomics" ? "Genomics" : "Peptide"}
-                    </span>
+                    {(() => { const dc = DOMAIN_CONFIG[expert.domain]; const c = dc?.color || "white"; return (
+                      <span className="text-[8px] px-1.5 py-0.5 rounded-full flex-shrink-0 uppercase tracking-wider font-semibold" style={{ backgroundColor: `color-mix(in srgb, ${c === "teal-400" ? "#2DA5A0" : c === "purple-400" ? "#A855F7" : c === "blue-400" ? "#60A5FA" : c === "red-400" ? "#F87171" : c === "amber-400" ? "#FBBF24" : c === "emerald-400" ? "#34D399" : c === "green-400" ? "#4ADE80" : "#B75E18"} 15%, transparent)`, color: `color-mix(in srgb, ${c === "teal-400" ? "#2DA5A0" : c === "purple-400" ? "#A855F7" : c === "blue-400" ? "#60A5FA" : c === "red-400" ? "#F87171" : c === "amber-400" ? "#FBBF24" : c === "emerald-400" ? "#34D399" : c === "green-400" ? "#4ADE80" : "#B75E18"} 60%, transparent)` }}>
+                        {dc?.shortLabel || expert.domain}
+                      </span>
+                    ); })()}
                   </div>
                 </div>
               ))}
@@ -54,10 +57,7 @@ export function ExpertCredibilityFooter({ domain = "all" }: { domain?: "all" | "
         <div>
           <p className="text-xs text-white/30 font-medium mb-1">Evidence-Based Recommendations</p>
           <p className="text-[10px] text-white/15 leading-relaxed">
-            FarmCeutica Wellness product recommendations are informed by research from leading authorities in nutritional genomics and peptide science.
-            {domain !== "peptide" && " For genomics-guided nutrition, look for providers using tests backed by ISNN-certified research. The CNGS credential from the American Nutrition Association represents the practitioner standard."}
-            {domain !== "genomics" && " For peptide therapy, prioritize providers aligned with the International Peptide Society (IPS), American Peptide Society (APS), and A4M science-based approaches."}
-            {" "}The field is evolving. Always consult a qualified practitioner.
+            FarmCeutica Wellness recommendations are informed by research from leaders at IFM, ABC, CMCR, ISCM, NAMA, ISNN, IPS, and APS — representing the global gold standard across genomics, functional medicine, herbal science, Eastern medicine, cannabinoid research, peptide therapy, and micronutrient science. Evidence levels vary by domain. Always consult a qualified practitioner.
           </p>
         </div>
       </div>

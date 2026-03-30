@@ -6,7 +6,7 @@ export interface ExpertAuthority {
   credentials: string;
   country: string;
   specialty: string;
-  domain: "nutritional_genomics" | "peptide_science";
+  domain: "nutritional_genomics" | "peptide_science" | "functional_medicine" | "tcm" | "ayurvedic" | "herbal_medicine" | "cannabis_science" | "vitamins_minerals";
   keyContributions: string[];
   affiliations: string[];
   relevantGeneNutrientPairs?: string[];
@@ -41,41 +41,88 @@ export const PEPTIDE_SCIENCE_EXPERTS: ExpertAuthority[] = [
   { id: "de-la-fuente", name: "C\u00e9sar de la Fuente, PhD", credentials: "PhD", country: "USA/Spain", specialty: "AI-Designed Antimicrobial Peptides", domain: "peptide_science", keyContributions: ["Pioneer in AI/ML-designed therapeutic peptides", "Research on antimicrobial peptides for resistant infections"], affiliations: ["University of Pennsylvania"], notableWork: "Used AI to discover novel antimicrobial peptides — pioneering AI and peptide therapy intersection" },
 ];
 
-export const ALL_EXPERTS = [...NUTRITIONAL_GENOMICS_EXPERTS, ...PEPTIDE_SCIENCE_EXPERTS];
+// ═══ FUNCTIONAL MEDICINE ═══
+export const FUNCTIONAL_MEDICINE_EXPERTS: ExpertAuthority[] = [
+  { id: "bland", name: "Jeffrey S. Bland, PhD", credentials: "PhD", country: "USA", specialty: "Functional Medicine & Systems Biology", domain: "functional_medicine", keyContributions: ["'Father of Functional Medicine'", "Co-founder of IFM", "40+ years in nutritional science and systems biology"], affiliations: ["Institute for Functional Medicine (IFM)", "PLMI", "Big Bold Health"], publicationCount: "100s", notableWork: "Created the functional medicine framework connecting upstream root causes to downstream symptom clusters" },
+  { id: "hyman", name: "Mark Hyman, MD", credentials: "MD", country: "USA", specialty: "Functional Medicine & Personalized Nutrition", domain: "functional_medicine", keyContributions: ["IFM Senior Advisor", "Founded Cleveland Clinic Center for Functional Medicine", "15x NYT bestselling author"], affiliations: ["Cleveland Clinic", "The UltraWellness Center", "IFM"], publicationCount: "100+", notableWork: "Popularized root-cause cluster analysis and personalized supplement protocols for millions" },
+];
 
-// Map gene-nutrient pairs to relevant experts
+// ═══ TRADITIONAL CHINESE MEDICINE ═══
+export const TCM_EXPERTS: ExpertAuthority[] = [
+  { id: "lao", name: "Lixing Lao, PhD, MD, LAc", credentials: "PhD, MD, LAc", country: "USA/China", specialty: "TCM Integration with Western Medicine", domain: "tcm", keyContributions: ["Former ISCM president", "200+ publications on TCM integration", "Pioneered evidence-based acupuncture research"], affiliations: ["ISCM", "Virginia University of Integrative Medicine", "University of Maryland"], publicationCount: "200+", notableWork: "Bridges TCM pattern recognition with functional and genomic insights" },
+  { id: "hong-jin", name: "Hong Jin, PhD, LAc", credentials: "PhD, LAc", country: "China/USA", specialty: "Evidence-Based TCM & Classical Formulas", domain: "tcm", keyContributions: ["Evidence-based classical formula integration", "Combines traditional formulas with nutraceutical protocols"], affiliations: ["Capital TCM Research Institute"], notableWork: "Demonstrated how classical TCM formulas can be validated through pharmacogenomic research" },
+];
+
+// ═══ AYURVEDIC MEDICINE ═══
+export const AYURVEDIC_EXPERTS: ExpertAuthority[] = [
+  { id: "kodikannath", name: "Jayarajan Kodikannath, BAMS", credentials: "BAMS", country: "India/USA", specialty: "Ayurveda-Genomics Integration & Dosha Typing", domain: "ayurvedic", keyContributions: ["NAMA President", "Pioneer in genomics-informed dosha typing", "Bridges Prakriti assessment with SNP personalization"], affiliations: ["National Ayurvedic Medical Association (NAMA)"], notableWork: "Established framework for mapping Ayurvedic dosha types to genetic variants" },
+  { id: "halpern", name: "Marc Halpern, DC, CAS", credentials: "DC, CAS", country: "USA", specialty: "Clinical Ayurveda & Dosha-Specific Protocols", domain: "ayurvedic", keyContributions: ["Founder of California College of Ayurveda", "30+ years translating Ayurvedic principles to clinical practice"], affiliations: ["California College of Ayurveda (CCA)"], notableWork: "Created clinical methodology for dosha-specific herbal and lifestyle protocols" },
+];
+
+// ═══ HERBAL MEDICINE & PHYTOTHERAPY ═══
+export const HERBAL_MEDICINE_EXPERTS: ExpertAuthority[] = [
+  { id: "blumenthal", name: "Mark Blumenthal", credentials: "Founder, ABC", country: "USA", specialty: "Herbal Science Standards & Evidence", domain: "herbal_medicine", keyContributions: ["Founder of American Botanical Council (ABC)", "40+ years setting herbal safety and efficacy standards", "Publisher of HerbalGram"], affiliations: ["American Botanical Council (ABC)"], publicationCount: "1000+ (through ABC)", notableWork: "Sets global standards for herbal supplement quality, safety, and efficacy" },
+  { id: "winston", name: "David Winston, RH (AHG)", credentials: "RH (AHG)", country: "USA", specialty: "Clinical Herbalism & Functional Integration", domain: "herbal_medicine", keyContributions: ["Master herbalist with 50+ years of practice", "Founder of Herbal Therapeutics Research Library", "Integrates herbalism with functional medicine"], affiliations: ["American Herbalists Guild (AHG)"], publicationCount: "50+", notableWork: "Created clinical protocols combining adaptogenic herbs with functional medicine" },
+  { id: "low-dog", name: "Tieraona Low Dog, MD", credentials: "MD", country: "USA", specialty: "Evidence-Based Herbal Medicine & Women's Health", domain: "herbal_medicine", keyContributions: ["Former Andrew Weil Center faculty", "Leading voice in evidence-based herbal medicine", "Expert in women's health herbal supplementation"], affiliations: ["Medicine Lodge Ranch"], notableWork: "Established evidence base for integrating herbal medicine with conventional pharmacology" },
+];
+
+// ═══ MEDICAL CANNABIS / CANNABINOID SCIENCE ═══
+export const CANNABIS_SCIENCE_EXPERTS: ExpertAuthority[] = [
+  { id: "grant", name: "Igor Grant, MD", credentials: "MD", country: "USA", specialty: "Cannabinoid Therapeutics Research", domain: "cannabis_science", keyContributions: ["Director of CMCR at UC San Diego", "100s of cannabinoid studies", "Gold standard for medical cannabis research"], affiliations: ["Center for Medicinal Cannabis Research (CMCR)", "UC San Diego"], publicationCount: "100s", notableWork: "Leads the largest academic cannabinoid research program in the US" },
+  { id: "mechoulam", name: "Raphael Mechoulam, PhD (1930\u20132023)", credentials: "PhD", country: "Israel", specialty: "Endocannabinoid System Discovery", domain: "cannabis_science", keyContributions: ["Discovered THC (1964) and the endocannabinoid system", "Identified anandamide and 2-AG", "Legacy authority for all cannabinoid science"], affiliations: ["Hebrew University of Jerusalem"], publicationCount: "400+", notableWork: "Discovered the endocannabinoid system \u2014 foundation for all cannabinoid supplement recommendations" },
+];
+
+// ═══ VITAMINS & MINERALS / MICRONUTRIENT THERAPY ═══
+export const MICRONUTRIENT_EXPERTS: ExpertAuthority[] = [
+  { id: "bailey", name: "Regan Bailey, PhD, MPH, RD", credentials: "PhD, MPH, RD", country: "USA", specialty: "Micronutrient Epidemiology & Personalized Supplementation", domain: "vitamins_minerals", keyContributions: ["Formerly NIH Office of Dietary Supplements", "NHANES micronutrient analysis", "Bridges vitamins/minerals with genomics"], affiliations: ["Purdue University", "NIH ODS (former)"], publicationCount: "150+", notableWork: "Established epidemiological framework for identifying micronutrient gaps" },
+  { id: "holick", name: "Michael F. Holick, MD, PhD", credentials: "MD, PhD", country: "USA", specialty: "Vitamin D Metabolism & Deficiency", domain: "vitamins_minerals", keyContributions: ["World's leading vitamin D authority", "Discovered active form of vitamin D", "Research on VDR genetic variants"], affiliations: ["Boston University School of Medicine"], publicationCount: "500+", notableWork: "Defined how VDR genetic variants determine individual vitamin D requirements" },
+  { id: "ames", name: "Bruce Ames, PhD", credentials: "PhD", country: "USA", specialty: "Micronutrient Triage Theory & Aging", domain: "vitamins_minerals", keyContributions: ["Developed Triage Theory of micronutrient allocation", "Pioneer in subclinical deficiencies and aging", "Research on genetic variants and nutrient priorities"], affiliations: ["UC Berkeley", "CHORI"], publicationCount: "550+", notableWork: "Created Triage Theory explaining why subclinical nutrient deficiencies cause long-term disease" },
+];
+
+// ═══ UNIFIED EXPORTS ═══
+export const ALL_EXPERTS = [...NUTRITIONAL_GENOMICS_EXPERTS, ...PEPTIDE_SCIENCE_EXPERTS, ...FUNCTIONAL_MEDICINE_EXPERTS, ...TCM_EXPERTS, ...AYURVEDIC_EXPERTS, ...HERBAL_MEDICINE_EXPERTS, ...CANNABIS_SCIENCE_EXPERTS, ...MICRONUTRIENT_EXPERTS];
+
+export const DOMAIN_CONFIG: Record<string, { label: string; shortLabel: string; color: string }> = {
+  nutritional_genomics: { label: "Nutritional Genomics", shortLabel: "Genomics", color: "teal-400" },
+  peptide_science: { label: "Peptide Science", shortLabel: "Peptide", color: "purple-400" },
+  functional_medicine: { label: "Functional Medicine", shortLabel: "Functional", color: "blue-400" },
+  tcm: { label: "Traditional Chinese Medicine", shortLabel: "TCM", color: "red-400" },
+  ayurvedic: { label: "Ayurvedic Medicine", shortLabel: "Ayurveda", color: "amber-400" },
+  herbal_medicine: { label: "Herbal Medicine", shortLabel: "Herbal", color: "emerald-400" },
+  cannabis_science: { label: "Cannabinoid Science", shortLabel: "Cannabis", color: "green-400" },
+  vitamins_minerals: { label: "Vitamins & Minerals", shortLabel: "Micronutrient", color: "orange-400" },
+};
+
+export const EXPERT_BY_ID = Object.fromEntries(ALL_EXPERTS.map(e => [e.id, e]));
+
+export function getExpertsByDomain(domain: string): ExpertAuthority[] {
+  return ALL_EXPERTS.filter(e => e.domain === domain);
+}
+
 export function getExpertsForRecommendation(productName: string, geneNutrientPairs?: string[]): ExpertAuthority[] {
   const matched: ExpertAuthority[] = [];
-  const nameLower = productName.toLowerCase();
+  const n = productName.toLowerCase();
+  const add = (id: string) => { const e = EXPERT_BY_ID[id]; if (e && !matched.find(m => m.id === id)) matched.push(e); };
 
-  // Match by gene-nutrient pairs
+  // Gene-nutrient pair matching
   if (geneNutrientPairs) {
     for (const expert of NUTRITIONAL_GENOMICS_EXPERTS) {
-      if (expert.relevantGeneNutrientPairs?.some(p => geneNutrientPairs.some(gnp => p.toLowerCase().includes(gnp.toLowerCase())))) {
-        matched.push(expert);
-      }
+      if (expert.relevantGeneNutrientPairs?.some(p => geneNutrientPairs.some(gnp => p.toLowerCase().includes(gnp.toLowerCase())))) add(expert.id);
     }
   }
 
-  // Match by product category
-  if (nameLower.includes("omega") || nameLower.includes("dha") || nameLower.includes("epa")) {
-    if (!matched.find(e => e.id === "simopoulos")) matched.push(NUTRITIONAL_GENOMICS_EXPERTS.find(e => e.id === "simopoulos")!);
-    if (!matched.find(e => e.id === "ordovas")) matched.push(NUTRITIONAL_GENOMICS_EXPERTS.find(e => e.id === "ordovas")!);
-  }
-  if (nameLower.includes("methyl") || nameLower.includes("folate") || nameLower.includes("b12") || nameLower.includes("b complex")) {
-    if (!matched.find(e => e.id === "joffe")) matched.push(NUTRITIONAL_GENOMICS_EXPERTS.find(e => e.id === "joffe")!);
-    if (!matched.find(e => e.id === "kohlmeier")) matched.push(NUTRITIONAL_GENOMICS_EXPERTS.find(e => e.id === "kohlmeier")!);
-  }
-  if (nameLower.includes("vitamin d")) {
-    if (!matched.find(e => e.id === "el-sohemy")) matched.push(NUTRITIONAL_GENOMICS_EXPERTS.find(e => e.id === "el-sohemy")!);
-  }
-  if (nameLower.includes("peptide") || nameLower.includes("bpc") || nameLower.includes("thymosin")) {
-    matched.push(PEPTIDE_SCIENCE_EXPERTS.find(e => e.id === "seeds")!);
-    matched.push(PEPTIDE_SCIENCE_EXPERTS.find(e => e.id === "yurth")!);
-  }
-  if (nameLower.includes("collagen")) {
-    matched.push(PEPTIDE_SCIENCE_EXPERTS.find(e => e.id === "fields")!);
-  }
+  // Product category matching
+  if (n.includes("omega") || n.includes("dha") || n.includes("epa")) { add("simopoulos"); add("ordovas"); }
+  if (n.includes("methyl") || n.includes("folate") || n.includes("b12") || n.includes("b complex")) { add("joffe"); add("kohlmeier"); }
+  if (n.includes("vitamin d")) { add("el-sohemy"); add("holick"); }
+  if (n.includes("peptide") || n.includes("bpc") || n.includes("thymosin")) { add("seeds"); add("yurth"); }
+  if (n.includes("collagen")) { add("fields"); }
+  if (n.includes("ashwagandha") || n.includes("rhodiola") || n.includes("adaptogen") || n.includes("holy basil")) { add("winston"); add("blumenthal"); }
+  if (n.includes("turmeric") || n.includes("curcumin") || n.includes("milk thistle") || n.includes("echinacea")) { add("blumenthal"); add("low-dog"); }
+  if (n.includes("cbd") || n.includes("cbg") || n.includes("cannabin") || n.includes("cannabis")) { add("grant"); add("mechoulam"); }
+  if (n.includes("magnesium") || n.includes("zinc") || n.includes("selenium") || n.includes("iron")) { add("bailey"); add("ames"); }
+  if (n.includes("coq10") || n.includes("nad") || n.includes("mitochon")) { add("ames"); add("bland"); }
+  if (n.includes("probiotic") || n.includes("gut") || n.includes("digestive")) { add("hyman"); add("bland"); }
 
-  return matched.filter(Boolean).slice(0, 4);
+  return matched.filter(Boolean).slice(0, 5);
 }
