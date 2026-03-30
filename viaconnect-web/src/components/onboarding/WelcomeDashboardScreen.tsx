@@ -39,10 +39,12 @@ export function WelcomeDashboardScreen() {
     async function fetchName() {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const name = user.user_metadata?.full_name || "";
-        setFirstName(name.split(" ")[0] || "");
-      }
+      if (!user) return;
+
+      // Try profiles.full_name first, then auth metadata
+      const { data: profile } = await supabase.from("profiles").select("full_name").eq("id", user.id).single();
+      const fullName = profile?.full_name || user.user_metadata?.full_name || user.user_metadata?.name || "";
+      setFirstName(fullName.split(" ")[0] || "");
     }
     fetchName();
   }, []);

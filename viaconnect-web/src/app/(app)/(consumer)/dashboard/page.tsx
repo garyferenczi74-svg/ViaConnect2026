@@ -84,7 +84,18 @@ const DAILY_SCORES = [
 /* ─── Dashboard Page ───────────────────────────────────────────────────────── */
 
 export default function ConsumerDashboard() {
-  const greeting = `${getGreeting()}, Gary`;
+  const [userName, setUserName] = useState("there");
+
+  useEffect(() => {
+    async function loadName() {
+      const { getDisplayName } = await import("@/lib/user/get-display-name");
+      const name = await getDisplayName();
+      setUserName(name);
+    }
+    loadName();
+  }, []);
+
+  const greeting = `${getGreeting()}, ${userName}`;
   const { display, done } = useTypewriter(greeting, 40);
 
   return (
