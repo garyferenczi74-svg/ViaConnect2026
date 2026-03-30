@@ -157,18 +157,16 @@ export function Sidebar({
   const router = useRouter();
   const portal = getPortal(role);
 
-  // Persist collapsed state in localStorage
-  const [collapsed, setCollapsed] = useState(false);
+  // Sidebar always expanded — labels always visible
+  const [collapsed] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored === "true") {
-      setCollapsed(true);
-      onCollapseChange?.(true);
-    }
+    // Clear any stored collapsed state so sidebar always shows labels
+    localStorage.removeItem(STORAGE_KEY);
+    onCollapseChange?.(false);
     setMounted(true);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
