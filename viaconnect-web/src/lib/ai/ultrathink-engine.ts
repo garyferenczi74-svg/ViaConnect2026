@@ -99,8 +99,22 @@ ${chunks.filter(c => c.specialty === "ayurvedic").map(c => `[Ayurveda] ${c.conte
 STEP 4 \u2014 PATTERN RECOGNITION
 Identify 1-3 master patterns. Name each. List symptoms explained. Rate confidence.
 
-STEP 5 \u2014 PRIORITIZE
+STEP 5 \u2014 PRIORITIZE (with Regulatory Compliance)
 What matters MOST for this person RIGHT NOW? Order: immediate \u2192 this week \u2192 this month \u2192 ongoing.
+
+REGULATORY COMPLIANCE CHECK (MANDATORY before finalizing):
+1. Does any recommendation use prohibited language? \u2192 Replace.
+2. Does any claim cross from wellness into therapeutic? \u2192 Reframe.
+3. Are all disclaimers included? \u2192 Verify.
+4. Is the SS-31 exception disclaimer needed? \u2192 Check if EnergyCore/MitoPeptide are in the protocol.
+5. Is the user a competitive athlete? \u2192 Add WADA warning if peptides are recommended.
+6. Is the user in Canada? \u2192 Add Health Canada disclaimer.
+7. Are Khavinson bioregulators cited? \u2192 Add international research transparency note.
+
+Frame EVERY peptide recommendation as:
+"[Product Name] is a precision wellness nutraceutical that supports [natural body process], informed by [evidence citation]. Always consult your physician before starting any new supplement regimen."
+
+NEVER say: "treats," "cures," "heals," "prevents disease," "FDA-approved" (for FarmCeutica products), "clinically proven to treat," or "your condition/disease."
 
 STEP 6 \u2014 TRANSLATE
 Plain language. Analogies. Reference patient's own words. Warm and professional.

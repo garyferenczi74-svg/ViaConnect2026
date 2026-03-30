@@ -1,4 +1,6 @@
-// Ultrathink Safety Guardrails — Non-diagnostic, disclaimers, dosage limits, escalation
+// Ultrathink Safety Guardrails — Non-diagnostic, disclaimers, dosage limits, escalation, regulatory compliance
+
+import { PROHIBITED_LANGUAGE, LANGUAGE_REPLACEMENTS } from "@/config/regulatory/compliant-language";
 
 export const SAFETY_RULES = {
   nonDiagnostic: {
@@ -59,4 +61,93 @@ export function checkEscalationTriggers(scores: Record<string, { score: number; 
 
 export function verifyDisclaimer(output: { disclaimer?: string }): { disclaimer: string } {
   return { disclaimer: output.disclaimer || SAFETY_RULES.disclaimers.text };
+}
+
+// ═══════════════════════════════════════════════════════════════
+// REGULATORY GUARDRAILS — Peptide Compliance Layer
+// ═══════════════════════════════════════════════════════════════
+
+export const REGULATORY_GUARDRAILS = {
+
+  // ═══ LANGUAGE SCANNING ═══
+  preOutputScan: {
+    enabled: true,
+    scanFor: PROHIBITED_LANGUAGE,
+    replaceWith: LANGUAGE_REPLACEMENTS,
+    action: 'Replace prohibited language before displaying to user',
+  },
+
+  // ═══ DISCLAIMER INJECTION ═══
+  disclaimerInjection: {
+    enabled: true,
+    standardFDA: {
+      injectAfterEvery: 'peptide_product_mention',
+      format: 'small_text_below',
+    },
+    consultPractitioner: {
+      injectAt: 'bottom_of_protocol',
+      includeCtaButtons: true,
+    },
+    ssException: {
+      triggerProducts: ['EnergyCore\u2122', 'MitoPeptide\u2122', 'CoQ10-Peptide\u2122', 'ATP-Regen\u2122'],
+      injectOnProductPage: true,
+    },
+    athleteWADA: {
+      triggerCondition: 'user.lifestyle.competitive_athlete === true',
+      injectOnProtocol: true,
+    },
+    canadaSpecific: {
+      triggerCondition: 'user.country === "CA" || user.province === "AB"',
+      injectOnAllPages: true,
+    },
+  },
+
+  // ═══ CLAIM LEVEL ENFORCEMENT ═══
+  claimLevels: {
+    structureFunction: {
+      permitted: true,
+      example: 'Supports mitochondrial energy production',
+      scope: 'Describes how the product supports a normal body function',
+    },
+    wellness: {
+      permitted: true,
+      example: 'Supports your body\'s natural stress resilience',
+      scope: 'General wellness optimization without disease reference',
+    },
+    therapeutic: {
+      permitted: false,
+      example: 'Treats chronic fatigue syndrome',
+      scope: 'NEVER \u2014 crosses into drug claim territory',
+    },
+    diagnostic: {
+      permitted: false,
+      example: 'You have adrenal insufficiency',
+      scope: 'NEVER \u2014 crosses into medical diagnosis',
+    },
+  },
+
+  // ═══ FDA UPDATE MONITORING ═══
+  regulatoryMonitoring: {
+    category2Reclassification: {
+      status: 'PENDING as of March 2026',
+      action: 'Review monthly. If Category 1 reclassification is confirmed, update disclaimers but maintain wellness positioning.',
+    },
+    dsheaMeetings: {
+      status: 'Ongoing 2026 public meetings',
+      action: 'Monitor for changes to dietary substance definitions. If peptides are added as lawful dietary ingredients, update DSHEA disclaimer.',
+    },
+    healthCanada: {
+      status: 'No authorization for portfolio peptides',
+      action: 'Monitor Health Canada NHP updates quarterly.',
+    },
+  },
+};
+
+export function scanRegulatoryCompliance(text: string): string {
+  let result = text;
+  for (const [prohibited, compliant] of Object.entries(LANGUAGE_REPLACEMENTS)) {
+    const regex = new RegExp(`\\b${prohibited.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'gi');
+    result = result.replace(regex, compliant);
+  }
+  return result;
 }
