@@ -19,7 +19,7 @@ const PORTAL_NAV: Record<string, NavItem[]> = {
     { href: '/genetics', label: 'Genetics', icon: Dna },
     { href: '/supplements', label: 'Supplement Protocol', icon: Pill },
     { href: '/plugins', label: 'Plugins', icon: Plug },
-    { href: '/wearables', label: 'Wearables', icon: Activity },
+    { href: '/wearables', label: 'Wearables Data', icon: Activity },
     { href: '/helix/arena', label: 'Helix Rewards', icon: Coins },
     { href: '/messages', label: 'Messages', icon: MessageSquare },
     { href: '/media-sources', label: 'Research', icon: Newspaper },
