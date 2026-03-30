@@ -116,11 +116,11 @@ function BackgroundLayer({ background }: { background: InterstitialConfig["backg
           muted
           loop
           playsInline
-          preload="auto"
+          preload="metadata"
           aria-hidden="true"
           onLoadedData={() => setVideoLoaded(true)}
           onError={() => setVideoError(true)}
-          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${
+          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ${
             videoLoaded ? "opacity-100" : "opacity-0"
           }`}
         >
@@ -140,7 +140,7 @@ interface InterstitialScreenProps {
 }
 
 export function InterstitialScreen({ config, onContinue, celebrationMode }: InterstitialScreenProps) {
-  const buttonDelay = celebrationMode ? 2.5 : 1.0;
+  const buttonDelay = celebrationMode ? 2.0 : 0.5;
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col items-center justify-center overflow-hidden">
@@ -179,7 +179,7 @@ export function InterstitialScreen({ config, onContinue, celebrationMode }: Inte
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, ease: "easeOut", delay: celebrationMode ? 0.8 : 0.3 }}
+          transition={{ duration: 0.6, ease: "easeOut", delay: celebrationMode ? 0.6 : 0.15 }}
           className="text-center mb-8"
         >
           <h1 className="text-xl sm:text-3xl md:text-4xl font-light text-white leading-relaxed tracking-tight px-2">
@@ -219,7 +219,7 @@ export function InterstitialScreen({ config, onContinue, celebrationMode }: Inte
           <motion.div
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: "easeOut", delay: 0.6 }}
+            transition={{ duration: 0.6, ease: "easeOut", delay: 0.3 }}
             className="w-full"
           >
             <FeaturePreviewCard card={config.featureCard} />
