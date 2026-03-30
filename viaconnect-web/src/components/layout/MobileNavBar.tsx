@@ -17,7 +17,7 @@ const PORTAL_NAV: Record<string, NavItem[]> = {
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/analytics', label: 'Analytics', icon: BarChart3 },
     { href: '/genetics', label: 'Genetics', icon: Dna },
-    { href: '/supplements', label: 'Supplements', icon: Pill },
+    { href: '/supplements', label: 'Supplement Protocol', icon: Pill },
     { href: '/wearables', label: 'Wearables', icon: Activity },
     { href: '/shop', label: 'Shop', icon: ShoppingBag },
     { href: '/helix/arena', label: 'Helix Rewards', icon: Coins },
