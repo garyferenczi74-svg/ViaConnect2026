@@ -20,11 +20,11 @@ const PORTAL_NAV: Record<string, NavItem[]> = {
     { href: '/supplements', label: 'Supplement Protocol', icon: Pill },
     { href: '/plugins', label: 'Plugins', icon: Plug },
     { href: '/wearables', label: 'Wearables', icon: Activity },
-    { href: '/shop', label: 'Shop', icon: ShoppingBag },
     { href: '/helix/arena', label: 'Helix Rewards', icon: Coins },
     { href: '/messages', label: 'Messages', icon: MessageSquare },
     { href: '/media-sources', label: 'Research', icon: Newspaper },
     { href: '/ai', label: 'AI', icon: Brain },
+    { href: '/shop', label: 'Shop', icon: ShoppingBag },
     { href: '/profile', label: 'Profile', icon: UserIcon },
   ],
   practitioner: [
