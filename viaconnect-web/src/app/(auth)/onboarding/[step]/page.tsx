@@ -6,6 +6,8 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { ArrowLeft, ArrowRight, Loader2, Plus, X, Sparkles, Zap, Brain, Moon, Flame, Heart, CheckCircle2, Crown, Star, Calendar, ChevronDown, Info, Camera, FolderOpen, SkipForward, BrainCircuit } from "lucide-react";
 import { ProgressMotivator } from "@/components/caq/ProgressMotivator";
+import { VoiceInput } from "@/components/caq/VoiceInput";
+import { CalmingHelixBackground } from "@/components/caq/CalmingHelixBackground";
 import { CONVERSATIONAL_LABELS } from "@/config/caq-conversational-labels";
 import { SMART_PLACEHOLDERS, DEFAULT_PLACEHOLDER } from "@/config/caq-smart-placeholders";
 import toast from "react-hot-toast";
@@ -660,9 +662,13 @@ export default function OnboardingStepPage() {
   const currentFormIndex = formPhases.findIndex((s) => s.id === stepId);
 
   return (
-    <div className={`w-full mx-auto ${stepId === "complete" ? "max-w-4xl" : "max-w-[720px]"}`}>
+    <div className={`relative w-full mx-auto ${stepId === "complete" ? "max-w-4xl" : "max-w-[720px]"}`}>
+      {/* Calming helix background */}
+      {stepId !== "complete" && (
+        <CalmingHelixBackground phase={currentFormIndex + 1} totalPhases={formPhases.length} />
+      )}
       {/* Logo */}
-      <div className="text-center mb-6">
+      <div className="text-center mb-6 relative z-10">
         <h1 className="text-3xl font-bold text-white">
           <span className="text-copper">Via</span>Connect
         </h1>
@@ -671,7 +677,16 @@ export default function OnboardingStepPage() {
 
       {/* Animated progress bar with motivation */}
       {stepId !== "complete" && (
-        <ProgressMotivator currentPhase={currentFormIndex + 1} totalPhases={formPhases.length} />
+        <ProgressMotivator
+          currentPhase={currentFormIndex + 1}
+          totalPhases={formPhases.length}
+          partialData={{
+            symptomsPhysical: symptomsPhysical,
+            symptomsNeurological: symptomsNeuro,
+            symptomsEmotional: symptomsEmotional,
+            medications: medications.medications.map(m => ({ name: m })),
+          }}
+        />
       )}
 
       <div className={`glass rounded-2xl ${stepId === "complete" ? "p-6 lg:p-8" : "p-6 lg:p-8"}`}>
@@ -1120,18 +1135,21 @@ export default function OnboardingStepPage() {
                           <label className="text-xs text-white/30">Optional: describe your experience</label>
                           <span className={`text-xs ${wordCount > 200 ? "text-red-400" : "text-white/20"}`}>{wordCount}/200 words</span>
                         </div>
-                        <textarea
-                          value={entry.description}
-                          onChange={(e) => {
-                            const words = e.target.value.trim().split(/\s+/);
-                            if (words.length <= 200 || e.target.value.length < entry.description.length) {
-                              setData((prev) => ({ ...prev, [symptom.id]: { ...prev[symptom.id], description: e.target.value } }));
-                            }
-                          }}
-                          placeholder={SMART_PLACEHOLDERS[symptom.id] || DEFAULT_PLACEHOLDER}
-                          rows={2}
-                          className="w-full px-4 py-2.5 rounded-lg bg-white/[0.03] border border-white/5 text-sm text-white/70 placeholder:text-white/20 resize-none focus:border-teal-400/30 focus:ring-1 focus:ring-teal-400/20 focus:outline-none transition-all"
-                        />
+                        <div className="flex gap-2">
+                          <textarea
+                            value={entry.description}
+                            onChange={(e) => {
+                              const words = e.target.value.trim().split(/\s+/);
+                              if (words.length <= 200 || e.target.value.length < entry.description.length) {
+                                setData((prev) => ({ ...prev, [symptom.id]: { ...prev[symptom.id], description: e.target.value } }));
+                              }
+                            }}
+                            placeholder={SMART_PLACEHOLDERS[symptom.id] || DEFAULT_PLACEHOLDER}
+                            rows={2}
+                            className="flex-1 px-4 py-2.5 rounded-lg bg-white/[0.03] border border-white/5 text-sm text-white/70 placeholder:text-white/20 resize-none focus:border-teal-400/30 focus:ring-1 focus:ring-teal-400/20 focus:outline-none transition-all"
+                          />
+                          <VoiceInput onTranscript={(text) => setData((prev) => ({ ...prev, [symptom.id]: { ...prev[symptom.id], description: prev[symptom.id].description ? prev[symptom.id].description + " " + text : text } }))} />
+                        </div>
                         {/* Pulsing brain indicator */}
                         {entry.description.trim().length > 0 && (
                           <div className="flex items-center gap-1.5 mt-2">

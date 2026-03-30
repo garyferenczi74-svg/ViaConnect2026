@@ -1,6 +1,8 @@
 "use client";
 
 import { Sparkles } from "lucide-react";
+import { ListenToSummary } from "./ListenToSummary";
+import { ShareablePatternCard } from "./ShareablePatternCard";
 
 interface MasterPatternSummary {
   name: string;
@@ -33,7 +35,13 @@ export function ExecutiveSummaryHero({ executiveSummary, masterPatterns, overall
           <h2 className="text-xl md:text-2xl font-bold text-white">Your Blueprint</h2>
         </div>
 
-        <p className="text-sm text-white/60 leading-relaxed mb-4">{executiveSummary}</p>
+        <p className="text-sm text-white/60 leading-relaxed mb-3">{executiveSummary}</p>
+
+        {/* Listen + Share */}
+        <div className="flex flex-wrap items-center gap-2 mb-4">
+          <ListenToSummary summaryText={executiveSummary} />
+          <ShareablePatternCard patterns={masterPatterns} burdenScore={overallBurdenScore} />
+        </div>
 
         {/* Master pattern pills */}
         {masterPatterns.length > 0 && (

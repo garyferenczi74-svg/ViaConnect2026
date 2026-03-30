@@ -12,6 +12,7 @@ import { ProactiveInsightCard } from '@/components/ui/ProactiveInsightCard';
 import { Coins, Flame, Gift, TrendingUp, Pill, Check, ArrowRight, Sunrise, Sun, Moon, Clock, RefreshCw, Lightbulb } from 'lucide-react';
 import { QuickReassessmentCard } from '@/components/dashboard/QuickReassessmentCard';
 import { DailyUltrathinkTip } from '@/components/dashboard/DailyUltrathinkTip';
+import { PatternCirclePreview } from '@/components/community/PatternCirclePreview';
 import type { LucideIcon } from 'lucide-react';
 
 /* ─── Typewriter Hook ──────────────────────────────────────────────────────── */
@@ -390,6 +391,11 @@ export default function ConsumerDashboard() {
       {/* ── 30-Day Check-In ────────────────────────────────────────── */}
       <section className="px-4 lg:px-6">
         <QuickReassessmentCard daysElapsed={21} />
+      </section>
+
+      {/* ── Pattern Circles (Coming Soon) ──────────────────────────── */}
+      <section className="px-4 lg:px-6">
+        <PatternCirclePreview userPatterns={["HPA Axis Dysregulation", "Methylation Pathway"]} />
       </section>
 
       {/* ── Retake Assessment ─────────────────────────────────────────── */}

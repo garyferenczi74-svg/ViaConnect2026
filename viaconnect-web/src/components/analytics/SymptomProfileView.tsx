@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { ReportLoadAnimation } from "./ReportLoadAnimation";
 import {
   ChevronDown, TrendingUp, Search, Info, RefreshCw, Check, ArrowRight,
   ShieldAlert, Stethoscope, Leaf, Activity, Brain, Heart, Flame,
@@ -38,12 +39,17 @@ const STATUS_COLORS: Record<string, string> = { optimal: "bg-teal-400", suboptim
 
 /* ═══ MAIN VIEW ═══ */
 export function SymptomProfileView({ data, caqCompleted }: { data: SymptomProfileData | null; caqCompleted: boolean }) {
+  const [showLoadAnimation, setShowLoadAnimation] = useState(true);
+  const handleAnimationComplete = useCallback(() => setShowLoadAnimation(false), []);
+
   if (!caqCompleted || !data || data.status === "no_data") {
     return (<div className="p-6 md:p-8 text-center py-16"><Search className="w-10 h-10 text-white/15 mx-auto mb-4" strokeWidth={1.5} /><p className="text-base text-white/40 mb-2">Symptom Profile Not Yet Available</p><p className="text-xs text-white/25 mb-6 max-w-md mx-auto">Complete your Clinical Assessment Questionnaire to generate your personalized Symptom Profile.</p><a href="/onboarding/i-caq-intro" className="min-h-[44px] inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-teal-400/10 border border-teal-400/30 text-teal-400 text-sm font-medium">Start Assessment <ArrowRight className="w-4 h-4" strokeWidth={1.5} /></a></div>);
   }
 
   return (
     <div className="p-5 md:p-8 space-y-8">
+      {/* Report load celebration */}
+      {showLoadAnimation && <ReportLoadAnimation onComplete={handleAnimationComplete} />}
       {/* HEADER WITH RETAKE BUTTON */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-2">
         <div><h3 className="text-base md:text-lg font-semibold text-white">Symptom Profile</h3><p className="text-xs text-white/30 mt-0.5">AI-powered multi-disciplinary analysis</p></div>

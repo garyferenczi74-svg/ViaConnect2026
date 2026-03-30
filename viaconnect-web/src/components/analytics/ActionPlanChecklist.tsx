@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Zap, Calendar, CalendarDays, Repeat, Check } from "lucide-react";
+import { Zap, Calendar, CalendarDays, CalendarPlus, Repeat, Check } from "lucide-react";
+import { downloadICS } from "@/lib/calendar/add-to-calendar";
 import type { LucideIcon } from "lucide-react";
 
 interface ActionItem {
@@ -60,13 +61,20 @@ function ActionChecklistItem({ item, accent, onToggle }: { item: ActionItem; acc
           {item.action}
         </p>
         <p className="text-xs text-white/25 mt-0.5">{item.rationale}</p>
-        <div className="flex gap-2 mt-1.5">
+        <div className="flex items-center gap-2 mt-1.5">
           <span className={`text-[9px] px-2 py-0.5 rounded-full ${CATEGORY_STYLES[item.category] || "bg-orange-400/10 text-orange-400"}`}>
             {item.category.replace("_", " ")}
           </span>
           <span className="text-[9px] px-2 py-0.5 rounded-full bg-white/5 text-white/20">
             {item.expectedTimeframe}
           </span>
+          <button
+            onClick={(e) => { e.stopPropagation(); downloadICS(item); }}
+            className="min-h-[24px] px-2 py-0.5 rounded text-[10px] text-white/20 hover:text-white/40 transition-colors flex items-center gap-1"
+          >
+            <CalendarPlus className="w-3 h-3" strokeWidth={1.5} />
+            Calendar
+          </button>
         </div>
       </div>
     </div>

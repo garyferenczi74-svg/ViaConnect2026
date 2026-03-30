@@ -304,6 +304,26 @@ body {
 }
 .animate-fade-in { animation: fade-in 0.5s ease-out; }
 
+/* ─── Accessibility: High Contrast ─────────────────────────────────────────── */
+
+.high-contrast {
+  --bg-primary: #000000;
+  --text-primary: #FFFFFF;
+  --border-primary: #FFFFFF;
+}
+
+/* ─── Accessibility: Large Text ────────────────────────────────────────────── */
+
+.large-text {
+  font-size: 118%;
+}
+
+.large-text input,
+.large-text textarea,
+.large-text select {
+  font-size: 1.1rem;
+}
+
 /* Instrument Sans for Helix Rewards */
 @import url('https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap');
 
