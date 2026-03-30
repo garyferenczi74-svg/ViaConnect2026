@@ -29,6 +29,7 @@ import {
   CheckCircle,
   Clock,
   Award,
+  RefreshCw,
 } from "lucide-react";
 import { PageTransition, StaggerChild, MotionCard, ChartReveal } from "@/lib/motion";
 
@@ -576,7 +577,8 @@ export default function AnalyticsPage() {
         <Card className="p-5">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-semibold text-white">Symptom Profile</h3>
-            <Link href="/profile/assessment" className="text-xs text-copper hover:underline">
+            <Link href="/onboarding/i-caq-intro" className="inline-flex items-center gap-2 min-h-[44px] px-5 py-2.5 rounded-xl bg-orange-400/10 border border-orange-400/25 text-orange-400 text-sm font-medium hover:bg-orange-400/15 hover:border-orange-400/35 active:bg-orange-400/20 transition-all cursor-pointer no-underline">
+              <RefreshCw className="w-4 h-4" strokeWidth={1.5} />
               Retake Assessment
             </Link>
           </div>
