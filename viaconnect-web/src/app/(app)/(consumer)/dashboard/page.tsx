@@ -158,6 +158,25 @@ export default function ConsumerDashboard() {
         </div>
       </section>
 
+      {/* ── Daily Scores ──────────────────────────────────────────────── */}
+      <section className="px-4 lg:px-6 pb-6">
+        <p className="text-overline mb-4">Daily Scores</p>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {DAILY_SCORES.map((score) => (
+            <GlassCard key={score.label} variant="score" hover={false} className="flex items-center justify-center py-5">
+              <ScoreDisplay
+                value={score.value}
+                label={score.label}
+                color={score.color}
+                trend={score.trend}
+                trendValue={score.trendValue}
+                size="sm"
+              />
+            </GlassCard>
+          ))}
+        </div>
+      </section>
+
       {/* ── AI Proactive Insight ─────────────────────────────────────── */}
       <section className="px-4 lg:px-6 pb-2">
         <ProactiveInsightCard
@@ -179,25 +198,6 @@ export default function ConsumerDashboard() {
         <div className="flex flex-col gap-3">
           {DAILY_ACTIONS.map((action, i) => (
             <ActionCard key={i} {...action} />
-          ))}
-        </div>
-      </section>
-
-      {/* ── Daily Scores ──────────────────────────────────────────────── */}
-      <section className="px-4 lg:px-6 pb-6">
-        <p className="text-overline mb-4">Daily Scores</p>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {DAILY_SCORES.map((score) => (
-            <GlassCard key={score.label} variant="score" hover={false} className="flex items-center justify-center py-5">
-              <ScoreDisplay
-                value={score.value}
-                label={score.label}
-                color={score.color}
-                trend={score.trend}
-                trendValue={score.trendValue}
-                size="sm"
-              />
-            </GlassCard>
           ))}
         </div>
       </section>
