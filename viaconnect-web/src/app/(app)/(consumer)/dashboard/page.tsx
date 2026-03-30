@@ -5,12 +5,11 @@ import { GlassCard } from '@/components/ui/GlassCard';
 import { ScoreDisplay } from '@/components/ui/ScoreDisplay';
 import { ActionCard } from '@/components/ui/ActionCard';
 import { ProtocolCard } from '@/components/ui/ProtocolCard';
-import { SupplementProtocolSection } from '@/components/protocol/SupplementProtocolSection';
 import { GeneticInsightCard } from '@/components/ui/GeneticInsightCard';
 import { VCButton } from '@/components/ui/VCButton';
 import { PluginCTA } from '@/components/ui/PluginCTA';
 import { ProactiveInsightCard } from '@/components/ui/ProactiveInsightCard';
-import { Coins, Flame, Gift, TrendingUp } from 'lucide-react';
+import { Coins, Flame, Gift, TrendingUp, Pill, Check, ArrowRight } from 'lucide-react';
 
 /* ─── Typewriter Hook ──────────────────────────────────────────────────────── */
 
@@ -218,44 +217,52 @@ export default function ConsumerDashboard() {
         />
       </section>
 
-      {/* ── Supplement Protocol (3-Tab Premium Section) ──────────────── */}
+      {/* ── Active Protocol (Condensed — links to /supplements for full view) ── */}
       <section className="px-4 lg:px-6 pb-6">
-        <SupplementProtocolSection
-          supplements={[
-            { id: '1', productName: 'BioB Fusion\u2122 Methylated B Complex', dosage: '1 capsule', deliveryMethod: 'Liposomal', priority: 'essential', takenToday: true },
-            { id: '2', productName: 'Liposomal Vitamin D3 + K2 (MK-7)', dosage: '5000 IU', deliveryMethod: 'Liposomal', priority: 'essential', takenToday: false },
-            { id: '3', productName: 'Algal Omega-3 DHA/EPA', dosage: '1000mg', priority: 'essential', takenToday: false },
-          ]}
-          protocol={{
-            morning: [
-              { id: '1', productName: 'BioB Fusion\u2122 Methylated B Complex', dosage: '1 capsule', deliveryMethod: 'Liposomal', priority: 'essential', dataSourceTag: 'caq', takenToday: true },
-              { id: '2', productName: 'Liposomal Vitamin D3 + K2 (MK-7)', dosage: '5000 IU', deliveryMethod: 'Liposomal', priority: 'essential', dataSourceTag: 'caq', takenToday: false },
-              { id: '3', productName: 'Algal Omega-3 DHA/EPA', dosage: '1000mg', priority: 'essential', dataSourceTag: 'caq', takenToday: false },
-            ],
-            afternoon: [
-              { id: '4', productName: 'Liposomal CoQ10 (Ubiquinol)', dosage: '200mg', deliveryMethod: 'Liposomal', priority: 'recommended', dataSourceTag: 'caq', takenToday: false },
-            ],
-            evening: [
-              { id: '5', productName: 'Liposomal Magnesium L-Threonate', dosage: '400mg', deliveryMethod: 'Liposomal', priority: 'essential', dataSourceTag: 'caq', takenToday: false },
-              { id: '6', productName: 'Melatonin (Extended Release)', dosage: '3mg', priority: 'optional', dataSourceTag: 'caq', takenToday: false },
-            ],
-            asNeeded: [
-              { id: '7', productName: 'L-Theanine', dosage: '200mg', priority: 'optional', dataSourceTag: 'caq', takenToday: false },
-            ],
-            gapAnalysis: { gaps: [{ nutrient: 'Vitamin D', deficit: '38% below target' }, { nutrient: 'Omega-3', deficit: '55% gap' }] },
-            recommendations: [
-              { id: 'r1', productName: 'Liposomal NAC (N-Acetyl Cysteine)', dosage: '600mg', timing: 'Morning', deliveryMethod: 'Liposomal', priority: 'recommended', reason: 'Glutathione precursor for detoxification and antioxidant defense', evidenceLevel: 'strong', dataSourceTag: 'caq' },
-              { id: 'r2', productName: 'Micellar Ashwagandha (KSM-66\u00ae)', dosage: '600mg', timing: 'Afternoon', deliveryMethod: 'Micellar', priority: 'recommended', reason: 'Adaptogenic stress support based on elevated stress scores', evidenceLevel: 'strong', dataSourceTag: 'caq' },
-            ],
-          }}
-          medications={[
-            { id: 'm1', name: 'None' },
-          ]}
-          allergies={['None']}
-          adverseReactions=""
-          interactions={[]}
-          tier={1}
-        />
+        <div className="rounded-2xl bg-white/[0.03] border border-white/[0.08] overflow-hidden">
+          <div className="flex items-center justify-between p-5 md:p-6 border-b border-white/5">
+            <div className="flex items-center gap-3">
+              <div className="relative flex-shrink-0"><div className="absolute blur-xl -inset-1.5 rounded-2xl opacity-60" style={{ backgroundColor: "#2DA5A033" }} /><div className="relative w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: "linear-gradient(135deg, #2DA5A033, #2DA5A01A, transparent)", border: "1px solid #2DA5A026" }}><Pill className="w-5 h-5 text-teal-400" strokeWidth={1.5} /></div></div>
+              <div>
+                <h2 className="text-base md:text-lg font-semibold text-white">Active Protocol</h2>
+                <p className="text-xs text-white/30">Your daily supplement schedule</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-20 h-2 rounded-full bg-white/5 overflow-hidden"><div className="h-full rounded-full bg-teal-400 transition-all" style={{ width: "14%" }} /></div>
+              <span className="text-xs font-medium text-teal-400">14%</span>
+            </div>
+          </div>
+          <div className="divide-y divide-white/[0.03]">
+            {[
+              { name: "BioB Fusion\u2122 Methylated B Complex", dose: "1 capsule", time: "Morning", taken: true },
+              { name: "Liposomal Vitamin D3 + K2", dose: "5000 IU", time: "Morning", taken: false },
+              { name: "Algal Omega-3 DHA/EPA", dose: "1000mg", time: "Morning", taken: false },
+              { name: "Liposomal CoQ10 (Ubiquinol)", dose: "200mg", time: "Afternoon", taken: false },
+              { name: "Liposomal Magnesium L-Threonate", dose: "400mg", time: "Evening", taken: false },
+              { name: "Melatonin (Extended Release)", dose: "3mg", time: "Evening", taken: false },
+            ].map((item, i) => (
+              <div key={i} className="flex items-center gap-3 px-5 py-3 hover:bg-white/[0.02] transition-colors">
+                <div className="min-w-[44px] min-h-[44px] flex items-center justify-center">
+                  {item.taken ? (
+                    <div className="w-5 h-5 rounded-full bg-teal-400/20 border border-teal-400/40 flex items-center justify-center"><Check className="w-3 h-3 text-teal-400" strokeWidth={2.5} /></div>
+                  ) : (
+                    <div className="w-5 h-5 rounded-full border-2 border-white/15" />
+                  )}
+                </div>
+                <p className={`flex-1 text-sm ${item.taken ? "text-white/30 line-through" : "text-white/70"}`}>{item.name}</p>
+                <span className="text-[10px] text-white/20">{item.dose}</span>
+                <span className="text-[10px] text-white/15">{item.time}</span>
+              </div>
+            ))}
+          </div>
+          <div className="p-4 md:p-5 border-t border-white/5 flex items-center justify-between">
+            <span className="text-xs text-white/25">+1 more item</span>
+            <a href="/supplements" className="min-h-[44px] px-4 py-2 rounded-lg bg-teal-400/10 border border-teal-400/30 text-teal-400 text-xs font-medium hover:bg-teal-400/15 transition-all flex items-center gap-1.5">
+              View Full Protocol <ArrowRight className="w-3.5 h-3.5" strokeWidth={1.5} />
+            </a>
+          </div>
+        </div>
       </section>
 
       {/* ── Helix Rewards ─────────────────────────────────────────────── */}
