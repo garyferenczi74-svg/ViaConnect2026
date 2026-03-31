@@ -13,6 +13,7 @@ import { Coins, Flame, Gift, TrendingUp, Pill, Check, ArrowRight, Sunrise, Sun, 
 import { QuickReassessmentCard } from '@/components/dashboard/QuickReassessmentCard';
 import { DailyUltrathinkTip } from '@/components/dashboard/DailyUltrathinkTip';
 import { PatternCirclePreview } from '@/components/community/PatternCirclePreview';
+import { DashboardPeptideSection } from '@/components/dashboard/DashboardPeptideSection';
 import type { LucideIcon } from 'lucide-react';
 
 /* ─── Typewriter Hook ──────────────────────────────────────────────────────── */
@@ -378,6 +379,18 @@ export default function ConsumerDashboard() {
             </div>
           </VCButton>
         </GlassCard>
+      </section>
+
+      {/* ── Peptide Protocol (Standalone) ──────────────────────────── */}
+      <section className="px-4 lg:px-6">
+        <DashboardPeptideSection
+          masterPatterns={[
+            { name: "HPA Axis Dysregulation", symptomsInvolved: ["fatigue", "stress", "sleep"] },
+            { name: "Neuroinflammation Pattern", symptomsInvolved: ["brain fog", "memory", "focus"] },
+          ]}
+          helixBalance={1250}
+          caqCompleted={true}
+        />
       </section>
 
       {/* ── Daily Ultrathink Tip ────────────────────────────────────── */}
