@@ -8,6 +8,8 @@ import { ArrowLeft, ArrowRight, Loader2, Plus, X, Sparkles, Zap, Brain, Moon, Fl
 import { ProgressMotivator } from "@/components/caq/ProgressMotivator";
 import { VoiceInput } from "@/components/caq/VoiceInput";
 import { CalmingHelixBackground } from "@/components/caq/CalmingHelixBackground";
+import { BodyTypeSelector } from "@/components/caq/BodyTypeSelector";
+import { shouldShowBodyTypeSelector } from "@/lib/caq/body-type-trigger";
 import { CONVERSATIONAL_LABELS } from "@/config/caq-conversational-labels";
 import { SMART_PLACEHOLDERS, DEFAULT_PLACEHOLDER } from "@/config/caq-smart-placeholders";
 import toast from "react-hot-toast";
@@ -379,6 +381,7 @@ export default function OnboardingStepPage() {
   const [weightUnit, setWeightUnit] = useState<"kg" | "lbs">("lbs");
   const [heightFt, setHeightFt] = useState("");
   const [heightIn, setHeightIn] = useState("");
+  const [bodyType, setBodyType] = useState<string | null>(null);
 
   // Phase 1b state — Health Concerns & Family History
   const [healthConcerns, setHealthConcerns] = useState<string[]>([]);
@@ -540,7 +543,7 @@ export default function OnboardingStepPage() {
     try {
       // Save current phase
       switch (stepId) {
-        case "1": await savePhase("1", demographics); break;
+        case "1": await savePhase("1", { ...demographics, bodyType }); break;
         case "1b": await savePhase("6", { healthConcerns, familyHistory }); break;
         case "2a": await savePhase("7", symptomsPhysical); break;
         case "2b": await savePhase("8", symptomsNeuro); break;
@@ -934,6 +937,16 @@ export default function OnboardingStepPage() {
                 )}
               </div>
             </div>
+
+            {/* Conditional Body Type Selector — appears when underweight */}
+            {shouldShowBodyTypeSelector({
+              height: demographics.height,
+              weight: demographics.weight,
+              heightUnit: heightUnit === "ft" ? "ft" : "cm",
+              weightUnit: weightUnit,
+            }) && (
+              <BodyTypeSelector value={bodyType} onChange={setBodyType} />
+            )}
 
           </div>
         )}

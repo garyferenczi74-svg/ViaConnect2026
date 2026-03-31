@@ -44,6 +44,7 @@ export async function fusePatientData(userId: string): Promise<PatientContext> {
     adverseReactions: (phase4.adverseReactions as string) || "",
     medications: meds,
     supplements: supps,
+    bodyType: (profile.body_type as string) || null,
     geneticData: null, // Populate when genetic data available
     labData: null, // Populate when lab data available
     dataTier,

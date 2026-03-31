@@ -62,6 +62,7 @@ export interface PatientContext {
   supplements: Array<{ name: string; dosage?: string; delivery_method?: string }>;
   geneticData: Record<string, unknown> | null;
   labData: Array<Record<string, unknown>> | null;
+  bodyType: string | null;
   dataTier: 1 | 2 | 3;
   dataCompleteness: number;
 }
@@ -74,6 +75,7 @@ Execute each step in order.
 
 STEP 1 \u2014 ABSORB
 Patient: age ${context.age || "unknown"}, sex ${context.sex || "unknown"}, BMI ${context.bmi || "unknown"}
+Body type: ${context.bodyType || "not specified"}${context.bodyType === "ectomorph" ? " \u2192 Hardgainer frame: prioritize calorie surplus, mitochondrial energy, slow-burn recovery" : context.bodyType === "mesomorph" ? " \u2192 Athletic frame currently underweight: investigate root cause (stress, illness, lifestyle), focus recovery" : context.bodyType === "endomorph" ? " \u2192 Wider frame but underweight: high-signal for metabolic, hormonal, or health-related root pattern" : ""}
 Physical symptoms: ${JSON.stringify(context.symptomsPhysical)}
 Neurological symptoms: ${JSON.stringify(context.symptomsNeurological)}
 Emotional symptoms: ${JSON.stringify(context.symptomsEmotional)}
