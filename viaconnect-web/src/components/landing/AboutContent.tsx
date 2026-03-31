@@ -74,7 +74,7 @@ export function AboutContent() {
 
       <TabP>&ldquo;This is not a supplement company. This is a health company that happens to make the best supplements you have ever taken&mdash;because they were designed for the only genome that matters: yours.&rdquo;</TabP>
 
-      <TabCTA text="Join the Precision Health Revolution \u2192 Start Your Journey Today" />
+      <TabCTA text={"Join the Precision Health Revolution\nStart Your Journey Today"} />
 
       <TabAccent>&ldquo;Your DNA has been waiting your whole life for you to read it. Today is the day.&rdquo;</TabAccent>
     </div>
