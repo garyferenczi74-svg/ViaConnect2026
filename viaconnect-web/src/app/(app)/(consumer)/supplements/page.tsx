@@ -11,6 +11,7 @@ import type { LucideIcon } from "lucide-react";
 import { ProtocolConfidenceBadge } from "@/components/protocol/ProtocolConfidenceBadge";
 import { PractitionerDisclaimer } from "@/components/protocol/PractitionerDisclaimer";
 import { DataSourceTag } from "@/components/protocol/DataSourceTag";
+import { PeptideProtocolTab } from "@/components/protocol/PeptideProtocolTab";
 
 function PIcon({ icon: Icon, color, size = "md" }: { icon: LucideIcon; color: string; size?: "sm" | "md" | "lg" }) {
   const s = size === "lg" ? { box: "w-14 h-14", ico: "w-7 h-7", glow: "blur-2xl -inset-2" } : size === "sm" ? { box: "w-9 h-9", ico: "w-4 h-4", glow: "blur-lg -inset-1" } : { box: "w-12 h-12", ico: "w-5 h-5", glow: "blur-xl -inset-1.5" };
@@ -216,6 +217,20 @@ export default function SupplementsPage() {
             </div>
           </div>
           <div className="text-center pt-4"><a href="/shop" className="min-h-[48px] inline-flex items-center gap-2 px-6 py-3 rounded-xl border border-teal-400/25 hover:border-teal-400/40 text-white font-semibold text-sm hover:shadow-[0_0_25px_rgba(45,165,160,0.1)] transition-all duration-300" style={{ background: "linear-gradient(135deg, rgba(45,165,160,0.15), rgba(183,94,24,0.15))" }}><ShoppingBag className="w-4 h-4 text-teal-400" strokeWidth={1.5} /> Browse Full Catalog <ArrowRight className="w-4 h-4" strokeWidth={1.5} /></a></div>
+        </div>
+      </Section>
+
+      {/* ═══ 6. PEPTIDE PROTOCOL ═══ */}
+      <Section icon={FlaskConical} iconColor="#A855F7" title="Peptide Protocol" subtitle="AI-personalized FarmCeutica\u2122 oral peptide recommendations">
+        <div className="p-5 md:p-6">
+          <PeptideProtocolTab
+            masterPatterns={[
+              { name: "HPA Axis Dysregulation", symptomsInvolved: ["fatigue", "stress", "sleep"] },
+              { name: "Neuroinflammation Pattern", symptomsInvolved: ["brain fog", "memory", "focus"] },
+            ]}
+            helixBalance={1250}
+            caqCompleted={true}
+          />
         </div>
       </Section>
 
