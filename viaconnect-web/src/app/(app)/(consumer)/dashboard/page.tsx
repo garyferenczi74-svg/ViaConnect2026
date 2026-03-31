@@ -14,6 +14,9 @@ import { QuickReassessmentCard } from '@/components/dashboard/QuickReassessmentC
 import { DailyUltrathinkTip } from '@/components/dashboard/DailyUltrathinkTip';
 import { PatternCirclePreview } from '@/components/community/PatternCirclePreview';
 import { DashboardPeptideSection } from '@/components/dashboard/DashboardPeptideSection';
+import { DashboardSidebar } from '@/components/dashboard/DashboardSidebar';
+import { DashboardMobileNav } from '@/components/dashboard/DashboardMobileNav';
+import { useActiveSection } from '@/hooks/useActiveSection';
 import type { LucideIcon } from 'lucide-react';
 
 /* ─── Typewriter Hook ──────────────────────────────────────────────────────── */
@@ -152,8 +155,8 @@ function ActiveProtocolFull() {
           <div className="flex items-center gap-3">
             <PIcon icon={Pill} color="#2DA5A0" size="md" />
             <div>
-              <h2 className="text-base md:text-lg font-bold text-white">Active Protocol</h2>
-              <p className="text-xs text-white/30">Your daily supplement schedule</p>
+              <h2 className="text-base md:text-lg font-bold text-white">Supplement Protocol</h2>
+              <p className="text-xs text-white/30">GeneX360\u2122 nutraceuticals</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -213,13 +216,35 @@ export default function ConsumerDashboard() {
   const greeting = `${getGreeting()}, ${userName}`;
   const { display, done } = useTypewriter(greeting, 40);
 
+  const activeSection = useActiveSection([
+    "bio-optimization-score",
+    "daily-scores",
+    "health-intelligence",
+    "supplement-protocol",
+    "peptide-protocol",
+    "genetics-section",
+    "wellness-analytics",
+  ]);
+
   return (
     <div
       className="min-h-screen w-full text-white overflow-x-hidden"
       style={{ background: 'var(--gradient-hero)' }}
     >
+      {/* ── Mobile Section Nav ────────────────────────────────────────── */}
+      <div className="px-4 lg:px-6">
+        <DashboardMobileNav activeSection={activeSection} caqCompleted={true} hasPeptideRecs={true} />
+      </div>
+
+      <div className="flex gap-6 px-4 lg:px-6">
+        {/* ── Desktop Sidebar ──────────────────────────────────────────── */}
+        <DashboardSidebar activeSection={activeSection} caqCompleted={true} hasPeptideRecs={true} />
+
+        {/* ── Main Content ─────────────────────────────────────────────── */}
+        <div className="flex-1 min-w-0">
+
       {/* ── Greeting Section ──────────────────────────────────────────── */}
-      <section className="px-4 lg:px-6 pt-6 pb-2">
+      <section className="pt-6 pb-2">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-heading-2" style={{ color: '#FFFFFF' }}>
@@ -239,7 +264,7 @@ export default function ConsumerDashboard() {
       </section>
 
       {/* ── Hero Score ────────────────────────────────────────────────── */}
-      <section className="flex justify-center py-6">
+      <section id="bio-optimization-score" className="flex justify-center py-6">
         <ScoreDisplay
           value={87}
           maxValue={100}
@@ -274,7 +299,7 @@ export default function ConsumerDashboard() {
       </section>
 
       {/* ── Daily Scores ──────────────────────────────────────────────── */}
-      <section className="px-4 lg:px-6 pb-6">
+      <section id="daily-scores" className="px-4 lg:px-6 pb-6">
         <p className="text-overline mb-4">Daily Scores</p>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {DAILY_SCORES.map((score) => (
@@ -293,7 +318,7 @@ export default function ConsumerDashboard() {
       </section>
 
       {/* ── AI Proactive Insight ─────────────────────────────────────── */}
-      <section className="px-4 lg:px-6 pb-2">
+      <section id="health-intelligence" className="px-4 lg:px-6 pb-2">
         <ProactiveInsightCard
           type="plan_adjustment"
           title="AI adjusted your plan for today"
@@ -317,8 +342,8 @@ export default function ConsumerDashboard() {
         </div>
       </section>
 
-      {/* ── Insights of the Day ────────────────────────────────── */}
-      <section className="px-4 lg:px-6 pb-6">
+      {/* ── Insights of the Day / Genetics ────────────────────────── */}
+      <section id="genetics-section" className="px-4 lg:px-6 pb-6">
         <p className="text-overline mb-4">Insights of the Day</p>
         <GeneticInsightCard
           gene="MTHFR"
@@ -332,8 +357,8 @@ export default function ConsumerDashboard() {
         />
       </section>
 
-      {/* ── Active Protocol (Full Daily Schedule) ──────────────────────── */}
-      <section className="px-4 lg:px-6 pb-6">
+      {/* ── Supplement Protocol (Full Daily Schedule) ──────────────────── */}
+      <section id="supplement-protocol" className="px-4 lg:px-6 pb-6">
         <ActiveProtocolFull />
       </section>
 
@@ -382,7 +407,7 @@ export default function ConsumerDashboard() {
       </section>
 
       {/* ── Peptide Protocol (Standalone) ──────────────────────────── */}
-      <section className="px-4 lg:px-6">
+      <section id="peptide-protocol" className="px-4 lg:px-6">
         <DashboardPeptideSection
           masterPatterns={[
             { name: "HPA Axis Dysregulation", symptomsInvolved: ["fatigue", "stress", "sleep"] },
@@ -393,8 +418,8 @@ export default function ConsumerDashboard() {
         />
       </section>
 
-      {/* ── Daily Ultrathink Tip ────────────────────────────────────── */}
-      <section className="px-4 lg:px-6">
+      {/* ── Daily Ultrathink Tip / Wellness Analytics ──────────────── */}
+      <section id="wellness-analytics" className="px-4 lg:px-6">
         <DailyUltrathinkTip tip={{
           content: "Your symptom pattern suggests morning cortisol may be a factor. Try 10 minutes of sunlight exposure within 30 minutes of waking to support your circadian rhythm.",
           sourcePattern: "HPA axis + circadian"
@@ -415,6 +440,9 @@ export default function ConsumerDashboard() {
       <section className="px-4 lg:px-6 pb-8">
         <RetakeAssessmentCard context="dashboard" />
       </section>
+
+        </div>{/* end main content */}
+      </div>{/* end flex layout */}
     </div>
   );
 }
