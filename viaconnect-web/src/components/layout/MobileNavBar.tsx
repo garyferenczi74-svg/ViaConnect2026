@@ -6,7 +6,7 @@ import {
   LayoutDashboard, Dna, Pill, ShoppingBag, Coins, MessageSquare,
   User as UserIcon, Users, ClipboardList, BarChart3, AlertTriangle,
   FileText, Brain, Settings, Leaf, Activity, Calendar, Shield, Upload,
-  Plug, Newspaper, BookOpen, ChevronLeft, ChevronRight,
+  Plug, Newspaper, BookOpen, FlaskConical, ChevronLeft, ChevronRight,
 } from 'lucide-react';
 import { useRef } from 'react';
 
@@ -18,6 +18,7 @@ const PORTAL_NAV: Record<string, NavItem[]> = {
     { href: '/analytics', label: 'Analytics', icon: BarChart3 },
     { href: '/genetics', label: 'Genetics', icon: Dna },
     { href: '/supplements', label: 'Supplement Protocol', icon: Pill },
+    { href: '/peptide-protocol', label: 'Peptides', icon: FlaskConical },
     { href: '/plugins', label: 'Plugins', icon: Plug },
     { href: '/wearables', label: 'Wearables Data', icon: Activity },
     { href: '/helix/arena', label: 'Helix Rewards', icon: Coins },

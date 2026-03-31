@@ -13,9 +13,6 @@ import { Coins, Flame, Gift, TrendingUp, Pill, Check, ArrowRight, Sunrise, Sun, 
 import { QuickReassessmentCard } from '@/components/dashboard/QuickReassessmentCard';
 import { DailyUltrathinkTip } from '@/components/dashboard/DailyUltrathinkTip';
 import { PatternCirclePreview } from '@/components/community/PatternCirclePreview';
-import { DashboardPeptideSection } from '@/components/dashboard/DashboardPeptideSection';
-import { DashboardSidebar } from '@/components/dashboard/DashboardSidebar';
-import { DashboardMobileNav } from '@/components/dashboard/DashboardMobileNav';
 import type { LucideIcon } from 'lucide-react';
 
 /* ─── Typewriter Hook ──────────────────────────────────────────────────────── */
@@ -154,8 +151,8 @@ function ActiveProtocolFull() {
           <div className="flex items-center gap-3">
             <PIcon icon={Pill} color="#2DA5A0" size="md" />
             <div>
-              <h2 className="text-base md:text-lg font-bold text-white">Supplement Protocol</h2>
-              <p className="text-xs text-white/30">GeneX360\u2122 nutraceuticals</p>
+              <h2 className="text-base md:text-lg font-bold text-white">Active Protocol</h2>
+              <p className="text-xs text-white/30">Your daily supplement schedule</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -215,27 +212,13 @@ export default function ConsumerDashboard() {
   const greeting = `${getGreeting()}, ${userName}`;
   const { display, done } = useTypewriter(greeting, 40);
 
-  const [activeSection, setActiveSection] = useState("bio-optimization-score");
-
   return (
     <div
       className="min-h-screen w-full text-white overflow-x-hidden"
       style={{ background: 'var(--gradient-hero)' }}
     >
-      {/* ── Mobile Section Nav ────────────────────────────────────────── */}
-      <div className="px-4 lg:px-6">
-        <DashboardMobileNav activeSection={activeSection} onSectionChange={setActiveSection} caqCompleted={true} hasPeptideRecs={true} />
-      </div>
-
-      <div className="flex gap-6 px-4 lg:px-6">
-        {/* ── Desktop Sidebar ──────────────────────────────────────────── */}
-        <DashboardSidebar activeSection={activeSection} onSectionChange={setActiveSection} caqCompleted={true} hasPeptideRecs={true} />
-
-        {/* ── Main Content — ONE section visible at a time ──────────── */}
-        <div className="flex-1 min-w-0">
-
-      {/* ── Greeting (always visible) ─────────────────────────────────── */}
-      <section className="pt-6 pb-2">
+      {/* ── Greeting Section ──────────────────────────────────────────── */}
+      <section className="px-4 lg:px-6 pt-6 pb-2">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-heading-2" style={{ color: '#FFFFFF' }}>
@@ -248,143 +231,177 @@ export default function ConsumerDashboard() {
               )}
             </h1>
             <p className="text-body-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
-              Personal Wellness Dashboard
+              Your Bio Optimization Score
             </p>
           </div>
         </div>
       </section>
 
-      {/* ═══ BIO OPTIMIZATION SCORE ═══ */}
-      {activeSection === "bio-optimization-score" && (
-        <>
-          <section className="flex justify-center py-6">
-            <ScoreDisplay value={87} maxValue={100} label="Bio Optimization" trend="up" trendValue="+3 from yesterday" color="teal" size="xl" />
-          </section>
-
-          <section className="pb-2">
-            <div className="flex flex-col sm:flex-row gap-3">
-              <PluginCTA type="wearable" navigateTo="/plugins/wearables" connectedCount={2} connectedDevices={[{ name: 'Oura Ring', icon: '\uD83D\uDC8D' }, { name: 'Apple Watch', icon: '\u231A' }]} variant="hero" />
-              <PluginCTA type="app" navigateTo="/plugins/apps" connectedCount={0} variant="hero" />
-            </div>
-          </section>
-        </>
-      )}
-
-      {/* ═══ DAILY SCORES ═══ */}
-      {activeSection === "daily-scores" && (
-        <section className="pb-6">
-          <p className="text-overline mb-4">Daily Scores</p>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {DAILY_SCORES.map((score) => (
-              <GlassCard key={score.label} variant="score" hover={false} className="flex items-center justify-center py-5">
-                <ScoreDisplay value={score.value} label={score.label} color={score.color} trend={score.trend} trendValue={score.trendValue} size="sm" />
-              </GlassCard>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* ═══ HEALTH INTELLIGENCE ═══ */}
-      {activeSection === "health-intelligence" && (
-        <>
-          <section className="pb-2">
-            <ProactiveInsightCard
-              type="plan_adjustment" title="AI adjusted your plan for today"
-              summary="NAD+ moved to morning based on poor sleep + COMT variant. Recovery score 52/100 — moderate activity recommended."
-              urgency="attention"
-              actions={[{ label: 'View Changes', route: '/supplements' }, { label: 'Ask AI Why', route: '/ai' }]}
-              geneticBadge={{ gene: 'COMT', variant: 'Val158Met' }}
-            />
-          </section>
-          <section className="pb-6">
-            <p className="text-overline mb-4">Today&apos;s Precision Actions</p>
-            <div className="flex flex-col gap-3">
-              {DAILY_ACTIONS.map((action, i) => (<ActionCard key={i} {...action} />))}
-            </div>
-          </section>
-        </>
-      )}
-
-      {/* ═══ SUPPLEMENT PROTOCOL ═══ */}
-      {activeSection === "supplement-protocol" && (
-        <section className="pb-6">
-          <ActiveProtocolFull />
-        </section>
-      )}
-
-      {/* ═══ PEPTIDE PROTOCOL ═══ */}
-      {activeSection === "peptide-protocol" && (
-        <section className="pb-6">
-          <DashboardPeptideSection
-            masterPatterns={[
-              { name: "HPA Axis Dysregulation", symptomsInvolved: ["fatigue", "stress", "sleep"] },
-              { name: "Neuroinflammation Pattern", symptomsInvolved: ["brain fog", "memory", "focus"] },
-            ]}
-            helixBalance={1250}
-            caqCompleted={true}
-          />
-        </section>
-      )}
-
-      {/* ═══ GENETICS ═══ */}
-      {activeSection === "genetics-section" && (
-        <section className="pb-6">
-          <p className="text-overline mb-4">Genetic Insights</p>
-          <GeneticInsightCard
-            gene="MTHFR" variant="C677T" rsId="rs1801133" genotype="CT" impact="Moderate"
-            insight="Your heterozygous MTHFR variant reduces methylfolate conversion by ~35%. Your MTHFR+ supplement provides the active L-methylfolate form, bypassing this enzymatic bottleneck."
-            relatedProduct="MTHFR+" productAction={() => {}}
-          />
-        </section>
-      )}
-
-      {/* ═══ WELLNESS ANALYTICS ═══ */}
-      {activeSection === "wellness-analytics" && (
-        <>
-          <section className="pb-4">
-            <DailyUltrathinkTip tip={{
-              content: "Your symptom pattern suggests morning cortisol may be a factor. Try 10 minutes of sunlight exposure within 30 minutes of waking to support your circadian rhythm.",
-              sourcePattern: "HPA axis + circadian"
-            }} />
-          </section>
-          <section className="pb-4">
-            <QuickReassessmentCard daysElapsed={21} />
-          </section>
-          <section className="pb-4">
-            <PatternCirclePreview userPatterns={["HPA Axis Dysregulation", "Methylation Pathway"]} />
-          </section>
-          <section className="pb-6">
-            <p className="text-overline mb-4">Helix Rewards</p>
-            <GlassCard variant="default" hover={false} className="flex flex-col gap-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'rgba(45, 165, 160, 0.12)' }}>
-                  <Coins size={20} style={{ color: 'var(--teal-400)' }} />
-                </div>
-                <div>
-                  <p className="text-caption" style={{ color: 'var(--text-secondary)' }}>Balance</p>
-                  <p className="text-display-md text-white" style={{ fontSize: '32px', fontWeight: 700 }}>2,847<span className="text-body-sm ml-1" style={{ color: 'var(--text-tertiary)' }}>Helix$</span></p>
-                </div>
-              </div>
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-1.5">
-                  <Flame size={16} style={{ color: '#F39C12' }} />
-                  <span className="text-caption" style={{ color: 'var(--text-secondary)' }}>12-day streak</span>
-                  <span className="text-caption font-semibold px-2 py-0.5 rounded-full" style={{ background: 'rgba(45, 165, 160, 0.12)', color: 'var(--teal-400)' }}>2x multiplier</span>
-                </div>
-              </div>
-              <VCButton variant="secondary" size="sm"><div className="flex items-center gap-2"><Gift size={14} />Helix Rewards Hub</div></VCButton>
-            </GlassCard>
-          </section>
-        </>
-      )}
-
-      {/* ── Retake Assessment (always visible at bottom) ──────────────── */}
-      <section className="pb-8">
-        <RetakeAssessmentCard context="dashboard" />
+      {/* ── Hero Score ────────────────────────────────────────────────── */}
+      <section className="flex justify-center py-6">
+        <ScoreDisplay
+          value={87}
+          maxValue={100}
+          label="Bio Optimization"
+          trend="up"
+          trendValue="+3 from yesterday"
+          color="teal"
+          size="xl"
+        />
       </section>
 
-        </div>{/* end main content */}
-      </div>{/* end flex layout */}
+      {/* ── Plugin CTAs ─────────────────────────────────────────────── */}
+      <section className="px-4 lg:px-6 pb-2">
+        <div className="flex flex-col sm:flex-row gap-3">
+          <PluginCTA
+            type="wearable"
+            navigateTo="/plugins/wearables"
+            connectedCount={2}
+            connectedDevices={[
+              { name: 'Oura Ring', icon: '💍' },
+              { name: 'Apple Watch', icon: '⌚' },
+            ]}
+            variant="hero"
+          />
+          <PluginCTA
+            type="app"
+            navigateTo="/plugins/apps"
+            connectedCount={0}
+            variant="hero"
+          />
+        </div>
+      </section>
+
+      {/* ── Daily Scores ──────────────────────────────────────────────── */}
+      <section className="px-4 lg:px-6 pb-6">
+        <p className="text-overline mb-4">Daily Scores</p>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {DAILY_SCORES.map((score) => (
+            <GlassCard key={score.label} variant="score" hover={false} className="flex items-center justify-center py-5">
+              <ScoreDisplay
+                value={score.value}
+                label={score.label}
+                color={score.color}
+                trend={score.trend}
+                trendValue={score.trendValue}
+                size="sm"
+              />
+            </GlassCard>
+          ))}
+        </div>
+      </section>
+
+      {/* ── AI Proactive Insight ─────────────────────────────────────── */}
+      <section className="px-4 lg:px-6 pb-2">
+        <ProactiveInsightCard
+          type="plan_adjustment"
+          title="AI adjusted your plan for today"
+          summary="NAD+ moved to morning based on poor sleep + COMT variant. Recovery score 52/100 — moderate activity recommended."
+          urgency="attention"
+          actions={[
+            { label: 'View Changes', route: '/supplements' },
+            { label: 'Ask AI Why', route: '/ai' },
+          ]}
+          geneticBadge={{ gene: 'COMT', variant: 'Val158Met' }}
+        />
+      </section>
+
+      {/* ── Today's Precision Actions ─────────────────────────────────── */}
+      <section className="px-4 lg:px-6 pb-6">
+        <p className="text-overline mb-4">Today&apos;s Precision Actions</p>
+        <div className="flex flex-col gap-3">
+          {DAILY_ACTIONS.map((action, i) => (
+            <ActionCard key={i} {...action} />
+          ))}
+        </div>
+      </section>
+
+      {/* ── Insights of the Day ────────────────────────────────── */}
+      <section className="px-4 lg:px-6 pb-6">
+        <p className="text-overline mb-4">Insights of the Day</p>
+        <GeneticInsightCard
+          gene="MTHFR"
+          variant="C677T"
+          rsId="rs1801133"
+          genotype="CT"
+          impact="Moderate"
+          insight="Your heterozygous MTHFR variant reduces methylfolate conversion by ~35%. Your MTHFR+ supplement provides the active L-methylfolate form, bypassing this enzymatic bottleneck."
+          relatedProduct="MTHFR+"
+          productAction={() => {}}
+        />
+      </section>
+
+      {/* ── Active Protocol (Full Daily Schedule) ──────────────────────── */}
+      <section className="px-4 lg:px-6 pb-6">
+        <ActiveProtocolFull />
+      </section>
+
+      {/* ── Helix Rewards ─────────────────────────────────────────────── */}
+      <section className="px-4 lg:px-6 pb-8">
+        <p className="text-overline mb-4">Helix Rewards</p>
+        <GlassCard variant="default" hover={false} className="flex flex-col gap-4">
+          <div className="flex items-center gap-3">
+            <div
+              className="w-10 h-10 rounded-xl flex items-center justify-center"
+              style={{ background: 'rgba(45, 165, 160, 0.12)' }}
+            >
+              <Coins size={20} style={{ color: 'var(--teal-400)' }} />
+            </div>
+            <div>
+              <p className="text-caption" style={{ color: 'var(--text-secondary)' }}>Balance</p>
+              <p className="text-display-md text-white" style={{ fontSize: '32px', fontWeight: 700 }}>
+                2,847
+                <span className="text-body-sm ml-1" style={{ color: 'var(--text-tertiary)' }}>Helix$</span>
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-1.5">
+              <Flame size={16} style={{ color: '#F39C12' }} />
+              <span className="text-caption" style={{ color: 'var(--text-secondary)' }}>
+                12-day streak
+              </span>
+              <span
+                className="text-caption font-semibold px-2 py-0.5 rounded-full"
+                style={{ background: 'rgba(45, 165, 160, 0.12)', color: 'var(--teal-400)' }}
+              >
+                2x multiplier
+              </span>
+            </div>
+          </div>
+
+          <VCButton variant="secondary" size="sm">
+            <div className="flex items-center gap-2">
+              <Gift size={14} />
+              Helix Rewards Hub
+            </div>
+          </VCButton>
+        </GlassCard>
+      </section>
+
+      {/* ── Daily Ultrathink Tip ────────────────────────────────────── */}
+      <section className="px-4 lg:px-6">
+        <DailyUltrathinkTip tip={{
+          content: "Your symptom pattern suggests morning cortisol may be a factor. Try 10 minutes of sunlight exposure within 30 minutes of waking to support your circadian rhythm.",
+          sourcePattern: "HPA axis + circadian"
+        }} />
+      </section>
+
+      {/* ── 30-Day Check-In ────────────────────────────────────────── */}
+      <section className="px-4 lg:px-6">
+        <QuickReassessmentCard daysElapsed={21} />
+      </section>
+
+      {/* ── Pattern Circles (Coming Soon) ──────────────────────────── */}
+      <section className="px-4 lg:px-6">
+        <PatternCirclePreview userPatterns={["HPA Axis Dysregulation", "Methylation Pathway"]} />
+      </section>
+
+      {/* ── Retake Assessment ─────────────────────────────────────────── */}
+      <section className="px-4 lg:px-6 pb-8">
+        <RetakeAssessmentCard context="dashboard" />
+      </section>
     </div>
   );
 }
