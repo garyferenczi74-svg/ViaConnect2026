@@ -431,7 +431,8 @@ function RetakeAssessmentCard({ context = "dashboard" }: { context?: "dashboard"
             </a>
             <button onClick={() => setConfirming(false)} className="min-h-[36px] px-2.5 py-1.5 rounded-lg bg-white/5 border border-white/10 text-white/40 text-[11px] hover:bg-white/[0.08] transition-all">Cancel</button>
           </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
