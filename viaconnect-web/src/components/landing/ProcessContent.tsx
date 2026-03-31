@@ -30,8 +30,8 @@ export function ProcessContent() {
       <div className="rounded-xl bg-gradient-to-r from-[#B87333]/20 to-[#D4923A]/20 border border-[#B87333]/30 p-6 my-8 text-center">
         <p className="text-2xl font-bold text-white">GeneX360&trade; COMPLETE</p>
         <p className="text-4xl font-bold text-[#06B6D4] mt-2">$988.88</p>
-        <p className="text-sm text-white/60 mt-2">Save $1,473 (59.8%) &mdash; 6 months Platinum included &mdash; HSA/FSA Eligible</p>
-        <p className="text-xs text-white/40 mt-1">Ships in 4 days &mdash; Results 7&ndash;14 days</p>
+        <p className="text-sm text-white/60 mt-2">Save $1,473 (59.8%) , 6 months Platinum included , HSA/FSA Eligible</p>
+        <p className="text-xs text-white/40 mt-1">Ships in 4 days , Results 7 to14 days</p>
       </div>
 
       <TabH2>ViaConnect&trade; Membership</TabH2>
@@ -100,10 +100,10 @@ export function ProcessContent() {
       </div>
 
       <TabH2>HSA/FSA Eligible</TabH2>
-      <TabP>Truemed integration. LMN generated in-app. 25&ndash;40% effective cost reduction. $988.88 becomes $593&ndash;$741.</TabP>
+      <TabP>Truemed integration. LMN generated in-app. 25 to40% effective cost reduction. $988.88 becomes $593 to$741.</TabP>
 
       <TabH2>Subscribe &amp; Save</TabH2>
-      <TabP>$89&ndash;$189/month (20% off). Genetically-calibrated. Auto-adjusted by AI.</TabP>
+      <TabP>$89 to$189/month (20% off). Genetically-calibrated. Auto-adjusted by AI.</TabP>
 
       <TabH2>What Every Member Gets</TabH2>
       <ul className="list-none space-y-2 mb-6">
@@ -115,7 +115,7 @@ export function ProcessContent() {
         <TabCheck>Community</TabCheck>
         <TabCheck>Evidence library</TabCheck>
         <TabCheck>Ships in 4 days</TabCheck>
-        <TabCheck>Results 7&ndash;14 days</TabCheck>
+        <TabCheck>Results 7 to14 days</TabCheck>
         <TabCheck>Lifetime genetic data access</TabCheck>
       </ul>
 
