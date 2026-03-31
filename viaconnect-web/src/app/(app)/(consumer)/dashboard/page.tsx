@@ -250,7 +250,7 @@ export default function ConsumerDashboard() {
         />
       </section>
 
-      {/* ── Plugin CTAs ─────────────────────────────────────────────── */}
+      {/* ── Plugin CTAs + Update Assessment ─────────────────────────── */}
       <section className="px-4 lg:px-6 pb-2">
         <div className="flex flex-col sm:flex-row gap-3">
           <PluginCTA
@@ -269,6 +269,7 @@ export default function ConsumerDashboard() {
             connectedCount={0}
             variant="hero"
           />
+          <RetakeAssessmentCard context="dashboard" />
         </div>
       </section>
 
@@ -394,13 +395,8 @@ export default function ConsumerDashboard() {
       </section>
 
       {/* ── Pattern Circles (Coming Soon) ──────────────────────────── */}
-      <section className="px-4 lg:px-6">
-        <PatternCirclePreview userPatterns={["HPA Axis Dysregulation", "Methylation Pathway"]} />
-      </section>
-
-      {/* ── Retake Assessment ─────────────────────────────────────────── */}
       <section className="px-4 lg:px-6 pb-8">
-        <RetakeAssessmentCard context="dashboard" />
+        <PatternCirclePreview userPatterns={["HPA Axis Dysregulation", "Methylation Pathway"]} />
       </section>
     </div>
   );
@@ -408,27 +404,35 @@ export default function ConsumerDashboard() {
 
 function RetakeAssessmentCard({ context = "dashboard" }: { context?: "dashboard" | "supplements" | "analytics" }) {
   const [confirming, setConfirming] = React.useState(false);
-  const subtitles = {
-    dashboard: "Retake the Clinical Assessment Questionnaire to update your health profile, supplement protocol, and Bio Optimization score with your current status",
-    supplements: "Retake the Clinical Assessment Questionnaire to update your supplement protocol and recommendations with your current health status",
-    analytics: "Retake the Clinical Assessment Questionnaire to update your symptom profile with your current health status",
-  };
+
   return (
-    <div className="rounded-xl bg-white/[0.02] border border-white/[0.08] p-5 md:p-6">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div className="flex items-start gap-3">
-          <div className="relative flex-shrink-0"><div className="absolute blur-lg -inset-1 rounded-2xl opacity-60" style={{ backgroundColor: "#B75E1833" }} /><div className="relative w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "linear-gradient(135deg, #B75E1833, #B75E181A, transparent)", border: "1px solid #B75E1826" }}><RefreshCw className="w-4 h-4 text-orange-400" strokeWidth={1.5} /></div></div>
-          <div><h4 className="text-sm font-semibold text-white">Update Your Assessment</h4><p className="text-xs text-white/30 mt-1 leading-relaxed max-w-md">{subtitles[context]}</p></div>
-        </div>
-        {!confirming ? (
-          <button onClick={() => setConfirming(true)} className="min-h-[44px] px-5 py-2.5 rounded-xl bg-orange-400/10 border border-orange-400/30 text-orange-400 text-sm font-medium hover:bg-orange-400/15 transition-all flex items-center gap-2 w-full sm:w-auto justify-center flex-shrink-0"><RefreshCw className="w-4 h-4" strokeWidth={1.5} /> Retake Assessment</button>
-        ) : (
-          <div className="w-full sm:w-auto space-y-3">
-            <div className="rounded-lg bg-orange-400/5 border border-orange-400/10 px-4 py-3"><p className="text-xs text-white/40 leading-relaxed">This will take you through all 7 phases. Your previous answers will be <span className="text-white/60 font-medium">pre-filled</span> so you only need to update what has changed.</p><p className="text-[10px] text-white/25 mt-2">All engines will regenerate after completion.</p></div>
-            <div className="flex gap-2"><a href="/onboarding/i-caq-intro" className="min-h-[44px] flex-1 px-5 py-2.5 rounded-xl bg-teal-400/15 border border-teal-400/30 text-teal-400 text-sm font-medium hover:bg-teal-400/20 transition-all flex items-center gap-2 justify-center"><Check className="w-4 h-4" strokeWidth={2} /> Yes, Start Assessment</a><button onClick={() => setConfirming(false)} className="min-h-[44px] px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white/40 text-sm hover:bg-white/[0.08] transition-all flex items-center justify-center">Cancel</button></div>
+    <div className="flex-1 rounded-xl bg-white/[0.02] border border-orange-400/15 p-4 flex flex-col justify-between gap-3 min-w-0">
+      <div className="flex items-start gap-3">
+        <div className="relative flex-shrink-0">
+          <div className="absolute blur-lg -inset-1 rounded-2xl opacity-60" style={{ backgroundColor: "#B75E1833" }} />
+          <div className="relative w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "linear-gradient(135deg, #B75E1833, #B75E181A, transparent)", border: "1px solid #B75E1826" }}>
+            <RefreshCw className="w-4 h-4 text-orange-400" strokeWidth={1.5} />
           </div>
-        )}
+        </div>
+        <div className="min-w-0">
+          <h4 className="text-sm font-semibold text-white">Update Assessment</h4>
+          <p className="text-[11px] text-white/30 mt-0.5 leading-relaxed">
+            {confirming ? "Pre-filled with your previous answers" : "Retake CAQ to refresh your protocol"}
+          </p>
+        </div>
       </div>
+      {!confirming ? (
+        <button onClick={() => setConfirming(true)} className="min-h-[44px] w-full px-4 py-2.5 rounded-xl bg-orange-400/10 border border-orange-400/30 text-orange-400 text-sm font-medium hover:bg-orange-400/15 transition-all flex items-center justify-center gap-2">
+          <RefreshCw className="w-4 h-4" strokeWidth={1.5} /> Retake
+        </button>
+      ) : (
+        <div className="space-y-2">
+          <a href="/onboarding/i-caq-intro" className="min-h-[44px] w-full px-4 py-2.5 rounded-xl bg-teal-400/15 border border-teal-400/30 text-teal-400 text-sm font-medium hover:bg-teal-400/20 transition-all flex items-center justify-center gap-2">
+            <Check className="w-4 h-4" strokeWidth={2} /> Start
+          </a>
+          <button onClick={() => setConfirming(false)} className="min-h-[36px] w-full px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-white/40 text-xs hover:bg-white/[0.08] transition-all">Cancel</button>
+        </div>
+      )}
     </div>
   );
 }
