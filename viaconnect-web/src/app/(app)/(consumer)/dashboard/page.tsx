@@ -230,9 +230,6 @@ export default function ConsumerDashboard() {
                 />
               )}
             </h1>
-            <p className="text-body-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
-              Your Bio Optimization Score
-            </p>
           </div>
         </div>
       </section>
