@@ -76,7 +76,7 @@ export function AboutContent() {
 
       <TabCTA text={"Join the Precision Health Revolution\nStart Your Journey Today"} />
 
-      <TabAccent>&ldquo;Your DNA has been waiting your whole life for you to read it. Today is the day.&rdquo;</TabAccent>
+      <p className="text-base md:text-lg text-[#B87333] italic font-semibold mb-4 text-center">&ldquo;Your DNA has been waiting your whole life for you to read it. Today is the day.&rdquo;</p>
     </div>
   );
 }
