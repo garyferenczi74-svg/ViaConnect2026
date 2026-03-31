@@ -20,11 +20,12 @@ function SidebarGroupDivider({ label }: { label: string }) {
 
 interface DashboardSidebarProps {
   activeSection: string;
+  onSectionChange: (sectionId: string) => void;
   caqCompleted: boolean;
   hasPeptideRecs: boolean;
 }
 
-export function DashboardSidebar({ activeSection, caqCompleted, hasPeptideRecs }: DashboardSidebarProps) {
+export function DashboardSidebar({ activeSection, onSectionChange, caqCompleted, hasPeptideRecs }: DashboardSidebarProps) {
   const visibleSections = DASHBOARD_SIDEBAR_SECTIONS.filter((s) => {
     if (s.alwaysVisible) return true;
     if (s.visibilityCondition === "caqCompleted") return caqCompleted;
@@ -52,13 +53,10 @@ export function DashboardSidebar({ activeSection, caqCompleted, hasPeptideRecs }
           return (
             <div key={section.id}>
               {showDivider && groupLabel && <SidebarGroupDivider label={groupLabel} />}
-              <a
-                href={section.scrollTarget}
-                onClick={(e) => {
-                  e.preventDefault();
-                  document.querySelector(section.scrollTarget)?.scrollIntoView({ behavior: "smooth", block: "start" });
-                }}
-                className={`group flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 min-h-[40px] border-l-2 ${
+              <button
+                type="button"
+                onClick={() => onSectionChange(section.id)}
+                className={`w-full text-left group flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 min-h-[40px] border-l-2 ${
                   isActive
                     ? isProtocol
                       ? ""
@@ -91,7 +89,7 @@ export function DashboardSidebar({ activeSection, caqCompleted, hasPeptideRecs }
                 {isPeptide && hasPeptideRecs && (
                   <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: "#A855F799" }} />
                 )}
-              </a>
+              </button>
             </div>
           );
         })}
