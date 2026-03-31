@@ -1,17 +1,19 @@
 'use client'
-import React from 'react'
+import React, { useState, useCallback } from 'react'
 import Link from 'next/link'
 import { InfiniteSlider } from '@/components/ui/infinite-slider'
 import { ProgressiveBlur } from '@/components/ui/progressive-blur'
 import { cn } from '@/lib/utils'
 import { Menu, X, ChevronRight } from 'lucide-react'
 import { useScroll, motion } from 'framer-motion'
+import { TabDropdownPanel } from './TabDropdownPanel'
+import type { TabId } from './TabContent'
 
-const menuItems = [
-    { name: 'Features', href: '#features' },
-    { name: 'Genomics', href: '#genomics' },
-    { name: 'Pricing', href: '#pricing' },
-    { name: 'About', href: '#about' },
+const menuItems: { name: string; id: TabId }[] = [
+    { name: 'Features', id: 'features' },
+    { name: 'Genomics', id: 'genomics' },
+    { name: 'Process', id: 'process' },
+    { name: 'About', id: 'about' },
 ]
 
 const Logo = () => {
@@ -22,7 +24,7 @@ const Logo = () => {
     )
 }
 
-function HeroHeader() {
+function HeroHeader({ activeTab, onTabClick, onClose }: { activeTab: TabId | null; onTabClick: (id: TabId) => void; onClose: () => void }) {
     const [menuState, setMenuState] = React.useState(false)
     const [isScrolled, setIsScrolled] = React.useState(false)
 
@@ -42,7 +44,7 @@ function HeroHeader() {
                 <div className={cn('mx-auto mt-2 max-w-6xl px-6 transition-all duration-300 lg:px-12', isScrolled && 'bg-[#0d1225]/80 max-w-4xl rounded-3xl border border-white/5 backdrop-blur-2xl lg:px-5')}>
                     <div className="relative flex flex-wrap items-center justify-between gap-6 py-3 md:gap-0 md:py-4">
                         <div className="flex w-full items-center justify-between lg:w-auto">
-                            <Link href="/" aria-label="home">
+                            <Link href="/" aria-label="home" onClick={() => onClose()}>
                                 <Logo />
                             </Link>
                             <button
@@ -60,11 +62,14 @@ function HeroHeader() {
                                 <ul className="flex flex-col gap-6 text-base lg:flex-row lg:gap-0 lg:text-sm">
                                     {menuItems.map((item, index) => (
                                         <li key={index}>
-                                            <Link
-                                                href={item.href}
-                                                className="text-slate-300 block duration-150 hover:text-white md:px-4 lg:text-sm">
+                                            <button
+                                                onClick={() => { onTabClick(item.id); setMenuState(false); }}
+                                                className={cn(
+                                                    'text-slate-300 block duration-150 hover:text-white md:px-4 lg:text-sm text-left w-full lg:w-auto',
+                                                    activeTab === item.id && 'text-white border-b-2 border-[#B87333] pb-0.5'
+                                                )}>
                                                 <span>{item.name}</span>
-                                            </Link>
+                                            </button>
                                         </li>
                                     ))}
                                 </ul>
@@ -91,9 +96,20 @@ function HeroHeader() {
 }
 
 export function HeroSection() {
+    const [activeTab, setActiveTab] = useState<TabId | null>(null)
+
+    const handleTabClick = useCallback((id: TabId) => {
+        setActiveTab(prev => prev === id ? null : id)
+    }, [])
+
+    const handleClose = useCallback(() => {
+        setActiveTab(null)
+    }, [])
+
     return (
         <>
-            <HeroHeader />
+            <HeroHeader activeTab={activeTab} onTabClick={handleTabClick} onClose={handleClose} />
+            <TabDropdownPanel activeTab={activeTab} onClose={handleClose} />
             <main className="overflow-x-hidden">
                 <div className="fixed inset-0 bg-gradient-to-b from-[#0d1225] to-[#141c35] -z-10" />
                 <div className="fixed top-0 right-0 w-[55vw] h-[55vh] bg-[radial-gradient(ellipse_at_top_right,rgba(120,60,180,0.12),transparent_65%)] pointer-events-none -z-10" />
@@ -118,9 +134,9 @@ export function HeroSection() {
                                         <ChevronRight className="ml-1" />
                                     </Link>
                                     <Link
-                                        href="/genex360"
+                                        href="/login"
                                         className="inline-flex h-14 sm:h-12 w-full sm:w-auto items-center justify-center rounded-full border border-white/20 px-6 text-base font-semibold text-white backdrop-blur-sm transition-all duration-300 hover:border-white/30 hover:bg-white/10">
-                                        <span className="text-nowrap">Explore GeneX360</span>
+                                        <span className="text-nowrap">Sign In</span>
                                     </Link>
                                 </div>
                             </div>
