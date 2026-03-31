@@ -70,7 +70,7 @@ export function GenomicsContent() {
       </ul>
       <TabP>&ldquo;We are not 23andMe. Your genome belongs to you.&rdquo;</TabP>
 
-      <TabCTA text="Stop Guessing. Start Knowing. \u2192 Order Your GeneX360\u2122 Kit" />
+      <TabCTA text={"Stop Guessing. Start Knowing.\nOrder Your GeneX360\u2122 Kit"} />
     </div>
   );
 }

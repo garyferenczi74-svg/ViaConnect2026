@@ -119,7 +119,7 @@ export function ProcessContent() {
         <TabCheck>Lifetime genetic data access</TabCheck>
       </ul>
 
-      <TabCTA text="Your Genome. Your Investment. Your Future. \u2192 Choose Your Plan" />
+      <TabCTA text={"Your Genome. Your Investment. Your Future.\nChoose Your Plan"} />
     </div>
   );
 }

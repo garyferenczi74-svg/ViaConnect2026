@@ -74,7 +74,7 @@ export function FeaturesContent() {
       />
       <TabP>&ldquo;AG1 is a good greens powder. It is also the same greens powder for all 8 billion people on Earth. That was fine for 2020. It is not fine anymore.&rdquo;</TabP>
 
-      <TabCTA text="Your DNA Has a Plan. Start Following It. \u2192 Begin Your Free Assessment" />
+      <TabCTA text={"Your DNA Has a Plan. Start Following It.\nBegin Your Free Assessment"} />
     </div>
   );
 }
