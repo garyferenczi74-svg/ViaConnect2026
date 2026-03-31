@@ -140,6 +140,9 @@ export default function SupplementsPage() {
         </div>
       </Section>
 
+      {/* ═══ UPDATE ASSESSMENT ═══ */}
+      <SupplementsRetakeCard />
+
       {/* ═══ 2. RECOMMENDED SUPPLEMENTS ═══ */}
       <Section icon={Sparkles} iconColor="#2DA5A0" title="Recommended Supplements" subtitle="AI-powered FarmCeutica product recommendations">
         <div className="p-5 md:p-6 space-y-5">
@@ -221,9 +224,6 @@ export default function SupplementsPage() {
 
       {/* DISCLAIMER */}
       <PractitionerDisclaimer />
-
-      {/* RETAKE ASSESSMENT */}
-      <SupplementsRetakeCard />
 
     </div>
   );
