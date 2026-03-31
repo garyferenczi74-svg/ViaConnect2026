@@ -220,20 +220,6 @@ export default function SupplementsPage() {
         </div>
       </Section>
 
-      {/* ═══ 6. PEPTIDE PROTOCOL ═══ */}
-      <Section icon={FlaskConical} iconColor="#A855F7" title="Peptide Protocol" subtitle="AI-personalized FarmCeutica\u2122 oral peptide recommendations">
-        <div className="p-5 md:p-6">
-          <PeptideProtocolTab
-            masterPatterns={[
-              { name: "HPA Axis Dysregulation", symptomsInvolved: ["fatigue", "stress", "sleep"] },
-              { name: "Neuroinflammation Pattern", symptomsInvolved: ["brain fog", "memory", "focus"] },
-            ]}
-            helixBalance={1250}
-            caqCompleted={true}
-          />
-        </div>
-      </Section>
-
       {/* DISCLAIMER */}
       <PractitionerDisclaimer />
 
