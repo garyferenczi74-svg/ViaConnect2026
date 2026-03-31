@@ -26,42 +26,6 @@ export function AboutContent() {
         <TabBullet>Science evolves, protocols evolve with it</TabBullet>
       </ul>
 
-      <TabH2>Our Journey</TabH2>
-      <div className="space-y-4 my-6">
-        {[
-          { year: "1990s\u20132010s", text: "30+ years GMP facility development." },
-          { year: "2018", text: "FarmCeutica founded." },
-          { year: "2019\u20132021", text: "Dual-delivery technology validated (10\u201327x)." },
-          { year: "2022\u20132023", text: "Pivot to precision nutraceuticals. 27+ formulations." },
-          { year: "2024", text: "GeneX360\u2122 designed. PeptideIQ\u2122 + CannabisIQ\u2122 (zero competitors). CLIA labs." },
-          { year: "2024\u20132025", text: "ViaConnect\u2122 built. Five-source AI. HIPAA deployed. Patent filed." },
-          { year: "2025", text: "Clinical validation: MTHFR (N=72), bio-age (N=47). Score: A\u2212 (91/110)." },
-          { year: "2026", text: "Launch. $5.5M seed round. 48,000+ retail. The revolution goes live." },
-        ].map((item) => (
-          <div key={item.year} className="flex gap-4 items-start">
-            <span className="text-sm font-bold text-[#06B6D4] w-28 flex-shrink-0">{item.year}</span>
-            <span className="text-base text-white/70">{item.text}</span>
-          </div>
-        ))}
-      </div>
-
-      <TabH2>The Team</TabH2>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 my-6">
-        {[
-          { name: "Gary Ferenczi", role: "CEO & Founder", detail: "30+ years GMP" },
-          { name: "Dr. Fadi Dagher", role: "Medical Director", detail: "" },
-          { name: "Thomas Rosengren", role: "CTO / Production", detail: "" },
-          { name: "Steve Rica", role: "Compliance", detail: "" },
-          { name: "Domenic Romeo", role: "CFO", detail: "" },
-        ].map((member) => (
-          <div key={member.name} className="rounded-xl bg-white/5 border border-white/10 p-4">
-            <p className="text-sm font-semibold text-white">{member.name}</p>
-            <p className="text-xs text-[#B87333] mt-0.5">{member.role}</p>
-            {member.detail && <p className="text-xs text-white/40 mt-0.5">{member.detail}</p>}
-          </div>
-        ))}
-      </div>
-
       <TabH2>Our Promise</TabH2>
       <ul className="list-none space-y-2 mb-6">
         <TabBullet>Never sell genetic data</TabBullet>
