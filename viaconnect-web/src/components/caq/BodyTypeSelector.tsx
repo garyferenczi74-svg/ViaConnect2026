@@ -95,16 +95,13 @@ export function BodyTypeSelector({ value, onChange }: BodyTypeSelectorProps) {
               key={type.id}
               type="button"
               onClick={() => onChange(type.id)}
-              className={`relative rounded-xl p-5 text-left transition-all duration-300 min-h-[44px] border-2 ${
-                isSelected
-                  ? "shadow-lg"
-                  : "bg-white/[0.02] border-white/8 hover:border-white/15 hover:bg-white/[0.04]"
-              }`}
-              style={isSelected ? {
-                backgroundColor: `${type.hex}1A`,
-                borderColor: `${type.hex}66`,
-                boxShadow: `0 0 30px ${type.hex}15`,
-              } : undefined}
+              className="relative rounded-xl p-5 text-left transition-all duration-300 min-h-[44px]"
+              style={{
+                border: "2px solid",
+                borderColor: isSelected ? `${type.hex}66` : "rgba(255,255,255,0.08)",
+                backgroundColor: isSelected ? `${type.hex}1A` : "rgba(255,255,255,0.02)",
+                boxShadow: isSelected ? `0 0 30px ${type.hex}15` : "none",
+              }}
             >
               {/* Selected indicator */}
               {isSelected && (
