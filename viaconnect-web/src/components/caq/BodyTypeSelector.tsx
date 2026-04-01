@@ -47,7 +47,8 @@ const BODY_TYPES: BodyTypeOption[] = [
 function BodyTypeCard({ type, isSelected, onSelect }: { type: BodyTypeOption; isSelected: boolean; onSelect: () => void }) {
   const Icon = type.icon;
   return (
-    <button type="button" onClick={onSelect} className="rounded-xl p-5 text-left transition-all duration-300 w-full" style={{
+    <div role="button" tabIndex={0} onClick={onSelect} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") onSelect(); }}
+      className="rounded-xl p-5 text-left transition-all duration-300 w-full cursor-pointer" style={{
       border: `2px solid ${isSelected ? `${type.hex}66` : "rgba(255,255,255,0.08)"}`,
       backgroundColor: isSelected ? `${type.hex}1A` : "rgba(255,255,255,0.02)",
       boxShadow: isSelected ? `0 0 30px ${type.hex}15` : "none",
@@ -58,14 +59,16 @@ function BodyTypeCard({ type, isSelected, onSelect }: { type: BodyTypeOption; is
           <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: type.hex }} />
         </div>
       )}
-      <div className="w-14 h-14 rounded-xl flex items-center justify-center mb-4" style={{
+      <div className="w-14 h-14 rounded-xl flex items-center justify-center" style={{
         backgroundColor: isSelected ? `${type.hex}26` : "rgba(255,255,255,0.05)",
         border: `1px solid ${isSelected ? `${type.hex}33` : "rgba(255,255,255,0.08)"}`,
       }}>
         <Icon className="w-6 h-6" style={{ color: isSelected ? type.hex : "rgba(255,255,255,0.3)" }} strokeWidth={1.5} />
       </div>
-      <h4 className="text-sm font-bold mb-1" style={{ color: isSelected ? "#fff" : "rgba(255,255,255,0.6)" }}>{type.label}</h4>
-      <p className="text-xs leading-relaxed" style={{ color: isSelected ? "rgba(255,255,255,0.5)" : "rgba(255,255,255,0.25)" }}>{type.description}</p>
+      <div className="h-4" />
+      <h4 className="text-sm font-bold" style={{ color: isSelected ? "#fff" : "rgba(255,255,255,0.6)" }}>{type.label}</h4>
+      <div className="h-1" />
+      <p className="text-xs leading-relaxed min-h-[60px]" style={{ color: isSelected ? "rgba(255,255,255,0.5)" : "rgba(255,255,255,0.25)" }}>{type.description}</p>
       {isSelected && (
         <div className="mt-4 pt-3 border-t border-white/5 space-y-1.5 w-full">
           {type.traits.map((trait, i) => (
@@ -76,7 +79,7 @@ function BodyTypeCard({ type, isSelected, onSelect }: { type: BodyTypeOption; is
           ))}
         </div>
       )}
-    </button>
+    </div>
   );
 }
 
