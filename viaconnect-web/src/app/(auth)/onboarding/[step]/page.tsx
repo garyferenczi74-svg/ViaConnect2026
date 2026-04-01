@@ -951,6 +951,22 @@ export default function OnboardingStepPage() {
               </div>
             </div>
 
+            {/* BMI indicator */}
+            {demographics.height && demographics.weight && parseFloat(demographics.height) > 0 && parseFloat(demographics.weight) > 0 && (() => {
+              const h = parseFloat(demographics.height) / 100;
+              const w = parseFloat(demographics.weight);
+              const bmi = w / (h * h);
+              if (!isFinite(bmi) || bmi <= 0) return null;
+              return (
+                <div className="flex items-center gap-2 mt-2">
+                  <p className="text-xs text-white/30">
+                    BMI: <span className={`font-medium ${bmi < 18.5 ? "text-amber-400" : bmi < 25 ? "text-teal-400" : "text-orange-400"}`}>{bmi.toFixed(1)}</span>
+                    {bmi < 18.5 && <span className="text-amber-400/60 ml-2">(Underweight)</span>}
+                  </p>
+                </div>
+              );
+            })()}
+
             {/* Conditional Body Type Selector — appears when underweight */}
             {shouldShowBodyTypeSelector({
               height: demographics.height,
