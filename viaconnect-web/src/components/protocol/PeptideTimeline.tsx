@@ -16,7 +16,7 @@ function buildTimeline(recs: PeptideRecommendation[]): Record<string, string[]> 
   for (const rec of recs) {
     const names = rec.products.map((p) => p.name).join(" + ");
     today.push(`Begin ${names} at suggested dose`);
-    thisWeek.push(`Assess tolerance for ${names} \u2014 note any changes`);
+    thisWeek.push(`Assess tolerance for ${names} \, note any changes`);
     thisMonth.push(`Complete 30-day loading cycle for ${names}`);
   }
 
@@ -79,7 +79,7 @@ export function PeptideTimeline({ recommendations }: PeptideTimelineProps) {
             <Hexagon className="w-4 h-4 text-amber-400" strokeWidth={1.5} />
           </div>
           <div>
-            <p className="text-xs text-white/40">Day 0 of 30 \u2014 Protocol not yet started</p>
+            <p className="text-xs text-white/40">Day 0 of 30 \, Protocol not yet started</p>
             <p className="text-[10px] text-amber-400/40">0 Helix earned so far</p>
           </div>
         </div>

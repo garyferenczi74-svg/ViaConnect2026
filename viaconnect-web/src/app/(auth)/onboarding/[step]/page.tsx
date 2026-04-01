@@ -967,15 +967,10 @@ export default function OnboardingStepPage() {
               );
             })()}
 
-            {/* Conditional Body Type Selector — appears when underweight */}
-            {shouldShowBodyTypeSelector({
-              height: demographics.height,
-              weight: demographics.weight,
-              heightUnit: heightUnit === "ft" ? "ft" : "cm",
-              weightUnit: weightUnit,
-            }) && (
+            {/* Body Type Selector — always visible on Phase 1 */}
+            <div className="mt-4 pt-4 border-t border-white/5">
               <BodyTypeSelector value={bodyType} onChange={setBodyType} />
-            )}
+            </div>
 
           </div>
         )}

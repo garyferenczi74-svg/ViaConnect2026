@@ -117,12 +117,12 @@ export const REGULATORY_GUARDRAILS = {
     therapeutic: {
       permitted: false,
       example: 'Treats chronic fatigue syndrome',
-      scope: 'NEVER \u2014 crosses into drug claim territory',
+      scope: 'NEVER \, crosses into drug claim territory',
     },
     diagnostic: {
       permitted: false,
       example: 'You have adrenal insufficiency',
-      scope: 'NEVER \u2014 crosses into medical diagnosis',
+      scope: 'NEVER \, crosses into medical diagnosis',
     },
   },
 

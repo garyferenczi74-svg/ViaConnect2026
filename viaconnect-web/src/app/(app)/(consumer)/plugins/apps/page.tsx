@@ -82,7 +82,7 @@ export default function AppsPage() {
   });
 
   const handleConnect = () => {
-    toast.success('Connection flow coming soon \u2014 Terra API integration in progress');
+    toast.success('Connection flow coming soon \, Terra API integration in progress');
   };
 
   // Group filtered apps by category for display

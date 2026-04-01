@@ -43,7 +43,7 @@ function generateTease(areas: string[]): string {
   };
 
   const pattern = teases[area1] || teases[area2] || "multi-system optimization";
-  return `We're seeing a possible ${pattern} pattern \u2014 your full report is ready in moments.`;
+  return `We're seeing a possible ${pattern} pattern \, your full report is ready in moments.`;
 }
 
 export function UltrathinkProcessing({ onComplete, topSymptomAreas = [] }: UltrathinkProcessingProps) {

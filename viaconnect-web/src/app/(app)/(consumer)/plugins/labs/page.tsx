@@ -7,7 +7,7 @@ import { VCButton } from '@/components/ui/VCButton';
 
 export default function LabsPage() {
   const handleAction = () => {
-    toast.success('Connection flow coming soon \u2014 Terra API integration in progress');
+    toast.success('Connection flow coming soon \, Terra API integration in progress');
   };
 
   return (

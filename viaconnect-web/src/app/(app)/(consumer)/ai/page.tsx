@@ -100,7 +100,7 @@ const INITIAL_MESSAGES: ChatMessage[] = [
     id: 'ai-1',
     role: 'assistant',
     content:
-      "Good morning, Gary! Based on your Oura data from last night (6.2hrs, 45min deep sleep, HRV 38ms \u2014 12% below your baseline), I\u2019ve adjusted today\u2019s plan:\n\n\u2022 Moved NAD+ to 8am (your COMT AG variant metabolizes faster in morning)\n\u2022 Added extra RELAX+ tonight\n\u2022 Reduced activity target to moderate (recovery: 52/100)\n\nYour IL-6 GG variant means your body responds more aggressively to sleep debt. Prioritize 7.5+ hours tonight.",
+      "Good morning, Gary! Based on your Oura data from last night (6.2hrs, 45min deep sleep, HRV 38ms \, 12% below your baseline), I\u2019ve adjusted today\u2019s plan:\n\n\u2022 Moved NAD+ to 8am (your COMT AG variant metabolizes faster in morning)\n\u2022 Added extra RELAX+ tonight\n\u2022 Reduced activity target to moderate (recovery: 52/100)\n\nYour IL-6 GG variant means your body responds more aggressively to sleep debt. Prioritize 7.5+ hours tonight.",
     timestamp: new Date(Date.now() - 600000),
     actions: [{ label: 'Apply Adjusted Plan' }],
     geneticBadges: ['COMT Val158Met', 'IL-6'],
@@ -130,7 +130,7 @@ const QUICK_PROMPTS = [
 ];
 
 const MOCK_AI_RESPONSE =
-  "I\u2019m analyzing your genetic profile and biometric data to give you the most personalized answer. The full AI engine is being connected \u2014 stay tuned for real-time genomic intelligence!";
+  "I\u2019m analyzing your genetic profile and biometric data to give you the most personalized answer. The full AI engine is being connected \, stay tuned for real-time genomic intelligence!";
 
 // ── Page ─────────────────────────────────────────────────────────────────────
 

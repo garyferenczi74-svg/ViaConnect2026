@@ -75,7 +75,7 @@ export default function PeptideProtocolPage({ masterPatterns, helixBalance, caqC
       {/* Page header */}
       <div>
         <h1 className="text-2xl md:text-3xl font-bold text-white">Peptide Protocol</h1>
-        <p className="text-sm text-white/40 mt-1">Personalized FarmCeutica\u2122 oral peptides \u2014 Powered by Ultrathink\u2122</p>
+        <p className="text-sm text-white/40 mt-1">Personalized FarmCeutica\u2122 oral peptides \, Powered by Ultrathink\u2122</p>
       </div>
 
       {/* Mandatory disclaimer */}

@@ -13,7 +13,7 @@ export function SkipButton({ onSkip }: SkipButtonProps) {
       className="text-[10px] text-white/20 hover:text-white/35 transition-colors flex items-center gap-1 min-h-[36px]"
     >
       <SkipForward className="w-3 h-3" strokeWidth={1.5} />
-      Skip for now \u2014 your report will still be 95% accurate
+      Skip for now \, your report will still be 95% accurate
     </button>
   );
 }

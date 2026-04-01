@@ -12,7 +12,7 @@ export const US_FDA_STATUS = {
     category2List: 'In late 2023, FDA placed ~19 popular peptides on Category 2 Bulk Drug Substances list (potential significant safety risks). This prohibited routine compounding for BPC-157, Epitalon, GHK-Cu injectable, Thymosin \u03b11/\u03b24 fragments, and others.',
     feb2026Update: 'February 2026: HHS Secretary Robert F. Kennedy Jr. announced ~14 peptides may shift back to Category 1, potentially restoring compounding pharmacy access under physician prescription.',
     currentStatus: 'As of late March 2026: formal FDA list update is STILL PENDING. No final reclassification confirmed in official guidance.',
-    implication: 'Even if reclassified, these remain unapproved drugs \u2014 NOT over-the-counter or supplement ingredients. Compounded versions require valid prescriptions.',
+    implication: 'Even if reclassified, these remain unapproved drugs \, NOT over-the-counter or supplement ingredients. Compounded versions require valid prescriptions.',
   },
 
   dsheaStatus: {
@@ -24,7 +24,7 @@ export const US_FDA_STATUS = {
 
   researchUseOnly: {
     summary: 'Many peptides are legally sold for Research Use Only (RUO). Marketing or implying human use violates FDA rules.',
-    implication: 'ViaConnect must NEVER position products as RUO \u2014 they are wellness nutraceuticals.',
+    implication: 'ViaConnect must NEVER position products as RUO \, they are wellness nutraceuticals.',
   },
 
   ssException: {
@@ -33,7 +33,7 @@ export const US_FDA_STATUS = {
     approval: 'FDA accelerated approval September 2025 (injection) for improving muscle strength in Barth syndrome patients (\u226530 kg)',
     significance: 'First mitochondria-targeted therapy approved in the US',
     restriction: 'Use strictly limited to this rare indication. Off-label wellness/energy marketing is PROHIBITED and could attract scrutiny.',
-    viaconnectImplication: 'EnergyCore\u2122 and MitoPeptide\u2122 are oral analogs \u2014 they must NEVER reference the FDA approval as applying to FarmCeutica products. The approval applies ONLY to Forzinity\u2122 injection for Barth syndrome.',
+    viaconnectImplication: 'EnergyCore\u2122 and MitoPeptide\u2122 are oral analogs \, they must NEVER reference the FDA approval as applying to FarmCeutica products. The approval applies ONLY to Forzinity\u2122 injection for Barth syndrome.',
   },
 
   wadaStatus: {

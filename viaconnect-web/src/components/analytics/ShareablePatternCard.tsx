@@ -16,7 +16,7 @@ export function ShareablePatternCard({ patterns, burdenScore }: ShareablePattern
   const [shared, setShared] = useState(false);
 
   const handleShare = async () => {
-    const shareText = `My top patterns: ${patterns.map((p) => p.name).join(", ")} \u2014 Bio Optimization: ${burdenScore}/100`;
+    const shareText = `My top patterns: ${patterns.map((p) => p.name).join(", ")} \, Bio Optimization: ${burdenScore}/100`;
     const shareData = {
       title: "My ViaConnect\u2122 Ultrathink Patterns",
       text: shareText,

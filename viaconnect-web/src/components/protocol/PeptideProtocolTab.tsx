@@ -69,7 +69,7 @@ export function PeptideProtocolTab({ masterPatterns, helixBalance, caqCompleted 
               </div>
               <div>
                 <h2 className="text-lg md:text-xl font-bold text-white">Your Personalized Peptide Protocol</h2>
-                <p className="text-sm text-white/40 mt-0.5">Powered by Ultrathink\u2122 \u2014 Based on your CAQ answers</p>
+                <p className="text-sm text-white/40 mt-0.5">Powered by Ultrathink\u2122 \, Based on your CAQ answers</p>
               </div>
             </div>
             {hasPeptideRecs && <ListenToSummary summaryText={generatePeptideSummary(recommendations)} />}

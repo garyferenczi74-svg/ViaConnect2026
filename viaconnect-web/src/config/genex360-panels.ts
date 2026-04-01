@@ -18,7 +18,7 @@ export const GENEX360_PANELS = [
     icon: "\ud83e\uddec",
     color: "bg-gradient-to-br from-teal-400/20 to-orange-400/10",
     borderColor: "border-teal-400/30",
-    description: "The full suite \u2014 all 6 genetic panels in one comprehensive test",
+    description: "The full suite \, all 6 genetic panels in one comprehensive test",
     isComplete: true,
   },
   {
@@ -28,7 +28,7 @@ export const GENEX360_PANELS = [
     icon: "\ud83d\udd2c",
     color: "bg-blue-400/10",
     borderColor: "border-blue-400/20",
-    description: "MTHFR, COMT, CBS, MTR, MTRR \u2014 methylation pathway analysis",
+    description: "MTHFR, COMT, CBS, MTR, MTRR \, methylation pathway analysis",
   },
   {
     id: "nutrigendx",

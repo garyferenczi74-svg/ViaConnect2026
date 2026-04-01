@@ -113,7 +113,7 @@ export function DashboardPeptideCard({ recommendation }: DashboardPeptideCardPro
               {recommendation.includesRetatrutideRef && (
                 <div className="px-2.5 py-2 rounded-lg bg-orange-400/5 border border-orange-400/10">
                   <p className="text-[9px] text-orange-400/50 leading-relaxed">
-                    For advanced metabolic support, discuss Retatrutide (triple agonist) with your practitioner \u2014 investigational, clinical trials only.
+                    For advanced metabolic support, discuss Retatrutide (triple agonist) with your practitioner \, investigational, clinical trials only.
                   </p>
                 </div>
               )}

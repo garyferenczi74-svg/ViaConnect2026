@@ -141,7 +141,7 @@ export function PeptideProductCard({ recommendation }: PeptideProductCardProps) 
               <p className="text-xs text-orange-400/70 font-medium mb-1">Advanced Metabolic Support Discussion</p>
               <p className="text-[11px] text-white/30 leading-relaxed">
                 For advanced metabolic support, discuss Retatrutide (triple agonist) with
-                your practitioner \u2014 it is currently investigational and only available via
+                your practitioner \, it is currently investigational and only available via
                 clinical trials. Your Ultrathink profile shows strong alignment with its
                 researched pathways.
               </p>

@@ -26,7 +26,7 @@ export function QuickReassessmentCard({ daysElapsed }: QuickReassessmentCardProp
           </h4>
           <p className="text-xs text-white/30 mt-0.5">
             {isReady
-              ? "Quick 2-min reassessment \u2014 see how your patterns are shifting"
+              ? "Quick 2-min reassessment \, see how your patterns are shifting"
               : "Your next assessment will track pattern changes"}
           </p>
         </div>

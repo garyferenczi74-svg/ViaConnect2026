@@ -203,7 +203,7 @@ export default function PanelDeepDivePage({
                           <Badge variant="neutral">{v.category}</Badge>
                         </td>
                         <td className="py-3 px-4 text-xs text-copper">
-                          {v.product?.short_name ?? v.product?.name ?? "\u2014"}
+                          {v.product?.short_name ?? v.product?.name ?? "\,"}
                         </td>
                         <td className="py-3 px-4">
                           {isExpanded ? (

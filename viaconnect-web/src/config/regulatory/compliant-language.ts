@@ -31,7 +31,7 @@ export const PERMITTED_LANGUAGE = {
 
   ssException: [
     'The SS-31 compound has received FDA approval for a specific rare condition (Barth syndrome)',
-    'FarmCeutica\'s oral formulation is a wellness analog \u2014 not the approved drug product',
+    'FarmCeutica\'s oral formulation is a wellness analog \, not the approved drug product',
   ],
 };
 

@@ -194,8 +194,8 @@ export default function PractitionerCompliancePage() {
     { key: "patient", header: "Patient", sortable: true },
     { key: "consentType", header: "Type" },
     { key: "status", header: "Status", render: (row) => <Badge variant={consentStatusBadge[row.status]}>{row.status}</Badge> },
-    { key: "signedDate", header: "Signed", render: (row) => <span>{row.signedDate || "\u2014"}</span> },
-    { key: "expiryDate", header: "Expires", render: (row) => <span>{row.expiryDate || "\u2014"}</span> },
+    { key: "signedDate", header: "Signed", render: (row) => <span>{row.signedDate || "\,"}</span> },
+    { key: "expiryDate", header: "Expires", render: (row) => <span>{row.expiryDate || "\,"}</span> },
     {
       key: "actions", header: "",
       render: (row) => (
@@ -214,7 +214,7 @@ export default function PractitionerCompliancePage() {
     { key: "status", header: "Status", render: (row) => <Badge variant={credStatusBadge[row.status]}>{row.status}</Badge> },
     { key: "issueDate", header: "Issued" },
     { key: "expiryDate", header: "Expires" },
-    { key: "ceHours", header: "CE Hours", render: (row) => <span>{row.ceHours > 0 ? `${row.ceHours} hrs` : "\u2014"}</span> },
+    { key: "ceHours", header: "CE Hours", render: (row) => <span>{row.ceHours > 0 ? `${row.ceHours} hrs` : "\,"}</span> },
   ];
 
   return (

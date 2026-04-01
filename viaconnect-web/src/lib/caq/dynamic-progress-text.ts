@@ -36,7 +36,7 @@ export function getDynamicProgressText(
 ): string {
   if (currentPhase <= 2) {
     return [
-      "Let's get to know you \u2014 this helps Ultrathink personalize everything.",
+      "Let's get to know you \, this helps Ultrathink personalize everything.",
       "Great start. Ultrathink is already building your health map.",
     ][currentPhase - 1];
   }
@@ -52,25 +52,25 @@ export function getDynamicProgressText(
   }
 
   if (currentPhase === 4 && topPhysical && topNeuro) {
-    return `Your ${topPhysical} + ${topNeuro} are forming a clear cluster \u2014 Ultrathink is narrowing the root cause.`;
+    return `Your ${topPhysical} + ${topNeuro} are forming a clear cluster \, Ultrathink is narrowing the root cause.`;
   }
   if (currentPhase === 4) {
     return "Your neurological picture is taking shape.";
   }
 
   if (currentPhase === 5) {
-    return "The emotional dimension adds the final layer \u2014 patterns are crystallizing.";
+    return "The emotional dimension adds the final layer \, patterns are crystallizing.";
   }
 
   if (currentPhase === 6) {
     const hasMeds = (partialData.medications?.length || 0) > 0;
     return hasMeds
       ? "Ultrathink is cross-referencing your medications with emerging patterns."
-      : "Your supplement data shapes the protocol \u2014 almost there.";
+      : "Your supplement data shapes the protocol \, almost there.";
   }
 
   if (currentPhase === 7) {
-    return "Final phase! Your lifestyle data completes the picture \u2014 Ultrathink launches after this.";
+    return "Final phase! Your lifestyle data completes the picture \, Ultrathink launches after this.";
   }
 
   return `Building your personalized blueprint.`;

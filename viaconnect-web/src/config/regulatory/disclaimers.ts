@@ -16,14 +16,14 @@ export const DISCLAIMERS = {
   },
 
   consultPractitioner: {
-    text: 'Always consult your physician, naturopath, or qualified healthcare practitioner before starting any new supplement regimen \u2014 especially if you are taking medications, are pregnant or nursing, or have pre-existing health conditions.',
+    text: 'Always consult your physician, naturopath, or qualified healthcare practitioner before starting any new supplement regimen \, especially if you are taking medications, are pregnant or nursing, or have pre-existing health conditions.',
     required: true as const,
     displayLocation: 'Bottom of every AI-generated protocol, Symptom Profile, and recommendation section',
     ctaButtons: ['Find a Physician', 'Find a Naturopath'] as const,
   },
 
   ssException: {
-    text: 'Note: The compound SS-31/Elamipretide has received FDA accelerated approval as Forzinity\u2122 (injection) for a specific rare condition (Barth syndrome). FarmCeutica\'s oral formulations are wellness analogs utilizing dual liposomal-micellar delivery \u2014 they are NOT the FDA-approved drug product and are not marketed for the treatment of any disease.',
+    text: 'Note: The compound SS-31/Elamipretide has received FDA accelerated approval as Forzinity\u2122 (injection) for a specific rare condition (Barth syndrome). FarmCeutica\'s oral formulations are wellness analogs utilizing dual liposomal-micellar delivery \, they are NOT the FDA-approved drug product and are not marketed for the treatment of any disease.',
     required: true as const,
     displayLocation: 'On any page referencing EnergyCore\u2122 or MitoPeptide\u2122',
   },

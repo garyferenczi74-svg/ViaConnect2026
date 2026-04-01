@@ -16,8 +16,8 @@ const SLIDES: Record<string, Slide[]> = {
   consumer: [
     {
       title: "Your Master Patterns",
-      description: "Ultrathink identifies the 1\u20133 root causes driving your symptoms \u2014 not just a list, a blueprint.",
-      preview: 'Sample: "Adrenal Battery Depletion" \u2014 fatigue + brain fog + sleep issues traced to one source',
+      description: "Ultrathink identifies the 1\u20133 root causes driving your symptoms \, not just a list, a blueprint.",
+      preview: 'Sample: "Adrenal Battery Depletion" \, fatigue + brain fog + sleep issues traced to one source',
       icon: BrainCircuit,
     },
     {
@@ -29,7 +29,7 @@ const SLIDES: Record<string, Slide[]> = {
     {
       title: "Track & Optimize",
       description: "Your Bio Optimization score evolves as you follow your protocol and reassess.",
-      preview: "Day 1: 58/100 \u2192 Day 30: 74/100 \u2014 patterns shifting",
+      preview: "Day 1: 58/100 \u2192 Day 30: 74/100 \, patterns shifting",
       icon: TrendingUp,
     },
   ],
