@@ -1464,7 +1464,7 @@ export default function OnboardingStepPage() {
                       <Plus className="w-3.5 h-3.5" />
                       Add &quot;{suppSearchQuery.trim()}&quot; manually
                     </button>
-                    {filtered.length === 0 && (
+                    {filtered.length < 3 && (
                       <button type="button"
                         onClick={async () => {
                           const qAi = suppSearchQuery.trim();

@@ -83,6 +83,69 @@ export async function completeCAQAndTriggerEngines(): Promise<{
       errors.push(`Interactions: ${err instanceof Error ? err.message : "Failed"}`);
     }
 
+    // ═══ STEP 5: Copy Phase 6 supplements to user_current_supplements + adherence ═══
+    try {
+      const { data: assessments } = await supabase
+        .from("assessment_results")
+        .select("phase, data")
+        .eq("user_id", user.id)
+        .eq("phase", 4)
+        .single();
+
+      const phase4 = (assessments?.data || {}) as Record<string, unknown>;
+      const userSupps = (phase4.userSupplements as Array<Record<string, unknown>>) || [];
+
+      if (userSupps.length > 0 && !userSupps.some((s) => s.name === "None")) {
+        // Save to user_current_supplements
+        const entries = userSupps.map((s) => ({
+          user_id: user.id,
+          supplement_name: String(s.name || ""),
+          brand: String(s.brand || ""),
+          product_name: String(s.name || ""),
+          formulation: String(s.formulation || ""),
+          dosage: s.dosage ? `${s.dosage}${s.unit || "mg"}` : "",
+          dosage_form: String(s.deliveryMethod || "capsule"),
+          frequency: String(s.frequency || "daily"),
+          category: String(s.category || "general"),
+          key_ingredients: [] as string[],
+          source: String(s.source || "manual"),
+          is_current: true,
+          is_ai_recommended: false,
+          added_at: new Date().toISOString(),
+        }));
+
+        await supabase.from("user_current_supplements").upsert(entries, {
+          onConflict: "user_id,supplement_name",
+        });
+
+        // Create adherence tracking
+        const adherenceEntries = entries.map((e) => ({
+          user_id: user.id,
+          supplement_name: e.supplement_name,
+          supplement_type: "current",
+          category: e.category,
+          recommended_dosage: e.dosage,
+          recommended_frequency: e.frequency,
+          adherence_percent: 0,
+          streak_days: 0,
+          total_doses_logged: 0,
+          started_at: new Date().toISOString(),
+          status: "active",
+        }));
+
+        await supabase.from("supplement_adherence").upsert(adherenceEntries, {
+          onConflict: "user_id,supplement_name",
+        });
+
+        results["current_supplements"] = true;
+      } else {
+        results["current_supplements"] = true; // No supplements to copy is not an error
+      }
+    } catch (err) {
+      results["current_supplements"] = false;
+      errors.push(`Current supplements: ${err instanceof Error ? err.message : "Failed"}`);
+    }
+
     const allPassed = Object.values(results).every((v) => v === true);
     return { success: allPassed, results, errors };
   } catch (err) {
