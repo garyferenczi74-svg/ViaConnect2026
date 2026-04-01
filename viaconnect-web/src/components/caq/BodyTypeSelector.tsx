@@ -21,37 +21,37 @@ const BODY_TYPES: BodyTypeOption[] = [
     label: "Ectomorph / Hardgainer",
     hex: "#2DA5A0",
     silhouetteStyle: "narrow",
-    description: "Narrow frame, fast metabolism, naturally lean. Gaining weight and muscle has always been a challenge \u2014 you burn through calories quickly.",
+    description: "Narrow frame, fast metabolism, naturally lean. Gaining weight and muscle has always been a challenge. You burn through calories quickly.",
     traits: [
       "Narrow shoulders and hips",
-      "Fast metabolism \u2014 burns calories easily",
+      "Fast metabolism, burns calories easily",
       "Difficulty gaining weight or muscle",
       "Long limbs relative to torso",
       "Low body fat even without trying",
     ],
-    ultrathinkNote: "Ultrathink will prioritize calorie-dense nutrition, mitochondrial energy optimization, and HPA axis recovery to support your body\u2019s ability to build and retain mass.",
+    ultrathinkNote: "Ultrathink will prioritize calorie-dense nutrition, mitochondrial energy optimization, and HPA axis recovery to support your body's ability to build and retain mass.",
   },
   {
     id: "mesomorph",
     label: "Mesomorph / Athletic Frame",
     hex: "#60A5FA",
     silhouetteStyle: "athletic",
-    description: "Naturally muscular frame with broader shoulders. You can gain muscle relatively easily, but you\u2019re currently underweight \u2014 possibly from stress, illness, or lifestyle changes.",
+    description: "Naturally muscular frame with broader shoulders. You can gain muscle relatively easily, but you may be currently underweight, possibly from stress, illness, or lifestyle changes.",
     traits: [
-      "Medium-to-broad bone structure",
+      "Medium to broad bone structure",
       "Naturally muscular when active",
       "Gains muscle easier than ectomorphs",
       "Currently underweight due to circumstances",
       "Responds well to training + nutrition",
     ],
-    ultrathinkNote: "Ultrathink will focus on recovery optimization, protein synthesis support, and identifying what caused the weight loss \u2014 stress, illness, or lifestyle \u2014 to address the root pattern.",
+    ultrathinkNote: "Ultrathink will focus on recovery optimization, protein synthesis support, and identifying what caused the weight loss (stress, illness, or lifestyle) to address the root pattern.",
   },
   {
     id: "endomorph",
     label: "Endomorph / Softer Frame",
     hex: "#FBBF24",
     silhouetteStyle: "wider",
-    description: "Wider bone structure with a tendency to store fat more easily. Being underweight despite this frame type often signals metabolic, hormonal, or health-related causes worth investigating.",
+    description: "Wider bone structure with a tendency to store fat more easily. Being underweight despite this frame type often signals metabolic, hormonal, or health related causes worth investigating.",
     traits: [
       "Wider hips and/or shoulders",
       "Naturally tends to store fat",
@@ -59,7 +59,7 @@ const BODY_TYPES: BodyTypeOption[] = [
       "May indicate metabolic or hormonal pattern",
       "Recovery approach differs from hardgainers",
     ],
-    ultrathinkNote: "Ultrathink will investigate potential metabolic, hormonal, or stress-related causes for being underweight with this frame type \u2014 this combination often reveals important master patterns.",
+    ultrathinkNote: "Ultrathink will investigate potential metabolic, hormonal, or stress related causes for being underweight with this frame type. This combination often reveals important master patterns.",
   },
 ];
 
@@ -69,6 +69,8 @@ interface BodyTypeSelectorProps {
 }
 
 export function BodyTypeSelector({ value, onChange }: BodyTypeSelectorProps) {
+  const selectedType = BODY_TYPES.find((t) => t.id === value);
+
   return (
     <div className="space-y-4 pt-2">
       {/* Section header */}
@@ -78,7 +80,7 @@ export function BodyTypeSelector({ value, onChange }: BodyTypeSelectorProps) {
         </h3>
         <p className="text-xs text-white/30 mt-1 leading-relaxed">
           This helps Ultrathink personalize your nutrition, supplement, and wellness
-          recommendations for healthy weight optimization. There&apos;s no wrong answer \u2014
+          recommendations for healthy weight optimization. There&apos;s no wrong answer,
           choose what feels closest to your natural build.
         </p>
       </div>
@@ -143,7 +145,7 @@ export function BodyTypeSelector({ value, onChange }: BodyTypeSelectorProps) {
                 {type.description}
               </p>
 
-              {/* Expanded traits + Ultrathink note */}
+              {/* Expanded traits (no Ultrathink note here) */}
               <AnimatePresence>
                 {isSelected && (
                   <motion.div
@@ -161,15 +163,6 @@ export function BodyTypeSelector({ value, onChange }: BodyTypeSelectorProps) {
                         </div>
                       ))}
                     </div>
-
-                    <div
-                      className="mt-3 p-3 rounded-lg"
-                      style={{ backgroundColor: `${type.hex}0D`, border: `1px solid ${type.hex}1A` }}
-                    >
-                      <p className="text-[10px] text-white/30 leading-relaxed">
-                        {type.ultrathinkNote}
-                      </p>
-                    </div>
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -177,6 +170,28 @@ export function BodyTypeSelector({ value, onChange }: BodyTypeSelectorProps) {
           );
         })}
       </div>
+
+      {/* Ultrathink explanation below all three cards */}
+      <AnimatePresence>
+        {selectedType && (
+          <motion.div
+            key={selectedType.id}
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.25 }}
+            className="rounded-xl p-4"
+            style={{ backgroundColor: `${selectedType.hex}0D`, border: `1px solid ${selectedType.hex}1A` }}
+          >
+            <p className="text-[10px] text-white/20 uppercase tracking-wider font-semibold mb-1.5">
+              How Ultrathink uses this
+            </p>
+            <p className="text-xs text-white/40 leading-relaxed">
+              {selectedType.ultrathinkNote}
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Helper text */}
       <div className="flex items-center gap-2 mt-2">
