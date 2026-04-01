@@ -1,5 +1,5 @@
-// FarmCeutica Peptide Registry — Complete 29-Peptide Portfolio
-// 8 categories, 113 SKUs, 4 delivery forms per product
+// FarmCeutica Peptide Registry — Complete 28-Peptide Portfolio
+// 8 categories, 109 SKUs (27 oral x 4 forms + 1 injectable-only)
 
 import type { PeptideProduct } from "./categories-1-3";
 import { ALL_CATEGORIES_1_3, CATEGORY_CONFIG_1_3 } from "./categories-1-3";
@@ -68,6 +68,30 @@ export const REGISTRY_STATS = {
   synergisticInteractions: SYNERGISTIC_INTERACTIONS.length,
   stackingProtocols: STACKING_PROTOCOLS.length,
 };
+
+// ═══ DELIVERY FORM HELPERS ═══
+export { DELIVERY_FORMS, DELIVERY_FORM_BY_KEY, CATEGORY_PREFERRED_FORM, SYMPTOM_FORM_RECOMMENDATIONS, SKU_COUNTS } from "./delivery-forms";
+
+export function getRecommendedForm(peptideId: string, symptom?: string): string {
+  const peptide = PEPTIDE_BY_ID[peptideId];
+  if (!peptide) return "liposomal";
+  // Retatrutide is injectable only
+  if (peptideId === "retatrutide") return "injectable";
+  // Symptom-specific recommendation
+  if (symptom) {
+    const { SYMPTOM_FORM_RECOMMENDATIONS } = require("./delivery-forms");
+    const rec = SYMPTOM_FORM_RECOMMENDATIONS[symptom];
+    if (rec) return rec.form;
+  }
+  // Category default
+  const { CATEGORY_PREFERRED_FORM } = require("./delivery-forms");
+  return CATEGORY_PREFERRED_FORM[peptide.category] || "liposomal";
+}
+
+export function getAvailableForms(peptideId: string): string[] {
+  if (peptideId === "retatrutide") return ["injectable"];
+  return ["liposomal", "micellar", "injectable", "nasal_spray"];
+}
 
 // Re-exports
 export { ALL_INTERACTIONS, MAJOR_INTERACTIONS, MODERATE_INTERACTIONS, SYNERGISTIC_INTERACTIONS };
