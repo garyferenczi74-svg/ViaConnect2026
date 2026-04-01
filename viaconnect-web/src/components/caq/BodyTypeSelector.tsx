@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Info } from "lucide-react";
 import { BodyTypeSilhouette } from "./BodyTypeSilhouette";
@@ -95,7 +94,7 @@ export function BodyTypeSelector({ value, onChange }: BodyTypeSelectorProps) {
               key={type.id}
               type="button"
               onClick={() => onChange(type.id)}
-              className="relative rounded-xl p-5 text-left transition-all duration-300 min-h-[44px]"
+              className="relative rounded-xl p-5 text-left transition-all duration-300 flex flex-col items-start justify-start"
               style={{
                 border: "2px solid",
                 borderColor: isSelected ? `${type.hex}66` : "rgba(255,255,255,0.08)",
@@ -103,7 +102,7 @@ export function BodyTypeSelector({ value, onChange }: BodyTypeSelectorProps) {
                 boxShadow: isSelected ? `0 0 30px ${type.hex}15` : "none",
               }}
             >
-              {/* Selected indicator */}
+              {/* Selected indicator — absolute, zero layout impact */}
               {isSelected && (
                 <motion.div
                   initial={{ scale: 0 }}
@@ -115,15 +114,12 @@ export function BodyTypeSelector({ value, onChange }: BodyTypeSelectorProps) {
                 </motion.div>
               )}
 
-              {/* Silhouette icon */}
+              {/* Icon — fixed size */}
               <div
-                className="w-14 h-14 rounded-xl mb-4 flex items-center justify-center"
-                style={isSelected ? {
-                  backgroundColor: `${type.hex}26`,
-                  border: `1px solid ${type.hex}33`,
-                } : {
-                  backgroundColor: "rgba(255,255,255,0.05)",
-                  border: "1px solid rgba(255,255,255,0.08)",
+                className="w-14 h-14 rounded-xl flex items-center justify-center"
+                style={{
+                  backgroundColor: isSelected ? `${type.hex}26` : "rgba(255,255,255,0.05)",
+                  border: `1px solid ${isSelected ? `${type.hex}33` : "rgba(255,255,255,0.08)"}`,
                 }}
               >
                 <BodyTypeSilhouette
@@ -132,17 +128,23 @@ export function BodyTypeSelector({ value, onChange }: BodyTypeSelectorProps) {
                 />
               </div>
 
+              {/* Fixed spacer */}
+              <div className="h-4" />
+
               {/* Label */}
-              <h4 className={`text-sm font-bold mb-1 ${isSelected ? "text-white" : "text-white/60"}`}>
+              <h4 className={`text-sm font-bold ${isSelected ? "text-white" : "text-white/60"}`}>
                 {type.label}
               </h4>
+
+              {/* Fixed spacer */}
+              <div className="h-1" />
 
               {/* Description */}
               <p className={`text-xs leading-relaxed ${isSelected ? "text-white/50" : "text-white/25"}`}>
                 {type.description}
               </p>
 
-              {/* Expanded traits (no Ultrathink note here) */}
+              {/* Expanded traits — renders BELOW description only */}
               <AnimatePresence>
                 {isSelected && (
                   <motion.div
@@ -150,7 +152,7 @@ export function BodyTypeSelector({ value, onChange }: BodyTypeSelectorProps) {
                     animate={{ height: "auto", opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }}
                     transition={{ duration: 0.2 }}
-                    className="overflow-hidden"
+                    className="overflow-hidden w-full"
                   >
                     <div className="mt-4 pt-3 border-t border-white/5 space-y-1.5">
                       {type.traits.map((trait, i) => (
