@@ -1540,39 +1540,46 @@ export default function OnboardingStepPage() {
                       </div>
                     )}
 
-                    {productPhotos.length === 0 ? (
-                      <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                        <label className="flex items-center justify-center gap-2 px-4 py-2.5 min-h-[44px] rounded-xl bg-teal-400/10 border border-teal-400/30 text-teal-400 text-sm font-medium cursor-pointer hover:bg-teal-400/15 transition-all">
-                          <Camera className="w-4 h-4" /> Take Photo
-                          <input type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => {
-                            if (e.target.files?.[0]) setProductPhotos([e.target.files[0]]);
-                          }} />
-                        </label>
-                        <label className="flex items-center justify-center gap-2 px-4 py-2.5 min-h-[44px] rounded-xl bg-white/5 border border-white/10 text-white/60 text-sm font-medium cursor-pointer hover:border-white/20 transition-all">
-                          <FolderOpen className="w-4 h-4" /> Upload File
-                          <input type="file" accept="image/jpeg,image/png,image/heic,image/webp" multiple className="hidden" onChange={(e) => {
-                            if (e.target.files) setProductPhotos([...productPhotos, ...Array.from(e.target.files)].slice(0, 3));
-                          }} />
-                        </label>
-                      </div>
-                    ) : (
-                      <button type="button" disabled={photoAnalyzing}
-                        onClick={async () => {
+                    <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                      <label className="flex items-center justify-center gap-2 px-4 py-2.5 min-h-[44px] rounded-xl bg-teal-400/10 border border-teal-400/30 text-teal-400 text-sm font-medium cursor-pointer hover:bg-teal-400/15 transition-all">
+                        <Camera className="w-4 h-4" /> Take Photo
+                        <input type="file" accept="image/*" capture="environment" className="hidden" onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          setProductPhotos([file]);
                           setPhotoAnalyzing(true); setAiLookupError(""); setAiLookupResult(null);
                           try {
                             const formData = new FormData();
-                            productPhotos.forEach((p) => formData.append("photos", p));
+                            formData.append("photos", file);
                             const res = await fetch("/api/ai/identify-product-photo", { method: "POST", body: formData });
                             const data = await res.json();
                             if (data.found && data.product) { setAiLookupResult(data.product); }
                             else { setAiLookupError(data.error || "Could not identify product from photo"); }
                           } catch { setAiLookupError("Photo analysis failed. Try searching by name."); }
                           setPhotoAnalyzing(false); setProductPhotos([]);
-                        }}
-                        className="px-5 py-2.5 rounded-xl bg-teal-400/15 border border-teal-400/40 text-teal-400 font-medium text-sm hover:bg-teal-400/20 transition-all flex items-center gap-2 mx-auto">
-                        <Sparkles className="w-4 h-4" /> Identify This Product
-                      </button>
-                    )}
+                          e.target.value = "";
+                        }} />
+                      </label>
+                      <label className="flex items-center justify-center gap-2 px-4 py-2.5 min-h-[44px] rounded-xl bg-white/5 border border-white/10 text-white/60 text-sm font-medium cursor-pointer hover:border-white/20 transition-all">
+                        <FolderOpen className="w-4 h-4" /> Upload File
+                        <input type="file" accept="image/jpeg,image/png,image/heic,image/webp" className="hidden" onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          setProductPhotos([file]);
+                          setPhotoAnalyzing(true); setAiLookupError(""); setAiLookupResult(null);
+                          try {
+                            const formData = new FormData();
+                            formData.append("photos", file);
+                            const res = await fetch("/api/ai/identify-product-photo", { method: "POST", body: formData });
+                            const data = await res.json();
+                            if (data.found && data.product) { setAiLookupResult(data.product); }
+                            else { setAiLookupError(data.error || "Could not identify product from photo"); }
+                          } catch { setAiLookupError("Photo analysis failed. Try searching by name."); }
+                          setPhotoAnalyzing(false); setProductPhotos([]);
+                          e.target.value = "";
+                        }} />
+                      </label>
+                    </div>
                     <p className="text-[10px] text-white/20 mt-3">Tip: Include the Supplement Facts panel for best results</p>
                   </div>
                 </>
