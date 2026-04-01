@@ -295,16 +295,27 @@ export default function AnalyticsPage() {
   const { data: symptomData } = useQuery({
     queryKey: ["analytics-symptoms", userId],
     queryFn: async () => {
-      const { data } = await supabase
+      // Fetch symptoms from phases 7 (physical), 8 (neuro), 9 (emotional)
+      const { data: phases } = await supabase
         .from("assessment_results")
-        .select("data")
+        .select("phase, data")
         .eq("user_id", userId!)
-        .eq("phase", 2)
-        .single();
-      if (data?.data && typeof data.data === "object") {
-        return data.data as CAQSymptoms;
+        .in("phase", [7, 8, 9]);
+
+      if (!phases?.length) return {} as CAQSymptoms;
+
+      const result: CAQSymptoms = {};
+      for (const p of phases) {
+        if (p.data && typeof p.data === "object") {
+          for (const [key, val] of Object.entries(p.data as Record<string, unknown>)) {
+            if (val && typeof val === "object" && "score" in (val as Record<string, unknown>)) {
+              const label = key.replace(/_severity$/, "").replace(/_/g, " ");
+              result[label] = (val as { score: number }).score;
+            }
+          }
+        }
       }
-      return {} as CAQSymptoms;
+      return result;
     },
     enabled: !!userId,
   });

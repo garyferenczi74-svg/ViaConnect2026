@@ -10,6 +10,7 @@ import { VoiceInput } from "@/components/caq/VoiceInput";
 import { CalmingHelixBackground } from "@/components/caq/CalmingHelixBackground";
 import { BodyTypeSelector } from "@/components/caq/BodyTypeSelector";
 import { shouldShowBodyTypeSelector } from "@/lib/caq/body-type-trigger";
+import { completeCAQAndTriggerEngines } from "@/lib/caq/complete-caq";
 import { CONVERSATIONAL_LABELS } from "@/config/caq-conversational-labels";
 import { SMART_PLACEHOLDERS, DEFAULT_PLACEHOLDER } from "@/config/caq-smart-placeholders";
 import toast from "react-hot-toast";
@@ -552,7 +553,10 @@ export default function OnboardingStepPage() {
         case "3": {
           await savePhase("3", { ...lifestyle, goals: goals.goals, supplementForm: goals.supplementForm, budgetRange: goals.budgetRange });
 
-          // Calculate Bio Optimization Score via API (analyzes all CAQ phases)
+          // Show Ultrathink processing animation immediately
+          setShowProcessing(true);
+
+          // ═══ Calculate Bio Optimization Score ═══
           let bioScore = 0;
           try {
             const bioRes = await fetch("/api/ai/calculate-bio-optimization", { method: "POST" });
@@ -560,7 +564,7 @@ export default function OnboardingStepPage() {
               const bioData = await bioRes.json();
               bioScore = bioData.score || 0;
             }
-          } catch { /* fallback: legacy formula */
+          } catch {
             bioScore = calculateBioOptimizationScore(symptoms, lifestyle, goals);
             const supabase = createClient();
             const { data: { user } } = await supabase.auth.getUser();
@@ -570,6 +574,17 @@ export default function OnboardingStepPage() {
           }
           toast.success(`Your Bio Optimization Score: ${bioScore}/100`, { duration: 5000 });
 
+          // ═══ Fire ALL downstream AI engines ═══
+          try {
+            const triggerResult = await completeCAQAndTriggerEngines();
+            if (triggerResult.errors.length > 0) {
+              console.warn("Engine warnings:", triggerResult.errors);
+            }
+          } catch (err) {
+            console.error("Engine trigger error:", err);
+          }
+
+          // ═══ Generate Supplement Recommendations ═══
           try {
             const res = await fetch("/api/recommendations/generate", {
               method: "POST",
@@ -582,8 +597,6 @@ export default function OnboardingStepPage() {
             }
           } catch { /* protocol generation optional */ }
 
-          // Show Ultrathink processing animation
-          setShowProcessing(true);
           return;
         }
       }
