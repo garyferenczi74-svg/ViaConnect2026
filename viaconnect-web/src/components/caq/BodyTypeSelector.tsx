@@ -86,7 +86,7 @@ export function BodyTypeSelector({ value, onChange }: BodyTypeSelectorProps) {
       </div>
 
       {/* 3 Body Type Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-start">
         {BODY_TYPES.map((type) => {
           const isSelected = value === type.id;
 
