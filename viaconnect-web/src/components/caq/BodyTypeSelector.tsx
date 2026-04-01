@@ -1,14 +1,14 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { Info } from "lucide-react";
-import { BodyTypeSilhouette } from "./BodyTypeSilhouette";
+import { Info, User, Dumbbell, Circle } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
 interface BodyTypeOption {
   id: "ectomorph" | "mesomorph" | "endomorph";
   label: string;
   hex: string;
-  silhouetteStyle: "narrow" | "athletic" | "wider";
+  icon: LucideIcon;
   description: string;
   traits: string[];
   ultrathinkNote: string;
@@ -19,7 +19,7 @@ const BODY_TYPES: BodyTypeOption[] = [
     id: "ectomorph",
     label: "Ectomorph / Hardgainer",
     hex: "#2DA5A0",
-    silhouetteStyle: "narrow",
+    icon: User,
     description: "Narrow frame, fast metabolism, naturally lean. Gaining weight and muscle has always been a challenge. You burn through calories quickly.",
     traits: [
       "Narrow shoulders and hips",
@@ -34,7 +34,7 @@ const BODY_TYPES: BodyTypeOption[] = [
     id: "mesomorph",
     label: "Mesomorph / Athletic Frame",
     hex: "#60A5FA",
-    silhouetteStyle: "athletic",
+    icon: Dumbbell,
     description: "Naturally muscular frame with broader shoulders. You can gain muscle relatively easily, but you may be currently underweight, possibly from stress, illness, or lifestyle changes.",
     traits: [
       "Medium to broad bone structure",
@@ -49,7 +49,7 @@ const BODY_TYPES: BodyTypeOption[] = [
     id: "endomorph",
     label: "Endomorph / Softer Frame",
     hex: "#FBBF24",
-    silhouetteStyle: "wider",
+    icon: Circle,
     description: "Wider bone structure with a tendency to store fat more easily. Being underweight despite this frame type often signals metabolic, hormonal, or health related causes worth investigating.",
     traits: [
       "Wider hips and/or shoulders",
@@ -84,87 +84,124 @@ export function BodyTypeSelector({ value, onChange }: BodyTypeSelectorProps) {
         </p>
       </div>
 
-      {/* 3 Body Type Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-start">
+      {/* 3 Body Type Cards — using simple table-like layout for guaranteed alignment */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "12px", alignItems: "start" }} className="sm:grid hidden">
         {BODY_TYPES.map((type) => {
           const isSelected = value === type.id;
-
+          const Icon = type.icon;
           return (
             <button
               key={type.id}
               type="button"
               onClick={() => onChange(type.id)}
-              className="relative rounded-xl p-5 text-left transition-all duration-300 flex flex-col items-start justify-start"
               style={{
-                border: "2px solid",
-                borderColor: isSelected ? `${type.hex}66` : "rgba(255,255,255,0.08)",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "flex-start",
+                justifyContent: "flex-start",
+                padding: "20px",
+                borderRadius: "12px",
+                textAlign: "left" as const,
+                border: `2px solid ${isSelected ? `${type.hex}66` : "rgba(255,255,255,0.08)"}`,
                 backgroundColor: isSelected ? `${type.hex}1A` : "rgba(255,255,255,0.02)",
                 boxShadow: isSelected ? `0 0 30px ${type.hex}15` : "none",
+                transition: "all 0.3s",
+                position: "relative" as const,
+                cursor: "pointer",
               }}
             >
-              {/* Selected indicator — absolute, zero layout impact */}
+              {/* Selected dot */}
               {isSelected && (
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  className="absolute top-3 right-3 w-6 h-6 rounded-full flex items-center justify-center"
-                  style={{ backgroundColor: `${type.hex}33`, border: `1px solid ${type.hex}66` }}
-                >
-                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: type.hex }} />
-                </motion.div>
+                <div style={{
+                  position: "absolute", top: 12, right: 12,
+                  width: 24, height: 24, borderRadius: "50%",
+                  backgroundColor: `${type.hex}33`, border: `1px solid ${type.hex}66`,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                }}>
+                  <div style={{ width: 10, height: 10, borderRadius: "50%", backgroundColor: type.hex }} />
+                </div>
               )}
 
-              {/* Icon — fixed size */}
-              <div
-                className="w-14 h-14 rounded-xl flex items-center justify-center"
-                style={{
-                  backgroundColor: isSelected ? `${type.hex}26` : "rgba(255,255,255,0.05)",
-                  border: `1px solid ${isSelected ? `${type.hex}33` : "rgba(255,255,255,0.08)"}`,
-                }}
-              >
-                <BodyTypeSilhouette
-                  style={type.silhouetteStyle}
-                  color={isSelected ? type.hex : "rgba(255,255,255,0.3)"}
-                />
+              {/* Icon */}
+              <div style={{
+                width: 56, height: 56, borderRadius: 12,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                backgroundColor: isSelected ? `${type.hex}26` : "rgba(255,255,255,0.05)",
+                border: `1px solid ${isSelected ? `${type.hex}33` : "rgba(255,255,255,0.08)"}`,
+              }}>
+                <Icon style={{ width: 24, height: 24, color: isSelected ? type.hex : "rgba(255,255,255,0.3)" }} strokeWidth={1.5} />
               </div>
 
-              {/* Fixed spacer */}
-              <div className="h-4" />
+              {/* Spacer */}
+              <div style={{ height: 16 }} />
 
               {/* Label */}
-              <h4 className={`text-sm font-bold ${isSelected ? "text-white" : "text-white/60"}`}>
+              <div style={{ fontSize: 14, fontWeight: 700, color: isSelected ? "#fff" : "rgba(255,255,255,0.6)" }}>
                 {type.label}
-              </h4>
+              </div>
 
-              {/* Fixed spacer */}
-              <div className="h-1" />
+              {/* Spacer */}
+              <div style={{ height: 4 }} />
 
               {/* Description */}
-              <p className={`text-xs leading-relaxed ${isSelected ? "text-white/50" : "text-white/25"}`}>
+              <div style={{ fontSize: 12, lineHeight: 1.6, color: isSelected ? "rgba(255,255,255,0.5)" : "rgba(255,255,255,0.25)" }}>
                 {type.description}
-              </p>
+              </div>
 
-              {/* Expanded traits — renders BELOW description only */}
-              <AnimatePresence>
-                {isSelected && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: "auto", opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.2 }}
-                    className="overflow-hidden w-full"
-                  >
-                    <div className="mt-4 pt-3 border-t border-white/5 space-y-1.5">
-                      {type.traits.map((trait, i) => (
-                        <div key={i} className="flex items-start gap-2">
-                          <div className="w-1 h-1 rounded-full mt-1.5 flex-shrink-0" style={{ backgroundColor: `${type.hex}99` }} />
-                          <span className="text-[11px] text-white/35">{trait}</span>
-                        </div>
-                      ))}
+              {/* Expanded traits */}
+              {isSelected && (
+                <div style={{ marginTop: 16, paddingTop: 12, borderTop: "1px solid rgba(255,255,255,0.05)", width: "100%" }}>
+                  {type.traits.map((trait, i) => (
+                    <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: 6 }}>
+                      <div style={{ width: 4, height: 4, borderRadius: "50%", backgroundColor: `${type.hex}99`, marginTop: 6, flexShrink: 0 }} />
+                      <span style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>{trait}</span>
                     </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+                  ))}
+                </div>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Mobile: stacked cards */}
+      <div className="flex flex-col gap-3 sm:hidden">
+        {BODY_TYPES.map((type) => {
+          const isSelected = value === type.id;
+          const Icon = type.icon;
+          return (
+            <button
+              key={type.id}
+              type="button"
+              onClick={() => onChange(type.id)}
+              className="rounded-xl p-5 text-left transition-all duration-300"
+              style={{
+                border: `2px solid ${isSelected ? `${type.hex}66` : "rgba(255,255,255,0.08)"}`,
+                backgroundColor: isSelected ? `${type.hex}1A` : "rgba(255,255,255,0.02)",
+              }}
+            >
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{
+                  backgroundColor: isSelected ? `${type.hex}26` : "rgba(255,255,255,0.05)",
+                  border: `1px solid ${isSelected ? `${type.hex}33` : "rgba(255,255,255,0.08)"}`,
+                }}>
+                  <Icon style={{ width: 20, height: 20, color: isSelected ? type.hex : "rgba(255,255,255,0.3)" }} strokeWidth={1.5} />
+                </div>
+                <div className="flex-1">
+                  <h4 style={{ fontSize: 14, fontWeight: 700, color: isSelected ? "#fff" : "rgba(255,255,255,0.6)" }}>{type.label}</h4>
+                  <p style={{ fontSize: 12, color: isSelected ? "rgba(255,255,255,0.5)" : "rgba(255,255,255,0.25)", marginTop: 2 }}>{type.description}</p>
+                </div>
+              </div>
+              {isSelected && (
+                <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+                  {type.traits.map((trait, i) => (
+                    <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: 6 }}>
+                      <div style={{ width: 4, height: 4, borderRadius: "50%", backgroundColor: `${type.hex}99`, marginTop: 6, flexShrink: 0 }} />
+                      <span style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>{trait}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </button>
           );
         })}
@@ -182,10 +219,10 @@ export function BodyTypeSelector({ value, onChange }: BodyTypeSelectorProps) {
             className="rounded-xl p-4"
             style={{ backgroundColor: `${selectedType.hex}0D`, border: `1px solid ${selectedType.hex}1A` }}
           >
-            <p className="text-[10px] text-white/20 uppercase tracking-wider font-semibold mb-1.5">
+            <p style={{ fontSize: 10, color: "rgba(255,255,255,0.2)", textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 600, marginBottom: 6 }}>
               How Ultrathink uses this
             </p>
-            <p className="text-xs text-white/40 leading-relaxed">
+            <p style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", lineHeight: 1.6 }}>
               {selectedType.ultrathinkNote}
             </p>
           </motion.div>
