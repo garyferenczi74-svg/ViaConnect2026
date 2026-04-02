@@ -1608,13 +1608,56 @@ export default function OnboardingStepPage() {
                           setProductPhotos([file]);
                           setPhotoAnalyzing(true); setAiLookupError(""); setAiLookupResult(null);
                           try {
-                            const formData = new FormData();
-                            formData.append("photos", file);
-                            const res = await fetch("/api/ai/identify-product-photo", { method: "POST", body: formData });
-                            const data = await res.json();
-                            if (data.found && data.product) { setAiLookupResult(data.product); }
-                            else { setAiLookupError(data.error || "Could not identify product from photo"); }
-                          } catch { setAiLookupError("Photo analysis failed. Try searching by name."); }
+                            // Convert to base64
+                            const base64 = await new Promise<string>((resolve, reject) => {
+                              const reader = new FileReader();
+                              reader.onload = () => resolve((reader.result as string).split(",")[1]);
+                              reader.onerror = () => reject(new Error("Failed to read file"));
+                              reader.readAsDataURL(file);
+                            });
+                            // Step 1: Vision OCR
+                            const visionRes = await fetch("/api/ai/supplement-vision", {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ image: base64, mediaType: file.type || "image/jpeg" }),
+                            });
+                            const visionData = await visionRes.json();
+                            if (!visionData.success) { setAiLookupError(visionData.error || "Could not identify product"); setPhotoAnalyzing(false); setProductPhotos([]); e.target.value = ""; return; }
+                            const ocr = visionData.ocrData;
+                            // Step 2: Web search enrichment (if brand found)
+                            if (ocr.brand || ocr.productName) {
+                              try {
+                                const enrichRes = await fetch("/api/ai/supplement-search", {
+                                  method: "POST",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({ brand: ocr.brand, productName: ocr.productName, ocrIngredients: ocr.ingredients }),
+                                });
+                                const enrichData = await enrichRes.json();
+                                if (enrichData.fullIngredients?.length > 0) { ocr.ingredients = enrichData.fullIngredients; }
+                                if (enrichData.nonMedicinalIngredients) { ocr.nonMedicinalIngredients = enrichData.nonMedicinalIngredients; }
+                              } catch { /* enrichment optional */ }
+                            }
+                            // Map to existing result format
+                            setAiLookupResult({
+                              name: ocr.productName || "Supplement",
+                              brand: ocr.brand || "Unknown",
+                              fullName: `${ocr.brand || ""} ${ocr.productName || "Supplement"}`.trim(),
+                              servingSize: ocr.servingSize || "See label",
+                              recommendedDose: ocr.dosagePerServing || ocr.servingSize || "As directed",
+                              recommendedFrequency: "once_daily",
+                              ingredients: (ocr.ingredients || []).map((ing: { name: string; form?: string; amount?: number; unit?: string; dailyValuePercent?: number }) => ({
+                                name: `${ing.name}${ing.form ? ` (${ing.form})` : ""}`,
+                                amount: ing.amount ?? 0,
+                                unit: ing.unit || "mg",
+                                dailyValuePercent: ing.dailyValuePercent || null,
+                                category: "standard_actives",
+                              })),
+                              otherIngredients: ocr.nonMedicinalIngredients || [],
+                              allergenWarnings: ocr.allergenWarnings || [],
+                              confidence: visionData.confidence || 0.7,
+                              photoNotes: `Identified via AI Vision (${ocr.overallConfidence || "medium"} confidence)`,
+                            });
+                          } catch (err) { setAiLookupError("Photo analysis failed. Try searching by name."); console.error("Photo error:", err); }
                           setPhotoAnalyzing(false); setProductPhotos([]);
                           e.target.value = "";
                         }} />
@@ -1627,13 +1670,52 @@ export default function OnboardingStepPage() {
                           setProductPhotos([file]);
                           setPhotoAnalyzing(true); setAiLookupError(""); setAiLookupResult(null);
                           try {
-                            const formData = new FormData();
-                            formData.append("photos", file);
-                            const res = await fetch("/api/ai/identify-product-photo", { method: "POST", body: formData });
-                            const data = await res.json();
-                            if (data.found && data.product) { setAiLookupResult(data.product); }
-                            else { setAiLookupError(data.error || "Could not identify product from photo"); }
-                          } catch { setAiLookupError("Photo analysis failed. Try searching by name."); }
+                            const base64 = await new Promise<string>((resolve, reject) => {
+                              const reader = new FileReader();
+                              reader.onload = () => resolve((reader.result as string).split(",")[1]);
+                              reader.onerror = () => reject(new Error("Failed to read file"));
+                              reader.readAsDataURL(file);
+                            });
+                            const visionRes = await fetch("/api/ai/supplement-vision", {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ image: base64, mediaType: file.type || "image/jpeg" }),
+                            });
+                            const visionData = await visionRes.json();
+                            if (!visionData.success) { setAiLookupError(visionData.error || "Could not identify product"); setPhotoAnalyzing(false); setProductPhotos([]); e.target.value = ""; return; }
+                            const ocr = visionData.ocrData;
+                            if (ocr.brand || ocr.productName) {
+                              try {
+                                const enrichRes = await fetch("/api/ai/supplement-search", {
+                                  method: "POST",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({ brand: ocr.brand, productName: ocr.productName, ocrIngredients: ocr.ingredients }),
+                                });
+                                const enrichData = await enrichRes.json();
+                                if (enrichData.fullIngredients?.length > 0) { ocr.ingredients = enrichData.fullIngredients; }
+                                if (enrichData.nonMedicinalIngredients) { ocr.nonMedicinalIngredients = enrichData.nonMedicinalIngredients; }
+                              } catch { /* enrichment optional */ }
+                            }
+                            setAiLookupResult({
+                              name: ocr.productName || "Supplement",
+                              brand: ocr.brand || "Unknown",
+                              fullName: `${ocr.brand || ""} ${ocr.productName || "Supplement"}`.trim(),
+                              servingSize: ocr.servingSize || "See label",
+                              recommendedDose: ocr.dosagePerServing || ocr.servingSize || "As directed",
+                              recommendedFrequency: "once_daily",
+                              ingredients: (ocr.ingredients || []).map((ing: { name: string; form?: string; amount?: number; unit?: string; dailyValuePercent?: number }) => ({
+                                name: `${ing.name}${ing.form ? ` (${ing.form})` : ""}`,
+                                amount: ing.amount ?? 0,
+                                unit: ing.unit || "mg",
+                                dailyValuePercent: ing.dailyValuePercent || null,
+                                category: "standard_actives",
+                              })),
+                              otherIngredients: ocr.nonMedicinalIngredients || [],
+                              allergenWarnings: ocr.allergenWarnings || [],
+                              confidence: visionData.confidence || 0.7,
+                              photoNotes: `Identified via AI Vision (${ocr.overallConfidence || "medium"} confidence)`,
+                            });
+                          } catch (err) { setAiLookupError("Photo analysis failed. Try searching by name."); console.error("Photo error:", err); }
                           setPhotoAnalyzing(false); setProductPhotos([]);
                           e.target.value = "";
                         }} />
