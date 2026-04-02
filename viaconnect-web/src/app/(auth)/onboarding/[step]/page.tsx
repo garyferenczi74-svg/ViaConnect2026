@@ -12,6 +12,7 @@ import { BodyTypeSelector } from "@/components/caq/BodyTypeSelector";
 import { shouldShowBodyTypeSelector } from "@/lib/caq/body-type-trigger";
 import { completeCAQAndTriggerEngines } from "@/lib/caq/complete-caq";
 import { fetchPreviousCAQ } from "@/lib/caq/fetchPreviousCAQ";
+import SupplementPhotoUpload from "@/components/caq/phase6/SupplementPhotoUpload";
 import { CONVERSATIONAL_LABELS } from "@/config/caq-conversational-labels";
 import { SMART_PLACEHOLDERS, DEFAULT_PLACEHOLDER } from "@/config/caq-smart-placeholders";
 import toast from "react-hot-toast";
@@ -1616,7 +1617,7 @@ export default function OnboardingStepPage() {
                 );
               })()}
 
-              {/* "or" Divider + Photo Upload */}
+              {/* "or" Divider + NEW Photo Upload Component */}
               {!showDosageModal && !aiLookupResult && !aiLookupLoading && !userSupplements.some(s => s.name === "None") && (
                 <>
                   <div className="flex items-center gap-4 my-4">
@@ -1624,169 +1625,30 @@ export default function OnboardingStepPage() {
                     <span className="text-xs text-white/25 font-medium uppercase tracking-wider">or</span>
                     <div className="flex-grow h-px bg-white/10" />
                   </div>
-                  <div className="rounded-xl border border-dashed border-white/15 bg-white/[0.02] p-5 text-center mb-3">
-                    <div className="w-12 h-12 rounded-full bg-teal-400/10 flex items-center justify-center mx-auto mb-3">
-                      <Camera className="w-6 h-6 text-teal-400" />
-                    </div>
-                    <h3 className="text-sm font-medium text-white mb-1">Add a photo of your product</h3>
-                    <p className="text-xs text-white/40 mb-4">Take a picture of the front label or Supplement Facts panel</p>
-
-                    {/* Photo previews */}
-                    {productPhotos.length > 0 && (
-                      <div className="flex gap-3 justify-center mb-4">
-                        {productPhotos.map((photo, i) => (
-                          <div key={i} className="relative w-16 h-16 rounded-lg overflow-hidden border border-white/10">
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src={URL.createObjectURL(photo)} alt={`Photo ${i + 1}`} className="w-full h-full object-cover" />
-                            <button type="button" onClick={() => setProductPhotos(productPhotos.filter((_, idx) => idx !== i))}
-                              className="absolute top-0.5 right-0.5 w-4 h-4 rounded-full bg-black/60 flex items-center justify-center">
-                              <X className="w-2.5 h-2.5 text-white" />
-                            </button>
-                          </div>
-                        ))}
-                        {productPhotos.length < 3 && (
-                          <label className="w-16 h-16 rounded-lg border border-dashed border-white/10 flex items-center justify-center cursor-pointer hover:border-white/20">
-                            <Plus className="w-4 h-4 text-white/30" />
-                            <input type="file" accept="image/*" className="hidden" onChange={(e) => {
-                              if (e.target.files?.[0]) setProductPhotos([...productPhotos, e.target.files[0]]);
-                            }} />
-                          </label>
-                        )}
-                      </div>
-                    )}
-
-                    {photoAnalyzing ? (
-                      <div className="flex flex-col items-center gap-3 py-4">
-                        <div className="w-8 h-8 border-2 border-teal-400 border-t-transparent rounded-full animate-spin" />
-                        <p className="text-sm text-teal-400 font-medium">Reading your supplement label...</p>
-                        <p className="text-xs text-white/30">Identifying brand, ingredients, and amounts</p>
-                      </div>
-                    ) : (
-                    <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                      <label className="flex items-center justify-center gap-2 px-4 py-2.5 min-h-[44px] rounded-xl bg-teal-400/10 border border-teal-400/30 text-teal-400 text-sm font-medium cursor-pointer hover:bg-teal-400/15 transition-all">
-                        <Camera className="w-4 h-4" /> Take Photo
-                        <input type="file" accept="image/*" capture="environment" className="hidden" onChange={async (e) => {
-                          const file = e.target.files?.[0];
-                          if (!file) return;
-                          setProductPhotos([file]);
-                          setPhotoAnalyzing(true); setAiLookupError(""); setAiLookupResult(null);
-                          try {
-                            // Convert to base64
-                            const base64 = await new Promise<string>((resolve, reject) => {
-                              const reader = new FileReader();
-                              reader.onload = () => resolve((reader.result as string).split(",")[1]);
-                              reader.onerror = () => reject(new Error("Failed to read file"));
-                              reader.readAsDataURL(file);
-                            });
-                            // Step 1: Vision OCR
-                            const visionRes = await fetch("/api/ai/supplement-vision", {
-                              method: "POST",
-                              headers: { "Content-Type": "application/json" },
-                              body: JSON.stringify({ image: base64, mediaType: file.type || "image/jpeg" }),
-                            });
-                            const visionData = await visionRes.json();
-                            if (!visionData.success) { setAiLookupError(visionData.error || "Could not identify product"); setPhotoAnalyzing(false); setProductPhotos([]); e.target.value = ""; return; }
-                            const ocr = visionData.ocrData;
-                            // Step 2: Web search enrichment (if brand found)
-                            if (ocr.brand || ocr.productName) {
-                              try {
-                                const enrichRes = await fetch("/api/ai/supplement-search", {
-                                  method: "POST",
-                                  headers: { "Content-Type": "application/json" },
-                                  body: JSON.stringify({ brand: ocr.brand, productName: ocr.productName, ocrIngredients: ocr.ingredients }),
-                                });
-                                const enrichData = await enrichRes.json();
-                                if (enrichData.fullIngredients?.length > 0) { ocr.ingredients = enrichData.fullIngredients; }
-                                if (enrichData.nonMedicinalIngredients) { ocr.nonMedicinalIngredients = enrichData.nonMedicinalIngredients; }
-                              } catch { /* enrichment optional */ }
-                            }
-                            // Map to existing result format
-                            setAiLookupResult({
-                              name: ocr.productName || "Supplement",
-                              brand: ocr.brand || "Unknown",
-                              fullName: `${ocr.brand || ""} ${ocr.productName || "Supplement"}`.trim(),
-                              servingSize: ocr.servingSize || "See label",
-                              recommendedDose: ocr.dosagePerServing || ocr.servingSize || "As directed",
-                              recommendedFrequency: "once_daily",
-                              ingredients: (ocr.ingredients || []).map((ing: { name: string; form?: string; amount?: number; unit?: string; dailyValuePercent?: number }) => ({
-                                name: `${ing.name}${ing.form ? ` (${ing.form})` : ""}`,
-                                amount: ing.amount ?? 0,
-                                unit: ing.unit || "mg",
-                                dailyValuePercent: ing.dailyValuePercent || null,
-                                category: "standard_actives",
-                              })),
-                              otherIngredients: ocr.nonMedicinalIngredients || [],
-                              allergenWarnings: ocr.allergenWarnings || [],
-                              confidence: visionData.confidence || 0.7,
-                              photoNotes: `Identified via AI Vision (${ocr.overallConfidence || "medium"} confidence)`,
-                            });
-                          } catch (err) { setAiLookupError("Photo analysis failed. Try searching by name."); console.error("Photo error:", err); }
-                          setPhotoAnalyzing(false); setProductPhotos([]);
-                          e.target.value = "";
-                        }} />
-                      </label>
-                      <label className="flex items-center justify-center gap-2 px-4 py-2.5 min-h-[44px] rounded-xl bg-white/5 border border-white/10 text-white/60 text-sm font-medium cursor-pointer hover:border-white/20 transition-all">
-                        <FolderOpen className="w-4 h-4" /> Upload File
-                        <input type="file" accept="image/jpeg,image/png,image/heic,image/webp" className="hidden" onChange={async (e) => {
-                          const file = e.target.files?.[0];
-                          if (!file) return;
-                          setProductPhotos([file]);
-                          setPhotoAnalyzing(true); setAiLookupError(""); setAiLookupResult(null);
-                          try {
-                            const base64 = await new Promise<string>((resolve, reject) => {
-                              const reader = new FileReader();
-                              reader.onload = () => resolve((reader.result as string).split(",")[1]);
-                              reader.onerror = () => reject(new Error("Failed to read file"));
-                              reader.readAsDataURL(file);
-                            });
-                            const visionRes = await fetch("/api/ai/supplement-vision", {
-                              method: "POST",
-                              headers: { "Content-Type": "application/json" },
-                              body: JSON.stringify({ image: base64, mediaType: file.type || "image/jpeg" }),
-                            });
-                            const visionData = await visionRes.json();
-                            if (!visionData.success) { setAiLookupError(visionData.error || "Could not identify product"); setPhotoAnalyzing(false); setProductPhotos([]); e.target.value = ""; return; }
-                            const ocr = visionData.ocrData;
-                            if (ocr.brand || ocr.productName) {
-                              try {
-                                const enrichRes = await fetch("/api/ai/supplement-search", {
-                                  method: "POST",
-                                  headers: { "Content-Type": "application/json" },
-                                  body: JSON.stringify({ brand: ocr.brand, productName: ocr.productName, ocrIngredients: ocr.ingredients }),
-                                });
-                                const enrichData = await enrichRes.json();
-                                if (enrichData.fullIngredients?.length > 0) { ocr.ingredients = enrichData.fullIngredients; }
-                                if (enrichData.nonMedicinalIngredients) { ocr.nonMedicinalIngredients = enrichData.nonMedicinalIngredients; }
-                              } catch { /* enrichment optional */ }
-                            }
-                            setAiLookupResult({
-                              name: ocr.productName || "Supplement",
-                              brand: ocr.brand || "Unknown",
-                              fullName: `${ocr.brand || ""} ${ocr.productName || "Supplement"}`.trim(),
-                              servingSize: ocr.servingSize || "See label",
-                              recommendedDose: ocr.dosagePerServing || ocr.servingSize || "As directed",
-                              recommendedFrequency: "once_daily",
-                              ingredients: (ocr.ingredients || []).map((ing: { name: string; form?: string; amount?: number; unit?: string; dailyValuePercent?: number }) => ({
-                                name: `${ing.name}${ing.form ? ` (${ing.form})` : ""}`,
-                                amount: ing.amount ?? 0,
-                                unit: ing.unit || "mg",
-                                dailyValuePercent: ing.dailyValuePercent || null,
-                                category: "standard_actives",
-                              })),
-                              otherIngredients: ocr.nonMedicinalIngredients || [],
-                              allergenWarnings: ocr.allergenWarnings || [],
-                              confidence: visionData.confidence || 0.7,
-                              photoNotes: `Identified via AI Vision (${ocr.overallConfidence || "medium"} confidence)`,
-                            });
-                          } catch (err) { setAiLookupError("Photo analysis failed. Try searching by name."); console.error("Photo error:", err); }
-                          setPhotoAnalyzing(false); setProductPhotos([]);
-                          e.target.value = "";
-                        }} />
-                      </label>
-                    </div>
-                    )}
-                    <p className="text-[10px] text-white/20 mt-3">Tip: Include the Supplement Facts panel for best results</p>
-                  </div>
+                  <SupplementPhotoUpload
+                    onProductIdentified={(product) => {
+                      console.log("Photo identified:", product);
+                    }}
+                    onProductAdded={(product) => {
+                      setUserSupplements([...userSupplements, {
+                        name: `${product.brand || ""} ${product.productName || "Supplement"}`.trim(),
+                        brand: product.brand || "",
+                        source: "photo_ai",
+                        deliveryMethod: "standard_actives",
+                        dosage: "1",
+                        unit: "serving",
+                        frequency: "once_daily",
+                        reason: "",
+                        ingredientBreakdown: (product.ingredients || []).map((ing) => ({
+                          name: ing.name,
+                          amount: ing.amount ?? 0,
+                          unit: ing.unit || "mg",
+                          category: "standard_actives",
+                        })),
+                      }]);
+                      toast.success(`${product.brand || ""} ${product.productName || "Supplement"} added!`);
+                    }}
+                  />
                 </>
               )}
 
