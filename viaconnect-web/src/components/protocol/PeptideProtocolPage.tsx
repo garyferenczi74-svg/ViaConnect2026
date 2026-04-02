@@ -1,6 +1,9 @@
 "use client";
 
-import { FlaskConical, ClipboardList, ArrowRight, RefreshCw } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { FlaskConical, ClipboardList, ArrowRight, RefreshCw, Search, Dna } from "lucide-react";
+import { searchPeptides } from "@/config/peptide-database/registry";
+import type { PeptideProduct } from "@/config/peptide-database/categories-1-3";
 import { ListenToSummary } from "@/components/analytics/ListenToSummary";
 import { PeptideDisclaimerBanner } from "./PeptideDisclaimerBanner";
 import { HelixPeptideCard } from "./HelixPeptideCard";
@@ -58,6 +61,103 @@ function PeptideEmptyState() {
   );
 }
 
+const CATEGORY_CHIPS = [
+  { id: 0, label: "All" },
+  { id: 1, label: "Longevity", color: "#7C3AED" },
+  { id: 2, label: "Stress", color: "#DC2626" },
+  { id: 3, label: "Energy", color: "#F59E0B" },
+  { id: 4, label: "Immune", color: "#059669" },
+  { id: 5, label: "Neuro", color: "#2563EB" },
+  { id: 6, label: "Hormonal", color: "#EC4899" },
+  { id: 7, label: "Gut/Detox", color: "#84CC16" },
+  { id: 8, label: "Metabolic", color: "#B75E18" },
+];
+
+function PeptideSearchSection() {
+  const [query, setQuery] = useState("");
+  const [catFilter, setCatFilter] = useState(0);
+  const [results, setResults] = useState<PeptideProduct[]>([]);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const q = query.toLowerCase().trim();
+    const catLabel = catFilter > 0 ? CATEGORY_CHIPS.find((c) => c.id === catFilter)?.label.toLowerCase() || "" : "";
+    const searchTerm = q.length >= 2 ? q : catLabel;
+    if (!searchTerm) { setResults([]); setShowDropdown(false); return; }
+    const found = searchPeptides(searchTerm).filter((p) => catFilter === 0 || p.category.toLowerCase().includes(catLabel));
+    setResults(found.slice(0, 8));
+    setShowDropdown(found.length > 0);
+  }, [query, catFilter]);
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) setShowDropdown(false);
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
+  return (
+    <div ref={containerRef} className="relative">
+      <div className="rounded-xl bg-white/[0.02] border border-white/8 p-5">
+        <div className="relative">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/25" strokeWidth={1.5} />
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onFocus={() => results.length > 0 && setShowDropdown(true)}
+            placeholder="Search peptides by name, category, or condition..."
+            className="w-full min-h-[48px] pl-11 pr-4 py-3 rounded-xl bg-white/5 border border-purple-400/20 text-sm text-white placeholder:text-white/20 focus:border-purple-400/40 focus:ring-1 focus:ring-purple-400/20 transition-all outline-none"
+          />
+        </div>
+        <div className="flex flex-wrap gap-2 mt-3">
+          {CATEGORY_CHIPS.map((cat) => (
+            <button
+              key={cat.id}
+              type="button"
+              onClick={() => setCatFilter(cat.id === catFilter ? 0 : cat.id)}
+              className={`px-3 py-1.5 rounded-full text-[11px] font-medium transition-all min-h-[32px] ${
+                catFilter === cat.id ? "text-white" : "bg-white/5 text-white/30 hover:text-white/50"
+              }`}
+              style={catFilter === cat.id && cat.color ? { backgroundColor: cat.color } : catFilter === cat.id ? { backgroundColor: "#6B7280" } : undefined}
+            >
+              {cat.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {showDropdown && results.length > 0 && (
+        <div className="absolute z-50 w-full mt-2 rounded-xl bg-[#1E2D47] border border-white/10 shadow-2xl overflow-hidden max-h-[320px] overflow-y-auto">
+          {results.map((pep) => (
+            <button
+              key={pep.id}
+              type="button"
+              onClick={() => { setShowDropdown(false); setQuery(""); }}
+              className="w-full text-left px-4 py-3 hover:bg-purple-400/5 border-b border-white/[0.03] last:border-0 transition-colors flex items-center justify-between gap-3 min-h-[56px]"
+            >
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                <Dna className="w-4 h-4 text-purple-400/60 flex-shrink-0" strokeWidth={1.5} />
+                <div className="min-w-0">
+                  <p className="text-sm text-white/90 font-medium truncate">{pep.name}</p>
+                  <p className="text-[10px] text-white/30">{pep.category}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-1.5 flex-shrink-0">
+                <span className={`text-[9px] px-1.5 py-0.5 rounded-full ${pep.evidenceLevel === "strong" ? "bg-teal-400/10 text-teal-400/60" : pep.evidenceLevel === "emerging" ? "bg-blue-400/10 text-blue-400/60" : "bg-amber-400/10 text-amber-400/60"}`}>
+                  {pep.evidenceLevel}
+                </span>
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function PeptideProtocolPage({ masterPatterns, helixBalance, caqCompleted }: PeptideProtocolPageProps) {
   if (!caqCompleted) {
     return (
@@ -75,7 +175,7 @@ export default function PeptideProtocolPage({ masterPatterns, helixBalance, caqC
       {/* Page header */}
       <div>
         <h1 className="text-2xl md:text-3xl font-bold text-white">Peptide Protocol</h1>
-        <p className="text-sm text-white/40 mt-1">Personalized FarmCeutica\u2122 oral peptides \, Powered by Ultrathink\u2122</p>
+        <p className="text-sm text-white/40 mt-1">Personalized FarmCeutica oral peptides, Powered by Ultrathink</p>
       </div>
 
       {/* Mandatory disclaimer */}
@@ -106,6 +206,9 @@ export default function PeptideProtocolPage({ masterPatterns, helixBalance, caqC
           </div>
         </div>
       </div>
+
+      {/* Peptide search bar */}
+      <PeptideSearchSection />
 
       {/* Helix balance */}
       {hasPeptideRecs && <HelixPeptideCard helixBalance={helixBalance} />}
