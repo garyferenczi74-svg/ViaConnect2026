@@ -11,35 +11,50 @@ export async function GET(req: Request) {
 
   const supabase = createClient();
 
-  // Try full-text search first
-  const { data, error } = await supabase
-    .from("supplement_products")
-    .select("*")
-    .textSearch("search_vector", query, { type: "websearch" })
-    .limit(8);
+  try {
+    // Use the search_supplements RPC function (searches brands, products, aliases)
+    const { data, error } = await supabase.rpc("search_supplements", {
+      search_query: query.toLowerCase(),
+      result_limit: 8,
+    });
 
-  if (!error && data && data.length > 0) {
-    return NextResponse.json({ results: data.map(mapToSuggestion) });
+    if (error) {
+      console.error("Search RPC error:", error);
+      // Fallback: simple ILIKE on brand registry
+      const { data: fallback } = await supabase
+        .from("supplement_brand_registry")
+        .select("id, brand_name, tier, key_categories")
+        .ilike("brand_name", `%${query}%`)
+        .limit(8);
+
+      return NextResponse.json({
+        results: (fallback || []).map((b) => ({
+          resultType: "brand",
+          brandName: b.brand_name,
+          productName: null,
+          category: (b.key_categories as string[])?.[0] || "Supplement",
+          isEnriched: false,
+          ingredientBreakdown: null,
+          matchScore: 50,
+        })),
+      });
+    }
+
+    return NextResponse.json({
+      results: (data || []).map((r: Record<string, unknown>) => ({
+        resultType: r.result_type,
+        brandId: r.brand_id,
+        brandName: r.brand_name,
+        productId: r.product_id,
+        productName: r.product_name,
+        category: r.product_category || "Supplement",
+        isEnriched: r.is_enriched || false,
+        ingredientBreakdown: r.ingredient_breakdown,
+        matchScore: r.match_score,
+      })),
+    });
+  } catch (err) {
+    console.error("Search error:", err);
+    return NextResponse.json({ results: [] });
   }
-
-  // Fallback: ILIKE prefix match
-  const { data: fallback } = await supabase
-    .from("supplement_products")
-    .select("*")
-    .or(`brand_name.ilike.%${query}%,product_name.ilike.%${query}%`)
-    .limit(8);
-
-  return NextResponse.json({ results: (fallback || []).map(mapToSuggestion) });
-}
-
-function mapToSuggestion(row: Record<string, unknown>) {
-  return {
-    brandName: row.brand_name as string,
-    productName: row.product_name as string,
-    formulation: (row.formulation as string) || "",
-    category: (row.category as string) || "Supplement",
-    dosageForm: (row.dosage_form as string) || "capsule",
-    typicalDosage: (row.typical_dosage as string) || "",
-    keyIngredients: (row.key_ingredients as string[]) || [],
-  };
 }
