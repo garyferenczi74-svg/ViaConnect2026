@@ -1617,7 +1617,7 @@ export default function OnboardingStepPage() {
               })()}
 
               {/* "or" Divider + Photo Upload */}
-              {!showDosageModal && !aiLookupResult && !aiLookupLoading && !photoAnalyzing && !userSupplements.some(s => s.name === "None") && (
+              {!showDosageModal && !aiLookupResult && !aiLookupLoading && !userSupplements.some(s => s.name === "None") && (
                 <>
                   <div className="flex items-center gap-4 my-4">
                     <div className="flex-grow h-px bg-white/10" />
@@ -1655,6 +1655,13 @@ export default function OnboardingStepPage() {
                       </div>
                     )}
 
+                    {photoAnalyzing ? (
+                      <div className="flex flex-col items-center gap-3 py-4">
+                        <div className="w-8 h-8 border-2 border-teal-400 border-t-transparent rounded-full animate-spin" />
+                        <p className="text-sm text-teal-400 font-medium">Reading your supplement label...</p>
+                        <p className="text-xs text-white/30">Identifying brand, ingredients, and amounts</p>
+                      </div>
+                    ) : (
                     <div className="flex flex-col sm:flex-row gap-3 justify-center">
                       <label className="flex items-center justify-center gap-2 px-4 py-2.5 min-h-[44px] rounded-xl bg-teal-400/10 border border-teal-400/30 text-teal-400 text-sm font-medium cursor-pointer hover:bg-teal-400/15 transition-all">
                         <Camera className="w-4 h-4" /> Take Photo
@@ -1777,18 +1784,10 @@ export default function OnboardingStepPage() {
                         }} />
                       </label>
                     </div>
+                    )}
                     <p className="text-[10px] text-white/20 mt-3">Tip: Include the Supplement Facts panel for best results</p>
                   </div>
                 </>
-              )}
-
-              {/* Photo Analyzing State */}
-              {photoAnalyzing && (
-                <div className="rounded-xl border border-teal-400/10 bg-teal-400/[0.03] p-6 flex flex-col items-center gap-3 mb-3">
-                  <div className="w-8 h-8 border-2 border-teal-400 border-t-transparent rounded-full animate-spin" />
-                  <p className="text-sm text-teal-400">Analyzing your product photo...</p>
-                  <p className="text-xs text-white/30">Reading label, identifying ingredients, and verifying amounts</p>
-                </div>
               )}
 
               {/* AI Lookup Loading */}
