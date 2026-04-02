@@ -18,6 +18,7 @@ import { InterstitialScreen } from "@/components/onboarding/InterstitialScreen";
 import { WelcomeDashboardScreen } from "@/components/onboarding/WelcomeDashboardScreen";
 import { CAQ_INTERSTITIALS } from "@/config/caq-interstitials";
 import { SEED_INGREDIENTS, FARMCEUTICA_CATEGORIES, normalizeIngredientName } from "@/config/farmceutica-ingredients";
+import { searchBrandsAndProducts } from "@/config/brand-search-index";
 import { InteractionBanner } from "@/components/interactions/InteractionBanner";
 import { emitDataEvent } from "@/lib/ai/emit-event";
 
@@ -1463,6 +1464,33 @@ export default function OnboardingStepPage() {
                         </button>
                       );
                     })}
+                    {/* Brand/Product results from 110-brand index */}
+                    {(() => {
+                      const brandResults = searchBrandsAndProducts(q);
+                      if (brandResults.length === 0) return null;
+                      return (
+                        <>
+                          <div className="px-4 py-2 border-t border-white/10">
+                            <p className="text-[10px] text-teal-400/40 uppercase tracking-wider font-semibold">Brand Products</p>
+                          </div>
+                          {brandResults.map((br, i) => (
+                            <button key={`brand-${i}`} type="button"
+                              onClick={() => {
+                                setShowDosageModal(`${br.brand} ${br.productName}`);
+                                setDosageForm({ deliveryMethod: "standard_actives", dosage: "", unit: "mg", frequency: "", reason: "" });
+                                setSuppSearchQuery("");
+                              }}
+                              className="w-full text-left px-4 py-3 hover:bg-white/5 active:bg-white/10 border-b border-white/[0.03] last:border-0 transition-colors flex items-center justify-between gap-3">
+                              <div className="flex-1 min-w-0">
+                                <span className="text-sm text-white/90 block truncate">{br.brand} {br.productName}</span>
+                                <span className="text-[10px] text-white/30">{br.servingSize}</span>
+                              </div>
+                              <span className="text-[10px] px-2 py-0.5 rounded-full flex-shrink-0 bg-blue-400/10 border border-blue-400/20 text-blue-400/60">{br.category}</span>
+                            </button>
+                          ))}
+                        </>
+                      );
+                    })()}
                     {/* Manual add */}
                     <button type="button"
                       onClick={() => {
