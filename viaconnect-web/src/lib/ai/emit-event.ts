@@ -49,10 +49,14 @@ export async function emitDataEvent(
 
   const cascadeActions = cascadeMap[eventType] || [];
 
-  await supabase.from("data_events").insert({
-    user_id: userId,
-    event_type: eventType,
-    event_data: eventData,
-    cascade_actions: cascadeActions,
-  }).catch(() => {});
+  try {
+    await supabase.from("data_events").insert({
+      user_id: userId,
+      event_type: eventType,
+      event_data: eventData,
+      cascade_actions: cascadeActions,
+    });
+  } catch {
+    // Silent fail — data events are non-critical
+  }
 }
