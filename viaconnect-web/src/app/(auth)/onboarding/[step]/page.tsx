@@ -4,13 +4,14 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { ArrowLeft, ArrowRight, Loader2, Plus, X, Sparkles, Zap, Brain, Moon, Flame, Heart, CheckCircle2, Crown, Star, Calendar, ChevronDown, Info, Camera, FolderOpen, SkipForward, BrainCircuit } from "lucide-react";
+import { ArrowLeft, ArrowRight, Loader2, Plus, X, Sparkles, Zap, Brain, Moon, Flame, Heart, CheckCircle2, Crown, Star, Calendar, ChevronDown, Info, Camera, FolderOpen, SkipForward, BrainCircuit, RefreshCw } from "lucide-react";
 import { ProgressMotivator } from "@/components/caq/ProgressMotivator";
 import { VoiceInput } from "@/components/caq/VoiceInput";
 import { CalmingHelixBackground } from "@/components/caq/CalmingHelixBackground";
 import { BodyTypeSelector } from "@/components/caq/BodyTypeSelector";
 import { shouldShowBodyTypeSelector } from "@/lib/caq/body-type-trigger";
 import { completeCAQAndTriggerEngines } from "@/lib/caq/complete-caq";
+import { fetchPreviousCAQ } from "@/lib/caq/fetchPreviousCAQ";
 import { CONVERSATIONAL_LABELS } from "@/config/caq-conversational-labels";
 import { SMART_PLACEHOLDERS, DEFAULT_PLACEHOLDER } from "@/config/caq-smart-placeholders";
 import toast from "react-hot-toast";
@@ -468,16 +469,63 @@ export default function OnboardingStepPage() {
   }, [medSearch, medications.medications]);
 
   // Pre-populate full name from auth metadata for Demographics page
+  const [isRetake, setIsRetake] = useState(false);
+  const [retakeLoaded, setRetakeLoaded] = useState(false);
+
+  // Load previous CAQ data for retake pre-population
   useEffect(() => {
-    if (stepId === "1" && !demographics.name) {
-      const supabase = createClient();
-      supabase.auth.getUser().then(({ data: { user } }) => {
-        if (user?.user_metadata?.full_name) {
-          setDemographics((prev) => ({ ...prev, name: user.user_metadata.full_name }));
-        }
-      });
-    }
-  }, [stepId, demographics.name]);
+    if (retakeLoaded) return;
+    const supabase = createClient();
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (!user) return;
+      // Load user name for Phase 1
+      if (user.user_metadata?.full_name && !demographics.name) {
+        setDemographics((prev) => ({ ...prev, name: user.user_metadata.full_name }));
+      }
+      // Check if user has completed CAQ before
+      const { data: profile } = await supabase.from("profiles").select("assessment_completed").eq("id", user.id).single();
+      if (profile?.assessment_completed) {
+        setIsRetake(true);
+        try {
+          const prev = await fetchPreviousCAQ(user.id);
+          if (prev) {
+            // Pre-populate demographics
+            const d = prev.demographics as Record<string, string | string[]>;
+            if (d.name || d.dob || d.sex) {
+              setDemographics((p) => ({ ...p, ...(d.name ? { name: String(d.name) } : {}), ...(d.dob ? { dob: String(d.dob) } : {}), ...(d.age ? { age: String(d.age) } : {}), ...(d.sex ? { sex: String(d.sex) } : {}), ...(d.height ? { height: String(d.height) } : {}), ...(d.weight ? { weight: String(d.weight) } : {}), ...(d.ethnicity ? { ethnicity: d.ethnicity as string[] } : {}), ...(d.bloodType ? { bloodType: String(d.bloodType) } : {}) }));
+            }
+            // Pre-populate health concerns
+            const hc = prev.healthConcerns as { healthConcerns?: string[]; familyHistory?: { condition: string; relationships: string[] }[] };
+            if (hc.healthConcerns?.length) setHealthConcerns(hc.healthConcerns);
+            if (hc.familyHistory?.length) setFamilyHistory(hc.familyHistory);
+            // Pre-populate symptoms
+            const mapSymptoms = (data: Record<string, unknown>, defaults: SymptomPhaseData): SymptomPhaseData => {
+              const result = { ...defaults };
+              for (const [key, val] of Object.entries(data)) {
+                if (val && typeof val === "object" && "score" in (val as Record<string, unknown>)) {
+                  result[key] = val as { score: number; description: string };
+                }
+              }
+              return result;
+            };
+            if (Object.keys(prev.physicalSymptoms).length > 0) setSymptomsPhysical((p) => mapSymptoms(prev.physicalSymptoms, p));
+            if (Object.keys(prev.neuroSymptoms).length > 0) setSymptomsNeuro((p) => mapSymptoms(prev.neuroSymptoms, p));
+            if (Object.keys(prev.emotionalSymptoms).length > 0) setSymptomsEmotional((p) => mapSymptoms(prev.emotionalSymptoms, p));
+            // Pre-populate lifestyle
+            const ls = prev.lifestyle as Record<string, string>;
+            if (ls.diet || ls.exercise || ls.sleepHours) {
+              setLifestyle((p) => ({ ...p, ...(ls.diet ? { diet: ls.diet } : {}), ...(ls.exercise ? { exercise: ls.exercise } : {}), ...(ls.sleepHours ? { sleepHours: ls.sleepHours } : {}), ...(ls.stressLevel ? { stressLevel: ls.stressLevel } : {}), ...(ls.alcohol ? { alcohol: ls.alcohol } : {}), ...(ls.smoking ? { smoking: ls.smoking } : {}), ...(ls.caffeine ? { caffeine: ls.caffeine } : {}), ...(ls.waterIntake ? { waterIntake: ls.waterIntake } : {}), ...(ls.screenTime ? { screenTime: ls.screenTime } : {}), ...(ls.sunExposure ? { sunExposure: ls.sunExposure } : {}) }));
+            }
+            // Pre-populate goals
+            const goals_arr = (ls as Record<string, unknown>).goals as string[] | undefined;
+            if (goals_arr?.length) setGoals((p) => ({ ...p, goals: goals_arr }));
+          }
+        } catch (err) { console.warn("Failed to load previous CAQ:", err); }
+      }
+      setRetakeLoaded(true);
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Real-time interaction check when medications or supplements change
   useEffect(() => {
@@ -708,6 +756,14 @@ export default function OnboardingStepPage() {
       )}
 
       <div className={`glass rounded-2xl ${stepId === "complete" ? "p-6 lg:p-8" : "p-6 lg:p-8"}`}>
+        {/* Retake banner */}
+        {isRetake && stepId !== "complete" && !stepId.startsWith("i-") && (
+          <div className="flex items-start gap-3 px-4 py-3 mb-4 bg-teal-400/5 border border-teal-400/15 rounded-xl">
+            <RefreshCw className="w-4 h-4 text-teal-400 flex-shrink-0 mt-0.5" strokeWidth={1.5} />
+            <p className="text-xs text-teal-400/70 leading-relaxed">Your previous answers are loaded. Update anything that&apos;s changed.</p>
+          </div>
+        )}
+
         {/* Phase header (hidden on complete page — it has its own) */}
         {stepId !== "complete" && (
           <div className="mb-6">
