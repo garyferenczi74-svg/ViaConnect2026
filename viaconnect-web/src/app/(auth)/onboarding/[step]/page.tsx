@@ -19,6 +19,7 @@ import { WelcomeDashboardScreen } from "@/components/onboarding/WelcomeDashboard
 import { CAQ_INTERSTITIALS } from "@/config/caq-interstitials";
 import { SEED_INGREDIENTS, FARMCEUTICA_CATEGORIES, normalizeIngredientName } from "@/config/farmceutica-ingredients";
 import { searchBrandsAndProducts } from "@/config/brand-search-index";
+import { PEPTIDE_REGISTRY, searchPeptides } from "@/config/peptide-database/registry";
 import { InteractionBanner } from "@/components/interactions/InteractionBanner";
 import { emitDataEvent } from "@/lib/ai/emit-event";
 
@@ -1410,7 +1411,7 @@ export default function OnboardingStepPage() {
                     value={suppSearchQuery}
                     onChange={(e) => setSuppSearchQuery(e.target.value)}
                     onFocus={() => { if (suppSearchQuery.trim()) setSuppSearchResults([]); }}
-                    placeholder="Search your current vitamins and minerals by brand or ingredient"
+                    placeholder="Search vitamins, minerals, supplements and peptides by brand or ingredient"
                     className="w-full pl-12 pr-4 py-3.5 rounded-xl bg-white/5 border border-teal-400/30 text-base text-white placeholder:text-white/30 focus:border-teal-400/60 focus:ring-1 focus:ring-teal-400/30 focus:outline-none transition-all"
                     autoComplete="off"
                     spellCheck={false}
@@ -1486,6 +1487,36 @@ export default function OnboardingStepPage() {
                                 <span className="text-[10px] text-white/30">{br.servingSize}</span>
                               </div>
                               <span className="text-[10px] px-2 py-0.5 rounded-full flex-shrink-0 bg-blue-400/10 border border-blue-400/20 text-blue-400/60">{br.category}</span>
+                            </button>
+                          ))}
+                        </>
+                      );
+                    })()}
+                    {/* Peptide results from 28-peptide database */}
+                    {(() => {
+                      const peptideResults = searchPeptides(q).slice(0, 5);
+                      if (peptideResults.length === 0) return null;
+                      return (
+                        <>
+                          <div className="px-4 py-2 border-t border-white/10">
+                            <p className="text-[10px] text-purple-400/40 uppercase tracking-wider font-semibold">FarmCeutica Peptides</p>
+                          </div>
+                          {peptideResults.map((pep) => (
+                            <button key={pep.id} type="button"
+                              onClick={() => {
+                                setShowDosageModal(`FarmCeutica ${pep.name}`);
+                                setDosageForm({ deliveryMethod: "peptides", dosage: "", unit: "mg", frequency: "", reason: "" });
+                                setSuppSearchQuery("");
+                              }}
+                              className="w-full text-left px-4 py-3 hover:bg-purple-400/5 active:bg-purple-400/10 border-b border-white/[0.03] last:border-0 transition-colors flex items-center justify-between gap-3">
+                              <div className="flex-1 min-w-0">
+                                <span className="text-sm text-white/90 block truncate">{pep.name}</span>
+                                <span className="text-[10px] text-white/30">{pep.category}</span>
+                              </div>
+                              <div className="flex items-center gap-1.5 flex-shrink-0">
+                                <span className={`text-[9px] px-1.5 py-0.5 rounded-full ${pep.evidenceLevel === "strong" ? "bg-teal-400/10 text-teal-400/60" : pep.evidenceLevel === "emerging" ? "bg-blue-400/10 text-blue-400/60" : "bg-amber-400/10 text-amber-400/60"}`}>{pep.evidenceLevel}</span>
+                                <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-400/10 border border-purple-400/20 text-purple-400/60">Peptide</span>
+                              </div>
                             </button>
                           ))}
                         </>
@@ -2000,7 +2031,7 @@ export default function OnboardingStepPage() {
                   ).slice(0, 10);
                   setSuppSearchResults(matches);
                 }}
-                placeholder="Search your current vitamins and minerals by brand or ingredient"
+                placeholder="Search vitamins, minerals, supplements and peptides by brand or ingredient"
                 className="w-full pl-12 pr-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-white/30 focus:border-teal-400/50 focus:ring-1 focus:ring-teal-400/30 focus:outline-none"
               />
             </div>
