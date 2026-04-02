@@ -60,7 +60,9 @@ RESPOND WITH ONLY THIS JSON STRUCTURE (no markdown, no preamble):
 
 export async function POST(req: Request) {
   try {
-    const { image, mediaType } = await req.json();
+    const body = await req.json();
+    const image = body.image || body.imageBase64;
+    const mediaType = body.mediaType || body.mimeType;
 
     if (!image || typeof image !== "string" || image.length < 100) {
       return NextResponse.json({ success: false, error: "No valid image data received." });
@@ -111,7 +113,18 @@ export async function POST(req: Request) {
     console.log("supplement-vision: Response (first 300):", text.substring(0, 300));
 
     const cleaned = text.replace(/```json|```/g, "").trim();
-    const parsed = JSON.parse(cleaned);
+    let parsed;
+    try {
+      parsed = JSON.parse(cleaned);
+    } catch {
+      const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        parsed = JSON.parse(jsonMatch[0]);
+      } else {
+        console.error("supplement-vision: Could not parse:", cleaned.substring(0, 300));
+        return NextResponse.json({ success: false, error: "Could not parse AI response. Try again." });
+      }
+    }
 
     const confidenceMap = { high: 0.9, medium: 0.7, low: 0.4 };
     const confidence = confidenceMap[parsed.overallConfidence as keyof typeof confidenceMap] || 0.5;
