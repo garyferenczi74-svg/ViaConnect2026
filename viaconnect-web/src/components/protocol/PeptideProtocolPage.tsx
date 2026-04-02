@@ -210,6 +210,23 @@ export default function PeptideProtocolPage({ masterPatterns, helixBalance, caqC
       {/* Peptide search bar */}
       <PeptideSearchSection />
 
+      {/* Update assessment */}
+      <div className="rounded-xl bg-white/[0.02] border border-orange-400/15 p-4 flex items-center gap-3">
+        <div className="relative flex-shrink-0">
+          <div className="absolute blur-lg -inset-1 rounded-2xl opacity-60" style={{ backgroundColor: "#B75E1833" }} />
+          <div className="relative w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "linear-gradient(135deg, #B75E1833, #B75E181A, transparent)", border: "1px solid #B75E1826" }}>
+            <RefreshCw className="w-4 h-4 text-orange-400" strokeWidth={1.5} />
+          </div>
+        </div>
+        <div className="flex-1 min-w-0">
+          <h4 className="text-sm font-semibold text-white">Update Assessment</h4>
+          <p className="text-[11px] text-white/30 mt-0.5">Retake CAQ to refresh your peptide protocol</p>
+        </div>
+        <a href="/onboarding/i-caq-intro" className="min-h-[36px] px-3 py-1.5 rounded-lg bg-orange-400/10 border border-orange-400/30 text-orange-400 text-[11px] font-medium hover:bg-orange-400/15 transition-all flex items-center gap-1.5 flex-shrink-0">
+          <RefreshCw className="w-3 h-3" strokeWidth={1.5} /> Retake
+        </a>
+      </div>
+
       {/* Helix balance */}
       {hasPeptideRecs && <HelixPeptideCard helixBalance={helixBalance} />}
 
@@ -229,19 +246,6 @@ export default function PeptideProtocolPage({ masterPatterns, helixBalance, caqC
       {/* FAQ */}
       <PeptideFAQSection />
 
-      {/* Retake assessment */}
-      <div className="rounded-xl bg-white/[0.02] border border-white/8 p-5">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div>
-            <h4 className="text-sm font-semibold text-white">Update Your Assessment</h4>
-            <p className="text-xs text-white/30 mt-1 max-w-md">Retake the Clinical Assessment Questionnaire to update your peptide protocol with your current health status.</p>
-          </div>
-          <a href="/onboarding/i-caq-intro" className="min-h-[44px] px-5 py-2.5 rounded-xl bg-orange-400/10 border border-orange-400/30 text-orange-400 text-sm font-medium hover:bg-orange-400/15 transition-all flex items-center gap-2 flex-shrink-0">
-            <RefreshCw className="w-4 h-4" strokeWidth={1.5} />
-            Retake Assessment
-          </a>
-        </div>
-      </div>
     </div>
   );
 }
