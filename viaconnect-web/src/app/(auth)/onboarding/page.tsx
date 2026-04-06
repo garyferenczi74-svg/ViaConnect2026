@@ -254,7 +254,7 @@ export default function OnboardingWelcomePage() {
           style={{ color: "var(--text-tertiary)" }}
         >
           <span className="font-semibold tracking-wide">ViaConnect</span>
-          <span>FarmCeutica Wellness LLC</span>
+          <span>ViaConnect Wellness</span>
         </div>
       </div>
     </>

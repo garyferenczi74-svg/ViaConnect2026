@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 
 /**
- * Genemetrics API Integration for FarmCeutica GENEX360
+ * Genemetrics API Integration for ViaConnect GENEX360
  *
  * This endpoint handles two actions:
  * 1. "check" — Polls the Genemetrics partner API for pending results
@@ -227,7 +227,7 @@ export async function POST(request: NextRequest) {
         source: "genemetrics_genex360",
         imported_at: new Date().toISOString(),
       },
-      source_lab: "FarmCeutica GENEX360 (Genemetrics)",
+      source_lab: "ViaConnect GENEX360 (Genemetrics)",
       report_date: new Date().toISOString().split("T")[0],
     }, { onConflict: "user_id" });
 

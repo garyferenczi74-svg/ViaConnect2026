@@ -16,7 +16,7 @@ export const metadata: Metadata = {
     template: "%s | ViaConnect GeneX360",
   },
   description:
-    "One Genome. One Formulation. One Life at a Time. Precision health platform by FarmCeutica Wellness LLC. Gene-guided supplements, AI clinical reasoning, and real-time wellness tracking.",
+    "One Genome. One Formulation. One Life at a Time. Precision health platform by ViaConnect. Gene-guided supplements, AI clinical reasoning, and real-time wellness tracking.",
   keywords: [
     "precision health",
     "genomics",
@@ -26,13 +26,13 @@ export const metadata: Metadata = {
     "COMT",
     "pharmacogenomics",
     "gene-guided",
-    "FarmCeutica",
+    "ViaConnect",
     "ViaConnect",
     "GeneX360",
   ],
-  authors: [{ name: "FarmCeutica Wellness LLC" }],
-  creator: "FarmCeutica Wellness LLC",
-  publisher: "FarmCeutica Wellness LLC",
+  authors: [{ name: "ViaConnect" }],
+  creator: "ViaConnect",
+  publisher: "ViaConnect",
   metadataBase: new URL(
     process.env.NEXT_PUBLIC_APP_URL ?? "https://viaconnect.health"
   ),
@@ -57,7 +57,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "ViaConnect GeneX360 — Precision Health",
     description:
-      "Gene-guided supplements and AI-powered clinical reasoning by FarmCeutica Wellness.",
+      "Gene-guided supplements and AI-powered clinical reasoning by ViaConnect.",
     images: ["/og-image.png"],
   },
   icons: {

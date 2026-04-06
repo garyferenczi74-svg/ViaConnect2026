@@ -28,13 +28,13 @@ const FARMCEUTICA_EQUIVALENTS: Record<string, { productName: string; bioavailabi
   "omega-3": { productName: "FarmCeutica Micellar Algal Omega-3", bioavailability: 0.85 },
   quercetin: { productName: "FarmCeutica Liposomal Quercetin", bioavailability: 0.90 },
   resveratrol: { productName: "FarmCeutica Liposomal Resveratrol", bioavailability: 0.90 },
-  "b12": { productName: "FarmCeutica BioB Fusion Methylated B Complex", bioavailability: 0.90 },
-  folate: { productName: "FarmCeutica MTHFR+ (L-Methylfolate)", bioavailability: 0.90 },
+  "b12": { productName: "ViaConnect BioB Fusion Methylated B Complex", bioavailability: 0.90 },
+  folate: { productName: "ViaConnect MTHFR+ (L-Methylfolate)", bioavailability: 0.90 },
   iron: { productName: "FarmCeutica Liposomal Iron Bisglycinate", bioavailability: 0.90 },
   zinc: { productName: "FarmCeutica Liposomal Zinc Picolinate", bioavailability: 0.90 },
 };
 
-function findFarmCeuticaEquivalent(ingredientName: string): { productName: string; bioavailability: number } | null {
+function findViaConnectEquivalent(ingredientName: string): { productName: string; bioavailability: number } | null {
   const lower = ingredientName.toLowerCase();
   for (const [key, val] of Object.entries(FARMCEUTICA_EQUIVALENTS)) {
     if (lower.includes(key)) return val;
@@ -52,7 +52,7 @@ export function generateUpgradeInsights(
   const userBioavail = BIOAVAILABILITY_MAP[deliveryMethod] || 0.20;
 
   for (const ingredient of ingredients) {
-    const fcEquiv = findFarmCeuticaEquivalent(ingredient.name);
+    const fcEquiv = findViaConnectEquivalent(ingredient.name);
     if (!fcEquiv) continue;
 
     const multiplier = fcEquiv.bioavailability / userBioavail;

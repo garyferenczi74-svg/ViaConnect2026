@@ -138,7 +138,7 @@ export function SupplementSmartSearch({
             transition={{ duration: 0.15 }}
             className="absolute z-50 w-full mt-2 rounded-xl bg-[#1E2D47] border border-white/10 shadow-2xl overflow-hidden max-h-[320px] overflow-y-auto"
           >
-            {/* Local FarmCeutica results */}
+            {/* Local results */}
             {localResults.map((item) => {
               const alreadyAdded = existingNames.some((n) => n.toLowerCase() === item.name.toLowerCase());
               const name = item.search_name;
@@ -160,7 +160,7 @@ export function SupplementSmartSearch({
                   type="button"
                   onClick={() => {
                     if (!alreadyAdded) {
-                      onSelectProduct(item.name, "FarmCeutica", item.category, item.delivery_method);
+                      onSelectProduct(item.name, "ViaConnect", item.category, item.delivery_method);
                       setQuery("");
                       setShowDropdown(false);
                     }

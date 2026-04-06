@@ -1,60 +1,52 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const query = searchParams.get("q");
+  const limit = Math.min(parseInt(searchParams.get("limit") ?? "20"), 50);
+  const brandId = searchParams.get("brand_id") ?? null;
 
   if (!query || query.length < 2) {
-    return NextResponse.json({ results: [] });
+    return NextResponse.json({ results: [], grouped: { brands: [], products: [], ingredients: [] }, total: 0 });
   }
 
   const supabase = createClient();
 
   try {
-    // Use the search_supplements RPC function (searches brands, products, aliases)
-    const { data, error } = await supabase.rpc("search_supplements", {
-      search_query: query.toLowerCase(),
-      result_limit: 8,
+    // Use the enhanced v2 search RPC
+    const { data, error } = await supabase.rpc("search_supplements_v2", {
+      query_text: query,
+      result_limit: limit,
+      brand_filter: brandId,
     });
 
     if (error) {
       console.error("Search RPC error:", error);
-      // Fallback: simple ILIKE on brand registry
-      const { data: fallback } = await supabase
-        .from("supplement_brand_registry")
-        .select("id, brand_name, tier, key_categories")
-        .ilike("brand_name", `%${query}%`)
-        .limit(8);
-
+      // Fallback to old search_supplements
+      const { data: fallback } = await supabase.rpc("search_supplements", {
+        search_query: query.toLowerCase(),
+        result_limit: limit,
+      });
       return NextResponse.json({
-        results: (fallback || []).map((b) => ({
-          resultType: "brand",
-          brandName: b.brand_name,
-          productName: null,
-          category: (b.key_categories as string[])?.[0] || "Supplement",
-          isEnriched: false,
-          ingredientBreakdown: null,
-          matchScore: 50,
-        })),
+        results: fallback || [],
+        grouped: { brands: [], products: fallback || [], ingredients: [] },
+        total: (fallback || []).length,
       });
     }
 
-    return NextResponse.json({
-      results: (data || []).map((r: Record<string, unknown>) => ({
-        resultType: r.result_type,
-        brandId: r.brand_id,
-        brandName: r.brand_name,
-        productId: r.product_id,
-        productName: r.product_name,
-        category: r.product_category || "Supplement",
-        isEnriched: r.is_enriched || false,
-        ingredientBreakdown: r.ingredient_breakdown,
-        matchScore: r.match_score,
-      })),
-    });
+    const results = data || [];
+    const grouped = {
+      brands: results.filter((r: any) => r.result_type === "brand"),
+      products: results.filter((r: any) => r.result_type === "product"),
+      ingredients: results.filter((r: any) => r.result_type === "ingredient"),
+    };
+
+    return NextResponse.json({ results, grouped, total: results.length, query });
   } catch (err) {
     console.error("Search error:", err);
-    return NextResponse.json({ results: [] });
+    return NextResponse.json({ results: [], grouped: { brands: [], products: [], ingredients: [] }, total: 0 });
   }
 }

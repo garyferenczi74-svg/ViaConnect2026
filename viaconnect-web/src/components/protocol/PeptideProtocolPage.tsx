@@ -39,7 +39,7 @@ function PeptideNotReadyState() {
       </div>
       <h2 className="text-xl font-bold text-white mb-2">Your Peptide Protocol Awaits</h2>
       <p className="text-sm text-white/40 max-w-md mx-auto leading-relaxed mb-6">
-        Complete your Clinical Assessment Questionnaire first. Ultrathink will analyze your symptoms, goals, and patterns to recommend personalized peptides from the FarmCeutica\u2122 portfolio.
+        Complete your Clinical Assessment Questionnaire first. Ultrathink will analyze your symptoms, goals, and patterns to recommend personalized peptides from the ViaConnect portfolio.
       </p>
       <a href="/onboarding/i-caq-intro" className="inline-flex items-center gap-2 min-h-[48px] px-6 py-3 rounded-xl bg-teal-400/15 border border-teal-400/30 text-teal-400 text-sm font-semibold hover:bg-teal-400/20 transition-all">
         <ClipboardList className="w-4 h-4" strokeWidth={1.5} />
@@ -175,7 +175,7 @@ export default function PeptideProtocolPage({ masterPatterns, helixBalance, caqC
       {/* Page header */}
       <div>
         <h1 className="text-2xl md:text-3xl font-bold text-white">Peptide Protocol</h1>
-        <p className="text-sm text-white/40 mt-1">Personalized FarmCeutica oral peptides, Powered by Ultrathink</p>
+        <p className="text-sm text-white/40 mt-1">Personalized oral peptides, Powered by Ultrathink</p>
       </div>
 
       {/* Mandatory disclaimer */}

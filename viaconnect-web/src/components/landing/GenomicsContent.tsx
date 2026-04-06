@@ -36,7 +36,7 @@ export function GenomicsContent() {
       <TabP><TabBold>All 6 panels. Save $1,473 (59.8%).</TabBold> 6 months Platinum included ($173.28 value). HSA/FSA eligible.</TabP>
 
       <TabH2>SNP-Targeted Nutraceuticals</TabH2>
-      <TabP>&ldquo;FarmCeutica doesn&apos;t make supplements then figure out who to sell them to. We identify genetic variants, research the biochemistry, then formulate exactly what that variant demands.&rdquo;</TabP>
+      <TabP>&ldquo;ViaConnect doesn&apos;t make supplements then figure out who to sell them to. We identify genetic variants, research the biochemistry, then formulate exactly what that variant demands.&rdquo;</TabP>
       <TabP>MTHFR+ (MTHFR C677T/A1298C) | COMT+ (Val158Met) | SHRED+ (FTO/MC4R/GLP1R) | FOCUS+ (COMT/BDNF) | CALM+ (stress SNPs) | RELAX+ (multi-SNP sleep) | RISE+ (energy metabolism) | NAD+ (longevity SNPs) | FLEX+ (TNF/IL-6) | BLAST+ (ACTN3/ACE) | VDR+ (VDR Bsm1/Taq1) | MAOA+ (MAOA VNTR) | Plus BALANCE+, CLEAN+, IRON+, AMINO ACID MATRIX+, DigestiZorb+, CREATINE HCL+, DESIRE+, GROW+ Pre-Natal. 27+ products.</TabP>
 
       <TabH2>Dual-Delivery Absorption</TabH2>
@@ -46,7 +46,7 @@ export function GenomicsContent() {
       <TabP><TabBold>Combined:</TabBold> 10 to27x bioavailability. PK studies: N=24 liposomal (Cmax +1,055%, AUC +1,079%), N=32 micellar (Cmax +2,594%, 27x bioavailability).</TabP>
 
       <TabTable
-        headers={["Nutrient", "Standard", "FarmCeutica", "Improvement"]}
+        headers={["Nutrient", "Standard", "ViaConnect", "Improvement"]}
         rows={[
           ["CoQ10", "<4%", "60\u2013108%", "15\u201327x"],
           ["Curcumin", "<1%", "27\u201345%", "27\u201345x"],

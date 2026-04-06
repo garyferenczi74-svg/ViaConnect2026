@@ -21,6 +21,7 @@ import { WelcomeDashboardScreen } from "@/components/onboarding/WelcomeDashboard
 import { CAQ_INTERSTITIALS } from "@/config/caq-interstitials";
 import { SEED_INGREDIENTS, FARMCEUTICA_CATEGORIES, normalizeIngredientName } from "@/config/farmceutica-ingredients";
 import { searchBrandsAndProducts } from "@/config/brand-search-index";
+import BrandProductSearch from "@/components/caq/phase6/BrandProductSearch";
 import { PEPTIDE_REGISTRY, searchPeptides } from "@/config/peptide-database/registry";
 import { InteractionBanner } from "@/components/interactions/InteractionBanner";
 import { emitDataEvent } from "@/lib/ai/emit-event";
@@ -419,10 +420,12 @@ export default function OnboardingStepPage() {
     screenTime: "", sunExposure: "",
   });
 
-  // Phase 4b state — Current Supplements (FarmCeutica search + AI product lookup)
+  // Phase 4b state — Current Supplements (ViaConnect search + AI product lookup)
   const [userSupplements, setUserSupplements] = useState<{ name: string; brand: string; source: string; deliveryMethod: string; dosage: string; unit: string; frequency: string; reason: string; ingredientBreakdown?: { name: string; amount: number; unit: string; category?: string; dailyValuePercent?: number | null }[] }[]>([]);
   const [suppSearchQuery, setSuppSearchQuery] = useState("");
   const [suppSearchResults, setSuppSearchResults] = useState<{ name: string; search_name: string; category: string; delivery_method: string }[]>([]);
+  // Live database search results (2,189 products from 20+ brands)
+  const [liveDbResults, setLiveDbResults] = useState<{ result_type: string; brand_name: string; product_name: string; product_category: string; match_score: number }[]>([]);
   const [showDosageModal, setShowDosageModal] = useState<string | null>(null);
   const [dosageForm, setDosageForm] = useState({ deliveryMethod: "", dosage: "", unit: "mg", frequency: "", reason: "" });
   // AI product lookup state
@@ -434,6 +437,28 @@ export default function OnboardingStepPage() {
   // Photo upload state
   const [productPhotos, setProductPhotos] = useState<File[]>([]);
   const [photoAnalyzing, setPhotoAnalyzing] = useState(false);
+
+  // Live database search — debounced query to Supabase (2,189 products)
+  useEffect(() => {
+    if (suppSearchQuery.trim().length < 2) { setLiveDbResults([]); return; }
+    const timer = setTimeout(async () => {
+      try {
+        const supabase = createClient();
+        const { data } = await supabase.rpc('search_supplements', {
+          search_query: suppSearchQuery.trim().toLowerCase(),
+          result_limit: 8,
+        });
+        setLiveDbResults((data || []).map((r: Record<string, unknown>) => ({
+          result_type: r.result_type as string,
+          brand_name: r.brand_name as string,
+          product_name: r.product_name as string,
+          product_category: (r.product_category as string) || 'Supplement',
+          match_score: r.match_score as number,
+        })));
+      } catch { setLiveDbResults([]); }
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [suppSearchQuery]);
 
   // Phase 4 state
   const [medications, setMedications] = useState<MedicationsData>({
@@ -494,6 +519,19 @@ export default function OnboardingStepPage() {
             const d = prev.demographics as Record<string, string | string[]>;
             if (d.name || d.dob || d.sex) {
               setDemographics((p) => ({ ...p, ...(d.name ? { name: String(d.name) } : {}), ...(d.dob ? { dob: String(d.dob) } : {}), ...(d.age ? { age: String(d.age) } : {}), ...(d.sex ? { sex: String(d.sex) } : {}), ...(d.height ? { height: String(d.height) } : {}), ...(d.weight ? { weight: String(d.weight) } : {}), ...(d.ethnicity ? { ethnicity: d.ethnicity as string[] } : {}), ...(d.bloodType ? { bloodType: String(d.bloodType) } : {}) }));
+            }
+            // Hydrate heightFt/heightIn from stored cm value
+            if (d.height) {
+              const cm = parseFloat(String(d.height));
+              if (cm > 0) {
+                const totalIn = cm / 2.54;
+                setHeightFt(String(Math.floor(totalIn / 12)));
+                setHeightIn(String(Math.round(totalIn % 12)));
+              }
+            }
+            // Hydrate body type
+            if (d.bodyType) {
+              setBodyType(String(d.bodyType));
             }
             // Pre-populate health concerns
             const hc = prev.healthConcerns as { healthConcerns?: string[]; familyHistory?: { condition: string; relationships: string[] }[] };
@@ -1459,163 +1497,31 @@ export default function OnboardingStepPage() {
               <label className="block text-base font-semibold text-white mb-1">What You Are Currently Taking</label>
               <p className="text-sm text-white/40 mb-3">Add every supplement, vitamin, and mineral you take regularly</p>
 
-              {/* Search Input — reacts on EVERY keystroke including first */}
+              {/* Brand + Product Search — powered by 2,472 products from 113 brands in Supabase */}
               {!showDosageModal && !userSupplements.some(s => s.name === "None") && (
-                <div className="relative mb-3">
-                  <Sparkles className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-teal-400/50 pointer-events-none" />
-                  <input
-                    type="text"
-                    value={suppSearchQuery}
-                    onChange={(e) => setSuppSearchQuery(e.target.value)}
-                    onFocus={() => { if (suppSearchQuery.trim()) setSuppSearchResults([]); }}
+                <div className="mb-3">
+                  <BrandProductSearch
+                    darkMode={true}
+                    onProductSelect={(product) => {
+                      setShowDosageModal(product.product_name);
+                      setDosageForm({
+                        deliveryMethod: product.delivery_method || "standard_actives",
+                        dosage: "", unit: "mg", frequency: "", reason: "",
+                      });
+                      setSuppSearchQuery("");
+                    }}
+                    onManualEntry={(searchText) => {
+                      setShowDosageModal(searchText);
+                      setDosageForm({ deliveryMethod: "", dosage: "", unit: "mg", frequency: "", reason: "" });
+                      setSuppSearchQuery("");
+                      setAiLookupResult(null); setAiLookupError("");
+                    }}
                     placeholder="Search vitamins, minerals, supplements and peptides by brand or ingredient"
-                    className="w-full pl-12 pr-4 py-3.5 rounded-xl bg-white/5 border border-teal-400/30 text-base text-white placeholder:text-white/30 focus:border-teal-400/60 focus:ring-1 focus:ring-teal-400/30 focus:outline-none transition-all"
-                    autoComplete="off"
-                    spellCheck={false}
                   />
                 </div>
               )}
 
-              {/* Search Results — instant client-side filtering, alphabetical */}
-              {!showDosageModal && suppSearchQuery.trim().length > 0 && (() => {
-                const q = suppSearchQuery.toLowerCase().trim();
-                const filtered = SEED_INGREDIENTS
-                  .filter((i) => {
-                    const name = i.search_name.toLowerCase();
-                    return name.startsWith(q) || name.split(/[\s\-\(\)\/]+/).some(word => word.startsWith(q));
-                  })
-                  .sort((a, b) => {
-                    const aStarts = a.search_name.toLowerCase().startsWith(q) ? 0 : 1;
-                    const bStarts = b.search_name.toLowerCase().startsWith(q) ? 0 : 1;
-                    if (aStarts !== bStarts) return aStarts - bStarts;
-                    return a.search_name.localeCompare(b.search_name);
-                  })
-                  .slice(0, 15);
-                return (
-                  <div className="rounded-xl bg-[#1E2D4A] border border-white/10 shadow-2xl shadow-black/40 max-h-[320px] overflow-y-auto mb-3 z-50 relative">
-                    {filtered.map((item) => {
-                      // Highlight matching text
-                      const name = item.search_name;
-                      const lowerName = name.toLowerCase();
-                      let matchIdx = lowerName.indexOf(q);
-                      if (matchIdx === -1) {
-                        const words = lowerName.split(/[\s\-\(\)\/]+/);
-                        let pos = 0;
-                        for (const word of words) {
-                          const wIdx = lowerName.indexOf(word, pos);
-                          if (word.startsWith(q)) { matchIdx = wIdx; break; }
-                          pos = wIdx + word.length;
-                        }
-                      }
-                      return (
-                        <button key={item.name} type="button"
-                          onClick={() => {
-                            setShowDosageModal(item.name);
-                            setDosageForm({ deliveryMethod: item.delivery_method === "Liposomal" ? "liposomal_delivery" : item.delivery_method === "Micellar" ? "micellar_delivery" : "standard_actives", dosage: "", unit: "mg", frequency: "", reason: "" });
-                            setSuppSearchQuery("");
-                          }}
-                          className="w-full text-left px-4 py-3 hover:bg-white/5 active:bg-white/10 border-b border-white/[0.03] last:border-0 transition-colors flex items-center justify-between gap-3">
-                          <span className="text-sm text-white/90 flex-1">
-                            {matchIdx >= 0 ? <>{name.slice(0, matchIdx)}<span className="text-teal-400 font-medium">{name.slice(matchIdx, matchIdx + q.length)}</span>{name.slice(matchIdx + q.length)}</> : name}
-                          </span>
-                          <span className="text-[10px] px-2 py-0.5 rounded-full flex-shrink-0 bg-teal-400/10 border border-teal-400/20 text-teal-400/60">{item.delivery_method}</span>
-                        </button>
-                      );
-                    })}
-                    {/* Brand/Product results from 110-brand index */}
-                    {(() => {
-                      const brandResults = searchBrandsAndProducts(q);
-                      if (brandResults.length === 0) return null;
-                      return (
-                        <>
-                          <div className="px-4 py-2 border-t border-white/10">
-                            <p className="text-[10px] text-teal-400/40 uppercase tracking-wider font-semibold">Brand Products</p>
-                          </div>
-                          {brandResults.map((br, i) => (
-                            <button key={`brand-${i}`} type="button"
-                              onClick={() => {
-                                setShowDosageModal(`${br.brand} ${br.productName}`);
-                                setDosageForm({ deliveryMethod: "standard_actives", dosage: "", unit: "mg", frequency: "", reason: "" });
-                                setSuppSearchQuery("");
-                              }}
-                              className="w-full text-left px-4 py-3 hover:bg-white/5 active:bg-white/10 border-b border-white/[0.03] last:border-0 transition-colors flex items-center justify-between gap-3">
-                              <div className="flex-1 min-w-0">
-                                <span className="text-sm text-white/90 block truncate">{br.brand} {br.productName}</span>
-                                <span className="text-[10px] text-white/30">{br.servingSize}</span>
-                              </div>
-                              <span className="text-[10px] px-2 py-0.5 rounded-full flex-shrink-0 bg-blue-400/10 border border-blue-400/20 text-blue-400/60">{br.category}</span>
-                            </button>
-                          ))}
-                        </>
-                      );
-                    })()}
-                    {/* Peptide results from 28-peptide database */}
-                    {(() => {
-                      const peptideResults = searchPeptides(q).slice(0, 5);
-                      if (peptideResults.length === 0) return null;
-                      return (
-                        <>
-                          <div className="px-4 py-2 border-t border-white/10">
-                            <p className="text-[10px] text-purple-400/40 uppercase tracking-wider font-semibold">FarmCeutica Peptides</p>
-                          </div>
-                          {peptideResults.map((pep) => (
-                            <button key={pep.id} type="button"
-                              onClick={() => {
-                                setShowDosageModal(`FarmCeutica ${pep.name}`);
-                                setDosageForm({ deliveryMethod: "peptides", dosage: "", unit: "mg", frequency: "", reason: "" });
-                                setSuppSearchQuery("");
-                              }}
-                              className="w-full text-left px-4 py-3 hover:bg-purple-400/5 active:bg-purple-400/10 border-b border-white/[0.03] last:border-0 transition-colors flex items-center justify-between gap-3">
-                              <div className="flex-1 min-w-0">
-                                <span className="text-sm text-white/90 block truncate">{pep.name}</span>
-                                <span className="text-[10px] text-white/30">{pep.category}</span>
-                              </div>
-                              <div className="flex items-center gap-1.5 flex-shrink-0">
-                                <span className={`text-[9px] px-1.5 py-0.5 rounded-full ${pep.evidenceLevel === "strong" ? "bg-teal-400/10 text-teal-400/60" : pep.evidenceLevel === "emerging" ? "bg-blue-400/10 text-blue-400/60" : "bg-amber-400/10 text-amber-400/60"}`}>{pep.evidenceLevel}</span>
-                                <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-400/10 border border-purple-400/20 text-purple-400/60">Peptide</span>
-                              </div>
-                            </button>
-                          ))}
-                        </>
-                      );
-                    })()}
-                    {/* Manual add */}
-                    <button type="button"
-                      onClick={() => {
-                        setShowDosageModal(suppSearchQuery.trim());
-                        setDosageForm({ deliveryMethod: "", dosage: "", unit: "mg", frequency: "", reason: "" });
-                        setSuppSearchQuery("");
-                        setAiLookupResult(null); setAiLookupError("");
-                      }}
-                      className="w-full text-left px-4 py-3 text-sm font-medium text-copper hover:bg-copper/5 transition-colors flex items-center gap-2 border-t border-white/10">
-                      <Plus className="w-3.5 h-3.5" />
-                      Add &quot;{suppSearchQuery.trim()}&quot; manually
-                    </button>
-                    {filtered.length < 3 && (
-                      <button type="button"
-                        onClick={async () => {
-                          const qAi = suppSearchQuery.trim();
-                          setAiLookupLoading(true); setAiLookupError(""); setAiLookupResult(null);
-                          setSuppSearchQuery("");
-                          try {
-                            const res = await fetch("/api/ai/product-lookup", {
-                              method: "POST", headers: { "Content-Type": "application/json" },
-                              body: JSON.stringify({ query: qAi }),
-                            });
-                            const data = await res.json();
-                            if (data.found && data.product) { setAiLookupResult(data.product); }
-                            else { setAiLookupError(data.error || "Product not found"); }
-                          } catch { setAiLookupError("Search failed. Try manual entry."); }
-                          setAiLookupLoading(false);
-                        }}
-                        className="w-full text-left px-4 py-3 text-sm font-medium text-teal-400 hover:bg-teal-400/5 transition-colors flex items-center gap-2 border-t border-white/10">
-                        <Sparkles className="w-3.5 h-3.5" />
-                        Search all supplement brands with AI
-                      </button>
-                    )}
-                  </div>
-                );
-              })()}
+              {/* Old inline search results removed — BrandProductSearch component handles all search UI */}
 
               {/* "or" Divider + NEW Photo Upload Component */}
               {!showDosageModal && !aiLookupResult && !aiLookupLoading && !userSupplements.some(s => s.name === "None") && (

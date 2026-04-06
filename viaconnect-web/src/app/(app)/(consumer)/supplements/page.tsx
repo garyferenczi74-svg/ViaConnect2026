@@ -1,41 +1,61 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Pill, CalendarClock, Sparkles, ShieldAlert, UserSearch, ShoppingBag,
   Stethoscope, Leaf, ArrowRight, Check, Search, FlaskConical, Droplets,
   Dna, Activity, TestTubes, Clock, Sunrise, Sun, Moon,
-  AlertTriangle, Plus, RefreshCw,
+  AlertTriangle, Plus, RefreshCw, Loader2,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { ProtocolConfidenceBadge } from "@/components/protocol/ProtocolConfidenceBadge";
 import { PractitionerDisclaimer } from "@/components/protocol/PractitionerDisclaimer";
 import { DataSourceTag } from "@/components/protocol/DataSourceTag";
+import SupplementInput from "@/components/shared/SupplementInput";
+import type { PluginProductResult } from "@/plugins/types";
+import { useUserDashboardData } from "@/hooks/useUserDashboardData";
+import type { DashboardSupplement } from "@/hooks/useUserDashboardData";
+import { createClient } from "@/lib/supabase/client";
+import RecommendedSupplements from "@/components/supplement-protocol/RecommendedSupplements";
 
 function PIcon({ icon: Icon, color, size = "md" }: { icon: LucideIcon; color: string; size?: "sm" | "md" | "lg" }) {
   const s = size === "lg" ? { box: "w-14 h-14", ico: "w-7 h-7", glow: "blur-2xl -inset-2" } : size === "sm" ? { box: "w-9 h-9", ico: "w-4 h-4", glow: "blur-lg -inset-1" } : { box: "w-12 h-12", ico: "w-5 h-5", glow: "blur-xl -inset-1.5" };
   return (<div className="relative flex-shrink-0"><div className={`absolute ${s.glow} rounded-2xl opacity-60 pointer-events-none`} style={{ backgroundColor: `${color}33` }} /><div className={`relative ${s.box} rounded-xl flex items-center justify-center`} style={{ background: `linear-gradient(135deg, ${color}33, ${color}1A, transparent)`, border: `1px solid ${color}26` }}><Icon className={s.ico} style={{ color }} strokeWidth={1.5} /></div></div>);
 }
 
-/* ═══ DATA ═══ */
-const PROTOCOL = {
-  morning: [
-    { id: "1", productName: "BioB Fusion\u2122 Methylated B Complex", dosage: "1 capsule", deliveryMethod: "Liposomal", priority: "essential" as const, dataSourceTag: "caq", takenToday: true },
-    { id: "2", productName: "Liposomal Vitamin D3 + K2 (MK-7)", dosage: "5000 IU", deliveryMethod: "Liposomal", priority: "essential" as const, dataSourceTag: "caq", takenToday: false },
-    { id: "3", productName: "Algal Omega-3 DHA/EPA", dosage: "1000mg", priority: "essential" as const, dataSourceTag: "caq", takenToday: false },
-  ],
-  afternoon: [{ id: "4", productName: "Liposomal CoQ10 (Ubiquinol)", dosage: "200mg", deliveryMethod: "Liposomal", priority: "recommended" as const, dataSourceTag: "caq", takenToday: false }],
-  evening: [
-    { id: "5", productName: "Liposomal Magnesium L-Threonate", dosage: "400mg", deliveryMethod: "Liposomal", priority: "essential" as const, dataSourceTag: "caq", takenToday: false },
-    { id: "6", productName: "Melatonin (Extended Release)", dosage: "3mg", priority: "optional" as const, dataSourceTag: "caq", takenToday: false },
-  ],
-  asNeeded: [{ id: "7", productName: "L-Theanine", dosage: "200mg", priority: "optional" as const, dataSourceTag: "caq", takenToday: false }],
+/* ═══ DATA — built from real user supplements ═══ */
+
+type ProtocolItem = {
+  id: string;
+  productName: string;
+  dosage: string;
+  deliveryMethod?: string;
+  priority: "essential" | "recommended" | "optional";
+  dataSourceTag: string;
+  takenToday: boolean;
 };
-const GAPS = [{ nutrient: "Vitamin D", deficit: "38% below" }, { nutrient: "Omega-3", deficit: "55% gap" }, { nutrient: "Magnesium", deficit: "25% below" }];
-const RECS = [
-  { id: "r1", productName: "Liposomal NAC", dosage: "600mg", timing: "Morning", deliveryMethod: "Liposomal", priority: "recommended" as const, reason: "Glutathione precursor for detoxification", evidenceLevel: "strong", dataSourceTag: "caq" },
-  { id: "r2", productName: "Micellar Ashwagandha (KSM-66\u00ae)", dosage: "600mg", timing: "Afternoon", deliveryMethod: "Micellar", priority: "recommended" as const, reason: "Adaptogenic stress support", evidenceLevel: "strong", dataSourceTag: "caq" },
-];
+
+function buildProtocol(supplements: DashboardSupplement[]): Record<string, ProtocolItem[]> {
+  const protocol: Record<string, ProtocolItem[]> = { morning: [], afternoon: [], evening: [], asNeeded: [] };
+  supplements.forEach((s) => {
+    const freq = (s.frequency || "").toLowerCase();
+    const cat = (s.category || "").toLowerCase();
+    let slot = "morning";
+    if (freq.includes("evening") || freq.includes("night") || freq.includes("bedtime") || cat.includes("sleep")) slot = "evening";
+    else if (freq.includes("afternoon") || freq.includes("midday")) slot = "afternoon";
+    else if (freq.includes("needed") || freq.includes("prn")) slot = "asNeeded";
+    protocol[slot].push({
+      id: s.id,
+      productName: s.product_name || s.supplement_name || "Supplement",
+      dosage: s.dosage || "",
+      deliveryMethod: s.dosage_form || undefined,
+      priority: s.is_ai_recommended ? "recommended" : "essential",
+      dataSourceTag: s.is_ai_recommended ? "ai" : "caq",
+      takenToday: false,
+    });
+  });
+  return protocol;
+}
 const SLOTS = [
   { id: "morning", label: "Morning", icon: Sunrise, time: "7:00 AM", color: "#FBBF24" },
   { id: "afternoon", label: "Afternoon", icon: Sun, time: "12:00 PM", color: "#B75E18" },
@@ -95,9 +115,21 @@ function Section({ icon, iconColor, title, subtitle, children }: { icon: LucideI
 
 /* ═══ MAIN PAGE ═══ */
 export default function SupplementsPage() {
+  const { loading, supplements, assessmentCompleted, profile } = useUserDashboardData();
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4" style={{ background: "linear-gradient(180deg, #0F1520, #1A2744)" }}>
+        <Loader2 className="w-8 h-8 text-teal-400 animate-spin" />
+        <p className="text-sm text-white/40">Loading your supplement protocol...</p>
+      </div>
+    );
+  }
+
+  const PROTOCOL = buildProtocol(supplements);
   const all = [...PROTOCOL.morning, ...PROTOCOL.afternoon, ...PROTOCOL.evening, ...PROTOCOL.asNeeded];
   const taken = all.filter(i => i.takenToday).length;
-  const pct = Math.round((taken / all.length) * 100);
+  const pct = all.length > 0 ? Math.round((taken / all.length) * 100) : 0;
 
   return (
     <div className="min-h-screen px-2 sm:px-4 md:px-8 py-4 md:py-6 space-y-6" style={{ background: "linear-gradient(180deg, #0F1520, #1A2744)" }}>
@@ -123,7 +155,7 @@ export default function SupplementsPage() {
           </div>
           <div className="space-y-4">
             {SLOTS.map((slot) => {
-              const items = (PROTOCOL as Record<string, typeof PROTOCOL.morning>)[slot.id] || [];
+              const items = (PROTOCOL as Record<string, ProtocolItem[]>)[slot.id] || [];
               if (!items.length) return null;
               return (
                 <div key={slot.id} className="rounded-xl bg-white/[0.02] border border-white/5 overflow-hidden">
@@ -143,26 +175,10 @@ export default function SupplementsPage() {
       {/* ═══ UPDATE ASSESSMENT ═══ */}
       <SupplementsRetakeCard />
 
-      {/* ═══ 2. RECOMMENDED SUPPLEMENTS ═══ */}
-      <Section icon={Sparkles} iconColor="#2DA5A0" title="Recommended Supplements" subtitle="AI-powered FarmCeutica product recommendations">
-        <div className="p-5 md:p-6 space-y-5">
-          <div className="rounded-xl bg-teal-400/[0.03] border border-teal-400/10 p-4">
-            <div className="flex items-start gap-3"><PIcon icon={Sparkles} color="#2DA5A0" size="sm" /><div><h3 className="text-sm font-semibold text-teal-400 mb-1">AI-Powered Recommendations</h3><p className="text-xs text-white/40">Based on your Clinical Assessment, we identified {GAPS.length} nutrient gaps and {RECS.length} products for your protocol.</p></div></div>
-          </div>
-          {GAPS.length > 0 && (
-            <div><h4 className="text-xs text-white/25 uppercase tracking-wider font-semibold mb-3">Nutrient Gaps</h4><div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">{GAPS.map((g, i) => <div key={i} className="rounded-lg bg-orange-400/5 border border-orange-400/10 px-3 py-2.5 text-center"><p className="text-xs font-medium text-orange-400/80">{g.nutrient}</p><p className="text-[10px] text-white/20 mt-0.5">{g.deficit}</p></div>)}</div></div>
-          )}
-          <div className="space-y-3">
-            {RECS.map((rec) => (
-              <div key={rec.id} className="rounded-xl bg-white/[0.02] border border-white/[0.08] p-4 md:p-5 hover:border-teal-400/20 transition-all group">
-                <div className="flex items-start gap-4">
-                  <PIcon icon={Pill} color={rec.priority === "essential" ? "#2DA5A0" : "#B75E18"} size="sm" />
-                  <div className="flex-1 min-w-0"><h4 className="text-sm font-semibold text-white group-hover:text-teal-400 transition-colors">{rec.productName}</h4><div className="flex flex-wrap items-center gap-2 mt-1.5"><span className="text-xs text-white/40">{rec.dosage}</span>{rec.timing && <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/5 text-white/25">{rec.timing}</span>}{rec.deliveryMethod && <span className="text-[10px] px-2 py-0.5 rounded-full bg-teal-400/10 text-teal-400/40">{rec.deliveryMethod}</span>}</div><p className="text-xs text-white/30 mt-2">{rec.reason}</p></div>
-                  <button className="min-h-[36px] px-4 py-1.5 rounded-lg text-xs font-medium bg-teal-400/10 border border-teal-400/30 text-teal-400 hover:bg-teal-400/15 transition-all flex items-center gap-1.5 flex-shrink-0"><Plus className="w-3 h-3" strokeWidth={2} /> Add</button>
-                </div>
-              </div>
-            ))}
-          </div>
+      {/* ═══ 2. RECOMMENDED SUPPLEMENTS — Powered by Ultrathink AI ═══ */}
+      <Section icon={Sparkles} iconColor="#2DA5A0" title="Recommended Supplements" subtitle="AI-powered personalized protocol by Ultrathink">
+        <div className="p-5 md:p-6">
+          <RecommendedSupplements />
         </div>
       </Section>
 
@@ -178,12 +194,6 @@ export default function SupplementsPage() {
       {/* ═══ 4. FIND A PRACTITIONER ═══ */}
       <Section icon={UserSearch} iconColor="#B75E18" title="Find a Practitioner" subtitle="Consult with a healthcare professional">
         <div className="p-5 md:p-6 space-y-6">
-          <div className="rounded-xl bg-orange-400/5 border border-orange-400/15 p-5">
-            <div className="flex items-start gap-3">
-              <PIcon icon={ShieldAlert} color="#B75E18" size="sm" />
-              <div><h3 className="text-sm font-semibold text-orange-400 mb-1">Important: Consult Before Starting</h3><p className="text-xs text-white/40 leading-relaxed">Your supplement protocol has been generated by AI. We strongly recommend consulting with a healthcare practitioner or naturopath before starting any new supplement regimen.</p></div>
-            </div>
-          </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
             <div className="relative rounded-2xl overflow-hidden group cursor-pointer"><div className="absolute inset-0 bg-gradient-to-br from-teal-400/10 to-teal-400/[0.02]" /><div className="relative border border-teal-400/15 group-hover:border-teal-400/30 rounded-2xl p-5 md:p-6 transition-all duration-300 group-hover:shadow-[0_0_30px_rgba(45,165,160,0.08)]">
               <PIcon icon={Stethoscope} color="#2DA5A0" size="lg" />
@@ -204,9 +214,9 @@ export default function SupplementsPage() {
       </Section>
 
       {/* ═══ 5. BROWSE & BUILD PROTOCOL ═══ */}
-      <Section icon={ShoppingBag} iconColor="#B75E18" title="Browse & Build Protocol" subtitle="Search the FarmCeutica catalog and add to your protocol">
+      <Section icon={ShoppingBag} iconColor="#B75E18" title="Browse & Build Protocol" subtitle="Scan a barcode, search by name, or browse the catalog">
         <div className="p-5 md:p-6 space-y-6">
-          <div className="relative"><Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/25 pointer-events-none" strokeWidth={1.5} /><input type="text" placeholder="Browse the catalog and add supplements to build your daily protocol" className="w-full pl-12 pr-4 py-4 rounded-xl bg-white/5 border border-white/10 text-white text-base placeholder:text-white/25 focus:border-teal-400/40 focus:ring-1 focus:ring-teal-400/20 focus:outline-none transition-all" autoComplete="off" /></div>
+          <SupplementInput portal="consumer" onProductAdded={(product: PluginProductResult) => { console.log('[supplements] Product added:', product); }} />
           <div><h3 className="text-xs text-white/20 uppercase tracking-wider font-semibold mb-3">Browse by Category</h3>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 md:gap-3">
               {CATEGORIES.map((cat) => (
@@ -226,6 +236,149 @@ export default function SupplementsPage() {
       <PractitionerDisclaimer />
 
     </div>
+  );
+}
+
+// RecommendedSupplementsSection replaced by Ultrathink-powered RecommendedSupplements component
+// Old inline section removed — see src/components/supplement-protocol/RecommendedSupplements.tsx
+
+function _RecommendedSupplementsSectionRemoved({ assessmentCompleted, profile, supplements }: {
+  assessmentCompleted: boolean;
+  profile: ReturnType<typeof useUserDashboardData>['profile'];
+  supplements: DashboardSupplement[];
+}) {
+  const [recommendations, setRecommendations] = useState<FarmCeuticaRecommendation[]>([]);
+  const [loadingRecs, setLoadingRecs] = useState(true);
+
+  useEffect(() => {
+    if (!assessmentCompleted) { setLoadingRecs(false); return; }
+
+    async function loadRecs() {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { setLoadingRecs(false); return; }
+
+      const { data: phases } = await supabase
+        .from('assessment_results')
+        .select('phase, data')
+        .eq('user_id', user.id);
+
+      if (!phases?.length) { setLoadingRecs(false); return; }
+
+      const assessmentPhases: Record<number, Record<string, unknown>> = {};
+      for (const p of phases) {
+        assessmentPhases[p.phase] = (p.data || {}) as Record<string, unknown>;
+      }
+
+      const currentSuppNames = supplements.map(s => s.product_name || s.supplement_name || '');
+      const recs = generateFarmCeuticaRecommendations(assessmentPhases, currentSuppNames);
+      setRecommendations(recs);
+      setLoadingRecs(false);
+    }
+
+    loadRecs();
+  }, [assessmentCompleted, supplements]);
+
+  const priorityColor = (p: string) => p === 'essential' ? '#2DA5A0' : p === 'recommended' ? '#B75E18' : '#9CA3AF';
+
+  return (
+    <Section icon={Sparkles} iconColor="#2DA5A0" title="Recommended Supplements" subtitle="Personalized products for your protocol">
+      <div className="p-5 md:p-6 space-y-5">
+        {/* Header summary */}
+        <div className="rounded-xl bg-teal-400/[0.03] border border-teal-400/10 p-4">
+          <div className="flex items-start gap-3">
+            <PIcon icon={Sparkles} color="#2DA5A0" size="sm" />
+            <div>
+              <h3 className="text-sm font-semibold text-teal-400 mb-1">AI-Powered Recommendations</h3>
+              <p className="text-xs text-white/40">
+                {assessmentCompleted
+                  ? `Based on your goals, symptoms, and lifestyle — ${recommendations.length} products selected for you.`
+                  : 'Complete your assessment to receive personalized supplement recommendations.'}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Optimization areas + strengths badges */}
+        {(profile?.bio_optimization_opportunities?.length ?? 0) > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {(profile?.bio_optimization_opportunities || []).map((opp, i) => (
+              <span key={`opp-${i}`} className="text-[10px] font-medium px-2.5 py-1 rounded-full bg-orange-400/10 text-orange-400/80 border border-orange-400/15">{opp}</span>
+            ))}
+            {(profile?.bio_optimization_strengths || []).map((s, i) => (
+              <span key={`str-${i}`} className="text-[10px] font-medium px-2.5 py-1 rounded-full bg-teal-400/10 text-teal-400/80 border border-teal-400/15">{s}</span>
+            ))}
+          </div>
+        )}
+
+        {/* Loading state */}
+        {loadingRecs && (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="w-6 h-6 text-teal-400 animate-spin" />
+          </div>
+        )}
+
+        {/* Product recommendation cards */}
+        {!loadingRecs && recommendations.length > 0 && (
+          <div className="space-y-3">
+            {recommendations.map((rec) => (
+              <div key={rec.id} className="rounded-xl bg-white/[0.02] border border-white/[0.08] p-4 md:p-5 hover:border-teal-400/20 transition-all group">
+                <div className="flex items-start gap-4">
+                  <PIcon icon={Pill} color={priorityColor(rec.priority)} size="sm" />
+                  <div className="flex-1 min-w-0">
+                    {/* Product name + priority */}
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h4 className="text-sm font-semibold text-white group-hover:text-teal-400 transition-colors">{rec.productName}</h4>
+                      <span className={`text-[9px] px-2 py-0.5 rounded-full font-semibold uppercase tracking-wider ${
+                        rec.priority === 'essential' ? 'bg-teal-400/10 text-teal-400/70 border border-teal-400/20'
+                        : rec.priority === 'recommended' ? 'bg-orange-400/10 text-orange-400/70 border border-orange-400/20'
+                        : 'bg-white/5 text-white/30 border border-white/10'
+                      }`}>{rec.priority}</span>
+                    </div>
+
+                    {/* Dosage + timing + delivery */}
+                    <div className="flex flex-wrap items-center gap-2 mt-1.5">
+                      <span className="text-xs text-white/40">{rec.dosage}</span>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/5 text-white/25">{rec.timing}</span>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-teal-400/10 text-teal-400/40">{rec.deliveryMethod}</span>
+                    </div>
+
+                    {/* Reason */}
+                    <p className="text-xs text-white/30 mt-2 leading-relaxed">{rec.reason}</p>
+
+                    {/* Triggering factors */}
+                    {rec.triggeringFactors.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 mt-2">
+                        {rec.triggeringFactors.slice(0, 4).map((factor, i) => (
+                          <span key={i} className="text-[9px] px-1.5 py-0.5 rounded bg-white/[0.04] text-white/20">{factor}</span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Price + Add button */}
+                  <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                    <span className="text-sm font-bold text-teal-400">${rec.price.toFixed(2)}</span>
+                    <button className="min-h-[36px] px-4 py-1.5 rounded-lg text-xs font-medium bg-teal-400/10 border border-teal-400/30 text-teal-400 hover:bg-teal-400/20 transition-all flex items-center gap-1.5">
+                      <Plus className="w-3 h-3" strokeWidth={2} /> Add to Daily Schedule
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Empty state */}
+        {!loadingRecs && recommendations.length === 0 && !assessmentCompleted && (
+          <div className="text-center py-4">
+            <a href="/onboarding/i-caq-intro" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-teal-400/15 border border-teal-400/30 text-teal-400 text-sm font-medium hover:bg-teal-400/20 transition-all">
+              <Sparkles className="w-4 h-4" /> Take Assessment for Personalized Recommendations
+            </a>
+          </div>
+        )}
+      </div>
+    </Section>
   );
 }
 

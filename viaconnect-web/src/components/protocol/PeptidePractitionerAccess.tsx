@@ -17,7 +17,7 @@ export function PeptidePractitionerAccess() {
             Get Prescribed \, Connect with a Provider
           </h3>
           <p className="text-sm text-white/40 leading-relaxed mb-4">
-            All FarmCeutica\u2122 peptides are oral, high-bioavailability formulations
+            All ViaConnect peptides are oral, high-bioavailability formulations
             designed for wellness support. For best results, your peptide protocol
             should be reviewed and prescribed by a licensed practitioner or naturopath
             who can access your full Ultrathink profile.

@@ -1,4 +1,4 @@
-// Mandatory Disclaimer Templates — FarmCeutica Peptide Portfolio
+// Mandatory Disclaimer Templates — ViaConnect Peptide Portfolio
 // 7 disclaimer types with triggers and display locations
 
 export const DISCLAIMERS = {
@@ -10,7 +10,7 @@ export const DISCLAIMERS = {
   },
 
   wellnessPositioning: {
-    text: 'FarmCeutica\u2122 peptide products are precision wellness nutraceuticals designed to support your body\'s natural optimization processes. They are informed by international clinical literature and functional medicine principles. They are NOT pharmaceutical drugs, NOT FDA-approved medications, and NOT intended to replace medical treatment.',
+    text: 'ViaConnect peptide products are precision wellness nutraceuticals designed to support your body\'s natural optimization processes. They are informed by international clinical literature and functional medicine principles. They are NOT pharmaceutical drugs, NOT FDA-approved medications, and NOT intended to replace medical treatment.',
     required: true as const,
     displayLocation: 'On the /supplements page, Recommended Supplements tab, and any product detail view',
   },
@@ -23,7 +23,7 @@ export const DISCLAIMERS = {
   },
 
   ssException: {
-    text: 'Note: The compound SS-31/Elamipretide has received FDA accelerated approval as Forzinity\u2122 (injection) for a specific rare condition (Barth syndrome). FarmCeutica\'s oral formulations are wellness analogs utilizing dual liposomal-micellar delivery \, they are NOT the FDA-approved drug product and are not marketed for the treatment of any disease.',
+    text: 'Note: The compound SS-31/Elamipretide has received FDA accelerated approval as Forzinity\u2122 (injection) for a specific rare condition (Barth syndrome). ViaConnect\'s oral formulations are wellness analogs utilizing dual liposomal-micellar delivery \, they are NOT the FDA-approved drug product and are not marketed for the treatment of any disease.',
     required: true as const,
     displayLocation: 'On any page referencing EnergyCore\u2122 or MitoPeptide\u2122',
   },

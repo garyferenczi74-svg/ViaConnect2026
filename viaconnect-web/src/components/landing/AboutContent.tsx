@@ -9,7 +9,7 @@ export function AboutContent() {
       <TabH1>We Didn&apos;t Start a Supplement Company. We Started a Revolution.</TabH1>
 
       <TabH2>Who We Are</TabH2>
-      <TabP>FarmCeutica Wellness LLC is not another brand on a shelf. We are a vertically integrated precision health company headquartered in Buffalo, New York with operations in Rakitovica, Croatia, built from the ground up to solve the fundamental problem the supplement industry has been ignoring: your body is genetically unique, and your supplements should be too.</TabP>
+      <TabP>ViaConnect is not another brand on a shelf. We are a vertically integrated precision health company headquartered in Buffalo, New York with operations in Rakitovica, Croatia, built from the ground up to solve the fundamental problem the supplement industry has been ignoring: your body is genetically unique, and your supplements should be too.</TabP>
       <TabP>We are the first company in the world to build the entire stack,from genetic testing to AI interpretation to formulation to delivery to clinical platform,as one integrated system.</TabP>
 
       <TabH2>Our Mission</TabH2>

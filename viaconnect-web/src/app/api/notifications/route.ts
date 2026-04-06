@@ -198,7 +198,7 @@ export async function POST(request: Request) {
                             <p style="color: #374151; line-height: 1.6;">${message}</p>
                             <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;" />
                             <p style="color: #9ca3af; font-size: 12px;">
-                              FarmCeutica Wellness LLC · Buffalo, NY<br/>
+                              ViaConnect · Buffalo, NY<br/>
                               One Genome. One Formulation. One Life at a Time.
                             </p>
                           </div>

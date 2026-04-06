@@ -1,0 +1,5 @@
+-- Performance Advisor Agent Infrastructure — Applied 2026-04-04
+-- Tables: advisor_snapshots, advisor_issues, migration_sync_log, advisor_fix_log, advisor_agent_config
+-- RPCs: get_advisor_summary, get_recent_fixes, check_tables_without_rls, check_missing_fk_indexes,
+--       check_unused_indexes, check_table_bloat, check_stale_statistics
+-- Applied via Supabase MCP: advisor_agent_infra_v2

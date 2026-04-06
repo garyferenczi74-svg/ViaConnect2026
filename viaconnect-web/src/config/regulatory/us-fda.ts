@@ -1,4 +1,4 @@
-// US FDA Regulatory Status — FarmCeutica Peptide Portfolio (March 2026)
+// US FDA Regulatory Status — ViaConnect Peptide Portfolio (March 2026)
 
 export const US_FDA_STATUS = {
 
@@ -33,7 +33,7 @@ export const US_FDA_STATUS = {
     approval: 'FDA accelerated approval September 2025 (injection) for improving muscle strength in Barth syndrome patients (\u226530 kg)',
     significance: 'First mitochondria-targeted therapy approved in the US',
     restriction: 'Use strictly limited to this rare indication. Off-label wellness/energy marketing is PROHIBITED and could attract scrutiny.',
-    viaconnectImplication: 'EnergyCore\u2122 and MitoPeptide\u2122 are oral analogs \, they must NEVER reference the FDA approval as applying to FarmCeutica products. The approval applies ONLY to Forzinity\u2122 injection for Barth syndrome.',
+    viaconnectImplication: 'EnergyCore\u2122 and MitoPeptide\u2122 are oral analogs \, they must NEVER reference the FDA approval as applying to ViaConnect products. The approval applies ONLY to Forzinity\u2122 injection for Barth syndrome.',
   },
 
   wadaStatus: {

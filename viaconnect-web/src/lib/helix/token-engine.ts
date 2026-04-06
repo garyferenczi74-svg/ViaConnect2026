@@ -17,7 +17,7 @@ export const EARN_RULES: Record<string, { baseTokens: number; description: strin
   ai_chat_session: { baseTokens: 5, description: "AI Advisor conversation", dailyLimit: 3 },
   lab_upload: { baseTokens: 50, description: "Lab results uploaded" },
   genex360_completed: { baseTokens: 500, description: "GeneX360 results received" },
-  purchase_completed: { baseTokens: 25, description: "FarmCeutica purchase" },
+  purchase_completed: { baseTokens: 25, description: "ViaConnect purchase" },
   referral_signup: { baseTokens: 100, description: "Referred friend signed up" },
   referral_caq_complete: { baseTokens: 100, description: "Referred friend completed CAQ" },
   challenge_completed: { baseTokens: 0, description: "Challenge reward (variable)" },

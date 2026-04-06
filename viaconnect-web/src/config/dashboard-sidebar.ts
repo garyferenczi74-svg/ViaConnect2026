@@ -59,7 +59,7 @@ export const DASHBOARD_SIDEBAR_SECTIONS: DashboardSidebarSection[] = [
     scrollTarget: "#peptide-protocol",
     alwaysVisible: false,
     visibilityCondition: "caqCompleted",
-    description: "FarmCeutica\u2122 peptides",
+    description: "Precision peptides",
     group: "protocols",
   },
   {

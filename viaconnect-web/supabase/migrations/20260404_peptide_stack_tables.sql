@@ -1,0 +1,4 @@
+-- Peptide Stack Tables — Applied 2026-04-04
+-- Tables: peptide_detected_patterns, peptide_stack_protocols, peptide_stack_recommendations
+-- RPC: get_active_peptide_stack
+-- Applied via Supabase MCP: peptide_stack_tables

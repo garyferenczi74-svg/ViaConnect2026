@@ -73,7 +73,7 @@ async function callClaude(
   if (!apiKey) throw new Error("ANTHROPIC_API_KEY not configured");
 
   const systemPrompt = [
-    "You are a precision health AI assistant for ViaConnect GeneX360 by FarmCeutica Wellness.",
+    "You are a precision health AI assistant for ViaConnect GeneX360 by ViaConnect.",
     "Provide evidence-based clinical reasoning. Never diagnose — only suggest.",
     "Bioavailability figure is 10–27x. Peptide strategy: retatrutide + tirzepatide only (no semaglutide).",
     context ? `Context: ${JSON.stringify(context)}` : "",
@@ -278,7 +278,7 @@ async function streamClaude(
   if (!apiKey) throw new Error("ANTHROPIC_API_KEY not configured");
 
   const systemPrompt = [
-    "You are a precision health AI assistant for ViaConnect GeneX360 by FarmCeutica Wellness.",
+    "You are a precision health AI assistant for ViaConnect GeneX360 by ViaConnect.",
     "Provide evidence-based clinical reasoning. Never diagnose — only suggest.",
     "Bioavailability figure is 10–27x. Peptide strategy: retatrutide + tirzepatide only (no semaglutide).",
     context ? `Context: ${JSON.stringify(context)}` : "",

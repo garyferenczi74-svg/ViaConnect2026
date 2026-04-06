@@ -10,7 +10,7 @@ const FAQS = [
   },
   {
     question: "Why oral delivery instead of injectable?",
-    answer: "FarmCeutica\u2122 uses proprietary dual liposomal-micellar delivery technology that achieves 10\u201327x enhanced bioavailability compared to standard oral formulations. This means you get clinical-level absorption without needles \, convenient, safe, and accessible as a wellness product.",
+    answer: "ViaConnect uses proprietary dual liposomal-micellar delivery technology that achieves 10\u201327x enhanced bioavailability compared to standard oral formulations. This means you get clinical-level absorption without needles \, convenient, safe, and accessible as a wellness product.",
   },
   {
     question: "What is the science behind these recommendations?",
@@ -18,7 +18,7 @@ const FAQS = [
   },
   {
     question: "Are these products FDA-approved?",
-    answer: "FarmCeutica\u2122 peptide products are precision wellness nutraceuticals \, they are NOT FDA-approved drugs. They are manufactured in GMP-certified facilities with third-party testing. These statements have not been evaluated by the FDA. Always consult your healthcare provider.",
+    answer: "ViaConnect peptide products are precision wellness nutraceuticals \, they are NOT FDA-approved drugs. They are manufactured in GMP-certified facilities with third-party testing. These statements have not been evaluated by the FDA. Always consult your healthcare provider.",
   },
   {
     question: "What is the 30-day loading cycle?",

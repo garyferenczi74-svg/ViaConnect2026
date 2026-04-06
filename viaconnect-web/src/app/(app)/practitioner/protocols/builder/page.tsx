@@ -14,6 +14,8 @@ import {
   ShieldCheck,
   Loader2,
 } from "lucide-react";
+import SupplementInput from "@/components/shared/SupplementInput";
+import type { PluginProductResult } from "@/plugins/types";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -338,16 +340,32 @@ export default function ProtocolBuilderPage() {
       p.category.toLowerCase().includes(productSearch.toLowerCase())
     );
 
+    function handlePluginProductAdded(product: PluginProductResult) {
+      const newProduct: Product = {
+        id: `plugin-${Date.now()}`,
+        name: [product.brand, product.productName].filter(Boolean).join(' - ') || 'Supplement',
+        category: product.isPeptide ? 'Peptide' : 'Supplement',
+        price: 0,
+        dose: product.servingSize || 'As directed',
+      };
+      addProduct(newProduct);
+    }
+
     return (
       <div className="space-y-4">
         <h2 className="text-xl font-semibold text-white">Product Selection</h2>
-        <p className="text-sm text-gray-400">Browse the catalog and add supplements to the protocol.</p>
+        <p className="text-sm text-gray-400">Scan a barcode, search by name, or browse the catalog.</p>
+
+        {/* Plugin-powered barcode scanner + search */}
+        <Card hover={false} className="p-4">
+          <SupplementInput portal="practitioner" onProductAdded={handlePluginProductAdded} />
+        </Card>
 
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
           <input
             type="text"
-            placeholder="Search products..."
+            placeholder="Search product catalog..."
             value={productSearch}
             onChange={(e) => setProductSearch(e.target.value)}
             className="w-full h-10 pl-9 pr-3 rounded-lg text-sm text-white placeholder:text-gray-600 outline-none bg-white/[0.04] border border-white/[0.08] focus:border-portal-green/50 focus:ring-1 focus:ring-portal-green/20 transition-colors"

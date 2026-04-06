@@ -81,7 +81,7 @@ export const KNOWLEDGE_SOURCES = {
     ],
   },
   farmceuticaCatalog: {
-    description: "Complete FarmCeutica Wellness 56-SKU product database",
+    description: "Complete ViaConnect 56-SKU product database",
     indexingStrategy: "chunk by product, metadata: category, delivery_method, key_ingredients",
     categories: [
       "Liposomal delivery formulations (10-27x bioavailability)",

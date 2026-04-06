@@ -11,7 +11,10 @@ import {
   CheckCircle2,
   ShieldCheck,
   ExternalLink,
+  Plug,
+  ArrowRight,
 } from "lucide-react";
+import Link from "next/link";
 import { Card, Button, Badge, Input } from "@/components/ui";
 import { PageTransition, StaggerChild } from "@/lib/motion";
 
@@ -376,6 +379,26 @@ export default function SettingsPage() {
               </Button>
             </div>
           </Card>
+        </StaggerChild>
+
+        {/* ── Plugin Manager ── */}
+        <StaggerChild>
+        <Link href="/naturopath/settings/plugins">
+          <Card className="p-6 hover:border-sage/30 transition-all cursor-pointer">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-lg bg-sage/10 flex items-center justify-center">
+                  <Plug className="w-4 h-4 text-sage" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold text-white">Plugin Manager</h2>
+                  <p className="text-sm text-gray-400">Manage barcode scanner, search, and interaction data sources</p>
+                </div>
+              </div>
+              <ArrowRight className="w-5 h-5 text-gray-500" />
+            </div>
+          </Card>
+        </Link>
         </StaggerChild>
       </div>
     </PageTransition>

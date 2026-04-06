@@ -116,7 +116,7 @@ REGULATORY COMPLIANCE CHECK (MANDATORY before finalizing):
 Frame EVERY peptide recommendation as:
 "[Product Name] is a precision wellness nutraceutical that supports [natural body process], informed by [evidence citation]. Always consult your physician before starting any new supplement regimen."
 
-NEVER say: "treats," "cures," "heals," "prevents disease," "FDA-approved" (for FarmCeutica products), "clinically proven to treat," or "your condition/disease."
+NEVER say: "treats," "cures," "heals," "prevents disease," "FDA-approved" (for ViaConnect products), "clinically proven to treat," or "your condition/disease."
 
 STEP 6 \, TRANSLATE
 Plain language. Analogies. Reference patient's own words. Warm and professional.

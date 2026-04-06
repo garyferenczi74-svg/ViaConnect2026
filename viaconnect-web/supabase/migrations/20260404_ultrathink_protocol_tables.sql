@@ -1,0 +1,4 @@
+-- Ultrathink Protocol Tables — Applied 2026-04-04
+-- Tables: ultrathink_protocols, ultrathink_recommendations, ultrathink_agent_log
+-- RPC: get_active_protocol
+-- Applied via Supabase MCP: ultrathink_protocol_tables

@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { Card, Badge, Button } from "@/components/ui";
 import { PageTransition, StaggerChild } from "@/lib/motion";
+import { InteractionEngine } from "@/components/shared/InteractionEngine";
 
 // ─── Data ──────────────────────────────────────────────────────────────────────
 
@@ -311,7 +312,13 @@ export default function NaturopathInteractionsPage() {
   return (
     <PageTransition className="min-h-screen bg-dark-bg p-4 sm:p-6 md:p-10">
       <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
+
+        {/* Unified Interaction Engine — Patient interactions from DB */}
+        <Card className="p-6" hover={false}>
+          <InteractionEngine mode="naturopath" userId="" />
+        </Card>
+
+        {/* Standalone Herb-Drug Interaction Checker */}
         <StaggerChild className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-white">Herb-Drug Interaction Checker</h1>

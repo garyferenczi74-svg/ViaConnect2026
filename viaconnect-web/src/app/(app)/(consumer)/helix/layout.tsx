@@ -212,7 +212,7 @@ export default function HelixLayout({ children }: { children: React.ReactNode })
           {/* ═══ FOOTER ═══ */}
           <div className="border-t border-white/[0.04] pt-10 pb-6 text-center">
             <p className="text-[12px] text-white/20">
-              Helix Rewards&trade; by ViaConnect&trade; &bull; FarmCeutica Wellness LLC &bull; &copy; 2026 All Rights Reserved
+              Helix Rewards&trade; by ViaConnect&trade; &bull; ViaConnect &bull; &copy; 2026 All Rights Reserved
             </p>
           </div>
         </div>

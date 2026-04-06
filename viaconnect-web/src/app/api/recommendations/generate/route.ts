@@ -111,7 +111,7 @@ function normalizePhaseData(phases: Array<{ phase: number; data: any }>): CAQRes
 }
 
 /**
- * Maps common supplement names to FarmCeutica replacement SKUs.
+ * Maps common supplement names to ViaConnect replacement SKUs.
  * Returns a list of { original, replacement_sku, replacement_name, reason }.
  */
 const SUPPLEMENT_REPLACEMENT_MAP: Record<string, { sku: string; name: string; reason: string }> = {
@@ -245,7 +245,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json().catch(() => ({}));
     const result = await runPostCAQPipeline(supabase, user.id, caqResponses, body.assessment_id);
 
-    // Find FarmCeutica replacements for user's current supplements
+    // Find ViaConnect replacements for user's current supplements
     const replacements = findSupplementReplacements(caqResponses.current_supplements || []);
 
     // Boost priority of replacement products in recommendations

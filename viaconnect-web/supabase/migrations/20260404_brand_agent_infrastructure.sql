@@ -1,0 +1,4 @@
+-- Brand Enrichment Agent Infrastructure — Applied 2026-04-04
+-- Tables: brand_agent_log, brand_enrichment_state, brand_agent_config
+-- Adapted to supplement_brand_registry (real schema)
+-- See migration applied via Supabase MCP: brand_agent_infrastructure

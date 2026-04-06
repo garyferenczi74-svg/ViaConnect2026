@@ -170,7 +170,7 @@
     },
     {
         "DTCMargin":  86.3,
-        "Name":  "NeuroCalm+ (Calm+)",
+        "Name":  "NeuroCalm+",
         "COGS":  17.61,
         "SKU":  "14",
         "MSRP":  128.88,
@@ -729,7 +729,7 @@
     },
     {
         "DTCMargin":  44.7,
-        "Name":  "Genetic Methylation Testing",
+        "Name":  "GeneXM",
         "COGS":  159.88,
         "SKU":  "57",
         "MSRP":  288.88,
@@ -742,7 +742,7 @@
     },
     {
         "DTCMargin":  41.1,
-        "Name":  "Genetic Nutrition Test",
+        "Name":  "NutragenHQ",
         "COGS":  228.88,
         "SKU":  "58",
         "MSRP":  388.88,
@@ -755,7 +755,7 @@
     },
     {
         "DTCMargin":  60.9,
-        "Name":  "Dutch Hormone Test",
+        "Name":  "HormoneIQ",
         "COGS":  198.88,
         "SKU":  "59",
         "MSRP":  508.88,
@@ -781,7 +781,7 @@
     },
     {
         "DTCMargin":  52.2,
-        "Name":  "Combo Test (Meth+Nutr+Dutch)",
+        "Name":  "GeneX360",
         "COGS":  329,
         "SKU":  "61",
         "MSRP":  688.88,
@@ -804,5 +804,83 @@
         "WSMargin":  34.6,
         "DistMargin":  -9,
         "COGSRatio":  32.7
+    },
+    {
+        "DTCMargin":  86.3,
+        "Name":  "CycleSync+",
+        "COGS":  17.61,
+        "SKU":  "63",
+        "MSRP":  128.88,
+        "Category":  "Women",
+        "Wholesale":  64.44,
+        "Distributor":  38.66,
+        "WSMargin":  72.7,
+        "DistMargin":  54.4,
+        "COGSRatio":  13.7
+    },
+    {
+        "DTCMargin":  86.3,
+        "Name":  "MenoBalance+",
+        "COGS":  17.61,
+        "SKU":  "64",
+        "MSRP":  128.88,
+        "Category":  "Women",
+        "Wholesale":  64.44,
+        "Distributor":  38.66,
+        "WSMargin":  72.7,
+        "DistMargin":  54.4,
+        "COGSRatio":  13.7
+    },
+    {
+        "DTCMargin":  86.3,
+        "Name":  "Radiance+",
+        "COGS":  17.61,
+        "SKU":  "65",
+        "MSRP":  128.88,
+        "Category":  "Women",
+        "Wholesale":  64.44,
+        "Distributor":  38.66,
+        "WSMargin":  72.7,
+        "DistMargin":  54.4,
+        "COGSRatio":  13.7
+    },
+    {
+        "DTCMargin":  86.3,
+        "Name":  "ThyroBalance+",
+        "COGS":  17.61,
+        "SKU":  "66",
+        "MSRP":  128.88,
+        "Category":  "Women",
+        "Wholesale":  64.44,
+        "Distributor":  38.66,
+        "WSMargin":  72.7,
+        "DistMargin":  54.4,
+        "COGSRatio":  13.7
+    },
+    {
+        "DTCMargin":  40.0,
+        "Name":  "PeptidesIQ",
+        "COGS":  299.40,
+        "SKU":  "67",
+        "MSRP":  499.00,
+        "Category":  "Testing",
+        "Wholesale":  249.50,
+        "Distributor":  149.70,
+        "WSMargin":  -20.0,
+        "DistMargin":  -100.0,
+        "COGSRatio":  60.0
+    },
+    {
+        "DTCMargin":  40.0,
+        "Name":  "CannabisIQ",
+        "COGS":  113.33,
+        "SKU":  "68",
+        "MSRP":  188.88,
+        "Category":  "Testing",
+        "Wholesale":  94.44,
+        "Distributor":  56.66,
+        "WSMargin":  -20.0,
+        "DistMargin":  -100.0,
+        "COGSRatio":  60.0
     }
 ]

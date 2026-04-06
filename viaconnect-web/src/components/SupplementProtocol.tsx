@@ -174,7 +174,7 @@ export default function SupplementProtocol() {
           )}
           <p className="text-white/50 text-xs sm:text-sm mb-4">
             {currentSupplements.length > 0
-              ? 'Generate your personalized FarmCeutica protocol based on your assessment'
+              ? 'Generate your personalized ViaConnect protocol based on your assessment'
               : 'No supplements in your protocol yet.'}
           </p>
           <button
@@ -194,7 +194,7 @@ export default function SupplementProtocol() {
             rel="noopener noreferrer"
             className="text-copper text-xs sm:text-sm font-medium hover:text-copper/80 transition-colors"
           >
-            Shop FarmCeutica &rarr;
+            Shop ViaConnect &rarr;
           </a>
         </div>
       </div>
@@ -276,7 +276,7 @@ export default function SupplementProtocol() {
           rel="noopener noreferrer"
           className="px-4 py-2 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-600 text-white text-xs sm:text-sm font-semibold hover:opacity-90 transition-opacity whitespace-nowrap"
         >
-          Shop FarmCeutica
+          Shop ViaConnect
         </a>
       </div>
 
@@ -287,7 +287,7 @@ export default function SupplementProtocol() {
             {'\uD83D\uDD04'} Upgrade Your Current Supplements
           </p>
           <p className="text-white/50 text-[10px] sm:text-xs mb-3">
-            We found FarmCeutica replacements with 10-27x bioavailability for supplements you&apos;re already taking:
+            We found ViaConnect replacements with 10-27x bioavailability for supplements you&apos;re already taking:
           </p>
           <div className="space-y-2">
             {replacements.map((r) => (

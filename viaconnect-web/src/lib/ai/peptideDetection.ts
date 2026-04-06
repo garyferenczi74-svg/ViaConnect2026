@@ -28,7 +28,7 @@ export function detectPeptideInIngredients(
         detected: true,
         peptideKeyword: match,
         ingredientName: ingredient.name,
-        suggestion: `This product contains ${match}, which is in the FarmCeutica peptide database. Would you like to also add it to your Peptides Protocol for enhanced tracking and interaction monitoring?`,
+        suggestion: `This product contains ${match}, which is in the ViaConnect peptide database. Would you like to also add it to your Peptides Protocol for enhanced tracking and interaction monitoring?`,
       };
     }
   }

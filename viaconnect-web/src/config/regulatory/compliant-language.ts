@@ -31,7 +31,7 @@ export const PERMITTED_LANGUAGE = {
 
   ssException: [
     'The SS-31 compound has received FDA approval for a specific rare condition (Barth syndrome)',
-    'FarmCeutica\'s oral formulation is a wellness analog \, not the approved drug product',
+    'ViaConnect\'s oral formulation is a wellness analog \, not the approved drug product',
   ],
 };
 
@@ -59,7 +59,7 @@ export const PROHIBITED_LANGUAGE = {
   ],
 
   fdaImplications: [
-    'FDA-approved (when referring to FarmCeutica products)',
+    'FDA-approved (when referring to ViaConnect products)',
     'clinically proven',
     'medically proven',
     'scientifically proven to treat',

@@ -219,7 +219,7 @@ function RecommendedTab({ protocol }: { protocol: Props["protocol"] }) {
           <PIcon icon={Sparkles} color="#2DA5A0" size="sm" />
           <div>
             <h3 className="text-sm font-semibold text-teal-400 mb-1">AI-Powered Recommendations</h3>
-            <p className="text-xs text-white/40 leading-relaxed">Based on your Clinical Assessment, we&apos;ve identified {gaps.length} nutrient gap{gaps.length !== 1 ? "s" : ""} and {recs.length} FarmCeutica products for your protocol.</p>
+            <p className="text-xs text-white/40 leading-relaxed">Based on your Clinical Assessment, we&apos;ve identified {gaps.length} nutrient gap{gaps.length !== 1 ? "s" : ""} and {recs.length} products for your protocol.</p>
           </div>
         </div>
       </div>
@@ -239,7 +239,7 @@ function RecommendedTab({ protocol }: { protocol: Props["protocol"] }) {
       )}
 
       <div className="space-y-3">
-        <h4 className="text-xs text-white/25 uppercase tracking-wider font-semibold">FarmCeutica Products For You</h4>
+        <h4 className="text-xs text-white/25 uppercase tracking-wider font-semibold">Recommended Products For You</h4>
         {recs.map((rec, i) => (
           <div key={rec.id || i} className="rounded-xl bg-white/[0.02] border border-white/[0.08] p-4 md:p-5 hover:border-teal-400/20 hover:bg-white/[0.03] transition-all group">
             <div className="flex items-start gap-4">

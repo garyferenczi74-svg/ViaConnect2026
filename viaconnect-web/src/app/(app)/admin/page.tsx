@@ -108,7 +108,7 @@ export default function AdminDashboardPage() {
       <StaggerChild>
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-white">FarmCeutica Admin Portal</h1>
+            <h1 className="text-2xl font-bold text-white">ViaConnect Admin Portal</h1>
             <p className="text-gray-400 text-sm mt-1">Financial Toolchain &middot; {skuCount ?? 62} SKUs &middot; {board?.report_quarter ?? "Q1 2026"}</p>
           </div>
           <Badge variant="active" className="bg-copper/20 text-copper">ADMIN</Badge>

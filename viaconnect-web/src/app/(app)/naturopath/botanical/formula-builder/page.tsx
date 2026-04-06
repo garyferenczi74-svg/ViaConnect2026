@@ -520,7 +520,7 @@ export default function FormulaBuilderPage() {
               <div>
                 <p className="text-[10px] uppercase tracking-wider text-gray-600">Practitioner</p>
                 <p className="text-sm text-white">Dr. ViaConnect, ND</p>
-                <p className="text-xs text-gray-500">FarmCeutica Wellness Clinic</p>
+                <p className="text-xs text-gray-500">ViaConnect Wellness Clinic</p>
               </div>
             </div>
           </Card>

@@ -41,7 +41,7 @@ function wrapInLayout(innerHtml: string): string {
         <!-- Footer -->
         <tr>
           <td style="background:${BRAND.navy};padding:20px 32px;text-align:center;">
-            <span style="color:#94A3B8;font-size:12px;">&copy; 2026 ViaConnect &middot; FarmCeutica Inc. All rights reserved.</span>
+            <span style="color:#94A3B8;font-size:12px;">&copy; 2026 ViaConnect &middot; ViaConnect Inc. All rights reserved.</span>
           </td>
         </tr>
       </table>

@@ -222,7 +222,7 @@ export default function GeneticUploadPage() {
                     <Zap className="w-6 h-6 text-copper" />
                   </div>
                   <div>
-                    <h2 className="text-lg font-semibold text-white">FarmCeutica GENEX360</h2>
+                    <h2 className="text-lg font-semibold text-white">ViaConnect GENEX360</h2>
                     <p className="text-sm text-gray-400">Auto-import results from your GENEX360 test via Genemetrics</p>
                   </div>
                 </div>

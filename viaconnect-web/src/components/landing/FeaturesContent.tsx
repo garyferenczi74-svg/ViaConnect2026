@@ -32,7 +32,7 @@ export function FeaturesContent() {
       <TabH2>The Five Things No One Else Can Do</TabH2>
 
       <TabH3>1. Genomic-First Formulations</TabH3>
-      <TabP>Every product in the FarmCeutica line exists because a genetic variant demands it. MTHFR+ exists because 40 to60% of the population can&apos;t convert folic acid into usable folate. COMT+ exists because Val158Met carriers metabolize catecholamines at dramatically different rates. SHRED+ exists because FTO and MC4R variants create genetically distinct obesity-risk profiles. These are not marketing angles,they are biochemical realities that your current supplement brand is ignoring.</TabP>
+      <TabP>Every product in the ViaConnect line exists because a genetic variant demands it. MTHFR+ exists because 40 to60% of the population can&apos;t convert folic acid into usable folate. COMT+ exists because Val158Met carriers metabolize catecholamines at dramatically different rates. SHRED+ exists because FTO and MC4R variants create genetically distinct obesity-risk profiles. These are not marketing angles,they are biochemical realities that your current supplement brand is ignoring.</TabP>
 
       <TabH3>2. World&apos;s Most Comprehensive Genetic Test Suite</TabH3>
       <TabP>GeneX360&trade; is not one test. It is six. Methylation and pharmacogenomics. Nutrient genetics. Hormonal profiling (DUTCH Complete with 40+ metabolites). Biological age via 850,000 epigenetic markers. Peptide response genetics (world&apos;s first,zero competitors). Cannabinoid metabolism genetics (world&apos;s first,zero competitors). Nobody else even comes close.</TabP>
@@ -41,7 +41,7 @@ export function FeaturesContent() {
       <TabP>Other wellness apps give you a chatbot. We give you five independent intelligence sources,Claude, OpenAI, Perplexity Sonar, OpenEvidence, and PubMed with 36 million citations,all cross-referencing every recommendation before it reaches you. A safety gating system blocks any flagged interaction regardless of what any individual AI suggests.</TabP>
 
       <TabH3>4. Dual-Delivery Absorption Technology</TabH3>
-      <TabP>Standard supplements absorb at less than 10%. Some below 1%. FarmCeutica&apos;s proprietary dual liposomal-micellar technology delivers 10 to 27 times greater bioavailability,validated in clinical pharmacokinetic studies. Micelles hit fast (30 to60 minutes). Liposomes sustain (4 to8 hours).</TabP>
+      <TabP>Standard supplements absorb at less than 10%. Some below 1%. ViaConnect&apos;s proprietary dual liposomal-micellar technology delivers 10 to 27 times greater bioavailability,validated in clinical pharmacokinetic studies. Micelles hit fast (30 to60 minutes). Liposomes sustain (4 to8 hours).</TabP>
 
       <TabH3>5. Three Portals, One Ecosystem</TabH3>
       <TabP>You get your own health command center. Your doctor gets a clinical decision support system with EHR integration. Your naturopath gets an herb-gene interaction database with 500+ botanicals. Everyone sees the same genetic data. Everyone works from the same protocol.</TabP>

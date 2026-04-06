@@ -11,9 +11,12 @@ import {
   Pill,
   Calendar,
   Clock,
+  ScanLine,
 } from "lucide-react";
 import { Card, Badge, Button, Avatar } from "@/components/ui";
 import { PageTransition, StaggerChild } from "@/lib/motion";
+import SupplementInput from "@/components/shared/SupplementInput";
+import type { PluginProductResult } from "@/plugins/types";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -155,6 +158,7 @@ const statusBadgeVariant: Record<ProtocolStatus, "active" | "neutral" | "info" |
 export default function ProtocolsPage() {
   const [filter, setFilter] = useState("all");
   const [search, setSearch] = useState("");
+  const [showQuickAdd, setShowQuickAdd] = useState(false);
 
   const filteredProtocols = useMemo(() => {
     let result = protocols;
@@ -216,6 +220,28 @@ export default function ProtocolsPage() {
             onChange={(e) => setSearch(e.target.value)}
             className="w-full h-10 pl-10 pr-4 rounded-lg text-sm text-white placeholder:text-gray-600 outline-none transition-colors bg-white/[0.04] border border-white/[0.08] focus:border-sage/50 focus:ring-1 focus:ring-sage/20"
           />
+        </StaggerChild>
+
+        {/* Quick Add: Barcode Scanner + Plugin Search */}
+        <StaggerChild className="mb-6">
+          <button
+            onClick={() => setShowQuickAdd(!showQuickAdd)}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-sage bg-sage/10 border border-sage/20 hover:bg-sage/15 transition-colors"
+          >
+            <ScanLine className="w-4 h-4" />
+            {showQuickAdd ? 'Hide' : 'Quick Add'}: Scan Barcode or Search
+          </button>
+          {showQuickAdd && (
+            <Card hover={false} className="mt-3 p-4">
+              <SupplementInput
+                portal="naturopath"
+                onProductAdded={(product: PluginProductResult) => {
+                  console.log('[naturopath-protocols] Product added:', product);
+                  setShowQuickAdd(false);
+                }}
+              />
+            </Card>
+          )}
         </StaggerChild>
 
         {/* Protocol Cards */}

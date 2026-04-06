@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import type { Product } from "@/lib/supabase/types";
 import { Card } from "@/components/ui/Card";
@@ -37,6 +37,7 @@ import { PageTransition, StaggerChild, MotionCard } from "@/lib/motion";
 // ─── Master SKU Library (all FarmCeutica products) ──────────────────────────
 
 import MASTER_SKUS from "@/data/farmceutica_master_skus.json";
+import { CategoryNav, CategoryHeader, groupByCategory, categorySectionId } from "@/components/shop/CategorySections";
 
 const supabase = createClient();
 
@@ -155,6 +156,14 @@ function matchesCurrentSupplement(productName: string, currentSupplements: strin
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export default function SupplementShopPage() {
+  return (
+    <Suspense fallback={null}>
+      <ShopContent />
+    </Suspense>
+  );
+}
+
+function ShopContent() {
   const router = useRouter();
   const [userId, setUserId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -165,11 +174,21 @@ export default function SupplementShopPage() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [showCart, setShowCart] = useState(false);
 
+  const searchParams = useSearchParams();
+
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (user) setUserId(user.id);
     });
   }, []);
+
+  // Handle deep-link params from recommendation cards (?q=ProductName&action=buy)
+  useEffect(() => {
+    const incomingQuery = searchParams.get('q');
+    if (incomingQuery) {
+      setSearchQuery(incomingQuery);
+    }
+  }, [searchParams]);
 
   // Fetch user's personalized recommendations
   const { data: recommendations } = useQuery({
@@ -212,10 +231,17 @@ export default function SupplementShopPage() {
     queryKey: ["shop-db-products"],
     queryFn: async () => {
       const { data } = await supabase
-        .from("products")
-        .select("sku, name, short_name, description, image_url, delivery_type")
+        .from("product_catalog")
+        .select("sku, name, description, image_url, delivery_form")
         .eq("active", true);
-      return (data ?? []) as { sku: string; name: string; short_name: string; description: string; image_url: string | null; delivery_type: string | null }[];
+      return (data ?? []).map((p: any) => ({
+        sku: p.sku,
+        name: p.name,
+        short_name: p.name,
+        description: p.description ?? '',
+        image_url: p.image_url,
+        delivery_type: p.delivery_form,
+      })) as { sku: string; name: string; short_name: string; description: string; image_url: string | null; delivery_type: string | null }[];
     },
   });
 
@@ -270,10 +296,27 @@ export default function SupplementShopPage() {
       );
     }
 
+    // Fixed display order for Testing & Diagnostics products
+    const TESTING_ORDER: Record<string, number> = {
+      "GeneX360": 1,
+      "GeneXM": 2,
+      "NutragenHQ": 3,
+      "HormoneIQ": 4,
+      "EpiGenDX": 5,
+      "PeptidesIQ": 6,
+      "CannabisIQ": 7,
+      "30 Day Custom Vitamin Package": 8,
+    };
+    const testingOrder = (name: string) => TESTING_ORDER[name] ?? 999;
+
     // Sort
     switch (sortBy) {
       case "recommended":
         items.sort((a, b) => {
+          // Testing products use fixed custom order
+          if (a.Category === "Testing" && b.Category === "Testing") {
+            return testingOrder(a.Name) - testingOrder(b.Name);
+          }
           // Recommended first, then current regime, then alphabetical
           if (a.isRecommended && !b.isRecommended) return -1;
           if (!a.isRecommended && b.isRecommended) return 1;
@@ -352,7 +395,7 @@ export default function SupplementShopPage() {
             Supplement Shop
           </h1>
           <p className="text-gray-400 text-sm mt-1">
-            Full FarmCeutica library — personalized picks highlighted from your wellness assessment.
+            Full product library — personalized picks highlighted from your wellness assessment.
           </p>
         </div>
 
@@ -512,9 +555,19 @@ export default function SupplementShopPage() {
             description="Try adjusting your search or filter criteria."
           />
         ) : viewMode === "grid" ? (
-          /* ── Visual Grid (Stitch-style) ── */
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-            {displayProducts.map((product) => {
+          /* ── Grouped Category Sections (A-Z) ── */
+          (() => {
+            const groups = groupByCategory(displayProducts);
+            const categoryKeys = [...groups.keys()];
+            return (
+              <div>
+                <CategoryNav categoryKeys={categoryKeys} />
+                <div className="space-y-12">
+                  {[...groups.entries()].map(([catKey, catProducts]) => (
+                    <section key={catKey} id={categorySectionId(catKey)} className="scroll-mt-20">
+                      <CategoryHeader categoryKey={catKey} productCount={catProducts.length} />
+                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                        {catProducts.map((product) => {
               const inCart = cart.find((c) => c.sku === product.SKU);
               return (
                 <MotionCard
@@ -544,12 +597,12 @@ export default function SupplementShopPage() {
                   </div>
 
                   {/* Product Image / Placeholder */}
-                  <div className="aspect-square bg-gradient-to-br from-white/[0.03] to-white/[0.01] flex items-center justify-center p-4 relative">
+                  <div className="aspect-square bg-white flex items-center justify-center p-4 relative">
                     {product.imageUrl ? (
                       <img
                         src={product.imageUrl}
                         alt={product.Name}
-                        className="w-full h-full object-contain"
+                        className="w-full h-full object-contain mix-blend-multiply"
                       />
                     ) : (
                       <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-copper/15 to-teal/10 flex items-center justify-center">
@@ -632,7 +685,13 @@ export default function SupplementShopPage() {
                 </MotionCard>
               );
             })}
-          </div>
+                      </div>
+                    </section>
+                  ))}
+                </div>
+              </div>
+            );
+          })()
         ) : (
           /* ── List View ── */
           <div className="space-y-2">

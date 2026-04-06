@@ -146,6 +146,20 @@ export async function completeCAQAndTriggerEngines(): Promise<{
       errors.push(`Current supplements: ${err instanceof Error ? err.message : "Failed"}`);
     }
 
+    // ═══ STEP 6: Trigger Ultrathink Protocol Generation ═══
+    try {
+      const ultraRes = await fetch("/api/ultrathink/recommend", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ trigger: "caq-complete" }),
+      });
+      results["ultrathink_protocol"] = ultraRes.ok;
+      if (!ultraRes.ok) errors.push(`Ultrathink: ${ultraRes.status}`);
+    } catch (err) {
+      results["ultrathink_protocol"] = false;
+      errors.push(`Ultrathink: ${err instanceof Error ? err.message : "Failed"}`);
+    }
+
     const allPassed = Object.values(results).every((v) => v === true);
     return { success: allPassed, results, errors };
   } catch (err) {

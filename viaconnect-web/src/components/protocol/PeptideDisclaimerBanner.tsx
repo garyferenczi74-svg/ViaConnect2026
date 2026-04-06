@@ -31,7 +31,7 @@ export function PeptideDisclaimerBanner() {
             Peptides are for wellness optimization only and must be discussed with a
             licensed practitioner or naturopath. This is NOT a prescription. Consult your
             provider before use. These statements have not been evaluated by the FDA.
-            All FarmCeutica\u2122 peptides are oral, high-bioavailability formulations designed
+            All ViaConnect peptides are oral, high-bioavailability formulations designed
             for wellness support only.
           </p>
           {!acknowledged && (

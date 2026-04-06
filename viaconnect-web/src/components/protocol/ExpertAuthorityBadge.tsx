@@ -57,7 +57,7 @@ export function ExpertCredibilityFooter({ domain = "all" }: { domain?: "all" | "
         <div>
           <p className="text-xs text-white/30 font-medium mb-1">Evidence-Based Recommendations</p>
           <p className="text-[10px] text-white/15 leading-relaxed">
-            FarmCeutica Wellness recommendations are informed by research from leaders at IFM, ABC, CMCR, ISCM, NAMA, ISNN, IPS, and APS — representing the global gold standard across genomics, functional medicine, herbal science, Eastern medicine, cannabinoid research, peptide therapy, and micronutrient science. Evidence levels vary by domain. Always consult a qualified practitioner.
+            ViaConnect recommendations are informed by research from leaders at IFM, ABC, CMCR, ISCM, NAMA, ISNN, IPS, and APS — representing the global gold standard across genomics, functional medicine, herbal science, Eastern medicine, cannabinoid research, peptide therapy, and micronutrient science. Evidence levels vary by domain. Always consult a qualified practitioner.
           </p>
         </div>
       </div>

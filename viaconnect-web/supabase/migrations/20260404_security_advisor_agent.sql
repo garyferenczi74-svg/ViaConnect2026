@@ -1,0 +1,4 @@
+-- Security Advisor Agent — Applied 2026-04-04
+-- Tables: security_agent_config, security_audit_log, security_repair_log, security_pending_repairs
+-- View: security_scan_summary
+-- Applied via Supabase MCP: security_advisor_agent

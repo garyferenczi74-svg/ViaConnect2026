@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { Card, Badge, Button } from "@/components/ui";
 import { PageTransition, StaggerChild } from "@/lib/motion";
+import { InteractionEngine } from "@/components/shared/InteractionEngine";
 
 // ─── Data ──────────────────────────────────────────────────────────────────────
 
@@ -286,7 +287,13 @@ export default function InteractionsPage() {
   return (
     <PageTransition className="min-h-screen bg-dark-bg p-6 md:p-10">
       <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
+
+        {/* Unified Interaction Engine — Patient interactions from DB */}
+        <Card className="p-6" hover={false}>
+          <InteractionEngine mode="practitioner" userId="" />
+        </Card>
+
+        {/* Standalone Interaction Checker */}
         <StaggerChild className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-white">Interaction Checker</h1>

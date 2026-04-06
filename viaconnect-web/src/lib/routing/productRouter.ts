@@ -16,7 +16,7 @@ const PEPTIDE_KEYWORDS = [
 ];
 
 const PEPTIDE_BRANDS = [
-  "FarmCeutica", "Integrative Peptides", "Peptide Sciences",
+  "ViaConnect", "Integrative Peptides", "Peptide Sciences",
   "Tailor Made Compounding", "Empower Pharmacy",
 ];
 
