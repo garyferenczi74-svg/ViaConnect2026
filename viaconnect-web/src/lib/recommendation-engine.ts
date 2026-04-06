@@ -201,7 +201,7 @@ export async function generateRecommendations(supabase: SupabaseClient, userId: 
       'digestive enzymes': 'FC-DIGEST-001', 'berberine': 'FC-SHRED-001',
       'lions mane': 'FC-FOCUS-001', "lion's mane": 'FC-FOCUS-001',
       'nmn': 'FC-NAD-001', 'resveratrol': 'FC-NAD-001',
-      'zinc': 'FC-DESIRE-001', '5-htp': 'FC-MAOA-001',
+      'zinc': 'FC-CATALYST-001', '5-htp': 'FC-MAOA-001',
       'milk thistle': 'FC-CLEAN-001',
     };
     for (const supp of caq.current_supplements) {
@@ -214,9 +214,24 @@ export async function generateRecommendations(supabase: SupabaseClient, userId: 
     }
   }
 
+  // ── Sex / age category gating ──
+  // Always exclude children's products from adult CAQ recommendations.
+  // Exclude `womens` category for users who self-report as male.
+  // Exclude the male-only RISE+ Male Testosterone SKU for users who self-report as female.
+  const reportedSex = (caq.sex || '').toString().toLowerCase().trim();
+  const isMale = ['male', 'm', 'man'].includes(reportedSex);
+  const isFemale = ['female', 'f', 'woman'].includes(reportedSex);
+  const MALE_ONLY_SKUS = new Set(['FC-RISE-001']); // RISE+ Male Testosterone
+
   const scored: ProductMatch[] = [];
   for (const product of products) {
     if (hasContraindication(product.sku, caq)) continue;
+    // Children's products are never recommended via the adult CAQ pipeline
+    if (product.category === 'childrens') continue;
+    // Block women's-category products for male users
+    if (isMale && product.category === 'womens') continue;
+    // Block male-only SKUs (e.g. RISE+) for female users
+    if (isFemale && MALE_ONLY_SKUS.has(product.sku)) continue;
     const mSym = (product.symptom_tags||[]).filter((t:string) => symptomTags.includes(t));
     const mLife = (product.lifestyle_tags||[]).filter((t:string) => lifestyleTags.includes(t));
     const mGoal = (product.goal_tags||[]).filter((t:string) => goalTags.includes(t));

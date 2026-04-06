@@ -1,14 +1,16 @@
 "use client";
 
 import { useState, useRef } from "react";
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search, ChevronDown, ChevronUp, Dna, Sparkles, ArrowRight,
   Shield, Lock, Upload, FileText, ClipboardList,
   FlaskConical, Apple, Activity, Clock, TestTubes, Leaf,
-  Droplets, TestTube, FileBarChart,
+  Droplets, TestTube, FileBarChart, ShoppingCart,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { getGeneticsShopUrl } from "@/utils/geneticsShopLinks";
 
 /* ═══════════════════════════════════════════════════════════════════════ */
 /*  PREMIUM ICON                                                          */
@@ -33,20 +35,20 @@ function PremiumIcon({ icon: Icon, color, size = "md" }: { icon: LucideIcon; col
 /*  DATA                                                                  */
 /* ═══════════════════════════════════════════════════════════════════════ */
 
-const PANELS: { id: string; code: string; name: string; icon: LucideIcon; color: string; price: string; status: "complete" | "partial" | "incomplete"; partialLabel?: string; genes: string[]; variants: string; description: string; isComplete?: boolean; subPanels?: string[] }[] = [
-  { id: "genex360-complete", code: "GeneX360\u2122 Complete", name: "All 6 Panels", icon: Dna, color: "#2DA5A0", price: "$988.88", status: "partial", partialLabel: "2/6", genes: [], variants: "500+", description: "The full suite of 6 genetic panels in one comprehensive test", isComplete: true,
+const PANELS: { id: string; code: string; name: string; icon: LucideIcon; color: string; status: "complete" | "partial" | "incomplete"; partialLabel?: string; genes: string[]; variants: string; description: string; isComplete?: boolean; subPanels?: string[] }[] = [
+  { id: "genex360-complete", code: "GeneX360\u2122 Complete", name: "All 6 Panels", icon: Dna, color: "#2DA5A0", status: "partial", partialLabel: "2/6", genes: [], variants: "500+", description: "The full suite of 6 genetic panels in one comprehensive test", isComplete: true,
     subPanels: ["GeneX-M\u2122", "NutrigenDX\u2122", "HormoneIQ\u2122", "EpigenHQ\u2122", "PeptideIQ\u2122", "CannabisIQ\u2122"] },
-  { id: "genex-m", code: "GeneX-M\u2122", name: "Methylation", icon: FlaskConical, color: "#60A5FA", price: "$288.88", status: "complete",
+  { id: "genex-m", code: "GeneX-M\u2122", name: "Methylation", icon: FlaskConical, color: "#60A5FA", status: "complete",
     genes: ["MTHFR", "COMT", "CBS", "MTR", "MTRR", "AHCY", "MAT"], variants: "45+", description: "Methylation pathway analysis for B-vitamin metabolism" },
-  { id: "nutrigendx", code: "NutrigenDX\u2122", name: "Nutrition", icon: Apple, color: "#4ADE80", price: "$288.88", status: "incomplete",
+  { id: "nutrigendx", code: "NutrigenDX\u2122", name: "Nutrition", icon: Apple, color: "#4ADE80", status: "incomplete",
     genes: ["FUT2", "GC", "BCMO1", "SLC23A1", "NBPF3"], variants: "80+", description: "Vitamin metabolism, mineral absorption, macronutrient sensitivity" },
-  { id: "hormoneiq", code: "HormoneIQ\u2122", name: "Complete Hormone", icon: Activity, color: "#A855F7", price: "$388.88", status: "incomplete",
+  { id: "hormoneiq", code: "HormoneIQ\u2122", name: "Complete Hormone", icon: Activity, color: "#A855F7", status: "incomplete",
     genes: ["CYP19A1", "ESR1", "AR", "DIO2", "HSD17B1"], variants: "65+", description: "Estrogen, testosterone, thyroid, cortisol pathway genetics" },
-  { id: "epigenhq", code: "EpigenHQ\u2122", name: "Biological Age", icon: Clock, color: "#FBBF24", price: "$388.88", status: "incomplete",
+  { id: "epigenhq", code: "EpigenHQ\u2122", name: "Biological Age", icon: Clock, color: "#FBBF24", status: "incomplete",
     genes: ["TERT", "TERC", "FOXO3", "APOE", "SIRT1"], variants: "55+", description: "Biological age, telomere length, DNA methylation clock" },
-  { id: "peptideiq", code: "PeptideIQ\u2122", name: "Peptide Genetics", icon: TestTubes, color: "#22D3EE", price: "$488.88", status: "incomplete",
+  { id: "peptideiq", code: "PeptideIQ\u2122", name: "Peptide Genetics", icon: TestTubes, color: "#22D3EE", status: "incomplete",
     genes: ["GH1", "IGF1", "COL1A1", "COL5A1", "MMP1"], variants: "40+", description: "Growth hormone, collagen synthesis, neuropeptide sensitivity" },
-  { id: "cannabisiq", code: "CannabisIQ\u2122", name: "Cannabinoid Genetics", icon: Leaf, color: "#34D399", price: "$288.88", status: "incomplete",
+  { id: "cannabisiq", code: "CannabisIQ\u2122", name: "Cannabinoid Genetics", icon: Leaf, color: "#34D399", status: "incomplete",
     genes: ["CNR1", "CNR2", "FAAH", "CYP2C9", "COMT"], variants: "35+", description: "CB1/CB2 receptors, FAAH, THC metabolism" },
 ];
 
@@ -82,6 +84,27 @@ function StatusBadge({ status, partial }: { status: string; partial?: string }) 
   if (status === "complete") return <span className="text-[10px] px-2 py-0.5 rounded-full bg-teal-400/15 border border-teal-400/30 text-teal-400 flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-teal-400" />Results Ready</span>;
   if (status === "partial") return <span className="text-[10px] px-2 py-0.5 rounded-full bg-yellow-400/15 border border-yellow-400/30 text-yellow-400 flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse" />{partial || "Partial"}</span>;
   return <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 border border-white/15 text-white/40 flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-white/30" />Available</span>;
+}
+
+/* ── Buy Now button: deep-links to /shop?q=<panel> via geneticsShopLinks ── */
+function BuyNowButton({ panelId, compact = false }: { panelId: string; compact?: boolean }) {
+  const href = getGeneticsShopUrl(panelId);
+  return (
+    <Link href={href} onClick={(e) => e.stopPropagation()} className={compact ? "inline-block" : "inline-block w-full sm:w-auto"}>
+      <motion.span
+        whileHover={{ scale: 1.03 }}
+        whileTap={{ scale: 0.97 }}
+        className={`inline-flex items-center justify-center gap-2 rounded-xl font-semibold text-white bg-[#2DA5A0] hover:bg-[#2DA5A0]/85 shadow-lg shadow-[#2DA5A0]/20 hover:shadow-[#2DA5A0]/30 transition-all duration-200 focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744] ${
+          compact
+            ? "px-3 py-1.5 text-xs min-h-[32px]"
+            : "px-4 py-2.5 text-xs sm:text-sm min-h-[44px] w-full sm:w-auto"
+        }`}
+      >
+        <ShoppingCart className={compact ? "w-3.5 h-3.5" : "w-4 h-4"} strokeWidth={1.5} />
+        Buy Now
+      </motion.span>
+    </Link>
+  );
 }
 
 /* ═══════════════════════════════════════════════════════════════════════ */
@@ -124,58 +147,6 @@ export default function GeneticsPage() {
             </div>
           </div>
         </header>
-
-        {/* ═══ GENEX360 COMPLETE (HERO) ═══ */}
-        {(() => { const p = PANELS[0]; return (
-          <div className="rounded-2xl p-5 md:p-6 border border-teal-400/20 hover:border-teal-400/40 hover:shadow-[0_0_40px_rgba(45,165,160,0.1)] transition-all duration-300 cursor-pointer"
-            style={{ background: "linear-gradient(135deg, rgba(45,165,160,0.12) 0%, rgba(96,165,250,0.06) 50%, rgba(183,94,24,0.06) 100%)" }}>
-            <div className="flex flex-col sm:flex-row gap-4 items-start">
-              <PremiumIcon icon={p.icon} color={p.color} size="lg" />
-              <div className="flex-1">
-                <div className="flex flex-wrap items-center gap-2 mb-1">
-                  <h2 className="text-lg md:text-xl font-bold text-white">{p.code}</h2>
-                  <span className="text-xs px-2.5 py-0.5 rounded-full border border-teal-400/30 text-teal-400 font-medium" style={{ background: "linear-gradient(135deg, rgba(45,165,160,0.2), rgba(183,94,24,0.15))" }}>Most Popular</span>
-                </div>
-                <p className="text-sm text-white/50 mb-3">{p.description}</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {p.subPanels?.map((sp) => <span key={sp} className="text-[10px] px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-white/40 font-mono">{sp}</span>)}
-                </div>
-              </div>
-              <div className="flex flex-col items-end gap-2 flex-shrink-0">
-                <StatusBadge status={p.status} partial={p.partialLabel} />
-                <span className="text-xs text-white/30">{p.variants} variants</span>
-                <span className="text-sm font-bold text-white">{p.price}</span>
-              </div>
-            </div>
-          </div>
-        ); })()}
-
-        {/* ═══ 6 INDIVIDUAL PANELS ═══ */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
-          {PANELS.slice(1).map((panel) => (
-            <div key={panel.id} className="rounded-2xl p-4 md:p-5 border border-white/[0.08] bg-white/[0.03] hover:border-white/20 hover:bg-white/[0.05] transition-all duration-200 cursor-pointer group"
-              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.boxShadow = `0 0 30px ${panel.color}18`; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.boxShadow = "none"; }}>
-              <div className="flex items-center justify-between mb-3">
-                <div className="group-hover:scale-110 transition-transform duration-200">
-                  <PremiumIcon icon={panel.icon} color={panel.color} size="sm" />
-                </div>
-                <StatusBadge status={panel.status} />
-              </div>
-              <h3 className="text-sm font-bold text-white">{panel.code}</h3>
-              <p className="text-xs text-white/40 mt-0.5">{panel.name}</p>
-              <p className="text-xs text-white/30 mt-2 line-clamp-2">{panel.description}</p>
-              <div className="flex flex-wrap gap-1 mt-3">
-                {panel.genes.slice(0, 4).map((g) => <span key={g} className="text-[9px] px-1.5 py-0.5 rounded bg-white/5 border border-white/[0.06] text-white/30 font-mono">{g}</span>)}
-                {panel.genes.length > 4 && <span className="text-[9px] px-1.5 py-0.5 text-white/20">+{panel.genes.length - 4}</span>}
-              </div>
-              <div className="flex items-center justify-between mt-3 pt-3 border-t border-white/5">
-                <span className="text-xs text-white/25">{panel.variants} variants</span>
-                <span className="text-sm font-bold text-white">{panel.price}</span>
-              </div>
-            </div>
-          ))}
-        </div>
 
         {/* ═══ YOUR VARIANTS EXPLORER ═══ */}
         <section className="space-y-4">
@@ -311,6 +282,58 @@ export default function GeneticsPage() {
           <input ref={labInputRef} type="file" className="hidden" accept=".pdf,.csv,.xlsx,.xls,.jpg,.jpeg,.png,.heic,.txt" multiple />
           <p className="text-[10px] text-white/15 mt-4">Your lab data is encrypted end-to-end and never shared without your consent.</p>
         </section>
+
+        {/* ═══ GENEX360 COMPLETE (HERO) ═══ */}
+        {(() => { const p = PANELS[0]; return (
+          <div className="rounded-2xl p-5 md:p-6 border border-teal-400/20 hover:border-teal-400/40 hover:shadow-[0_0_40px_rgba(45,165,160,0.1)] transition-all duration-300 cursor-pointer"
+            style={{ background: "linear-gradient(135deg, rgba(45,165,160,0.12) 0%, rgba(96,165,250,0.06) 50%, rgba(183,94,24,0.06) 100%)" }}>
+            <div className="flex flex-col sm:flex-row gap-4 items-start">
+              <PremiumIcon icon={p.icon} color={p.color} size="lg" />
+              <div className="flex-1">
+                <div className="flex flex-wrap items-center gap-2 mb-1">
+                  <h2 className="text-lg md:text-xl font-bold text-white">{p.code}</h2>
+                  <span className="text-xs px-2.5 py-0.5 rounded-full border border-teal-400/30 text-teal-400 font-medium" style={{ background: "linear-gradient(135deg, rgba(45,165,160,0.2), rgba(183,94,24,0.15))" }}>Most Popular</span>
+                </div>
+                <p className="text-sm text-white/50 mb-3">{p.description}</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {p.subPanels?.map((sp) => <span key={sp} className="text-[10px] px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-white/40 font-mono">{sp}</span>)}
+                </div>
+              </div>
+              <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                <StatusBadge status={p.status} partial={p.partialLabel} />
+                <span className="text-xs text-white/30">{p.variants} variants</span>
+                <BuyNowButton panelId={p.id} />
+              </div>
+            </div>
+          </div>
+        ); })()}
+
+        {/* ═══ 6 INDIVIDUAL PANELS ═══ */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
+          {PANELS.slice(1).map((panel) => (
+            <div key={panel.id} className="rounded-2xl p-4 md:p-5 border border-white/[0.08] bg-white/[0.03] hover:border-white/20 hover:bg-white/[0.05] transition-all duration-200 cursor-pointer group"
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.boxShadow = `0 0 30px ${panel.color}18`; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.boxShadow = "none"; }}>
+              <div className="flex items-center justify-between mb-3">
+                <div className="group-hover:scale-110 transition-transform duration-200">
+                  <PremiumIcon icon={panel.icon} color={panel.color} size="sm" />
+                </div>
+                <StatusBadge status={panel.status} />
+              </div>
+              <h3 className="text-sm font-bold text-white">{panel.code}</h3>
+              <p className="text-xs text-white/40 mt-0.5">{panel.name}</p>
+              <p className="text-xs text-white/30 mt-2 line-clamp-2">{panel.description}</p>
+              <div className="flex flex-wrap gap-1 mt-3">
+                {panel.genes.slice(0, 4).map((g) => <span key={g} className="text-[9px] px-1.5 py-0.5 rounded bg-white/5 border border-white/[0.06] text-white/30 font-mono">{g}</span>)}
+                {panel.genes.length > 4 && <span className="text-[9px] px-1.5 py-0.5 text-white/20">+{panel.genes.length - 4}</span>}
+              </div>
+              <div className="flex items-center justify-between mt-3 pt-3 border-t border-white/5 gap-2">
+                <span className="text-xs text-white/25 flex-shrink-0">{panel.variants} variants</span>
+                <BuyNowButton panelId={panel.id} compact />
+              </div>
+            </div>
+          ))}
+        </div>
 
         {/* ═══ ORDER CTA ═══ */}
         <div className="rounded-2xl p-6 md:p-8 border border-white/[0.06] relative overflow-hidden" style={{ background: "linear-gradient(135deg, #1A2744, #1E2D4A, #1A2744)" }}>

@@ -1,0 +1,121 @@
+{
+  "projectId": "nnhkcufyqjojdbvdrpky",
+  "promptVersion": "#38c",
+  "generatedAt": "2026-04-05T01:00:00Z",
+  "initialState": {
+    "errors": 0,
+    "warnings": 0,
+    "infos": 100
+  },
+  "finalState": {
+    "errors": 0,
+    "warnings": 0,
+    "infos": 88
+  },
+  "totalFixed": 12,
+  "totalFailed": 0,
+  "manualReviewRequired": 88,
+  "indexesDropped": [
+    {
+      "index": "idx_interactions_user",
+      "table": "medication_interactions",
+      "reason": "Redundant: covered by idx_interactions_severity (user_id, severity)",
+      "type": "redundant"
+    },
+    {
+      "index": "idx_verification_codes_email_lookup",
+      "table": "verification_codes",
+      "reason": "Redundant: partial index (email WHERE NOT NULL) covered by idx_verification_codes_email (email, used, expires_at)",
+      "type": "redundant"
+    },
+    {
+      "index": "idx_advisor_issues_status",
+      "table": "advisor_issues",
+      "reason": "Internal tooling, NO FK support, 0 rows, 0 scans",
+      "type": "internal_tooling"
+    },
+    {
+      "index": "idx_advisor_issues_category",
+      "table": "advisor_issues",
+      "reason": "Internal tooling, NO FK support, 0 rows, 0 scans",
+      "type": "internal_tooling"
+    },
+    {
+      "index": "idx_advisor_snapshots_run",
+      "table": "advisor_snapshots",
+      "reason": "Internal tooling, NO FK support, 0 rows, 0 scans",
+      "type": "internal_tooling"
+    },
+    {
+      "index": "idx_sec_audit_scan",
+      "table": "security_audit_log",
+      "reason": "Internal tooling, NO FK support, 0 rows, 0 scans",
+      "type": "internal_tooling"
+    },
+    {
+      "index": "idx_sec_audit_severity",
+      "table": "security_audit_log",
+      "reason": "Internal tooling, NO FK support, 0 rows, 0 scans",
+      "type": "internal_tooling"
+    },
+    {
+      "index": "idx_sec_audit_status",
+      "table": "security_audit_log",
+      "reason": "Internal tooling, NO FK support, 0 rows, 0 scans",
+      "type": "internal_tooling"
+    },
+    {
+      "index": "idx_sec_audit_at",
+      "table": "security_audit_log",
+      "reason": "Internal tooling, NO FK support, 0 rows, 0 scans",
+      "type": "internal_tooling"
+    },
+    {
+      "index": "idx_sec_pending_status",
+      "table": "security_pending_repairs",
+      "reason": "Internal tooling, NO FK support, 0 rows, 0 scans",
+      "type": "internal_tooling"
+    },
+    {
+      "index": "idx_sec_repair_success",
+      "table": "security_repair_log",
+      "reason": "Internal tooling, NO FK support, 0 rows, 0 scans",
+      "type": "internal_tooling"
+    }
+  ],
+  "indexesKept": {
+    "fk_supporting": 47,
+    "search_gin_trgm": 18,
+    "functional_filter": 22,
+    "total": 87
+  },
+  "keepReasons": {
+    "fk_supporting": "These indexes support foreign key constraints. Without them, FK cascade operations and JOINs would require sequential scans.",
+    "search_gin_trgm": "These power the ViaConnect search engine, brand discovery, and supplement lookup features (GIN, trgm, tsvector).",
+    "functional_filter": "These support app queries: RLS optimization, category filtering, auth flows, template lookups, event processing."
+  },
+  "otherInfoItems": [
+    {
+      "name": "auth_db_connections_absolute",
+      "count": 1,
+      "reason": "Infrastructure config, not schema change",
+      "recommendedAction": "Switch to percentage-based connection allocation in Supabase Dashboard"
+    }
+  ],
+  "migrations": [
+    "fix_info_drop_redundant_and_tooling_indexes"
+  ],
+  "cumulativeFromPrompt38b": {
+    "totalMigrations": 4,
+    "migrationNames": [
+      "fix_warn_auth_rls_initplan_peptide_tables",
+      "fix_info_unindexed_fk_pep_recs_user_id",
+      "fix_info_drop_redundant_and_tooling_indexes"
+    ],
+    "totalWarningsFixed": 3,
+    "totalInfoFixed": 12,
+    "startingState": { "errors": 0, "warnings": 3, "infos": 97 },
+    "endingState": { "errors": 0, "warnings": 0, "infos": 88 }
+  },
+  "postLaunchPlan": "Run pg_stat_reset() 30 days after launch (July 2026). Wait 30 days. Re-run advisor August 2026. Drop indexes still showing 0 scans with real traffic."
+}

@@ -1,0 +1,84 @@
+{
+  "projectId": "nnhkcufyqjojdbvdrpky",
+  "promptVersion": "#38b",
+  "generatedAt": "2026-04-05T00:00:00Z",
+  "initialState": {
+    "errors": 0,
+    "warnings": 3,
+    "infos": 97
+  },
+  "finalState": {
+    "errors": 0,
+    "warnings": 0,
+    "infos": 101
+  },
+  "totalFixed": 4,
+  "totalFailed": 0,
+  "manualReviewRequired": 101,
+  "fixes": [
+    {
+      "severity": "WARN",
+      "name": "auth_rls_initplan",
+      "table": "peptide_detected_patterns",
+      "policy": "own_pep_patterns",
+      "action": "Replaced auth.uid() with (SELECT auth.uid())",
+      "migration": "fix_warn_auth_rls_initplan_peptide_tables",
+      "status": "FIXED"
+    },
+    {
+      "severity": "WARN",
+      "name": "auth_rls_initplan",
+      "table": "peptide_stack_protocols",
+      "policy": "own_pep_protocols",
+      "action": "Replaced auth.uid() with (SELECT auth.uid())",
+      "migration": "fix_warn_auth_rls_initplan_peptide_tables",
+      "status": "FIXED"
+    },
+    {
+      "severity": "WARN",
+      "name": "auth_rls_initplan",
+      "table": "peptide_stack_recommendations",
+      "policy": "own_pep_recs",
+      "action": "Replaced auth.uid() with (SELECT auth.uid())",
+      "migration": "fix_warn_auth_rls_initplan_peptide_tables",
+      "status": "FIXED"
+    },
+    {
+      "severity": "INFO",
+      "name": "unindexed_foreign_keys",
+      "table": "peptide_stack_recommendations",
+      "fkey": "peptide_stack_recommendations_user_id_fkey",
+      "action": "Created index idx_pep_recs_user_id via CONCURRENTLY",
+      "migration": "fix_info_unindexed_fk_pep_recs_user_id",
+      "status": "FIXED"
+    }
+  ],
+  "manualReviewItems": [
+    {
+      "name": "unused_index",
+      "count": 100,
+      "reason": "Pre-launch platform with zero production traffic. 49 support FKs, 18 are search/GIN indexes, 33 are functional. All needed at launch.",
+      "recommendedAction": "Re-evaluate 90 days post-launch (September 2026)"
+    },
+    {
+      "name": "auth_db_connections_absolute",
+      "count": 1,
+      "reason": "Infrastructure config change, not schema migration",
+      "recommendedAction": "Review with CTO — switch to percentage-based connection allocation in Supabase dashboard"
+    }
+  ],
+  "migrations": [
+    "fix_warn_auth_rls_initplan_peptide_tables",
+    "fix_info_unindexed_fk_pep_recs_user_id"
+  ],
+  "infoCounts": {
+    "unused_index_total": 100,
+    "unused_index_fk_support": 49,
+    "unused_index_search_gin": 18,
+    "unused_index_functional": 33,
+    "auth_db_connections": 1
+  },
+  "notes": "Info count increased from 97 to 101 because: (1) the new idx_pep_recs_user_id index + 3 recreated RLS policies created 5 new zero-scan entries, (2) the 1 unindexed_foreign_keys finding was resolved. Net: +4 unused_index, -1 unindexed_fk = +3 total info.",
+  "monitoringActive": true,
+  "nextScanAt": "2026-04-05T00:15:00Z"
+}

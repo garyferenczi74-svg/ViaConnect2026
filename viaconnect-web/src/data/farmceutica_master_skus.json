@@ -196,7 +196,7 @@
     },
     {
         "DTCMargin":  86.2,
-        "Name":  "Clean+ Detox \u0026 Liver Health",
+        "Name":  "Clean+ Detox & Liver Health",
         "COGS":  14.98,
         "SKU":  "16",
         "MSRP":  108.88,
@@ -261,7 +261,7 @@
     },
     {
         "DTCMargin":  87.1,
-        "Name":  "FLEX+ Joint \u0026 Inflammation",
+        "Name":  "FLEX+ Joint & Inflammation",
         "COGS":  12.72,
         "SKU":  "21",
         "MSRP":  98.88,
@@ -729,7 +729,7 @@
     },
     {
         "DTCMargin":  44.7,
-        "Name":  "GeneXM",
+        "Name":  "GeneX-M™ Methylation Panel",
         "COGS":  159.88,
         "SKU":  "57",
         "MSRP":  288.88,
@@ -742,7 +742,7 @@
     },
     {
         "DTCMargin":  41.1,
-        "Name":  "NutragenHQ",
+        "Name":  "NutrigenDX™ Genetic Nutrition Panel",
         "COGS":  228.88,
         "SKU":  "58",
         "MSRP":  388.88,
@@ -754,47 +754,47 @@
         "COGSRatio":  58.9
     },
     {
-        "DTCMargin":  60.9,
-        "Name":  "HormoneIQ",
+        "DTCMargin":  48.9,
+        "Name":  "HormoneIQ™ Genetic Hormone Panel",
         "COGS":  198.88,
         "SKU":  "59",
-        "MSRP":  508.88,
+        "MSRP":  388.88,
         "Category":  "Testing",
-        "Wholesale":  254.44,
-        "Distributor":  152.66,
-        "WSMargin":  21.8,
-        "DistMargin":  -30.3,
-        "COGSRatio":  39.1
+        "Wholesale":  194.44,
+        "Distributor":  116.66,
+        "WSMargin":  -2.3,
+        "DistMargin":  -70.5,
+        "COGSRatio":  51.1
     },
     {
-        "DTCMargin":  32.5,
-        "Name":  "EpiGenDX",
+        "DTCMargin":  34.9,
+        "Name":  "EpigenHQ™ Epigenetic Aging Panel",
         "COGS":  298.88,
         "SKU":  "60",
-        "MSRP":  443,
+        "MSRP":  458.88,
         "Category":  "Testing",
-        "Wholesale":  221.5,
-        "Distributor":  132.9,
-        "WSMargin":  -34.9,
-        "DistMargin":  -124.9,
-        "COGSRatio":  67.5
+        "Wholesale":  229.44,
+        "Distributor":  137.66,
+        "WSMargin":  -30.3,
+        "DistMargin":  -117.1,
+        "COGSRatio":  65.1
     },
     {
-        "DTCMargin":  52.2,
-        "Name":  "GeneX360",
+        "DTCMargin":  66.7,
+        "Name":  "GeneX360™ Complete Genetic Panel",
         "COGS":  329,
         "SKU":  "61",
-        "MSRP":  688.88,
+        "MSRP":  988.88,
         "Category":  "Testing",
-        "Wholesale":  344.44,
-        "Distributor":  206.66,
-        "WSMargin":  4.5,
-        "DistMargin":  -59.2,
-        "COGSRatio":  47.8
+        "Wholesale":  494.44,
+        "Distributor":  296.66,
+        "WSMargin":  33.5,
+        "DistMargin":  -10.9,
+        "COGSRatio":  33.3
     },
     {
         "DTCMargin":  67.3,
-        "Name":  "30 Day Custom Vitamin Package",
+        "Name":  "30-Day Custom Vitamin Package",
         "COGS":  65,
         "SKU":  "62",
         "MSRP":  198.88,
@@ -802,7 +802,7 @@
         "Wholesale":  99.44,
         "Distributor":  59.66,
         "WSMargin":  34.6,
-        "DistMargin":  -9,
+        "DistMargin":  -9.0,
         "COGSRatio":  32.7
     },
     {
@@ -858,29 +858,29 @@
         "COGSRatio":  13.7
     },
     {
-        "DTCMargin":  40.0,
-        "Name":  "PeptidesIQ",
-        "COGS":  299.40,
+        "DTCMargin":  38.8,
+        "Name":  "PeptideIQ™ Genetic Peptide Response Panel",
+        "COGS":  299.4,
         "SKU":  "67",
-        "MSRP":  499.00,
+        "MSRP":  488.88,
         "Category":  "Testing",
-        "Wholesale":  249.50,
-        "Distributor":  149.70,
-        "WSMargin":  -20.0,
-        "DistMargin":  -100.0,
-        "COGSRatio":  60.0
+        "Wholesale":  244.44,
+        "Distributor":  146.66,
+        "WSMargin":  -22.5,
+        "DistMargin":  -104.1,
+        "COGSRatio":  61.2
     },
     {
-        "DTCMargin":  40.0,
-        "Name":  "CannabisIQ",
+        "DTCMargin":  43.0,
+        "Name":  "CannabisIQ™ Genetic Cannabinoid Panel",
         "COGS":  113.33,
         "SKU":  "68",
-        "MSRP":  188.88,
+        "MSRP":  198.88,
         "Category":  "Testing",
-        "Wholesale":  94.44,
-        "Distributor":  56.66,
-        "WSMargin":  -20.0,
-        "DistMargin":  -100.0,
-        "COGSRatio":  60.0
+        "Wholesale":  99.44,
+        "Distributor":  59.66,
+        "WSMargin":  -14.0,
+        "DistMargin":  -90.0,
+        "COGSRatio":  57.0
     }
 ]

@@ -38,6 +38,9 @@ import { PageTransition, StaggerChild, MotionCard } from "@/lib/motion";
 
 import MASTER_SKUS from "@/data/farmceutica_master_skus.json";
 import { CategoryNav, CategoryHeader, groupByCategory, categorySectionId } from "@/components/shop/CategorySections";
+import { ProductInfoButtons, type FormulationData } from "@/components/shop/ProductInfoButtons";
+import { TestingProductInfoButtons } from "@/components/shop/TestingProductInfoButtons";
+import { getFormulationByName, getFormulationDataByName } from "@/data/masterFormulations";
 
 const supabase = createClient();
 
@@ -232,7 +235,7 @@ function ShopContent() {
     queryFn: async () => {
       const { data } = await supabase
         .from("product_catalog")
-        .select("sku, name, description, image_url, delivery_form")
+        .select("sku, name, description, image_url, delivery_form, short_description, formulation_json")
         .eq("active", true);
       return (data ?? []).map((p: any) => ({
         sku: p.sku,
@@ -241,7 +244,18 @@ function ShopContent() {
         description: p.description ?? '',
         image_url: p.image_url,
         delivery_type: p.delivery_form,
-      })) as { sku: string; name: string; short_name: string; description: string; image_url: string | null; delivery_type: string | null }[];
+        short_description: p.short_description ?? null,
+        formulation_json: p.formulation_json ?? null,
+      })) as {
+        sku: string;
+        name: string;
+        short_name: string;
+        description: string;
+        image_url: string | null;
+        delivery_type: string | null;
+        short_description: string | null;
+        formulation_json: FormulationData;
+      }[];
     },
   });
 
@@ -252,12 +266,60 @@ function ShopContent() {
     return map;
   }, [recommendations]);
 
-  // Build DB product lookup by name
+  // Build DB product lookup by normalized name so MASTER_SKUS entries with
+  // ™/® symbols, hyphens, plurals, or descriptive suffixes still resolve to the
+  // matching DB row (and pick up image_url, delivery_form, etc.)
   const dbProductMap = useMemo(() => {
-    const map = new Map<string, { short_name: string; description: string; image_url: string | null; delivery_type: string | null }>();
-    (dbProducts ?? []).forEach((p) => map.set(p.name, p));
+    type DbInfo = {
+      short_name: string;
+      description: string;
+      image_url: string | null;
+      delivery_type: string | null;
+      short_description: string | null;
+      formulation_json: FormulationData;
+    };
+    const map = new Map<string, DbInfo>();
+    const normKey = (s: string) =>
+      s.toLowerCase().replace(/[™®]/g, "").replace(/[^a-z0-9]+/g, "").trim();
+    (dbProducts ?? []).forEach((p) => {
+      map.set(p.name, p);
+      const k = normKey(p.name);
+      if (k) map.set(k, p);
+    });
     return map;
   }, [dbProducts]);
+
+  // Lookup helper: try exact name, then normalized name, then explicit aliases
+  // for testing-kit products whose MASTER_SKUS marketing names differ from the
+  // catalog names in product_catalog.
+  const findDbInfo = useMemo(() => {
+    const NAME_ALIASES: Record<string, string> = {
+      // MASTER_SKUS marketing name → product_catalog canonical name
+      "GeneX-M™ Methylation Panel": "GeneXM",
+      "NutrigenDX™ Genetic Nutrition Panel": "NutragenHQ",
+      "HormoneIQ™ Genetic Hormone Panel": "HormoneIQ",
+      "EpigenHQ™ Epigenetic Aging Panel": "EpiGenDX",
+      "GeneX360™ Complete Genetic Panel": "GeneX360",
+      "30-Day Custom Vitamin Package": "30 Day Custom Vitamin Package",
+      "PeptideIQ™ Genetic Peptide Response Panel": "PeptidesIQ",
+      "CannabisIQ™ Genetic Cannabinoid Panel": "CannabisIQ",
+    };
+    const normKey = (s: string) =>
+      s.toLowerCase().replace(/[™®]/g, "").replace(/[^a-z0-9]+/g, "").trim();
+    return (skuName: string) => {
+      // 1. exact name
+      const exact = dbProductMap.get(skuName);
+      if (exact) return exact;
+      // 2. explicit alias → canonical DB name
+      const aliased = NAME_ALIASES[skuName];
+      if (aliased) {
+        const v = dbProductMap.get(aliased) ?? dbProductMap.get(normKey(aliased));
+        if (v) return v;
+      }
+      // 3. normalized form
+      return dbProductMap.get(normKey(skuName));
+    };
+  }, [dbProductMap]);
 
   const currentSupplements = caqData?.currentSupplements ?? [];
 
@@ -265,8 +327,11 @@ function ShopContent() {
   const displayProducts = useMemo(() => {
     let items = (MASTER_SKUS as MasterSKU[]).map((sku) => {
       const rec = recMap.get(sku.Name);
-      const dbInfo = dbProductMap.get(sku.Name);
+      const dbInfo = findDbInfo(sku.Name);
       const isCurrentRegime = matchesCurrentSupplement(sku.Name, currentSupplements);
+      // Prefer the hardcoded Master Formulation file (Prompt #49f) over DB data.
+      const masterFormulation = getFormulationByName(sku.Name);
+      const masterFormulationLegacy = getFormulationDataByName(sku.Name);
       return {
         ...sku,
         recommendation: rec ?? null,
@@ -276,6 +341,9 @@ function ShopContent() {
         shortName: dbInfo?.short_name ?? null,
         imageUrl: dbInfo?.image_url ?? null,
         deliveryType: dbInfo?.delivery_type ?? null,
+        shortDescription:
+          masterFormulation?.marketingDescription ?? dbInfo?.short_description ?? null,
+        formulationJson: (masterFormulationLegacy ?? dbInfo?.formulation_json ?? null) as FormulationData,
       };
     });
 
@@ -636,9 +704,23 @@ function ShopContent() {
                       {product.shortName ?? product.Name}
                     </p>
 
-                    {product.deliveryType && (
-                      <p className="text-[10px] text-gray-500">{product.deliveryType}</p>
-                    )}
+                    {(() => {
+                      // For test_kit products, swap the bare delivery_form text
+                      // for the product's mini description.
+                      const isTestKit =
+                        !!product.deliveryType && /test[\s_]?kit/i.test(product.deliveryType);
+                      if (isTestKit && product.shortDescription) {
+                        return (
+                          <p className="text-[10px] text-gray-400 leading-snug line-clamp-3">
+                            {product.shortDescription}
+                          </p>
+                        );
+                      }
+                      if (product.deliveryType) {
+                        return <p className="text-[10px] text-gray-500">{product.deliveryType}</p>;
+                      }
+                      return null;
+                    })()}
 
                     {/* Recommendation Reason */}
                     {product.recommendation && (
@@ -661,6 +743,23 @@ function ShopContent() {
                         </div>
                       )}
                     </div>
+
+                    {product.shortDescription && (
+                      <p className="text-xs text-[rgba(255,255,255,0.50)] leading-relaxed line-clamp-3 mt-1">
+                        {product.shortDescription}
+                      </p>
+                    )}
+
+                    {/* Description + Formulation drop-downs (or Testing accordion) */}
+                    {product.Category === 'Testing' ? (
+                      <TestingProductInfoButtons sku={product.SKU} />
+                    ) : (
+                      <ProductInfoButtons
+                        description={product.shortDescription ?? product.description}
+                        formulationJson={product.formulationJson}
+                        deliveryForm={product.deliveryType}
+                      />
+                    )}
 
                     {/* Add to Cart Button */}
                     <Button
@@ -699,6 +798,7 @@ function ShopContent() {
               const inCart = cart.find((c) => c.sku === product.SKU);
               return (
                 <Card key={product.SKU} className={`p-4 ${product.isRecommended ? "ring-1 ring-copper/30" : ""}`}>
+                  <div className="flex flex-col gap-3">
                   <div className="flex items-center gap-4">
                     {/* SKU Badge */}
                     <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-copper/15 to-teal/10 flex items-center justify-center flex-shrink-0">
@@ -732,9 +832,23 @@ function ShopContent() {
                           {product.recommendation.reason}
                         </p>
                       )}
-                      {product.deliveryType && (
-                        <p className="text-[10px] text-gray-500 mt-0.5">{product.deliveryType}</p>
-                      )}
+                      {(() => {
+                        const isTestKit =
+                          !!product.deliveryType && /test[\s_]?kit/i.test(product.deliveryType);
+                        if (isTestKit && product.shortDescription) {
+                          return (
+                            <p className="text-[10px] text-gray-400 mt-0.5 leading-snug line-clamp-2">
+                              {product.shortDescription}
+                            </p>
+                          );
+                        }
+                        if (product.deliveryType) {
+                          return (
+                            <p className="text-[10px] text-gray-500 mt-0.5">{product.deliveryType}</p>
+                          );
+                        }
+                        return null;
+                      })()}
                     </div>
 
                     {/* Confidence */}
@@ -764,6 +878,24 @@ function ShopContent() {
                       )}
                       {inCart ? `(${inCart.quantity})` : "Add"}
                     </Button>
+                  </div>
+
+                    {product.shortDescription && (
+                      <p className="text-xs text-[rgba(255,255,255,0.45)] leading-snug line-clamp-2 mt-0.5">
+                        {product.shortDescription}
+                      </p>
+                    )}
+
+                    {/* Description + Formulation drop-downs (or Testing accordion) */}
+                    {product.Category === 'Testing' ? (
+                      <TestingProductInfoButtons sku={product.SKU} />
+                    ) : (
+                      <ProductInfoButtons
+                        description={product.shortDescription ?? product.description}
+                        formulationJson={product.formulationJson}
+                        deliveryForm={product.deliveryType}
+                      />
+                    )}
                   </div>
                 </Card>
               );

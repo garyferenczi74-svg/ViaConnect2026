@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { motion } from 'framer-motion';
 import { Sparkles, Zap, Shield, Info, ChevronDown, ChevronUp, Plus, X, RotateCcw, Dna, TestTube2, Activity, Clock, ArrowUpRight, CheckCircle, Loader2, ShoppingCart, ExternalLink } from 'lucide-react';
 import { buildPurchaseLink, buildViewLink } from '@/lib/utils/shopLinks';
 
@@ -153,6 +155,8 @@ export default function RecommendedSupplements() {
           const isExp = expanded === rec.id;
           const isAcc = accepted.has(rec.id);
 
+          const moreInfoUrl = buildViewLink({ productName: rec.product });
+
           return (
             <div key={rec.id} className={`rounded-2xl border border-[rgba(255,255,255,0.08)] bg-[#1E3054] overflow-hidden hover:border-[rgba(255,255,255,0.15)] transition-all duration-200 ${isAcc ? 'ring-2 ring-[rgba(45,165,160,0.50)]' : ''}`}>
               <div className="px-4 py-3.5 flex items-start gap-3 hover:bg-[rgba(255,255,255,0.04)] transition-colors">
@@ -173,6 +177,22 @@ export default function RecommendedSupplements() {
                   </div>
                   <p className="text-xs text-[rgba(255,255,255,0.45)] mt-1.5">{rec.dosage} · {rec.frequency} · {rec.timing?.join(' + ')}</p>
                   {rec.replaces_current && <p className="text-xs text-[#FB923C] mt-1">Upgrades: {rec.replaces_current}</p>}
+
+                  {/* "More Info" → Shop deep-link.
+                      Mobile: full-width row below info. Desktop: auto-width inline pill. */}
+                  <motion.div
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="mt-2.5 sm:inline-block"
+                  >
+                    <Link
+                      href={moreInfoUrl}
+                      className="w-full sm:w-auto min-h-[36px] inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-[rgba(45,165,160,0.15)] hover:bg-[rgba(45,165,160,0.25)] border border-[rgba(45,165,160,0.30)] hover:border-[rgba(45,165,160,0.50)] text-[#2DA5A0] text-xs font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744]"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" strokeWidth={1.5} />
+                      More Info
+                    </Link>
+                  </motion.div>
                 </div>
                 <div className="flex items-center gap-1 flex-shrink-0">
                   <button onClick={() => setExpanded(isExp ? null : rec.id)} className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[rgba(255,255,255,0.08)]">
@@ -212,26 +232,22 @@ export default function RecommendedSupplements() {
                     <p className="text-xs text-[rgba(255,255,255,0.55)]">Interaction: <span className="font-medium capitalize text-[rgba(255,255,255,0.70)]">{rec.interaction_check}</span></p>
                   </div>
 
-                  {/* Purchase Actions */}
+                  {/* Purchase Actions — Next.js client-side nav */}
                   <div className="grid grid-cols-2 gap-2 pt-1">
-                    <a
+                    <Link
                       href={buildPurchaseLink({ productName: rec.product })}
-                      target="_blank"
-                      rel="noopener noreferrer"
                       className="flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-white bg-[#2DA5A0] hover:bg-[#1A8A85] shadow-lg shadow-[rgba(45,165,160,0.20)] transition-all duration-200 group"
                     >
                       <ShoppingCart className="w-4 h-4 group-hover:scale-110 transition-transform" strokeWidth={1.5} />
                       Purchase Now
-                    </a>
-                    <a
+                    </Link>
+                    <Link
                       href={buildViewLink({ productName: rec.product })}
-                      target="_blank"
-                      rel="noopener noreferrer"
                       className="flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-[rgba(255,255,255,0.65)] bg-[rgba(255,255,255,0.06)] border border-[rgba(255,255,255,0.12)] hover:border-[rgba(255,255,255,0.25)] hover:text-white transition-all duration-200 group"
                     >
                       <ExternalLink className="w-3.5 h-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" strokeWidth={1.5} />
                       View in Shop
-                    </a>
+                    </Link>
                   </div>
 
                   <button onClick={() => setAccepted(prev => new Set([...prev, rec.id]))} disabled={isAcc}

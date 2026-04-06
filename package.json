@@ -9,5 +9,9 @@
   },
   "engines": {
     "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "framer-motion": "^12.38.0",
+    "next-mdx-remote": "^6.0.0"
   }
 }

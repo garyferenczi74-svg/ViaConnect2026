@@ -28,7 +28,7 @@ export const CATEGORY_CONFIG: Record<string, CategoryConfig> = {
   },
   CHILDREN: {
     label: "Children's",
-    order: 2,
+    order: 3,
     color: '#D97706',
     gradientFrom: 'rgba(217,119,6,0.15)',
     gradientTo: 'rgba(217,119,6,0.04)',
@@ -38,7 +38,7 @@ export const CATEGORY_CONFIG: Record<string, CategoryConfig> = {
   },
   MUSHROOM: {
     label: 'Functional Mushrooms',
-    order: 3,
+    order: 8,
     color: '#16A34A',
     gradientFrom: 'rgba(22,163,74,0.15)',
     gradientTo: 'rgba(22,163,74,0.04)',
@@ -78,7 +78,7 @@ export const CATEGORY_CONFIG: Record<string, CategoryConfig> = {
   },
   WOMEN: {
     label: "Women's Health",
-    order: 7,
+    order: 2,
     color: '#9D4EDD',
     gradientFrom: 'rgba(157,78,221,0.15)',
     gradientTo: 'rgba(157,78,221,0.04)',
@@ -117,9 +117,24 @@ export function groupByCategory<T extends { Category?: string; Name?: string; ca
     groups.get(key)!.push(p);
   }
 
-  // Sort products A-Z within each group
-  for (const [, group] of groups) {
-    group.sort((a, b) => (a.Name ?? a.name ?? '').localeCompare(b.Name ?? b.name ?? ''));
+  // Sort products A-Z within each group, with GeneX360 pinned first
+  // and CannabisIQ pinned last inside the Testing & Diagnostics section.
+  for (const [key, group] of groups) {
+    group.sort((a, b) => {
+      const aName = a.Name ?? a.name ?? '';
+      const bName = b.Name ?? b.name ?? '';
+      if (key === 'TESTING') {
+        const aIsGeneX360 = aName.startsWith('GeneX360');
+        const bIsGeneX360 = bName.startsWith('GeneX360');
+        if (aIsGeneX360 && !bIsGeneX360) return -1;
+        if (!aIsGeneX360 && bIsGeneX360) return 1;
+        const aIsCannabis = aName.startsWith('CannabisIQ');
+        const bIsCannabis = bName.startsWith('CannabisIQ');
+        if (aIsCannabis && !bIsCannabis) return 1;
+        if (!aIsCannabis && bIsCannabis) return -1;
+      }
+      return aName.localeCompare(bName);
+    });
   }
 
   // Sort groups by config order
