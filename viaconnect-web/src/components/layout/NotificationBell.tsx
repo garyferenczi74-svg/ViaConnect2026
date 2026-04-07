@@ -70,10 +70,62 @@ export function NotificationBell() {
 
   useEffect(() => {
     load();
-    // Light polling so a freshly accepted share shows up without a hard
-    // refresh. Realtime channels are a bigger surgery — defer.
-    const timer = setInterval(load, 60_000);
-    return () => clearInterval(timer);
+
+    // Realtime: subscribe to inserts and updates on user_notifications
+    // scoped to the current user. Postgres changes get fan-fed through
+    // Supabase Realtime so we can update the bell without polling.
+    let channel: any = null;
+    let cancelled = false;
+
+    (async () => {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user || cancelled) return;
+
+      channel = (supabase as any)
+        .channel(`user_notifications:${user.id}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "INSERT",
+            schema: "public",
+            table: "user_notifications",
+            filter: `user_id=eq.${user.id}`,
+          },
+          (payload: any) => {
+            const row = payload?.new as NotificationRow | undefined;
+            if (!row || row.is_read) return;
+            setRows((prev) => {
+              if (prev.some((r) => r.id === row.id)) return prev;
+              return [row, ...prev].slice(0, 20);
+            });
+            setUnread((u) => u + 1);
+          },
+        )
+        .on(
+          "postgres_changes",
+          {
+            event: "UPDATE",
+            schema: "public",
+            table: "user_notifications",
+            filter: `user_id=eq.${user.id}`,
+          },
+          (payload: any) => {
+            const row = payload?.new as NotificationRow | undefined;
+            if (!row) return;
+            setRows((prev) => prev.map((r) => (r.id === row.id ? row : r)));
+          },
+        )
+        .subscribe();
+    })();
+
+    return () => {
+      cancelled = true;
+      if (channel) {
+        const supabase = createClient();
+        (supabase as any).removeChannel(channel);
+      }
+    };
   }, []);
 
   // Click-outside to close
