@@ -1967,7 +1967,7 @@ export default function OnboardingStepPage() {
                     type="button"
                     onClick={() => {
                       setShowDosageModal(ing.name);
-                      setDosageForm({ dosage: "", unit: "mg", frequency: "Once daily", reason: "" });
+                      setDosageForm({ deliveryMethod: "", dosage: "", unit: "mg", frequency: "Once daily", reason: "" });
                       setSuppSearchQuery("");
                       setSuppSearchResults([]);
                     }}
@@ -1983,7 +1983,7 @@ export default function OnboardingStepPage() {
                     type="button"
                     onClick={() => {
                       setShowDosageModal(suppSearchQuery.trim());
-                      setDosageForm({ dosage: "", unit: "mg", frequency: "Once daily", reason: "" });
+                      setDosageForm({ deliveryMethod: "", dosage: "", unit: "mg", frequency: "Once daily", reason: "" });
                       setSuppSearchQuery("");
                       setSuppSearchResults([]);
                     }}
@@ -2049,9 +2049,10 @@ export default function OnboardingStepPage() {
                     onClick={() => {
                       const isFarmceutica = SEED_INGREDIENTS.some((ing) => ing.name === showDosageModal);
                       setUserSupplements([...userSupplements, {
-                        name: showDosageModal,
+                        name: showDosageModal ?? "",
                         brand: isFarmceutica ? "FarmCeutica" : "External",
                         source: isFarmceutica ? "farmceutica" : "manual",
+                        deliveryMethod: dosageForm.deliveryMethod ?? "",
                         dosage: dosageForm.dosage,
                         unit: dosageForm.unit,
                         frequency: dosageForm.frequency,
@@ -2110,7 +2111,7 @@ export default function OnboardingStepPage() {
             {/* None button */}
             <button
               type="button"
-              onClick={() => setUserSupplements(userSupplements.some(s => s.name === "None") ? [] : [{ name: "None", brand: "", source: "manual", dosage: "", unit: "", frequency: "", reason: "" }])}
+              onClick={() => setUserSupplements(userSupplements.some(s => s.name === "None") ? [] : [{ name: "None", brand: "", source: "manual", deliveryMethod: "", dosage: "", unit: "", frequency: "", reason: "" }])}
               className={`px-4 py-2 rounded-full border text-sm font-medium transition-all ${
                 userSupplements.some(s => s.name === "None")
                   ? "bg-portal-green/15 border-portal-green/30 text-portal-green"

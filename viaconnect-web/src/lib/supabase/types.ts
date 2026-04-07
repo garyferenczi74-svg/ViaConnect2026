@@ -7007,3 +7007,48 @@ export const Constants = {
     },
   },
 } as const
+
+// ════════════════════════════════════════════════════════════════════════
+//  LEGACY ALIASES — manually maintained
+//  DO NOT REMOVE WHEN REGENERATING WITH `supabase gen types`.
+//  Re-add this block (or copy from git history) after every regen.
+//  These re-export Row types and helper enums that older code paths
+//  still import directly from "@/lib/supabase/types".
+//  Tables that no longer exist in the live schema are aliased to `any`
+//  so calling code keeps compiling; runtime behavior is unchanged.
+// ════════════════════════════════════════════════════════════════════════
+
+// Existing tables — proper Database row extracts
+export type Profile = Database["public"]["Tables"]["profiles"]["Row"]
+export type AssessmentResult = Database["public"]["Tables"]["assessment_results"]["Row"]
+export type GeneticProfile = Database["public"]["Tables"]["genetic_profiles"]["Row"]
+export type Notification = Database["public"]["Tables"]["notifications"]["Row"]
+export type Product = Database["public"]["Tables"]["products"]["Row"]
+export type UserProtocol = Database["public"]["Tables"]["user_protocols"]["Row"]
+export type TokenTransaction = Database["public"]["Tables"]["token_transactions"]["Row"]
+export type Order = Database["public"]["Tables"]["orders"]["Row"]
+export type AuditLog = Database["public"]["Tables"]["audit_logs"]["Row"]
+
+// Tables removed from the live schema — typed as any so legacy callers
+// keep compiling. Drop these aliases when the code paths are migrated.
+export type SupplementLog = any
+export type GeneticVariant = any
+export type Conversation = any
+export type Message = any
+export type Achievement = any
+export type UserAchievement = any
+export type Subscription = any
+
+// Role helpers (originally lived in the hand-rolled types.ts)
+export type DatabaseRole = "patient" | "practitioner" | "admin" | "naturopath"
+export type UserRole = "consumer" | "practitioner" | "naturopath" | "admin"
+
+export function mapDatabaseRoleToUserRole(dbRole: DatabaseRole | string): UserRole {
+  switch (dbRole) {
+    case "patient": return "consumer"
+    case "practitioner": return "practitioner"
+    case "naturopath": return "naturopath"
+    case "admin": return "admin"
+    default: return "consumer"
+  }
+}

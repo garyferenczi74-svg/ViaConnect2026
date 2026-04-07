@@ -22,7 +22,8 @@ export async function trackEvent(event: string, properties?: Record<string, unkn
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    await supabase.from("analytics_events").insert({
+    // Cast for jsonb properties payload
+    await (supabase as any).from("analytics_events").insert({
       user_id: user.id,
       event,
       properties: properties || {},

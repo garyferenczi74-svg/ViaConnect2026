@@ -30,6 +30,8 @@ async function getFirebaseAccessToken(): Promise<string> {
   // Uses Google Application Default Credentials (ADC).
   // In production the GOOGLE_APPLICATION_CREDENTIALS env var points to the
   // service-account JSON or workload-identity is configured.
+  // @ts-ignore - google-auth-library is an optional runtime dependency loaded
+  // dynamically; not installed in dev/CI to keep the bundle lean.
   const { GoogleAuth } = await import('google-auth-library');
   const auth = new GoogleAuth({
     scopes: ['https://www.googleapis.com/auth/firebase.messaging'],
@@ -191,7 +193,9 @@ export async function triggerGamification(
   eventData?: Record<string, unknown>,
 ): Promise<void> {
   try {
-    await awardTokens(userId, eventType, eventData);
+    // awardTokens(userId, source, sourceId?, overrideAmount?, metadata?) —
+    // pass eventData as the metadata arg (5th position).
+    await awardTokens(userId, eventType, undefined, undefined, eventData);
   } catch (error) {
     console.error(
       '[notification-service] Gamification trigger failed:',

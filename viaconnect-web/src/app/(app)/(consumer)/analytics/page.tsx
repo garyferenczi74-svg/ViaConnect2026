@@ -232,12 +232,16 @@ export default function AnalyticsPage() {
   });
 
   // Supplement logs (adherence data)
+  // Cast to any: supplement_logs / genetic_variants are not in the regenerated
+  // typegen, and user_protocols' product_id column has shifted shape.
+  const sb = supabase as any;
+
   const { data: supplementLogs } = useQuery({
     queryKey: ["analytics-logs", userId],
     queryFn: async () => {
       const ninetyDaysAgo = new Date();
       ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
-      const { data } = await supabase
+      const { data } = await sb
         .from("supplement_logs")
         .select("product_id, logged_at, time_of_day")
         .eq("user_id", userId!)
@@ -252,7 +256,7 @@ export default function AnalyticsPage() {
   const { data: protocol } = useQuery({
     queryKey: ["analytics-protocol", userId],
     queryFn: async () => {
-      const { data } = await supabase
+      const { data } = await sb
         .from("user_protocols")
         .select("id, product_id, dose, time_of_day, active, product:products(name, short_name)")
         .eq("user_id", userId!)
@@ -281,7 +285,7 @@ export default function AnalyticsPage() {
   const { data: variants } = useQuery({
     queryKey: ["analytics-variants", userId],
     queryFn: async () => {
-      const { data } = await supabase
+      const { data } = await sb
         .from("genetic_variants")
         .select("*")
         .eq("user_id", userId!)

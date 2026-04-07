@@ -59,7 +59,9 @@ export async function routeProductToSection(
     const supabase = createClient();
     const normalized = productName.toLowerCase().replace(/[^a-z0-9]/g, "");
 
-    const { data } = await supabase
+    // Cast to any: typegen rejects the .or() chain on this peptide_registry
+    // shape because of generic instantiation depth. Runtime is unaffected.
+    const { data } = await (supabase as any)
       .from("peptide_registry")
       .select("peptide_id, name")
       .or(`peptide_id.ilike.%${normalized}%,name.ilike.%${productName}%`)

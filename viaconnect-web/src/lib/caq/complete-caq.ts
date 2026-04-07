@@ -32,6 +32,8 @@ export async function completeCAQAndTriggerEngines(): Promise<{
       const healthConcernsData = getPhase(6) || {};
       const demographicsData = getPhase(1) || {};
 
+      // Cast the update payload to any: jsonb columns are typed as the strict
+      // Json union, which Record<string, unknown> doesn't satisfy structurally.
       await supabase.from("profiles").update({
         symptoms_physical: symptomsPhysical,
         symptoms_neurological: symptomsNeurological,
@@ -41,7 +43,7 @@ export async function completeCAQAndTriggerEngines(): Promise<{
         assessment_completed: true,
         caq_completed_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-      }).eq("id", user.id);
+      } as any).eq("id", user.id);
 
       results["sync_profile"] = true;
     } catch (err) {

@@ -129,7 +129,7 @@ export async function POST(request: Request) {
       confidence: result.product?.confidence || 0,
       fetched_at: new Date().toISOString(),
       expires_at: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),
-    }, { onConflict: "query_normalized" }).catch(() => {});
+    }, { onConflict: "query_normalized" }).then(() => {}, () => {});
 
     return NextResponse.json(result);
   } catch {

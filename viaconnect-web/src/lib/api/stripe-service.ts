@@ -5,7 +5,9 @@
 import Stripe from 'stripe';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2024-04-10',
+  // Cast: this code targets the 2024-04-10 API but the installed @types/stripe
+  // expects 2026-02-25.clover. The runtime call still honors the explicit string.
+  apiVersion: '2024-04-10' as any,
 });
 
 // ---- Subscription tier → Stripe Price ID map ------------------------------
@@ -169,7 +171,9 @@ export async function handleWebhookEvent(
           subscriptionId: sub.id,
           customerId: sub.customer as string,
           status: sub.status,
-          currentPeriodEnd: sub.current_period_end,
+          // current_period_end was removed from Subscription's typed surface in
+          // newer Stripe SDKs but is still present at runtime. Cast through any.
+          currentPeriodEnd: (sub as any).current_period_end,
         },
       };
     }
@@ -210,7 +214,9 @@ export async function handleWebhookEvent(
           invoiceId: invoice.id,
           customerId: invoice.customer as string,
           amountPaid: invoice.amount_paid,
-          subscriptionId: invoice.subscription as string | null,
+          // invoice.subscription was removed from typed Invoice surface but
+          // is still present at runtime in webhook payloads.
+          subscriptionId: (invoice as any).subscription as string | null,
           gamificationTrigger: true,
         },
       };

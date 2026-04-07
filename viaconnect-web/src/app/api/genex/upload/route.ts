@@ -434,13 +434,15 @@ export async function POST(request: Request) {
         clinical_summary: v.clinical_summary,
       }));
 
-      const { error: variantError } = await supabase
+      // genetic_variants table is not in the regenerated typegen — cast supabase
+      // to any so the upsert chain compiles. Runtime behavior unchanged.
+      const { error: variantError } = await (supabase as any)
         .from("genetic_variants")
         .upsert(variantRows, { onConflict: "user_id,rsid" });
 
       if (variantError) {
         // Fall back to insert if upsert fails (constraint may not exist)
-        await supabase.from("genetic_variants").insert(variantRows);
+        await (supabase as any).from("genetic_variants").insert(variantRows);
       }
     }
 
@@ -489,8 +491,8 @@ export async function POST(request: Request) {
       { onConflict: "user_id" }
     );
 
-    // Audit log
-    await supabase.from("audit_logs").insert({
+    // Audit log — typegen rejects the jsonb metadata payload structurally; cast
+    await (supabase as any).from("audit_logs").insert({
       user_id: user.id,
       action: "genex_upload_processed",
       resource_type: "genetics",
@@ -529,7 +531,7 @@ export async function POST(request: Request) {
     const message =
       err instanceof Error ? err.message : "Upload processing failed";
 
-    await supabase.from("audit_logs").insert({
+    await (supabase as any).from("audit_logs").insert({
       user_id: user.id,
       action: "genex_upload_error",
       resource_type: "genetics",

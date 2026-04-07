@@ -43,7 +43,7 @@ export default function AdvisorDashboard() {
     ]);
     if (sumRes.data) setSummary(sumRes.data);
     if (fixRes.data) setFixes(fixRes.data);
-    if (migRes.data) setMigrations(migRes.data);
+    if (migRes.data) setMigrations(migRes.data as unknown as any);
     setIsRefreshing(false);
   }, []);
 

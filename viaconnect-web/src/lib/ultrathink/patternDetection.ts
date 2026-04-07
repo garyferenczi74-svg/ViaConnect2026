@@ -33,7 +33,12 @@ function hasConcern(ctx: UltrathinkContext, ...keywords: string[]): boolean {
 }
 
 function hasFamilyHistory(ctx: UltrathinkContext, ...keywords: string[]): boolean {
-  return ctx.familyHistory.some(f => keywords.some(k => (f.condition || '').toLowerCase().includes(k.toLowerCase())));
+  // UltrathinkContext.familyHistory is typed as string[] now (was previously
+  // Array<{condition: string}>). Match keywords against each entry directly.
+  return ctx.familyHistory.some(f => {
+    const text = (typeof f === 'string' ? f : (f as any)?.condition || '').toLowerCase();
+    return keywords.some(k => text.includes(k.toLowerCase()));
+  });
 }
 
 export function detectPatterns(ctx: UltrathinkContext): DetectedPattern[] {

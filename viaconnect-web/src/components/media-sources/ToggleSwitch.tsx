@@ -5,7 +5,7 @@ import React from 'react';
 interface ToggleSwitchProps {
   isActive: boolean;
   onToggle: () => void;
-  ariaLabel: string;
+  ariaLabel?: string;
 }
 
 export default function ToggleSwitch({ isActive, onToggle, ariaLabel }: ToggleSwitchProps) {

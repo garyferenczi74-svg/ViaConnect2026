@@ -140,9 +140,9 @@ async function applyRulesEngine(ctx: UltrathinkContext, supabase: any) {
           if (rule.trigger_operator === 'contains' || rule.trigger_operator === 'contains_any') {
             // Check if any symptom name matches AND has score >= 5
             isTriggered = Object.entries(symptomMap).some(([k, v]) =>
-              (v as any).score >= 5 && targets.some(t => k.toLowerCase().includes(t))
+              (v as any).score >= 5 && targets.some((t: string) => k.toLowerCase().includes(t))
             ) || ctx.topSymptoms.some(s =>
-              s.category === catFilter && targets.some(t => s.name.toLowerCase().includes(t))
+              s.category === catFilter && targets.some((t: string) => s.name.toLowerCase().includes(t))
             );
           }
         } else if (field === 'stressLevel') {
@@ -182,7 +182,7 @@ async function applyRulesEngine(ctx: UltrathinkContext, supabase: any) {
       case 'medication': {
         if (rule.trigger_operator === 'contains') {
           const targets = rule.trigger_value.split(',').map((v: string) => v.trim().toLowerCase());
-          isTriggered = ctx.medications.some(m => targets.some(t => m.toLowerCase().includes(t)));
+          isTriggered = ctx.medications.some(m => targets.some((t: string) => m.toLowerCase().includes(t)));
         }
         break;
       }

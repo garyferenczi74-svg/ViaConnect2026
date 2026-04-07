@@ -145,7 +145,7 @@ export async function POST(request: Request) {
       data_sources_used: ["caq_phase1", "caq_phase2", "caq_phase3", "caq_phase4", "caq_phase5", "caq_phase6", "caq_phase7"],
       calculated_at: new Date().toISOString(),
       next_calculation_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-    }, { onConflict: "user_id,calculated_at" }).catch(() => {});
+    }, { onConflict: "user_id,calculated_at" }).then(() => {}, () => {});
 
     return NextResponse.json({ summary, categories, calculatedAt: new Date().toISOString() });
   } catch {

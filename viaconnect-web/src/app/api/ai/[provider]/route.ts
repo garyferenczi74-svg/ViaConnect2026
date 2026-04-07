@@ -51,7 +51,8 @@ async function writeAuditLog(
 ) {
   try {
     const supabase = createClient();
-    await supabase.from("audit_logs").insert({
+    // Cast for jsonb metadata payload
+    await (supabase as any).from("audit_logs").insert({
       user_id: userId,
       action,
       resource_type: resourceType,

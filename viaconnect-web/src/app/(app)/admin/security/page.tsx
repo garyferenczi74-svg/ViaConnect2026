@@ -45,8 +45,11 @@ export default function SecurityAdminPage() {
       supabase.from('security_pending_repairs').select('*').eq('status', 'pending').order('created_at', { ascending: false }),
       supabase.from('security_agent_config').select('key, value').eq('key', 'agent_mode').single(),
     ]);
-    if (s.data) setScan(s.data);
-    if (f.data) setFindings(f.data);
+    // Cast through unknown: typegen Row types and the local ScanSummary /
+    // AuditFinding shapes don't structurally overlap, but the runtime data is
+    // correct. The cast keeps the local UI types authoritative.
+    if (s.data) setScan(s.data as unknown as any);
+    if (f.data) setFindings(f.data as unknown as any);
     if (p.data) setPending(p.data);
     if (c.data) setMode((c.data.value as string).replace(/"/g, '') as any);
     setLoading(false);

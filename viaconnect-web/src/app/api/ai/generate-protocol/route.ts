@@ -16,7 +16,9 @@ export async function POST(request: Request) {
     ]);
 
     const assessments = assessmentsRes.data || [];
-    const profile = profileRes.data || {};
+    // Cast to any: typegen Row + the `|| {}` fallback widens to {} which loses
+    // property access. Same pattern as unified-context.ts and data-fusion.ts.
+    const profile: any = profileRes.data || {};
     const getPhase = (phase: number) => assessments.find((a) => a.phase === phase)?.data as Record<string, unknown> | undefined;
 
     const phase4Data = getPhase(4) || {};
@@ -95,7 +97,7 @@ export async function POST(request: Request) {
       },
       confidence_score: confidenceScore,
       is_active: true,
-    }, { onConflict: "user_id" }).catch(() => {});
+    }, { onConflict: "user_id" }).then(() => {}, () => {});
 
     const totalRecs = safeProtocol.morning.length + safeProtocol.afternoon.length + safeProtocol.evening.length + safeProtocol.asNeeded.length;
 

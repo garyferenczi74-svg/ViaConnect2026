@@ -117,7 +117,7 @@ export function MedicalHerbalInteractions({ userId, portal = 'consumer', onSafet
           return (
             <button key={sev} onClick={() => setFilter(filter === sev ? 'all' : sev)}
               className={`p-2.5 rounded-xl border text-center transition-all ${c.bg} ${c.border} ${filter === sev ? 'ring-2 ring-offset-1 ring-offset-[#1A2744]' : ''}`}
-              style={filter === sev ? { ringColor: c.text } : {}}>
+              style={filter === sev ? ({ ringColor: c.text } as React.CSSProperties) : undefined}>
               <Icon className="w-4 h-4 mx-auto mb-1" style={{ color: c.text }} strokeWidth={1.5} />
               <p className="text-xl font-black text-white">{count}</p>
               <p className="text-xs font-medium capitalize" style={{ color: c.text }}>{sev}</p>

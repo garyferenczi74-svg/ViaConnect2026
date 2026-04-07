@@ -171,7 +171,7 @@ export async function POST(request: Request) {
           mitigation: i.mitigation,
           evidence_level: i.evidenceLevel,
           blocked_from_protocol: i.severity === "major",
-        }, { onConflict: "id" }).catch(() => {});
+        }, { onConflict: "id" }).then(() => {}, () => {});
       }
 
       // Create notifications for major/moderate
@@ -183,7 +183,7 @@ export async function POST(request: Request) {
           body: `${i.interactsWith} may interact with ${i.medication}. ${i.mitigation || "Please consult a practitioner."}`,
           severity: i.severity === "major" ? "critical" : "warning",
           portal: "consumer",
-        }).catch(() => {});
+        }).then(() => {}, () => {});
       }
     }
 

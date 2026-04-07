@@ -106,7 +106,7 @@ export async function POST() {
       score,
       source: "caq_initial",
       breakdown: input,
-    }, { onConflict: "user_id,date" }).catch(() => {});
+    }, { onConflict: "user_id,date" }).then(() => {}, () => {});
 
     return NextResponse.json({
       score,

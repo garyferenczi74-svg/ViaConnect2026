@@ -113,7 +113,7 @@ export async function matchProduct(brandId: string, extractedProductName: string
       product_name: exactProduct.product_name,
       brand_name: '',
       ingredient_breakdown: exactProduct.ingredient_breakdown,
-      is_enriched: exactProduct.is_enriched,
+      is_enriched: exactProduct.is_enriched ?? false,
       delivery_method: exactProduct.delivery_method,
       bioavailability_estimate: exactProduct.bioavailability_estimate ? parseFloat(String(exactProduct.bioavailability_estimate)) : null,
     };

@@ -21,7 +21,11 @@ export async function calculateEngagementScore(userId: string): Promise<Engageme
     .eq("user_id", userId)
     .gte("created_at", monthStart);
 
-  const uniqueDays = new Set((txns || []).map((t) => t.created_at.split("T")[0]));
+  const uniqueDays = new Set(
+    (txns || [])
+      .map((t) => t.created_at?.split("T")[0])
+      .filter((d): d is string => !!d)
+  );
   const daysActiveThisMonth = uniqueDays.size;
   const daysSoFar = now.getDate();
   const activityRate = Math.min(100, (daysActiveThisMonth / daysSoFar) * 100);

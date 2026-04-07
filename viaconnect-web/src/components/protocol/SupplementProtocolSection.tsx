@@ -124,7 +124,7 @@ function DailyScheduleTab({ supplements, protocol }: { supplements: ProtocolItem
   function getSlotItems(slotId: string) {
     if (protocol) {
       if (slotId === "asNeeded") return protocol.asNeeded || [];
-      return (protocol as Record<string, ProtocolItem[]>)[slotId] || [];
+      return ((protocol as unknown) as Record<string, ProtocolItem[]>)[slotId] || [];
     }
     return supplements || [];
   }

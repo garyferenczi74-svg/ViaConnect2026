@@ -220,8 +220,8 @@ export async function POST(request: Request) {
       }
     }
 
-    // Audit log
-    await supabase.from("audit_logs").insert({
+    // Audit log — typegen rejects jsonb metadata payload, cast supabase
+    await (supabase as any).from("audit_logs").insert({
       user_id: user.id,
       action: "notification_sent",
       resource_type: "notification",

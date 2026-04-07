@@ -142,7 +142,7 @@ export default function SourceCard({ source, isActive, onToggle, onPreview }: So
       {/* Tags */}
       <div className="flex flex-wrap gap-1.5">
         {source.tags.map((tag) => (
-          <TagPill key={tag} label={tag} />
+          <TagPill key={tag} tag={tag} />
         ))}
       </div>
 
@@ -150,7 +150,7 @@ export default function SourceCard({ source, isActive, onToggle, onPreview }: So
       <div className="flex justify-between items-center pt-4 mt-4 border-t border-[rgba(255,255,255,0.06)]">
         {/* Left: Toggle + Label */}
         <div className="flex items-center gap-2">
-          <ToggleSwitch checked={isActive} onChange={onToggle} />
+          <ToggleSwitch isActive={isActive} onToggle={onToggle} />
           <span
             className="text-xs font-semibold"
             style={{ color: isActive ? '#2DA5A0' : '#718096' }}

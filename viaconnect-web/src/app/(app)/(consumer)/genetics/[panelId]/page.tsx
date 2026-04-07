@@ -66,7 +66,8 @@ export default function PanelDeepDivePage({
   const { data: variants, isLoading } = useQuery({
     queryKey: ["panel-variants", userId, panelId],
     queryFn: async () => {
-      const { data } = await supabase
+      // genetic_variants table not in current typegen — cast supabase to any
+      const { data } = await (supabase as any)
         .from("genetic_variants")
         .select("*, product:products(id, name, short_name, price)")
         .eq("user_id", userId!)

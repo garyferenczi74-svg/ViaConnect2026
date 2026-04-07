@@ -8,7 +8,9 @@ export async function checkCache(brand: string, productName: string) {
   const nb = normalizeBrandName(brand);
   const np = normalizeProductName(productName);
 
-  const { data } = await supabase
+  // supplement_product_cache is not in the regenerated typegen — cast to any
+  // so the chain compiles. Runtime behavior unchanged.
+  const { data } = await (supabase as any)
     .from("supplement_product_cache")
     .select("*")
     .eq("normalized_brand", nb)
@@ -38,7 +40,8 @@ export async function saveToCache(
   const nb = normalizeBrandName(brand);
   const np = normalizeProductName(productName);
 
-  const { data, error } = await supabase
+  // See checkCache above for the supplement_product_cache typegen drift note.
+  const { data, error } = await (supabase as any)
     .from("supplement_product_cache")
     .upsert({
       brand,

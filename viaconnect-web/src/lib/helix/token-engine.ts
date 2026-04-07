@@ -48,7 +48,7 @@ export async function earnTokens(
   const baseAmount = customAmount || rule.baseTokens;
   const multiplier = balance.multiplier || 1;
   const tokensEarned = Math.round(baseAmount * multiplier);
-  const newBalance = balance.current_balance + tokensEarned;
+  const newBalance = (balance.current_balance ?? 0) + tokensEarned;
 
   // Record transaction
   await supabase.from("helix_transactions").insert({
@@ -89,11 +89,11 @@ export async function redeemTokens(
     .eq("user_id", userId)
     .single();
 
-  if (!balance || balance.current_balance < amount) {
-    return { success: false, newBalance: balance?.current_balance || 0, error: "Insufficient balance" };
+  if (!balance || (balance.current_balance ?? 0) < amount) {
+    return { success: false, newBalance: balance?.current_balance ?? 0, error: "Insufficient balance" };
   }
 
-  const newBalance = balance.current_balance - amount;
+  const newBalance = (balance.current_balance ?? 0) - amount;
 
   await supabase.from("helix_transactions").insert({
     user_id: userId,
@@ -129,7 +129,7 @@ async function checkTierUpgrade(userId: string) {
   if (!tiers) return;
 
   for (const tier of tiers) {
-    if (balance.tier_points >= tier.min_points && balance.current_tier !== tier.tier) {
+    if ((balance.tier_points ?? 0) >= tier.min_points && balance.current_tier !== tier.tier) {
       await supabase.from("helix_balances").update({
         current_tier: tier.tier,
         multiplier: tier.multiplier,

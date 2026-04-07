@@ -206,9 +206,9 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Write variants to genetic_variants table
+    // Write variants to genetic_variants table (not in regenerated typegen — cast)
     if (allVariants.length > 0) {
-      await supabase.from("genetic_variants").upsert(allVariants, { onConflict: "user_id,rsid" });
+      await (supabase as any).from("genetic_variants").upsert(allVariants, { onConflict: "user_id,rsid" });
     }
 
     // Update genetic_profiles

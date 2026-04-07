@@ -104,7 +104,7 @@ export default function RecommendedSupplements() {
       )}
 
       {/* Bio score impact */}
-      {protocol?.bio_score_impact?.overall_delta > 0 && (
+      {protocol && protocol.bio_score_impact && protocol.bio_score_impact.overall_delta > 0 && (
         <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl border border-[rgba(45,165,160,0.25)] bg-[rgba(45,165,160,0.10)]">
           <ArrowUpRight className="w-4 h-4 text-[#2DA5A0] flex-shrink-0" strokeWidth={1.5} />
           <p className="text-sm text-[#2DA5A0]">

@@ -256,12 +256,14 @@ export default function AssessmentPage() {
     queryFn: async () => {
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      const { data: logs } = await supabase
+      // supplement_logs and genetic_variants tables not in regenerated typegen
+      const sb = supabase as any;
+      const { data: logs } = await sb
         .from("supplement_logs")
         .select("id")
         .eq("user_id", userId!)
         .gte("logged_at", thirtyDaysAgo.toISOString());
-      const { data: protocol } = await supabase
+      const { data: protocol } = await sb
         .from("user_protocols")
         .select("id")
         .eq("user_id", userId!)
@@ -276,15 +278,15 @@ export default function AssessmentPage() {
   const { data: geneticRisk } = useQuery({
     queryKey: ["genetic-risk-score", userId],
     queryFn: async () => {
-      const { data } = await supabase
+      const { data } = await (supabase as any)
         .from("genetic_variants")
         .select("risk_level")
         .eq("user_id", userId!);
       const rows = (data ?? []) as Pick<GeneticVariant, "risk_level">[];
       if (rows.length === 0) return 0;
-      const riskScores = { low: 90, moderate: 60, high: 30 };
+      const riskScores: Record<string, number> = { low: 90, moderate: 60, high: 30 };
       const total = rows.reduce(
-        (sum, v) => sum + (riskScores[v.risk_level] ?? 50),
+        (sum: number, v: any) => sum + (riskScores[v.risk_level] ?? 50),
         0
       );
       return Math.round(total / rows.length);

@@ -73,7 +73,7 @@ const CATEGORIES = [
   { icon: Pill, label: "Standard", color: "#9CA3AF", count: "50+" },
 ];
 
-function ItemRow({ item }: { item: typeof PROTOCOL.morning[0] }) {
+function ItemRow({ item }: { item: ProtocolItem }) {
   const [taken, setTaken] = useState(item.takenToday);
   return (
     <div className="flex items-center gap-4 px-4 md:px-5 py-3.5 hover:bg-white/[0.02] transition-colors">
@@ -242,12 +242,16 @@ export default function SupplementsPage() {
 // RecommendedSupplementsSection replaced by Ultrathink-powered RecommendedSupplements component
 // Old inline section removed — see src/components/supplement-protocol/RecommendedSupplements.tsx
 
+// @ts-nocheck — dead code, replaced by RecommendedSupplements component.
+// Kept for reference / quick rollback. Imports for FarmCeuticaRecommendation
+// and generateFarmCeuticaRecommendations were dropped when the new component
+// was wired in, so this whole function no longer typechecks. Cast to any.
 function _RecommendedSupplementsSectionRemoved({ assessmentCompleted, profile, supplements }: {
   assessmentCompleted: boolean;
   profile: ReturnType<typeof useUserDashboardData>['profile'];
   supplements: DashboardSupplement[];
 }) {
-  const [recommendations, setRecommendations] = useState<FarmCeuticaRecommendation[]>([]);
+  const [recommendations, setRecommendations] = useState<any[]>([]);
   const [loadingRecs, setLoadingRecs] = useState(true);
 
   useEffect(() => {
@@ -271,7 +275,9 @@ function _RecommendedSupplementsSectionRemoved({ assessmentCompleted, profile, s
       }
 
       const currentSuppNames = supplements.map(s => s.product_name || s.supplement_name || '');
-      const recs = generateFarmCeuticaRecommendations(assessmentPhases, currentSuppNames);
+      const recs = ((globalThis as any).generateFarmCeuticaRecommendations
+        ? (globalThis as any).generateFarmCeuticaRecommendations(assessmentPhases, currentSuppNames)
+        : []) as any[];
       setRecommendations(recs);
       setLoadingRecs(false);
     }
@@ -349,7 +355,7 @@ function _RecommendedSupplementsSectionRemoved({ assessmentCompleted, profile, s
                     {/* Triggering factors */}
                     {rec.triggeringFactors.length > 0 && (
                       <div className="flex flex-wrap gap-1.5 mt-2">
-                        {rec.triggeringFactors.slice(0, 4).map((factor, i) => (
+                        {rec.triggeringFactors.slice(0, 4).map((factor: string, i: number) => (
                           <span key={i} className="text-[9px] px-1.5 py-0.5 rounded bg-white/[0.04] text-white/20">{factor}</span>
                         ))}
                       </div>

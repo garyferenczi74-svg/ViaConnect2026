@@ -76,10 +76,10 @@ export async function recognizeProduct(brandId: string, ocrProductName: string):
 
   for (const p of products || []) {
     if (p.normalized_product_name === normalized) {
-      return { productId: p.id, productName: p.product_name, category: p.product_category, isEnriched: p.is_enriched, ingredientBreakdown: p.ingredient_breakdown as unknown[] | null, matchType: "exact", confidence: 1.0 };
+      return { productId: p.id, productName: p.product_name, category: p.product_category, isEnriched: p.is_enriched ?? false, ingredientBreakdown: p.ingredient_breakdown as unknown[] | null, matchType: "exact", confidence: 1.0 };
     }
     if (levenshtein(p.normalized_product_name, normalized) <= 3) {
-      return { productId: p.id, productName: p.product_name, category: p.product_category, isEnriched: p.is_enriched, ingredientBreakdown: p.ingredient_breakdown as unknown[] | null, matchType: "fuzzy", confidence: 0.85 };
+      return { productId: p.id, productName: p.product_name, category: p.product_category, isEnriched: p.is_enriched ?? false, ingredientBreakdown: p.ingredient_breakdown as unknown[] | null, matchType: "fuzzy", confidence: 0.85 };
     }
   }
 

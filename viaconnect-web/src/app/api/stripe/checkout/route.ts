@@ -83,8 +83,8 @@ export async function POST(request: Request) {
       }),
     });
 
-    // Audit log the checkout initiation
-    await supabase.from("audit_logs").insert({
+    // Audit log the checkout initiation — cast for jsonb metadata payload
+    await (supabase as any).from("audit_logs").insert({
       user_id: user.id,
       action: "checkout_initiated",
       resource_type: "stripe",

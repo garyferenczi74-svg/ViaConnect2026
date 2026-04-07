@@ -40,7 +40,7 @@ export default function BrandAgentDashboard() {
         .order('tier').order('enrichment_score', { ascending: true }),
     ]);
     if (sum) setSummary(sum);
-    if (br) setBrands(br);
+    if (br) setBrands(br as unknown as any);
     setIsRefreshing(false);
   };
 

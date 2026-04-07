@@ -198,7 +198,7 @@ export async function POST() {
       calculatedAt: new Date().toISOString(),
     };
 
-    await supabase.from("wellness_analytics").upsert({ user_id: user.id, summary: result.summary, categories: result, trigger: "symptom_profile", calculated_at: new Date().toISOString() }, { onConflict: "user_id,calculated_at" }).catch(() => {});
+    await supabase.from("wellness_analytics").upsert({ user_id: user.id, summary: result.summary, categories: result, trigger: "symptom_profile", calculated_at: new Date().toISOString() }, { onConflict: "user_id,calculated_at" }).then(() => {}, () => {});
 
     return NextResponse.json(result);
   } catch {

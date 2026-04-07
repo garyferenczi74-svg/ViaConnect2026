@@ -7,7 +7,7 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const query = searchParams.get("q");
   const limit = Math.min(parseInt(searchParams.get("limit") ?? "20"), 50);
-  const brandId = searchParams.get("brand_id") ?? null;
+  const brandId = searchParams.get("brand_id") ?? undefined;
 
   if (!query || query.length < 2) {
     return NextResponse.json({ results: [], grouped: { brands: [], products: [], ingredients: [] }, total: 0 });

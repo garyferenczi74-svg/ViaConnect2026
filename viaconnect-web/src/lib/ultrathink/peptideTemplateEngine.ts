@@ -196,7 +196,9 @@ function substituteFields(text: string, ctx: UltrathinkContext, patterns: Detect
 // ── Check for Retatrutide Solo Protocol ─────────────────────────────────────
 
 function shouldUseRetatrutideSolo(ctx: UltrathinkContext): boolean {
-  const hba1c = ctx.labValues?.hba1c;
+  // labValues is an optional bag not declared on UltrathinkContext yet — keep
+  // the read tolerant via any cast until the context type is extended.
+  const hba1c = (ctx as any).labValues?.hba1c;
   return typeof hba1c === 'number' && hba1c > 6.5;
 }
 

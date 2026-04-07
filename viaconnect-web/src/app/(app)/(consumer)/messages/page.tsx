@@ -35,11 +35,16 @@ export default function MessagesPage() {
 
   type ConversationWithProfile = Conversation & { otherName: string; otherAvatar: string | null };
 
+  // The `conversations` and `messages` tables aren't in the regenerated
+  // typegen — they were removed from public when the messaging schema moved.
+  // Cast supabase to any inside this file so the live runtime queries compile.
+  const sb = supabase as any;
+
   // Conversations
   const { data: conversations, isLoading: convoLoading } = useQuery({
     queryKey: ["conversations", userId],
     queryFn: async () => {
-      const { data } = await supabase
+      const { data } = await sb
         .from("conversations")
         .select("*")
         .or(`patient_id.eq.${userId},practitioner_id.eq.${userId}`)
@@ -52,7 +57,7 @@ export default function MessagesPage() {
       const practitionerIds = rows.map((c) =>
         c.patient_id === userId ? c.practitioner_id : c.patient_id
       );
-      const { data: profiles } = await supabase
+      const { data: profiles } = await sb
         .from("profiles")
         .select("id, full_name, avatar_url")
         .in("id", practitionerIds);
@@ -75,7 +80,7 @@ export default function MessagesPage() {
   const { data: messages, isLoading: msgsLoading } = useQuery({
     queryKey: ["messages", activeConversation],
     queryFn: async () => {
-      const { data } = await supabase
+      const { data } = await sb
         .from("messages")
         .select("*")
         .eq("conversation_id", activeConversation!)
@@ -122,7 +127,7 @@ export default function MessagesPage() {
     if (!activeConversation || !userId || !messages) return;
     const unread = messages.filter((m: MessageRow) => m.sender_id !== userId && !m.read);
     if (unread.length > 0) {
-      supabase
+      sb
         .from("messages")
         .update({ read: true })
         .in("id", unread.map((m: MessageRow) => m.id))
@@ -134,7 +139,7 @@ export default function MessagesPage() {
 
   const sendMessage = useMutation({
     mutationFn: async (content: string) => {
-      const { error } = await supabase.from("messages").insert({
+      const { error } = await sb.from("messages").insert({
         conversation_id: activeConversation!,
         sender_id: userId!,
         content,
@@ -142,7 +147,7 @@ export default function MessagesPage() {
       if (error) throw error;
 
       // Update conversation's last message
-      await supabase
+      await sb
         .from("conversations")
         .update({
           last_message: content,

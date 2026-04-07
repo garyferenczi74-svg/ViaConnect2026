@@ -98,7 +98,8 @@ export default function ProfilePage() {
   const { data: practitioners } = useQuery({
     queryKey: ["connected-practitioners", userId],
     queryFn: async () => {
-      const { data: convos } = await supabase
+      // conversations table not in current typegen — cast supabase to any
+      const { data: convos } = await (supabase as any)
         .from("conversations")
         .select("practitioner_id")
         .eq("patient_id", userId!);

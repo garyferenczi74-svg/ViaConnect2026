@@ -32,7 +32,7 @@ export default function WellnessAnalyticsPage() {
 
     if (cached && !isRefresh) {
       setSummary(cached.summary || "");
-      setCategories((cached.categories as AnalyticsCategory[]) || []);
+      setCategories((cached.categories as unknown as AnalyticsCategory[]) || []);
       setLastUpdated(cached.calculated_at);
       setLoading(false);
       return;

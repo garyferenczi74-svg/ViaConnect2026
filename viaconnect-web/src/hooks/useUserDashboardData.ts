@@ -214,8 +214,8 @@ export function useUserDashboardData(): DashboardData {
         score: typeof h.score === 'string' ? parseFloat(h.score) : (h.score || 0),
       }));
       setBioHistory(parsedBioHistory as DashboardBioHistory[]);
-      setHelixBalance((helixData as DashboardReward) || null);
-      setStreak((streakData as DashboardStreak) || null);
+      setHelixBalance((helixData as unknown as DashboardReward) || null);
+      setStreak((streakData as unknown as DashboardStreak) || null);
       console.log('[dashboard] Data loaded:', { supplements: finalSupps.length, bioHistory: parsedBioHistory.length, helix: !!helixData, streak: !!streakData });
       setLoading(false);
     }

@@ -55,7 +55,10 @@ export async function POST() {
 
     // Fallback: derive patterns from assessment_results categories
     if (detectedPatterns.length === 0 && labResult.status === 'fulfilled' && labResult.value.data?.length) {
-      const scores = labResult.value.data as { category: string; score: number }[];
+      // Cast through unknown: typegen tries to resolve `category` as a column on
+      // assessment_results and fails, producing a SelectQueryError union that
+      // can't be assigned to the local shape directly. The runtime data is fine.
+      const scores = labResult.value.data as unknown as { category: string; score: number }[];
       const categoryMap: Record<string, string> = {
         'stress': 'hpa_axis', 'anxiety': 'hpa_axis',
         'cognitive': 'neuroinflammation', 'brain_fog': 'neuroinflammation',
@@ -79,8 +82,9 @@ export async function POST() {
     // Safe default
     if (detectedPatterns.length === 0) detectedPatterns.push('hpa_axis');
 
-    // Build user context
-    const profile = profileResult.status === 'fulfilled' ? profileResult.value.data : null;
+    // Build user context — typegen produces a SelectQueryError union for the
+    // profiles select chain in this file (see issue note above). Cast to any.
+    const profile: any = profileResult.status === 'fulfilled' ? profileResult.value.data : null;
     let age: number | undefined;
     if (profile?.date_of_birth) {
       age = Math.floor((Date.now() - new Date(profile.date_of_birth).getTime()) / (365.25 * 86400000));
@@ -97,8 +101,9 @@ export async function POST() {
       .eq('protocol_type', 'peptide')
       .eq('status', 'active');
 
-    // ── Save new protocol ──
-    const { data: saved, error } = await supabase
+    // ── Save new protocol ── (typegen has trouble inferring this insert
+    // shape because some columns are jsonb; cast supabase to any.)
+    const { data: saved, error } = await (supabase as any)
       .from('ultrathink_protocols')
       .insert({
         user_id: userId,

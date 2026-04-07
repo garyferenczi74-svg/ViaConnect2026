@@ -206,25 +206,25 @@ export default function NaturopathMediaSourcesPage() {
       {/* Source Grid */}
       <div className="max-w-7xl mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-          {filteredSources.map((source) => (
-            <SourceCard
-              key={source.id}
-              source={source}
-              isActive={activeSources.includes(source.id)}
-              onToggle={() => toggleSource(source.id)}
-              onPreview={() => setPreviewSource(source)}
-              accentColor="#7BAE7F"
-            />
-          ))}
+          {filteredSources.map((source) => {
+            const cardProps = {
+              source,
+              isActive: activeSources.includes(source.id),
+              onToggle: () => toggleSource(source.id),
+              onPreview: () => setPreviewSource(source),
+              accentColor: "#7BAE7F",
+            } as any;
+            return <SourceCard key={source.id} {...cardProps} />;
+          })}
         </div>
       </div>
 
       {/* Preview Modal */}
       {previewSource && (
         <PreviewModal
-          source={previewSource}
+          source={previewSource as any}
           onClose={() => setPreviewSource(null)}
-          accentColor="#7BAE7F"
+          {...({ accentColor: "#7BAE7F" } as any)}
         />
       )}
     </div>
