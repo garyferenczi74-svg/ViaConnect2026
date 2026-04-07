@@ -11,7 +11,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, Share2, Copy, Check, ShieldCheck, ShieldOff, Trash2,
   Loader2, Mail, Stethoscope, Leaf, ClipboardList, AlertTriangle, Clock,
+  ChevronDown, ChevronUp, Eye, FilePlus2, Pencil, ShoppingCart, Sparkles,
+  UserPlus, UserMinus, History,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { ShareProtocolButton } from "@/components/consumer/ShareProtocolButton";
 import { formatInviteCode } from "@/utils/protocolShareAccess";
@@ -224,6 +227,7 @@ function EmptyState() {
 function ActiveShareCard({
   share, onRevoke,
 }: { share: ShareRow; onRevoke: () => void }) {
+  const [showActivity, setShowActivity] = useState(false);
   return (
     <article className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4 md:p-5">
       <div className="flex items-start justify-between gap-3 mb-3">
@@ -248,7 +252,21 @@ function ActiveShareCard({
 
       <PermissionGrid share={share} />
 
-      <div className="flex items-center justify-end gap-2 mt-4">
+      <div className="flex items-center justify-between gap-2 mt-4">
+        <button
+          type="button"
+          onClick={() => setShowActivity(v => !v)}
+          aria-expanded={showActivity}
+          className="inline-flex items-center gap-1.5 text-xs font-medium text-white/55 hover:text-white px-3 py-1.5 rounded-lg border border-white/[0.08] hover:border-white/[0.18] transition-all"
+        >
+          <History className="w-3.5 h-3.5" strokeWidth={1.5} />
+          {showActivity ? "Hide activity" : "View activity"}
+          {showActivity ? (
+            <ChevronUp className="w-3 h-3" strokeWidth={1.5} />
+          ) : (
+            <ChevronDown className="w-3 h-3" strokeWidth={1.5} />
+          )}
+        </button>
         <button
           type="button"
           onClick={onRevoke}
@@ -258,6 +276,21 @@ function ActiveShareCard({
           Revoke access
         </button>
       </div>
+
+      <AnimatePresence initial={false}>
+        {showActivity && (
+          <motion.div
+            key="activity"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.22 }}
+            className="overflow-hidden"
+          >
+            <ActivityTimeline shareId={share.id} />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </article>
   );
 }
@@ -339,9 +372,10 @@ function PendingShareCard({
 // ── Inactive share card ───────────────────────────────────────────────
 function InactiveShareCard({ share }: { share: ShareRow }) {
   const statusLabel = share.status[0].toUpperCase() + share.status.slice(1);
+  const [showActivity, setShowActivity] = useState(false);
   return (
-    <article className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4 opacity-60">
-      <div className="flex items-center justify-between gap-3">
+    <article className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4">
+      <div className="flex items-center justify-between gap-3 opacity-60">
         <div className="flex items-center gap-3 min-w-0">
           <ProviderAvatar type={share.provider_type} muted />
           <div className="min-w-0">
@@ -357,8 +391,163 @@ function InactiveShareCard({ share }: { share: ShareRow }) {
           {share.provider_type}
         </span>
       </div>
+      <div className="mt-3 flex justify-end">
+        <button
+          type="button"
+          onClick={() => setShowActivity(v => !v)}
+          aria-expanded={showActivity}
+          className="inline-flex items-center gap-1.5 text-[11px] font-medium text-white/45 hover:text-white/70 transition-colors"
+        >
+          <History className="w-3 h-3" strokeWidth={1.5} />
+          {showActivity ? "Hide audit trail" : "View audit trail"}
+        </button>
+      </div>
+      <AnimatePresence initial={false}>
+        {showActivity && (
+          <motion.div
+            key="activity"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.22 }}
+            className="overflow-hidden"
+          >
+            <ActivityTimeline shareId={share.id} />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </article>
   );
+}
+
+// ── Activity timeline (lazy-loaded on expand) ─────────────────────────
+interface ActivityRow {
+  id: string;
+  share_id: string;
+  actor_id: string;
+  action: string;
+  details: Record<string, any> | null;
+  created_at: string;
+}
+
+const ACTION_META: Record<
+  string,
+  { icon: LucideIcon; label: string; color: string }
+> = {
+  created:              { icon: FilePlus2,    label: "Share created",        color: "#7BAE7F" },
+  accepted:             { icon: UserPlus,     label: "Provider accepted",    color: "#2DA5A0" },
+  declined:             { icon: UserMinus,    label: "Provider declined",    color: "#B75E18" },
+  revoked:              { icon: ShieldOff,    label: "Access revoked",       color: "#F87171" },
+  updated_permissions:  { icon: Pencil,       label: "Permissions updated",  color: "#FBBF24" },
+  viewed_protocol:      { icon: Eye,          label: "Protocol viewed",      color: "#60A5FA" },
+  ordered_for_patient:  { icon: ShoppingCart, label: "Order placed",         color: "#A855F7" },
+  recommended_product:  { icon: Sparkles,     label: "Product recommended",  color: "#22D3EE" },
+  modified_protocol:    { icon: Pencil,       label: "Protocol modified",    color: "#FBBF24" },
+};
+
+function ActivityTimeline({ shareId }: { shareId: string }) {
+  const [rows, setRows] = useState<ActivityRow[] | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const supabase = createClient();
+      const { data, error: err } = await (supabase as any)
+        .from("protocol_share_activity")
+        .select("id, share_id, actor_id, action, details, created_at")
+        .eq("share_id", shareId)
+        .order("created_at", { ascending: false })
+        .limit(100);
+      if (cancelled) return;
+      if (err) {
+        setError(err.message ?? "Could not load activity.");
+      } else {
+        setRows((data as ActivityRow[]) ?? []);
+      }
+      setLoading(false);
+    })();
+    return () => { cancelled = true; };
+  }, [shareId]);
+
+  if (loading) {
+    return (
+      <div className="mt-3 flex items-center justify-center py-6">
+        <Loader2 className="w-4 h-4 animate-spin text-white/40" strokeWidth={1.5} />
+      </div>
+    );
+  }
+  if (error) {
+    return (
+      <p className="mt-3 text-xs text-red-400 text-center py-4">{error}</p>
+    );
+  }
+  if (!rows || rows.length === 0) {
+    return (
+      <p className="mt-3 text-xs text-white/35 text-center py-4">
+        No activity recorded yet.
+      </p>
+    );
+  }
+  return (
+    <ol className="mt-4 space-y-2 border-t border-white/[0.06] pt-4">
+      {rows.map((r) => (
+        <ActivityLine key={r.id} row={r} />
+      ))}
+    </ol>
+  );
+}
+
+function ActivityLine({ row }: { row: ActivityRow }) {
+  const meta = ACTION_META[row.action] ?? {
+    icon: History,
+    label: row.action.replace(/_/g, " "),
+    color: "#94a3b8",
+  };
+  const Icon = meta.icon;
+  const detail =
+    row.details && typeof row.details === "object"
+      ? row.details.category
+        ? ` · ${String(row.details.category).replace(/_/g, " ")}`
+        : row.details.invite_email
+          ? ` · ${row.details.invite_email}`
+          : ""
+      : "";
+  return (
+    <li className="flex items-start gap-3 text-xs">
+      <div
+        className="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5"
+        style={{ backgroundColor: `${meta.color}1F`, border: `1px solid ${meta.color}33` }}
+      >
+        <Icon className="w-3 h-3" style={{ color: meta.color }} strokeWidth={1.5} />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="text-white/80">
+          {meta.label}
+          <span className="text-white/40">{detail}</span>
+        </p>
+        <p className="text-[10px] text-white/35 mt-0.5">
+          {formatDateTime(row.created_at)}
+        </p>
+      </div>
+    </li>
+  );
+}
+
+function formatDateTime(iso: string): string {
+  try {
+    const d = new Date(iso);
+    return d.toLocaleString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+    });
+  } catch {
+    return iso;
+  }
 }
 
 // ── Shared bits ───────────────────────────────────────────────────────
