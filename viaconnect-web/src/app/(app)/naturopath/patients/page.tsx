@@ -1,101 +1,151 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Search, Plus, Eye } from "lucide-react";
+import { Search, Eye, Loader2, ShieldCheck, Users, Inbox } from "lucide-react";
 import {
   Card,
   Button,
   Badge,
-  Select,
   DataTable,
   Avatar,
 } from "@/components/ui";
 import type { Column } from "@/components/ui";
 import { PageTransition, StaggerChild } from "@/lib/motion";
+import { createClient } from "@/lib/supabase/client";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 type Patient = {
+  shareId: string;
   id: string;
   name: string;
   email: string;
   initials: string;
   constitutionalType: string;
-  lastVisit: string;
-  activeFormulas: number;
-  compliance: number;
-  status: string;
+  bioScore: number | null;
+  acceptedAt: string | null;
+  sharedCount: number;
+  status: "active";
   [key: string]: unknown;
 };
 
-// ─── Mock Patients ───────────────────────────────────────────────────────────
-
-const mockPatients: Patient[] = [
-  { id: "p-001", name: "Elena Vasquez", email: "elena.v@email.com", initials: "EV", constitutionalType: "Vata-Pitta", lastVisit: "2026-03-19", activeFormulas: 3, compliance: 92, status: "active" },
-  { id: "p-002", name: "Marcus Chen", email: "m.chen@email.com", initials: "MC", constitutionalType: "Kapha", lastVisit: "2026-03-18", activeFormulas: 2, compliance: 88, status: "active" },
-  { id: "p-003", name: "Priya Sharma", email: "priya.s@email.com", initials: "PS", constitutionalType: "Pitta", lastVisit: "2026-03-15", activeFormulas: 4, compliance: 95, status: "active" },
-  { id: "p-004", name: "James Whitfield", email: "j.whitfield@email.com", initials: "JW", constitutionalType: "Sanguine", lastVisit: "2026-03-14", activeFormulas: 1, compliance: 78, status: "active" },
-  { id: "p-005", name: "Sana Al-Rashid", email: "sana.ar@email.com", initials: "SA", constitutionalType: "Melancholic", lastVisit: "2026-03-12", activeFormulas: 2, compliance: 91, status: "active" },
-  { id: "p-006", name: "Tomoko Hayashi", email: "t.hayashi@email.com", initials: "TH", constitutionalType: "Vata", lastVisit: "2026-03-10", activeFormulas: 3, compliance: 86, status: "active" },
-  { id: "p-007", name: "Derek Okafor", email: "d.okafor@email.com", initials: "DO", constitutionalType: "Choleric", lastVisit: "2026-02-28", activeFormulas: 1, compliance: 72, status: "inactive" },
-  { id: "p-008", name: "Ingrid Larsson", email: "ingrid.l@email.com", initials: "IL", constitutionalType: "Phlegmatic", lastVisit: "2026-03-17", activeFormulas: 2, compliance: 97, status: "active" },
-  { id: "p-009", name: "Rafael Dominguez", email: "r.dominguez@email.com", initials: "RD", constitutionalType: "Pitta-Kapha", lastVisit: "2026-03-06", activeFormulas: 0, compliance: 65, status: "inactive" },
-  { id: "p-010", name: "Mei-Lin Wu", email: "meilin.w@email.com", initials: "MW", constitutionalType: "Vata-Kapha", lastVisit: "2026-03-20", activeFormulas: 5, compliance: 94, status: "active" },
-];
-
-// ─── Filter options ──────────────────────────────────────────────────────────
-
-const constitutionalOptions = [
-  { value: "all", label: "All Types" },
-  { value: "Vata", label: "Vata" },
-  { value: "Pitta", label: "Pitta" },
-  { value: "Kapha", label: "Kapha" },
-  { value: "Sanguine", label: "Sanguine" },
-  { value: "Choleric", label: "Choleric" },
-  { value: "Melancholic", label: "Melancholic" },
-  { value: "Phlegmatic", label: "Phlegmatic" },
-];
-
-const statusOptions = [
-  { value: "all", label: "All Statuses" },
-  { value: "active", label: "Active" },
-  { value: "inactive", label: "Inactive" },
-];
+interface SharedPatientRow {
+  share_id: string;
+  patient_id: string;
+  full_name: string | null;
+  email: string | null;
+  constitutional_type: string | null;
+  bio_optimization_score: number | string | null;
+  accepted_at: string | null;
+  share_supplements: boolean;
+  share_bio_score: boolean;
+  share_genetics: boolean;
+  share_caq: boolean;
+  share_wellness: boolean;
+  share_peptides: boolean;
+  share_labs: boolean;
+}
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-function complianceColor(value: number) {
-  if (value >= 90) return "text-portal-green";
-  if (value >= 75) return "text-portal-yellow";
-  return "text-rose";
+function initialsOf(name: string | null, fallback: string): string {
+  if (!name) return fallback.slice(0, 2).toUpperCase();
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((p) => p[0]?.toUpperCase() ?? "")
+    .join("");
 }
 
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+function formatDate(iso: string | null): string {
+  if (!iso) return "—";
+  return new Date(iso).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+function bioScoreColor(value: number | null): string {
+  if (value === null) return "text-gray-500";
+  if (value >= 80) return "text-portal-green";
+  if (value >= 60) return "text-portal-yellow";
+  return "text-rose";
 }
 
 // ─── Page ────────────────────────────────────────────────────────────────────
 
 export default function NaturopathPatientsPage() {
+  const [patients, setPatients] = useState<Patient[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
-  const [typeFilter, setTypeFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
 
-  const filtered = mockPatients.filter((p) => {
-    const matchSearch =
-      p.name.toLowerCase().includes(search.toLowerCase()) ||
-      p.email.toLowerCase().includes(search.toLowerCase());
-    const matchType =
-      typeFilter === "all" || p.constitutionalType.toLowerCase().includes(typeFilter.toLowerCase());
-    const matchStatus = statusFilter === "all" || p.status === statusFilter;
-    return matchSearch && matchType && matchStatus;
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const supabase = createClient();
+      const { data, error: rpcError } = await (supabase as any).rpc(
+        "provider_list_shared_patients",
+      );
+      if (cancelled) return;
+      if (rpcError) {
+        setError(rpcError.message ?? "Could not load patients.");
+        setLoading(false);
+        return;
+      }
+      const rows = (data as SharedPatientRow[]) ?? [];
+      setPatients(
+        rows.map((r) => {
+          const sharedCount = [
+            r.share_supplements,
+            r.share_bio_score,
+            r.share_genetics,
+            r.share_caq,
+            r.share_wellness,
+            r.share_peptides,
+            r.share_labs,
+          ].filter(Boolean).length;
+          const score =
+            r.bio_optimization_score === null ||
+            r.bio_optimization_score === undefined
+              ? null
+              : Number(r.bio_optimization_score);
+          return {
+            shareId: r.share_id,
+            id: r.patient_id,
+            name: r.full_name ?? r.email ?? "Unnamed patient",
+            email: r.email ?? "",
+            initials: initialsOf(r.full_name, r.email ?? "P"),
+            constitutionalType: r.constitutional_type ?? "—",
+            bioScore: score,
+            acceptedAt: r.accepted_at,
+            sharedCount,
+            status: "active",
+          };
+        }),
+      );
+      setLoading(false);
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  const filtered = patients.filter((p) => {
+    if (!search) return true;
+    const q = search.toLowerCase();
+    return (
+      p.name.toLowerCase().includes(q) ||
+      p.email.toLowerCase().includes(q) ||
+      p.constitutionalType.toLowerCase().includes(q)
+    );
   });
 
   const columns: Column<Patient>[] = [
     {
       key: "name",
-      header: "Name",
+      header: "Patient",
       sortable: true,
       render: (row) => (
         <div className="flex items-center gap-3">
@@ -109,38 +159,37 @@ export default function NaturopathPatientsPage() {
     },
     {
       key: "constitutionalType",
-      header: "Constitutional Type",
+      header: "Constitutional",
       render: (row) => (
         <Badge variant="neutral">{row.constitutionalType}</Badge>
       ),
     },
     {
-      key: "lastVisit",
-      header: "Last Visit",
+      key: "bioScore",
+      header: "Bio Score",
       sortable: true,
-      render: (row) => <span className="text-gray-300">{formatDate(row.lastVisit)}</span>,
-    },
-    {
-      key: "activeFormulas",
-      header: "Active Formulas",
-      render: (row) => <span className="text-gray-300">{row.activeFormulas}</span>,
-    },
-    {
-      key: "compliance",
-      header: "Compliance",
       render: (row) => (
-        <span className={`font-semibold ${complianceColor(row.compliance)}`}>
-          {row.compliance}%
+        <span className={`font-semibold ${bioScoreColor(row.bioScore)}`}>
+          {row.bioScore !== null ? Math.round(row.bioScore) : "—"}
         </span>
       ),
     },
     {
-      key: "status",
-      header: "Status",
+      key: "sharedCount",
+      header: "Shared",
       render: (row) => (
-        <Badge variant={row.status === "active" ? "active" : "neutral"}>
-          {row.status === "active" ? "Active" : "Inactive"}
-        </Badge>
+        <span className="inline-flex items-center gap-1 text-xs text-gray-300">
+          <ShieldCheck className="w-3.5 h-3.5 text-[#2DA5A0]" strokeWidth={1.5} />
+          {row.sharedCount}/7 categories
+        </span>
+      ),
+    },
+    {
+      key: "acceptedAt",
+      header: "Shared since",
+      sortable: true,
+      render: (row) => (
+        <span className="text-gray-300">{formatDate(row.acceptedAt)}</span>
       ),
     },
     {
@@ -148,11 +197,11 @@ export default function NaturopathPatientsPage() {
       header: "Actions",
       render: (row) => (
         <Link
-          href={`/naturopath/patients/${row.id}`}
+          href={`/naturopath/patients/${row.id}/protocol`}
           className="inline-flex items-center gap-1.5 text-xs font-medium text-sage hover:text-sage-light transition-colors"
         >
-          <Eye className="w-3.5 h-3.5" />
-          View
+          <Eye className="w-3.5 h-3.5" strokeWidth={1.5} />
+          Open protocol
         </Link>
       ),
     },
@@ -166,54 +215,72 @@ export default function NaturopathPatientsPage() {
           <div>
             <h1 className="text-3xl font-bold text-white">Patient Roster</h1>
             <p className="mt-1 text-gray-400">
-              {mockPatients.length} patients &middot; {mockPatients.filter((p) => p.status === "active").length} active
+              {patients.length} {patients.length === 1 ? "patient has" : "patients have"} shared their protocol with you
             </p>
           </div>
-          <Button className="bg-sage hover:bg-sage/80 text-white shadow-lg shadow-sage/20">
-            <Plus className="w-4 h-4 mr-2" />
-            Add Patient
-          </Button>
+          <Link href="/naturopath/accept-share">
+            <Button className="bg-sage hover:bg-sage/80 text-white shadow-lg shadow-sage/20">
+              <ShieldCheck className="w-4 h-4 mr-2" strokeWidth={1.5} />
+              Accept invite code
+            </Button>
+          </Link>
         </StaggerChild>
 
-        {/* Search + Filters */}
+        {/* Search */}
         <StaggerChild>
-        <Card hover={false} className="p-4 mb-6">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+          <Card hover={false} className="p-4 mb-6">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" strokeWidth={1.5} />
               <input
                 type="text"
-                placeholder="Search patients by name or email..."
+                placeholder="Search by name, email, or constitutional type..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="w-full h-10 pl-10 pr-3 rounded-lg text-sm text-white placeholder:text-gray-600 outline-none transition-colors bg-white/[0.04] border border-white/[0.08] focus:border-sage/50 focus:ring-1 focus:ring-sage/20"
               />
             </div>
-            <div className="w-48">
-              <Select
-                value={typeFilter}
-                onValueChange={setTypeFilter}
-                placeholder="Constitutional Type"
-                options={constitutionalOptions}
-              />
-            </div>
-            <div className="w-40">
-              <Select
-                value={statusFilter}
-                onValueChange={setStatusFilter}
-                placeholder="Status"
-                options={statusOptions}
-              />
-            </div>
-          </div>
-        </Card>
+          </Card>
         </StaggerChild>
 
-        {/* DataTable */}
-        <StaggerChild>
-        <DataTable<Patient> columns={columns} data={filtered} pageSize={10} />
-        </StaggerChild>
+        {/* Body */}
+        {loading ? (
+          <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-12 text-center">
+            <Loader2 className="w-6 h-6 text-white/40 mx-auto animate-spin" strokeWidth={1.5} />
+            <p className="text-sm text-white/40 mt-3">Loading shared patients…</p>
+          </div>
+        ) : error ? (
+          <div className="rounded-2xl border border-[#B75E18]/30 bg-[#B75E18]/10 p-6 text-center">
+            <p className="text-sm text-[#F5B681]">{error}</p>
+          </div>
+        ) : patients.length === 0 ? (
+          <EmptyState />
+        ) : (
+          <StaggerChild>
+            <DataTable<Patient> columns={columns} data={filtered} pageSize={10} />
+          </StaggerChild>
+        )}
       </div>
     </PageTransition>
+  );
+}
+
+function EmptyState() {
+  return (
+    <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-12 text-center">
+      <div className="w-14 h-14 mx-auto rounded-2xl bg-white/[0.04] border border-white/[0.06] flex items-center justify-center mb-4">
+        <Inbox className="w-6 h-6 text-white/30" strokeWidth={1.5} />
+      </div>
+      <p className="text-sm text-white/70 mb-1">No shared patients yet</p>
+      <p className="text-xs text-white/40 mb-5 max-w-sm mx-auto">
+        When a patient sends you an invite code, accept it on the share page and they'll appear here.
+      </p>
+      <Link
+        href="/naturopath/accept-share"
+        className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#2DA5A0] hover:bg-[#2DA5A0]/85 text-white text-sm font-semibold transition-colors"
+      >
+        <ShieldCheck className="w-4 h-4" strokeWidth={1.5} />
+        Accept an invite code
+      </Link>
+    </div>
   );
 }

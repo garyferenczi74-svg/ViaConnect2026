@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import Link from "next/link";
 import { Search, UserPlus, ChevronLeft, ChevronRight } from "lucide-react";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -101,12 +100,13 @@ export default function PatientsPage() {
         {/* ── Header ───────────────────────────────────────────────── */}
         <div className="flex items-center justify-between">
           <h1 className="text-heading-2 text-[#B75E18]">Patients</h1>
-          <Link href="#">
-            <button className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white bg-gradient-to-r from-[#4A90D9] to-[#3A7BC8] hover:opacity-90 transition-opacity">
-              <UserPlus className="w-4 h-4" />
-              + Add Patient
-            </button>
-          </Link>
+          <button
+            type="button"
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white bg-gradient-to-r from-[#4A90D9] to-[#3A7BC8] hover:opacity-90 transition-opacity"
+          >
+            <UserPlus className="w-4 h-4" />
+            + Add Patient
+          </button>
         </div>
 
         {/* ── Search Bar ───────────────────────────────────────────── */}
@@ -157,45 +157,40 @@ export default function PatientsPage() {
               {filtered.map((patient, i) => {
                 const status = statusConfig[patient.status];
                 return (
-                  <Link
+                  <tr
                     key={patient.id}
-                    href="#"
-                    className="contents"
+                    className={`hover:bg-white/[0.03] cursor-pointer transition-colors ${
+                      i % 2 === 1 ? "bg-white/[0.02]" : ""
+                    }`}
                   >
-                    <tr
-                      className={`hover:bg-white/[0.03] cursor-pointer transition-colors ${
-                        i % 2 === 1 ? "bg-white/[0.02]" : ""
-                      }`}
-                    >
-                      <td className="text-xs font-medium text-white py-2 px-3">{patient.name}</td>
-                      <td className="text-xs text-gray-300 py-2 px-3">{patient.age}</td>
-                      <td className="text-xs py-2 px-3">
-                        <div className="flex flex-wrap gap-1">
-                          {patient.variants.map((v) => (
-                            <span
-                              key={v}
-                              className="inline-block rounded-full bg-blue-500/10 text-[#4A90D9] text-[10px] font-mono px-2 py-0.5"
-                            >
-                              {v}
-                            </span>
-                          ))}
-                        </div>
-                      </td>
-                      <td className="text-xs py-2 px-3">
-                        <span className={`font-medium ${complianceColor(patient.compliance)}`}>
-                          {patient.compliance}%
-                        </span>
-                      </td>
-                      <td className="text-xs text-gray-300 py-2 px-3">{patient.panels}</td>
-                      <td className="text-xs text-gray-400 py-2 px-3">{patient.lastVisit}</td>
-                      <td className="text-xs py-2 px-3">
-                        <div className="flex items-center gap-1.5">
-                          <span className={`w-2 h-2 rounded-full ${status.dot}`} />
-                          <span className="text-gray-300">{status.label}</span>
-                        </div>
-                      </td>
-                    </tr>
-                  </Link>
+                    <td className="text-xs font-medium text-white py-2 px-3">{patient.name}</td>
+                    <td className="text-xs text-gray-300 py-2 px-3">{patient.age}</td>
+                    <td className="text-xs py-2 px-3">
+                      <div className="flex flex-wrap gap-1">
+                        {patient.variants.map((v) => (
+                          <span
+                            key={v}
+                            className="inline-block rounded-full bg-blue-500/10 text-[#4A90D9] text-[10px] font-mono px-2 py-0.5"
+                          >
+                            {v}
+                          </span>
+                        ))}
+                      </div>
+                    </td>
+                    <td className="text-xs py-2 px-3">
+                      <span className={`font-medium ${complianceColor(patient.compliance)}`}>
+                        {patient.compliance}%
+                      </span>
+                    </td>
+                    <td className="text-xs text-gray-300 py-2 px-3">{patient.panels}</td>
+                    <td className="text-xs text-gray-400 py-2 px-3">{patient.lastVisit}</td>
+                    <td className="text-xs py-2 px-3">
+                      <div className="flex items-center gap-1.5">
+                        <span className={`w-2 h-2 rounded-full ${status.dot}`} />
+                        <span className="text-gray-300">{status.label}</span>
+                      </div>
+                    </td>
+                  </tr>
                 );
               })}
             </tbody>

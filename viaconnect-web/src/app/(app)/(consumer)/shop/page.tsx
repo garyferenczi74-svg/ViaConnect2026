@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -502,6 +503,32 @@ function ShopContent() {
           </div>
         </StaggerChild>
       )}
+
+      {/* Peptide Catalog discover card — informational, links to /shop/peptides */}
+      <StaggerChild>
+        <Link
+          href="/shop/peptides"
+          className="block rounded-2xl border border-[rgba(45,165,160,0.20)] bg-gradient-to-br from-[rgba(45,165,160,0.10)] to-[rgba(183,94,24,0.08)] px-4 py-3 transition-all duration-200 hover:border-[rgba(45,165,160,0.40)] hover:from-[rgba(45,165,160,0.15)] hover:to-[rgba(183,94,24,0.12)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744]"
+        >
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border border-[rgba(45,165,160,0.30)] bg-gradient-to-br from-[#1A2744] to-[#2DA5A0]">
+              <FlaskConical className="h-5 w-5 text-white" strokeWidth={1.5} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold text-white">
+                Peptide Catalog
+              </p>
+              <p className="mt-0.5 text-[11px] leading-snug text-[rgba(255,255,255,0.55)]">
+                Educational profiles for the FarmCeutica peptide portfolio. Information only — not for direct purchase. Share with your licensed practitioner.
+              </p>
+            </div>
+            <span className="hidden flex-shrink-0 items-center gap-1 rounded-full border border-[rgba(45,165,160,0.30)] bg-[rgba(45,165,160,0.10)] px-3 py-1 text-xs font-medium text-[#2DA5A0] sm:inline-flex">
+              View Catalog
+              <ChevronDown className="h-3 w-3 -rotate-90" strokeWidth={1.5} />
+            </span>
+          </div>
+        </Link>
+      </StaggerChild>
 
       {/* Search, Filters, Sort, View Toggle */}
       <StaggerChild className="space-y-3">

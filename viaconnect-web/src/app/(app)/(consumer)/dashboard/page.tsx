@@ -14,6 +14,7 @@ import { QuickReassessmentCard } from '@/components/dashboard/QuickReassessmentC
 import { DailyUltrathinkTip } from '@/components/dashboard/DailyUltrathinkTip';
 import { PatternCirclePreview } from '@/components/community/PatternCirclePreview';
 import { useUserDashboardData } from '@/hooks/useUserDashboardData';
+import { ShareProtocolButton } from '@/components/consumer/ShareProtocolButton';
 import type { DashboardSupplement } from '@/hooks/useUserDashboardData';
 import type { LucideIcon } from 'lucide-react';
 
@@ -280,8 +281,8 @@ export default function ConsumerDashboard() {
     >
       {/* ── Greeting Section ──────────────────────────────────────────── */}
       <section className="px-4 lg:px-6 pt-6 pb-2">
-        <div className="flex items-center justify-between">
-          <div>
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
             <h1 className="text-heading-2" style={{ color: '#FFFFFF' }}>
               {display}
               {!done && (
@@ -292,6 +293,7 @@ export default function ConsumerDashboard() {
               )}
             </h1>
           </div>
+          <ShareProtocolButton compact label="Share" className="shrink-0" />
         </div>
       </section>
 
