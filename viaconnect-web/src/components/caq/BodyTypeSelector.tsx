@@ -29,7 +29,7 @@ const BODY_TYPES: BodyTypeOption[] = [
     label: "Mesomorph / Athletic Frame",
     hex: "#60A5FA",
     icon: Dumbbell,
-    description: "Naturally muscular frame with broader shoulders. You can gain muscle relatively easily, but you may be currently underweight, possibly from stress, illness, or lifestyle changes.",
+    description: "Naturally muscular frame with broader shoulders. You can gain muscle relatively easily, but you may be currently under or overweight, possibly from stress, illness, or lifestyle changes.",
     traits: ["Medium to broad bone structure", "Naturally muscular when active", "Gains muscle easier than ectomorphs", "Currently underweight due to circumstances", "Responds well to training + nutrition"],
     ultrathinkNote: "Ultrathink will focus on recovery optimization, protein synthesis support, and identifying what caused the weight loss (stress, illness, or lifestyle) to address the root pattern.",
   },
