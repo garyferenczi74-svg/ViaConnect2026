@@ -4,3 +4,6 @@ node_modules/
 .env.local
 *.log
 .vercel
+
+# Local-only Supabase email template draft — kept on disk, never committed
+supabase-email-template.html
