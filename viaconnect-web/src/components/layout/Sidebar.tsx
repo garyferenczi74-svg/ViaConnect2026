@@ -65,6 +65,7 @@ const CONSUMER: PortalConfig = {
     { href: "/science", label: "Science & Authorities", icon: BookOpen },
     { href: "/ai", label: "AI Advisor", icon: Brain },
     { href: "/shop", label: "Shop", icon: ShoppingBag },
+    { href: "/shop/peptides", label: "Peptide Catalog", icon: FlaskConical },
     { href: "/profile", label: "Profile", icon: UserIcon },
   ],
   accent: "bg-teal",
