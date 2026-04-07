@@ -38,6 +38,7 @@ import { PageTransition, StaggerChild, MotionCard } from "@/lib/motion";
 // ─── Master SKU Library (all FarmCeutica products) ──────────────────────────
 
 import MASTER_SKUS from "@/data/farmceutica_master_skus.json";
+import { UserMenu } from "@/components/account/UserMenu";
 import { CategoryNav, CategoryHeader, groupByCategory, categorySectionId } from "@/components/shop/CategorySections";
 import { ProductInfoButtons, type FormulationData } from "@/components/shop/ProductInfoButtons";
 import { TestingProductInfoButtons } from "@/components/shop/TestingProductInfoButtons";
@@ -468,19 +469,25 @@ function ShopContent() {
           </p>
         </div>
 
-        {/* Cart Button */}
-        <button
-          onClick={() => setShowCart(!showCart)}
-          className="relative flex items-center gap-2 px-4 py-2.5 rounded-xl bg-copper/15 text-copper border border-copper/20 hover:bg-copper/25 transition-colors"
-        >
-          <ShoppingCart className="w-4 h-4" />
-          <span className="text-sm font-medium">Cart</span>
-          {cartItemCount > 0 && (
-            <span className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-copper text-white text-[10px] font-bold flex items-center justify-center">
-              {cartItemCount}
-            </span>
-          )}
-        </button>
+        {/* Header Actions: Cart + User Menu */}
+        <div className="flex items-center gap-2">
+          {/* Cart Button */}
+          <button
+            onClick={() => setShowCart(!showCart)}
+            className="relative flex items-center gap-2 px-4 py-2.5 rounded-xl bg-copper/15 text-copper border border-copper/20 hover:bg-copper/25 transition-colors"
+          >
+            <ShoppingCart className="w-4 h-4" />
+            <span className="text-sm font-medium">Cart</span>
+            {cartItemCount > 0 && (
+              <span className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-copper text-white text-[10px] font-bold flex items-center justify-center">
+                {cartItemCount}
+              </span>
+            )}
+          </button>
+
+          {/* User Menu (Account dropdown) */}
+          <UserMenu />
+        </div>
       </StaggerChild>
 
       {/* Personalized Banner */}
