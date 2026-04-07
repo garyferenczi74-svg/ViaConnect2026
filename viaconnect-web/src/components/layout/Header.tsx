@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Bell, Search, Menu, X } from "lucide-react";
 import { ViaConnectLogo } from "@/components/ui/ViaConnectLogo";
+import { CartIcon } from "@/components/shop/CartIcon";
 
 // ─── Breadcrumb helpers ──────────────────────────────────────────────────────
 
@@ -135,6 +136,9 @@ export function Header({
             {isMac ? "⌘" : "Ctrl+"}K
           </kbd>
         </button>
+
+        {/* Cart — global access from any portal page (Prompt #52) */}
+        <CartIcon />
 
         {/* Notification bell */}
         <button

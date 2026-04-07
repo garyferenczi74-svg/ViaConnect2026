@@ -58,12 +58,9 @@ function validate(form: ShippingForm): FormErrors {
   return errs;
 }
 
-function formatOrderNumber(): string {
-  const d = new Date();
-  const ymd = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}`;
-  const rand = String(Math.floor(Math.random() * 100000)).padStart(5, "0");
-  return `FC-${ymd}-${rand}`;
-}
+// Order numbers are generated server-side by generate_shop_order_number()
+// (called inside shop_create_order_with_items) so the client doesn't need
+// its own format helper.
 
 export default function ShopCheckoutPage() {
   const router = useRouter();
@@ -149,60 +146,57 @@ export default function ShopCheckoutPage() {
         return;
       }
 
-      const orderNumber = formatOrderNumber();
-      const orderPayload = {
-        user_id: user.id,
-        order_number: orderNumber,
-        status: "pending",
-        shipping_first_name: form.firstName.trim(),
-        shipping_last_name: form.lastName.trim(),
-        shipping_address_line1: form.address1.trim(),
-        shipping_address_line2: form.address2.trim() || null,
-        shipping_city: form.city.trim(),
-        shipping_state: form.state,
-        shipping_zip: form.zip.trim(),
-        shipping_country: form.country,
-        shipping_phone: form.phone.trim(),
-        shipping_email: form.email.trim(),
-        subtotal_cents: subtotalCents,
-        discount_cents: discountCents,
-        shipping_cents: shippingCents,
-        tax_cents: taxCents,
-        total_cents: totalCents,
-        discount_code: appliedDiscount,
-        portal_type: "consumer",
-      };
+      // Use the transactional RPC `shop_create_order_with_items` so the order
+      // header and all line items are inserted in a single SQL transaction.
+      // If anything fails, the entire order rolls back — we can never end up
+      // with an order row that has zero line items. Order numbers are also
+      // generated server-side via generate_shop_order_number() to avoid the
+      // client-side collision risk.
+      const { data: order, error: rpcErr } = await (supabase as any).rpc(
+        "shop_create_order_with_items",
+        {
+          p_shipping: {
+            first_name: form.firstName.trim(),
+            last_name: form.lastName.trim(),
+            address1: form.address1.trim(),
+            address2: form.address2.trim() || null,
+            city: form.city.trim(),
+            state: form.state,
+            zip: form.zip.trim(),
+            country: form.country,
+            phone: form.phone.trim(),
+            email: form.email.trim(),
+          },
+          p_totals: {
+            subtotal_cents: subtotalCents,
+            discount_cents: discountCents,
+            shipping_cents: shippingCents,
+            tax_cents: taxCents,
+            total_cents: totalCents,
+          },
+          p_items: items.map(it => ({
+            product_slug: it.productSlug,
+            product_name: it.productName,
+            product_type: it.productType,
+            delivery_form: it.deliveryForm,
+            quantity: it.quantity,
+            unit_price_cents: it.unitPriceCents ?? 0,
+            metadata: it.metadata,
+          })),
+          p_discount_code: appliedDiscount,
+          p_portal_type: "consumer",
+        },
+      );
 
-      const { data: order, error: orderErr } = await (supabase as any)
-        .from("shop_orders")
-        .insert(orderPayload)
-        .select()
-        .single();
-
-      if (orderErr || !order) {
-        setSubmitError(orderErr?.message ?? "Could not create order. Please try again.");
+      if (rpcErr || !order) {
+        setSubmitError(rpcErr?.message ?? "Could not create order. Please try again.");
         setIsSubmitting(false);
         return;
       }
 
-      const lineItems = items.map(it => ({
-        order_id: order.id,
-        product_slug: it.productSlug,
-        product_name: it.productName,
-        product_type: it.productType,
-        delivery_form: it.deliveryForm,
-        quantity: it.quantity,
-        unit_price_cents: it.unitPriceCents ?? 0,
-        line_total_cents: (it.unitPriceCents ?? 0) * it.quantity,
-        metadata: it.metadata,
-      }));
-
-      if (lineItems.length > 0) {
-        await (supabase as any).from("shop_order_items").insert(lineItems);
-      }
-
+      const orderRow = Array.isArray(order) ? order[0] : order;
       await clearCart();
-      router.push(`/shop/order-confirmation/${order.id}`);
+      router.push(`/shop/order-confirmation/${orderRow.id}`);
     } catch (err: any) {
       setSubmitError(err?.message ?? "Unexpected error placing order.");
       setIsSubmitting(false);

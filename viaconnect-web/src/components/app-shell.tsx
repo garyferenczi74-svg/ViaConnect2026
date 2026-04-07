@@ -9,6 +9,10 @@ import { CommandPalette } from "@/components/layout/CommandPalette";
 import { ToastProvider } from "@/components/ui/Toast";
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 import { useRealtimeSubscriptions, useKeyboardShortcuts } from "@/lib/hooks";
+// Cart infrastructure (Prompt #52). Mounted at AppShell level so the cart icon
+// in the global Header has access to useCart() from any portal page.
+import { CartProvider } from "@/context/CartContext";
+import { CartSlideOver } from "@/components/shop/CartSlideOver";
 
 const SIDEBAR_STORAGE_KEY = "viaconnect-sidebar-collapsed";
 
@@ -58,38 +62,42 @@ export function AppShell({
   const sidebarWidth = mounted && isDesktop ? (sidebarCollapsed ? 72 : 260) : 0;
 
   return (
-    <div className="min-h-screen bg-dark-bg" data-portal={role}>
-      {/* Desktop: Fixed sidebar */}
-      {mounted && isDesktop && (
-        <div className="fixed inset-y-0 left-0 z-50">
-          <Sidebar user={user} role={role} onCollapseChange={setSidebarCollapsed} />
+    <CartProvider>
+      <div className="min-h-screen bg-dark-bg" data-portal={role}>
+        {/* Desktop: Fixed sidebar */}
+        {mounted && isDesktop && (
+          <div className="fixed inset-y-0 left-0 z-50">
+            <Sidebar user={user} role={role} onCollapseChange={setSidebarCollapsed} />
+          </div>
+        )}
+
+        {/* Main content area */}
+        <div
+          className="flex flex-col min-h-screen"
+          style={{
+            marginLeft: sidebarWidth,
+            transition: "margin-left 200ms ease",
+          }}
+        >
+          {/* Header — always visible (logo, breadcrumbs, search, bell, cart) */}
+          <Header
+            onMobileMenuToggle={() => {}}
+            mobileMenuOpen={false}
+            onCommandPaletteOpen={handleCommandPaletteOpen}
+          />
+
+          {/* Page content */}
+          <main className="flex-1 overflow-y-auto overflow-x-hidden">
+            {children}
+          </main>
         </div>
-      )}
 
-      {/* Main content area */}
-      <div
-        className="flex flex-col min-h-screen"
-        style={{
-          marginLeft: sidebarWidth,
-          transition: "margin-left 200ms ease",
-        }}
-      >
-        {/* Header — always visible (logo, breadcrumbs, search, bell) */}
-        <Header
-          onMobileMenuToggle={() => {}}
-          mobileMenuOpen={false}
-          onCommandPaletteOpen={handleCommandPaletteOpen}
-        />
-
-        {/* Page content */}
-        <main className="flex-1 overflow-y-auto overflow-x-hidden">
-          {children}
-        </main>
+        <CommandPalette open={commandPaletteOpen} onOpenChange={setCommandPaletteOpen} />
+        <ToastProvider />
+        {/* Global cart drawer — driven by useCart().openCart() from anywhere */}
+        <CartSlideOver />
       </div>
-
-      <CommandPalette open={commandPaletteOpen} onOpenChange={setCommandPaletteOpen} />
-      <ToastProvider />
-    </div>
+    </CartProvider>
   );
 }
 

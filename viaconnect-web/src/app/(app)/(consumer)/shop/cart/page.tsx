@@ -19,7 +19,7 @@ export default function ShopCartPage() {
 
   return (
     <div
-      className="min-h-screen w-full px-4 py-6 sm:px-6 lg:px-10"
+      className="min-h-screen w-full px-4 py-6 pb-28 lg:pb-6 sm:px-6 lg:px-10"
       style={{ background: "linear-gradient(180deg, #141E33 0%, #1A2744 30%, #1A2744 100%)" }}
     >
       <div className="mx-auto max-w-6xl">
@@ -128,6 +128,26 @@ export default function ShopCartPage() {
           </div>
         )}
       </div>
+
+      {/* Mobile-only sticky checkout bar. Hidden on lg+ since the sidebar
+          summary already provides the checkout CTA there. */}
+      {!isLoading && items.length > 0 && (
+        <div className="lg:hidden fixed bottom-0 inset-x-0 z-40 border-t border-white/[0.08] bg-[#1A2744]/95 backdrop-blur-md px-4 py-3 flex items-center justify-between gap-3 shadow-[0_-8px_24px_rgba(0,0,0,0.4)]">
+          <div className="min-w-0">
+            <p className="text-[10px] uppercase tracking-wider text-white/40">Subtotal</p>
+            <p className="text-base font-bold text-white truncate">
+              {formatCents(subtotalCents, "—")}
+            </p>
+          </div>
+          <Link
+            href="/shop/checkout"
+            className="inline-flex items-center justify-center gap-2 text-sm font-semibold text-white bg-[#2DA5A0] hover:bg-[#2DA5A0]/85 shadow-lg shadow-[#2DA5A0]/20 rounded-xl px-5 py-3 min-h-[44px] flex-shrink-0"
+          >
+            Checkout
+            <ArrowRight className="w-4 h-4" strokeWidth={1.5} />
+          </Link>
+        </div>
+      )}
 
       <ConfirmClearModal
         open={confirmClear}

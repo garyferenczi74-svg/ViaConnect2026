@@ -428,7 +428,10 @@ function ShopContent() {
       unitPriceCents: Math.round((sku.MSRP ?? 0) * 100),
       metadata: {
         category: sku.Category,
-        isRecommended: !!recMap.get(sku.Name),
+        // `aiRecommended` is the canonical key the cart UI looks for to render
+        // the AI Recommended badge in the slide-over and on /shop/cart.
+        aiRecommended: !!recMap.get(sku.Name),
+        recommendedBy: recMap.get(sku.Name) ? "Ultrathink AI" : undefined,
       },
     });
     toast.success(`${sku.Name} added to cart`);

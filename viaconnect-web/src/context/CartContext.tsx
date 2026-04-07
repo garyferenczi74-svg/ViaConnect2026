@@ -253,65 +253,38 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
     if (!userId) return; // guest cart — localStorage handles persistence
 
-    // Server sync. Use the merge-or-insert pattern: try insert first; on
-    // unique-index collision, look up the existing row and update its quantity.
-    const insertPayload = {
-      user_id: userId,
-      product_slug: input.productSlug,
-      product_name: input.productName,
-      product_type: input.productType,
-      quantity: desiredQty,
-      delivery_form: input.deliveryForm,
-      unit_price_cents: input.unitPriceCents,
-      metadata: input.metadata,
-    };
+    // Server sync via the atomic RPC `shop_cart_add_item`. The function does
+    // INSERT ... ON CONFLICT DO UPDATE quantity = quantity + EXCLUDED.quantity
+    // in a single SQL statement, so parallel adds (e.g. user double-clicks
+    // Add to Cart, or two tabs add at once) can never lose increments.
+    const { data: row, error: rpcErr } = await (supabase as any).rpc(
+      "shop_cart_add_item",
+      {
+        p_product_slug: input.productSlug,
+        p_product_name: input.productName,
+        p_product_type: input.productType,
+        p_quantity: desiredQty,
+        p_delivery_form: input.deliveryForm,
+        p_unit_price_cents: input.unitPriceCents,
+        p_metadata: input.metadata,
+      },
+    );
 
-    const { data: inserted, error: insertErr } = await (supabase as any)
-      .from("shop_cart_items")
-      .insert(insertPayload)
-      .select()
-      .single();
-
-    if (insertErr) {
-      // Likely a unique-index collision — fetch the row and bump it.
-      const { data: existing } = await (supabase as any)
-        .from("shop_cart_items")
-        .select("*")
-        .eq("user_id", userId)
-        .eq("product_slug", input.productSlug)
-        .filter(
-          "delivery_form",
-          input.deliveryForm == null ? "is" : "eq",
-          input.deliveryForm == null ? null : input.deliveryForm,
-        )
-        .maybeSingle();
-      if (existing) {
-        const newQty = clamp((existing.quantity ?? 0) + desiredQty);
-        const { data: updated } = await (supabase as any)
-          .from("shop_cart_items")
-          .update({ quantity: newQty })
-          .eq("id", existing.id)
-          .select()
-          .single();
-        if (updated) {
-          setItems(prev =>
-            prev.map(it =>
-              matchKey(it.productSlug, it.deliveryForm) === key
-                ? rowToItem(updated)
-                : it,
-            ),
-          );
-        }
-      }
+    if (rpcErr || !row) {
+      // RPC failed (network blip, RLS, etc.) — leave the optimistic state in
+      // place. Next page load will reconcile from the server cart.
       return;
     }
 
-    if (inserted) {
-      // Replace the optimistic local id with the real server id.
+    // The RPC returns the canonical post-merge row. Replace the optimistic
+    // entry so the local id becomes the real DB id and the quantity matches
+    // what the server actually has after concurrent merges.
+    const serverRow = Array.isArray(row) ? row[0] : row;
+    if (serverRow) {
       setItems(prev =>
         prev.map(it =>
           matchKey(it.productSlug, it.deliveryForm) === key
-            ? rowToItem(inserted)
+            ? rowToItem(serverRow)
             : it,
         ),
       );

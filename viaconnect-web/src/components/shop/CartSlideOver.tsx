@@ -4,7 +4,7 @@
 
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import Link from "next/link";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import {
   X, ShoppingBag, Sparkles, Minus, Plus, Trash2, ArrowRight,
 } from "lucide-react";
@@ -13,6 +13,8 @@ import { useCart, formatCents, type CartItem } from "@/context/CartContext";
 export function CartSlideOver() {
   const { items, itemCount, subtotalCents, isCartOpen, closeCart, removeItem, updateQuantity } = useCart();
   const reduce = useReducedMotion();
+  const drawerRef = useRef<HTMLElement | null>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
 
   // Close on Escape
   useEffect(() => {
@@ -23,6 +25,59 @@ export function CartSlideOver() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [isCartOpen, closeCart]);
+
+  // Body scroll lock + focus management while the drawer is open. We remember
+  // the element that had focus before opening, move focus into the drawer's
+  // close button, and restore focus to the trigger when the drawer closes.
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    if (!isCartOpen) return;
+    previousFocusRef.current = document.activeElement as HTMLElement | null;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const t = window.setTimeout(() => {
+      const closeBtn = drawerRef.current?.querySelector<HTMLButtonElement>(
+        '[aria-label="Close cart"]',
+      );
+      closeBtn?.focus();
+    }, 0);
+    return () => {
+      window.clearTimeout(t);
+      document.body.style.overflow = prevOverflow;
+      // Return focus to whatever opened the drawer (typically the CartIcon)
+      previousFocusRef.current?.focus?.();
+    };
+  }, [isCartOpen]);
+
+  // Simple focus trap: keep Tab/Shift+Tab cycling within the drawer.
+  useEffect(() => {
+    if (!isCartOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Tab") return;
+      const root = drawerRef.current;
+      if (!root) return;
+      const focusables = root.querySelectorAll<HTMLElement>(
+        'a, button:not([disabled]), input, [tabindex]:not([tabindex="-1"])',
+      );
+      if (focusables.length === 0) return;
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      const active = document.activeElement as HTMLElement | null;
+      if (e.shiftKey) {
+        if (active === first || !root.contains(active)) {
+          e.preventDefault();
+          last.focus();
+        }
+      } else {
+        if (active === last || !root.contains(active)) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [isCartOpen]);
 
   return (
     <AnimatePresence>
@@ -41,12 +96,14 @@ export function CartSlideOver() {
 
           {/* Drawer */}
           <motion.aside
+            ref={drawerRef as React.RefObject<HTMLElement>}
             initial={{ x: "100%" }}
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
             transition={reduce ? { duration: 0 } : { type: "spring", stiffness: 300, damping: 32 }}
             className="absolute right-0 top-0 h-full w-[400px] max-w-[90vw] bg-[#1A2744] border-l border-white/[0.08] shadow-2xl flex flex-col"
             role="dialog"
+            aria-modal="true"
             aria-label="Shopping cart"
           >
             {/* Header */}
