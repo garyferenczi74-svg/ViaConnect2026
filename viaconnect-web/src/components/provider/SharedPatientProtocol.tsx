@@ -267,6 +267,16 @@ function TabBody({
       return <SupplementsTab patientId={patientId} />;
     case "bioScore":
       return <BioScoreTab patientId={patientId} />;
+    case "geneticResults":
+      return <GeneticsTab patientId={patientId} />;
+    case "caqData":
+      return <CaqTab patientId={patientId} />;
+    case "wellnessAnalytics":
+      return <WellnessAnalyticsTab patientId={patientId} />;
+    case "peptideRecommendations":
+      return <PeptideTab patientId={patientId} />;
+    case "labResults":
+      return <LabResultsTab />;
     default:
       return <PlaceholderTab tabKey={tabKey} />;
   }
@@ -450,6 +460,288 @@ function BioScoreTab({ patientId }: { patientId: string }) {
       <p className="text-[10px] text-white/30 mt-6 text-center max-w-sm mx-auto">
         Aggregate score only. Individual gamification, streaks, and Helix
         Rewards data are never shared with providers.
+      </p>
+    </div>
+  );
+}
+
+// ── shared RPC fetcher hook ──────────────────────────────────────────────
+
+function useRpcFetch<T>(
+  rpcName: string,
+  patientId: string,
+): { data: T[] | null; loading: boolean; error: string | null } {
+  const [data, setData] = useState<T[] | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const supabase = createClient();
+      const { data: rows, error: rpcError } = await (supabase as any).rpc(
+        rpcName,
+        { p_patient_id: patientId },
+      );
+      if (cancelled) return;
+      if (rpcError) {
+        setError(
+          rpcError.message?.replace(/^protocol_share_assert_access:\s*/i, "") ??
+            "Could not load data.",
+        );
+      } else {
+        setData((rows as T[]) ?? []);
+      }
+      setLoading(false);
+    })();
+    return () => { cancelled = true; };
+  }, [rpcName, patientId]);
+
+  return { data, loading, error };
+}
+
+function TabStateWrap({
+  loading,
+  error,
+  empty,
+  children,
+}: {
+  loading: boolean;
+  error: string | null;
+  empty: boolean;
+  children: React.ReactNode;
+}) {
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-10">
+        <Loader2 className="w-5 h-5 animate-spin text-[#2DA5A0]" strokeWidth={1.5} />
+      </div>
+    );
+  }
+  if (error) {
+    return <p className="text-sm text-[#F5B681] py-6 text-center">{error}</p>;
+  }
+  if (empty) {
+    return (
+      <p className="text-sm text-white/50 py-6 text-center">
+        No data on record yet.
+      </p>
+    );
+  }
+  return <>{children}</>;
+}
+
+// ── genetics ─────────────────────────────────────────────────────────────
+
+function GeneticsTab({ patientId }: { patientId: string }) {
+  const { data, loading, error } = useRpcFetch<any>(
+    "provider_get_patient_genetics",
+    patientId,
+  );
+  const row = data && data.length > 0 ? data[0] : null;
+  return (
+    <TabStateWrap loading={loading} error={error} empty={!row}>
+      {row && (
+        <div className="space-y-4">
+          <div className="grid sm:grid-cols-3 gap-3">
+            <GeneCard label="MTHFR" value={row.mthfr_status} />
+            <GeneCard label="COMT" value={row.comt_status} />
+            <GeneCard label="CYP2D6" value={row.cyp2d6_status} />
+          </div>
+          {row.additional_genes && Object.keys(row.additional_genes).length > 0 && (
+            <div className="rounded-xl bg-[#1A2744] border border-white/5 p-4">
+              <p className="text-[10px] uppercase tracking-wider text-white/45 font-semibold mb-2">
+                Additional variants
+              </p>
+              <pre className="text-xs text-white/70 overflow-x-auto whitespace-pre-wrap font-mono">
+                {JSON.stringify(row.additional_genes, null, 2)}
+              </pre>
+            </div>
+          )}
+          <p className="text-[10px] text-white/35 text-center">
+            Source: {row.source_lab ?? "patient upload"}
+            {row.report_date && ` · ${new Date(row.report_date).toLocaleDateString()}`}
+          </p>
+        </div>
+      )}
+    </TabStateWrap>
+  );
+}
+
+function GeneCard({ label, value }: { label: string; value: string | null }) {
+  return (
+    <div className="rounded-xl bg-[#1A2744] border border-white/5 p-4 text-center">
+      <p className="text-[10px] uppercase tracking-wider text-white/45 font-semibold mb-1">
+        {label}
+      </p>
+      <p className="text-sm font-mono text-white">{value || "—"}</p>
+    </div>
+  );
+}
+
+// ── CAQ ──────────────────────────────────────────────────────────────────
+
+function CaqTab({ patientId }: { patientId: string }) {
+  const { data, loading, error } = useRpcFetch<any>(
+    "provider_get_patient_caq",
+    patientId,
+  );
+  const row = data && data.length > 0 ? data[0] : null;
+  return (
+    <TabStateWrap loading={loading} error={error} empty={!row}>
+      {row && (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-white/55">
+              Version {row.version_number} · {row.status}
+            </span>
+            {row.completed_at && (
+              <span className="text-white/40">
+                Completed {new Date(row.completed_at).toLocaleDateString()}
+              </span>
+            )}
+          </div>
+          <CaqSection label="Health concerns" payload={row.health_concerns} />
+          <CaqSection label="Physical symptoms" payload={row.physical_symptoms} />
+          <CaqSection label="Neuro symptoms" payload={row.neuro_symptoms} />
+          <CaqSection label="Emotional symptoms" payload={row.emotional_symptoms} />
+          <CaqSection label="Medications" payload={row.medications} />
+          <CaqSection label="Allergies" payload={row.allergies} />
+          <CaqSection label="Lifestyle" payload={row.lifestyle} />
+        </div>
+      )}
+    </TabStateWrap>
+  );
+}
+
+function CaqSection({ label, payload }: { label: string; payload: any }) {
+  if (!payload) return null;
+  const isEmpty =
+    (Array.isArray(payload) && payload.length === 0) ||
+    (typeof payload === "object" && Object.keys(payload).length === 0);
+  if (isEmpty) return null;
+  return (
+    <div className="rounded-xl bg-[#1A2744] border border-white/5 p-3">
+      <p className="text-[10px] uppercase tracking-wider text-white/45 font-semibold mb-1.5">
+        {label}
+      </p>
+      <pre className="text-xs text-white/75 overflow-x-auto whitespace-pre-wrap leading-snug">
+        {Array.isArray(payload)
+          ? payload.join(", ")
+          : JSON.stringify(payload, null, 2)}
+      </pre>
+    </div>
+  );
+}
+
+// ── wellness analytics ───────────────────────────────────────────────────
+
+function WellnessAnalyticsTab({ patientId }: { patientId: string }) {
+  const { data, loading, error } = useRpcFetch<any>(
+    "provider_get_patient_wellness_analytics",
+    patientId,
+  );
+  const row = data && data.length > 0 ? data[0] : null;
+  return (
+    <TabStateWrap loading={loading} error={error} empty={!row}>
+      {row && (
+        <div className="space-y-4">
+          {row.summary && (
+            <div className="rounded-xl bg-[#1A2744] border border-white/5 p-4">
+              <p className="text-[10px] uppercase tracking-wider text-white/45 font-semibold mb-1.5">
+                Summary
+              </p>
+              <p className="text-sm text-white/85 leading-relaxed">{row.summary}</p>
+            </div>
+          )}
+          {row.categories && (
+            <div className="rounded-xl bg-[#1A2744] border border-white/5 p-4">
+              <p className="text-[10px] uppercase tracking-wider text-white/45 font-semibold mb-2">
+                Category breakdown
+              </p>
+              <pre className="text-xs text-white/70 overflow-x-auto whitespace-pre-wrap font-mono">
+                {JSON.stringify(row.categories, null, 2)}
+              </pre>
+            </div>
+          )}
+          <p className="text-[10px] text-white/35 text-center">
+            {Array.isArray(row.data_sources_used) && row.data_sources_used.length > 0
+              ? `Sources: ${row.data_sources_used.join(", ")}`
+              : "No sources recorded"}
+            {row.calculated_at &&
+              ` · calculated ${new Date(row.calculated_at).toLocaleDateString()}`}
+          </p>
+        </div>
+      )}
+    </TabStateWrap>
+  );
+}
+
+// ── peptide recommendations ──────────────────────────────────────────────
+
+function PeptideTab({ patientId }: { patientId: string }) {
+  const { data, loading, error } = useRpcFetch<any>(
+    "provider_get_patient_peptide_recommendations",
+    patientId,
+  );
+  return (
+    <TabStateWrap
+      loading={loading}
+      error={error}
+      empty={!data || data.length === 0}
+    >
+      <div className="space-y-3">
+        {(data ?? []).map((p, i) => (
+          <div
+            key={i}
+            className="rounded-xl bg-[#1A2744] border border-white/5 p-4"
+          >
+            <div className="flex items-start justify-between gap-3 mb-2">
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-white truncate">
+                  {p.peptide_name}
+                </p>
+                <p className="text-[11px] text-white/50 mt-0.5">
+                  {[p.delivery_form, p.dosage, p.frequency].filter(Boolean).join(" · ")}
+                </p>
+              </div>
+              {p.priority && (
+                <span className="text-[9px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#2DA5A0]/15 border border-[#2DA5A0]/30 text-[#2DA5A0] flex-shrink-0">
+                  {p.priority}
+                </span>
+              )}
+            </div>
+            {p.rationale && (
+              <p className="text-xs text-white/65 leading-snug">{p.rationale}</p>
+            )}
+            {(p.cycle_on_weeks || p.cycle_off_weeks) && (
+              <p className="text-[10px] text-white/40 mt-2">
+                Cycle: {p.cycle_on_weeks ?? 0} on / {p.cycle_off_weeks ?? 0} off weeks
+              </p>
+            )}
+            {p.requires_supervision && (
+              <p className="text-[10px] text-[#F5B681] mt-1.5">
+                Requires medical supervision
+              </p>
+            )}
+          </div>
+        ))}
+      </div>
+    </TabStateWrap>
+  );
+}
+
+// ── lab results (no backing table yet) ───────────────────────────────────
+
+function LabResultsTab() {
+  return (
+    <div className="flex flex-col items-center justify-center text-center py-10">
+      <p className="text-sm text-white/55 mb-1">
+        Lab results storage coming soon.
+      </p>
+      <p className="text-xs text-white/35 max-w-sm">
+        Patient share permission is wired and will activate the moment
+        the lab uploads pipeline lands.
       </p>
     </div>
   );
