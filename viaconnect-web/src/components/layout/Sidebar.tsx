@@ -77,6 +77,7 @@ const PRACTITIONER: PortalConfig = {
   nav: [
     { href: "/practitioner/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { href: "/practitioner/patients", label: "Patients", icon: Users },
+    { href: "/practitioner/shop", label: "Shop", icon: ShoppingBag },
     { href: "/practitioner/protocols", label: "Protocols", icon: ClipboardList },
     { href: "/practitioner/analytics", label: "Analytics", icon: BarChart3 },
     { href: "/practitioner/genomics", label: "Genomics", icon: Dna },
@@ -98,6 +99,7 @@ const NATUROPATH: PortalConfig = {
   nav: [
     { href: "/naturopath/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { href: "/naturopath/patients", label: "Patients", icon: Users },
+    { href: "/naturopath/shop", label: "Shop", icon: ShoppingBag },
     { href: "/naturopath/botanical", label: "Botanical", icon: Leaf },
     { href: "/naturopath/constitutional", label: "Constitutional", icon: Activity },
     { href: "/naturopath/protocols", label: "Protocols", icon: ClipboardList },

@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -41,6 +42,8 @@ import { CategoryNav, CategoryHeader, groupByCategory, categorySectionId } from 
 import { ProductInfoButtons, type FormulationData } from "@/components/shop/ProductInfoButtons";
 import { TestingProductInfoButtons } from "@/components/shop/TestingProductInfoButtons";
 import { getFormulationByName, getFormulationDataByName } from "@/data/masterFormulations";
+import { useCart } from "@/context/CartContext";
+import { CartIcon } from "@/components/shop/CartIcon";
 
 const supabase = createClient();
 
@@ -91,15 +94,9 @@ type Recommendation = {
   source: string;
 };
 
-// ─── Cart item ───────────────────────────────────────────────────────────────
-
-type CartItem = {
-  sku: string;
-  name: string;
-  price: number;
-  quantity: number;
-  category: string;
-};
+// Cart item type previously lived here as a local type. As of Prompt #52 the
+// shop reads from the global CartContext (src/context/CartContext.tsx) and
+// no longer maintains its own item shape.
 
 // ─── Sort options ────────────────────────────────────────────────────────────
 
@@ -174,8 +171,16 @@ function ShopContent() {
   const [sortBy, setSortBy] = useState<SortOption>("recommended");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [showSortDropdown, setShowSortDropdown] = useState(false);
-  const [cart, setCart] = useState<CartItem[]>([]);
-  const [showCart, setShowCart] = useState(false);
+  // Cart state now lives in the global CartContext (Prompt #52). The legacy
+  // `cart` / `showCart` local state was removed. We re-derive a sku-keyed view
+  // here so the inline "in cart" indicator on each product card still works.
+  const {
+    items: cartItems,
+    itemCount: cartItemCount,
+    addItem,
+    removeItem,
+    updateQuantity: updateCartItemQuantity,
+  } = useCart();
 
   const searchParams = useSearchParams();
 
@@ -411,32 +416,32 @@ function ShopContent() {
     return items;
   }, [categoryFilter, searchQuery, sortBy, recMap, dbProductMap, currentSupplements]);
 
-  // Cart operations
+  // Cart operations — thin wrappers over the global CartContext.
+  // `addToCart` keeps the existing call sites untouched while routing through
+  // the new context (which persists to shop_cart_items + fires the toast).
   function addToCart(sku: MasterSKU) {
-    setCart((prev) => {
-      const existing = prev.find((c) => c.sku === sku.SKU);
-      if (existing) {
-        return prev.map((c) => (c.sku === sku.SKU ? { ...c, quantity: c.quantity + 1 } : c));
-      }
-      return [...prev, { sku: sku.SKU, name: sku.Name, price: sku.MSRP, quantity: 1, category: sku.Category }];
+    addItem({
+      productSlug: sku.SKU,
+      productName: sku.Name,
+      productType: sku.Category === "Testing" ? "genetic_test" : "supplement",
+      quantity: 1,
+      deliveryForm: null,
+      unitPriceCents: Math.round((sku.MSRP ?? 0) * 100),
+      metadata: {
+        category: sku.Category,
+        isRecommended: !!recMap.get(sku.Name),
+      },
     });
     toast.success(`${sku.Name} added to cart`);
   }
 
-  function removeFromCart(sku: string) {
-    setCart((prev) => prev.filter((c) => c.sku !== sku));
-  }
+  // Lookup helpers used by the inline "In Cart (n)" indicator on product cards
+  const cartBySku = useMemo(() => {
+    const m = new Map<string, { id: string; quantity: number }>();
+    cartItems.forEach((it) => m.set(it.productSlug, { id: it.id, quantity: it.quantity }));
+    return m;
+  }, [cartItems]);
 
-  function updateQuantity(sku: string, delta: number) {
-    setCart((prev) =>
-      prev
-        .map((c) => (c.sku === sku ? { ...c, quantity: Math.max(0, c.quantity + delta) } : c))
-        .filter((c) => c.quantity > 0)
-    );
-  }
-
-  const cartTotal = cart.reduce((sum, c) => sum + c.price * c.quantity, 0);
-  const cartItemCount = cart.reduce((sum, c) => sum + c.quantity, 0);
   const recommendedCount = displayProducts.filter((p) => p.isRecommended).length;
 
   // Category badge color
@@ -467,19 +472,8 @@ function ShopContent() {
           </p>
         </div>
 
-        {/* Cart Button */}
-        <button
-          onClick={() => setShowCart(!showCart)}
-          className="relative flex items-center gap-2 px-4 py-2.5 rounded-xl bg-copper/15 text-copper border border-copper/20 hover:bg-copper/25 transition-colors"
-        >
-          <ShoppingCart className="w-4 h-4" />
-          <span className="text-sm font-medium">Cart</span>
-          {cartItemCount > 0 && (
-            <span className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-copper text-white text-[10px] font-bold flex items-center justify-center">
-              {cartItemCount}
-            </span>
-          )}
-        </button>
+        {/* Cart trigger — opens the global CartSlideOver from CartContext */}
+        <CartIcon />
       </StaggerChild>
 
       {/* Personalized Banner */}
@@ -502,6 +496,32 @@ function ShopContent() {
           </div>
         </StaggerChild>
       )}
+
+      {/* Peptide Catalog discover card — informational, links to /shop/peptides */}
+      <StaggerChild>
+        <Link
+          href="/shop/peptides"
+          className="block rounded-2xl border border-[rgba(45,165,160,0.20)] bg-gradient-to-br from-[rgba(45,165,160,0.10)] to-[rgba(183,94,24,0.08)] px-4 py-3 transition-all duration-200 hover:border-[rgba(45,165,160,0.40)] hover:from-[rgba(45,165,160,0.15)] hover:to-[rgba(183,94,24,0.12)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744]"
+        >
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border border-[rgba(45,165,160,0.30)] bg-gradient-to-br from-[#1A2744] to-[#2DA5A0]">
+              <FlaskConical className="h-5 w-5 text-white" strokeWidth={1.5} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold text-white">
+                Peptide Catalog
+              </p>
+              <p className="mt-0.5 text-[11px] leading-snug text-[rgba(255,255,255,0.55)]">
+                Educational profiles for the FarmCeutica peptide portfolio. Information only — not for direct purchase. Share with your licensed practitioner.
+              </p>
+            </div>
+            <span className="hidden flex-shrink-0 items-center gap-1 rounded-full border border-[rgba(45,165,160,0.30)] bg-[rgba(45,165,160,0.10)] px-3 py-1 text-xs font-medium text-[#2DA5A0] sm:inline-flex">
+              View Catalog
+              <ChevronDown className="h-3 w-3 -rotate-90" strokeWidth={1.5} />
+            </span>
+          </div>
+        </Link>
+      </StaggerChild>
 
       {/* Search, Filters, Sort, View Toggle */}
       <StaggerChild className="space-y-3">
@@ -636,7 +656,7 @@ function ShopContent() {
                       <CategoryHeader categoryKey={catKey} productCount={catProducts.length} />
                       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                         {catProducts.map((product) => {
-              const inCart = cart.find((c) => c.sku === product.SKU);
+              const inCart = cartBySku.get(product.SKU);
               return (
                 <MotionCard
                   key={product.SKU}
@@ -795,7 +815,7 @@ function ShopContent() {
           /* ── List View ── */
           <div className="space-y-2">
             {displayProducts.map((product) => {
-              const inCart = cart.find((c) => c.sku === product.SKU);
+              const inCart = cartBySku.get(product.SKU);
               return (
                 <Card key={product.SKU} className={`p-4 ${product.isRecommended ? "ring-1 ring-copper/30" : ""}`}>
                   <div className="flex flex-col gap-3">
@@ -904,93 +924,8 @@ function ShopContent() {
         )}
       </StaggerChild>
 
-      {/* Slide-out Cart Panel */}
-      {showCart && (
-        <div className="fixed inset-0 z-50 flex justify-end">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setShowCart(false)} />
-          <div className="relative w-full max-w-md bg-dark-card border-l border-dark-border shadow-2xl flex flex-col h-full">
-            {/* Cart Header */}
-            <div className="flex items-center justify-between p-4 border-b border-white/[0.06]">
-              <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-                <ShoppingCart className="w-5 h-5 text-copper" />
-                Cart ({cartItemCount})
-              </h2>
-              <button onClick={() => setShowCart(false)} className="text-gray-500 hover:text-white">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Cart Items */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-3">
-              {cart.length === 0 ? (
-                <div className="text-center py-12">
-                  <ShoppingBag className="w-12 h-12 text-gray-600 mx-auto mb-3" />
-                  <p className="text-sm text-gray-500">Your cart is empty</p>
-                  <p className="text-xs text-gray-600 mt-1">Add supplements from the shop</p>
-                </div>
-              ) : (
-                cart.map((item) => (
-                  <div
-                    key={item.sku}
-                    className="flex items-center gap-3 p-3 rounded-lg border border-white/[0.06] bg-white/[0.02]"
-                  >
-                    <div className="w-10 h-10 rounded-lg bg-copper/10 flex items-center justify-center flex-shrink-0">
-                      <span className="text-copper text-xs font-bold">{item.sku.padStart(2, "0")}</span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm text-white font-medium truncate">{item.name}</p>
-                      <p className="text-xs text-gray-500">${item.price.toFixed(2)} each</p>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <button
-                        onClick={() => updateQuantity(item.sku, -1)}
-                        className="w-6 h-6 rounded bg-white/[0.06] text-gray-400 hover:text-white flex items-center justify-center text-xs"
-                      >
-                        -
-                      </button>
-                      <span className="text-sm text-white font-medium w-6 text-center">{item.quantity}</span>
-                      <button
-                        onClick={() => updateQuantity(item.sku, 1)}
-                        className="w-6 h-6 rounded bg-white/[0.06] text-gray-400 hover:text-white flex items-center justify-center text-xs"
-                      >
-                        +
-                      </button>
-                    </div>
-                    <button
-                      onClick={() => removeFromCart(item.sku)}
-                      className="text-gray-500 hover:text-rose ml-1"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                ))
-              )}
-            </div>
-
-            {/* Cart Footer */}
-            {cart.length > 0 && (
-              <div className="p-4 border-t border-white/[0.06] space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-400">Subtotal</span>
-                  <span className="text-lg font-bold text-white">${cartTotal.toFixed(2)}</span>
-                </div>
-                <Button
-                  size="lg"
-                  variant="primary"
-                  className="w-full gap-2"
-                  onClick={() => {
-                    setShowCart(false);
-                    router.push("/checkout");
-                  }}
-                >
-                  Proceed to Checkout
-                  <ArrowRight className="w-4 h-4" />
-                </Button>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+      {/* Cart slide-over now lives in src/app/(app)/(consumer)/layout.tsx
+          via <CartSlideOver />, driven by the global CartContext (Prompt #52). */}
     </PageTransition>
   );
 }

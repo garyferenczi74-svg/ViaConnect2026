@@ -32,6 +32,7 @@ const PORTAL_NAV: Record<string, NavItem[]> = {
   practitioner: [
     { href: '/practitioner/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/practitioner/patients', label: 'Patients', icon: Users },
+    { href: '/practitioner/shop', label: 'Shop', icon: ShoppingBag },
     { href: '/practitioner/protocols', label: 'Protocols', icon: ClipboardList },
     { href: '/practitioner/analytics', label: 'Analytics', icon: BarChart3 },
     { href: '/practitioner/genomics', label: 'Genomics', icon: Dna },
@@ -45,6 +46,7 @@ const PORTAL_NAV: Record<string, NavItem[]> = {
   naturopath: [
     { href: '/naturopath/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/naturopath/patients', label: 'Patients', icon: Users },
+    { href: '/naturopath/shop', label: 'Shop', icon: ShoppingBag },
     { href: '/naturopath/botanical', label: 'Botanical', icon: Leaf },
     { href: '/naturopath/protocols', label: 'Protocols', icon: ClipboardList },
     { href: '/naturopath/analytics', label: 'Analytics', icon: BarChart3 },
