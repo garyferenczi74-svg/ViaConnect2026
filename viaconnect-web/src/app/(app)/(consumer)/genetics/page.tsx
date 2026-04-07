@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { getGeneticsShopUrl } from "@/utils/geneticsShopLinks";
+import { ShareProtocolButton } from "@/components/consumer/ShareProtocolButton";
 
 /* ═══════════════════════════════════════════════════════════════════════ */
 /*  PREMIUM ICON                                                          */
@@ -141,9 +142,12 @@ export default function GeneticsPage() {
               <h1 className="text-2xl md:text-3xl font-bold text-white">Genetics</h1>
               <p className="text-sm text-white/40 mt-0.5">Upload your DNA test and lab results here</p>
             </div>
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-400/10 border border-blue-400/20">
-              <div className="flex gap-1"><span className="w-2 h-2 rounded-full bg-teal-400" /><span className="w-2 h-2 rounded-full bg-white/15" /><span className="w-2 h-2 rounded-full bg-white/15" /></div>
-              <span className="text-xs text-blue-400 font-medium">Personalized</span>
+            <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-400/10 border border-blue-400/20">
+                <div className="flex gap-1"><span className="w-2 h-2 rounded-full bg-teal-400" /><span className="w-2 h-2 rounded-full bg-white/15" /><span className="w-2 h-2 rounded-full bg-white/15" /></div>
+                <span className="text-xs text-blue-400 font-medium">Personalized</span>
+              </div>
+              <ShareProtocolButton compact label="Share" />
             </div>
           </div>
         </header>
