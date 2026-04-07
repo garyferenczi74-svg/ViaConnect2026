@@ -11,8 +11,6 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { getGeneticsShopUrl } from "@/utils/geneticsShopLinks";
-import { useCart } from "@/context/CartContext";
-import toast from "react-hot-toast";
 
 /* ═══════════════════════════════════════════════════════════════════════ */
 /*  PREMIUM ICON                                                          */
@@ -88,53 +86,11 @@ function StatusBadge({ status, partial }: { status: string; partial?: string }) 
   return <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 border border-white/15 text-white/40 flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-white/30" />Available</span>;
 }
 
-/* ── Buy Now button: adds the genetic test to the cart and opens the slide-over.
-   Pricing was removed from the genetics portal in Prompt #51, so the cart line
-   for these items has unitPriceCents = null and surfaces as "Contact for
-   Pricing". The href is also kept as a fallback for environments without the
-   CartProvider (it deep-links into the shop with the panel name pre-filtered). */
-function BuyNowButton({
-  panelId, panelName, panelCode, compact = false,
-}: {
-  panelId: string;
-  panelName?: string;
-  panelCode?: string;
-  compact?: boolean;
-}) {
-  const { addItem, openCart } = useCart();
-  const fallbackHref = getGeneticsShopUrl(panelId);
-
-  const handleClick = async (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    try {
-      await addItem({
-        productSlug: panelId,
-        productName: panelCode ?? panelName ?? panelId,
-        productType: "genetic_test",
-        quantity: 1,
-        deliveryForm: null,
-        unitPriceCents: null, // pricing removed in Prompt #51 — surfaces as "Contact for Pricing"
-        metadata: {
-          category: "Methylation / GeneX360",
-          source: "genetics_portal",
-        },
-      });
-      toast.success(`${panelCode ?? panelName ?? "Panel"} added to cart`);
-      openCart();
-    } catch {
-      // If the cart provider isn't mounted for any reason, fall through to the
-      // shop deep-link so the user still lands somewhere useful.
-      window.location.href = fallbackHref;
-    }
-  };
-
+/* ── Buy Now button: deep-links to /shop?q=<panel> via geneticsShopLinks ── */
+function BuyNowButton({ panelId, compact = false }: { panelId: string; compact?: boolean }) {
+  const href = getGeneticsShopUrl(panelId);
   return (
-    <Link
-      href={fallbackHref}
-      onClick={handleClick}
-      className={compact ? "inline-block" : "inline-block w-full sm:w-auto"}
-    >
+    <Link href={href} onClick={(e) => e.stopPropagation()} className={compact ? "inline-block" : "inline-block w-full sm:w-auto"}>
       <motion.span
         whileHover={{ scale: 1.03 }}
         whileTap={{ scale: 0.97 }}
@@ -346,7 +302,7 @@ export default function GeneticsPage() {
               <div className="flex flex-col items-end gap-2 flex-shrink-0">
                 <StatusBadge status={p.status} partial={p.partialLabel} />
                 <span className="text-xs text-white/30">{p.variants} variants</span>
-                <BuyNowButton panelId={p.id} panelCode={p.code} panelName={p.name} />
+                <BuyNowButton panelId={p.id} />
               </div>
             </div>
           </div>
@@ -373,7 +329,7 @@ export default function GeneticsPage() {
               </div>
               <div className="flex items-center justify-between mt-3 pt-3 border-t border-white/5 gap-2">
                 <span className="text-xs text-white/25 flex-shrink-0">{panel.variants} variants</span>
-                <BuyNowButton panelId={panel.id} panelCode={panel.code} panelName={panel.name} compact />
+                <BuyNowButton panelId={panel.id} compact />
               </div>
             </div>
           ))}
