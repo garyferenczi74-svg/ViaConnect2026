@@ -12,6 +12,16 @@ export interface PeptidePerformanceMetric {
   value: string;
 }
 
+// Distribution tier for the FarmCeutica peptide portfolio (Prompt #54b).
+// Tiers reflect the regulatory + practitioner-mediation strategy, NOT the
+// therapeutic category. A peptide's `category` (e.g., "Mitochondrial/Energy")
+// is independent from its `distributionTier`.
+export type PeptideDistributionTier =
+  | "tier1_dtc"        // Direct-to-Consumer Wellness Essentials
+  | "tier2_hcp"        // HCP Distributed / Clinical Partners
+  | "tier3_premium"    // Premium Therapeutics / Clinical Research
+  | "ruo_pipeline";    // Research-Use-Only / Pipeline
+
 export interface PeptideProduct {
   id: string;
   name: string;
@@ -32,6 +42,17 @@ export interface PeptideProduct {
   genexPanel: string;
   priceRange: string;
   marketLaunch: string;
+  // ── Prompt #54b additions (all optional so existing entries don't need
+  // to be backfilled inline — distribution tier is resolved via the
+  // TIER_ASSIGNMENTS map in ./tiers.ts when not set on the entry itself)
+  distributionTier?: PeptideDistributionTier;
+  clinicalTierNote?: string;
+  contraindications?: string;
+  practitionerNotes?: string;
+  keyStudies?: string;
+  isInjectableOnly?: boolean;
+  isTopicalOnly?: boolean;
+  isStackable?: boolean;
 }
 
 // ═══════════════════════════════════════════════════════════════
