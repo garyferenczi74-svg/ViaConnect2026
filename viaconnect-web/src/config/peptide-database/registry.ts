@@ -20,11 +20,24 @@ export const PEPTIDE_REGISTRY: PeptideProduct[] = [
 ];
 
 // ═══ CATEGORY CONFIG (all 8) ═══
-export const ALL_CATEGORIES = [
+// Each category's `products` array is enriched at module load time with any
+// matching #54b additions (Prompt #54b adds peptides whose `category` field
+// equals the CATEGORY_CONFIG `label`). This way the catalog page, which
+// reads ALL_CATEGORIES, picks up all 41 peptides.
+const RAW_CATEGORIES = [
   ...CATEGORY_CONFIG_1_3,
   ...CATEGORY_CONFIG_4_6,
   ...CATEGORY_CONFIG_7_8,
 ];
+
+export const ALL_CATEGORIES = RAW_CATEGORIES.map((cat) => {
+  const additions = NEW_PEPTIDES_54B.filter((p) => p.category === cat.label);
+  if (additions.length === 0) return cat;
+  return {
+    ...cat,
+    products: [...cat.products, ...additions],
+  };
+});
 
 // ═══ LOOKUP HELPERS ═══
 export const PEPTIDE_BY_ID = Object.fromEntries(PEPTIDE_REGISTRY.map((p) => [p.id, p]));
