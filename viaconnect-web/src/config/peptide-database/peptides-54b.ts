@@ -465,25 +465,303 @@ const MELANOTAN_2: PeptideProduct = {
 };
 
 // ════════════════════════════════════════════════════════════════════════════
-// EXPORT — All 13 new peptides
+// PROMPT #53 BACKFILL — 8 peptides that were missed during the original
+// #53 execution. Categories chosen to match existing CATEGORY_CONFIG labels
+// so the ALL_CATEGORIES enrichment in registry.ts surfaces them automatically.
+// ════════════════════════════════════════════════════════════════════════════
+
+// ── TIER 1 — DTC (3) ──
+
+const AOD_9604: PeptideProduct = {
+  id: "aod-9604",
+  name: "AOD-9604",
+  category: "Metabolic / GLP-1 Class",
+  categoryIcon: "TrendingDown",
+  categoryColor: "#B75E18",
+  type: "Modified HGH fragment (amino acids 177–191)",
+  mechanism: "Beta-3 adrenergic lipolysis activator without HGH side effects",
+  evidenceLevel: "strong",
+  howItWorks:
+    "AOD-9604 is a modified fragment (amino acids 177–191) of human growth hormone specifically engineered to stimulate lipolysis without the growth-promoting or diabetogenic effects of full-length HGH. Targets fat metabolism directly by activating beta-3 adrenergic receptors on adipocytes to release stored fatty acids while inhibiting lipogenesis. AOD-9604 has also demonstrated cartilage repair benefits, earning GRAS status from the FDA in some food supplement formulations.",
+  keyHighlights: [
+    "Targeted fat metabolism without any HGH side effects",
+    "Lipolysis activation via beta-3 adrenergic pathway",
+    "Lipogenesis inhibition — blocks new fat storage",
+    "No impact on blood glucose, IGF-1, or insulin sensitivity",
+    "Cartilage repair and regeneration (secondary benefit)",
+  ],
+  ...PLACEHOLDER_DEFAULTS,
+  dosingForms: STANDARD_FORMS,
+  distributionTier: "tier1_dtc",
+  clinicalTierNote:
+    "Tier 1 — DTC Wellness Essential. FDA GRAS status for certain formulations. Established safety profile.",
+  keyStudies:
+    "Phase 2 clinical trials for obesity (Metabolic Pharmaceuticals). Demonstrated significant fat reduction vs. placebo without affecting IGF-1 or glucose. FDA GRAS determination for certain oral formulations.",
+  contraindications:
+    "Generally well-tolerated with minimal reported side effects. No known drug interactions at standard doses. Monitor in patients with thyroid dysfunction.",
+  practitionerNotes:
+    "One of the safest metabolic peptides — ideal for patients who want fat-targeted support without GH axis manipulation. Can be stacked with GLP-1 pathway peptides for complementary mechanisms.",
+  isStackable: true,
+};
+
+const SEMAX: PeptideProduct = {
+  id: "semax",
+  name: "Semax",
+  category: "Neuro/Cognitive & Mood",
+  categoryIcon: "Brain",
+  categoryColor: "#2563EB",
+  type: "Synthetic ACTH(4-10) heptapeptide analog",
+  mechanism: "Melanocortin MC3R/MC4R agonist — BDNF/NGF upregulation",
+  evidenceLevel: "strong",
+  howItWorks:
+    "Semax is a synthetic heptapeptide analog of ACTH(4–10) that retains cognitive enhancement effects without the adrenal cortisol stimulation of full ACTH. Approved in Russia as a prescription nootropic and neuroprotective agent for stroke recovery, cognitive impairment, optic nerve disease, and ADHD. Upregulates BDNF and NGF expression, modulates dopamine and serotonin metabolism, and enhances cerebral blood flow.",
+  keyHighlights: [
+    "BDNF and NGF upregulation for neuroplasticity and memory",
+    "Stroke recovery and acute neuroprotection (approved indication in Russia)",
+    "ADHD attention, focus, and executive function improvement",
+    "Cerebral blood flow enhancement without systemic cardiovascular effects",
+    "No cortisol stimulation — unlike full-length ACTH",
+  ],
+  ...PLACEHOLDER_DEFAULTS,
+  dosingForms: STANDARD_FORMS,
+  distributionTier: "tier1_dtc",
+  clinicalTierNote:
+    "Tier 1 — DTC Wellness Essential. Approved nootropic with 20+ years of clinical use history.",
+  keyStudies:
+    "Approved in Russia and several CIS countries since 2001 (0.1% nasal solution). Published clinical studies in stroke recovery, optic nerve atrophy, and cognitive enhancement. Excellent safety profile across 20+ years of clinical use.",
+  contraindications:
+    "Avoid in patients with acute psychotic episodes. Use caution with concurrent anticoagulants. Pregnancy and lactation — insufficient data.",
+  practitionerNotes:
+    "Nasal spray is the clinically validated delivery route. Pairs synergistically with Selank for combined nootropic + anxiolytic effects (the 'Russian stack'). Typical dosing: 200–600mcg intranasal, 1–2x daily.",
+  isStackable: true,
+};
+
+const SELANK: PeptideProduct = {
+  id: "selank",
+  name: "Selank",
+  category: "Neuro/Cognitive & Mood",
+  categoryIcon: "Brain",
+  categoryColor: "#2563EB",
+  type: "Synthetic tuftsin analog (heptapeptide)",
+  mechanism: "GABA-A allosteric modulator + BDNF upregulator",
+  evidenceLevel: "strong",
+  howItWorks:
+    "Selank is a synthetic heptapeptide analog of the endogenous immunomodulatory peptide tuftsin. Approved in Russia as a prescription anxiolytic and nootropic, Selank combines anti-anxiety effects through GABA-A receptor modulation with cognitive enhancement via BDNF upregulation — providing calm, focused mental clarity without sedation, tolerance, or withdrawal.",
+  keyHighlights: [
+    "Anxiolytic effects without sedation, tolerance, or dependence",
+    "BDNF upregulation for neuroplasticity and memory consolidation",
+    "Immune modulation via tuftsin-derived pathway",
+    "Enkephalin stabilization for endogenous stress resilience",
+    "Nasal spray delivery for rapid CNS access",
+  ],
+  ...PLACEHOLDER_DEFAULTS,
+  dosingForms: STANDARD_FORMS,
+  distributionTier: "tier1_dtc",
+  clinicalTierNote:
+    "Tier 1 — DTC Wellness Essential. Approved anxiolytic/nootropic with established safety profile.",
+  keyStudies:
+    "Approved in Russia since 2009 (0.15% nasal solution). Studies demonstrate anxiolytic efficacy comparable to low-dose benzodiazepines without cognitive impairment or dependency.",
+  contraindications:
+    "Generally well-tolerated. Avoid concurrent use with high-dose benzodiazepines. Pregnancy and lactation — insufficient data.",
+  practitionerNotes:
+    "The 'calm focus' peptide — pairs with Semax for the classic Russian nootropic stack. Ideal for patients with anxiety-driven cognitive impairment who can't tolerate stimulant nootropics. Typical dosing: 250–500mcg intranasal, 1–3x daily.",
+  isStackable: true,
+};
+
+// ── TIER 2 — HCP (2) ──
+
+const KPV_TRIPEPTIDE: PeptideProduct = {
+  id: "kpv-tripeptide",
+  name: "KPV (Tripeptide)",
+  category: "Gut & Detox Support",
+  categoryIcon: "Leaf",
+  categoryColor: "#84CC16",
+  type: "Alpha-MSH C-terminal tripeptide (Lys-Pro-Val)",
+  mechanism: "Intracellular NF-κB inhibition for localized gut inflammation",
+  evidenceLevel: "moderate",
+  howItWorks:
+    "KPV is a C-terminal tripeptide fragment of alpha-melanocyte-stimulating hormone that retains the anti-inflammatory properties of the parent hormone while being small enough to penetrate intestinal epithelial cells directly. Enters colonic epithelial cells and inhibits NF-κB inflammatory signaling at the nuclear level, reducing pro-inflammatory cytokine production locally without systemic immunosuppression.",
+  keyHighlights: [
+    "Direct NF-κB inhibition inside intestinal epithelial cells",
+    "Localized gut inflammation reduction without systemic immunosuppression",
+    "IBD, colitis, and Crohn's symptom management support",
+    "Mucosal immune modulation at the site of inflammation",
+    "Synergistic with BPC-157 for comprehensive gut healing protocols",
+  ],
+  ...PLACEHOLDER_DEFAULTS,
+  dosingForms: STANDARD_FORMS,
+  distributionTier: "tier2_hcp",
+  clinicalTierNote:
+    "Tier 2 — HCP Distributed. Practitioner guidance recommended for inflammatory bowel conditions.",
+  keyStudies:
+    "Studies demonstrate KPV's ability to reduce colonic inflammation in DSS-induced colitis models by 60–70%. NF-κB inhibition mechanism characterized in human colonic epithelial cell lines (Caco-2, HT-29). Dalmasso et al., Journal of Biological Chemistry.",
+  contraindications:
+    "Limited human clinical trial data. Theoretical concern: long-term NF-κB suppression in the gut could affect mucosal immune surveillance. Monitor in immunocompromised patients.",
+  practitionerNotes:
+    "Oral/liposomal delivery preferred for GI targets (reaches colonic epithelium intact). Pairs with BPC-157 + Larazotide Acetate for the most comprehensive gut protocol. Do NOT use as a replacement for prescribed IBD medications without gastroenterologist collaboration.",
+  isStackable: true,
+};
+
+const THYMOSIN_ALPHA_1: PeptideProduct = {
+  id: "thymosin-alpha-1",
+  name: "Thymosin Alpha-1 (Tα1)",
+  category: "Immune & Regenerative",
+  categoryIcon: "Shield",
+  categoryColor: "#059669",
+  type: "28-amino-acid thymic peptide (Zadaxin®)",
+  mechanism: "TLR2/TLR9 dendritic cell activation + T-cell maturation",
+  evidenceLevel: "strong",
+  howItWorks:
+    "Thymosin Alpha-1 is a 28-amino-acid peptide naturally produced by thymic epithelial cells that serves as the master regulator of adaptive immune function. Approved in over 35 countries (marketed as Zadaxin®) for hepatitis B, hepatitis C, and as an immune adjuvant. Restores age-related decline in T-cell function, enhances dendritic cell antigen presentation, and modulates the Th1/Th2 immune balance.",
+  keyHighlights: [
+    "Approved in 35+ countries for immune support (Zadaxin®)",
+    "Thymic function restoration and T-cell maturation enhancement",
+    "NK cell activity and cytotoxicity increase",
+    "Vaccine response improvement — proven immune adjuvant",
+    "Immunosenescence reversal in aging populations",
+  ],
+  ...PLACEHOLDER_DEFAULTS,
+  dosingForms: STANDARD_FORMS,
+  distributionTier: "tier2_hcp",
+  clinicalTierNote:
+    "Tier 2 — HCP Distributed. Approved pharmaceutical compound — practitioner dosing guidance recommended.",
+  keyStudies:
+    "FDA orphan drug status for hepatitis B. Approved in 35+ countries as Zadaxin® (SciClone Pharmaceuticals). Over 4,400 patients in published clinical trials.",
+  contraindications:
+    "Generally very well-tolerated. Contraindicated in organ transplant recipients on immunosuppression. Use caution in autoimmune conditions. Monitor in patients on immunosuppressive therapy.",
+  practitionerNotes:
+    "The most evidence-backed immune peptide available. Standard dosing: 1.6mg subcutaneous, 2x weekly. Pairs with Thymulin for comprehensive thymic restoration. Consider adding to pre-surgical, pre-travel, or seasonal immune protocols.",
+  isStackable: true,
+};
+
+// ── TIER 3 — PREMIUM (1) ──
+
+const DIHEXA: PeptideProduct = {
+  id: "dihexa",
+  name: "Dihexa (PNB-0408)",
+  category: "Neuro/Cognitive & Mood",
+  categoryIcon: "Brain",
+  categoryColor: "#2563EB",
+  type: "Angiotensin IV hexapeptide analog",
+  mechanism: "HGF/c-Met agonist — extreme synaptogenic potency",
+  evidenceLevel: "moderate",
+  howItWorks:
+    "Dihexa is a hexapeptide analog of angiotensin IV that crosses the blood-brain barrier and demonstrates extraordinary potency in promoting cognitive function — approximately 10 million times more potent than BDNF at promoting hepatocyte growth factor (HGF) signaling in the brain. Drives new synapse formation, increases dendritic spine density, enhances long-term potentiation, and has reversed cognitive deficits in animal models of Alzheimer's disease.",
+  keyHighlights: [
+    "Most potent synaptogenic compound characterized (10^7x more potent than BDNF at HGF/c-Met)",
+    "New synapse formation and dendritic spine density increase",
+    "Memory and learning enhancement via LTP facilitation",
+    "Alzheimer's cognitive deficit reversal in animal models",
+    "Blood-brain barrier penetrant — systemic administration reaches CNS targets",
+  ],
+  ...PLACEHOLDER_DEFAULTS,
+  dosingForms: STANDARD_FORMS,
+  distributionTier: "tier3_premium",
+  clinicalTierNote:
+    "Tier 3 — Premium Therapeutics / Clinical Research. No human clinical trials. Clinical oversight required.",
+  keyStudies:
+    "Published by Harding, Wright et al. at Washington State University (Journal of Pharmacology and Experimental Therapeutics, 2013). Demonstrated complete reversal of scopolamine-induced cognitive deficits in rats at picomolar doses.",
+  contraindications:
+    "No human clinical trial safety data. Theoretical concern: HGF/c-Met pathway activation could promote tumor growth in patients with existing c-Met-positive malignancies. Not for use in patients with active or history of cancer without oncologist clearance.",
+  practitionerNotes:
+    "The most potent cognitive peptide in the portfolio but with the thinnest human safety data. Reserve for patients with significant cognitive decline unresponsive to Tier 1/2 nootropic peptides. Start at lowest effective dose and titrate. Monitor for any signs of aberrant tissue growth.",
+  isStackable: true,
+};
+
+// ── RUO / PIPELINE (2) ──
+
+const FIVE_AMINO_1MQ: PeptideProduct = {
+  id: "5-amino-1mq",
+  name: "5-Amino-1MQ",
+  category: "Metabolic / GLP-1 Class",
+  categoryIcon: "TrendingDown",
+  categoryColor: "#B75E18",
+  type: "NNMT inhibitor (small molecule)",
+  mechanism: "Adipocyte NNMT inhibition — fat oxidation shift",
+  evidenceLevel: "moderate",
+  howItWorks:
+    "5-Amino-1MQ is a selective small-molecule inhibitor of nicotinamide N-methyltransferase (NNMT) — a metabolic enzyme overexpressed in white adipose tissue that drives fat storage, suppresses cellular energy expenditure, and depletes intracellular NAD+ and SAMe pools. By blocking NNMT, 5-Amino-1MQ shifts adipocyte metabolism from lipid storage to fatty acid oxidation, preserves NAD+ for mitochondrial function, and increases SAMe availability for methylation reactions.",
+  keyHighlights: [
+    "NNMT enzyme inhibition — shifts fat cell metabolism from storage to oxidation",
+    "NAD+ conservation in adipose tissue (supports sirtuin activation)",
+    "SAMe preservation for methylation capacity in fat cells",
+    "Complementary mechanism to GLP-1 agonists and sympathomimetics",
+    "No appetite suppression or CNS stimulation side effects",
+  ],
+  ...PLACEHOLDER_DEFAULTS,
+  dosingForms: STANDARD_FORMS,
+  distributionTier: "ruo_pipeline",
+  clinicalTierNote:
+    "RUO / Pipeline — Research-use-only compound. No human clinical trials. Preclinical data only.",
+  keyStudies:
+    "NNMT identified as obesity target (Kraus et al., Nature, 2014). 5-Amino-1MQ characterized as selective NNMT inhibitor with anti-adipogenic effects in 3T3-L1 adipocyte models. Neelakantan et al., Biochemical Pharmacology.",
+  contraindications:
+    "No human clinical trials published. Preclinical compound. Potential interaction with methylation-dependent pathways. NNMT also expressed in liver — monitor hepatic function in extended use.",
+  practitionerNotes:
+    "Research compound, not for clinical prescription. The most novel metabolic mechanism in the portfolio — entirely independent of the GLP-1/GIP axis. Theoretical stacking: 5-Amino-1MQ + AOD-9604 + Tirzepatide for triple-mechanism fat loss.",
+  isStackable: true,
+};
+
+const MOTS_C: PeptideProduct = {
+  id: "mots-c",
+  name: "MOTS-c",
+  category: "Mitochondrial/Energy",
+  categoryIcon: "Battery",
+  categoryColor: "#F59E0B",
+  type: "Mitochondrial-derived 16-amino-acid peptide",
+  mechanism: "AMPK activator — exercise mimetic mitochondrial biogenesis",
+  evidenceLevel: "moderate",
+  howItWorks:
+    "MOTS-c is a 16-amino-acid mitochondrial-derived peptide encoded directly by mitochondrial DNA rather than the nuclear genome. Activates AMPK, promotes glucose uptake independent of insulin, stimulates fatty acid oxidation, and drives mitochondrial biogenesis — essentially mimicking the molecular effects of endurance exercise. Circulating MOTS-c levels decline with age, correlating with metabolic syndrome and insulin resistance.",
+  keyHighlights: [
+    "AMPK activation — master cellular energy sensor engagement",
+    "Exercise mimetic molecular effects (glucose uptake, fat oxidation, mito biogenesis)",
+    "Insulin-independent glucose uptake (GLUT4 translocation)",
+    "Mitochondrial biogenesis stimulation via PGC-1α",
+    "Age-related metabolic decline protection (MOTS-c declines with aging)",
+  ],
+  ...PLACEHOLDER_DEFAULTS,
+  dosingForms: STANDARD_FORMS,
+  distributionTier: "ruo_pipeline",
+  clinicalTierNote:
+    "RUO / Pipeline — Research-use-only. Human clinical trials for therapeutic use pending.",
+  keyStudies:
+    "Discovered by Lee et al. at USC Leonard Davis School of Gerontology (Cell Metabolism, 2015). Human studies show MOTS-c levels correlate with exercise capacity and decline with age. Kim et al., Nature Communications — MOTS-c nuclear translocation under metabolic stress.",
+  contraindications:
+    "No human clinical trials for therapeutic use published. Hypoglycemia theoretical risk in patients on insulin or sulfonylureas. Folate cycle interaction — consider in patients with MTHFR variants.",
+  practitionerNotes:
+    "Research compound. The most compelling exercise mimetic peptide with direct mitochondrial genomic origin. Relevant for sedentary patients unable to exercise, age-related metabolic decline, and insulin resistance unresponsive to lifestyle intervention. Pair with MTHFR+™ in patients with known methylation variants.",
+  isStackable: true,
+};
+
+// ════════════════════════════════════════════════════════════════════════════
+// EXPORT — All 21 new peptides (13 from #54b + 8 from #53 backfill)
 // ════════════════════════════════════════════════════════════════════════════
 
 export const NEW_PEPTIDES_54B: PeptideProduct[] = [
-  // Tier 1 — DTC (4)
+  // Tier 1 — DTC (7: 4 from #54b + 3 from backfill)
   SERMORELIN,
   PPW,
   PINEALON,
   CHONLUTEN,
-  // Tier 2 — HCP (6)
+  AOD_9604,
+  SEMAX,
+  SELANK,
+  // Tier 2 — HCP (8: 6 from #54b + 2 from backfill)
   GHK_CU_INJECTABLE,
   IPAMORELIN_STANDALONE,
   CJC_1295_NO_DAC,
   PT_141,
   TESOFENSINE,
   CEREBROLYSIN,
-  // Tier 3 — Premium (2)
+  KPV_TRIPEPTIDE,
+  THYMOSIN_ALPHA_1,
+  // Tier 3 — Premium (3: 2 from #54b + 1 from backfill)
   FR_ALPHA_BINDING,
   CDK5_BLOCKING,
-  // RUO / Pipeline (1)
+  DIHEXA,
+  // RUO / Pipeline (3: 1 from #54b + 2 from backfill)
   MELANOTAN_2,
+  FIVE_AMINO_1MQ,
+  MOTS_C,
 ];
