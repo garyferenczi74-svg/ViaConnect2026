@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
-import { Bell, Search, Menu, X } from "lucide-react";
+import { Search, Menu, X } from "lucide-react";
 import { ViaConnectLogo } from "@/components/ui/ViaConnectLogo";
+import { NotificationBell } from "@/components/layout/NotificationBell";
 
 // ─── Breadcrumb helpers ──────────────────────────────────────────────────────
 
@@ -137,22 +137,7 @@ export function Header({
         </button>
 
         {/* Notification bell */}
-        <button
-          className="relative p-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/[0.04] transition-colors"
-          aria-label="Notifications"
-        >
-          <Bell className="w-4 h-4" />
-          {/* Animated unread badge */}
-          <AnimatePresence>
-            <motion.span
-              key="bell-badge"
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              exit={{ scale: 0 }}
-              className="absolute top-1 right-1 w-2 h-2 rounded-full bg-copper"
-            />
-          </AnimatePresence>
-        </button>
+        <NotificationBell />
       </div>
     </header>
   );
