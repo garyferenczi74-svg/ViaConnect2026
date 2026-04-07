@@ -297,20 +297,26 @@ function EmptyShareState() {
 function SupplementsTab({ patientId }: { patientId: string }) {
   const [rows, setRows] = useState<any[] | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       const supabase = createClient();
-      const { data } = await (supabase as any)
-        .from("user_current_supplements")
-        .select("supplement_name, dosage, frequency, notes")
-        .eq("user_id", patientId)
-        .limit(50);
-      if (!cancelled) {
+      const { data, error: rpcError } = await (supabase as any).rpc(
+        "provider_get_patient_supplements",
+        { p_patient_id: patientId },
+      );
+      if (cancelled) return;
+      if (rpcError) {
+        setError(
+          rpcError.message?.replace(/^protocol_share_assert_access:\s*/i, "") ??
+            "Could not load supplements.",
+        );
+      } else {
         setRows((data as any[]) ?? []);
-        setLoading(false);
       }
+      setLoading(false);
     })();
     return () => { cancelled = true; };
   }, [patientId]);
@@ -321,6 +327,9 @@ function SupplementsTab({ patientId }: { patientId: string }) {
         <Loader2 className="w-5 h-5 animate-spin text-[#2DA5A0]" strokeWidth={1.5} />
       </div>
     );
+  }
+  if (error) {
+    return <p className="text-sm text-[#F5B681] py-6 text-center">{error}</p>;
   }
   if (!rows || rows.length === 0) {
     return (
@@ -338,9 +347,9 @@ function SupplementsTab({ patientId }: { patientId: string }) {
         >
           <div className="min-w-0">
             <p className="text-sm font-semibold truncate">{s.supplement_name}</p>
-            {s.notes && (
-              <p className="text-xs text-white/45 mt-0.5 truncate">{s.notes}</p>
-            )}
+            <p className="text-xs text-white/45 mt-0.5 truncate">
+              {[s.brand, s.product_name].filter(Boolean).join(" · ") || s.category}
+            </p>
           </div>
           <div className="text-right text-xs text-white/55 shrink-0">
             <p>{s.dosage}</p>
@@ -353,24 +362,28 @@ function SupplementsTab({ patientId }: { patientId: string }) {
 }
 
 function BioScoreTab({ patientId }: { patientId: string }) {
-  const [score, setScore] = useState<number | null>(null);
-  const [tier, setTier] = useState<string | null>(null);
+  const [row, setRow] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       const supabase = createClient();
-      const { data } = await (supabase as any)
-        .from("profiles")
-        .select("bio_optimization_score, bio_optimization_tier")
-        .eq("id", patientId)
-        .maybeSingle();
-      if (!cancelled) {
-        setScore(data?.bio_optimization_score ?? null);
-        setTier(data?.bio_optimization_tier ?? null);
-        setLoading(false);
+      const { data, error: rpcError } = await (supabase as any).rpc(
+        "provider_get_patient_bio_score",
+        { p_patient_id: patientId },
+      );
+      if (cancelled) return;
+      if (rpcError) {
+        setError(
+          rpcError.message?.replace(/^protocol_share_assert_access:\s*/i, "") ??
+            "Could not load bio score.",
+        );
+      } else {
+        setRow(Array.isArray(data) ? data[0] ?? null : data ?? null);
       }
+      setLoading(false);
     })();
     return () => { cancelled = true; };
   }, [patientId]);
@@ -382,18 +395,59 @@ function BioScoreTab({ patientId }: { patientId: string }) {
       </div>
     );
   }
+  if (error) {
+    return <p className="text-sm text-[#F5B681] py-6 text-center">{error}</p>;
+  }
+  const score = row?.bio_optimization_score
+    ? Number(row.bio_optimization_score)
+    : null;
+  const strengths: string[] = row?.bio_optimization_strengths ?? [];
+  const opportunities: string[] = row?.bio_optimization_opportunities ?? [];
+
   return (
-    <div className="flex flex-col items-center text-center py-6">
-      <p className="text-xs uppercase tracking-wider text-white/45 mb-2">
-        Bio Optimization Score
-      </p>
-      <p className="text-6xl font-semibold text-[#2DA5A0]">
-        {score !== null ? Math.round(score) : "—"}
-      </p>
-      {tier && (
-        <p className="text-xs text-white/55 mt-2">{tier}</p>
+    <div className="py-2">
+      <div className="flex flex-col items-center text-center py-2">
+        <p className="text-xs uppercase tracking-wider text-white/45 mb-2">
+          Bio Optimization Score
+        </p>
+        <p className="text-6xl font-semibold text-[#2DA5A0]">
+          {score !== null ? Math.round(score) : "—"}
+        </p>
+        {row?.bio_optimization_tier && (
+          <p className="text-xs text-white/55 mt-2">{row.bio_optimization_tier}</p>
+        )}
+      </div>
+
+      {(strengths.length > 0 || opportunities.length > 0) && (
+        <div className="grid sm:grid-cols-2 gap-3 mt-6">
+          {strengths.length > 0 && (
+            <div className="rounded-xl bg-[#1A2744] border border-[#7BAE7F]/20 p-4">
+              <p className="text-[10px] uppercase tracking-wider text-[#7BAE7F] font-semibold mb-2">
+                Strengths
+              </p>
+              <ul className="space-y-1">
+                {strengths.map((s, i) => (
+                  <li key={i} className="text-xs text-white/70">• {s}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {opportunities.length > 0 && (
+            <div className="rounded-xl bg-[#1A2744] border border-[#B75E18]/20 p-4">
+              <p className="text-[10px] uppercase tracking-wider text-[#B75E18] font-semibold mb-2">
+                Opportunities
+              </p>
+              <ul className="space-y-1">
+                {opportunities.map((s, i) => (
+                  <li key={i} className="text-xs text-white/70">• {s}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
       )}
-      <p className="text-[10px] text-white/30 mt-4 max-w-sm">
+
+      <p className="text-[10px] text-white/30 mt-6 text-center max-w-sm mx-auto">
         Aggregate score only. Individual gamification, streaks, and Helix
         Rewards data are never shared with providers.
       </p>
