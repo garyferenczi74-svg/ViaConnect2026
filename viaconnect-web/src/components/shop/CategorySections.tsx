@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { Zap, Star, Leaf, Dna, FlaskConical, Heart, Package, TestTube2 } from 'lucide-react';
 
 // ── Category config ──
@@ -174,6 +175,16 @@ export function CategoryNav({ categoryKeys }: { categoryKeys: string[] }) {
             </button>
           );
         })}
+
+        {/* Prompt #53 — Peptide Catalog (educational, off-cart navigation) */}
+        <Link
+          href="/shop/peptides"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap bg-[#2DA5A0]/15 text-[#2DA5A0] border border-[#2DA5A0]/30 hover:bg-[#2DA5A0]/25 hover:border-[#2DA5A0]/50 transition-all duration-150 flex-shrink-0"
+        >
+          <FlaskConical className="w-3 h-3 flex-shrink-0" strokeWidth={1.5} />
+          Peptides
+          <span className="text-[9px] opacity-70 ml-0.5">29</span>
+        </Link>
       </div>
     </div>
   );
