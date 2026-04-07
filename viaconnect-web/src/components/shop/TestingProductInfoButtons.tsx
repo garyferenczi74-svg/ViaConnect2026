@@ -9,6 +9,7 @@ import {
   ListChecks,
   Workflow,
   ChevronDown,
+  type LucideIcon,
 } from 'lucide-react';
 import {
   getTestingProductBySku,
@@ -17,7 +18,7 @@ import {
 
 // Map data-file string icon names → actual Lucide components.
 // Only the icons used by the 8 testing products' sections.
-const ICON_MAP: Record<string, React.ComponentType<{ className?: string; strokeWidth?: number; style?: React.CSSProperties }>> = {
+const ICON_MAP: Record<string, LucideIcon> = {
   Search,
   Users,
   Package,
