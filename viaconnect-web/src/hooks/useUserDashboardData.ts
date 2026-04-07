@@ -43,7 +43,8 @@ export interface DashboardBioHistory {
 }
 
 export interface DashboardReward {
-  balance: number;
+  /** Renamed from `balance` to match the helix_balances.current_balance column */
+  current_balance: number;
   lifetime_earned: number;
 }
 
@@ -64,8 +65,10 @@ export interface DashboardData {
   assessmentCompleted: boolean;
 }
 
-// Safe query helper: returns data or null, never throws
-async function safeQuery<T>(fn: () => Promise<{ data: T | null; error: unknown }>): Promise<T | null> {
+// Safe query helper: returns data or null, never throws.
+// Uses PromiseLike instead of Promise so Supabase's thennable PostgrestBuilder
+// chain is accepted directly without an extra `await`/cast at every call site.
+async function safeQuery<T>(fn: () => PromiseLike<{ data: T | null; error: unknown }>): Promise<T | null> {
   try {
     const { data, error } = await fn();
     if (error) {
@@ -142,7 +145,7 @@ export function useUserDashboardData(): DashboardData {
         safeQuery(() =>
           supabase
             .from('helix_balances')
-            .select('balance, lifetime_earned')
+            .select('current_balance, lifetime_earned')
             .eq('user_id', user.id)
             .single()
         ),

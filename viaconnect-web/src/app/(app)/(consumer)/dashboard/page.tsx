@@ -264,7 +264,7 @@ export default function ConsumerDashboard() {
   ];
 
   // Helix rewards — real data
-  const helixBal = helixBalance?.balance ?? 0;
+  const helixBal = helixBalance?.current_balance ?? 0;
   const streakDays = streak?.current_count ?? 0;
   const multiplier = streakDays >= 30 ? '4x' : streakDays >= 14 ? '2x' : streakDays >= 7 ? '1.5x' : '1x';
 

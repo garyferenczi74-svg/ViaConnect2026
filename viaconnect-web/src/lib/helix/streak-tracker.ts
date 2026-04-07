@@ -28,15 +28,19 @@ export async function updateStreak(userId: string, streakType: StreakType): Prom
   }
 
   const lastDate = existing.last_logged_date;
+  // current_count and longest_count are nullable in the regenerated types;
+  // coalesce to 0 so arithmetic and Math.max stay typed as number.
+  const currentCount = existing.current_count ?? 0;
+  const longestCount = existing.longest_count ?? 0;
   if (lastDate === today) {
     // Already logged today
-    return { current: existing.current_count, longest: existing.longest_count, isNew: false };
+    return { current: currentCount, longest: longestCount, isNew: false };
   }
 
   const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
   const isConsecutive = lastDate === yesterday;
-  const newCount = isConsecutive ? existing.current_count + 1 : 1;
-  const newLongest = Math.max(existing.longest_count, newCount);
+  const newCount = isConsecutive ? currentCount + 1 : 1;
+  const newLongest = Math.max(longestCount, newCount);
 
   await supabase.from("helix_streaks").update({
     current_count: newCount,
@@ -54,7 +58,10 @@ export async function getStreaks(userId: string): Promise<Record<StreakType, { c
 
   const result: Record<string, { current: number; longest: number }> = {};
   for (const streak of data || []) {
-    result[streak.streak_type] = { current: streak.current_count, longest: streak.longest_count };
+    result[streak.streak_type] = {
+      current: streak.current_count ?? 0,
+      longest: streak.longest_count ?? 0,
+    };
   }
   return result as Record<StreakType, { current: number; longest: number }>;
 }

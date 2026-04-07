@@ -95,7 +95,12 @@ export async function buildUnifiedContext(userId: string): Promise<UnifiedDataCo
     supabase.from("wellness_analytics").select("*").eq("user_id", userId).order("calculated_at", { ascending: false }).limit(1).single(),
   ]);
 
-  const profile = profileRes.data || {};
+  // Cast to any: several columns referenced below (date_of_birth, sex, ethnicity,
+  // health_concerns, symptoms_*, bio_optimization_*) live in profiles in the
+  // current schema, but the typegen produces a strict Row type and the `|| {}`
+  // fallback widens the union to bare {} which loses property access. Treating
+  // profile as a loose record preserves runtime behavior.
+  const profile: any = profileRes.data || {};
   const assessments = assessmentsRes.data || [];
   const getPhase = (phase: number) => assessments.find((a) => a.phase === phase)?.data as Record<string, unknown> | undefined;
 

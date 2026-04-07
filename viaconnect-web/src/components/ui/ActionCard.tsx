@@ -12,8 +12,12 @@ import {
   Circle,
   Check,
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
-const iconMap: Record<string, React.ComponentType<{ className?: string; size?: number }>> = {
+// Use LucideIcon (the exported icon-component type) instead of a hand-rolled
+// React.ComponentType<{className?, size?}>. The hand-rolled type rejected the
+// ForwardRefExoticComponent that current lucide-react ships.
+const iconMap: Record<string, LucideIcon> = {
   pill: Pill,
   heart: Heart,
   activity: Activity,

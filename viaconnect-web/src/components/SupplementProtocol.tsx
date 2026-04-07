@@ -52,32 +52,36 @@ export default function SupplementProtocol() {
       .eq('user_id', user.id)
       .in('status', ['recommended', 'accepted'])
       .order('priority_rank', { ascending: true });
-    setRecs(data || []);
+    setRecs((data || []) as Rec[]);
 
-    // Fetch supplement replacements and current supplements from assessment data
+    // Fetch supplement replacements and current supplements from assessment data.
+    // assessment_results.data is jsonb (typed as Json union); cast at the read
+    // site so we can pull strongly named keys without per-property narrowing.
     const { data: summary } = await supabase
       .from('assessment_results')
       .select('data')
       .eq('user_id', user.id)
       .eq('phase', 0)
       .single();
-    if (summary?.data?.supplement_replacements) {
-      setReplacements(summary.data.supplement_replacements);
+    const summaryData = (summary?.data ?? null) as any;
+    if (summaryData?.supplement_replacements) {
+      setReplacements(summaryData.supplement_replacements);
     }
-    if (summary?.data?.current_supplements) {
-      setCurrentSupplements(summary.data.current_supplements);
+    if (summaryData?.current_supplements) {
+      setCurrentSupplements(summaryData.current_supplements);
     }
 
     // Fallback: load current supplements from Phase 4 if not in summary
-    if (!summary?.data?.current_supplements) {
+    if (!summaryData?.current_supplements) {
       const { data: phase4 } = await supabase
         .from('assessment_results')
         .select('data')
         .eq('user_id', user.id)
         .eq('phase', 4)
         .single();
-      if (phase4?.data?.supplements) {
-        setCurrentSupplements(phase4.data.supplements);
+      const phase4Data = (phase4?.data ?? null) as any;
+      if (phase4Data?.supplements) {
+        setCurrentSupplements(phase4Data.supplements);
       }
     }
 

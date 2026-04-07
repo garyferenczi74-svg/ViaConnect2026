@@ -50,7 +50,11 @@ export async function runPhotoOCRPipeline(
     // ═══ STEP 2: Cache Check ═══
     onStateChange?.("searching");
 
-    const cached = await checkCache(brand, productName).catch(() => null);
+    // checkCache returns rows from supplement_product_cache; that table is not
+    // present in the regenerated typegen, so the columns we read below
+    // (brand, product_name, ingredient_breakdown, etc.) widen to never. Cast
+    // here at the seam — runtime behavior is unchanged.
+    const cached: any = await checkCache(brand, productName).catch(() => null);
     if (cached) {
       console.log("photoPipeline: Cache hit for", brand, productName);
       return {

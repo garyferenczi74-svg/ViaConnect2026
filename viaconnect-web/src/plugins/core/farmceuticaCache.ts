@@ -17,7 +17,10 @@ export const farmceuticaCachePlugin: SupplementPlugin = {
 
   async lookupBarcode(upc: string): Promise<PluginProductResult | null> {
     const supabase = createClient();
-    const { data } = await supabase
+    // Cast the chain to any: `supplement_product_cache` is not in the current
+    // public schema (typegen omits it) but the table still exists / is queried
+    // at runtime via Supabase. Casting preserves runtime behavior.
+    const { data } = await (supabase as any)
       .from('supplement_product_cache')
       .select('*')
       .eq('upc_code', upc)

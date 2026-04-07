@@ -13,7 +13,9 @@ export async function fusePatientData(userId: string): Promise<PatientContext> {
     supabase.from("user_supplements").select("*").eq("user_id", userId).eq("is_active", true),
   ]);
 
-  const profile = profileRes.data || {};
+  // Cast to any: see unified-context.ts for context — typegen produces a strict
+  // Row type which the `|| {}` fallback widens to bare {}, losing property access.
+  const profile: any = profileRes.data || {};
   const assessments = assessmentsRes.data || [];
   const getPhase = (p: number) => assessments.find((a) => a.phase === p)?.data as Record<string, unknown> | undefined;
   const phase4 = getPhase(4) || {};

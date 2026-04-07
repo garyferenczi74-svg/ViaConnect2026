@@ -25,7 +25,11 @@ export async function fetchPreviousCAQ(userId: string): Promise<PreviousCAQData 
     .rpc("get_latest_completed_caq", { target_user_id: userId });
 
   if (versionData && versionData.length > 0) {
-    const row = versionData[0];
+    // Cast row to any: jsonb columns (demographics, healthConcerns, etc.) come
+    // back as Supabase's Json union type, which can't be assigned to the strict
+    // Record<string, unknown> / unknown[] interface fields without per-field
+    // narrowing. Casting once at the source preserves runtime behavior.
+    const row = versionData[0] as any;
     return {
       assessmentId: row.assessment_id,
       versionNumber: row.version_number,
