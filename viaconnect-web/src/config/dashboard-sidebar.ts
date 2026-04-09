@@ -64,8 +64,8 @@ export const DASHBOARD_SIDEBAR_SECTIONS: DashboardSidebarSection[] = [
   },
   {
     id: "genetics-section",
-    label: "Genetics",
-    shortLabel: "Genetics",
+    label: "Genetics Protocol",
+    shortLabel: "Genetics Protocol",
     icon: "Dna",
     scrollTarget: "#genetics-section",
     alwaysVisible: true,

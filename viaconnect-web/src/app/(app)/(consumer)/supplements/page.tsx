@@ -182,6 +182,35 @@ export default function SupplementsPage() {
         </div>
       </Section>
 
+      {/* ═══ 2b. BROWSE OUR FULL SUPPLEMENT CATALOG → /shop ═══ */}
+      <Section icon={ShoppingBag} iconColor="#2DA5A0" title="Browse Our Full Supplement Catalog" subtitle="Explore the complete ViaConnect™ shop">
+        <div className="p-5 md:p-6">
+          <a
+            href="/shop"
+            className="group relative block overflow-hidden rounded-2xl border border-teal-400/20 bg-gradient-to-br from-teal-400/10 via-teal-400/[0.04] to-transparent p-5 md:p-6 transition-all duration-300 hover:border-teal-400/40 hover:shadow-[0_0_30px_rgba(45,165,160,0.10)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744]"
+          >
+            <div className="flex items-start gap-4">
+              <PIcon icon={ShoppingBag} color="#2DA5A0" size="lg" />
+              <div className="min-w-0 flex-1">
+                <h3 className="text-base font-bold text-white md:text-lg">
+                  Browse Our Full Supplement Catalog
+                </h3>
+                <p className="mt-1 text-xs leading-relaxed text-white/50 md:text-sm">
+                  Explore the complete ViaConnect™ shop — liposomal, micellar,
+                  methylated, minerals, amino acids, botanicals, and specialty
+                  formulas. All curated for genomics-guided protocols.
+                </p>
+                <div className="mt-3 inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-teal-400/30 bg-teal-400/15 px-4 py-2.5 text-sm font-semibold text-teal-400 transition-all group-hover:border-teal-400/50 group-hover:bg-teal-400/25">
+                  <ShoppingBag className="h-4 w-4" strokeWidth={1.5} />
+                  Visit the Shop
+                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" strokeWidth={1.5} />
+                </div>
+              </div>
+            </div>
+          </a>
+        </div>
+      </Section>
+
       {/* ═══ 3. MEDICAL & HERBAL INTERACTIONS ═══ */}
       <Section icon={ShieldAlert} iconColor="#60A5FA" title="Medical & Herbal Interactions" subtitle="Medications, allergies, and interaction analysis">
         <div className="p-5 md:p-6 space-y-6">

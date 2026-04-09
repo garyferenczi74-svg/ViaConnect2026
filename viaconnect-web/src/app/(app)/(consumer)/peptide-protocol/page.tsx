@@ -4,6 +4,7 @@ import { FlaskConical } from "lucide-react";
 import { PeptideDisclaimerBanner } from "@/components/peptide-protocol/PeptideDisclaimerBanner";
 import { PeptideSearchBar } from "@/components/peptide-protocol/PeptideSearchBar";
 import { PersonalizedPeptideStack } from "@/components/peptide-protocol/PersonalizedPeptideStack";
+import { PeptideCatalogSection } from "@/components/peptide-protocol/PeptideCatalogSection";
 import { PeptidePractitionerAccess } from "@/components/peptide-protocol/PeptidePractitionerAccess";
 import { ShareProtocolButton } from "@/components/consumer/ShareProtocolButton";
 
@@ -31,6 +32,7 @@ export default function PeptideProtocolRoute() {
         <PeptideDisclaimerBanner />
         <PeptideSearchBar />
         <PersonalizedPeptideStack />
+        <PeptideCatalogSection />
         <PeptidePractitionerAccess />
 
       </div>
