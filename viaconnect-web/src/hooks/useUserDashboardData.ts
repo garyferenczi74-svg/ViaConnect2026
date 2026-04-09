@@ -141,11 +141,11 @@ export function useUserDashboardData(): DashboardData {
             .order('date', { ascending: true })
             .limit(90)
         ),
-        // Helix balance
+        // Helix balance — actual column is `balance`; alias to current_balance
         safeQuery(() =>
           supabase
             .from('helix_balances')
-            .select('current_balance, lifetime_earned')
+            .select('current_balance:balance, lifetime_earned')
             .eq('user_id', user.id)
             .single()
         ),

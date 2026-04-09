@@ -227,6 +227,37 @@ export default function GeneticsPage() {
           </div>
         </section>
 
+        {/* ═══ BROWSE FULL SNP SUPPORT FORMULATIONS → /shop#category-snp ═══ */}
+        <section
+          className="rounded-2xl border border-orange-400/20 p-6 md:p-8 relative overflow-hidden"
+          style={{ background: "linear-gradient(135deg, #1A2744, #2A1F15)" }}
+        >
+          <div className="flex items-center gap-4 mb-4">
+            <PremiumIcon icon={Dna} color="#B75E18" size="lg" />
+            <div className="min-w-0">
+              <h3 className="text-base md:text-lg font-bold text-white">
+                Browse Full SNP Support Formulations
+              </h3>
+              <p className="text-sm text-white/40 mt-0.5">
+                Methylation / GeneX360™ catalog · MTHFR, COMT, VDR &amp; 80+ variants
+              </p>
+            </div>
+          </div>
+          <p className="text-xs md:text-sm text-white/50 leading-relaxed mb-5">
+            Precision formulas designed to support common SNP patterns identified
+            by GeneX360™ — methylation cofactors, neurotransmitter balance,
+            detoxification, and more.
+          </p>
+          <Link
+            href="/shop#category-snp"
+            className="group inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-orange-400/30 bg-orange-400/15 px-4 py-2.5 text-sm font-semibold text-orange-400 transition-all hover:border-orange-400/50 hover:bg-orange-400/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744]"
+          >
+            <ShoppingCart className="w-4 h-4" strokeWidth={1.5} />
+            Browse SNP Support Catalog
+            <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" strokeWidth={1.5} />
+          </Link>
+        </section>
+
         {/* ═══ DNA UPLOAD (TEAL ACCENT) ═══ */}
         <section className="rounded-2xl border border-teal-400/15 p-6 md:p-8 relative overflow-hidden" style={{ background: "linear-gradient(135deg, #141E33, #1A2E3E)" }}>
           <div className="absolute top-4 right-4 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-teal-400/10 border border-teal-400/20 z-10">

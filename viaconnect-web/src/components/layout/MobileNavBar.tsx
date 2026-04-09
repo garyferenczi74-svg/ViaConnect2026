@@ -16,7 +16,7 @@ const PORTAL_NAV: Record<string, NavItem[]> = {
   consumer: [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/analytics', label: 'Analytics', icon: BarChart3 },
-    { href: '/genetics', label: 'Genetics', icon: Dna },
+    { href: '/genetics', label: 'Genetics Protocol', icon: Dna },
     { href: '/supplements', label: 'Supplement Protocol', icon: Pill },
     { href: '/peptide-protocol', label: 'Peptides', icon: FlaskConical },
     { href: '/plugins', label: 'Plugins', icon: Plug },
