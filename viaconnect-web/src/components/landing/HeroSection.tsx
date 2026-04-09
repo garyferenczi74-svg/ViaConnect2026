@@ -119,7 +119,7 @@ export function HeroSection() {
                             <div className="mx-auto max-w-lg text-center lg:ml-0 lg:max-w-full lg:text-left">
                                 <h1 className="mt-8 max-w-2xl text-balance text-4xl sm:text-5xl md:text-6xl lg:mt-16 xl:text-7xl font-bold text-white leading-[1.1]">
                                     <span className="block whitespace-nowrap">Precision Personal Health</span>
-                                    <span className="block text-[#B75E18]">Powered by Your Data</span>
+                                    <span className="block whitespace-nowrap text-[#B75E18]">Powered by Your Data</span>
                                 </h1>
                                 <p className="mt-8 sm:mt-10 max-w-2xl text-balance text-base sm:text-lg text-slate-300 leading-relaxed">
                                     One Genome  One Formulation  One Life at a Time
