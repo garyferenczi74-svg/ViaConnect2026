@@ -3,8 +3,22 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Sparkles, Zap, Shield, Info, ChevronDown, ChevronUp, Plus, X, RotateCcw, Dna, TestTube2, Activity, Clock, ArrowUpRight, CheckCircle, Loader2, ShoppingCart, ExternalLink } from 'lucide-react';
+import { Sparkles, Zap, Shield, Info, ChevronDown, ChevronUp, Plus, X, RotateCcw, Dna, TestTube2, Activity, Clock, ArrowUpRight, CheckCircle, Loader2, ShoppingCart, ExternalLink, Star } from 'lucide-react';
 import { buildPurchaseLink, buildViewLink } from '@/lib/utils/shopLinks';
+// Prompt #60 v2 — Layer 6 confidence scoring (browser-safe, no Node deps)
+import { score as scoreConfidence } from '@/lib/ultrathink/confidenceScorer';
+
+// Map evidence_level (already present on every Recommendation) to a numeric
+// data_confidence 0..1. Outcome data is null pre-launch — confidenceScorer
+// degrades gracefully and shows the evidence-only string.
+function evidenceToDataConfidence(level: string): number {
+  switch ((level ?? '').toLowerCase()) {
+    case 'strong':   return 0.85;
+    case 'moderate': return 0.65;
+    case 'emerging': return 0.45;
+    default:         return 0.50;
+  }
+}
 
 interface Recommendation {
   id: string; rank: number; priority: 'high' | 'medium' | 'low';
@@ -174,6 +188,19 @@ export default function RecommendedSupplements() {
                   <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                     <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${del.color}`}>{rec.delivery_form}{del.note ? ` · ${del.note}` : ''}</span>
                     <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${pri.badge}`}>{pri.label}</span>
+                    {/* Prompt #60 v2 — Ultrathink confidence pill (Layer 6) */}
+                    {(() => {
+                      const c = scoreConfidence({ data_confidence: evidenceToDataConfidence(rec.evidence_level) });
+                      return (
+                        <span
+                          title={c.ui_string}
+                          className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium bg-[rgba(183,94,24,0.15)] text-[#B75E18] border border-[rgba(183,94,24,0.35)]"
+                        >
+                          <Star className="w-3 h-3" strokeWidth={1.5} />
+                          {c.combined_pct}%
+                        </span>
+                      );
+                    })()}
                   </div>
                   <p className="text-xs text-[rgba(255,255,255,0.45)] mt-1.5">{rec.dosage} · {rec.frequency} · {rec.timing?.join(' + ')}</p>
                   {rec.replaces_current && <p className="text-xs text-[#FB923C] mt-1">Upgrades: {rec.replaces_current}</p>}

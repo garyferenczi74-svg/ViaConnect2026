@@ -12,31 +12,6 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.4"
   }
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
   public: {
     Tables: {
       advisor_agent_config: {
@@ -171,6 +146,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      advisor_peptide_shares: {
+        Row: {
+          advisor_response: string
+          created_at: string
+          id: string
+          original_question: string
+          patient_id: string
+          peptide_name: string
+          practitioner_id: string
+          practitioner_notes: string | null
+          reviewed_at: string | null
+          status: string
+        }
+        Insert: {
+          advisor_response: string
+          created_at?: string
+          id?: string
+          original_question: string
+          patient_id: string
+          peptide_name: string
+          practitioner_id: string
+          practitioner_notes?: string | null
+          reviewed_at?: string | null
+          status?: string
+        }
+        Update: {
+          advisor_response?: string
+          created_at?: string
+          id?: string
+          original_question?: string
+          patient_id?: string
+          peptide_name?: string
+          practitioner_id?: string
+          practitioner_notes?: string | null
+          reviewed_at?: string | null
+          status?: string
+        }
+        Relationships: []
       }
       advisor_snapshots: {
         Row: {
@@ -2728,6 +2742,235 @@ export type Database = {
           },
         ]
       }
+      jeffery_directives: {
+        Row: {
+          acknowledged_at: string | null
+          author_id: string
+          completed_at: string | null
+          created_at: string
+          id: string
+          instruction: string
+          jeffery_acknowledgment: string | null
+          jeffery_progress: Json | null
+          priority: string
+          scope: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          acknowledged_at?: string | null
+          author_id: string
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          instruction: string
+          jeffery_acknowledgment?: string | null
+          jeffery_progress?: Json | null
+          priority?: string
+          scope?: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          acknowledged_at?: string | null
+          author_id?: string
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          instruction?: string
+          jeffery_acknowledgment?: string | null
+          jeffery_progress?: Json | null
+          priority?: string
+          scope?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      jeffery_knowledge_entries: {
+        Row: {
+          admin_notes: string | null
+          admin_verified: boolean | null
+          confidence: number | null
+          created_at: string
+          entry_data: Json
+          entry_summary: string | null
+          entry_title: string
+          entry_type: string
+          id: string
+          message_id: string | null
+          source_name: string | null
+          source_url: string | null
+        }
+        Insert: {
+          admin_notes?: string | null
+          admin_verified?: boolean | null
+          confidence?: number | null
+          created_at?: string
+          entry_data: Json
+          entry_summary?: string | null
+          entry_title: string
+          entry_type: string
+          id?: string
+          message_id?: string | null
+          source_name?: string | null
+          source_url?: string | null
+        }
+        Update: {
+          admin_notes?: string | null
+          admin_verified?: boolean | null
+          confidence?: number | null
+          created_at?: string
+          entry_data?: Json
+          entry_summary?: string | null
+          entry_title?: string
+          entry_type?: string
+          id?: string
+          message_id?: string | null
+          source_name?: string | null
+          source_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "jeffery_knowledge_entries_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "jeffery_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      jeffery_learning_log: {
+        Row: {
+          applied_to_agents: string[] | null
+          config_changes: Json | null
+          created_at: string
+          id: string
+          lesson: string
+          lesson_category: string | null
+          source_id: string | null
+          source_type: string
+        }
+        Insert: {
+          applied_to_agents?: string[] | null
+          config_changes?: Json | null
+          created_at?: string
+          id?: string
+          lesson: string
+          lesson_category?: string | null
+          source_id?: string | null
+          source_type: string
+        }
+        Update: {
+          applied_to_agents?: string[] | null
+          config_changes?: Json | null
+          created_at?: string
+          id?: string
+          lesson?: string
+          lesson_category?: string | null
+          source_id?: string | null
+          source_type?: string
+        }
+        Relationships: []
+      }
+      jeffery_message_comments: {
+        Row: {
+          author_id: string
+          content: string
+          created_at: string
+          directive_acknowledged: boolean | null
+          directive_acknowledged_at: string | null
+          id: string
+          is_directive: boolean
+          message_id: string
+        }
+        Insert: {
+          author_id: string
+          content: string
+          created_at?: string
+          directive_acknowledged?: boolean | null
+          directive_acknowledged_at?: string | null
+          id?: string
+          is_directive?: boolean
+          message_id: string
+        }
+        Update: {
+          author_id?: string
+          content?: string
+          created_at?: string
+          directive_acknowledged?: boolean | null
+          directive_acknowledged_at?: string | null
+          id?: string
+          is_directive?: boolean
+          message_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "jeffery_message_comments_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "jeffery_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      jeffery_messages: {
+        Row: {
+          applied_action: Json | null
+          applied_at: string | null
+          category: string
+          created_at: string
+          detail: Json
+          id: string
+          proposed_action: Json | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          severity: string
+          source_agent: string | null
+          source_context: Json | null
+          status: string
+          summary: string
+          title: string
+        }
+        Insert: {
+          applied_action?: Json | null
+          applied_at?: string | null
+          category: string
+          created_at?: string
+          detail?: Json
+          id?: string
+          proposed_action?: Json | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          severity?: string
+          source_agent?: string | null
+          source_context?: Json | null
+          status?: string
+          summary: string
+          title: string
+        }
+        Update: {
+          applied_action?: Json | null
+          applied_at?: string | null
+          category?: string
+          created_at?: string
+          detail?: Json
+          id?: string
+          proposed_action?: Json | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          severity?: string
+          source_agent?: string | null
+          source_context?: Json | null
+          status?: string
+          summary?: string
+          title?: string
+        }
+        Relationships: []
+      }
       kit_registrations: {
         Row: {
           id: string
@@ -3089,6 +3332,72 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      naturopath_profiles: {
+        Row: {
+          accepting_patients: boolean
+          bio: string | null
+          created_at: string
+          id: string
+          license_number: string | null
+          license_state: string | null
+          license_type: string | null
+          metadata: Json
+          practice_address: string | null
+          practice_city: string | null
+          practice_name: string | null
+          practice_phone: string | null
+          practice_state: string | null
+          practice_zip: string | null
+          profile_photo_url: string | null
+          specialties: string[]
+          updated_at: string
+          user_id: string
+          website_url: string | null
+        }
+        Insert: {
+          accepting_patients?: boolean
+          bio?: string | null
+          created_at?: string
+          id?: string
+          license_number?: string | null
+          license_state?: string | null
+          license_type?: string | null
+          metadata?: Json
+          practice_address?: string | null
+          practice_city?: string | null
+          practice_name?: string | null
+          practice_phone?: string | null
+          practice_state?: string | null
+          practice_zip?: string | null
+          profile_photo_url?: string | null
+          specialties?: string[]
+          updated_at?: string
+          user_id: string
+          website_url?: string | null
+        }
+        Update: {
+          accepting_patients?: boolean
+          bio?: string | null
+          created_at?: string
+          id?: string
+          license_number?: string | null
+          license_state?: string | null
+          license_type?: string | null
+          metadata?: Json
+          practice_address?: string | null
+          practice_city?: string | null
+          practice_name?: string | null
+          practice_phone?: string | null
+          practice_state?: string | null
+          practice_zip?: string | null
+          profile_photo_url?: string | null
+          specialties?: string[]
+          updated_at?: string
+          user_id?: string
+          website_url?: string | null
+        }
+        Relationships: []
       }
       notifications: {
         Row: {
@@ -4267,6 +4576,122 @@ export type Database = {
         }
         Relationships: []
       }
+      protocol_share_activity: {
+        Row: {
+          action: string
+          actor_id: string
+          created_at: string
+          details: Json
+          id: string
+          share_id: string
+        }
+        Insert: {
+          action: string
+          actor_id: string
+          created_at?: string
+          details?: Json
+          id?: string
+          share_id: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string
+          created_at?: string
+          details?: Json
+          id?: string
+          share_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "protocol_share_activity_share_id_fkey"
+            columns: ["share_id"]
+            isOneToOne: false
+            referencedRelation: "protocol_shares"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      protocol_shares: {
+        Row: {
+          accepted_at: string | null
+          can_modify_protocol: boolean
+          can_order_on_behalf: boolean
+          can_recommend_products: boolean
+          created_at: string
+          expires_at: string | null
+          id: string
+          invite_code: string
+          invite_email: string | null
+          metadata: Json
+          notes: string | null
+          patient_id: string
+          provider_id: string | null
+          provider_type: string
+          revoked_at: string | null
+          share_bio_optimization_score: boolean
+          share_caq_data: boolean
+          share_genetic_results: boolean
+          share_lab_results: boolean
+          share_peptide_recommendations: boolean
+          share_supplements: boolean
+          share_wellness_analytics: boolean
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          can_modify_protocol?: boolean
+          can_order_on_behalf?: boolean
+          can_recommend_products?: boolean
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          invite_code: string
+          invite_email?: string | null
+          metadata?: Json
+          notes?: string | null
+          patient_id: string
+          provider_id?: string | null
+          provider_type: string
+          revoked_at?: string | null
+          share_bio_optimization_score?: boolean
+          share_caq_data?: boolean
+          share_genetic_results?: boolean
+          share_lab_results?: boolean
+          share_peptide_recommendations?: boolean
+          share_supplements?: boolean
+          share_wellness_analytics?: boolean
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          can_modify_protocol?: boolean
+          can_order_on_behalf?: boolean
+          can_recommend_products?: boolean
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          invite_code?: string
+          invite_email?: string | null
+          metadata?: Json
+          notes?: string | null
+          patient_id?: string
+          provider_id?: string | null
+          provider_type?: string
+          revoked_at?: string | null
+          share_bio_optimization_score?: boolean
+          share_caq_data?: boolean
+          share_genetic_results?: boolean
+          share_lab_results?: boolean
+          share_peptide_recommendations?: boolean
+          share_supplements?: boolean
+          share_wellness_analytics?: boolean
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       protocol_templates: {
         Row: {
           bio_improvements: string[]
@@ -4506,6 +4931,265 @@ export type Database = {
           urgent_reorders?: number | null
         }
         Relationships: []
+      }
+      research_hub_alerts: {
+        Row: {
+          alert_type: string
+          body: string | null
+          created_at: string
+          id: string
+          is_read: boolean
+          title: string
+          user_id: string
+          user_item_id: string
+        }
+        Insert: {
+          alert_type?: string
+          body?: string | null
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          title: string
+          user_id: string
+          user_item_id: string
+        }
+        Update: {
+          alert_type?: string
+          body?: string | null
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          title?: string
+          user_id?: string
+          user_item_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "research_hub_alerts_user_item_id_fkey"
+            columns: ["user_item_id"]
+            isOneToOne: false
+            referencedRelation: "research_hub_user_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      research_hub_categories: {
+        Row: {
+          created_at: string
+          description: string | null
+          icon_name: string
+          id: string
+          is_default: boolean
+          label: string
+          slug: string
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          icon_name: string
+          id?: string
+          is_default?: boolean
+          label: string
+          slug: string
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          icon_name?: string
+          id?: string
+          is_default?: boolean
+          label?: string
+          slug?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
+      research_hub_items: {
+        Row: {
+          author: string | null
+          category_id: string
+          created_at: string
+          id: string
+          image_url: string | null
+          original_url: string | null
+          published_at: string | null
+          raw_metadata: Json
+          source_name: string
+          summary: string | null
+          tags: string[]
+          title: string
+        }
+        Insert: {
+          author?: string | null
+          category_id: string
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          original_url?: string | null
+          published_at?: string | null
+          raw_metadata?: Json
+          source_name: string
+          summary?: string | null
+          tags?: string[]
+          title: string
+        }
+        Update: {
+          author?: string | null
+          category_id?: string
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          original_url?: string | null
+          published_at?: string | null
+          raw_metadata?: Json
+          source_name?: string
+          summary?: string | null
+          tags?: string[]
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "research_hub_items_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "research_hub_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      research_hub_user_items: {
+        Row: {
+          id: string
+          is_bookmarked: boolean
+          is_dismissed: boolean
+          is_read: boolean
+          item_id: string
+          matched_domains: string[]
+          read_at: string | null
+          relevance_reasons: Json
+          relevance_score: number
+          surfaced_at: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          is_bookmarked?: boolean
+          is_dismissed?: boolean
+          is_read?: boolean
+          item_id: string
+          matched_domains?: string[]
+          read_at?: string | null
+          relevance_reasons?: Json
+          relevance_score?: number
+          surfaced_at?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          is_bookmarked?: boolean
+          is_dismissed?: boolean
+          is_read?: boolean
+          item_id?: string
+          matched_domains?: string[]
+          read_at?: string | null
+          relevance_reasons?: Json
+          relevance_score?: number
+          surfaced_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "research_hub_user_items_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "research_hub_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      research_hub_user_sources: {
+        Row: {
+          added_at: string
+          category_id: string
+          id: string
+          is_active: boolean
+          is_custom: boolean
+          notify_alerts: boolean
+          source_icon_url: string | null
+          source_name: string
+          source_type: string
+          source_url: string | null
+          user_id: string
+        }
+        Insert: {
+          added_at?: string
+          category_id: string
+          id?: string
+          is_active?: boolean
+          is_custom?: boolean
+          notify_alerts?: boolean
+          source_icon_url?: string | null
+          source_name: string
+          source_type: string
+          source_url?: string | null
+          user_id: string
+        }
+        Update: {
+          added_at?: string
+          category_id?: string
+          id?: string
+          is_active?: boolean
+          is_custom?: boolean
+          notify_alerts?: boolean
+          source_icon_url?: string | null
+          source_name?: string
+          source_type?: string
+          source_url?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "research_hub_user_sources_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "research_hub_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      research_hub_user_tabs: {
+        Row: {
+          activated_at: string
+          category_id: string
+          id: string
+          is_active: boolean
+          user_id: string
+        }
+        Insert: {
+          activated_at?: string
+          category_id: string
+          id?: string
+          is_active?: boolean
+          user_id: string
+        }
+        Update: {
+          activated_at?: string
+          category_id?: string
+          id?: string
+          is_active?: boolean
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "research_hub_user_tabs_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "research_hub_categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       reward_redemptions: {
         Row: {
@@ -4858,6 +5542,250 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      shop_cart_items: {
+        Row: {
+          created_at: string
+          delivery_form: string | null
+          id: string
+          metadata: Json
+          product_name: string
+          product_slug: string
+          product_type: string
+          quantity: number
+          unit_price_cents: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          delivery_form?: string | null
+          id?: string
+          metadata?: Json
+          product_name: string
+          product_slug: string
+          product_type?: string
+          quantity?: number
+          unit_price_cents?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          delivery_form?: string | null
+          id?: string
+          metadata?: Json
+          product_name?: string
+          product_slug?: string
+          product_type?: string
+          quantity?: number
+          unit_price_cents?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      shop_order_items: {
+        Row: {
+          created_at: string
+          delivery_form: string | null
+          id: string
+          line_total_cents: number
+          metadata: Json
+          order_id: string
+          product_name: string
+          product_slug: string
+          product_type: string
+          quantity: number
+          unit_price_cents: number
+        }
+        Insert: {
+          created_at?: string
+          delivery_form?: string | null
+          id?: string
+          line_total_cents?: number
+          metadata?: Json
+          order_id: string
+          product_name: string
+          product_slug: string
+          product_type: string
+          quantity?: number
+          unit_price_cents?: number
+        }
+        Update: {
+          created_at?: string
+          delivery_form?: string | null
+          id?: string
+          line_total_cents?: number
+          metadata?: Json
+          order_id?: string
+          product_name?: string
+          product_slug?: string
+          product_type?: string
+          quantity?: number
+          unit_price_cents?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shop_order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "shop_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shop_order_status_history: {
+        Row: {
+          carrier: string | null
+          created_at: string
+          description: string | null
+          id: string
+          metadata: Json
+          order_id: string
+          status: string
+          title: string
+          tracking_number: string | null
+          tracking_url: string | null
+        }
+        Insert: {
+          carrier?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          metadata?: Json
+          order_id: string
+          status: string
+          title: string
+          tracking_number?: string | null
+          tracking_url?: string | null
+        }
+        Update: {
+          carrier?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          metadata?: Json
+          order_id?: string
+          status?: string
+          title?: string
+          tracking_number?: string | null
+          tracking_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shop_order_status_history_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "shop_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shop_orders: {
+        Row: {
+          cancellation_reason: string | null
+          cancelled_at: string | null
+          carrier: string | null
+          created_at: string
+          delivered_at: string | null
+          discount_cents: number
+          discount_code: string | null
+          estimated_delivery_date: string | null
+          id: string
+          metadata: Json
+          notes: string | null
+          order_number: string
+          portal_type: string
+          shipping_address_line1: string | null
+          shipping_address_line2: string | null
+          shipping_cents: number
+          shipping_city: string | null
+          shipping_country: string | null
+          shipping_email: string | null
+          shipping_first_name: string | null
+          shipping_last_name: string | null
+          shipping_phone: string | null
+          shipping_state: string | null
+          shipping_zip: string | null
+          status: string
+          subtotal_cents: number
+          tax_cents: number
+          total_cents: number
+          tracking_number: string | null
+          tracking_url: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          carrier?: string | null
+          created_at?: string
+          delivered_at?: string | null
+          discount_cents?: number
+          discount_code?: string | null
+          estimated_delivery_date?: string | null
+          id?: string
+          metadata?: Json
+          notes?: string | null
+          order_number: string
+          portal_type?: string
+          shipping_address_line1?: string | null
+          shipping_address_line2?: string | null
+          shipping_cents?: number
+          shipping_city?: string | null
+          shipping_country?: string | null
+          shipping_email?: string | null
+          shipping_first_name?: string | null
+          shipping_last_name?: string | null
+          shipping_phone?: string | null
+          shipping_state?: string | null
+          shipping_zip?: string | null
+          status?: string
+          subtotal_cents?: number
+          tax_cents?: number
+          total_cents?: number
+          tracking_number?: string | null
+          tracking_url?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          carrier?: string | null
+          created_at?: string
+          delivered_at?: string | null
+          discount_cents?: number
+          discount_code?: string | null
+          estimated_delivery_date?: string | null
+          id?: string
+          metadata?: Json
+          notes?: string | null
+          order_number?: string
+          portal_type?: string
+          shipping_address_line1?: string | null
+          shipping_address_line2?: string | null
+          shipping_cents?: number
+          shipping_city?: string | null
+          shipping_country?: string | null
+          shipping_email?: string | null
+          shipping_first_name?: string | null
+          shipping_last_name?: string | null
+          shipping_phone?: string | null
+          shipping_state?: string | null
+          shipping_zip?: string | null
+          status?: string
+          subtotal_cents?: number
+          tax_cents?: number
+          total_cents?: number
+          tracking_number?: string | null
+          tracking_url?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       sku_rationalization: {
         Row: {
@@ -5534,6 +6462,227 @@ export type Database = {
           },
         ]
       }
+      ultrathink_advisor_conversations: {
+        Row: {
+          advisor_role: string
+          category: string | null
+          confidence: number | null
+          content: string
+          context_snapshot: Json | null
+          created_at: string
+          escalated: boolean
+          guardrail_triggered: boolean
+          guardrail_type: string | null
+          id: string
+          message_role: string
+          patient_id: string | null
+          response_length: number | null
+          user_id: string
+        }
+        Insert: {
+          advisor_role: string
+          category?: string | null
+          confidence?: number | null
+          content: string
+          context_snapshot?: Json | null
+          created_at?: string
+          escalated?: boolean
+          guardrail_triggered?: boolean
+          guardrail_type?: string | null
+          id?: string
+          message_role: string
+          patient_id?: string | null
+          response_length?: number | null
+          user_id: string
+        }
+        Update: {
+          advisor_role?: string
+          category?: string | null
+          confidence?: number | null
+          content?: string
+          context_snapshot?: Json | null
+          created_at?: string
+          escalated?: boolean
+          guardrail_triggered?: boolean
+          guardrail_type?: string | null
+          id?: string
+          message_role?: string
+          patient_id?: string | null
+          response_length?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      ultrathink_advisor_evolution_reports: {
+        Row: {
+          actions_taken: Json | null
+          created_at: string
+          degradation_detected: boolean
+          id: string
+          metrics: Json
+          role: string
+          week_of: string
+        }
+        Insert: {
+          actions_taken?: Json | null
+          created_at?: string
+          degradation_detected?: boolean
+          id?: string
+          metrics: Json
+          role: string
+          week_of: string
+        }
+        Update: {
+          actions_taken?: Json | null
+          created_at?: string
+          degradation_detected?: boolean
+          id?: string
+          metrics?: Json
+          role?: string
+          week_of?: string
+        }
+        Relationships: []
+      }
+      ultrathink_advisor_prompts: {
+        Row: {
+          created_at: string
+          created_by: string
+          deactivated_at: string | null
+          id: string
+          is_active: boolean
+          role: string
+          system_prompt: string
+          version: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string
+          deactivated_at?: string | null
+          id?: string
+          is_active?: boolean
+          role: string
+          system_prompt: string
+          version?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          deactivated_at?: string | null
+          id?: string
+          is_active?: boolean
+          role?: string
+          system_prompt?: string
+          version?: number
+        }
+        Relationships: []
+      }
+      ultrathink_advisor_query_log: {
+        Row: {
+          advisor_role: string
+          context_snapshot: Json | null
+          created_at: string
+          id: string
+          message: string
+          model_used: string | null
+          patient_id: string | null
+          response_time_ms: number | null
+          satisfaction_rating: number | null
+          tokens_used: number | null
+          user_id: string
+        }
+        Insert: {
+          advisor_role: string
+          context_snapshot?: Json | null
+          created_at?: string
+          id?: string
+          message: string
+          model_used?: string | null
+          patient_id?: string | null
+          response_time_ms?: number | null
+          satisfaction_rating?: number | null
+          tokens_used?: number | null
+          user_id: string
+        }
+        Update: {
+          advisor_role?: string
+          context_snapshot?: Json | null
+          created_at?: string
+          id?: string
+          message?: string
+          model_used?: string | null
+          patient_id?: string | null
+          response_time_ms?: number | null
+          satisfaction_rating?: number | null
+          tokens_used?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      ultrathink_advisor_ratings: {
+        Row: {
+          conversation_id: string
+          created_at: string
+          feedback: string | null
+          id: string
+          rating: number
+          user_id: string
+        }
+        Insert: {
+          conversation_id: string
+          created_at?: string
+          feedback?: string | null
+          id?: string
+          rating: number
+          user_id: string
+        }
+        Update: {
+          conversation_id?: string
+          created_at?: string
+          feedback?: string | null
+          id?: string
+          rating?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ultrathink_advisor_ratings_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "ultrathink_advisor_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ultrathink_agent_events: {
+        Row: {
+          agent_name: string
+          created_at: string
+          event_type: string
+          id: string
+          payload: Json
+          run_id: string | null
+          severity: string
+        }
+        Insert: {
+          agent_name: string
+          created_at?: string
+          event_type: string
+          id?: string
+          payload?: Json
+          run_id?: string | null
+          severity?: string
+        }
+        Update: {
+          agent_name?: string
+          created_at?: string
+          event_type?: string
+          id?: string
+          payload?: Json
+          run_id?: string | null
+          severity?: string
+        }
+        Relationships: []
+      }
       ultrathink_agent_log: {
         Row: {
           created_at: string | null
@@ -5577,6 +6726,714 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      ultrathink_agent_registry: {
+        Row: {
+          agent_name: string
+          agent_type: string
+          consecutive_misses: number
+          description: string
+          display_name: string
+          expected_period_minutes: number | null
+          health_check_query: string | null
+          health_status: string
+          id: string
+          is_active: boolean
+          is_critical: boolean
+          last_health_check_at: string | null
+          last_heartbeat_at: string | null
+          origin_prompt: string | null
+          registered_at: string
+          reports: string | null
+          runtime_handle: string | null
+          runtime_kind: string
+          tier: number
+          updated_at: string
+        }
+        Insert: {
+          agent_name: string
+          agent_type: string
+          consecutive_misses?: number
+          description: string
+          display_name: string
+          expected_period_minutes?: number | null
+          health_check_query?: string | null
+          health_status?: string
+          id?: string
+          is_active?: boolean
+          is_critical?: boolean
+          last_health_check_at?: string | null
+          last_heartbeat_at?: string | null
+          origin_prompt?: string | null
+          registered_at?: string
+          reports?: string | null
+          runtime_handle?: string | null
+          runtime_kind: string
+          tier: number
+          updated_at?: string
+        }
+        Update: {
+          agent_name?: string
+          agent_type?: string
+          consecutive_misses?: number
+          description?: string
+          display_name?: string
+          expected_period_minutes?: number | null
+          health_check_query?: string | null
+          health_status?: string
+          id?: string
+          is_active?: boolean
+          is_critical?: boolean
+          last_health_check_at?: string | null
+          last_heartbeat_at?: string | null
+          origin_prompt?: string | null
+          registered_at?: string
+          reports?: string | null
+          runtime_handle?: string | null
+          runtime_kind?: string
+          tier?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ultrathink_agent_tasks: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          error_message: string | null
+          id: string
+          max_retries: number
+          payload: Json
+          priority: number
+          result: Json | null
+          retry_count: number
+          scheduled_for: string
+          started_at: string | null
+          status: string
+          task_type: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          max_retries?: number
+          payload?: Json
+          priority?: number
+          result?: Json | null
+          retry_count?: number
+          scheduled_for?: string
+          started_at?: string | null
+          status?: string
+          task_type: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          max_retries?: number
+          payload?: Json
+          priority?: number
+          result?: Json | null
+          retry_count?: number
+          scheduled_for?: string
+          started_at?: string | null
+          status?: string
+          task_type?: string
+        }
+        Relationships: []
+      }
+      ultrathink_clinical_rules: {
+        Row: {
+          bioavailability_note: string | null
+          combined_score: number | null
+          created_at: string
+          delivery_form: string | null
+          deprecated_at: string | null
+          deprecation_reason: string | null
+          dosage: string | null
+          evidence_level: string
+          evidence_score: number
+          frequency: string | null
+          health_signals: string[] | null
+          id: string
+          is_active: boolean
+          outcome_n: number
+          outcome_score: number | null
+          product_category: string | null
+          product_name: string | null
+          rationale_template: string | null
+          rule_id: string
+          rule_name: string
+          source_rule_table: string | null
+          timing: string[] | null
+          trigger_field: string | null
+          trigger_operator: string | null
+          trigger_type: string
+          trigger_value: string | null
+          updated_at: string
+        }
+        Insert: {
+          bioavailability_note?: string | null
+          combined_score?: number | null
+          created_at?: string
+          delivery_form?: string | null
+          deprecated_at?: string | null
+          deprecation_reason?: string | null
+          dosage?: string | null
+          evidence_level?: string
+          evidence_score?: number
+          frequency?: string | null
+          health_signals?: string[] | null
+          id?: string
+          is_active?: boolean
+          outcome_n?: number
+          outcome_score?: number | null
+          product_category?: string | null
+          product_name?: string | null
+          rationale_template?: string | null
+          rule_id: string
+          rule_name: string
+          source_rule_table?: string | null
+          timing?: string[] | null
+          trigger_field?: string | null
+          trigger_operator?: string | null
+          trigger_type: string
+          trigger_value?: string | null
+          updated_at?: string
+        }
+        Update: {
+          bioavailability_note?: string | null
+          combined_score?: number | null
+          created_at?: string
+          delivery_form?: string | null
+          deprecated_at?: string | null
+          deprecation_reason?: string | null
+          dosage?: string | null
+          evidence_level?: string
+          evidence_score?: number
+          frequency?: string | null
+          health_signals?: string[] | null
+          id?: string
+          is_active?: boolean
+          outcome_n?: number
+          outcome_score?: number | null
+          product_category?: string | null
+          product_name?: string | null
+          rationale_template?: string | null
+          rule_id?: string
+          rule_name?: string
+          source_rule_table?: string | null
+          timing?: string[] | null
+          trigger_field?: string | null
+          trigger_operator?: string | null
+          trigger_type?: string
+          trigger_value?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ultrathink_data_feeds: {
+        Row: {
+          base_url: string | null
+          circuit_open_until: string | null
+          consecutive_failures: number
+          cost_per_run_usd: number
+          cost_tier: string
+          created_at: string
+          daily_budget_usd: number
+          display_name: string
+          id: string
+          is_active: boolean
+          last_run_at: string | null
+          last_status: string | null
+          next_run_at: string | null
+          notes: string | null
+          schedule_cron: string
+          source: string
+          spent_reset_at: string
+          total_spent_lifetime_usd: number
+          total_spent_today_usd: number
+          updated_at: string
+        }
+        Insert: {
+          base_url?: string | null
+          circuit_open_until?: string | null
+          consecutive_failures?: number
+          cost_per_run_usd?: number
+          cost_tier: string
+          created_at?: string
+          daily_budget_usd?: number
+          display_name: string
+          id?: string
+          is_active?: boolean
+          last_run_at?: string | null
+          last_status?: string | null
+          next_run_at?: string | null
+          notes?: string | null
+          schedule_cron: string
+          source: string
+          spent_reset_at?: string
+          total_spent_lifetime_usd?: number
+          total_spent_today_usd?: number
+          updated_at?: string
+        }
+        Update: {
+          base_url?: string | null
+          circuit_open_until?: string | null
+          consecutive_failures?: number
+          cost_per_run_usd?: number
+          cost_tier?: string
+          created_at?: string
+          daily_budget_usd?: number
+          display_name?: string
+          id?: string
+          is_active?: boolean
+          last_run_at?: string | null
+          last_status?: string | null
+          next_run_at?: string | null
+          notes?: string | null
+          schedule_cron?: string
+          source?: string
+          spent_reset_at?: string
+          total_spent_lifetime_usd?: number
+          total_spent_today_usd?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ultrathink_interaction_rules: {
+        Row: {
+          agent_a: string
+          agent_a_kind: string
+          agent_b: string
+          agent_b_kind: string
+          created_at: string
+          evidence_score: number
+          id: string
+          is_active: boolean
+          mechanism: string | null
+          recommendation: string
+          severity: string
+          source: string
+          source_ids: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          agent_a: string
+          agent_a_kind: string
+          agent_b: string
+          agent_b_kind: string
+          created_at?: string
+          evidence_score?: number
+          id?: string
+          is_active?: boolean
+          mechanism?: string | null
+          recommendation: string
+          severity: string
+          source: string
+          source_ids?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          agent_a?: string
+          agent_a_kind?: string
+          agent_b?: string
+          agent_b_kind?: string
+          created_at?: string
+          evidence_score?: number
+          id?: string
+          is_active?: boolean
+          mechanism?: string | null
+          recommendation?: string
+          severity?: string
+          source?: string
+          source_ids?: string[] | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ultrathink_jeffery_advisor_config: {
+        Row: {
+          auto_applied: boolean
+          created_at: string
+          id: string
+          instructions: string
+          is_active: boolean
+          reason: string | null
+          role: string
+        }
+        Insert: {
+          auto_applied?: boolean
+          created_at?: string
+          id?: string
+          instructions: string
+          is_active?: boolean
+          reason?: string | null
+          role: string
+        }
+        Update: {
+          auto_applied?: boolean
+          created_at?: string
+          id?: string
+          instructions?: string
+          is_active?: boolean
+          reason?: string | null
+          role?: string
+        }
+        Relationships: []
+      }
+      ultrathink_jeffery_decisions: {
+        Row: {
+          created_at: string
+          decision_type: string
+          id: string
+          inputs: Json
+          outcome: Json | null
+          rationale: string
+          reviewed_at: string | null
+          run_id: string
+          target_agent: string | null
+          was_correct: boolean | null
+        }
+        Insert: {
+          created_at?: string
+          decision_type: string
+          id?: string
+          inputs?: Json
+          outcome?: Json | null
+          rationale: string
+          reviewed_at?: string | null
+          run_id: string
+          target_agent?: string | null
+          was_correct?: boolean | null
+        }
+        Update: {
+          created_at?: string
+          decision_type?: string
+          id?: string
+          inputs?: Json
+          outcome?: Json | null
+          rationale?: string
+          reviewed_at?: string | null
+          run_id?: string
+          target_agent?: string | null
+          was_correct?: boolean | null
+        }
+        Relationships: []
+      }
+      ultrathink_jeffery_evolution: {
+        Row: {
+          agent_name: string | null
+          created_at: string
+          delta_pct: number | null
+          entry_type: string
+          id: string
+          metric_name: string | null
+          metric_value: number | null
+          notes: string | null
+          payload: Json
+          population_size: number | null
+          rolling_30d_avg: number | null
+          week_starting: string | null
+        }
+        Insert: {
+          agent_name?: string | null
+          created_at?: string
+          delta_pct?: number | null
+          entry_type: string
+          id?: string
+          metric_name?: string | null
+          metric_value?: number | null
+          notes?: string | null
+          payload?: Json
+          population_size?: number | null
+          rolling_30d_avg?: number | null
+          week_starting?: string | null
+        }
+        Update: {
+          agent_name?: string | null
+          created_at?: string
+          delta_pct?: number | null
+          entry_type?: string
+          id?: string
+          metric_name?: string | null
+          metric_value?: number | null
+          notes?: string | null
+          payload?: Json
+          population_size?: number | null
+          rolling_30d_avg?: number | null
+          week_starting?: string | null
+        }
+        Relationships: []
+      }
+      ultrathink_knowledge_base: {
+        Row: {
+          citations: Json
+          created_at: string
+          domain: string
+          effect_size: number | null
+          evidence_level: string
+          evidence_score: number
+          fact_hash: string
+          id: string
+          last_validated: string
+          object: string
+          predicate: string
+          source_count: number
+          subject: string
+          updated_at: string
+        }
+        Insert: {
+          citations?: Json
+          created_at?: string
+          domain: string
+          effect_size?: number | null
+          evidence_level?: string
+          evidence_score?: number
+          fact_hash: string
+          id?: string
+          last_validated?: string
+          object: string
+          predicate: string
+          source_count?: number
+          subject: string
+          updated_at?: string
+        }
+        Update: {
+          citations?: Json
+          created_at?: string
+          domain?: string
+          effect_size?: number | null
+          evidence_level?: string
+          evidence_score?: number
+          fact_hash?: string
+          id?: string
+          last_validated?: string
+          object?: string
+          predicate?: string
+          source_count?: number
+          subject?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ultrathink_knowledge_graph_edges: {
+        Row: {
+          created_at: string
+          dst_fact_id: string
+          id: string
+          relation: string
+          src_fact_id: string
+          weight: number
+        }
+        Insert: {
+          created_at?: string
+          dst_fact_id: string
+          id?: string
+          relation: string
+          src_fact_id: string
+          weight?: number
+        }
+        Update: {
+          created_at?: string
+          dst_fact_id?: string
+          id?: string
+          relation?: string
+          src_fact_id?: string
+          weight?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ultrathink_knowledge_graph_edges_dst_fact_id_fkey"
+            columns: ["dst_fact_id"]
+            isOneToOne: false
+            referencedRelation: "ultrathink_knowledge_base"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ultrathink_knowledge_graph_edges_src_fact_id_fkey"
+            columns: ["src_fact_id"]
+            isOneToOne: false
+            referencedRelation: "ultrathink_knowledge_base"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ultrathink_nutrient_rda: {
+        Row: {
+          age_group: string
+          id: string
+          nutrient: string
+          rda_unit: string | null
+          rda_value: number | null
+          retrieved_at: string
+          source: string
+          source_url: string | null
+          upper_limit: number | null
+          upper_limit_unit: string | null
+        }
+        Insert: {
+          age_group: string
+          id?: string
+          nutrient: string
+          rda_unit?: string | null
+          rda_value?: number | null
+          retrieved_at?: string
+          source?: string
+          source_url?: string | null
+          upper_limit?: number | null
+          upper_limit_unit?: string | null
+        }
+        Update: {
+          age_group?: string
+          id?: string
+          nutrient?: string
+          rda_unit?: string | null
+          rda_value?: number | null
+          retrieved_at?: string
+          source?: string
+          source_url?: string | null
+          upper_limit?: number | null
+          upper_limit_unit?: string | null
+        }
+        Relationships: []
+      }
+      ultrathink_outcome_tracker: {
+        Row: {
+          age_bracket: string
+          bio_score_after_30d: number | null
+          bio_score_after_60d: number | null
+          bio_score_before: number
+          condition_pattern: string
+          delta_30d: number | null
+          delta_60d: number | null
+          id: string
+          improved: boolean | null
+          product_name: string
+          recommendation_at: string
+          recommendation_hash: string
+          recorded_at: string
+          sex_bracket: string | null
+        }
+        Insert: {
+          age_bracket: string
+          bio_score_after_30d?: number | null
+          bio_score_after_60d?: number | null
+          bio_score_before: number
+          condition_pattern: string
+          delta_30d?: number | null
+          delta_60d?: number | null
+          id?: string
+          improved?: boolean | null
+          product_name: string
+          recommendation_at: string
+          recommendation_hash: string
+          recorded_at?: string
+          sex_bracket?: string | null
+        }
+        Update: {
+          age_bracket?: string
+          bio_score_after_30d?: number | null
+          bio_score_after_60d?: number | null
+          bio_score_before?: number
+          condition_pattern?: string
+          delta_30d?: number | null
+          delta_60d?: number | null
+          id?: string
+          improved?: boolean | null
+          product_name?: string
+          recommendation_at?: string
+          recommendation_hash?: string
+          recorded_at?: string
+          sex_bracket?: string | null
+        }
+        Relationships: []
+      }
+      ultrathink_pattern_cache: {
+        Row: {
+          built_at: string
+          combined_confidence: number | null
+          data_confidence: number
+          expires_at: string | null
+          hit_count: number
+          id: string
+          last_hit_at: string | null
+          outcome_confidence: number | null
+          pattern_hash: string
+          protocol_payload: Json
+          sample_n: number
+          signal_summary: string
+          source_rule_ids: string[] | null
+        }
+        Insert: {
+          built_at?: string
+          combined_confidence?: number | null
+          data_confidence: number
+          expires_at?: string | null
+          hit_count?: number
+          id?: string
+          last_hit_at?: string | null
+          outcome_confidence?: number | null
+          pattern_hash: string
+          protocol_payload: Json
+          sample_n?: number
+          signal_summary: string
+          source_rule_ids?: string[] | null
+        }
+        Update: {
+          built_at?: string
+          combined_confidence?: number | null
+          data_confidence?: number
+          expires_at?: string | null
+          hit_count?: number
+          id?: string
+          last_hit_at?: string | null
+          outcome_confidence?: number | null
+          pattern_hash?: string
+          protocol_payload?: Json
+          sample_n?: number
+          signal_summary?: string
+          source_rule_ids?: string[] | null
+        }
+        Relationships: []
+      }
+      ultrathink_product_efficacy: {
+        Row: {
+          avg_delta_60d: number | null
+          computed_at: string
+          condition_pattern: string | null
+          id: string
+          improved_n: number
+          improvement_rate: number | null
+          median_delta_60d: number | null
+          product_name: string
+          sample_n: number
+        }
+        Insert: {
+          avg_delta_60d?: number | null
+          computed_at?: string
+          condition_pattern?: string | null
+          id?: string
+          improved_n?: number
+          improvement_rate?: number | null
+          median_delta_60d?: number | null
+          product_name: string
+          sample_n?: number
+        }
+        Update: {
+          avg_delta_60d?: number | null
+          computed_at?: string
+          condition_pattern?: string | null
+          id?: string
+          improved_n?: number
+          improvement_rate?: number | null
+          median_delta_60d?: number | null
+          product_name?: string
+          sample_n?: number
+        }
+        Relationships: []
       }
       ultrathink_protocols: {
         Row: {
@@ -5766,6 +7623,108 @@ export type Database = {
           },
         ]
       }
+      ultrathink_research_feed: {
+        Row: {
+          abstract: string | null
+          authors: string[] | null
+          external_id: string
+          fetched_at: string
+          id: string
+          knowledge_ids: string[] | null
+          process_error: string | null
+          processed_at: string | null
+          published_at: string | null
+          raw_payload: Json | null
+          source: string
+          status: string
+          title: string
+          url: string | null
+        }
+        Insert: {
+          abstract?: string | null
+          authors?: string[] | null
+          external_id: string
+          fetched_at?: string
+          id?: string
+          knowledge_ids?: string[] | null
+          process_error?: string | null
+          processed_at?: string | null
+          published_at?: string | null
+          raw_payload?: Json | null
+          source: string
+          status?: string
+          title: string
+          url?: string | null
+        }
+        Update: {
+          abstract?: string | null
+          authors?: string[] | null
+          external_id?: string
+          fetched_at?: string
+          id?: string
+          knowledge_ids?: string[] | null
+          process_error?: string | null
+          processed_at?: string | null
+          published_at?: string | null
+          raw_payload?: Json | null
+          source?: string
+          status?: string
+          title?: string
+          url?: string | null
+        }
+        Relationships: []
+      }
+      ultrathink_sync_log: {
+        Row: {
+          action: string
+          cost_usd: number
+          created_at: string
+          duration_ms: number | null
+          error_message: string | null
+          id: string
+          metadata: Json | null
+          records_added: number
+          records_error: number
+          records_in: number
+          records_skipped: number
+          run_id: string
+          source: string
+          status: string
+        }
+        Insert: {
+          action: string
+          cost_usd?: number
+          created_at?: string
+          duration_ms?: number | null
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          records_added?: number
+          records_error?: number
+          records_in?: number
+          records_skipped?: number
+          run_id: string
+          source: string
+          status?: string
+        }
+        Update: {
+          action?: string
+          cost_usd?: number
+          created_at?: string
+          duration_ms?: number | null
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          records_added?: number
+          records_error?: number
+          records_in?: number
+          records_skipped?: number
+          run_id?: string
+          source?: string
+          status?: string
+        }
+        Relationships: []
+      }
       unit_economics: {
         Row: {
           annual_profit_per_customer: number
@@ -5860,6 +7819,60 @@ export type Database = {
             referencedColumns: ["sku"]
           },
         ]
+      }
+      user_addresses: {
+        Row: {
+          address_line1: string
+          address_line2: string | null
+          city: string
+          country: string
+          created_at: string
+          first_name: string
+          id: string
+          is_default: boolean
+          label: string
+          last_name: string
+          phone: string | null
+          state: string
+          updated_at: string
+          user_id: string
+          zip: string
+        }
+        Insert: {
+          address_line1: string
+          address_line2?: string | null
+          city: string
+          country?: string
+          created_at?: string
+          first_name: string
+          id?: string
+          is_default?: boolean
+          label?: string
+          last_name: string
+          phone?: string | null
+          state: string
+          updated_at?: string
+          user_id: string
+          zip: string
+        }
+        Update: {
+          address_line1?: string
+          address_line2?: string | null
+          city?: string
+          country?: string
+          created_at?: string
+          first_name?: string
+          id?: string
+          is_default?: boolean
+          label?: string
+          last_name?: string
+          phone?: string | null
+          state?: string
+          updated_at?: string
+          user_id?: string
+          zip?: string
+        }
+        Relationships: []
       }
       user_current_supplements: {
         Row: {
@@ -6022,6 +8035,54 @@ export type Database = {
           },
         ]
       }
+      user_notification_preferences: {
+        Row: {
+          created_at: string
+          email_delivery_confirmation: boolean
+          email_newsletter: boolean
+          email_order_updates: boolean
+          email_promotions: boolean
+          email_protocol_recommendations: boolean
+          email_shipping_updates: boolean
+          id: string
+          push_bio_score_milestones: boolean
+          push_order_updates: boolean
+          push_protocol_changes: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email_delivery_confirmation?: boolean
+          email_newsletter?: boolean
+          email_order_updates?: boolean
+          email_promotions?: boolean
+          email_protocol_recommendations?: boolean
+          email_shipping_updates?: boolean
+          id?: string
+          push_bio_score_milestones?: boolean
+          push_order_updates?: boolean
+          push_protocol_changes?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email_delivery_confirmation?: boolean
+          email_newsletter?: boolean
+          email_order_updates?: boolean
+          email_promotions?: boolean
+          email_protocol_recommendations?: boolean
+          email_shipping_updates?: boolean
+          id?: string
+          push_bio_score_milestones?: boolean
+          push_order_updates?: boolean
+          push_protocol_changes?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_notifications: {
         Row: {
           body: string
@@ -6029,6 +8090,8 @@ export type Database = {
           id: string
           is_dismissed: boolean | null
           is_read: boolean | null
+          link: string | null
+          metadata: Json
           portal: string | null
           related_interaction_id: string | null
           severity: string | null
@@ -6042,6 +8105,8 @@ export type Database = {
           id?: string
           is_dismissed?: boolean | null
           is_read?: boolean | null
+          link?: string | null
+          metadata?: Json
           portal?: string | null
           related_interaction_id?: string | null
           severity?: string | null
@@ -6055,6 +8120,8 @@ export type Database = {
           id?: string
           is_dismissed?: boolean | null
           is_read?: boolean | null
+          link?: string | null
+          metadata?: Json
           portal?: string | null
           related_interaction_id?: string | null
           severity?: string | null
@@ -6362,6 +8429,51 @@ export type Database = {
         }
         Relationships: []
       }
+      waitlist_signups: {
+        Row: {
+          benefits: Json
+          capacity: number
+          created_at: string
+          email: string
+          id: string
+          ip_address: unknown
+          position: number
+          redeemed_at: string | null
+          redeemed_user_id: string | null
+          referral_source: string | null
+          status: string
+          user_agent: string | null
+        }
+        Insert: {
+          benefits?: Json
+          capacity?: number
+          created_at?: string
+          email: string
+          id?: string
+          ip_address?: unknown
+          position: number
+          redeemed_at?: string | null
+          redeemed_user_id?: string | null
+          referral_source?: string | null
+          status?: string
+          user_agent?: string | null
+        }
+        Update: {
+          benefits?: Json
+          capacity?: number
+          created_at?: string
+          email?: string
+          id?: string
+          ip_address?: unknown
+          position?: number
+          redeemed_at?: string | null
+          redeemed_user_id?: string | null
+          referral_source?: string | null
+          status?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       wearable_integrations: {
         Row: {
           connected_at: string | null
@@ -6631,6 +8743,8 @@ export type Database = {
           similarity: number
         }[]
       }
+      generate_protocol_invite_code: { Args: never; Returns: string }
+      generate_shop_order_number: { Args: never; Returns: string }
       get_active_peptide_stack: {
         Args: { p_user_id: string }
         Returns: {
@@ -6722,7 +8836,47 @@ export type Database = {
           tier: number
         }[]
       }
+      increment_brand_retry: {
+        Args: { p_brand_id: string }
+        Returns: undefined
+      }
       is_financial_admin: { Args: never; Returns: boolean }
+      jeffery_emit_message: {
+        Args: {
+          p_category: string
+          p_detail: Json
+          p_proposed_action: Json
+          p_severity: string
+          p_source_agent: string
+          p_source_context: Json
+          p_summary: string
+          p_title: string
+        }
+        Returns: string
+      }
+      jeffery_log_decision: {
+        Args: {
+          p_decision_type: string
+          p_inputs: Json
+          p_rationale: string
+          p_run_id: string
+          p_target_agent: string
+        }
+        Returns: string
+      }
+      jeffery_log_evolution: {
+        Args: {
+          p_agent_name: string
+          p_entry_type: string
+          p_metric_name: string
+          p_metric_value: number
+          p_notes: string
+          p_payload: Json
+          p_population_size: number
+          p_rolling_30d_avg: number
+        }
+        Returns: string
+      }
       lookup_protocol_template: {
         Args: { p_pattern_ids: string[]; p_template_type?: string }
         Returns: {
@@ -6763,6 +8917,263 @@ export type Database = {
           product_category: string
           product_id: string
           product_name: string
+        }[]
+      }
+      protocol_share_accept: {
+        Args: { p_invite_code: string }
+        Returns: {
+          accepted_at: string | null
+          can_modify_protocol: boolean
+          can_order_on_behalf: boolean
+          can_recommend_products: boolean
+          created_at: string
+          expires_at: string | null
+          id: string
+          invite_code: string
+          invite_email: string | null
+          metadata: Json
+          notes: string | null
+          patient_id: string
+          provider_id: string | null
+          provider_type: string
+          revoked_at: string | null
+          share_bio_optimization_score: boolean
+          share_caq_data: boolean
+          share_genetic_results: boolean
+          share_lab_results: boolean
+          share_peptide_recommendations: boolean
+          share_supplements: boolean
+          share_wellness_analytics: boolean
+          status: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "protocol_shares"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      protocol_share_assert_access: {
+        Args: { p_category: string; p_patient_id: string }
+        Returns: {
+          accepted_at: string | null
+          can_modify_protocol: boolean
+          can_order_on_behalf: boolean
+          can_recommend_products: boolean
+          created_at: string
+          expires_at: string | null
+          id: string
+          invite_code: string
+          invite_email: string | null
+          metadata: Json
+          notes: string | null
+          patient_id: string
+          provider_id: string | null
+          provider_type: string
+          revoked_at: string | null
+          share_bio_optimization_score: boolean
+          share_caq_data: boolean
+          share_genetic_results: boolean
+          share_lab_results: boolean
+          share_peptide_recommendations: boolean
+          share_supplements: boolean
+          share_wellness_analytics: boolean
+          status: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "protocol_shares"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      protocol_share_create: {
+        Args: {
+          p_can_modify_protocol: boolean
+          p_can_order_on_behalf: boolean
+          p_can_recommend_products: boolean
+          p_invite_email: string
+          p_notes?: string
+          p_provider_type: string
+          p_share_bio_optimization_score: boolean
+          p_share_caq_data: boolean
+          p_share_genetic_results: boolean
+          p_share_lab_results: boolean
+          p_share_peptide_recommendations: boolean
+          p_share_supplements: boolean
+          p_share_wellness_analytics: boolean
+        }
+        Returns: {
+          accepted_at: string | null
+          can_modify_protocol: boolean
+          can_order_on_behalf: boolean
+          can_recommend_products: boolean
+          created_at: string
+          expires_at: string | null
+          id: string
+          invite_code: string
+          invite_email: string | null
+          metadata: Json
+          notes: string | null
+          patient_id: string
+          provider_id: string | null
+          provider_type: string
+          revoked_at: string | null
+          share_bio_optimization_score: boolean
+          share_caq_data: boolean
+          share_genetic_results: boolean
+          share_lab_results: boolean
+          share_peptide_recommendations: boolean
+          share_supplements: boolean
+          share_wellness_analytics: boolean
+          status: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "protocol_shares"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      protocol_share_revoke: {
+        Args: { p_share_id: string }
+        Returns: {
+          accepted_at: string | null
+          can_modify_protocol: boolean
+          can_order_on_behalf: boolean
+          can_recommend_products: boolean
+          created_at: string
+          expires_at: string | null
+          id: string
+          invite_code: string
+          invite_email: string | null
+          metadata: Json
+          notes: string | null
+          patient_id: string
+          provider_id: string | null
+          provider_type: string
+          revoked_at: string | null
+          share_bio_optimization_score: boolean
+          share_caq_data: boolean
+          share_genetic_results: boolean
+          share_lab_results: boolean
+          share_peptide_recommendations: boolean
+          share_supplements: boolean
+          share_wellness_analytics: boolean
+          status: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "protocol_shares"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      provider_get_patient_bio_score: {
+        Args: { p_patient_id: string }
+        Returns: {
+          bio_optimization_opportunities: string[]
+          bio_optimization_score: number
+          bio_optimization_strengths: string[]
+          bio_optimization_tier: string
+          caq_completed_at: string
+        }[]
+      }
+      provider_get_patient_caq: {
+        Args: { p_patient_id: string }
+        Returns: {
+          allergies: Json
+          completed_at: string
+          demographics: Json
+          emotional_symptoms: Json
+          health_concerns: Json
+          lifestyle: Json
+          medications: Json
+          neuro_symptoms: Json
+          physical_symptoms: Json
+          status: string
+          supplements: Json
+          version_number: number
+        }[]
+      }
+      provider_get_patient_genetics: {
+        Args: { p_patient_id: string }
+        Returns: {
+          additional_genes: Json
+          comt_status: string
+          created_at: string
+          cyp2d6_status: string
+          mthfr_status: string
+          report_date: string
+          source_lab: string
+        }[]
+      }
+      provider_get_patient_peptide_recommendations: {
+        Args: { p_patient_id: string }
+        Returns: {
+          created_at: string
+          cycle_off_weeks: number
+          cycle_on_weeks: number
+          delivery_form: string
+          dosage: string
+          evidence_level: string
+          frequency: string
+          is_accepted: boolean
+          peptide_name: string
+          priority: string
+          rank: number
+          rationale: string
+          requires_supervision: boolean
+        }[]
+      }
+      provider_get_patient_supplements: {
+        Args: { p_patient_id: string }
+        Returns: {
+          added_at: string
+          brand: string
+          category: string
+          dosage: string
+          dosage_form: string
+          frequency: string
+          is_current: boolean
+          product_name: string
+          supplement_name: string
+        }[]
+      }
+      provider_get_patient_wellness_analytics: {
+        Args: { p_patient_id: string }
+        Returns: {
+          calculated_at: string
+          categories: Json
+          data_sources_used: string[]
+          genex360_included: boolean
+          summary: string
+        }[]
+      }
+      provider_list_shared_patients: {
+        Args: never
+        Returns: {
+          accepted_at: string
+          bio_optimization_score: number
+          can_modify: boolean
+          can_order: boolean
+          can_recommend: boolean
+          constitutional_type: string
+          email: string
+          full_name: string
+          patient_id: string
+          share_bio_score: boolean
+          share_caq: boolean
+          share_genetics: boolean
+          share_id: string
+          share_labs: boolean
+          share_peptides: boolean
+          share_supplements: boolean
+          share_wellness: boolean
         }[]
       }
       search_peptides: {
@@ -6845,8 +9256,129 @@ export type Database = {
           similarity_score: number
         }[]
       }
-      show_limit: { Args: never; Returns: number }
-      show_trgm: { Args: { "": string }; Returns: string[] }
+      shop_cart_add_item: {
+        Args: {
+          p_delivery_form: string
+          p_metadata: Json
+          p_product_name: string
+          p_product_slug: string
+          p_product_type: string
+          p_quantity: number
+          p_unit_price_cents: number
+        }
+        Returns: {
+          created_at: string
+          delivery_form: string | null
+          id: string
+          metadata: Json
+          product_name: string
+          product_slug: string
+          product_type: string
+          quantity: number
+          unit_price_cents: number | null
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "shop_cart_items"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      shop_create_order_with_items: {
+        Args: {
+          p_discount_code?: string
+          p_items: Json
+          p_portal_type?: string
+          p_shipping: Json
+          p_totals: Json
+        }
+        Returns: {
+          cancellation_reason: string | null
+          cancelled_at: string | null
+          carrier: string | null
+          created_at: string
+          delivered_at: string | null
+          discount_cents: number
+          discount_code: string | null
+          estimated_delivery_date: string | null
+          id: string
+          metadata: Json
+          notes: string | null
+          order_number: string
+          portal_type: string
+          shipping_address_line1: string | null
+          shipping_address_line2: string | null
+          shipping_cents: number
+          shipping_city: string | null
+          shipping_country: string | null
+          shipping_email: string | null
+          shipping_first_name: string | null
+          shipping_last_name: string | null
+          shipping_phone: string | null
+          shipping_state: string | null
+          shipping_zip: string | null
+          status: string
+          subtotal_cents: number
+          tax_cents: number
+          total_cents: number
+          tracking_number: string | null
+          tracking_url: string | null
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "shop_orders"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      ultrathink_agent_health_sweep: {
+        Args: never
+        Returns: {
+          out_agent_name: string
+          out_new_status: string
+        }[]
+      }
+      ultrathink_agent_heartbeat: {
+        Args: {
+          p_agent_name: string
+          p_event_type: string
+          p_payload: Json
+          p_run_id: string
+          p_severity: string
+        }
+        Returns: undefined
+      }
+      ultrathink_record_sync: {
+        Args: {
+          p_action: string
+          p_added: number
+          p_cost: number
+          p_duration: number
+          p_err_msg: string
+          p_error: number
+          p_in: number
+          p_metadata: Json
+          p_run_id: string
+          p_skipped: number
+          p_source: string
+          p_status: string
+        }
+        Returns: undefined
+      }
+      ultrathink_today_spend: { Args: never; Returns: number }
+      waitlist_join: {
+        Args: {
+          p_email: string
+          p_referral_source?: string
+          p_user_agent?: string
+        }
+        Returns: Json
+      }
+      waitlist_stats: { Args: never; Returns: Json }
     }
     Enums: {
       alert_severity: "INFO" | "WARNING" | "ALERT" | "CRITICAL"
@@ -6986,9 +9518,6 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {
       alert_severity: ["INFO", "WARNING", "ALERT", "CRITICAL"],

@@ -1,0 +1,26 @@
+-- =============================================================================
+-- Prompt #60c: Jeffery™ Admin Command Center (APPEND-ONLY)
+-- =============================================================================
+-- 5 new tables giving Gary (admin) human-in-the-loop control over Jeffery:
+--   1. jeffery_messages           — every action/proposal Jeffery makes
+--   2. jeffery_message_comments   — admin comments and inline directives
+--   3. jeffery_directives         — high-level steering instructions
+--   4. jeffery_learning_log       — what Jeffery learned from admin feedback
+--   5. jeffery_knowledge_entries  — every knowledge fact Jeffery has consumed
+--
+-- Plus 1 helper RPC: jeffery_emit_message(...) — uniform emit + auto-apply gate
+--
+-- RLS: admin-only (profiles.role='admin'). All write policies use a real
+-- constraint (no WITH CHECK true) so the security advisor stays clean.
+--
+-- Realtime: jeffery_messages and jeffery_message_comments are added to
+-- supabase_realtime so the admin LiveFeed gets push updates.
+--
+-- See migration applied via mcp for the full body — this file is the disk
+-- record for git history / restores.
+-- =============================================================================
+
+-- Body identical to applied migration jeffery_admin_command_center.
+-- Tables: jeffery_messages, jeffery_message_comments, jeffery_directives,
+-- jeffery_learning_log, jeffery_knowledge_entries.
+-- See applied SQL for full DDL + RLS + RPC + Realtime publication.

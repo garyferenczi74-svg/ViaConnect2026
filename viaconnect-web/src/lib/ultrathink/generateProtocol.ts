@@ -4,6 +4,10 @@
  */
 
 import { UltrathinkContext } from './buildContext';
+// Prompt #60 v2 — optional cache-first path. Imported lazily so existing
+// callers without a Supabase client suffer no behavior change.
+import { matchPattern, hashSignals, type UserSignals } from './patternMatcher';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 export interface ProtocolRecommendation {
   rank: number;
@@ -232,7 +236,49 @@ Return ONLY valid JSON (no markdown, no backticks):
 - Maximum 5 HIGH priority, maximum 12 total recommendations
 - Quality over quantity — every recommendation must be justified by data`;
 
-export async function generateProtocol(context: UltrathinkContext): Promise<GeneratedProtocol> {
+/**
+ * Generate a protocol for a given user context.
+ *
+ * Prompt #60 v2 — optional second parameter `supabase` enables the cache-first
+ * path: pattern_cache is consulted before Claude is called, and the Claude
+ * result is written back to the cache after a successful generation. When
+ * `supabase` is omitted (existing call sites), behavior is unchanged.
+ */
+export async function generateProtocol(
+  context: UltrathinkContext,
+  supabase?: SupabaseClient
+): Promise<GeneratedProtocol & { source?: 'cache' | 'claude'; cache_hit?: boolean }> {
+  // ── Cache-first path (optional) ─────────────────────────────────────
+  if (supabase) {
+    try {
+      const signals: UserSignals = {
+        age: context.demographics.age,
+        sex: context.demographics.sex,
+        symptoms: context.topSymptoms.map(s => s.name),
+        medications: context.medications,
+        bio_score: context.bioScore,
+      };
+      const hit = await matchPattern(supabase, signals);
+      if (hit) {
+        // Cache hit: deserialize the stored protocol payload and return it
+        const payload = hit.protocol_payload as Partial<GeneratedProtocol>;
+        return {
+          recommendations: payload.recommendations ?? [],
+          protocol_rationale: payload.protocol_rationale ?? hit.signal_summary,
+          bio_score_impact: payload.bio_score_impact ?? { overall_delta: 0, primary_improvements: [], timeline_weeks: 12 },
+          input_tokens: 0,
+          output_tokens: 0,
+          source: 'cache',
+          cache_hit: true,
+        };
+      }
+    } catch {
+      // Cache lookup failure must NEVER block protocol generation —
+      // fall through to the existing Claude path.
+    }
+  }
+
+  // ── Existing Claude path (unchanged) ────────────────────────────────
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) throw new Error('ANTHROPIC_API_KEY not configured');
 
@@ -261,13 +307,44 @@ export async function generateProtocol(context: UltrathinkContext): Promise<Gene
   if (!jsonMatch) throw new Error('No valid JSON in Ultrathink response');
 
   const parsed = JSON.parse(jsonMatch[0]);
-  return {
+  const result: GeneratedProtocol & { source?: 'cache' | 'claude'; cache_hit?: boolean } = {
     recommendations: parsed.recommendations ?? [],
     protocol_rationale: parsed.protocol_rationale ?? '',
     bio_score_impact: parsed.bio_score_impact ?? { overall_delta: 0, primary_improvements: [], timeline_weeks: 12 },
     input_tokens: data.usage?.input_tokens ?? 0,
     output_tokens: data.usage?.output_tokens ?? 0,
+    source: 'claude',
+    cache_hit: false,
   };
+
+  // ── Cache write-back (best-effort, fire-and-forget) ─────────────────
+  // Prompt #60 v2 — store the Claude result so future identical signal
+  // vectors hit the cache. Failure here must NEVER block the response.
+  if (supabase) {
+    void (async () => {
+      try {
+        const signals: UserSignals = {
+          age: context.demographics.age,
+          sex: context.demographics.sex,
+          symptoms: context.topSymptoms.map(s => s.name),
+          medications: context.medications,
+          bio_score: context.bioScore,
+        };
+        const pattern_hash = await hashSignals(signals);
+        const signal_summary = `Claude-generated for ${context.demographics.age ?? 'unknown'}yo ${context.demographics.sex ?? 'unknown'} — ${context.topSymptoms.slice(0, 3).map(s => s.name).join(', ')}`;
+        await supabase.from('ultrathink_pattern_cache').upsert({
+          pattern_hash,
+          signal_summary,
+          protocol_payload: result,
+          data_confidence: 0.6,    // Claude default; outcome score will refine post-launch
+          outcome_confidence: null,
+          sample_n: 1,
+        }, { onConflict: 'pattern_hash' });
+      } catch { /* swallow — write-back is best effort */ }
+    })();
+  }
+
+  return result;
 }
 
 function buildUserPrompt(ctx: UltrathinkContext): string {

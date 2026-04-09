@@ -1,0 +1,26 @@
+-- =============================================================================
+-- Prompt #60d: Peptide sharing protocol + advisor guardrail support (APPEND-ONLY)
+-- =============================================================================
+-- 1 new table: advisor_peptide_shares — consumer → practitioner peptide referrals
+--   - patient_id, practitioner_id, peptide_name, original_question, advisor_response
+--   - status enum: pending_review | reviewed | approved_for_protocol | dismissed
+--
+-- RLS adapted to actual schema:
+--   - Patients can read their own + INSERT only when the practitioner is
+--     actually their assigned provider via public.protocol_shares (status='active')
+--     (the spec said practitioner_patients which doesn't exist in this schema)
+--   - Practitioners can read shares assigned to them and update status/notes
+--
+-- Realtime: advisor_peptide_shares added to supabase_realtime so the
+-- practitioner UI can push-receive new shares.
+--
+-- This file is the disk record. Migration body identical to applied
+-- `advisor_peptide_shares` migration via mcp.
+--
+-- Same migration also UPDATEs the 3 active rows in
+-- public.ultrathink_advisor_prompts to append the new guardrail rules
+-- (FarmCeutica-only product recommendations + role-specific peptide rules
+-- + disclaimer note).
+-- =============================================================================
+
+-- See applied migration for full DDL + RLS + Realtime + prompt updates.
