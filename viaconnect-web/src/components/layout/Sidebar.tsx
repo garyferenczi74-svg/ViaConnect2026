@@ -21,6 +21,9 @@ import {
   AlertTriangle,
   FileText,
   Brain,
+  BrainCircuit,
+  MessageCircleHeart,
+  Cpu,
   Settings,
   Leaf,
   Activity,
@@ -54,7 +57,8 @@ const CONSUMER: PortalConfig = {
   nav: [
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { href: "/analytics", label: "Analytics", icon: BarChart3 },
-    { href: "/genetics", label: "Genetics", icon: Dna },
+    { href: "/genetics", label: "Genetics Protocol", icon: Dna },
+    { href: "/wellness/advisor", label: "Jeffery AI Wellness Assistant", icon: MessageCircleHeart },
     { href: "/supplements", label: "Supplement Protocol", icon: Pill },
     { href: "/peptide-protocol", label: "Peptide Protocol", icon: FlaskConical },
     { href: "/plugins", label: "Plugins", icon: Plug },
@@ -77,6 +81,7 @@ const PRACTITIONER: PortalConfig = {
   nav: [
     { href: "/practitioner/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { href: "/practitioner/patients", label: "Patients", icon: Users },
+    { href: "/practitioner/advisor", label: "AI Clinical Assistant", icon: BrainCircuit },
     { href: "/practitioner/protocols", label: "Protocols", icon: ClipboardList },
     { href: "/practitioner/analytics", label: "Analytics", icon: BarChart3 },
     { href: "/practitioner/genomics", label: "Genomics", icon: Dna },
@@ -98,6 +103,7 @@ const NATUROPATH: PortalConfig = {
   nav: [
     { href: "/naturopath/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { href: "/naturopath/patients", label: "Patients", icon: Users },
+    { href: "/naturopath/advisor", label: "AI Holistic Advisor", icon: Leaf },
     { href: "/naturopath/botanical", label: "Botanical", icon: Leaf },
     { href: "/naturopath/constitutional", label: "Constitutional", icon: Activity },
     { href: "/naturopath/protocols", label: "Protocols", icon: ClipboardList },
@@ -117,6 +123,7 @@ const NATUROPATH: PortalConfig = {
 
 const ADMIN: PortalConfig = {
   nav: [
+    { href: "/admin/jeffery", label: "Jeffery™ Command Center", icon: Cpu },
     { href: "/admin", label: "Admin Dashboard", icon: LayoutDashboard },
     { href: "/admin/board", label: "Board Metrics", icon: BarChart3 },
     { href: "/admin/skus", label: "SKU Portfolio", icon: Pill },
