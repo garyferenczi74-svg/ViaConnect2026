@@ -18,7 +18,12 @@ import { QuickReassessmentCard } from '@/components/dashboard/QuickReassessmentC
 import { PatternCirclePreview } from '@/components/community/PatternCirclePreview';
 import { ConnectCard } from '@/components/dashboard/ConnectCard';
 import { DashboardLinkCard } from '@/components/dashboard/DashboardLinkCard';
+import ParallaxSection from '@/components/ui/ParallaxSection';
 import { RefreshCw, FileQuestion } from 'lucide-react';
+
+// Pre-uploaded hero image (Hero Images bucket — already public, full URL)
+const DASHBOARD_HERO_IMAGE =
+  'https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Images/Hero%20lake%20workout.png';
 
 /* ── Skeleton ───────────────────────────────────────────────── */
 function DashboardSkeleton() {
@@ -93,6 +98,26 @@ export default function ConsumerDashboard() {
 
   return (
     <div className="min-h-screen w-full bg-[#1A2744] text-white">
+      {/* ── Parallax Hero (Prompt #62 — full-width, additive) ── */}
+      <ParallaxSection
+        imagePath={DASHBOARD_HERO_IMAGE}
+        speed={0.4}
+        height="h-[260px] md:h-[340px] lg:h-[400px]"
+        overlayOpacity={0.55}
+        gradientFade="bottom"
+        priority
+        alt="Personal wellness dashboard background"
+      >
+        <div className="text-center">
+          <h2 className="text-2xl font-bold leading-tight text-white drop-shadow-md sm:text-3xl md:text-4xl lg:text-5xl">
+            Your Personal Wellness Journey
+          </h2>
+          <p className="mx-auto mt-3 max-w-md text-sm text-white/85 drop-shadow sm:text-base md:max-w-xl md:text-lg">
+            Powered by your data · guided by your goals
+          </p>
+        </div>
+      </ParallaxSection>
+
       <div className="mx-auto max-w-7xl space-y-6 px-4 py-6 md:px-6 md:py-8">
         {/* ── 1. Header ────────────────────────────────────── */}
         <DashboardHeader />
