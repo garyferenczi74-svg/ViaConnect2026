@@ -80,7 +80,7 @@ export function DailyMetricGauge({
   const fillLength = (animatedScore / 100) * arcLength;
 
   return (
-    <div className="relative flex flex-col items-center rounded-2xl border border-white/10 bg-gradient-to-br from-[#1E3054] to-[#141E33] p-3.5 transition-all hover:border-white/20">
+    <div className="relative flex flex-col items-center rounded-2xl border border-white/10 bg-gradient-to-br from-[#1E3054]/60 to-[#141E33]/60 backdrop-blur-md p-3.5 transition-all hover:border-white/20">
       {/* Soft glow */}
       <div
         className="pointer-events-none absolute -top-6 left-1/2 h-24 w-24 -translate-x-1/2 rounded-full opacity-20 blur-2xl"

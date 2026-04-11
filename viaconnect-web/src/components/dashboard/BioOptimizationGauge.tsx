@@ -86,7 +86,7 @@ export function BioOptimizationGauge({
   const fillLength = (score / 100) * arcLength;
 
   return (
-    <section className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-[#1E3054] via-[#1A2744] to-[#141E33] p-5 sm:p-6 md:p-8">
+    <section className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-[#1E3054]/60 via-[#1A2744]/60 to-[#141E33]/60 backdrop-blur-md p-5 sm:p-6 md:p-8">
       {/* Soft glow background */}
       <div
         className="pointer-events-none absolute -right-20 -top-20 h-72 w-72 rounded-full opacity-20 blur-3xl"

@@ -29,7 +29,7 @@ export function DashboardLinkCard({
   cta,
 }: DashboardLinkCardProps) {
   return (
-    <section className="rounded-2xl border border-white/10 bg-[#1E3054] p-4 sm:p-5">
+    <section className="rounded-2xl border border-white/10 bg-[#1E3054]/60 backdrop-blur-md p-4 sm:p-5">
       {/* Header eyebrow */}
       <div className="mb-3 flex items-center gap-2">
         {EyebrowIcon && (

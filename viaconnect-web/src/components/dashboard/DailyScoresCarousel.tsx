@@ -56,7 +56,7 @@ export function DailyScoresCarousel({ history, daysToShow = 14 }: DailyScoresCar
 
   if (scores.length === 0) {
     return (
-      <section className="rounded-2xl border border-white/10 bg-[#1E3054] p-5 text-center">
+      <section className="rounded-2xl border border-white/10 bg-[#1E3054]/60 backdrop-blur-md p-5 text-center">
         <LineChart className="mx-auto mb-2 h-8 w-8 text-white/30" strokeWidth={1.5} />
         <p className="text-sm font-semibold text-white">No daily scores yet</p>
         <p className="mt-1 text-xs text-white/40">

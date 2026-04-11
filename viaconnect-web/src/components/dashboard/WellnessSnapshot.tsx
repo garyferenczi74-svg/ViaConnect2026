@@ -140,7 +140,7 @@ export function WellnessSnapshot({ autoFetch = true }: WellnessSnapshotProps) {
   const low = sorted[sorted.length - 1];
 
   return (
-    <section className="rounded-2xl border border-white/10 bg-[#1E3054] p-4 sm:p-5">
+    <section className="rounded-2xl border border-white/10 bg-[#1E3054]/60 backdrop-blur-md p-4 sm:p-5">
       <div className="mb-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Sparkles className="h-4 w-4 text-[#2DA5A0]" strokeWidth={1.5} />

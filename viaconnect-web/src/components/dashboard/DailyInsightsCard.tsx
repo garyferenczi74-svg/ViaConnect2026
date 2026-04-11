@@ -191,7 +191,7 @@ export function DailyInsightsCard({ profile, supplements }: DailyInsightsCardPro
   };
 
   return (
-    <section className="relative overflow-hidden rounded-2xl border border-white/10 bg-[#1E3054] p-4 sm:p-5">
+    <section className="relative overflow-hidden rounded-2xl border border-white/10 bg-[#1E3054]/60 backdrop-blur-md p-4 sm:p-5">
       {/* Header */}
       <div className="mb-4 flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">

@@ -133,7 +133,7 @@ export function TodaysProtocol({ supplements }: TodaysProtocolProps) {
 
   if (supplements.length === 0) {
     return (
-      <section className="rounded-2xl border border-white/10 bg-[#1E3054] p-6 text-center">
+      <section className="rounded-2xl border border-white/10 bg-[#1E3054]/60 backdrop-blur-md p-6 text-center">
         <Pill className="mx-auto mb-3 h-8 w-8 text-[#2DA5A0]/60" strokeWidth={1.5} />
         <h3 className="text-base font-semibold text-white">No Active Protocol Yet</h3>
         <p className="mx-auto mt-1 max-w-sm text-xs text-white/40">
@@ -151,7 +151,7 @@ export function TodaysProtocol({ supplements }: TodaysProtocolProps) {
   }
 
   return (
-    <section className="relative flex h-full flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#1E3054]">
+    <section className="relative flex h-full flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#1E3054]/60 backdrop-blur-md">
       <AnimatePresence>{showConfetti && <ConfettiBurst />}</AnimatePresence>
 
       {/* Header */}
