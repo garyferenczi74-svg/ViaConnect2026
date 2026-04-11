@@ -22,7 +22,7 @@ interface QuickAction {
 }
 
 const ACTIONS: QuickAction[] = [
-  { label: 'Jeffery AI Wellness Assistant', href: '/wellness/advisor', icon: MessageCircleHeart, color: '#2DA5A0', description: 'Chat with your personal AI assistant' },
+  { label: 'Hannah AI Wellness Assistant', href: '/wellness/advisor', icon: MessageCircleHeart, color: '#2DA5A0', description: 'Chat with your personal AI assistant' },
   { label: 'Wearable Data',             href: '/wearables',        icon: Activity,           color: '#7C6FE0', description: 'Recovery, sleep & strain insights' },
   { label: 'Shop',                      href: '/shop',             icon: ShoppingBag,        color: '#B75E18', description: 'Browse supplements, peptides & tests' },
 ];

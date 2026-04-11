@@ -9,7 +9,7 @@ export default function PractitionerAdvisorPage() {
       role="practitioner"
       accentColor="#3B82F6"
       title="AI Clinical Assistant"
-      subtitle="Evidence-based clinical intelligence — powered by Jeffery™"
+      subtitle="Evidence-based clinical intelligence — powered by Hannah™"
       icon={<BrainCircuit className="w-5 h-5" strokeWidth={1.5} style={{ color: "#3B82F6" }} />}
       suggestedPrompts={[
         "Review my patient's protocol for gaps",

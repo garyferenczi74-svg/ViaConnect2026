@@ -9,7 +9,7 @@ export default function NaturopathAdvisorPage() {
       role="naturopath"
       accentColor="#10B981"
       title="AI Holistic Advisor"
-      subtitle="Integrative protocol intelligence — powered by Jeffery™"
+      subtitle="Integrative protocol intelligence — powered by Hannah™"
       icon={<Leaf className="w-5 h-5" strokeWidth={1.5} style={{ color: "#10B981" }} />}
       suggestedPrompts={[
         "Build a botanical protocol for hypothyroid pattern",

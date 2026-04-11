@@ -442,7 +442,7 @@ export default function ResearchHubPage() {
               <h1 className="text-xl font-bold text-white sm:text-2xl">Research Hub</h1>
               <div className="mt-0.5 flex flex-wrap items-center gap-2">
                 <p className="text-xs text-white/45 sm:text-sm">
-                  Personalized discovery scored by Jeffery
+                  Personalized discovery scored by Hannah
                 </p>
                 <span className="inline-flex items-center gap-1 rounded-full border border-[#FBBF24]/40 bg-gradient-to-r from-[#FBBF24]/15 to-[#B75E18]/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#FBBF24] shadow-[0_0_12px_rgba(251,191,36,0.18)]">
                   <Sparkles className="h-3 w-3" strokeWidth={2} />

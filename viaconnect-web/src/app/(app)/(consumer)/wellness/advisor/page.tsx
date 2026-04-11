@@ -8,7 +8,7 @@ export default function ConsumerAdvisorPage() {
     <AdvisorChat
       role="consumer"
       accentColor="#2DA5A0"
-      title="Jeffery our AI Wellness Assistant"
+      title="Hannah our AI Wellness Assistant"
       subtitle="Your personal wellness assistant from FarmCeutica Wellness"
       icon={<MessageCircleHeart className="w-5 h-5" strokeWidth={1.5} style={{ color: "#2DA5A0" }} />}
       suggestedPrompts={[

@@ -58,7 +58,7 @@ const CONSUMER: PortalConfig = {
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { href: "/analytics", label: "Analytics", icon: BarChart3 },
     { href: "/genetics", label: "Genetics Protocol", icon: Dna },
-    { href: "/wellness/advisor", label: "Jeffery AI Wellness Assistant", icon: MessageCircleHeart },
+    { href: "/wellness/advisor", label: "Hannah AI Wellness Assistant", icon: MessageCircleHeart },
     { href: "/supplements", label: "Supplement Protocol", icon: Pill },
     { href: "/peptide-protocol", label: "Peptide Protocol", icon: FlaskConical },
     { href: "/plugins", label: "Plugins", icon: Plug },

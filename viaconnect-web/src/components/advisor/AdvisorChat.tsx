@@ -133,7 +133,7 @@ export default function AdvisorChat({
             </div>
             <div className="text-center">
               <p className="text-white/80 text-base md:text-lg font-medium">How can I help today?</p>
-              <p className="text-white/40 text-xs md:text-sm mt-1">Powered by Jeffery™</p>
+              <p className="text-white/40 text-xs md:text-sm mt-1">Powered by Hannah™</p>
             </div>
             <SuggestedPrompts prompts={suggestedPrompts} onPick={(p) => sendMessage(p)} accentColor={accentColor} />
           </motion.div>
