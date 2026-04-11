@@ -141,10 +141,10 @@ export default function ConsumerDashboard() {
 
         {/* ── 4. Today's Protocol + (Wellness Snapshot / Helix Rewards stack) ── */}
         <div className="grid items-stretch gap-5 lg:grid-cols-[1.4fr_1fr]">
-          <div className="flex h-full flex-col gap-5">
+          <div className="flex h-full min-w-0 flex-col gap-5">
             {/* Today's Protocol grows to fill leftover space so the column
                 bottom aligns with the right column's Connect App tab */}
-            <div className="flex flex-1 flex-col">
+            <div className="flex min-w-0 flex-1 flex-col">
               <TodaysProtocol supplements={supplements} />
             </div>
             <DashboardLinkCard
@@ -158,7 +158,7 @@ export default function ConsumerDashboard() {
               cta="Update Assessment"
             />
           </div>
-          <div className="flex h-full flex-col gap-5">
+          <div className="flex h-full min-w-0 flex-col gap-5">
             {/* Wellness Snapshot is desktop-only per spec */}
             <div className="hidden lg:block">
               <WellnessSnapshot autoFetch={assessmentCompleted} />
