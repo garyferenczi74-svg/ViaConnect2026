@@ -18,7 +18,7 @@ import { QuickReassessmentCard } from '@/components/dashboard/QuickReassessmentC
 import { PatternCirclePreview } from '@/components/community/PatternCirclePreview';
 import { ConnectCard } from '@/components/dashboard/ConnectCard';
 import { DashboardLinkCard } from '@/components/dashboard/DashboardLinkCard';
-import ParallaxSection from '@/components/ui/ParallaxSection';
+import FixedHeroBackground from '@/components/ui/FixedHeroBackground';
 import { RefreshCw, FileQuestion } from 'lucide-react';
 
 // Pre-uploaded hero image (Hero Images bucket — already public, full URL)
@@ -97,28 +97,27 @@ export default function ConsumerDashboard() {
     : 0;
 
   return (
-    <div className="min-h-screen w-full bg-[#1A2744] text-white">
-      {/* ── Parallax Hero (Prompt #62 — full-width, additive) ── */}
-      <ParallaxSection
+    <div className="min-h-screen w-full text-white">
+      {/* ── Fixed Hero Background (Prompt #62 — scroll-over pattern) ── */}
+      <FixedHeroBackground
         imagePath={DASHBOARD_HERO_IMAGE}
-        speed={0.4}
-        height="h-[260px] md:h-[340px] lg:h-[400px]"
-        overlayOpacity={0.55}
-        gradientFade="bottom"
-        priority
+        overlayOpacity={0.45}
         alt="Personal wellness dashboard background"
-      >
-        <div className="text-center">
-          <h2 className="text-2xl font-bold leading-tight text-white drop-shadow-md sm:text-3xl md:text-4xl lg:text-5xl">
-            Your Personal Wellness Journey
-          </h2>
-          <p className="mx-auto mt-3 max-w-md text-sm text-white/85 drop-shadow sm:text-base md:max-w-xl md:text-lg">
-            Powered by your data · guided by your goals
-          </p>
-        </div>
-      </ParallaxSection>
+      />
 
-      <div className="mx-auto max-w-7xl space-y-6 px-4 py-6 md:px-6 md:py-8">
+      {/* ── Transparent hero zone — image visible through here ── */}
+      <div className="relative z-10 mx-auto max-w-7xl px-4 pt-8 pb-10 text-center md:px-6 md:pt-12 md:pb-16">
+        <h2 className="font-instrument-sans text-2xl font-bold leading-tight text-white drop-shadow-md sm:text-3xl md:text-4xl lg:text-5xl">
+          Your Personal Wellness Journey
+        </h2>
+        <p className="mx-auto mt-3 max-w-md text-sm text-white/85 drop-shadow sm:text-base md:max-w-xl md:text-lg">
+          Powered by your data · guided by your goals
+        </p>
+      </div>
+
+      {/* ── Content scrolls over the fixed image (Sonar pattern — no solid bg) ── */}
+      <div className="relative z-10 -mt-2 min-h-screen rounded-t-3xl pb-24">
+        <div className="mx-auto max-w-7xl space-y-6 px-4 py-6 md:px-6 md:py-8">
         {/* ── 1. Header ────────────────────────────────────── */}
         <DashboardHeader />
 
@@ -186,6 +185,7 @@ export default function ConsumerDashboard() {
         <PatternCirclePreview
           userPatterns={['HPA Axis Dysregulation', 'Methylation Pathway']}
         />
+        </div>
       </div>
     </div>
   );
