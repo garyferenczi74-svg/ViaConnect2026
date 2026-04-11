@@ -5,7 +5,7 @@
 // gauge is a smaller sibling of the BioOptimizationGauge so the dashboard
 // reads as one cohesive scoring system.
 
-import { Activity, Bed, Brain, Footprints, HeartPulse, Pill, Flame, Sparkles } from 'lucide-react';
+import { Activity, Apple, Bed, Brain, Footprints, HeartPulse, Pill, Flame, Sparkles } from 'lucide-react';
 import type { DashboardBioHistory, DashboardAdherence } from '@/hooks/useUserDashboardData';
 import { DailyMetricGauge } from './DailyMetricGauge';
 
@@ -64,7 +64,16 @@ export function DailyScoresGrid({
       )
     : 0;
 
-  // Composite "personal wellness" snapshot — average of the 7 gauge fills
+  // Nutrition — backend cron will populate breakdown.nutrition once the
+  // server-side scoring formula (CAQ diet quality + supplement adherence +
+  // gap coverage) is wired up. Until then, fall back to supplement adherence
+  // as the only client-side signal so the gauge shows a meaningful value.
+  const nutritionRaw = (breakdown.nutrition as number | undefined);
+  const nutritionScore = Math.round(
+    typeof nutritionRaw === 'number' ? nutritionRaw : supplementScore,
+  );
+
+  // Composite "personal wellness" snapshot — average of the 8 gauge fills
   const composite = Math.round(
     (sleepScore +
       exerciseScore +
@@ -72,8 +81,9 @@ export function DailyScoresGrid({
       stressInverted +
       recoveryScore +
       streakScore +
-      supplementScore) /
-      7,
+      supplementScore +
+      nutritionScore) /
+      8,
   );
 
   return (
@@ -95,7 +105,7 @@ export function DailyScoresGrid({
           </div>
           <h2 className="text-lg font-bold text-white sm:text-xl">Daily Scores</h2>
           <p className="mt-0.5 text-xs text-white/40">
-            Today&apos;s readiness across 7 core metrics
+            Today&apos;s readiness across 8 core metrics
           </p>
         </div>
 
@@ -108,8 +118,8 @@ export function DailyScoresGrid({
         </div>
       </div>
 
-      {/* Gauge grid */}
-      <div className="relative grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
+      {/* Gauge grid — 2×4 mobile, 4×2 tablet+ (8 gauges, no orphans) */}
+      <div className="relative grid grid-cols-2 gap-3 sm:grid-cols-4">
         <DailyMetricGauge
           score={sleepScore}
           displayValue={`${sleepScore}`}
@@ -165,6 +175,14 @@ export function DailyScoresGrid({
           label="Supplements"
           icon={Pill}
           delay={0.3}
+        />
+        <DailyMetricGauge
+          score={nutritionScore}
+          displayValue={`${nutritionScore}`}
+          displayUnit="/100"
+          label="Nutrition"
+          icon={Apple}
+          delay={0.35}
         />
       </div>
     </section>
