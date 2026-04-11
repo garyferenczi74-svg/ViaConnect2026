@@ -8,6 +8,8 @@
 import { Activity, Apple, Bed, Brain, Footprints, HeartPulse, Pill, Flame, Sparkles } from 'lucide-react';
 import type { DashboardBioHistory, DashboardAdherence } from '@/hooks/useUserDashboardData';
 import { DailyMetricGauge } from './DailyMetricGauge';
+import { EngagementNudge } from './EngagementNudge';
+import { topNudge } from '@/lib/scoring/engagementNudges';
 
 interface DailyScoresGridProps {
   bioHistory: DashboardBioHistory[];
@@ -86,7 +88,24 @@ export function DailyScoresGrid({
       8,
   );
 
+  // Highest-priority nudge for the EngagementNudge card under the grid.
+  const nudge = topNudge({
+    snapshots: [
+      { id: 'sleep', score: sleepScore },
+      { id: 'exercise', score: exerciseScore },
+      { id: 'steps', score: stepsScore },
+      { id: 'stress', score: stressInverted },
+      { id: 'recovery', score: recoveryScore },
+      { id: 'streak', score: streakScore },
+      { id: 'supplements', score: supplementScore },
+      { id: 'nutrition', score: nutritionScore },
+    ],
+    currentStreak,
+    hourOfDay: new Date().getHours(),
+  });
+
   return (
+    <div className="space-y-4">
     <section className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-[#1E3054]/60 via-[#1A2744]/60 to-[#141E33]/60 backdrop-blur-md p-5 sm:p-6 md:p-7">
       {/* Soft glow background */}
       <div
@@ -186,5 +205,7 @@ export function DailyScoresGrid({
         />
       </div>
     </section>
+    <EngagementNudge nudge={nudge} />
+    </div>
   );
 }
