@@ -67,7 +67,6 @@ const CONSUMER: PortalConfig = {
     { href: "/messages", label: "Connect", icon: MessageSquare },
     { href: "/media-sources", label: "Research Hub", icon: Newspaper },
     { href: "/science", label: "Science & Authorities", icon: BookOpen },
-    { href: "/ai", label: "AI Advisor", icon: Brain },
     { href: "/shop", label: "Shop", icon: ShoppingBag },
     { href: "/profile", label: "Profile", icon: UserIcon },
   ],
