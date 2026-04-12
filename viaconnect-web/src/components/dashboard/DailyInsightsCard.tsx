@@ -218,10 +218,15 @@ export function DailyInsightsCard({ profile, supplements }: DailyInsightsCardPro
           Research Hub
           <ArrowRight className="h-3.5 w-3.5" strokeWidth={1.5} />
         </Link>
-        <ChevronDown
-          className={`h-4 w-4 flex-shrink-0 text-white/45 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
-          strokeWidth={1.5}
-        />
+        <div className="flex flex-shrink-0 items-center gap-1.5">
+          {!open && (
+            <span className="text-[10px] font-medium text-[#2DA5A0]/70">Tap to expand</span>
+          )}
+          <ChevronDown
+            className={`h-4 w-4 text-white/45 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+            strokeWidth={1.5}
+          />
+        </div>
       </button>
 
       {/* Collapsible body */}
