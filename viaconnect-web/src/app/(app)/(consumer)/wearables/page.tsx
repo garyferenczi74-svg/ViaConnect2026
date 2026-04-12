@@ -212,6 +212,34 @@ export default function WearableDashboardPage() {
           </div>
         </header>
 
+        {/* ─── CONNECT YOUR WEARABLE ─────────────────────────────────── */}
+        <section>
+          <Overline>Connect a Device</Overline>
+          <Link
+            href="/plugins/wearables"
+            className="group block rounded-2xl border border-[#2DA5A0]/20 bg-gradient-to-br from-[#2DA5A0]/10 via-[#2DA5A0]/[0.04] to-transparent p-5 transition-all hover:border-[#2DA5A0]/40 hover:shadow-[0_0_30px_rgba(45,165,160,0.10)]"
+          >
+            <div className="flex items-start gap-4">
+              <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl border border-[#2DA5A0]/30 bg-gradient-to-br from-[#1A2744] to-[#2DA5A0]">
+                <Watch className="h-6 w-6 text-white" strokeWidth={1.5} />
+              </div>
+              <div className="min-w-0 flex-1">
+                <h3 className="text-base font-bold text-white">Connect Your Wearable</h3>
+                <p className="mt-1 text-xs leading-relaxed text-white/50">
+                  Sync Oura Ring, Apple Watch, Whoop, Garmin, Fitbit and more to power
+                  real-time recovery, sleep, strain, and heart rate tracking — all
+                  interpreted through the lens of your genetic profile.
+                </p>
+                <div className="mt-3 inline-flex min-h-[40px] items-center gap-2 rounded-xl border border-[#2DA5A0]/30 bg-[#2DA5A0]/15 px-4 py-2 text-sm font-semibold text-[#2DA5A0] transition-all group-hover:border-[#2DA5A0]/50 group-hover:bg-[#2DA5A0]/25">
+                  <Watch className="h-4 w-4" strokeWidth={1.5} />
+                  Browse Wearables
+                  <ChevronRight className="h-4 w-4" strokeWidth={1.5} />
+                </div>
+              </div>
+            </div>
+          </Link>
+        </section>
+
         {/* ─── 2. DAILY SCORES ───────────────────────────────────────── */}
         <section>
           <Overline>Today&apos;s Scores</Overline>
