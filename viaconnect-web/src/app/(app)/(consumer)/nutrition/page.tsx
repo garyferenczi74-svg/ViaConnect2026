@@ -2,12 +2,14 @@
 
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { Apple, Camera } from 'lucide-react';
+import { Apple, Camera, PenLine } from 'lucide-react';
 import { NutritionScoreCard } from '@/components/nutrition/NutritionScoreCard';
 import { QuickMealLog } from '@/components/nutrition/QuickMealLog';
+import { PhotoMealLog } from '@/components/nutrition/PhotoMealLog';
 import { ManualMealEntry } from '@/components/nutrition/ManualMealEntry';
 import { NutritionInsights } from '@/components/nutrition/NutritionInsights';
 import { MealHistory } from '@/components/nutrition/MealHistory';
+import { MyMeals } from '@/components/nutrition/MyMeals';
 
 export default function NutritionPage() {
   const [mealsToday, setMealsToday] = useState(0);
@@ -42,8 +44,8 @@ export default function NutritionPage() {
 
   const TABS = [
     { id: 'quick' as const, label: 'Quick Log', icon: Apple },
-    { id: 'photo' as const, label: 'Photo AI', icon: Camera, disabled: true },
-    { id: 'manual' as const, label: 'Manual', icon: Apple },
+    { id: 'photo' as const, label: 'Photo AI', icon: Camera },
+    { id: 'manual' as const, label: 'Manual', icon: PenLine },
   ];
 
   return (
@@ -62,7 +64,7 @@ export default function NutritionPage() {
           {TABS.map((t) => {
             const Icon = t.icon;
             const isActive = tab === t.id;
-            const isDisabled = 'disabled' in t && t.disabled;
+            const isDisabled = 'disabled' in t && !!(t as any).disabled;
             return (
               <button
                 key={t.id}
@@ -84,13 +86,11 @@ export default function NutritionPage() {
         </div>
 
         {tab === 'quick' && <QuickMealLog />}
-        {tab === 'photo' && (
-          <p className="py-6 text-center text-xs text-white/30">
-            Photo AI logging coming soon
-          </p>
-        )}
+        {tab === 'photo' && <PhotoMealLog onSaved={loadMealCount} />}
         {tab === 'manual' && <ManualMealEntry onSaved={loadMealCount} />}
       </div>
+
+      <MyMeals onRelog={loadMealCount} />
 
       <NutritionInsights mealsLoggedToday={mealsToday} score={score} />
 
