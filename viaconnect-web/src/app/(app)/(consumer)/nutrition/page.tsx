@@ -61,7 +61,7 @@ export default function NutritionPage() {
           className="flex items-center gap-1.5 rounded-xl border border-[#2DA5A0]/30 bg-[#2DA5A0]/10 px-3 py-2 text-xs font-medium text-[#2DA5A0] transition-all hover:bg-[#2DA5A0]/20"
         >
           <Dna className="h-3.5 w-3.5" strokeWidth={1.5} />
-          Genetics Guide
+          Nutrition by Genetics
           <ArrowRight className="h-3 w-3" strokeWidth={1.5} />
         </Link>
       </div>
