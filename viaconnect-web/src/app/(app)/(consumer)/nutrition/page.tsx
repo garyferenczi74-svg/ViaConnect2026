@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
-import { Apple, Camera, Dna, PenLine, ArrowRight } from 'lucide-react';
+import { Apple, Camera, ChevronRight, Dna, PenLine, ArrowRight, Smartphone } from 'lucide-react';
 import { NutritionScoreCard } from '@/components/nutrition/NutritionScoreCard';
 import { QuickMealLog } from '@/components/nutrition/QuickMealLog';
 import { PhotoMealLog } from '@/components/nutrition/PhotoMealLog';
@@ -106,6 +106,30 @@ export default function NutritionPage() {
       <NutritionInsights mealsLoggedToday={mealsToday} score={score} />
 
       <MealHistory />
+
+      {/* Connect Your App */}
+      <Link
+        href="/plugins/apps"
+        className="group block rounded-2xl border border-[#B75E18]/20 bg-gradient-to-br from-[#B75E18]/10 via-[#B75E18]/[0.04] to-transparent p-5 transition-all hover:border-[#B75E18]/40 hover:shadow-[0_0_30px_rgba(183,94,24,0.10)]"
+      >
+        <div className="flex items-start gap-4">
+          <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl border border-[#B75E18]/30 bg-gradient-to-br from-[#1A2744] to-[#B75E18]">
+            <Smartphone className="h-6 w-6 text-white" strokeWidth={1.5} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <h3 className="text-base font-bold text-white">Connect Your App</h3>
+            <p className="mt-1 text-xs leading-relaxed text-white/50">
+              Link MyFitnessPal, Cronometer, Strava, Apple Health and more so your
+              nutrition log learns from your daily routine.
+            </p>
+            <div className="mt-3 inline-flex min-h-[40px] items-center gap-2 rounded-xl border border-[#B75E18]/30 bg-[#B75E18]/15 px-4 py-2 text-sm font-semibold text-[#B75E18] transition-all group-hover:border-[#B75E18]/50 group-hover:bg-[#B75E18]/25">
+              <Smartphone className="h-4 w-4" strokeWidth={1.5} />
+              Browse Apps
+              <ChevronRight className="h-4 w-4" strokeWidth={1.5} />
+            </div>
+          </div>
+        </div>
+      </Link>
     </div>
   );
 }
