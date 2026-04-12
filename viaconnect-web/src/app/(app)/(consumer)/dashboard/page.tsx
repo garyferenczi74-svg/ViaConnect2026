@@ -19,6 +19,8 @@ import { PatternCirclePreview } from '@/components/community/PatternCirclePrevie
 import { ConnectCard } from '@/components/dashboard/ConnectCard';
 import { DashboardLinkCard } from '@/components/dashboard/DashboardLinkCard';
 import FixedHeroBackground from '@/components/ui/FixedHeroBackground';
+import { DailyCheckIn } from '@/components/dashboard/DailyCheckIn';
+import { QuickMealLogWidget } from '@/components/dashboard/QuickMealLogWidget';
 import { RefreshCw, FileQuestion } from 'lucide-react';
 
 // Pre-uploaded hero image (Hero Images bucket — already public, full URL)
@@ -138,6 +140,12 @@ export default function ConsumerDashboard() {
           adherence={adherence}
           currentStreak={currentStreak}
         />
+
+        {/* ── 3b. Daily Check-In (Prompt #62e — Tier 4 manual input) ── */}
+        <DailyCheckIn />
+
+        {/* ── 3c. Quick Meal Log (Prompt #62f — 4 meal slots) ── */}
+        <QuickMealLogWidget />
 
         {/* ── 4. Today's Protocol + (Wellness Snapshot / Helix Rewards stack) ── */}
         <div className="grid items-stretch gap-5 lg:grid-cols-[1.4fr_1fr]">

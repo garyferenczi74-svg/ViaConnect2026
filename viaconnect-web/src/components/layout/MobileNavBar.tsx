@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  LayoutDashboard, Dna, Pill, ShoppingBag, Coins, MessageSquare,
+  Apple, LayoutDashboard, Dna, Pill, ShoppingBag, Coins, MessageSquare,
   User as UserIcon, Users, ClipboardList, BarChart3, AlertTriangle,
   FileText, Brain, Settings, Leaf, Activity, Calendar, Shield, Upload,
   Plug, Newspaper, BookOpen, FlaskConical, ChevronLeft, ChevronRight,
@@ -17,6 +17,7 @@ const PORTAL_NAV: Record<string, NavItem[]> = {
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/analytics', label: 'Analytics', icon: BarChart3 },
     { href: '/genetics', label: 'Genetics Protocol', icon: Dna },
+    { href: '/nutrition', label: 'Nutrition Log', icon: Apple },
     { href: '/supplements', label: 'Supplement Protocol', icon: Pill },
     { href: '/peptide-protocol', label: 'Peptides', icon: FlaskConical },
     { href: '/plugins', label: 'Plugins', icon: Plug },
