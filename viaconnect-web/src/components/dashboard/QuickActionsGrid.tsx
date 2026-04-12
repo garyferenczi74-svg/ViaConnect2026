@@ -40,8 +40,7 @@ export function QuickActionsGrid() {
             <motion.div key={action.href} whileHover={{ y: -2 }} whileTap={{ scale: 0.98 }}>
               <Link
                 href={action.href}
-                className="group flex h-full min-h-[120px] flex-col gap-2 rounded-2xl border border-white/10 bg-white/[0.04] p-4 transition-all hover:bg-white/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744]"
-                style={{ borderColor: 'rgba(255,255,255,0.10)' }}
+                className="group flex h-full min-h-[120px] flex-col gap-2 rounded-2xl border border-white/10 bg-[#1E3054]/60 backdrop-blur-md p-4 transition-all hover:bg-[#1E3054]/75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744]"
               >
                 <div
                   className="flex h-10 w-10 items-center justify-center rounded-xl transition-all"
