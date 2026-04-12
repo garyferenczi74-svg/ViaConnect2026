@@ -58,12 +58,12 @@ const CONSUMER: PortalConfig = {
   nav: [
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { href: "/analytics", label: "Analytics", icon: BarChart3 },
-    { href: "/genetics", label: "Genetics Protocol", icon: Dna },
     { href: "/wellness/advisor", label: "Hannah AI Wellness Assistant", icon: MessageCircleHeart },
     { href: "/nutrition", label: "Nutrition Log", icon: Apple },
     { href: "/supplements", label: "Supplement Protocol", icon: Pill },
     { href: "/wearables", label: "Wearables Data", icon: Activity },
     { href: "/helix", label: "Helix Rewards", icon: Dna },
+    { href: "/genetics", label: "Genetics Protocol", icon: Dna },
     { href: "/peptide-protocol", label: "Peptide Protocol", icon: FlaskConical },
     { href: "/plugins", label: "Plugins", icon: Plug },
     { href: "/messages", label: "Connect", icon: MessageSquare },
