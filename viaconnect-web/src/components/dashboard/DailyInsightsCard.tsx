@@ -7,7 +7,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { ArrowRight, Bookmark, Clock, ExternalLink, Sparkles } from 'lucide-react';
+import { AnimatePresence } from 'framer-motion';
+import { ArrowRight, Bookmark, ChevronDown, Clock, ExternalLink, Sparkles } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import {
   getActiveCategoryIds,
@@ -49,6 +50,7 @@ export function DailyInsightsCard({ profile, supplements }: DailyInsightsCardPro
   const [loading, setLoading] = useState(true);
   const [items, setItems] = useState<ScoredItem[]>([]);
   const [userId, setUserId] = useState<string | null>(null);
+  const [open, setOpen] = useState(false);
 
   // Reusable load function — called on mount, on Research Hub events,
   // and on window focus so toggles propagate live to the dashboard.
@@ -191,26 +193,48 @@ export function DailyInsightsCard({ profile, supplements }: DailyInsightsCardPro
   };
 
   return (
-    <section className="relative overflow-hidden rounded-2xl border border-white/10 bg-[#1E3054]/60 backdrop-blur-md p-4 sm:p-5">
-      {/* Header */}
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <Sparkles className="h-4 w-4 text-[#2DA5A0]" strokeWidth={1.5} />
-          <div>
-            <h2 className="text-sm font-bold text-white">Daily Insights</h2>
-            <p className="text-[11px] text-white/40">
-              Top {totalCount} matches for your wellness journey
-            </p>
-          </div>
+    <section className="relative overflow-hidden rounded-2xl border border-white/10 bg-[#1E3054]/60 backdrop-blur-md">
+      {/* Collapsible header */}
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className="flex w-full items-center gap-3 p-4 text-left transition-colors hover:bg-white/[0.03] sm:p-5"
+      >
+        <Sparkles className="h-4 w-4 flex-shrink-0 text-[#2DA5A0]" strokeWidth={1.5} />
+        <div className="min-w-0 flex-1">
+          <h2 className="text-sm font-bold text-white">Daily Insights</h2>
+          <p className="text-[11px] text-white/40">
+            {totalCount > 0
+              ? `${totalCount} match${totalCount === 1 ? '' : 'es'} for your wellness journey`
+              : 'Personalized research from your active sources'}
+          </p>
         </div>
         <Link
           href="/media-sources"
-          className="inline-flex min-h-[36px] items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[11px] font-medium text-white/70 transition-all hover:border-white/20 hover:bg-white/[0.08] hover:text-white"
+          onClick={(e) => e.stopPropagation()}
+          className="hidden min-h-[36px] items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[11px] font-medium text-white/70 transition-all hover:border-white/20 hover:bg-white/[0.08] hover:text-white sm:inline-flex"
         >
           Research Hub
           <ArrowRight className="h-3.5 w-3.5" strokeWidth={1.5} />
         </Link>
-      </div>
+        <ChevronDown
+          className={`h-4 w-4 flex-shrink-0 text-white/45 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+          strokeWidth={1.5}
+        />
+      </button>
+
+      {/* Collapsible body */}
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            className="overflow-hidden"
+          >
+            <div className="px-4 pb-4 sm:px-5 sm:pb-5">
 
       {loading ? (
         <div className="space-y-2">
@@ -299,6 +323,11 @@ export function DailyInsightsCard({ profile, supplements }: DailyInsightsCardPro
           ))}
         </ul>
       )}
+
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </section>
   );
 }
