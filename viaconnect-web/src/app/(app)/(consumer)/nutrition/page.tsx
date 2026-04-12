@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
-import { Apple, Camera, PenLine } from 'lucide-react';
+import { Apple, Camera, Dna, PenLine, ArrowRight } from 'lucide-react';
 import { NutritionScoreCard } from '@/components/nutrition/NutritionScoreCard';
 import { QuickMealLog } from '@/components/nutrition/QuickMealLog';
 import { PhotoMealLog } from '@/components/nutrition/PhotoMealLog';
@@ -50,9 +51,19 @@ export default function NutritionPage() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
-      <div>
-        <h1 className="text-xl font-bold text-white sm:text-2xl">Nutrition</h1>
-        <p className="mt-1 text-sm text-white/40">Track your daily nutrition</p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-xl font-bold text-white sm:text-2xl">Nutrition</h1>
+          <p className="mt-1 text-sm text-white/40">Track your daily nutrition</p>
+        </div>
+        <Link
+          href="/nutrition/guide"
+          className="flex items-center gap-1.5 rounded-xl border border-[#2DA5A0]/30 bg-[#2DA5A0]/10 px-3 py-2 text-xs font-medium text-[#2DA5A0] transition-all hover:bg-[#2DA5A0]/20"
+        >
+          <Dna className="h-3.5 w-3.5" strokeWidth={1.5} />
+          Genetics Guide
+          <ArrowRight className="h-3 w-3" strokeWidth={1.5} />
+        </Link>
       </div>
 
       <NutritionScoreCard score={score} mealsLoggedToday={mealsToday} />

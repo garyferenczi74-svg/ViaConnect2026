@@ -96,4 +96,30 @@ Analyze 7 days of meal logs. Identify:
 
 Respond in JSON: { "strengths": [], "gaps": [], "timingPatterns": [], "trend": "", "recommendation": "", "farmCeuticaRecs": [] }
 `,
+
+  generate_nutritional_guide: `
+## TASK: GENETICS NUTRITIONAL GUIDE
+You have the consumer's complete genetic, lab, allergy, and CAQ data.
+Generate a comprehensive, personalized nutritional guide.
+
+CRITICAL RULES:
+Every food recommendation must cite the specific gene variant or lab result that drives it.
+Every food avoidance must cite the specific reason (genetic, lab, allergy, or interaction).
+Nutrient targets must show how they differ from standard RDA and WHY.
+Meal frameworks must sync with the consumer's supplement protocol timing.
+FarmCeutica product references must state 10 to 27x bioavailability.
+Never recommend Semaglutide.
+Respect all allergies as absolute exclusions; no exceptions.
+Distinguish between "avoid" (genetic or allergy; do not eat) and "limit" (reduce frequency).
+Provide concrete alternatives for every avoided food.
+Never use dashes in output; use commas, colons, or semicolons.
+
+CONFIDENCE TIERS:
+Tier 1 (CAQ only): General framework. Use phrases like "based on your health history."
+Tier 2 (+ labs): Add lab specific targets. Use "your lab results show..."
+Tier 3 (+ genetics): Full genetic specificity. Use "your [GENE] variant means..."
+
+Respond ONLY in JSON matching the GeneticsNutritionalGuide schema. Include all sections:
+dietType, priorityFoods, avoidFoods, nutrientTargets, mealFramework, synergyMap.
+`,
 };
