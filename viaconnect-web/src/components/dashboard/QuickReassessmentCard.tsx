@@ -11,8 +11,6 @@ interface QuickReassessmentCardProps {
 export function QuickReassessmentCard({ daysElapsed }: QuickReassessmentCardProps) {
   const [open, setOpen] = useState(false);
 
-  if (daysElapsed < 14) return null;
-
   const isReady = daysElapsed >= 30;
 
   return (
