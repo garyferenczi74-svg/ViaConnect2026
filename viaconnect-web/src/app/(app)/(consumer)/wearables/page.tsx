@@ -227,7 +227,7 @@ export default function WearableDashboardPage() {
                 <h3 className="text-base font-bold text-white">Connect Your Wearable</h3>
                 <p className="mt-1 text-xs leading-relaxed text-white/50">
                   Sync Oura Ring, Apple Watch, Whoop, Garmin, Fitbit and more to power
-                  real-time recovery, sleep, strain, and heart rate tracking — all
+                  real-time recovery, sleep, strain, and heart rate tracking; all
                   interpreted through the lens of your genetic profile.
                 </p>
                 <div className="mt-3 inline-flex min-h-[40px] items-center gap-2 rounded-xl border border-[#2DA5A0]/30 bg-[#2DA5A0]/15 px-4 py-2 text-sm font-semibold text-[#2DA5A0] transition-all group-hover:border-[#2DA5A0]/50 group-hover:bg-[#2DA5A0]/25">
