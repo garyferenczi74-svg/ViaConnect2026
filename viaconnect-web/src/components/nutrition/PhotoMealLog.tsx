@@ -48,8 +48,8 @@ export function PhotoMealLog({ mealType = 'lunch', supplements = [], onSaved }: 
       setAnalysis(result);
       setInteractions(checkFoodInteractions(result.items, supplements));
       setStep('results');
-    } catch (err: any) {
-      setError(err.message || 'Analysis failed');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Analysis failed');
       setStep('capture');
     }
   }, [mealType, supplements]);
@@ -69,7 +69,9 @@ export function PhotoMealLog({ mealType = 'lunch', supplements = [], onSaved }: 
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      await (supabase as any).from('meal_logs').insert({
+      // TODO: Remove cast once meal_logs is added to Supabase typegen
+      const untypedClient = supabase as unknown as { from(t: string): { insert(r: Record<string, unknown>): Promise<unknown> } };
+      await untypedClient.from('meal_logs').insert({
         user_id: user.id,
         meal_type: mealType,
         log_method: 'photo_ai',
@@ -99,7 +101,9 @@ export function PhotoMealLog({ mealType = 'lunch', supplements = [], onSaved }: 
 
       const mealName = `${mealType.charAt(0).toUpperCase() + mealType.slice(1)} — ${new Date().toLocaleDateString('en-US', { weekday: 'short' })}`;
 
-      await (supabase as any).from('saved_meals').upsert({
+      // TODO: Remove cast once saved_meals is added to Supabase typegen
+      const untypedClient = supabase as unknown as { from(t: string): { upsert(r: Record<string, unknown>, opts?: Record<string, unknown>): Promise<unknown> } };
+      await untypedClient.from('saved_meals').upsert({
         user_id: user.id,
         name: mealName,
         meal_type: mealType,

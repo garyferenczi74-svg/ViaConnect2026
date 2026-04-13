@@ -139,7 +139,7 @@ export default function PluginsPage() {
       className="min-h-screen pb-24"
       style={{ background: 'var(--gradient-hero)' }}
     >
-      <div className="mx-auto max-w-2xl px-5 pt-12">
+      <div className="mx-auto max-w-2xl px-4 md:px-5 lg:px-6 pt-8 md:pt-12">
         {/* ── Header ── */}
         <header className="mb-10">
           <h1
@@ -155,10 +155,10 @@ export default function PluginsPage() {
         </header>
 
         {/* ── Hero CTA Cards ── */}
-        <div className="flex flex-col gap-4 mb-12">
+        <div className="flex flex-col gap-4 mb-8 md:mb-12">
           {/* Card 1 — Wearable */}
           <div
-            className="glass-v2 rounded-2xl p-6"
+            className="glass-v2 rounded-2xl p-4 md:p-6"
             style={{ borderLeft: '4px solid var(--teal-500)' }}
           >
             <div className="flex items-start gap-4 mb-4">
@@ -186,7 +186,7 @@ export default function PluginsPage() {
 
           {/* Card 2 — App */}
           <div
-            className="glass-v2 rounded-2xl p-6"
+            className="glass-v2 rounded-2xl p-4 md:p-6"
             style={{ borderLeft: '4px solid var(--orange-500)' }}
           >
             <div className="flex items-start gap-4 mb-4">
@@ -214,7 +214,7 @@ export default function PluginsPage() {
 
           {/* Card 3 — Lab */}
           <div
-            className="glass-v2 rounded-2xl p-6"
+            className="glass-v2 rounded-2xl p-4 md:p-6"
             style={{ borderLeft: '4px solid #27AE60' }}
           >
             <div className="flex items-start gap-4 mb-4">
@@ -237,7 +237,7 @@ export default function PluginsPage() {
             </div>
             <Link href="/plugins/labs">
               <button
-                className="w-full py-2.5 rounded-xl text-sm font-semibold text-white transition-all hover:brightness-110 active:scale-[0.98]"
+                className="w-full py-2.5 min-h-[44px] rounded-xl text-sm font-semibold text-white transition-all hover:brightness-110 active:scale-[0.98]"
                 style={{
                   background: 'linear-gradient(135deg, #27AE60, #1e8a4d)',
                 }}
@@ -266,7 +266,7 @@ export default function PluginsPage() {
                   if (e.key === 'Enter' && !matchesExisting && query.trim().length >= 2) handleRequest();
                 }}
                 placeholder="Search apps, wearables, or devices..."
-                className="w-full rounded-xl border border-white/10 bg-white/[0.04] py-3 pl-10 pr-4 text-sm text-white placeholder-white/30 focus:border-[#2DA5A0]/40 focus:outline-none focus:ring-2 focus:ring-[#2DA5A0]/20"
+                className="w-full rounded-xl border border-white/10 bg-white/[0.04] py-3 min-h-[44px] pl-10 pr-4 text-sm text-white placeholder-white/30 focus:border-[#2DA5A0]/40 focus:outline-none focus:ring-2 focus:ring-[#2DA5A0]/20"
               />
             </div>
 
@@ -374,7 +374,7 @@ export default function PluginsPage() {
         {/* ── Why Connect? ── */}
         <section className="mb-12">
           <p className="text-overline mb-4">WHY CONNECT?</p>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {whyConnectCards.map((card) => {
               const CardIcon = card.icon;
               return (
@@ -401,7 +401,7 @@ export default function PluginsPage() {
         {/* ── Privacy & Security ── */}
         <section className="mb-12">
           <p className="text-overline mb-4">PRIVACY &amp; SECURITY</p>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {privacyItems.map((item) => {
               const ItemIcon = item.icon;
               return (

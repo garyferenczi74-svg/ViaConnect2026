@@ -35,7 +35,7 @@ export function QuickMealLogWidget() {
           .select('meal_type')
           .eq('user_id', user.id)
           .eq('meal_date', today);
-        if (data) setLoggedMeals(new Set(data.map((r: any) => r.meal_type)));
+        if (data) setLoggedMeals(new Set(data.map((r: { meal_type: string }) => r.meal_type)));
       } catch { /* table may not exist yet */ }
     })();
   }, []);

@@ -23,12 +23,12 @@ interface ScheduleBlock {
   items: ProtocolCheckItemData[];
 }
 
-const TIME_BLOCKS: { id: string; label: string; icon: LucideIcon; color: string }[] = [
-  { id: 'morning', label: 'Morning', icon: Sunrise, time: '7–9 AM', color: '#FFB347' } as any,
-  { id: 'midday', label: 'Midday', icon: Sun, time: '12–2 PM', color: '#2DA5A0' } as any,
-  { id: 'evening', label: 'Evening', icon: Sunset, time: '5–7 PM', color: '#B75E18' } as any,
-  { id: 'bedtime', label: 'Bedtime', icon: Moon, time: '9–11 PM', color: '#7C6FE0' } as any,
-  { id: 'asNeeded', label: 'As Needed', icon: Clock, time: 'Flexible', color: '#9CA3AF' } as any,
+const TIME_BLOCKS: { id: string; label: string; icon: LucideIcon; time: string; color: string }[] = [
+  { id: 'morning', label: 'Morning', icon: Sunrise, time: '7–9 AM', color: '#FFB347' },
+  { id: 'midday', label: 'Midday', icon: Sun, time: '12–2 PM', color: '#2DA5A0' },
+  { id: 'evening', label: 'Evening', icon: Sunset, time: '5–7 PM', color: '#B75E18' },
+  { id: 'bedtime', label: 'Bedtime', icon: Moon, time: '9–11 PM', color: '#7C6FE0' },
+  { id: 'asNeeded', label: 'As Needed', icon: Clock, time: 'Flexible', color: '#9CA3AF' },
 ];
 
 const slotForSupp = (s: DashboardSupplement): string => {

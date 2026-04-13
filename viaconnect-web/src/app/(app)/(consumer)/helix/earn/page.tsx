@@ -39,7 +39,7 @@ export default function EarnPage() {
   const possible = DAILY_ACTIONS.reduce((s, a) => s + a.helix, 0);
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-6 md:gap-8 p-4 md:p-6">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: 12 }}
@@ -53,14 +53,14 @@ export default function EarnPage() {
       </motion.div>
 
       {/* Earning categories grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
         {EARN_CATEGORIES.map((cat, i) => (
           <motion.div
             key={cat.label}
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.08, duration: 0.5, ease: 'easeOut' }}
-            className="relative overflow-hidden rounded-[20px] p-6 bg-[rgba(26,39,68,0.55)] backdrop-blur-[24px] backdrop-saturate-[160%] border border-white/[0.08] hover:border-white/[0.14] hover:shadow-[0_20px_60px_rgba(0,0,0,0.3)] transition-all duration-300 hover:-translate-y-0.5 flex items-start gap-4"
+            className="relative overflow-hidden rounded-[20px] p-4 md:p-6 bg-[rgba(26,39,68,0.55)] backdrop-blur-[24px] backdrop-saturate-[160%] border border-white/[0.08] hover:border-white/[0.14] hover:shadow-[0_20px_60px_rgba(0,0,0,0.3)] transition-all duration-300 hover:-translate-y-0.5 flex flex-col md:flex-row items-start gap-3 md:gap-4"
           >
             {/* Rim light */}
             <div
@@ -93,14 +93,14 @@ export default function EarnPage() {
           Today&apos;s Helix Activity
         </h3>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 md:gap-2.5">
           {DAILY_ACTIONS.map((action, i) => (
             <motion.div
               key={action.label}
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.08, duration: 0.4, ease: 'easeOut' }}
-              className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${
+              className={`flex items-center gap-3 px-4 py-3 min-h-[44px] rounded-xl transition-colors ${
                 action.completed
                   ? 'bg-[#2DA5A0]/10 border border-[#2DA5A0]/15'
                   : 'bg-white/[0.02] border border-white/[0.04]'

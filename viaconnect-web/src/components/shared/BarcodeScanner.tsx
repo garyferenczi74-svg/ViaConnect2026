@@ -48,10 +48,9 @@ export default function BarcodeScanner({ onBarcodeDetected, onClose }: BarcodeSc
           },
           () => {} // Ignore per-frame scan misses
         );
-      } catch (err: any) {
+      } catch {
         if (!cancelled) {
           setError('Camera access denied. Please allow camera access to scan barcodes.');
-          console.error('[barcode-scanner] Start error:', err);
         }
       }
     }

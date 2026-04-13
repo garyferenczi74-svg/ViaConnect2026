@@ -33,7 +33,7 @@ export default function NutritionPage() {
       setMealsToday(count);
 
       if (count > 0) {
-        const avgQ = data.reduce((s: number, r: any) => s + (r.quality_rating ?? 2), 0) / count;
+        const avgQ = data.reduce((s: number, r: { quality_rating?: number }) => s + (r.quality_rating ?? 2), 0) / count;
         const freqScore = Math.min(100, (count / 3) * 60);
         const qualScore = (avgQ / 4) * 100;
         setScore(Math.round(freqScore * 0.4 + qualScore * 0.6));
@@ -99,7 +99,7 @@ export default function NutritionPage() {
           {TABS.map((t) => {
             const Icon = t.icon;
             const isActive = tab === t.id;
-            const isDisabled = 'disabled' in t && !!(t as any).disabled;
+            const isDisabled = 'disabled' in t && !!(t as unknown as { disabled?: boolean }).disabled;
             return (
               <button
                 key={t.id}

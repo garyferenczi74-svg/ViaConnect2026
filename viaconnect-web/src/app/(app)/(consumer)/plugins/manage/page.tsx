@@ -11,6 +11,14 @@ import {
   Unplug,
   RotateCcw,
   Plus,
+  Gem,
+  Watch,
+  Activity,
+  Leaf,
+  Bike,
+  Dna,
+  CheckCircle,
+  AlertTriangle,
 } from 'lucide-react';
 
 /* ------------------------------------------------------------------ */
@@ -20,7 +28,7 @@ import {
 interface Wearable {
   id: string;
   name: string;
-  emoji: string;
+  icon: React.ElementType;
   status: 'connected' | 'error';
   lastSync: string;
   dataTypes: string[];
@@ -29,7 +37,7 @@ interface Wearable {
 interface AppConnection {
   id: string;
   name: string;
-  emoji: string;
+  icon: React.ElementType;
   status: 'connected' | 'error';
   lastSync: string;
   dataTypes: string[];
@@ -39,7 +47,7 @@ const wearables: Wearable[] = [
   {
     id: 'oura',
     name: 'Oura Ring Gen 3',
-    emoji: '💍',
+    icon: Gem,
     status: 'connected',
     lastSync: '2 minutes ago',
     dataTypes: ['sleep', 'hrv', 'temperature'],
@@ -47,7 +55,7 @@ const wearables: Wearable[] = [
   {
     id: 'apple-watch',
     name: 'Apple Watch S9',
-    emoji: '⌚',
+    icon: Watch,
     status: 'connected',
     lastSync: '5 minutes ago',
     dataTypes: ['heart_rate', 'activity', 'ecg'],
@@ -55,7 +63,7 @@ const wearables: Wearable[] = [
   {
     id: 'garmin',
     name: 'Garmin Venu 3',
-    emoji: '🏃',
+    icon: Activity,
     status: 'error',
     lastSync: '2 hours ago',
     dataTypes: ['activity', 'sleep', 'stress'],
@@ -66,7 +74,7 @@ const apps: AppConnection[] = [
   {
     id: 'myfitnesspal',
     name: 'MyFitnessPal',
-    emoji: '🥗',
+    icon: Leaf,
     status: 'connected',
     lastSync: '1 hr ago',
     dataTypes: ['nutrition', 'calories', 'macros'],
@@ -74,7 +82,7 @@ const apps: AppConnection[] = [
   {
     id: 'strava',
     name: 'Strava',
-    emoji: '🚴',
+    icon: Bike,
     status: 'connected',
     lastSync: 'today',
     dataTypes: ['workouts', 'activities'],
@@ -104,7 +112,7 @@ function DataPill({ label }: { label: string }) {
 }
 
 function DeviceCard({
-  emoji,
+  icon: Icon,
   name,
   status,
   lastSync,
@@ -112,7 +120,7 @@ function DeviceCard({
   onDisconnect,
   onRetry,
 }: {
-  emoji: string;
+  icon: React.ElementType;
   name: string;
   status: 'connected' | 'error';
   lastSync: string;
@@ -123,8 +131,8 @@ function DeviceCard({
   return (
     <div className="glass-v2 flex items-start gap-4 p-4 rounded-2xl">
       {/* Icon */}
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10 text-xl">
-        {emoji}
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10">
+        <Icon className="w-5 h-5 text-white/70" strokeWidth={1.5} />
       </div>
 
       {/* Center info */}
@@ -136,7 +144,7 @@ function DeviceCard({
           {status === 'connected' ? (
             <span className="text-white/60">Connected · Synced {lastSync}</span>
           ) : (
-            <span className="text-amber-300">⚠️ Sync error · Last: {lastSync}</span>
+            <span className="text-amber-300 inline-flex items-center gap-1"><AlertTriangle className="w-3 h-3" strokeWidth={1.5} /> Sync error; Last: {lastSync}</span>
           )}
         </p>
 
@@ -200,7 +208,7 @@ export default function ManageConnectionsPage() {
     label: string,
   ) {
     if (window.confirm(`Disconnect ${label}? You can reconnect later.`)) {
-      (listSetter as (fn: (prev: any[]) => any[]) => void)((prev) =>
+      (listSetter as unknown as (fn: (prev: { id: string }[]) => { id: string }[]) => void)((prev) =>
         prev.filter((item: { id: string }) => item.id !== id),
       );
     }
@@ -229,7 +237,7 @@ export default function ManageConnectionsPage() {
         {wearableList.map((w) => (
           <DeviceCard
             key={w.id}
-            emoji={w.emoji}
+            icon={w.icon}
             name={w.name}
             status={w.status}
             lastSync={w.lastSync}
@@ -249,7 +257,7 @@ export default function ManageConnectionsPage() {
         {appList.map((a) => (
           <DeviceCard
             key={a.id}
-            emoji={a.emoji}
+            icon={a.icon}
             name={a.name}
             status={a.status}
             lastSync={a.lastSync}
@@ -266,12 +274,12 @@ export default function ManageConnectionsPage() {
         <p className="text-overline">LABS</p>
 
         <div className="glass-v2 flex items-start gap-4 p-4 rounded-2xl">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10 text-xl">
-            🧬
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10">
+            <Dna className="w-5 h-5 text-white/70" strokeWidth={1.5} />
           </div>
           <div className="flex-1 min-w-0 space-y-1">
-            <p className="font-semibold text-white">Lab Report &mdash; March 15, 2026</p>
-            <p className="text-sm text-emerald-400">✅ 23 biomarkers extracted</p>
+            <p className="font-semibold text-white">Lab Report, March 15, 2026</p>
+            <p className="text-sm text-emerald-400 inline-flex items-center gap-1"><CheckCircle className="w-3.5 h-3.5" strokeWidth={1.5} /> 23 biomarkers extracted</p>
             <p className="text-sm text-white/50">Source: Quest Diagnostics</p>
           </div>
           <div className="flex shrink-0 items-center gap-2">
@@ -294,12 +302,12 @@ export default function ManageConnectionsPage() {
         <p className="text-overline">GENETIC DATA IMPORTS</p>
 
         <div className="glass-v2 flex items-start gap-4 p-4 rounded-2xl">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10 text-xl">
-            🧬
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10">
+            <Dna className="w-5 h-5 text-white/70" strokeWidth={1.5} />
           </div>
           <div className="flex-1 min-w-0 space-y-1">
             <p className="font-semibold text-white">23andMe Raw Data Import</p>
-            <p className="text-sm text-emerald-400">✅ Processed · 612,000 SNPs</p>
+            <p className="text-sm text-emerald-400 inline-flex items-center gap-1"><CheckCircle className="w-3.5 h-3.5" strokeWidth={1.5} /> Processed; 612,000 SNPs</p>
             <p className="text-sm text-white/50">Imported: February 20, 2026</p>
           </div>
           <div className="flex shrink-0 items-center gap-2">

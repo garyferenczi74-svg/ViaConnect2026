@@ -213,11 +213,11 @@ export default function AIAdvisorPage() {
         </StaggerChild>
 
         {/* Two-column layout */}
-        <StaggerChild className="flex gap-6 items-start">
+        <StaggerChild className="flex flex-col lg:flex-row gap-6 items-start">
           {/* ── Left Panel (65%) — Chat ── */}
-          <div className="w-[65%] flex flex-col glass rounded-2xl overflow-hidden">
+          <div className="w-full lg:w-[65%] flex flex-col glass rounded-2xl overflow-hidden">
             {/* Model selector bar */}
-            <div className="flex items-center gap-2 px-5 py-3 border-b border-white/[0.06]">
+            <div className="flex items-center gap-2 px-3 md:px-5 py-3 border-b border-white/[0.06] overflow-x-auto">
               {(Object.keys(MODEL_META) as AIModel[]).map((key) => {
                 const meta = MODEL_META[key];
                 const Icon = meta.icon;
@@ -241,7 +241,7 @@ export default function AIAdvisorPage() {
             </div>
 
             {/* Chat messages */}
-            <div className="flex-1 overflow-y-auto p-5 space-y-4 min-h-[500px] max-h-[600px]">
+            <div className="flex-1 overflow-y-auto p-3 md:p-5 space-y-4 min-h-[400px] md:min-h-[500px] max-h-[600px]">
               {messages.map((msg) => {
                 if (msg.role === "user") {
                   return (
@@ -344,7 +344,7 @@ export default function AIAdvisorPage() {
             </div>
 
             {/* Input area */}
-            <div className="border-t border-white/[0.06] px-5 py-4 flex gap-3">
+            <div className="border-t border-white/[0.06] px-3 md:px-5 py-4 flex gap-3">
               <textarea
                 ref={textareaRef}
                 value={input}
@@ -352,7 +352,7 @@ export default function AIAdvisorPage() {
                 onKeyDown={handleKeyDown}
                 rows={1}
                 placeholder="Ask about protocols, interactions, genetic analysis..."
-                className="flex-1 resize-none bg-white/[0.04] border border-white/[0.08] rounded-lg px-4 py-3 text-sm text-white placeholder:text-gray-600 outline-none focus:border-copper/50 focus:ring-1 focus:ring-copper/20 transition-colors"
+                className="flex-1 resize-none bg-white/[0.04] border border-white/[0.08] rounded-lg px-4 py-3 text-base text-white placeholder:text-gray-600 outline-none focus:border-copper/50 focus:ring-1 focus:ring-copper/20 transition-colors"
               />
               <Button
                 variant="primary"
@@ -367,7 +367,7 @@ export default function AIAdvisorPage() {
           </div>
 
           {/* ── Right Panel (35%) — Context ── */}
-          <div className="w-[35%] space-y-5">
+          <div className="w-full lg:w-[35%] space-y-5">
             {/* Current Patient Summary */}
             <Card className="p-5 space-y-4">
               <div className="flex items-center justify-between">

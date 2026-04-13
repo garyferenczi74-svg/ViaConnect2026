@@ -135,8 +135,8 @@ export function DailyInsightsCard({ profile, supplements }: DailyInsightsCardPro
           .slice(0, 5);
 
         setItems(scored);
-      } catch (e) {
-        console.warn('[daily-insights] load failed', e);
+      } catch {
+        // load failed — silently ignore
       } finally {
         setLoading(false);
       }

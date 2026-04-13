@@ -79,3 +79,9 @@ export function calculateGaugeScore(config: GaugeScoreConfig): number {
 
   return Math.round(clamp(blended));
 }
+
+export function calculateComposite(scores: Record<GaugeId, number>): number {
+  const values = Object.values(scores);
+  if (values.length === 0) return 0;
+  return Math.round(values.reduce((a, b) => a + b, 0) / values.length);
+}

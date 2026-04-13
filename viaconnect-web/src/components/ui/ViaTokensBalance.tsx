@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { Coins, Flame } from 'lucide-react';
 
 interface ViaTokensBalanceProps {
   balance: number;
@@ -21,7 +22,7 @@ export function ViaTokensBalance({
   if (size === 'sm') {
     return (
       <div className="inline-flex items-center gap-1.5">
-        <span className="text-sm">🪙</span>
+        <Coins className="w-4 h-4" strokeWidth={1.5} style={{ color: '#2DA5A0' }} />
         <span className="text-sm font-semibold" style={{ color: '#2DA5A0' }}>
           {balance.toLocaleString()}
         </span>
@@ -38,7 +39,7 @@ export function ViaTokensBalance({
             className="flex items-center justify-center w-10 h-10 rounded-lg text-2xl"
             style={{ backgroundColor: 'rgba(45, 165, 160, 0.12)' }}
           >
-            🪙
+            <Coins className="w-6 h-6" strokeWidth={1.5} style={{ color: '#2DA5A0' }} />
           </div>
           <div className="flex items-baseline gap-1.5">
             <span className="text-2xl font-bold text-white">
@@ -48,7 +49,7 @@ export function ViaTokensBalance({
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-sm">🔥</span>
+          <Flame className="w-4 h-4 text-orange-400" strokeWidth={1.5} />
           <span className="text-xs text-secondary">{streak}</span>
           <span
             className="rounded-full px-2 py-0.5 text-xs font-bold"
@@ -68,7 +69,7 @@ export function ViaTokensBalance({
   return (
     <div className="glass-v2 p-6 rounded-xl">
       <div className="flex items-center gap-4 mb-4">
-        <span className="text-4xl">🪙</span>
+        <Coins className="w-10 h-10" strokeWidth={1.5} style={{ color: '#2DA5A0' }} />
         <div className="flex items-baseline gap-2">
           <span
             className="text-white"
@@ -80,7 +81,7 @@ export function ViaTokensBalance({
         </div>
       </div>
       <div className="flex items-center gap-2 mb-2">
-        <span className="text-base">🔥</span>
+        <Flame className="w-5 h-5 text-orange-400" strokeWidth={1.5} />
         <span className="text-sm font-bold text-white">
           {streak}-day streak
         </span>

@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import type { RealtimeChannel } from "@supabase/supabase-js";
 
 interface NotificationRow {
   id: string;
@@ -55,7 +56,7 @@ export function NotificationBell() {
       setLoading(false);
       return;
     }
-    const { data } = await (supabase as any)
+    const { data } = await supabase
       .from("user_notifications")
       .select("id, user_id, type, title, body, link, is_read, created_at")
       .eq("user_id", user.id)
@@ -74,7 +75,7 @@ export function NotificationBell() {
     // Realtime: subscribe to inserts and updates on user_notifications
     // scoped to the current user. Postgres changes get fan-fed through
     // Supabase Realtime so we can update the bell without polling.
-    let channel: any = null;
+    let channel: RealtimeChannel | null = null;
     let cancelled = false;
 
     (async () => {
@@ -82,7 +83,7 @@ export function NotificationBell() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user || cancelled) return;
 
-      channel = (supabase as any)
+      channel = supabase
         .channel(`user_notifications:${user.id}`)
         .on(
           "postgres_changes",
@@ -92,8 +93,8 @@ export function NotificationBell() {
             table: "user_notifications",
             filter: `user_id=eq.${user.id}`,
           },
-          (payload: any) => {
-            const row = payload?.new as NotificationRow | undefined;
+          (payload: { new: Record<string, unknown> }) => {
+            const row = payload?.new as unknown as NotificationRow | undefined;
             if (!row || row.is_read) return;
             setRows((prev) => {
               if (prev.some((r) => r.id === row.id)) return prev;
@@ -110,8 +111,8 @@ export function NotificationBell() {
             table: "user_notifications",
             filter: `user_id=eq.${user.id}`,
           },
-          (payload: any) => {
-            const row = payload?.new as NotificationRow | undefined;
+          (payload: { new: Record<string, unknown> }) => {
+            const row = payload?.new as unknown as NotificationRow | undefined;
             if (!row) return;
             setRows((prev) => prev.map((r) => (r.id === row.id ? row : r)));
           },
@@ -123,7 +124,7 @@ export function NotificationBell() {
       cancelled = true;
       if (channel) {
         const supabase = createClient();
-        (supabase as any).removeChannel(channel);
+        supabase.removeChannel(channel);
       }
     };
   }, []);
@@ -149,7 +150,7 @@ export function NotificationBell() {
     setRows(prev => prev.map(r => ({ ...r, is_read: true })));
     setUnread(0);
     const supabase = createClient();
-    await (supabase as any)
+    await supabase
       .from("user_notifications")
       .update({ is_read: true })
       .in("id", ids);

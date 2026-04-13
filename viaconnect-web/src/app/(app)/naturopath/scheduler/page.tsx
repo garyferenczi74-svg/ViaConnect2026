@@ -96,7 +96,7 @@ const DURATION_OPTIONS = [
 const INITIAL_APPOINTMENTS: Appointment[] = [
   { id: "1", patient: "Elena Vasquez", type: "Constitutional Assessment", date: "2026-03-02", time: "09:00", duration: 90, status: "Completed", notes: "Vata-Pitta typing complete" },
   { id: "2", patient: "Marcus Chen", type: "Follow-up", date: "2026-03-04", time: "10:00", duration: 45, status: "Completed", notes: "Review liver support protocol" },
-  { id: "3", patient: "Priya Sharma", type: "Initial Consult", date: "2026-03-06", time: "14:00", duration: 60, status: "Completed", notes: "New patient intake — thyroid concerns" },
+  { id: "3", patient: "Priya Sharma", type: "Initial Consult", date: "2026-03-06", time: "14:00", duration: 60, status: "Completed", notes: "New patient intake, thyroid concerns" },
   { id: "4", patient: "David Okafor", type: "Botanical Review", date: "2026-03-10", time: "11:00", duration: 45, status: "Completed", notes: "Adjust adaptogen formula" },
   { id: "5", patient: "Sarah Williams", type: "New Patient", date: "2026-03-13", time: "09:30", duration: 60, status: "Completed", notes: "Referral from Dr. Kim" },
   { id: "6", patient: "James Kowalski", type: "Follow-up", date: "2026-03-16", time: "15:00", duration: 30, status: "Confirmed", notes: "MTHFR protocol check-in" },
@@ -320,14 +320,14 @@ export default function SchedulerPage() {
   );
 
   return (
-    <PageTransition className="min-h-screen bg-dark-bg px-6 py-10">
+    <PageTransition className="min-h-screen bg-dark-bg px-4 md:px-6 lg:px-8 py-6 md:py-10">
       <div className="mx-auto max-w-7xl">
         {/* ============================================================ */}
         {/*  Header                                                       */}
         {/* ============================================================ */}
         <StaggerChild className="mb-8 flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-white">
+            <h1 className="text-2xl md:text-3xl font-bold text-white">
               Appointment Calendar
             </h1>
             <p className="mt-1 text-gray-400">
@@ -376,7 +376,7 @@ export default function SchedulerPage() {
             <h2 className="min-w-[160px] text-center text-lg font-semibold text-white">
               {viewMode === "month"
                 ? `${monthName} ${year}`
-                : `Week of ${weekDates[0].toLocaleDateString("en-US", { month: "short", day: "numeric" })} — ${weekDates[6].toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`}
+                : `Week of ${weekDates[0].toLocaleDateString("en-US", { month: "short", day: "numeric" })} to ${weekDates[6].toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`}
             </h2>
             <button
               type="button"
@@ -390,7 +390,7 @@ export default function SchedulerPage() {
           {/* New appointment */}
           <button
             type="button"
-            className="rounded-lg bg-sage px-4 py-2 text-sm font-medium text-white hover:bg-sage/80 transition-colors"
+            className="rounded-lg bg-sage px-4 py-2 min-h-[44px] text-sm font-medium text-white hover:bg-sage/80 transition-colors"
             onClick={() => openNewAppt()}
           >
             + New Appointment
@@ -401,9 +401,9 @@ export default function SchedulerPage() {
         {/*  Month View                                                   */}
         {/* ============================================================ */}
         {viewMode === "month" && (
-          <Card hover={false} className="border border-dark-border p-4 mb-6">
+          <Card hover={false} className="border border-dark-border p-2 md:p-4 mb-6 overflow-x-auto">
             {/* Day headers */}
-            <div className="mb-2 grid grid-cols-7 gap-1">
+            <div className="mb-2 grid grid-cols-7 gap-1 min-w-[500px]">
               {DAYS_OF_WEEK.map((d) => (
                 <div
                   key={d}
@@ -415,7 +415,7 @@ export default function SchedulerPage() {
             </div>
 
             {/* Calendar cells */}
-            <div className="grid grid-cols-7 gap-1">
+            <div className="grid grid-cols-7 gap-1 min-w-[500px]">
               {/* Leading blanks */}
               {Array.from({ length: firstDow }).map((_, i) => (
                 <div key={`blank-${i}`} className="h-20 rounded-lg" />
@@ -495,7 +495,7 @@ export default function SchedulerPage() {
         {/*  Week View                                                    */}
         {/* ============================================================ */}
         {viewMode === "week" && (
-          <Card hover={false} className="border border-dark-border p-4 mb-6 overflow-x-auto">
+          <Card hover={false} className="border border-dark-border p-2 md:p-4 mb-6 overflow-x-auto">
             {/* Day headers */}
             <div className="grid grid-cols-[60px_repeat(7,1fr)] gap-1 mb-1">
               <div />
@@ -586,7 +586,7 @@ export default function SchedulerPage() {
         {/*  Selected Day Detail (Month view)                             */}
         {/* ============================================================ */}
         {viewMode === "month" && selectedDate && selectedDayAppts.length > 0 && (
-          <Card hover={false} className="border border-dark-border p-5 mb-6">
+          <Card hover={false} className="border border-dark-border p-3 md:p-5 mb-6">
             <h3 className="mb-3 text-sm font-semibold text-white">
               Appointments for{" "}
               {new Date(selectedDate + "T00:00:00").toLocaleDateString("en-US", {
@@ -601,7 +601,7 @@ export default function SchedulerPage() {
                 <button
                   key={a.id}
                   type="button"
-                  className="flex w-full items-center gap-4 rounded-lg border border-white/[0.06] bg-white/[0.02] p-3 text-left hover:bg-white/[0.05] transition-colors"
+                  className="flex w-full items-center gap-3 md:gap-4 rounded-lg border border-white/[0.06] bg-white/[0.02] p-2.5 md:p-3 min-h-[44px] text-left hover:bg-white/[0.05] transition-colors"
                   onClick={() => openEditAppt(a)}
                 >
                   <span className="w-16 font-mono text-xs text-sage">
@@ -639,7 +639,7 @@ export default function SchedulerPage() {
               <Card
                 key={a.id}
                 hover={false}
-                className="flex items-center justify-between border border-dark-border p-4"
+                className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 md:gap-0 border border-dark-border p-3 md:p-4"
               >
                 <div className="flex items-center gap-4">
                   <span className="w-20 font-mono text-sm text-sage">
@@ -707,7 +707,7 @@ export default function SchedulerPage() {
               options={APPT_TYPE_OPTIONS}
             />
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Input
                 label="Date"
                 type="date"

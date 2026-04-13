@@ -44,16 +44,16 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <>
+    <div className="w-full max-w-md mx-auto px-4 md:px-0">
       {/* Logo */}
       <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold text-white">
+        <h1 className="text-2xl md:text-3xl font-bold text-white">
           <span className="text-copper">Via</span>Connect
         </h1>
-        <p className="text-gray-400 mt-2 text-sm">Reset your password</p>
+        <p className="text-gray-400 mt-2 text-sm md:text-base">Reset your password</p>
       </div>
 
-      <div className="glass rounded-2xl p-8">
+      <div className="glass rounded-2xl p-4 md:p-6 lg:p-8">
         {sent ? (
           <div className="text-center space-y-4 py-4">
             <div className="w-14 h-14 bg-portal-green/15 rounded-2xl flex items-center justify-center mx-auto">
@@ -97,7 +97,7 @@ export default function ForgotPasswordPage() {
                 type="email"
                 value={email}
                 onChange={(e) => { setEmail(e.target.value); setError(""); }}
-                className={`w-full h-10 bg-dark-surface border rounded-lg px-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-1 transition-colors ${
+                className={`w-full h-10 min-h-[44px] bg-dark-surface border rounded-lg px-3 text-base text-white placeholder-gray-600 focus:outline-none focus:ring-1 transition-colors ${
                   error
                     ? "border-rose/40 focus:ring-rose/30 focus:border-rose"
                     : "border-dark-border focus:ring-copper/50 focus:border-copper/50"
@@ -110,7 +110,7 @@ export default function ForgotPasswordPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full h-10 bg-gradient-to-r from-copper to-copper/80 hover:from-copper/90 hover:to-copper/70 disabled:opacity-50 text-white font-medium rounded-lg transition-all flex items-center justify-center gap-2"
+              className="w-full h-10 min-h-[44px] bg-gradient-to-r from-copper to-copper/80 hover:from-copper/90 hover:to-copper/70 disabled:opacity-50 text-white font-medium rounded-lg transition-all flex items-center justify-center gap-2"
             >
               {isLoading ? (
                 <>
@@ -131,6 +131,6 @@ export default function ForgotPasswordPage() {
           </form>
         )}
       </div>
-    </>
+    </div>
   );
 }

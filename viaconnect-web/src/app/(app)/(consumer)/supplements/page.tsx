@@ -245,7 +245,7 @@ export default function SupplementsPage() {
       {/* ═══ 5. BROWSE & BUILD PROTOCOL ═══ */}
       <Section icon={ShoppingBag} iconColor="#B75E18" title="Browse & Build Protocol" subtitle="Scan a barcode, search by name, or browse the catalog">
         <div className="p-5 md:p-6 space-y-6">
-          <SupplementInput portal="consumer" onProductAdded={(product: PluginProductResult) => { console.log('[supplements] Product added:', product); }} />
+          <SupplementInput portal="consumer" onProductAdded={() => {}} />
           <div><h3 className="text-xs text-white/20 uppercase tracking-wider font-semibold mb-3">Browse by Category</h3>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 md:gap-3">
               {CATEGORIES.map((cat) => (
@@ -304,9 +304,9 @@ function _RecommendedSupplementsSectionRemoved({ assessmentCompleted, profile, s
       }
 
       const currentSuppNames = supplements.map(s => s.product_name || s.supplement_name || '');
-      const recs = ((globalThis as any).generateFarmCeuticaRecommendations
-        ? (globalThis as any).generateFarmCeuticaRecommendations(assessmentPhases, currentSuppNames)
-        : []) as any[];
+      const recs = ((globalThis as unknown as Record<string, unknown>).generateFarmCeuticaRecommendations
+        ? ((globalThis as unknown as Record<string, (...args: unknown[]) => unknown[]>).generateFarmCeuticaRecommendations)(assessmentPhases, currentSuppNames)
+        : []) as { name: string; priority: string; reason: string }[];
       setRecommendations(recs);
       setLoadingRecs(false);
     }

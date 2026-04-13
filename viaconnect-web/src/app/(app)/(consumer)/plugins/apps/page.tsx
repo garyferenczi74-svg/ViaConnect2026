@@ -93,7 +93,7 @@ export default function AppsPage() {
   }, {});
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4 md:gap-6 px-4 md:px-0">
       {/* Back link */}
       <Link
         href="/plugins"
@@ -115,7 +115,7 @@ export default function AppsPage() {
           <button
             key={cat}
             onClick={() => setActiveCategory(cat)}
-            className="px-4 py-1.5 rounded-full text-sm font-medium transition-all"
+            className="px-4 py-1.5 min-h-[44px] rounded-full text-sm font-medium transition-all"
             style={
               activeCategory === cat
                 ? { backgroundColor: 'rgba(45, 165, 160, 0.15)', color: '#2DA5A0' }
@@ -128,14 +128,14 @@ export default function AppsPage() {
       </div>
 
       {/* Search input */}
-      <div className="glass-v2 flex items-center gap-3 px-4 py-3 rounded-xl">
+      <div className="glass-v2 flex items-center gap-3 px-4 py-3 min-h-[44px] rounded-xl">
         <Search size={18} className="shrink-0" style={{ color: 'var(--text-secondary)' }} />
         <input
           type="text"
           placeholder="Search apps..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="bg-transparent outline-none w-full text-sm text-white placeholder:text-white/40"
+          className="bg-transparent outline-none w-full text-sm text-white placeholder:text-white/40 min-h-[44px]"
         />
       </div>
 
@@ -148,7 +148,7 @@ export default function AppsPage() {
               <button
                 key={app.name}
                 onClick={handleConnect}
-                className="glass-v2 flex items-start gap-4 p-5 rounded-2xl text-left transition-all hover:brightness-110 active:scale-[0.98] cursor-pointer"
+                className="glass-v2 flex items-start gap-3 md:gap-4 p-4 md:p-5 rounded-2xl text-left transition-all hover:brightness-110 active:scale-[0.98] cursor-pointer min-h-[44px]"
               >
                 <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-[var(--navy-600)] text-2xl shrink-0">
                   {app.icon}

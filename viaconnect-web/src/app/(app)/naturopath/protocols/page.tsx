@@ -235,8 +235,7 @@ export default function ProtocolsPage() {
             <Card hover={false} className="mt-3 p-4">
               <SupplementInput
                 portal="naturopath"
-                onProductAdded={(product: PluginProductResult) => {
-                  console.log('[naturopath-protocols] Product added:', product);
+                onProductAdded={() => {
                   setShowQuickAdd(false);
                 }}
               />

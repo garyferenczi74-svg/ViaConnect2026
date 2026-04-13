@@ -9,6 +9,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Loader2, Package, Search, ShoppingBag } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import type { Tables } from "@/lib/supabase/types";
 import { OrderCard } from "@/components/account/OrderCard";
 import {
   toOrderSummary,
@@ -16,6 +17,10 @@ import {
   type OrderSummary,
   type StatusHistoryEntry,
 } from "@/components/account/orderTypes";
+
+type ShopOrderRow = Tables<"shop_orders">;
+type ShopOrderItemRow = Tables<"shop_order_items">;
+type ShopOrderStatusHistoryRow = Tables<"shop_order_status_history">;
 
 const STATUS_OPTIONS: { value: OrderStatus | "all"; label: string }[] = [
   { value: "all",              label: "All statuses" },
@@ -73,7 +78,7 @@ export default function OrdersPage() {
         }
         return;
       }
-      const { data: orderRows, error: ordersErr } = await (supabase as any)
+      const { data: orderRows, error: ordersErr } = await supabase
         .from("shop_orders")
         .select("*")
         .eq("user_id", user.id)
@@ -84,30 +89,30 @@ export default function OrdersPage() {
         setLoading(false);
         return;
       }
-      const orderRowsTyped = (orderRows as any[]) ?? [];
+      const orderRowsTyped: ShopOrderRow[] = orderRows ?? [];
       const orderIds = orderRowsTyped.map((o) => o.id);
 
-      let itemRows: any[] = [];
-      let historyRows: any[] = [];
+      let itemRows: ShopOrderItemRow[] = [];
+      let historyRows: ShopOrderStatusHistoryRow[] = [];
       if (orderIds.length > 0) {
         const [itemsRes, historyRes] = await Promise.all([
-          (supabase as any)
+          supabase
             .from("shop_order_items")
             .select("*")
             .in("order_id", orderIds)
             .order("created_at", { ascending: true }),
-          (supabase as any)
+          supabase
             .from("shop_order_status_history")
             .select("*")
             .in("order_id", orderIds)
             .order("created_at", { ascending: false }),
         ]);
-        itemRows = (itemsRes.data as any[]) ?? [];
-        historyRows = (historyRes.data as any[]) ?? [];
+        itemRows = itemsRes.data ?? [];
+        historyRows = historyRes.data ?? [];
       }
       if (cancelled) return;
 
-      const itemsByOrder = new Map<string, any[]>();
+      const itemsByOrder = new Map<string, ShopOrderItemRow[]>();
       for (const it of itemRows) {
         const arr = itemsByOrder.get(it.order_id) ?? [];
         arr.push(it);

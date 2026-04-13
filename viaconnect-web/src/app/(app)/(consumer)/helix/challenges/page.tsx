@@ -24,7 +24,7 @@ const CHALLENGES = [
 
 export default function ChallengesPage() {
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4 md:gap-6 p-4 md:p-6">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: 12 }}
@@ -38,7 +38,7 @@ export default function ChallengesPage() {
       </motion.div>
 
       {/* Challenge grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
         {CHALLENGES.map((ch, i) => (
           <ChallengeCard
             key={ch.title}

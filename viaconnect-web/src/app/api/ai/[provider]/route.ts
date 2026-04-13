@@ -51,8 +51,8 @@ async function writeAuditLog(
 ) {
   try {
     const supabase = createClient();
-    // Cast for jsonb metadata payload
-    await (supabase as any).from("audit_logs").insert({
+    // @ts-expect-error -- audit_logs table not in generated Database type
+    await supabase.from("audit_logs").insert({
       user_id: userId,
       action,
       resource_type: resourceType,

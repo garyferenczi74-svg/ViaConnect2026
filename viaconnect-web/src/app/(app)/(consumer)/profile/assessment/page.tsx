@@ -286,7 +286,7 @@ export default function AssessmentPage() {
       if (rows.length === 0) return 0;
       const riskScores: Record<string, number> = { low: 90, moderate: 60, high: 30 };
       const total = rows.reduce(
-        (sum: number, v: any) => sum + (riskScores[v.risk_level] ?? 50),
+        (sum: number, v: Pick<GeneticVariant, "risk_level">) => sum + (riskScores[v.risk_level] ?? 50),
         0
       );
       return Math.round(total / rows.length);

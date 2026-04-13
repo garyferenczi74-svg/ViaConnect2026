@@ -44,7 +44,6 @@ export function SherlockActivityFeed() {
       const s = await getDailySummary(user?.id ?? null);
       setSummary(s);
     } catch (e) {
-      console.warn('[sherlock] summary load failed', e);
     }
   };
 

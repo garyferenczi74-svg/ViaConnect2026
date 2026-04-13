@@ -60,7 +60,8 @@ export async function GET(req: NextRequest, { params }: { params: { appId: strin
     const tokens = await tokenRes.json();
 
     // Store connection
-    await (supabase as any).from('data_source_connections').upsert({
+    // @ts-expect-error -- data_source_connections table not in generated Database type
+    await supabase.from('data_source_connections').upsert({
       user_id: user.id,
       source_id: appId,
       source_type: appDef.category === 'nutrition' ? 'nutrition_app' : appDef.category === 'mindfulness' ? 'mindfulness_app' : 'wearable',
@@ -73,7 +74,7 @@ export async function GET(req: NextRequest, { params }: { params: { appId: strin
     }, { onConflict: 'user_id,source_id' });
 
     return NextResponse.redirect(new URL('/settings/integrations?connected=' + appId, req.url));
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error(`oauth/${appId}:`, err);
     return NextResponse.redirect(new URL('/settings/integrations?error=internal', req.url));
   }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { AlertTriangle, Brain, CheckCircle } from "lucide-react";
+import { AlertTriangle, Brain, CheckCircle, Siren } from "lucide-react";
 
 type FilterType = "all" | "critical" | "warnings" | "predictions" | "resolved";
 
@@ -79,7 +79,7 @@ export default function AlertsPage() {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-bold text-white">
-                  🚨 Early illness signals detected
+                  <Siren className="w-4 h-4 inline mr-1" strokeWidth={1.5} style={{ color: "#EF4444" }} /> Early illness signals detected
                 </p>
               </div>
             </div>
@@ -157,7 +157,7 @@ export default function AlertsPage() {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-bold text-white">
-                  ⚠️ Recovery score declining 3 consecutive days
+                  <AlertTriangle className="w-4 h-4 inline mr-1" strokeWidth={1.5} style={{ color: "#F59E0B" }} /> Recovery score declining 3 consecutive days
                 </p>
               </div>
             </div>
@@ -218,7 +218,7 @@ export default function AlertsPage() {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-bold text-white">
-                  🧠 Supplement response prediction: MTHFR+
+                  <Brain className="w-4 h-4 inline mr-1" strokeWidth={1.5} style={{ color: "#2DA5A0" }} /> Supplement response prediction: MTHFR+
                 </p>
               </div>
             </div>
@@ -269,7 +269,7 @@ export default function AlertsPage() {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-bold text-white">
-                  ✅ Sleep debt recovered
+                  <CheckCircle className="w-4 h-4 inline mr-1" strokeWidth={1.5} style={{ color: "#22C55E" }} /> Sleep debt recovered
                 </p>
               </div>
             </div>

@@ -72,12 +72,10 @@ async function safeQuery<T>(fn: () => PromiseLike<{ data: T | null; error: unkno
   try {
     const { data, error } = await fn();
     if (error) {
-      console.warn('[dashboard] Query error:', error);
       return null;
     }
     return data;
-  } catch (err) {
-    console.warn('[dashboard] Query exception:', err);
+  } catch {
     return null;
   }
 }
@@ -173,9 +171,7 @@ export function useUserDashboardData(): DashboardData {
           assessment_completed: p.assessment_completed === true,
           caq_completed_at: (p.caq_completed_at as string) || null,
         });
-        console.log('[dashboard] Profile loaded:', { score: p.bio_optimization_score, completed: p.assessment_completed, tier: p.bio_optimization_tier });
       } else {
-        console.warn('[dashboard] Profile query returned null — check column names');
         setProfile(null);
       }
 
@@ -191,7 +187,7 @@ export function useUserDashboardData(): DashboardData {
             .eq('is_active', true)
         );
         if (fallback && Array.isArray(fallback)) {
-          finalSupps = (fallback as any[]).map((s) => ({
+          finalSupps = (fallback as { id: string; product_name: string; brand: string; dosage_amount: string | null; dosage_unit: string | null; delivery_method: string | null; frequency: string | null; category: string | null; source: string | null }[]).map((s) => ({
             id: s.id,
             supplement_name: s.product_name || '',
             brand: s.brand,
@@ -209,14 +205,13 @@ export function useUserDashboardData(): DashboardData {
 
       setAdherence((adherenceData as DashboardAdherence[]) || []);
       // Parse bio history scores from string to number
-      const parsedBioHistory = ((bioData as any[]) || []).map((h) => ({
+      const parsedBioHistory = ((bioData as { score: string | number; [key: string]: unknown }[]) || []).map((h) => ({
         ...h,
         score: typeof h.score === 'string' ? parseFloat(h.score) : (h.score || 0),
       }));
       setBioHistory(parsedBioHistory as DashboardBioHistory[]);
       setHelixBalance((helixData as unknown as DashboardReward) || null);
       setStreak((streakData as unknown as DashboardStreak) || null);
-      console.log('[dashboard] Data loaded:', { supplements: finalSupps.length, bioHistory: parsedBioHistory.length, helix: !!helixData, streak: !!streakData });
       setLoading(false);
     }
 

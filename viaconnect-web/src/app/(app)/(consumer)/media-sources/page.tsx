@@ -191,7 +191,6 @@ export default function ResearchHubPage() {
         setSources(srcs);
         setUserItemStates(states);
       } catch (e) {
-        console.warn('[research-hub] load failed', e);
       } finally {
         if (!cancelled) setLoading(false);
       }

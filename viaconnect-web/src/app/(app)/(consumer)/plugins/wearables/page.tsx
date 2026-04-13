@@ -74,7 +74,7 @@ export default function WearablesPage() {
   };
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4 md:gap-6 px-4 md:px-0">
       {/* Back link */}
       <Link
         href="/plugins"
@@ -91,14 +91,14 @@ export default function WearablesPage() {
       </h1>
 
       {/* Search input */}
-      <div className="glass-v2 flex items-center gap-3 px-4 py-3 rounded-xl">
+      <div className="glass-v2 flex items-center gap-3 px-4 py-3 min-h-[44px] rounded-xl">
         <Search size={18} className="shrink-0" style={{ color: 'var(--text-secondary)' }} />
         <input
           type="text"
           placeholder="Search devices..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="bg-transparent outline-none w-full text-sm text-white placeholder:text-white/40"
+          className="bg-transparent outline-none w-full text-sm text-white placeholder:text-white/40 min-h-[44px]"
         />
       </div>
 
@@ -125,12 +125,12 @@ export default function WearablesPage() {
       {/* All Wearables section */}
       <div className="flex flex-col gap-4">
         <p className="text-overline">ALL WEARABLES</p>
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
           {filteredAll.map((w) => (
             <button
               key={w.name}
               onClick={handleConnect}
-              className="glass-v2 flex flex-col items-center gap-2 p-4 rounded-xl transition-all hover:brightness-110 active:scale-[0.97] cursor-pointer"
+              className="glass-v2 flex flex-col items-center gap-2 p-4 min-h-[44px] rounded-xl transition-all hover:brightness-110 active:scale-[0.97] cursor-pointer"
             >
               <span className="text-2xl">{w.icon}</span>
               <span className="text-xs font-medium text-white/80 text-center leading-tight">
@@ -143,7 +143,7 @@ export default function WearablesPage() {
 
       {/* Info note */}
       <div
-        className="glass-v2 flex items-start gap-3 p-4 rounded-xl"
+        className="glass-v2 flex items-start gap-3 p-3 md:p-4 rounded-xl"
         style={{ borderLeft: '3px solid #B75E18' }}
       >
         <Lightbulb size={18} className="shrink-0 mt-0.5" style={{ color: '#B75E18' }} />

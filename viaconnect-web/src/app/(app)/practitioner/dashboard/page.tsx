@@ -136,8 +136,8 @@ export default function PractitionerDashboardPage() {
         {/* ── Recent Results ─────────────────────────────────────────── */}
         <section>
           <p className="text-overline mb-3">RECENT RESULTS</p>
-          <div className="glass-v2 p-0 overflow-hidden">
-            <table className="w-full text-left">
+          <div className="glass-v2 p-0 overflow-hidden overflow-x-auto">
+            <table className="w-full text-left min-w-[480px]">
               <thead>
                 <tr className="border-b border-white/[0.06]">
                   <th className="text-xs text-secondary uppercase font-medium py-2 px-3">Patient</th>
@@ -172,17 +172,17 @@ export default function PractitionerDashboardPage() {
           <p className="text-overline mb-3">QUICK ACTIONS</p>
           <div className="flex flex-wrap gap-3">
             <Link href="#">
-              <button className="px-4 py-2 rounded-lg text-sm font-medium text-white bg-gradient-to-r from-[#4A90D9] to-[#3A7BC8] hover:opacity-90 transition-opacity">
+              <button className="px-4 py-2 min-h-[44px] rounded-lg text-sm font-medium text-white bg-gradient-to-r from-[#4A90D9] to-[#3A7BC8] hover:opacity-90 transition-opacity">
                 + New Patient
               </button>
             </Link>
             <Link href="#">
-              <button className="px-4 py-2 rounded-lg text-sm font-medium text-[#4A90D9] border border-[#4A90D9]/30 bg-transparent hover:bg-[#4A90D9]/10 transition-colors">
+              <button className="px-4 py-2 min-h-[44px] rounded-lg text-sm font-medium text-[#4A90D9] border border-[#4A90D9]/30 bg-transparent hover:bg-[#4A90D9]/10 transition-colors">
                 Order Panel
               </button>
             </Link>
             <Link href="#">
-              <button className="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/[0.04] transition-colors flex items-center gap-2">
+              <button className="px-4 py-2 min-h-[44px] rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/[0.04] transition-colors flex items-center gap-2">
                 <Video className="w-4 h-4" />
                 Start Video Call
               </button>

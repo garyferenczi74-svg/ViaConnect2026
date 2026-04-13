@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { ArrowLeft, RefreshCw, Loader2, ChevronDown, ChevronUp, TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { ArrowLeft, RefreshCw, Loader2, ChevronDown, ChevronUp, TrendingUp, TrendingDown, Minus, Brain } from "lucide-react";
 import Link from "next/link";
 import type { AnalyticsCategory } from "@/lib/analytics/categories";
 import { getScoreColor, getScoreBgColor } from "@/lib/analytics/categories";
@@ -92,7 +92,7 @@ export default function WellnessAnalyticsPage() {
         <div className="rounded-2xl p-6 bg-teal-400/5 border border-teal-400/15">
           <div className="flex items-start gap-3">
             <div className="flex-shrink-0 w-10 h-10 rounded-full bg-teal-400/10 flex items-center justify-center">
-              <span className="text-lg">🧠</span>
+              <Brain className="w-5 h-5 text-teal-400" strokeWidth={1.5} />
             </div>
             <div>
               <h2 className="text-sm font-semibold text-teal-400 mb-2">Your Health Intelligence</h2>

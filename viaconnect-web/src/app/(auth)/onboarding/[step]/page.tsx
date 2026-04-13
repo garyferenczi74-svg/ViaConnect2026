@@ -559,7 +559,7 @@ export default function OnboardingStepPage() {
             const goals_arr = (ls as Record<string, unknown>).goals as string[] | undefined;
             if (goals_arr?.length) setGoals((p) => ({ ...p, goals: goals_arr }));
           }
-        } catch (err) { console.warn("Failed to load previous CAQ:", err); }
+        } catch (err) { }
       }
       setRetakeLoaded(true);
     });
@@ -667,10 +667,8 @@ export default function OnboardingStepPage() {
           try {
             const triggerResult = await completeCAQAndTriggerEngines();
             if (triggerResult.errors.length > 0) {
-              console.warn("Engine warnings:", triggerResult.errors);
             }
           } catch (err) {
-            console.error("Engine trigger error:", err);
           }
 
           // ═══ Generate Supplement Recommendations ═══
@@ -1533,7 +1531,7 @@ export default function OnboardingStepPage() {
                   </div>
                   <SupplementPhotoUpload
                     onProductIdentified={(product) => {
-                      console.log("Photo identified:", product);
+                      void product;
                     }}
                     onProductAdded={(product) => {
                       setUserSupplements([...userSupplements, {

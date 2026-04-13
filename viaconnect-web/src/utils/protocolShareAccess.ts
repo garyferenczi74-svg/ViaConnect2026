@@ -13,6 +13,9 @@
 // fallback default of true.
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/lib/supabase/types";
+
+type ProtocolShareRow = Database['public']['Tables']['protocol_shares']['Row'];
 
 // ── Types ──────────────────────────────────────────────────────────────
 
@@ -103,7 +106,7 @@ export async function getSharePermissions(
   patientId: string,
   supabase: SupabaseClient,
 ): Promise<SharePermissions | null> {
-  const { data, error } = await (supabase as any)
+  const { data, error } = await supabase
     .from("protocol_shares")
     .select(
       "id, provider_type, status, created_at, accepted_at, share_supplements, share_genetic_results, share_caq_data, share_bio_optimization_score, share_wellness_analytics, share_peptide_recommendations, share_lab_results, can_order_on_behalf, can_modify_protocol, can_recommend_products",
@@ -125,7 +128,7 @@ export async function listProviderShares(
   providerId: string,
   supabase: SupabaseClient,
 ): Promise<Array<SharePermissions & { patientId: string }>> {
-  const { data } = await (supabase as any)
+  const { data } = await supabase
     .from("protocol_shares")
     .select(
       "id, patient_id, provider_type, status, created_at, accepted_at, share_supplements, share_genetic_results, share_caq_data, share_bio_optimization_score, share_wellness_analytics, share_peptide_recommendations, share_lab_results, can_order_on_behalf, can_modify_protocol, can_recommend_products",
@@ -148,13 +151,13 @@ export async function listProviderShares(
 export async function listPatientShares(
   patientId: string,
   supabase: SupabaseClient,
-): Promise<any[]> {
-  const { data } = await (supabase as any)
+): Promise<ProtocolShareRow[]> {
+  const { data } = await supabase
     .from("protocol_shares")
     .select("*")
     .eq("patient_id", patientId)
     .order("created_at", { ascending: false });
-  return (data as any[]) ?? [];
+  return data ?? [];
 }
 
 // ── Hard guards ────────────────────────────────────────────────────────

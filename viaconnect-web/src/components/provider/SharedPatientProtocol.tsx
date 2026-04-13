@@ -88,8 +88,8 @@ export function SharedPatientProtocol({
           const first = TABS.find((t) => result[t.key]);
           setActiveTab(first?.key ?? null);
         }
-      } catch (e: any) {
-        if (!cancelled) setError(e?.message ?? "Could not load share.");
+      } catch (e: unknown) {
+        if (!cancelled) setError(e instanceof Error ? e.message : "Could not load share.");
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -304,8 +304,17 @@ function EmptyShareState() {
   );
 }
 
+interface SupplementRpcRow {
+  supplement_name: string;
+  brand: string | null;
+  product_name: string | null;
+  category: string | null;
+  dosage: string | null;
+  frequency: string | null;
+}
+
 function SupplementsTab({ patientId }: { patientId: string }) {
-  const [rows, setRows] = useState<any[] | null>(null);
+  const [rows, setRows] = useState<SupplementRpcRow[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -313,9 +322,9 @@ function SupplementsTab({ patientId }: { patientId: string }) {
     let cancelled = false;
     (async () => {
       const supabase = createClient();
-      const { data, error: rpcError } = await (supabase as any).rpc(
-        "provider_get_patient_supplements",
-        { p_patient_id: patientId },
+      const { data, error: rpcError } = await supabase.rpc(
+        "provider_get_patient_supplements" as "brand_autocomplete",
+        { p_patient_id: patientId } as unknown as { search_query: string },
       );
       if (cancelled) return;
       if (rpcError) {
@@ -324,7 +333,7 @@ function SupplementsTab({ patientId }: { patientId: string }) {
             "Could not load supplements.",
         );
       } else {
-        setRows((data as any[]) ?? []);
+        setRows((data as unknown as SupplementRpcRow[]) ?? []);
       }
       setLoading(false);
     })();

@@ -349,8 +349,8 @@ export default function SignupPage() {
     setResendCooldown(60);
   }
 
-  const inputClass = "w-full h-10 bg-dark-surface border border-dark-border rounded-lg px-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-copper/50 focus:border-copper/50 transition-colors";
-  const errorInputClass = "w-full h-10 bg-dark-surface border border-rose/40 rounded-lg px-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-rose/30 focus:border-rose transition-colors";
+  const inputClass = "w-full h-10 min-h-[44px] bg-dark-surface border border-dark-border rounded-lg px-3 text-base text-white placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-copper/50 focus:border-copper/50 transition-colors";
+  const errorInputClass = "w-full h-10 min-h-[44px] bg-dark-surface border border-rose/40 rounded-lg px-3 text-base text-white placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-rose/30 focus:border-rose transition-colors";
 
   // Render interstitial overlay when active
   if (activeInterstitial !== null) {
@@ -363,19 +363,19 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="max-w-[480px] mx-auto">
+    <div className="w-full max-w-md mx-auto px-4 md:px-0">
       {/* Logo */}
       <div className="text-center mb-6">
-        <h1 className="text-3xl font-bold text-white">
+        <h1 className="text-2xl md:text-3xl font-bold text-white">
           <span className="text-copper">Via</span>Connect
         </h1>
-        <p className="text-gray-400 mt-2 text-sm">Create your account</p>
+        <p className="text-gray-400 mt-2 text-sm md:text-base">Create your account</p>
       </div>
 
       <Stepper current={step} />
 
       <form
-        className="glass rounded-2xl p-8"
+        className="glass rounded-2xl p-4 md:p-6 lg:p-8"
         onSubmit={(e) => {
           e.preventDefault();
           if (step === 5) {
@@ -559,14 +559,14 @@ export default function SignupPage() {
                   value={digit}
                   onChange={(e) => handleOtpChange(i, e.target.value)}
                   onKeyDown={(e) => handleOtpKeyDown(i, e)}
-                  className="w-11 h-12 text-center text-lg font-bold bg-dark-surface border border-dark-border rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-copper focus:border-copper transition-colors"
+                  className="w-11 h-12 min-h-[44px] text-center text-lg font-bold bg-dark-surface border border-dark-border rounded-lg text-base text-white focus:outline-none focus:ring-2 focus:ring-copper focus:border-copper transition-colors"
                 />
               ))}
             </div>
             <button
               onClick={handleVerifyOtp}
               disabled={isLoading || otp.join("").length < 6}
-              className="w-full h-10 bg-gradient-to-r from-copper to-copper/80 hover:from-copper/90 hover:to-copper/70 disabled:opacity-50 text-white font-medium rounded-lg transition-all flex items-center justify-center gap-2"
+              className="w-full h-10 min-h-[44px] bg-gradient-to-r from-copper to-copper/80 hover:from-copper/90 hover:to-copper/70 disabled:opacity-50 text-white font-medium rounded-lg transition-all flex items-center justify-center gap-2"
             >
               {isLoading ? (
                 <>
@@ -611,7 +611,7 @@ export default function SignupPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="flex items-center gap-1.5 h-9 px-5 bg-gradient-to-r from-copper to-copper/80 hover:from-copper/90 hover:to-copper/70 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-all"
+              className="flex items-center gap-1.5 h-9 min-h-[44px] px-5 bg-gradient-to-r from-copper to-copper/80 hover:from-copper/90 hover:to-copper/70 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-all"
             >
               {isLoading ? (
                 <>

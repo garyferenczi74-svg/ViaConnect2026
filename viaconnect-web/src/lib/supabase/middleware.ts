@@ -86,10 +86,21 @@ export async function updateSession(request: NextRequest) {
     // Admin role has access to ALL portals (consumer, practitioner, naturopath, admin)
     const isAdmin = rawRole === "admin";
 
+    // Detect if the user is crossing portal boundaries so the client can
+    // clear stale cached data (auth store + React Query) on arrival.
+    const currentPortal = pathname.startsWith("/practitioner")
+      ? "practitioner"
+      : pathname.startsWith("/naturopath")
+      ? "naturopath"
+      : pathname.startsWith("/admin")
+      ? "admin"
+      : "consumer";
+
     // Admin-only routes
     if (pathname.startsWith("/admin") && !isAdmin) {
       const url = request.nextUrl.clone();
       url.pathname = getRoleHomePath(role);
+      url.searchParams.set("portal_switch", "1");
       return NextResponse.redirect(url);
     }
 
@@ -97,12 +108,14 @@ export async function updateSession(request: NextRequest) {
     if (pathname.startsWith("/practitioner") && role !== "practitioner" && !isAdmin) {
       const url = request.nextUrl.clone();
       url.pathname = getRoleHomePath(role);
+      url.searchParams.set("portal_switch", "1");
       return NextResponse.redirect(url);
     }
 
     if (pathname.startsWith("/naturopath") && role !== "naturopath" && !isAdmin) {
       const url = request.nextUrl.clone();
       url.pathname = getRoleHomePath(role);
+      url.searchParams.set("portal_switch", "1");
       return NextResponse.redirect(url);
     }
 
@@ -114,6 +127,7 @@ export async function updateSession(request: NextRequest) {
     if (isConsumerRoute && role !== "consumer" && !isAdmin && role !== undefined) {
       const url = request.nextUrl.clone();
       url.pathname = getRoleHomePath(role);
+      url.searchParams.set("portal_switch", "1");
       return NextResponse.redirect(url);
     }
   }

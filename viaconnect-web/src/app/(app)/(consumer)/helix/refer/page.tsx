@@ -41,8 +41,8 @@ export default function ReferPage() {
   };
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div className="flex flex-col gap-4 md:gap-6 p-4 md:p-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
         {/* Left Card — Invite & Earn */}
         <GlassCard glow>
           <h2 className="flex items-center gap-2 text-[20px] font-extrabold text-[#B75E18] mb-2">
@@ -60,7 +60,7 @@ export default function ReferPage() {
           </div>
 
           {/* Reward tiers */}
-          <div className="grid grid-cols-3 gap-3 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
             <div className="text-center p-3 rounded-xl bg-white/[0.03] border border-white/[0.04]">
               <div className="flex items-center justify-center gap-1 mb-1">
                 <HelixIcon size={14} />
@@ -85,14 +85,14 @@ export default function ReferPage() {
           </div>
 
           {/* CTA Buttons */}
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-3">
             <button
               onClick={handleCopyLink}
-              className="flex-1 py-3 rounded-xl bg-gradient-to-r from-[#B75E18] to-[#d4751f] text-white text-sm font-bold hover:opacity-90 transition-opacity"
+              className="flex-1 py-3 min-h-[44px] rounded-xl bg-gradient-to-r from-[#B75E18] to-[#d4751f] text-white text-sm font-bold hover:opacity-90 transition-opacity"
             >
               {copied ? 'Copied!' : 'Copy Link'}
             </button>
-            <button className="flex-1 py-3 rounded-xl bg-gradient-to-r from-[#2DA5A0] to-[#35bdb7] text-white text-sm font-bold hover:opacity-90 transition-opacity">
+            <button className="flex-1 py-3 min-h-[44px] rounded-xl bg-gradient-to-r from-[#2DA5A0] to-[#35bdb7] text-white text-sm font-bold hover:opacity-90 transition-opacity">
               Share via Text
             </button>
           </div>
@@ -105,7 +105,7 @@ export default function ReferPage() {
             <h3 className="text-[16px] font-extrabold text-white mb-4">Referral Stats</h3>
             <div className="flex flex-col gap-3">
               {REFERRAL_STATS.map((stat) => (
-                <div key={stat.label} className="flex items-center justify-between py-2 border-b border-white/[0.04] last:border-0">
+                <div key={stat.label} className="flex items-center justify-between py-2 min-h-[44px] border-b border-white/[0.04] last:border-0">
                   <div className="flex items-center gap-2">
                     <stat.icon size={14} strokeWidth={1.5} className="text-white/30" />
                     <span className="text-[13px] text-white/40 font-medium">{stat.label}</span>
@@ -127,7 +127,7 @@ export default function ReferPage() {
               <Trophy size={18} strokeWidth={1.5} className="text-[#2DA5A0]" />
               Referral Milestones
             </h3>
-            <div className="grid grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {MILESTONES.map((m) => {
                 const achieved = FRIENDS_JOINED >= m.count;
                 return (

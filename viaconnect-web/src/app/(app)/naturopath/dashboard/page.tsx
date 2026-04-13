@@ -66,7 +66,7 @@ const geneticResults = [
 export default function NaturopathDashboardPage() {
   return (
     <div
-      className="min-h-screen px-6 py-10"
+      className="min-h-screen px-4 md:px-6 lg:px-8 py-6 md:py-10"
       style={{ background: 'linear-gradient(180deg, #0D1520 0%, #121E1A 50%, #131D2E 100%)' }}
     >
       <div className="mx-auto max-w-7xl">
@@ -134,7 +134,7 @@ export default function NaturopathDashboardPage() {
                   {alert.buttons.map((btn) => (
                     <button
                       key={btn}
-                      className="text-xs font-medium transition-colors hover:opacity-80"
+                      className="text-xs font-medium transition-colors hover:opacity-80 min-h-[44px] sm:min-h-0"
                       style={{ color: '#7BAE7F' }}
                     >
                       {btn}
@@ -180,7 +180,7 @@ export default function NaturopathDashboardPage() {
           >
             Recent Genetic Results
           </p>
-          <div className="glass-v2 rounded-xl overflow-hidden">
+          <div className="glass-v2 rounded-xl overflow-hidden overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-white/[0.06]">
@@ -218,19 +218,19 @@ export default function NaturopathDashboardPage() {
           <div className="flex flex-wrap gap-3">
             <Link
               href="/naturopath/botanical"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium text-white transition-all hover:opacity-90"
+              className="inline-flex items-center gap-2 px-5 py-2.5 min-h-[44px] rounded-lg text-sm font-medium text-white transition-all hover:opacity-90"
               style={{ background: 'linear-gradient(135deg, #7BAE7F, #5E9462)' }}
             >
               Herbal-Genomic Database
             </Link>
             <button
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium border transition-colors hover:bg-white/[0.04]"
+              className="inline-flex items-center gap-2 px-5 py-2.5 min-h-[44px] rounded-lg text-sm font-medium border transition-colors hover:bg-white/[0.04]"
               style={{ borderColor: '#7BAE7F50', color: '#7BAE7F' }}
             >
               Methylation Explorer
             </button>
             <button
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium text-secondary transition-colors hover:bg-white/[0.04]"
+              className="inline-flex items-center gap-2 px-5 py-2.5 min-h-[44px] rounded-lg text-sm font-medium text-secondary transition-colors hover:bg-white/[0.04]"
             >
               <FileText className="w-4 h-4" />
               New Intake Form

@@ -1,0 +1,35 @@
+{
+  "agent_id": "michelangelo",
+  "display_name": "Michelangelo",
+  "role": "senior_developer",
+  "parent_agent": "jeffery",
+  "status": "always_on",
+  "obra_superpowers": {
+    "parallel_execution": true,
+    "persistent_memory": true,
+    "cross_agent_comms": true,
+    "self_healing_loops": true,
+    "autonomous_escalation": true
+  },
+  "pillars": [
+    "brainstorm_first",
+    "micro_task_planning",
+    "tdd",
+    "code_review"
+  ],
+  "quality_gates": {
+    "brainstorm_required": true,
+    "min_test_coverage": 85,
+    "max_function_lines": 50,
+    "max_file_lines": 300,
+    "review_checklist_pass": true,
+    "zero_typescript_errors": true,
+    "zero_lint_warnings": true
+  },
+  "communication": {
+    "reports_to": "jeffery",
+    "broadcasts_to": ["all_agents"],
+    "escalation_threshold": "2_failed_retries",
+    "status_interval_minutes": 30
+  }
+}

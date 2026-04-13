@@ -1,8 +1,11 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
+import { useEffect } from "react";
 import { AppShell } from "@/components/app-shell";
 import { MobileNavBar } from "@/components/layout/MobileNavBar";
+import { useAuthStore } from "@/lib/store/auth-store";
+import { useQueryClient } from "@tanstack/react-query";
 import type { User } from "@supabase/supabase-js";
 import Link from "next/link";
 

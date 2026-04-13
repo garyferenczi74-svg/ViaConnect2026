@@ -197,17 +197,17 @@ export default function CompliancePage() {
   ];
 
   return (
-    <PageTransition className="min-h-screen bg-dark-bg px-6 py-10">
+    <PageTransition className="min-h-screen bg-dark-bg px-4 md:px-6 lg:px-8 py-6 md:py-10">
       <div className="mx-auto max-w-7xl">
         {/* Header */}
-        <StaggerChild className="mb-8 flex items-center justify-between">
+        <StaggerChild className="mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-white">HIPAA Compliance Dashboard</h1>
+            <h1 className="text-2xl md:text-3xl font-bold text-white">HIPAA Compliance Dashboard</h1>
             <p className="mt-1 text-gray-400">
               Monitor compliance status, audit logs, and patient consents
             </p>
           </div>
-          <Button className="bg-sage hover:bg-sage/80 text-white">
+          <Button className="bg-sage hover:bg-sage/80 text-white min-h-[44px] sm:min-h-0">
             <Download className="w-4 h-4 mr-2" />
             Export Report
           </Button>
@@ -261,7 +261,7 @@ export default function CompliancePage() {
           </Card>
 
           {/* Stat Cards */}
-          <div className="lg:col-span-2 grid grid-cols-2 gap-4">
+          <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
             <StatCard icon={Shield} label="Total Audits (YTD)" value="4" />
             <StatCard
               icon={AlertTriangle}
@@ -275,12 +275,12 @@ export default function CompliancePage() {
         </StaggerChild>
 
         {/* Audit Trail Viewer */}
-        <Card hover={false} className="p-6 mb-8">
+        <Card hover={false} className="p-4 md:p-6 mb-8">
           <div className="flex items-center justify-between mb-5">
             <h2 className="text-lg font-semibold text-white">Audit Trail Viewer</h2>
           </div>
-          <div className="flex flex-wrap items-end gap-4 mb-5">
-            <div className="w-52">
+          <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-end gap-4 mb-5">
+            <div className="w-full sm:w-52">
               <Select
                 label="Action Type"
                 value={actionFilter}
@@ -288,7 +288,7 @@ export default function CompliancePage() {
                 options={actionTypeOptions}
               />
             </div>
-            <div className="w-44">
+            <div className="w-full sm:w-44">
               <Select
                 label="Date Range"
                 value={dateFilter}
@@ -305,8 +305,8 @@ export default function CompliancePage() {
         </Card>
 
         {/* Consent Management */}
-        <Card hover={false} className="p-6 mb-8">
-          <div className="flex items-center justify-between mb-5">
+        <Card hover={false} className="p-4 md:p-6 mb-8">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-5">
             <h2 className="text-lg font-semibold text-white">Consent Management</h2>
             <Button size="sm" className="bg-sage hover:bg-sage/80 text-white">
               <FileText className="w-3.5 h-3.5 mr-1.5" />
@@ -321,7 +321,7 @@ export default function CompliancePage() {
         </Card>
 
         {/* Action Items */}
-        <Card hover={false} className="p-6">
+        <Card hover={false} className="p-4 md:p-6">
           <h2 className="text-lg font-semibold text-white mb-5">Action Items</h2>
           <div className="space-y-3">
             {actionItems.map((item) => (

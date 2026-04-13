@@ -77,9 +77,9 @@ export default function SupplementPhotoUpload({ onProductIdentified, onProductAd
       setProduct(data.data);
       setState('complete');
       onProductIdentified?.(data.data);
-    } catch (err: any) {
+    } catch (err: unknown) {
       setState('error');
-      setErrorMsg(err.message || 'Something went wrong.');
+      setErrorMsg(err instanceof Error ? err.message : 'Something went wrong.');
     }
   }
 

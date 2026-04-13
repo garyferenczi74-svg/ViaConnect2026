@@ -89,16 +89,16 @@ function LoginForm() {
   }
 
   return (
-    <div className="max-w-[480px] mx-auto">
+    <div className="w-full max-w-md mx-auto px-4 md:px-0">
       {/* Logo */}
       <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold text-white">
+        <h1 className="text-2xl md:text-3xl font-bold text-white">
           <span className="text-copper">Via</span>Connect
         </h1>
-        <p className="text-gray-400 mt-2 text-sm">Sign in to your account</p>
+        <p className="text-gray-400 mt-2 text-sm md:text-base">Sign in to your account</p>
       </div>
 
-      <div className="glass rounded-2xl p-8 space-y-6">
+      <div className="glass rounded-2xl p-4 md:p-6 lg:p-8 space-y-6">
         <form onSubmit={handleLogin} className="space-y-5">
           {/* Email */}
           <div>
@@ -110,7 +110,7 @@ function LoginForm() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full h-10 bg-dark-surface border border-dark-border rounded-lg px-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-copper/50 focus:border-copper/50 transition-colors"
+              className="w-full h-10 min-h-[44px] bg-dark-surface border border-dark-border rounded-lg px-3 text-base text-white placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-copper/50 focus:border-copper/50 transition-colors"
               placeholder="you@example.com"
             />
             {errors.email && <p className="text-xs text-rose mt-1">{errors.email}</p>}
@@ -132,7 +132,7 @@ function LoginForm() {
                 type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full h-10 bg-dark-surface border border-dark-border rounded-lg px-3 pr-10 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-copper/50 focus:border-copper/50 transition-colors"
+                className="w-full h-10 min-h-[44px] bg-dark-surface border border-dark-border rounded-lg px-3 pr-10 text-base text-white placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-copper/50 focus:border-copper/50 transition-colors"
                 placeholder="Your password"
               />
               <button
@@ -161,7 +161,7 @@ function LoginForm() {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full h-10 bg-gradient-to-r from-copper to-copper/80 hover:from-copper/90 hover:to-copper/70 disabled:opacity-50 text-white font-medium rounded-lg transition-all flex items-center justify-center gap-2"
+            className="w-full h-10 min-h-[44px] bg-gradient-to-r from-copper to-copper/80 hover:from-copper/90 hover:to-copper/70 disabled:opacity-50 text-white font-medium rounded-lg transition-all flex items-center justify-center gap-2"
           >
             {isLoading ? (
               <>
@@ -185,7 +185,7 @@ function LoginForm() {
         <div className="grid grid-cols-2 gap-3">
           <button
             onClick={() => handleOAuth("google")}
-            className="h-10 flex items-center justify-center gap-2 rounded-lg border border-white/[0.08] bg-white/[0.02] text-sm text-gray-300 hover:bg-white/[0.06] hover:text-white transition-colors"
+            className="h-10 min-h-[44px] flex items-center justify-center gap-2 rounded-lg border border-white/[0.08] bg-white/[0.02] text-sm text-gray-300 hover:bg-white/[0.06] hover:text-white transition-colors"
           >
             <svg className="w-4 h-4" viewBox="0 0 24 24">
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" />
@@ -197,7 +197,7 @@ function LoginForm() {
           </button>
           <button
             onClick={() => handleOAuth("apple")}
-            className="h-10 flex items-center justify-center gap-2 rounded-lg border border-white/[0.08] bg-white/[0.02] text-sm text-gray-300 hover:bg-white/[0.06] hover:text-white transition-colors"
+            className="h-10 min-h-[44px] flex items-center justify-center gap-2 rounded-lg border border-white/[0.08] bg-white/[0.02] text-sm text-gray-300 hover:bg-white/[0.06] hover:text-white transition-colors"
           >
             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
               <path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.32 2.32-1.55 4.41-3.74 4.25z" />

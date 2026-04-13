@@ -63,3 +63,41 @@ export const normalizeAdherence = (
   completed: number,
   scheduled: number,
 ): number => (scheduled > 0 ? Math.round((completed / scheduled) * 100) : 0);
+
+/** Manual check-in option → score mappings. Index 0 = worst, 4 = best. */
+export const MANUAL_SCORE_MAP: Record<string, number[]> = {
+  sleep:    [10, 30, 50, 70, 90],
+  exercise: [0, 25, 50, 75, 100],
+  steps:    [10, 30, 50, 70, 90],
+  stress:   [10, 30, 50, 70, 90],
+  recovery: [10, 30, 50, 70, 90],
+};
+
+export interface MealLogEntry {
+  quality_rating?: number | null;
+  calories?: number | null;
+  protein_g?: number | null;
+  carbs_g?: number | null;
+  fat_g?: number | null;
+  ai_analysis?: Record<string, unknown> | null;
+}
+
+export function normalizeMealData(meals: MealLogEntry[]): number {
+  if (meals.length === 0) return 0;
+
+  const hasMacros = meals.some((m) => m.calories && m.protein_g);
+  if (hasMacros) {
+    const totalCal = meals.reduce((s, m) => s + (m.calories ?? 0), 0);
+    const totalProt = meals.reduce((s, m) => s + Number(m.protein_g ?? 0), 0);
+    const calScore = Math.min(100, (totalCal / 2000) * 80);
+    const protScore = Math.min(100, (totalProt / 100) * 80);
+    return Math.round(calScore * 0.5 + protScore * 0.5);
+  }
+
+  const mealCount = meals.length;
+  const avgQuality =
+    meals.reduce((s, m) => s + (m.quality_rating ?? 2), 0) / mealCount;
+  const frequencyScore = Math.min(100, (mealCount / 3) * 60);
+  const qualityScore = (avgQuality / 4) * 100;
+  return Math.round(frequencyScore * 0.4 + qualityScore * 0.6);
+}

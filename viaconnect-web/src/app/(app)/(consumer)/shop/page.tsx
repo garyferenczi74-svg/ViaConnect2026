@@ -239,7 +239,7 @@ function ShopContent() {
         .from("product_catalog")
         .select("sku, name, description, image_url, delivery_form, short_description, formulation_json")
         .eq("active", true);
-      return (data ?? []).map((p: any) => ({
+      return (data ?? []).map((p: { sku: string; name: string; description: string | null; image_url: string | null; delivery_form: string | null; short_description: string | null; formulation_json: unknown }) => ({
         sku: p.sku,
         name: p.name,
         short_name: p.name,

@@ -12,6 +12,18 @@ import {
   ArrowUpRight, Minus,
 } from "lucide-react";
 import { PageTransition, StaggerChild, MotionCard } from "@/lib/motion";
+import type { Tables, Json } from "@/lib/supabase/types";
+
+type BoardMetricsRow = Tables<"board_metrics">;
+type SkuRow = Pick<Tables<"sku_rationalization">, "sku" | "name" | "category" | "tier" | "composite_score" | "dtc_margin">;
+type AlertSnapshotRow = Tables<"alert_snapshots">;
+type InventoryRow = Pick<Tables<"inventory_reorder">, "sku" | "name" | "po_urgency" | "next_order_value" | "stockout_risk" | "days_until_reorder">;
+
+interface AlertEntry {
+  title: string;
+  action: string;
+  severity: string;
+}
 
 const supabase = createClient();
 
@@ -52,7 +64,7 @@ export default function AdminDashboardPage() {
     queryKey: ["admin-board-metrics"],
     queryFn: async () => {
       const { data } = await supabase.from("board_metrics").select("*").order("created_at", { ascending: false }).limit(1).single();
-      return data as any;
+      return data as BoardMetricsRow | null;
     },
     enabled: !!userId,
   });
@@ -61,7 +73,7 @@ export default function AdminDashboardPage() {
     queryKey: ["admin-sku-rationalization"],
     queryFn: async () => {
       const { data } = await supabase.from("sku_rationalization").select("sku, name, category, tier, composite_score, dtc_margin").order("composite_score", { ascending: false });
-      return (data ?? []) as any[];
+      return (data ?? []) as SkuRow[];
     },
     enabled: !!userId,
   });
@@ -70,7 +82,7 @@ export default function AdminDashboardPage() {
     queryKey: ["admin-alerts"],
     queryFn: async () => {
       const { data } = await supabase.from("alert_snapshots").select("*").order("created_at", { ascending: false }).limit(1).single();
-      return data as any;
+      return data as AlertSnapshotRow | null;
     },
     enabled: !!userId,
   });
@@ -79,7 +91,7 @@ export default function AdminDashboardPage() {
     queryKey: ["admin-inventory-urgent"],
     queryFn: async () => {
       const { data } = await supabase.from("inventory_reorder").select("sku, name, po_urgency, next_order_value, stockout_risk, days_until_reorder").in("po_urgency", ["URGENT", "SOON"]).order("days_until_reorder");
-      return (data ?? []) as any[];
+      return (data ?? []) as InventoryRow[];
     },
     enabled: !!userId,
   });
@@ -93,15 +105,15 @@ export default function AdminDashboardPage() {
     enabled: !!userId,
   });
 
-  const stars = skus?.filter((s: any) => s.tier === "Star") ?? [];
-  const watchSunset = skus?.filter((s: any) => s.tier === "Watch" || s.tier === "Sunset") ?? [];
+  const stars = skus?.filter((s) => s.tier === "Star") ?? [];
+  const watchSunset = skus?.filter((s) => s.tier === "Watch" || s.tier === "Sunset") ?? [];
   const tierCounts = {
-    Star: skus?.filter((s: any) => s.tier === "Star").length ?? 0,
-    Core: skus?.filter((s: any) => s.tier === "Core").length ?? 0,
-    Watch: skus?.filter((s: any) => s.tier === "Watch").length ?? 0,
-    Sunset: skus?.filter((s: any) => s.tier === "Sunset").length ?? 0,
+    Star: skus?.filter((s) => s.tier === "Star").length ?? 0,
+    Core: skus?.filter((s) => s.tier === "Core").length ?? 0,
+    Watch: skus?.filter((s) => s.tier === "Watch").length ?? 0,
+    Sunset: skus?.filter((s) => s.tier === "Sunset").length ?? 0,
   };
-  const alertList: any[] = alerts?.alerts ?? [];
+  const alertList: AlertEntry[] = (Array.isArray(alerts?.alerts) ? alerts.alerts : []) as unknown as AlertEntry[];
 
   return (
     <PageTransition className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-[1440px] mx-auto">
@@ -139,7 +151,7 @@ export default function AdminDashboardPage() {
             <Badge variant="active">{tierCounts.Star} Stars</Badge>
           </div>
           <div className="space-y-2">
-            {stars.slice(0, 8).map((s: any) => (
+            {stars.slice(0, 8).map((s) => (
               <div key={s.sku} className="flex items-center justify-between py-1.5 border-b border-white/[0.04] last:border-0">
                 <div className="min-w-0"><p className="text-xs text-white font-medium truncate">{s.name}</p><p className="text-[10px] text-gray-500">{s.category} &middot; SKU {s.sku}</p></div>
                 <span className="text-xs text-portal-green font-medium ml-2">{s.composite_score}</span>
@@ -159,7 +171,7 @@ export default function AdminDashboardPage() {
           </div>
           {alertList.length > 0 ? (
             <div className="space-y-2">
-              {alertList.slice(0, 8).map((a: any, i: number) => (
+              {alertList.slice(0, 8).map((a, i: number) => (
                 <div key={i} className="flex items-start gap-2 py-1.5 border-b border-white/[0.04] last:border-0">
                   <AlertTriangle className={`w-3.5 h-3.5 mt-0.5 flex-shrink-0 ${a.severity === "CRITICAL" ? "text-rose" : "text-portal-yellow"}`} />
                   <div className="min-w-0"><p className="text-xs text-white truncate">{a.title}</p><p className="text-[10px] text-gray-500 truncate">{a.action}</p></div>
@@ -176,7 +188,7 @@ export default function AdminDashboardPage() {
           </div>
           {inventory && inventory.length > 0 ? (
             <div className="space-y-2">
-              {inventory.slice(0, 8).map((item: any) => (
+              {inventory.slice(0, 8).map((item) => (
                 <div key={item.sku} className="flex items-center justify-between py-1.5 border-b border-white/[0.04] last:border-0">
                   <div className="min-w-0"><p className="text-xs text-white font-medium truncate">{item.name}</p><p className="text-[10px] text-gray-500">{item.days_until_reorder}d until reorder</p></div>
                   <Badge variant={item.po_urgency === "URGENT" ? "danger" : "warning"}>{item.po_urgency}</Badge>
@@ -192,7 +204,7 @@ export default function AdminDashboardPage() {
           <Card className="p-5">
             <div className="flex items-center gap-2 mb-4"><Shield className="w-4 h-4 text-portal-yellow" /><h2 className="text-sm font-semibold text-white">Watch &amp; Sunset SKUs</h2></div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-              {watchSunset.map((s: any) => (
+              {watchSunset.map((s) => (
                 <div key={s.sku} className="flex items-center justify-between p-3 rounded-lg border border-white/[0.06] bg-white/[0.02]">
                   <div className="min-w-0"><p className="text-xs text-white font-medium truncate">{s.name}</p><p className="text-[10px] text-gray-500">{s.category} &middot; Score: {s.composite_score} &middot; DTC: {s.dtc_margin}%</p></div>
                   <Badge variant={s.tier === "Sunset" ? "danger" : "warning"}>{s.tier}</Badge>

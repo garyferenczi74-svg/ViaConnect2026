@@ -66,7 +66,6 @@ export function useTodaysAdherence(): UseTodaysAdherenceResult {
           setEntries(map);
         }
       } catch (e) {
-        console.warn('[adherence] load failed', e);
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -128,7 +127,6 @@ export function useTodaysAdherence(): UseTodaysAdherenceResult {
         }
       } catch (e) {
         // Roll back optimistic update on hard failure
-        console.warn('[adherence] toggle failed', e);
         setEntries((prev) => ({ ...prev, [k]: !next }));
       }
     },

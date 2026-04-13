@@ -1,7 +1,24 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { buildUltrathinkContext, UltrathinkContext } from '@/lib/ultrathink/buildContext';
+import { buildUltrathinkContext, UltrathinkContext, SymptomEntry } from '@/lib/ultrathink/buildContext';
 import { detectPatterns } from '@/lib/ultrathink/patternDetection';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '@/lib/supabase/types';
+
+type ProtocolRuleRow = Database['public']['Tables']['protocol_rules']['Row'];
+
+interface TriggeredRule extends ProtocolRuleRow {
+  rationale: string;
+  health_signals: string[];
+  contraindications?: string[];
+  synergy_with?: string[];
+}
+
+/** Extended context with optional future data sources (lab values, genetics). */
+interface ExtendedContext extends UltrathinkContext {
+  labValues?: Record<string, string | number>;
+  genetics?: Record<string, string>;
+}
 
 export const dynamic = 'force-dynamic';
 
@@ -24,8 +41,9 @@ export async function GET() {
       .eq('protocol_id', proto.id).eq('is_dismissed', false).order('rank');
 
     return NextResponse.json({ protocol: { ...proto, protocol_id: proto.id, recommendations: recs ?? [] } });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message, protocol: null }, { status: 500 });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Unknown error';
+    return NextResponse.json({ error: message, protocol: null }, { status: 500 });
   }
 }
 
@@ -105,19 +123,20 @@ export async function POST(request: Request) {
       duration_ms: Date.now() - startTime, status: 'generated', engine: 'rules-v1',
     }, { status: 201 });
 
-  } catch (err: any) {
-    console.error('[ultrathink POST]', err.message);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Unknown error';
+    console.error('[ultrathink POST]', message);
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 
 // ── RULES ENGINE — Zero API cost, <100ms ────────────────────────────────────
 
-async function applyRulesEngine(ctx: UltrathinkContext, supabase: any) {
+async function applyRulesEngine(ctx: UltrathinkContext, supabase: SupabaseClient<Database>): Promise<TriggeredRule[]> {
   const { data: rules } = await supabase.from('protocol_rules').select('*').eq('is_active', true);
   if (!rules) return [];
 
-  const triggered: any[] = [];
+  const triggered: TriggeredRule[] = [];
   const addedProducts = new Set<string>();
 
   for (const rule of rules) {
@@ -140,7 +159,7 @@ async function applyRulesEngine(ctx: UltrathinkContext, supabase: any) {
           if (rule.trigger_operator === 'contains' || rule.trigger_operator === 'contains_any') {
             // Check if any symptom name matches AND has score >= 5
             isTriggered = Object.entries(symptomMap).some(([k, v]) =>
-              (v as any).score >= 5 && targets.some((t: string) => k.toLowerCase().includes(t))
+              (v as SymptomEntry).score >= 5 && targets.some((t: string) => k.toLowerCase().includes(t))
             ) || ctx.topSymptoms.some(s =>
               s.category === catFilter && targets.some((t: string) => s.name.toLowerCase().includes(t))
             );
@@ -174,7 +193,7 @@ async function applyRulesEngine(ctx: UltrathinkContext, supabase: any) {
       }
       case 'lifestyle': {
         const field = rule.trigger_field;
-        const val = (ctx.lifestyle as any)[field] || '';
+        const val = ctx.lifestyle[field] || '';
         if (rule.trigger_operator === 'eq') isTriggered = val === rule.trigger_value;
         if (rule.trigger_operator === 'in') isTriggered = rule.trigger_value.split(',').some((v: string) => val.toLowerCase().includes(v.trim().toLowerCase()));
         break;
@@ -197,10 +216,10 @@ async function applyRulesEngine(ctx: UltrathinkContext, supabase: any) {
       }
       case 'lab_value': {
         // Lab values from context (future: pulled from uploaded lab results)
-        const ctxAny = ctx as any;
-        const val = ctxAny.labValues?.[rule.trigger_field];
+        const ctxExt = ctx as ExtendedContext;
+        const val = ctxExt.labValues?.[rule.trigger_field];
         if (val != null) {
-          const numVal = parseFloat(val);
+          const numVal = parseFloat(String(val));
           if (rule.trigger_operator === 'lt') isTriggered = numVal < parseFloat(rule.trigger_value);
           if (rule.trigger_operator === 'gt') isTriggered = numVal > parseFloat(rule.trigger_value);
         }
@@ -208,8 +227,8 @@ async function applyRulesEngine(ctx: UltrathinkContext, supabase: any) {
       }
       case 'genetic': {
         // Genetic data from context (future: pulled from GeneX360 upload)
-        const ctxAny = ctx as any;
-        const val = ctxAny.genetics?.[rule.trigger_field] || '';
+        const ctxExt = ctx as ExtendedContext;
+        const val = ctxExt.genetics?.[rule.trigger_field] || '';
         if (rule.trigger_operator === 'in') isTriggered = rule.trigger_value.split(',').some((v: string) => val.toLowerCase() === v.trim().toLowerCase());
         if (rule.trigger_operator === 'contains') isTriggered = val.toLowerCase().includes(rule.trigger_value.toLowerCase());
         break;
@@ -233,7 +252,7 @@ async function applyRulesEngine(ctx: UltrathinkContext, supabase: any) {
 }
 
 function substituteFields(template: string, ctx: UltrathinkContext): string {
-  const ctxAny = ctx as any;
+  const ctxExt = ctx as ExtendedContext;
   return template
     .replace(/\{\{stressLevel\}\}/g, ctx.lifestyle.stressLevel || 'elevated')
     .replace(/\{\{stress_level\}\}/g, ctx.lifestyle.stress_level || ctx.lifestyle.stressLevel || '?')
@@ -242,16 +261,16 @@ function substituteFields(template: string, ctx: UltrathinkContext): string {
     .replace(/\{\{age\}\}/g, ctx.demographics.age?.toString() || 'your')
     .replace(/\{\{sex\}\}/g, ctx.demographics.sex || 'your')
     // Lab value substitutions
-    .replace(/\{\{vitamin_d\}\}/g, ctxAny.labValues?.vitamin_d?.toString() || '?')
-    .replace(/\{\{vitamin_b12\}\}/g, ctxAny.labValues?.vitamin_b12?.toString() || '?')
-    .replace(/\{\{homocysteine\}\}/g, ctxAny.labValues?.homocysteine?.toString() || '?')
-    .replace(/\{\{crp\}\}/g, ctxAny.labValues?.crp?.toString() || '?')
-    .replace(/\{\{ferritin\}\}/g, ctxAny.labValues?.ferritin?.toString() || '?')
-    .replace(/\{\{hba1c\}\}/g, ctxAny.labValues?.hba1c?.toString() || '?')
-    .replace(/\{\{triglycerides\}\}/g, ctxAny.labValues?.triglycerides?.toString() || '?')
-    .replace(/\{\{testosterone_total\}\}/g, ctxAny.labValues?.testosterone_total?.toString() || '?')
+    .replace(/\{\{vitamin_d\}\}/g, ctxExt.labValues?.vitamin_d?.toString() || '?')
+    .replace(/\{\{vitamin_b12\}\}/g, ctxExt.labValues?.vitamin_b12?.toString() || '?')
+    .replace(/\{\{homocysteine\}\}/g, ctxExt.labValues?.homocysteine?.toString() || '?')
+    .replace(/\{\{crp\}\}/g, ctxExt.labValues?.crp?.toString() || '?')
+    .replace(/\{\{ferritin\}\}/g, ctxExt.labValues?.ferritin?.toString() || '?')
+    .replace(/\{\{hba1c\}\}/g, ctxExt.labValues?.hba1c?.toString() || '?')
+    .replace(/\{\{triglycerides\}\}/g, ctxExt.labValues?.triglycerides?.toString() || '?')
+    .replace(/\{\{testosterone_total\}\}/g, ctxExt.labValues?.testosterone_total?.toString() || '?')
     // Genetic substitutions
-    .replace(/\{\{mthfr_status\}\}/g, ctxAny.genetics?.mthfr_status || '?')
-    .replace(/\{\{apoe_status\}\}/g, ctxAny.genetics?.apoe_status || '?')
-    .replace(/\{\{comt_status\}\}/g, ctxAny.genetics?.comt_status || '?');
+    .replace(/\{\{mthfr_status\}\}/g, ctxExt.genetics?.mthfr_status || '?')
+    .replace(/\{\{apoe_status\}\}/g, ctxExt.genetics?.apoe_status || '?')
+    .replace(/\{\{comt_status\}\}/g, ctxExt.genetics?.comt_status || '?');
 }

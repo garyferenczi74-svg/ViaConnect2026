@@ -66,7 +66,7 @@ export function WellnessSnapshot({ autoFetch = true }: WellnessSnapshotProps) {
         .maybeSingle();
 
       if (data && Array.isArray(data.categories)) {
-        return data.categories.map((c: any) => ({
+        return data.categories.map((c: { id: string; name: string; score: number }) => ({
           id: c.id,
           name: c.name,
           score: typeof c.score === 'number' ? c.score : 0,
@@ -89,15 +89,15 @@ export function WellnessSnapshot({ autoFetch = true }: WellnessSnapshotProps) {
       const json = await res.json();
       if (!res.ok || json.error) throw new Error(json.error || 'generation failed');
       if (Array.isArray(json.categories)) {
-        return json.categories.map((c: any) => ({
+        return json.categories.map((c: { id: string; name: string; score: number }) => ({
           id: c.id,
           name: c.name,
           score: typeof c.score === 'number' ? c.score : 0,
         }));
       }
       return null;
-    } catch (e: any) {
-      setError(e?.message || 'Could not generate analytics');
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Could not generate analytics');
       return null;
     } finally {
       setGenerating(false);

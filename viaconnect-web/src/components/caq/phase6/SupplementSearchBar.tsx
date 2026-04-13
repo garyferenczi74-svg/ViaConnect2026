@@ -52,8 +52,8 @@ export default function SupplementSearchBar({
         const { results: data } = await res.json();
         setResults(data ?? []);
         setIsOpen(true);
-      } catch (e: any) {
-        if (e.name !== 'AbortError') setResults([]);
+      } catch (e: unknown) {
+        if (e instanceof Error && e.name !== 'AbortError') setResults([]);
       } finally {
         setIsLoading(false);
       }

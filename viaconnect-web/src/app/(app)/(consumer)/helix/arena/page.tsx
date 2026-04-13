@@ -8,7 +8,7 @@ import { LeaderboardBar } from '@/components/helix/LeaderboardBar';
 import { ChallengeCard } from '@/components/helix/ChallengeCard';
 import { MessageBubble } from '@/components/helix/MessageBubble';
 import { HelixIcon } from '@/components/helix/HelixIcon';
-import { Swords, MessageCircle, Flame, Activity, Footprints, Pill, Salad, Dumbbell, Target, HeartHandshake } from 'lucide-react';
+import { Swords, MessageCircle, Flame, Activity, Footprints, Pill, Salad, Dumbbell, Target, HeartHandshake, Star, Trophy, Award } from 'lucide-react';
 import { HelixIconWrapper } from '@/components/helix/HelixIcons';
 
 /* ------------------------------------------------------------------ */
@@ -40,19 +40,19 @@ interface ChatMessage {
 }
 
 const INITIAL_MESSAGES: ChatMessage[] = [
-  { id: 1, sender: 'Sarah K.',  text: 'Just hit 4K Helix this week! 🎉', timestamp: '2:34 PM', isSent: false },
-  { id: 2, sender: 'You',       text: 'Nice! I\'m right behind you 💪', timestamp: '2:35 PM', isSent: true },
+  { id: 1, sender: 'Sarah K.',  text: 'Just hit 4K Helix this week!', timestamp: '2:34 PM', isSent: false },
+  { id: 2, sender: 'You',       text: 'Nice! I\'m right behind you', timestamp: '2:35 PM', isSent: true },
   { id: 3, sender: 'Mike R.',   text: 'The steps challenge is brutal today', timestamp: '2:36 PM', isSent: false },
   { id: 4, sender: 'You',       text: 'Already at 8K, pushing for 10K before lunch', timestamp: '2:37 PM', isSent: true },
   { id: 5, sender: 'Jessica L.', text: 'Who else is doing the supplement streak?', timestamp: '2:40 PM', isSent: false },
-  { id: 6, sender: 'Sarah K.',  text: 'Day 12 for me! The 2x multiplier is 🔥', timestamp: '2:41 PM', isSent: false },
+  { id: 6, sender: 'Sarah K.',  text: 'Day 12 for me! The 2x multiplier is incredible', timestamp: '2:41 PM', isSent: false },
 ];
 
 const QUICK_REACTIONS = [
-  { icon: Flame, text: "🔥 Let's go!" },
-  { icon: Dumbbell, text: "💪 Crushing it!" },
-  { icon: HeartHandshake, text: "👏 Great work!" },
-  { icon: Footprints, text: "🏃 Keep moving!" },
+  { icon: Flame, text: "Let's go!" },
+  { icon: Dumbbell, text: "Crushing it!" },
+  { icon: HeartHandshake, text: "Great work!" },
+  { icon: Footprints, text: "Keep moving!" },
 ];
 
 const ACTIVE_CHALLENGES = [
@@ -102,9 +102,9 @@ export default function ArenaPage() {
   };
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-6 md:gap-8 p-4 md:p-6">
       {/* Two-column grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
         {/* Column 1 — Leaderboard */}
         <GlassCard glow>
           {/* Header */}
@@ -125,7 +125,7 @@ export default function ArenaPage() {
           </div>
 
           {/* Podium Display: 2nd | 1st | 3rd */}
-          <div className="flex items-end justify-center gap-4 mb-8">
+          <div className="flex items-end justify-center gap-3 md:gap-4 mb-6 md:mb-8">
             {PODIUM_USERS.map((user) => {
               const heights: Record<number, number> = { 1: 110, 2: 90, 3: 75 };
               const medalColors: Record<number, string> = { 1: '#FFD700', 2: '#C0C0C0', 3: '#CD7F32' };
@@ -208,7 +208,7 @@ export default function ArenaPage() {
           </div>
 
           {/* Message feed */}
-          <div className="h-[320px] overflow-y-auto pr-1 mb-4 scrollbar-hide">
+          <div className="h-[260px] md:h-[320px] overflow-y-auto pr-1 mb-4 scrollbar-hide">
             {messages.map((msg, i) => (
               <MessageBubble
                 key={msg.id}
@@ -230,11 +230,11 @@ export default function ArenaPage() {
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Type a message..."
-              className="flex-1 px-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-[13px] text-white placeholder-white/25 outline-none focus:border-[#2DA5A0]/40 transition-colors"
+              className="flex-1 px-4 py-2.5 min-h-[44px] rounded-xl bg-white/[0.04] border border-white/[0.08] text-[13px] text-white placeholder-white/25 outline-none focus:border-[#2DA5A0]/40 transition-colors"
             />
             <button
               onClick={() => sendMessage(input)}
-              className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#2DA5A0] to-[#35bdb7] text-white text-sm font-bold hover:opacity-90 transition-opacity"
+              className="px-4 py-2.5 min-h-[44px] rounded-xl bg-gradient-to-r from-[#2DA5A0] to-[#35bdb7] text-white text-sm font-bold hover:opacity-90 transition-opacity"
             >
               Send
             </button>
@@ -246,7 +246,7 @@ export default function ArenaPage() {
               <button
                 key={reaction.text}
                 onClick={() => sendMessage(reaction.text)}
-                className="flex items-center px-3 py-1.5 rounded-full text-[11px] font-semibold bg-white/[0.04] border border-white/[0.06] text-white/50 hover:bg-white/[0.08] hover:text-white/70 transition-colors"
+                className="flex items-center px-3 py-1.5 min-h-[44px] md:min-h-0 rounded-full text-[11px] font-semibold bg-white/[0.04] border border-white/[0.06] text-white/50 hover:bg-white/[0.08] hover:text-white/70 transition-colors"
               >
                 <reaction.icon size={12} strokeWidth={1.5} className="text-white/30 mr-1" />
                 {reaction.text}
@@ -262,9 +262,9 @@ export default function ArenaPage() {
           <Flame size={20} strokeWidth={1.5} className="text-[#B75E18]" />
           Active Challenges
         </h2>
-        <div className="flex gap-4 overflow-x-auto pb-3 snap-x snap-mandatory scrollbar-hide">
+        <div className="flex gap-3 md:gap-4 overflow-x-auto pb-3 snap-x snap-mandatory scrollbar-hide">
           {ACTIVE_CHALLENGES.map((ch, i) => (
-            <div key={ch.title} className="snap-start flex-shrink-0 w-[280px]">
+            <div key={ch.title} className="snap-start flex-shrink-0 w-[260px] md:w-[280px]">
               <ChallengeCard
                 type={ch.type}
                 title={ch.title}

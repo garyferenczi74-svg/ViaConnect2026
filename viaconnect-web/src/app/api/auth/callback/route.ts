@@ -33,8 +33,8 @@ export async function GET(request: Request) {
 
   // Audit log the successful login
   try {
-    // Cast to any: typegen rejects the jsonb metadata payload structurally
-    await (supabase as any).from("audit_logs").insert({
+    // @ts-expect-error -- audit_logs table not in generated Database type
+    await supabase.from("audit_logs").insert({
       user_id: user.id,
       action: "oauth_login",
       resource_type: "auth",

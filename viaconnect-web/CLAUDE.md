@@ -69,3 +69,20 @@ Every component, page, and feature must be developed for BOTH desktop AND mobile
 - [ ] Supabase email templates NOT touched
 - [ ] package.json NOT touched
 - [ ] Existing migrations NOT modified
+
+---
+
+## Agents
+
+### Michelangelo (Senior Developer Sub-Agent, OBRA Framework)
+- Reports to: Jeffery
+- Always-on, parallel execution, 24/7
+- Enforces OBRA protocol on ALL code: Observe/Brainstorm, Blueprint, Review, Audit/TDD
+- Quality gates: 80% line coverage, 100% critical path coverage, zero TS errors, zero `any`
+- Veto power: can BLOCK any merge that fails Gate R or Gate A
+- Agent definition: .claude/agents/michelangelo.md
+- Integration hooks: .claude/agents/michelangelo-hooks.md
+- Gate scripts: scripts/agents/michelangelo-*.ts
+- Living spec: docs/agents/michelangelo-spec.md
+- Config (legacy): docs/agents/michelangelo-config.json
+- Source (legacy): src/lib/agents/michelangelo/

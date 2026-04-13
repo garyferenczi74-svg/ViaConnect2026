@@ -27,13 +27,13 @@ export async function POST(request: Request) {
     if (!res.ok) { const e = await res.text(); return NextResponse.json({ success: false, error: 'API ' + res.status + ': ' + e.substring(0,200) }, { status: 500 }); }
 
     const data = await res.json();
-    const text = data.content?.find((b: any) => b.type === 'text')?.text || '';
+    const text = data.content?.find((b: { type: string; text?: string }) => b.type === 'text')?.text || '';
     const clean = text.replace(/```json?\s*/gi,'').replace(/```/g,'').trim();
     const m = clean.match(/\{[\s\S]*\}/);
     if (!m) return NextResponse.json({ success: false, error: 'No JSON in response' }, { status: 500 });
 
     return NextResponse.json({ success: true, data: JSON.parse(m[0]) });
-  } catch (err: any) {
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    return NextResponse.json({ success: false, error: err instanceof Error ? err.message : 'Unknown error' }, { status: 500 });
   }
 }

@@ -48,10 +48,10 @@ export default function SecurityAdminPage() {
     // Cast through unknown: typegen Row types and the local ScanSummary /
     // AuditFinding shapes don't structurally overlap, but the runtime data is
     // correct. The cast keeps the local UI types authoritative.
-    if (s.data) setScan(s.data as unknown as any);
-    if (f.data) setFindings(f.data as unknown as any);
-    if (p.data) setPending(p.data);
-    if (c.data) setMode((c.data.value as string).replace(/"/g, '') as any);
+    if (s.data) setScan(s.data as unknown as ScanSummary);
+    if (f.data) setFindings(f.data as unknown as AuditFinding[]);
+    if (p.data) setPending(p.data as unknown as PendingRepair[]);
+    if (c.data) setMode((c.data.value as string).replace(/"/g, '') as 'auto' | 'review' | 'audit');
     setLoading(false);
   }, []);
 
@@ -126,7 +126,7 @@ export default function SecurityAdminPage() {
         {([{ key: 'findings', label: 'Findings', icon: AlertTriangle, badge: findings.filter(f => f.status === 'open').length },
            { key: 'pending', label: 'Pending Repairs', icon: Wrench, badge: pending.length },
            { key: 'config', label: 'Config', icon: Settings, badge: 0 }] as const).map(t => (
-          <button key={t.key} onClick={() => setTab(t.key as any)}
+          <button key={t.key} onClick={() => setTab(t.key as 'findings' | 'pending' | 'config')}
             className={`flex items-center gap-2 pb-3 text-sm font-medium border-b-2 transition-colors ${tab === t.key ? 'border-[#2DA5A0] text-[#2DA5A0]' : 'border-transparent text-slate-400 hover:text-white'}`}>
             <t.icon className="w-4 h-4" strokeWidth={1.5} />{t.label}
             {t.badge > 0 && <span className="ml-1 px-1.5 py-0.5 bg-[#2DA5A0]/20 text-[#2DA5A0] rounded text-xs">{t.badge}</span>}

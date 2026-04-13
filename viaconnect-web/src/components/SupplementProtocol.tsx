@@ -97,8 +97,8 @@ export default function SupplementProtocol() {
         body: '{}',
       });
       if (res.ok) await fetchRecs();
-    } catch (e) {
-      console.error(e);
+    } catch {
+      // request failed — silently ignore
     } finally {
       setGenerating(false);
     }

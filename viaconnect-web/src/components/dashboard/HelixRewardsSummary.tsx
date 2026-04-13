@@ -101,7 +101,7 @@ export function HelixRewardsSummary({ totalPoints, currentStreak, longestStreak 
 
         if (cancelled || !Array.isArray(data)) return;
         setActivity(
-          data.map((row: any) => ({
+          data.map((row: { id: string; description: string; amount: number; created_at: string }) => ({
             id: row.id,
             description: row.description || 'Activity',
             points: row.amount || 0,

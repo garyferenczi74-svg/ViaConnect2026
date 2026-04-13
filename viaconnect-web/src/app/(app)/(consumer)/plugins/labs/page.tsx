@@ -11,7 +11,7 @@ export default function LabsPage() {
   };
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4 md:gap-6 px-4 md:px-0">
       {/* Back link */}
       <Link
         href="/plugins"
@@ -34,7 +34,7 @@ export default function LabsPage() {
 
       {/* Card 1 - Upload Lab Report */}
       <div
-        className="glass-v2 p-6 rounded-2xl flex flex-col gap-4"
+        className="glass-v2 p-4 md:p-6 rounded-2xl flex flex-col gap-3 md:gap-4"
         style={{ borderLeft: '4px solid #2DA5A0' }}
       >
         <div
@@ -54,7 +54,7 @@ export default function LabsPage() {
       </div>
 
       {/* Card 2 - Quest Diagnostics */}
-      <div className="glass-v2 p-6 rounded-2xl flex flex-col gap-4">
+      <div className="glass-v2 p-4 md:p-6 rounded-2xl flex flex-col gap-3 md:gap-4">
         <div
           className="flex items-center justify-center w-11 h-11 rounded-xl"
           style={{ backgroundColor: 'rgba(45, 165, 160, 0.08)' }}
@@ -71,7 +71,7 @@ export default function LabsPage() {
       </div>
 
       {/* Card 3 - Labcorp */}
-      <div className="glass-v2 p-6 rounded-2xl flex flex-col gap-4">
+      <div className="glass-v2 p-4 md:p-6 rounded-2xl flex flex-col gap-3 md:gap-4">
         <div
           className="flex items-center justify-center w-11 h-11 rounded-xl"
           style={{ backgroundColor: 'rgba(45, 165, 160, 0.08)' }}
@@ -88,7 +88,7 @@ export default function LabsPage() {
       </div>
 
       {/* Card 4 - Manual Entry */}
-      <div className="glass-v2 p-6 rounded-2xl flex flex-col gap-4">
+      <div className="glass-v2 p-4 md:p-6 rounded-2xl flex flex-col gap-3 md:gap-4">
         <div
           className="flex items-center justify-center w-11 h-11 rounded-xl"
           style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)' }}
@@ -105,7 +105,7 @@ export default function LabsPage() {
       </div>
 
       {/* Genetic Context Preview */}
-      <div className="glass-v2-insight p-5 rounded-2xl flex flex-col gap-3">
+      <div className="glass-v2-insight p-4 md:p-5 rounded-2xl flex flex-col gap-3">
         <div className="flex items-center gap-2">
           <Dna size={16} style={{ color: 'var(--teal-500)' }} />
           <p className="text-overline">GENETIC CONTEXT PREVIEW</p>
@@ -132,7 +132,7 @@ export default function LabsPage() {
       </div>
 
       {/* ViaTokens reward note */}
-      <div className="glass-v2 flex items-center gap-3 p-4 rounded-xl">
+      <div className="glass-v2 flex items-center gap-3 p-3 md:p-4 rounded-xl min-h-[44px]">
         <Coins size={20} style={{ color: '#D4A017' }} />
         <p className="text-sm font-semibold" style={{ color: '#D4A017' }}>
           +50 ViaTokens for uploading labs!

@@ -51,8 +51,6 @@ export default function IntegrationsPage() {
   const handleConnect = useCallback((appId: string) => {
     // In production: redirect to OAuth2 authorization URL
     // For now: show that the flow would start
-    const redirectUri = `${window.location.origin}/api/integrations/oauth/${appId}/callback`;
-    console.log(`OAuth flow for ${appId} would redirect to authorization URL with callback: ${redirectUri}`);
     alert(`${appId} OAuth connection coming soon. The authorization flow will redirect to ${appId}'s login page.`);
   }, []);
 

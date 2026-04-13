@@ -87,18 +87,18 @@ export default function OrderDetailPage() {
         .eq("order_id", orderId)
         .order("created_at", { ascending: false }),
     ]);
-    const items = (itemsRes.data as any[]) ?? [];
-    const historyRows = (historyRes.data as any[]) ?? [];
+    const items = (itemsRes.data as Record<string, unknown>[]) ?? [];
+    const historyRows = (historyRes.data as Record<string, unknown>[]) ?? [];
     setOrder(toOrderSummary(orderRow, items));
     setHistory(
       historyRows.map((h) => ({
         id: String(h.id),
         status: h.status as OrderStatus,
         title: String(h.title),
-        description: h.description ?? null,
-        trackingNumber: h.tracking_number ?? null,
-        trackingUrl: h.tracking_url ?? null,
-        carrier: h.carrier ?? null,
+        description: (h.description as string) ?? null,
+        trackingNumber: (h.tracking_number as string) ?? null,
+        trackingUrl: (h.tracking_url as string) ?? null,
+        carrier: (h.carrier as string) ?? null,
         createdAt: String(h.created_at),
       })),
     );
@@ -231,7 +231,7 @@ export default function OrderDetailPage() {
           <ul className="space-y-3">
             {order.items.map((it) => {
               const aiRecommended =
-                it.metadata && (it.metadata as any).aiRecommended === true;
+                it.metadata && (it.metadata as Record<string, unknown>).aiRecommended === true;
               return (
                 <li
                   key={it.id}
