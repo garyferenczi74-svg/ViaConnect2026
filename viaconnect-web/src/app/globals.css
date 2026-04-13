@@ -336,6 +336,56 @@ body {
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
+/* ─── ViaConnect Check-in Sliders ─────────────────────────────────────────── */
+
+.checkin-slider {
+  background: transparent;
+}
+.checkin-slider::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 9999px;
+  background: linear-gradient(
+    to right,
+    var(--slider-color, #2DA5A0) 0%,
+    var(--slider-color, #2DA5A0) var(--slider-pct, 50%),
+    rgba(255,255,255,0.10) var(--slider-pct, 50%)
+  );
+}
+.checkin-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--slider-color, #2DA5A0);
+  border: 2px solid #ffffff;
+  margin-top: -7px;
+  cursor: pointer;
+  box-shadow: 0 0 6px rgba(45,165,160,0.45);
+}
+.checkin-slider::-moz-range-track {
+  height: 4px;
+  border-radius: 9999px;
+  background: rgba(255,255,255,0.10);
+}
+.checkin-slider::-moz-range-progress {
+  height: 4px;
+  border-radius: 9999px;
+  background: var(--slider-color, #2DA5A0);
+}
+.checkin-slider::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--slider-color, #2DA5A0);
+  border: 2px solid #ffffff;
+  cursor: pointer;
+}
+@media (pointer: coarse) {
+  .checkin-slider {
+    padding: 12px 0;
+  }
+}
+
 /* ─── Utility ──────────────────────────────────────────────────────────────── */
 
 @layer utilities {
