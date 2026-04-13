@@ -100,7 +100,7 @@ function ItemRow({ item }: { item: ProtocolItem }) {
 function Section({ icon, iconColor, title, subtitle, children }: { icon: LucideIcon; iconColor: string; title: string; subtitle: string; children: React.ReactNode }) {
   return (
     <section className="relative rounded-2xl overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-b from-[#141E33] via-[#1A2744] to-[#1A2744]" />
+      <div className="absolute inset-0 bg-[#1E3054]/75 backdrop-blur-sm" />
       <div className="absolute inset-0 rounded-2xl border border-white/[0.08]" />
       <div className="relative z-10">
         <div className="flex items-center gap-3 p-5 md:p-6 border-b border-white/5">
