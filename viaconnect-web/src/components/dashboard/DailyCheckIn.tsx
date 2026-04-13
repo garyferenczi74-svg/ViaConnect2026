@@ -26,6 +26,11 @@ import { CheckInSlider } from './CheckInSlider';
 import {
   mergeScoreSources,
   calculateDayScore,
+  sleepCheckinScore,
+  exerciseCheckinScore,
+  activityCheckinScore,
+  stressCheckinScore,
+  energyCheckinScore,
   type CheckInRaw,
 } from '@/lib/scoring/checkinScoreBridge';
 
@@ -148,12 +153,15 @@ export function DailyCheckIn() {
       );
 
       // 2. Upsert normalized 0-100 scores to daily_score_inputs (for gauges)
+      // Uses Prompt #66 bridge functions: sleepCheckinScore combines BOTH hours
+      // AND quality; exerciseCheckinScore uses base + duration bonus; all others
+      // use nuanced linear curves with proper inversion for stress.
       const gaugeRows = [
-        { gauge_id: 'sleep', raw_value: sleepHours, normalized_score: normalizeSleepHours(sleepHours) },
-        { gauge_id: 'exercise', raw_value: normalizeExercise(cardioActive, cardioDuration, resistanceActive, resistanceDuration), normalized_score: normalizeExercise(cardioActive, cardioDuration, resistanceActive, resistanceDuration) },
-        { gauge_id: 'steps', raw_value: activityLevel, normalized_score: normalize1to5(activityLevel) },
-        { gauge_id: 'stress', raw_value: stressLevel, normalized_score: normalize1to5(6 - stressLevel) }, // invert: low stress = high score
-        { gauge_id: 'recovery', raw_value: energyLevel, normalized_score: normalize1to5(energyLevel) },
+        { gauge_id: 'sleep', raw_value: sleepHours, normalized_score: sleepCheckinScore(sleepHours, sleepQuality) },
+        { gauge_id: 'exercise', raw_value: cardioDuration + resistanceDuration, normalized_score: exerciseCheckinScore(cardioActive, cardioDuration, resistanceActive, resistanceDuration) },
+        { gauge_id: 'steps', raw_value: activityLevel, normalized_score: activityCheckinScore(activityLevel) },
+        { gauge_id: 'stress', raw_value: stressLevel, normalized_score: stressCheckinScore(stressLevel) },
+        { gauge_id: 'recovery', raw_value: energyLevel, normalized_score: energyCheckinScore(energyLevel) },
       ].map((r) => ({
         user_id: user.id,
         gauge_id: r.gauge_id,
