@@ -6,7 +6,7 @@ import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { BioOptimizationGauge } from '@/components/dashboard/BioOptimizationGauge';
 import { TodaysProtocol } from '@/components/dashboard/TodaysProtocol';
 import { WellnessSnapshot } from '@/components/dashboard/WellnessSnapshot';
-import { DailyScoresGrid } from '@/components/dashboard/DailyScoresGrid';
+import { DailyScoresPanel } from '@/components/dashboard/DailyScoresPanel';
 import { HelixRewardsSummary } from '@/components/dashboard/HelixRewardsSummary';
 import { QuickActionsGrid } from '@/components/dashboard/QuickActionsGrid';
 import { DailyInsightsCard } from '@/components/dashboard/DailyInsightsCard';
@@ -66,39 +66,14 @@ export default function ConsumerDashboard() {
     assessmentCompleted,
   } = useUserDashboardData();
 
-  // Lifted check-in scores: populated by DailyCheckIn via CustomEvent,
-  // persisted in localStorage for page reloads. Passed to DailyScoresGrid
-  // so gauges update immediately when the user submits a check-in.
-  const [checkinScores, setCheckinScores] = useState<Record<string, number>>(() => {
-    if (typeof window === 'undefined') return {};
-    try {
-      const stored = localStorage.getItem('vc_checkin_scores');
-      if (!stored) return {};
-      const parsed = JSON.parse(stored);
-      if (parsed.date !== new Date().toISOString().split('T')[0]) return {};
-      return parsed.scores ?? {};
-    } catch { return {}; }
-  });
+  // Raw check-in data passed to DailyScoresPanel for score computation.
+  const [checkinRaw, setCheckinRaw] = useState<Record<string, any> | null>(null);
 
-  // Direct callback from DailyCheckIn (most reliable path)
   const handleCheckinScores = useCallback((scores: Record<string, number>) => {
-    const today = new Date().toISOString().split('T')[0];
-    setCheckinScores((prev) => {
-      const merged = { ...prev, ...scores };
-      try { localStorage.setItem('vc_checkin_scores', JSON.stringify({ date: today, scores: merged })); } catch {}
-      return merged;
-    });
+    // The scores map contains gauge_id → normalized_score from DailyCheckIn.
+    // Also store the raw slider state so the panel can recompute on refresh.
+    setCheckinRaw((prev) => ({ ...(prev ?? {}), ...scores, _ts: Date.now() }));
   }, []);
-
-  // Also listen for CustomEvent as backup
-  useEffect(() => {
-    const onCheckin = (e: Event) => {
-      const detail = (e as CustomEvent).detail as Record<string, number> | undefined;
-      if (detail && typeof detail === 'object') handleCheckinScores(detail);
-    };
-    window.addEventListener('checkin-submitted', onCheckin);
-    return () => window.removeEventListener('checkin-submitted', onCheckin);
-  }, [handleCheckinScores]);
 
   if (loading) return <DashboardSkeleton />;
 
@@ -167,12 +142,7 @@ export default function ConsumerDashboard() {
         {/* ── All remaining content — image fades as overlay darkens ── */}
         <div className="mx-auto max-w-7xl space-y-6 px-4 pb-24 md:px-6">
         {/* ── 3. Daily Scores Grid (Personal Wellness Dashboard) ── */}
-        <DailyScoresGrid
-          bioHistory={bioHistory}
-          adherence={adherence}
-          currentStreak={currentStreak}
-          checkinScores={checkinScores}
-        />
+        <DailyScoresPanel checkinRaw={checkinRaw} />
 
         {/* ── 3b. Daily Check-In (Prompt #62e — Tier 4 manual input) ── */}
         <DailyCheckIn onScoresUpdate={handleCheckinScores} />
