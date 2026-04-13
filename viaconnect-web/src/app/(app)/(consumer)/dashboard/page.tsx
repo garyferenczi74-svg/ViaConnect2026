@@ -18,7 +18,7 @@ import { QuickReassessmentCard } from '@/components/dashboard/QuickReassessmentC
 import { PatternCirclePreview } from '@/components/community/PatternCirclePreview';
 import { ConnectCard } from '@/components/dashboard/ConnectCard';
 import { DashboardLinkCard } from '@/components/dashboard/DashboardLinkCard';
-import FixedHeroBackground from '@/components/ui/FixedHeroBackground';
+import FixedHeroSection from '@/components/ui/FixedHeroSection';
 import { DailyCheckIn } from '@/components/dashboard/DailyCheckIn';
 import { QuickMealLogWidget } from '@/components/dashboard/QuickMealLogWidget';
 import { RefreshCw, FileQuestion } from 'lucide-react';
@@ -100,25 +100,24 @@ export default function ConsumerDashboard() {
 
   return (
     <div className="min-h-screen w-full text-white">
-      {/* ── Fixed Hero Background (Prompt #62 — scroll-over pattern) ── */}
-      <FixedHeroBackground
-        imagePath={DASHBOARD_HERO_IMAGE}
-        overlayOpacity={0.45}
+      {/* ── Fixed Hero Section (Prompt #62 — Sonar scroll-over pattern) ── */}
+      <FixedHeroSection
+        imageUrl={DASHBOARD_HERO_IMAGE}
+        height="h-[280px] md:h-[380px]"
+        overlayOpacity={0.52}
+        gradientFade="bottom"
         alt="Personal wellness dashboard background"
-      />
-
-      {/* ── Transparent hero zone — image visible through here ── */}
-      <div className="relative z-10 mx-auto max-w-7xl px-4 pt-8 pb-10 text-center md:px-6 md:pt-12 md:pb-16">
-        <h2 className="font-instrument-sans text-2xl font-bold leading-tight text-white drop-shadow-md sm:text-3xl md:text-4xl lg:text-5xl">
+      >
+        <h1 className="font-instrument-sans text-2xl font-semibold tracking-tight text-white md:text-4xl">
           Your Personal Wellness Journey
-        </h2>
-        <p className="mx-auto mt-3 max-w-md text-sm text-white/85 drop-shadow sm:text-base md:max-w-xl md:text-lg">
-          Powered by your data · guided by your goals
+        </h1>
+        <p className="mt-2 text-sm text-white/65 md:text-base">
+          Powered by your data; guided by your goals
         </p>
-      </div>
+      </FixedHeroSection>
 
-      {/* ── Content scrolls over the fixed image (Sonar pattern — no solid bg) ── */}
-      <div className="relative z-10 -mt-2 min-h-screen rounded-t-3xl pb-24">
+      {/* ── Content scrolls over the fixed hero ── */}
+      <div className="relative -mt-2 min-h-screen rounded-t-3xl pb-24">
         <div className="mx-auto max-w-7xl space-y-6 px-4 py-6 md:px-6 md:py-8">
         {/* ── 1. Header ────────────────────────────────────── */}
         <DashboardHeader />
