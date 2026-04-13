@@ -2340,15 +2340,30 @@ function OnboardingComplete() {
         .single();
       if (profile?.bio_optimization_score) setBioScore(profile.bio_optimization_score);
 
-      // Load saved symptom data from assessment_results phase 2
-      const { data: phase2 } = await supabase
+      // Load saved symptom data from assessment_results phases 7/8/9
+      const { data: phases } = await supabase
         .from("assessment_results")
-        .select("data")
+        .select("phase, data")
         .eq("user_id", user.id)
-        .eq("phase", 2)
-        .single();
-      if (phase2?.data) {
-        setSavedSymptoms(phase2.data as SymptomsData);
+        .in("phase", [7, 8, 9]);
+
+      if (phases && phases.length > 0) {
+        const phaseMap: Record<number, any> = {};
+        for (const p of phases) phaseMap[p.phase] = p.data ?? {};
+
+        const physical = phaseMap[7] ?? {};
+        const neuro = phaseMap[8] ?? {};
+        const emotional = phaseMap[9] ?? {};
+
+        setSavedSymptoms({
+          Energy: 10 - (physical.fatigue_severity?.score ?? 5),
+          Sleep: 10 - (neuro.sleep_quality_severity?.score ?? 5),
+          Stress: 10 - (emotional.stress_severity?.score ?? 5),
+          Anxiety: 10 - (emotional.anxiety_severity?.score ?? 5),
+          Digestion: 10 - (physical.digestive_severity?.score ?? 5),
+          Cognition: 10 - (neuro.brain_fog_severity?.score ?? 5),
+          Metabolic: 10 - (physical.metabolic_severity?.score ?? physical.weight_severity?.score ?? 5),
+        } as SymptomsData);
       }
 
       setLoading(false);
