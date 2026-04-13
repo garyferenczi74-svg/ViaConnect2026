@@ -63,7 +63,11 @@ const normalizeExercise = (
   return Math.round(Math.min(100, (total / 60) * 75 + 25));
 };
 
-export function DailyCheckIn() {
+interface DailyCheckInProps {
+  onScoresUpdate?: (scores: Record<string, number>) => void;
+}
+
+export function DailyCheckIn({ onScoresUpdate }: DailyCheckInProps = {}) {
   // ── State ────────────────────────────────────────────────
   const [collapsed, setCollapsed] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -145,7 +149,16 @@ export function DailyCheckIn() {
       const scoreMap: Record<string, number> = {};
       for (const r of gaugeRows) scoreMap[r.gauge_id] = r.normalized_score;
       setSubmitted(true);
-      window.dispatchEvent(new CustomEvent('checkin-submitted', { detail: scoreMap }));
+
+      // Update gauges via direct callback (most reliable) + event (backup)
+      onScoresUpdate?.(scoreMap);
+      try { window.dispatchEvent(new CustomEvent('checkin-submitted', { detail: scoreMap })); } catch {}
+
+      // Persist to localStorage for page reload survival
+      try {
+        const today = new Date().toISOString().split('T')[0];
+        localStorage.setItem('vc_checkin_scores', JSON.stringify({ date: today, scores: scoreMap }));
+      } catch {}
 
       // 1. Upsert raw slider values to daily_checkins
       await (supabase as any).from('daily_checkins').upsert(

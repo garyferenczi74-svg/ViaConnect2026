@@ -80,21 +80,25 @@ export default function ConsumerDashboard() {
     } catch { return {}; }
   });
 
+  // Direct callback from DailyCheckIn (most reliable path)
+  const handleCheckinScores = useCallback((scores: Record<string, number>) => {
+    const today = new Date().toISOString().split('T')[0];
+    setCheckinScores((prev) => {
+      const merged = { ...prev, ...scores };
+      try { localStorage.setItem('vc_checkin_scores', JSON.stringify({ date: today, scores: merged })); } catch {}
+      return merged;
+    });
+  }, []);
+
+  // Also listen for CustomEvent as backup
   useEffect(() => {
     const onCheckin = (e: Event) => {
       const detail = (e as CustomEvent).detail as Record<string, number> | undefined;
-      if (detail && typeof detail === 'object') {
-        const today = new Date().toISOString().split('T')[0];
-        setCheckinScores((prev) => {
-          const merged = { ...prev, ...detail };
-          localStorage.setItem('vc_checkin_scores', JSON.stringify({ date: today, scores: merged }));
-          return merged;
-        });
-      }
+      if (detail && typeof detail === 'object') handleCheckinScores(detail);
     };
     window.addEventListener('checkin-submitted', onCheckin);
     return () => window.removeEventListener('checkin-submitted', onCheckin);
-  }, []);
+  }, [handleCheckinScores]);
 
   if (loading) return <DashboardSkeleton />;
 
@@ -171,7 +175,7 @@ export default function ConsumerDashboard() {
         />
 
         {/* ── 3b. Daily Check-In (Prompt #62e — Tier 4 manual input) ── */}
-        <DailyCheckIn />
+        <DailyCheckIn onScoresUpdate={handleCheckinScores} />
 
         {/* ── 3c. Quick Meal Log (Prompt #62f — 4 meal slots) ── */}
         <QuickMealLogWidget />
