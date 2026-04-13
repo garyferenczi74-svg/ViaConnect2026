@@ -142,65 +142,52 @@ export default function SupplementsPage() {
     >
       <div className="min-h-screen bg-gradient-to-b from-[rgba(10,15,35,0.40)] via-[rgba(26,39,68,0.70)] to-[rgba(26,39,68,0.97)]">
 
-        {/* ── Hero tagline — image shows through ── */}
-        <div className="w-full px-4 pt-14 pb-8 text-center">
-          <div className="mx-auto mb-3 h-0.5 w-10 rounded-full bg-[#2DA5A0]" />
-          <h1 className="text-2xl font-semibold tracking-tight text-white md:text-3xl">
-            Supplement Protocol
-          </h1>
-          <p className="mt-2 text-sm text-white/60 md:text-base">
-            Your personalised FarmCeutica daily plan
-          </p>
-        </div>
-
-      {/* ── Portal tab bar — dark backing strip for visibility (Prompt #73) ── */}
-      <div className="sticky top-[60px] z-30 w-full bg-[#1A2744] border-b border-white/[0.08] shadow-[0_2px_12px_rgba(0,0,0,0.25)]">
-        <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide px-4 py-3 md:px-6">
-          <PortalTab
-            label="Personal Wellness"
-            isActive={true}
-            accentColor="#2DA5A0"
-            accentAlpha20="rgba(45,165,160,0.20)"
-            accentAlpha40="rgba(45,165,160,0.40)"
-            layoutId="supplement-tab-indicator"
-          />
-          <PortalTab
-            label="Practitioner"
-            isActive={false}
-            href="/practitioner/protocols"
-            accentColor="#3B82F6"
-            accentAlpha20="rgba(59,130,246,0.20)"
-            accentAlpha40="rgba(59,130,246,0.40)"
-            layoutId="supplement-tab-indicator"
-          />
-          <PortalTab
-            label="Naturopath"
-            isActive={false}
-            href="/naturopath/protocols"
-            accentColor="#22C55E"
-            accentAlpha20="rgba(34,197,94,0.20)"
-            accentAlpha40="rgba(34,197,94,0.40)"
-            layoutId="supplement-tab-indicator"
-          />
-          <PortalTab
-            label="Admin"
-            isActive={false}
-            href="/admin"
-            accentColor="#EF4444"
-            accentAlpha20="rgba(239,68,68,0.20)"
-            accentAlpha40="rgba(239,68,68,0.40)"
-            layoutId="supplement-tab-indicator"
-          />
-          <PortalTab
-            label="Hounddog"
-            isActive={false}
-            href="/admin/hounddog"
-            accentColor="#A855F7"
-            accentAlpha20="rgba(168,85,247,0.20)"
-            accentAlpha40="rgba(168,85,247,0.40)"
-            layoutId="supplement-tab-indicator"
-          />
-        </div>
+      {/* ── Portal buttons at top of page (no backing strip, no header) ── */}
+      <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide px-4 pt-4 pb-2 md:px-6">
+        <PortalTab
+          label="Personal Wellness"
+          isActive={true}
+          accentColor="#2DA5A0"
+          accentAlpha20="rgba(45,165,160,0.20)"
+          accentAlpha40="rgba(45,165,160,0.40)"
+          layoutId="supplement-tab-indicator"
+        />
+        <PortalTab
+          label="Practitioner"
+          isActive={false}
+          href="/practitioner/protocols"
+          accentColor="#3B82F6"
+          accentAlpha20="rgba(59,130,246,0.20)"
+          accentAlpha40="rgba(59,130,246,0.40)"
+          layoutId="supplement-tab-indicator"
+        />
+        <PortalTab
+          label="Naturopath"
+          isActive={false}
+          href="/naturopath/protocols"
+          accentColor="#22C55E"
+          accentAlpha20="rgba(34,197,94,0.20)"
+          accentAlpha40="rgba(34,197,94,0.40)"
+          layoutId="supplement-tab-indicator"
+        />
+        <PortalTab
+          label="Admin"
+          isActive={false}
+          href="/admin"
+          accentColor="#EF4444"
+          accentAlpha20="rgba(239,68,68,0.20)"
+          accentAlpha40="rgba(239,68,68,0.40)"
+          layoutId="supplement-tab-indicator"
+        />
+        <PortalTab
+          label="Hounddog"
+          isActive={false}
+          href="/admin/hounddog"
+          accentColor="#A855F7"
+          accentAlpha20="rgba(168,85,247,0.20)"
+          accentAlpha40="rgba(168,85,247,0.40)"
+          layoutId="supplement-tab-indicator"
+        />
       </div>
 
       <div className="space-y-6 px-2 py-4 sm:px-4 md:px-8 md:py-6">
