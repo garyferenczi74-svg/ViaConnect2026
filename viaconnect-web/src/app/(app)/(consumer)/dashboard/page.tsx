@@ -101,7 +101,7 @@ export default function ConsumerDashboard() {
     // ── Full-page fixed background (Prompt #62L — true Sonar pattern) ──
     <div
       className="min-h-screen w-full bg-cover bg-no-repeat bg-scroll text-white md:bg-fixed"
-      style={{ backgroundImage: `url('${DASHBOARD_HERO_IMAGE}')`, backgroundPosition: 'center 75%' }}
+      style={{ backgroundImage: `url('${DASHBOARD_HERO_IMAGE}')`, backgroundPosition: 'center bottom' }}
       style={{ backgroundImage: `url('${DASHBOARD_HERO_IMAGE}')` }}
     >
       {/* Progressive overlay: lightest at top (image breathes), solid navy at bottom */}
