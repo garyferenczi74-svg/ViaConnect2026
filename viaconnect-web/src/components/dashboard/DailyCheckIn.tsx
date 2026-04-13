@@ -334,7 +334,6 @@ export function DailyCheckIn({ onScoresUpdate }: DailyCheckInProps = {}) {
                   <button
                     type="button"
                     onClick={() => setCardioActive((p) => !p)}
-                    disabled={submitted}
                     className={`flex flex-1 items-center justify-center gap-2 rounded-xl border px-3 py-2 text-sm transition-all ${
                       cardioActive
                         ? 'border-[#2DA5A0] bg-[#2DA5A0]/20 text-[#2DA5A0]'
@@ -347,7 +346,6 @@ export function DailyCheckIn({ onScoresUpdate }: DailyCheckInProps = {}) {
                   <button
                     type="button"
                     onClick={() => setResistanceActive((p) => !p)}
-                    disabled={submitted}
                     className={`flex flex-1 items-center justify-center gap-2 rounded-xl border px-3 py-2 text-sm transition-all ${
                       resistanceActive
                         ? 'border-[#B75E18] bg-[#B75E18]/20 text-[#B75E18]'
