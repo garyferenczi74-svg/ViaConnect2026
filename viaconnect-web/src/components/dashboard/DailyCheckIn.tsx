@@ -1,6 +1,6 @@
 'use client';
 
-// Quick Daily Check — Prompt #65 slider overhaul.
+// Quick Daily Check Ins — Prompt #65 slider overhaul.
 // All 5 cards use CheckInSlider. Exercise has toggle buttons + duration
 // sliders that expand/collapse via AnimatePresence. Single upsert to
 // daily_checkins (raw values) + daily_score_inputs (normalized 0-100).
@@ -228,7 +228,7 @@ export function DailyCheckIn() {
         <div className="flex items-center gap-2">
           <Check className="h-4 w-4 text-[#22C55E]" strokeWidth={1.5} />
           <span className="text-xs font-medium text-white/60">
-            Quick Daily Check complete
+            Quick Daily Check Ins complete
           </span>
         </div>
         <span className="text-xs text-[#2DA5A0]">+15 pts</span>
@@ -246,7 +246,7 @@ export function DailyCheckIn() {
       >
         <div className="flex items-center gap-2">
           <ClipboardCheck className="h-5 w-5 text-[#2DA5A0]" strokeWidth={1.5} />
-          <h3 className="text-sm font-semibold text-white">Quick Daily Check</h3>
+          <h3 className="text-sm font-semibold text-white">Quick Daily Check Ins</h3>
         </div>
         <div className="flex items-center gap-2">
           <span className="text-xs text-[#2DA5A0]">+15 pts</span>

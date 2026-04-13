@@ -30,7 +30,7 @@ export function QuickReassessmentCard({ daysElapsed }: QuickReassessmentCardProp
         </div>
         <div className="flex-1 min-w-0">
           <h4 className="text-sm font-semibold text-white">
-            {isReady ? "Quick Daily Check: 30 day check-in ready" : `Quick Daily Check: ${30 - daysElapsed} days until check-in`}
+            {isReady ? "Quick Daily Check Ins: 30 day check-in ready" : `Quick Daily Check Ins: ${30 - daysElapsed} days until check-in`}
           </h4>
           <p className="text-xs text-white/30 mt-0.5">
             {isReady
