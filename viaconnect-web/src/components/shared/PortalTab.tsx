@@ -41,21 +41,21 @@ export function PortalTab({
               borderColor: accentAlpha40,
             }
           : {
-              backgroundColor: 'rgba(255,255,255,0.05)',
-              color: 'rgba(255,255,255,0.45)',
-              borderColor: 'rgba(255,255,255,0.08)',
+              backgroundColor: 'rgba(255,255,255,0.07)',
+              color: 'rgba(255,255,255,0.65)',
+              borderColor: 'rgba(255,255,255,0.12)',
             }
       }
       onMouseEnter={(e) => {
         if (!isActive) {
-          (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(255,255,255,0.10)';
-          (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.70)';
+          (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(255,255,255,0.12)';
+          (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.90)';
         }
       }}
       onMouseLeave={(e) => {
         if (!isActive) {
-          (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(255,255,255,0.05)';
-          (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.45)';
+          (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(255,255,255,0.07)';
+          (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.65)';
         }
       }}
     >

@@ -153,52 +153,54 @@ export default function SupplementsPage() {
           </p>
         </div>
 
-      {/* ── Portal tab bar — translucent colored pills (Prompt #71) ── */}
-      <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide px-4 pb-4 md:px-8">
-        <PortalTab
-          label="Personal Wellness"
-          isActive={true}
-          accentColor="#2DA5A0"
-          accentAlpha20="rgba(45,165,160,0.20)"
-          accentAlpha40="rgba(45,165,160,0.40)"
-          layoutId="supplement-tab-indicator"
-        />
-        <PortalTab
-          label="Practitioner"
-          isActive={false}
-          href="/practitioner/protocols"
-          accentColor="#3B82F6"
-          accentAlpha20="rgba(59,130,246,0.20)"
-          accentAlpha40="rgba(59,130,246,0.40)"
-          layoutId="supplement-tab-indicator"
-        />
-        <PortalTab
-          label="Naturopath"
-          isActive={false}
-          href="/naturopath/protocols"
-          accentColor="#22C55E"
-          accentAlpha20="rgba(34,197,94,0.20)"
-          accentAlpha40="rgba(34,197,94,0.40)"
-          layoutId="supplement-tab-indicator"
-        />
-        <PortalTab
-          label="Admin"
-          isActive={false}
-          href="/admin"
-          accentColor="#EF4444"
-          accentAlpha20="rgba(239,68,68,0.20)"
-          accentAlpha40="rgba(239,68,68,0.40)"
-          layoutId="supplement-tab-indicator"
-        />
-        <PortalTab
-          label="Hounddog"
-          isActive={false}
-          href="/admin/hounddog"
-          accentColor="#A855F7"
-          accentAlpha20="rgba(168,85,247,0.20)"
-          accentAlpha40="rgba(168,85,247,0.40)"
-          layoutId="supplement-tab-indicator"
-        />
+      {/* ── Portal tab bar — dark backing strip for visibility (Prompt #73) ── */}
+      <div className="sticky top-[60px] z-30 w-full bg-[#1A2744] border-b border-white/[0.08] shadow-[0_2px_12px_rgba(0,0,0,0.25)]">
+        <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide px-4 py-3 md:px-6">
+          <PortalTab
+            label="Personal Wellness"
+            isActive={true}
+            accentColor="#2DA5A0"
+            accentAlpha20="rgba(45,165,160,0.20)"
+            accentAlpha40="rgba(45,165,160,0.40)"
+            layoutId="supplement-tab-indicator"
+          />
+          <PortalTab
+            label="Practitioner"
+            isActive={false}
+            href="/practitioner/protocols"
+            accentColor="#3B82F6"
+            accentAlpha20="rgba(59,130,246,0.20)"
+            accentAlpha40="rgba(59,130,246,0.40)"
+            layoutId="supplement-tab-indicator"
+          />
+          <PortalTab
+            label="Naturopath"
+            isActive={false}
+            href="/naturopath/protocols"
+            accentColor="#22C55E"
+            accentAlpha20="rgba(34,197,94,0.20)"
+            accentAlpha40="rgba(34,197,94,0.40)"
+            layoutId="supplement-tab-indicator"
+          />
+          <PortalTab
+            label="Admin"
+            isActive={false}
+            href="/admin"
+            accentColor="#EF4444"
+            accentAlpha20="rgba(239,68,68,0.20)"
+            accentAlpha40="rgba(239,68,68,0.40)"
+            layoutId="supplement-tab-indicator"
+          />
+          <PortalTab
+            label="Hounddog"
+            isActive={false}
+            href="/admin/hounddog"
+            accentColor="#A855F7"
+            accentAlpha20="rgba(168,85,247,0.20)"
+            accentAlpha40="rgba(168,85,247,0.40)"
+            layoutId="supplement-tab-indicator"
+          />
+        </div>
       </div>
 
       <div className="space-y-6 px-2 py-4 sm:px-4 md:px-8 md:py-6">
