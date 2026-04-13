@@ -3,13 +3,17 @@
 // FixedHeroSection — Sonar-style fixed-background scroll-over section.
 // Pure CSS: background-attachment:fixed on desktop, bg-scroll on mobile
 // (iOS Safari fallback). No JavaScript motion hooks needed.
+//
+// When height="auto", the section grows to fit its children (use
+// className="min-h-[420px]" etc. to set a minimum). Children layout
+// is flex-col so callers control alignment via their own classes.
 
 import type { ReactNode } from 'react';
 
 interface FixedHeroSectionProps {
   /** Full Supabase URL or relative path in Hero Images bucket */
   imageUrl: string;
-  /** Tailwind height classes. Default: 'h-[320px] md:h-[420px]' */
+  /** Tailwind height classes OR 'auto' to let children drive height. */
   height?: string;
   /** Overlay darkness 0-1. Default: 0.55 */
   overlayOpacity?: number;
@@ -17,9 +21,9 @@ interface FixedHeroSectionProps {
   gradientFade?: 'bottom' | 'top' | 'both' | 'none';
   /** Alt text for accessibility */
   alt?: string;
-  /** Content rendered centered over image */
+  /** Content rendered over image */
   children?: ReactNode;
-  /** Additional className */
+  /** Additional className (e.g. min-h-[420px] when height='auto') */
   className?: string;
 }
 
@@ -42,11 +46,14 @@ export default function FixedHeroSection({
     none: 'none',
   };
 
+  // When height='auto', omit fixed height; let children drive height
+  const heightClass = height === 'auto' ? '' : height;
+
   return (
     <section
       role="img"
       aria-label={alt}
-      className={`relative overflow-hidden ${height} ${className}`}
+      className={`relative overflow-hidden ${heightClass} ${className}`}
     >
       {/* Fixed background: bg-scroll on mobile (<md), bg-fixed on desktop (>=md) */}
       <div
@@ -68,9 +75,9 @@ export default function FixedHeroSection({
         />
       )}
 
-      {/* Children centred */}
+      {/* Children: flex-col so callers control their own layout */}
       {children && (
-        <div className="relative z-10 flex h-full flex-col items-center justify-center px-4 text-center">
+        <div className="relative z-10 flex h-full w-full flex-col">
           {children}
         </div>
       )}

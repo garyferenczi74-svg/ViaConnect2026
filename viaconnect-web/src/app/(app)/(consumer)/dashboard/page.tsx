@@ -100,39 +100,47 @@ export default function ConsumerDashboard() {
 
   return (
     <div className="min-h-screen w-full text-white">
-      {/* ── Fixed Hero Section (Prompt #62 — Sonar scroll-over pattern) ── */}
+      {/* ── Fixed Hero (Prompt #62a — greeting + gauge INSIDE hero) ── */}
       <FixedHeroSection
         imageUrl={DASHBOARD_HERO_IMAGE}
-        height="h-[280px] md:h-[380px]"
+        height="auto"
         overlayOpacity={0.52}
         gradientFade="bottom"
         alt="Personal wellness dashboard background"
+        className="min-h-[420px] md:min-h-[560px]"
       >
-        <h1 className="font-instrument-sans text-2xl font-semibold tracking-tight text-white md:text-4xl">
-          Your Personal Wellness Journey
-        </h1>
-        <p className="mt-2 text-sm text-white/65 md:text-base">
-          Powered by your data; guided by your goals
-        </p>
+        {/* Hero tagline */}
+        <div className="w-full pt-10 text-center md:pt-14">
+          <h1 className="text-2xl font-semibold tracking-tight text-white md:text-4xl">
+            Your Personal Wellness Journey
+          </h1>
+          <p className="mt-2 text-sm text-white/65 md:text-base">
+            Powered by your data; guided by your goals
+          </p>
+        </div>
+
+        {/* Greeting row — floating over image */}
+        <div className="mx-auto mt-6 w-full max-w-7xl px-4 md:px-6">
+          <DashboardHeader />
+        </div>
+
+        {/* Bio Optimization Gauge — floating on the hero image */}
+        <div className="mx-auto w-full max-w-7xl px-4 pb-10 md:px-6 md:pb-14">
+          <BioOptimizationGauge
+            score={bioScore}
+            tier={bioTier}
+            tierMultiplier={tierMultiplier(bioTier)}
+            hasCAQ={assessmentCompleted}
+            hasLabs={false}
+            hasGenetics={false}
+            weeklyDelta={weeklyDelta}
+          />
+        </div>
       </FixedHeroSection>
 
-      {/* ── Content scrolls over the fixed hero ── */}
-      <div className="relative -mt-2 min-h-screen rounded-t-3xl pb-24">
-        <div className="mx-auto max-w-7xl space-y-6 px-4 py-6 md:px-6 md:py-8">
-        {/* ── 1. Header ────────────────────────────────────── */}
-        <DashboardHeader />
-
-        {/* ── 2. Bio Optimization Gauge (Hero) ─────────────── */}
-        <BioOptimizationGauge
-          score={bioScore}
-          tier={bioTier}
-          tierMultiplier={tierMultiplier(bioTier)}
-          hasCAQ={assessmentCompleted}
-          hasLabs={false}
-          hasGenetics={false}
-          weeklyDelta={weeklyDelta}
-        />
-
+      {/* ── Content below hero — normal dark background ── */}
+      <div className="relative z-10 -mt-6 min-h-screen bg-[#1A2744] pt-6 pb-24 md:-mt-8 md:pt-8">
+        <div className="mx-auto max-w-7xl space-y-6 px-4 md:px-6">
         {/* ── 3. Daily Scores Grid (Personal Wellness Dashboard) ── */}
         <DailyScoresGrid
           bioHistory={bioHistory}
