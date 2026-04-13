@@ -19,7 +19,7 @@ import { createClient } from "@/lib/supabase/client";
 import RecommendedSupplements from "@/components/supplement-protocol/RecommendedSupplements";
 import { PortalTab } from "@/components/shared/PortalTab";
 const SUPPLEMENT_HERO_IMAGE =
-  "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Images/Doctor%203.png";
+  "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Images/Athlete%201.png";
 
 function PIcon({ icon: Icon, color, size = "md" }: { icon: LucideIcon; color: string; size?: "sm" | "md" | "lg" }) {
   const s = size === "lg" ? { box: "w-14 h-14", ico: "w-7 h-7", glow: "blur-2xl -inset-2" } : size === "sm" ? { box: "w-9 h-9", ico: "w-4 h-4", glow: "blur-lg -inset-1" } : { box: "w-12 h-12", ico: "w-5 h-5", glow: "blur-xl -inset-1.5" };
