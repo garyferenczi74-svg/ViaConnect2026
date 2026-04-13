@@ -1,201 +1,201 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Sparkles, Loader2, ArrowRight, Pencil, Send } from 'lucide-react';
-import HounddogCard from '../shared/HounddogCard';
-import HounddogPill from '../shared/HounddogPill';
+import React, { useState, useCallback } from 'react';
+import { Zap, Edit3, ArrowRight, Loader } from 'lucide-react';
+import { C } from '@/lib/hounddog/constants';
+import Btn from '../shared/Btn';
+import Pill from '../shared/Pill';
+import PBar from '../shared/PBar';
 
-interface BatchScript {
-  id: string;
+/* ------------------------------------------------------------------ */
+/*  Types                                                              */
+/* ------------------------------------------------------------------ */
+interface AutoScript {
   title: string;
-  hookQuote: string;
+  hook: string;
   angle: string;
-  aiScore: number;
+  score: number;
   duration: string;
 }
 
-const platforms = ['TikTok', 'Instagram Reels', 'YouTube Shorts', 'YouTube Long Form', 'Facebook', 'Reddit'];
-const countOptions = [3, 5, 10, 15];
+const PLATFORMS = ['TikTok', 'Instagram', 'YouTube', 'Facebook', 'Reddit', 'All'] as const;
+const COUNT_OPTIONS = [3, 5, 10, 15] as const;
 
-function ProgressBar({ value }: { value: number }) {
-  const barColor = value > 90 ? 'bg-emerald-400' : value > 80 ? 'bg-[#2DA5A0]' : 'bg-[#B75E18]';
-  return (
-    <div className="w-full bg-white/10 rounded-full h-2">
-      <div
-        className={`h-2 rounded-full transition-all duration-500 ${barColor}`}
-        style={{ width: `${Math.min(value, 100)}%` }}
-      />
-    </div>
-  );
+const STAGES = [
+  "Researching niche...",
+  "Generating scripts...",
+  "Scoring hooks...",
+  "Finalizing...",
+];
+
+const MOCK_SCRIPTS: AutoScript[] = [
+  { title: "Why Your Supplements Aren't Working", hook: "Your genetics determine...", angle: "Authority Gap", score: 94, duration: "45s" },
+  { title: "The 3 Peptides That Changed My Biomarkers", hook: "After 90 days of tracking...", angle: "Proof/Results", score: 91, duration: "38s" },
+  { title: "Stop Wasting Money on Generic Supplements", hook: "You're spending $200/month...", angle: "Loss Aversion", score: 88, duration: "52s" },
+  { title: "What 10\u201327x Bioavailability Actually Means", hook: "Most supplements are destroyed...", angle: "Pattern Interrupt", score: 85, duration: "41s" },
+  { title: "AI Built My Entire Supplement Stack From DNA", hook: "I uploaded my genetic data...", angle: "Transformation", score: 93, duration: "60s" },
+];
+
+/* ------------------------------------------------------------------ */
+/*  Helpers                                                            */
+/* ------------------------------------------------------------------ */
+function scoreColor(s: number): string {
+  if (s > 90) return C.green;
+  if (s > 80) return C.teal;
+  return C.orange;
 }
 
-function generateMockScripts(count: number): BatchScript[] {
-  const titles = [
-    'The peptide your doctor will not mention',
-    'Why 90% of biohackers get this wrong',
-    'I tracked my sleep for 60 days; here is what happened',
-    'This recovery protocol is underrated',
-    'Stop wasting money on the wrong peptides',
-    'The science behind GHK Cu explained simply',
-    'One change that fixed my HRV overnight',
-    'BPC 157 vs TB 500: the real difference',
-    'Three signs your stack needs an upgrade',
-    'How I cut my recovery time in half',
-    'The morning protocol nobody talks about',
-    'My lab results after 90 days on peptides',
-    'What your Oura ring is really telling you',
-    'The longevity stack I recommend to everyone',
-    'Why timing matters more than dosing',
-  ];
+const inputStyle: React.CSSProperties = {
+  width: '100%',
+  background: C.card2,
+  border: `1px solid ${C.border}`,
+  borderRadius: 7,
+  color: C.text,
+  fontSize: 12,
+  padding: '8px 10px',
+  outline: 'none',
+  fontFamily: 'inherit',
+};
 
-  const hooks = [
-    'Stop scrolling. This could change everything.',
-    'Your doctor does not want you to know this.',
-    'I was skeptical too, until I saw my lab results.',
-    'This is the most underrated peptide on the market.',
-    'If you are still doing this, you are wasting your money.',
-    'Nobody is talking about this, and it is a problem.',
-    'I tested this for 30 days so you do not have to.',
-    'The data does not lie: look at these numbers.',
-    'Three words: deep sleep optimization.',
-    'This changed my morning routine forever.',
-    'I was wrong about this peptide. Here is why.',
-    'Save this before it gets buried in your feed.',
-    'The difference between good sleep and great sleep.',
-    'Your recovery is broken. Here is the fix.',
-    'This is not medical advice; this is data.',
-  ];
-
-  const angles = ['Curiosity Gap', 'Contrarian', 'Data Driven', 'Personal Story', 'Myth Busting', 'Tutorial'];
-
-  return Array.from({ length: count }, (_, i) => ({
-    id: `batch-${i}`,
-    title: titles[i % titles.length],
-    hookQuote: hooks[i % hooks.length],
-    angle: angles[i % angles.length],
-    aiScore: Math.floor(Math.random() * 20) + 78,
-    duration: `${Math.floor(Math.random() * 30) + 30} to ${Math.floor(Math.random() * 30) + 60}s`,
-  }));
-}
-
+/* ------------------------------------------------------------------ */
+/*  Component                                                          */
+/* ------------------------------------------------------------------ */
 export default function AutoScriptTab() {
   const [niche, setNiche] = useState('Precision Wellness / Peptides');
   const [platform, setPlatform] = useState('TikTok');
-  const [count, setCount] = useState(5);
+  const [count, setCount] = useState<number>(5);
   const [loading, setLoading] = useState(false);
-  const [scripts, setScripts] = useState<BatchScript[]>([]);
+  const [stage, setStage] = useState('');
+  const [scripts, setScripts] = useState<AutoScript[]>([]);
 
-  const handleGenerate = () => {
+  const handleGenerate = useCallback(() => {
+    if (loading) return;
     setLoading(true);
     setScripts([]);
-    setTimeout(() => {
-      setScripts(generateMockScripts(count));
+    setStage(STAGES[0]);
+
+    const t1 = setTimeout(() => setStage(STAGES[1]), 550);
+    const t2 = setTimeout(() => setStage(STAGES[2]), 1100);
+    const t3 = setTimeout(() => setStage(STAGES[3]), 1650);
+    const t4 = setTimeout(() => {
+      setScripts(MOCK_SCRIPTS.slice(0, count));
       setLoading(false);
-    }, 1500);
-  };
+      setStage('');
+    }, 2200);
+
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
+  }, [loading, count]);
 
   return (
-    <div className="space-y-5">
-      {/* Input form */}
-      <HounddogCard className="p-5">
-        <h3 className="text-white font-semibold text-sm mb-4">Batch Script Generator</h3>
-
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
-          <div>
-            <label className="text-white/50 text-xs block mb-1.5">Niche</label>
-            <input
-              type="text"
-              value={niche}
-              onChange={(e) => setNiche(e.target.value)}
-              className="w-full bg-[#141E33] border border-white/[0.08] rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#2DA5A0]/40 transition-colors"
-            />
-          </div>
-          <div>
-            <label className="text-white/50 text-xs block mb-1.5">Platform</label>
-            <select
-              value={platform}
-              onChange={(e) => setPlatform(e.target.value)}
-              className="w-full bg-[#141E33] border border-white/[0.08] rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#2DA5A0]/40 transition-colors appearance-none"
-            >
-              {platforms.map((p) => (
-                <option key={p} value={p}>{p}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="text-white/50 text-xs block mb-1.5">Count</label>
-            <select
-              value={count}
-              onChange={(e) => setCount(Number(e.target.value))}
-              className="w-full bg-[#141E33] border border-white/[0.08] rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#2DA5A0]/40 transition-colors appearance-none"
-            >
-              {countOptions.map((c) => (
-                <option key={c} value={c}>{c} scripts</option>
-              ))}
-            </select>
-          </div>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      {/* ---- INPUT FORM ---- */}
+      <div>
+        {/* 3-col grid */}
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
+            gap: 10,
+            marginBottom: 10,
+          }}
+        >
+          <input
+            type="text"
+            value={niche}
+            onChange={(e) => setNiche(e.target.value)}
+            placeholder="Niche"
+            style={{ ...inputStyle, flex: 1 }}
+            onFocus={(e) => { e.currentTarget.style.borderColor = C.teal; }}
+            onBlur={(e) => { e.currentTarget.style.borderColor = C.border as string; }}
+          />
+          <select
+            value={platform}
+            onChange={(e) => setPlatform(e.target.value)}
+            style={{ ...inputStyle, appearance: 'none' as const }}
+          >
+            {PLATFORMS.map((p) => (
+              <option key={p} value={p} style={{ background: C.card2 }}>{p}</option>
+            ))}
+          </select>
+          <select
+            value={count}
+            onChange={(e) => setCount(Number(e.target.value))}
+            style={{ ...inputStyle, appearance: 'none' as const }}
+          >
+            {COUNT_OPTIONS.map((c) => (
+              <option key={c} value={c} style={{ background: C.card2 }}>{c}</option>
+            ))}
+          </select>
         </div>
 
-        <button
-          onClick={handleGenerate}
-          disabled={loading}
-          className="flex items-center gap-2 bg-[#2DA5A0] hover:bg-[#2DA5A0]/80 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-semibold px-5 py-2.5 rounded-lg transition-colors"
-        >
-          {loading ? (
-            <Loader2 size={14} strokeWidth={1.5} className="animate-spin" />
-          ) : (
-            <Sparkles size={14} strokeWidth={1.5} />
-          )}
-          {loading ? 'Generating...' : 'Generate Batch'}
-        </button>
-      </HounddogCard>
+        {/* Loading stage */}
+        {loading && stage && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+            <Loader size={12} strokeWidth={1.5} color={C.orange} style={{ animation: 'hd-spin 1s linear infinite' }} />
+            <span style={{ fontSize: 11, color: C.muted2 }}>{stage}</span>
+          </div>
+        )}
 
-      {/* Results */}
+        <Btn variant="orange" onClick={handleGenerate} loading={loading} icon={Zap}>
+          Generate Scripts
+        </Btn>
+      </div>
+
+      {/* ---- RESULTS ---- */}
       {scripts.length > 0 && (
-        <div className="space-y-4">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {/* Header */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <p className="text-white font-semibold text-sm">
-              {scripts.length} Scripts Generated
-            </p>
-            <button className="flex items-center gap-2 bg-[#B75E18] hover:bg-[#B75E18]/80 text-white text-xs font-semibold px-4 py-2 rounded-lg transition-colors">
-              <Send size={12} strokeWidth={1.5} />
-              Push All to Pipeline
-            </button>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+            <span style={{ fontSize: 16, fontWeight: 700, color: C.text }}>{scripts.length} Scripts Ready</span>
+            <Btn variant="green" icon={ArrowRight}>Push All to Pipeline</Btn>
           </div>
 
-          {/* Script cards */}
-          <div className="space-y-3">
-            {scripts.map((script) => (
-              <HounddogCard key={script.id} className="p-4 border-l-2 border-l-[#2DA5A0]">
-                <div className="flex flex-col sm:flex-row sm:items-start gap-3">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-white text-sm font-semibold mb-1">{script.title}</p>
-                    <p className="text-white/40 text-xs italic mb-2">"{script.hookQuote}"</p>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <HounddogPill label={script.angle} color="teal" size="sm" />
-                      <HounddogPill label={`AI: ${script.aiScore}`} color={script.aiScore > 85 ? 'green' : 'orange'} size="sm" />
-                      <HounddogPill label={script.duration} color="gray" size="sm" />
-                    </div>
-                    <div className="mt-2 w-full max-w-[200px]">
-                      <ProgressBar value={script.aiScore} />
-                    </div>
-                  </div>
+          {/* Cards */}
+          {scripts.map((s, i) => (
+            <div
+              key={i}
+              style={{
+                borderLeft: `3px solid ${C.teal}`,
+                background: C.card,
+                border: `1px solid ${C.border}`,
+                borderLeftColor: C.teal,
+                borderLeftWidth: 3,
+                borderRadius: 10,
+                padding: 12,
+                animation: 'hd-fade 0.4s ease',
+                animationDelay: `${i * 80}ms`,
+                animationFillMode: 'backwards',
+              }}
+            >
+              {/* Title */}
+              <div style={{ fontSize: 13, fontWeight: 700, color: C.text, marginBottom: 4 }}>
+                #{i + 1} {'\u2014'} {s.title}
+              </div>
 
-                  <div className="flex gap-2 flex-shrink-0">
-                    <button className="flex items-center gap-1.5 text-xs text-white/50 hover:text-[#2DA5A0] bg-white/5 hover:bg-[#2DA5A0]/10 px-3 py-1.5 rounded-lg transition-colors">
-                      <Pencil size={12} strokeWidth={1.5} />
-                      Edit
-                    </button>
-                    <button className="flex items-center gap-1.5 text-xs text-white/50 hover:text-[#B75E18] bg-white/5 hover:bg-[#B75E18]/10 px-3 py-1.5 rounded-lg transition-colors">
-                      <ArrowRight size={12} strokeWidth={1.5} />
-                      Send to Pipeline
-                    </button>
-                  </div>
-                </div>
-              </HounddogCard>
-            ))}
-          </div>
+              {/* Hook quote */}
+              <div style={{ fontSize: 11, color: C.muted2, fontStyle: 'italic', marginBottom: 8 }}>
+                &ldquo;{s.hook}&rdquo;
+              </div>
+
+              {/* Pills row */}
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
+                <Pill label={`${s.score}`} color={scoreColor(s.score)} />
+                <Pill label={s.angle} color={C.teal} />
+                <Pill label={s.duration} color={C.muted2} />
+              </div>
+
+              {/* PBar */}
+              <div style={{ marginBottom: 10, maxWidth: 240 }}>
+                <PBar value={s.score} color={scoreColor(s.score)} />
+              </div>
+
+              {/* Action btns */}
+              <div style={{ display: 'flex', gap: 8 }}>
+                <Btn variant="ghost" icon={Edit3}>Edit</Btn>
+                <Btn variant="primary" icon={ArrowRight}>Pipeline</Btn>
+              </div>
+            </div>
+          ))}
         </div>
       )}
     </div>

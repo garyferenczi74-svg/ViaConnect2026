@@ -2,78 +2,79 @@
 
 import React, { useState } from 'react';
 import {
-  Pencil,
+  Clock,
+  Edit3,
   Trash2,
+  Send,
   ArrowRight,
   Sparkles,
   Copy,
-  Send,
 } from 'lucide-react';
-import HounddogCard from '../shared/HounddogCard';
-import HounddogPill from '../shared/HounddogPill';
+import { C, SCHEDULED } from '@/lib/hounddog/constants';
+import type { ScheduledItem } from '@/lib/hounddog/constants';
+import Btn from '../shared/Btn';
+import Pill from '../shared/Pill';
+import PBar from '../shared/PBar';
 
 type SubTab = 'scheduled' | 'scripts' | 'editor';
 
-interface ScheduledPost {
-  id: string;
-  platform: string;
-  platformColor: string;
-  title: string;
-  time: string;
-  status: 'queued' | 'approved' | 'draft';
-  aiScore: number;
-}
-
-interface ScriptItem {
-  id: string;
-  title: string;
-  summary: string;
-  tags: string[];
-}
-
-const mockScheduled: ScheduledPost[] = [
-  { id: '1', platform: 'TikTok', platformColor: '#00f2ea', title: 'Peptide stacking 101: beginner guide', time: 'Tomorrow, 9:00 AM', status: 'approved', aiScore: 92 },
-  { id: '2', platform: 'Instagram', platformColor: '#E1306C', title: 'BPC 157 results carousel', time: 'Tomorrow, 12:30 PM', status: 'queued', aiScore: 85 },
-  { id: '3', platform: 'YouTube', platformColor: '#FF0000', title: 'Monthly lab results breakdown', time: 'Apr 14, 3:00 PM', status: 'draft', aiScore: 71 },
-  { id: '4', platform: 'TikTok', platformColor: '#00f2ea', title: 'Top 5 recovery peptides ranked', time: 'Apr 15, 10:00 AM', status: 'queued', aiScore: 88 },
-];
-
-const mockScripts: ScriptItem[] = [
-  { id: 's1', title: 'The peptide nobody talks about', summary: 'Hook driven script targeting the curiosity gap; covers lesser known peptides for sleep optimization.', tags: ['TikTok', 'Hook', 'Sleep'] },
-  { id: 's2', title: 'Why your stack is wrong', summary: 'Contrarian angle script challenging common peptide stacking mistakes with research citations.', tags: ['Instagram', 'Contrarian', 'Education'] },
-  { id: 's3', title: '30 day transformation protocol', summary: 'Before and after narrative script showing realistic peptide journey with weekly milestones.', tags: ['YouTube', 'Transformation', 'Long Form'] },
-];
-
-const statusColorMap: Record<string, 'teal' | 'green' | 'gray'> = {
-  queued: 'teal',
-  approved: 'green',
-  draft: 'gray',
+const STATUS_COLORS: Record<string, string> = {
+  queued: C.teal,
+  drafting: C.orange,
+  writing: C.purple,
 };
 
-function ProgressBar({ value, className = '' }: { value: number; className?: string }) {
-  const barColor = value > 90 ? 'bg-emerald-400' : value > 80 ? 'bg-[#2DA5A0]' : 'bg-[#B75E18]';
-  return (
-    <div className={`w-full bg-white/10 rounded-full h-2 ${className}`}>
-      <div
-        className={`h-2 rounded-full transition-all duration-500 ${barColor}`}
-        style={{ width: `${Math.min(value, 100)}%` }}
-      />
-    </div>
-  );
-}
+const SCRIPTS = [
+  {
+    title: 'Why Your Supplements Fail (DNA Proof)',
+    summary: 'Hook: Your genetics say no ... Body: 3 SNPs that block absorption ... CTA: Get tested ... Est. 45s',
+    pills: [
+      { label: 'AI 94', color: C.green },
+      { label: 'Authority Gap', color: C.teal },
+      { label: 'Peptides', color: C.orange },
+    ],
+  },
+  {
+    title: 'Morning Routine: Gene Guided Stack',
+    summary: 'Hook: I stopped guessing ... Body: Methylation pathway walkthrough ... CTA: Save this stack ... Est. 45s',
+    pills: [
+      { label: 'AI 94', color: C.green },
+      { label: 'Authority Gap', color: C.teal },
+      { label: 'Peptides', color: C.orange },
+    ],
+  },
+  {
+    title: '10 to 27x Bioavailability Explained',
+    summary: 'Hook: Liposomal is not a gimmick ... Body: Absorption science simplified ... CTA: Link in bio ... Est. 45s',
+    pills: [
+      { label: 'AI 94', color: C.green },
+      { label: 'Authority Gap', color: C.teal },
+      { label: 'Peptides', color: C.orange },
+    ],
+  },
+  {
+    title: 'MTHFR: What Your Doctor Misses',
+    summary: 'Hook: 40% of people have this variant ... Body: Folate vs folic acid deep dive ... CTA: Get your panel ... Est. 45s',
+    pills: [
+      { label: 'AI 94', color: C.green },
+      { label: 'Authority Gap', color: C.teal },
+      { label: 'Peptides', color: C.orange },
+    ],
+  },
+];
+
+const SCORE_ITEMS = [
+  { label: 'Hook Strength', value: 82 },
+  { label: 'CTA Score', value: 76 },
+  { label: 'Engagement Pred.', value: 88 },
+  { label: 'Virality Index', value: 71 },
+];
 
 export default function ContentTab() {
   const [activeSubTab, setActiveSubTab] = useState<SubTab>('scheduled');
   const [editorText, setEditorText] = useState(
-    'Stop scrolling. This is the peptide protocol that changed my sleep, recovery, and energy in 30 days.\n\nHere is exactly what I used:\n\n1. BPC 157: 250mcg twice daily\n2. TB 500: 2.5mg twice per week\n3. GHK Cu: 200mcg before bed\n\nThe results? My deep sleep went from 45 minutes to 2 hours. Recovery time cut in half. Energy levels I have not felt since my 20s.\n\nSave this. Share it with someone who needs it.\n\nFollow for more precision wellness protocols.'
+    'Your genetics determine which supplements actually work...'
   );
-
-  const [scores] = useState({
-    hookStrength: 88,
-    ctaScore: 76,
-    engagementPrediction: 82,
-    viralityIndex: 69,
-  });
 
   const subTabs: { key: SubTab; label: string }[] = [
     { key: 'scheduled', label: 'Scheduled' },
@@ -82,146 +83,205 @@ export default function ContentTab() {
   ];
 
   return (
-    <div className="space-y-4">
-      {/* Sub-tabs */}
-      <div className="flex gap-1 bg-[#1A2744] rounded-lg p-1 w-fit">
-        {subTabs.map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveSubTab(tab.key)}
-            className={`px-4 py-1.5 rounded-md text-xs font-medium transition-colors ${
-              activeSubTab === tab.key
-                ? 'bg-[#1E3054] text-[#2DA5A0]'
-                : 'text-white/45 hover:text-white/70'
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      {/* Sub tab buttons */}
+      <div style={{ display: 'flex', gap: 6 }}>
+        {subTabs.map((tab) => {
+          const isActive = activeSubTab === tab.key;
+          return (
+            <button
+              key={tab.key}
+              onClick={() => setActiveSubTab(tab.key)}
+              style={{
+                borderRadius: 7,
+                background: isActive ? C.teal + '18' : 'transparent',
+                border: `1px solid ${isActive ? C.teal + '40' : C.border}`,
+                color: isActive ? C.teal : C.muted,
+                fontSize: 12,
+                fontWeight: 600,
+                padding: '6px 14px',
+                cursor: 'pointer',
+                transition: 'all 0.15s',
+              }}
+            >
+              {tab.label}
+            </button>
+          );
+        })}
       </div>
 
-      {/* SCHEDULED */}
+      {/* Scheduled */}
       {activeSubTab === 'scheduled' && (
-        <div className="space-y-3">
-          {mockScheduled.map((post) => (
-            <HounddogCard key={post.id} className="p-4">
-              <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-                {/* Platform dot + title */}
-                <div className="flex items-center gap-2 flex-1 min-w-0">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {SCHEDULED.map((item: ScheduledItem) => {
+            const statusColor = STATUS_COLORS[item.status] || C.teal;
+            const barColor = item.aiScore > 90 ? C.green : item.aiScore > 80 ? C.teal : C.orange;
+            return (
+              <div
+                key={item.id}
+                style={{
+                  background: C.card,
+                  border: `1px solid ${C.border}`,
+                  borderRadius: 10,
+                  padding: 12,
+                }}
+              >
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 10,
+                    flexWrap: 'wrap',
+                  }}
+                >
+                  {/* Platform circle */}
                   <span
-                    className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                    style={{ backgroundColor: post.platformColor }}
-                  />
-                  <div className="min-w-0">
-                    <p className="text-white text-sm font-medium truncate">{post.title}</p>
-                    <p className="text-white/40 text-[10px]">{post.time}</p>
-                  </div>
-                </div>
-
-                {/* Status + AI Score + Actions */}
-                <div className="flex items-center gap-3 flex-shrink-0">
-                  <HounddogPill label={post.status} color={statusColorMap[post.status]} />
-                  <div className="flex items-center gap-2 w-28">
-                    <span className="text-white/50 text-[10px]">AI</span>
-                    <ProgressBar value={post.aiScore} className="flex-1" />
-                    <span className="text-white/60 text-[10px] w-6 text-right">{post.aiScore}</span>
-                  </div>
-                  <button className="text-white/30 hover:text-[#2DA5A0] transition-colors">
-                    <Pencil size={14} strokeWidth={1.5} />
-                  </button>
-                  <button className="text-white/30 hover:text-red-400 transition-colors">
-                    <Trash2 size={14} strokeWidth={1.5} />
-                  </button>
-                </div>
-              </div>
-            </HounddogCard>
-          ))}
-        </div>
-      )}
-
-      {/* SCRIPTS */}
-      {activeSubTab === 'scripts' && (
-        <div className="space-y-3">
-          {mockScripts.map((script) => (
-            <HounddogCard key={script.id} className="p-4">
-              <div className="flex flex-col sm:flex-row sm:items-start gap-3">
-                <div className="flex-1 min-w-0">
-                  <p className="text-white text-sm font-semibold mb-1">{script.title}</p>
-                  <p className="text-white/40 text-xs mb-2">{script.summary}</p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {script.tags.map((tag) => (
-                      <HounddogPill key={tag} label={tag} color="gray" size="sm" />
-                    ))}
-                  </div>
-                </div>
-                <div className="flex gap-2 flex-shrink-0">
-                  <button
-                    onClick={() => {
-                      setEditorText(`# ${script.title}\n\n${script.summary}`);
-                      setActiveSubTab('editor');
+                    style={{
+                      width: 14,
+                      height: 14,
+                      borderRadius: '50%',
+                      background: item.platformColor,
+                      flexShrink: 0,
                     }}
-                    className="flex items-center gap-1.5 text-xs text-[#2DA5A0] hover:text-[#2DA5A0]/80 bg-[#2DA5A0]/10 px-3 py-1.5 rounded-lg transition-colors"
-                  >
-                    <Pencil size={12} strokeWidth={1.5} />
-                    Edit in Editor
-                  </button>
-                  <button className="flex items-center gap-1.5 text-xs text-[#B75E18] hover:text-[#B75E18]/80 bg-[#B75E18]/10 px-3 py-1.5 rounded-lg transition-colors">
-                    <ArrowRight size={12} strokeWidth={1.5} />
-                    Push to Pipeline
-                  </button>
+                  />
+                  {/* Title */}
+                  <span style={{ fontSize: 12, fontWeight: 700, color: C.text, flex: 1, minWidth: 120 }}>
+                    {item.title}
+                  </span>
+                  {/* Time */}
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 10, color: C.muted }}>
+                    <Clock size={10} strokeWidth={1.5} />
+                    {item.time}
+                  </span>
+                  {/* Status Pill */}
+                  <Pill label={item.status.toUpperCase()} color={statusColor} />
+                  {/* AI Score Pill */}
+                  <Pill label={`AI ${item.aiScore}`} color={C.green} />
+                  {/* Actions */}
+                  <div style={{ display: 'flex', gap: 4 }}>
+                    <Btn variant="ghost" icon={Edit3} onClick={() => {}}>Edit</Btn>
+                    <Btn variant="green" icon={Send} onClick={() => {}}>Send</Btn>
+                    <Btn variant="danger" icon={Trash2} onClick={() => {}}>Trash</Btn>
+                  </div>
+                </div>
+                {/* Progress bar */}
+                <div style={{ marginTop: 8 }}>
+                  <PBar value={item.aiScore} color={barColor} height={3} />
                 </div>
               </div>
-            </HounddogCard>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Scripts */}
+      {activeSubTab === 'scripts' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {SCRIPTS.map((script, idx) => (
+            <div
+              key={idx}
+              style={{
+                background: C.card,
+                border: `1px solid ${C.border}`,
+                borderLeft: `3px solid ${C.teal}`,
+                borderRadius: 10,
+                padding: 14,
+              }}
+            >
+              <div style={{ fontSize: 13, fontWeight: 700, color: C.text, marginBottom: 6 }}>
+                {script.title}
+              </div>
+              <div style={{ fontSize: 11, color: C.muted2, lineHeight: 1.5, marginBottom: 8 }}>
+                {script.summary}
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                {script.pills.map((p, pi) => (
+                  <Pill key={pi} label={p.label} color={p.color} />
+                ))}
+                <div style={{ flex: 1 }} />
+                <Btn variant="ghost" icon={Edit3} onClick={() => {}}>Edit</Btn>
+                <Btn variant="primary" icon={ArrowRight} onClick={() => {}}>Pipeline</Btn>
+              </div>
+            </div>
           ))}
         </div>
       )}
 
-      {/* EDITOR */}
+      {/* Editor */}
       {activeSubTab === 'editor' && (
-        <div className="space-y-4">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           {/* Textarea */}
-          <div className="relative">
-            <textarea
-              value={editorText}
-              onChange={(e) => setEditorText(e.target.value)}
-              className="w-full h-48 sm:h-64 bg-[#141E33] border border-white/[0.08] rounded-xl p-4 text-white text-sm font-[Instrument_Sans] resize-y focus:outline-none focus:border-[#2DA5A0]/40 transition-colors"
-              placeholder="Paste or write your script here..."
-            />
-            <span className="absolute bottom-3 right-3 text-white/20 text-[10px]">
-              {editorText.length} chars
-            </span>
+          <textarea
+            value={editorText}
+            onChange={(e) => setEditorText(e.target.value)}
+            style={{
+              fontFamily: "'DM Mono', monospace",
+              background: C.card2,
+              border: `1px solid ${C.border}`,
+              color: C.text,
+              minHeight: 190,
+              padding: 12,
+              borderRadius: 8,
+              fontSize: 13,
+              lineHeight: 1.6,
+              resize: 'vertical',
+              outline: 'none',
+            }}
+            onFocus={(e) => {
+              (e.currentTarget as HTMLTextAreaElement).style.borderColor = C.teal;
+            }}
+            onBlur={(e) => {
+              (e.currentTarget as HTMLTextAreaElement).style.borderColor = C.border;
+            }}
+          />
+
+          {/* Button row */}
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <Btn variant="primary" icon={Sparkles} onClick={() => {}}>AI Optimize</Btn>
+            <Btn variant="ghost" icon={Send} onClick={() => {}}>Send to Pipeline</Btn>
+            <Btn variant="ghost" icon={Copy} onClick={() => {}}>Duplicate</Btn>
           </div>
 
-          {/* Scoring cards */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            {[
-              { label: 'Hook Strength', value: scores.hookStrength },
-              { label: 'CTA Score', value: scores.ctaScore },
-              { label: 'Engagement Prediction', value: scores.engagementPrediction },
-              { label: 'Virality Index', value: scores.viralityIndex },
-            ].map((score) => (
-              <HounddogCard key={score.label} className="p-3">
-                <p className="text-white/50 text-[10px] mb-1">{score.label}</p>
-                <p className="text-white font-bold text-lg mb-2">{score.value}</p>
-                <ProgressBar value={score.value} />
-              </HounddogCard>
-            ))}
-          </div>
-
-          {/* Actions */}
-          <div className="flex flex-wrap gap-3">
-            <button className="flex items-center gap-2 bg-[#2DA5A0] hover:bg-[#2DA5A0]/80 text-white text-sm font-semibold px-5 py-2.5 rounded-lg transition-colors">
-              <Sparkles size={14} strokeWidth={1.5} />
-              AI Optimize
-            </button>
-            <button className="flex items-center gap-2 bg-[#B75E18] hover:bg-[#B75E18]/80 text-white text-sm font-semibold px-5 py-2.5 rounded-lg transition-colors">
-              <Send size={14} strokeWidth={1.5} />
-              Send to Pipeline
-            </button>
-            <button className="flex items-center gap-2 bg-white/10 hover:bg-white/15 text-white text-sm font-medium px-5 py-2.5 rounded-lg transition-colors">
-              <Copy size={14} strokeWidth={1.5} />
-              Duplicate
-            </button>
+          {/* 2x2 scoring grid */}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr',
+              gap: 10,
+            }}
+          >
+            {SCORE_ITEMS.map((score) => {
+              const barColor = score.value > 80 ? C.green : C.teal;
+              return (
+                <div
+                  key={score.label}
+                  style={{
+                    background: C.card,
+                    border: `1px solid ${C.border}`,
+                    borderRadius: 10,
+                    padding: 12,
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: 9,
+                      color: C.muted,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.06em',
+                      fontWeight: 600,
+                      marginBottom: 4,
+                    }}
+                  >
+                    {score.label}
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 2, marginBottom: 8 }}>
+                    <span style={{ fontSize: 24, fontWeight: 700, color: C.text }}>{score.value}</span>
+                    <span style={{ fontSize: 12, color: C.muted }}>/100</span>
+                  </div>
+                  <PBar value={score.value} color={barColor} height={3} />
+                </div>
+              );
+            })}
           </div>
         </div>
       )}

@@ -4,7 +4,6 @@
 // Uses CSS custom properties for fill color + percentage, avoiding JS paint.
 
 import { useRef, useEffect, type ReactNode } from 'react';
-import { motion } from 'framer-motion';
 
 interface CheckInSliderProps {
   min: number;
@@ -46,12 +45,7 @@ export function CheckInSlider({
   }, [value, min, max, accentColor]);
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: -6 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, ease: 'easeOut' }}
-      className="mb-4"
-    >
+    <div className="mb-4">
       <div className="mb-2 flex items-center justify-between">
         <div className="flex items-center gap-2">
           {icon}
@@ -88,6 +82,6 @@ export function CheckInSlider({
           <span className="shrink-0 text-[10px] text-white/40">{rightLabel}</span>
         )}
       </div>
-    </motion.div>
+    </div>
   );
 }

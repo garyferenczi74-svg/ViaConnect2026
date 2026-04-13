@@ -1,180 +1,209 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Sparkles, ArrowRight, Pencil, Copy, Loader2 } from 'lucide-react';
-import HounddogCard from '../shared/HounddogCard';
-import HounddogPill from '../shared/HounddogPill';
+import React, { useState, useCallback } from 'react';
+import { Zap, CheckCircle, Edit3, Copy, ArrowRight, Loader } from 'lucide-react';
+import { C } from '@/lib/hounddog/constants';
+import SecHead from '../shared/SecHead';
+import Btn from '../shared/Btn';
+import Pill from '../shared/Pill';
 
-interface GeneratedScript {
-  hookScore: number;
+/* ------------------------------------------------------------------ */
+/*  Types                                                              */
+/* ------------------------------------------------------------------ */
+interface GeneratedResult {
   hook: string;
   body: string;
   cta: string;
+  angle: string;
+  hookScore: number;
   estimatedViews: string;
-  engagementPrediction: number;
-  duration: string;
+  bestTime: string;
   hashtags: string[];
 }
 
-const platforms = ['TikTok', 'Instagram Reels', 'YouTube Shorts', 'YouTube Long Form', 'Facebook', 'Reddit'];
+const PLATFORMS = ['TikTok', 'Instagram', 'YouTube', 'Facebook', 'Reddit', 'All'] as const;
 
+const MOCK_RESULT: GeneratedResult = {
+  hook: "Your genetics determine which supplements actually work \u2014 most people are getting it completely wrong.",
+  body: "[idea]\n\nGeneX360 data from 500 panels: your MTHFR variant alone can make standard B12 useless; or worse. We built ViaConnect because precision wellness shouldn't be guesswork.",
+  cta: "Drop your supplement question below. Our AI looks at research; not marketing.",
+  angle: "Authority Gap + Personalization",
+  hookScore: 91,
+  estimatedViews: "800K\u20132.1M",
+  bestTime: "6:30 PM weekdays",
+  hashtags: ["#precisionwellness", "#peptides", "#GeneX360", "#biohacking"],
+};
+
+const STAGES = [
+  "Analyzing idea...",
+  "Researching hooks...",
+  "Crafting script...",
+  "Scoring...",
+];
+
+/* ------------------------------------------------------------------ */
+/*  Shared inline styles                                               */
+/* ------------------------------------------------------------------ */
+const inputStyle: React.CSSProperties = {
+  width: '100%',
+  background: C.card2,
+  border: `1px solid ${C.border}`,
+  borderRadius: 7,
+  color: C.text,
+  fontSize: 12,
+  padding: '8px 10px',
+  outline: 'none',
+  fontFamily: 'inherit',
+};
+
+/* ------------------------------------------------------------------ */
+/*  Component                                                          */
+/* ------------------------------------------------------------------ */
 export default function CreateTab() {
   const [niche, setNiche] = useState('Precision Wellness / Peptides');
   const [platform, setPlatform] = useState('TikTok');
   const [rawIdea, setRawIdea] = useState('');
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<GeneratedScript | null>(null);
+  const [stage, setStage] = useState('');
+  const [result, setResult] = useState<GeneratedResult | null>(null);
 
-  const handleGenerate = () => {
-    if (!rawIdea.trim()) return;
+  const handleGenerate = useCallback(() => {
+    if (!rawIdea.trim() || loading) return;
     setLoading(true);
     setResult(null);
+    setStage(STAGES[0]);
 
-    // Mock response after 1.5s simulated delay
-    setTimeout(() => {
-      setResult({
-        hookScore: 91,
-        hook: 'Stop scrolling if you care about your sleep. This one peptide changed everything.',
-        body: 'I tested BPC 157 for 30 days straight. Here is what happened to my deep sleep, recovery time, and morning energy. The data does not lie; my Oura ring tracked every night.\n\nWeek 1: Deep sleep increased by 22 minutes\nWeek 2: Recovery score jumped from 64 to 81\nWeek 3: Morning HRV consistently above 65\nWeek 4: Best sleep metrics of my entire life',
-        cta: 'Save this for later. Follow for more protocols backed by real data, not hype.',
-        estimatedViews: '180K to 450K',
-        engagementPrediction: 87,
-        duration: '45 to 60 seconds',
-        hashtags: ['#peptides', '#biohacking', '#sleepoptimization', '#bpc157', '#precisionwellness', '#longevity', '#deepwork'],
-      });
+    const t1 = setTimeout(() => setStage(STAGES[1]), 550);
+    const t2 = setTimeout(() => setStage(STAGES[2]), 1100);
+    const t3 = setTimeout(() => setStage(STAGES[3]), 1650);
+    const t4 = setTimeout(() => {
+      setResult(MOCK_RESULT);
       setLoading(false);
-    }, 1500);
-  };
+      setStage('');
+    }, 2200);
+
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
+  }, [rawIdea, loading]);
+
+  const scoreColor = (result?.hookScore ?? 0) > 90 ? C.green : C.teal;
 
   return (
-    <div className="space-y-5">
-      {/* Input form */}
-      <HounddogCard className="p-5">
-        <h3 className="text-white font-semibold text-sm mb-4">Idea to Script Generator</h3>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-          {/* Niche */}
-          <div>
-            <label className="text-white/50 text-xs block mb-1.5">Niche</label>
-            <input
-              type="text"
-              value={niche}
-              onChange={(e) => setNiche(e.target.value)}
-              className="w-full bg-[#141E33] border border-white/[0.08] rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#2DA5A0]/40 transition-colors"
-            />
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      {/* ---- INPUT FORM ---- */}
+      <div>
+        <SecHead label="">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <Zap size={13} strokeWidth={1.5} color={C.orange} />
+            <span style={{ fontSize: 9, fontWeight: 700, color: C.orange, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+              IDEA TO PIPELINE
+            </span>
           </div>
+        </SecHead>
 
-          {/* Platform */}
-          <div>
-            <label className="text-white/50 text-xs block mb-1.5">Platform</label>
-            <select
-              value={platform}
-              onChange={(e) => setPlatform(e.target.value)}
-              className="w-full bg-[#141E33] border border-white/[0.08] rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#2DA5A0]/40 transition-colors appearance-none"
-            >
-              {platforms.map((p) => (
-                <option key={p} value={p}>
-                  {p}
-                </option>
-              ))}
-            </select>
-          </div>
+        {/* 2-col grid */}
+        <div
+          style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 10, marginBottom: 10 }}
+        >
+          <input
+            type="text"
+            value={niche}
+            onChange={(e) => setNiche(e.target.value)}
+            placeholder="Niche"
+            style={inputStyle}
+            onFocus={(e) => { e.currentTarget.style.borderColor = C.teal; }}
+            onBlur={(e) => { e.currentTarget.style.borderColor = C.border as string; }}
+          />
+          <select
+            value={platform}
+            onChange={(e) => setPlatform(e.target.value)}
+            style={{ ...inputStyle, appearance: 'none' as const }}
+          >
+            {PLATFORMS.map((p) => (
+              <option key={p} value={p} style={{ background: C.card2 }}>{p}</option>
+            ))}
+          </select>
         </div>
 
         {/* Raw Idea */}
-        <div className="mb-4">
-          <label className="text-white/50 text-xs block mb-1.5">Raw Idea</label>
-          <textarea
-            value={rawIdea}
-            onChange={(e) => setRawIdea(e.target.value)}
-            placeholder="Describe your content idea: what angle, what message, what audience reaction you want..."
-            className="w-full h-28 bg-[#141E33] border border-white/[0.08] rounded-lg px-3 py-2 text-white text-sm resize-y focus:outline-none focus:border-[#2DA5A0]/40 transition-colors"
-          />
-        </div>
+        <textarea
+          rows={4}
+          value={rawIdea}
+          onChange={(e) => setRawIdea(e.target.value)}
+          placeholder="Drop your idea here; rough notes, a concept, anything. Hounddog handles the rest."
+          style={{ ...inputStyle, borderRadius: 8, resize: 'vertical', marginBottom: 10 }}
+          onFocus={(e) => { e.currentTarget.style.borderColor = C.teal; }}
+          onBlur={(e) => { e.currentTarget.style.borderColor = C.border as string; }}
+        />
 
-        {/* Generate */}
-        <button
-          onClick={handleGenerate}
-          disabled={loading || !rawIdea.trim()}
-          className="flex items-center gap-2 bg-[#2DA5A0] hover:bg-[#2DA5A0]/80 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-semibold px-5 py-2.5 rounded-lg transition-colors"
-        >
-          {loading ? (
-            <Loader2 size={14} strokeWidth={1.5} className="animate-spin" />
-          ) : (
-            <Sparkles size={14} strokeWidth={1.5} />
-          )}
-          {loading ? 'Generating...' : 'Generate Script'}
-        </button>
-      </HounddogCard>
+        {/* Loading stage */}
+        {loading && stage && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+            <Loader size={12} strokeWidth={1.5} color={C.orange} style={{ animation: 'hd-spin 1s linear infinite' }} />
+            <span style={{ fontSize: 11, color: C.muted2 }}>{stage}</span>
+          </div>
+        )}
 
-      {/* Result */}
+        <Btn variant="orange" onClick={handleGenerate} loading={loading} icon={Zap}>
+          Generate &amp; Push to Pipeline
+        </Btn>
+      </div>
+
+      {/* ---- RESULT ---- */}
       {result && (
-        <div className="space-y-4">
-          {/* Success banner */}
-          <div className="flex items-center gap-3 bg-[#2DA5A0]/10 border border-[#2DA5A0]/20 rounded-xl px-4 py-3">
-            <Sparkles size={16} strokeWidth={1.5} className="text-[#2DA5A0]" />
-            <span className="text-[#2DA5A0] text-sm font-medium">Script generated successfully</span>
-            <HounddogPill label={`Hook Score: ${result.hookScore}`} color="teal" size="md" />
+        <div style={{ animation: 'hd-fade 0.4s ease', display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {/* Success row */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <CheckCircle size={14} strokeWidth={1.5} color={C.green} />
+            <span style={{ fontSize: 13, fontWeight: 700, color: C.text }}>Script Generated</span>
+            <Pill label={`${result.hookScore}`} color={scoreColor} />
           </div>
 
-          {/* Script blocks */}
-          <div className="space-y-3">
-            {/* Hook */}
-            <HounddogCard className="p-4 border-l-2 border-l-[#B75E18]">
-              <p className="text-[#E8863A] text-[10px] font-semibold uppercase tracking-wider mb-1">Hook</p>
-              <p className="text-white text-sm">{result.hook}</p>
-            </HounddogCard>
-
-            {/* Body */}
-            <HounddogCard className="p-4 border-l-2 border-l-[#2DA5A0]">
-              <p className="text-[#2DA5A0] text-[10px] font-semibold uppercase tracking-wider mb-1">Body</p>
-              <p className="text-white text-sm whitespace-pre-line">{result.body}</p>
-            </HounddogCard>
-
-            {/* CTA */}
-            <HounddogCard className="p-4 border-l-2 border-l-purple-500">
-              <p className="text-purple-400 text-[10px] font-semibold uppercase tracking-wider mb-1">CTA</p>
-              <p className="text-white text-sm">{result.cta}</p>
-            </HounddogCard>
+          {/* Hook block */}
+          <div style={{ borderLeft: `3px solid ${C.orange}`, background: C.card, border: `1px solid ${C.border}`, borderLeftColor: C.orange, borderLeftWidth: 3, borderRadius: 8, padding: 12 }}>
+            <div style={{ fontSize: 8, fontWeight: 700, color: C.orange, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>HOOK</div>
+            <div style={{ fontSize: 12, color: C.text, whiteSpace: 'pre-wrap' }}>{result.hook}</div>
           </div>
 
-          {/* Stats row */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <HounddogCard className="p-3 text-center">
-              <p className="text-white/40 text-[10px]">Estimated Views</p>
-              <p className="text-white font-bold text-sm">{result.estimatedViews}</p>
-            </HounddogCard>
-            <HounddogCard className="p-3 text-center">
-              <p className="text-white/40 text-[10px]">Engagement Prediction</p>
-              <p className="text-[#2DA5A0] font-bold text-sm">{result.engagementPrediction}%</p>
-            </HounddogCard>
-            <HounddogCard className="p-3 text-center">
-              <p className="text-white/40 text-[10px]">Duration</p>
-              <p className="text-white font-bold text-sm">{result.duration}</p>
-            </HounddogCard>
+          {/* Body block */}
+          <div style={{ borderLeft: `3px solid ${C.teal}`, background: C.card, border: `1px solid ${C.border}`, borderLeftColor: C.teal, borderLeftWidth: 3, borderRadius: 8, padding: 12 }}>
+            <div style={{ fontSize: 8, fontWeight: 700, color: C.teal, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>BODY</div>
+            <div style={{ fontSize: 12, color: C.text, whiteSpace: 'pre-wrap' }}>{result.body}</div>
           </div>
 
-          {/* Hashtags */}
-          <div className="flex flex-wrap gap-2">
+          {/* CTA block */}
+          <div style={{ borderLeft: `3px solid ${C.purple}`, background: C.card, border: `1px solid ${C.border}`, borderLeftColor: C.purple, borderLeftWidth: 3, borderRadius: 8, padding: 12 }}>
+            <div style={{ fontSize: 8, fontWeight: 700, color: C.purple, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>CTA</div>
+            <div style={{ fontSize: 12, color: C.text, whiteSpace: 'pre-wrap' }}>{result.cta}</div>
+          </div>
+
+          {/* Stats 3-col */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 10 }}>
+            <div>
+              <div style={{ fontSize: 8, fontWeight: 600, color: C.muted, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 2 }}>Angle</div>
+              <div style={{ fontSize: 12, color: C.text }}>{result.angle}</div>
+            </div>
+            <div>
+              <div style={{ fontSize: 8, fontWeight: 600, color: C.muted, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 2 }}>Est. Views</div>
+              <div style={{ fontSize: 12, color: C.green }}>{result.estimatedViews}</div>
+            </div>
+            <div>
+              <div style={{ fontSize: 8, fontWeight: 600, color: C.muted, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 2 }}>Best Time</div>
+              <div style={{ fontSize: 12, color: C.text }}>{result.bestTime}</div>
+            </div>
+          </div>
+
+          {/* Hashtag pills */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
             {result.hashtags.map((tag) => (
-              <HounddogPill key={tag} label={tag} color="teal" size="sm" />
+              <Pill key={tag} label={tag} color={C.teal} />
             ))}
           </div>
 
-          {/* Actions */}
-          <div className="flex flex-wrap gap-3">
-            <button className="flex items-center gap-2 bg-[#B75E18] hover:bg-[#B75E18]/80 text-white text-sm font-semibold px-5 py-2.5 rounded-lg transition-colors">
-              <ArrowRight size={14} strokeWidth={1.5} />
-              Add to Pipeline
-            </button>
-            <button className="flex items-center gap-2 bg-white/10 hover:bg-white/15 text-white text-sm font-medium px-5 py-2.5 rounded-lg transition-colors">
-              <Pencil size={14} strokeWidth={1.5} />
-              Edit in Editor
-            </button>
-            <button className="flex items-center gap-2 bg-white/10 hover:bg-white/15 text-white text-sm font-medium px-5 py-2.5 rounded-lg transition-colors">
-              <Copy size={14} strokeWidth={1.5} />
-              Clone for Other Platforms
-            </button>
+          {/* Action row */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            <Btn variant="green" icon={ArrowRight}>Add to Pipeline</Btn>
+            <Btn variant="ghost" icon={Edit3}>Edit in Editor</Btn>
+            <Btn variant="ghost" icon={Copy}>Clone for Others</Btn>
           </div>
         </div>
       )}
