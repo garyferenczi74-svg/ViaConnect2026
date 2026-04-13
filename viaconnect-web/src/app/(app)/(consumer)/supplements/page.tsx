@@ -17,6 +17,10 @@ import { useUserDashboardData } from "@/hooks/useUserDashboardData";
 import type { DashboardSupplement } from "@/hooks/useUserDashboardData";
 import { createClient } from "@/lib/supabase/client";
 import RecommendedSupplements from "@/components/supplement-protocol/RecommendedSupplements";
+import FixedHeroSection from "@/components/ui/FixedHeroSection";
+
+const SUPPLEMENT_HERO_IMAGE =
+  "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Images/Scientist%202.png";
 
 function PIcon({ icon: Icon, color, size = "md" }: { icon: LucideIcon; color: string; size?: "sm" | "md" | "lg" }) {
   const s = size === "lg" ? { box: "w-14 h-14", ico: "w-7 h-7", glow: "blur-2xl -inset-2" } : size === "sm" ? { box: "w-9 h-9", ico: "w-4 h-4", glow: "blur-lg -inset-1" } : { box: "w-12 h-12", ico: "w-5 h-5", glow: "blur-xl -inset-1.5" };
@@ -132,7 +136,27 @@ export default function SupplementsPage() {
   const pct = all.length > 0 ? Math.round((taken / all.length) * 100) : 0;
 
   return (
-    <div className="min-h-screen px-2 sm:px-4 md:px-8 py-4 md:py-6 space-y-6" style={{ background: "linear-gradient(180deg, #0F1520, #1A2744)" }}>
+    <div className="min-h-screen" style={{ background: "linear-gradient(180deg, #0F1520, #1A2744)" }}>
+      {/* ── Fixed Hero (Prompt #62k — Scientist 2) ── */}
+      <FixedHeroSection
+        imageUrl={SUPPLEMENT_HERO_IMAGE}
+        height="h-[220px] md:h-[300px]"
+        overlayOpacity={0.58}
+        gradientFade="bottom"
+        alt="FarmCeutica Supplement Protocol background"
+      >
+        <div className="flex flex-col items-center gap-2">
+          <div className="h-0.5 w-10 rounded-full bg-[#2DA5A0]" />
+          <h1 className="text-2xl font-semibold tracking-tight text-white md:text-3xl">
+            Supplement Protocol
+          </h1>
+          <p className="text-sm text-white/60 md:text-base">
+            Your personalised FarmCeutica daily plan
+          </p>
+        </div>
+      </FixedHeroSection>
+
+      <div className="relative z-10 space-y-6 px-2 py-4 sm:px-4 md:px-8 md:py-6">
 
       {/* PAGE HEADER */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -264,6 +288,7 @@ export default function SupplementsPage() {
       {/* DISCLAIMER */}
       <PractitionerDisclaimer />
 
+      </div>
     </div>
   );
 }

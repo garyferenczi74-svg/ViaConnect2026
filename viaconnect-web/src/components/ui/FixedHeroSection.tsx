@@ -75,9 +75,15 @@ export default function FixedHeroSection({
         />
       )}
 
-      {/* Children: flex-col so callers control their own layout */}
+      {/* Children layout:
+          height='auto' → flex-col, children control positioning
+          fixed height  → centred by default */}
       {children && (
-        <div className="relative z-10 flex h-full w-full flex-col">
+        <div
+          className={`relative z-10 flex h-full w-full flex-col ${
+            height !== 'auto' ? 'items-center justify-center' : ''
+          }`}
+        >
           {children}
         </div>
       )}
