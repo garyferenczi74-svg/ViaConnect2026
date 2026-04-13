@@ -17,8 +17,6 @@ import { useUserDashboardData } from "@/hooks/useUserDashboardData";
 import type { DashboardSupplement } from "@/hooks/useUserDashboardData";
 import { createClient } from "@/lib/supabase/client";
 import RecommendedSupplements from "@/components/supplement-protocol/RecommendedSupplements";
-import FixedHeroSection from "@/components/ui/FixedHeroSection";
-
 const SUPPLEMENT_HERO_IMAGE =
   "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Images/Scientist%202.png";
 
@@ -136,27 +134,25 @@ export default function SupplementsPage() {
   const pct = all.length > 0 ? Math.round((taken / all.length) * 100) : 0;
 
   return (
-    <div className="min-h-screen" style={{ background: "linear-gradient(180deg, #0F1520, #1A2744)" }}>
-      {/* ── Fixed Hero (Prompt #62k — Scientist 2) ── */}
-      <FixedHeroSection
-        imageUrl={SUPPLEMENT_HERO_IMAGE}
-        height="h-[220px] md:h-[300px]"
-        overlayOpacity={0.58}
-        gradientFade="bottom"
-        alt="FarmCeutica Supplement Protocol background"
-      >
-        <div className="flex flex-col items-center gap-2">
-          <div className="h-0.5 w-10 rounded-full bg-[#2DA5A0]" />
+    // ── Full-page fixed background (Prompt #62L) ──
+    <div
+      className="min-h-screen bg-cover bg-center bg-top bg-no-repeat bg-scroll text-white md:bg-fixed"
+      style={{ backgroundImage: `url('${SUPPLEMENT_HERO_IMAGE}')` }}
+    >
+      <div className="min-h-screen bg-gradient-to-b from-[rgba(10,15,35,0.40)] via-[rgba(26,39,68,0.70)] to-[rgba(26,39,68,0.97)]">
+
+        {/* ── Hero tagline — image shows through ── */}
+        <div className="w-full px-4 pt-14 pb-8 text-center">
+          <div className="mx-auto mb-3 h-0.5 w-10 rounded-full bg-[#2DA5A0]" />
           <h1 className="text-2xl font-semibold tracking-tight text-white md:text-3xl">
             Supplement Protocol
           </h1>
-          <p className="text-sm text-white/60 md:text-base">
+          <p className="mt-2 text-sm text-white/60 md:text-base">
             Your personalised FarmCeutica daily plan
           </p>
         </div>
-      </FixedHeroSection>
 
-      <div className="relative z-10 space-y-6 px-2 py-4 sm:px-4 md:px-8 md:py-6">
+      <div className="space-y-6 px-2 py-4 sm:px-4 md:px-8 md:py-6">
 
       {/* PAGE HEADER */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -288,6 +284,7 @@ export default function SupplementsPage() {
       {/* DISCLAIMER */}
       <PractitionerDisclaimer />
 
+      </div>
       </div>
     </div>
   );

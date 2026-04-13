@@ -12,8 +12,6 @@ import {
 import type { LucideIcon } from "lucide-react";
 import { getGeneticsShopUrl } from "@/utils/geneticsShopLinks";
 import { ShareProtocolButton } from "@/components/consumer/ShareProtocolButton";
-import FixedHeroSection from "@/components/ui/FixedHeroSection";
-
 const GENETICS_HERO_IMAGE =
   "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Images/Scientist%201.png";
 
@@ -132,25 +130,23 @@ export default function GeneticsPage() {
   const riskCounts = { High: VARIANTS.filter(v => v.impact === "High").length, Moderate: VARIANTS.filter(v => v.impact === "Moderate").length, Low: VARIANTS.filter(v => v.impact === "Low").length };
 
   return (
-    <div className="min-h-screen w-full" style={{ background: "linear-gradient(180deg, #141E33 0%, #1A2744 30%, #1A2744 100%)" }}>
-      {/* ── Fixed Hero (Prompt #62) ── */}
-      <FixedHeroSection
-        imageUrl={GENETICS_HERO_IMAGE}
-        height="h-[280px] md:h-[380px]"
-        overlayOpacity={0.58}
-        gradientFade="bottom"
-        alt="GeneX360 genetics portal background"
-      >
-        <div className="flex flex-col items-center gap-3">
-          <div className="h-0.5 w-10 rounded-full bg-[#2DA5A0]" />
-          <h1 className="font-instrument-sans text-2xl font-semibold tracking-tight text-white md:text-4xl">
+    // ── Full-page fixed background (Prompt #62L) ──
+    <div
+      className="min-h-screen w-full bg-cover bg-center bg-top bg-no-repeat bg-scroll text-white md:bg-fixed"
+      style={{ backgroundImage: `url('${GENETICS_HERO_IMAGE}')` }}
+    >
+      <div className="min-h-screen bg-gradient-to-b from-[rgba(10,15,35,0.40)] via-[rgba(26,39,68,0.70)] to-[rgba(26,39,68,0.97)]">
+
+        {/* ── Hero tagline — image shows through ── */}
+        <div className="w-full px-4 pt-14 pb-8 text-center">
+          <div className="mx-auto mb-3 h-0.5 w-10 rounded-full bg-[#2DA5A0]" />
+          <h1 className="text-2xl font-semibold tracking-tight text-white md:text-4xl">
             GeneX360 Genetics Protocol
           </h1>
-          <p className="max-w-lg text-sm text-white/65 md:text-base">
+          <p className="mt-2 max-w-lg mx-auto text-sm text-white/65 md:text-base">
             Precision insights from your genetic blueprint
           </p>
         </div>
-      </FixedHeroSection>
 
       <div className="mx-auto max-w-5xl space-y-8 px-4 py-6 sm:px-6 lg:px-10">
 
@@ -407,6 +403,7 @@ export default function GeneticsPage() {
           </div>
         </div>
 
+      </div>
       </div>
     </div>
   );

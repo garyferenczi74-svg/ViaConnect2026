@@ -18,7 +18,6 @@ import { QuickReassessmentCard } from '@/components/dashboard/QuickReassessmentC
 import { PatternCirclePreview } from '@/components/community/PatternCirclePreview';
 import { ConnectCard } from '@/components/dashboard/ConnectCard';
 import { DashboardLinkCard } from '@/components/dashboard/DashboardLinkCard';
-import FixedHeroSection from '@/components/ui/FixedHeroSection';
 import { DailyCheckIn } from '@/components/dashboard/DailyCheckIn';
 import { QuickMealLogWidget } from '@/components/dashboard/QuickMealLogWidget';
 import { RefreshCw, FileQuestion } from 'lucide-react';
@@ -99,18 +98,16 @@ export default function ConsumerDashboard() {
     : 0;
 
   return (
-    <div className="min-h-screen w-full text-white">
-      {/* ── Fixed Hero (Prompt #62a — greeting + gauge INSIDE hero) ── */}
-      <FixedHeroSection
-        imageUrl={DASHBOARD_HERO_IMAGE}
-        height="auto"
-        overlayOpacity={0.52}
-        gradientFade="bottom"
-        alt="Personal wellness dashboard background"
-        className="min-h-[420px] md:min-h-[560px]"
-      >
-        {/* Hero tagline */}
-        <div className="w-full pt-10 text-center md:pt-14">
+    // ── Full-page fixed background (Prompt #62L — true Sonar pattern) ──
+    <div
+      className="min-h-screen w-full bg-cover bg-center bg-top bg-no-repeat bg-scroll text-white md:bg-fixed"
+      style={{ backgroundImage: `url('${DASHBOARD_HERO_IMAGE}')` }}
+    >
+      {/* Progressive overlay: lightest at top (image breathes), solid navy at bottom */}
+      <div className="min-h-screen bg-gradient-to-b from-[rgba(10,15,35,0.30)] via-[rgba(26,39,68,0.60)] to-[rgba(26,39,68,0.95)]">
+
+        {/* ── Tagline — image fully visible ── */}
+        <div className="w-full px-4 pt-14 pb-6 text-center">
           <h1 className="text-2xl font-semibold tracking-tight text-white md:text-4xl">
             Your Personal Wellness Journey
           </h1>
@@ -119,13 +116,13 @@ export default function ConsumerDashboard() {
           </p>
         </div>
 
-        {/* Greeting row — floating over image */}
-        <div className="mx-auto mt-6 w-full max-w-7xl px-4 md:px-6">
+        {/* ── Greeting — image visible ── */}
+        <div className="mx-auto w-full max-w-7xl px-4 mb-4 md:px-6">
           <DashboardHeader />
         </div>
 
-        {/* Bio Optimization Gauge — floating on the hero image */}
-        <div className="mx-auto w-full max-w-7xl px-4 pb-10 md:px-6 md:pb-14">
+        {/* ── Bio Optimization Gauge — semi-transparent card over image ── */}
+        <div className="mx-auto w-full max-w-7xl px-4 mb-8 md:px-6">
           <BioOptimizationGauge
             score={bioScore}
             tier={bioTier}
@@ -136,11 +133,9 @@ export default function ConsumerDashboard() {
             weeklyDelta={weeklyDelta}
           />
         </div>
-      </FixedHeroSection>
 
-      {/* ── Content below hero — normal dark background ── */}
-      <div className="relative z-10 -mt-6 min-h-screen bg-[#1A2744] pt-6 pb-24 md:-mt-8 md:pt-8">
-        <div className="mx-auto max-w-7xl space-y-6 px-4 md:px-6">
+        {/* ── All remaining content — image fades as overlay darkens ── */}
+        <div className="mx-auto max-w-7xl space-y-6 px-4 pb-24 md:px-6">
         {/* ── 3. Daily Scores Grid (Personal Wellness Dashboard) ── */}
         <DailyScoresGrid
           bioHistory={bioHistory}
