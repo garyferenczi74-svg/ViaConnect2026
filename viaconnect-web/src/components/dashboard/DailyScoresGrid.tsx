@@ -29,25 +29,33 @@ export function DailyScoresGrid({
   adherence,
   currentStreak,
 }: DailyScoresGridProps) {
-  // Fetch today's check-in scores from daily_score_inputs so manual
-  // slider values populate the gauges even without wearable data.
-  const [checkinScores, setCheckinScores] = useState<Record<string, number>>({});
+  // Check-in scores: populated from the DailyCheckIn custom event
+  // and persisted to localStorage so they survive page reloads.
+  const [checkinScores, setCheckinScores] = useState<Record<string, number>>(() => {
+    if (typeof window === 'undefined') return {};
+    try {
+      const stored = localStorage.getItem('vc_checkin_scores');
+      if (!stored) return {};
+      const parsed = JSON.parse(stored);
+      if (parsed.date !== new Date().toISOString().split('T')[0]) return {};
+      return parsed.scores ?? {};
+    } catch { return {}; }
+  });
 
   useEffect(() => {
+    // Also try fetching from daily_score_inputs (works when table exists)
     (async () => {
       try {
         const supabase = createClient();
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
         const today = new Date().toISOString().split('T')[0];
-
         const { data } = await (supabase as any)
           .from('daily_score_inputs')
           .select('gauge_id, normalized_score')
           .eq('user_id', user.id)
           .eq('score_date', today);
-
-        if (data && Array.isArray(data)) {
+        if (data && Array.isArray(data) && data.length > 0) {
           const scores: Record<string, number> = {};
           for (const row of data) {
             const existing = scores[row.gauge_id];
@@ -55,39 +63,29 @@ export function DailyScoresGrid({
               scores[row.gauge_id] = row.normalized_score;
             }
           }
-          setCheckinScores(scores);
+          setCheckinScores((prev) => {
+            const merged = { ...prev, ...scores };
+            localStorage.setItem('vc_checkin_scores', JSON.stringify({ date: today, scores: merged }));
+            return merged;
+          });
         }
       } catch { /* table may not exist yet */ }
     })();
 
-    // Re-fetch when check-in is submitted (custom event from DailyCheckIn)
-    const refresh = () => {
-      (async () => {
-        try {
-          const supabase = createClient();
-          const { data: { user } } = await supabase.auth.getUser();
-          if (!user) return;
-          const today = new Date().toISOString().split('T')[0];
-          const { data } = await (supabase as any)
-            .from('daily_score_inputs')
-            .select('gauge_id, normalized_score')
-            .eq('user_id', user.id)
-            .eq('score_date', today);
-          if (data && Array.isArray(data)) {
-            const scores: Record<string, number> = {};
-            for (const row of data) {
-              const existing = scores[row.gauge_id];
-              if (existing === undefined || row.normalized_score > existing) {
-                scores[row.gauge_id] = row.normalized_score;
-              }
-            }
-            setCheckinScores(scores);
-          }
-        } catch { /* ignore */ }
-      })();
+    // Listen for direct score data from DailyCheckIn (no DB round-trip)
+    const onCheckin = (e: Event) => {
+      const detail = (e as CustomEvent).detail as Record<string, number> | undefined;
+      if (detail && typeof detail === 'object') {
+        const today = new Date().toISOString().split('T')[0];
+        setCheckinScores((prev) => {
+          const merged = { ...prev, ...detail };
+          localStorage.setItem('vc_checkin_scores', JSON.stringify({ date: today, scores: merged }));
+          return merged;
+        });
+      }
     };
-    window.addEventListener('checkin-submitted', refresh);
-    return () => window.removeEventListener('checkin-submitted', refresh);
+    window.addEventListener('checkin-submitted', onCheckin);
+    return () => window.removeEventListener('checkin-submitted', onCheckin);
   }, []);
 
   // Latest breakdown row (if any)

@@ -199,7 +199,11 @@ export function DailyCheckIn() {
         .eq('check_in_date', today);
 
       setSubmitted(true);
-      window.dispatchEvent(new Event('checkin-submitted'));
+      // Dispatch scores directly so DailyScoresGrid can update
+      // without a DB round-trip (tables may not exist yet)
+      const scoreMap: Record<string, number> = {};
+      for (const r of gaugeRows) scoreMap[r.gauge_id] = r.normalized_score;
+      window.dispatchEvent(new CustomEvent('checkin-submitted', { detail: scoreMap }));
     } catch {
       /* table may not exist yet */
     } finally {
