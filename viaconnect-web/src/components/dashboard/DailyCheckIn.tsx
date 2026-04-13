@@ -23,6 +23,11 @@ import {
   Zap,
 } from 'lucide-react';
 import { CheckInSlider } from './CheckInSlider';
+import {
+  mergeScoreSources,
+  calculateDayScore,
+  type CheckInRaw,
+} from '@/lib/scoring/checkinScoreBridge';
 
 // ── Label helpers ──────────────────────────────────────────
 const sleepQualityLabel = (v: number) =>
@@ -163,6 +168,35 @@ export function DailyCheckIn() {
       await (supabase as any)
         .from('daily_score_inputs')
         .upsert(gaugeRows, { onConflict: 'user_id,gauge_id,source_id,score_date' });
+
+      // 3. Recalculate merged day score via check-in bridge (Prompt #66)
+      const checkinRaw: CheckInRaw = {
+        sleep_hours: sleepHours,
+        sleep_quality_score: sleepQuality,
+        cardio_active: cardioActive,
+        cardio_duration_min: cardioActive ? cardioDuration : null,
+        resistance_active: resistanceActive,
+        resistance_duration_min: resistanceActive ? resistanceDuration : null,
+        activity_level_score: activityLevel,
+        stress_level_score: stressLevel,
+        energy_recovery_score: energyLevel,
+      };
+      // No wearable fetch for now (wearable bridge deferred); pass empty
+      const merged = mergeScoreSources({}, checkinRaw);
+      const dayScore = calculateDayScore(merged);
+
+      await (supabase as any)
+        .from('daily_checkins')
+        .update({
+          day_score: dayScore,
+          sleep_source: merged.sleepSource,
+          activity_source: merged.activitySource,
+          stress_source: merged.stressSource,
+          recovery_source: merged.recoverySource,
+          score_calculated_at: new Date().toISOString(),
+        })
+        .eq('user_id', user.id)
+        .eq('check_in_date', today);
 
       setSubmitted(true);
     } catch {

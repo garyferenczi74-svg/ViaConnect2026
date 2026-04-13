@@ -18,6 +18,8 @@ interface BioOptimizationGaugeProps {
   hasLabs?: boolean;
   hasGenetics?: boolean;
   weeklyDelta?: number;
+  /** Which of the 5 score dimensions have data today (for completeness indicator). */
+  trackedDimensions?: { sleep: boolean; activity: boolean; stress: boolean; recovery: boolean; hrv: boolean };
 }
 
 const colorForScore = (score: number): string => {
@@ -69,6 +71,7 @@ export function BioOptimizationGauge({
   hasLabs = false,
   hasGenetics = false,
   weeklyDelta = 0,
+  trackedDimensions,
 }: BioOptimizationGaugeProps) {
   const animated = useCountUp(score);
   const color = colorForScore(score);
@@ -245,6 +248,24 @@ export function BioOptimizationGauge({
               </Link>
             )}
           </div>
+
+          {/* 5-dot data completeness indicator (Prompt #66) */}
+          {trackedDimensions && (
+            <div className="flex items-center gap-1.5">
+              {(['sleep', 'activity', 'stress', 'recovery', 'hrv'] as const).map((dim) => (
+                <div
+                  key={dim}
+                  title={dim}
+                  className={`h-2 w-2 rounded-full transition-colors duration-300 ${
+                    trackedDimensions[dim] ? 'bg-[#2DA5A0]' : 'bg-white/15'
+                  }`}
+                />
+              ))}
+              <span className="ml-1 text-[11px] text-white/40">
+                {Object.values(trackedDimensions).filter(Boolean).length} / 5 tracked
+              </span>
+            </div>
+          )}
         </div>
       </div>
     </section>
