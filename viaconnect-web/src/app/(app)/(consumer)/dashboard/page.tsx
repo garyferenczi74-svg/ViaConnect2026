@@ -1,10 +1,6 @@
 'use client';
 
-// Consumer Dashboard — Prompt #56 refresh.
-// 5 primary sections (Hero gauge → Today's Protocol + Wellness Snapshot →
-// Daily Scores → Helix Rewards + Quick Actions). Existing Ultrathink Tip,
-// Quick Reassessment, and Pattern Circles are preserved below as extras.
-
+import { useState, useEffect, useCallback } from 'react';
 import { useUserDashboardData } from '@/hooks/useUserDashboardData';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { BioOptimizationGauge } from '@/components/dashboard/BioOptimizationGauge';
@@ -69,6 +65,36 @@ export default function ConsumerDashboard() {
     streak,
     assessmentCompleted,
   } = useUserDashboardData();
+
+  // Lifted check-in scores: populated by DailyCheckIn via CustomEvent,
+  // persisted in localStorage for page reloads. Passed to DailyScoresGrid
+  // so gauges update immediately when the user submits a check-in.
+  const [checkinScores, setCheckinScores] = useState<Record<string, number>>(() => {
+    if (typeof window === 'undefined') return {};
+    try {
+      const stored = localStorage.getItem('vc_checkin_scores');
+      if (!stored) return {};
+      const parsed = JSON.parse(stored);
+      if (parsed.date !== new Date().toISOString().split('T')[0]) return {};
+      return parsed.scores ?? {};
+    } catch { return {}; }
+  });
+
+  useEffect(() => {
+    const onCheckin = (e: Event) => {
+      const detail = (e as CustomEvent).detail as Record<string, number> | undefined;
+      if (detail && typeof detail === 'object') {
+        const today = new Date().toISOString().split('T')[0];
+        setCheckinScores((prev) => {
+          const merged = { ...prev, ...detail };
+          localStorage.setItem('vc_checkin_scores', JSON.stringify({ date: today, scores: merged }));
+          return merged;
+        });
+      }
+    };
+    window.addEventListener('checkin-submitted', onCheckin);
+    return () => window.removeEventListener('checkin-submitted', onCheckin);
+  }, []);
 
   if (loading) return <DashboardSkeleton />;
 
@@ -141,6 +167,7 @@ export default function ConsumerDashboard() {
           bioHistory={bioHistory}
           adherence={adherence}
           currentStreak={currentStreak}
+          checkinScores={checkinScores}
         />
 
         {/* ── 3b. Daily Check-In (Prompt #62e — Tier 4 manual input) ── */}
