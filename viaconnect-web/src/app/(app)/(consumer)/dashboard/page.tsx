@@ -71,9 +71,9 @@ export default function ConsumerDashboard() {
   // Live preview data (updates as sliders move, before submit)
   const [previewRaw, setPreviewRaw] = useState<Record<string, any> | null>(null);
 
-  // Called when user submits (saves + triggers score calculation)
-  const handleCheckinScores = useCallback((scores: Record<string, number>) => {
-    setCheckinRaw((prev) => ({ ...(prev ?? {}), ...scores, _ts: Date.now() }));
+  // Called when user saves a card (raw slider state, not pre-computed scores)
+  const handleCheckinScores = useCallback((rawState: Record<string, any>) => {
+    setCheckinRaw((prev) => ({ ...(prev ?? {}), ...rawState, _ts: Date.now() }));
     setPreviewRaw(null);
   }, []);
 

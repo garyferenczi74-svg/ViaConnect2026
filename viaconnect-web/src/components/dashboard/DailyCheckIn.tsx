@@ -68,7 +68,7 @@ const normalizeExercise = (
 };
 
 interface DailyCheckInProps {
-  onScoresUpdate?: (scores: Record<string, number>) => void;
+  onScoresUpdate?: (rawState: Record<string, any>) => void;
   onSliderChange?: (state: Record<string, any>) => void;
 }
 
@@ -95,17 +95,21 @@ export function DailyCheckIn({ onScoresUpdate, onSliderChange }: DailyCheckInPro
   const [stressLevel, setStressLevel] = useState(2);
   const [energyLevel, setEnergyLevel] = useState(3);
 
-  // Score dispatch helper
+  // Dispatch raw slider state so DailyScoresPanel can run V2 scoring engine
   const dispatchScores = useCallback(() => {
-    const scoreMap: Record<string, number> = {
-      sleep: sleepCheckinScore(sleepHours, sleepQuality),
-      exercise: exerciseCheckinScore(cardioActive, cardioDuration, resistanceActive, resistanceDuration),
-      steps: activityCheckinScore(activityLevel),
-      stress: stressCheckinScore(stressLevel),
-      recovery: energyCheckinScore(energyLevel),
+    const rawState: Record<string, any> = {
+      sleep_hours: sleepHours,
+      sleep_quality_score: sleepQuality,
+      cardio_active: cardioActive,
+      cardio_duration_min: cardioActive ? cardioDuration : null,
+      resistance_active: resistanceActive,
+      resistance_duration_min: resistanceActive ? resistanceDuration : null,
+      activity_level_score: activityLevel,
+      stress_level_score: stressLevel,
+      energy_recovery_score: energyLevel,
     };
-    onScoresUpdate?.(scoreMap);
-    try { window.dispatchEvent(new CustomEvent('checkin-allSubmitted', { detail: scoreMap })); } catch {}
+    onScoresUpdate?.(rawState);
+    try { window.dispatchEvent(new CustomEvent('checkin-submitted', { detail: rawState })); } catch {}
   }, [sleepHours, sleepQuality, cardioActive, cardioDuration, resistanceActive, resistanceDuration, activityLevel, stressLevel, energyLevel, onScoresUpdate]);
 
   // ── Per-card submit hooks ───────────────────────────────
