@@ -73,16 +73,9 @@ export function QuickMealLogWidget() {
       <div className="mb-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Apple className="h-5 w-5 text-[#2DA5A0]" strokeWidth={1.5} />
-          <h3 className="text-sm font-semibold text-white">Meal Log</h3>
+          <h3 className="text-sm font-semibold text-white">Quick Meal Log</h3>
           <span className="text-xs text-white/40">{loggedCount}/4</span>
         </div>
-        <Link
-          href="/nutrition"
-          className="flex items-center gap-1 text-xs text-[#2DA5A0] hover:text-[#2DA5A0]/80"
-        >
-          Full logger
-          <ChevronRight className="h-3 w-3" strokeWidth={1.5} />
-        </Link>
       </div>
 
       <div className="grid grid-cols-4 gap-2">
@@ -139,6 +132,16 @@ export function QuickMealLogWidget() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Full Logger button */}
+      <Link
+        href="/nutrition"
+        className="mt-3 flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl border border-[#2DA5A0]/30 bg-[#2DA5A0]/15 px-4 py-2.5 text-sm font-medium text-[#2DA5A0] transition-all hover:border-[#2DA5A0]/50 hover:bg-[#2DA5A0]/25"
+      >
+        <Apple className="h-4 w-4" strokeWidth={1.5} />
+        Full Nutrition Logger
+        <ChevronRight className="h-4 w-4" strokeWidth={1.5} />
+      </Link>
     </div>
   );
 }
