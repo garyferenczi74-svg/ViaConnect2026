@@ -66,13 +66,20 @@ export default function ConsumerDashboard() {
     assessmentCompleted,
   } = useUserDashboardData();
 
-  // Raw check-in data passed to DailyScoresPanel for score computation.
+  // Saved check-in data (after submit button pressed)
   const [checkinRaw, setCheckinRaw] = useState<Record<string, any> | null>(null);
+  // Live preview data (updates as sliders move, before submit)
+  const [previewRaw, setPreviewRaw] = useState<Record<string, any> | null>(null);
 
+  // Called when user submits (saves + triggers score calculation)
   const handleCheckinScores = useCallback((scores: Record<string, number>) => {
-    // The scores map contains gauge_id → normalized_score from DailyCheckIn.
-    // Also store the raw slider state so the panel can recompute on refresh.
     setCheckinRaw((prev) => ({ ...(prev ?? {}), ...scores, _ts: Date.now() }));
+    setPreviewRaw(null);
+  }, []);
+
+  // Called on every slider change (live preview, no DB write)
+  const handleSliderPreview = useCallback((sliderState: Record<string, any>) => {
+    setPreviewRaw({ ...sliderState, _ts: Date.now() });
   }, []);
 
   if (loading) return <DashboardSkeleton />;
@@ -142,10 +149,10 @@ export default function ConsumerDashboard() {
         {/* ── All remaining content — image fades as overlay darkens ── */}
         <div className="mx-auto max-w-7xl space-y-6 px-4 pb-24 md:px-6">
         {/* ── 3. Daily Scores Grid (Personal Wellness Dashboard) ── */}
-        <DailyScoresPanel checkinRaw={checkinRaw} />
+        <DailyScoresPanel checkinRaw={checkinRaw} previewRaw={previewRaw} />
 
         {/* ── 3b. Daily Check-In (Prompt #62e — Tier 4 manual input) ── */}
-        <DailyCheckIn onScoresUpdate={handleCheckinScores} />
+        <DailyCheckIn onScoresUpdate={handleCheckinScores} onSliderChange={handleSliderPreview} />
 
         {/* ── 3c. Quick Meal Log (Prompt #62f — 4 meal slots) ── */}
         <QuickMealLogWidget />

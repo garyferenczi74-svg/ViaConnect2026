@@ -14,6 +14,7 @@ interface DailyScoreGaugeProps {
   icon?: LucideIcon;
   size?: 'sm' | 'md';
   animate?: boolean;
+  isPreview?: boolean;
 }
 
 const MODE_ICONS: Record<DataMode, LucideIcon> = {
@@ -48,6 +49,7 @@ export function DailyScoreGauge({
   icon: GaugeIcon,
   size = 'md',
   animate = true,
+  isPreview = false,
 }: DailyScoreGaugeProps) {
   const animated = animate ? useCountUp(score) : score;
   const sz = size === 'sm' ? 100 : 120;
@@ -76,10 +78,25 @@ export function DailyScoreGauge({
             <motion.circle
               cx={center} cy={center} r={radius} fill="none"
               stroke={color} strokeWidth={stroke} strokeLinecap="round"
+              strokeDasharray={isPreview ? `4 4` : undefined}
+              initial={{ strokeDasharray: isPreview ? `4 4` : `0 ${circumference}` }}
+              animate={{ strokeDasharray: isPreview ? `4 4` : `${fillLength} ${circumference}` }}
+              transition={{ duration: 1.2, ease: 'easeOut' }}
+              style={{
+                filter: isPreview ? undefined : `drop-shadow(0 0 8px ${color}55)`,
+                opacity: isPreview ? 0.5 : 1,
+                strokeDashoffset: isPreview ? 0 : undefined,
+              }}
+            />
+          )}
+          {!noData && isPreview && (
+            <motion.circle
+              cx={center} cy={center} r={radius} fill="none"
+              stroke={color} strokeWidth={stroke} strokeLinecap="round"
               initial={{ strokeDasharray: `0 ${circumference}` }}
               animate={{ strokeDasharray: `${fillLength} ${circumference}` }}
-              transition={{ duration: 1.2, ease: 'easeOut' }}
-              style={{ filter: `drop-shadow(0 0 8px ${color}55)` }}
+              transition={{ duration: 0.6, ease: 'easeOut' }}
+              style={{ opacity: 0.3 }}
             />
           )}
           {confidence > 0 && confidence < 1 && (
@@ -92,8 +109,8 @@ export function DailyScoreGauge({
             <span className="text-lg text-white/20">--</span>
           ) : (
             <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }} className="text-center">
-              <div className="text-xl font-bold leading-none sm:text-2xl" style={{ color }}>{animated}</div>
-              <div className="mt-0.5 text-[9px] text-white/40">/100</div>
+              <div className="text-xl font-bold leading-none sm:text-2xl" style={{ color, opacity: isPreview ? 0.5 : 1 }}>{animated}</div>
+              <div className="mt-0.5 text-[9px] text-white/40">{isPreview ? 'preview' : '/100'}</div>
             </motion.div>
           )}
         </div>

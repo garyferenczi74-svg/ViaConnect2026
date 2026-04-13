@@ -19,11 +19,16 @@ import Link from 'next/link';
 
 interface DailyScoresPanelProps {
   checkinRaw?: Record<string, any> | null;
+  previewRaw?: Record<string, any> | null;
 }
 
-export function DailyScoresPanel({ checkinRaw }: DailyScoresPanelProps) {
-  const [result, setResult] = useState<DailyScoreResult | null>(null);
+export function DailyScoresPanel({ checkinRaw, previewRaw }: DailyScoresPanelProps) {
+  const [savedResult, setSavedResult] = useState<DailyScoreResult | null>(null);
+  const [previewResult, setPreviewResult] = useState<DailyScoreResult | null>(null);
   const [loaded, setLoaded] = useState(false);
+
+  const result = savedResult ?? previewResult;
+  const isPreview = !savedResult && previewResult !== null;
 
   const computeScores = useCallback(async (overrideCheckin?: DailyCheckinData | null) => {
     try {
@@ -75,7 +80,8 @@ export function DailyScoresPanel({ checkinRaw }: DailyScoresPanelProps) {
       // const wearable = null;
 
       const scores = calculateDailyScores(checkinData, mealLog.meals.length > 0 ? mealLog : null, null);
-      setResult(scores);
+      setSavedResult(scores);
+      setPreviewResult(null);
     } catch { /* fallback: no scores */ }
     finally { setLoaded(true); }
   }, []);
@@ -83,13 +89,22 @@ export function DailyScoresPanel({ checkinRaw }: DailyScoresPanelProps) {
   // Initial load
   useEffect(() => { computeScores(); }, [computeScores]);
 
-  // When parent passes new check-in data (from DailyCheckIn callback)
+  // When parent passes saved check-in data (from submit)
   useEffect(() => {
     if (checkinRaw) {
       const mapped = mapCheckInToScoringInput(checkinRaw);
       computeScores(mapped);
     }
   }, [checkinRaw, computeScores]);
+
+  // Live preview: compute scores client-side as sliders move (no DB)
+  useEffect(() => {
+    if (previewRaw && !savedResult) {
+      const mapped = mapCheckInToScoringInput(previewRaw);
+      const preview = calculateDailyScores(mapped, null, null);
+      setPreviewResult(preview);
+    }
+  }, [previewRaw, savedResult]);
 
   // Listen for check-in events (backup path)
   useEffect(() => {
@@ -155,13 +170,13 @@ export function DailyScoresPanel({ checkinRaw }: DailyScoresPanelProps) {
 
         {/* Gauges */}
         {hasData ? (
-          <div className="relative grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-            <DailyScoreGauge {...result!.sleep} dataMode={result!.dataMode} icon={Bed} />
-            <DailyScoreGauge {...result!.energy} dataMode={result!.dataMode} icon={Zap} />
-            <DailyScoreGauge {...result!.moodStress} dataMode={result!.dataMode} icon={Brain} />
-            <DailyScoreGauge {...result!.nutrition} dataMode={result!.dataMode} icon={Apple} />
-            <DailyScoreGauge {...result!.activity} dataMode={result!.dataMode} icon={Activity} />
-            <DailyScoreGauge {...result!.overall} dataMode={result!.dataMode} icon={Heart} />
+          <div className={`relative grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6 ${isPreview ? 'ring-1 ring-[#2DA5A0]/20 rounded-2xl p-1' : ''}`}>
+            <DailyScoreGauge {...result!.sleep} dataMode={result!.dataMode} icon={Bed} isPreview={isPreview} />
+            <DailyScoreGauge {...result!.energy} dataMode={result!.dataMode} icon={Zap} isPreview={isPreview} />
+            <DailyScoreGauge {...result!.moodStress} dataMode={result!.dataMode} icon={Brain} isPreview={isPreview} />
+            <DailyScoreGauge {...result!.nutrition} dataMode={result!.dataMode} icon={Apple} isPreview={isPreview} />
+            <DailyScoreGauge {...result!.activity} dataMode={result!.dataMode} icon={Activity} isPreview={isPreview} />
+            <DailyScoreGauge {...result!.overall} dataMode={result!.dataMode} icon={Heart} isPreview={isPreview} />
           </div>
         ) : loaded ? (
           <div className="flex flex-col items-center gap-3 py-8">

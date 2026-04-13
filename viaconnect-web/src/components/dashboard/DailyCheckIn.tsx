@@ -65,9 +65,10 @@ const normalizeExercise = (
 
 interface DailyCheckInProps {
   onScoresUpdate?: (scores: Record<string, number>) => void;
+  onSliderChange?: (state: Record<string, any>) => void;
 }
 
-export function DailyCheckIn({ onScoresUpdate }: DailyCheckInProps = {}) {
+export function DailyCheckIn({ onScoresUpdate, onSliderChange }: DailyCheckInProps = {}) {
   // ── State ────────────────────────────────────────────────
   const [collapsed, setCollapsed] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -87,6 +88,18 @@ export function DailyCheckIn({ onScoresUpdate }: DailyCheckInProps = {}) {
   const [activityLevel, setActivityLevel] = useState(3);
   const [stressLevel, setStressLevel] = useState(2);
   const [energyLevel, setEnergyLevel] = useState(3);
+
+  // ── Emit live preview on every slider change ─────────────
+  useEffect(() => {
+    if (submitted || collapsed) return;
+    onSliderChange?.({
+      sleepHours: sleepHours,
+      sleepQuality: sleepQuality,
+      cardioActive, cardioDuration,
+      resistanceActive, resistanceDuration,
+      activityLevel, stressLevel, energyLevel,
+    });
+  }, [sleepHours, sleepQuality, cardioActive, cardioDuration, resistanceActive, resistanceDuration, activityLevel, stressLevel, energyLevel, submitted, collapsed, onSliderChange]);
 
   // ── Load today's saved values on mount ───────────────────
   useEffect(() => {
