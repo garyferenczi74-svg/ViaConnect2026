@@ -38,6 +38,7 @@ import {
   ChevronLeft,
   ChevronDown,
   LogOut,
+  Target,
 } from "lucide-react";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -130,6 +131,7 @@ const ADMIN: PortalConfig = {
     { href: "/admin/skus", label: "SKU Portfolio", icon: Pill },
     { href: "/admin/alerts", label: "Alerts & Risks", icon: AlertTriangle },
     { href: "/admin/inventory", label: "Inventory", icon: ClipboardList },
+    { href: "/admin/hounddog", label: "Hounddog", icon: Target },
     { href: "/profile", label: "Profile", icon: UserIcon },
     { href: "/practitioner/settings", label: "Settings", icon: Settings },
   ],
