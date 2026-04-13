@@ -133,6 +133,20 @@ export function DailyCheckIn() {
       if (!user) return;
       const today = new Date().toISOString().split('T')[0];
 
+      // 0. Compute gauge scores and dispatch to DailyScoresGrid FIRST
+      //    (before any DB writes that might fail if tables don't exist)
+      const gaugeRows = [
+        { gauge_id: 'sleep', normalized_score: sleepCheckinScore(sleepHours, sleepQuality) },
+        { gauge_id: 'exercise', normalized_score: exerciseCheckinScore(cardioActive, cardioDuration, resistanceActive, resistanceDuration) },
+        { gauge_id: 'steps', normalized_score: activityCheckinScore(activityLevel) },
+        { gauge_id: 'stress', normalized_score: stressCheckinScore(stressLevel) },
+        { gauge_id: 'recovery', normalized_score: energyCheckinScore(energyLevel) },
+      ];
+      const scoreMap: Record<string, number> = {};
+      for (const r of gaugeRows) scoreMap[r.gauge_id] = r.normalized_score;
+      setSubmitted(true);
+      window.dispatchEvent(new CustomEvent('checkin-submitted', { detail: scoreMap }));
+
       // 1. Upsert raw slider values to daily_checkins
       await (supabase as any).from('daily_checkins').upsert(
         {
@@ -153,21 +167,12 @@ export function DailyCheckIn() {
       );
 
       // 2. Upsert normalized 0-100 scores to daily_score_inputs (for gauges)
-      // Uses Prompt #66 bridge functions: sleepCheckinScore combines BOTH hours
-      // AND quality; exerciseCheckinScore uses base + duration bonus; all others
-      // use nuanced linear curves with proper inversion for stress.
-      const gaugeRows = [
-        { gauge_id: 'sleep', raw_value: sleepHours, normalized_score: sleepCheckinScore(sleepHours, sleepQuality) },
-        { gauge_id: 'exercise', raw_value: cardioDuration + resistanceDuration, normalized_score: exerciseCheckinScore(cardioActive, cardioDuration, resistanceActive, resistanceDuration) },
-        { gauge_id: 'steps', raw_value: activityLevel, normalized_score: activityCheckinScore(activityLevel) },
-        { gauge_id: 'stress', raw_value: stressLevel, normalized_score: stressCheckinScore(stressLevel) },
-        { gauge_id: 'recovery', raw_value: energyLevel, normalized_score: energyCheckinScore(energyLevel) },
-      ].map((r) => ({
+      const dbGaugeRows = gaugeRows.map((r) => ({
         user_id: user.id,
         gauge_id: r.gauge_id,
         source_id: 'manual_checkin',
         tier: 4,
-        raw_value: r.raw_value,
+        raw_value: r.normalized_score,
         normalized_score: r.normalized_score,
         confidence: 0.6,
         score_date: today,
@@ -175,7 +180,7 @@ export function DailyCheckIn() {
 
       await (supabase as any)
         .from('daily_score_inputs')
-        .upsert(gaugeRows, { onConflict: 'user_id,gauge_id,source_id,score_date' });
+        .upsert(dbGaugeRows, { onConflict: 'user_id,gauge_id,source_id,score_date' });
 
       // 3. Recalculate merged day score via check-in bridge (Prompt #66)
       const checkinRaw: CheckInRaw = {
@@ -206,12 +211,7 @@ export function DailyCheckIn() {
         .eq('user_id', user.id)
         .eq('check_in_date', today);
 
-      setSubmitted(true);
-      // Dispatch scores directly so DailyScoresGrid can update
-      // without a DB round-trip (tables may not exist yet)
-      const scoreMap: Record<string, number> = {};
-      for (const r of gaugeRows) scoreMap[r.gauge_id] = r.normalized_score;
-      window.dispatchEvent(new CustomEvent('checkin-submitted', { detail: scoreMap }));
+      // (submitted + dispatched above, before DB writes)
     } catch {
       /* table may not exist yet */
     } finally {
@@ -346,61 +346,43 @@ export function DailyCheckIn() {
                   </button>
                 </div>
 
-                <AnimatePresence>
-                  {cardioActive && (
-                    <motion.div
-                      key="cardio-dur"
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
-                      exit={{ opacity: 0, height: 0 }}
-                      transition={{ duration: 0.25, ease: 'easeOut' }}
-                      className="overflow-hidden"
-                    >
-                      <CheckInSlider
-                        id="cardio-duration"
-                        title="Cardio duration"
-                        icon={<Timer className="h-4 w-4 text-[#2DA5A0]" strokeWidth={1.5} />}
-                        min={5}
-                        max={120}
-                        step={5}
-                        value={cardioDuration}
-                        onChange={setCardioDuration}
-                        formatLabel={minLabel}
-                        leftLabel="5m"
-                        rightLabel="2h"
-                        accentColor="#2DA5A0"
-                      />
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                {cardioActive && (
+                  <div className="pt-1">
+                    <CheckInSlider
+                      id="cardio-duration"
+                      title="Cardio duration"
+                      icon={<Timer className="h-4 w-4 text-[#2DA5A0]" strokeWidth={1.5} />}
+                      min={5}
+                      max={120}
+                      step={5}
+                      value={cardioDuration}
+                      onChange={setCardioDuration}
+                      formatLabel={minLabel}
+                      leftLabel="5m"
+                      rightLabel="2h"
+                      accentColor="#2DA5A0"
+                    />
+                  </div>
+                )}
 
-                <AnimatePresence>
-                  {resistanceActive && (
-                    <motion.div
-                      key="resistance-dur"
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
-                      exit={{ opacity: 0, height: 0 }}
-                      transition={{ duration: 0.25, ease: 'easeOut' }}
-                      className="overflow-hidden"
-                    >
-                      <CheckInSlider
-                        id="resistance-duration"
-                        title="Resistance duration"
-                        icon={<Timer className="h-4 w-4 text-[#B75E18]" strokeWidth={1.5} />}
-                        min={5}
-                        max={120}
-                        step={5}
-                        value={resistanceDuration}
-                        onChange={setResistanceDuration}
-                        formatLabel={minLabel}
-                        leftLabel="5m"
-                        rightLabel="2h"
-                        accentColor="#B75E18"
-                      />
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                {resistanceActive && (
+                  <div className="pt-1">
+                    <CheckInSlider
+                      id="resistance-duration"
+                      title="Resistance duration"
+                      icon={<Timer className="h-4 w-4 text-[#B75E18]" strokeWidth={1.5} />}
+                      min={5}
+                      max={120}
+                      step={5}
+                      value={resistanceDuration}
+                      onChange={setResistanceDuration}
+                      formatLabel={minLabel}
+                      leftLabel="5m"
+                      rightLabel="2h"
+                      accentColor="#B75E18"
+                    />
+                  </div>
+                )}
               </div>
 
               {/* ── Card 3: Activity ───────────────────────── */}
