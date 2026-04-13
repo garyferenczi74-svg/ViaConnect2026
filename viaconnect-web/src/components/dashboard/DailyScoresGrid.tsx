@@ -1,11 +1,8 @@
 'use client';
 
-// DailyScoresGrid — replaces the carousel with a row of 7 circular gauges
-// (Sleep, Exercise min, Steps, Stress, Recovery, Streak, Supplements). Each
-// gauge is a smaller sibling of the BioOptimizationGauge so the dashboard
-// reads as one cohesive scoring system.
-
+import { useEffect, useState } from 'react';
 import { Activity, Apple, Bed, Brain, Footprints, HeartPulse, Pill, Flame, Sparkles } from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
 import type { DashboardBioHistory, DashboardAdherence } from '@/hooks/useUserDashboardData';
 import { DailyMetricGauge } from './DailyMetricGauge';
 import { EngagementNudge } from './EngagementNudge';
@@ -32,28 +29,114 @@ export function DailyScoresGrid({
   adherence,
   currentStreak,
 }: DailyScoresGridProps) {
+  // Fetch today's check-in scores from daily_score_inputs so manual
+  // slider values populate the gauges even without wearable data.
+  const [checkinScores, setCheckinScores] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+        const today = new Date().toISOString().split('T')[0];
+
+        const { data } = await (supabase as any)
+          .from('daily_score_inputs')
+          .select('gauge_id, normalized_score')
+          .eq('user_id', user.id)
+          .eq('score_date', today);
+
+        if (data && Array.isArray(data)) {
+          const scores: Record<string, number> = {};
+          for (const row of data) {
+            const existing = scores[row.gauge_id];
+            if (existing === undefined || row.normalized_score > existing) {
+              scores[row.gauge_id] = row.normalized_score;
+            }
+          }
+          setCheckinScores(scores);
+        }
+      } catch { /* table may not exist yet */ }
+    })();
+
+    // Re-fetch when check-in is submitted (custom event from DailyCheckIn)
+    const refresh = () => {
+      (async () => {
+        try {
+          const supabase = createClient();
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user) return;
+          const today = new Date().toISOString().split('T')[0];
+          const { data } = await (supabase as any)
+            .from('daily_score_inputs')
+            .select('gauge_id, normalized_score')
+            .eq('user_id', user.id)
+            .eq('score_date', today);
+          if (data && Array.isArray(data)) {
+            const scores: Record<string, number> = {};
+            for (const row of data) {
+              const existing = scores[row.gauge_id];
+              if (existing === undefined || row.normalized_score > existing) {
+                scores[row.gauge_id] = row.normalized_score;
+              }
+            }
+            setCheckinScores(scores);
+          }
+        } catch { /* ignore */ }
+      })();
+    };
+    window.addEventListener('checkin-submitted', refresh);
+    return () => window.removeEventListener('checkin-submitted', refresh);
+  }, []);
+
   // Latest breakdown row (if any)
   const latest = bioHistory.length > 0 ? bioHistory[bioHistory.length - 1] : null;
   const breakdown = (latest?.breakdown ?? {}) as Record<string, number | undefined>;
 
+  // Merge: check-in scores fill in when breakdown is 0 or missing.
+  // Breakdown (wearable/cron) wins when it has a real value.
+  const merged = (gauge: string, breakdownVal: number | undefined): number => {
+    const bv = breakdownVal ?? 0;
+    const cv = checkinScores[gauge] ?? 0;
+    return bv > 0 ? bv : cv;
+  };
+
   // Sleep — already 0–100 in breakdown when present
-  const sleepScore = Math.round(breakdown.sleep ?? 0);
+  const sleepScore = Math.round(merged('sleep', breakdown.sleep));
 
-  // Exercise minutes — raw minutes, normalize to target for gauge fill
-  const exerciseMin = Math.round((breakdown.exercise as number | undefined) ?? breakdown.exercise_min ?? 0);
-  const exerciseScore = Math.min(100, Math.round((exerciseMin / EXERCISE_TARGET_MIN) * 100));
+  // Exercise — breakdown stores raw minutes; check-in stores normalized 0-100
+  const exerciseFromBreakdown = (breakdown.exercise as number | undefined) ?? (breakdown.exercise_min as number | undefined) ?? 0;
+  const exerciseMin = Math.round(exerciseFromBreakdown);
+  const exerciseScoreFromBreakdown = exerciseFromBreakdown > 0
+    ? Math.min(100, Math.round((exerciseMin / EXERCISE_TARGET_MIN) * 100))
+    : 0;
+  const exerciseScore = exerciseScoreFromBreakdown > 0
+    ? exerciseScoreFromBreakdown
+    : (checkinScores.exercise ?? 0);
 
-  // Steps — raw count, normalize to target
-  const steps = Math.round((breakdown.steps as number | undefined) ?? 0);
-  const stepsScore = Math.min(100, Math.round((steps / STEP_TARGET) * 100));
+  // Steps — breakdown stores raw count; check-in stores normalized 0-100
+  const stepsFromBreakdown = Math.round((breakdown.steps as number | undefined) ?? 0);
+  const stepsScoreFromBreakdown = stepsFromBreakdown > 0
+    ? Math.min(100, Math.round((stepsFromBreakdown / STEP_TARGET) * 100))
+    : 0;
+  const steps = stepsFromBreakdown;
+  const stepsScore = stepsScoreFromBreakdown > 0
+    ? stepsScoreFromBreakdown
+    : (checkinScores.steps ?? 0);
 
-  // Stress — stored as 0–100 (lower = better). Display the raw score, color
-  // by inverted value so high stress = warning.
-  const stressRaw = Math.round((breakdown.stress as number | undefined) ?? 0);
-  const stressInverted = Math.max(0, 100 - stressRaw);
+  // Stress — breakdown stores raw 0-100 (lower=better); check-in stores
+  // normalized 0-100 (higher=better, already inverted)
+  const stressFromBreakdown = Math.round((breakdown.stress as number | undefined) ?? 0);
+  const stressInverted = stressFromBreakdown > 0
+    ? Math.max(0, 100 - stressFromBreakdown)
+    : (checkinScores.stress ?? 0);
+  const stressRaw = stressFromBreakdown > 0
+    ? stressFromBreakdown
+    : Math.max(0, 100 - (checkinScores.stress ?? 0));
 
   // Recovery — already 0–100
-  const recoveryScore = Math.round(breakdown.recovery ?? 0);
+  const recoveryScore = Math.round(merged('recovery', breakdown.recovery));
 
   // Streak — display as days, normalize to target for gauge fill
   const streakScore = Math.min(100, Math.round((currentStreak / STREAK_TARGET_DAYS) * 100));

@@ -199,6 +199,7 @@ export function DailyCheckIn() {
         .eq('check_in_date', today);
 
       setSubmitted(true);
+      window.dispatchEvent(new Event('checkin-submitted'));
     } catch {
       /* table may not exist yet */
     } finally {
