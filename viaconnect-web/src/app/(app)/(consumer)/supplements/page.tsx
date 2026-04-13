@@ -137,7 +137,7 @@ export default function SupplementsPage() {
   return (
     // ── Full-page fixed background (Prompt #62L) ──
     <div
-      className="min-h-screen bg-no-repeat text-white"
+      className="min-h-screen bg-no-repeat bg-scroll text-white md:bg-fixed"
       style={{ backgroundImage: `url('${SUPPLEMENT_HERO_IMAGE}')`, backgroundSize: 'contain', backgroundPosition: 'top center', backgroundColor: '#1A2744' }}
     >
       <div className="min-h-screen bg-gradient-to-b from-[rgba(10,15,35,0.40)] via-[rgba(26,39,68,0.70)] to-[rgba(26,39,68,0.97)]">
