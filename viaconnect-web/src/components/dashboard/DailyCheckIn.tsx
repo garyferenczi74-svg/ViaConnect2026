@@ -23,6 +23,10 @@ import {
   Zap,
 } from 'lucide-react';
 import { CheckInSlider } from './CheckInSlider';
+import { CheckInSubmitButton } from './CheckInSubmitButton';
+import { useCheckinCard } from '@/hooks/useCheckinCard';
+import { useMidnightReset } from '@/hooks/useMidnightReset';
+import { detectTimezone, localDateString, syncTimezone } from '@/lib/timezone';
 import {
   mergeScoreSources,
   calculateDayScore,
@@ -69,10 +73,12 @@ interface DailyCheckInProps {
 }
 
 export function DailyCheckIn({ onScoresUpdate, onSliderChange }: DailyCheckInProps = {}) {
-  // ── State ────────────────────────────────────────────────
+  // ── Core state ──────────────────────────────────────────
   const [collapsed, setCollapsed] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [timezone] = useState(() => detectTimezone());
+  const [checkInDate, setCheckInDate] = useState(() => localDateString(detectTimezone()));
+  const [todayCheckin, setTodayCheckin] = useState<Record<string, any> | null>(null);
 
   // Sleep
   const [sleepHours, setSleepHours] = useState(7);
@@ -89,9 +95,80 @@ export function DailyCheckIn({ onScoresUpdate, onSliderChange }: DailyCheckInPro
   const [stressLevel, setStressLevel] = useState(2);
   const [energyLevel, setEnergyLevel] = useState(3);
 
+  // Score dispatch helper
+  const dispatchScores = useCallback(() => {
+    const scoreMap: Record<string, number> = {
+      sleep: sleepCheckinScore(sleepHours, sleepQuality),
+      exercise: exerciseCheckinScore(cardioActive, cardioDuration, resistanceActive, resistanceDuration),
+      steps: activityCheckinScore(activityLevel),
+      stress: stressCheckinScore(stressLevel),
+      recovery: energyCheckinScore(energyLevel),
+    };
+    onScoresUpdate?.(scoreMap);
+    try { window.dispatchEvent(new CustomEvent('checkin-allSubmitted', { detail: scoreMap })); } catch {}
+  }, [sleepHours, sleepQuality, cardioActive, cardioDuration, resistanceActive, resistanceDuration, activityLevel, stressLevel, energyLevel, onScoresUpdate]);
+
+  // ── Per-card submit hooks ───────────────────────────────
+  const sleepCard = useCheckinCard({
+    userId: userId ?? '', timezone, checkInDate,
+    submitFlagColumn: 'sleep_allSubmitted_at',
+    initialSubmittedAt: todayCheckin?.sleep_allSubmitted_at,
+    buildPayload: () => ({ sleep_hours: sleepHours, sleep_quality_score: sleepQuality }),
+    onSaved: dispatchScores,
+  });
+
+  const exerciseCard = useCheckinCard({
+    userId: userId ?? '', timezone, checkInDate,
+    submitFlagColumn: 'exercise_allSubmitted_at',
+    initialSubmittedAt: todayCheckin?.exercise_allSubmitted_at,
+    buildPayload: () => ({
+      cardio_active: cardioActive,
+      cardio_duration_min: cardioActive ? cardioDuration : null,
+      resistance_active: resistanceActive,
+      resistance_duration_min: resistanceActive ? resistanceDuration : null,
+    }),
+    onSaved: dispatchScores,
+  });
+
+  const activityCard = useCheckinCard({
+    userId: userId ?? '', timezone, checkInDate,
+    submitFlagColumn: 'activity_allSubmitted_at',
+    initialSubmittedAt: todayCheckin?.activity_allSubmitted_at,
+    buildPayload: () => ({ activity_level_score: activityLevel }),
+    onSaved: dispatchScores,
+  });
+
+  const stressCard = useCheckinCard({
+    userId: userId ?? '', timezone, checkInDate,
+    submitFlagColumn: 'stress_allSubmitted_at',
+    initialSubmittedAt: todayCheckin?.stress_allSubmitted_at,
+    buildPayload: () => ({ stress_level_score: stressLevel }),
+    onSaved: dispatchScores,
+  });
+
+  const energyCard = useCheckinCard({
+    userId: userId ?? '', timezone, checkInDate,
+    submitFlagColumn: 'energy_allSubmitted_at',
+    initialSubmittedAt: todayCheckin?.energy_allSubmitted_at,
+    buildPayload: () => ({ energy_recovery_score: energyLevel }),
+    onSaved: dispatchScores,
+  });
+
+  const allSubmitted = sleepCard.isSubmitted && exerciseCard.isSubmitted && activityCard.isSubmitted && stressCard.isSubmitted && energyCard.isSubmitted;
+
+  // ── Midnight auto-reset ─────────────────────────────────
+  useMidnightReset(timezone, useCallback(() => {
+    setSleepHours(7); setSleepQuality(3);
+    setCardioActive(false); setResistanceActive(false);
+    setCardioDuration(30); setResistanceDuration(30);
+    setActivityLevel(3); setStressLevel(2); setEnergyLevel(3);
+    setCheckInDate(localDateString(timezone));
+    setTodayCheckin(null);
+  }, [timezone]));
+
   // ── Emit live preview on every slider change ─────────────
   useEffect(() => {
-    if (submitted || collapsed) return;
+    if (allSubmitted || collapsed) return;
     onSliderChange?.({
       sleepHours: sleepHours,
       sleepQuality: sleepQuality,
@@ -99,27 +176,27 @@ export function DailyCheckIn({ onScoresUpdate, onSliderChange }: DailyCheckInPro
       resistanceActive, resistanceDuration,
       activityLevel, stressLevel, energyLevel,
     });
-  }, [sleepHours, sleepQuality, cardioActive, cardioDuration, resistanceActive, resistanceDuration, activityLevel, stressLevel, energyLevel, submitted, collapsed, onSliderChange]);
+  }, [sleepHours, sleepQuality, cardioActive, cardioDuration, resistanceActive, resistanceDuration, activityLevel, stressLevel, energyLevel, allSubmitted, collapsed, onSliderChange]);
 
   // ── Load today's saved values on mount ───────────────────
   useEffect(() => {
     (async () => {
       try {
         const supabase = createClient();
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
+        const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
-        const today = new Date().toISOString().split('T')[0];
+        setUserId(user.id);
+        syncTimezone(supabase, user.id);
 
         const { data } = await (supabase as any)
           .from('daily_checkins')
           .select('*')
           .eq('user_id', user.id)
-          .eq('check_in_date', today)
+          .eq('check_in_date', checkInDate)
           .maybeSingle();
 
         if (data) {
+          setTodayCheckin(data);
           if (data.sleep_hours != null) setSleepHours(data.sleep_hours);
           if (data.sleep_quality_score != null) setSleepQuality(data.sleep_quality_score);
           if (data.cardio_active != null) setCardioActive(data.cardio_active);
@@ -129,135 +206,15 @@ export function DailyCheckIn({ onScoresUpdate, onSliderChange }: DailyCheckInPro
           if (data.activity_level_score != null) setActivityLevel(data.activity_level_score);
           if (data.stress_level_score != null) setStressLevel(data.stress_level_score);
           if (data.energy_recovery_score != null) setEnergyLevel(data.energy_recovery_score);
-          setSubmitted(true);
-          setCollapsed(true);
         }
-      } catch {
-        /* table may not exist yet */
-      }
+      } catch { /* table may not exist yet */ }
     })();
-  }, []);
+  }, [checkInDate]);
 
   // ── Submit ───────────────────────────────────────────────
-  const handleSubmit = useCallback(async () => {
-    if (loading) return;
-    setLoading(true);
-    try {
-      const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) return;
-      const today = new Date().toISOString().split('T')[0];
-
-      // 0. Compute gauge scores and dispatch to DailyScoresGrid FIRST
-      //    (before any DB writes that might fail if tables don't exist)
-      const gaugeRows = [
-        { gauge_id: 'sleep', normalized_score: sleepCheckinScore(sleepHours, sleepQuality) },
-        { gauge_id: 'exercise', normalized_score: exerciseCheckinScore(cardioActive, cardioDuration, resistanceActive, resistanceDuration) },
-        { gauge_id: 'steps', normalized_score: activityCheckinScore(activityLevel) },
-        { gauge_id: 'stress', normalized_score: stressCheckinScore(stressLevel) },
-        { gauge_id: 'recovery', normalized_score: energyCheckinScore(energyLevel) },
-      ];
-      const scoreMap: Record<string, number> = {};
-      for (const r of gaugeRows) scoreMap[r.gauge_id] = r.normalized_score;
-      setSubmitted(true);
-
-      // Update gauges via direct callback (most reliable) + event (backup)
-      onScoresUpdate?.(scoreMap);
-      try { window.dispatchEvent(new CustomEvent('checkin-submitted', { detail: scoreMap })); } catch {}
-
-      // Persist to localStorage for page reload survival
-      try {
-        const today = new Date().toISOString().split('T')[0];
-        localStorage.setItem('vc_checkin_scores', JSON.stringify({ date: today, scores: scoreMap }));
-      } catch {}
-
-      // 1. Upsert raw slider values to daily_checkins
-      await (supabase as any).from('daily_checkins').upsert(
-        {
-          user_id: user.id,
-          check_in_date: today,
-          sleep_hours: sleepHours,
-          sleep_quality_score: sleepQuality,
-          cardio_active: cardioActive,
-          cardio_duration_min: cardioActive ? cardioDuration : null,
-          resistance_active: resistanceActive,
-          resistance_duration_min: resistanceActive ? resistanceDuration : null,
-          activity_level_score: activityLevel,
-          stress_level_score: stressLevel,
-          energy_recovery_score: energyLevel,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: 'user_id,check_in_date' },
-      );
-
-      // 2. Upsert normalized 0-100 scores to daily_score_inputs (for gauges)
-      const dbGaugeRows = gaugeRows.map((r) => ({
-        user_id: user.id,
-        gauge_id: r.gauge_id,
-        source_id: 'manual_checkin',
-        tier: 4,
-        raw_value: r.normalized_score,
-        normalized_score: r.normalized_score,
-        confidence: 0.6,
-        score_date: today,
-      }));
-
-      await (supabase as any)
-        .from('daily_score_inputs')
-        .upsert(dbGaugeRows, { onConflict: 'user_id,gauge_id,source_id,score_date' });
-
-      // 3. Recalculate merged day score via check-in bridge (Prompt #66)
-      const checkinRaw: CheckInRaw = {
-        sleep_hours: sleepHours,
-        sleep_quality_score: sleepQuality,
-        cardio_active: cardioActive,
-        cardio_duration_min: cardioActive ? cardioDuration : null,
-        resistance_active: resistanceActive,
-        resistance_duration_min: resistanceActive ? resistanceDuration : null,
-        activity_level_score: activityLevel,
-        stress_level_score: stressLevel,
-        energy_recovery_score: energyLevel,
-      };
-      // No wearable fetch for now (wearable bridge deferred); pass empty
-      const merged = mergeScoreSources({}, checkinRaw);
-      const dayScore = calculateDayScore(merged);
-
-      await (supabase as any)
-        .from('daily_checkins')
-        .update({
-          day_score: dayScore,
-          sleep_source: merged.sleepSource,
-          activity_source: merged.activitySource,
-          stress_source: merged.stressSource,
-          recovery_source: merged.recoverySource,
-          score_calculated_at: new Date().toISOString(),
-        })
-        .eq('user_id', user.id)
-        .eq('check_in_date', today);
-
-      // (submitted + dispatched above, before DB writes)
-    } catch {
-      /* table may not exist yet */
-    } finally {
-      setLoading(false);
-    }
-  }, [
-    loading,
-    sleepHours,
-    sleepQuality,
-    cardioActive,
-    cardioDuration,
-    resistanceActive,
-    resistanceDuration,
-    activityLevel,
-    stressLevel,
-    energyLevel,
-  ]);
 
   // ── Collapsed summary state ──────────────────────────────
-  if (submitted && collapsed) {
+  if (allSubmitted && collapsed) {
     return (
       <button
         onClick={() => setCollapsed(false)}
@@ -310,32 +267,13 @@ export function DailyCheckIn({ onScoresUpdate, onSliderChange }: DailyCheckInPro
                 <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-white/40">
                   How did you sleep?
                 </p>
-                <CheckInSlider
-                  id="sleep-hours"
-                  title="Hours slept"
-                  icon={<Moon className="h-4 w-4 text-[#2DA5A0]" strokeWidth={1.5} />}
-                  min={0}
-                  max={12}
-                  step={0.5}
-                  value={sleepHours}
-                  onChange={setSleepHours}
-                  formatLabel={(v) => `${v.toFixed(1)} h`}
-                  leftLabel="0"
-                  rightLabel="12h"
-                />
-                <CheckInSlider
-                  id="sleep-quality"
-                  title="Sleep quality"
-                  icon={<Star className="h-4 w-4 text-[#2DA5A0]" strokeWidth={1.5} />}
-                  min={1}
-                  max={5}
-                  step={1}
-                  value={sleepQuality}
-                  onChange={setSleepQuality}
-                  formatLabel={sleepQualityLabel}
-                  leftLabel="Terrible"
-                  rightLabel="Great"
-                />
+                <div className={`transition-opacity duration-300 ${sleepCard.isSubmitted ? 'opacity-50 pointer-events-none' : ''}`}>
+                  <CheckInSlider id="sleep-hours" title="Hours slept" icon={<Moon className="h-4 w-4 text-[#2DA5A0]" strokeWidth={1.5} />} min={0} max={12} step={0.5} value={sleepHours} onChange={setSleepHours} formatLabel={(v) => `${v.toFixed(1)} h`} leftLabel="0" rightLabel="12h" />
+                  <CheckInSlider id="sleep-quality" title="Sleep quality" icon={<Star className="h-4 w-4 text-[#2DA5A0]" strokeWidth={1.5} />} min={1} max={5} step={1} value={sleepQuality} onChange={setSleepQuality} formatLabel={sleepQualityLabel} leftLabel="Terrible" rightLabel="Great" />
+                </div>
+                <div className="mt-2">
+                  <CheckInSubmitButton isSubmitted={sleepCard.isSubmitted} isLoading={sleepCard.isLoading} onSubmit={sleepCard.handleSubmit} label="Save sleep" />
+                </div>
               </div>
 
               {/* ── Card 2: Exercise ───────────────────────── */}
@@ -343,6 +281,7 @@ export function DailyCheckIn({ onScoresUpdate, onSliderChange }: DailyCheckInPro
                 <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-white/40">
                   Exercise today?
                 </p>
+                <div className={`transition-opacity duration-300 ${exerciseCard.isSubmitted ? 'opacity-50 pointer-events-none' : ''}`}>
                 <div className="mb-3 flex gap-3">
                   <button
                     type="button"
@@ -407,6 +346,10 @@ export function DailyCheckIn({ onScoresUpdate, onSliderChange }: DailyCheckInPro
                     />
                   </div>
                 )}
+                </div>
+                <div className="mt-2">
+                  <CheckInSubmitButton isSubmitted={exerciseCard.isSubmitted} isLoading={exerciseCard.isLoading} onSubmit={exerciseCard.handleSubmit} label="Save exercise" />
+                </div>
               </div>
 
               {/* ── Card 3: Activity ───────────────────────── */}
@@ -414,19 +357,12 @@ export function DailyCheckIn({ onScoresUpdate, onSliderChange }: DailyCheckInPro
                 <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-white/40">
                   How active were you?
                 </p>
-                <CheckInSlider
-                  id="activity-level"
-                  title="Activity level"
-                  icon={<Activity className="h-4 w-4 text-[#2DA5A0]" strokeWidth={1.5} />}
-                  min={1}
-                  max={5}
-                  step={1}
-                  value={activityLevel}
-                  onChange={setActivityLevel}
-                  formatLabel={activityLabel}
-                  leftLabel="Sedentary"
-                  rightLabel="Very Active"
-                />
+                <div className={`transition-opacity duration-300 ${activityCard.isSubmitted ? 'opacity-50 pointer-events-none' : ''}`}>
+                  <CheckInSlider id="activity-level" title="Activity level" icon={<Activity className="h-4 w-4 text-[#2DA5A0]" strokeWidth={1.5} />} min={1} max={5} step={1} value={activityLevel} onChange={setActivityLevel} formatLabel={activityLabel} leftLabel="Sedentary" rightLabel="Very Active" />
+                </div>
+                <div className="mt-2">
+                  <CheckInSubmitButton isSubmitted={activityCard.isSubmitted} isLoading={activityCard.isLoading} onSubmit={activityCard.handleSubmit} label="Save activity" />
+                </div>
               </div>
 
               {/* ── Card 4: Stress ─────────────────────────── */}
@@ -434,20 +370,12 @@ export function DailyCheckIn({ onScoresUpdate, onSliderChange }: DailyCheckInPro
                 <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-white/40">
                   Stress level?
                 </p>
-                <CheckInSlider
-                  id="stress-level"
-                  title="Stress level"
-                  icon={<Zap className="h-4 w-4 text-[#B75E18]" strokeWidth={1.5} />}
-                  min={1}
-                  max={5}
-                  step={1}
-                  value={stressLevel}
-                  onChange={setStressLevel}
-                  formatLabel={stressLabel}
-                  leftLabel="Very Low"
-                  rightLabel="Very High"
-                  accentColor="#B75E18"
-                />
+                <div className={`transition-opacity duration-300 ${stressCard.isSubmitted ? 'opacity-50 pointer-events-none' : ''}`}>
+                  <CheckInSlider id="stress-level" title="Stress level" icon={<Zap className="h-4 w-4 text-[#B75E18]" strokeWidth={1.5} />} min={1} max={5} step={1} value={stressLevel} onChange={setStressLevel} formatLabel={stressLabel} leftLabel="Very Low" rightLabel="Very High" accentColor="#B75E18" />
+                </div>
+                <div className="mt-2">
+                  <CheckInSubmitButton isSubmitted={stressCard.isSubmitted} isLoading={stressCard.isLoading} onSubmit={stressCard.handleSubmit} label="Save stress" />
+                </div>
               </div>
 
               {/* ── Card 5: Energy ─────────────────────────── */}
@@ -455,39 +383,18 @@ export function DailyCheckIn({ onScoresUpdate, onSliderChange }: DailyCheckInPro
                 <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-white/40">
                   Energy & recovery?
                 </p>
-                <CheckInSlider
-                  id="energy-recovery"
-                  title="Energy & recovery"
-                  icon={<Battery className="h-4 w-4 text-[#2DA5A0]" strokeWidth={1.5} />}
-                  min={1}
-                  max={5}
-                  step={1}
-                  value={energyLevel}
-                  onChange={setEnergyLevel}
-                  formatLabel={energyLabel}
-                  leftLabel="Exhausted"
-                  rightLabel="Excellent"
-                />
+                <div className={`transition-opacity duration-300 ${energyCard.isSubmitted ? 'opacity-50 pointer-events-none' : ''}`}>
+                  <CheckInSlider id="energy-recovery" title="Energy & recovery" icon={<Battery className="h-4 w-4 text-[#2DA5A0]" strokeWidth={1.5} />} min={1} max={5} step={1} value={energyLevel} onChange={setEnergyLevel} formatLabel={energyLabel} leftLabel="Exhausted" rightLabel="Excellent" />
+                </div>
+                <div className="mt-2">
+                  <CheckInSubmitButton isSubmitted={energyCard.isSubmitted} isLoading={energyCard.isLoading} onSubmit={energyCard.handleSubmit} label="Save energy" />
+                </div>
               </div>
 
-              {/* ── Submit / Success ────────────────────────── */}
-              {!submitted && (
-                <button
-                  type="button"
-                  onClick={handleSubmit}
-                  disabled={loading}
-                  className="mt-2 w-full min-h-[44px] rounded-xl border border-[#2DA5A0]/30 bg-[#2DA5A0]/15 text-sm font-medium text-[#2DA5A0] transition-all hover:bg-[#2DA5A0]/25 disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  {loading ? 'Saving...' : 'Submit Check-In'}
-                </button>
-              )}
-
-              {submitted && (
+              {allSubmitted && (
                 <div className="flex items-center gap-2 rounded-lg border border-[#22C55E]/20 bg-[#22C55E]/10 p-3">
                   <Check className="h-4 w-4 text-[#22C55E]" strokeWidth={1.5} />
-                  <span className="text-xs text-[#22C55E]">
-                    Check-in saved! +15 Helix Points
-                  </span>
+                  <span className="text-xs text-[#22C55E]">All check-ins saved for today! +15 Helix Points</span>
                 </div>
               )}
             </div>
