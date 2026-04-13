@@ -104,7 +104,7 @@ export default function ConsumerDashboard() {
       style={{ backgroundImage: `url('${DASHBOARD_HERO_IMAGE}')` }}
     >
       {/* Progressive overlay: lightest at top (image breathes), solid navy at bottom */}
-      <div className="min-h-screen bg-gradient-to-b from-[rgba(10,15,35,0.30)] via-[rgba(26,39,68,0.60)] to-[rgba(26,39,68,0.95)]">
+      <div className="min-h-screen bg-gradient-to-b from-[rgba(10,15,35,0.15)] via-[rgba(26,39,68,0.50)] to-[rgba(26,39,68,0.95)]">
 
         {/* ── Tagline — image fully visible ── */}
         <div className="w-full px-4 pt-14 pb-6 text-center">
