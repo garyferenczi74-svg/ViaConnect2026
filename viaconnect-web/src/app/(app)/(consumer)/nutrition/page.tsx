@@ -139,5 +139,7 @@ export default function NutritionPage() {
 
       <MealHistory />
     </div>
+    </div>
+    </div>
   );
 }
