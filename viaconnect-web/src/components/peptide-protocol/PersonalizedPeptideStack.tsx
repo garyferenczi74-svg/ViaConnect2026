@@ -235,7 +235,7 @@ export function PersonalizedPeptideStack({ userId }: { userId?: string } = {}) {
                     initial={{ opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: idx * 0.06 }}
-                    className="rounded-2xl border border-[rgba(255,255,255,0.08)] bg-[#1E3054] overflow-hidden hover:border-[rgba(255,255,255,0.15)] transition-all"
+                    className="rounded-2xl border border-[rgba(255,255,255,0.08)] bg-[#1E3054]/60 backdrop-blur-md overflow-hidden hover:border-[rgba(255,255,255,0.15)] transition-all"
                   >
                     <button
                       onClick={() => setExpandedIndex(isExpanded ? null : idx)}
@@ -299,7 +299,7 @@ export function PersonalizedPeptideStack({ userId }: { userId?: string } = {}) {
                               <p className="text-sm text-[rgba(255,255,255,0.65)] leading-relaxed">{item.indication}</p>
                             </div>
                             {item.cycleNote && (
-                              <div className="flex items-start gap-2 rounded-lg bg-[#172542] p-3">
+                              <div className="flex items-start gap-2 rounded-lg bg-[#172542]/60 backdrop-blur-sm p-3">
                                 <RotateCcw className="w-3.5 h-3.5 text-[rgba(45,165,160,0.70)] mt-0.5 shrink-0" strokeWidth={1.5} />
                                 <p className="text-xs text-[rgba(255,255,255,0.50)]">{item.cycleNote}</p>
                               </div>

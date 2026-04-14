@@ -131,7 +131,7 @@ export function PeptideSearchBar() {
       </div>
 
       <div className="relative">
-        <div className="flex items-center gap-2 px-4 py-3 rounded-2xl bg-[#172542] border border-[rgba(255,255,255,0.15)] focus-within:border-[#2DA5A0] focus-within:ring-2 focus-within:ring-[#2DA5A0]/15 transition-all">
+        <div className="flex items-center gap-2 px-4 py-3 rounded-2xl bg-[#172542]/60 backdrop-blur-md border border-[rgba(255,255,255,0.15)] focus-within:border-[#2DA5A0] focus-within:ring-2 focus-within:ring-[#2DA5A0]/15 transition-all">
           {isSearching
             ? <Loader2 className="w-4 h-4 text-[#2DA5A0] animate-spin shrink-0" strokeWidth={1.5} />
             : <Search className="w-4 h-4 text-[rgba(255,255,255,0.35)] shrink-0" strokeWidth={1.5} />
@@ -158,7 +158,7 @@ export function PeptideSearchBar() {
               initial={{ opacity: 0, y: -4 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -4 }}
-              className="absolute z-50 top-full mt-1 left-0 right-0 bg-[#1E3054] rounded-2xl border border-[rgba(255,255,255,0.10)] shadow-2xl overflow-hidden"
+              className="absolute z-50 top-full mt-1 left-0 right-0 bg-[#1E3054]/90 backdrop-blur-md rounded-2xl border border-[rgba(255,255,255,0.10)] shadow-2xl overflow-hidden"
             >
               {results.length === 0 ? (
                 <div className="px-4 py-6 text-center text-sm text-[rgba(255,255,255,0.35)]">
