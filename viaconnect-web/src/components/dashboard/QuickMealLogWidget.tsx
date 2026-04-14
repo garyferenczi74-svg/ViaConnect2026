@@ -42,20 +42,29 @@ export function QuickMealLogWidget() {
 
   const handleQuickLog = useCallback(async (mealType: string, qualityIdx: number) => {
     setSaving(true);
+    const quality = QUALITY_SCORES[qualityIdx];
+
+    // Update UI + dispatch BEFORE DB write so gauge updates even if
+    // the meal_logs table doesn't exist yet or insert fails.
+    setLoggedMeals((prev) => new Set(prev).add(mealType));
+    setActiveMeal(null);
+    try {
+      window.dispatchEvent(new CustomEvent('meal-logged', {
+        detail: { meal_type: mealType, quality_rating: quality, log_method: 'quick' },
+      }));
+    } catch {}
+
     try {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) { setSaving(false); return; }
       await (supabase as any).from('meal_logs').insert({
         user_id: user.id,
         meal_type: mealType,
         log_method: 'quick',
-        quality_rating: QUALITY_SCORES[qualityIdx],
+        quality_rating: quality,
         meal_date: new Date().toISOString().split('T')[0],
       });
-      setLoggedMeals((prev) => new Set(prev).add(mealType));
-      setActiveMeal(null);
-      try { window.dispatchEvent(new CustomEvent('meal-logged')); } catch {}
     } catch { /* table may not exist yet */ }
     finally { setSaving(false); }
   }, []);

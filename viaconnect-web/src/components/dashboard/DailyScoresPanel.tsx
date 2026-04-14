@@ -22,6 +22,16 @@ interface DailyScoresPanelProps {
 type ScoreState = 'loading' | 'empty' | 'loaded';
 
 const CACHE_KEY = 'vc_daily_scores_cache';
+const MEALS_CACHE_KEY = 'vc_local_meals_cache';
+
+interface LocalMeal {
+  meal_type: string;
+  quality_rating?: number | null;
+  calories?: number | null;
+  protein_grams?: number | null;
+  carbs_grams?: number | null;
+  fats_grams?: number | null;
+}
 
 function getCachedScores(): DailyScoreResult | null {
   if (typeof window === 'undefined') return null;
@@ -39,6 +49,26 @@ function setCachedScores(scores: DailyScoreResult) {
     sessionStorage.setItem(CACHE_KEY, JSON.stringify({
       date: new Date().toISOString().split('T')[0],
       scores,
+    }));
+  } catch {}
+}
+
+function getCachedMeals(): LocalMeal[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem(MEALS_CACHE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (parsed.date !== new Date().toISOString().split('T')[0]) return [];
+    return parsed.meals ?? [];
+  } catch { return []; }
+}
+
+function setCachedMeals(meals: LocalMeal[]) {
+  try {
+    localStorage.setItem(MEALS_CACHE_KEY, JSON.stringify({
+      date: new Date().toISOString().split('T')[0],
+      meals,
     }));
   } catch {}
 }
@@ -97,6 +127,28 @@ export function DailyScoresPanel({ checkinRaw, previewRaw }: DailyScoresPanelPro
         }
       } catch {}
 
+      // Merge client-side cached meals (captured from meal-logged events)
+      // for users whose DB writes fail silently or whose table doesn't exist.
+      const local = getCachedMeals();
+      if (local.length > 0) {
+        const existing = new Set(mealLog.meals.map((m) => m.meal_type));
+        for (const lm of local) {
+          if (!existing.has(lm.meal_type)) {
+            mealLog.meals.push({
+              meal_type: lm.meal_type,
+              calories: lm.calories ?? null,
+              protein_grams: lm.protein_grams ?? null,
+              carbs_grams: lm.carbs_grams ?? null,
+              fats_grams: lm.fats_grams ?? null,
+              includes_vegetables: false,
+              includes_whole_grains: false,
+              includes_lean_protein: false,
+              meal_quality_rating: lm.quality_rating ?? null,
+            });
+          }
+        }
+      }
+
       if (cancelled) return;
 
       const scores = calculateDailyScores(checkinData, mealLog.meals.length > 0 ? mealLog : null, null);
@@ -154,14 +206,25 @@ export function DailyScoresPanel({ checkinRaw, previewRaw }: DailyScoresPanelPro
   }, [previewRaw, scoreState]);
 
   // Listen for check-in + meal events (always active so a fresh user
-  // who logs a meal first gets an immediate gauge update)
+  // who logs a meal first gets an immediate gauge update).
+  // Meal events may carry detail which we cache locally so scoring
+  // works even when the meal_logs DB write fails silently.
   useEffect(() => {
-    const handler = () => computeScores();
-    window.addEventListener('checkin-submitted', handler);
-    window.addEventListener('meal-logged', handler);
+    const onCheckin = () => computeScores();
+    const onMeal = (e: Event) => {
+      const detail = (e as CustomEvent).detail as LocalMeal | undefined;
+      if (detail && detail.meal_type) {
+        const existing = getCachedMeals();
+        const dedup = existing.filter((m) => m.meal_type !== detail.meal_type);
+        setCachedMeals([...dedup, detail]);
+      }
+      computeScores();
+    };
+    window.addEventListener('checkin-submitted', onCheckin);
+    window.addEventListener('meal-logged', onMeal);
     return () => {
-      window.removeEventListener('checkin-submitted', handler);
-      window.removeEventListener('meal-logged', handler);
+      window.removeEventListener('checkin-submitted', onCheckin);
+      window.removeEventListener('meal-logged', onMeal);
     };
   }, [computeScores]);
 

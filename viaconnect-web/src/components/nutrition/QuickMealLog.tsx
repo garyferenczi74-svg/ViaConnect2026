@@ -31,7 +31,11 @@ export function QuickMealLog() {
       });
 
       setSaved(true);
-      try { window.dispatchEvent(new CustomEvent('meal-logged')); } catch {}
+      try {
+        window.dispatchEvent(new CustomEvent('meal-logged', {
+          detail: { meal_type: mealType.toLowerCase(), quality_rating: quality, log_method: 'quick' },
+        }));
+      } catch {}
       setTimeout(() => {
         setSaved(false);
         setMealType(null);

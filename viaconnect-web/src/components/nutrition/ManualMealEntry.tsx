@@ -39,7 +39,17 @@ export function ManualMealEntry({ onSaved }: { onSaved?: () => void }) {
 
       setSaved(true);
       onSaved?.();
-      try { window.dispatchEvent(new CustomEvent('meal-logged')); } catch {}
+      try {
+        window.dispatchEvent(new CustomEvent('meal-logged', {
+          detail: {
+            meal_type: mealType.toLowerCase(),
+            calories: calories ? parseInt(calories) : null,
+            protein_grams: protein ? parseFloat(protein) : null,
+            carbs_grams: carbs ? parseFloat(carbs) : null,
+            fats_grams: fat ? parseFloat(fat) : null,
+          },
+        }));
+      } catch {}
       setTimeout(() => {
         setSaved(false);
         setMealType(null);

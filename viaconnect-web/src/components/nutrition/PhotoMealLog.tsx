@@ -88,7 +88,18 @@ export function PhotoMealLog({ mealType = 'lunch', supplements = [], onSaved }: 
       setStep('saved');
       setShowSavePrompt(true);
       onSaved?.();
-      try { window.dispatchEvent(new CustomEvent('meal-logged')); } catch {}
+      try {
+        window.dispatchEvent(new CustomEvent('meal-logged', {
+          detail: {
+            meal_type: mealType,
+            quality_rating: analysis.mealQualityScore >= 75 ? 4 : analysis.mealQualityScore >= 50 ? 3 : analysis.mealQualityScore >= 25 ? 2 : 1,
+            calories: analysis.totals.calories,
+            protein_grams: analysis.totals.protein,
+            carbs_grams: analysis.totals.carbs,
+            fats_grams: analysis.totals.fat,
+          },
+        }));
+      } catch {}
     } catch { /* table may not exist yet */ }
     finally { setSaving(false); }
   }, [analysis, mealType, saving, onSaved]);
