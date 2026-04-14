@@ -161,6 +161,9 @@ export function DailyCheckIn({ onScoresUpdate, onSliderChange }: DailyCheckInPro
   const allSubmitted = sleepCard.isSubmitted && exerciseCard.isSubmitted && activityCard.isSubmitted && stressCard.isSubmitted && energyCard.isSubmitted;
 
   // ── Midnight auto-reset ─────────────────────────────────
+  // Fires at local midnight. Clears slider values, rolls the check-in
+  // date, nulls out todayCheckin (which cascades into each card hook
+  // via the initialSubmittedAt sync), and re-opens the form.
   useMidnightReset(timezone, useCallback(() => {
     setSleepHours(7); setSleepQuality(3);
     setCardioActive(false); setResistanceActive(false);
@@ -168,6 +171,7 @@ export function DailyCheckIn({ onScoresUpdate, onSliderChange }: DailyCheckInPro
     setActivityLevel(3); setStressLevel(2); setEnergyLevel(3);
     setCheckInDate(localDateString(timezone));
     setTodayCheckin(null);
+    setCollapsed(false);
   }, [timezone]));
 
   // ── Emit live preview on every slider change ─────────────

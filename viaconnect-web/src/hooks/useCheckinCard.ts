@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { isSubmittedToday } from '@/lib/checkinReset';
 
@@ -31,6 +31,13 @@ export function useCheckinCard({
 }: UseCheckinCardOptions): UseCheckinCardReturn {
   const [isLoading, setIsLoading] = useState(false);
   const [submittedAt, setSubmittedAt] = useState<string | null>(initialSubmittedAt ?? null);
+
+  // Sync with incoming initialSubmittedAt changes (e.g. when parent
+  // clears todayCheckin at local midnight) so the card unlocks on
+  // the new day without requiring a page reload.
+  useEffect(() => {
+    setSubmittedAt(initialSubmittedAt ?? null);
+  }, [initialSubmittedAt, checkInDate]);
 
   const isSubmitted = isSubmittedToday(submittedAt, timezone);
 
