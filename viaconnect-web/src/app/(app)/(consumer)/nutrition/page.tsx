@@ -50,7 +50,7 @@ export default function NutritionPage() {
   ];
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
+    <div className="mx-auto max-w-7xl space-y-6 px-4 py-6 md:px-6 md:py-8">
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-xl font-bold text-white sm:text-2xl">Nutrition</h1>
