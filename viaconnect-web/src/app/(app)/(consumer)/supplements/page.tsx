@@ -164,16 +164,16 @@ export default function SupplementsPage() {
             <p className="text-xs text-white/30">{taken}/{all.length} taken today</p>
             <div className="flex items-center gap-2"><div className="w-24 h-2 rounded-full bg-white/5 overflow-hidden"><div className="h-full rounded-full bg-teal-400" style={{ width: `${pct}%` }} /></div><span className="text-xs font-medium text-teal-400">{pct}%</span></div>
           </div>
-          <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {SLOTS.map((slot) => {
               const items = (PROTOCOL as Record<string, ProtocolItem[]>)[slot.id] || [];
               if (!items.length) return null;
               return (
-                <div key={slot.id} className="rounded-xl bg-white/[0.02] border border-white/5 overflow-hidden">
+                <div key={slot.id} className="rounded-xl bg-white/[0.02] border border-white/5 overflow-hidden flex flex-col">
                   <div className="flex items-center gap-3 px-4 md:px-5 py-3 border-b border-white/5">
                     <PIcon icon={slot.icon} color={slot.color} size="sm" />
-                    <div className="flex-1"><h4 className="text-sm font-semibold text-white">{slot.label}</h4><p className="text-[10px] text-white/25">{slot.time}</p></div>
-                    <span className="text-xs text-white/20">{items.length} item{items.length !== 1 ? "s" : ""}</span>
+                    <div className="flex-1 min-w-0"><h4 className="text-sm font-semibold text-white">{slot.label}</h4><p className="text-[10px] text-white/25">{slot.time}</p></div>
+                    <span className="text-xs text-white/20">{items.length}</span>
                   </div>
                   <div className="divide-y divide-white/[0.03]">{items.map((item) => <ItemRow key={item.id} item={item} />)}</div>
                 </div>
