@@ -191,7 +191,7 @@ const sleepStages = [
 /* ─── Main Page ──────────────────────────────────────────────────────────── */
 
 const WEARABLE_HERO_IMAGE =
-  'https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Images/Apple%20Watch.png';
+  'https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Images/Athlete%209F.png';
 
 export default function WearableDashboardPage() {
   return (
