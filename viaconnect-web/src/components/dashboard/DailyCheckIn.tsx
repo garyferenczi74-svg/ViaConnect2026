@@ -74,7 +74,7 @@ interface DailyCheckInProps {
 
 export function DailyCheckIn({ onScoresUpdate, onSliderChange }: DailyCheckInProps = {}) {
   // ── Core state ──────────────────────────────────────────
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
   const [timezone] = useState(() => detectTimezone());
   const [checkInDate, setCheckInDate] = useState(() => localDateString(detectTimezone()));
@@ -171,7 +171,7 @@ export function DailyCheckIn({ onScoresUpdate, onSliderChange }: DailyCheckInPro
     setActivityLevel(3); setStressLevel(2); setEnergyLevel(3);
     setCheckInDate(localDateString(timezone));
     setTodayCheckin(null);
-    setCollapsed(false);
+    setCollapsed(true);
   }, [timezone]));
 
   // ── Emit live preview on every slider change ─────────────
