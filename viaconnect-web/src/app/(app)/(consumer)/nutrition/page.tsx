@@ -107,18 +107,14 @@ export default function NutritionPage() {
           {TABS.map((t) => {
             const Icon = t.icon;
             const isActive = tab === t.id;
-            const isDisabled = 'disabled' in t && !!(t as unknown as { disabled?: boolean }).disabled;
             return (
               <button
                 key={t.id}
-                onClick={() => !isDisabled && setTab(t.id)}
-                disabled={isDisabled}
+                onClick={() => setTab(t.id)}
                 className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] font-medium transition-all ${
                   isActive
                     ? 'border border-[#B75E18]/40 bg-[#B75E18]/20 text-[#B75E18]'
-                    : isDisabled
-                      ? 'cursor-not-allowed border border-white/[0.04] text-white/20'
-                      : 'border border-white/[0.06] text-white/50 hover:bg-white/[0.06]'
+                    : 'border border-white/[0.06] text-white/50 hover:bg-white/[0.06]'
                 }`}
               >
                 <Icon className="h-3 w-3" strokeWidth={1.5} />
