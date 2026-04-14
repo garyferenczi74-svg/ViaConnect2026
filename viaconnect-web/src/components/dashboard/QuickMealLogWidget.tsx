@@ -42,61 +42,67 @@ export function QuickMealLogWidget({ hideHeader = false, onSaved }: QuickMealLog
   const [savedMeals, setSavedMeals] = useState<Set<MealType>>(new Set());
   const [saving, setSaving] = useState(false);
 
-  // Load today's values on mount
-  useEffect(() => {
-    (async () => {
-      try {
-        const supabase = createClient();
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
-        const today = new Date().toISOString().split('T')[0];
+  const loadFromDb = useCallback(async () => {
+    try {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const today = new Date().toISOString().split('T')[0];
 
-        const { data } = await (supabase as any)
-          .from('daily_checkins')
-          .select('breakfast_protein, breakfast_carbs, breakfast_fat, breakfast_sugar, breakfast_score, lunch_protein, lunch_carbs, lunch_fat, lunch_sugar, lunch_score, dinner_protein, dinner_carbs, dinner_fat, dinner_sugar, dinner_score, snacks_protein, snacks_carbs, snacks_fat, snacks_sugar, snacks_score')
-          .eq('user_id', user.id)
-          .eq('check_in_date', today)
-          .maybeSingle();
+      const { data } = await (supabase as any)
+        .from('daily_checkins')
+        .select('breakfast_protein, breakfast_carbs, breakfast_fat, breakfast_sugar, breakfast_score, lunch_protein, lunch_carbs, lunch_fat, lunch_sugar, lunch_score, dinner_protein, dinner_carbs, dinner_fat, dinner_sugar, dinner_score, snacks_protein, snacks_carbs, snacks_fat, snacks_sugar, snacks_score')
+        .eq('user_id', user.id)
+        .eq('check_in_date', today)
+        .maybeSingle();
 
-        if (data) {
-          const newMacros: Record<MealType, MacroValues> = {
-            breakfast: {
-              protein: data.breakfast_protein ?? 5,
-              carbs: data.breakfast_carbs ?? 5,
-              fat: data.breakfast_fat ?? 5,
-              sugar: data.breakfast_sugar ?? 3,
-            },
-            lunch: {
-              protein: data.lunch_protein ?? 5,
-              carbs: data.lunch_carbs ?? 5,
-              fat: data.lunch_fat ?? 5,
-              sugar: data.lunch_sugar ?? 3,
-            },
-            dinner: {
-              protein: data.dinner_protein ?? 5,
-              carbs: data.dinner_carbs ?? 5,
-              fat: data.dinner_fat ?? 5,
-              sugar: data.dinner_sugar ?? 3,
-            },
-            snacks: {
-              protein: data.snacks_protein ?? 5,
-              carbs: data.snacks_carbs ?? 5,
-              fat: data.snacks_fat ?? 5,
-              sugar: data.snacks_sugar ?? 3,
-            },
-          };
-          setMacros(newMacros);
+      if (data) {
+        setMacros({
+          breakfast: {
+            protein: data.breakfast_protein ?? 5,
+            carbs: data.breakfast_carbs ?? 5,
+            fat: data.breakfast_fat ?? 5,
+            sugar: data.breakfast_sugar ?? 3,
+          },
+          lunch: {
+            protein: data.lunch_protein ?? 5,
+            carbs: data.lunch_carbs ?? 5,
+            fat: data.lunch_fat ?? 5,
+            sugar: data.lunch_sugar ?? 3,
+          },
+          dinner: {
+            protein: data.dinner_protein ?? 5,
+            carbs: data.dinner_carbs ?? 5,
+            fat: data.dinner_fat ?? 5,
+            sugar: data.dinner_sugar ?? 3,
+          },
+          snacks: {
+            protein: data.snacks_protein ?? 5,
+            carbs: data.snacks_carbs ?? 5,
+            fat: data.snacks_fat ?? 5,
+            sugar: data.snacks_sugar ?? 3,
+          },
+        });
 
-          const saved = new Set<MealType>();
-          if (data.breakfast_score != null) saved.add('breakfast');
-          if (data.lunch_score != null) saved.add('lunch');
-          if (data.dinner_score != null) saved.add('dinner');
-          if (data.snacks_score != null) saved.add('snacks');
-          setSavedMeals(saved);
-        }
-      } catch { /* table may not have macro columns yet */ }
-    })();
+        const saved = new Set<MealType>();
+        if (data.breakfast_score != null) saved.add('breakfast');
+        if (data.lunch_score != null) saved.add('lunch');
+        if (data.dinner_score != null) saved.add('dinner');
+        if (data.snacks_score != null) saved.add('snacks');
+        setSavedMeals(saved);
+      }
+    } catch { /* table may not have macro columns yet */ }
   }, []);
+
+  // Initial load + cross-instance sync: any meal-logged event from the
+  // dashboard or the nutrition page reloads this widget's state so both
+  // surfaces always reflect the same saved meals.
+  useEffect(() => { loadFromDb(); }, [loadFromDb]);
+  useEffect(() => {
+    const onMeal = () => loadFromDb();
+    window.addEventListener('meal-logged', onMeal);
+    return () => window.removeEventListener('meal-logged', onMeal);
+  }, [loadFromDb]);
 
   // Reset expanded accordion when tab changes
   useEffect(() => { setExpandedMacro(null); }, [activeTab]);
