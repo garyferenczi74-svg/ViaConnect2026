@@ -236,7 +236,7 @@ export function DailyCheckIn({ onScoresUpdate, onSliderChange }: DailyCheckInPro
   // ── Collapsed state (complete or partial) ───────────────
   if (collapsed) {
     const isComplete = allSubmitted;
-    const promptText = isComplete ? 'Complete' : `Complete: ${pendingCards.join(', ')}`;
+    const promptText = isComplete ? 'Complete' : pendingCards.join(' · ');
     const promptColor = isComplete ? '#22C55E' : 'rgba(255,255,255,0.70)';
     const borderColor = isComplete ? 'border-[#22C55E]/25' : 'border-white/10';
     const bgColor = isComplete ? 'bg-[#22C55E]/[0.07]' : 'bg-[#1E3054]/60';
