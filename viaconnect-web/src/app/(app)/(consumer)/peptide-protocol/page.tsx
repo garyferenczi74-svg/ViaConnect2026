@@ -10,29 +10,23 @@ import { PeptidePractitionerAccess } from "@/components/peptide-protocol/Peptide
 import { ShareProtocolButton } from "@/components/consumer/ShareProtocolButton";
 
 const PEPTIDE_HERO_IMAGE =
-  "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Images/Athlete%201.png";
+  "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Images/Peptides%201.png";
 
 export default function PeptideProtocolRoute() {
   return (
-    <div className="relative min-h-screen text-white">
-      {/* Fixed full-bleed hero background with blur + dim overlay */}
-      <motion.div
-        className="fixed inset-0 -z-10"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.8, ease: 'easeOut' }}
-      >
-        <img
-          src={PEPTIDE_HERO_IMAGE}
-          alt="Peptide Protocol"
-          className="h-full w-full object-cover object-center"
-          style={{ filter: 'blur(2px)' }}
-        />
-        <div className="absolute inset-0 bg-black/40" />
-      </motion.div>
-
-      {/* Page content scrolls over the fixed hero */}
-      <div className="relative z-10 max-w-3xl mx-auto px-4 py-6 md:px-6 space-y-5">
+    <motion.div
+      className="min-h-screen bg-no-repeat text-white"
+      style={{
+        backgroundImage: `url('${PEPTIDE_HERO_IMAGE}')`,
+        backgroundSize: 'contain',
+        backgroundPosition: 'top center',
+        backgroundColor: '#1A2744',
+      }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.8, ease: 'easeOut' }}
+    >
+      <div className="max-w-3xl mx-auto px-4 py-6 md:px-6 space-y-5">
 
         {/* Page header */}
         <div className="flex items-center justify-between gap-3 pb-2">
@@ -57,6 +51,6 @@ export default function PeptideProtocolRoute() {
         <PeptidePractitionerAccess />
 
       </div>
-    </div>
+    </motion.div>
   );
 }
