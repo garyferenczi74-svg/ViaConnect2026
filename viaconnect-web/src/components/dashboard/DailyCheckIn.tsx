@@ -233,41 +233,43 @@ export function DailyCheckIn({ onScoresUpdate, onSliderChange }: DailyCheckInPro
     { card: energyCard, label: 'Energy' },
   ].filter((c) => !c.card.isSubmitted).map((c) => c.label);
 
-  // ── Collapsed: complete (all done) ──────────────────────
-  if (allSubmitted && collapsed) {
-    return (
-      <button
-        onClick={() => setCollapsed(false)}
-        className="flex w-full items-center justify-between rounded-xl border border-[#22C55E]/20 bg-[#22C55E]/10 backdrop-blur-md p-3"
-      >
-        <div className="flex items-center gap-2">
-          <Check className="h-4 w-4 text-[#22C55E]" strokeWidth={1.5} />
-          <span className="text-xs font-medium text-[#22C55E]">
-            Daily Check In Complete
-          </span>
-        </div>
-        <span className="text-xs text-[#2DA5A0]">+15 pts</span>
-      </button>
-    );
-  }
+  // ── Collapsed state (complete or partial) ───────────────
+  if (collapsed) {
+    const isComplete = allSubmitted;
+    const promptText = isComplete ? 'Complete' : `Complete: ${pendingCards.join(', ')}`;
+    const promptColor = isComplete ? '#22C55E' : 'rgba(255,255,255,0.70)';
+    const borderColor = isComplete ? 'border-[#22C55E]/25' : 'border-white/10';
+    const bgColor = isComplete ? 'bg-[#22C55E]/[0.07]' : 'bg-[#1E3054]/60';
 
-  // ── Collapsed: partial (some pending) ──────────────────
-  if (collapsed && pendingCards.length > 0) {
     return (
-      <button
-        onClick={() => setCollapsed(false)}
-        className="flex w-full items-center justify-between gap-3 rounded-xl border border-white/10 bg-[#1E3054]/60 backdrop-blur-md p-3"
-      >
-        <div className="flex items-center gap-2 min-w-0">
+      <div className={`flex w-full items-center gap-3 rounded-xl border ${borderColor} ${bgColor} backdrop-blur-md p-3`}>
+        {/* Heading — always visible */}
+        <div className="flex items-center gap-2 min-w-0 flex-shrink-0">
           <ClipboardCheck className="h-4 w-4 flex-shrink-0 text-[#2DA5A0]" strokeWidth={1.5} />
-          <span className="text-xs font-medium text-white/70 truncate">
-            Still to complete: {pendingCards.join(', ')}
+          <h3 className="text-xs font-semibold text-white whitespace-nowrap">Quick Daily Check Ins</h3>
+        </div>
+
+        {/* Middle prompt */}
+        <div className="flex-1 min-w-0 flex items-center justify-center">
+          {isComplete && <Check className="h-3.5 w-3.5 mr-1 flex-shrink-0 text-[#22C55E]" strokeWidth={1.5} />}
+          <span className="text-xs font-medium truncate" style={{ color: promptColor }}>
+            {promptText}
           </span>
         </div>
-        <span className="flex flex-shrink-0 items-center gap-1.5 rounded-lg border border-[#2DA5A0]/40 bg-[#2DA5A0]/15 px-2.5 py-1 text-[11px] font-semibold text-[#2DA5A0]">
-          Expand
-        </span>
-      </button>
+
+        {/* 21st.dev styled Expand button */}
+        <button
+          onClick={() => setCollapsed(false)}
+          className="group relative flex flex-shrink-0 items-center gap-1.5 overflow-hidden rounded-lg px-3 py-1.5 text-[11px] font-semibold text-white transition-all hover:shadow-[0_0_16px_rgba(45,165,160,0.35)] active:scale-[0.97]"
+          style={{
+            background: 'linear-gradient(135deg, #2DA5A0 0%, #1E3054 100%)',
+          }}
+        >
+          <span className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
+          <span className="relative">Expand</span>
+          <ChevronDown className="relative h-3 w-3" strokeWidth={2} />
+        </button>
+      </div>
     );
   }
 
