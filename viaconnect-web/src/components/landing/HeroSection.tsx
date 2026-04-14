@@ -117,9 +117,9 @@ export function HeroSection() {
                     <div className="relative min-h-[100svh] flex items-center py-32 md:pb-36 lg:pb-40 lg:pt-72">
                         <div className="relative z-10 mx-auto flex max-w-7xl flex-col px-6 lg:block lg:px-12">
                             <div className="mx-auto max-w-lg text-center lg:ml-0 lg:max-w-full lg:text-left">
-                                <h1 className="mt-8 max-w-2xl text-balance text-4xl sm:text-5xl md:text-6xl lg:mt-16 xl:text-7xl font-bold text-white leading-[1.1]">
-                                    <span className="block whitespace-nowrap">Precision Personal Health</span>
-                                    <span className="block whitespace-nowrap text-[#B75E18]">Powered by Your Data</span>
+                                <h1 className="mt-8 max-w-2xl text-balance text-3xl sm:text-4xl md:text-5xl lg:mt-16 lg:text-6xl xl:text-7xl font-bold text-white leading-[1.1]">
+                                    <span className="block">Precision Personal Health</span>
+                                    <span className="block text-[#B75E18]">Powered by Your Data</span>
                                 </h1>
                                 <p className="mt-8 sm:mt-10 max-w-2xl text-balance text-base sm:text-lg text-slate-300 leading-relaxed">
                                     One Genome  One Formulation  One Life at a Time
@@ -131,13 +131,13 @@ export function HeroSection() {
                                     <Link
                                         href="/signup"
                                         className="inline-flex h-14 sm:h-12 w-full sm:w-auto items-center justify-center rounded-full bg-[#b75e18] pl-6 pr-4 text-base font-semibold text-white shadow-[0_0_20px_rgba(183,94,24,0.4)] transition-all duration-300 hover:bg-[#d4741f] hover:shadow-[0_0_30px_rgba(183,94,24,0.6)]">
-                                        <span className="text-nowrap">Your Journey Starts Here</span>
+                                        <span>Your Journey Starts Here</span>
                                         <ChevronRight className="ml-1" />
                                     </Link>
                                     <Link
                                         href="/login"
                                         className="inline-flex h-14 sm:h-12 w-full sm:w-auto items-center justify-center rounded-full border border-white/20 px-6 text-base font-semibold text-white backdrop-blur-sm transition-all duration-300 hover:border-white/30 hover:bg-white/10">
-                                        <span className="text-nowrap">Sign In</span>
+                                        <span>Sign In</span>
                                     </Link>
                                 </div>
                             </div>
