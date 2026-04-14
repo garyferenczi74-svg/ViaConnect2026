@@ -152,26 +152,28 @@ function DailyScheduleTab({ supplements, protocol }: { supplements: ProtocolItem
         </div>
       </div>
 
-      {/* Time Slots */}
-      {TIME_SLOTS.map((slot) => {
-        const items = getSlotItems(slot.id);
-        if (items.length === 0) return null;
-        return (
-          <div key={slot.id} className="rounded-xl bg-white/[0.02] border border-white/5 overflow-hidden">
-            <div className="flex items-center gap-3 px-4 md:px-5 py-3 border-b border-white/5">
-              <PIcon icon={slot.icon} color={slot.color} size="sm" />
-              <div className="flex-1">
-                <h4 className="text-sm font-semibold text-white">{slot.label}</h4>
-                <p className="text-[10px] text-white/25">{slot.time}</p>
+      {/* Time Slots — 3-column grid on desktop, 2 on tablet, 1 on mobile */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {TIME_SLOTS.map((slot) => {
+          const items = getSlotItems(slot.id);
+          if (items.length === 0) return null;
+          return (
+            <div key={slot.id} className="rounded-xl bg-white/[0.02] border border-white/5 overflow-hidden flex flex-col">
+              <div className="flex items-center gap-3 px-4 md:px-5 py-3 border-b border-white/5">
+                <PIcon icon={slot.icon} color={slot.color} size="sm" />
+                <div className="flex-1 min-w-0">
+                  <h4 className="text-sm font-semibold text-white">{slot.label}</h4>
+                  <p className="text-[10px] text-white/25">{slot.time}</p>
+                </div>
+                <span className="text-xs text-white/20">{items.length}</span>
               </div>
-              <span className="text-xs text-white/20">{items.length} item{items.length !== 1 ? "s" : ""}</span>
+              <div className="divide-y divide-white/[0.03]">
+                {items.map((item, i) => <ItemRow key={item.id || i} item={item} />)}
+              </div>
             </div>
-            <div className="divide-y divide-white/[0.03]">
-              {items.map((item, i) => <ItemRow key={item.id || i} item={item} />)}
-            </div>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
 
       {total === 0 && (
         <div className="text-center py-12">
