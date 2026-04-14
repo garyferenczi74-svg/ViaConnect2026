@@ -4,9 +4,9 @@ import { RotateCcw, ShieldAlert, FlaskConical } from 'lucide-react';
 
 // ── Dark Theme Tokens ──
 const DT = {
-  cardBg:        '#1E3054',
-  cardBgAlt:     '#243B6A',
-  cardBgDeep:    '#172542',
+  cardBg:        'rgba(30, 48, 84, 0.35)',
+  cardBgAlt:     'rgba(36, 59, 106, 0.35)',
+  cardBgDeep:    'rgba(23, 37, 66, 0.35)',
   textPrimary:   '#FFFFFF',
   textSecondary: 'rgba(255,255,255,0.55)',
   textMuted:     'rgba(255,255,255,0.35)',
@@ -86,6 +86,8 @@ export function CyclingProtocolCard({ items }: { items: CyclingItem[] }) {
               className="px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4"
               style={{
                 background: DT.cardBg,
+                backdropFilter: 'blur(12px)',
+                WebkitBackdropFilter: 'blur(12px)',
                 borderBottom: i < items.length - 1 ? `1px solid ${DT.borderSubtle}` : 'none',
               }}
             >
