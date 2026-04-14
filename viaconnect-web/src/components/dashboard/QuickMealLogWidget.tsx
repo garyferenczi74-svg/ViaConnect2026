@@ -147,7 +147,11 @@ export function QuickMealLogWidget() {
         meal_date: today,
       });
     } catch { /* tables may not have new columns yet */ }
-    finally { setSaving(false); }
+    finally {
+      setSaving(false);
+      setActiveTab(null);
+      setExpandedMacro(null);
+    }
   }, [activeTab, macros, saving]);
 
   const loggedCount = savedMeals.size;
