@@ -18,7 +18,7 @@ import type { DashboardSupplement } from "@/hooks/useUserDashboardData";
 import { createClient } from "@/lib/supabase/client";
 import RecommendedSupplements from "@/components/supplement-protocol/RecommendedSupplements";
 const SUPPLEMENT_HERO_IMAGE =
-  "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Images/Athlete%201.png";
+  "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Images/Athlete%205.png";
 
 function PIcon({ icon: Icon, color, size = "md" }: { icon: LucideIcon; color: string; size?: "sm" | "md" | "lg" }) {
   const s = size === "lg" ? { box: "w-14 h-14", ico: "w-7 h-7", glow: "blur-2xl -inset-2" } : size === "sm" ? { box: "w-9 h-9", ico: "w-4 h-4", glow: "blur-lg -inset-1" } : { box: "w-12 h-12", ico: "w-5 h-5", glow: "blur-xl -inset-1.5" };
@@ -136,8 +136,8 @@ export default function SupplementsPage() {
   return (
     // ── Full-page fixed background (Prompt #62L) ──
     <div
-      className="min-h-screen bg-cover bg-center bg-no-repeat bg-scroll text-white md:bg-fixed"
-      style={{ backgroundImage: `url('${SUPPLEMENT_HERO_IMAGE}')`, backgroundColor: '#1A2744' }}
+      className="min-h-screen bg-no-repeat bg-scroll text-white md:bg-fixed"
+      style={{ backgroundImage: `url('${SUPPLEMENT_HERO_IMAGE}')`, backgroundSize: '100% auto', backgroundPosition: 'top center', backgroundColor: '#1A2744' }}
     >
       <div className="min-h-screen bg-gradient-to-b from-[rgba(10,15,35,0.60)] via-[rgba(26,39,68,0.80)] to-[rgba(26,39,68,0.97)]">
 
