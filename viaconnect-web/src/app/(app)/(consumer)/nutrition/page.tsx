@@ -12,6 +12,9 @@ import { NutritionInsights } from '@/components/nutrition/NutritionInsights';
 import { MealHistory } from '@/components/nutrition/MealHistory';
 import { MyMeals } from '@/components/nutrition/MyMeals';
 
+const NUTRITION_HERO_IMAGE =
+  'https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Images/Food%203.png';
+
 export default function NutritionPage() {
   const [mealsToday, setMealsToday] = useState(0);
   const [score, setScore] = useState(0);
@@ -50,7 +53,12 @@ export default function NutritionPage() {
   ];
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6 px-4 py-6 md:px-6 md:py-8">
+    <div
+      className="min-h-screen bg-no-repeat bg-scroll text-white md:bg-fixed"
+      style={{ backgroundImage: `url('${NUTRITION_HERO_IMAGE}')`, backgroundSize: '100% auto', backgroundPosition: 'top center', backgroundColor: '#1A2744' }}
+    >
+      <div className="min-h-screen bg-gradient-to-b from-[rgba(10,15,35,0.40)] via-[rgba(26,39,68,0.70)] to-[rgba(26,39,68,0.97)]">
+      <div className="mx-auto max-w-7xl space-y-6 px-4 py-6 md:px-6 md:py-8">
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-xl font-bold text-white sm:text-2xl">Nutrition</h1>
