@@ -137,10 +137,10 @@ export default function SupplementsPage() {
   return (
     // ── Full-page fixed background (Prompt #62L) ──
     <div
-      className="min-h-screen bg-no-repeat bg-scroll text-white md:bg-fixed"
-      style={{ backgroundImage: `url('${SUPPLEMENT_HERO_IMAGE}')`, backgroundSize: '100% auto', backgroundPosition: 'top center', backgroundColor: '#1A2744' }}
+      className="min-h-screen bg-cover bg-center bg-no-repeat bg-scroll text-white md:bg-fixed"
+      style={{ backgroundImage: `url('${SUPPLEMENT_HERO_IMAGE}')`, backgroundColor: '#1A2744' }}
     >
-      <div className="min-h-screen bg-gradient-to-b from-[rgba(10,15,35,0.40)] via-[rgba(26,39,68,0.70)] to-[rgba(26,39,68,0.97)]">
+      <div className="min-h-screen bg-gradient-to-b from-[rgba(10,15,35,0.60)] via-[rgba(26,39,68,0.80)] to-[rgba(26,39,68,0.97)]">
 
       {/* ── Portal buttons at top of page (no backing strip, no header) ── */}
       <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide px-4 pt-4 pb-2 md:px-6">
