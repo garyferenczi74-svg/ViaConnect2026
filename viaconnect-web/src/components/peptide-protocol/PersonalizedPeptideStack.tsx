@@ -235,7 +235,7 @@ export function PersonalizedPeptideStack({ userId }: { userId?: string } = {}) {
                     initial={{ opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: idx * 0.06 }}
-                    className="rounded-2xl border border-[rgba(255,255,255,0.08)] bg-[#1E3054]/60 backdrop-blur-md overflow-hidden hover:border-[rgba(255,255,255,0.15)] transition-all"
+                    className="rounded-2xl border border-[rgba(255,255,255,0.08)] bg-[#1E3054]/35 backdrop-blur-md overflow-hidden hover:border-[rgba(255,255,255,0.15)] transition-all"
                   >
                     <button
                       onClick={() => setExpandedIndex(isExpanded ? null : idx)}
