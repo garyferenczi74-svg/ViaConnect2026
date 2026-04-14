@@ -17,7 +17,6 @@ import { useUserDashboardData } from "@/hooks/useUserDashboardData";
 import type { DashboardSupplement } from "@/hooks/useUserDashboardData";
 import { createClient } from "@/lib/supabase/client";
 import RecommendedSupplements from "@/components/supplement-protocol/RecommendedSupplements";
-import { PortalTab } from "@/components/shared/PortalTab";
 const SUPPLEMENT_HERO_IMAGE =
   "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Images/Athlete%201.png";
 
@@ -142,53 +141,7 @@ export default function SupplementsPage() {
     >
       <div className="min-h-screen bg-gradient-to-b from-[rgba(10,15,35,0.60)] via-[rgba(26,39,68,0.80)] to-[rgba(26,39,68,0.97)]">
 
-      {/* ── Portal buttons at top of page (no backing strip, no header) ── */}
-      <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide px-4 pt-4 pb-2 md:px-6">
-        <PortalTab
-          label="Personal Wellness"
-          isActive={true}
-          accentColor="#2DA5A0"
-          accentAlpha20="rgba(45,165,160,0.20)"
-          accentAlpha40="rgba(45,165,160,0.40)"
-          layoutId="supplement-tab-indicator"
-        />
-        <PortalTab
-          label="Practitioner"
-          isActive={false}
-          href="/practitioner/protocols"
-          accentColor="#3B82F6"
-          accentAlpha20="rgba(59,130,246,0.20)"
-          accentAlpha40="rgba(59,130,246,0.40)"
-          layoutId="supplement-tab-indicator"
-        />
-        <PortalTab
-          label="Naturopath"
-          isActive={false}
-          href="/naturopath/protocols"
-          accentColor="#22C55E"
-          accentAlpha20="rgba(34,197,94,0.20)"
-          accentAlpha40="rgba(34,197,94,0.40)"
-          layoutId="supplement-tab-indicator"
-        />
-        <PortalTab
-          label="Admin"
-          isActive={false}
-          href="/admin"
-          accentColor="#EF4444"
-          accentAlpha20="rgba(239,68,68,0.20)"
-          accentAlpha40="rgba(239,68,68,0.40)"
-          layoutId="supplement-tab-indicator"
-        />
-        <PortalTab
-          label="Hounddog"
-          isActive={false}
-          href="/admin/hounddog"
-          accentColor="#A855F7"
-          accentAlpha20="rgba(168,85,247,0.20)"
-          accentAlpha40="rgba(168,85,247,0.40)"
-          layoutId="supplement-tab-indicator"
-        />
-      </div>
+      {/* Portal switcher removed (Prompt #74): global nav is single source of truth */}
 
       <div className="space-y-6 px-2 py-4 sm:px-4 md:px-8 md:py-6">
 
