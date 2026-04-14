@@ -189,42 +189,64 @@ export function TodaysProtocol({ supplements }: TodaysProtocolProps) {
         </div>
       </div>
 
-      {/* Blocks */}
+      {/* Blocks — time-aware single container based on user's local hour */}
       <div className="flex-1 space-y-3 p-4 sm:p-5">
-        {blocks.map((block) => {
-          const Icon = block.icon;
-          const blockDone = block.items.filter((i) => i.isCompleted).length;
+        {(() => {
+          // 00:00-11:59 → morning, 12:00-17:59 → midday, 18:00-23:59 → evening
+          const hour = new Date().getHours();
+          const currentSlotId = hour < 12 ? 'morning' : hour < 18 ? 'midday' : 'evening';
+          const currentBlock = blocks.find((b) => b.id === currentSlotId);
+
+          // Fallback: if user has no items in the current slot, show any block
+          // that has items (prefer nearest time slot)
+          const displayBlock = currentBlock ?? blocks[0];
+
+          if (!displayBlock) {
+            return (
+              <div className="flex items-center justify-center py-8">
+                <p className="text-xs text-white/30">No supplements scheduled</p>
+              </div>
+            );
+          }
+
+          const Icon = displayBlock.icon;
+          const blockDone = displayBlock.items.filter((i) => i.isCompleted).length;
+          const isNow = displayBlock.id === currentSlotId;
+
           return (
-            <div key={block.id} className="overflow-hidden rounded-xl border border-white/[0.06] bg-white/[0.02]">
+            <div className="overflow-hidden rounded-xl border border-white/[0.06] bg-white/[0.02]">
               <div className="flex items-center gap-2.5 border-b border-white/5 px-3 py-2.5 sm:px-4">
                 <div
                   className="flex h-7 w-7 items-center justify-center rounded-lg"
                   style={{
-                    background: `${block.color}22`,
-                    border: `1px solid ${block.color}44`,
+                    background: `${displayBlock.color}22`,
+                    border: `1px solid ${displayBlock.color}44`,
                   }}
                 >
-                  <Icon className="h-3.5 w-3.5" strokeWidth={1.5} style={{ color: block.color }} />
+                  <Icon className="h-3.5 w-3.5" strokeWidth={1.5} style={{ color: displayBlock.color }} />
                 </div>
                 <div className="flex-1">
-                  <h4 className="text-xs font-semibold text-white">{block.label}</h4>
+                  <h4 className="text-xs font-semibold text-white">
+                    {displayBlock.label}
+                    {isNow && <span className="ml-1.5 text-[10px] font-normal text-white/40">· now</span>}
+                  </h4>
                   <p className="text-[10px] text-white/35">
-                    {blockDone} of {block.items.length} done
+                    {blockDone} of {displayBlock.items.length} done
                   </p>
                 </div>
               </div>
               <div className="divide-y divide-white/[0.04]">
-                {block.items.map((item) => (
+                {displayBlock.items.map((item) => (
                   <ProtocolCheckItem
                     key={item.id}
                     item={item}
-                    onToggle={(slug) => toggle(slug, block.id, totalCount)}
+                    onToggle={(slug) => toggle(slug, displayBlock.id, totalCount)}
                   />
                 ))}
               </div>
             </div>
           );
-        })}
+        })()}
       </div>
 
       {/* Footer link */}
