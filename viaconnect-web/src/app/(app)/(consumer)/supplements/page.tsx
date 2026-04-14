@@ -143,7 +143,7 @@ export default function SupplementsPage() {
 
       {/* Portal switcher removed (Prompt #74): global nav is single source of truth */}
 
-      <div className="space-y-6 px-2 py-4 sm:px-4 md:px-8 md:py-6">
+      <div className="mx-auto max-w-7xl space-y-6 px-4 py-6 md:px-6 md:py-8">
 
       {/* PAGE HEADER */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
