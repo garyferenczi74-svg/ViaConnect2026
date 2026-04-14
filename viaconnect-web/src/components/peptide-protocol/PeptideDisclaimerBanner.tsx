@@ -19,8 +19,8 @@ export function PeptideDisclaimerBanner() {
   return (
     <div className={`rounded-2xl border backdrop-blur-md transition-all duration-300 ${
       expanded
-        ? 'bg-[rgba(20,30,45,0.80)] border-[rgba(183,94,24,0.35)]'
-        : 'bg-[rgba(20,30,45,0.70)] border-[rgba(183,94,24,0.25)]'
+        ? 'bg-[rgba(52,70,104,0.80)] border-[rgba(183,94,24,0.35)]'
+        : 'bg-[rgba(52,70,104,0.70)] border-[rgba(183,94,24,0.25)]'
     }`}>
       {!expanded && (
         <button
