@@ -32,7 +32,7 @@ export function PortalTab({
     <Tag
       href={href}
       onClick={onClick}
-      className="relative inline-flex items-center whitespace-nowrap rounded-full border px-4 py-2 text-sm font-medium transition-all duration-200"
+      className="relative inline-flex shrink-0 items-center whitespace-nowrap rounded-full border px-4 py-1.5 text-sm font-medium transition-colors duration-200"
       style={
         isActive
           ? {
