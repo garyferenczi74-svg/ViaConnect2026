@@ -1,6 +1,7 @@
 'use client';
 
 import { BodyTrackerTabs } from '@/components/body-tracker/BodyTrackerTabs';
+import { MobileHeroBackground } from '@/components/ui/MobileHeroBackground';
 
 const HERO_IMAGE =
   'https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Images/Athlete%201.png';
@@ -11,11 +12,9 @@ export default function BodyTrackerLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div
-      className="min-h-screen bg-cover bg-center bg-no-repeat bg-scroll text-white md:bg-fixed"
-      style={{ backgroundImage: `url('${HERO_IMAGE}')`, backgroundColor: '#1A2744' }}
-    >
-      <div className="min-h-screen bg-gradient-to-b from-[rgba(10,15,35,0.45)] via-[rgba(26,39,68,0.75)] to-[rgba(26,39,68,0.97)]">
+    <>
+      <MobileHeroBackground src={HERO_IMAGE} overlayOpacity={0.55} objectPosition="center center" priority />
+      <div className="relative z-10 min-h-screen text-white">
         {/* Tab navigation */}
         <div className="sticky top-[60px] z-30 border-b border-white/[0.08] bg-[#1A2744]/90 backdrop-blur-md">
           <BodyTrackerTabs />
@@ -25,6 +24,6 @@ export default function BodyTrackerLayout({
           {children}
         </div>
       </div>
-    </div>
+    </>
   );
 }

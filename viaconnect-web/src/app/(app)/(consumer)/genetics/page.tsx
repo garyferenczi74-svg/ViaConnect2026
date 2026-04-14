@@ -12,6 +12,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 import { getGeneticsShopUrl } from "@/utils/geneticsShopLinks";
 import { ShareProtocolButton } from "@/components/consumer/ShareProtocolButton";
+import { MobileHeroBackground } from "@/components/ui/MobileHeroBackground";
 const GENETICS_HERO_IMAGE =
   "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Images/Scientist%201.png";
 
@@ -131,11 +132,9 @@ export default function GeneticsPage() {
 
   return (
     // ── Full-page fixed background (Prompt #62L) ──
-    <div
-      className="min-h-screen w-full bg-cover bg-center bg-top bg-no-repeat bg-scroll text-white md:bg-fixed"
-      style={{ backgroundImage: `url('${GENETICS_HERO_IMAGE}')` }}
-    >
-      <div className="min-h-screen bg-gradient-to-b from-[rgba(10,15,35,0.40)] via-[rgba(26,39,68,0.70)] to-[rgba(26,39,68,0.97)]">
+    <>
+    <MobileHeroBackground src={GENETICS_HERO_IMAGE} overlayOpacity={0.58} objectPosition="center center" priority />
+    <div className="relative z-10 min-h-screen w-full text-white">
 
         {/* ── Hero tagline — image shows through ── */}
         <div className="w-full px-4 pt-14 pb-8 text-center">
@@ -404,7 +403,7 @@ export default function GeneticsPage() {
         </div>
 
       </div>
-      </div>
     </div>
+    </>
   );
 }

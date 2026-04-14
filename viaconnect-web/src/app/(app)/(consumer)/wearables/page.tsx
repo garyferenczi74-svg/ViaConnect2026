@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { MobileHeroBackground } from '@/components/ui/MobileHeroBackground';
 import {
   Activity,
   Heart,
@@ -195,11 +196,9 @@ const WEARABLE_HERO_IMAGE =
 
 export default function WearableDashboardPage() {
   return (
-    <div
-      className="min-h-screen overflow-x-hidden bg-no-repeat bg-scroll text-white md:bg-fixed"
-      style={{ backgroundImage: `url('${WEARABLE_HERO_IMAGE}')`, backgroundSize: '100% auto', backgroundPosition: 'top center', backgroundColor: '#1A2744' }}
-    >
-      <div className="min-h-screen bg-gradient-to-b from-[rgba(10,15,35,0.40)] via-[rgba(26,39,68,0.70)] to-[rgba(26,39,68,0.97)]">
+    <>
+      <MobileHeroBackground src={WEARABLE_HERO_IMAGE} overlayOpacity={0.55} objectPosition="center top" priority />
+      <div className="relative z-10 min-h-screen overflow-x-hidden text-white">
       <div className="max-w-3xl mx-auto px-4 pt-8 pb-24 space-y-8">
 
         {/* ─── 1. HEADER ─────────────────────────────────────────────── */}
@@ -467,7 +466,7 @@ export default function WearableDashboardPage() {
         </div>
 
       </div>
-      </div>
     </div>
+    </>
   );
 }

@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
 import type { SupplementLog, GeneticVariant } from "@/lib/supabase/types";
 import { Card } from "@/components/ui/Card";
+import { MobileHeroBackground } from "@/components/ui/MobileHeroBackground";
 import { Badge } from "@/components/ui/Badge";
 import { Progress } from "@/components/ui/Progress";
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -455,11 +456,9 @@ export default function AnalyticsPage() {
   const recCount = (recommendations ?? []).length;
 
   return (
-    <div
-      className="min-h-screen bg-no-repeat bg-scroll text-white md:bg-fixed"
-      style={{ backgroundImage: "url('https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Images/Athlete%206.png')", backgroundSize: 'cover', backgroundPosition: 'center center', backgroundColor: '#1A2744' }}
-    >
-      <div className="min-h-screen bg-gradient-to-b from-[rgba(10,15,35,0.40)] via-[rgba(26,39,68,0.70)] to-[rgba(26,39,68,0.97)]">
+    <>
+    <MobileHeroBackground src="https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Images/Athlete%206.png" overlayOpacity={0.55} objectPosition="center center" priority />
+    <div className="relative z-10 min-h-screen text-white">
     <PageTransition className="p-6 lg:p-8 space-y-6 max-w-[1440px] mx-auto">
       {/* Header */}
       <StaggerChild>
@@ -774,7 +773,7 @@ export default function AnalyticsPage() {
         </Card>
       </StaggerChild>
     </PageTransition>
-      </div>
     </div>
+    </>
   );
 }

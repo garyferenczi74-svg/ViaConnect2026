@@ -12,6 +12,7 @@ import { NutritionInsights } from '@/components/nutrition/NutritionInsights';
 import { MealHistory } from '@/components/nutrition/MealHistory';
 import { MyMeals } from '@/components/nutrition/MyMeals';
 import { ConnectedAppMealDropdown } from '@/components/nutrition/ConnectedAppMealDropdown';
+import { MobileHeroBackground } from '@/components/ui/MobileHeroBackground';
 
 const NUTRITION_HERO_IMAGE =
   'https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Images/Food%203.png';
@@ -54,11 +55,9 @@ export default function NutritionPage() {
   ];
 
   return (
-    <div
-      className="min-h-screen bg-no-repeat bg-scroll text-white md:bg-fixed"
-      style={{ backgroundImage: `url('${NUTRITION_HERO_IMAGE}')`, backgroundSize: '100% auto', backgroundPosition: 'top center', backgroundColor: '#1A2744' }}
-    >
-      <div className="min-h-screen bg-gradient-to-b from-[rgba(10,15,35,0.40)] via-[rgba(26,39,68,0.70)] to-[rgba(26,39,68,0.97)]">
+    <>
+    <MobileHeroBackground src={NUTRITION_HERO_IMAGE} overlayOpacity={0.55} objectPosition="center top" priority />
+    <div className="relative z-10 min-h-screen text-white">
       <div className="mx-auto max-w-7xl space-y-6 px-4 py-6 md:px-6 md:py-8">
       <div className="flex items-start justify-between">
         <div>
@@ -141,6 +140,6 @@ export default function NutritionPage() {
       <MealHistory />
     </div>
     </div>
-    </div>
+    </>
   );
 }

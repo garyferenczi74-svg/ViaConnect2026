@@ -17,6 +17,7 @@ import { useUserDashboardData } from "@/hooks/useUserDashboardData";
 import type { DashboardSupplement } from "@/hooks/useUserDashboardData";
 import { createClient } from "@/lib/supabase/client";
 import RecommendedSupplements from "@/components/supplement-protocol/RecommendedSupplements";
+import { MobileHeroBackground } from "@/components/ui/MobileHeroBackground";
 const SUPPLEMENT_HERO_IMAGE =
   "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Images/Athlete%205.png";
 
@@ -139,12 +140,9 @@ export default function SupplementsPage() {
   const currentSlotId = hour < 12 ? 'morning' : hour < 18 ? 'afternoon' : 'evening';
 
   return (
-    // ── Full-page fixed background (Prompt #62L) ──
-    <div
-      className="min-h-screen bg-no-repeat bg-scroll text-white md:bg-fixed"
-      style={{ backgroundImage: `url('${SUPPLEMENT_HERO_IMAGE}')`, backgroundSize: '100% auto', backgroundPosition: 'top center', backgroundColor: '#1A2744' }}
-    >
-      <div className="min-h-screen bg-gradient-to-b from-[rgba(10,15,35,0.60)] via-[rgba(26,39,68,0.80)] to-[rgba(26,39,68,0.97)]">
+    <>
+    <MobileHeroBackground src={SUPPLEMENT_HERO_IMAGE} overlayOpacity={0.6} objectPosition="center top" priority />
+    <div className="relative z-10 min-h-screen text-white">
 
       {/* Portal switcher removed (Prompt #74): global nav is single source of truth */}
 
@@ -314,8 +312,8 @@ export default function SupplementsPage() {
       <PractitionerDisclaimer />
 
       </div>
-      </div>
     </div>
+    </>
   );
 }
 
