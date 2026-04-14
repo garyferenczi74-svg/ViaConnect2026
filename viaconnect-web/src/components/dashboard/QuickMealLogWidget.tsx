@@ -161,9 +161,14 @@ export function QuickMealLogWidget() {
           <h3 className="text-sm font-semibold text-white">Meal Log</h3>
           <span className="text-xs text-white/40">{loggedCount}/4</span>
         </div>
-        <Link href="/nutrition" className="flex items-center gap-1 text-xs text-[#2DA5A0] hover:text-[#2DA5A0]/80">
-          Full logger
-          <ChevronRight className="h-3 w-3" strokeWidth={1.5} />
+        <Link
+          href="/nutrition"
+          className="group relative flex flex-shrink-0 items-center gap-1.5 overflow-hidden rounded-lg px-3 py-1.5 text-[11px] font-semibold text-white transition-all hover:shadow-[0_0_16px_rgba(45,165,160,0.35)] active:scale-[0.97]"
+          style={{ background: 'linear-gradient(135deg, #2DA5A0 0%, #1E3054 100%)' }}
+        >
+          <span className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
+          <span className="relative">Full Nutritional Logger</span>
+          <ChevronRight className="relative h-3 w-3" strokeWidth={2} />
         </Link>
       </div>
 
