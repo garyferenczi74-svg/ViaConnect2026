@@ -7,6 +7,7 @@ import { DailyScoreGauge } from './DailyScoreGauge';
 import {
   calculateDailyScores,
   mapCheckInToScoringInput,
+  getScoreColor,
   type DailyScoreResult,
   type DailyCheckinData,
   type MealLogData,
@@ -95,6 +96,7 @@ export function DailyScoresPanel({ checkinRaw, previewRaw }: DailyScoresPanelPro
       const today = new Date().toISOString().split('T')[0];
 
       let checkinData: DailyCheckinData | null = overrideCheckin ?? null;
+      let rawCheckin: Record<string, any> | null = null;
       if (!checkinData) {
         try {
           const { data } = await (supabase as any)
@@ -103,7 +105,10 @@ export function DailyScoresPanel({ checkinRaw, previewRaw }: DailyScoresPanelPro
             .eq('user_id', user.id)
             .eq('check_in_date', today)
             .maybeSingle();
-          if (data) checkinData = mapCheckInToScoringInput(data);
+          if (data) {
+            rawCheckin = data;
+            checkinData = mapCheckInToScoringInput(data);
+          }
         } catch {}
       }
 
@@ -152,6 +157,52 @@ export function DailyScoresPanel({ checkinRaw, previewRaw }: DailyScoresPanelPro
       if (cancelled) return;
 
       const scores = calculateDailyScores(checkinData, mealLog.meals.length > 0 ? mealLog : null, null);
+
+      // Override nutrition gauge with the macro-slider meal scores written by
+      // the dashboard / Nutrition Quick Log. Each {meal}_score is already 0-100.
+      const mealScoreFields = ['breakfast_score', 'lunch_score', 'dinner_score', 'snacks_score'];
+      const mealScores: number[] = mealScoreFields
+        .map((f) => (rawCheckin ? rawCheckin[f] : null))
+        .filter((v): v is number => typeof v === 'number');
+      // Secondary source: derive 0-100 meal scores from quality_rating (1-4) on
+      // any logged meal we know about (DB or local cache) when macro slider
+      // scores aren't present yet.
+      if (mealScores.length === 0) {
+        const ratingSource: Array<{ quality_rating?: number | null }> = [
+          ...mealLog.meals.map((m) => ({ quality_rating: m.meal_quality_rating })),
+          ...getCachedMeals(),
+        ];
+        for (const r of ratingSource) {
+          if (r.quality_rating != null) {
+            mealScores.push(Math.min(100, Math.max(0, r.quality_rating * 25)));
+          }
+        }
+      }
+
+      if (mealScores.length > 0) {
+        const avg = Math.round(mealScores.reduce((s, v) => s + v, 0) / mealScores.length);
+        scores.nutrition = {
+          ...scores.nutrition,
+          score: avg,
+          manualScore: avg,
+          manualWeight: 1,
+          wearableWeight: 0,
+          confidence: Math.min(1, 0.4 + mealScores.length * 0.15),
+          color: getScoreColor(avg),
+        };
+        // Recompute overall so the new nutrition value is reflected.
+        const active = [scores.sleep, scores.energy, scores.moodStress, scores.nutrition, scores.activity]
+          .filter((g) => g.confidence > 0);
+        if (active.length > 0) {
+          const overallScore = Math.round(active.reduce((s, g) => s + g.score, 0) / active.length);
+          scores.overall = {
+            ...scores.overall,
+            score: overallScore,
+            confidence: active.length / 5,
+            color: getScoreColor(overallScore),
+          };
+        }
+      }
 
       if (scores.overall.confidence > 0) {
         setSavedResult(scores);
