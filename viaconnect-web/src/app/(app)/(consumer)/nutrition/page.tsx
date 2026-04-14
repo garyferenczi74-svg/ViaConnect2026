@@ -11,6 +11,7 @@ import { ManualMealEntry } from '@/components/nutrition/ManualMealEntry';
 import { NutritionInsights } from '@/components/nutrition/NutritionInsights';
 import { MealHistory } from '@/components/nutrition/MealHistory';
 import { MyMeals } from '@/components/nutrition/MyMeals';
+import { ConnectedAppMealDropdown } from '@/components/nutrition/ConnectedAppMealDropdown';
 
 const NUTRITION_HERO_IMAGE =
   'https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Images/Food%203.png';
@@ -102,6 +103,10 @@ export default function NutritionPage() {
 
       <div className="rounded-xl border border-white/10 bg-[#1E3054]/60 backdrop-blur-md p-4 sm:p-5">
         <h3 className="mb-4 text-sm font-semibold text-white">Log a Meal</h3>
+
+        <div className="mb-4">
+          <ConnectedAppMealDropdown />
+        </div>
 
         <div className="mb-4 flex gap-1.5">
           {TABS.map((t) => {
