@@ -25,7 +25,12 @@ const MEAL_TABS: { id: MealType; label: string; icon: React.ReactNode }[] = [
   { id: 'snacks', label: 'Snacks', icon: <Cookie className="h-4 w-4" strokeWidth={1.5} /> },
 ];
 
-export function QuickMealLogWidget() {
+interface QuickMealLogWidgetProps {
+  hideHeader?: boolean;
+  onSaved?: () => void;
+}
+
+export function QuickMealLogWidget({ hideHeader = false, onSaved }: QuickMealLogWidgetProps = {}) {
   const [activeTab, setActiveTab] = useState<MealType | null>(null);
   const [macros, setMacros] = useState<Record<MealType, MacroValues>>({
     breakfast: { ...DEFAULT_MACROS },
@@ -151,30 +156,32 @@ export function QuickMealLogWidget() {
       setSaving(false);
       setActiveTab(null);
       setExpandedMacro(null);
+      onSaved?.();
     }
-  }, [activeTab, macros, saving]);
+  }, [activeTab, macros, saving, onSaved]);
 
   const loggedCount = savedMeals.size;
 
   return (
-    <div className="rounded-xl border border-white/10 bg-[#1E3054]/60 backdrop-blur-md p-4">
-      {/* Header */}
-      <div className="mb-3 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Apple className="h-5 w-5 text-[#2DA5A0]" strokeWidth={1.5} />
-          <h3 className="text-sm font-semibold text-white">Meal Log</h3>
-          <span className="text-xs text-white/40">{loggedCount}/4</span>
+    <div className={hideHeader ? '' : 'rounded-xl border border-white/10 bg-[#1E3054]/60 backdrop-blur-md p-4'}>
+      {!hideHeader && (
+        <div className="mb-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Apple className="h-5 w-5 text-[#2DA5A0]" strokeWidth={1.5} />
+            <h3 className="text-sm font-semibold text-white">Meal Log</h3>
+            <span className="text-xs text-white/40">{loggedCount}/4</span>
+          </div>
+          <Link
+            href="/nutrition"
+            className="group relative flex flex-shrink-0 items-center gap-1.5 overflow-hidden rounded-lg px-3 py-1.5 text-[11px] font-semibold text-white transition-all hover:shadow-[0_0_16px_rgba(45,165,160,0.35)] active:scale-[0.97]"
+            style={{ background: 'linear-gradient(135deg, #2DA5A0 0%, #1E3054 100%)' }}
+          >
+            <span className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
+            <span className="relative">Full Nutritional Logger</span>
+            <ChevronRight className="relative h-3 w-3" strokeWidth={2} />
+          </Link>
         </div>
-        <Link
-          href="/nutrition"
-          className="group relative flex flex-shrink-0 items-center gap-1.5 overflow-hidden rounded-lg px-3 py-1.5 text-[11px] font-semibold text-white transition-all hover:shadow-[0_0_16px_rgba(45,165,160,0.35)] active:scale-[0.97]"
-          style={{ background: 'linear-gradient(135deg, #2DA5A0 0%, #1E3054 100%)' }}
-        >
-          <span className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
-          <span className="relative">Full Nutritional Logger</span>
-          <ChevronRight className="relative h-3 w-3" strokeWidth={2} />
-        </Link>
-      </div>
+      )}
 
       {/* Meal type tabs (unchanged layout pattern) */}
       <div className="grid grid-cols-4 gap-2">

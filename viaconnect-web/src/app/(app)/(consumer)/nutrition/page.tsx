@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { Apple, Camera, ChevronRight, Dna, PenLine, ArrowRight, Smartphone } from 'lucide-react';
 import { NutritionScoreCard } from '@/components/nutrition/NutritionScoreCard';
-import { QuickMealLog } from '@/components/nutrition/QuickMealLog';
+import { QuickMealLogWidget } from '@/components/dashboard/QuickMealLogWidget';
 import { PhotoMealLog } from '@/components/nutrition/PhotoMealLog';
 import { ManualMealEntry } from '@/components/nutrition/ManualMealEntry';
 import { NutritionInsights } from '@/components/nutrition/NutritionInsights';
@@ -124,7 +124,7 @@ export default function NutritionPage() {
           })}
         </div>
 
-        {tab === 'quick' && <QuickMealLog />}
+        {tab === 'quick' && <QuickMealLogWidget hideHeader onSaved={loadMealCount} />}
         {tab === 'photo' && <PhotoMealLog onSaved={loadMealCount} />}
         {tab === 'manual' && <ManualMealEntry onSaved={loadMealCount} />}
       </div>
