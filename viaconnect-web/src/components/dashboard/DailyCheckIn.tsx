@@ -215,22 +215,54 @@ export function DailyCheckIn({ onScoresUpdate, onSliderChange }: DailyCheckInPro
     })();
   }, [checkInDate]);
 
-  // ── Submit ───────────────────────────────────────────────
+  // ── Auto-collapse when all cards submitted ─────────────
+  useEffect(() => {
+    if (allSubmitted && !collapsed) setCollapsed(true);
+  }, [allSubmitted, collapsed]);
 
-  // ── Collapsed summary state ──────────────────────────────
+  // ── Pending cards summary for minimized state ──────────
+  const pendingCards = [
+    { card: sleepCard, label: 'Sleep' },
+    { card: exerciseCard, label: 'Exercise' },
+    { card: activityCard, label: 'Activity' },
+    { card: stressCard, label: 'Stress' },
+    { card: energyCard, label: 'Energy' },
+  ].filter((c) => !c.card.isSubmitted).map((c) => c.label);
+
+  // ── Collapsed: complete (all done) ──────────────────────
   if (allSubmitted && collapsed) {
     return (
       <button
         onClick={() => setCollapsed(false)}
-        className="flex w-full items-center justify-between rounded-xl border border-white/10 bg-[#1E3054]/60 backdrop-blur-md p-3"
+        className="flex w-full items-center justify-between rounded-xl border border-[#22C55E]/20 bg-[#22C55E]/10 backdrop-blur-md p-3"
       >
         <div className="flex items-center gap-2">
           <Check className="h-4 w-4 text-[#22C55E]" strokeWidth={1.5} />
-          <span className="text-xs font-medium text-white/60">
-            Quick Daily Check Ins complete
+          <span className="text-xs font-medium text-[#22C55E]">
+            Daily Check In Complete
           </span>
         </div>
         <span className="text-xs text-[#2DA5A0]">+15 pts</span>
+      </button>
+    );
+  }
+
+  // ── Collapsed: partial (some pending) ──────────────────
+  if (collapsed && pendingCards.length > 0) {
+    return (
+      <button
+        onClick={() => setCollapsed(false)}
+        className="flex w-full items-center justify-between gap-3 rounded-xl border border-white/10 bg-[#1E3054]/60 backdrop-blur-md p-3"
+      >
+        <div className="flex items-center gap-2 min-w-0">
+          <ClipboardCheck className="h-4 w-4 flex-shrink-0 text-[#2DA5A0]" strokeWidth={1.5} />
+          <span className="text-xs font-medium text-white/70 truncate">
+            Still to complete: {pendingCards.join(', ')}
+          </span>
+        </div>
+        <span className="flex flex-shrink-0 items-center gap-1.5 rounded-lg border border-[#2DA5A0]/40 bg-[#2DA5A0]/15 px-2.5 py-1 text-[11px] font-semibold text-[#2DA5A0]">
+          Expand
+        </span>
       </button>
     );
   }
@@ -249,10 +281,9 @@ export function DailyCheckIn({ onScoresUpdate, onSliderChange }: DailyCheckInPro
         </div>
         <div className="flex items-center gap-2">
           <span className="text-xs text-[#2DA5A0]">+15 pts</span>
-          <ChevronDown
-            className={`h-4 w-4 text-white/40 transition-transform ${collapsed ? '' : 'rotate-180'}`}
-            strokeWidth={1.5}
-          />
+          <span className="flex items-center gap-1 rounded-lg border border-white/15 bg-white/[0.06] px-2.5 py-1 text-[11px] font-medium text-white/70 transition-colors hover:bg-white/[0.10]">
+            Collapse
+          </span>
         </div>
       </button>
 
