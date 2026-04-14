@@ -190,13 +190,17 @@ const sleepStages = [
 
 /* ─── Main Page ──────────────────────────────────────────────────────────── */
 
+const WEARABLE_HERO_IMAGE =
+  'https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Images/Apple%20Watch.png';
+
 export default function WearableDashboardPage() {
   return (
     <div
-      className="min-h-screen overflow-x-hidden pb-24"
-      style={{ background: 'var(--gradient-hero)' }}
+      className="min-h-screen overflow-x-hidden bg-no-repeat bg-scroll text-white md:bg-fixed"
+      style={{ backgroundImage: `url('${WEARABLE_HERO_IMAGE}')`, backgroundSize: '100% auto', backgroundPosition: 'top center', backgroundColor: '#1A2744' }}
     >
-      <div className="max-w-3xl mx-auto px-4 pt-8 space-y-8">
+      <div className="min-h-screen bg-gradient-to-b from-[rgba(10,15,35,0.40)] via-[rgba(26,39,68,0.70)] to-[rgba(26,39,68,0.97)]">
+      <div className="max-w-3xl mx-auto px-4 pt-8 pb-24 space-y-8">
 
         {/* ─── 1. HEADER ─────────────────────────────────────────────── */}
         <header>
@@ -462,6 +466,7 @@ export default function WearableDashboardPage() {
           </Link>
         </div>
 
+      </div>
       </div>
     </div>
   );

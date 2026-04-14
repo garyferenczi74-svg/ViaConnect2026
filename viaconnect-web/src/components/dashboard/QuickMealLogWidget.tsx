@@ -26,7 +26,7 @@ const MEAL_TABS: { id: MealType; label: string; icon: React.ReactNode }[] = [
 ];
 
 export function QuickMealLogWidget() {
-  const [activeTab, setActiveTab] = useState<MealType>('breakfast');
+  const [activeTab, setActiveTab] = useState<MealType | null>(null);
   const [macros, setMacros] = useState<Record<MealType, MacroValues>>({
     breakfast: { ...DEFAULT_MACROS },
     lunch: { ...DEFAULT_MACROS },
@@ -100,23 +100,26 @@ export function QuickMealLogWidget() {
     setMacros((prev) => ({ ...prev, [meal]: { ...prev[meal], [field]: value } }));
   }, []);
 
-  const current = macros[activeTab];
-  const qualityScore = computeMealScore(current.protein, current.carbs, current.fat, current.sugar);
+  const current = activeTab ? macros[activeTab] : null;
+  const qualityScore = current
+    ? computeMealScore(current.protein, current.carbs, current.fat, current.sugar)
+    : 0;
 
   const handleSave = useCallback(async () => {
-    if (saving) return;
+    if (saving || !activeTab) return;
     setSaving(true);
-    const m = macros[activeTab];
+    const meal = activeTab;
+    const m = macros[meal];
     const score = computeMealScore(m.protein, m.carbs, m.fat, m.sugar);
     const qualityRating = score >= 75 ? 4 : score >= 50 ? 3 : score >= 25 ? 2 : 1;
 
     // Dispatch first so gauge updates even if DB fails
     try {
       window.dispatchEvent(new CustomEvent('meal-logged', {
-        detail: { meal_type: activeTab === 'snacks' ? 'snack' : activeTab, quality_rating: qualityRating, log_method: 'quick' },
+        detail: { meal_type: meal === 'snacks' ? 'snack' : meal, quality_rating: qualityRating, log_method: 'quick' },
       }));
     } catch {}
-    setSavedMeals((prev) => new Set(prev).add(activeTab));
+    setSavedMeals((prev) => new Set(prev).add(meal));
 
     try {
       const supabase = createClient();
@@ -127,18 +130,18 @@ export function QuickMealLogWidget() {
       await (supabase as any).from('daily_checkins').upsert({
         user_id: user.id,
         check_in_date: today,
-        [`${activeTab}_protein`]: m.protein,
-        [`${activeTab}_carbs`]: m.carbs,
-        [`${activeTab}_fat`]: m.fat,
-        [`${activeTab}_sugar`]: m.sugar,
-        [`${activeTab}_score`]: score,
+        [`${meal}_protein`]: m.protein,
+        [`${meal}_carbs`]: m.carbs,
+        [`${meal}_fat`]: m.fat,
+        [`${meal}_sugar`]: m.sugar,
+        [`${meal}_score`]: score,
         updated_at: new Date().toISOString(),
       }, { onConflict: 'user_id,check_in_date' });
 
       // Also write a meal_logs row so nutrition gauge computation has data
       await (supabase as any).from('meal_logs').insert({
         user_id: user.id,
-        meal_type: activeTab === 'snacks' ? 'snack' : activeTab,
+        meal_type: meal === 'snacks' ? 'snack' : meal,
         log_method: 'quick',
         quality_rating: qualityRating,
         meal_date: today,
@@ -172,7 +175,7 @@ export function QuickMealLogWidget() {
           return (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => setActiveTab(isActive ? null : tab.id)}
               className={`flex flex-col items-center gap-1.5 rounded-lg py-3 transition-all ${
                 isActive
                   ? 'border border-[#2DA5A0]/40 bg-[#2DA5A0]/15'
@@ -193,12 +196,24 @@ export function QuickMealLogWidget() {
       </div>
 
       {/* Active tab content: meal quality score + macro accordions + save */}
+      <AnimatePresence initial={false}>
+        {activeTab && current && (() => {
+          const meal: MealType = activeTab;
+          return (
+          <motion.div
+            key={`panel-${meal}`}
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+            className="overflow-hidden"
+          >
       <div className="mt-4">
         {/* Meal Quality Score */}
         <div className="mb-3 flex items-center justify-between px-1">
           <span className="text-[10px] uppercase tracking-wider text-white/50">Meal Quality</span>
           <motion.span
-            key={`${activeTab}-${qualityScore}`}
+            key={`${meal}-${qualityScore}`}
             initial={{ scale: 0.85, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ duration: 0.2 }}
@@ -215,7 +230,7 @@ export function QuickMealLogWidget() {
             id="protein" label="Protein"
             icon={<Beef className="h-4 w-4" strokeWidth={1.5} />}
             value={current.protein}
-            onChange={(v) => setMacroValue(activeTab, 'protein', v)}
+            onChange={(v) => setMacroValue(meal,'protein', v)}
             accentColor="#2DA5A0"
             isExpanded={expandedMacro === 'protein'}
             onToggle={() => setExpandedMacro((p) => (p === 'protein' ? null : 'protein'))}
@@ -224,7 +239,7 @@ export function QuickMealLogWidget() {
             id="carbs" label="Carbs"
             icon={<Wheat className="h-4 w-4" strokeWidth={1.5} />}
             value={current.carbs}
-            onChange={(v) => setMacroValue(activeTab, 'carbs', v)}
+            onChange={(v) => setMacroValue(meal,'carbs', v)}
             accentColor="#B75E18"
             isExpanded={expandedMacro === 'carbs'}
             onToggle={() => setExpandedMacro((p) => (p === 'carbs' ? null : 'carbs'))}
@@ -233,7 +248,7 @@ export function QuickMealLogWidget() {
             id="fat" label="Fat"
             icon={<Droplets className="h-4 w-4" strokeWidth={1.5} />}
             value={current.fat}
-            onChange={(v) => setMacroValue(activeTab, 'fat', v)}
+            onChange={(v) => setMacroValue(meal,'fat', v)}
             accentColor="#6366F1"
             isExpanded={expandedMacro === 'fat'}
             onToggle={() => setExpandedMacro((p) => (p === 'fat' ? null : 'fat'))}
@@ -242,7 +257,7 @@ export function QuickMealLogWidget() {
             id="sugar" label="Sugar"
             icon={<Candy className="h-4 w-4" strokeWidth={1.5} />}
             value={current.sugar}
-            onChange={(v) => setMacroValue(activeTab, 'sugar', v)}
+            onChange={(v) => setMacroValue(meal,'sugar', v)}
             accentColor="#EF4444"
             isExpanded={expandedMacro === 'sugar'}
             onToggle={() => setExpandedMacro((p) => (p === 'sugar' ? null : 'sugar'))}
@@ -257,12 +272,16 @@ export function QuickMealLogWidget() {
         >
           {saving ? (
             <Loader2 className="h-4 w-4 animate-spin" strokeWidth={1.5} />
-          ) : savedMeals.has(activeTab) ? (
+          ) : savedMeals.has(meal) ? (
             <Check className="h-4 w-4" strokeWidth={1.5} />
           ) : null}
-          {saving ? 'Saving...' : savedMeals.has(activeTab) ? `Update ${MEAL_TABS.find((t) => t.id === activeTab)?.label}` : `Save ${MEAL_TABS.find((t) => t.id === activeTab)?.label}`}
+          {saving ? 'Saving...' : savedMeals.has(meal) ? `Update ${MEAL_TABS.find((t) => t.id === meal)?.label}` : `Save ${MEAL_TABS.find((t) => t.id === meal)?.label}`}
         </button>
       </div>
+          </motion.div>
+          );
+        })()}
+      </AnimatePresence>
     </div>
   );
 }
