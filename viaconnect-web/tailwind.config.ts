@@ -108,6 +108,21 @@ const config: Config = {
         "gradient-teal": "linear-gradient(135deg, #2DA5A0, #1F8A85)",
         "gradient-orange": "linear-gradient(135deg, #B75E18, #994E14)",
       },
+      height: {
+        dvh: "100dvh",
+        svh: "100svh",
+        lvh: "100lvh",
+      },
+      minHeight: {
+        dvh: "100dvh",
+        svh: "100svh",
+      },
+      backdropBlur: {
+        xs: "2px",
+      },
+      borderOpacity: {
+        8: "0.08",
+      },
     },
   },
   plugins: [

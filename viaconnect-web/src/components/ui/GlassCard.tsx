@@ -3,27 +3,37 @@
 import React from 'react';
 
 type GlassCardVariant = 'default' | 'score' | 'action' | 'insight' | 'widget';
+type GlassCardIntensity = 'light' | 'medium' | 'heavy';
 
 interface GlassCardProps {
   variant?: GlassCardVariant;
+  intensity?: GlassCardIntensity;
   hover?: boolean;
   className?: string;
   children: React.ReactNode;
   onClick?: React.MouseEventHandler<HTMLDivElement>;
 }
 
+const intensityBlur: Record<GlassCardIntensity, string> = {
+  light: 'blur(8px)',
+  medium: 'blur(16px)',
+  heavy: 'blur(24px)',
+};
+
 export function GlassCard({
   variant = 'default',
+  intensity = 'medium',
   hover = true,
   className = '',
   children,
   onClick,
 }: GlassCardProps) {
+  const blur = intensityBlur[intensity];
   const baseStyles: React.CSSProperties = {
     background: 'var(--glass-bg)',
     border: '1px solid var(--glass-border)',
-    backdropFilter: 'blur(16px)',
-    WebkitBackdropFilter: 'blur(16px)',
+    backdropFilter: blur,
+    WebkitBackdropFilter: blur,
     borderRadius: variant === 'widget' ? '20px' : '16px',
     boxShadow: 'var(--shadow-card)',
     padding: '1.5rem',
