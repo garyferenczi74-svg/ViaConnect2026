@@ -14,10 +14,9 @@ const HERO_IMAGE =
 export default function PeptideProtocolRoute() {
   return (
     <div
-      className="min-h-screen bg-no-repeat bg-scroll text-white md:bg-fixed"
+      className="min-h-screen bg-cover bg-no-repeat bg-scroll text-white md:bg-fixed"
       style={{
         backgroundImage: `url('${HERO_IMAGE}')`,
-        backgroundSize: '60% auto',
         backgroundPosition: 'center 20%',
         backgroundColor: '#0D1520',
       }}
