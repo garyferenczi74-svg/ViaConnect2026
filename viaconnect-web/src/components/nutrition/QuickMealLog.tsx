@@ -31,6 +31,7 @@ export function QuickMealLog() {
       });
 
       setSaved(true);
+      try { window.dispatchEvent(new CustomEvent('meal-logged')); } catch {}
       setTimeout(() => {
         setSaved(false);
         setMealType(null);

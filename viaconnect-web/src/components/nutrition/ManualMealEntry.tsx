@@ -39,6 +39,7 @@ export function ManualMealEntry({ onSaved }: { onSaved?: () => void }) {
 
       setSaved(true);
       onSaved?.();
+      try { window.dispatchEvent(new CustomEvent('meal-logged')); } catch {}
       setTimeout(() => {
         setSaved(false);
         setMealType(null);

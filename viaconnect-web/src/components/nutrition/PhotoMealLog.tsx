@@ -88,6 +88,7 @@ export function PhotoMealLog({ mealType = 'lunch', supplements = [], onSaved }: 
       setStep('saved');
       setShowSavePrompt(true);
       onSaved?.();
+      try { window.dispatchEvent(new CustomEvent('meal-logged')); } catch {}
     } catch { /* table may not exist yet */ }
     finally { setSaving(false); }
   }, [analysis, mealType, saving, onSaved]);

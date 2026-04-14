@@ -55,6 +55,7 @@ export function QuickMealLogWidget() {
       });
       setLoggedMeals((prev) => new Set(prev).add(mealType));
       setActiveMeal(null);
+      try { window.dispatchEvent(new CustomEvent('meal-logged')); } catch {}
     } catch { /* table may not exist yet */ }
     finally { setSaving(false); }
   }, []);

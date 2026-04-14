@@ -153,9 +153,9 @@ export function DailyScoresPanel({ checkinRaw, previewRaw }: DailyScoresPanelPro
     }
   }, [previewRaw, scoreState]);
 
-  // Listen for check-in + meal events (backup)
+  // Listen for check-in + meal events (always active so a fresh user
+  // who logs a meal first gets an immediate gauge update)
   useEffect(() => {
-    if (scoreState !== 'loaded' && !scoresLoadedRef.current) return;
     const handler = () => computeScores();
     window.addEventListener('checkin-submitted', handler);
     window.addEventListener('meal-logged', handler);
@@ -163,7 +163,7 @@ export function DailyScoresPanel({ checkinRaw, previewRaw }: DailyScoresPanelPro
       window.removeEventListener('checkin-submitted', handler);
       window.removeEventListener('meal-logged', handler);
     };
-  }, [scoreState, computeScores]);
+  }, [computeScores]);
 
   // Nudge
   const nudge = topNudge({

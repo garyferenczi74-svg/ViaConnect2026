@@ -60,6 +60,7 @@ export function MyMeals({ onRelog }: { onRelog?: () => void }) {
       setMeals((prev) =>
         prev.map((m) => (m.id === meal.id ? { ...m, times_logged: m.times_logged + 1 } : m)),
       );
+      try { window.dispatchEvent(new CustomEvent('meal-logged')); } catch {}
       onRelog?.();
     } catch { /* table may not exist yet */ }
   }, [onRelog]);
