@@ -9,7 +9,7 @@ import { PeptidePractitionerAccess } from "@/components/peptide-protocol/Peptide
 import { ShareProtocolButton } from "@/components/consumer/ShareProtocolButton";
 
 const HERO_IMAGE =
-  "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Images/Athlete%201.png";
+  "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Images/Peptides%201.png";
 
 export default function PeptideProtocolRoute() {
   return (
