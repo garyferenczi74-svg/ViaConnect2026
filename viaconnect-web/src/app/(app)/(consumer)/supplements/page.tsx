@@ -133,6 +133,11 @@ export default function SupplementsPage() {
   const taken = all.filter(i => i.takenToday).length;
   const pct = all.length > 0 ? Math.round((taken / all.length) * 100) : 0;
 
+  // Mobile: show one slot at a time based on current local hour.
+  // 00:00-11:59 = morning, 12:00-17:59 = afternoon, 18:00-23:59 = evening
+  const hour = new Date().getHours();
+  const currentSlotId = hour < 12 ? 'morning' : hour < 18 ? 'afternoon' : 'evening';
+
   return (
     // ── Full-page fixed background (Prompt #62L) ──
     <div
@@ -164,7 +169,8 @@ export default function SupplementsPage() {
             <p className="text-xs text-white/30">{taken}/{all.length} taken today</p>
             <div className="flex items-center gap-2"><div className="w-24 h-2 rounded-full bg-white/5 overflow-hidden"><div className="h-full rounded-full bg-teal-400" style={{ width: `${pct}%` }} /></div><span className="text-xs font-medium text-teal-400">{pct}%</span></div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Desktop: 3 columns (Morning / Afternoon / Evening) */}
+          <div className="hidden md:grid md:grid-cols-3 gap-4">
             {SLOTS.filter((s) => s.id !== 'asNeeded').map((slot) => {
               const items = (PROTOCOL as Record<string, ProtocolItem[]>)[slot.id] || [];
               return (
@@ -184,6 +190,33 @@ export default function SupplementsPage() {
                 </div>
               );
             })}
+          </div>
+
+          {/* Mobile: single container auto-switching by time of day */}
+          <div className="md:hidden">
+            {(() => {
+              const slot = SLOTS.find((s) => s.id === currentSlotId)!;
+              const items = (PROTOCOL as Record<string, ProtocolItem[]>)[slot.id] || [];
+              return (
+                <div className="rounded-xl bg-white/[0.02] border border-white/5 overflow-hidden flex flex-col">
+                  <div className="flex items-center gap-3 px-4 py-3 border-b border-white/5">
+                    <PIcon icon={slot.icon} color={slot.color} size="sm" />
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-sm font-semibold text-white">{slot.label}</h4>
+                      <p className="text-[10px] text-white/25">{slot.time} · now</p>
+                    </div>
+                    <span className="text-xs text-white/20">{items.length}</span>
+                  </div>
+                  {items.length > 0 ? (
+                    <div className="divide-y divide-white/[0.03]">{items.map((item) => <ItemRow key={item.id} item={item} />)}</div>
+                  ) : (
+                    <div className="flex-1 flex items-center justify-center py-8 px-4">
+                      <p className="text-xs text-white/25 text-center">No supplements scheduled</p>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
           </div>
         </div>
       </Section>
