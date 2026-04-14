@@ -17,7 +17,7 @@ export function PeptideDisclaimerBanner() {
   };
 
   return (
-    <div className={`rounded-2xl border border-[rgba(183,94,24,0.35)] bg-[#1E3054]/60 backdrop-blur-md transition-all duration-300`}>
+    <div className={`rounded-2xl border border-[rgba(183,94,24,0.35)] bg-[#1E3054]/35 backdrop-blur-md transition-all duration-300`}>
       {!expanded && (
         <button
           onClick={() => setExpanded(true)}
