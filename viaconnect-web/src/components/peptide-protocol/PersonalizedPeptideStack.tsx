@@ -333,8 +333,8 @@ export function PersonalizedPeptideStack({ userId }: { userId?: string } = {}) {
             }))} />
 
             {/* Timestamp */}
-            <p className="text-xs text-center text-[rgba(255,255,255,0.30)] pt-2">
-              Generated {new Date(protocol.generated_at).toLocaleString()} · Ultrathink™ Deterministic Engine v1 · $0
+            <p className="text-xs text-center pt-2" style={{ color: '#B75E18' }}>
+              Generated {new Date(protocol.generated_at).toLocaleString()} · Powered by Jeffery AI · $0
             </p>
           </motion.div>
         )}
