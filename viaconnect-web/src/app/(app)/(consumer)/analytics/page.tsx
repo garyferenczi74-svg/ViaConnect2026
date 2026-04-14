@@ -455,6 +455,11 @@ export default function AnalyticsPage() {
   const recCount = (recommendations ?? []).length;
 
   return (
+    <div
+      className="min-h-screen bg-no-repeat bg-scroll text-white md:bg-fixed"
+      style={{ backgroundImage: "url('https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Images/Doctor%201.png')", backgroundSize: '100% auto', backgroundPosition: 'top center', backgroundColor: '#1A2744' }}
+    >
+      <div className="min-h-screen bg-gradient-to-b from-[rgba(10,15,35,0.40)] via-[rgba(26,39,68,0.70)] to-[rgba(26,39,68,0.97)]">
     <PageTransition className="p-6 lg:p-8 space-y-6 max-w-[1440px] mx-auto">
       {/* Header */}
       <StaggerChild>
@@ -769,5 +774,7 @@ export default function AnalyticsPage() {
         </Card>
       </StaggerChild>
     </PageTransition>
+      </div>
+    </div>
   );
 }
