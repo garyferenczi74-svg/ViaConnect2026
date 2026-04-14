@@ -7,6 +7,7 @@ import {
   User as UserIcon, Users, ClipboardList, BarChart3, AlertTriangle,
   FileText, Brain, Settings, Leaf, Activity, Calendar, Shield, Upload,
   Plug, Newspaper, BookOpen, FlaskConical, ChevronLeft, ChevronRight,
+  MessageCircleHeart,
 } from 'lucide-react';
 import { useRef } from 'react';
 
@@ -16,17 +17,18 @@ const PORTAL_NAV: Record<string, NavItem[]> = {
   consumer: [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/analytics', label: 'Analytics', icon: BarChart3 },
-    { href: '/genetics', label: 'Genetics Protocol', icon: Dna },
+    { href: '/wellness/advisor', label: 'Hannah AI', icon: MessageCircleHeart },
     { href: '/nutrition', label: 'Nutrition Log', icon: Apple },
     { href: '/supplements', label: 'Supplement Protocol', icon: Pill },
-    { href: '/peptide-protocol', label: 'Peptides', icon: FlaskConical },
-    { href: '/plugins', label: 'Plugins', icon: Plug },
+    { href: '/body-tracker', label: 'Body Tracker', icon: Activity },
     { href: '/wearables', label: 'Wearables Data', icon: Activity },
-    { href: '/helix/arena', label: 'Helix Rewards', icon: Coins },
+    { href: '/helix', label: 'Helix Rewards', icon: Dna },
+    { href: '/genetics', label: 'Genetics Protocol', icon: Dna },
+    { href: '/peptide-protocol', label: 'Peptide Protocol', icon: FlaskConical },
+    { href: '/plugins', label: 'Plugins', icon: Plug },
     { href: '/messages', label: 'Connect', icon: MessageSquare },
-    { href: '/media-sources', label: 'Research', icon: Newspaper },
+    { href: '/media-sources', label: 'Research Hub', icon: Newspaper },
     { href: '/science', label: 'Science', icon: BookOpen },
-    { href: '/ai', label: 'AI', icon: Brain },
     { href: '/shop', label: 'Shop', icon: ShoppingBag },
     { href: '/profile', label: 'Profile', icon: UserIcon },
   ],
