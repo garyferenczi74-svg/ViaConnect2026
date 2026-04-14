@@ -68,18 +68,25 @@ export function SupplementProtocolSection({ supplements, protocol, medications, 
           <ProtocolConfidenceBadge tier={tier} />
         </div>
 
-        {/* TAB BAR */}
-        <div className="flex gap-1 mt-6 bg-white/[0.03] rounded-xl p-1 border border-white/5">
-          {TABS.map((tab) => (
-            <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-              className={`flex-1 flex items-center justify-center gap-2 min-h-[44px] px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
-                activeTab === tab.id ? "bg-white/[0.08] text-white shadow-sm border border-white/10" : "text-white/35 hover:text-white/55 hover:bg-white/[0.02]"
-              }`}>
-              <tab.icon className={`w-4 h-4 ${activeTab === tab.id ? "text-teal-400" : "text-white/25"}`} strokeWidth={1.5} />
-              <span className="hidden sm:inline">{tab.label}</span>
-              <span className="sm:hidden text-xs">{tab.short}</span>
-            </button>
-          ))}
+        {/* TAB BAR — canonical compact pills (Prompt #76) */}
+        <div className="mt-6 flex items-center gap-2 overflow-x-auto scrollbar-hide">
+          {TABS.map((tab) => {
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className="shrink-0 inline-flex items-center gap-1.5 rounded-full border px-4 py-1.5 text-sm font-medium whitespace-nowrap transition-colors duration-200 cursor-pointer"
+                style={isActive
+                  ? { backgroundColor: 'rgba(59,130,246,0.18)', color: '#3B82F6', borderColor: 'rgba(59,130,246,0.40)' }
+                  : { backgroundColor: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.60)', borderColor: 'rgba(255,255,255,0.10)' }}
+              >
+                <tab.icon className="h-3.5 w-3.5" strokeWidth={1.5} />
+                <span className="hidden sm:inline">{tab.label}</span>
+                <span className="sm:hidden">{tab.short}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
