@@ -51,7 +51,7 @@ export function SupplementProtocolSection({ supplements, protocol, medications, 
 
   return (
     <section className="relative rounded-2xl overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-b from-[#141E33] via-[#1A2744] to-[#1A2744]" />
+      <div className="absolute inset-0 bg-gradient-to-b from-[#141E33]/35 via-[#1A2744]/35 to-[#1A2744]/35 backdrop-blur-md" />
       <div className="absolute inset-0 rounded-2xl border border-white/[0.08]" />
       <div className="absolute -inset-px rounded-2xl bg-gradient-to-b from-teal-400/[0.08] via-transparent to-orange-400/[0.05] opacity-50 pointer-events-none" />
 
