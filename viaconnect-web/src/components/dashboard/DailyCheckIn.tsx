@@ -112,12 +112,32 @@ export function DailyCheckIn({ onScoresUpdate, onSliderChange }: DailyCheckInPro
     try { window.dispatchEvent(new CustomEvent('checkin-submitted', { detail: rawState })); } catch {}
   }, [sleepHours, sleepQuality, cardioActive, cardioDuration, resistanceActive, resistanceDuration, activityLevel, stressLevel, energyLevel, onScoresUpdate]);
 
+  // ── Unified payload builder ─────────────────────────────
+  // Every card's save must send the FULL slider state; Supabase upsert
+  // with onConflict nulls out any column missing from the payload, so a
+  // partial per-card payload would erase other categories the user
+  // already saved. See Prompt #83.
+  const buildFullPayload = useCallback(() => ({
+    sleep_hours: sleepHours,
+    sleep_quality_score: sleepQuality,
+    cardio_active: cardioActive,
+    cardio_duration_min: cardioActive ? cardioDuration : null,
+    resistance_active: resistanceActive,
+    resistance_duration_min: resistanceActive ? resistanceDuration : null,
+    activity_level_score: activityLevel,
+    stress_level_score: stressLevel,
+    energy_recovery_score: energyLevel,
+  }), [
+    sleepHours, sleepQuality, cardioActive, cardioDuration,
+    resistanceActive, resistanceDuration, activityLevel, stressLevel, energyLevel,
+  ]);
+
   // ── Per-card submit hooks ───────────────────────────────
   const sleepCard = useCheckinCard({
     userId: userId ?? '', timezone, checkInDate,
     submitFlagColumn: 'sleep_allSubmitted_at',
     initialSubmittedAt: todayCheckin?.sleep_allSubmitted_at,
-    buildPayload: () => ({ sleep_hours: sleepHours, sleep_quality_score: sleepQuality }),
+    buildPayload: buildFullPayload,
     onSaved: dispatchScores,
   });
 
@@ -125,12 +145,7 @@ export function DailyCheckIn({ onScoresUpdate, onSliderChange }: DailyCheckInPro
     userId: userId ?? '', timezone, checkInDate,
     submitFlagColumn: 'exercise_allSubmitted_at',
     initialSubmittedAt: todayCheckin?.exercise_allSubmitted_at,
-    buildPayload: () => ({
-      cardio_active: cardioActive,
-      cardio_duration_min: cardioActive ? cardioDuration : null,
-      resistance_active: resistanceActive,
-      resistance_duration_min: resistanceActive ? resistanceDuration : null,
-    }),
+    buildPayload: buildFullPayload,
     onSaved: dispatchScores,
   });
 
@@ -138,7 +153,7 @@ export function DailyCheckIn({ onScoresUpdate, onSliderChange }: DailyCheckInPro
     userId: userId ?? '', timezone, checkInDate,
     submitFlagColumn: 'activity_allSubmitted_at',
     initialSubmittedAt: todayCheckin?.activity_allSubmitted_at,
-    buildPayload: () => ({ activity_level_score: activityLevel }),
+    buildPayload: buildFullPayload,
     onSaved: dispatchScores,
   });
 
@@ -146,7 +161,7 @@ export function DailyCheckIn({ onScoresUpdate, onSliderChange }: DailyCheckInPro
     userId: userId ?? '', timezone, checkInDate,
     submitFlagColumn: 'stress_allSubmitted_at',
     initialSubmittedAt: todayCheckin?.stress_allSubmitted_at,
-    buildPayload: () => ({ stress_level_score: stressLevel }),
+    buildPayload: buildFullPayload,
     onSaved: dispatchScores,
   });
 
@@ -154,7 +169,7 @@ export function DailyCheckIn({ onScoresUpdate, onSliderChange }: DailyCheckInPro
     userId: userId ?? '', timezone, checkInDate,
     submitFlagColumn: 'energy_allSubmitted_at',
     initialSubmittedAt: todayCheckin?.energy_allSubmitted_at,
-    buildPayload: () => ({ energy_recovery_score: energyLevel }),
+    buildPayload: buildFullPayload,
     onSaved: dispatchScores,
   });
 
