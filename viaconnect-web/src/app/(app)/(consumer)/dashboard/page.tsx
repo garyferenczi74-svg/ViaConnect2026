@@ -21,6 +21,8 @@ import { RefreshCw, FileQuestion } from 'lucide-react';
 // Pre-uploaded hero image (Hero Images bucket — already public, full URL)
 const DASHBOARD_HERO_IMAGE =
   'https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Images/Hero%20lake%20workout.png';
+const DASHBOARD_HERO_IMAGE_MOBILE =
+  'https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Mobile%20Hero/Athlete%2012%20Mobile.png';
 
 /* ── Skeleton ───────────────────────────────────────────────── */
 function DashboardSkeleton() {
@@ -71,6 +73,18 @@ export default function ConsumerDashboard() {
   // Live preview data (updates as sliders move, before submit)
   const [previewRaw, setPreviewRaw] = useState<Record<string, any> | null>(null);
 
+  // Mobile-only hero swap: keeps desktop path untouched and flips only
+  // the mobile background URL via a client-side matchMedia check.
+  const [isMobileHero, setIsMobileHero] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 767px)');
+    const update = () => setIsMobileHero(mq.matches);
+    update();
+    mq.addEventListener('change', update);
+    return () => mq.removeEventListener('change', update);
+  }, []);
+  const heroImage = isMobileHero ? DASHBOARD_HERO_IMAGE_MOBILE : DASHBOARD_HERO_IMAGE;
+
   // Called when user saves a card (raw slider state, not pre-computed scores)
   const handleCheckinScores = useCallback((rawState: Record<string, any>) => {
     setCheckinRaw((prev) => ({ ...(prev ?? {}), ...rawState, _ts: Date.now() }));
@@ -113,7 +127,7 @@ export default function ConsumerDashboard() {
     // ── Full-page fixed background (Prompt #62L — true Sonar pattern) ──
     <div
       className="min-h-screen w-full bg-contain bg-top bg-no-repeat bg-scroll text-white md:bg-cover md:bg-[position:center_45%] md:bg-fixed"
-      style={{ backgroundImage: `url('${DASHBOARD_HERO_IMAGE}')` }}
+      style={{ backgroundImage: `url('${heroImage}')` }}
     >
       {/* Progressive overlay: lightest at top (image breathes), solid navy at bottom */}
       <div className="min-h-screen bg-gradient-to-b from-[rgba(10,15,35,0.30)] via-[rgba(26,39,68,0.60)] to-[rgba(26,39,68,0.95)]">
