@@ -49,6 +49,7 @@ export function BioOptimizationTrend({
   }, [bioPoints]);
 
   const insight = useHannahInsights({
+    userId,
     displayName,
     range,
     points: bioPoints,
@@ -56,7 +57,7 @@ export function BioOptimizationTrend({
     weeksActive,
   });
 
-  const recs = useJourneyRecommendations(current);
+  const recs = useJourneyRecommendations(userId, current);
 
   const pb = calcPersonalBest(bioPoints);
   const active = countDaysActive(bioPoints);

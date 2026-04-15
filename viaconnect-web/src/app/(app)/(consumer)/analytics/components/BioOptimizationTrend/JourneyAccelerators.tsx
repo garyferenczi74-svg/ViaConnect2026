@@ -4,6 +4,8 @@ import Link from "next/link";
 import { Moon, Apple, Activity, Brain, Pill, ArrowRight } from "lucide-react";
 import type { JourneyRec } from "./hooks/useJourneyRecommendations";
 
+type IconKey = JourneyRec["icon"];
+
 const ICONS = {
   sleep: Moon,
   nutrition: Apple,
@@ -12,7 +14,7 @@ const ICONS = {
   supplement: Pill,
 } as const;
 
-const HREFS: Record<JourneyRec["icon"], string> = {
+const HREFS: Record<IconKey, string> = {
   supplement: "/shop",
   sleep: "/dashboard",
   movement: "/dashboard",
