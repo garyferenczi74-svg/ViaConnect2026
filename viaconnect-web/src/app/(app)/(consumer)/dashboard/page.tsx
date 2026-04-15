@@ -73,17 +73,6 @@ export default function ConsumerDashboard() {
   // Live preview data (updates as sliders move, before submit)
   const [previewRaw, setPreviewRaw] = useState<Record<string, any> | null>(null);
 
-  // Mobile-only hero swap: keeps desktop path untouched and flips only
-  // the mobile background URL via a client-side matchMedia check.
-  const [isMobileHero, setIsMobileHero] = useState(false);
-  useEffect(() => {
-    const mq = window.matchMedia('(max-width: 767px)');
-    const update = () => setIsMobileHero(mq.matches);
-    update();
-    mq.addEventListener('change', update);
-    return () => mq.removeEventListener('change', update);
-  }, []);
-  const heroImage = isMobileHero ? DASHBOARD_HERO_IMAGE_MOBILE : DASHBOARD_HERO_IMAGE;
 
   // Called when user saves a card (raw slider state, not pre-computed scores)
   const handleCheckinScores = useCallback((rawState: Record<string, any>) => {
@@ -125,12 +114,24 @@ export default function ConsumerDashboard() {
 
   return (
     // ── Full-page fixed background (Prompt #62L — true Sonar pattern) ──
+    <>
+    {/* Mobile only: fixed hero bg with soft dim so the full image stays
+        visible behind content as it scrolls. Desktop path below is
+        untouched. */}
+    <div aria-hidden="true" className="fixed inset-0 z-0 pointer-events-none md:hidden">
+      <div
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: `url('${DASHBOARD_HERO_IMAGE_MOBILE}')` }}
+      />
+      <div className="absolute inset-0 bg-gradient-to-b from-[rgba(10,15,35,0.18)] via-[rgba(13,21,32,0.32)] to-[rgba(13,21,32,0.55)]" />
+    </div>
+
     <div
-      className="min-h-screen w-full bg-cover bg-no-repeat bg-scroll text-white md:bg-fixed"
-      style={{ backgroundImage: `url('${heroImage}')`, backgroundPosition: 'center 45%' }}
+      className="relative z-10 min-h-screen w-full text-white md:bg-cover md:bg-no-repeat md:bg-fixed md:[background-image:var(--dash-hero)] md:bg-[position:center_45%]"
+      style={{ ['--dash-hero' as string]: `url('${DASHBOARD_HERO_IMAGE}')` } as React.CSSProperties}
     >
-      {/* Progressive overlay: lightest at top (image breathes), solid navy at bottom */}
-      <div className="min-h-screen bg-gradient-to-b from-[rgba(10,15,35,0.30)] via-[rgba(26,39,68,0.60)] to-[rgba(26,39,68,0.95)]">
+      {/* Progressive overlay: lightest at top (image breathes), solid navy at bottom (desktop only) */}
+      <div className="min-h-screen md:bg-gradient-to-b md:from-[rgba(10,15,35,0.30)] md:via-[rgba(26,39,68,0.60)] md:to-[rgba(26,39,68,0.95)]">
 
         {/* ── Tagline — image fully visible ── */}
         <div className="w-full px-4 pt-14 pb-6 text-center">
@@ -220,5 +221,6 @@ export default function ConsumerDashboard() {
         </div>
       </div>
     </div>
+    </>
   );
 }
