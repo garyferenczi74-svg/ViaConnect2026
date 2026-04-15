@@ -18,9 +18,6 @@ import {
   type TimeRange,
 } from "./utils/trendCalculations";
 
-const MOBILE_HERO =
-  "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Mobile%20Hero/Athlete%2020%20Mobile.png";
-
 type Props = {
   userId: string | null;
   displayName: string;
@@ -72,24 +69,7 @@ export function BioOptimizationTrend({
           "0 4px 30px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06), inset 0 0 0 1px rgba(255,255,255,0.03)",
       }}
     >
-      {/* Mobile-only hero background (hidden on md and up; desktop untouched) */}
-      <img
-        src={MOBILE_HERO}
-        alt=""
-        aria-hidden
-        className="md:hidden absolute inset-0 w-full h-full object-cover z-0 pointer-events-none select-none"
-        style={{ opacity: 0.5 }}
-      />
-      <div
-        aria-hidden
-        className="md:hidden absolute inset-0 z-[1] pointer-events-none"
-        style={{
-          background:
-            "linear-gradient(180deg, rgba(11,21,32,0.55) 0%, rgba(11,21,32,0.7) 50%, rgba(9,16,24,0.85) 100%)",
-        }}
-      />
-
-      <div className="relative z-10 p-4 md:p-6 space-y-4 md:space-y-5">
+<div className="relative z-10 p-4 md:p-6 space-y-4 md:space-y-5">
         {/* Header row */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
           <div>
