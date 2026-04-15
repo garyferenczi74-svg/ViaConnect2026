@@ -6,38 +6,6 @@
 html, body {
   overflow-x: hidden;
   max-width: 100vw;
-  /* Prevent overscroll bounce from revealing white behind the fixed hero (Prompt #80) */
-  overscroll-behavior: none;
-  -webkit-overflow-scrolling: touch;
-}
-
-/* ─── Mobile Hero Background (Prompt #80) ────────────────────────────────── */
-/* Dedicated fixed-viewport layer; works around iOS Safari + Chrome Mobile
-   quirks with background-attachment: fixed and 100vh viewport sizing. */
-.hero-bg-fixed {
-  /* Block touch interactions (prevents long-press image menu on iOS) */
-  -webkit-touch-callout: none;
-  -webkit-user-select: none;
-  user-select: none;
-}
-.hero-bg-fixed img {
-  touch-action: pan-x pan-y;
-}
-
-/* Use dynamic viewport height on supporting browsers (iOS 15.4+, Chrome 108+) */
-@supports (height: 100dvh) {
-  .hero-bg-fixed {
-    height: 100dvh !important;
-  }
-}
-
-/* Older iOS: -webkit-fill-available fills the inner visible viewport area */
-@supports (-webkit-touch-callout: none) {
-  @supports not (height: 100dvh) {
-    .hero-bg-fixed {
-      height: -webkit-fill-available;
-    }
-  }
 }
 
 /* ─── Safe area padding (iPhone notch / home indicator) ──────────────────── */

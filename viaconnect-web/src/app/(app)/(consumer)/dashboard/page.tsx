@@ -16,7 +16,6 @@ import { ConnectCard } from '@/components/dashboard/ConnectCard';
 import { DashboardLinkCard } from '@/components/dashboard/DashboardLinkCard';
 import { DailyCheckIn } from '@/components/dashboard/DailyCheckIn';
 import { QuickMealLogWidget } from '@/components/dashboard/QuickMealLogWidget';
-import { MobileHeroBackground } from '@/components/ui/MobileHeroBackground';
 import { RefreshCw, FileQuestion } from 'lucide-react';
 
 // Pre-uploaded hero image (Hero Images bucket — already public, full URL)
@@ -111,16 +110,14 @@ export default function ConsumerDashboard() {
     : 0;
 
   return (
-    // ── Mobile safe fixed hero pattern (Prompt #80) ──
-    <>
-      <MobileHeroBackground
-        src={DASHBOARD_HERO_IMAGE}
-        overlayOpacity={0.55}
-        objectPosition="center 45%"
-        priority
-      />
+    // ── Full-page fixed background (Prompt #62L — true Sonar pattern) ──
+    <div
+      className="min-h-screen w-full bg-cover bg-no-repeat bg-scroll text-white md:bg-fixed"
+      style={{ backgroundImage: `url('${DASHBOARD_HERO_IMAGE}')`, backgroundPosition: 'center 45%' }}
+    >
+      {/* Progressive overlay: lightest at top (image breathes), solid navy at bottom */}
+      <div className="min-h-screen bg-gradient-to-b from-[rgba(10,15,35,0.30)] via-[rgba(26,39,68,0.60)] to-[rgba(26,39,68,0.95)]">
 
-      <div className="relative z-10 min-h-screen w-full text-white">
         {/* ── Tagline — image fully visible ── */}
         <div className="w-full px-4 pt-14 pb-6 text-center">
           <h1 className="text-2xl font-semibold tracking-tight text-white md:text-4xl">
@@ -149,55 +146,65 @@ export default function ConsumerDashboard() {
           />
         </div>
 
-        {/* ── All remaining content — glassmorphic cards layered over hero ── */}
+        {/* ── All remaining content — image fades as overlay darkens ── */}
         <div className="mx-auto max-w-7xl space-y-6 px-4 pb-24 md:px-6">
-          <DailyScoresPanel checkinRaw={checkinRaw} previewRaw={previewRaw} />
+        {/* ── 3. Daily Scores Grid (Personal Wellness Dashboard) ── */}
+        <DailyScoresPanel checkinRaw={checkinRaw} previewRaw={previewRaw} />
 
-          <DailyCheckIn onScoresUpdate={handleCheckinScores} onSliderChange={handleSliderPreview} />
+        {/* ── 3b. Daily Check-In (Prompt #62e — Tier 4 manual input) ── */}
+        <DailyCheckIn onScoresUpdate={handleCheckinScores} onSliderChange={handleSliderPreview} />
 
-          <QuickMealLogWidget />
+        {/* ── 3c. Quick Meal Log (Prompt #62f — 4 meal slots) ── */}
+        <QuickMealLogWidget />
 
-          <div className="grid items-stretch gap-5 lg:grid-cols-[1.4fr_1fr]">
-            <div className="flex h-full min-w-0 flex-col gap-5">
-              <div className="flex min-w-0 flex-1 flex-col">
-                <TodaysProtocol supplements={supplements} />
-              </div>
-              <DashboardLinkCard
-                eyebrow="Health Profile"
-                eyebrowIcon={FileQuestion}
-                title="Update Your Assessment"
-                description="Refresh your CAQ answers so Ultrathink™ can refine your protocol based on your latest symptoms, medications, and goals."
-                icon={RefreshCw}
-                accent="#B75E18"
-                href="/onboarding/i-caq-intro"
-                cta="Update Assessment"
-              />
+        {/* ── 4. Today's Protocol + (Wellness Snapshot / Helix Rewards stack) ── */}
+        <div className="grid items-stretch gap-5 lg:grid-cols-[1.4fr_1fr]">
+          <div className="flex h-full min-w-0 flex-col gap-5">
+            {/* Today's Protocol grows to fill leftover space so the column
+                bottom aligns with the right column's Connect App tab */}
+            <div className="flex min-w-0 flex-1 flex-col">
+              <TodaysProtocol supplements={supplements} />
             </div>
-            <div className="flex h-full min-w-0 flex-col gap-5">
-              <div className="hidden lg:block">
-                <WellnessSnapshot autoFetch={assessmentCompleted} />
-              </div>
-              <HelixRewardsSummary
-                totalPoints={helixPoints}
-                currentStreak={currentStreak}
-                longestStreak={longestStreak}
-              />
-              <ConnectCard type="wearable" href="/plugins/wearables" />
-              <ConnectCard type="app" href="/plugins/apps" />
-            </div>
+            <DashboardLinkCard
+              eyebrow="Health Profile"
+              eyebrowIcon={FileQuestion}
+              title="Update Your Assessment"
+              description="Refresh your CAQ answers so Ultrathink™ can refine your protocol based on your latest symptoms, medications, and goals."
+              icon={RefreshCw}
+              accent="#B75E18"
+              href="/onboarding/i-caq-intro"
+              cta="Update Assessment"
+            />
           </div>
+          <div className="flex h-full min-w-0 flex-col gap-5">
+            {/* Wellness Snapshot is desktop-only per spec */}
+            <div className="hidden lg:block">
+              <WellnessSnapshot autoFetch={assessmentCompleted} />
+            </div>
+            <HelixRewardsSummary
+              totalPoints={helixPoints}
+              currentStreak={currentStreak}
+              longestStreak={longestStreak}
+            />
+            {/* Connect device / app cards — full-width, matching tab design */}
+            <ConnectCard type="wearable" href="/plugins/wearables" />
+            <ConnectCard type="app" href="/plugins/apps" />
+          </div>
+        </div>
 
-          <QuickActionsGrid />
+        {/* ── 5. Quick Actions ─────────────────────────────── */}
+        <QuickActionsGrid />
 
-          <DailyInsightsCard profile={profile} supplements={supplements} />
+        {/* ── Daily Insights (Prompt #61, replaces DailyUltrathinkTip) ── */}
+        <DailyInsightsCard profile={profile} supplements={supplements} />
 
-          <QuickReassessmentCard daysElapsed={daysSinceCAQ || 0} />
+        <QuickReassessmentCard daysElapsed={daysSinceCAQ || 0} />
 
-          <PatternCirclePreview
-            userPatterns={['HPA Axis Dysregulation', 'Methylation Pathway']}
-          />
+        <PatternCirclePreview
+          userPatterns={['HPA Axis Dysregulation', 'Methylation Pathway']}
+        />
         </div>
       </div>
-    </>
+    </div>
   );
 }
