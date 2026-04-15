@@ -172,7 +172,7 @@ export default function RecommendedSupplements() {
           const moreInfoUrl = buildViewLink({ productName: rec.product });
 
           return (
-            <div key={rec.id} className={`rounded-2xl border border-[rgba(255,255,255,0.08)] bg-[#1E3054] overflow-hidden hover:border-[rgba(255,255,255,0.15)] transition-all duration-200 ${isAcc ? 'ring-2 ring-[rgba(45,165,160,0.50)]' : ''}`}>
+            <div key={rec.id} className={`rounded-2xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.05)] overflow-hidden hover:border-[rgba(255,255,255,0.15)] transition-all duration-200 ${isAcc ? 'ring-2 ring-[rgba(45,165,160,0.50)]' : ''}`}>
               <div className="px-4 py-3.5 flex items-start gap-3 hover:bg-[rgba(255,255,255,0.04)] transition-colors">
                 <div className="flex flex-col items-center gap-1 flex-shrink-0 w-10">
                   <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#1A2744] to-[#2DA5A0] flex items-center justify-center">
