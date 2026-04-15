@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { FlaskConical } from "lucide-react";
 import { PeptideDisclaimerBanner } from "@/components/peptide-protocol/PeptideDisclaimerBanner";
 import { PeptideSearchBar } from "@/components/peptide-protocol/PeptideSearchBar";
@@ -7,23 +8,50 @@ import { PersonalizedPeptideStack } from "@/components/peptide-protocol/Personal
 import { PeptideCatalogSection } from "@/components/peptide-protocol/PeptideCatalogSection";
 import { PeptidePractitionerAccess } from "@/components/peptide-protocol/PeptidePractitionerAccess";
 import { ShareProtocolButton } from "@/components/consumer/ShareProtocolButton";
-import { MobileHeroBackground } from "@/components/ui/MobileHeroBackground";
 
-const PEPTIDE_HERO_IMAGE =
+const PEPTIDE_HERO_DESKTOP =
   "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Images/Fit%20couple%202.png";
-const PEPTIDE_HERO_IMAGE_MOBILE =
+const PEPTIDE_HERO_MOBILE =
   "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Mobile%20Hero/Athlete%2011%20mobile.png";
 
 export default function PeptideProtocolRoute() {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const update = () => setIsMobile(window.innerWidth < 768);
+    update();
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, []);
+
+  const heroSrc = isMobile ? PEPTIDE_HERO_MOBILE : PEPTIDE_HERO_DESKTOP;
+
   return (
     <>
-      <MobileHeroBackground
-        src={PEPTIDE_HERO_IMAGE}
-        mobileSrc={PEPTIDE_HERO_IMAGE_MOBILE}
-        overlayOpacity={0.55}
-        objectPosition="center 20%"
-        priority
-      />
+      {/* HERO — fixed behind everything, inline styles to guarantee rendering */}
+      <div
+        className="fixed inset-0 -z-10 overflow-hidden"
+        style={{ width: '100vw', height: '100vh', top: 0, left: 0 }}
+      >
+        <img
+          src={heroSrc}
+          alt="Peptide Protocol background"
+          style={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            objectPosition: 'center 20%',
+            filter: 'blur(2px)',
+          }}
+        />
+        <div
+          style={{
+            position: 'absolute',
+            top: 0, left: 0, right: 0, bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.40)',
+          }}
+        />
+      </div>
 
       {/* CONTENT — scrolls over hero */}
       <div className="relative z-10 text-white">
