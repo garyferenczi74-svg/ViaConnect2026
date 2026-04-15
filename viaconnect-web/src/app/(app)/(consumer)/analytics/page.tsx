@@ -37,6 +37,7 @@ import {
 } from "lucide-react";
 import { PageTransition, StaggerChild, MotionCard, ChartReveal } from "@/lib/motion";
 import { BioOptimizationTrend } from "./components/BioOptimizationTrend";
+import { useAnalyticsRealtime } from "./components/BioOptimizationTrend/hooks/useAnalyticsRealtime";
 import { getDisplayName } from "@/lib/user/get-display-name";
 
 const supabase = createClient();
@@ -302,6 +303,8 @@ export default function AnalyticsPage() {
     });
     getDisplayName().then(setDisplayName);
   }, []);
+
+  useAnalyticsRealtime(userId);
 
   // Bio Optimization score history
   const { data: scoreHistory, isLoading: scoreLoading } = useQuery({
@@ -700,47 +703,55 @@ export default function AnalyticsPage() {
         </p>
       </StaggerChild>
 
-      {/* ── Row 1: Key Stats ── */}
+      {/* ── Row 1: Key Stats (deep-link to source pages) ── */}
       <StaggerChild className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <MotionCard className="p-5">
-          <div className="flex items-center justify-between mb-2">
-            <Activity className="w-4 h-4 text-portal-green" />
-            {scoreTrend !== 0 && (
-              <span className={`flex items-center gap-0.5 text-[10px] font-medium ${scoreTrend > 0 ? "text-portal-green" : "text-rose"}`}>
-                {scoreTrend > 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-                {scoreTrend > 0 ? "+" : ""}{scoreTrend}
-              </span>
-            )}
-          </div>
-          <p className="text-3xl font-bold text-white">{currentScore}</p>
-          <p className="text-xs text-gray-500 mt-1">Bio Optimization</p>
-        </MotionCard>
+        <Link href="/dashboard" className="no-underline">
+          <MotionCard className="p-5 cursor-pointer">
+            <div className="flex items-center justify-between mb-2">
+              <Activity className="w-4 h-4 text-portal-green" />
+              {scoreTrend !== 0 && (
+                <span className={`flex items-center gap-0.5 text-[10px] font-medium ${scoreTrend > 0 ? "text-portal-green" : "text-rose"}`}>
+                  {scoreTrend > 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                  {scoreTrend > 0 ? "+" : ""}{scoreTrend}
+                </span>
+              )}
+            </div>
+            <p className="text-3xl font-bold text-white">{currentScore}</p>
+            <p className="text-xs text-gray-500 mt-1">Bio Optimization</p>
+          </MotionCard>
+        </Link>
 
-        <MotionCard className="p-5">
-          <div className="flex items-center justify-between mb-2">
-            <CheckCircle className="w-4 h-4 text-copper" />
-            {adherence.last7 > adherence.last30 && (
-              <span className="flex items-center gap-0.5 text-[10px] font-medium text-portal-green">
-                <TrendingUp className="w-3 h-3" />
-                Improving
-              </span>
-            )}
-          </div>
-          <p className="text-3xl font-bold text-white">{adherence.overall}%</p>
-          <p className="text-xs text-gray-500 mt-1">30-Day Adherence</p>
-        </MotionCard>
+        <Link href="/supplements" className="no-underline">
+          <MotionCard className="p-5 cursor-pointer">
+            <div className="flex items-center justify-between mb-2">
+              <CheckCircle className="w-4 h-4 text-copper" />
+              {adherence.last7 > adherence.last30 && (
+                <span className="flex items-center gap-0.5 text-[10px] font-medium text-portal-green">
+                  <TrendingUp className="w-3 h-3" />
+                  Improving
+                </span>
+              )}
+            </div>
+            <p className="text-3xl font-bold text-white">{adherence.overall}%</p>
+            <p className="text-xs text-gray-500 mt-1">30-Day Adherence</p>
+          </MotionCard>
+        </Link>
 
-        <MotionCard className="p-5">
-          <Flame className="w-4 h-4 text-portal-yellow mb-2" />
-          <p className="text-3xl font-bold text-white">{checkinStreak}</p>
-          <p className="text-xs text-gray-500 mt-1">Day Streak</p>
-        </MotionCard>
+        <Link href="/dashboard" className="no-underline">
+          <MotionCard className="p-5 cursor-pointer">
+            <Flame className="w-4 h-4 text-portal-yellow mb-2" />
+            <p className="text-3xl font-bold text-white">{checkinStreak}</p>
+            <p className="text-xs text-gray-500 mt-1">Day Streak</p>
+          </MotionCard>
+        </Link>
 
-        <MotionCard className="p-5">
-          <Pill className="w-4 h-4 text-plum mb-2" />
-          <p className="text-3xl font-bold text-white">{protocolCount}</p>
-          <p className="text-xs text-gray-500 mt-1">Active Supplements</p>
-        </MotionCard>
+        <Link href="/supplements" className="no-underline">
+          <MotionCard className="p-5 cursor-pointer">
+            <Pill className="w-4 h-4 text-plum mb-2" />
+            <p className="text-3xl font-bold text-white">{protocolCount}</p>
+            <p className="text-xs text-gray-500 mt-1">Active Supplements</p>
+          </MotionCard>
+        </Link>
       </StaggerChild>
 
       {/* ── Bio Optimization Trend (full width) ── */}
@@ -762,6 +773,13 @@ export default function AnalyticsPage() {
               <h3 className="text-sm font-semibold text-white">Adherence by Supplement</h3>
               <p className="text-[11px] text-white/35 mt-0.5">CAQ recommendations and supplements in your protocol</p>
             </div>
+            <Link
+              href="/supplements"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-copper/10 border border-copper/25 text-copper text-xs font-medium hover:bg-copper/15 transition-all no-underline"
+            >
+              Manage
+              <TrendingUp className="w-3.5 h-3.5" strokeWidth={1.5} />
+            </Link>
           </div>
           {supplementAdherence.length === 0 ? (
             <EmptyState icon={Pill} title="No protocol data" description="Add supplements to your protocol or complete the Clinical Assessment to track adherence." />

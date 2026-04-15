@@ -12,6 +12,7 @@ import { ProtocolConfidenceCTA } from "./ProtocolConfidenceCTA";
 import { useBioOptimizationTrend } from "./hooks/useBioOptimizationTrend";
 import { useHannahInsights } from "./hooks/useHannahInsights";
 import { useJourneyRecommendations } from "./hooks/useJourneyRecommendations";
+import { useAnalyticsRealtime } from "./hooks/useAnalyticsRealtime";
 import {
   daysActive as countDaysActive,
   personalBest as calcPersonalBest,
@@ -33,6 +34,7 @@ export function BioOptimizationTrend({
 }: Props) {
   const [range, setRange] = useState<TimeRange>("7D");
 
+  useAnalyticsRealtime(userId);
   const { data, isLoading } = useBioOptimizationTrend(userId, range);
 
   const bioPoints = data?.bioScores ?? [];

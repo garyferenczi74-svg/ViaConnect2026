@@ -1,6 +1,7 @@
 "use client";
 
-import { Sparkles, Target, TrendingUp } from "lucide-react";
+import Link from "next/link";
+import { Sparkles, Target, TrendingUp, ArrowRight } from "lucide-react";
 import type { HannahInsight } from "./hooks/useHannahInsights";
 
 export function HannahInsightPanel({ insight }: { insight: HannahInsight }) {
@@ -71,13 +72,27 @@ export function HannahInsightPanel({ insight }: { insight: HannahInsight }) {
         <p className="text-sm text-white/80 leading-relaxed">{insight.recommendation}</p>
       </div>
 
-      <div className="flex items-center justify-between text-xs">
+      <div className="flex items-center justify-between text-xs mb-3">
         <span className="text-white/50">Estimated lift</span>
         <span className="inline-flex items-center gap-1.5 font-semibold" style={{ color: "#34D399" }}>
           <TrendingUp className="w-3.5 h-3.5" strokeWidth={1.5} />
           +{insight.estimatedImpact} pts
         </span>
       </div>
+
+      <Link
+        href="/wellness/advisor"
+        className="inline-flex items-center justify-between w-full rounded-lg px-3 py-2 text-xs font-medium transition-colors hover:bg-white/5"
+        style={{
+          background: "rgba(45,165,160,0.14)",
+          border: "1px solid rgba(45,165,160,0.35)",
+          color: "#2DA5A0",
+          fontFamily: "var(--font-dm-sans), sans-serif",
+        }}
+      >
+        <span>View Full Report with Hannah</span>
+        <ArrowRight className="w-3.5 h-3.5" strokeWidth={1.5} />
+      </Link>
     </div>
   );
 }

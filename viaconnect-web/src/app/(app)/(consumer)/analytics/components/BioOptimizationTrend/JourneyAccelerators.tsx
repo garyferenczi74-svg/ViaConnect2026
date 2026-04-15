@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Moon, Apple, Activity, Brain, Pill, ArrowRight } from "lucide-react";
 import type { JourneyRec } from "./hooks/useJourneyRecommendations";
 
@@ -10,6 +11,14 @@ const ICONS = {
   stress: Brain,
   supplement: Pill,
 } as const;
+
+const HREFS: Record<JourneyRec["icon"], string> = {
+  supplement: "/shop",
+  sleep: "/dashboard",
+  movement: "/dashboard",
+  nutrition: "/dashboard",
+  stress: "/dashboard",
+};
 
 export function JourneyAccelerators({ recs }: { recs: JourneyRec[] }) {
   return (
@@ -41,10 +50,10 @@ export function JourneyAccelerators({ recs }: { recs: JourneyRec[] }) {
         {recs.map((rec) => {
           const Icon = ICONS[rec.icon];
           return (
-            <button
+            <Link
               key={rec.id}
-              type="button"
-              className="text-left rounded-xl p-4 transition-all group"
+              href={HREFS[rec.icon]}
+              className="text-left rounded-xl p-4 transition-all group no-underline"
               style={{
                 background: "rgba(22,36,64,0.4)",
                 border: "1px solid rgba(45,165,160,0.18)",
@@ -94,7 +103,7 @@ export function JourneyAccelerators({ recs }: { recs: JourneyRec[] }) {
                   style={{ color: "#E8803A" }}
                 />
               </div>
-            </button>
+            </Link>
           );
         })}
       </div>

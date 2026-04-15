@@ -12,7 +12,7 @@ export function ProtocolConfidenceCTA({
 }) {
   return (
     <Link
-      href="/genex360"
+      href="/genetics"
       className="block rounded-2xl p-5 md:p-6 relative overflow-hidden transition-transform hover:scale-[1.005]"
       style={{
         background: "rgba(30,48,84,0.45)",
