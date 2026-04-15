@@ -1,6 +1,10 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import {
+  validateRecommendationText,
+  validateSupplementCandidate,
+} from "@/lib/agents/jeffery/guardrails";
 
 type HannahInsightPayload = {
   timeRange: "7D" | "4W" | "3M" | "1Y";
@@ -22,6 +26,18 @@ export async function persistHannahInsight(payload: HannahInsightPayload) {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "unauthenticated" };
+
+  // Jeffery guardrail: insight text must pass platform rules before cache.
+  const textCheck = validateRecommendationText(
+    `${payload.analysis} ${payload.recommendation}`,
+  );
+  if (!textCheck.ok) {
+    return {
+      ok: false,
+      error: "guardrail_violation",
+      violations: textCheck.violations,
+    };
+  }
 
   const expires = new Date(Date.now() + TTL_HOURS[payload.timeRange] * 3600_000);
 
@@ -60,6 +76,25 @@ export async function seedJourneyRecommendations(recs: JourneyRecPayload[]) {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "unauthenticated" };
+
+  // Jeffery guardrail: validate every rec before we persist any. Run both
+  // text and supplement-candidate checks so we catch banned brands in
+  // descriptions and banned products in titles.
+  const allViolations = [];
+  for (const r of recs) {
+    const textCheck = validateRecommendationText(`${r.title} ${r.description}`);
+    if (!textCheck.ok) allViolations.push(...textCheck.violations);
+    if (r.icon === "supplement") {
+      const supCheck = validateSupplementCandidate({
+        productName: r.title,
+        deliveryForm: "oral",
+      });
+      if (!supCheck.ok) allViolations.push(...supCheck.violations);
+    }
+  }
+  if (allViolations.length > 0) {
+    return { ok: false, error: "guardrail_violation", violations: allViolations };
+  }
 
   const sb = supabase as any;
 
