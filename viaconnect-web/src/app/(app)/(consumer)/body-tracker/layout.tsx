@@ -5,6 +5,8 @@ import { MobileHeroBackground } from '@/components/ui/MobileHeroBackground';
 
 const HERO_IMAGE =
   'https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Images/Athlete%201.png';
+const HERO_IMAGE_MOBILE =
+  'https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Mobile%20Hero/Athlete%2018%20Mobile.png';
 
 export default function BodyTrackerLayout({
   children,
@@ -13,7 +15,13 @@ export default function BodyTrackerLayout({
 }) {
   return (
     <>
-      <MobileHeroBackground src={HERO_IMAGE} overlayOpacity={0.55} objectPosition="center center" priority />
+      <MobileHeroBackground
+        src={HERO_IMAGE}
+        mobileSrc={HERO_IMAGE_MOBILE}
+        overlayOpacity={0.55}
+        objectPosition="center center"
+        priority
+      />
       <div className="relative z-10 min-h-screen text-white">
         {/* Tab navigation */}
         <div className="sticky top-[60px] z-30 border-b border-white/[0.08] bg-[#1A2744]/90 backdrop-blur-md">
