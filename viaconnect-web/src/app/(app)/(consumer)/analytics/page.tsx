@@ -36,6 +36,8 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { PageTransition, StaggerChild, MotionCard, ChartReveal } from "@/lib/motion";
+import { BioOptimizationTrend } from "./components/BioOptimizationTrend";
+import { getDisplayName } from "@/lib/user/get-display-name";
 
 const supabase = createClient();
 
@@ -153,7 +155,7 @@ function SupplementAdherenceGraph({ items }: { items: AdherenceItem[] }) {
   const avg = items.length > 0 ? Math.round(items.reduce((s, i) => s + i.rate, 0) / items.length) : 0;
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between rounded-lg border border-white/[0.06] bg-white/[0.02] px-3 py-2">
+      <div className="flex items-center justify-between rounded-lg border border-[rgba(45,165,160,0.22)] bg-[rgba(26,39,68,0.55)] backdrop-blur-sm px-3 py-2">
         <div className="flex items-baseline gap-2">
           <span className="text-[10px] uppercase tracking-wider text-white/30">Protocol average</span>
           <span className="text-xs text-white/50">{items.length} {items.length === 1 ? "supplement" : "supplements"}</span>
@@ -170,7 +172,7 @@ function SupplementAdherenceGraph({ items }: { items: AdherenceItem[] }) {
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.04, duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
-              className="group relative overflow-hidden rounded-lg border border-white/[0.06] bg-white/[0.02] p-3 transition-colors hover:border-white/[0.12] hover:bg-white/[0.035]"
+              className="group relative overflow-hidden rounded-lg border border-[rgba(45,165,160,0.15)] bg-[rgba(30,48,84,0.45)] backdrop-blur-sm p-3 transition-colors hover:border-[rgba(45,165,160,0.30)] hover:bg-[rgba(30,48,84,0.65)]"
             >
               <div className="mb-1.5 flex items-center justify-between gap-2">
                 <div className="flex min-w-0 items-center gap-2">
@@ -292,11 +294,13 @@ const symptomIcons: Record<string, React.ElementType> = {
 
 export default function AnalyticsPage() {
   const [userId, setUserId] = useState<string | null>(null);
+  const [displayName, setDisplayName] = useState<string>("");
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (user) setUserId(user.id);
     });
+    getDisplayName().then(setDisplayName);
   }, []);
 
   // Bio Optimization score history
@@ -698,68 +702,19 @@ export default function AnalyticsPage() {
         </MotionCard>
       </StaggerChild>
 
-      {/* ── Row 2: Vitality Trend + Adherence Trend ── */}
-      <StaggerChild className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Bio Optimization Trend */}
-        <Card className="p-5">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h3 className="text-sm font-semibold text-white">Bio Optimization Trend</h3>
-              <p className="text-xs text-gray-500 mt-0.5">Last {scores.length} data points</p>
-            </div>
-            <Badge variant={currentScore >= 60 ? "active" : currentScore >= 40 ? "pending" : "danger"}>
-              {currentScore >= 80 ? "Excellent" : currentScore >= 60 ? "Good" : currentScore >= 40 ? "Moderate" : "Needs Attention"}
-            </Badge>
-          </div>
-          <ChartReveal>
-            {scores.length >= 2 ? (
-              <TrendChart
-                data={scores}
-                color={currentScore >= 60 ? "#4ADE80" : currentScore >= 40 ? "#FBBF24" : "#F87171"}
-              />
-            ) : (
-              <div className="h-[80px] flex items-center justify-center">
-                <p className="text-xs text-gray-600">
-                  {scores.length === 0 ? "Complete your assessment to start tracking" : "More data points needed for trend"}
-                </p>
-              </div>
-            )}
-          </ChartReveal>
-        </Card>
-
-        {/* Adherence Trend */}
-        <Card className="p-5">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h3 className="text-sm font-semibold text-white">Weekly Adherence</h3>
-              <p className="text-xs text-gray-500 mt-0.5">Last 12 weeks</p>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="text-right">
-                <p className="text-xs text-gray-500">7-day</p>
-                <p className="text-sm font-bold text-white">{adherence.last7}%</p>
-              </div>
-              <div className="text-right">
-                <p className="text-xs text-gray-500">30-day</p>
-                <p className="text-sm font-bold text-white">{adherence.last30}%</p>
-              </div>
-            </div>
-          </div>
-          <ChartReveal>
-            {weeklyAdherence.length >= 2 ? (
-              <TrendChart data={weeklyAdherence} color="#B75F19" />
-            ) : (
-              <div className="h-[80px] flex items-center justify-center">
-                <p className="text-xs text-gray-600">Log supplements daily to see adherence trends</p>
-              </div>
-            )}
-          </ChartReveal>
-        </Card>
+      {/* ── Bio Optimization Trend (full width) ── */}
+      <StaggerChild>
+        <BioOptimizationTrend
+          userId={userId}
+          displayName={displayName}
+          streak={adherence.streak}
+          adherencePct={adherence.overall}
+        />
       </StaggerChild>
 
-      {/* ── Row 3: Adherence by Supplement + Symptom Severity ── */}
-      <StaggerChild className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Per-supplement adherence — from CAQ + Supplement Protocol */}
+      {/* ── Row 3: Adherence by Supplement (left) + Symptom Profile / Genetic Risk / Protocol Match (right stack) ── */}
+      <StaggerChild className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+        {/* LEFT: Per-supplement adherence */}
         <Card className="p-5">
           <div className="mb-4 flex items-center justify-between">
             <div>
@@ -774,159 +729,131 @@ export default function AnalyticsPage() {
           )}
         </Card>
 
-        {/* Symptom severity */}
-        <Card className="p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold text-white">Symptom Profile</h3>
-            <Link href="/onboarding/i-caq-intro" className="inline-flex items-center gap-2 min-h-[44px] px-5 py-2.5 rounded-xl bg-orange-400/10 border border-orange-400/25 text-orange-400 text-sm font-medium hover:bg-orange-400/15 hover:border-orange-400/35 active:bg-orange-400/20 transition-all cursor-pointer no-underline">
-              <RefreshCw className="w-4 h-4" strokeWidth={1.5} />
-              Retake Assessment
-            </Link>
-          </div>
-          {symptomBreakdown.length === 0 ? (
-            <EmptyState icon={Activity} title="No symptom data" description="Complete your Clinical Assessment to see symptom analysis." />
-          ) : (
-            <div className="space-y-2.5">
-              {symptomBreakdown.slice(0, 8).map((sym) => {
-                const Icon = sym.icon;
-                return (
-                  <div key={sym.label} className="flex items-center gap-3">
-                    <Icon className={`w-3.5 h-3.5 flex-shrink-0 ${sym.severity >= 7 ? "text-rose" : sym.severity >= 4 ? "text-portal-yellow" : "text-portal-green"}`} />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-0.5">
-                        <span className="text-xs text-gray-400">{sym.label}</span>
-                        <span className="text-[10px] text-gray-500">{sym.severity}/10</span>
+        {/* RIGHT: stacked trio sharing the left column's height */}
+        <div className="grid grid-rows-3 gap-4 h-full">
+          {/* Symptom Profile */}
+          <Card className="p-5 overflow-hidden flex flex-col min-h-0">
+            <div className="flex items-center justify-between mb-3 flex-shrink-0">
+              <h3 className="text-sm font-semibold text-white">Symptom Profile</h3>
+              <Link href="/onboarding/i-caq-intro" className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-orange-400/10 border border-orange-400/25 text-orange-400 text-xs font-medium hover:bg-orange-400/15 hover:border-orange-400/35 transition-all no-underline">
+                <RefreshCw className="w-3.5 h-3.5" strokeWidth={1.5} />
+                Retake
+              </Link>
+            </div>
+            {symptomBreakdown.length === 0 ? (
+              <EmptyState icon={Activity} title="No symptom data" description="Complete your Clinical Assessment to see symptom analysis." />
+            ) : (
+              <div className="flex-1 min-h-0 overflow-y-auto space-y-2 pr-1">
+                {symptomBreakdown.slice(0, 5).map((sym) => {
+                  const Icon = sym.icon;
+                  return (
+                    <div key={sym.label} className="flex items-center gap-3">
+                      <Icon className={`w-3.5 h-3.5 flex-shrink-0 ${sym.severity >= 7 ? "text-rose" : sym.severity >= 4 ? "text-portal-yellow" : "text-portal-green"}`} />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between mb-0.5">
+                          <span className="text-xs text-gray-400 truncate">{sym.label}</span>
+                          <span className="text-[10px] text-gray-500 ml-2">{sym.severity}/10</span>
+                        </div>
+                        <Progress
+                          value={sym.severity}
+                          max={10}
+                          color={sym.severity >= 7 ? "bg-rose" : sym.severity >= 4 ? "bg-portal-yellow" : "bg-portal-green"}
+                        />
                       </div>
-                      <Progress
-                        value={sym.severity}
-                        max={10}
-                        color={sym.severity >= 7 ? "bg-rose" : sym.severity >= 4 ? "bg-portal-yellow" : "bg-portal-green"}
-                      />
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </Card>
-      </StaggerChild>
-
-      {/* ── Row 4: Genetic Risk + Protocol Overview + Spending ── */}
-      <StaggerChild className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Genetic Risk Distribution */}
-        <Card className="p-5">
-          <div className="flex items-center gap-2 mb-4">
-            <Dna className="w-4 h-4 text-teal" />
-            <h3 className="text-sm font-semibold text-white">Genetic Risk</h3>
-          </div>
-          {geneticBreakdown.total === 0 ? (
-            <div className="text-center py-4">
-              <p className="text-xs text-gray-500">No genetic data available</p>
-              <Link href="/genetics" className="text-xs text-copper hover:underline mt-1 inline-block">
-                Order GeneX360 Test
-              </Link>
-            </div>
-          ) : (
-            <>
-              <DonutChart
-                segments={[
-                  { value: geneticBreakdown.high, color: "#F87171", label: "High" },
-                  { value: geneticBreakdown.moderate, color: "#FBBF24", label: "Moderate" },
-                  { value: geneticBreakdown.low, color: "#4ADE80", label: "Low" },
-                ]}
-                centerLabel="Variants"
-                centerValue={String(geneticBreakdown.total)}
-              />
-              <div className="flex justify-center gap-4 mt-3">
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-[#F87171]" />
-                  <span className="text-[10px] text-gray-400">High ({geneticBreakdown.high})</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-[#FBBF24]" />
-                  <span className="text-[10px] text-gray-400">Mod ({geneticBreakdown.moderate})</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-[#4ADE80]" />
-                  <span className="text-[10px] text-gray-400">Low ({geneticBreakdown.low})</span>
-                </div>
+                  );
+                })}
               </div>
-            </>
-          )}
-        </Card>
+            )}
+          </Card>
 
-        {/* Protocol Confidence Overview */}
-        <Card className="p-5">
-          <div className="flex items-center gap-2 mb-4">
-            <Target className="w-4 h-4 text-copper" />
-            <h3 className="text-sm font-semibold text-white">Protocol Match</h3>
-          </div>
-          {recCount === 0 ? (
-            <div className="text-center py-4">
-              <p className="text-xs text-gray-500">No recommendations yet</p>
-              <Link href="/profile/assessment" className="text-xs text-copper hover:underline mt-1 inline-block">
-                Take Assessment
-              </Link>
+          {/* Genetic Risk */}
+          <Card className="p-5 overflow-hidden flex flex-col min-h-0">
+            <div className="flex items-center gap-2 mb-3 flex-shrink-0">
+              <Dna className="w-4 h-4 text-teal" />
+              <h3 className="text-sm font-semibold text-white">Genetic Risk</h3>
             </div>
-          ) : (
-            <div className="space-y-2.5">
-              {(recommendations ?? []).slice(0, 6).map((rec) => (
-                <div key={rec.id} className="flex items-center justify-between">
-                  <span className="text-xs text-gray-400 truncate flex-1 mr-2">{rec.product_name}</span>
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    <div className="w-16">
-                      <Progress
-                        value={rec.confidence_score}
-                        color={rec.confidence_score >= 85 ? "bg-portal-green" : rec.confidence_score >= 70 ? "bg-copper" : "bg-portal-yellow"}
-                      />
-                    </div>
-                    <span className="text-[10px] font-medium text-white w-8 text-right">{rec.confidence_score}%</span>
+            {geneticBreakdown.total === 0 ? (
+              <div className="flex-1 flex flex-col items-center justify-center text-center">
+                <p className="text-xs text-gray-500">No genetic data available</p>
+                <Link href="/genetics" className="text-xs text-copper hover:underline mt-1 inline-block">
+                  Order GeneX360 Test
+                </Link>
+              </div>
+            ) : (
+              <div className="flex-1 min-h-0 flex items-center gap-4">
+                <div className="flex-shrink-0">
+                  <DonutChart
+                    segments={[
+                      { value: geneticBreakdown.high, color: "#F87171", label: "High" },
+                      { value: geneticBreakdown.moderate, color: "#FBBF24", label: "Moderate" },
+                      { value: geneticBreakdown.low, color: "#4ADE80", label: "Low" },
+                    ]}
+                    centerLabel="Variants"
+                    centerValue={String(geneticBreakdown.total)}
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-[#F87171]" />
+                    <span className="text-[11px] text-gray-400">High ({geneticBreakdown.high})</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-[#FBBF24]" />
+                    <span className="text-[11px] text-gray-400">Moderate ({geneticBreakdown.moderate})</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-[#4ADE80]" />
+                    <span className="text-[11px] text-gray-400">Low ({geneticBreakdown.low})</span>
                   </div>
                 </div>
-              ))}
-              <div className="pt-2 border-t border-white/[0.06]">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-gray-500">Avg. Match</span>
-                  <span className="text-sm font-bold text-copper">
-                    {Math.round((recommendations ?? []).reduce((s, r) => s + r.confidence_score, 0) / recCount)}%
-                  </span>
+              </div>
+            )}
+          </Card>
+
+          {/* Protocol Match */}
+          <Card className="p-5 overflow-hidden flex flex-col min-h-0">
+            <div className="flex items-center gap-2 mb-3 flex-shrink-0">
+              <Target className="w-4 h-4 text-copper" />
+              <h3 className="text-sm font-semibold text-white">Supplement Recommendations</h3>
+            </div>
+            {recCount === 0 ? (
+              <div className="flex-1 flex flex-col items-center justify-center text-center">
+                <p className="text-xs text-gray-500">No recommendations yet</p>
+                <Link href="/profile/assessment" className="text-xs text-copper hover:underline mt-1 inline-block">
+                  Take Assessment
+                </Link>
+              </div>
+            ) : (
+              <div className="flex-1 min-h-0 flex flex-col">
+                <div className="flex-1 min-h-0 overflow-y-auto space-y-2 pr-1">
+                  {(recommendations ?? []).slice(0, 4).map((rec) => (
+                    <div key={rec.id} className="flex items-center justify-between">
+                      <span className="text-xs text-gray-400 truncate flex-1 mr-2">{rec.product_name}</span>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <div className="w-14">
+                          <Progress
+                            value={rec.confidence_score}
+                            color={rec.confidence_score >= 85 ? "bg-portal-green" : rec.confidence_score >= 70 ? "bg-copper" : "bg-portal-yellow"}
+                          />
+                        </div>
+                        <span className="text-[10px] font-medium text-white w-8 text-right">{rec.confidence_score}%</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="pt-2 mt-2 border-t border-white/[0.06] flex-shrink-0">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-gray-500">Avg. Match</span>
+                    <span className="text-sm font-bold text-copper">
+                      {Math.round((recommendations ?? []).reduce((s, r) => s + r.confidence_score, 0) / recCount)}%
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
-        </Card>
-
-        {/* Spending + Tokens */}
-        <Card className="p-5">
-          <div className="flex items-center gap-2 mb-4">
-            <Award className="w-4 h-4 text-portal-yellow" />
-            <h3 className="text-sm font-semibold text-white">Wellness Investment</h3>
-          </div>
-          <div className="space-y-4">
-            <div>
-              <p className="text-xs text-gray-500 mb-1">Total Spent</p>
-              <p className="text-2xl font-bold text-white">${totalSpent.toFixed(2)}</p>
-            </div>
-            <div>
-              <p className="text-xs text-gray-500 mb-1">Est. Monthly Protocol</p>
-              <p className="text-lg font-semibold text-copper">${monthlyEstimate.toFixed(2)}/mo</p>
-            </div>
-            <div className="pt-3 border-t border-white/[0.06]">
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-gray-500">ViaTokens Earned</span>
-                <span className="text-sm font-bold text-portal-yellow">{(tokens?.lifetime_earned ?? 0).toLocaleString()} VT</span>
-              </div>
-              <div className="flex items-center justify-between mt-1">
-                <span className="text-xs text-gray-500">Current Balance</span>
-                <span className="text-sm font-bold text-white">{(tokens?.balance ?? 0).toLocaleString()} VT</span>
-              </div>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-gray-500">Orders</span>
-              <span className="text-sm font-medium text-white">{(orders ?? []).length}</span>
-            </div>
-          </div>
-        </Card>
+            )}
+          </Card>
+        </div>
       </StaggerChild>
 
       {/* ── Row 5: Time-of-Day Distribution ── */}
@@ -944,7 +871,7 @@ export default function AnalyticsPage() {
               };
               const { icon: Icon, color } = icons[tod];
               return (
-                <div key={tod} className="text-center p-3 rounded-lg bg-white/[0.02] border border-white/[0.06]">
+                <div key={tod} className="text-center p-3 rounded-lg bg-[rgba(30,48,84,0.45)] backdrop-blur-sm border border-[rgba(45,165,160,0.15)]">
                   <Icon className={`w-5 h-5 mx-auto mb-2 ${color}`} />
                   <p className="text-lg font-bold text-white">{items.length}</p>
                   <p className="text-[10px] text-gray-500 capitalize">{tod}</p>
