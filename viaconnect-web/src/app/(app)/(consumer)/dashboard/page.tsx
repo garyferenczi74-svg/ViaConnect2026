@@ -22,7 +22,7 @@ import { RefreshCw, FileQuestion } from 'lucide-react';
 const DASHBOARD_HERO_IMAGE =
   'https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Images/Hero%20lake%20workout.png';
 const DASHBOARD_HERO_IMAGE_MOBILE =
-  'https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Mobile%20Hero/Athlete%2012%20Mobile.png';
+  'https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Mobile%20Hero/Athlete%2019%20Mobile.png';
 
 /* ── Skeleton ───────────────────────────────────────────────── */
 function DashboardSkeleton() {
