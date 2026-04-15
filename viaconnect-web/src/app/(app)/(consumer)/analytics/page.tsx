@@ -457,7 +457,13 @@ export default function AnalyticsPage() {
 
   return (
     <>
-    <MobileHeroBackground src="https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Images/Athlete%206.png" overlayOpacity={0.55} objectPosition="center center" priority />
+    <MobileHeroBackground
+      src="https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Images/Athlete%206.png"
+      mobileSrc="https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Mobile%20Hero/Athlete%2020%20Mobile.png"
+      overlayOpacity={0.55}
+      objectPosition="center center"
+      priority
+    />
     <div className="relative z-10 min-h-screen text-white">
     <PageTransition className="p-6 lg:p-8 space-y-6 max-w-[1440px] mx-auto">
       {/* Header */}

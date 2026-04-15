@@ -5,6 +5,8 @@ import { useEffect, useState } from 'react';
 
 interface MobileHeroBackgroundProps {
   src: string;
+  mobileSrc?: string;
+  mobileBreakpoint?: number;
   alt?: string;
   overlayOpacity?: number;
   overlayGradient?: boolean;
@@ -16,6 +18,8 @@ interface MobileHeroBackgroundProps {
 
 export function MobileHeroBackground({
   src,
+  mobileSrc,
+  mobileBreakpoint = 768,
   alt = '',
   overlayOpacity = 0.55,
   overlayGradient = true,
@@ -26,6 +30,7 @@ export function MobileHeroBackground({
 }: MobileHeroBackgroundProps) {
   const [isLoaded, setIsLoaded] = useState(false);
   const [viewportHeight, setViewportHeight] = useState<string>('100vh');
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     const supportsDvh =
@@ -39,6 +44,7 @@ export function MobileHeroBackground({
       } else {
         setViewportHeight(`${window.innerHeight}px`);
       }
+      setIsMobile(window.innerWidth < mobileBreakpoint);
     };
 
     update();
@@ -48,7 +54,9 @@ export function MobileHeroBackground({
       window.removeEventListener('resize', update);
       window.removeEventListener('orientationchange', update);
     };
-  }, []);
+  }, [mobileBreakpoint]);
+
+  const activeSrc = isMobile && mobileSrc ? mobileSrc : src;
 
   const clamp = (n: number) => Math.min(1, Math.max(0, n));
   const op = clamp(overlayOpacity);
@@ -75,7 +83,8 @@ export function MobileHeroBackground({
       }}
     >
       <Image
-        src={src}
+        key={activeSrc}
+        src={activeSrc}
         alt={alt}
         fill
         priority={priority}
