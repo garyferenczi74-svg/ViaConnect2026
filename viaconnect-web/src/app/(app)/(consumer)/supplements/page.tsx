@@ -62,9 +62,9 @@ function buildProtocol(supplements: DashboardSupplement[]): Record<ProtocolSlot,
   return protocol;
 }
 const SLOTS: { id: ProtocolSlot; label: string; icon: LucideIcon; time: string; color: string }[] = [
-  { id: "morning", label: "Morning", icon: Sunrise, time: "7:00 AM", color: "#FBBF24" },
-  { id: "afternoon", label: "Afternoon", icon: Sun, time: "12:00 PM", color: "#B75E18" },
-  { id: "evening", label: "Evening", icon: Moon, time: "7:00 PM", color: "#60A5FA" },
+  { id: "morning", label: "Morning", icon: Sunrise, time: "12 AM to 12 PM", color: "#FBBF24" },
+  { id: "afternoon", label: "Afternoon", icon: Sun, time: "12 PM to 6 PM", color: "#B75E18" },
+  { id: "evening", label: "Night", icon: Moon, time: "6 PM to 12 AM", color: "#60A5FA" },
   { id: "asNeeded", label: "As Needed", icon: Clock, time: "Flexible", color: "#9CA3AF" },
 ];
 const CATEGORIES = [
@@ -189,7 +189,7 @@ export default function SupplementsPage() {
             <p className="text-xs text-white/30">{takenCount}/{total} taken today</p>
             <div className="flex items-center gap-2"><div className="w-24 h-2 rounded-full bg-white/5 overflow-hidden"><div className="h-full rounded-full bg-teal-400" style={{ width: `${pct}%` }} /></div><span className="text-xs font-medium text-teal-400">{pct}%</span></div>
           </div>
-          {/* Desktop: 3 columns (Morning / Afternoon / Evening) */}
+          {/* Desktop: 3 columns (Morning / Afternoon / Night) */}
           <div className="hidden md:grid md:grid-cols-3 gap-4">
             {SLOTS.filter((s) => s.id !== 'asNeeded').map((slot) => {
               const items = PROTOCOL[slot.id];
@@ -212,23 +212,31 @@ export default function SupplementsPage() {
             })}
           </div>
 
-          {/* Mobile: single container auto-switching by time of day */}
+          {/* Mobile: single container auto-switching by time of day.
+              Header always reflects current clock; items come from the
+              current slot or fall back to the nearest non-empty slot. */}
           <div className="md:hidden">
             {(() => {
-              const slot = SLOTS.find((s) => s.id === currentSlotId)!;
-              const items = PROTOCOL[slot.id];
+              const headerSlot = SLOTS.find((s) => s.id === currentSlotId)!;
+              const sourceSlotId: ProtocolSlot =
+                PROTOCOL[currentSlotId].length > 0
+                  ? currentSlotId
+                  : (["morning", "afternoon", "evening", "asNeeded"] as ProtocolSlot[]).find(
+                      (s) => PROTOCOL[s].length > 0,
+                    ) ?? currentSlotId;
+              const items = PROTOCOL[sourceSlotId];
               return (
                 <div className="rounded-xl bg-white/[0.02] border border-white/5 overflow-hidden flex flex-col">
                   <div className="flex items-center gap-3 px-4 py-3 border-b border-white/5">
-                    <PIcon icon={slot.icon} color={slot.color} size="sm" />
+                    <PIcon icon={headerSlot.icon} color={headerSlot.color} size="sm" />
                     <div className="flex-1 min-w-0">
-                      <h4 className="text-sm font-semibold text-white">{slot.label}</h4>
-                      <p className="text-[10px] text-white/25">{slot.time} · now</p>
+                      <h4 className="text-sm font-semibold text-white">{headerSlot.label}</h4>
+                      <p className="text-[10px] text-white/25">{headerSlot.time} · now</p>
                     </div>
                     <span className="text-xs text-white/20">{items.length}</span>
                   </div>
                   {items.length > 0 ? (
-                    <div className="divide-y divide-white/[0.03]">{items.map((item) => <ItemRow key={item.id} item={item} slot={slot.id} taken={isTaken(item, slot.id)} onToggle={handleToggle} />)}</div>
+                    <div className="divide-y divide-white/[0.03]">{items.map((item) => <ItemRow key={item.id} item={item} slot={sourceSlotId} taken={isTaken(item, sourceSlotId)} onToggle={handleToggle} />)}</div>
                   ) : (
                     <div className="flex-1 flex items-center justify-center py-8 px-4">
                       <p className="text-xs text-white/25 text-center">No supplements scheduled</p>

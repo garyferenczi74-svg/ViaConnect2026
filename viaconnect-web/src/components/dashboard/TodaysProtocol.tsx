@@ -30,9 +30,9 @@ interface ScheduleBlock {
 }
 
 const TIME_BLOCKS: { id: ProtocolSlot; label: string; icon: LucideIcon; time: string; color: string }[] = [
-  { id: 'morning', label: 'Morning', icon: Sunrise, time: '7 to 9 AM', color: '#FFB347' },
-  { id: 'afternoon', label: 'Afternoon', icon: Sun, time: '12 to 2 PM', color: '#2DA5A0' },
-  { id: 'evening', label: 'Evening', icon: Moon, time: '6 to 10 PM', color: '#7C6FE0' },
+  { id: 'morning', label: 'Morning', icon: Sunrise, time: '12 AM to 12 PM', color: '#FFB347' },
+  { id: 'afternoon', label: 'Afternoon', icon: Sun, time: '12 PM to 6 PM', color: '#2DA5A0' },
+  { id: 'evening', label: 'Night', icon: Moon, time: '6 PM to 12 AM', color: '#7C6FE0' },
   { id: 'asNeeded', label: 'As Needed', icon: Clock, time: 'Flexible', color: '#9CA3AF' },
 ];
 
@@ -183,20 +183,18 @@ export function TodaysProtocol({ supplements }: TodaysProtocolProps) {
         </div>
       </div>
 
-      {/* Blocks — time-aware single container based on user's local hour */}
+      {/* Blocks — header always reflects current clock; items come from
+          the current slot or fall back to the nearest non-empty slot */}
       <div className="flex-1 space-y-3 p-4 sm:p-5">
         {(() => {
-          // 00:00-11:59 → morning, 12:00-17:59 → afternoon, 18:00-23:59 → evening
+          // 00:00-11:59 → morning, 12:00-17:59 → afternoon, 18:00-23:59 → night
           const hour = new Date().getHours();
           const currentSlotId: ProtocolSlot =
             hour < 12 ? 'morning' : hour < 18 ? 'afternoon' : 'evening';
-          const currentBlock = blocks.find((b) => b.id === currentSlotId);
+          const headerConfig = TIME_BLOCKS.find((b) => b.id === currentSlotId)!;
+          const sourceBlock = blocks.find((b) => b.id === currentSlotId) ?? blocks[0];
 
-          // Fallback: if user has no items in the current slot, show any block
-          // that has items (prefer nearest time slot)
-          const displayBlock = currentBlock ?? blocks[0];
-
-          if (!displayBlock) {
+          if (!sourceBlock) {
             return (
               <div className="flex items-center justify-center py-8">
                 <p className="text-xs text-white/30">No supplements scheduled</p>
@@ -204,9 +202,8 @@ export function TodaysProtocol({ supplements }: TodaysProtocolProps) {
             );
           }
 
-          const Icon = displayBlock.icon;
-          const blockDone = displayBlock.items.filter((i) => i.isCompleted).length;
-          const isNow = displayBlock.id === currentSlotId;
+          const Icon = headerConfig.icon;
+          const blockDone = sourceBlock.items.filter((i) => i.isCompleted).length;
 
           return (
             <div className="overflow-hidden rounded-xl border border-white/[0.06] bg-white/[0.02]">
@@ -214,28 +211,28 @@ export function TodaysProtocol({ supplements }: TodaysProtocolProps) {
                 <div
                   className="flex h-7 w-7 items-center justify-center rounded-lg"
                   style={{
-                    background: `${displayBlock.color}22`,
-                    border: `1px solid ${displayBlock.color}44`,
+                    background: `${headerConfig.color}22`,
+                    border: `1px solid ${headerConfig.color}44`,
                   }}
                 >
-                  <Icon className="h-3.5 w-3.5" strokeWidth={1.5} style={{ color: displayBlock.color }} />
+                  <Icon className="h-3.5 w-3.5" strokeWidth={1.5} style={{ color: headerConfig.color }} />
                 </div>
                 <div className="flex-1">
                   <h4 className="text-xs font-semibold text-white">
-                    {displayBlock.label}
-                    {isNow && <span className="ml-1.5 text-[10px] font-normal text-white/40">· now</span>}
+                    {headerConfig.label}
+                    <span className="ml-1.5 text-[10px] font-normal text-white/40">· now</span>
                   </h4>
                   <p className="text-[10px] text-white/35">
-                    {blockDone} of {displayBlock.items.length} done
+                    {blockDone} of {sourceBlock.items.length} done
                   </p>
                 </div>
               </div>
               <div className="divide-y divide-white/[0.04]">
-                {displayBlock.items.map((item) => (
+                {sourceBlock.items.map((item) => (
                   <ProtocolCheckItem
                     key={item.id}
                     item={item}
-                    onToggle={(slug) => toggle(slug, displayBlock.id, totalCount)}
+                    onToggle={(slug) => toggle(slug, sourceBlock.id, totalCount)}
                   />
                 ))}
               </div>
