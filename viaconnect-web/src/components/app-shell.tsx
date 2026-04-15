@@ -81,10 +81,8 @@ export function AppShell({
           onCommandPaletteOpen={handleCommandPaletteOpen}
         />
 
-        {/* Page content — body scrolls, not <main>.
-            position: fixed on hero backgrounds breaks on mobile Safari when
-            nested inside an overflow-y:auto container (Prompt #80). */}
-        <main className="flex-1 overflow-x-hidden">
+        {/* Page content */}
+        <main className="flex-1 overflow-y-auto overflow-x-hidden">
           {children}
         </main>
       </div>
