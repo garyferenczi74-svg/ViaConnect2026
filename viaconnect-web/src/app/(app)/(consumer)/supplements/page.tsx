@@ -15,6 +15,13 @@ import SupplementInput from "@/components/shared/SupplementInput";
 import type { PluginProductResult } from "@/plugins/types";
 import { useUserDashboardData } from "@/hooks/useUserDashboardData";
 import type { DashboardSupplement } from "@/hooks/useUserDashboardData";
+import { useTodaysAdherence } from "@/hooks/useTodaysAdherence";
+import {
+  supplementToSlot,
+  supplementSlug,
+  adherenceKey,
+  type ProtocolSlot,
+} from "@/lib/protocolSlot";
 import { createClient } from "@/lib/supabase/client";
 import RecommendedSupplements from "@/components/supplement-protocol/RecommendedSupplements";
 import { MobileHeroBackground } from "@/components/ui/MobileHeroBackground";
@@ -30,36 +37,31 @@ function PIcon({ icon: Icon, color, size = "md" }: { icon: LucideIcon; color: st
 
 type ProtocolItem = {
   id: string;
+  productSlug: string;
   productName: string;
   dosage: string;
   deliveryMethod?: string;
   priority: "essential" | "recommended" | "optional";
   dataSourceTag: string;
-  takenToday: boolean;
 };
 
-function buildProtocol(supplements: DashboardSupplement[]): Record<string, ProtocolItem[]> {
-  const protocol: Record<string, ProtocolItem[]> = { morning: [], afternoon: [], evening: [], asNeeded: [] };
+function buildProtocol(supplements: DashboardSupplement[]): Record<ProtocolSlot, ProtocolItem[]> {
+  const protocol: Record<ProtocolSlot, ProtocolItem[]> = { morning: [], afternoon: [], evening: [], asNeeded: [] };
   supplements.forEach((s) => {
-    const freq = (s.frequency || "").toLowerCase();
-    const cat = (s.category || "").toLowerCase();
-    let slot = "morning";
-    if (freq.includes("evening") || freq.includes("night") || freq.includes("bedtime") || cat.includes("sleep")) slot = "evening";
-    else if (freq.includes("afternoon") || freq.includes("midday")) slot = "afternoon";
-    else if (freq.includes("needed") || freq.includes("prn")) slot = "asNeeded";
+    const slot = supplementToSlot(s);
     protocol[slot].push({
       id: s.id,
+      productSlug: supplementSlug(s),
       productName: s.product_name || s.supplement_name || "Supplement",
       dosage: s.dosage || "",
       deliveryMethod: s.dosage_form || undefined,
       priority: s.is_ai_recommended ? "recommended" : "essential",
       dataSourceTag: s.is_ai_recommended ? "ai" : "caq",
-      takenToday: false,
     });
   });
   return protocol;
 }
-const SLOTS = [
+const SLOTS: { id: ProtocolSlot; label: string; icon: LucideIcon; time: string; color: string }[] = [
   { id: "morning", label: "Morning", icon: Sunrise, time: "7:00 AM", color: "#FBBF24" },
   { id: "afternoon", label: "Afternoon", icon: Sun, time: "12:00 PM", color: "#B75E18" },
   { id: "evening", label: "Evening", icon: Moon, time: "7:00 PM", color: "#60A5FA" },
@@ -76,11 +78,25 @@ const CATEGORIES = [
   { icon: Pill, label: "Standard", color: "#9CA3AF", count: "50+" },
 ];
 
-function ItemRow({ item }: { item: ProtocolItem }) {
-  const [taken, setTaken] = useState(item.takenToday);
+function ItemRow({
+  item,
+  slot,
+  taken,
+  onToggle,
+}: {
+  item: ProtocolItem;
+  slot: ProtocolSlot;
+  taken: boolean;
+  onToggle: (slug: string, slot: ProtocolSlot) => void;
+}) {
   return (
     <div className="flex items-center gap-4 px-4 md:px-5 py-3.5 hover:bg-white/[0.02] transition-colors">
-      <button onClick={() => setTaken(!taken)} className="min-w-[44px] min-h-[44px] flex items-center justify-center">
+      <button
+        onClick={() => onToggle(item.productSlug, slot)}
+        aria-pressed={taken}
+        aria-label={`${taken ? "Uncheck" : "Check"} ${item.productName}`}
+        className="min-w-[44px] min-h-[44px] flex items-center justify-center"
+      >
         {taken ? <div className="w-6 h-6 rounded-full bg-teal-400/20 border border-teal-400/40 flex items-center justify-center"><Check className="w-3.5 h-3.5 text-teal-400" strokeWidth={2.5} /></div> : <div className="w-6 h-6 rounded-full border-2 border-white/15 hover:border-teal-400/30 transition-colors" />}
       </button>
       <div className="flex-1 min-w-0">
@@ -119,6 +135,7 @@ function Section({ icon, iconColor, title, subtitle, children }: { icon: LucideI
 /* ═══ MAIN PAGE ═══ */
 export default function SupplementsPage() {
   const { loading, supplements, assessmentCompleted, profile } = useUserDashboardData();
+  const { entries, toggle } = useTodaysAdherence();
 
   if (loading) {
     return (
@@ -130,14 +147,19 @@ export default function SupplementsPage() {
   }
 
   const PROTOCOL = buildProtocol(supplements);
-  const all = [...PROTOCOL.morning, ...PROTOCOL.afternoon, ...PROTOCOL.evening, ...PROTOCOL.asNeeded];
-  const taken = all.filter(i => i.takenToday).length;
-  const pct = all.length > 0 ? Math.round((taken / all.length) * 100) : 0;
+  const allWithSlot: { item: ProtocolItem; slot: ProtocolSlot }[] = (
+    ["morning", "afternoon", "evening", "asNeeded"] as ProtocolSlot[]
+  ).flatMap((slot) => PROTOCOL[slot].map((item) => ({ item, slot })));
+  const total = allWithSlot.length;
+  const takenCount = allWithSlot.filter(({ item, slot }) => !!entries[adherenceKey(item.productSlug, slot)]).length;
+  const pct = total > 0 ? Math.round((takenCount / total) * 100) : 0;
+  const handleToggle = (slug: string, slot: ProtocolSlot) => toggle(slug, slot, total);
+  const isTaken = (item: ProtocolItem, slot: ProtocolSlot) => !!entries[adherenceKey(item.productSlug, slot)];
 
   // Mobile: show one slot at a time based on current local hour.
   // 00:00-11:59 = morning, 12:00-17:59 = afternoon, 18:00-23:59 = evening
   const hour = new Date().getHours();
-  const currentSlotId = hour < 12 ? 'morning' : hour < 18 ? 'afternoon' : 'evening';
+  const currentSlotId: ProtocolSlot = hour < 12 ? 'morning' : hour < 18 ? 'afternoon' : 'evening';
 
   return (
     <>
@@ -164,13 +186,13 @@ export default function SupplementsPage() {
       <Section icon={CalendarClock} iconColor="#2DA5A0" title="Daily Schedule" subtitle="Your supplement checklist for today">
         <div className="p-5 md:p-6">
           <div className="flex items-center justify-between mb-5">
-            <p className="text-xs text-white/30">{taken}/{all.length} taken today</p>
+            <p className="text-xs text-white/30">{takenCount}/{total} taken today</p>
             <div className="flex items-center gap-2"><div className="w-24 h-2 rounded-full bg-white/5 overflow-hidden"><div className="h-full rounded-full bg-teal-400" style={{ width: `${pct}%` }} /></div><span className="text-xs font-medium text-teal-400">{pct}%</span></div>
           </div>
           {/* Desktop: 3 columns (Morning / Afternoon / Evening) */}
           <div className="hidden md:grid md:grid-cols-3 gap-4">
             {SLOTS.filter((s) => s.id !== 'asNeeded').map((slot) => {
-              const items = (PROTOCOL as Record<string, ProtocolItem[]>)[slot.id] || [];
+              const items = PROTOCOL[slot.id];
               return (
                 <div key={slot.id} className="rounded-xl bg-white/[0.02] border border-white/5 overflow-hidden flex flex-col">
                   <div className="flex items-center gap-3 px-4 md:px-5 py-3 border-b border-white/5">
@@ -179,7 +201,7 @@ export default function SupplementsPage() {
                     <span className="text-xs text-white/20">{items.length}</span>
                   </div>
                   {items.length > 0 ? (
-                    <div className="divide-y divide-white/[0.03]">{items.map((item) => <ItemRow key={item.id} item={item} />)}</div>
+                    <div className="divide-y divide-white/[0.03]">{items.map((item) => <ItemRow key={item.id} item={item} slot={slot.id} taken={isTaken(item, slot.id)} onToggle={handleToggle} />)}</div>
                   ) : (
                     <div className="flex-1 flex items-center justify-center py-8 px-4">
                       <p className="text-xs text-white/25 text-center">No supplements scheduled</p>
@@ -194,7 +216,7 @@ export default function SupplementsPage() {
           <div className="md:hidden">
             {(() => {
               const slot = SLOTS.find((s) => s.id === currentSlotId)!;
-              const items = (PROTOCOL as Record<string, ProtocolItem[]>)[slot.id] || [];
+              const items = PROTOCOL[slot.id];
               return (
                 <div className="rounded-xl bg-white/[0.02] border border-white/5 overflow-hidden flex flex-col">
                   <div className="flex items-center gap-3 px-4 py-3 border-b border-white/5">
@@ -206,7 +228,7 @@ export default function SupplementsPage() {
                     <span className="text-xs text-white/20">{items.length}</span>
                   </div>
                   {items.length > 0 ? (
-                    <div className="divide-y divide-white/[0.03]">{items.map((item) => <ItemRow key={item.id} item={item} />)}</div>
+                    <div className="divide-y divide-white/[0.03]">{items.map((item) => <ItemRow key={item.id} item={item} slot={slot.id} taken={isTaken(item, slot.id)} onToggle={handleToggle} />)}</div>
                   ) : (
                     <div className="flex-1 flex items-center justify-center py-8 px-4">
                       <p className="text-xs text-white/25 text-center">No supplements scheduled</p>

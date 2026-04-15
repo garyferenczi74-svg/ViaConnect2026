@@ -6,9 +6,15 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, Pill, Sunrise, Sun, Sunset, Moon, Clock, type LucideIcon } from 'lucide-react';
+import { ArrowRight, Pill, Sunrise, Sun, Moon, Clock, type LucideIcon } from 'lucide-react';
 import type { DashboardSupplement } from '@/hooks/useUserDashboardData';
 import { useTodaysAdherence } from '@/hooks/useTodaysAdherence';
+import {
+  supplementToSlot,
+  supplementSlug,
+  adherenceKey,
+  type ProtocolSlot,
+} from '@/lib/protocolSlot';
 import { ProtocolCheckItem, type ProtocolCheckItemData } from './ProtocolCheckItem';
 
 interface TodaysProtocolProps {
@@ -16,36 +22,19 @@ interface TodaysProtocolProps {
 }
 
 interface ScheduleBlock {
-  id: string;
+  id: ProtocolSlot;
   label: string;
   icon: LucideIcon;
   color: string;
   items: ProtocolCheckItemData[];
 }
 
-const TIME_BLOCKS: { id: string; label: string; icon: LucideIcon; time: string; color: string }[] = [
-  { id: 'morning', label: 'Morning', icon: Sunrise, time: '7–9 AM', color: '#FFB347' },
-  { id: 'midday', label: 'Midday', icon: Sun, time: '12–2 PM', color: '#2DA5A0' },
-  { id: 'evening', label: 'Evening', icon: Sunset, time: '5–7 PM', color: '#B75E18' },
-  { id: 'bedtime', label: 'Bedtime', icon: Moon, time: '9–11 PM', color: '#7C6FE0' },
+const TIME_BLOCKS: { id: ProtocolSlot; label: string; icon: LucideIcon; time: string; color: string }[] = [
+  { id: 'morning', label: 'Morning', icon: Sunrise, time: '7 to 9 AM', color: '#FFB347' },
+  { id: 'afternoon', label: 'Afternoon', icon: Sun, time: '12 to 2 PM', color: '#2DA5A0' },
+  { id: 'evening', label: 'Evening', icon: Moon, time: '6 to 10 PM', color: '#7C6FE0' },
   { id: 'asNeeded', label: 'As Needed', icon: Clock, time: 'Flexible', color: '#9CA3AF' },
 ];
-
-const slotForSupp = (s: DashboardSupplement): string => {
-  const freq = (s.frequency || '').toLowerCase();
-  const cat = (s.category || '').toLowerCase();
-  if (freq.includes('bedtime') || freq.includes('night')) return 'bedtime';
-  if (freq.includes('evening') || cat.includes('sleep')) return 'evening';
-  if (freq.includes('midday') || freq.includes('afternoon') || freq.includes('lunch')) return 'midday';
-  if (freq.includes('needed') || freq.includes('prn')) return 'asNeeded';
-  return 'morning';
-};
-
-const slugify = (s: string) =>
-  s
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)/g, '');
 
 function ConfettiBurst() {
   // 18 small particles bursting outward
@@ -82,26 +71,31 @@ export function TodaysProtocol({ supplements }: TodaysProtocolProps) {
 
   // Build schedule blocks from supplements + adherence state
   const blocks: ScheduleBlock[] = useMemo(() => {
-    const grouped: Record<string, ProtocolCheckItemData[]> = {};
+    const grouped: Record<ProtocolSlot, ProtocolCheckItemData[]> = {
+      morning: [],
+      afternoon: [],
+      evening: [],
+      asNeeded: [],
+    };
     supplements.forEach((s) => {
-      const slot = slotForSupp(s);
-      const slug = slugify(s.product_name || s.supplement_name || s.id);
+      const slot = supplementToSlot(s);
+      const slug = supplementSlug(s);
       const item: ProtocolCheckItemData = {
         id: s.id,
         productName: s.product_name || s.supplement_name || 'Supplement',
         productSlug: slug,
         deliveryForm: s.dosage_form,
         dosage: s.dosage,
-        isCompleted: !!entries[`${slug}:${slot}`],
+        isCompleted: !!entries[adherenceKey(slug, slot)],
       };
-      (grouped[slot] = grouped[slot] || []).push(item);
+      grouped[slot].push(item);
     });
-    return TIME_BLOCKS.filter((b) => (grouped[b.id] || []).length > 0).map((b) => ({
+    return TIME_BLOCKS.filter((b) => grouped[b.id].length > 0).map((b) => ({
       id: b.id,
       label: b.label,
       icon: b.icon,
       color: b.color,
-      items: grouped[b.id] || [],
+      items: grouped[b.id],
     }));
   }, [supplements, entries]);
 
@@ -192,9 +186,10 @@ export function TodaysProtocol({ supplements }: TodaysProtocolProps) {
       {/* Blocks — time-aware single container based on user's local hour */}
       <div className="flex-1 space-y-3 p-4 sm:p-5">
         {(() => {
-          // 00:00-11:59 → morning, 12:00-17:59 → midday, 18:00-23:59 → evening
+          // 00:00-11:59 → morning, 12:00-17:59 → afternoon, 18:00-23:59 → evening
           const hour = new Date().getHours();
-          const currentSlotId = hour < 12 ? 'morning' : hour < 18 ? 'midday' : 'evening';
+          const currentSlotId: ProtocolSlot =
+            hour < 12 ? 'morning' : hour < 18 ? 'afternoon' : 'evening';
           const currentBlock = blocks.find((b) => b.id === currentSlotId);
 
           // Fallback: if user has no items in the current slot, show any block
