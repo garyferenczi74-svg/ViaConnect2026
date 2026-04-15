@@ -458,7 +458,7 @@ export default function AnalyticsPage() {
   return (
     <>
     <MobileHeroBackground
-      src="https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Images/Athlete%206.png"
+      src="https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Images/Athlete%2020%20Desktop.png"
       mobileSrc="https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Mobile%20Hero/Athlete%2020%20Mobile.png"
       overlayOpacity={0.55}
       objectPosition="center center"
@@ -472,7 +472,7 @@ export default function AnalyticsPage() {
           <BarChart3 className="w-6 h-6 text-copper" />
           Wellness Analytics
         </h1>
-        <p className="text-gray-400 text-sm mt-1">
+        <p className="text-[#B75E18] text-sm mt-1">
           Track your vitality, adherence, symptoms, and wellness journey over time.
         </p>
       </StaggerChild>
