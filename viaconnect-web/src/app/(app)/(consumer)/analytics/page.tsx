@@ -2,8 +2,11 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { motion } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
 import type { SupplementLog, GeneticVariant } from "@/lib/supabase/types";
+import type { DashboardSupplement } from "@/hooks/useUserDashboardData";
+import { supplementSlug } from "@/lib/protocolSlot";
 import { Card } from "@/components/ui/Card";
 import { MobileHeroBackground } from "@/components/ui/MobileHeroBackground";
 import { Badge } from "@/components/ui/Badge";
@@ -121,6 +124,99 @@ function HorizontalBarChart({ items }: { items: { label: string; value: number; 
           <Progress value={item.value} max={item.max} color={item.color} />
         </div>
       ))}
+    </div>
+  );
+}
+
+// ─── Supplement Adherence Graph (21st.dev polish) ───────────────────────────
+
+interface AdherenceItem {
+  id: string;
+  name: string;
+  rate: number;
+  completedCount: number;
+  expectedCount: number;
+  streak: number;
+  source: "CAQ" | "Added";
+  category: string | null;
+}
+
+function adherenceColor(rate: number): string {
+  if (rate >= 80) return "#22C55E";
+  if (rate >= 60) return "#2DA5A0";
+  if (rate >= 40) return "#F59E0B";
+  if (rate >= 20) return "#B75E18";
+  return "#EF4444";
+}
+
+function SupplementAdherenceGraph({ items }: { items: AdherenceItem[] }) {
+  const avg = items.length > 0 ? Math.round(items.reduce((s, i) => s + i.rate, 0) / items.length) : 0;
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between rounded-lg border border-white/[0.06] bg-white/[0.02] px-3 py-2">
+        <div className="flex items-baseline gap-2">
+          <span className="text-[10px] uppercase tracking-wider text-white/30">Protocol average</span>
+          <span className="text-xs text-white/50">{items.length} {items.length === 1 ? "supplement" : "supplements"}</span>
+        </div>
+        <span className="text-sm font-bold" style={{ color: adherenceColor(avg) }}>{avg}%</span>
+      </div>
+
+      <div className="space-y-2">
+        {items.map((item, i) => {
+          const color = adherenceColor(item.rate);
+          return (
+            <motion.div
+              key={item.id}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.04, duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+              className="group relative overflow-hidden rounded-lg border border-white/[0.06] bg-white/[0.02] p-3 transition-colors hover:border-white/[0.12] hover:bg-white/[0.035]"
+            >
+              <div className="mb-1.5 flex items-center justify-between gap-2">
+                <div className="flex min-w-0 items-center gap-2">
+                  <span className="truncate text-xs font-medium text-white/85">{item.name}</span>
+                  <span
+                    className="shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider"
+                    style={
+                      item.source === "CAQ"
+                        ? { backgroundColor: "rgba(45,165,160,0.14)", color: "#2DA5A0", border: "1px solid rgba(45,165,160,0.24)" }
+                        : { backgroundColor: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.45)", border: "1px solid rgba(255,255,255,0.08)" }
+                    }
+                  >
+                    {item.source}
+                  </span>
+                </div>
+                <span className="shrink-0 text-xs font-bold tabular-nums" style={{ color }}>
+                  {item.rate}%
+                </span>
+              </div>
+
+              <div className="h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${item.rate}%` }}
+                  transition={{ delay: i * 0.04 + 0.18, duration: 0.8, ease: "easeOut" }}
+                  className="h-full rounded-full"
+                  style={{
+                    background: `linear-gradient(90deg, ${color}66 0%, ${color} 100%)`,
+                    boxShadow: `0 0 12px ${color}40`,
+                  }}
+                />
+              </div>
+
+              <div className="mt-1.5 flex items-center justify-between text-[10px] text-white/35">
+                <span>{item.completedCount} of {item.expectedCount} doses last 30 days</span>
+                {item.streak > 0 && (
+                  <span className="flex items-center gap-1 text-orange-400/80">
+                    <Flame className="h-2.5 w-2.5" strokeWidth={2} />
+                    {item.streak}d streak
+                  </span>
+                )}
+              </div>
+            </motion.div>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -267,6 +363,38 @@ export default function AnalyticsPage() {
     enabled: !!userId,
   });
 
+  // Active supplements from CAQ + Supplement Protocol page (unified source)
+  const { data: activeSupplements } = useQuery({
+    queryKey: ["analytics-active-supplements", userId],
+    queryFn: async () => {
+      const { data } = await sb
+        .from("user_current_supplements")
+        .select("id, supplement_name, product_name, brand, dosage, dosage_form, frequency, category, is_current, is_ai_recommended")
+        .eq("user_id", userId!)
+        .eq("is_current", true);
+      return (data ?? []) as DashboardSupplement[];
+    },
+    enabled: !!userId,
+  });
+
+  // Adherence log from Today's Protocol + Supplement Protocol check-offs
+  const { data: adherenceLog } = useQuery({
+    queryKey: ["analytics-adherence-log", userId],
+    queryFn: async () => {
+      const thirty = new Date();
+      thirty.setDate(thirty.getDate() - 30);
+      const dateStr = thirty.toISOString().slice(0, 10);
+      const { data } = await sb
+        .from("protocol_adherence_log")
+        .select("product_slug, scheduled_date, time_of_day, completed")
+        .eq("user_id", userId!)
+        .eq("completed", true)
+        .gte("scheduled_date", dateStr);
+      return (data ?? []) as { product_slug: string; scheduled_date: string; time_of_day: string; completed: boolean }[];
+    },
+    enabled: !!userId,
+  });
+
   // Recommendations
   const { data: recommendations } = useQuery({
     queryKey: ["analytics-recs", userId],
@@ -358,6 +486,56 @@ export default function AnalyticsPage() {
   const currentScore = profileData?.bio_optimization_score ?? 0;
   const scores = (scoreHistory ?? []).map((s) => s.score);
   const scoreTrend = scores.length >= 2 ? scores[scores.length - 1] - scores[scores.length - 2] : 0;
+
+  // Per-supplement adherence using the canonical data the Supplement
+  // Protocol page writes (user_current_supplements + protocol_adherence_log).
+  // CAQ-recommended items carry the CAQ badge; manually-added carry Added.
+  const supplementAdherence: AdherenceItem[] = useMemo(() => {
+    const supps = activeSupplements ?? [];
+    const logs = adherenceLog ?? [];
+    if (supps.length === 0) return [];
+
+    const logsBySlug: Record<string, { product_slug: string; scheduled_date: string }[]> = {};
+    for (const row of logs) {
+      (logsBySlug[row.product_slug] = logsBySlug[row.product_slug] || []).push(row);
+    }
+
+    const todayKey = new Date().toISOString().slice(0, 10);
+
+    return supps
+      .map((s) => {
+        const slug = supplementSlug(s);
+        const slugLogs = logsBySlug[slug] ?? [];
+        const completedCount = slugLogs.length;
+        const rate = Math.min(100, Math.round((completedCount / 30) * 100));
+
+        // Streak: consecutive days with a completed log, counted back from today
+        const dates = new Set(slugLogs.map((r) => r.scheduled_date));
+        let streak = 0;
+        const cursor = new Date(todayKey);
+        while (streak < 90) {
+          const key = cursor.toISOString().slice(0, 10);
+          if (dates.has(key)) {
+            streak++;
+            cursor.setDate(cursor.getDate() - 1);
+          } else {
+            break;
+          }
+        }
+
+        return {
+          id: s.id,
+          name: s.product_name || s.supplement_name || "Supplement",
+          rate,
+          completedCount,
+          expectedCount: 30,
+          streak,
+          source: s.is_ai_recommended ? ("CAQ" as const) : ("Added" as const),
+          category: s.category,
+        };
+      })
+      .sort((a, b) => b.rate - a.rate || a.name.localeCompare(b.name));
+  }, [activeSupplements, adherenceLog]);
 
   // Adherence calculations
   const adherence = useMemo(() => {
@@ -581,20 +759,18 @@ export default function AnalyticsPage() {
 
       {/* ── Row 3: Adherence by Supplement + Symptom Severity ── */}
       <StaggerChild className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Per-supplement adherence */}
+        {/* Per-supplement adherence — from CAQ + Supplement Protocol */}
         <Card className="p-5">
-          <h3 className="text-sm font-semibold text-white mb-4">Adherence by Supplement</h3>
-          {adherence.byProduct.length === 0 ? (
-            <EmptyState icon={Pill} title="No protocol data" description="Add supplements to your protocol to track adherence." />
+          <div className="mb-4 flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-semibold text-white">Adherence by Supplement</h3>
+              <p className="text-[11px] text-white/35 mt-0.5">CAQ recommendations and supplements in your protocol</p>
+            </div>
+          </div>
+          {supplementAdherence.length === 0 ? (
+            <EmptyState icon={Pill} title="No protocol data" description="Add supplements to your protocol or complete the Clinical Assessment to track adherence." />
           ) : (
-            <HorizontalBarChart
-              items={adherence.byProduct.map((p) => ({
-                label: p.name,
-                value: p.rate,
-                max: 100,
-                color: p.rate >= 80 ? "bg-portal-green" : p.rate >= 50 ? "bg-portal-yellow" : "bg-rose",
-              }))}
-            />
+            <SupplementAdherenceGraph items={supplementAdherence} />
           )}
         </Card>
 
