@@ -177,6 +177,12 @@ export function QuickMealLogWidget({ hideHeader = false, onSaved }: QuickMealLog
         quality_rating: qualityRating,
         meal_date: today,
       });
+
+      // Fire-and-forget: roll into daily_scores so Category Pillars on the
+      // Analytics page reflect the new nutrition without blocking the UI.
+      void import('@/app/actions/dailyScores')
+        .then(({ recalculateDailyScores }) => recalculateDailyScores(user.id, today))
+        .catch((err) => console.error('[QuickMealLogWidget] recalc failed', err));
     } catch { /* tables may not have new columns yet */ }
     finally {
       setSaving(false);

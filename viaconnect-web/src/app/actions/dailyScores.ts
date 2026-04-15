@@ -18,7 +18,7 @@ export async function recalculateDailyScores(
       .from('daily_checkins')
       .select('*')
       .eq('user_id', userId)
-      .eq('checkin_date', date)
+      .eq('check_in_date', date)
       .maybeSingle(),
     (supabase as any)
       .from('meal_logs')
@@ -67,7 +67,9 @@ export async function recalculateDailyScores(
       },
       calculated_at: new Date().toISOString(),
     }, { onConflict: 'user_id,score_date' });
-  } catch { /* table may not exist yet */ }
+  } catch (err) {
+    console.error('[recalculateDailyScores] upsert failed:', err);
+  }
 
   return result;
 }

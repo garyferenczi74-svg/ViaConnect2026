@@ -62,6 +62,16 @@ export function useCheckinCard({
 
       setSubmittedAt(now);
       onSaved?.();
+
+      // Fire-and-forget: roll the saved check-in into daily_scores so the
+      // Analytics Category Pillars / Bio Optimization trend pick up the
+      // new values. Runs AFTER onSaved so the dashboard panel's refresh
+      // event fires immediately and the UI doesn't stall.
+      void import('@/app/actions/dailyScores')
+        .then(({ recalculateDailyScores }) => recalculateDailyScores(userId, checkInDate))
+        .catch((err) => {
+          console.error(`[CheckinCard:${submitFlagColumn}] recalc failed`, err);
+        });
     } catch (err) {
       console.error(`[CheckinCard:${submitFlagColumn}]`, err);
     } finally {
