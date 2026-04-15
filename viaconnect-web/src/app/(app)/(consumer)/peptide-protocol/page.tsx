@@ -39,7 +39,7 @@ export default function PeptideProtocolRoute() {
       {/* CONTENT — scrolls over hero */}
       <div className="relative z-10 text-white">
         {/* Transparent spacer — hero shows through here */}
-        <div className="h-[300px] md:h-[400px]" />
+        <div className="h-[80px] md:h-[400px]" />
 
         {/* Deep Navy content starts below the hero visible area */}
         <div className="min-h-screen rounded-t-3xl bg-[#0D1520] px-4 py-8 md:px-8">
