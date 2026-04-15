@@ -212,19 +212,12 @@ export default function SupplementsPage() {
             })}
           </div>
 
-          {/* Mobile: single container auto-switching by time of day.
-              Header always reflects current clock; items come from the
-              current slot or fall back to the nearest non-empty slot. */}
+          {/* Mobile: single container for the current time slot only.
+              Items are only those classified for the current slot. */}
           <div className="md:hidden">
             {(() => {
               const headerSlot = SLOTS.find((s) => s.id === currentSlotId)!;
-              const sourceSlotId: ProtocolSlot =
-                PROTOCOL[currentSlotId].length > 0
-                  ? currentSlotId
-                  : (["morning", "afternoon", "evening", "asNeeded"] as ProtocolSlot[]).find(
-                      (s) => PROTOCOL[s].length > 0,
-                    ) ?? currentSlotId;
-              const items = PROTOCOL[sourceSlotId];
+              const items = PROTOCOL[currentSlotId];
               return (
                 <div className="rounded-xl bg-white/[0.02] border border-white/5 overflow-hidden flex flex-col">
                   <div className="flex items-center gap-3 px-4 py-3 border-b border-white/5">
@@ -236,10 +229,10 @@ export default function SupplementsPage() {
                     <span className="text-xs text-white/20">{items.length}</span>
                   </div>
                   {items.length > 0 ? (
-                    <div className="divide-y divide-white/[0.03]">{items.map((item) => <ItemRow key={item.id} item={item} slot={sourceSlotId} taken={isTaken(item, sourceSlotId)} onToggle={handleToggle} />)}</div>
+                    <div className="divide-y divide-white/[0.03]">{items.map((item) => <ItemRow key={item.id} item={item} slot={currentSlotId} taken={isTaken(item, currentSlotId)} onToggle={handleToggle} />)}</div>
                   ) : (
                     <div className="flex-1 flex items-center justify-center py-8 px-4">
-                      <p className="text-xs text-white/25 text-center">No supplements scheduled</p>
+                      <p className="text-xs text-white/25 text-center">No supplements scheduled for {headerSlot.label.toLowerCase()}</p>
                     </div>
                   )}
                 </div>

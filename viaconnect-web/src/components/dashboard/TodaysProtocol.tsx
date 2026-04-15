@@ -183,8 +183,8 @@ export function TodaysProtocol({ supplements }: TodaysProtocolProps) {
         </div>
       </div>
 
-      {/* Blocks — header always reflects current clock; items come from
-          the current slot or fall back to the nearest non-empty slot */}
+      {/* Blocks — single container for the current time slot only; items
+          are the ones classified for that slot (no cross slot fallback) */}
       <div className="flex-1 space-y-3 p-4 sm:p-5">
         {(() => {
           // 00:00-11:59 → morning, 12:00-17:59 → afternoon, 18:00-23:59 → night
@@ -192,18 +192,10 @@ export function TodaysProtocol({ supplements }: TodaysProtocolProps) {
           const currentSlotId: ProtocolSlot =
             hour < 12 ? 'morning' : hour < 18 ? 'afternoon' : 'evening';
           const headerConfig = TIME_BLOCKS.find((b) => b.id === currentSlotId)!;
-          const sourceBlock = blocks.find((b) => b.id === currentSlotId) ?? blocks[0];
-
-          if (!sourceBlock) {
-            return (
-              <div className="flex items-center justify-center py-8">
-                <p className="text-xs text-white/30">No supplements scheduled</p>
-              </div>
-            );
-          }
-
+          const currentBlock = blocks.find((b) => b.id === currentSlotId);
+          const items = currentBlock?.items ?? [];
           const Icon = headerConfig.icon;
-          const blockDone = sourceBlock.items.filter((i) => i.isCompleted).length;
+          const blockDone = items.filter((i) => i.isCompleted).length;
 
           return (
             <div className="overflow-hidden rounded-xl border border-white/[0.06] bg-white/[0.02]">
@@ -223,19 +215,27 @@ export function TodaysProtocol({ supplements }: TodaysProtocolProps) {
                     <span className="ml-1.5 text-[10px] font-normal text-white/40">· now</span>
                   </h4>
                   <p className="text-[10px] text-white/35">
-                    {blockDone} of {sourceBlock.items.length} done
+                    {blockDone} of {items.length} done
                   </p>
                 </div>
               </div>
-              <div className="divide-y divide-white/[0.04]">
-                {sourceBlock.items.map((item) => (
-                  <ProtocolCheckItem
-                    key={item.id}
-                    item={item}
-                    onToggle={(slug) => toggle(slug, sourceBlock.id, totalCount)}
-                  />
-                ))}
-              </div>
+              {items.length > 0 ? (
+                <div className="divide-y divide-white/[0.04]">
+                  {items.map((item) => (
+                    <ProtocolCheckItem
+                      key={item.id}
+                      item={item}
+                      onToggle={(slug) => toggle(slug, currentSlotId, totalCount)}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="flex items-center justify-center py-8 px-4">
+                  <p className="text-xs text-white/30 text-center">
+                    No supplements scheduled for {headerConfig.label.toLowerCase()}
+                  </p>
+                </div>
+              )}
             </div>
           );
         })()}
