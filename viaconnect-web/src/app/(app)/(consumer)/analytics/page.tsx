@@ -471,6 +471,21 @@ export default function AnalyticsPage() {
     enabled: !!userId,
   });
 
+  // Daily check-in history (powers streak + days-active)
+  const { data: checkinDates } = useQuery({
+    queryKey: ["analytics-checkin-dates", userId],
+    queryFn: async () => {
+      const { data } = await sb
+        .from("daily_checkins")
+        .select("check_in_date")
+        .eq("user_id", userId!)
+        .order("check_in_date", { ascending: false })
+        .limit(365);
+      return (data ?? []).map((r: { check_in_date: string }) => r.check_in_date);
+    },
+    enabled: !!userId,
+  });
+
   // Orders
   const { data: orders } = useQuery({
     queryKey: ["analytics-orders", userId],
@@ -487,8 +502,28 @@ export default function AnalyticsPage() {
 
   // ─── Computed values ─────────────────────────────────────────────────────
 
-  const currentScore = profileData?.bio_optimization_score ?? 0;
   const scores = (scoreHistory ?? []).map((s) => s.score);
+  const currentScore =
+    profileData?.bio_optimization_score ??
+    (scores.length > 0 ? Math.round(scores[scores.length - 1]) : 0);
+
+  // Consecutive days with a check-in, counted back from today
+  const checkinStreak = useMemo(() => {
+    const dates = new Set(checkinDates ?? []);
+    if (dates.size === 0) return 0;
+    let streak = 0;
+    const cursor = new Date();
+    for (let i = 0; i < 365; i++) {
+      const key = cursor.toISOString().slice(0, 10);
+      if (dates.has(key)) {
+        streak++;
+        cursor.setDate(cursor.getDate() - 1);
+      } else {
+        break;
+      }
+    }
+    return streak;
+  }, [checkinDates]);
   const scoreTrend = scores.length >= 2 ? scores[scores.length - 1] - scores[scores.length - 2] : 0;
 
   // Per-supplement adherence using the canonical data the Supplement
@@ -634,7 +669,13 @@ export default function AnalyticsPage() {
     .reduce((s, o) => s + o.total, 0);
   const monthlyEstimate = (recommendations ?? []).reduce((s, r) => s + (r.monthly_price ?? 0), 0);
 
-  const protocolCount = (protocol ?? []).length;
+  // Canonical active-supplements count comes from user_current_supplements
+  // (matches the source the Supplement Protocol page writes to). Falls back
+  // to user_protocols when the canonical table is empty.
+  const protocolCount =
+    (activeSupplements ?? []).length > 0
+      ? (activeSupplements ?? []).length
+      : (protocol ?? []).length;
   const recCount = (recommendations ?? []).length;
 
   return (
@@ -691,7 +732,7 @@ export default function AnalyticsPage() {
 
         <MotionCard className="p-5">
           <Flame className="w-4 h-4 text-portal-yellow mb-2" />
-          <p className="text-3xl font-bold text-white">{adherence.streak}</p>
+          <p className="text-3xl font-bold text-white">{checkinStreak}</p>
           <p className="text-xs text-gray-500 mt-1">Day Streak</p>
         </MotionCard>
 
@@ -707,7 +748,7 @@ export default function AnalyticsPage() {
         <BioOptimizationTrend
           userId={userId}
           displayName={displayName}
-          streak={adherence.streak}
+          streak={checkinStreak}
           adherencePct={adherence.overall}
         />
       </StaggerChild>
