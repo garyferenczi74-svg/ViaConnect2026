@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { FlaskConical } from "lucide-react";
 import { PeptideDisclaimerBanner } from "@/components/peptide-protocol/PeptideDisclaimerBanner";
 import { PeptideSearchBar } from "@/components/peptide-protocol/PeptideSearchBar";
@@ -9,23 +8,7 @@ import { PeptideCatalogSection } from "@/components/peptide-protocol/PeptideCata
 import { PeptidePractitionerAccess } from "@/components/peptide-protocol/PeptidePractitionerAccess";
 import { ShareProtocolButton } from "@/components/consumer/ShareProtocolButton";
 
-const PEPTIDE_HERO_DESKTOP =
-  "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Images/Fit%20couple%202.png";
-const PEPTIDE_HERO_MOBILE =
-  "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Mobile%20Hero/Athlete%2011%20mobile.png";
-
 export default function PeptideProtocolRoute() {
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    const update = () => setIsMobile(window.innerWidth < 768);
-    update();
-    window.addEventListener('resize', update);
-    return () => window.removeEventListener('resize', update);
-  }, []);
-
-  const heroSrc = isMobile ? PEPTIDE_HERO_MOBILE : PEPTIDE_HERO_DESKTOP;
-
   return (
     <>
       {/* HERO — fixed behind everything, inline styles to guarantee rendering */}
@@ -34,7 +17,7 @@ export default function PeptideProtocolRoute() {
         style={{ width: '100vw', height: '100vh', top: 0, left: 0 }}
       >
         <img
-          src={heroSrc}
+          src="https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Images/Fit%20couple%202.png"
           alt="Peptide Protocol background"
           style={{
             width: '100%',
@@ -56,7 +39,7 @@ export default function PeptideProtocolRoute() {
       {/* CONTENT — scrolls over hero */}
       <div className="relative z-10 text-white">
         {/* Transparent spacer — hero shows through here */}
-        <div className="h-[80px] md:h-[400px]" />
+        <div className="h-[300px] md:h-[400px]" />
 
         {/* Deep Navy content starts below the hero visible area */}
         <div className="min-h-screen rounded-t-3xl bg-[#0D1520] px-4 py-8 md:px-8">
