@@ -5,18 +5,18 @@ import { createClient } from '@/lib/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Apple, Coffee, UtensilsCrossed, Cookie, Check, ChevronRight, ChevronDown,
-  Beef, Wheat, Droplets, Candy, Loader2, Ban,
+  Beef, Wheat, Droplets, Candy, Loader2, Ban, Leaf,
 } from 'lucide-react';
 import Link from 'next/link';
 import { CheckInSlider } from './CheckInSlider';
 import { computeMealScore, mealScoreLabel, mealScoreColor } from '@/lib/scoring/mealQualityScore';
 
 type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snacks';
-type MacroField = 'protein' | 'carbs' | 'fat' | 'sugar';
+type MacroField = 'protein' | 'carbs' | 'fat' | 'healthyFat' | 'sugar';
 
-interface MacroValues { protein: number; carbs: number; fat: number; sugar: number; }
+interface MacroValues { protein: number; carbs: number; fat: number; healthyFat: number; sugar: number; }
 
-const DEFAULT_MACROS: MacroValues = { protein: 5, carbs: 5, fat: 5, sugar: 3 };
+const DEFAULT_MACROS: MacroValues = { protein: 5, carbs: 5, fat: 5, healthyFat: 5, sugar: 3 };
 
 const MEAL_TABS: { id: MealType; label: string; icon: React.ReactNode }[] = [
   { id: 'breakfast', label: 'Breakfast', icon: <Coffee className="h-4 w-4" strokeWidth={1.5} /> },
@@ -52,7 +52,7 @@ export function QuickMealLogWidget({ hideHeader = false, onSaved }: QuickMealLog
 
       const { data } = await (supabase as any)
         .from('daily_checkins')
-        .select('breakfast_protein, breakfast_carbs, breakfast_fat, breakfast_sugar, breakfast_score, breakfast_skipped, lunch_protein, lunch_carbs, lunch_fat, lunch_sugar, lunch_score, lunch_skipped, dinner_protein, dinner_carbs, dinner_fat, dinner_sugar, dinner_score, dinner_skipped, snacks_protein, snacks_carbs, snacks_fat, snacks_sugar, snacks_score, snacks_skipped')
+        .select('breakfast_protein, breakfast_carbs, breakfast_fat, breakfast_healthy_fat, breakfast_sugar, breakfast_score, breakfast_skipped, lunch_protein, lunch_carbs, lunch_fat, lunch_healthy_fat, lunch_sugar, lunch_score, lunch_skipped, dinner_protein, dinner_carbs, dinner_fat, dinner_healthy_fat, dinner_sugar, dinner_score, dinner_skipped, snacks_protein, snacks_carbs, snacks_fat, snacks_healthy_fat, snacks_sugar, snacks_score, snacks_skipped')
         .eq('user_id', user.id)
         .eq('check_in_date', today)
         .maybeSingle();
@@ -63,24 +63,28 @@ export function QuickMealLogWidget({ hideHeader = false, onSaved }: QuickMealLog
             protein: data.breakfast_protein ?? 5,
             carbs: data.breakfast_carbs ?? 5,
             fat: data.breakfast_fat ?? 5,
+            healthyFat: data.breakfast_healthy_fat ?? 5,
             sugar: data.breakfast_sugar ?? 3,
           },
           lunch: {
             protein: data.lunch_protein ?? 5,
             carbs: data.lunch_carbs ?? 5,
             fat: data.lunch_fat ?? 5,
+            healthyFat: data.lunch_healthy_fat ?? 5,
             sugar: data.lunch_sugar ?? 3,
           },
           dinner: {
             protein: data.dinner_protein ?? 5,
             carbs: data.dinner_carbs ?? 5,
             fat: data.dinner_fat ?? 5,
+            healthyFat: data.dinner_healthy_fat ?? 5,
             sugar: data.dinner_sugar ?? 3,
           },
           snacks: {
             protein: data.snacks_protein ?? 5,
             carbs: data.snacks_carbs ?? 5,
             fat: data.snacks_fat ?? 5,
+            healthyFat: data.snacks_healthy_fat ?? 5,
             sugar: data.snacks_sugar ?? 3,
           },
         });
@@ -121,7 +125,7 @@ export function QuickMealLogWidget({ hideHeader = false, onSaved }: QuickMealLog
 
   const current = activeTab ? macros[activeTab] : null;
   const qualityScore = current
-    ? computeMealScore(current.protein, current.carbs, current.fat, current.sugar)
+    ? computeMealScore(current.protein, current.carbs, current.fat, current.sugar, current.healthyFat)
     : 0;
 
   const handleSave = useCallback(async () => {
@@ -129,7 +133,7 @@ export function QuickMealLogWidget({ hideHeader = false, onSaved }: QuickMealLog
     setSaving(true);
     const meal = activeTab;
     const m = macros[meal];
-    const score = computeMealScore(m.protein, m.carbs, m.fat, m.sugar);
+    const score = computeMealScore(m.protein, m.carbs, m.fat, m.sugar, m.healthyFat);
     const qualityRating = score >= 75 ? 4 : score >= 50 ? 3 : score >= 25 ? 2 : 1;
 
     // Dispatch first so gauge updates even if DB fails
@@ -158,6 +162,7 @@ export function QuickMealLogWidget({ hideHeader = false, onSaved }: QuickMealLog
         [`${meal}_protein`]: m.protein,
         [`${meal}_carbs`]: m.carbs,
         [`${meal}_fat`]: m.fat,
+        [`${meal}_healthy_fat`]: m.healthyFat,
         [`${meal}_sugar`]: m.sugar,
         [`${meal}_score`]: score,
         [`${meal}_skipped`]: false,
@@ -211,6 +216,7 @@ export function QuickMealLogWidget({ hideHeader = false, onSaved }: QuickMealLog
         [`${meal}_protein`]: null,
         [`${meal}_carbs`]: null,
         [`${meal}_fat`]: null,
+        [`${meal}_healthy_fat`]: null,
         [`${meal}_sugar`]: null,
         [`${meal}_score`]: null,
         [`${meal}_skipped`]: true,
@@ -359,6 +365,15 @@ export function QuickMealLogWidget({ hideHeader = false, onSaved }: QuickMealLog
             accentColor="#6366F1"
             isExpanded={expandedMacro === 'fat'}
             onToggle={() => setExpandedMacro((p) => (p === 'fat' ? null : 'fat'))}
+          />
+          <MacroAccordionRow
+            id="healthyFat" label="Healthy Fat"
+            icon={<Leaf className="h-4 w-4" strokeWidth={1.5} />}
+            value={current.healthyFat}
+            onChange={(v) => setMacroValue(meal,'healthyFat', v)}
+            accentColor="#22C55E"
+            isExpanded={expandedMacro === 'healthyFat'}
+            onToggle={() => setExpandedMacro((p) => (p === 'healthyFat' ? null : 'healthyFat'))}
           />
           <MacroAccordionRow
             id="sugar" label="Sugar"
