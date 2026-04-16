@@ -28,6 +28,7 @@ const MEALS_CACHE_KEY = 'vc_local_meals_cache';
 interface LocalMeal {
   meal_type: string;
   quality_rating?: number | null;
+  meal_score?: number | null;
   calories?: number | null;
   protein_grams?: number | null;
   carbs_grams?: number | null;
@@ -113,10 +114,13 @@ export function DailyScoresPanel({ checkinRaw, previewRaw }: DailyScoresPanelPro
       }
 
       let mealLog: MealLogData = { meals: [] };
+      let dbMealScores: number[] = [];
       try {
+        // Select with wildcard so the query works whether or not
+        // the meal_score / macro_sliders migration has been applied.
         const { data: meals } = await (supabase as any)
           .from('meal_logs')
-          .select('meal_type, calories, protein_g, carbs_g, fat_g, quality_rating')
+          .select('*')
           .eq('user_id', user.id)
           .eq('meal_date', today);
         if (meals && meals.length > 0) {
@@ -129,6 +133,11 @@ export function DailyScoresPanel({ checkinRaw, previewRaw }: DailyScoresPanelPro
               meal_quality_rating: m.quality_rating,
             })),
           };
+          // Prompt #84: meal_score (0-100 from macro sliders) is the primary
+          // nutrition data source. Stored in meal_logs, NOT daily_checkins.
+          dbMealScores = meals
+            .map((m: any) => m.meal_score as number | null)
+            .filter((s: number | null): s is number => s !== null);
         }
       } catch {}
 
@@ -158,15 +167,20 @@ export function DailyScoresPanel({ checkinRaw, previewRaw }: DailyScoresPanelPro
 
       const scores = calculateDailyScores(checkinData, mealLog.meals.length > 0 ? mealLog : null, null);
 
-      // Override nutrition gauge with the macro-slider meal scores written by
-      // the dashboard / Nutrition Quick Log. Each {meal}_score is already 0-100.
-      const mealScoreFields = ['breakfast_score', 'lunch_score', 'dinner_score', 'snacks_score'];
-      const mealScores: number[] = mealScoreFields
-        .map((f) => (rawCheckin ? rawCheckin[f] : null))
-        .filter((v): v is number => typeof v === 'number');
-      // Secondary source: derive 0-100 meal scores from quality_rating (1-4) on
-      // any logged meal we know about (DB or local cache) when macro slider
-      // scores aren't present yet.
+      // Prompt #84: Build nutrition score from meal_logs.meal_score (primary),
+      // then cached meal_score, then quality_rating fallback. Never read from
+      // daily_checkins for meal data — those are independent streams.
+      const mealScores: number[] = [...dbMealScores];
+
+      // Supplement with cached meals (from meal-logged events)
+      if (mealScores.length === 0) {
+        for (const lm of getCachedMeals()) {
+          const s = (lm as any).meal_score ?? (lm.quality_rating != null ? Math.min(100, Math.max(0, lm.quality_rating * 25)) : null);
+          if (s != null) mealScores.push(s);
+        }
+      }
+
+      // Final fallback: quality_rating from any source
       if (mealScores.length === 0) {
         const ratingSource: Array<{ quality_rating?: number | null }> = [
           ...mealLog.meals.map((m) => ({ quality_rating: m.meal_quality_rating })),
@@ -204,6 +218,31 @@ export function DailyScoresPanel({ checkinRaw, previewRaw }: DailyScoresPanelPro
         }
       }
 
+      // Prompt #84 defense-in-depth: if the DB query returned no check-in
+      // data (e.g. columns not yet applied, or write still in-flight),
+      // but we already have client-side scores in state/cache, merge
+      // them so no gauge ever drops from a valid score back to zero.
+      if (scores.overall.confidence === 0 && scoresLoadedRef.current) {
+        const prev = getCachedScores();
+        if (prev && prev.overall.confidence > 0) {
+          // Overlay: keep any new non-zero gauge from the DB, but fill
+          // zeros from the previous known-good state.
+          const gauges: Array<'sleep' | 'energy' | 'moodStress' | 'nutrition' | 'activity'> =
+            ['sleep', 'energy', 'moodStress', 'nutrition', 'activity'];
+          for (const g of gauges) {
+            if (scores[g].confidence === 0 && prev[g].confidence > 0) {
+              scores[g] = prev[g];
+            }
+          }
+          // Recompute overall
+          const active = gauges.map((g) => scores[g]).filter((s) => s.confidence > 0);
+          if (active.length > 0) {
+            const overallScore = Math.round(active.reduce((s, g) => s + g.score, 0) / active.length);
+            scores.overall = { ...scores.overall, score: overallScore, confidence: active.length / 5, color: getScoreColor(overallScore) };
+          }
+        }
+      }
+
       if (scores.overall.confidence > 0) {
         setSavedResult(scores);
         setPreviewResult(null);
@@ -229,11 +268,50 @@ export function DailyScoresPanel({ checkinRaw, previewRaw }: DailyScoresPanelPro
     }
   }, [scoreState]);
 
-  // When parent passes saved check-in data (from per-card submit)
+  // When parent passes saved check-in data (from per-card submit).
+  // Prompt #84: Preserve existing nutrition score — check-in data is an
+  // independent stream from meal data and must NEVER zero out nutrition.
   useEffect(() => {
     if (checkinRaw) {
       const mapped = mapCheckInToScoringInput(checkinRaw);
       const scores = calculateDailyScores(mapped, null, null);
+
+      // Preserve nutrition from the session-cached scores (set by the last
+      // computeScores() call or meal-logged event). Without this, passing
+      // null for meals causes nutrition to drop to confidence 0.
+      const cached = getCachedScores();
+      if (cached && cached.nutrition.confidence > 0) {
+        scores.nutrition = cached.nutrition;
+      }
+      // Also check local meal cache as a secondary source
+      const cachedMeals = getCachedMeals();
+      if (scores.nutrition.confidence === 0 && cachedMeals.length > 0) {
+        const mealScores = cachedMeals
+          .filter((m) => (m as any).meal_score != null || m.quality_rating != null)
+          .map((m) => (m as any).meal_score ?? Math.min(100, Math.max(0, (m.quality_rating ?? 2) * 25)));
+        if (mealScores.length > 0) {
+          const avg = Math.round(mealScores.reduce((s: number, v: number) => s + v, 0) / mealScores.length);
+          scores.nutrition = {
+            ...scores.nutrition,
+            score: avg, manualScore: avg, manualWeight: 1, wearableWeight: 0,
+            confidence: Math.min(1, 0.4 + mealScores.length * 0.15),
+            color: getScoreColor(avg),
+          };
+        }
+      }
+
+      // Recompute overall with the preserved nutrition
+      const active = [scores.sleep, scores.energy, scores.moodStress, scores.nutrition, scores.activity]
+        .filter((g) => g.confidence > 0);
+      if (active.length > 0) {
+        const overallScore = Math.round(active.reduce((s, g) => s + g.score, 0) / active.length);
+        scores.overall = {
+          ...scores.overall,
+          score: overallScore, confidence: active.length / 5,
+          color: getScoreColor(overallScore),
+        };
+      }
+
       if (scores.overall.confidence > 0) {
         setSavedResult(scores);
         setPreviewResult(null);

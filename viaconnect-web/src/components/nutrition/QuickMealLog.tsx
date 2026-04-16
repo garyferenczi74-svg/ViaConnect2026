@@ -22,18 +22,28 @@ export function QuickMealLog() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      await (supabase as any).from('meal_logs').insert({
+      const today = new Date().toISOString().split('T')[0];
+      const mt = mealType.toLowerCase();
+
+      // Prompt #84: upsert to meal_logs (one entry per meal per day)
+      await (supabase as any).from('meal_logs').upsert({
         user_id: user.id,
-        meal_type: mealType.toLowerCase(),
+        meal_type: mt,
         log_method: 'quick',
         quality_rating: quality,
-        meal_date: new Date().toISOString().split('T')[0],
-      });
+        meal_score: Math.min(100, Math.max(0, quality * 25)),
+        meal_date: today,
+      }, { onConflict: 'user_id,meal_type,meal_date' });
+
+      // Nutrition-only recalc (never touches check-in gauges)
+      void import('@/app/actions/dailyScores')
+        .then(({ recalculateNutritionOnly }) => recalculateNutritionOnly(user.id, today))
+        .catch(() => {});
 
       setSaved(true);
       try {
         window.dispatchEvent(new CustomEvent('meal-logged', {
-          detail: { meal_type: mealType.toLowerCase(), quality_rating: quality, log_method: 'quick' },
+          detail: { meal_type: mt, quality_rating: quality, meal_score: quality * 25, log_method: 'quick' },
         }));
       } catch {}
       setTimeout(() => {

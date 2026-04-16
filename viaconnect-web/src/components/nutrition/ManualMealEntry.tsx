@@ -25,24 +25,33 @@ export function ManualMealEntry({ onSaved }: { onSaved?: () => void }) {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      await (supabase as any).from('meal_logs').insert({
+      const today = new Date().toISOString().split('T')[0];
+      const mt = mealType.toLowerCase();
+
+      // Prompt #84: upsert to meal_logs (one entry per meal per day)
+      await (supabase as any).from('meal_logs').upsert({
         user_id: user.id,
-        meal_type: mealType.toLowerCase(),
+        meal_type: mt,
         log_method: 'manual',
         description: description || null,
         calories: calories ? parseInt(calories) : null,
         protein_g: protein ? parseFloat(protein) : null,
         carbs_g: carbs ? parseFloat(carbs) : null,
         fat_g: fat ? parseFloat(fat) : null,
-        meal_date: new Date().toISOString().split('T')[0],
-      });
+        meal_date: today,
+      }, { onConflict: 'user_id,meal_type,meal_date' });
+
+      // Nutrition-only recalc (never touches check-in gauges)
+      void import('@/app/actions/dailyScores')
+        .then(({ recalculateNutritionOnly }) => recalculateNutritionOnly(user.id, today))
+        .catch(() => {});
 
       setSaved(true);
       onSaved?.();
       try {
         window.dispatchEvent(new CustomEvent('meal-logged', {
           detail: {
-            meal_type: mealType.toLowerCase(),
+            meal_type: mt,
             calories: calories ? parseInt(calories) : null,
             protein_grams: protein ? parseFloat(protein) : null,
             carbs_grams: carbs ? parseFloat(carbs) : null,

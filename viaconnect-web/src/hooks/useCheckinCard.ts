@@ -65,10 +65,11 @@ export function useCheckinCard({
 
       // Fire-and-forget: roll the saved check-in into daily_scores so the
       // Analytics Category Pillars / Bio Optimization trend pick up the
-      // new values. Runs AFTER onSaved so the dashboard panel's refresh
-      // event fires immediately and the UI doesn't stall.
+      // new values. Prompt #84: use check-in-only recalc so that nutrition
+      // scores (from meal_logs) are never overwritten. Runs AFTER onSaved
+      // so the dashboard panel's refresh event fires immediately.
       void import('@/app/actions/dailyScores')
-        .then(({ recalculateDailyScores }) => recalculateDailyScores(userId, checkInDate))
+        .then(({ recalculateCheckInOnly }) => recalculateCheckInOnly(userId, checkInDate))
         .catch((err) => {
           console.error(`[CheckinCard:${submitFlagColumn}] recalc failed`, err);
         });

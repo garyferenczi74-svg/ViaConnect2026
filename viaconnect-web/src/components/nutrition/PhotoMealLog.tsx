@@ -69,21 +69,29 @@ export function PhotoMealLog({ mealType = 'lunch', supplements = [], onSaved }: 
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // TODO: Remove cast once meal_logs is added to Supabase typegen
-      const untypedClient = supabase as unknown as { from(t: string): { insert(r: Record<string, unknown>): Promise<unknown> } };
-      await untypedClient.from('meal_logs').insert({
+      const today = new Date().toISOString().split('T')[0];
+      const qualityRating = analysis.mealQualityScore >= 75 ? 4 : analysis.mealQualityScore >= 50 ? 3 : analysis.mealQualityScore >= 25 ? 2 : 1;
+
+      // Prompt #84: upsert to meal_logs (one entry per meal per day)
+      await (supabase as any).from('meal_logs').upsert({
         user_id: user.id,
         meal_type: mealType,
         log_method: 'photo_ai',
-        quality_rating: analysis.mealQualityScore >= 75 ? 4 : analysis.mealQualityScore >= 50 ? 3 : analysis.mealQualityScore >= 25 ? 2 : 1,
-        description: analysis.items.map((i) => i.name).join(', '),
+        quality_rating: qualityRating,
+        meal_score: Math.round(analysis.mealQualityScore),
+        description: analysis.items.map((i: any) => i.name).join(', '),
         ai_analysis: analysis,
         calories: analysis.totals.calories,
         protein_g: analysis.totals.protein,
         carbs_g: analysis.totals.carbs,
         fat_g: analysis.totals.fat,
-        meal_date: new Date().toISOString().split('T')[0],
-      });
+        meal_date: today,
+      }, { onConflict: 'user_id,meal_type,meal_date' });
+
+      // Nutrition-only recalc (never touches check-in gauges)
+      void import('@/app/actions/dailyScores')
+        .then(({ recalculateNutritionOnly }) => recalculateNutritionOnly(user.id, today))
+        .catch(() => {});
 
       setStep('saved');
       setShowSavePrompt(true);
@@ -92,7 +100,8 @@ export function PhotoMealLog({ mealType = 'lunch', supplements = [], onSaved }: 
         window.dispatchEvent(new CustomEvent('meal-logged', {
           detail: {
             meal_type: mealType,
-            quality_rating: analysis.mealQualityScore >= 75 ? 4 : analysis.mealQualityScore >= 50 ? 3 : analysis.mealQualityScore >= 25 ? 2 : 1,
+            quality_rating: qualityRating,
+            meal_score: Math.round(analysis.mealQualityScore),
             calories: analysis.totals.calories,
             protein_grams: analysis.totals.protein,
             carbs_grams: analysis.totals.carbs,

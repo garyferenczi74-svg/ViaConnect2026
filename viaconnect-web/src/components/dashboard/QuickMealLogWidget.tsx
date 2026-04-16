@@ -53,65 +53,73 @@ export function QuickMealLogWidget({ hideHeader = false, onSaved }: QuickMealLog
       if (!user) return;
       const today = new Date().toISOString().split('T')[0];
 
-      const { data } = await (supabase as any)
-        .from('daily_checkins')
-        .select('breakfast_protein, breakfast_carbs, breakfast_fat, breakfast_healthy_fat, breakfast_sugar, breakfast_score, breakfast_skipped, lunch_protein, lunch_carbs, lunch_fat, lunch_healthy_fat, lunch_sugar, lunch_score, lunch_skipped, dinner_protein, dinner_carbs, dinner_fat, dinner_healthy_fat, dinner_sugar, dinner_score, dinner_skipped, snacks_protein, snacks_carbs, snacks_fat, snacks_healthy_fat, snacks_sugar, snacks_score, snacks_skipped, hydration_glasses')
-        .eq('user_id', user.id)
-        .eq('check_in_date', today)
-        .maybeSingle();
+      // Prompt #84: Read meal state from meal_logs (independent data stream).
+      // Fallback to daily_checkins for backward compat with pre-#84 data.
+      const [mealsRes, checkinRes] = await Promise.all([
+        (supabase as any)
+          .from('meal_logs')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('meal_date', today)
+          .in('meal_type', ['breakfast', 'lunch', 'dinner', 'snack']),
+        (supabase as any)
+          .from('daily_checkins')
+          .select('breakfast_protein, breakfast_carbs, breakfast_fat, breakfast_healthy_fat, breakfast_sugar, breakfast_score, breakfast_skipped, lunch_protein, lunch_carbs, lunch_fat, lunch_healthy_fat, lunch_sugar, lunch_score, lunch_skipped, dinner_protein, dinner_carbs, dinner_fat, dinner_healthy_fat, dinner_sugar, dinner_score, dinner_skipped, snacks_protein, snacks_carbs, snacks_fat, snacks_healthy_fat, snacks_sugar, snacks_score, snacks_skipped, hydration_glasses')
+          .eq('user_id', user.id)
+          .eq('check_in_date', today)
+          .maybeSingle(),
+      ]);
 
+      const saved = new Set<MealType>();
+      const skipped = new Set<MealType>();
+      const newMacros = { ...macros };
+
+      // Primary source: meal_logs (new path)
+      const meals = mealsRes.data ?? [];
+      for (const m of meals) {
+        const tab: MealType = m.meal_type === 'snack' ? 'snacks' : m.meal_type;
+        saved.add(tab);
+        if (m.macro_sliders) {
+          const sl = typeof m.macro_sliders === 'string' ? JSON.parse(m.macro_sliders) : m.macro_sliders;
+          newMacros[tab] = {
+            protein: sl.protein ?? 5,
+            carbs: sl.carbs ?? 5,
+            fat: sl.fat ?? 5,
+            healthyFat: sl.healthyFat ?? 5,
+            sugar: sl.sugar ?? 3,
+          };
+        }
+      }
+
+      // Fallback: daily_checkins (pre-#84 data that hasn't been re-saved yet)
+      const data = checkinRes.data;
       if (data) {
-        setMacros({
-          breakfast: {
-            protein: data.breakfast_protein ?? 5,
-            carbs: data.breakfast_carbs ?? 5,
-            fat: data.breakfast_fat ?? 5,
-            healthyFat: data.breakfast_healthy_fat ?? 5,
-            sugar: data.breakfast_sugar ?? 3,
-          },
-          lunch: {
-            protein: data.lunch_protein ?? 5,
-            carbs: data.lunch_carbs ?? 5,
-            fat: data.lunch_fat ?? 5,
-            healthyFat: data.lunch_healthy_fat ?? 5,
-            sugar: data.lunch_sugar ?? 3,
-          },
-          dinner: {
-            protein: data.dinner_protein ?? 5,
-            carbs: data.dinner_carbs ?? 5,
-            fat: data.dinner_fat ?? 5,
-            healthyFat: data.dinner_healthy_fat ?? 5,
-            sugar: data.dinner_sugar ?? 3,
-          },
-          snacks: {
-            protein: data.snacks_protein ?? 5,
-            carbs: data.snacks_carbs ?? 5,
-            fat: data.snacks_fat ?? 5,
-            healthyFat: data.snacks_healthy_fat ?? 5,
-            sugar: data.snacks_sugar ?? 3,
-          },
-        });
-
-        const saved = new Set<MealType>();
-        if (data.breakfast_score != null) saved.add('breakfast');
-        if (data.lunch_score != null) saved.add('lunch');
-        if (data.dinner_score != null) saved.add('dinner');
-        if (data.snacks_score != null) saved.add('snacks');
-        setSavedMeals(saved);
-
-        const skipped = new Set<MealType>();
-        if (data.breakfast_skipped) skipped.add('breakfast');
-        if (data.lunch_skipped) skipped.add('lunch');
-        if (data.dinner_skipped) skipped.add('dinner');
-        if (data.snacks_skipped) skipped.add('snacks');
-        setSkippedMeals(skipped);
+        const fallbackTabs: MealType[] = ['breakfast', 'lunch', 'dinner', 'snacks'];
+        for (const tab of fallbackTabs) {
+          // Only use daily_checkins if meal_logs didn't have this meal
+          if (!saved.has(tab) && data[`${tab}_score`] != null) {
+            saved.add(tab);
+            newMacros[tab] = {
+              protein: data[`${tab}_protein`] ?? 5,
+              carbs: data[`${tab}_carbs`] ?? 5,
+              fat: data[`${tab}_fat`] ?? 5,
+              healthyFat: data[`${tab}_healthy_fat`] ?? 5,
+              sugar: data[`${tab}_sugar`] ?? 3,
+            };
+          }
+          if (data[`${tab}_skipped`]) skipped.add(tab);
+        }
 
         if (data.hydration_glasses != null) {
           setWaterGlasses(data.hydration_glasses);
           setWaterSaved(true);
         }
       }
-    } catch { /* table may not have macro columns yet */ }
+
+      setMacros(newMacros);
+      setSavedMeals(saved);
+      setSkippedMeals(skipped);
+    } catch { /* tables may not have columns yet */ }
   }, []);
 
   // Initial load + cross-instance sync: any meal-logged event from the
@@ -143,11 +151,12 @@ export function QuickMealLogWidget({ hideHeader = false, onSaved }: QuickMealLog
     const m = macros[meal];
     const score = computeMealScore(m.protein, m.carbs, m.fat, m.sugar, m.healthyFat);
     const qualityRating = score >= 75 ? 4 : score >= 50 ? 3 : score >= 25 ? 2 : 1;
+    const mealType = meal === 'snacks' ? 'snack' : meal;
 
     // Dispatch first so gauge updates even if DB fails
     try {
       window.dispatchEvent(new CustomEvent('meal-logged', {
-        detail: { meal_type: meal === 'snacks' ? 'snack' : meal, quality_rating: qualityRating, log_method: 'quick' },
+        detail: { meal_type: mealType, quality_rating: qualityRating, meal_score: score, log_method: 'quick' },
       }));
     } catch {}
     setSavedMeals((prev) => new Set(prev).add(meal));
@@ -164,33 +173,24 @@ export function QuickMealLogWidget({ hideHeader = false, onSaved }: QuickMealLog
       if (!user) { setSaving(false); return; }
       const today = new Date().toISOString().split('T')[0];
 
-      await (supabase as any).from('daily_checkins').upsert({
+      // Prompt #84: Write meal data ONLY to meal_logs (never daily_checkins).
+      // meal_logs and daily_checkins are independent data streams — a partial
+      // upsert to daily_checkins would null out check-in columns (sleep, etc.).
+      await (supabase as any).from('meal_logs').upsert({
         user_id: user.id,
-        check_in_date: today,
-        [`${meal}_protein`]: m.protein,
-        [`${meal}_carbs`]: m.carbs,
-        [`${meal}_fat`]: m.fat,
-        [`${meal}_healthy_fat`]: m.healthyFat,
-        [`${meal}_sugar`]: m.sugar,
-        [`${meal}_score`]: score,
-        [`${meal}_skipped`]: false,
-        updated_at: new Date().toISOString(),
-      }, { onConflict: 'user_id,check_in_date' });
-
-      // Also write a meal_logs row so nutrition gauge computation has data
-      await (supabase as any).from('meal_logs').insert({
-        user_id: user.id,
-        meal_type: meal === 'snacks' ? 'snack' : meal,
+        meal_type: mealType,
         log_method: 'quick',
         quality_rating: qualityRating,
+        meal_score: score,
+        macro_sliders: { protein: m.protein, carbs: m.carbs, fat: m.fat, healthyFat: m.healthyFat, sugar: m.sugar },
         meal_date: today,
-      });
+      }, { onConflict: 'user_id,meal_type,meal_date' });
 
-      // Fire-and-forget: roll into daily_scores so Category Pillars on the
-      // Analytics page reflect the new nutrition without blocking the UI.
+      // Fire-and-forget: update ONLY the nutrition gauge in daily_scores.
+      // Check-in gauges (sleep, exercise, stress, etc.) are untouched.
       void import('@/app/actions/dailyScores')
-        .then(({ recalculateDailyScores }) => recalculateDailyScores(user.id, today))
-        .catch((err) => console.error('[QuickMealLogWidget] recalc failed', err));
+        .then(({ recalculateNutritionOnly }) => recalculateNutritionOnly(user.id, today))
+        .catch((err) => console.error('[QuickMealLogWidget] nutrition recalc failed', err));
     } catch { /* tables may not have new columns yet */ }
     finally {
       setSaving(false);
@@ -204,6 +204,7 @@ export function QuickMealLogWidget({ hideHeader = false, onSaved }: QuickMealLog
     if (saving || !activeTab) return;
     setSaving(true);
     const meal = activeTab;
+    const mealType = meal === 'snacks' ? 'snack' : meal;
 
     setSkippedMeals((prev) => new Set(prev).add(meal));
     setSavedMeals((prev) => {
@@ -214,7 +215,7 @@ export function QuickMealLogWidget({ hideHeader = false, onSaved }: QuickMealLog
     });
     try {
       window.dispatchEvent(new CustomEvent('meal-logged', {
-        detail: { meal_type: meal === 'snacks' ? 'snack' : meal, skipped: true, log_method: 'quick' },
+        detail: { meal_type: mealType, skipped: true, log_method: 'quick' },
       }));
     } catch {}
 
@@ -224,29 +225,20 @@ export function QuickMealLogWidget({ hideHeader = false, onSaved }: QuickMealLog
       if (!user) { setSaving(false); return; }
       const today = new Date().toISOString().split('T')[0];
 
-      await (supabase as any).from('daily_checkins').upsert({
-        user_id: user.id,
-        check_in_date: today,
-        [`${meal}_protein`]: null,
-        [`${meal}_carbs`]: null,
-        [`${meal}_fat`]: null,
-        [`${meal}_healthy_fat`]: null,
-        [`${meal}_sugar`]: null,
-        [`${meal}_score`]: null,
-        [`${meal}_skipped`]: true,
-        updated_at: new Date().toISOString(),
-      }, { onConflict: 'user_id,check_in_date' });
-
-      // Remove any previously logged quick entry for this meal today so the
-      // nutrition gauge does not keep counting it.
+      // Prompt #84: Only touch meal_logs — never write to daily_checkins from
+      // the meal widget. Remove the meal entry so nutrition gauge drops it.
       await (supabase as any)
         .from('meal_logs')
         .delete()
         .eq('user_id', user.id)
         .eq('meal_date', today)
-        .eq('meal_type', meal === 'snacks' ? 'snack' : meal)
-        .eq('log_method', 'quick');
-    } catch { /* tables may not have skipped columns yet */ }
+        .eq('meal_type', mealType);
+
+      // Fire-and-forget: recalculate nutrition without this meal
+      void import('@/app/actions/dailyScores')
+        .then(({ recalculateNutritionOnly }) => recalculateNutritionOnly(user.id, today))
+        .catch((err) => console.error('[QuickMealLogWidget:skip] nutrition recalc failed', err));
+    } catch { /* table may not exist yet */ }
     finally {
       setSaving(false);
       setActiveTab(null);
@@ -264,7 +256,17 @@ export function QuickMealLogWidget({ hideHeader = false, onSaved }: QuickMealLog
       if (!user) { setWaterSaving(false); return; }
       const today = new Date().toISOString().split('T')[0];
 
+      // Prompt #84: Hydration is a daily_checkins field. Use fetch-merge-upsert
+      // so that a partial payload does not null out check-in columns.
+      const { data: existing } = await (supabase as any)
+        .from('daily_checkins')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('check_in_date', today)
+        .maybeSingle();
+
       await (supabase as any).from('daily_checkins').upsert({
+        ...(existing ?? {}),
         user_id: user.id,
         check_in_date: today,
         hydration_glasses: glasses,
@@ -272,10 +274,6 @@ export function QuickMealLogWidget({ hideHeader = false, onSaved }: QuickMealLog
       }, { onConflict: 'user_id,check_in_date' });
 
       setWaterSaved(true);
-
-      void import('@/app/actions/dailyScores')
-        .then(({ recalculateDailyScores }) => recalculateDailyScores(user.id, today))
-        .catch((err) => console.error('[QuickMealLogWidget:water] recalc failed', err));
     } catch { /* column may not exist yet */ }
     finally { setWaterSaving(false); }
   }, [waterSaving]);
