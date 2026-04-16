@@ -36,6 +36,12 @@ export const APP_REGISTRY: AppDefinition[] = [
 
   // Health + Emotion
   { id: 'hume', name: 'Hume', category: 'health', dataProvided: ['Emotional Expression', 'Vocal Biomarkers', 'Sentiment Tracking'], gaugesAffected: ['stress', 'recovery'], syncMethod: 'webhook', tier: 1 },
+  { id: 'sonar_health', name: 'Sonar Health', category: 'health', dataProvided: ['Health Scores', 'Passive Monitoring', 'Predictive Insights'], gaugesAffected: ['sleep', 'stress', 'recovery'], syncMethod: 'webhook', tier: 1 },
+  { id: 'everme', name: 'EverMe', category: 'health', dataProvided: ['Habits', 'Journaling', 'Lifestyle Analytics'], gaugesAffected: ['stress', 'recovery'], syncMethod: 'polling', tier: 2 },
+  { id: 'bevel', name: 'Bevel', category: 'fitness', dataProvided: ['Body Composition', 'Metabolic Rate', 'Progress Photos'], gaugesAffected: ['exercise', 'recovery'], syncMethod: 'polling', tier: 2 },
+  { id: 'fitonamy', name: 'Fitonamy', category: 'fitness', dataProvided: ['Workouts', 'Strength Analytics', 'Recovery Tracking'], gaugesAffected: ['exercise', 'recovery'], syncMethod: 'webhook', tier: 2 },
+  { id: 'bestmy', name: 'Bestmy', category: 'fitness', dataProvided: ['Goals', 'Performance Benchmarks', 'Personal Records'], gaugesAffected: ['exercise', 'steps'], syncMethod: 'polling', tier: 2 },
+  { id: 'lyfta', name: 'Lyfta', category: 'fitness', dataProvided: ['Strength Training', 'Exercise Library', 'Progressive Overload'], gaugesAffected: ['exercise'], syncMethod: 'webhook', tier: 2 },
 ];
 
 export function getAppDef(appId: string): AppDefinition | undefined {

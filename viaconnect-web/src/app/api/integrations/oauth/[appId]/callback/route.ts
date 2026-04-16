@@ -90,6 +90,12 @@ function getTokenUrl(appId: string): string {
     garmin: 'https://connectapi.garmin.com/oauth-service/oauth/token',
     strava: 'https://www.strava.com/api/v3/oauth/token',
     hume: 'https://api.hume.ai/oauth2-cc/token',
+    sonar_health: 'https://api.sonar.health/oauth/token',
+    everme: 'https://api.everme.app/oauth2/token',
+    bevel: 'https://api.bevel.app/oauth/token',
+    fitonamy: 'https://api.fitonamy.com/oauth2/token',
+    bestmy: 'https://api.bestmy.app/oauth/token',
+    lyfta: 'https://api.lyfta.app/oauth2/token',
   };
   return urls[appId] ?? '';
 }

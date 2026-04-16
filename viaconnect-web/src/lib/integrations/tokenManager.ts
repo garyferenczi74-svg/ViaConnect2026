@@ -102,6 +102,12 @@ function getOAuthConfig(sourceId: string): OAuthConfig | null {
     garmin: { tokenUrl: 'https://connectapi.garmin.com/oauth-service/oauth/token', envPrefix: 'GARMIN' },
     strava: { tokenUrl: 'https://www.strava.com/api/v3/oauth/token', envPrefix: 'STRAVA' },
     hume: { tokenUrl: 'https://api.hume.ai/oauth2-cc/token', envPrefix: 'HUME' },
+    sonar_health: { tokenUrl: 'https://api.sonar.health/oauth/token', envPrefix: 'SONAR_HEALTH' },
+    everme: { tokenUrl: 'https://api.everme.app/oauth2/token', envPrefix: 'EVERME' },
+    bevel: { tokenUrl: 'https://api.bevel.app/oauth/token', envPrefix: 'BEVEL' },
+    fitonamy: { tokenUrl: 'https://api.fitonamy.com/oauth2/token', envPrefix: 'FITONAMY' },
+    bestmy: { tokenUrl: 'https://api.bestmy.app/oauth/token', envPrefix: 'BESTMY' },
+    lyfta: { tokenUrl: 'https://api.lyfta.app/oauth2/token', envPrefix: 'LYFTA' },
   };
 
   const cfg = configs[sourceId];
