@@ -1,6 +1,9 @@
 // Unified AI Data Context Builder
 // Assembles the complete data picture from ALL sources for any AI engine.
 // Every engine calls this instead of individual queries.
+//
+// buildHannahContext: Hannah-specific wrapper used by Ultrathink + Avatar.
+// (Prompt #88 — new export, does not modify buildUnifiedContext.)
 
 import { createClient } from "@/lib/supabase/client";
 
@@ -160,5 +163,92 @@ export async function buildUnifiedContext(userId: string): Promise<UnifiedDataCo
     analytics: analyticsRes.data || null,
     dataCompleteness,
     lastUpdated: new Date().toISOString(),
+  };
+}
+
+// ── Hannah-specific context wrapper (Prompt #88) ─────────────────────────
+// Returns a condensed summary + typed source list for the Ultrathink engine
+// and Tavus avatar context. Does NOT modify buildUnifiedContext above.
+
+export interface HannahSource {
+  type: 'pubmed' | 'internal_protocol' | 'caq' | 'gene_panel' | 'supplement_db' | 'interaction_rule' | 'other';
+  id?: string;
+  title?: string;
+  url?: string;
+  snippet?: string;
+}
+
+export interface HannahContextResult {
+  summary: string;
+  sources: HannahSource[];
+  raw: UnifiedDataContext;
+}
+
+export async function buildHannahContext(
+  userId: string,
+  _opts?: { includePHI?: boolean; ragPasses?: number },
+): Promise<HannahContextResult> {
+  const ctx = await buildUnifiedContext(userId);
+
+  const sources: HannahSource[] = [];
+
+  // CAQ data as a source
+  if (ctx.caq.healthConcerns.length > 0) {
+    sources.push({
+      type: 'caq',
+      title: 'CAQ Assessment',
+      snippet: `Health concerns: ${ctx.caq.healthConcerns.join(', ')}. Allergies: ${ctx.caq.allergies.join(', ') || 'none reported'}.`,
+    });
+  }
+
+  // Active supplements
+  if (ctx.supplements.length > 0) {
+    sources.push({
+      type: 'supplement_db',
+      title: 'Active Supplements',
+      snippet: ctx.supplements.map((s: any) => s.product_name || s.supplement_name || 'unknown').join(', '),
+    });
+  }
+
+  // Interactions
+  if (ctx.interactions.length > 0) {
+    sources.push({
+      type: 'interaction_rule',
+      title: 'Medication Interactions',
+      snippet: ctx.interactions.map((i: any) => `${i.drug_name || 'drug'} / ${i.supplement_name || 'supplement'}: ${i.severity || 'unknown'}`).join('; '),
+    });
+  }
+
+  // Genetic data
+  if (ctx.genetic) {
+    sources.push({
+      type: 'gene_panel',
+      title: 'GeneX360 Profile',
+      snippet: JSON.stringify(ctx.genetic).slice(0, 500),
+    });
+  }
+
+  // Protocol
+  if (ctx.protocol) {
+    sources.push({
+      type: 'internal_protocol',
+      title: 'Active Protocol',
+      snippet: JSON.stringify(ctx.protocol).slice(0, 500),
+    });
+  }
+
+  // Build summary
+  const parts: string[] = [];
+  if (ctx.profile?.display_name) parts.push(`User: ${ctx.profile.display_name}`);
+  parts.push(`Bio Optimization: ${ctx.bioOptimization.currentScore}/100 (${ctx.bioOptimization.tier})`);
+  parts.push(`Data completeness: ${ctx.dataCompleteness}%`);
+  if (ctx.medications.length > 0) parts.push(`Medications: ${ctx.medications.map((m: any) => m.name).join(', ')}`);
+  if (ctx.caq.healthConcerns.length > 0) parts.push(`Concerns: ${ctx.caq.healthConcerns.join(', ')}`);
+  if (ctx.supplements.length > 0) parts.push(`Supplements: ${ctx.supplements.length} active`);
+
+  return {
+    summary: parts.join('\n'),
+    sources,
+    raw: ctx,
   };
 }
