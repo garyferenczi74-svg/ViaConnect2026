@@ -155,8 +155,8 @@ export function TodaysProtocol({ supplements }: TodaysProtocolProps) {
             <Pill className="h-[18px] w-[18px] text-white" strokeWidth={1.5} />
           </div>
           <div>
-            <h2 className="text-base font-bold text-white">Today&apos;s Protocol</h2>
-            <p className="text-[11px] text-white/40">Daily supplement schedule</p>
+            <h2 className="text-base font-bold text-white">Daily Schedule</h2>
+            <p className="text-[11px] text-white/40">Your supplement checklist for today</p>
           </div>
         </div>
         <span className="text-xs font-semibold text-white/60">

@@ -29,52 +29,69 @@ const key = (slug: string, t: string) => `${slug}:${t}`;
 const POINTS_PER_CHECK = 5;
 const BONUS_FULL_DAY = 15;
 
+const ADHERENCE_CHANNEL = 'adherence-sync';
+const ADHERENCE_EVENT = 'adherence-changed';
+
 export function useTodaysAdherence(): UseTodaysAdherenceResult {
   const [loading, setLoading] = useState(true);
   const [entries, setEntries] = useState<Record<string, boolean>>({});
   const [userId, setUserId] = useState<string | null>(null);
   const [totalItems, setTotalItems] = useState(0);
 
-  // Initial load
-  useEffect(() => {
+  // Fetch today's adherence from Supabase
+  const fetchEntries = useCallback(async () => {
     const supabase: SupabaseAny = createClient();
-    let cancelled = false;
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+      setUserId(user.id);
 
-    (async () => {
-      try {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-        if (!user || cancelled) {
-          setLoading(false);
-          return;
-        }
-        setUserId(user.id);
+      const { data, error } = await (supabase as any)
+        .from('protocol_adherence_log')
+        .select('product_slug, time_of_day, completed')
+        .eq('user_id', user.id)
+        .eq('scheduled_date', today());
 
-        const { data, error } = await (supabase as any)
-          .from('protocol_adherence_log')
-          .select('product_slug, time_of_day, completed')
-          .eq('user_id', user.id)
-          .eq('scheduled_date', today());
-
-        if (cancelled) return;
-        if (!error && Array.isArray(data)) {
-          const map: Record<string, boolean> = {};
-          data.forEach((row: AdherenceEntry) => {
-            map[key(row.product_slug, row.time_of_day)] = row.completed;
-          });
-          setEntries(map);
-        }
-      } catch (e) {
-      } finally {
-        if (!cancelled) setLoading(false);
+      if (!error && Array.isArray(data)) {
+        const map: Record<string, boolean> = {};
+        data.forEach((row: AdherenceEntry) => {
+          map[key(row.product_slug, row.time_of_day)] = row.completed;
+        });
+        setEntries(map);
       }
-    })();
+    } catch (e) {
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Initial load
+  useEffect(() => { fetchEntries(); }, [fetchEntries]);
+
+  // Sync across tabs (BroadcastChannel) + same-tab instances (custom event)
+  useEffect(() => {
+    let bc: BroadcastChannel | null = null;
+    try { bc = new BroadcastChannel(ADHERENCE_CHANNEL); } catch {}
+
+    const applySync = (updated: Record<string, boolean>) => setEntries(updated);
+
+    const onBroadcast = (e: MessageEvent) => { if (e.data?.entries) applySync(e.data.entries); };
+    const onCustom = (e: Event) => { const d = (e as CustomEvent).detail; if (d?.entries) applySync(d.entries); };
+    const onVisible = () => { if (document.visibilityState === 'visible') fetchEntries(); };
+
+    bc?.addEventListener('message', onBroadcast);
+    window.addEventListener(ADHERENCE_EVENT, onCustom);
+    document.addEventListener('visibilitychange', onVisible);
 
     return () => {
-      cancelled = true;
+      bc?.removeEventListener('message', onBroadcast);
+      bc?.close();
+      window.removeEventListener(ADHERENCE_EVENT, onCustom);
+      document.removeEventListener('visibilitychange', onVisible);
     };
-  }, []);
+  }, [fetchEntries]);
 
   const toggle = useCallback(
     async (slug: string, timeOfDay: string, total: number) => {
@@ -82,8 +99,11 @@ export function useTodaysAdherence(): UseTodaysAdherenceResult {
       const k = key(slug, timeOfDay);
       const next = !entries[k];
 
-      // Optimistic update
-      setEntries((prev) => ({ ...prev, [k]: next }));
+      // Optimistic update + broadcast to other instances
+      const updated = { ...entries, [k]: next };
+      setEntries(updated);
+      try { new BroadcastChannel(ADHERENCE_CHANNEL).postMessage({ entries: updated }); } catch {}
+      window.dispatchEvent(new CustomEvent(ADHERENCE_EVENT, { detail: { entries: updated } }));
 
       const supabase: SupabaseAny = createClient();
 
