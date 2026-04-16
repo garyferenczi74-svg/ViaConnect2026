@@ -115,10 +115,10 @@ export default function WellnessAnalyticsPage() {
             <button
               key={cat.id}
               onClick={() => setExpandedCategory(expandedCategory === cat.id ? null : cat.id)}
-              className={`relative rounded-2xl p-4 text-left transition-all duration-200 ${
+              className={`relative rounded-2xl p-4 text-left backdrop-blur-sm transition-all duration-200 ${
                 expandedCategory === cat.id
-                  ? "bg-white/[0.08] border border-teal-400/30"
-                  : "bg-white/[0.04] border border-white/[0.08] hover:bg-white/[0.07] hover:border-white/15"
+                  ? "bg-[rgba(45,165,160,0.18)] border border-[rgba(45,165,160,0.45)]"
+                  : "bg-[rgba(26,39,68,0.55)] border border-[rgba(45,165,160,0.18)] hover:bg-[rgba(30,48,84,0.70)] hover:border-[rgba(45,165,160,0.32)]"
               }`}
             >
               {cat.isNew && (
@@ -149,7 +149,7 @@ export default function WellnessAnalyticsPage() {
         const cat = categories.find((c) => c.id === expandedCategory);
         if (!cat) return null;
         return (
-          <div className="rounded-2xl border border-white/10 bg-white/[0.03] overflow-hidden">
+          <div className="rounded-2xl border border-[rgba(45,165,160,0.22)] bg-[rgba(26,39,68,0.55)] backdrop-blur-md overflow-hidden">
             <div className="p-6 border-b border-white/5">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -176,7 +176,7 @@ export default function WellnessAnalyticsPage() {
                       insight.severity === "positive" ? "bg-teal-400/5 border border-teal-400/10" :
                       insight.severity === "warning" ? "bg-yellow-400/5 border border-yellow-400/10" :
                       insight.severity === "critical" ? "bg-red-400/5 border border-red-400/10" :
-                      "bg-white/[0.02] border border-white/5"
+                      "bg-[rgba(30,48,84,0.45)] border border-[rgba(45,165,160,0.15)]"
                     }`}>
                       <p className="text-sm text-white/70">{insight.text}</p>
                     </div>
@@ -191,7 +191,7 @@ export default function WellnessAnalyticsPage() {
                 <h4 className="text-xs font-semibold text-white/40 uppercase tracking-wider mb-3">Recommendations</h4>
                 <div className="space-y-2">
                   {cat.recommendations.map((rec, i) => (
-                    <div key={i} className="flex items-start gap-3 rounded-lg p-3 bg-white/[0.02] border border-white/5">
+                    <div key={i} className="flex items-start gap-3 rounded-lg p-3 bg-[rgba(30,48,84,0.45)] border border-[rgba(45,165,160,0.15)]">
                       <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
                         rec.priority === "high" ? "bg-red-400/15 text-red-400" :
                         rec.priority === "medium" ? "bg-yellow-400/15 text-yellow-400" :
