@@ -161,6 +161,7 @@ export function ConnectionCard({
         {status === 'disconnected' && (
           <button
             onClick={onConnect}
+            aria-label={`Connect ${source.name}`}
             className="flex min-h-[44px] flex-1 items-center justify-center gap-2 rounded-xl bg-[#2DA5A0] px-4 text-sm font-medium text-white transition-colors hover:bg-[#2DA5A0]/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/50"
           >
             <Plug className="h-4 w-4" strokeWidth={1.5} />
@@ -171,6 +172,7 @@ export function ConnectionCard({
         {status === 'error' && (
           <button
             onClick={onConnect}
+            aria-label={`Reconnect ${source.name}`}
             className="flex min-h-[44px] flex-1 items-center justify-center gap-2 rounded-xl bg-[#2DA5A0] px-4 text-sm font-medium text-white transition-colors hover:bg-[#2DA5A0]/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/50"
           >
             <Plug className="h-4 w-4" strokeWidth={1.5} />
@@ -183,6 +185,7 @@ export function ConnectionCard({
             <button
               onClick={onSyncNow}
               disabled={status === 'syncing'}
+              aria-label={`Sync ${source.name} now`}
               className="flex min-h-[44px] flex-1 items-center justify-center gap-2 rounded-xl border border-[#2DA5A0]/30 bg-[#2DA5A0]/10 px-4 text-sm font-medium text-[#2DA5A0] transition-colors hover:bg-[#2DA5A0]/20 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/50"
             >
               <RefreshCw className="h-4 w-4" strokeWidth={1.5} />
@@ -190,6 +193,7 @@ export function ConnectionCard({
             </button>
             <button
               onClick={onDisconnect}
+              aria-label={`Disconnect ${source.name}`}
               className="flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 text-sm font-medium text-white/50 transition-colors hover:bg-white/[0.08] hover:text-white/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/50"
             >
               <Unplug className="h-4 w-4" strokeWidth={1.5} />

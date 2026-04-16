@@ -5,10 +5,11 @@
  * Michelangelo, Sherlock) use this bus to send structured messages to
  * each other via the agent_messages table.
  *
- * Server-side and client-side compatible (uses the browser Supabase client).
+ * Uses a service-role client because agent messages are written
+ * programmatically on behalf of agents, not on behalf of users.
  */
 
-import { createClient } from '@/lib/supabase/client';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -43,8 +44,11 @@ export interface AgentMessageRow {
 // Helpers
 // ---------------------------------------------------------------------------
 
-function getSupabase() {
-  return createClient();
+function getSupabase(): SupabaseClient {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) throw new Error('Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY for message-bus');
+  return createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } });
 }
 
 // ---------------------------------------------------------------------------

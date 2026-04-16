@@ -260,6 +260,10 @@ async function enrichWithAI(
     '- Speak directly to the user in second person ("you", "your").',
     '- Be encouraging without being patronizing.',
     '- Reference specific numbers from the supporting data when relevant.',
+    '- NEVER recommend semaglutide, Ozempic, Wegovy, or any GLP-1 agonist.',
+    '- NEVER recommend oral retatrutide; retatrutide is injectable only and never stacked.',
+    '- Only mention supplements from the FarmCeutica Wellness product line.',
+    '- Bioavailability of FarmCeutica liposomal formulations: always 10 to 27 times.',
     '- Return valid JSON: an array of objects with keys: title, body, suggestedAction.',
   ].join('\n');
 
@@ -409,6 +413,17 @@ export async function generateDailyRecommendations(
 
   // Enrich with AI (graceful fallback)
   recommendations = await enrichWithAI(recommendations, context);
+
+  // Guardrail enforcement: strip any prohibited substance mentions
+  recommendations = recommendations.filter((r) => {
+    const text = `${r.title} ${r.body} ${r.suggestedAction ?? ''}`.toLowerCase();
+    const prohibited = /semaglutide|ozempic|wegovy|mounjaro|tirzepatide|oral\s+retatrutide/;
+    if (prohibited.test(text)) {
+      console.warn(`[arnold-recommender] Guardrail blocked: "${r.title}"`);
+      return false;
+    }
+    return true;
+  });
 
   // Store
   await storeRecommendations(recommendations, userId, db);

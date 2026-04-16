@@ -102,6 +102,7 @@ export function ArnoldRecommendationCard({
       <div className="mt-3 flex items-center gap-2">
         <button
           onClick={() => onAction(recommendation.id, primaryAction)}
+          aria-label={`${primaryLabel}: ${recommendation.title}`}
           className="flex min-h-[44px] flex-1 items-center justify-center gap-2 rounded-lg px-3 text-xs font-medium text-white transition-colors hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/50"
           style={{ backgroundColor: cat.color }}
         >
@@ -110,6 +111,7 @@ export function ArnoldRecommendationCard({
         </button>
         <button
           onClick={() => onAction(recommendation.id, 'dismiss')}
+          aria-label={`Dismiss: ${recommendation.title}`}
           className="flex min-h-[44px] items-center justify-center gap-1.5 rounded-lg border border-white/[0.08] bg-white/[0.04] px-4 text-xs font-medium text-white/50 transition-colors hover:bg-white/[0.08] hover:text-white/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/50"
         >
           <Check className="h-3.5 w-3.5" strokeWidth={1.5} />

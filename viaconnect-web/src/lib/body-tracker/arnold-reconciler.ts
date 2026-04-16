@@ -6,7 +6,20 @@
  * before being committed to body_tracker_entries.
  */
 
-import { createClient } from '@/lib/supabase/client';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+
+function buildServiceClient(): SupabaseClient {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) throw new Error('Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY for ArnoldReconciler');
+  return createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } });
+}
+
+const VALID_MEASUREMENTS = new Set([
+  'weight_lbs', 'goal_weight_lbs', 'bmi', 'body_fat_pct', 'visceral_fat_rating',
+  'body_water_pct', 'waist_in', 'hips_in', 'chest_in', 'neck_in',
+  'right_arm_in', 'left_arm_in', 'right_thigh_in', 'left_thigh_in',
+]);
 
 // ---------------------------------------------------------------------------
 // Types
@@ -58,12 +71,22 @@ const DEFAULT_TRUST_SCORES: Record<string, number> = {
 // ---------------------------------------------------------------------------
 
 export class ArnoldReconciler {
-  private supabase = createClient();
+  private _supabase: SupabaseClient | null = null;
+  private get supabase(): SupabaseClient {
+    if (!this._supabase) this._supabase = buildServiceClient();
+    return this._supabase;
+  }
 
   /**
    * Main pipeline: outlier detection -> dedup -> conflict detection -> store.
    */
   async process(entry: IncomingEntry): Promise<ReconciliationResult> {
+    // Validate measurement name against whitelist
+    if (!VALID_MEASUREMENTS.has(entry.measurement)) {
+      return { action: 'outlier_flagged', entryId: null, detail: `Invalid measurement: ${entry.measurement}` };
+    }
+
+    try {
     // Step 1: Outlier detection
     const outlier = await this.detectOutlier(entry);
     if (outlier) {
@@ -89,6 +112,10 @@ export class ArnoldReconciler {
     const entryId = await this.store(entry);
     await this.logReconciliation(entry, 'stored', entryId, null);
     return { action: 'stored', entryId, detail: 'Entry stored successfully' };
+    } catch (err) {
+      console.error(`[arnold-reconciler] process() failed: ${(err as Error).message}`);
+      return { action: 'outlier_flagged', entryId: null, detail: `Error: ${(err as Error).message}` };
+    }
   }
 
   /**
@@ -261,7 +288,7 @@ export class ArnoldReconciler {
   }
 
   private async store(entry: IncomingEntry): Promise<string> {
-    const { data } = await (this.supabase as any)
+    const { data, error } = await (this.supabase as any)
       .from('body_tracker_entries')
       .insert({
         user_id: entry.userId,
@@ -277,7 +304,11 @@ export class ArnoldReconciler {
       .select('id')
       .single();
 
-    const entryId = data?.id as string;
+    if (error || !data?.id) {
+      throw new Error(`Failed to store entry: ${error?.message ?? 'no id returned'}`);
+    }
+
+    const entryId = data.id as string;
 
     // Insert the measurement value into body_tracker_weight
     await (this.supabase as any)
