@@ -18,7 +18,7 @@ export interface CritiqueResult {
 export async function runSelfCritique(input: CritiqueInput): Promise<CritiqueResult> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
-    return { passed: true, notes: 'no_api_key_skipped', violatedGuardrails: [] };
+    return { passed: false, notes: 'no_api_key_fail_safe', violatedGuardrails: [] };
   }
 
   const res = await fetch(ANTHROPIC_API, {
@@ -28,6 +28,7 @@ export async function runSelfCritique(input: CritiqueInput): Promise<CritiqueRes
       'x-api-key': apiKey,
       'anthropic-version': ANTHROPIC_VERSION,
     },
+    signal: AbortSignal.timeout(15000), // 15s timeout for fast critic
     body: JSON.stringify({
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 400,

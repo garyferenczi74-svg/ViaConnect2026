@@ -37,7 +37,8 @@ export async function jefferyToHannah(
 
   // If Ultrathink is globally disabled, bridge collapses to existing behavior:
   // return a signal to Jeffery that it should use the existing Hannah handler.
-  if (!ultrathinkEnabled && !req.forceTier) {
+  // forceTier does NOT override the feature flag (flag is the kill switch).
+  if (!ultrathinkEnabled) {
     return {
       handler: 'hannah',
       tier: 'standard',

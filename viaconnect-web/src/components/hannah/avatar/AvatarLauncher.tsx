@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import { Video } from 'lucide-react';
 import { HannahAvatar } from './HannahAvatar';
@@ -13,13 +13,25 @@ export function AvatarLauncher() {
   const [open, setOpen] = useState(false);
   const enabled = useFeatureFlag('hannah_avatar_enabled');
 
+  const close = useCallback(() => setOpen(false), []);
+
+  // Escape key dismisses the modal
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') close();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [open, close]);
+
   if (!enabled) return null;
 
   return (
     <>
       <button
         onClick={() => setOpen(true)}
-        className="inline-flex min-h-[44px] items-center gap-2 px-3 py-2 text-sm text-white/80 hover:text-white rounded-lg hover:bg-white/5 transition"
+        className="inline-flex min-h-[44px] items-center gap-2 px-3 py-2 text-sm text-white/80 hover:text-white rounded-lg hover:bg-white/5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744]"
         aria-label="Talk to Hannah as avatar"
       >
         <div className="relative h-6 w-6 overflow-hidden rounded-full border border-[#2DA5A0]/40">
@@ -36,8 +48,14 @@ export function AvatarLauncher() {
       </button>
 
       {open && (
-        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
-          <HannahAvatar onClose={() => setOpen(false)} />
+        <div
+          className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Hannah avatar conversation"
+          onClick={(e) => { if (e.target === e.currentTarget) close(); }}
+        >
+          <HannahAvatar onClose={close} />
         </div>
       )}
     </>

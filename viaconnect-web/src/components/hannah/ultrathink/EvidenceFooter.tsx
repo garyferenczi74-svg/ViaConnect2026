@@ -28,7 +28,9 @@ export function EvidenceFooter({ citations }: EvidenceFooterProps) {
     <div className="mt-3 rounded-xl border border-white/[0.06] bg-white/[0.02]">
       <button
         onClick={() => setExpanded(!expanded)}
-        className="flex w-full items-center justify-between px-3 py-2.5 text-left transition-colors hover:bg-white/[0.03]"
+        aria-expanded={expanded}
+        aria-label={`${expanded ? 'Collapse' : 'Expand'} evidence sources`}
+        className="flex w-full min-h-[44px] items-center justify-between px-3 py-2.5 text-left transition-colors hover:bg-white/[0.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744] rounded-xl"
       >
         <div className="flex items-center gap-2">
           <FileText className="h-3.5 w-3.5 text-[#2DA5A0]" strokeWidth={1.5} />

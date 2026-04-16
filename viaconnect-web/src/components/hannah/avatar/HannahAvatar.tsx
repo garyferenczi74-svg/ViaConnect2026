@@ -65,7 +65,7 @@ export function HannahAvatar({ onClose }: HannahAvatarProps) {
         <button
           onClick={endSession}
           aria-label="Close avatar session"
-          className="text-white/60 hover:text-white transition-colors"
+          className="min-h-[44px] min-w-[44px] flex items-center justify-center text-white/60 hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/50 rounded-lg"
         >
           <X strokeWidth={1.5} className="w-5 h-5" />
         </button>
@@ -91,7 +91,7 @@ export function HannahAvatar({ onClose }: HannahAvatarProps) {
             </p>
             <button
               onClick={start}
-              className="min-h-[44px] px-6 py-3 bg-[#2DA5A0] hover:bg-[#2DA5A0]/90 text-white rounded-lg font-medium transition"
+              className="min-h-[44px] px-6 py-3 bg-[#2DA5A0] hover:bg-[#2DA5A0]/90 text-white rounded-lg font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
             >
               Start Conversation
             </button>
@@ -103,7 +103,7 @@ export function HannahAvatar({ onClose }: HannahAvatarProps) {
             <div className="relative h-24 w-24 overflow-hidden rounded-full border-2 border-[#2DA5A0]/30 opacity-60">
               <Image
                 src={HANNAH_IMG}
-                alt="Hannah"
+                alt="Hannah, connecting..."
                 fill
                 className="object-cover object-top"
                 sizes="96px"
@@ -119,7 +119,7 @@ export function HannahAvatar({ onClose }: HannahAvatarProps) {
             <p className="text-red-300 text-sm max-w-md text-center">{error}</p>
             <button
               onClick={start}
-              className="min-h-[44px] px-4 py-2 text-sm text-[#2DA5A0] border border-[#2DA5A0]/30 rounded-lg hover:bg-[#2DA5A0]/10 transition"
+              className="min-h-[44px] px-4 py-2 text-sm text-[#2DA5A0] border border-[#2DA5A0]/30 rounded-lg hover:bg-[#2DA5A0]/10 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/50"
             >
               Try Again
             </button>
@@ -130,6 +130,7 @@ export function HannahAvatar({ onClose }: HannahAvatarProps) {
           <iframe
             src={conversationUrl}
             allow="camera;microphone"
+            sandbox="allow-scripts allow-same-origin"
             className="absolute inset-0 h-full w-full border-0"
             title="Hannah Avatar Conversation"
           />

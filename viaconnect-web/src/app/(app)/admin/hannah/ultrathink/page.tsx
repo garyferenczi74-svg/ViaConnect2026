@@ -34,6 +34,7 @@ export default function HannahUltrathinkAdmin() {
   const [topSources, setTopSources] = useState<Array<{ source_type: string; count: number }>>([]);
   const [avatarStats, setAvatarStats] = useState<AvatarStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
     loadDashboard();
@@ -134,6 +135,7 @@ export default function HannahUltrathinkAdmin() {
       }
     } catch (e) {
       console.error('Failed to load Ultrathink dashboard:', e);
+      setError(true);
     } finally {
       setLoading(false);
     }
@@ -153,6 +155,12 @@ export default function HannahUltrathinkAdmin() {
         <h1 className="text-xl font-bold text-white sm:text-2xl">Hannah Ultrathink</h1>
         <p className="mt-1 text-sm text-white/40">Reasoning engine analytics (last 7 days)</p>
       </div>
+
+      {error && (
+        <div className="rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-300">
+          Unable to load dashboard data. Please refresh.
+        </div>
+      )}
 
       {/* KPI row */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -181,7 +189,7 @@ export default function HannahUltrathinkAdmin() {
       </div>
 
       {/* Tier breakdown */}
-      <div className="rounded-2xl border border-white/10 bg-[#1E3054]/60 p-5">
+      <div className="rounded-2xl border border-white/10 bg-[#1E3054]/60 backdrop-blur-md p-5">
         <h2 className="mb-4 text-sm font-semibold text-white/80">Sessions by Tier</h2>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -217,7 +225,7 @@ export default function HannahUltrathinkAdmin() {
       {/* Two-col: Top sources + Avatar stats */}
       <div className="grid gap-3 md:grid-cols-2">
         {/* Top evidence sources */}
-        <div className="rounded-2xl border border-white/10 bg-[#1E3054]/60 p-5">
+        <div className="rounded-2xl border border-white/10 bg-[#1E3054]/60 backdrop-blur-md p-5">
           <div className="mb-4 flex items-center gap-2">
             <FileText className="h-4 w-4 text-[#2DA5A0]" strokeWidth={1.5} />
             <h2 className="text-sm font-semibold text-white/80">Top Evidence Sources</h2>
@@ -237,7 +245,7 @@ export default function HannahUltrathinkAdmin() {
         </div>
 
         {/* Avatar stats */}
-        <div className="rounded-2xl border border-white/10 bg-[#1E3054]/60 p-5">
+        <div className="rounded-2xl border border-white/10 bg-[#1E3054]/60 backdrop-blur-md p-5">
           <div className="mb-4 flex items-center gap-2">
             <Video className="h-4 w-4 text-[#2DA5A0]" strokeWidth={1.5} />
             <h2 className="text-sm font-semibold text-white/80">Avatar Sessions</h2>

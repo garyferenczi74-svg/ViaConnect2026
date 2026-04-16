@@ -186,13 +186,14 @@ export interface HannahContextResult {
 
 export async function buildHannahContext(
   userId: string,
-  _opts?: { includePHI?: boolean; ragPasses?: number },
+  opts?: { includePHI?: boolean; ragPasses?: number },
 ): Promise<HannahContextResult> {
   const ctx = await buildUnifiedContext(userId);
+  const includePHI = opts?.includePHI ?? true;
 
   const sources: HannahSource[] = [];
 
-  // CAQ data as a source
+  // CAQ data as a source (health concerns are not PHI per HIPAA Safe Harbor)
   if (ctx.caq.healthConcerns.length > 0) {
     sources.push({
       type: 'caq',
@@ -201,7 +202,7 @@ export async function buildHannahContext(
     });
   }
 
-  // Active supplements
+  // Active supplements (product names are not PHI)
   if (ctx.supplements.length > 0) {
     sources.push({
       type: 'supplement_db',
@@ -210,8 +211,8 @@ export async function buildHannahContext(
     });
   }
 
-  // Interactions
-  if (ctx.interactions.length > 0) {
+  // Interactions — include medication names only when PHI is allowed
+  if (ctx.interactions.length > 0 && includePHI) {
     sources.push({
       type: 'interaction_rule',
       title: 'Medication Interactions',
@@ -219,8 +220,8 @@ export async function buildHannahContext(
     });
   }
 
-  // Genetic data
-  if (ctx.genetic) {
+  // Genetic data — PHI gated
+  if (ctx.genetic && includePHI) {
     sources.push({
       type: 'gene_panel',
       title: 'GeneX360 Profile',
@@ -228,8 +229,8 @@ export async function buildHannahContext(
     });
   }
 
-  // Protocol
-  if (ctx.protocol) {
+  // Protocol (protocol structure is not PHI, but skip for non-PHI to be safe)
+  if (ctx.protocol && includePHI) {
     sources.push({
       type: 'internal_protocol',
       title: 'Active Protocol',
@@ -237,12 +238,16 @@ export async function buildHannahContext(
     });
   }
 
-  // Build summary
+  // Build summary — omit identifying info when PHI is not allowed
   const parts: string[] = [];
-  if (ctx.profile?.display_name) parts.push(`User: ${ctx.profile.display_name}`);
+  if (includePHI && ctx.profile?.display_name) {
+    parts.push(`User: ${ctx.profile.display_name}`);
+  }
   parts.push(`Bio Optimization: ${ctx.bioOptimization.currentScore}/100 (${ctx.bioOptimization.tier})`);
   parts.push(`Data completeness: ${ctx.dataCompleteness}%`);
-  if (ctx.medications.length > 0) parts.push(`Medications: ${ctx.medications.map((m: any) => m.name).join(', ')}`);
+  if (includePHI && ctx.medications.length > 0) {
+    parts.push(`Medications: ${ctx.medications.map((m: any) => m.name).join(', ')}`);
+  }
   if (ctx.caq.healthConcerns.length > 0) parts.push(`Concerns: ${ctx.caq.healthConcerns.join(', ')}`);
   if (ctx.supplements.length > 0) parts.push(`Supplements: ${ctx.supplements.length} active`);
 

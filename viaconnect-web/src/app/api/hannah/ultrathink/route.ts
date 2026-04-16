@@ -22,6 +22,14 @@ export async function POST(request: Request) {
   };
   const { query, forceTier } = body;
 
+  // Input validation
+  if (!query || typeof query !== 'string' || query.trim().length === 0) {
+    return NextResponse.json({ error: 'Query is required' }, { status: 400 });
+  }
+  if (query.length > 5000) {
+    return NextResponse.json({ error: 'Query exceeds maximum length' }, { status: 400 });
+  }
+
   // Jeffery's routing decision
   const features = extractFeatures(query);
   const autoEscalate = isFeatureEnabled('hannah_ultrathink_auto_escalate', user.id);

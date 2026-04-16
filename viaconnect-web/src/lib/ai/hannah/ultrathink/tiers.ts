@@ -38,6 +38,6 @@ export const TIER_CONFIGS: Record<HannahTier, TierConfig> = {
     ragPasses: 2,
     selfCritique: true,
     evidenceFooter: true,
-    maxOutputTokens: 4096,
+    maxOutputTokens: 16384, // must exceed thinkingBudget (thinking + response share this cap)
   },
 };

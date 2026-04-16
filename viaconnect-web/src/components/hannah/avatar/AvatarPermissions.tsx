@@ -90,7 +90,7 @@ export function AvatarPermissions({ onGranted }: AvatarPermissionsProps) {
           </p>
           <button
             onClick={requestPermissions}
-            className="min-h-[44px] px-5 py-2.5 bg-[#2DA5A0] hover:bg-[#2DA5A0]/90 text-white rounded-lg font-medium transition text-sm"
+            className="min-h-[44px] px-5 py-2.5 bg-[#2DA5A0] hover:bg-[#2DA5A0]/90 text-white rounded-lg font-medium transition text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744]"
           >
             Allow Camera &amp; Microphone
           </button>

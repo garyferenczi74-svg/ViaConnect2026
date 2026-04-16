@@ -4,6 +4,7 @@ import { runSelfCritique } from './critique';
 import { rankEvidence } from './evidence';
 import { getUltrathinkSystemPrompt } from './prompts/ultrathink-system';
 import { buildHannahContext } from '@/lib/ai/unified-context';
+import { validateRecommendationText } from '@/lib/agents/jeffery/guardrails';
 import type { UltrathinkRequest, UltrathinkResponse } from './types';
 
 const ANTHROPIC_API = 'https://api.anthropic.com/v1/messages';
@@ -79,6 +80,7 @@ export async function runUltrathink(
       'anthropic-version': ANTHROPIC_VERSION,
     },
     body: JSON.stringify(body),
+    signal: AbortSignal.timeout(45000), // 45s timeout for Ultrathink reasoning
   });
 
   if (!res.ok) {
@@ -109,7 +111,11 @@ export async function runUltrathink(
     .map((b) => b.thinking!)
     .join('\n');
 
-  // 5. Self-critique (Ultrathink only)
+  // 5. Deterministic guardrail enforcement (runs BEFORE self-critique)
+  const guardrailCheck = validateRecommendationText(answer);
+  const guardrailViolations = guardrailCheck.violations.map((v) => v.code);
+
+  // 6. Self-critique (Ultrathink only)
   let critiqueResult: { passed: boolean; notes: string } = { passed: true, notes: '' };
   if (config.selfCritique) {
     critiqueResult = await runSelfCritique({
@@ -119,19 +125,27 @@ export async function runUltrathink(
     });
   }
 
-  // 6. Evidence ranking (Ultrathink only)
-  const citations = config.evidenceFooter
+  // 7. Block answer if guardrails failed OR critique failed
+  const blocked = !guardrailCheck.ok || !critiqueResult.passed;
+  const safeAnswer = blocked
+    ? 'I want to make sure I give you the most accurate information. Let me rephrase that with a focus on what FarmCeutica offers for your situation. Could you ask your question again, or let me know which specific area you\'d like me to focus on?\n\n*This is not medical advice. Always consult your healthcare provider before making changes to your wellness routine.*'
+    : answer;
+
+  // 8. Evidence ranking (Ultrathink only)
+  const citations = config.evidenceFooter && !blocked
     ? await rankEvidence({ query: req.query, answer, sources: context.sources })
     : [];
 
   return {
-    answer,
+    answer: safeAnswer,
     tier: req.tier,
     thinkingSummary: thinking ? condenseThinking(thinking) : undefined,
     citations,
-    confidence: critiqueResult.passed ? 0.9 : 0.5,
-    critiquePassed: critiqueResult.passed,
-    critiqueNotes: critiqueResult.notes,
+    confidence: blocked ? 0 : 0.9,
+    critiquePassed: !blocked,
+    critiqueNotes: blocked
+      ? [critiqueResult.notes, ...guardrailViolations].filter(Boolean).join('; ')
+      : critiqueResult.notes,
     latencyMs: Date.now() - startTime,
     inputTokens: message.usage.input_tokens,
     outputTokens: message.usage.output_tokens,

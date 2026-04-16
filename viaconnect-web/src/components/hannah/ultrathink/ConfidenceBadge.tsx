@@ -15,14 +15,14 @@ export function ConfidenceBadge({ confidence, critiquePassed }: ConfidenceBadgeP
     high: {
       icon: ShieldCheck,
       label: 'High confidence',
-      color: 'text-emerald-400',
-      bg: 'bg-emerald-400/10 border-emerald-400/20',
+      color: 'text-[#2DA5A0]',
+      bg: 'bg-[#2DA5A0]/10 border-[#2DA5A0]/20',
     },
     moderate: {
       icon: ShieldQuestion,
       label: 'Moderate confidence',
-      color: 'text-amber-400',
-      bg: 'bg-amber-400/10 border-amber-400/20',
+      color: 'text-[#B75E18]',
+      bg: 'bg-[#B75E18]/10 border-[#B75E18]/20',
     },
     low: {
       icon: ShieldAlert,
