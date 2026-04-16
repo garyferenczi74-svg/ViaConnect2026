@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { ArrowLeft, Search } from 'lucide-react';
 import toast from 'react-hot-toast';
 
-type Category = 'All' | 'Nutrition' | 'Fitness' | 'Sleep' | 'Medical' | 'Genetic Data';
+type Category = 'All' | 'Nutrition' | 'Fitness' | 'Sleep' | 'Medical' | 'Genetic Data' | 'Health';
 
 interface AppItem {
   name: string;
@@ -16,7 +16,7 @@ interface AppItem {
   geneticContext?: string;
 }
 
-const categories: Category[] = ['All', 'Nutrition', 'Fitness', 'Sleep', 'Medical', 'Genetic Data'];
+const categories: Category[] = ['All', 'Nutrition', 'Fitness', 'Sleep', 'Health', 'Medical', 'Genetic Data'];
 
 const apps: AppItem[] = [
   {
@@ -68,6 +68,14 @@ const apps: AppItem[] = [
     description: 'Manual .txt/.csv upload',
     dataTypes: ['snps'],
     category: 'Genetic Data',
+  },
+  {
+    name: 'Hume',
+    icon: '\uD83E\uDDE0',
+    description: 'Emotional expression analysis, vocal biomarkers, sentiment tracking',
+    dataTypes: ['emotion', 'vocal_biomarkers', 'sentiment'],
+    category: 'Health',
+    geneticContext: 'Vocal biomarker patterns + COMT/BDNF variants = emotional resilience profiling',
   },
 ];
 

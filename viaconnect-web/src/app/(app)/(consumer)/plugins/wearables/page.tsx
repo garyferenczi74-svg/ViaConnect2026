@@ -44,6 +44,14 @@ const popularWearables = [
     connectionMethod: 'via Fitbit Web API',
     dataTypes: ['heart_rate', 'sleep', 'spo2', 'activity', 'temperature'],
   },
+  {
+    name: 'Hume',
+    icon: '\uD83E\uDDE0',
+    description: 'Emotional expression \u00B7 Vocal biomarkers \u00B7 Sentiment tracking',
+    connectionMethod: 'via Hume API',
+    dataTypes: ['emotion', 'vocal_biomarkers', 'sentiment'],
+    geneticContext: 'Vocal biomarker patterns + COMT/BDNF variants = emotional resilience profiling',
+  },
 ];
 
 const allWearables = [

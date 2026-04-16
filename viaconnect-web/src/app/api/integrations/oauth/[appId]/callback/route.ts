@@ -89,6 +89,7 @@ function getTokenUrl(appId: string): string {
     whoop: 'https://api.prod.whoop.com/oauth/token',
     garmin: 'https://connectapi.garmin.com/oauth-service/oauth/token',
     strava: 'https://www.strava.com/api/v3/oauth/token',
+    hume: 'https://api.hume.ai/oauth2-cc/token',
   };
   return urls[appId] ?? '';
 }

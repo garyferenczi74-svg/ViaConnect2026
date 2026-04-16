@@ -101,6 +101,7 @@ function getOAuthConfig(sourceId: string): OAuthConfig | null {
     whoop: { tokenUrl: 'https://api.prod.whoop.com/oauth/token', envPrefix: 'WHOOP' },
     garmin: { tokenUrl: 'https://connectapi.garmin.com/oauth-service/oauth/token', envPrefix: 'GARMIN' },
     strava: { tokenUrl: 'https://www.strava.com/api/v3/oauth/token', envPrefix: 'STRAVA' },
+    hume: { tokenUrl: 'https://api.hume.ai/oauth2-cc/token', envPrefix: 'HUME' },
   };
 
   const cfg = configs[sourceId];

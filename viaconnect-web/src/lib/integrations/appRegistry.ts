@@ -33,6 +33,9 @@ export const APP_REGISTRY: AppDefinition[] = [
   // Mindfulness
   { id: 'headspace', name: 'Headspace', category: 'mindfulness', dataProvided: ['Meditation Minutes', 'Sessions'], gaugesAffected: ['stress'], syncMethod: 'polling', tier: 2 },
   { id: 'calm', name: 'Calm', category: 'mindfulness', dataProvided: ['Meditation Minutes', 'Sleep Stories'], gaugesAffected: ['stress', 'sleep'], syncMethod: 'polling', tier: 2 },
+
+  // Health + Emotion
+  { id: 'hume', name: 'Hume', category: 'health', dataProvided: ['Emotional Expression', 'Vocal Biomarkers', 'Sentiment Tracking'], gaugesAffected: ['stress', 'recovery'], syncMethod: 'webhook', tier: 1 },
 ];
 
 export function getAppDef(appId: string): AppDefinition | undefined {
