@@ -1,5 +1,11 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import {
+  calculateAllCategories,
+  buildEmptyUnifiedData,
+} from "@/lib/scoring/unified/unifiedScoringEngine";
+import type { DataLayer, UnifiedHealthData } from "@/lib/scoring/unified/types";
+import { calculateConfidencePercentage } from "@/lib/scoring/unified/confidenceTiers";
 
 export async function POST(request: Request) {
   try {
@@ -9,146 +15,291 @@ export async function POST(request: Request) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 
-    // Load all CAQ assessment data
-    const { data: assessments } = await supabase.from("assessment_results").select("phase, data").eq("user_id", user.id);
-    const { data: profile } = await supabase.from("profiles").select("bio_optimization_score, bio_optimization_tier, health_concerns, family_history, date_of_birth, ethnicity").eq("id", user.id).single();
-    const { data: interactions } = await supabase.from("medication_interactions").select("*").eq("user_id", user.id);
-    const { data: dailyScores } = await supabase.from("daily_scores").select("*").eq("user_id", user.id).order("date", { ascending: false }).limit(30);
+    // ── Assemble UnifiedHealthData from all sources in parallel ──
 
-    const getPhase = (phase: number) => (assessments || []).find((a) => a.phase === phase)?.data as Record<string, unknown> | undefined;
+    const client = supabase as any;
+    const today = new Date().toISOString().split("T")[0];
+    const ninetyDaysAgo = new Date(Date.now() - 90 * 86_400_000).toISOString().split("T")[0];
 
-    const phase3 = getPhase(7) || {};  // Physical symptoms
-    const phase4 = getPhase(8) || {};  // Neuro symptoms
-    const phase5 = getPhase(9) || {};  // Emotional symptoms
-    const phase6 = getPhase(4) || {};  // Medications
-    const phase7 = getPhase(3) || {};  // Lifestyle
+    const [
+      assessRes, profileRes, interactionsRes, dailyRes,
+      bodyRes, mealsRes, checkinRes, suppLogsRes,
+      geneticsRes, currentSuppsRes,
+    ] = await Promise.all([
+      client.from("assessment_results").select("phase, data").eq("user_id", user.id),
+      client.from("profiles").select("bio_optimization_score, bio_optimization_tier, health_concerns, family_history, date_of_birth, height_cm, weight_kg, caq_completed_at").eq("id", user.id).single(),
+      client.from("medication_interactions").select("severity, resolved").eq("user_id", user.id),
+      client.from("daily_scores").select("*").eq("user_id", user.id).gte("score_date", ninetyDaysAgo).order("score_date", { ascending: false }),
+      client.from("body_tracker_scores").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(1),
+      client.from("meal_logs").select("*").eq("user_id", user.id).eq("meal_date", today),
+      client.from("daily_checkins").select("check_in_date").eq("user_id", user.id).order("check_in_date", { ascending: false }).limit(90),
+      client.from("supplement_logs").select("logged_at").eq("user_id", user.id).gte("logged_at", new Date(Date.now() - 30 * 86_400_000).toISOString()),
+      client.from("genetic_variants").select("id").eq("user_id", user.id).limit(1),
+      client.from("user_current_supplements").select("id").eq("user_id", user.id).eq("is_current", true),
+    ]);
 
-    const meds = (phase6.medications as string[]) || [];
-    const supps = (phase6.userSupplements as Array<{ name: string; dosage: string; unit: string }>) || [];
-    const allergies = (phase6.allergies as string[]) || [];
-    const concerns = (profile?.health_concerns as string[]) || [];
-    const bioScore = profile?.bio_optimization_score || 0;
+    const data = buildEmptyUnifiedData(user.id);
 
-    // Calculate category scores from available data
-    const avgSymptoms = (data: Record<string, unknown>) => {
-      const vals = Object.values(data).filter((v): v is { score: number } => typeof v === "object" && v !== null && "score" in v).map((v) => v.score);
-      return vals.length > 0 ? vals.reduce((a, b) => a + b, 0) / vals.length : 5;
-    };
+    // ── L1: CAQ ──
+    const assessments = assessRes.data ?? [];
+    const profile = profileRes.data;
+    const getPhase = (p: number) => assessments.find((a: any) => a.phase === p)?.data as Record<string, any> | undefined;
 
-    const physAvg = avgSymptoms(phase3);
-    const neuroAvg = avgSymptoms(phase4);
-    const emotAvg = avgSymptoms(phase5);
+    if (assessments.length > 0) {
+      data.activeLayers.add("L1_CAQ");
+      const p3 = getPhase(7) || {};
+      const p4 = getPhase(8) || {};
+      const p5 = getPhase(9) || {};
+      const p6 = getPhase(4) || {};
+      const p7 = getPhase(3) || {};
 
-    const categories = [
-      {
-        id: "nutrient_profile", name: "Nutrient Profile", icon: "\ud83e\uddea",
-        score: Math.round(Math.min(100, 40 + supps.length * 10)),
-        trend: "stable" as const, trendDelta: 0, dataCompleteness: supps.length > 0 ? 75 : 30,
-        insightCount: supps.length > 0 ? 3 : 1, isNew: false,
-        insights: supps.length > 0
-          ? [{ id: "n1", text: `You're taking ${supps.length} supplement(s). AI analysis will identify nutrient gaps.`, severity: "neutral" as const }]
-          : [{ id: "n1", text: "No supplements reported. Significant nutrient gaps likely exist.", severity: "warning" as const }],
-        recommendations: supps.length < 3 ? [{ action: "add", description: "Consider a foundational supplement stack (Vitamin D, Omega-3, Magnesium)", priority: "high" as const }] : [],
-      },
-      {
-        id: "symptom_landscape", name: "Symptom Landscape", icon: "\ud83d\udcca",
-        score: Math.round(Math.max(0, 100 - ((physAvg + neuroAvg + emotAvg) / 3) * 10)),
-        trend: "stable" as const, trendDelta: 0, dataCompleteness: 80,
-        insightCount: 3, isNew: false,
-        insights: [
-          { id: "s1", text: `Physical symptom load: ${physAvg.toFixed(1)}/10. ${physAvg > 5 ? "Significant burden detected." : "Manageable levels."}`, severity: physAvg > 5 ? "warning" as const : "positive" as const },
-          { id: "s2", text: `Cognitive symptom load: ${neuroAvg.toFixed(1)}/10. ${neuroAvg > 5 ? "Brain fog and focus issues present." : "Cognitive function appears stable."}`, severity: neuroAvg > 5 ? "warning" as const : "positive" as const },
-          { id: "s3", text: `Emotional symptom load: ${emotAvg.toFixed(1)}/10. ${emotAvg > 5 ? "Mood and stress management needed." : "Emotional wellness is strong."}`, severity: emotAvg > 5 ? "warning" as const : "positive" as const },
-        ],
-        recommendations: physAvg > 5 ? [{ action: "monitor", description: "Track physical symptoms daily to identify triggers", priority: "high" as const }] : [],
-      },
-      {
-        id: "risk_radar", name: "Risk Radar", icon: "\ud83c\udfaf",
-        score: Math.round(Math.max(30, 100 - concerns.length * 5 - ((profile?.family_history as unknown[])?.length || 0) * 8)),
-        trend: "stable" as const, trendDelta: 0, dataCompleteness: 65,
-        insightCount: 2, isNew: false,
-        insights: [
-          { id: "r1", text: `${concerns.length} health concern(s) identified. Family history data ${(profile?.family_history as unknown[])?.length ? "available" : "not provided"}.`, severity: "neutral" as const },
-        ],
-        recommendations: [],
-      },
-      {
-        id: "medication_intel", name: "Medication Intelligence", icon: "\ud83d\udc8a",
-        score: Math.round(meds.filter(m => m !== "None").length === 0 ? 95 : Math.max(40, 100 - (interactions?.length || 0) * 15)),
-        trend: "stable" as const, trendDelta: 0, dataCompleteness: 85,
-        insightCount: (interactions?.length || 0) + 1, isNew: false,
-        insights: interactions?.length
-          ? [{ id: "m1", text: `${interactions.length} drug-supplement interaction(s) detected. ${interactions.filter(i => i.severity === "major").length} major.`, severity: "warning" as const }]
-          : [{ id: "m1", text: "No medication interactions detected. Your current regimen appears safe.", severity: "positive" as const }],
-        recommendations: [],
-      },
-      {
-        id: "protocol_effectiveness", name: "Protocol Effectiveness", icon: "\ud83d\udcc8",
-        score: dailyScores?.length ? Math.round(dailyScores.reduce((a, d) => a + (d.regimen_score || 0), 0) / dailyScores.length) : 50,
-        trend: "stable" as const, trendDelta: 0, dataCompleteness: dailyScores?.length ? Math.min(90, dailyScores.length * 3) : 20,
-        insightCount: 2, isNew: false,
-        insights: [{ id: "p1", text: dailyScores?.length ? `Protocol tracked for ${dailyScores.length} day(s). Continue logging for more precise insights.` : "Start logging daily supplement intake to track protocol effectiveness.", severity: "neutral" as const }],
-        recommendations: [],
-      },
-      {
-        id: "sleep_recovery", name: "Sleep & Recovery", icon: "\ud83c\udf19",
-        score: Math.round(phase7.sleepHours ? Math.min(100, (parseFloat(String(phase7.sleepHours)) / 8) * 100) : 60),
-        trend: "stable" as const, trendDelta: 0, dataCompleteness: 55,
-        insightCount: 2, isNew: false,
-        insights: [{ id: "sl1", text: phase7.sleepHours ? `Reported ${phase7.sleepHours} hours of sleep. ${parseFloat(String(phase7.sleepHours)) >= 7 ? "Within optimal range." : "Below the recommended 7-9 hours."}` : "Sleep data from self-report only. Connect a wearable for precise tracking.", severity: parseFloat(String(phase7.sleepHours || 0)) >= 7 ? "positive" as const : "warning" as const }],
-        recommendations: parseFloat(String(phase7.sleepHours || 0)) < 7 ? [{ action: "add", description: "Consider Liposomal Magnesium L-Threonate for sleep quality", priority: "medium" as const }] : [],
-      },
-      {
-        id: "stress_mood", name: "Stress & Mood", icon: "\ud83e\udde0",
-        score: Math.round(Math.max(0, 100 - emotAvg * 10)),
-        trend: "stable" as const, trendDelta: 0, dataCompleteness: 70,
-        insightCount: 2, isNew: false,
-        insights: [{ id: "st1", text: emotAvg > 5 ? "Elevated stress and mood symptoms detected. Protocol should prioritize adaptogenic support." : "Stress and mood indicators are within healthy range.", severity: emotAvg > 5 ? "warning" as const : "positive" as const }],
-        recommendations: emotAvg > 5 ? [{ action: "add", description: "Consider Micellar Ashwagandha (KSM-66) for stress resilience", priority: "high" as const }] : [],
-      },
-      {
-        id: "metabolic_health", name: "Metabolic Health", icon: "\u2696\ufe0f",
-        score: Math.round(70 - (physAvg > 3 ? (physAvg - 3) * 5 : 0)),
-        trend: "stable" as const, trendDelta: 0, dataCompleteness: 50,
-        insightCount: 1, isNew: false,
-        insights: [{ id: "met1", text: "Metabolic health score based on self-reported data. Lab work and wearable data will refine this.", severity: "neutral" as const }],
-        recommendations: [],
-      },
-      {
-        id: "immune_inflammation", name: "Immune & Inflammation", icon: "\ud83d\udee1\ufe0f",
-        score: Math.round(Math.max(30, 85 - physAvg * 3 - emotAvg * 2)),
-        trend: "stable" as const, trendDelta: 0, dataCompleteness: 55,
-        insightCount: 1, isNew: false,
-        insights: [{ id: "im1", text: "Immune and inflammation scores derived from symptom data. Adding anti-inflammatory supplements will improve this category.", severity: "neutral" as const }],
-        recommendations: [],
-      },
-      {
-        id: "bio_optimization_trends", name: "Bio Optimization Trends", icon: "\ud83d\udcc9",
-        score: Math.round(bioScore),
-        trend: "stable" as const, trendDelta: 0, dataCompleteness: 60,
-        insightCount: 2, isNew: false,
-        insights: [{ id: "bo1", text: `Current Bio Optimization score: ${bioScore}/100 (${profile?.bio_optimization_tier || "Developing"}). Daily tracking will reveal trends.`, severity: bioScore >= 70 ? "positive" as const : "neutral" as const }],
-        recommendations: [],
-      },
-    ];
+      const avgScores = (obj: Record<string, any>) => {
+        const vals = Object.values(obj).filter((v): v is { score: number } =>
+          typeof v === "object" && v !== null && "score" in v
+        ).map(v => v.score);
+        return vals.length > 0 ? vals.reduce((a, b) => a + b, 0) / vals.length : 5;
+      };
 
-    const summary = `Based on your clinical assessment, your Bio Optimization score is ${bioScore}/100. ` +
-      `Your strongest areas are ${categories.sort((a, b) => b.score - a.score).slice(0, 2).map(c => c.name).join(" and ")}. ` +
-      `Your primary optimization opportunities are in ${categories.sort((a, b) => a.score - b.score).slice(0, 2).map(c => c.name).join(" and ")}.`;
+      const concerns = (profile?.health_concerns as string[]) || [];
+      const familyHistory = (profile?.family_history as any[]) || [];
+      const meds = ((p6.medications as string[]) || []).filter(m => m && m !== "None");
+      const supps = (p6.userSupplements as any[]) || [];
+      const allergies = (p6.allergies as string[]) || [];
 
-    // Save analytics
-    await supabase.from("wellness_analytics").upsert({
+      const heightCm = profile?.height_cm;
+      const weightKg = profile?.weight_kg;
+      const bmi = heightCm && weightKg ? weightKg / ((heightCm / 100) ** 2) : null;
+      const dob = profile?.date_of_birth;
+      const age = dob ? Math.floor((Date.now() - new Date(dob).getTime()) / (365.25 * 86_400_000)) : 30;
+
+      data.caq = {
+        ...data.caq,
+        completed: true,
+        daysSinceCompletion: profile?.caq_completed_at
+          ? Math.floor((Date.now() - new Date(profile.caq_completed_at).getTime()) / 86_400_000)
+          : 0,
+        age, bmi,
+        healthConcernCount: concerns.length,
+        avgConcernSeverity: concerns.length > 0 ? 5 : 0,
+        familyHistoryRiskLoad: Math.min(100, familyHistory.length * 15),
+        familyHistoryCount: familyHistory.length,
+        physicalSymptomAvg: avgScores(p3),
+        neuroSymptomAvg: avgScores(p4),
+        emotionalSymptomAvg: avgScores(p5),
+        medicationCount: meds.length,
+        medications: meds,
+        supplementCount: supps.length,
+        supplementCoverageScore: Math.min(100, supps.length * 15),
+        allergyCount: allergies.length,
+        sleepHours: parseFloat(String(p7.sleepHours || 7)),
+        sleepQuality: parseFloat(String(p7.sleepQuality || 5)),
+        exerciseFrequency: parseFloat(String(p7.exerciseFrequency || 3)),
+        dietScore: parseFloat(String(p7.dietQuality || 5)),
+        stressLevel: parseFloat(String(p7.stressLevel || 5)),
+        smokingScore: p7.smoking === "never" ? 0 : p7.smoking === "former" ? 3 : 8,
+        alcoholScore: parseFloat(String(p7.alcoholFrequency || 2)),
+        sedentaryScore: parseFloat(String(p7.sedentaryHours || 5)),
+      };
+
+      // L2: Symptom Profile (bundled with CAQ Phases 3-5)
+      data.activeLayers.add("L2_SYMPTOMS");
+      const allSymScores = [
+        ...Object.values(p3), ...Object.values(p4), ...Object.values(p5),
+      ].filter((v): v is { score: number } => typeof v === "object" && v !== null && "score" in v)
+        .map(v => v.score);
+      data.symptoms = {
+        available: true,
+        retakenWithin30Days: false,
+        retakenWithin14Days: false,
+        stressScore: data.caq.emotionalSymptomAvg,
+        hormonalScore: 5,
+        hairNailScore: 5,
+        skinScore: 5,
+        weightScore: 5,
+        highSeverityCount: allSymScores.filter(s => s >= 7).length,
+        allScores: allSymScores,
+      };
+    }
+
+    // ── L3: Daily Scores ──
+    const dailyRows = (dailyRes.data ?? []) as any[];
+    if (dailyRows.length > 0) {
+      data.activeLayers.add("L3_DAILY");
+      const latest = dailyRows[0];
+      const checkinDates = new Set(((checkinRes.data ?? []) as any[]).map(r => r.check_in_date));
+      let streak = 0;
+      const cursor = new Date();
+      for (let i = 0; i < 365; i++) {
+        if (checkinDates.has(cursor.toISOString().slice(0, 10))) { streak++; cursor.setDate(cursor.getDate() - 1); }
+        else break;
+      }
+      data.daily = {
+        available: true,
+        daysActive: dailyRows.length,
+        consecutiveDays: streak,
+        sleepGauge: latest.sleep_score ?? 0,
+        exerciseGauge: latest.activity_score ?? 0,
+        stepsGauge: latest.activity_score ?? 0,
+        stressGauge: latest.mood_stress_score ?? 0,
+        recoveryGauge: latest.energy_score ?? 0,
+        streakGauge: Math.min(100, streak * 5),
+        supplementsGauge: 50,
+        nutritionGauge: latest.nutrition_score ?? 0,
+      };
+    }
+
+    // ── L4: Body Tracker ──
+    const bodyRow = (bodyRes.data ?? [])[0];
+    if (bodyRow) {
+      data.activeLayers.add("L4_BODY");
+      data.bodyTracker = {
+        available: true,
+        weeksOfData: 4,
+        bodyScore: bodyRow.total_score ?? 500,
+        compositionGrade: bodyRow.composition_grade ?? "C",
+        weightGrade: bodyRow.weight_grade ?? "C",
+        muscleGrade: bodyRow.muscle_grade ?? "C",
+        cardioGrade: bodyRow.cardio_grade ?? "C",
+        metabolicGrade: bodyRow.metabolic_grade ?? "C",
+        bmiOutOfRange: data.caq.bmi ? (data.caq.bmi < 18.5 || data.caq.bmi > 30) : false,
+        restingHRAnomaly: false,
+        bodyFatPercent: bodyRow.body_fat_pct ?? null,
+        weightTrendStable: true,
+        hrvTrend: null,
+        restingHR: bodyRow.resting_hr ?? null,
+        metabolicAge: bodyRow.metabolic_age ?? null,
+      };
+    }
+
+    // ── L5: Nutrition ──
+    const meals = (mealsRes.data ?? []) as any[];
+    if (meals.length > 0) {
+      data.activeLayers.add("L5_NUTRITION");
+      const mealScores = meals.map((m: any) => m.meal_score ?? (m.quality_rating ? m.quality_rating * 25 : 50));
+      data.nutrition = {
+        available: true,
+        mealsLogged: meals.length,
+        consecutiveDaysLogged: 1,
+        nutritionScore: Math.round(mealScores.reduce((a: number, b: number) => a + b, 0) / mealScores.length),
+        macroBalance: 50,
+        micronutrientDensity: 50,
+      };
+    }
+
+    // ── L6: Protocol Adherence ──
+    const suppLogs = (suppLogsRes.data ?? []) as any[];
+    const currentSupps = (currentSuppsRes.data ?? []) as any[];
+    if (suppLogs.length > 0 || currentSupps.length > 0) {
+      data.activeLayers.add("L6_PROTOCOL");
+      const interactions = (interactionsRes.data ?? []) as any[];
+      const severeCount = interactions.filter((i: any) => i.severity === "major" || i.severity === "severe").length;
+      const unresolvedCount = interactions.filter((i: any) => !i.resolved).length;
+      const expectedDoses = currentSupps.length * 30;
+      const completionRate = expectedDoses > 0 ? Math.min(100, Math.round((suppLogs.length / expectedDoses) * 100)) : 0;
+      data.protocol = {
+        available: true,
+        daysActive: suppLogs.length,
+        completionRate,
+        streakLength: 0,
+        interactionCount: interactions.length,
+        severeInteractionCount: severeCount,
+        maxInteractionSeverity: severeCount > 0 ? "severe" : interactions.length > 0 ? "warning" : "none",
+        unresolvedInteractionCount: unresolvedCount,
+      };
+    }
+
+    // ── L8: Genetics ──
+    if ((geneticsRes.data ?? []).length > 0) {
+      data.activeLayers.add("L8_GENETICS");
+      data.genetics = { ...data.genetics, available: true, panelCount: 1, optimizationBonus: 5 };
+    }
+
+    // Bio Optimization from profile
+    data.bioOptimizationScore = profile?.bio_optimization_score ?? 0;
+    data.bioOptimizationTier = profile?.bio_optimization_tier ?? "Developing";
+    data.daysSinceOnboarding = data.caq.daysSinceCompletion;
+
+    // ── Calculate all 10 categories ──
+    const result = calculateAllCategories(data, trigger);
+
+    // ── Build backward-compatible categories array for WellnessSnapshot ──
+    const categoriesArray = Object.entries(result.details).map(([id, detail]) => ({
+      id,
+      name: getCategoryName(id),
+      icon: getCategoryIcon(id),
+      score: detail.score,
+      trend: detail.trend,
+      trendDelta: detail.trendDelta,
+      dataCompleteness: Math.round(detail.dataCompleteness * 100),
+      insightCount: detail.insights.length,
+      isNew: false,
+      insights: detail.insights,
+      recommendations: detail.recommendations,
+    }));
+
+    // ── Persist to wellness_analytics ──
+    const confPct = calculateConfidencePercentage(data.activeLayers);
+    await client.from("wellness_analytics").upsert({
       user_id: user.id,
-      summary,
-      categories,
+      summary: result.summary,
+      categories: categoriesArray,
       trigger,
-      data_sources_used: ["caq_phase1", "caq_phase2", "caq_phase3", "caq_phase4", "caq_phase5", "caq_phase6", "caq_phase7"],
+      data_sources_used: result.activeLayers,
       calculated_at: new Date().toISOString(),
       next_calculation_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+      unified_scores: result.scores,
+      confidence_tier: result.confidence.name,
+      confidence_pct: confPct,
+      active_layers: result.activeLayers,
+      missing_layers: result.missingLayers,
+      top_category: result.topCategory,
+      low_category: result.lowCategory,
+      scoring_version: "v2",
     }, { onConflict: "user_id,calculated_at" }).then(() => {}, () => {});
 
-    return NextResponse.json({ summary, categories, calculatedAt: new Date().toISOString() });
-  } catch {
+    // ── Audit log ──
+    await client.from("scoring_audit_log").insert({
+      user_id: user.id,
+      trigger_event: trigger,
+      active_layers: result.activeLayers,
+      confidence_tier: result.confidence.name,
+      confidence_pct: confPct,
+      scores: result.scores,
+    }).then(() => {}, () => {});
+
+    return NextResponse.json({
+      summary: result.summary,
+      categories: categoriesArray,
+      scores: result.scores,
+      confidence: { tier: result.confidence.name, label: result.confidence.label, percentage: confPct },
+      topCategory: result.topCategory,
+      lowCategory: result.lowCategory,
+      calculatedAt: result.calculatedAt,
+    });
+  } catch (err) {
+    console.error("[generate-wellness-analytics]", err);
     return NextResponse.json({ error: "Analytics generation failed" }, { status: 500 });
   }
+}
+
+function getCategoryName(id: string): string {
+  const names: Record<string, string> = {
+    risk_radar: "Risk Radar", nutrient_profile: "Nutrient Profile",
+    protocol_effectiveness: "Protocol Effectiveness", metabolic_health: "Metabolic Health",
+    immune_inflammation: "Immune & Inflammation", bio_optimization_trends: "Bio Optimization Trends",
+    stress_mood: "Stress & Mood", symptom_landscape: "Symptom Landscape",
+    medication_intel: "Medication Intelligence", sleep_recovery: "Sleep & Recovery",
+  };
+  return names[id] ?? id;
+}
+
+function getCategoryIcon(id: string): string {
+  const icons: Record<string, string> = {
+    risk_radar: "\uD83C\uDFAF", nutrient_profile: "\uD83E\uDDEA",
+    protocol_effectiveness: "\uD83D\uDCC8", metabolic_health: "\u2696\uFE0F",
+    immune_inflammation: "\uD83D\uDEE1\uFE0F", bio_optimization_trends: "\uD83D\uDCC9",
+    stress_mood: "\uD83E\uDDE0", symptom_landscape: "\uD83D\uDCCA",
+    medication_intel: "\uD83D\uDC8A", sleep_recovery: "\uD83C\uDF19",
+  };
+  return icons[id] ?? "";
 }
