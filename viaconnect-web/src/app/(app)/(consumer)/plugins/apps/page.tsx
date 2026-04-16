@@ -77,6 +77,55 @@ const apps: AppItem[] = [
     category: 'Health',
     geneticContext: 'Vocal biomarker patterns + COMT/BDNF variants = emotional resilience profiling',
   },
+  {
+    name: 'Sonar Health',
+    icon: '\uD83D\uDCF1',
+    description: 'Continuous health monitoring, predictive insights, passive data collection',
+    dataTypes: ['health_scores', 'passive_monitoring', 'predictive_insights'],
+    category: 'Health',
+  },
+  {
+    name: 'EverMe',
+    icon: '\uD83C\uDF1F',
+    description: 'Personalized wellness journaling, habit tracking, lifestyle analytics',
+    dataTypes: ['habits', 'journaling', 'lifestyle'],
+    category: 'Health',
+  },
+  {
+    name: 'Bevel',
+    icon: '\uD83D\uDCC8',
+    description: 'Body composition analysis, metabolic tracking, progress photos',
+    dataTypes: ['body_composition', 'metabolic_rate', 'progress'],
+    category: 'Fitness',
+  },
+  {
+    name: 'Fitbit',
+    icon: '\u231A',
+    description: 'Activity, sleep, heart rate, SpO2, stress management',
+    dataTypes: ['activity', 'sleep', 'heart_rate', 'spo2'],
+    category: 'Fitness',
+  },
+  {
+    name: 'Fitonamy',
+    icon: '\uD83D\uDCAA',
+    description: 'AI powered workout programming, strength analytics, recovery tracking',
+    dataTypes: ['workouts', 'strength', 'recovery'],
+    category: 'Fitness',
+  },
+  {
+    name: 'Bestmy',
+    icon: '\uD83C\uDFAF',
+    description: 'Goal optimization, performance benchmarking, personal records',
+    dataTypes: ['goals', 'benchmarks', 'performance'],
+    category: 'Fitness',
+  },
+  {
+    name: 'Lyfta',
+    icon: '\uD83C\uDFCB\uFE0F',
+    description: 'Strength training logging, exercise library, progressive overload tracking',
+    dataTypes: ['workouts', 'strength', 'exercise_library'],
+    category: 'Fitness',
+  },
 ];
 
 export default function AppsPage() {
