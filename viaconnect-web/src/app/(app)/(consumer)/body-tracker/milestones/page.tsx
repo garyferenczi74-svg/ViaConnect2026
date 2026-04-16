@@ -2,9 +2,10 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Hexagon, Star } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Hexagon, Plus, Star } from 'lucide-react';
 import { AchievementBadge } from '@/components/body-tracker/AchievementBadge';
 import { getMilestoneMessage } from '@/lib/body-tracker/calculations';
+import { MilestoneCreatorForm } from '@/components/body-tracker/manual-input/forms/MilestoneCreatorForm';
 
 const SAMPLE_MILESTONES = [
   { id: '1', title: 'First 5 lbs', grade: 'A+', expected_days: 14, actual_days: 10, start_value: 192, current_value: 187, target_value: 187, target_unit: 'lbs', helix_tokens: 200 },
@@ -14,11 +15,26 @@ const SAMPLE_MILESTONES = [
 
 export default function MilestonesPage() {
   const [idx, setIdx] = useState(0);
+  const [open, setOpen] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
   const m = SAMPLE_MILESTONES[idx];
   const progress = m.actual_days / m.expected_days;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" key={refreshKey}>
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-bold text-white">Milestones</h2>
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="flex items-center gap-1.5 rounded-xl border border-[#2DA5A0]/30 bg-[#2DA5A0]/15 px-3 py-2 text-xs font-medium text-[#2DA5A0] hover:bg-[#2DA5A0]/25 min-h-[44px]"
+        >
+          <Plus className="h-3.5 w-3.5" strokeWidth={1.5} />
+          New milestone
+        </button>
+      </div>
+      <MilestoneCreatorForm open={open} onOpenChange={setOpen} onSaved={() => setRefreshKey((k) => k + 1)} />
+
       {/* Navigator */}
       <div className="flex items-center justify-center gap-4">
         <button

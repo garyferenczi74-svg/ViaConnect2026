@@ -61,5 +61,6 @@ export const BODY_TRACKER_TABS = [
   { id: 'muscle',      label: 'Muscle',      href: '/body-tracker/muscle' },
   { id: 'milestones',  label: 'Milestones',  href: '/body-tracker/milestones' },
   { id: 'metabolic',   label: 'Metabolic',   href: '/body-tracker/metabolic' },
+  { id: 'photos',      label: 'Photos',      href: '/body-tracker/photos' },
   { id: 'connections', label: 'Connections', href: '/body-tracker/connections' },
 ] as const;

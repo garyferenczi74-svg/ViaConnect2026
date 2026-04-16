@@ -1,11 +1,14 @@
 'use client';
 
-import { Heart, TrendingUp } from 'lucide-react';
+import { useState } from 'react';
+import { Heart, Plus, TrendingUp } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Cell, ResponsiveContainer,
   LineChart, Line, ReferenceLine,
 } from 'recharts';
 import { CapacityStrainBars } from '@/components/body-tracker/CapacityStrainBars';
+import { MetabolicCardioForm } from '@/components/body-tracker/manual-input/forms/MetabolicCardioForm';
+import { EntryHistoryTimeline } from '@/components/body-tracker/manual-input';
 
 const READINESS_COLORS: Record<string, string> = {
   optimal: '#2DA5A0', moderate: '#5B8DEF', suboptimal: '#9B59B6', low: '#E91E8C',
@@ -27,9 +30,23 @@ const momentumData = [
 ];
 
 export default function MetabolicPage() {
+  const [open, setOpen] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
+
   return (
-    <div className="space-y-6">
-      <h2 className="text-lg font-bold text-white">Metabolic & Cardiovascular</h2>
+    <div className="space-y-6" key={refreshKey}>
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-bold text-white">Metabolic & Cardiovascular</h2>
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="flex items-center gap-1.5 rounded-xl border border-[#2DA5A0]/30 bg-[#2DA5A0]/15 px-3 py-2 text-xs font-medium text-[#2DA5A0] hover:bg-[#2DA5A0]/25 min-h-[44px]"
+        >
+          <Plus className="h-3.5 w-3.5" strokeWidth={1.5} />
+          Log Entry
+        </button>
+      </div>
+      <MetabolicCardioForm open={open} onOpenChange={setOpen} onSaved={() => setRefreshKey((k) => k + 1)} />
 
       {/* Readiness window cards */}
       <div className="grid grid-cols-2 gap-3">
@@ -111,6 +128,8 @@ export default function MetabolicPage() {
 
       {/* Capacity & Strain */}
       <CapacityStrainBars capacity={65} strain={42} capacityBaseline={55} strainBaseline={50} />
+
+      <EntryHistoryTimeline category="metabolic" onChanged={() => setRefreshKey((k) => k + 1)} />
     </div>
   );
 }

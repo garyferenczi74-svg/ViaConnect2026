@@ -505,6 +505,601 @@ export type Database = {
         }
         Relationships: []
       }
+      body_photo_sessions: {
+        Row: {
+          arnold_analysis: Json | null
+          arnold_analyzed_at: string | null
+          arnold_confidence: number | null
+          arnold_error: string | null
+          arnold_status: string
+          back_full_path: string | null
+          back_thumb_path: string | null
+          clothing_type: string | null
+          created_at: string
+          front_full_path: string | null
+          front_thumb_path: string | null
+          id: string
+          is_complete: boolean | null
+          left_full_path: string | null
+          left_thumb_path: string | null
+          lighting_condition: string | null
+          linked_entry_id: string | null
+          notes: string | null
+          poses_completed: string[]
+          right_full_path: string | null
+          right_thumb_path: string | null
+          session_date: string
+          share_expires_at: string | null
+          shared_with_practitioner: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          arnold_analysis?: Json | null
+          arnold_analyzed_at?: string | null
+          arnold_confidence?: number | null
+          arnold_error?: string | null
+          arnold_status?: string
+          back_full_path?: string | null
+          back_thumb_path?: string | null
+          clothing_type?: string | null
+          created_at?: string
+          front_full_path?: string | null
+          front_thumb_path?: string | null
+          id?: string
+          is_complete?: boolean | null
+          left_full_path?: string | null
+          left_thumb_path?: string | null
+          lighting_condition?: string | null
+          linked_entry_id?: string | null
+          notes?: string | null
+          poses_completed?: string[]
+          right_full_path?: string | null
+          right_thumb_path?: string | null
+          session_date?: string
+          share_expires_at?: string | null
+          shared_with_practitioner?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          arnold_analysis?: Json | null
+          arnold_analyzed_at?: string | null
+          arnold_confidence?: number | null
+          arnold_error?: string | null
+          arnold_status?: string
+          back_full_path?: string | null
+          back_thumb_path?: string | null
+          clothing_type?: string | null
+          created_at?: string
+          front_full_path?: string | null
+          front_thumb_path?: string | null
+          id?: string
+          is_complete?: boolean | null
+          left_full_path?: string | null
+          left_thumb_path?: string | null
+          lighting_condition?: string | null
+          linked_entry_id?: string | null
+          notes?: string | null
+          poses_completed?: string[]
+          right_full_path?: string | null
+          right_thumb_path?: string | null
+          session_date?: string
+          share_expires_at?: string | null
+          shared_with_practitioner?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "body_photo_sessions_linked_entry_id_fkey"
+            columns: ["linked_entry_id"]
+            isOneToOne: false
+            referencedRelation: "body_tracker_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      body_tracker_entries: {
+        Row: {
+          condition_context: string | null
+          confidence: number | null
+          created_at: string
+          device_name: string | null
+          entry_date: string
+          id: string
+          manual_source_id: string | null
+          manual_source_tier: string | null
+          notes: string | null
+          scan_photo_url: string | null
+          source: string
+          time_of_day: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          condition_context?: string | null
+          confidence?: number | null
+          created_at?: string
+          device_name?: string | null
+          entry_date?: string
+          id?: string
+          manual_source_id?: string | null
+          manual_source_tier?: string | null
+          notes?: string | null
+          scan_photo_url?: string | null
+          source?: string
+          time_of_day?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          condition_context?: string | null
+          confidence?: number | null
+          created_at?: string
+          device_name?: string | null
+          entry_date?: string
+          id?: string
+          manual_source_id?: string | null
+          manual_source_tier?: string | null
+          notes?: string | null
+          scan_photo_url?: string | null
+          source?: string
+          time_of_day?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      body_tracker_metabolic: {
+        Row: {
+          basal_metabolic_rate_kcal: number | null
+          blood_oxygen_pct: number | null
+          body_temperature_f: number | null
+          bp_classification: string | null
+          circadian_readiness: Json
+          created_at: string
+          diastolic_bp: number | null
+          entry_id: string
+          hrv_ms: number | null
+          id: string
+          max_hr_measured: number | null
+          metabolic_age: number | null
+          metabolic_capacity: number | null
+          metabolic_momentum: number | null
+          moderate_window_end: string | null
+          moderate_window_start: string | null
+          optimal_window_end: string | null
+          optimal_window_start: string | null
+          recovery_hr: number | null
+          respiratory_rate: number | null
+          resting_hr_bpm: number | null
+          strain: number | null
+          systolic_bp: number | null
+          user_id: string
+          vo2_max: number | null
+        }
+        Insert: {
+          basal_metabolic_rate_kcal?: number | null
+          blood_oxygen_pct?: number | null
+          body_temperature_f?: number | null
+          bp_classification?: string | null
+          circadian_readiness?: Json
+          created_at?: string
+          diastolic_bp?: number | null
+          entry_id: string
+          hrv_ms?: number | null
+          id?: string
+          max_hr_measured?: number | null
+          metabolic_age?: number | null
+          metabolic_capacity?: number | null
+          metabolic_momentum?: number | null
+          moderate_window_end?: string | null
+          moderate_window_start?: string | null
+          optimal_window_end?: string | null
+          optimal_window_start?: string | null
+          recovery_hr?: number | null
+          respiratory_rate?: number | null
+          resting_hr_bpm?: number | null
+          strain?: number | null
+          systolic_bp?: number | null
+          user_id: string
+          vo2_max?: number | null
+        }
+        Update: {
+          basal_metabolic_rate_kcal?: number | null
+          blood_oxygen_pct?: number | null
+          body_temperature_f?: number | null
+          bp_classification?: string | null
+          circadian_readiness?: Json
+          created_at?: string
+          diastolic_bp?: number | null
+          entry_id?: string
+          hrv_ms?: number | null
+          id?: string
+          max_hr_measured?: number | null
+          metabolic_age?: number | null
+          metabolic_capacity?: number | null
+          metabolic_momentum?: number | null
+          moderate_window_end?: string | null
+          moderate_window_start?: string | null
+          optimal_window_end?: string | null
+          optimal_window_start?: string | null
+          recovery_hr?: number | null
+          respiratory_rate?: number | null
+          resting_hr_bpm?: number | null
+          strain?: number | null
+          systolic_bp?: number | null
+          user_id?: string
+          vo2_max?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "body_tracker_metabolic_entry_id_fkey"
+            columns: ["entry_id"]
+            isOneToOne: false
+            referencedRelation: "body_tracker_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      body_tracker_milestones: {
+        Row: {
+          achieved_at: string | null
+          actual_days: number | null
+          completed_date: string | null
+          created_at: string
+          current_value: number | null
+          description: string | null
+          expected_days: number | null
+          grade: string | null
+          helix_tokens_awarded: number | null
+          id: string
+          is_active: boolean
+          maintained_since: string | null
+          milestone_order: number
+          milestone_type: string
+          rate_preference: string | null
+          start_date: string
+          start_value: number | null
+          status: string | null
+          target_date: string | null
+          target_unit: string | null
+          target_value: number | null
+          title: string
+          total_milestones: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          achieved_at?: string | null
+          actual_days?: number | null
+          completed_date?: string | null
+          created_at?: string
+          current_value?: number | null
+          description?: string | null
+          expected_days?: number | null
+          grade?: string | null
+          helix_tokens_awarded?: number | null
+          id?: string
+          is_active?: boolean
+          maintained_since?: string | null
+          milestone_order?: number
+          milestone_type: string
+          rate_preference?: string | null
+          start_date?: string
+          start_value?: number | null
+          status?: string | null
+          target_date?: string | null
+          target_unit?: string | null
+          target_value?: number | null
+          title: string
+          total_milestones?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          achieved_at?: string | null
+          actual_days?: number | null
+          completed_date?: string | null
+          created_at?: string
+          current_value?: number | null
+          description?: string | null
+          expected_days?: number | null
+          grade?: string | null
+          helix_tokens_awarded?: number | null
+          id?: string
+          is_active?: boolean
+          maintained_since?: string | null
+          milestone_order?: number
+          milestone_type?: string
+          rate_preference?: string | null
+          start_date?: string
+          start_value?: number | null
+          status?: string | null
+          target_date?: string | null
+          target_unit?: string | null
+          target_value?: number | null
+          title?: string
+          total_milestones?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      body_tracker_scores: {
+        Row: {
+          body_score: number | null
+          breakdown_jsonb: Json
+          cardiovascular_grade: string | null
+          composition_grade: string | null
+          confidence_pct: number | null
+          created_at: string
+          id: string
+          metabolic_grade: string | null
+          muscle_grade: string | null
+          score_date: string
+          score_delta: number | null
+          tier: string | null
+          user_id: string
+          weight_grade: string | null
+        }
+        Insert: {
+          body_score?: number | null
+          breakdown_jsonb?: Json
+          cardiovascular_grade?: string | null
+          composition_grade?: string | null
+          confidence_pct?: number | null
+          created_at?: string
+          id?: string
+          metabolic_grade?: string | null
+          muscle_grade?: string | null
+          score_date?: string
+          score_delta?: number | null
+          tier?: string | null
+          user_id: string
+          weight_grade?: string | null
+        }
+        Update: {
+          body_score?: number | null
+          breakdown_jsonb?: Json
+          cardiovascular_grade?: string | null
+          composition_grade?: string | null
+          confidence_pct?: number | null
+          created_at?: string
+          id?: string
+          metabolic_grade?: string | null
+          muscle_grade?: string | null
+          score_date?: string
+          score_delta?: number | null
+          tier?: string | null
+          user_id?: string
+          weight_grade?: string | null
+        }
+        Relationships: []
+      }
+      body_tracker_segmental_fat: {
+        Row: {
+          body_water_pct: number | null
+          bone_mineral_density: number | null
+          created_at: string
+          entry_id: string
+          fat_mass_lbs: number | null
+          id: string
+          left_arm_pct: number | null
+          left_leg_pct: number | null
+          right_arm_pct: number | null
+          right_leg_pct: number | null
+          subcutaneous_fat_pct: number | null
+          total_body_fat_pct: number | null
+          trunk_pct: number | null
+          user_id: string
+          visceral_fat_rating: number | null
+        }
+        Insert: {
+          body_water_pct?: number | null
+          bone_mineral_density?: number | null
+          created_at?: string
+          entry_id: string
+          fat_mass_lbs?: number | null
+          id?: string
+          left_arm_pct?: number | null
+          left_leg_pct?: number | null
+          right_arm_pct?: number | null
+          right_leg_pct?: number | null
+          subcutaneous_fat_pct?: number | null
+          total_body_fat_pct?: number | null
+          trunk_pct?: number | null
+          user_id: string
+          visceral_fat_rating?: number | null
+        }
+        Update: {
+          body_water_pct?: number | null
+          bone_mineral_density?: number | null
+          created_at?: string
+          entry_id?: string
+          fat_mass_lbs?: number | null
+          id?: string
+          left_arm_pct?: number | null
+          left_leg_pct?: number | null
+          right_arm_pct?: number | null
+          right_leg_pct?: number | null
+          subcutaneous_fat_pct?: number | null
+          total_body_fat_pct?: number | null
+          trunk_pct?: number | null
+          user_id?: string
+          visceral_fat_rating?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "body_tracker_segmental_fat_entry_id_fkey"
+            columns: ["entry_id"]
+            isOneToOne: false
+            referencedRelation: "body_tracker_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      body_tracker_segmental_muscle: {
+        Row: {
+          created_at: string
+          entry_id: string
+          grip_strength_left_lbs: number | null
+          grip_strength_right_lbs: number | null
+          id: string
+          left_arm_lbs: number | null
+          left_leg_lbs: number | null
+          muscle_quality_score: number | null
+          right_arm_lbs: number | null
+          right_leg_lbs: number | null
+          skeletal_muscle_mass_lbs: number | null
+          smm_pct: number | null
+          total_muscle_mass_lbs: number | null
+          trunk_lbs: number | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          entry_id: string
+          grip_strength_left_lbs?: number | null
+          grip_strength_right_lbs?: number | null
+          id?: string
+          left_arm_lbs?: number | null
+          left_leg_lbs?: number | null
+          muscle_quality_score?: number | null
+          right_arm_lbs?: number | null
+          right_leg_lbs?: number | null
+          skeletal_muscle_mass_lbs?: number | null
+          smm_pct?: number | null
+          total_muscle_mass_lbs?: number | null
+          trunk_lbs?: number | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          entry_id?: string
+          grip_strength_left_lbs?: number | null
+          grip_strength_right_lbs?: number | null
+          id?: string
+          left_arm_lbs?: number | null
+          left_leg_lbs?: number | null
+          muscle_quality_score?: number | null
+          right_arm_lbs?: number | null
+          right_leg_lbs?: number | null
+          skeletal_muscle_mass_lbs?: number | null
+          smm_pct?: number | null
+          total_muscle_mass_lbs?: number | null
+          trunk_lbs?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "body_tracker_segmental_muscle_entry_id_fkey"
+            columns: ["entry_id"]
+            isOneToOne: false
+            referencedRelation: "body_tracker_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      body_tracker_weight: {
+        Row: {
+          basal_metabolic_rate: number | null
+          bmi: number | null
+          body_fat_pct: number | null
+          body_water_pct: number | null
+          bone_mass_lbs: number | null
+          chest_in: number | null
+          created_at: string
+          entry_id: string
+          goal_weight_lbs: number | null
+          hips_in: number | null
+          id: string
+          lean_body_mass_lbs: number | null
+          left_arm_in: number | null
+          left_calf_in: number | null
+          left_thigh_in: number | null
+          mineral_lbs: number | null
+          neck_in: number | null
+          protein_lbs: number | null
+          right_arm_in: number | null
+          right_calf_in: number | null
+          right_thigh_in: number | null
+          total_body_water_liters: number | null
+          user_id: string
+          visceral_fat_rating: number | null
+          waist_in: number | null
+          waist_to_hip_ratio: number | null
+          weight_lbs: number | null
+        }
+        Insert: {
+          basal_metabolic_rate?: number | null
+          bmi?: number | null
+          body_fat_pct?: number | null
+          body_water_pct?: number | null
+          bone_mass_lbs?: number | null
+          chest_in?: number | null
+          created_at?: string
+          entry_id: string
+          goal_weight_lbs?: number | null
+          hips_in?: number | null
+          id?: string
+          lean_body_mass_lbs?: number | null
+          left_arm_in?: number | null
+          left_calf_in?: number | null
+          left_thigh_in?: number | null
+          mineral_lbs?: number | null
+          neck_in?: number | null
+          protein_lbs?: number | null
+          right_arm_in?: number | null
+          right_calf_in?: number | null
+          right_thigh_in?: number | null
+          total_body_water_liters?: number | null
+          user_id: string
+          visceral_fat_rating?: number | null
+          waist_in?: number | null
+          waist_to_hip_ratio?: number | null
+          weight_lbs?: number | null
+        }
+        Update: {
+          basal_metabolic_rate?: number | null
+          bmi?: number | null
+          body_fat_pct?: number | null
+          body_water_pct?: number | null
+          bone_mass_lbs?: number | null
+          chest_in?: number | null
+          created_at?: string
+          entry_id?: string
+          goal_weight_lbs?: number | null
+          hips_in?: number | null
+          id?: string
+          lean_body_mass_lbs?: number | null
+          left_arm_in?: number | null
+          left_calf_in?: number | null
+          left_thigh_in?: number | null
+          mineral_lbs?: number | null
+          neck_in?: number | null
+          protein_lbs?: number | null
+          right_arm_in?: number | null
+          right_calf_in?: number | null
+          right_thigh_in?: number | null
+          total_body_water_liters?: number | null
+          user_id?: string
+          visceral_fat_rating?: number | null
+          waist_in?: number | null
+          waist_to_hip_ratio?: number | null
+          weight_lbs?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "body_tracker_weight_entry_id_fkey"
+            columns: ["entry_id"]
+            isOneToOne: false
+            referencedRelation: "body_tracker_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       botanical_formula_items: {
         Row: {
           dosage: string | null
@@ -1373,6 +1968,177 @@ export type Database = {
           partners?: number
           tier?: string
           type?: string
+        }
+        Relationships: []
+      }
+      daily_checkins: {
+        Row: {
+          activity_allSubmitted_at: string | null
+          activity_level_score: number | null
+          activity_source: string | null
+          breakfast_carbs: number | null
+          breakfast_fat: number | null
+          breakfast_healthy_fat: number | null
+          breakfast_protein: number | null
+          breakfast_score: number | null
+          breakfast_skipped: boolean | null
+          breakfast_sugar: number | null
+          cardio_active: boolean | null
+          cardio_duration_min: number | null
+          check_in_date: string
+          created_at: string
+          day_score: number | null
+          dinner_carbs: number | null
+          dinner_fat: number | null
+          dinner_healthy_fat: number | null
+          dinner_protein: number | null
+          dinner_score: number | null
+          dinner_skipped: boolean | null
+          dinner_sugar: number | null
+          energy_allSubmitted_at: string | null
+          energy_recovery_score: number | null
+          exercise_allSubmitted_at: string | null
+          hydration_glasses: number | null
+          id: string
+          lunch_carbs: number | null
+          lunch_fat: number | null
+          lunch_healthy_fat: number | null
+          lunch_protein: number | null
+          lunch_score: number | null
+          lunch_skipped: boolean | null
+          lunch_sugar: number | null
+          recovery_source: string | null
+          resistance_active: boolean | null
+          resistance_duration_min: number | null
+          score_calculated_at: string | null
+          sleep_allSubmitted_at: string | null
+          sleep_hours: number | null
+          sleep_quality_score: number | null
+          sleep_source: string | null
+          snacks_carbs: number | null
+          snacks_fat: number | null
+          snacks_healthy_fat: number | null
+          snacks_protein: number | null
+          snacks_score: number | null
+          snacks_skipped: boolean | null
+          snacks_sugar: number | null
+          stress_allSubmitted_at: string | null
+          stress_level_score: number | null
+          stress_source: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          activity_allSubmitted_at?: string | null
+          activity_level_score?: number | null
+          activity_source?: string | null
+          breakfast_carbs?: number | null
+          breakfast_fat?: number | null
+          breakfast_healthy_fat?: number | null
+          breakfast_protein?: number | null
+          breakfast_score?: number | null
+          breakfast_skipped?: boolean | null
+          breakfast_sugar?: number | null
+          cardio_active?: boolean | null
+          cardio_duration_min?: number | null
+          check_in_date?: string
+          created_at?: string
+          day_score?: number | null
+          dinner_carbs?: number | null
+          dinner_fat?: number | null
+          dinner_healthy_fat?: number | null
+          dinner_protein?: number | null
+          dinner_score?: number | null
+          dinner_skipped?: boolean | null
+          dinner_sugar?: number | null
+          energy_allSubmitted_at?: string | null
+          energy_recovery_score?: number | null
+          exercise_allSubmitted_at?: string | null
+          hydration_glasses?: number | null
+          id?: string
+          lunch_carbs?: number | null
+          lunch_fat?: number | null
+          lunch_healthy_fat?: number | null
+          lunch_protein?: number | null
+          lunch_score?: number | null
+          lunch_skipped?: boolean | null
+          lunch_sugar?: number | null
+          recovery_source?: string | null
+          resistance_active?: boolean | null
+          resistance_duration_min?: number | null
+          score_calculated_at?: string | null
+          sleep_allSubmitted_at?: string | null
+          sleep_hours?: number | null
+          sleep_quality_score?: number | null
+          sleep_source?: string | null
+          snacks_carbs?: number | null
+          snacks_fat?: number | null
+          snacks_healthy_fat?: number | null
+          snacks_protein?: number | null
+          snacks_score?: number | null
+          snacks_skipped?: boolean | null
+          snacks_sugar?: number | null
+          stress_allSubmitted_at?: string | null
+          stress_level_score?: number | null
+          stress_source?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          activity_allSubmitted_at?: string | null
+          activity_level_score?: number | null
+          activity_source?: string | null
+          breakfast_carbs?: number | null
+          breakfast_fat?: number | null
+          breakfast_healthy_fat?: number | null
+          breakfast_protein?: number | null
+          breakfast_score?: number | null
+          breakfast_skipped?: boolean | null
+          breakfast_sugar?: number | null
+          cardio_active?: boolean | null
+          cardio_duration_min?: number | null
+          check_in_date?: string
+          created_at?: string
+          day_score?: number | null
+          dinner_carbs?: number | null
+          dinner_fat?: number | null
+          dinner_healthy_fat?: number | null
+          dinner_protein?: number | null
+          dinner_score?: number | null
+          dinner_skipped?: boolean | null
+          dinner_sugar?: number | null
+          energy_allSubmitted_at?: string | null
+          energy_recovery_score?: number | null
+          exercise_allSubmitted_at?: string | null
+          hydration_glasses?: number | null
+          id?: string
+          lunch_carbs?: number | null
+          lunch_fat?: number | null
+          lunch_healthy_fat?: number | null
+          lunch_protein?: number | null
+          lunch_score?: number | null
+          lunch_skipped?: boolean | null
+          lunch_sugar?: number | null
+          recovery_source?: string | null
+          resistance_active?: boolean | null
+          resistance_duration_min?: number | null
+          score_calculated_at?: string | null
+          sleep_allSubmitted_at?: string | null
+          sleep_hours?: number | null
+          sleep_quality_score?: number | null
+          sleep_source?: string | null
+          snacks_carbs?: number | null
+          snacks_fat?: number | null
+          snacks_healthy_fat?: number | null
+          snacks_protein?: number | null
+          snacks_score?: number | null
+          snacks_skipped?: boolean | null
+          snacks_sugar?: number | null
+          stress_allSubmitted_at?: string | null
+          stress_level_score?: number | null
+          stress_source?: string | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -3155,6 +3921,78 @@ export type Database = {
         }
         Relationships: []
       }
+      meal_logs: {
+        Row: {
+          ai_analysis: Json | null
+          calories: number | null
+          carbs_g: number | null
+          created_at: string | null
+          description: string | null
+          external_id: string | null
+          fat_g: number | null
+          genetics_guide_flags: Json | null
+          id: string
+          log_method: string
+          logged_at: string | null
+          macro_sliders: Json | null
+          meal_date: string
+          meal_score: number | null
+          meal_type: string
+          photo_url: string | null
+          protein_g: number | null
+          quality_rating: number | null
+          source_app: string | null
+          sync_connection_id: string | null
+          user_id: string
+        }
+        Insert: {
+          ai_analysis?: Json | null
+          calories?: number | null
+          carbs_g?: number | null
+          created_at?: string | null
+          description?: string | null
+          external_id?: string | null
+          fat_g?: number | null
+          genetics_guide_flags?: Json | null
+          id?: string
+          log_method: string
+          logged_at?: string | null
+          macro_sliders?: Json | null
+          meal_date?: string
+          meal_score?: number | null
+          meal_type: string
+          photo_url?: string | null
+          protein_g?: number | null
+          quality_rating?: number | null
+          source_app?: string | null
+          sync_connection_id?: string | null
+          user_id: string
+        }
+        Update: {
+          ai_analysis?: Json | null
+          calories?: number | null
+          carbs_g?: number | null
+          created_at?: string | null
+          description?: string | null
+          external_id?: string | null
+          fat_g?: number | null
+          genetics_guide_flags?: Json | null
+          id?: string
+          log_method?: string
+          logged_at?: string | null
+          macro_sliders?: Json | null
+          meal_date?: string
+          meal_score?: number | null
+          meal_type?: string
+          photo_url?: string | null
+          protein_g?: number | null
+          quality_rating?: number | null
+          source_app?: string | null
+          sync_connection_id?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       medication_interactions: {
         Row: {
           blocked_from_protocol: boolean | null
@@ -3990,6 +4828,47 @@ export type Database = {
         }
         Relationships: []
       }
+      photo_share_permissions: {
+        Row: {
+          expires_at: string
+          granted_at: string
+          id: string
+          note: string | null
+          photo_session_id: string
+          photo_session_user_id: string
+          practitioner_id: string
+          revoked_at: string | null
+        }
+        Insert: {
+          expires_at: string
+          granted_at?: string
+          id?: string
+          note?: string | null
+          photo_session_id: string
+          photo_session_user_id: string
+          practitioner_id: string
+          revoked_at?: string | null
+        }
+        Update: {
+          expires_at?: string
+          granted_at?: string
+          id?: string
+          note?: string | null
+          photo_session_id?: string
+          photo_session_user_id?: string
+          practitioner_id?: string
+          revoked_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "photo_share_permissions_photo_session_id_fkey"
+            columns: ["photo_session_id"]
+            isOneToOne: false
+            referencedRelation: "body_photo_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       portfolio_trends: {
         Row: {
           active_customers: number | null
@@ -4314,6 +5193,7 @@ export type Database = {
           symptoms_emotional: Json | null
           symptoms_neurological: Json | null
           symptoms_physical: Json | null
+          unit_system: string | null
           updated_at: string | null
           username: string | null
           vitality_score: number | null
@@ -4340,6 +5220,7 @@ export type Database = {
           symptoms_emotional?: Json | null
           symptoms_neurological?: Json | null
           symptoms_physical?: Json | null
+          unit_system?: string | null
           updated_at?: string | null
           username?: string | null
           vitality_score?: number | null
@@ -4366,6 +5247,7 @@ export type Database = {
           symptoms_emotional?: Json | null
           symptoms_neurological?: Json | null
           symptoms_physical?: Json | null
+          unit_system?: string | null
           updated_at?: string | null
           username?: string | null
           vitality_score?: number | null
@@ -5320,6 +6202,45 @@ export type Database = {
           },
         ]
       }
+      scoring_audit_log: {
+        Row: {
+          active_layers: string[]
+          calculated_at: string | null
+          confidence_pct: number
+          confidence_tier: string
+          created_at: string | null
+          id: string
+          input_snapshot: Json | null
+          scores: Json
+          trigger_event: string
+          user_id: string
+        }
+        Insert: {
+          active_layers: string[]
+          calculated_at?: string | null
+          confidence_pct: number
+          confidence_tier: string
+          created_at?: string | null
+          id?: string
+          input_snapshot?: Json | null
+          scores: Json
+          trigger_event: string
+          user_id: string
+        }
+        Update: {
+          active_layers?: string[]
+          calculated_at?: string | null
+          confidence_pct?: number
+          confidence_tier?: string
+          created_at?: string | null
+          id?: string
+          input_snapshot?: Json | null
+          scores?: Json
+          trigger_event?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       security_agent_config: {
         Row: {
           description: string | null
@@ -5542,6 +6463,236 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      sherlock_activity_log: {
+        Row: {
+          action: string
+          created_at: string
+          details: Json
+          duration_ms: number | null
+          id: string
+          items_processed: number
+          task_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          details?: Json
+          duration_ms?: number | null
+          id?: string
+          items_processed?: number
+          task_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          details?: Json
+          duration_ms?: number | null
+          id?: string
+          items_processed?: number
+          task_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sherlock_activity_log_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "sherlock_task_queue"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sherlock_agent_state: {
+        Row: {
+          alerts_generated_today: number
+          config: Json
+          current_task_id: string | null
+          daily_reset_at: string
+          escalations_today: number
+          id: string
+          is_active: boolean
+          items_discovered_today: number
+          last_heartbeat: string
+          tasks_completed_today: number
+        }
+        Insert: {
+          alerts_generated_today?: number
+          config?: Json
+          current_task_id?: string | null
+          daily_reset_at?: string
+          escalations_today?: number
+          id?: string
+          is_active?: boolean
+          items_discovered_today?: number
+          last_heartbeat?: string
+          tasks_completed_today?: number
+        }
+        Update: {
+          alerts_generated_today?: number
+          config?: Json
+          current_task_id?: string | null
+          daily_reset_at?: string
+          escalations_today?: number
+          id?: string
+          is_active?: boolean
+          items_discovered_today?: number
+          last_heartbeat?: string
+          tasks_completed_today?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sherlock_agent_state_current_task_id_fkey"
+            columns: ["current_task_id"]
+            isOneToOne: false
+            referencedRelation: "sherlock_task_queue"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sherlock_escalations: {
+        Row: {
+          created_at: string
+          escalation_type: string
+          id: string
+          jeffery_response: Json | null
+          payload: Json
+          reason: string
+          resolved_at: string | null
+          status: string
+          task_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          escalation_type: string
+          id?: string
+          jeffery_response?: Json | null
+          payload?: Json
+          reason: string
+          resolved_at?: string | null
+          status?: string
+          task_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          escalation_type?: string
+          id?: string
+          jeffery_response?: Json | null
+          payload?: Json
+          reason?: string
+          resolved_at?: string | null
+          status?: string
+          task_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sherlock_escalations_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "sherlock_task_queue"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sherlock_task_queue: {
+        Row: {
+          assigned_at: string | null
+          category_id: string | null
+          completed_at: string | null
+          created_at: string
+          error_message: string | null
+          id: string
+          payload: Json
+          priority: number
+          result: Json
+          started_at: string | null
+          status: string
+          task_type: string
+          user_id: string | null
+        }
+        Insert: {
+          assigned_at?: string | null
+          category_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          payload?: Json
+          priority?: number
+          result?: Json
+          started_at?: string | null
+          status?: string
+          task_type: string
+          user_id?: string | null
+        }
+        Update: {
+          assigned_at?: string | null
+          category_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          payload?: Json
+          priority?: number
+          result?: Json
+          started_at?: string | null
+          status?: string
+          task_type?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sherlock_task_queue_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "research_hub_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sherlock_trends: {
+        Row: {
+          created_at: string
+          first_seen: string
+          id: string
+          is_active: boolean
+          item_ids: string[]
+          last_seen: string
+          source_count: number
+          topic: string
+          topic_keywords: string[]
+          trend_score: number
+        }
+        Insert: {
+          created_at?: string
+          first_seen?: string
+          id?: string
+          is_active?: boolean
+          item_ids?: string[]
+          last_seen?: string
+          source_count?: number
+          topic: string
+          topic_keywords?: string[]
+          trend_score?: number
+        }
+        Update: {
+          created_at?: string
+          first_seen?: string
+          id?: string
+          is_active?: boolean
+          item_ids?: string[]
+          last_seen?: string
+          source_count?: number
+          topic?: string
+          topic_keywords?: string[]
+          trend_score?: number
+        }
+        Relationships: []
       }
       shop_cart_items: {
         Row: {
@@ -8514,40 +9665,91 @@ export type Database = {
       }
       wellness_analytics: {
         Row: {
+          active_layers: string[] | null
           calculated_at: string | null
           categories: Json
+          confidence_pct: number | null
+          confidence_tier: string | null
           data_sources_used: string[] | null
           genex360_included: boolean | null
           id: string
+          low_category: string | null
+          missing_layers: string[] | null
           new_categories_unlocked: string[] | null
           next_calculation_at: string | null
+          scoring_version: string | null
           summary: string | null
+          top_category: string | null
           trigger: string | null
+          unified_scores: Json | null
           user_id: string | null
         }
         Insert: {
+          active_layers?: string[] | null
           calculated_at?: string | null
           categories?: Json
+          confidence_pct?: number | null
+          confidence_tier?: string | null
           data_sources_used?: string[] | null
           genex360_included?: boolean | null
           id?: string
+          low_category?: string | null
+          missing_layers?: string[] | null
           new_categories_unlocked?: string[] | null
           next_calculation_at?: string | null
+          scoring_version?: string | null
           summary?: string | null
+          top_category?: string | null
           trigger?: string | null
+          unified_scores?: Json | null
           user_id?: string | null
         }
         Update: {
+          active_layers?: string[] | null
           calculated_at?: string | null
           categories?: Json
+          confidence_pct?: number | null
+          confidence_tier?: string | null
           data_sources_used?: string[] | null
           genex360_included?: boolean | null
           id?: string
+          low_category?: string | null
+          missing_layers?: string[] | null
           new_categories_unlocked?: string[] | null
           next_calculation_at?: string | null
+          scoring_version?: string | null
           summary?: string | null
+          top_category?: string | null
           trigger?: string | null
+          unified_scores?: Json | null
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      wellness_scoring_config: {
+        Row: {
+          adjustment_rules: Json | null
+          base_weight: number
+          category: string
+          id: string
+          layer: string
+          updated_at: string | null
+        }
+        Insert: {
+          adjustment_rules?: Json | null
+          base_weight: number
+          category: string
+          id?: string
+          layer: string
+          updated_at?: string | null
+        }
+        Update: {
+          adjustment_rules?: Json | null
+          base_weight?: number
+          category?: string
+          id?: string
+          layer?: string
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -9536,6 +10738,7 @@ export const Constants = {
     },
   },
 } as const
+
 
 // ════════════════════════════════════════════════════════════════════════
 //  LEGACY ALIASES — manually maintained

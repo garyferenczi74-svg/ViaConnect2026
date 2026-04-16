@@ -46,6 +46,11 @@ interface RecentDataPoint {
   created_at: string;
 }
 
+interface ArnoldUserProfile {
+  trust_overrides: Record<string, number> | null;
+  outlier_z_threshold: number | null;
+}
+
 // ---------------------------------------------------------------------------
 // Default trust scores
 // ---------------------------------------------------------------------------
@@ -232,13 +237,13 @@ export class ArnoldReconciler {
   // Internal helpers
   // ---------------------------------------------------------------------------
 
-  private async getUserProfile(userId: string): Promise<Record<string, unknown> | null> {
+  private async getUserProfile(userId: string): Promise<ArnoldUserProfile | null> {
     const { data } = await (this.supabase as any)
       .from('arnold_user_profiles')
       .select('trust_overrides, outlier_z_threshold')
       .eq('user_id', userId)
       .maybeSingle();
-    return data ?? null;
+    return (data ?? null) as ArnoldUserProfile | null;
   }
 
   private async getRecentValues(userId: string, measurement: string, limit: number): Promise<RecentDataPoint[]> {

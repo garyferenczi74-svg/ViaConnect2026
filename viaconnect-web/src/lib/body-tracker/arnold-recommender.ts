@@ -11,6 +11,8 @@
  */
 
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { validateRecommendationText } from '@/lib/agents/jeffery/guardrails';
+import { arnoldNotifyHannah, arnoldEscalateToJeffery } from '@/lib/agents/message-bus';
 
 const ANTHROPIC_MODEL = 'claude-sonnet-4-6';
 const MAX_RECS_PER_DAY = 3;
@@ -414,19 +416,43 @@ export async function generateDailyRecommendations(
   // Enrich with AI (graceful fallback)
   recommendations = await enrichWithAI(recommendations, context);
 
-  // Guardrail enforcement: strip any prohibited substance mentions
+  // Guardrail enforcement: route every recommendation through Jeffery's
+  // canonical validator (Semaglutide / Retatrutide / blocked brands /
+  // bioavailability range). Any violation drops the rec and escalates to
+  // Jeffery for audit.
+  const blocked: Array<{ title: string; codes: string[] }> = [];
   recommendations = recommendations.filter((r) => {
-    const text = `${r.title} ${r.body} ${r.suggestedAction ?? ''}`.toLowerCase();
-    const prohibited = /semaglutide|ozempic|wegovy|mounjaro|tirzepatide|oral\s+retatrutide/;
-    if (prohibited.test(text)) {
-      console.warn(`[arnold-recommender] Guardrail blocked: "${r.title}"`);
+    const text = `${r.title} ${r.body} ${r.suggestedAction ?? ''}`;
+    const result = validateRecommendationText(text);
+    if (!result.ok) {
+      blocked.push({ title: r.title, codes: result.violations.map((v) => v.code) });
+      console.warn(
+        `[arnold-recommender] Guardrail blocked "${r.title}": ${result.violations.map((v) => v.code).join(', ')}`,
+      );
       return false;
     }
     return true;
   });
 
+  if (blocked.length > 0) {
+    void arnoldEscalateToJeffery('guardrail_block', { blocked }, userId);
+  }
+
   // Store
   await storeRecommendations(recommendations, userId, db);
+
+  // Notify Hannah so the chat agent can surface today's recs in conversation.
+  if (recommendations.length > 0) {
+    void arnoldNotifyHannah(
+      'recommendations_generated',
+      {
+        count: recommendations.length,
+        categories: recommendations.map((r) => r.category),
+        topPriority: recommendations[0]?.priority ?? null,
+      },
+      userId,
+    );
+  }
 
   return recommendations;
 }

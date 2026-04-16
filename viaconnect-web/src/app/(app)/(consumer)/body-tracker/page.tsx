@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { BodyScoreGauge } from '@/components/body-tracker/BodyScoreGauge';
 import { QuickMetricCard } from '@/components/body-tracker/QuickMetricCard';
+import { QuickLogCards } from '@/components/body-tracker/manual-input';
 import type { BodyScoreTier, MetricStatus } from '@/lib/body-tracker/types';
 
 // Placeholder data (populates UI immediately; replaced by Supabase when tables exist)
@@ -38,6 +39,7 @@ export default function BodyTrackerDashboard() {
   const [scoreData, setScoreData] = useState(DEFAULT_SCORE);
   const [metrics, setMetrics] = useState(DEFAULT_METRICS);
   const [contributors, setContributors] = useState(DEFAULT_CONTRIBUTORS);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     (async () => {
@@ -106,7 +108,7 @@ export default function BodyTrackerDashboard() {
         }
       } catch { /* tables may not exist yet */ }
     })();
-  }, []);
+  }, [refreshKey]);
 
   return (
     <div className="space-y-6">
@@ -117,6 +119,9 @@ export default function BodyTrackerDashboard() {
         confidencePct={scoreData.confidencePct}
         tier={scoreData.tier}
       />
+
+      {/* Quick Log */}
+      <QuickLogCards onSaved={() => setRefreshKey((k) => k + 1)} />
 
       {/* Quick Metrics */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">

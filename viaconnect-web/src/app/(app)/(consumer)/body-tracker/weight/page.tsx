@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { Plus, Scale, Target, TrendingDown } from 'lucide-react';
 import { WeightChart } from '@/components/body-tracker/WeightChart';
 import { TimeRangeToggle } from '@/components/body-tracker/TimeRangeToggle';
+import { WeightMeasurementsForm } from '@/components/body-tracker/manual-input/forms/WeightMeasurementsForm';
+import { EntryHistoryTimeline } from '@/components/body-tracker/manual-input';
 
 const SAMPLE_DATA = [
   { date: '2026-03-01', value: 192, label: 'Mar 1' },
@@ -17,19 +19,26 @@ const SAMPLE_DATA = [
 
 export default function WeightPage() {
   const [timeRange, setTimeRange] = useState<'D' | 'W' | 'M'>('W');
+  const [open, setOpen] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" key={refreshKey}>
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-bold text-white">Weight & Measurements</h2>
         <div className="flex items-center gap-3">
           <TimeRangeToggle value={timeRange} onChange={setTimeRange} />
-          <button className="flex items-center gap-1.5 rounded-xl border border-[#2DA5A0]/30 bg-[#2DA5A0]/15 px-3 py-2 text-xs font-medium text-[#2DA5A0] hover:bg-[#2DA5A0]/25">
+          <button
+            type="button"
+            onClick={() => setOpen(true)}
+            className="flex items-center gap-1.5 rounded-xl border border-[#2DA5A0]/30 bg-[#2DA5A0]/15 px-3 py-2 text-xs font-medium text-[#2DA5A0] hover:bg-[#2DA5A0]/25 min-h-[44px]"
+          >
             <Plus className="h-3.5 w-3.5" strokeWidth={1.5} />
             Log Weight
           </button>
         </div>
       </div>
+      <WeightMeasurementsForm open={open} onOpenChange={setOpen} onSaved={() => setRefreshKey((k) => k + 1)} />
 
       {/* Weight + Goal cards */}
       <div className="grid grid-cols-2 gap-3">
@@ -82,6 +91,8 @@ export default function WeightPage() {
           ))}
         </div>
       </div>
+
+      <EntryHistoryTimeline category="weight" onChanged={() => setRefreshKey((k) => k + 1)} />
     </div>
   );
 }

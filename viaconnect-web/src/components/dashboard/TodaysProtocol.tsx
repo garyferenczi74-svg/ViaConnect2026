@@ -9,6 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight, Pill, Sunrise, Sun, Moon, Clock, type LucideIcon } from 'lucide-react';
 import type { DashboardSupplement } from '@/hooks/useUserDashboardData';
 import { useTodaysAdherence } from '@/hooks/useTodaysAdherence';
+import { useTodaysMealsLogged } from '@/hooks/useTodaysMealsLogged';
 import {
   supplementToSlot,
   supplementSlug,
@@ -16,6 +17,7 @@ import {
   type ProtocolSlot,
 } from '@/lib/protocolSlot';
 import { ProtocolCheckItem, type ProtocolCheckItemData } from './ProtocolCheckItem';
+import { ProtocolProgressGauge } from './ProtocolProgressGauge';
 
 interface TodaysProtocolProps {
   supplements: DashboardSupplement[];
@@ -67,6 +69,7 @@ function ConfettiBurst() {
 
 export function TodaysProtocol({ supplements }: TodaysProtocolProps) {
   const { entries, toggle } = useTodaysAdherence();
+  const { loggedCount: mealsDone, mealsTotal } = useTodaysMealsLogged();
   const [showConfetti, setShowConfetti] = useState(false);
 
   // Build schedule blocks from supplements + adherence state
@@ -159,9 +162,12 @@ export function TodaysProtocol({ supplements }: TodaysProtocolProps) {
             <p className="text-[11px] text-white/40">Your supplement checklist for today</p>
           </div>
         </div>
-        <span className="text-xs font-semibold text-white/60">
-          {completedCount}/{totalCount}
-        </span>
+        <ProtocolProgressGauge
+          supplementsDone={completedCount}
+          supplementsTotal={totalCount}
+          mealsDone={mealsDone}
+          mealsTotal={mealsTotal}
+        />
       </div>
 
       {/* Adherence bar */}
