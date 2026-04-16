@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Apple, Coffee, UtensilsCrossed, Cookie, Check, ChevronRight, ChevronDown,
-  Beef, Wheat, Droplets, Candy, Loader2, Ban, Leaf,
+  Beef, Wheat, Droplets, Candy, Loader2, Ban, Leaf, Plus, Minus, GlassWater,
 } from 'lucide-react';
 import Link from 'next/link';
 import { CheckInSlider } from './CheckInSlider';
@@ -42,6 +42,9 @@ export function QuickMealLogWidget({ hideHeader = false, onSaved }: QuickMealLog
   const [savedMeals, setSavedMeals] = useState<Set<MealType>>(new Set());
   const [skippedMeals, setSkippedMeals] = useState<Set<MealType>>(new Set());
   const [saving, setSaving] = useState(false);
+  const [waterGlasses, setWaterGlasses] = useState(0);
+  const [waterSaved, setWaterSaved] = useState(false);
+  const [waterSaving, setWaterSaving] = useState(false);
 
   const loadFromDb = useCallback(async () => {
     try {
@@ -52,7 +55,7 @@ export function QuickMealLogWidget({ hideHeader = false, onSaved }: QuickMealLog
 
       const { data } = await (supabase as any)
         .from('daily_checkins')
-        .select('breakfast_protein, breakfast_carbs, breakfast_fat, breakfast_healthy_fat, breakfast_sugar, breakfast_score, breakfast_skipped, lunch_protein, lunch_carbs, lunch_fat, lunch_healthy_fat, lunch_sugar, lunch_score, lunch_skipped, dinner_protein, dinner_carbs, dinner_fat, dinner_healthy_fat, dinner_sugar, dinner_score, dinner_skipped, snacks_protein, snacks_carbs, snacks_fat, snacks_healthy_fat, snacks_sugar, snacks_score, snacks_skipped')
+        .select('breakfast_protein, breakfast_carbs, breakfast_fat, breakfast_healthy_fat, breakfast_sugar, breakfast_score, breakfast_skipped, lunch_protein, lunch_carbs, lunch_fat, lunch_healthy_fat, lunch_sugar, lunch_score, lunch_skipped, dinner_protein, dinner_carbs, dinner_fat, dinner_healthy_fat, dinner_sugar, dinner_score, dinner_skipped, snacks_protein, snacks_carbs, snacks_fat, snacks_healthy_fat, snacks_sugar, snacks_score, snacks_skipped, hydration_glasses')
         .eq('user_id', user.id)
         .eq('check_in_date', today)
         .maybeSingle();
@@ -102,6 +105,11 @@ export function QuickMealLogWidget({ hideHeader = false, onSaved }: QuickMealLog
         if (data.dinner_skipped) skipped.add('dinner');
         if (data.snacks_skipped) skipped.add('snacks');
         setSkippedMeals(skipped);
+
+        if (data.hydration_glasses != null) {
+          setWaterGlasses(data.hydration_glasses);
+          setWaterSaved(true);
+        }
       }
     } catch { /* table may not have macro columns yet */ }
   }, []);
@@ -247,6 +255,39 @@ export function QuickMealLogWidget({ hideHeader = false, onSaved }: QuickMealLog
     }
   }, [activeTab, saving, onSaved]);
 
+  const handleWaterSave = useCallback(async (glasses: number) => {
+    if (waterSaving) return;
+    setWaterSaving(true);
+    try {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { setWaterSaving(false); return; }
+      const today = new Date().toISOString().split('T')[0];
+
+      await (supabase as any).from('daily_checkins').upsert({
+        user_id: user.id,
+        check_in_date: today,
+        hydration_glasses: glasses,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'user_id,check_in_date' });
+
+      setWaterSaved(true);
+
+      void import('@/app/actions/dailyScores')
+        .then(({ recalculateDailyScores }) => recalculateDailyScores(user.id, today))
+        .catch((err) => console.error('[QuickMealLogWidget:water] recalc failed', err));
+    } catch { /* column may not exist yet */ }
+    finally { setWaterSaving(false); }
+  }, [waterSaving]);
+
+  const adjustWater = useCallback((delta: number) => {
+    setWaterGlasses((prev) => {
+      const next = Math.max(0, Math.min(20, prev + delta));
+      void handleWaterSave(next);
+      return next;
+    });
+  }, [handleWaterSave]);
+
   const loggedCount = savedMeals.size + skippedMeals.size;
 
   return (
@@ -312,6 +353,57 @@ export function QuickMealLogWidget({ hideHeader = false, onSaved }: QuickMealLog
             </button>
           );
         })}
+      </div>
+
+      {/* Water intake tracker */}
+      <div className="mt-3 flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3">
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg" style={{ backgroundColor: 'rgba(45,165,160,0.15)' }}>
+            <GlassWater className="h-4 w-4 text-[#2DA5A0]" strokeWidth={1.5} />
+          </div>
+          <div>
+            <p className="text-xs font-medium text-white">Water</p>
+            <p className="text-[10px] text-white/40">{waterGlasses} of 8 glasses</p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          {/* Visual pip bar */}
+          <div className="hidden sm:flex items-center gap-0.5">
+            {Array.from({ length: 8 }, (_, i) => (
+              <div
+                key={i}
+                className="h-4 w-1.5 rounded-full transition-colors"
+                style={{
+                  backgroundColor: i < waterGlasses ? '#2DA5A0' : 'rgba(255,255,255,0.06)',
+                  boxShadow: i < waterGlasses ? '0 0 6px rgba(45,165,160,0.4)' : 'none',
+                }}
+              />
+            ))}
+          </div>
+
+          <button
+            onClick={() => adjustWater(-1)}
+            disabled={waterGlasses <= 0 || waterSaving}
+            className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/[0.04] text-white/60 transition-colors hover:bg-white/[0.08] disabled:opacity-30 disabled:cursor-not-allowed"
+          >
+            <Minus className="h-3.5 w-3.5" strokeWidth={1.5} />
+          </button>
+
+          <span className="w-6 text-center text-sm font-bold tabular-nums text-[#2DA5A0]">{waterGlasses}</span>
+
+          <button
+            onClick={() => adjustWater(1)}
+            disabled={waterGlasses >= 20 || waterSaving}
+            className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#2DA5A0]/30 bg-[#2DA5A0]/15 text-[#2DA5A0] transition-colors hover:bg-[#2DA5A0]/25 disabled:opacity-30 disabled:cursor-not-allowed"
+          >
+            <Plus className="h-3.5 w-3.5" strokeWidth={1.5} />
+          </button>
+
+          {waterSaved && !waterSaving && (
+            <Check className="h-4 w-4 text-[#22C55E]" strokeWidth={1.5} />
+          )}
+        </div>
       </div>
 
       {/* Active tab content: meal quality score + macro accordions + save */}
