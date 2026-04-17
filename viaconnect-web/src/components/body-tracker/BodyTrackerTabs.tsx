@@ -30,7 +30,7 @@ export function BodyTrackerTabs() {
           <Link
             key={tab.id}
             href={tab.href}
-            className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3.5 py-2 text-xs font-medium transition-all ${
+            className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3.5 py-2 text-xs font-medium transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/50 focus-visible:ring-offset-0 [-webkit-tap-highlight-color:transparent] ${
               isActive
                 ? 'border-[#2DA5A0]/40 bg-[#2DA5A0]/20 text-[#2DA5A0]'
                 : 'border-white/12 bg-white/[0.07] text-white/65 hover:bg-white/12 hover:text-white/90'

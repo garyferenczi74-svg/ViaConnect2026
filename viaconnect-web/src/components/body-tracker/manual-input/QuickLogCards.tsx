@@ -46,12 +46,17 @@ export function QuickLogCards({ onSaved }: QuickLogCardsProps) {
               key={c.id}
               type="button"
               onClick={() => setActive(c.id)}
-              className="flex flex-col items-center justify-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-4 min-h-[88px] hover:bg-white/[0.06] transition-colors"
-              style={{ borderColor: `${c.accent}33` }}
+              className="flex flex-col items-center justify-center gap-2 rounded-xl border bg-white/5 p-4 min-h-[96px] backdrop-blur-md hover:bg-white/10 transition-colors"
+              style={{ borderColor: `${c.accent}40` }}
             >
-              <Icon className="h-5 w-5" strokeWidth={1.5} style={{ color: c.accent }} />
+              <span
+                className="flex h-8 w-8 items-center justify-center rounded-lg"
+                style={{ backgroundColor: `${c.accent}22` }}
+              >
+                <Icon className="h-4 w-4" strokeWidth={1.5} style={{ color: c.accent }} />
+              </span>
               <span className="text-xs font-medium text-white">{c.label}</span>
-              <span className="text-[10px] text-white/45">Log now</span>
+              <span className="text-[10px] text-white/55">Log now</span>
             </button>
           );
         })}
