@@ -8,6 +8,8 @@ import { ArnoldAnalysisCard } from '@/components/body-tracker/photos/ArnoldAnaly
 import { LatestSessionGrid } from '@/components/body-tracker/photos/LatestSessionGrid';
 import { PhotoSessionHistory } from '@/components/body-tracker/photos/PhotoSessionHistory';
 import { ComparisonPanel } from '@/components/body-tracker/photos/ComparisonPanel';
+import { RunScanButton } from '@/components/body-tracker/scanning/RunScanButton';
+import { ScanResultsPanel } from '@/components/body-tracker/scanning/ScanResultsPanel';
 
 export default function PhotosPage() {
   const [open, setOpen] = useState(false);
@@ -96,7 +98,10 @@ export default function PhotosPage() {
             <h3 className="text-xs font-semibold uppercase tracking-wider text-white/50">Latest session</h3>
             <LatestSessionGrid sessionId={latestId} />
             <ArnoldAnalysisCard sessionId={latestId} onRetry={() => retryAnalysis(latestId)} />
+            <RunScanButton sessionId={latestId} onComplete={() => setRefreshKey((k) => k + 1)} />
           </section>
+
+          <ScanResultsPanel sessionId={latestId} refreshKey={refreshKey} />
 
           <section className="space-y-3">
             <h3 className="text-xs font-semibold uppercase tracking-wider text-white/50">Previous sessions</h3>

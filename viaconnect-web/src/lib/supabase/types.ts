@@ -512,12 +512,20 @@ export type Database = {
           arnold_confidence: number | null
           arnold_error: string | null
           arnold_status: string
+          asymmetry_report: Json | null
+          avatar_parameters: Json | null
           back_full_path: string | null
           back_thumb_path: string | null
+          calibrated_with_manual: boolean
+          calibration_date: string | null
+          calibration_source: string | null
           clothing_type: string | null
+          composition_estimate: Json | null
           created_at: string
+          extracted_measurements: Json | null
           front_full_path: string | null
           front_thumb_path: string | null
+          future_me_parameters: Json | null
           id: string
           is_complete: boolean | null
           left_full_path: string | null
@@ -526,11 +534,15 @@ export type Database = {
           linked_entry_id: string | null
           notes: string | null
           poses_completed: string[]
+          quality_issues: string[] | null
           right_full_path: string | null
           right_thumb_path: string | null
+          scan_quality_score: number | null
+          scan_status: string
           session_date: string
           share_expires_at: string | null
           shared_with_practitioner: boolean
+          silhouette_data: Json | null
           updated_at: string
           user_id: string
         }
@@ -540,12 +552,20 @@ export type Database = {
           arnold_confidence?: number | null
           arnold_error?: string | null
           arnold_status?: string
+          asymmetry_report?: Json | null
+          avatar_parameters?: Json | null
           back_full_path?: string | null
           back_thumb_path?: string | null
+          calibrated_with_manual?: boolean
+          calibration_date?: string | null
+          calibration_source?: string | null
           clothing_type?: string | null
+          composition_estimate?: Json | null
           created_at?: string
+          extracted_measurements?: Json | null
           front_full_path?: string | null
           front_thumb_path?: string | null
+          future_me_parameters?: Json | null
           id?: string
           is_complete?: boolean | null
           left_full_path?: string | null
@@ -554,11 +574,15 @@ export type Database = {
           linked_entry_id?: string | null
           notes?: string | null
           poses_completed?: string[]
+          quality_issues?: string[] | null
           right_full_path?: string | null
           right_thumb_path?: string | null
+          scan_quality_score?: number | null
+          scan_status?: string
           session_date?: string
           share_expires_at?: string | null
           shared_with_practitioner?: boolean
+          silhouette_data?: Json | null
           updated_at?: string
           user_id: string
         }
@@ -568,12 +592,20 @@ export type Database = {
           arnold_confidence?: number | null
           arnold_error?: string | null
           arnold_status?: string
+          asymmetry_report?: Json | null
+          avatar_parameters?: Json | null
           back_full_path?: string | null
           back_thumb_path?: string | null
+          calibrated_with_manual?: boolean
+          calibration_date?: string | null
+          calibration_source?: string | null
           clothing_type?: string | null
+          composition_estimate?: Json | null
           created_at?: string
+          extracted_measurements?: Json | null
           front_full_path?: string | null
           front_thumb_path?: string | null
+          future_me_parameters?: Json | null
           id?: string
           is_complete?: boolean | null
           left_full_path?: string | null
@@ -582,11 +614,15 @@ export type Database = {
           linked_entry_id?: string | null
           notes?: string | null
           poses_completed?: string[]
+          quality_issues?: string[] | null
           right_full_path?: string | null
           right_thumb_path?: string | null
+          scan_quality_score?: number | null
+          scan_status?: string
           session_date?: string
           share_expires_at?: string | null
           shared_with_practitioner?: boolean
+          silhouette_data?: Json | null
           updated_at?: string
           user_id?: string
         }
@@ -596,6 +632,128 @@ export type Database = {
             columns: ["linked_entry_id"]
             isOneToOne: false
             referencedRelation: "body_tracker_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      body_scan_measurements: {
+        Row: {
+          body_fat_pct_high: number | null
+          body_fat_pct_low: number | null
+          body_fat_pct_mid: number | null
+          calibrated: boolean
+          chest_circ_cm: number | null
+          confidence_map: Json | null
+          created_at: string
+          estimation_method: string | null
+          fat_mass_kg: number | null
+          ffmi: number | null
+          hip_circ_cm: number | null
+          id: string
+          inseam_cm: number | null
+          lean_mass_kg: number | null
+          left_bicep_circ_cm: number | null
+          left_calf_circ_cm: number | null
+          left_forearm_circ_cm: number | null
+          left_thigh_circ_cm: number | null
+          neck_circ_cm: number | null
+          overall_confidence: number | null
+          right_bicep_circ_cm: number | null
+          right_calf_circ_cm: number | null
+          right_forearm_circ_cm: number | null
+          right_thigh_circ_cm: number | null
+          scan_date: string
+          session_id: string
+          shoulder_circ_cm: number | null
+          shoulder_to_waist_ratio: number | null
+          torso_length_cm: number | null
+          under_bust_circ_cm: number | null
+          user_id: string
+          waist_natural_circ_cm: number | null
+          waist_navel_circ_cm: number | null
+          waist_to_height_ratio: number | null
+          waist_to_hip_ratio: number | null
+        }
+        Insert: {
+          body_fat_pct_high?: number | null
+          body_fat_pct_low?: number | null
+          body_fat_pct_mid?: number | null
+          calibrated?: boolean
+          chest_circ_cm?: number | null
+          confidence_map?: Json | null
+          created_at?: string
+          estimation_method?: string | null
+          fat_mass_kg?: number | null
+          ffmi?: number | null
+          hip_circ_cm?: number | null
+          id?: string
+          inseam_cm?: number | null
+          lean_mass_kg?: number | null
+          left_bicep_circ_cm?: number | null
+          left_calf_circ_cm?: number | null
+          left_forearm_circ_cm?: number | null
+          left_thigh_circ_cm?: number | null
+          neck_circ_cm?: number | null
+          overall_confidence?: number | null
+          right_bicep_circ_cm?: number | null
+          right_calf_circ_cm?: number | null
+          right_forearm_circ_cm?: number | null
+          right_thigh_circ_cm?: number | null
+          scan_date: string
+          session_id: string
+          shoulder_circ_cm?: number | null
+          shoulder_to_waist_ratio?: number | null
+          torso_length_cm?: number | null
+          under_bust_circ_cm?: number | null
+          user_id: string
+          waist_natural_circ_cm?: number | null
+          waist_navel_circ_cm?: number | null
+          waist_to_height_ratio?: number | null
+          waist_to_hip_ratio?: number | null
+        }
+        Update: {
+          body_fat_pct_high?: number | null
+          body_fat_pct_low?: number | null
+          body_fat_pct_mid?: number | null
+          calibrated?: boolean
+          chest_circ_cm?: number | null
+          confidence_map?: Json | null
+          created_at?: string
+          estimation_method?: string | null
+          fat_mass_kg?: number | null
+          ffmi?: number | null
+          hip_circ_cm?: number | null
+          id?: string
+          inseam_cm?: number | null
+          lean_mass_kg?: number | null
+          left_bicep_circ_cm?: number | null
+          left_calf_circ_cm?: number | null
+          left_forearm_circ_cm?: number | null
+          left_thigh_circ_cm?: number | null
+          neck_circ_cm?: number | null
+          overall_confidence?: number | null
+          right_bicep_circ_cm?: number | null
+          right_calf_circ_cm?: number | null
+          right_forearm_circ_cm?: number | null
+          right_thigh_circ_cm?: number | null
+          scan_date?: string
+          session_id?: string
+          shoulder_circ_cm?: number | null
+          shoulder_to_waist_ratio?: number | null
+          torso_length_cm?: number | null
+          under_bust_circ_cm?: number | null
+          user_id?: string
+          waist_natural_circ_cm?: number | null
+          waist_navel_circ_cm?: number | null
+          waist_to_height_ratio?: number | null
+          waist_to_hip_ratio?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "body_scan_measurements_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "body_photo_sessions"
             referencedColumns: ["id"]
           },
         ]
@@ -6201,6 +6359,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      scan_calibration_nudges: {
+        Row: {
+          acted_at: string | null
+          dismissed_at: string | null
+          first_shown_at: string
+          id: string
+          last_shown_at: string
+          shown_count: number
+          trigger_key: string
+          user_id: string
+        }
+        Insert: {
+          acted_at?: string | null
+          dismissed_at?: string | null
+          first_shown_at?: string
+          id?: string
+          last_shown_at?: string
+          shown_count?: number
+          trigger_key: string
+          user_id: string
+        }
+        Update: {
+          acted_at?: string | null
+          dismissed_at?: string | null
+          first_shown_at?: string
+          id?: string
+          last_shown_at?: string
+          shown_count?: number
+          trigger_key?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       scoring_audit_log: {
         Row: {
