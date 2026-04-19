@@ -61,6 +61,7 @@ export async function updateSession(request: NextRequest) {
     pathname.startsWith("/api/waitlist/") ||
     pathname.startsWith("/api/auth/") ||
     pathname.startsWith("/api/stripe/webhook") ||
+    pathname.startsWith("/api/webhooks/") ||
     pathname.startsWith("/api/pricing/");
 
   // If not authenticated and trying to access protected route, redirect to login
