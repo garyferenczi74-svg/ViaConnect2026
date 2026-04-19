@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import { PractitionerWaitlistForm } from './PractitionerWaitlistForm';
 import {
@@ -114,7 +115,9 @@ export default function PractitionersLanding() {
           <p className="mb-10 text-2xl font-semibold leading-snug text-white md:text-3xl">
             Tell us about your practice.
           </p>
-          <PractitionerWaitlistForm />
+          <Suspense fallback={null}>
+            <PractitionerWaitlistForm />
+          </Suspense>
         </div>
       </section>
 
