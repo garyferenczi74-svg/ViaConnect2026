@@ -44,14 +44,21 @@ describeIfService('Phase 1: helix_tiers extension (service role)', () => {
 describeIfService('Phase 1: practitioner stub tables', () => {
   const db = hasService ? createClient(SUPABASE_URL, SERVICE_KEY!) : (null as never);
 
-  it('practitioners table exists with expected columns', async () => {
-    const { error } = await db.from('practitioners').select('id, user_id, display_name, status').limit(0);
+  // Path C reconciliation: practitioners now uses account_status (5-state)
+  // instead of the original stub status (4-state). The patient ↔ practitioner
+  // relationship table is the canonical practitioner_patients (extended in
+  // _110), not the patient_practitioner_relationships shim that _050 created
+  // and _160 dropped.
+  it('practitioners table exists with reconciled Phase 2 columns', async () => {
+    const { error } = await (db as any).from('practitioners')
+      .select('id, user_id, display_name, account_status, credential_type, practice_name')
+      .limit(0);
     expect(error).toBeNull();
   });
 
-  it('patient_practitioner_relationships has consent_share_engagement_score', async () => {
-    const { error } = await db.from('patient_practitioner_relationships')
-      .select('id, patient_user_id, practitioner_id, status, consent_share_engagement_score')
+  it('practitioner_patients carries the consent_share_engagement_score flag', async () => {
+    const { error } = await (db as any).from('practitioner_patients')
+      .select('id, patient_id, practitioner_id, status, consent_share_engagement_score')
       .limit(0);
     expect(error).toBeNull();
   });
@@ -136,18 +143,19 @@ describeIfAnon('Phase 1: RLS (anon role)', () => {
     expect((data ?? []).length).toBe(0);
   });
 
-  it('anonymous users cannot read patient_practitioner_relationships', async () => {
-    const { data } = await anon.from('patient_practitioner_relationships').select('id');
+  it('anonymous users cannot read practitioner_patients', async () => {
+    const { data } = await (anon as any).from('practitioner_patients').select('id');
     expect((data ?? []).length).toBe(0);
   });
 });
 
 // Type-check smoke: these imports fail at compile time if the regenerated
 // Database type is missing any of the Phase 1 tables, giving us a static
-// guarantee without running a runtime assertion.
+// guarantee without running a runtime assertion. patient_practitioner_relationships
+// was dropped by Path C reconciliation (`_160`); practitioner_patients is the
+// canonical relationship table.
 import type { Database } from '@/lib/supabase/types';
 type _Engagement = Database['public']['Tables']['engagement_score_snapshots']['Row'];
 type _Practitioner = Database['public']['Tables']['practitioners']['Row'];
-type _PPR = Database['public']['Tables']['patient_practitioner_relationships']['Row'];
 type _FamilyPool = Database['public']['Tables']['helix_family_pool_config']['Row'];
 type _EarningEvent = Database['public']['Tables']['helix_earning_event_types']['Row'];

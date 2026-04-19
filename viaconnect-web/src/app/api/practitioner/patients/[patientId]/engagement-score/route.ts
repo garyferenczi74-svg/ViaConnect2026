@@ -18,23 +18,30 @@ export async function GET(
   const user = userData.user;
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  // Resolve the practitioner record for the caller
-  const { data: practitionerRow } = await supabase
+  // Resolve the practitioner record for the caller. Path C reconciliation:
+  // practitioners now uses account_status (5-state superset of the
+  // Prompt #92 stub's 4-state status). Cast through `any` because the
+  // generated types lag the migration; types regen will catch up.
+  const { data: practitionerRow } = await (supabase as any)
     .from('practitioners')
-    .select('id, status')
+    .select('id, account_status')
     .eq('user_id', user.id)
     .maybeSingle();
-  const practitioner = practitionerRow as { id: string; status: string } | null;
-  if (!practitioner || practitioner.status !== 'active') {
+  const practitioner = practitionerRow as { id: string; account_status: string } | null;
+  if (!practitioner || practitioner.account_status !== 'active') {
     return NextResponse.json({ error: 'No active practitioner record' }, { status: 403 });
   }
 
-  // Verify active relationship + engagement score consent
-  const { data: rel } = await supabase
-    .from('patient_practitioner_relationships')
+  // Verify active relationship + engagement score consent. Path C
+  // reconciliation: practitioner_patients is the canonical relationship
+  // table; the Prompt #92 patient_practitioner_relationships shim has
+  // been dropped. practitioner_patients references auth.users directly
+  // for both sides, so we match on auth.uid() not practitioners.id.
+  const { data: rel } = await (supabase as any)
+    .from('practitioner_patients')
     .select('status, consent_share_engagement_score')
-    .eq('patient_user_id', params.patientId)
-    .eq('practitioner_id', practitioner.id)
+    .eq('patient_id', params.patientId)
+    .eq('practitioner_id', user.id)
     .maybeSingle();
   const relationship = rel as { status: string; consent_share_engagement_score: boolean } | null;
   if (!relationship || relationship.status !== 'active') {
