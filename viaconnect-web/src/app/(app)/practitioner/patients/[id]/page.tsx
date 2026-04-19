@@ -15,6 +15,7 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { PatientViewModeSelector } from '@/components/practitioner/PatientViewModeSelector';
+import { StandardPatientView } from '@/components/practitioner/StandardPatientView';
 import { NaturopathicPatientView } from '@/components/practitioner/NaturopathicPatientView';
 import LegacyPatientDetailView from './LegacyPatientView';
 
@@ -114,10 +115,10 @@ export default async function PractitionerPatientDetailPage({
       {renderNaturopathic ? (
         <NaturopathicPatientView patientId={params.id} relationship={relationship} />
       ) : (
-        // Standard view = preserve the existing client UI. Provides
-        // continuity for non-naturopath credentials and for naturopath
-        // credentials that explicitly choose Standard mode.
-        <LegacyPatientDetailView />
+        // Standard view: spec-aligned consent-gated component. The legacy
+        // client UI remains as the no-relationship fallback above so demo
+        // / mock-data routes still work.
+        <StandardPatientView patientId={params.id} relationship={relationship} />
       )}
     </div>
   );

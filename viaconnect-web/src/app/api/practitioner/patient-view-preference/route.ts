@@ -63,5 +63,26 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     );
   }
 
+  // Best-effort fan-out so Jeffery's admin LiveFeed surfaces per-patient
+  // override changes. Failure is non-fatal: the override is already
+  // persisted on practitioner_patients.
+  try {
+    await (supabase as any).from('agent_messages').insert({
+      from_agent: 'jeffery',
+      to_agent: 'jeffery',
+      message_type: 'patient_view_override_set',
+      user_id: user.id,
+      payload: {
+        relationship_id: data.id,
+        practitioner_user_id: user.id,
+        patient_user_id: parsed.data.patientId,
+        view_mode: parsed.data.viewMode,
+      },
+      status: 'pending',
+    });
+  } catch (e) {
+    console.warn('[patient-view-preference] agent_messages emit failed (non-fatal)', e);
+  }
+
   return NextResponse.json({ success: true });
 }
