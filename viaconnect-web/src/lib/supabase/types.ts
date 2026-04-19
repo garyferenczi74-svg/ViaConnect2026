@@ -2645,6 +2645,60 @@ export type Database = {
           },
         ]
       }
+      family_members: {
+        Row: {
+          accepted_at: string | null
+          birth_date: string | null
+          created_at: string
+          display_name: string
+          email: string | null
+          id: string
+          invitation_token: string | null
+          invited_at: string | null
+          is_active: boolean
+          member_type: string
+          member_user_id: string | null
+          permissions: Json
+          primary_user_id: string
+          relationship: string | null
+          updated_at: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          birth_date?: string | null
+          created_at?: string
+          display_name: string
+          email?: string | null
+          id?: string
+          invitation_token?: string | null
+          invited_at?: string | null
+          is_active?: boolean
+          member_type: string
+          member_user_id?: string | null
+          permissions?: Json
+          primary_user_id: string
+          relationship?: string | null
+          updated_at?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          birth_date?: string | null
+          created_at?: string
+          display_name?: string
+          email?: string | null
+          id?: string
+          invitation_token?: string | null
+          invited_at?: string | null
+          is_active?: boolean
+          member_type?: string
+          member_user_id?: string | null
+          permissions?: Json
+          primary_user_id?: string
+          relationship?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       farma_tokens: {
         Row: {
           balance: number
@@ -2709,6 +2763,53 @@ export type Database = {
           search_vector?: unknown
         }
         Relationships: []
+      }
+      features: {
+        Row: {
+          category: string
+          created_at: string
+          description: string | null
+          display_name: string
+          gate_behavior: string
+          id: string
+          is_active: boolean
+          minimum_tier_level: number
+          requires_family_tier: boolean
+          requires_genex360: boolean
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          description?: string | null
+          display_name: string
+          gate_behavior?: string
+          id: string
+          is_active?: boolean
+          minimum_tier_level: number
+          requires_family_tier?: boolean
+          requires_genex360?: boolean
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          display_name?: string
+          gate_behavior?: string
+          id?: string
+          is_active?: boolean
+          minimum_tier_level?: number
+          requires_family_tier?: boolean
+          requires_genex360?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "features_minimum_tier_level_fkey"
+            columns: ["minimum_tier_level"]
+            isOneToOne: false
+            referencedRelation: "membership_tiers"
+            referencedColumns: ["tier_level"]
+          },
+        ]
       }
       forecast_milestones: {
         Row: {
@@ -2843,6 +2944,168 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: true
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      genex360_products: {
+        Row: {
+          created_at: string
+          description: string | null
+          display_name: string
+          family_member_discount_percent: number
+          gifted_months: number
+          gifted_tier_id: string | null
+          id: string
+          is_active: boolean
+          panel_count: number
+          panels_included: string[]
+          price_cents: number
+          sort_order: number
+          stripe_price_id: string | null
+          stripe_product_id: string | null
+          unlocks_full_precision: boolean
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          display_name: string
+          family_member_discount_percent?: number
+          gifted_months: number
+          gifted_tier_id?: string | null
+          id: string
+          is_active?: boolean
+          panel_count: number
+          panels_included: string[]
+          price_cents: number
+          sort_order: number
+          stripe_price_id?: string | null
+          stripe_product_id?: string | null
+          unlocks_full_precision?: boolean
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          display_name?: string
+          family_member_discount_percent?: number
+          gifted_months?: number
+          gifted_tier_id?: string | null
+          id?: string
+          is_active?: boolean
+          panel_count?: number
+          panels_included?: string[]
+          price_cents?: number
+          sort_order?: number
+          stripe_price_id?: string | null
+          stripe_product_id?: string | null
+          unlocks_full_precision?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "genex360_products_gifted_tier_id_fkey"
+            columns: ["gifted_tier_id"]
+            isOneToOne: false
+            referencedRelation: "membership_tiers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      genex360_purchases: {
+        Row: {
+          created_at: string
+          family_discount_applied_percent: number
+          family_member_id: string | null
+          gift_ends_at: string | null
+          gift_membership_id: string | null
+          gift_starts_at: string | null
+          id: string
+          kit_shipped_at: string | null
+          kit_tracking_number: string | null
+          lab_processing_started_at: string | null
+          lifecycle_status: string
+          metadata: Json
+          order_id: string | null
+          payment_status: string
+          paypal_order_id: string | null
+          price_paid_cents: number
+          product_id: string
+          sample_received_at: string | null
+          stripe_payment_intent_id: string | null
+          test_results_delivered_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          family_discount_applied_percent?: number
+          family_member_id?: string | null
+          gift_ends_at?: string | null
+          gift_membership_id?: string | null
+          gift_starts_at?: string | null
+          id?: string
+          kit_shipped_at?: string | null
+          kit_tracking_number?: string | null
+          lab_processing_started_at?: string | null
+          lifecycle_status?: string
+          metadata?: Json
+          order_id?: string | null
+          payment_status?: string
+          paypal_order_id?: string | null
+          price_paid_cents: number
+          product_id: string
+          sample_received_at?: string | null
+          stripe_payment_intent_id?: string | null
+          test_results_delivered_at?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          family_discount_applied_percent?: number
+          family_member_id?: string | null
+          gift_ends_at?: string | null
+          gift_membership_id?: string | null
+          gift_starts_at?: string | null
+          id?: string
+          kit_shipped_at?: string | null
+          kit_tracking_number?: string | null
+          lab_processing_started_at?: string | null
+          lifecycle_status?: string
+          metadata?: Json
+          order_id?: string | null
+          payment_status?: string
+          paypal_order_id?: string | null
+          price_paid_cents?: number
+          product_id?: string
+          sample_received_at?: string | null
+          stripe_payment_intent_id?: string | null
+          test_results_delivered_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "genex360_purchases_family_member_id_fkey"
+            columns: ["family_member_id"]
+            isOneToOne: false
+            referencedRelation: "family_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "genex360_purchases_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "shop_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "genex360_purchases_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "genex360_products"
             referencedColumns: ["id"]
           },
         ]
@@ -4244,38 +4507,162 @@ export type Database = {
         }
         Relationships: []
       }
+      membership_tiers: {
+        Row: {
+          additional_adult_price_cents: number | null
+          additional_children_chunk_price_cents: number | null
+          annual_price_cents: number
+          annual_savings_cents: number | null
+          base_adults_included: number
+          base_children_included: number
+          children_chunk_size: number | null
+          created_at: string
+          description: string | null
+          display_name: string
+          id: string
+          is_active: boolean
+          is_family_tier: boolean
+          max_adults_allowed: number
+          monthly_price_cents: number
+          sort_order: number
+          stripe_annual_price_id: string | null
+          stripe_monthly_price_id: string | null
+          stripe_product_id: string | null
+          tier_level: number
+          updated_at: string
+        }
+        Insert: {
+          additional_adult_price_cents?: number | null
+          additional_children_chunk_price_cents?: number | null
+          annual_price_cents: number
+          annual_savings_cents?: number | null
+          base_adults_included?: number
+          base_children_included?: number
+          children_chunk_size?: number | null
+          created_at?: string
+          description?: string | null
+          display_name: string
+          id: string
+          is_active?: boolean
+          is_family_tier?: boolean
+          max_adults_allowed?: number
+          monthly_price_cents: number
+          sort_order: number
+          stripe_annual_price_id?: string | null
+          stripe_monthly_price_id?: string | null
+          stripe_product_id?: string | null
+          tier_level: number
+          updated_at?: string
+        }
+        Update: {
+          additional_adult_price_cents?: number | null
+          additional_children_chunk_price_cents?: number | null
+          annual_price_cents?: number
+          annual_savings_cents?: number | null
+          base_adults_included?: number
+          base_children_included?: number
+          children_chunk_size?: number | null
+          created_at?: string
+          description?: string | null
+          display_name?: string
+          id?: string
+          is_active?: boolean
+          is_family_tier?: boolean
+          max_adults_allowed?: number
+          monthly_price_cents?: number
+          sort_order?: number
+          stripe_annual_price_id?: string | null
+          stripe_monthly_price_id?: string | null
+          stripe_product_id?: string | null
+          tier_level?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       memberships: {
         Row: {
+          additional_adults: number
+          additional_children_chunks: number
+          billing_cycle: string | null
+          cancel_at_period_end: boolean
+          canceled_at: string | null
+          current_period_end: string | null
+          current_period_start: string | null
           expires_at: string | null
+          gift_source_id: string | null
           id: string
+          is_annual_prepay: boolean
+          metadata: Json
+          payment_method: string | null
+          paypal_subscription_id: string | null
           rc_entitlement_id: string | null
           started_at: string
           status: string
+          stripe_customer_id: string | null
           stripe_subscription_id: string | null
           tier: string
+          tier_id: string | null
+          updated_at: string
           user_id: string
         }
         Insert: {
+          additional_adults?: number
+          additional_children_chunks?: number
+          billing_cycle?: string | null
+          cancel_at_period_end?: boolean
+          canceled_at?: string | null
+          current_period_end?: string | null
+          current_period_start?: string | null
           expires_at?: string | null
+          gift_source_id?: string | null
           id?: string
+          is_annual_prepay?: boolean
+          metadata?: Json
+          payment_method?: string | null
+          paypal_subscription_id?: string | null
           rc_entitlement_id?: string | null
           started_at?: string
           status?: string
+          stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
           tier?: string
+          tier_id?: string | null
+          updated_at?: string
           user_id: string
         }
         Update: {
+          additional_adults?: number
+          additional_children_chunks?: number
+          billing_cycle?: string | null
+          cancel_at_period_end?: boolean
+          canceled_at?: string | null
+          current_period_end?: string | null
+          current_period_start?: string | null
           expires_at?: string | null
+          gift_source_id?: string | null
           id?: string
+          is_annual_prepay?: boolean
+          metadata?: Json
+          payment_method?: string | null
+          paypal_subscription_id?: string | null
           rc_entitlement_id?: string | null
           started_at?: string
           status?: string
+          stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
           tier?: string
+          tier_id?: string | null
+          updated_at?: string
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "memberships_tier_id_fkey"
+            columns: ["tier_id"]
+            isOneToOne: false
+            referencedRelation: "membership_tiers"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "memberships_user_id_fkey"
             columns: ["user_id"]
@@ -4515,6 +4902,96 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      outcome_stack_components: {
+        Row: {
+          created_at: string
+          id: string
+          is_primary: boolean
+          quantity: number
+          sku: string
+          sort_order: number
+          stack_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_primary?: boolean
+          quantity?: number
+          sku: string
+          sort_order?: number
+          stack_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_primary?: boolean
+          quantity?: number
+          sku?: string
+          sort_order?: number
+          stack_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "outcome_stack_components_sku_fkey"
+            columns: ["sku"]
+            isOneToOne: false
+            referencedRelation: "master_skus"
+            referencedColumns: ["sku"]
+          },
+          {
+            foreignKeyName: "outcome_stack_components_stack_id_fkey"
+            columns: ["stack_id"]
+            isOneToOne: false
+            referencedRelation: "outcome_stacks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      outcome_stacks: {
+        Row: {
+          bundle_discount_percent: number
+          created_at: string
+          description: string
+          display_name: string
+          hero_image_url: string | null
+          id: string
+          is_active: boolean
+          outcome_category: string
+          sort_order: number
+          stripe_price_id: string | null
+          stripe_product_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          bundle_discount_percent?: number
+          created_at?: string
+          description: string
+          display_name: string
+          hero_image_url?: string | null
+          id: string
+          is_active?: boolean
+          outcome_category: string
+          sort_order: number
+          stripe_price_id?: string | null
+          stripe_product_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          bundle_discount_percent?: number
+          created_at?: string
+          description?: string
+          display_name?: string
+          hero_image_url?: string | null
+          id?: string
+          is_active?: boolean
+          outcome_category?: string
+          sort_order?: number
+          stripe_price_id?: string | null
+          stripe_product_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       peptide_delivery_options: {
         Row: {
@@ -7562,6 +8039,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      supplement_discount_rules: {
+        Row: {
+          created_at: string
+          discount_percent: number
+          display_name: string
+          id: string
+          is_active: boolean
+          is_annual_prepay_bonus: boolean
+          requires_active_protocol: boolean
+          requires_genex360_any: boolean
+          requires_genex360_complete: boolean
+          requires_subscription: boolean
+          rule_priority: number
+        }
+        Insert: {
+          created_at?: string
+          discount_percent: number
+          display_name: string
+          id: string
+          is_active?: boolean
+          is_annual_prepay_bonus?: boolean
+          requires_active_protocol?: boolean
+          requires_genex360_any?: boolean
+          requires_genex360_complete?: boolean
+          requires_subscription?: boolean
+          rule_priority: number
+        }
+        Update: {
+          created_at?: string
+          discount_percent?: number
+          display_name?: string
+          id?: string
+          is_active?: boolean
+          is_annual_prepay_bonus?: boolean
+          requires_active_protocol?: boolean
+          requires_genex360_any?: boolean
+          requires_genex360_complete?: boolean
+          requires_subscription?: boolean
+          rule_priority?: number
+        }
+        Relationships: []
       }
       supplement_search_index: {
         Row: {

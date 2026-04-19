@@ -55,8 +55,13 @@ export async function updateSession(request: NextRequest) {
     pathname.startsWith("/login") ||
     pathname.startsWith("/signup") ||
     pathname.startsWith("/forgot-password") ||
+    pathname.startsWith("/pricing") ||
+    pathname === "/practitioners" ||
+    pathname.startsWith("/practitioners/") ||
+    pathname.startsWith("/api/waitlist/") ||
     pathname.startsWith("/api/auth/") ||
-    pathname.startsWith("/api/stripe/webhook");
+    pathname.startsWith("/api/stripe/webhook") ||
+    pathname.startsWith("/api/pricing/");
 
   // If not authenticated and trying to access protected route, redirect to login
   if (!user && !isPublicRoute) {
@@ -88,9 +93,11 @@ export async function updateSession(request: NextRequest) {
 
     // Detect if the user is crossing portal boundaries so the client can
     // clear stale cached data (auth store + React Query) on arrival.
-    const currentPortal = pathname.startsWith("/practitioner")
+    // Note the trailing slash on /practitioner/ — without it, this would
+    // also match /practitioners (the public landing/waitlist page).
+    const currentPortal = pathname.startsWith("/practitioner/")
       ? "practitioner"
-      : pathname.startsWith("/naturopath")
+      : pathname.startsWith("/naturopath/")
       ? "naturopath"
       : pathname.startsWith("/admin")
       ? "admin"
@@ -104,15 +111,17 @@ export async function updateSession(request: NextRequest) {
       return NextResponse.redirect(url);
     }
 
-    // Enforce portal access based on role — block cross-portal access
-    if (pathname.startsWith("/practitioner") && role !== "practitioner" && !isAdmin) {
+    // Enforce portal access based on role — block cross-portal access.
+    // Trailing slash matters: /practitioner/ is the practitioner portal,
+    // /practitioners is the public marketing/waitlist page.
+    if (pathname.startsWith("/practitioner/") && role !== "practitioner" && !isAdmin) {
       const url = request.nextUrl.clone();
       url.pathname = getRoleHomePath(role);
       url.searchParams.set("portal_switch", "1");
       return NextResponse.redirect(url);
     }
 
-    if (pathname.startsWith("/naturopath") && role !== "naturopath" && !isAdmin) {
+    if (pathname.startsWith("/naturopath/") && role !== "naturopath" && !isAdmin) {
       const url = request.nextUrl.clone();
       url.pathname = getRoleHomePath(role);
       url.searchParams.set("portal_switch", "1");
