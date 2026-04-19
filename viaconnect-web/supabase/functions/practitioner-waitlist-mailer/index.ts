@@ -213,13 +213,37 @@ serve(async (req: Request) => {
       sent++;
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'send failed';
+      const isPermanent = row.attempts + 1 >= 5;
       await db.from('practitioner_email_queue')
         .update({
-          status: row.attempts + 1 >= 5 ? 'failed' : 'pending',
+          status: isPermanent ? 'failed' : 'pending',
           last_error: msg,
           updated_at: new Date().toISOString(),
         })
         .eq('id', row.id);
+
+      // On permanent fail, surface to Jeffery's admin LiveFeed so the
+      // burndown is visible. Best-effort; do not block the loop.
+      if (isPermanent) {
+        try {
+          await db.from('agent_messages').insert({
+            from_agent: 'practitioner-waitlist-mailer',
+            to_agent: 'jeffery',
+            message_type: 'mailer_permanent_fail',
+            user_id: null,
+            payload: {
+              queue_id: row.id,
+              waitlist_id: w.id,
+              step: row.step,
+              attempts: row.attempts + 1,
+              last_error: msg,
+            },
+            status: 'pending',
+          });
+        } catch {
+          // ignore secondary failure; primary status is already failed
+        }
+      }
       failed++;
     }
   }

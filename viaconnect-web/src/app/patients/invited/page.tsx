@@ -79,47 +79,42 @@ function PatientInvitedInner() {
         return;
       }
 
-      const [{ data: { user } }, { data: rel }] = await Promise.all([
+      // Public lookup via SECURITY DEFINER RPC (migration _150) so the
+      // landing page can resolve practitioner identity without exposing the
+      // bulk practitioner_patients row to anon/authenticated SELECT.
+      const [{ data: { user } }, { data: rpc, error: rpcErr }] = await Promise.all([
         supabase.auth.getUser(),
-        (supabase as any)
-          .from('practitioner_patients')
-          .select(
-            'id, practitioner_id, status, invitation_note, consent_share_caq, consent_share_engagement_score, consent_share_protocols, consent_share_nutrition, can_view_genetics',
-          )
-          .eq('invitation_token', token)
-          .eq('status', 'invited')
-          .maybeSingle(),
+        (supabase as any).rpc('lookup_practitioner_invitation', { p_token: token }),
       ]);
 
       if (cancelled) return;
       setAuthedUserId(user?.id ?? null);
 
-      if (!rel) {
+      if (rpcErr) {
+        setError(rpcErr.message);
+        setLoading(false);
+        return;
+      }
+      const row = Array.isArray(rpc) ? rpc[0] : rpc;
+      if (!row || row.ok !== true) {
         setError('Invitation is invalid, expired, or already accepted.');
         setLoading(false);
         return;
       }
 
-      const { data: prac } = await (supabase as any)
-        .from('practitioners')
-        .select('display_name, practice_name')
-        .eq('user_id', rel.practitioner_id)
-        .maybeSingle();
-
-      if (cancelled) return;
       const presetState = {
-        consent_share_caq:              !!rel.consent_share_caq,
-        consent_share_engagement_score: !!rel.consent_share_engagement_score,
-        consent_share_protocols:        !!rel.consent_share_protocols,
-        consent_share_nutrition:        !!rel.consent_share_nutrition,
-        can_view_genetics:              !!rel.can_view_genetics,
+        consent_share_caq:              !!row.consent_share_caq,
+        consent_share_engagement_score: !!row.consent_share_engagement_score,
+        consent_share_protocols:        !!row.consent_share_protocols,
+        consent_share_nutrition:        !!row.consent_share_nutrition,
+        can_view_genetics:              !!row.can_view_genetics,
       };
       setCtx({
-        relationshipId: rel.id,
-        practitionerUserId: rel.practitioner_id,
-        practiceName: prac?.practice_name ?? null,
-        practitionerName: prac?.display_name ?? null,
-        invitationNote: rel.invitation_note ?? null,
+        relationshipId: '', // resolved on accept; not needed for the form
+        practitionerUserId: row.practitioner_user_id,
+        practiceName:     row.practice_name ?? null,
+        practitionerName: row.practitioner_display_name ?? null,
+        invitationNote:   row.invitation_note ?? null,
         presets: presetState,
       });
       setPresets(presetState);
@@ -131,24 +126,33 @@ function PatientInvitedInner() {
   async function accept() {
     if (!ctx || !authedUserId || !presets) return;
     setAccepting(true);
-    const { error: updateErr } = await (supabase as any)
-      .from('practitioner_patients')
-      .update({
-        patient_id: authedUserId,
-        status: 'active',
-        consent_granted_at: new Date().toISOString(),
-        invitation_accepted_at: new Date().toISOString(),
-        invitation_token: null,
-        consent_share_caq: presets.consent_share_caq,
-        consent_share_engagement_score: presets.consent_share_engagement_score,
-        consent_share_protocols: presets.consent_share_protocols,
-        consent_share_nutrition: presets.consent_share_nutrition,
-        can_view_genetics: presets.can_view_genetics,
-      })
-      .eq('id', ctx.relationshipId);
+    // Atomic claim via SECURITY DEFINER RPC. The function's UPDATE filters
+    // on token + status='invited' and uses ROW_COUNT to detect double-claim
+    // losers, so a stale or leaked token cannot overwrite a row that was
+    // already accepted by a racing tab.
+    const { data: rpc, error: rpcErr } = await (supabase as any).rpc(
+      'accept_practitioner_invitation',
+      {
+        p_token: token,
+        p_consent_share_caq:              presets.consent_share_caq,
+        p_consent_share_engagement_score: presets.consent_share_engagement_score,
+        p_consent_share_protocols:        presets.consent_share_protocols,
+        p_consent_share_nutrition:        presets.consent_share_nutrition,
+        p_can_view_genetics:              presets.can_view_genetics,
+      },
+    );
     setAccepting(false);
-    if (updateErr) {
-      setError(updateErr.message);
+    if (rpcErr) {
+      setError(rpcErr.message);
+      return;
+    }
+    const row = Array.isArray(rpc) ? rpc[0] : rpc;
+    if (!row || row.ok !== true) {
+      setError(
+        row?.error_code === 'unauthenticated'
+          ? 'Please sign in to accept the invitation.'
+          : 'Invitation could not be accepted. It may have been used or revoked.',
+      );
       return;
     }
     setAccepted(true);

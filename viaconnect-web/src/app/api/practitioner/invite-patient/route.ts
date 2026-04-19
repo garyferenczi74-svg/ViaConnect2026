@@ -80,9 +80,14 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     .from('practitioner_patients')
     .insert({
       practitioner_id: user.id,
-      // patient_id is set when the patient accepts; for now store the
-      // invited email in metadata via the invitation_note + a placeholder.
-      patient_id: user.id, // temporary self-link; replaced on accept
+      // patient_id stays null until the patient accepts via the
+      // accept_practitioner_invitation RPC. Migration _150 made this
+      // column nullable to support invitation rows that have not yet
+      // been claimed.
+      patient_id: null,
+      invited_email:      parsed.data.patientEmail.toLowerCase().trim(),
+      invited_first_name: parsed.data.patientFirstName.trim(),
+      invited_last_name:  parsed.data.patientLastName.trim(),
       relationship_type: 'primary',
       status: 'invited',
       invitation_token: token,
