@@ -39,6 +39,8 @@ import {
   ChevronDown,
   LogOut,
   Target,
+  GraduationCap,
+  CreditCard,
 } from "lucide-react";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -94,6 +96,9 @@ const PRACTITIONER: PortalConfig = {
     { href: "/practitioner/compliance", label: "Compliance", icon: Shield },
     { href: "/practitioner/media-sources", label: "Research Hub", icon: Newspaper },
     { href: "/practitioner/ai", label: "AI Advisor", icon: Brain },
+    { href: "/practitioner/shop", label: "Wholesale Shop", icon: ShoppingBag },
+    { href: "/practitioner/certification", label: "Certification", icon: GraduationCap },
+    { href: "/practitioner/billing", label: "Billing", icon: CreditCard },
     { href: "/practitioner/settings", label: "Settings", icon: Settings },
   ],
   accent: "bg-portal-green",
