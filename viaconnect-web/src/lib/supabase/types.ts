@@ -2809,44 +2809,131 @@ export type Database = {
         }
         Relationships: []
       }
+      feature_flag_audit: {
+        Row: {
+          change_reason: string | null
+          change_type: string
+          changed_at: string
+          changed_by: string
+          feature_id: string
+          id: string
+          ip_address: string | null
+          new_state: Json | null
+          previous_state: Json | null
+          user_agent: string | null
+        }
+        Insert: {
+          change_reason?: string | null
+          change_type: string
+          changed_at?: string
+          changed_by: string
+          feature_id: string
+          id?: string
+          ip_address?: string | null
+          new_state?: Json | null
+          previous_state?: Json | null
+          user_agent?: string | null
+        }
+        Update: {
+          change_reason?: string | null
+          change_type?: string
+          changed_at?: string
+          changed_by?: string
+          feature_id?: string
+          id?: string
+          ip_address?: string | null
+          new_state?: Json | null
+          previous_state?: Json | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feature_flag_audit_feature_id_fkey"
+            columns: ["feature_id"]
+            isOneToOne: false
+            referencedRelation: "features"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       features: {
         Row: {
           category: string
           created_at: string
           description: string | null
           display_name: string
+          evaluation_count_24h: number
+          feature_owner: string | null
           gate_behavior: string
           id: string
           is_active: boolean
+          kill_switch_engaged: boolean
+          kill_switch_engaged_at: string | null
+          kill_switch_engaged_by: string | null
+          kill_switch_reason: string | null
+          last_evaluated_at: string | null
+          launch_phase_id: string | null
           minimum_tier_level: number
           requires_family_tier: boolean
           requires_genex360: boolean
+          rollout_cohort_ids: string[]
+          rollout_percentage: number | null
+          rollout_strategy: string
         }
         Insert: {
           category: string
           created_at?: string
           description?: string | null
           display_name: string
+          evaluation_count_24h?: number
+          feature_owner?: string | null
           gate_behavior?: string
           id: string
           is_active?: boolean
+          kill_switch_engaged?: boolean
+          kill_switch_engaged_at?: string | null
+          kill_switch_engaged_by?: string | null
+          kill_switch_reason?: string | null
+          last_evaluated_at?: string | null
+          launch_phase_id?: string | null
           minimum_tier_level: number
           requires_family_tier?: boolean
           requires_genex360?: boolean
+          rollout_cohort_ids?: string[]
+          rollout_percentage?: number | null
+          rollout_strategy?: string
         }
         Update: {
           category?: string
           created_at?: string
           description?: string | null
           display_name?: string
+          evaluation_count_24h?: number
+          feature_owner?: string | null
           gate_behavior?: string
           id?: string
           is_active?: boolean
+          kill_switch_engaged?: boolean
+          kill_switch_engaged_at?: string | null
+          kill_switch_engaged_by?: string | null
+          kill_switch_reason?: string | null
+          last_evaluated_at?: string | null
+          launch_phase_id?: string | null
           minimum_tier_level?: number
           requires_family_tier?: boolean
           requires_genex360?: boolean
+          rollout_cohort_ids?: string[]
+          rollout_percentage?: number | null
+          rollout_strategy?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "features_launch_phase_id_fkey"
+            columns: ["launch_phase_id"]
+            isOneToOne: false
+            referencedRelation: "launch_phases"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "features_minimum_tier_level_fkey"
             columns: ["minimum_tier_level"]
@@ -4467,6 +4554,48 @@ export type Database = {
           id?: string
           metadata?: Json
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      launch_phases: {
+        Row: {
+          activation_status: string
+          actual_activation_date: string | null
+          created_at: string
+          description: string | null
+          display_name: string
+          id: string
+          metadata: Json
+          phase_type: string
+          sort_order: number
+          target_activation_date: string | null
+          updated_at: string
+        }
+        Insert: {
+          activation_status?: string
+          actual_activation_date?: string | null
+          created_at?: string
+          description?: string | null
+          display_name: string
+          id: string
+          metadata?: Json
+          phase_type: string
+          sort_order: number
+          target_activation_date?: string | null
+          updated_at?: string
+        }
+        Update: {
+          activation_status?: string
+          actual_activation_date?: string | null
+          created_at?: string
+          description?: string | null
+          display_name?: string
+          id?: string
+          metadata?: Json
+          phase_type?: string
+          sort_order?: number
+          target_activation_date?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
@@ -7110,6 +7239,36 @@ export type Database = {
         }
         Relationships: []
       }
+      rollout_cohorts: {
+        Row: {
+          cohort_type: string
+          created_at: string
+          definition: Json
+          description: string | null
+          display_name: string
+          id: string
+          is_active: boolean
+        }
+        Insert: {
+          cohort_type: string
+          created_at?: string
+          definition: Json
+          description?: string | null
+          display_name: string
+          id: string
+          is_active?: boolean
+        }
+        Update: {
+          cohort_type?: string
+          created_at?: string
+          definition?: Json
+          description?: string | null
+          display_name?: string
+          id?: string
+          is_active?: boolean
+        }
+        Relationships: []
+      }
       safety_alerts: {
         Row: {
           alert_type: string
@@ -7193,6 +7352,62 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      scheduled_flag_activations: {
+        Row: {
+          cancel_reason: string | null
+          canceled_at: string | null
+          canceled_by: string | null
+          created_at: string
+          executed_at: string | null
+          execution_error: string | null
+          execution_result: string | null
+          feature_id: string
+          id: string
+          scheduled_by: string
+          scheduled_for: string
+          target_action: string
+          target_value: Json
+        }
+        Insert: {
+          cancel_reason?: string | null
+          canceled_at?: string | null
+          canceled_by?: string | null
+          created_at?: string
+          executed_at?: string | null
+          execution_error?: string | null
+          execution_result?: string | null
+          feature_id: string
+          id?: string
+          scheduled_by: string
+          scheduled_for: string
+          target_action: string
+          target_value: Json
+        }
+        Update: {
+          cancel_reason?: string | null
+          canceled_at?: string | null
+          canceled_by?: string | null
+          created_at?: string
+          executed_at?: string | null
+          execution_error?: string | null
+          execution_result?: string | null
+          feature_id?: string
+          id?: string
+          scheduled_by?: string
+          scheduled_for?: string
+          target_action?: string
+          target_value?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scheduled_flag_activations_feature_id_fkey"
+            columns: ["feature_id"]
+            isOneToOne: false
+            referencedRelation: "features"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       scoring_audit_log: {
         Row: {
@@ -10113,6 +10328,41 @@ export type Database = {
         }
         Relationships: []
       }
+      user_feature_opt_ins: {
+        Row: {
+          feature_id: string
+          id: string
+          opted_in: boolean
+          opted_in_at: string
+          opted_out_at: string | null
+          user_id: string
+        }
+        Insert: {
+          feature_id: string
+          id?: string
+          opted_in?: boolean
+          opted_in_at?: string
+          opted_out_at?: string | null
+          user_id: string
+        }
+        Update: {
+          feature_id?: string
+          id?: string
+          opted_in?: boolean
+          opted_in_at?: string
+          opted_out_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_feature_opt_ins_feature_id_fkey"
+            columns: ["feature_id"]
+            isOneToOne: false
+            referencedRelation: "features"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_interaction_cache: {
         Row: {
           evaluated_at: string | null
@@ -11794,7 +12044,6 @@ export const Constants = {
     },
   },
 } as const
-
 
 // ════════════════════════════════════════════════════════════════════════
 //  LEGACY ALIASES — manually maintained

@@ -1,9 +1,16 @@
 // Prompt #90 Phase 2: Feature gating.
 // Pure `evaluateFeatureAccess` + DB-backed wrapper.
+//
+// Prompt #93 Phase 2.4: `userHasFeatureAccess` added as the single call
+// consumers should make. It routes through the flag evaluation engine so
+// kill switch, launch phase, and rollout strategy are all honored.
+// Existing exports (`evaluateFeatureAccess`, `loadFeatures`, etc.) remain
+// for Prompt #90 callers that don't need the full engine.
 
 import type { FeatureRow, GateBehavior, TierId, TierLevel } from '@/types/pricing';
 import { tierIdToLevel } from '@/types/pricing';
 import type { PricingSupabaseClient } from './supabase-types';
+import { evaluateFlagCached } from '@/lib/flags/cache';
 
 export interface FeatureAccessResult {
   hasAccess: boolean;
@@ -54,4 +61,29 @@ export async function loadFeatures(client: PricingSupabaseClient): Promise<Featu
 
 export function clearFeaturesCache(): void {
   cachedFeatures = null;
+}
+
+// ----- Prompt #93: full-engine wrapper --------------------------------------
+
+export interface UserFeatureAccess {
+  hasAccess: boolean;
+  gateBehavior: GateBehavior;
+  requiredTierLevel: TierLevel;
+  reason: string;
+}
+
+/** Route a feature access check through the full flag evaluation engine.
+ *  Respects kill switch, launch phase status, rollout strategy, tier gating,
+ *  family-tier and GeneX360 requirements. Anonymous users pass userId=null. */
+export async function userHasFeatureAccess(
+  userId: string | null,
+  featureId: string,
+): Promise<UserFeatureAccess> {
+  const result = await evaluateFlagCached(userId, featureId);
+  return {
+    hasAccess: result.enabled,
+    gateBehavior: result.gateBehavior,
+    requiredTierLevel: (result.metadata?.requiredTier ?? 0) as TierLevel,
+    reason: result.reason,
+  };
 }
