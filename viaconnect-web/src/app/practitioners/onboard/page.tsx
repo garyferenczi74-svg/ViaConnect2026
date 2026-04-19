@@ -8,7 +8,7 @@
 // onboarding API route in a follow-up; this page is the entry surface so
 // the email link in /admin/cohorts has a destination that fails closed.
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
@@ -37,6 +37,26 @@ interface OnboardingContext {
 }
 
 export default function PractitionerOnboardPage() {
+  return (
+    <Suspense fallback={<PageLoader />}>
+      <PractitionerOnboardInner />
+    </Suspense>
+  );
+}
+
+function PageLoader() {
+  return (
+    <main className="min-h-screen bg-[#0E1A30] text-white">
+      <section className="bg-[#0B1424]">
+        <div className="mx-auto max-w-3xl px-6 py-12 md:px-10 md:py-16">
+          <CenteredLoader />
+        </div>
+      </section>
+    </main>
+  );
+}
+
+function PractitionerOnboardInner() {
   const params = useSearchParams();
   const token = params.get('token') ?? '';
 

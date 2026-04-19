@@ -7,7 +7,7 @@
 // sign in / sign up) before activating; the page links to /login with
 // redirectTo preserving the token.
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
@@ -39,6 +39,26 @@ interface InvitationContext {
 }
 
 export default function PatientInvitedPage() {
+  return (
+    <Suspense fallback={<PageLoader />}>
+      <PatientInvitedInner />
+    </Suspense>
+  );
+}
+
+function PageLoader() {
+  return (
+    <main className="min-h-screen bg-[#0E1A30] text-white">
+      <section className="bg-[#0B1424]">
+        <div className="mx-auto max-w-3xl px-6 py-12 md:px-10 md:py-16">
+          <CenteredLoader />
+        </div>
+      </section>
+    </main>
+  );
+}
+
+function PatientInvitedInner() {
   const params = useSearchParams();
   const token = params.get('token') ?? '';
 
