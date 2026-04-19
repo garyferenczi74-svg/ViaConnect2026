@@ -49,39 +49,19 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const sb = supabase as any;
   const assignedFrom = parsed.data.include_behavior ? 'caq_refined_with_behavior' : 'caq_initial';
 
-  const { data: existingPrimary } = await sb
-    .from('customer_archetypes')
-    .select('id, archetype_id')
-    .eq('user_id', parsed.data.user_id)
-    .eq('is_primary', true)
-    .maybeSingle();
+  const { data: rpcData, error: rpcError } = await sb.rpc('assign_primary_archetype', {
+    p_user_id: parsed.data.user_id,
+    p_archetype_id: result.primary.archetype_id,
+    p_confidence_score: result.confidence,
+    p_assigned_from: assignedFrom,
+    p_signal_payload: result.signal_payload,
+  });
 
-  if (existingPrimary && existingPrimary.archetype_id === result.primary.archetype_id) {
-    await sb
-      .from('customer_archetypes')
-      .update({
-        confidence_score: result.confidence,
-        signal_payload: result.signal_payload,
-        assigned_from: assignedFrom,
-        assigned_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', existingPrimary.id);
-  } else {
-    if (existingPrimary) {
-      await sb
-        .from('customer_archetypes')
-        .update({ is_primary: false, updated_at: new Date().toISOString() })
-        .eq('id', existingPrimary.id);
-    }
-    await sb.from('customer_archetypes').insert({
-      user_id: parsed.data.user_id,
-      archetype_id: result.primary.archetype_id,
-      confidence_score: result.confidence,
-      assigned_from: assignedFrom,
-      signal_payload: result.signal_payload,
-      is_primary: true,
-    });
+  if (rpcError) {
+    return NextResponse.json(
+      { error: 'Persist failed', details: rpcError.message },
+      { status: 500 },
+    );
   }
 
   return NextResponse.json({
@@ -90,5 +70,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     secondary: result.secondary,
     confidence: result.confidence,
     assigned_from: assignedFrom,
+    customer_archetype_id: rpcData ?? null,
   });
 }

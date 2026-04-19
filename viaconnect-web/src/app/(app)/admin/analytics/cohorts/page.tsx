@@ -243,6 +243,7 @@ function RetentionView({ curve }: { curve: RetentionCurve }) {
         <Stat label="M6"  value={fmtPct(curve.checkpoints.month_6)} />
         <Stat label="M12" value={fmtPct(curve.checkpoints.month_12)} />
       </section>
+      <p className="md:hidden text-xs text-gray-400 mb-2">Scroll horizontally to see all months.</p>
       <div className="overflow-x-auto rounded-xl border border-white/10 bg-white/[0.03]">
         <table className="w-full text-sm">
           <thead className="text-xs text-gray-400">
@@ -283,6 +284,7 @@ function RevenueView({ curve }: { curve: RevenueCurve }) {
         <Stat label="Cumulative revenue per customer (M12)" value={fmtUsd(curve.cumulative_revenue_per_customer_by_month[12])} />
         <Stat label="Cumulative contribution per customer (M12)" value={fmtUsd(curve.cumulative_contribution_margin_per_customer_by_month[12])} />
       </section>
+      <p className="md:hidden text-xs text-gray-400 mb-2">Scroll horizontally to see all months.</p>
       <div className="overflow-x-auto rounded-xl border border-white/10 bg-white/[0.03]">
         <table className="w-full text-sm">
           <thead className="text-xs text-gray-400">
@@ -340,6 +342,7 @@ function CompareView({ result }: { result: ComparisonResult }) {
           </div>
         ))}
       </section>
+      <p className="md:hidden text-xs text-gray-400 mb-2">Scroll horizontally to see all months.</p>
       <div className="overflow-x-auto rounded-xl border border-white/10 bg-white/[0.03]">
         <table className="w-full text-sm">
           <thead className="text-xs text-gray-400">

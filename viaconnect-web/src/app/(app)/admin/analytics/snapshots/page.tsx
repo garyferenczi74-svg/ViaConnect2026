@@ -129,6 +129,8 @@ export default function SnapshotsPage() {
       )}
 
       {!loading && rows.length > 0 && (
+        <>
+        <p className="md:hidden text-xs text-gray-400 mb-2">Scroll horizontally to see all metrics.</p>
         <div className="overflow-x-auto rounded-xl border border-white/10 bg-white/[0.03]">
           <table className="w-full text-sm">
             <thead className="text-xs text-gray-400">
@@ -178,6 +180,7 @@ export default function SnapshotsPage() {
             </tbody>
           </table>
         </div>
+        </>
       )}
     </div>
   );

@@ -148,9 +148,23 @@ describe('evaluateAlerts', () => {
     expect(evaluateAlerts(snap())).toEqual([]);
   });
 
-  it('fires LTV:CAC alert when ratio drops below 1', () => {
+  it('fires LTV:CAC critical alert when ratio drops below 1', () => {
     const a = evaluateAlerts(snap({ ltv_cac_ratio_24mo: 0.7 }));
-    expect(a.find((x) => x.alert_type === 'ltv_cac_below_threshold')).toBeTruthy();
+    const alert = a.find((x) => x.alert_type === 'ltv_cac_below_threshold');
+    expect(alert).toBeTruthy();
+    expect(alert!.severity).toBe('critical');
+  });
+
+  it('fires LTV:CAC warning alert when ratio is between 1.0 and 3.0', () => {
+    const a = evaluateAlerts(snap({ ltv_cac_ratio_24mo: 2.5 }));
+    const alert = a.find((x) => x.alert_type === 'ltv_cac_below_threshold');
+    expect(alert).toBeTruthy();
+    expect(alert!.severity).toBe('warning');
+  });
+
+  it('does NOT fire LTV:CAC alert when ratio is at or above 3.0', () => {
+    const a = evaluateAlerts(snap({ ltv_cac_ratio_24mo: 3.5 }));
+    expect(a.find((x) => x.alert_type === 'ltv_cac_below_threshold')).toBeFalsy();
   });
 
   it('fires payback alert when payback exceeds the threshold', () => {

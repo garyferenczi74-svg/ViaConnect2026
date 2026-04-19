@@ -184,7 +184,7 @@ export const ALERT_THRESHOLDS = {
   NRR_MIN_PERCENT: 100,             // NRR below 100 means net contraction
   MONTHLY_CHURN_MAX_PERCENT: 5,     // monthly churn above triggers alert
   CONTRIBUTION_MARGIN_MIN_PERCENT: 50, // margin below triggers alert
-  CAC_MAX_CENTS: 200_00,            // > $200 CAC triggers alert
+  CAC_MAX_CENTS: 20000,             // > $200 CAC triggers alert (cents)
 } as const;
 
 export interface Alert {

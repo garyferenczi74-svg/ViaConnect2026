@@ -174,7 +174,7 @@ export default function BoardPackPage() {
             </Section>
 
             <Section title="Twelve-month trend">
-              <table className="w-full text-xs border border-gray-200">
+              <table className="w-full text-xs border border-gray-200 print:text-[10px] print:break-inside-avoid">
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="text-left px-2 py-1.5">Month</th>

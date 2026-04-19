@@ -34,7 +34,7 @@ const ALERT_THRESHOLDS = {
   NRR_MIN_PERCENT: 100,
   MONTHLY_CHURN_MAX_PERCENT: 5,
   CONTRIBUTION_MARGIN_MIN_PERCENT: 50,
-  CAC_MAX_CENTS: 200_00,
+  CAC_MAX_CENTS: 20000, // $200 expressed in cents
 };
 
 function admin(): SupabaseClient {
@@ -133,12 +133,12 @@ async function aggregateOverall(db: SupabaseClient, monthIso: string): Promise<S
   const monthEndIso = nextMonthIso(monthIso);
 
   const [
-    { data: orders },
-    { data: memberships },
-    { data: genexRows },
-    { data: spend },
-    { data: newCustomers },
-    { data: cohortRows },
+    ordersRes,
+    membershipsRes,
+    genexRes,
+    spendRes,
+    newCustomersRes,
+    cohortRes,
   ] = await Promise.all([
     db.from('shop_orders')
       .select('user_id, total_cents, shipping_cost_cents, payment_processing_cents, cogs_cents, contribution_margin_cents, created_at')
@@ -164,39 +164,69 @@ async function aggregateOverall(db: SupabaseClient, monthIso: string): Promise<S
       .eq('activity_month', monthIso),
   ]);
 
-  const orderRows = (orders ?? []) as Array<{ total_cents: number | null; shipping_cost_cents: number | null; payment_processing_cents: number | null; cogs_cents: number | null; contribution_margin_cents: number | null }>;
+  // Surface query failures so a silent fetch error does not produce a
+  // healthy-looking but empty snapshot. We log but do not throw, so a
+  // partial run still writes whatever did succeed (and the missing
+  // sections show up as zeros for the founder to investigate).
+  for (const [name, res] of Object.entries({
+    shop_orders: ordersRes,
+    memberships: membershipsRes,
+    genex360_purchases: genexRes,
+    marketing_spend: spendRes,
+    customer_acquisition_attribution: newCustomersRes,
+    cohort_customer_monthly: cohortRes,
+  }) as Array<[string, { error: { message?: string } | null }]>) {
+    if (res.error) {
+      console.warn(`[snapshot-tick] ${name} query failed:`, res.error.message);
+    }
+  }
+
+  const orderRows = (ordersRes.data ?? []) as Array<{ total_cents: number | null; shipping_cost_cents: number | null; payment_processing_cents: number | null; cogs_cents: number | null; contribution_margin_cents: number | null }>;
   const totalRevenue = orderRows.reduce((s, r) => s + (r.total_cents ?? 0), 0);
   const cogs         = orderRows.reduce((s, r) => s + (r.cogs_cents ?? 0), 0);
   const shipping     = orderRows.reduce((s, r) => s + (r.shipping_cost_cents ?? 0), 0);
   const payment      = orderRows.reduce((s, r) => s + (r.payment_processing_cents ?? 0), 0);
+  // shop_orders is the supplement product line at launch; this equals
+  // totalRevenue today. When non-supplement SKUs ship, isolate by
+  // joining product_catalog.category and recomputing here.
   const supplementRevenue = totalRevenue;
 
-  const m = (memberships ?? []) as Array<{ tier_id: string | null; status: string | null; monthly_price_cents: number | null; started_at: string | null; canceled_at: string | null }>;
+  const m = (membershipsRes.data ?? []) as Array<{ tier_id: string | null; status: string | null; monthly_price_cents: number | null; started_at: string | null; canceled_at: string | null }>;
   const activeMemberships = m.filter((row) => row.status === 'active' && (!row.canceled_at || row.canceled_at >= monthEndIso));
   const subscriptionRevenue = activeMemberships.reduce((s, r) => s + (r.monthly_price_cents ?? 0), 0);
   const mrr = subscriptionRevenue;
-  const activeMembershipCount = activeMemberships.length;
 
-  const g = (genexRows ?? []) as Array<{ price_cents: number | null }>;
+  const g = (genexRes.data ?? []) as Array<{ price_cents: number | null }>;
   const genexRevenue = g.reduce((s, r) => s + (r.price_cents ?? 0), 0);
 
-  const spendRows = (spend ?? []) as Array<{ amount_cents: number }>;
+  const spendRows = (spendRes.data ?? []) as Array<{ amount_cents: number }>;
   const marketingSpend = spendRows.reduce((s, r) => s + (r.amount_cents ?? 0), 0);
 
-  const newCount = ((newCustomers ?? []) as unknown[]).length;
+  const newCount = ((newCustomersRes.data ?? []) as unknown[]).length;
   const blendedCac = newCount > 0 ? Math.round(marketingSpend / newCount) : null;
 
-  // Churned this month: rows in cohort_customer_monthly with was_active_strict=false who were active last month.
-  const c = (cohortRows ?? []) as Array<{ user_id: string; was_active_strict: boolean }>;
+  // Churned this month: users active in the previous month per
+  // cohort_customer_monthly who are no longer active this month.
+  // The materialized view is refreshed at 02:14 UTC daily; this tick
+  // runs at 06:00 UTC on the 1st of each month, so the data is
+  // always at most ~4 hours stale relative to the activity_month.
+  const c = (cohortRes.data ?? []) as Array<{ user_id: string; was_active_strict: boolean }>;
   const activeNow = c.filter((r) => r.was_active_strict).length;
 
+  if (c.length === 0) {
+    console.warn(`[snapshot-tick] cohort_customer_monthly has no rows for ${monthIso}; churn metrics will be null. Verify the MV refresh ran.`);
+  }
+
   const lastMonthIso = previousMonthIso(new Date(`${monthIso}T12:00:00.000Z`));
-  const { data: lastMonthCohort } = await db
+  const lastMonthCohortRes = await db
     .from('cohort_customer_monthly')
     .select('user_id, was_active_strict')
     .eq('activity_month', lastMonthIso);
+  if (lastMonthCohortRes.error) {
+    console.warn('[snapshot-tick] last-month cohort query failed:', lastMonthCohortRes.error.message);
+  }
   const lastActiveSet = new Set(
-    ((lastMonthCohort ?? []) as Array<{ user_id: string; was_active_strict: boolean }>)
+    ((lastMonthCohortRes.data ?? []) as Array<{ user_id: string; was_active_strict: boolean }>)
       .filter((r) => r.was_active_strict)
       .map((r) => r.user_id),
   );
@@ -290,47 +320,52 @@ function evaluateAlerts(s: SnapshotRow): AlertRow[] {
   if (s.ltv_cac_ratio_24mo != null && s.ltv_cac_ratio_24mo < ALERT_THRESHOLDS.LTV_CAC_MIN) {
     alerts.push({ ...base, alert_type: 'ltv_cac_below_threshold', severity: 'critical',
       threshold_value: ALERT_THRESHOLDS.LTV_CAC_MIN, current_value: s.ltv_cac_ratio_24mo,
-      message: `${where}: 24-mo LTV:CAC is ${s.ltv_cac_ratio_24mo.toFixed(2)}x; below ${ALERT_THRESHOLDS.LTV_CAC_MIN}x.`,
-      raw_payload: {} });
+      message: `${where}: 24-mo LTV:CAC is ${s.ltv_cac_ratio_24mo.toFixed(2)}x; below ${ALERT_THRESHOLDS.LTV_CAC_MIN}x. Acquisition is unprofitable.`,
+      raw_payload: { ltv_24mo_cents: s.ltv_24mo_cents, blended_cac_cents: s.blended_cac_cents } });
+  } else if (s.ltv_cac_ratio_24mo != null && s.ltv_cac_ratio_24mo < ALERT_THRESHOLDS.LTV_CAC_WARNING) {
+    alerts.push({ ...base, alert_type: 'ltv_cac_below_threshold', severity: 'warning',
+      threshold_value: ALERT_THRESHOLDS.LTV_CAC_WARNING, current_value: s.ltv_cac_ratio_24mo,
+      message: `${where}: 24-mo LTV:CAC is ${s.ltv_cac_ratio_24mo.toFixed(2)}x; below the healthy ${ALERT_THRESHOLDS.LTV_CAC_WARNING}x band.`,
+      raw_payload: { ltv_24mo_cents: s.ltv_24mo_cents, blended_cac_cents: s.blended_cac_cents } });
   }
   if (s.payback_period_months != null && s.payback_period_months > ALERT_THRESHOLDS.PAYBACK_MAX_MONTHS) {
     alerts.push({ ...base, alert_type: 'payback_above_threshold',
       severity: s.payback_period_months > ALERT_THRESHOLDS.PAYBACK_MAX_MONTHS * 1.5 ? 'critical' : 'warning',
       threshold_value: ALERT_THRESHOLDS.PAYBACK_MAX_MONTHS, current_value: s.payback_period_months,
       message: `${where}: payback is ${s.payback_period_months.toFixed(1)} mo; above ${ALERT_THRESHOLDS.PAYBACK_MAX_MONTHS}.`,
-      raw_payload: {} });
+      raw_payload: { blended_cac_cents: s.blended_cac_cents, contribution_margin_cents: s.contribution_margin_cents, new_customers_count: s.new_customers_count } });
   }
   if (s.gross_revenue_retention_percent != null && s.gross_revenue_retention_percent < ALERT_THRESHOLDS.GRR_MIN_PERCENT) {
     alerts.push({ ...base, alert_type: 'grr_below_threshold', severity: 'critical',
       threshold_value: ALERT_THRESHOLDS.GRR_MIN_PERCENT, current_value: s.gross_revenue_retention_percent,
       message: `${where}: GRR is ${s.gross_revenue_retention_percent.toFixed(1)}%.`,
-      raw_payload: {} });
+      raw_payload: { churned_customers_count: s.churned_customers_count, active_customers_count: s.active_customers_count, monthly_churn_rate_percent: s.monthly_churn_rate_percent } });
   }
   if (s.net_revenue_retention_percent != null && s.net_revenue_retention_percent < ALERT_THRESHOLDS.NRR_MIN_PERCENT) {
     alerts.push({ ...base, alert_type: 'nrr_below_threshold',
       severity: s.net_revenue_retention_percent < 90 ? 'critical' : 'warning',
       threshold_value: ALERT_THRESHOLDS.NRR_MIN_PERCENT, current_value: s.net_revenue_retention_percent,
       message: `${where}: NRR is ${s.net_revenue_retention_percent.toFixed(1)}%.`,
-      raw_payload: {} });
+      raw_payload: { gross_revenue_retention_percent: s.gross_revenue_retention_percent, mrr_cents: s.mrr_cents } });
   }
   if (s.monthly_churn_rate_percent != null && s.monthly_churn_rate_percent > ALERT_THRESHOLDS.MONTHLY_CHURN_MAX_PERCENT) {
     alerts.push({ ...base, alert_type: 'monthly_churn_above_threshold',
       severity: s.monthly_churn_rate_percent > 8 ? 'critical' : 'warning',
       threshold_value: ALERT_THRESHOLDS.MONTHLY_CHURN_MAX_PERCENT, current_value: s.monthly_churn_rate_percent,
       message: `${where}: monthly churn is ${s.monthly_churn_rate_percent.toFixed(2)}%.`,
-      raw_payload: {} });
+      raw_payload: { churned_customers_count: s.churned_customers_count, active_customers_count: s.active_customers_count, annual_churn_rate_percent: s.annual_churn_rate_percent } });
   }
   if (s.contribution_margin_percent != null && s.contribution_margin_percent < ALERT_THRESHOLDS.CONTRIBUTION_MARGIN_MIN_PERCENT) {
     alerts.push({ ...base, alert_type: 'contribution_margin_below_threshold', severity: 'warning',
       threshold_value: ALERT_THRESHOLDS.CONTRIBUTION_MARGIN_MIN_PERCENT, current_value: s.contribution_margin_percent,
       message: `${where}: margin is ${s.contribution_margin_percent.toFixed(1)}%.`,
-      raw_payload: {} });
+      raw_payload: { cogs_cents: s.cogs_cents, shipping_cost_cents: s.shipping_cost_cents, payment_processing_cents: s.payment_processing_cents, helix_redemption_cost_cents: s.helix_redemption_cost_cents } });
   }
   if (s.blended_cac_cents != null && s.blended_cac_cents > ALERT_THRESHOLDS.CAC_MAX_CENTS) {
     alerts.push({ ...base, alert_type: 'cac_above_threshold', severity: 'warning',
       threshold_value: ALERT_THRESHOLDS.CAC_MAX_CENTS, current_value: s.blended_cac_cents,
       message: `${where}: CAC is $${(s.blended_cac_cents / 100).toFixed(0)}.`,
-      raw_payload: {} });
+      raw_payload: { marketing_spend_cents: s.marketing_spend_cents, new_customers_count: s.new_customers_count } });
   }
   return alerts;
 }

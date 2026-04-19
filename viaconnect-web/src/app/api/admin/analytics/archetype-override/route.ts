@@ -42,7 +42,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   const { data: existingPrimary } = await sb
     .from('customer_archetypes')
-    .select('id, archetype_id, signal_payload')
+    .select('id, archetype_id')
     .eq('user_id', parsed.data.user_id)
     .eq('is_primary', true)
     .maybeSingle();
@@ -55,35 +55,26 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     previous_archetype_id: existingPrimary?.archetype_id ?? null,
   };
 
-  if (existingPrimary) {
-    await sb
-      .from('customer_archetypes')
-      .update({ is_primary: false, updated_at: new Date().toISOString() })
-      .eq('id', existingPrimary.id);
-  }
+  const { data: rpcData, error: rpcError } = await sb.rpc('assign_primary_archetype', {
+    p_user_id: parsed.data.user_id,
+    p_archetype_id: parsed.data.archetype_id,
+    p_confidence_score: 1.0,
+    p_assigned_from: 'manual_admin_override',
+    p_signal_payload: overridePayload,
+  });
 
-  const { data: inserted, error: insertError } = await sb
-    .from('customer_archetypes')
-    .insert({
-      user_id: parsed.data.user_id,
-      archetype_id: parsed.data.archetype_id,
-      confidence_score: 1.0,
-      assigned_from: 'manual_admin_override',
-      signal_payload: overridePayload,
-      is_primary: true,
-    })
-    .select('id')
-    .maybeSingle();
-
-  if (insertError) {
-    return NextResponse.json({ error: 'Override insert failed', details: insertError.message }, { status: 500 });
+  if (rpcError) {
+    return NextResponse.json(
+      { error: 'Override failed', details: rpcError.message },
+      { status: 500 },
+    );
   }
 
   return NextResponse.json({
     user_id: parsed.data.user_id,
     archetype_id: parsed.data.archetype_id,
     assigned_from: 'manual_admin_override',
-    customer_archetype_id: inserted?.id ?? null,
+    customer_archetype_id: rpcData ?? null,
     previous_archetype_id: existingPrimary?.archetype_id ?? null,
   });
 }
