@@ -45,6 +45,7 @@ import {
   CreditCard,
   Sparkles,
   HeartPulse,
+  TrendingUp,
 } from "lucide-react";
 
 // ─── Naturopath-extras section, surfaced inside the practitioner sidebar
@@ -154,6 +155,7 @@ const ADMIN: PortalConfig = {
     { href: "/admin/jeffery", label: "Jeffery™ Command Center", icon: Cpu },
     { href: "/admin", label: "Admin Dashboard", icon: LayoutDashboard },
     { href: "/admin/board", label: "Board Metrics", icon: BarChart3 },
+    { href: "/admin/analytics", label: "Unit Economics", icon: TrendingUp },
     { href: "/admin/skus", label: "SKU Portfolio", icon: Pill },
     { href: "/admin/alerts", label: "Alerts & Risks", icon: AlertTriangle },
     { href: "/admin/inventory", label: "Inventory", icon: ClipboardList },
