@@ -7,6 +7,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import { ViaConnectLogo, DNAHelixIcon } from "@/components/ui/ViaConnectLogo";
+import { isNaturopathLikeCredential } from "@/lib/practitioner/taxonomy";
+import type { LucideIcon } from "lucide-react";
 import {
   LayoutDashboard,
   Dna,
@@ -41,7 +43,25 @@ import {
   Target,
   GraduationCap,
   CreditCard,
+  Sparkles,
+  HeartPulse,
 } from "lucide-react";
+
+// ─── Naturopath-extras section, surfaced inside the practitioner sidebar
+//    when the practitioner's credential_type is nd, dc, or lac.
+//    Phase 6 of Prompt #91. The route content lives at
+//    /practitioner/naturopath/* (foundation depth; expands post launch).
+interface NaturopathExtraItem {
+  href: string;
+  label: string;
+  icon: LucideIcon;
+}
+const NATUROPATH_EXTRAS: NaturopathExtraItem[] = [
+  { href: "/practitioner/naturopath/holistic-advisor",  label: "AI Holistic Advisor", icon: Sparkles },
+  { href: "/practitioner/naturopath/botanicals",        label: "Botanicals",          icon: Leaf },
+  { href: "/practitioner/naturopath/constitutional",    label: "Constitutional",      icon: HeartPulse },
+  { href: "/practitioner/naturopath/natural-protocols", label: "Natural Protocols",   icon: ClipboardList },
+];
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -183,6 +203,31 @@ export function Sidebar({
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  // Phase 6: fetch the practitioner's credential_type to decide whether the
+  // naturopath extras (AI Holistic Advisor, Botanicals, Constitutional,
+  // Natural Protocols) render in this sidebar.
+  const [showNaturopathExtras, setShowNaturopathExtras] = useState(false);
+  useEffect(() => {
+    if (role !== "practitioner") return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const supabase = createClient();
+        const { data } = await (supabase as any)
+          .from("practitioners")
+          .select("credential_type")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        if (cancelled) return;
+        const cred = (data?.credential_type as string | undefined) ?? "";
+        setShowNaturopathExtras(isNaturopathLikeCredential(cred));
+      } catch {
+        // table may not exist in older environments; silently leave hidden
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [role, user.id]);
+
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored === "true") {
@@ -307,6 +352,45 @@ export function Sidebar({
             </Link>
           );
         })}
+
+        {/* Phase 6: naturopath extras for nd, dc, lac credentials */}
+        {showNaturopathExtras && (
+          <div className="mt-3 pt-3 border-t border-white/[0.06]">
+            {!collapsed && (
+              <p className="px-3 pb-2 text-[10px] uppercase tracking-[0.18em] text-white/40">
+                Naturopathic Tools
+              </p>
+            )}
+            {NATUROPATH_EXTRAS.map((item) => {
+              const isActive =
+                pathname === item.href ||
+                pathname.startsWith(item.href + "/");
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  title={collapsed ? item.label : undefined}
+                  className={`relative flex items-center gap-3 rounded-lg text-[13px] font-medium transition-colors
+                    ${collapsed ? "justify-center px-0 py-2.5 mx-1" : "px-3 py-2"}
+                    ${isActive
+                      ? "bg-emerald-500/10 text-emerald-300"
+                      : "text-gray-400 hover:text-white hover:bg-white/[0.04]"}`}
+                >
+                  {isActive && (
+                    <span
+                      aria-hidden
+                      className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] rounded-r-full bg-emerald-400"
+                      style={{ height: 20 }}
+                    />
+                  )}
+                  <Icon className="w-[18px] h-[18px] shrink-0" strokeWidth={1.5} />
+                  {!collapsed && <span>{item.label}</span>}
+                </Link>
+              );
+            })}
+          </div>
+        )}
       </nav>
 
       {/* ── Bottom: User section ── */}
