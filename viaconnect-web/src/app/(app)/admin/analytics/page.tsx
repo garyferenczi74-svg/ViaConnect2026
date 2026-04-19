@@ -13,6 +13,8 @@ import {
   History,
   Wand2,
   ShieldCheck,
+  FileText,
+  AlertTriangle,
 } from 'lucide-react';
 
 interface Tile {
@@ -30,6 +32,8 @@ const TILES: Tile[] = [
   { href: '/admin/analytics/cohorts',      title: 'Cohorts',           blurb: 'Retention + revenue + cohort compare.',    Icon: Users,           group: 'reports' },
   { href: '/admin/analytics/archetypes',   title: 'Archetypes',        blurb: 'Distribution + per-archetype LTV/CAC.',    Icon: PieChart,        group: 'reports' },
   { href: '/admin/analytics/snapshots',    title: 'Snapshots',         blurb: 'Historical monthly snapshot trends.',      Icon: History,         group: 'reports' },
+  { href: '/admin/analytics/board-pack',   title: 'Board pack',        blurb: 'Print-ready monthly investor packet.',     Icon: FileText,        group: 'reports' },
+  { href: '/admin/analytics/alerts',       title: 'Alerts',            blurb: 'Threshold breaches; acknowledge each.',    Icon: AlertTriangle,   group: 'reports' },
   { href: '/admin/analytics/marketing-spend', title: 'Marketing spend', blurb: 'CFO entry of monthly channel spend.',     Icon: CircleDollarSign, group: 'tools' },
   { href: '/admin/analytics/tools/classify-user',     title: 'Classify user',     blurb: 'Re-run archetype classification.', Icon: Wand2,        group: 'tools' },
   { href: '/admin/analytics/tools/archetype-override', title: 'Override archetype', blurb: 'Manual primary archetype set.',   Icon: ShieldCheck,  group: 'tools' },
