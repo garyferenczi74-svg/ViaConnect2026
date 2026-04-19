@@ -338,6 +338,39 @@ export type Database = {
         }
         Relationships: []
       }
+      approver_assignments: {
+        Row: {
+          approver_role: string
+          assigned_at: string
+          assigned_by: string | null
+          id: string
+          is_active: boolean | null
+          unassigned_at: string | null
+          unassigned_by: string | null
+          user_id: string
+        }
+        Insert: {
+          approver_role: string
+          assigned_at?: string
+          assigned_by?: string | null
+          id?: string
+          is_active?: boolean | null
+          unassigned_at?: string | null
+          unassigned_by?: string | null
+          user_id: string
+        }
+        Update: {
+          approver_role?: string
+          assigned_at?: string
+          assigned_by?: string | null
+          id?: string
+          is_active?: boolean | null
+          unassigned_at?: string | null
+          unassigned_by?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       assessment_results: {
         Row: {
           created_at: string | null
@@ -2129,6 +2162,141 @@ export type Database = {
         }
         Relationships: []
       }
+      competitor_pricing: {
+        Row: {
+          billing_cycle: string | null
+          category: string
+          competitor_name: string
+          competitor_url: string | null
+          created_at: string
+          id: string
+          observed_at: string
+          observed_by_user_id: string | null
+          price_cents: number
+          product_description: string | null
+          product_name: string
+          source_notes: string | null
+          updated_at: string
+          viacura_comparable_domain_id: string | null
+        }
+        Insert: {
+          billing_cycle?: string | null
+          category: string
+          competitor_name: string
+          competitor_url?: string | null
+          created_at?: string
+          id?: string
+          observed_at: string
+          observed_by_user_id?: string | null
+          price_cents: number
+          product_description?: string | null
+          product_name: string
+          source_notes?: string | null
+          updated_at?: string
+          viacura_comparable_domain_id?: string | null
+        }
+        Update: {
+          billing_cycle?: string | null
+          category?: string
+          competitor_name?: string
+          competitor_url?: string | null
+          created_at?: string
+          id?: string
+          observed_at?: string
+          observed_by_user_id?: string | null
+          price_cents?: number
+          product_description?: string | null
+          product_name?: string
+          source_notes?: string | null
+          updated_at?: string
+          viacura_comparable_domain_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "competitor_pricing_viacura_comparable_domain_id_fkey"
+            columns: ["viacura_comparable_domain_id"]
+            isOneToOne: false
+            referencedRelation: "pricing_domains"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      customer_price_bindings: {
+        Row: {
+          authorized_by_proposal_id: string
+          binding_expires_at: string | null
+          bound_at: string
+          bound_value_cents: number | null
+          bound_value_percent: number | null
+          created_at: string
+          grandfathering_policy: string
+          id: string
+          practitioner_id: string | null
+          pricing_domain_id: string
+          status: string
+          superseded_by_binding_id: string | null
+          target_object_id: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          authorized_by_proposal_id: string
+          binding_expires_at?: string | null
+          bound_at?: string
+          bound_value_cents?: number | null
+          bound_value_percent?: number | null
+          created_at?: string
+          grandfathering_policy: string
+          id?: string
+          practitioner_id?: string | null
+          pricing_domain_id: string
+          status?: string
+          superseded_by_binding_id?: string | null
+          target_object_id: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          authorized_by_proposal_id?: string
+          binding_expires_at?: string | null
+          bound_at?: string
+          bound_value_cents?: number | null
+          bound_value_percent?: number | null
+          created_at?: string
+          grandfathering_policy?: string
+          id?: string
+          practitioner_id?: string | null
+          pricing_domain_id?: string
+          status?: string
+          superseded_by_binding_id?: string | null
+          target_object_id?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_price_bindings_authorized_by_proposal_id_fkey"
+            columns: ["authorized_by_proposal_id"]
+            isOneToOne: false
+            referencedRelation: "pricing_proposals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_price_bindings_pricing_domain_id_fkey"
+            columns: ["pricing_domain_id"]
+            isOneToOne: false
+            referencedRelation: "pricing_domains"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_price_bindings_superseded_by_binding_id_fkey"
+            columns: ["superseded_by_binding_id"]
+            isOneToOne: false
+            referencedRelation: "customer_price_bindings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       daily_checkins: {
         Row: {
           activity_allSubmitted_at: string | null
@@ -2449,6 +2617,63 @@ export type Database = {
           processing_completed_at?: string | null
           processing_started_at?: string | null
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      decision_rights_rules: {
+        Row: {
+          advisory_approvers: string[]
+          applies_to_categories: string[]
+          created_at: string
+          id: string
+          is_active: boolean
+          max_affected_customers: number | null
+          max_percent_change: number | null
+          min_affected_customers: number | null
+          min_percent_change: number | null
+          required_approvers: string[]
+          requires_board_approval: boolean
+          requires_board_notification: boolean
+          sort_order: number
+          target_decision_sla_hours: number | null
+          tier: string
+          updated_at: string
+        }
+        Insert: {
+          advisory_approvers?: string[]
+          applies_to_categories?: string[]
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          max_affected_customers?: number | null
+          max_percent_change?: number | null
+          min_affected_customers?: number | null
+          min_percent_change?: number | null
+          required_approvers: string[]
+          requires_board_approval?: boolean
+          requires_board_notification?: boolean
+          sort_order: number
+          target_decision_sla_hours?: number | null
+          tier: string
+          updated_at?: string
+        }
+        Update: {
+          advisory_approvers?: string[]
+          applies_to_categories?: string[]
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          max_affected_customers?: number | null
+          max_percent_change?: number | null
+          min_affected_customers?: number | null
+          min_percent_change?: number | null
+          required_approvers?: string[]
+          requires_board_approval?: boolean
+          requires_board_notification?: boolean
+          sort_order?: number
+          target_decision_sla_hours?: number | null
+          tier?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -3241,6 +3466,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      governance_configuration_log: {
+        Row: {
+          change_justification: string
+          change_type: string
+          changed_at: string
+          changed_by: string
+          id: string
+          new_state: Json | null
+          previous_state: Json | null
+          target_id: string
+          target_table: string
+        }
+        Insert: {
+          change_justification: string
+          change_type: string
+          changed_at?: string
+          changed_by: string
+          id?: string
+          new_state?: Json | null
+          previous_state?: Json | null
+          target_id: string
+          target_table: string
+        }
+        Update: {
+          change_justification?: string
+          change_type?: string
+          changed_at?: string
+          changed_by?: string
+          id?: string
+          new_state?: Json | null
+          previous_state?: Json | null
+          target_id?: string
+          target_table?: string
+        }
+        Relationships: []
       }
       health_metrics: {
         Row: {
@@ -6053,6 +6314,266 @@ export type Database = {
         }
         Relationships: []
       }
+      price_change_history: {
+        Row: {
+          applied_at: string
+          applied_by_user_id: string | null
+          change_action: string
+          created_at: string
+          id: string
+          new_value_cents: number | null
+          new_value_percent: number | null
+          previous_value_cents: number | null
+          previous_value_percent: number | null
+          pricing_domain_id: string
+          proposal_id: string
+          target_object_id: string
+        }
+        Insert: {
+          applied_at?: string
+          applied_by_user_id?: string | null
+          change_action: string
+          created_at?: string
+          id?: string
+          new_value_cents?: number | null
+          new_value_percent?: number | null
+          previous_value_cents?: number | null
+          previous_value_percent?: number | null
+          pricing_domain_id: string
+          proposal_id: string
+          target_object_id: string
+        }
+        Update: {
+          applied_at?: string
+          applied_by_user_id?: string | null
+          change_action?: string
+          created_at?: string
+          id?: string
+          new_value_cents?: number | null
+          new_value_percent?: number | null
+          previous_value_cents?: number | null
+          previous_value_percent?: number | null
+          pricing_domain_id?: string
+          proposal_id?: string
+          target_object_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "price_change_history_pricing_domain_id_fkey"
+            columns: ["pricing_domain_id"]
+            isOneToOne: false
+            referencedRelation: "pricing_domains"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "price_change_history_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: false
+            referencedRelation: "pricing_proposals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pricing_domains: {
+        Row: {
+          affected_customer_query_template: string | null
+          category: string
+          created_at: string
+          default_grandfathering_policy: string | null
+          description: string | null
+          display_name: string
+          id: string
+          is_active: boolean
+          pending_dependency: string | null
+          requires_grandfathering: boolean
+          sort_order: number
+          target_column: string
+          target_id_column: string
+          target_id_type: string
+          target_table: string
+        }
+        Insert: {
+          affected_customer_query_template?: string | null
+          category: string
+          created_at?: string
+          default_grandfathering_policy?: string | null
+          description?: string | null
+          display_name: string
+          id: string
+          is_active?: boolean
+          pending_dependency?: string | null
+          requires_grandfathering?: boolean
+          sort_order: number
+          target_column: string
+          target_id_column?: string
+          target_id_type?: string
+          target_table: string
+        }
+        Update: {
+          affected_customer_query_template?: string | null
+          category?: string
+          created_at?: string
+          default_grandfathering_policy?: string | null
+          description?: string | null
+          display_name?: string
+          id?: string
+          is_active?: boolean
+          pending_dependency?: string | null
+          requires_grandfathering?: boolean
+          sort_order?: number
+          target_column?: string
+          target_id_column?: string
+          target_id_type?: string
+          target_table?: string
+        }
+        Relationships: []
+      }
+      pricing_proposals: {
+        Row: {
+          activated_at: string | null
+          auto_classified_tier: string
+          change_type: string
+          competitive_analysis: string | null
+          current_value_cents: number | null
+          current_value_percent: number | null
+          emergency_justification: string | null
+          estimated_affected_customers: number | null
+          estimated_annual_revenue_impact_cents: number | null
+          expired_at: string | null
+          expires_at: string
+          grandfathering_override_justification: string | null
+          grandfathering_policy: string
+          id: string
+          impact_tier: string
+          initiated_at: string
+          initiated_by: string
+          is_emergency: boolean
+          percent_change: number | null
+          pricing_domain_id: string
+          projected_churn_change_percent: number | null
+          projected_ltv_cac_ratio_24mo_after: number | null
+          projected_ltv_cac_ratio_24mo_before: number | null
+          projected_ltv_change_percent: number | null
+          proposal_number: number
+          proposed_effective_date: string
+          proposed_value_cents: number | null
+          proposed_value_percent: number | null
+          rationale: string
+          raw_calculation_inputs: Json | null
+          risks_and_mitigations: string | null
+          rollback_justification: string | null
+          rolled_back_at: string | null
+          rolled_back_by: string | null
+          stakeholder_communication_plan: string | null
+          status: string
+          submitted_at: string | null
+          summary: string
+          target_object_ids: string[]
+          tier_override_justification: string | null
+          title: string
+          unit_economics_snapshot_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          activated_at?: string | null
+          auto_classified_tier: string
+          change_type: string
+          competitive_analysis?: string | null
+          current_value_cents?: number | null
+          current_value_percent?: number | null
+          emergency_justification?: string | null
+          estimated_affected_customers?: number | null
+          estimated_annual_revenue_impact_cents?: number | null
+          expired_at?: string | null
+          expires_at?: string
+          grandfathering_override_justification?: string | null
+          grandfathering_policy: string
+          id?: string
+          impact_tier: string
+          initiated_at?: string
+          initiated_by: string
+          is_emergency?: boolean
+          percent_change?: number | null
+          pricing_domain_id: string
+          projected_churn_change_percent?: number | null
+          projected_ltv_cac_ratio_24mo_after?: number | null
+          projected_ltv_cac_ratio_24mo_before?: number | null
+          projected_ltv_change_percent?: number | null
+          proposal_number?: number
+          proposed_effective_date: string
+          proposed_value_cents?: number | null
+          proposed_value_percent?: number | null
+          rationale: string
+          raw_calculation_inputs?: Json | null
+          risks_and_mitigations?: string | null
+          rollback_justification?: string | null
+          rolled_back_at?: string | null
+          rolled_back_by?: string | null
+          stakeholder_communication_plan?: string | null
+          status?: string
+          submitted_at?: string | null
+          summary: string
+          target_object_ids?: string[]
+          tier_override_justification?: string | null
+          title: string
+          unit_economics_snapshot_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          activated_at?: string | null
+          auto_classified_tier?: string
+          change_type?: string
+          competitive_analysis?: string | null
+          current_value_cents?: number | null
+          current_value_percent?: number | null
+          emergency_justification?: string | null
+          estimated_affected_customers?: number | null
+          estimated_annual_revenue_impact_cents?: number | null
+          expired_at?: string | null
+          expires_at?: string
+          grandfathering_override_justification?: string | null
+          grandfathering_policy?: string
+          id?: string
+          impact_tier?: string
+          initiated_at?: string
+          initiated_by?: string
+          is_emergency?: boolean
+          percent_change?: number | null
+          pricing_domain_id?: string
+          projected_churn_change_percent?: number | null
+          projected_ltv_cac_ratio_24mo_after?: number | null
+          projected_ltv_cac_ratio_24mo_before?: number | null
+          projected_ltv_change_percent?: number | null
+          proposal_number?: number
+          proposed_effective_date?: string
+          proposed_value_cents?: number | null
+          proposed_value_percent?: number | null
+          rationale?: string
+          raw_calculation_inputs?: Json | null
+          risks_and_mitigations?: string | null
+          rollback_justification?: string | null
+          rolled_back_at?: string | null
+          rolled_back_by?: string | null
+          stakeholder_communication_plan?: string | null
+          status?: string
+          submitted_at?: string | null
+          summary?: string
+          target_object_ids?: string[]
+          tier_override_justification?: string | null
+          title?: string
+          unit_economics_snapshot_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pricing_proposals_pricing_domain_id_fkey"
+            columns: ["pricing_domain_id"]
+            isOneToOne: false
+            referencedRelation: "pricing_domains"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pricing_tiers: {
         Row: {
           alerts: string
@@ -6428,6 +6949,119 @@ export type Database = {
           volume_lift?: string
         }
         Relationships: []
+      }
+      proposal_approvals: {
+        Row: {
+          advisory_comment: string | null
+          advisory_commented_at: string | null
+          approver_role: string
+          approver_user_id: string
+          created_at: string
+          decided_at: string | null
+          decision: string | null
+          decision_notes: string | null
+          id: string
+          is_advisory: boolean
+          is_required: boolean
+          notified_at: string | null
+          proposal_id: string
+          reminded_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          advisory_comment?: string | null
+          advisory_commented_at?: string | null
+          approver_role: string
+          approver_user_id: string
+          created_at?: string
+          decided_at?: string | null
+          decision?: string | null
+          decision_notes?: string | null
+          id?: string
+          is_advisory: boolean
+          is_required: boolean
+          notified_at?: string | null
+          proposal_id: string
+          reminded_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          advisory_comment?: string | null
+          advisory_commented_at?: string | null
+          approver_role?: string
+          approver_user_id?: string
+          created_at?: string
+          decided_at?: string | null
+          decision?: string | null
+          decision_notes?: string | null
+          id?: string
+          is_advisory?: boolean
+          is_required?: boolean
+          notified_at?: string | null
+          proposal_id?: string
+          reminded_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "proposal_approvals_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: false
+            referencedRelation: "pricing_proposals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      proposal_comments: {
+        Row: {
+          author_user_id: string
+          comment_body: string
+          comment_type: string
+          created_at: string
+          edited_at: string | null
+          id: string
+          is_deleted: boolean
+          proposal_id: string
+          reply_to_comment_id: string | null
+        }
+        Insert: {
+          author_user_id: string
+          comment_body: string
+          comment_type?: string
+          created_at?: string
+          edited_at?: string | null
+          id?: string
+          is_deleted?: boolean
+          proposal_id: string
+          reply_to_comment_id?: string | null
+        }
+        Update: {
+          author_user_id?: string
+          comment_body?: string
+          comment_type?: string
+          created_at?: string
+          edited_at?: string | null
+          id?: string
+          is_deleted?: boolean
+          proposal_id?: string
+          reply_to_comment_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "proposal_comments_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: false
+            referencedRelation: "pricing_proposals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proposal_comments_reply_to_comment_id_fkey"
+            columns: ["reply_to_comment_id"]
+            isOneToOne: false
+            referencedRelation: "proposal_comments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       protocol_ingredients: {
         Row: {
@@ -7362,6 +7996,7 @@ export type Database = {
           executed_at: string | null
           execution_error: string | null
           execution_result: string | null
+          execution_started_at: string | null
           feature_id: string
           id: string
           scheduled_by: string
@@ -7377,6 +8012,7 @@ export type Database = {
           executed_at?: string | null
           execution_error?: string | null
           execution_result?: string | null
+          execution_started_at?: string | null
           feature_id: string
           id?: string
           scheduled_by: string
@@ -7392,6 +8028,7 @@ export type Database = {
           executed_at?: string | null
           execution_error?: string | null
           execution_result?: string | null
+          execution_started_at?: string | null
           feature_id?: string
           id?: string
           scheduled_by?: string
@@ -11193,6 +11830,17 @@ export type Database = {
           index_scans: number
           index_size: string
           table_name: string
+        }[]
+      }
+      claim_pending_flag_activations: {
+        Args: { p_limit?: number }
+        Returns: {
+          feature_id: string
+          id: string
+          scheduled_by: string
+          scheduled_for: string
+          target_action: string
+          target_value: Json
         }[]
       }
       enrichment_queue: {
