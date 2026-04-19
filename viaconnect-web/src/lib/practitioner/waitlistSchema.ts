@@ -42,6 +42,7 @@ export const waitlistSubmissionSchema = z.object({
   practiceCity: z.string().max(100).optional(),
   practiceState: z.string().max(100).optional(),
   practicePostalCode: z.string().max(20).optional(),
+  practiceCountry: z.string().min(2).max(2).optional(),
 
   credentialType: credentialTypeSchema,
   credentialTypeOther: z.string().max(100).optional(),

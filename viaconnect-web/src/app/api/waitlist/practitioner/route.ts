@@ -71,6 +71,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       practice_city: validated.practiceCity ?? null,
       practice_state: validated.practiceState ?? null,
       practice_postal_code: validated.practicePostalCode ?? null,
+      practice_country: validated.practiceCountry ?? 'US',
       credential_type: validated.credentialType,
       credential_type_other: validated.credentialTypeOther ?? null,
       license_state: validated.licenseState ?? null,
@@ -113,13 +114,31 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 
-  // Best-effort enqueue of welcome email via the Supabase-only RPC.
+  // Welcome email is enqueued by an AFTER INSERT trigger on the waitlist
+  // table (see 20260418000040_practitioner_email_queue.sql), so the API
+  // route does not need to call the RPC explicitly. This keeps the public
+  // signup path free of any RPC grant requirement on anon callers.
+
+  // Best-effort fan-out to Jeffery's admin LiveFeed via agent_messages.
+  // Inserted directly because the canonical sendAgentMessage helper requires
+  // a service-role client and this route runs under the public anon session.
+  // RLS on agent_messages permits 'jeffery -> jeffery' system messages.
   try {
-    await (supabase as any).rpc('enqueue_practitioner_welcome_email', {
-      p_waitlist_id: data.id,
+    await (supabase as any).from('agent_messages').insert({
+      from_agent: 'jeffery',
+      to_agent: 'jeffery',
+      message_type: 'waitlist_submission_received',
+      user_id: null,
+      payload: {
+        waitlistId: data.id,
+        credentialType: validated.credentialType,
+        primaryClinicalFocus: validated.primaryClinicalFocus,
+        submissionType,
+      },
+      status: 'pending',
     });
   } catch (e) {
-    console.warn('[waitlist] welcome email enqueue failed (non-fatal)', e);
+    console.warn('[waitlist] agent_messages emit failed (non-fatal)', e);
   }
 
   return NextResponse.json({ success: true, waitlistId: data.id }, { status: 201 });

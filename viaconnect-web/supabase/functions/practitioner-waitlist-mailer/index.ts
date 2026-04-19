@@ -12,9 +12,22 @@
 
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
+import { SMTPClient } from 'https://deno.land/x/denomailer@1.6.0/mod.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_KEY  = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+
+// SMTP configuration. These are the same env vars Supabase Auth uses for its
+// transactional emails. Configure them in the Supabase dashboard under
+// Authentication > Email > SMTP Settings, OR set them as Edge Function
+// secrets via `supabase secrets set SMTP_HOST=...`. No third-party SaaS
+// provider is involved.
+const SMTP_HOST = Deno.env.get('SMTP_HOST') ?? '';
+const SMTP_PORT = Number(Deno.env.get('SMTP_PORT') ?? '587');
+const SMTP_USER = Deno.env.get('SMTP_USER') ?? '';
+const SMTP_PASS = Deno.env.get('SMTP_PASS') ?? '';
+const SMTP_FROM = Deno.env.get('SMTP_FROM') ?? 'no-reply@viacurawellness.com';
+const SMTP_FROM_NAME = Deno.env.get('SMTP_FROM_NAME') ?? 'ViaCura';
 
 function admin(): SupabaseClient {
   return createClient(SUPABASE_URL, SERVICE_KEY, {
@@ -104,31 +117,31 @@ async function sendViaSupabaseSmtp(params: {
   text: string;
   html: string;
 }): Promise<void> {
-  // Supabase Edge Functions do not yet expose a first-party SMTP send call,
-  // so we rely on the project's configured SMTP relay via the Auth admin
-  // generateLink + custom email template path for transactional sends. For
-  // the nurture sequence we instead invoke the built-in send-email RPC if
-  // the project ships one. To keep transport guarantees explicit, this stub
-  // posts to /auth/v1/admin/send-email which is wired to the project's
-  // configured SMTP server. Any future provider switch requires a new
-  // transport tag in practitioner_email_queue.
-  const url = `${SUPABASE_URL}/auth/v1/admin/notify`;
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: {
-      apikey: SERVICE_KEY,
-      Authorization: `Bearer ${SERVICE_KEY}`,
-      'Content-Type': 'application/json',
+  if (!SMTP_HOST || !SMTP_USER || !SMTP_PASS) {
+    throw new Error(
+      'SMTP not configured. Set SMTP_HOST, SMTP_USER, SMTP_PASS, SMTP_FROM via supabase secrets set, mirroring the project SMTP credentials used by Supabase Auth.',
+    );
+  }
+
+  const client = new SMTPClient({
+    connection: {
+      hostname: SMTP_HOST,
+      port: SMTP_PORT,
+      tls: SMTP_PORT === 465,
+      auth: { username: SMTP_USER, password: SMTP_PASS },
     },
-    body: JSON.stringify({
+  });
+
+  try {
+    await client.send({
+      from: `${SMTP_FROM_NAME} <${SMTP_FROM}>`,
       to: params.to,
       subject: params.subject,
-      text: params.text,
+      content: params.text,
       html: params.html,
-    }),
-  });
-  if (!res.ok) {
-    throw new Error(`Supabase SMTP relay returned ${res.status}: ${await res.text()}`);
+    });
+  } finally {
+    try { await client.close(); } catch { /* ignore close errors */ }
   }
 }
 

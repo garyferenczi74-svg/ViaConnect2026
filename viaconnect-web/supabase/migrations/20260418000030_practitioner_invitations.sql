@@ -66,6 +66,7 @@ SET search_path = public, pg_temp
 AS $$
 DECLARE
   r record;
+  v_rows INTEGER;
 BEGIN
   SELECT i.id, i.target_email, i.expected_credential_type, i.personal_note,
          coalesce(p.first_name || ' ' || p.last_name, 'A ViaCura founder') AS invited_by_display
@@ -83,9 +84,17 @@ BEGIN
   END IF;
 
   IF p_claim THEN
+    -- Atomic claim: only one concurrent caller wins. The losing caller sees
+    -- ROW_COUNT = 0 and is told the invitation is no longer valid.
     UPDATE public.practitioner_invitations
        SET used_at = now()
      WHERE id = r.id AND used_at IS NULL;
+    GET DIAGNOSTICS v_rows = ROW_COUNT;
+
+    IF v_rows = 0 THEN
+      RETURN QUERY SELECT false, NULL::TEXT, NULL::TEXT, NULL::TEXT, NULL::TEXT;
+      RETURN;
+    END IF;
   END IF;
 
   RETURN QUERY SELECT true, r.target_email, r.expected_credential_type, r.personal_note, r.invited_by_display;

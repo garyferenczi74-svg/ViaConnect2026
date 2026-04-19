@@ -81,8 +81,10 @@ export default function AdminWaitlistPage() {
 
   const reload = async () => {
     setLoading(true);
+    // Cast to any: practitioner_* tables ship with this migration set;
+    // generated Database types catch up after the next type regen.
     const [{ data: waitlistData }, { data: cohortData }] = await Promise.all([
-      supabase
+      (supabase as any)
         .from('practitioner_waitlist')
         .select(
           'id, email, first_name, last_name, practice_name, practice_city, practice_state, credential_type, primary_clinical_focus, years_in_practice, approximate_patient_panel_size, uses_genetic_testing, currently_dispensing_supplements, referral_source, interest_reason, biggest_clinical_challenge, status, priority_score, assigned_cohort_id, admin_notes, submission_type, email_sequence_step, created_at',
@@ -90,7 +92,7 @@ export default function AdminWaitlistPage() {
         .order('priority_score', { ascending: false, nullsFirst: false })
         .order('created_at', { ascending: false })
         .limit(500),
-      supabase
+      (supabase as any)
         .from('practitioner_cohorts')
         .select('id, name, cohort_number, status')
         .order('cohort_number', { ascending: true }),
@@ -118,7 +120,7 @@ export default function AdminWaitlistPage() {
 
   const updateRow = async (id: string, patch: Partial<WaitlistRow>) => {
     setBusyId(id);
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from('practitioner_waitlist')
       .update({
         ...patch,
@@ -313,15 +315,15 @@ function RowCard({
             {/* Submission details */}
             <div className="flex flex-col gap-3">
               <DetailField label="Primary clinical focus" value={row.primary_clinical_focus} />
-              <DetailField label="Years in practice" value={row.years_in_practice ?? '—'} />
-              <DetailField label="Patient panel" value={row.approximate_patient_panel_size ?? '—'} />
+              <DetailField label="Years in practice" value={row.years_in_practice ?? 'n/a'} />
+              <DetailField label="Patient panel" value={row.approximate_patient_panel_size ?? 'n/a'} />
               <DetailField
                 label="Uses genetic testing"
-                value={row.uses_genetic_testing === null ? '—' : row.uses_genetic_testing ? 'yes' : 'no'}
+                value={row.uses_genetic_testing === null ? 'n/a' : row.uses_genetic_testing ? 'yes' : 'no'}
               />
               <DetailField
                 label="Currently dispensing supplements"
-                value={row.currently_dispensing_supplements === null ? '—' : row.currently_dispensing_supplements ? 'yes' : 'no'}
+                value={row.currently_dispensing_supplements === null ? 'n/a' : row.currently_dispensing_supplements ? 'yes' : 'no'}
               />
               <DetailField label="Referral source" value={row.referral_source} />
               <div>

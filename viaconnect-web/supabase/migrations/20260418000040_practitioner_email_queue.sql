@@ -71,4 +71,29 @@ END;
 $$;
 
 REVOKE ALL ON FUNCTION public.enqueue_practitioner_welcome_email(UUID) FROM public;
-GRANT EXECUTE ON FUNCTION public.enqueue_practitioner_welcome_email(UUID) TO anon, authenticated, service_role;
+REVOKE ALL ON FUNCTION public.enqueue_practitioner_welcome_email(UUID) FROM anon;
+-- Server-only. Anonymous origins must not be able to enqueue arbitrary
+-- welcome emails for discovered waitlist UUIDs. The public API route does
+-- NOT call this RPC; instead, the AFTER INSERT trigger below enqueues
+-- step 1 automatically as a side-effect of row creation.
+GRANT EXECUTE ON FUNCTION public.enqueue_practitioner_welcome_email(UUID) TO service_role;
+
+-- Trigger: enqueue welcome email automatically on waitlist row creation.
+-- Runs as table owner (no RLS conflict) and is the only path to step 1.
+CREATE OR REPLACE FUNCTION public.tg_practitioner_waitlist_enqueue_welcome()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+BEGIN
+  PERFORM public.enqueue_practitioner_welcome_email(NEW.id);
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS practitioner_waitlist_enqueue_welcome
+  ON public.practitioner_waitlist;
+CREATE TRIGGER practitioner_waitlist_enqueue_welcome
+  AFTER INSERT ON public.practitioner_waitlist
+  FOR EACH ROW EXECUTE FUNCTION public.tg_practitioner_waitlist_enqueue_welcome();
