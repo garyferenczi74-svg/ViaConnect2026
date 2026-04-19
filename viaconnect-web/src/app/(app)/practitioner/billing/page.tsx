@@ -202,6 +202,17 @@ function SubscriptionCard({
         </div>
       )}
 
+      {tier.id === 'white_label' && (
+        <div className="mt-4 flex items-start gap-2 rounded-lg border border-portal-green/30 bg-portal-green/10 p-3 text-xs text-portal-green">
+          <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0" strokeWidth={1.5} />
+          <span>
+            White-label configuration (custom domain, brand colors, minimal ViaCura branding) is
+            handled by our team. <strong>Contact sales</strong> to schedule your white-label
+            kickoff; the configuration UI is reserved for ops during the founding cohort window.
+          </span>
+        </div>
+      )}
+
       <div className="mt-5 flex flex-wrap gap-2">
         <button className="inline-flex items-center gap-2 rounded-lg border border-portal-green/40 bg-portal-green/10 px-4 py-2 text-sm font-medium text-portal-green transition-colors hover:bg-portal-green/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-portal-green/60">
           <CreditCard className="h-4 w-4" strokeWidth={1.5} />
