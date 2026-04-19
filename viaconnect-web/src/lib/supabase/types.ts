@@ -2482,6 +2482,51 @@ export type Database = {
         }
         Relationships: []
       }
+      engagement_score_snapshots: {
+        Row: {
+          assessment_engagement_score: number
+          calculation_method_version: string
+          created_at: string
+          helix_activity_count: number
+          id: string
+          outcome_trajectory_score: number
+          period_end_date: string
+          period_start_date: string
+          protocol_adherence_score: number
+          score: number
+          tracking_consistency_score: number
+          user_id: string
+        }
+        Insert: {
+          assessment_engagement_score: number
+          calculation_method_version?: string
+          created_at?: string
+          helix_activity_count?: number
+          id?: string
+          outcome_trajectory_score: number
+          period_end_date: string
+          period_start_date: string
+          protocol_adherence_score: number
+          score: number
+          tracking_consistency_score: number
+          user_id: string
+        }
+        Update: {
+          assessment_engagement_score?: number
+          calculation_method_version?: string
+          created_at?: string
+          helix_activity_count?: number
+          id?: string
+          outcome_trajectory_score?: number
+          period_end_date?: string
+          period_start_date?: string
+          protocol_adherence_score?: number
+          score?: number
+          tracking_consistency_score?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       executive_dashboard: {
         Row: {
           annual_net_profit: number
@@ -3382,6 +3427,72 @@ export type Database = {
         }
         Relationships: []
       }
+      helix_earning_event_types: {
+        Row: {
+          base_points: number
+          category: string
+          created_at: string
+          description: string | null
+          display_name: string
+          frequency_limit: string | null
+          id: string
+          is_active: boolean
+          requires_consumer_tier: number
+        }
+        Insert: {
+          base_points: number
+          category: string
+          created_at?: string
+          description?: string | null
+          display_name: string
+          frequency_limit?: string | null
+          id: string
+          is_active?: boolean
+          requires_consumer_tier?: number
+        }
+        Update: {
+          base_points?: number
+          category?: string
+          created_at?: string
+          description?: string | null
+          display_name?: string
+          frequency_limit?: string | null
+          id?: string
+          is_active?: boolean
+          requires_consumer_tier?: number
+        }
+        Relationships: []
+      }
+      helix_family_pool_config: {
+        Row: {
+          configured_at: string
+          created_at: string
+          id: string
+          last_changed_at: string
+          pool_type: string
+          primary_user_id: string
+          updated_at: string
+        }
+        Insert: {
+          configured_at?: string
+          created_at?: string
+          id?: string
+          last_changed_at?: string
+          pool_type?: string
+          primary_user_id: string
+          updated_at?: string
+        }
+        Update: {
+          configured_at?: string
+          created_at?: string
+          id?: string
+          last_changed_at?: string
+          pool_type?: string
+          primary_user_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       helix_leaderboard: {
         Row: {
           challenge_id: string | null
@@ -3420,8 +3531,64 @@ export type Database = {
           },
         ]
       }
+      helix_redemption_catalog: {
+        Row: {
+          created_at: string
+          credit_dollars_cents: number | null
+          description: string | null
+          discount_percent: number | null
+          display_name: string
+          id: string
+          is_active: boolean
+          points_cost: number
+          redemption_limit_per_user: number | null
+          redemption_type: string
+          sort_order: number
+          stock_limit: number | null
+          stock_remaining: number | null
+          valid_from: string | null
+          valid_until: string | null
+        }
+        Insert: {
+          created_at?: string
+          credit_dollars_cents?: number | null
+          description?: string | null
+          discount_percent?: number | null
+          display_name: string
+          id: string
+          is_active?: boolean
+          points_cost: number
+          redemption_limit_per_user?: number | null
+          redemption_type: string
+          sort_order?: number
+          stock_limit?: number | null
+          stock_remaining?: number | null
+          valid_from?: string | null
+          valid_until?: string | null
+        }
+        Update: {
+          created_at?: string
+          credit_dollars_cents?: number | null
+          description?: string | null
+          discount_percent?: number | null
+          display_name?: string
+          id?: string
+          is_active?: boolean
+          points_cost?: number
+          redemption_limit_per_user?: number | null
+          redemption_type?: string
+          sort_order?: number
+          stock_limit?: number | null
+          stock_remaining?: number | null
+          valid_from?: string | null
+          valid_until?: string | null
+        }
+        Relationships: []
+      }
       helix_redemptions: {
         Row: {
+          application_context: Json
+          catalog_item_id: string | null
           created_at: string | null
           id: string
           order_id: string | null
@@ -3432,6 +3599,8 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          application_context?: Json
+          catalog_item_id?: string | null
           created_at?: string | null
           id?: string
           order_id?: string | null
@@ -3442,6 +3611,8 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          application_context?: Json
+          catalog_item_id?: string | null
           created_at?: string | null
           id?: string
           order_id?: string | null
@@ -3453,35 +3624,68 @@ export type Database = {
         }
         Relationships: []
       }
+      helix_referral_codes: {
+        Row: {
+          code: string
+          created_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       helix_referrals: {
         Row: {
           created_at: string | null
+          first_purchase_at: string | null
+          first_purchase_genex360_at: string | null
           id: string
+          referral_code: string | null
           referred_email: string
           referred_tokens_awarded: number | null
           referred_user_id: string | null
           referrer_id: string | null
           referrer_tokens_awarded: number | null
+          signed_up_at: string | null
           status: string | null
         }
         Insert: {
           created_at?: string | null
+          first_purchase_at?: string | null
+          first_purchase_genex360_at?: string | null
           id?: string
+          referral_code?: string | null
           referred_email: string
           referred_tokens_awarded?: number | null
           referred_user_id?: string | null
           referrer_id?: string | null
           referrer_tokens_awarded?: number | null
+          signed_up_at?: string | null
           status?: string | null
         }
         Update: {
           created_at?: string | null
+          first_purchase_at?: string | null
+          first_purchase_genex360_at?: string | null
           id?: string
+          referral_code?: string | null
           referred_email?: string
           referred_tokens_awarded?: number | null
           referred_user_id?: string | null
           referrer_id?: string | null
           referrer_tokens_awarded?: number | null
+          signed_up_at?: string | null
           status?: string | null
         }
         Relationships: []
@@ -3519,23 +3723,43 @@ export type Database = {
       helix_tiers: {
         Row: {
           benefits: Json | null
+          min_engagement_points: number
           min_points: number
           multiplier: number
+          required_membership_tier_id: string | null
           tier: string
+          tier_description: string | null
+          tier_icon_lucide_name: string | null
         }
         Insert: {
           benefits?: Json | null
+          min_engagement_points?: number
           min_points: number
           multiplier: number
+          required_membership_tier_id?: string | null
           tier: string
+          tier_description?: string | null
+          tier_icon_lucide_name?: string | null
         }
         Update: {
           benefits?: Json | null
+          min_engagement_points?: number
           min_points?: number
           multiplier?: number
+          required_membership_tier_id?: string | null
           tier?: string
+          tier_description?: string | null
+          tier_icon_lucide_name?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "helix_tiers_required_membership_tier_id_fkey"
+            columns: ["required_membership_tier_id"]
+            isOneToOne: false
+            referencedRelation: "membership_tiers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       helix_transactions: {
         Row: {
@@ -3543,10 +3767,15 @@ export type Database = {
           balance_after: number | null
           created_at: string | null
           description: string | null
+          event_type_id: string | null
+          helix_tier_at_time: string | null
           id: string
+          metadata: Json
           multiplier_applied: number | null
+          pool_type: string | null
           related_entity_id: string | null
           source: string
+          source_user_id: string | null
           type: string
           user_id: string | null
         }
@@ -3555,10 +3784,15 @@ export type Database = {
           balance_after?: number | null
           created_at?: string | null
           description?: string | null
+          event_type_id?: string | null
+          helix_tier_at_time?: string | null
           id?: string
+          metadata?: Json
           multiplier_applied?: number | null
+          pool_type?: string | null
           related_entity_id?: string | null
           source: string
+          source_user_id?: string | null
           type: string
           user_id?: string | null
         }
@@ -3567,14 +3801,27 @@ export type Database = {
           balance_after?: number | null
           created_at?: string | null
           description?: string | null
+          event_type_id?: string | null
+          helix_tier_at_time?: string | null
           id?: string
+          metadata?: Json
           multiplier_applied?: number | null
+          pool_type?: string | null
           related_entity_id?: string | null
           source?: string
+          source_user_id?: string | null
           type?: string
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "helix_transactions_event_type_id_fkey"
+            columns: ["event_type_id"]
+            isOneToOne: false
+            referencedRelation: "helix_earning_event_types"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       herbs: {
         Row: {
@@ -4993,6 +5240,56 @@ export type Database = {
         }
         Relationships: []
       }
+      patient_practitioner_relationships: {
+        Row: {
+          consent_share_engagement_score: boolean
+          consent_share_labs: boolean
+          consent_share_protocol: boolean
+          created_at: string
+          ended_at: string | null
+          id: string
+          patient_user_id: string
+          practitioner_id: string
+          started_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          consent_share_engagement_score?: boolean
+          consent_share_labs?: boolean
+          consent_share_protocol?: boolean
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          patient_user_id: string
+          practitioner_id: string
+          started_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          consent_share_engagement_score?: boolean
+          consent_share_labs?: boolean
+          consent_share_protocol?: boolean
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          patient_user_id?: string
+          practitioner_id?: string
+          started_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patient_practitioner_relationships_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       peptide_delivery_options: {
         Row: {
           bioavailability_estimate: number
@@ -5597,6 +5894,33 @@ export type Database = {
           total_subscribers?: number | null
           urgent_reorders?: number | null
           watch_skus?: number | null
+        }
+        Relationships: []
+      }
+      practitioners: {
+        Row: {
+          created_at: string
+          display_name: string | null
+          id: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -10747,6 +11071,28 @@ export type Database = {
           product_name: string
           tier: number
         }[]
+      }
+      helix_create_redemption: {
+        Args: {
+          p_order_id?: string
+          p_reward_description: string
+          p_reward_type: string
+          p_tokens_spent: number
+          p_user_id: string
+        }
+        Returns: string
+      }
+      helix_increment_balance: {
+        Args: { p_points: number; p_user_id: string }
+        Returns: undefined
+      }
+      helix_redeem_catalog_item: {
+        Args: {
+          p_application_context?: Json
+          p_catalog_item_id: string
+          p_user_id: string
+        }
+        Returns: string
       }
       increment_brand_retry: {
         Args: { p_brand_id: string }
