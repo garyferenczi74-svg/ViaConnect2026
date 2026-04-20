@@ -29,10 +29,13 @@ export interface ActiveViolationView extends MAPViolationRow {
 export async function fetchMyActiveViolations(
   supabase: SupabaseClient,
 ): Promise<ActiveViolationView[]> {
+  // source_url is denormalized onto map_violations (migration _016)
+  // so practitioners can read it under their own RLS without pulling
+  // from the admin-only map_price_observations table.
   const { data } = await asLoose(supabase)
     .from('map_violations')
     .select(
-      'violation_id, observation_id, product_id, practitioner_id, policy_id, severity, observed_price_cents, map_price_cents, discount_pct_below_map, status, grace_period_ends_at, remediation_deadline_at, notified_at, acknowledged_at, remediated_at, escalated_at, dismissed_at, created_at, products(name, sku), map_price_observations(source_url)',
+      'violation_id, observation_id, product_id, practitioner_id, policy_id, severity, observed_price_cents, map_price_cents, discount_pct_below_map, status, grace_period_ends_at, remediation_deadline_at, notified_at, acknowledged_at, remediated_at, escalated_at, dismissed_at, created_at, source_url, products(name, sku)',
     )
     .in('status', ['active', 'notified', 'acknowledged', 'escalated'])
     .order('severity', { ascending: false })
@@ -59,7 +62,7 @@ export async function fetchMyActiveViolations(
     createdAt: String(r.created_at ?? ''),
     productName: ((r.products as { name?: string } | null) ?? {}).name ?? null,
     productSku: ((r.products as { sku?: string } | null) ?? {}).sku ?? null,
-    sourceUrl: ((r.map_price_observations as { source_url?: string } | null) ?? {}).source_url ?? '',
+    sourceUrl: (r.source_url as string | null) ?? '',
   }));
 }
 
@@ -92,20 +95,20 @@ export async function fetchMyComplianceScore(
   };
 }
 
-/** Fetch 30-day trend of compliance scores for the sparkline. */
+/** Fetch 30-day trend of compliance scores for the sparkline. Pulls
+ *  the 30 MOST RECENT rows (descending query + JS reverse for display). */
 export async function fetchComplianceScoreTrend(
   supabase: SupabaseClient,
 ): Promise<Array<{ calculatedDate: string; score: number }>> {
   const { data } = await asLoose(supabase)
     .from('map_compliance_scores')
     .select('calculated_date, score')
-    .order('calculated_date', { ascending: true })
+    .order('calculated_date', { ascending: false })
     .limit(30);
   const rows = (data ?? []) as Array<{ calculated_date: string; score: number }>;
-  return rows.map((r) => ({
-    calculatedDate: r.calculated_date,
-    score: Number(r.score ?? 0),
-  }));
+  return rows
+    .map((r) => ({ calculatedDate: r.calculated_date, score: Number(r.score ?? 0) }))
+    .reverse();
 }
 
 import type { MAPPillState } from './types';
@@ -120,7 +123,10 @@ export interface ProductMAPStatus {
   exemptLabel: 'L3' | 'L4' | null;
 }
 
-function severityToPillState(
+/** Pure: map a MAP violation's severity + status onto the pricing-status
+ *  pill state consumed by the Revenue Intelligence page. Exported so
+ *  unit tests can exercise every branch without a Supabase round-trip. */
+export function severityToPillState(
   severity: string,
   status: string,
 ): MAPPillState {

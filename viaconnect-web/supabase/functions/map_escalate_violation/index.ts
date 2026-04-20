@@ -14,6 +14,9 @@ function jsonResponse(body: Record<string, unknown>, status = 200): Response {
   });
 }
 
+// Keep in sync with src/lib/map/clawback-events.ts CLAWBACK_PCT.
+// Mirrored here because the Deno edge runtime cannot import the
+// Node/Next lib module.
 const CLAWBACK_PCT = { yellow: 0, orange: 25, red: 50, black: 100 } as const;
 
 Deno.serve(async (_req) => {

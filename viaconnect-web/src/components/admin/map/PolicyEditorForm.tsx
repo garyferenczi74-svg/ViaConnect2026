@@ -95,8 +95,8 @@ export function PolicyEditorForm({ onSaved }: { onSaved: () => void }) {
             onChange={(e) => setTier(e.target.value as 'L1' | 'L2')}
             className="mt-1 w-full rounded-lg bg-white/[0.04] border border-white/[0.1] px-3 py-1.5 text-xs text-white"
           >
-            <option value="L1">L1 — Standard wholesale</option>
-            <option value="L2">L2 — Subscription</option>
+            <option value="L1">L1: Standard wholesale</option>
+            <option value="L2">L2: Subscription</option>
           </select>
         </div>
         <NumberField label="MSRP (cents)" value={msrpCents} onChange={setMsrpCents} />

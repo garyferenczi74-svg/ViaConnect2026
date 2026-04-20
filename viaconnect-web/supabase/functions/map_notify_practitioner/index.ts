@@ -14,6 +14,11 @@ function jsonResponse(body: Record<string, unknown>, status = 200): Response {
   });
 }
 
+// Keep in sync with src/lib/map/notifications.ts + src/lib/map/gracePeriods.ts.
+// Deno edge runtime cannot import the Node/Next lib module, so the
+// values are mirrored here. The Jeffery audit flagged the drift risk;
+// a CI check that diffs these constants against the lib is a Phase 2
+// follow-up.
 const SEVERITY_SLA_HOURS = { yellow: 168, orange: 24, red: 4, black: 1 } as const;
 const GRACE_HOURS = { yellow: 168, orange: 72, red: 48, black: 24 } as const;
 

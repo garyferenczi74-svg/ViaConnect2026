@@ -28,21 +28,6 @@ export type MAPPillState =
   | 'critical'
   | 'exempt';
 
-export interface MAPPolicyRow {
-  policyId: string;
-  productId: string;
-  tier: MAPPricingTier;
-  mapPriceCents: number;
-  msrpCents: number;
-  ingredientCostFloorCents: number;
-  mapEnforcementStartDate: string;
-  mapExemptionWindowStart: string | null;
-  mapExemptionWindowEnd: string | null;
-  mapMinimumDiscountPctAllowed: number;
-  mapPublishedUrl: string | null;
-  updatedBy: string | null;
-}
-
 export interface MAPViolationRow {
   violationId: string;
   observationId: string;
@@ -77,16 +62,4 @@ export interface MAPComplianceScoreRow {
   selfReportedRemediations: number;
   calculatedAt: string;
   calculatedDate: string;
-}
-
-export interface MAPPriceObservation {
-  productId: string;
-  source: MAPMonitorSource;
-  sourceUrl: string;
-  practitionerId: string | null;
-  observedPriceCents: number;
-  observerConfidence: number;
-  screenshotStoragePath?: string | null;
-  rawHtmlStoragePath?: string | null;
-  parserVersion: string;
 }

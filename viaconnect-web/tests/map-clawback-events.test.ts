@@ -64,4 +64,42 @@ describe('buildClawbackEventPayload', () => {
     expect(payload.holdDays).toBe(30);
     expect(payload.clawbackPct).toBe(100);
   });
+
+  it('yellow payload is a no-op (0% claw-back, no hold)', () => {
+    const payload = buildClawbackEventPayload({
+      violationId: 'v-3',
+      practitionerId: 'p-3',
+      productId: 'prod-3',
+      severity: 'yellow',
+    });
+    expect(payload.clawbackPct).toBe(0);
+    expect(payload.allSkuHold).toBe(false);
+    expect(payload.holdDays).toBe(0);
+  });
+
+  it('orange payload is 25% with no hold', () => {
+    const payload = buildClawbackEventPayload({
+      violationId: 'v-4',
+      practitionerId: 'p-4',
+      productId: 'prod-4',
+      severity: 'orange',
+    });
+    expect(payload.clawbackPct).toBe(25);
+    expect(payload.allSkuHold).toBe(false);
+    expect(payload.holdDays).toBe(0);
+  });
+
+  it('defaults emittedAt to now when not provided', () => {
+    const before = Date.now();
+    const payload = buildClawbackEventPayload({
+      violationId: 'v-5',
+      practitionerId: 'p-5',
+      productId: 'prod-5',
+      severity: 'red',
+    });
+    const after = Date.now();
+    const emittedMs = new Date(payload.emittedAt).getTime();
+    expect(emittedMs).toBeGreaterThanOrEqual(before);
+    expect(emittedMs).toBeLessThanOrEqual(after);
+  });
 });
