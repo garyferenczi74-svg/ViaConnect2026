@@ -12,6 +12,7 @@ import {
   mapSubscriptionToMembershipRow,
   mapCheckoutSessionCompletion,
 } from '@/lib/pricing/stripe-webhook-handlers';
+import { handleWhiteLabelPaymentSucceeded } from '@/lib/white-label/stripe-production-payment';
 
 export const runtime = 'nodejs'; // Stripe SDK needs Node APIs
 export const dynamic = 'force-dynamic';
@@ -138,6 +139,17 @@ async function handleEvent(event: Stripe.Event): Promise<void> {
         .update({ status: 'active' } as never)
         .eq('stripe_subscription_id', subscriptionId)
         .in('status', ['past_due', 'trialing']);
+      return;
+    }
+
+    case 'payment_intent.succeeded': {
+      const intent = event.data.object as Stripe.PaymentIntent;
+      // Currently only white-label production orders register PaymentIntents
+      // with metadata.production_order_id. Other PaymentIntents (e.g.
+      // future single-charge flows) can dispatch off the same event.
+      if (intent.metadata?.production_order_id) {
+        await handleWhiteLabelPaymentSucceeded(intent, db);
+      }
       return;
     }
 
