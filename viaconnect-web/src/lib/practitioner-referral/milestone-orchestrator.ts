@@ -21,6 +21,7 @@ import {
   evaluateMilestoneCandidate,
   computeHoldExpiry,
 } from './milestone-detector';
+import { runFraudDetectionOnMilestoneEvent } from './fraud-detection-orchestrator';
 import type { MilestoneId } from './schema-types';
 
 interface OrchestratorDeps {
@@ -92,6 +93,26 @@ export async function recordMilestoneEventIfEligible(
   if (error) {
     return { recorded: false, reason: `insert failed: ${error.message}`, attribution_id: attribution?.id };
   }
+
+  // Phase 6 hook: run pattern-based fraud detection on this referrer
+  // as soon as the event is recorded. Failures are non-fatal; the
+  // vesting tick will also consult pending flags.
+  try {
+    const { data: referringRow } = await sb
+      .from('practitioner_referral_attributions')
+      .select('referring_practitioner_id')
+      .eq('id', attribution!.id)
+      .maybeSingle();
+    if (referringRow?.referring_practitioner_id && event?.id) {
+      await runFraudDetectionOnMilestoneEvent(
+        { milestone_event_id: event.id, referring_practitioner_id: referringRow.referring_practitioner_id },
+        deps,
+      );
+    }
+  } catch (e) {
+    console.warn('[wl-ref-milestone] fraud detection failed', (e as Error).message);
+  }
+
   return { recorded: true, milestone_event_id: event?.id, attribution_id: attribution!.id };
 }
 
