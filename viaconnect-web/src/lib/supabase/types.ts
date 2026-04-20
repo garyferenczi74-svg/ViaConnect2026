@@ -2221,6 +2221,471 @@ export type Database = {
           },
         ]
       }
+      custom_formulation_development_fees: {
+        Row: {
+          admin_fee_retained_cents: number | null
+          created_at: string
+          custom_formulation_id: string
+          development_fee_cents: number
+          id: string
+          medical_review_fee_cents: number
+          paid_at: string | null
+          refund_amount_cents: number | null
+          refund_reason: string | null
+          refunded: boolean
+          refunded_at: string | null
+          stripe_payment_intent_id: string | null
+          total_cents: number
+          updated_at: string
+        }
+        Insert: {
+          admin_fee_retained_cents?: number | null
+          created_at?: string
+          custom_formulation_id: string
+          development_fee_cents?: number
+          id?: string
+          medical_review_fee_cents?: number
+          paid_at?: string | null
+          refund_amount_cents?: number | null
+          refund_reason?: string | null
+          refunded?: boolean
+          refunded_at?: string | null
+          stripe_payment_intent_id?: string | null
+          total_cents: number
+          updated_at?: string
+        }
+        Update: {
+          admin_fee_retained_cents?: number | null
+          created_at?: string
+          custom_formulation_id?: string
+          development_fee_cents?: number
+          id?: string
+          medical_review_fee_cents?: number
+          paid_at?: string | null
+          refund_amount_cents?: number | null
+          refund_reason?: string | null
+          refunded?: boolean
+          refunded_at?: string | null
+          stripe_payment_intent_id?: string | null
+          total_cents?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custom_formulation_development_fees_custom_formulation_id_fkey"
+            columns: ["custom_formulation_id"]
+            isOneToOne: true
+            referencedRelation: "custom_formulations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      custom_formulation_ingredients: {
+        Row: {
+          created_at: string
+          custom_formulation_id: string
+          dose_per_serving: number
+          dose_unit: string
+          id: string
+          ingredient_form: string | null
+          ingredient_id: string
+          is_active_ingredient: boolean
+          percent_daily_value: number | null
+          sort_order: number
+          source_notes: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          custom_formulation_id: string
+          dose_per_serving: number
+          dose_unit: string
+          id?: string
+          ingredient_form?: string | null
+          ingredient_id: string
+          is_active_ingredient?: boolean
+          percent_daily_value?: number | null
+          sort_order?: number
+          source_notes?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          custom_formulation_id?: string
+          dose_per_serving?: number
+          dose_unit?: string
+          id?: string
+          ingredient_form?: string | null
+          ingredient_id?: string
+          is_active_ingredient?: boolean
+          percent_daily_value?: number | null
+          sort_order?: number
+          source_notes?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custom_formulation_ingredients_custom_formulation_id_fkey"
+            columns: ["custom_formulation_id"]
+            isOneToOne: false
+            referencedRelation: "custom_formulations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custom_formulation_ingredients_ingredient_id_fkey"
+            columns: ["ingredient_id"]
+            isOneToOne: false
+            referencedRelation: "ingredient_library"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      custom_formulation_medical_reviews: {
+        Row: {
+          clinical_appropriateness_assessment: string | null
+          created_at: string
+          custom_formulation_id: string
+          decision: string
+          decision_notes: string
+          dose_appropriateness_assessment: string | null
+          id: string
+          intended_use_concerns: string | null
+          interaction_concerns: string | null
+          pediatric_safety_review: Json | null
+          pregnancy_safety_review: Json | null
+          review_duration_seconds: number | null
+          reviewed_at: string
+          reviewer_user_id: string
+          revision_items: Json
+        }
+        Insert: {
+          clinical_appropriateness_assessment?: string | null
+          created_at?: string
+          custom_formulation_id: string
+          decision: string
+          decision_notes: string
+          dose_appropriateness_assessment?: string | null
+          id?: string
+          intended_use_concerns?: string | null
+          interaction_concerns?: string | null
+          pediatric_safety_review?: Json | null
+          pregnancy_safety_review?: Json | null
+          review_duration_seconds?: number | null
+          reviewed_at?: string
+          reviewer_user_id: string
+          revision_items?: Json
+        }
+        Update: {
+          clinical_appropriateness_assessment?: string | null
+          created_at?: string
+          custom_formulation_id?: string
+          decision?: string
+          decision_notes?: string
+          dose_appropriateness_assessment?: string | null
+          id?: string
+          intended_use_concerns?: string | null
+          interaction_concerns?: string | null
+          pediatric_safety_review?: Json | null
+          pregnancy_safety_review?: Json | null
+          review_duration_seconds?: number | null
+          reviewed_at?: string
+          reviewer_user_id?: string
+          revision_items?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custom_formulation_medical_reviews_custom_formulation_id_fkey"
+            columns: ["custom_formulation_id"]
+            isOneToOne: false
+            referencedRelation: "custom_formulations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      custom_formulation_regulatory_reviews: {
+        Row: {
+          allergen_statement_verified: boolean | null
+          created_at: string
+          custom_formulation_id: string
+          decision: string
+          decision_notes: string
+          fda_disclaimer_required: boolean | null
+          id: string
+          label_claim_language_verified: boolean | null
+          manufacturer_of_record_verified: boolean | null
+          ndi_status_verified: boolean | null
+          prohibited_category_check_passed: boolean
+          review_duration_seconds: number | null
+          reviewed_at: string
+          reviewer_user_id: string
+          revision_items: Json
+        }
+        Insert: {
+          allergen_statement_verified?: boolean | null
+          created_at?: string
+          custom_formulation_id: string
+          decision: string
+          decision_notes: string
+          fda_disclaimer_required?: boolean | null
+          id?: string
+          label_claim_language_verified?: boolean | null
+          manufacturer_of_record_verified?: boolean | null
+          ndi_status_verified?: boolean | null
+          prohibited_category_check_passed: boolean
+          review_duration_seconds?: number | null
+          reviewed_at?: string
+          reviewer_user_id: string
+          revision_items?: Json
+        }
+        Update: {
+          allergen_statement_verified?: boolean | null
+          created_at?: string
+          custom_formulation_id?: string
+          decision?: string
+          decision_notes?: string
+          fda_disclaimer_required?: boolean | null
+          id?: string
+          label_claim_language_verified?: boolean | null
+          manufacturer_of_record_verified?: boolean | null
+          ndi_status_verified?: boolean | null
+          prohibited_category_check_passed?: boolean
+          review_duration_seconds?: number | null
+          reviewed_at?: string
+          reviewer_user_id?: string
+          revision_items?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custom_formulation_regulatory_review_custom_formulation_id_fkey"
+            columns: ["custom_formulation_id"]
+            isOneToOne: false
+            referencedRelation: "custom_formulations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      custom_formulation_stability_tests: {
+        Row: {
+          assigned_expiration_date_method: string | null
+          batch_number: string | null
+          conducted_by_user_id: string | null
+          created_at: string
+          custom_formulation_id: string
+          dissolution_results: Json
+          heavy_metals_results: Json
+          id: string
+          initial_test_date: string | null
+          microbiological_results: Json
+          notes: string | null
+          potency_results: Json
+          production_order_id: string | null
+          shelf_life_months: number | null
+          status: string
+          test_protocol: string
+          test_scheduled_dates: string[]
+          updated_at: string
+        }
+        Insert: {
+          assigned_expiration_date_method?: string | null
+          batch_number?: string | null
+          conducted_by_user_id?: string | null
+          created_at?: string
+          custom_formulation_id: string
+          dissolution_results?: Json
+          heavy_metals_results?: Json
+          id?: string
+          initial_test_date?: string | null
+          microbiological_results?: Json
+          notes?: string | null
+          potency_results?: Json
+          production_order_id?: string | null
+          shelf_life_months?: number | null
+          status?: string
+          test_protocol: string
+          test_scheduled_dates: string[]
+          updated_at?: string
+        }
+        Update: {
+          assigned_expiration_date_method?: string | null
+          batch_number?: string | null
+          conducted_by_user_id?: string | null
+          created_at?: string
+          custom_formulation_id?: string
+          dissolution_results?: Json
+          heavy_metals_results?: Json
+          id?: string
+          initial_test_date?: string | null
+          microbiological_results?: Json
+          notes?: string | null
+          potency_results?: Json
+          production_order_id?: string | null
+          shelf_life_months?: number | null
+          status?: string
+          test_protocol?: string
+          test_scheduled_dates?: string[]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custom_formulation_stability_tests_custom_formulation_id_fkey"
+            columns: ["custom_formulation_id"]
+            isOneToOne: false
+            referencedRelation: "custom_formulations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      custom_formulations: {
+        Row: {
+          approved_at: string | null
+          automated_validation_issues: Json
+          automated_validation_run_at: string | null
+          capsule_size: string | null
+          created_at: string
+          delivery_form: string
+          development_fee_invoice_id: string | null
+          development_fee_paid: boolean
+          development_fee_paid_at: string | null
+          enrollment_id: string
+          estimated_cogs_per_unit_cents: number | null
+          exclusive_to_practitioner_id: string
+          flavor_if_applicable: string | null
+          id: string
+          intended_adult_use: boolean
+          intended_pediatric_use: boolean
+          intended_pregnancy_use: boolean
+          intended_primary_indication: string
+          internal_description: string | null
+          internal_name: string
+          is_current_version: boolean
+          medical_review_id: string | null
+          parent_formulation_id: string | null
+          passed_automated_validation: boolean
+          practitioner_id: string
+          product_catalog_id: string | null
+          proposed_structure_function_claims: string[]
+          regulatory_review_id: string | null
+          servings_per_container: number
+          status: string
+          units_per_serving: number
+          updated_at: string
+          version_number: number
+        }
+        Insert: {
+          approved_at?: string | null
+          automated_validation_issues?: Json
+          automated_validation_run_at?: string | null
+          capsule_size?: string | null
+          created_at?: string
+          delivery_form: string
+          development_fee_invoice_id?: string | null
+          development_fee_paid?: boolean
+          development_fee_paid_at?: string | null
+          enrollment_id: string
+          estimated_cogs_per_unit_cents?: number | null
+          exclusive_to_practitioner_id: string
+          flavor_if_applicable?: string | null
+          id?: string
+          intended_adult_use?: boolean
+          intended_pediatric_use?: boolean
+          intended_pregnancy_use?: boolean
+          intended_primary_indication: string
+          internal_description?: string | null
+          internal_name: string
+          is_current_version?: boolean
+          medical_review_id?: string | null
+          parent_formulation_id?: string | null
+          passed_automated_validation?: boolean
+          practitioner_id: string
+          product_catalog_id?: string | null
+          proposed_structure_function_claims?: string[]
+          regulatory_review_id?: string | null
+          servings_per_container: number
+          status?: string
+          units_per_serving: number
+          updated_at?: string
+          version_number?: number
+        }
+        Update: {
+          approved_at?: string | null
+          automated_validation_issues?: Json
+          automated_validation_run_at?: string | null
+          capsule_size?: string | null
+          created_at?: string
+          delivery_form?: string
+          development_fee_invoice_id?: string | null
+          development_fee_paid?: boolean
+          development_fee_paid_at?: string | null
+          enrollment_id?: string
+          estimated_cogs_per_unit_cents?: number | null
+          exclusive_to_practitioner_id?: string
+          flavor_if_applicable?: string | null
+          id?: string
+          intended_adult_use?: boolean
+          intended_pediatric_use?: boolean
+          intended_pregnancy_use?: boolean
+          intended_primary_indication?: string
+          internal_description?: string | null
+          internal_name?: string
+          is_current_version?: boolean
+          medical_review_id?: string | null
+          parent_formulation_id?: string | null
+          passed_automated_validation?: boolean
+          practitioner_id?: string
+          product_catalog_id?: string | null
+          proposed_structure_function_claims?: string[]
+          regulatory_review_id?: string | null
+          servings_per_container?: number
+          status?: string
+          units_per_serving?: number
+          updated_at?: string
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custom_formulations_enrollment_id_fkey"
+            columns: ["enrollment_id"]
+            isOneToOne: false
+            referencedRelation: "level_4_enrollments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custom_formulations_exclusive_to_practitioner_id_fkey"
+            columns: ["exclusive_to_practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custom_formulations_parent_formulation_id_fkey"
+            columns: ["parent_formulation_id"]
+            isOneToOne: false
+            referencedRelation: "custom_formulations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custom_formulations_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custom_formulations_product_catalog_id_fkey"
+            columns: ["product_catalog_id"]
+            isOneToOne: false
+            referencedRelation: "product_catalog"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custom_formulations_product_catalog_id_fkey"
+            columns: ["product_catalog_id"]
+            isOneToOne: false
+            referencedRelation: "product_catalog_enriched"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customer_price_bindings: {
         Row: {
           authorized_by_proposal_id: string
@@ -3503,6 +3968,53 @@ export type Database = {
         }
         Relationships: []
       }
+      governance_notifications_queue: {
+        Row: {
+          created_at: string
+          dispatch_error: string | null
+          dispatched_at: string | null
+          id: string
+          notification_type: string
+          payload: Json
+          proposal_id: string | null
+          recipient_email: string | null
+          recipient_user_id: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          dispatch_error?: string | null
+          dispatched_at?: string | null
+          id?: string
+          notification_type: string
+          payload?: Json
+          proposal_id?: string | null
+          recipient_email?: string | null
+          recipient_user_id?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          dispatch_error?: string | null
+          dispatched_at?: string | null
+          id?: string
+          notification_type?: string
+          payload?: Json
+          proposal_id?: string | null
+          recipient_email?: string | null
+          recipient_user_id?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "governance_notifications_queue_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: false
+            referencedRelation: "pricing_proposals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       health_metrics: {
         Row: {
           hrv_source: string | null
@@ -4207,6 +4719,195 @@ export type Database = {
         }
         Relationships: []
       }
+      ingredient_library: {
+        Row: {
+          added_at: string
+          added_by: string | null
+          allowed_claim_language: string[] | null
+          alternate_names: string[]
+          available_forms: string[]
+          category: string
+          common_name: string
+          contains_allergen_egg: boolean
+          contains_allergen_fish: boolean
+          contains_allergen_milk: boolean
+          contains_allergen_peanut: boolean
+          contains_allergen_sesame: boolean
+          contains_allergen_shellfish: boolean
+          contains_allergen_soy: boolean
+          contains_allergen_tree_nut: boolean
+          contains_allergen_wheat: boolean
+          dose_unit: string
+          excluded_reason: string | null
+          fda_safety_concern_listed: boolean
+          fda_warning_letter_issued: boolean
+          gras_affirmation_date: string | null
+          gras_notice_number: string | null
+          id: string
+          inclusion_justification: string | null
+          is_available_for_custom_formulation: boolean
+          last_reviewed_at: string | null
+          last_reviewed_by: string | null
+          mechanism_summary: string | null
+          minimum_effective_dose_mg: number | null
+          minimum_source_quantity_kg: number | null
+          ndi_notification_number: string | null
+          pregnancy_category: string | null
+          primary_indications: string[]
+          regulatory_status: string
+          scientific_name: string | null
+          structure_function_claim_allowed: boolean
+          subcategory: string | null
+          supplier_notes: string | null
+          tolerable_upper_limit_adult_mg: number | null
+          tolerable_upper_limit_pediatric_mg: number | null
+          typical_cogs_cents_per_mg: number | null
+          typical_dose_mg: number | null
+        }
+        Insert: {
+          added_at?: string
+          added_by?: string | null
+          allowed_claim_language?: string[] | null
+          alternate_names?: string[]
+          available_forms?: string[]
+          category: string
+          common_name: string
+          contains_allergen_egg?: boolean
+          contains_allergen_fish?: boolean
+          contains_allergen_milk?: boolean
+          contains_allergen_peanut?: boolean
+          contains_allergen_sesame?: boolean
+          contains_allergen_shellfish?: boolean
+          contains_allergen_soy?: boolean
+          contains_allergen_tree_nut?: boolean
+          contains_allergen_wheat?: boolean
+          dose_unit: string
+          excluded_reason?: string | null
+          fda_safety_concern_listed?: boolean
+          fda_warning_letter_issued?: boolean
+          gras_affirmation_date?: string | null
+          gras_notice_number?: string | null
+          id: string
+          inclusion_justification?: string | null
+          is_available_for_custom_formulation?: boolean
+          last_reviewed_at?: string | null
+          last_reviewed_by?: string | null
+          mechanism_summary?: string | null
+          minimum_effective_dose_mg?: number | null
+          minimum_source_quantity_kg?: number | null
+          ndi_notification_number?: string | null
+          pregnancy_category?: string | null
+          primary_indications?: string[]
+          regulatory_status: string
+          scientific_name?: string | null
+          structure_function_claim_allowed?: boolean
+          subcategory?: string | null
+          supplier_notes?: string | null
+          tolerable_upper_limit_adult_mg?: number | null
+          tolerable_upper_limit_pediatric_mg?: number | null
+          typical_cogs_cents_per_mg?: number | null
+          typical_dose_mg?: number | null
+        }
+        Update: {
+          added_at?: string
+          added_by?: string | null
+          allowed_claim_language?: string[] | null
+          alternate_names?: string[]
+          available_forms?: string[]
+          category?: string
+          common_name?: string
+          contains_allergen_egg?: boolean
+          contains_allergen_fish?: boolean
+          contains_allergen_milk?: boolean
+          contains_allergen_peanut?: boolean
+          contains_allergen_sesame?: boolean
+          contains_allergen_shellfish?: boolean
+          contains_allergen_soy?: boolean
+          contains_allergen_tree_nut?: boolean
+          contains_allergen_wheat?: boolean
+          dose_unit?: string
+          excluded_reason?: string | null
+          fda_safety_concern_listed?: boolean
+          fda_warning_letter_issued?: boolean
+          gras_affirmation_date?: string | null
+          gras_notice_number?: string | null
+          id?: string
+          inclusion_justification?: string | null
+          is_available_for_custom_formulation?: boolean
+          last_reviewed_at?: string | null
+          last_reviewed_by?: string | null
+          mechanism_summary?: string | null
+          minimum_effective_dose_mg?: number | null
+          minimum_source_quantity_kg?: number | null
+          ndi_notification_number?: string | null
+          pregnancy_category?: string | null
+          primary_indications?: string[]
+          regulatory_status?: string
+          scientific_name?: string | null
+          structure_function_claim_allowed?: boolean
+          subcategory?: string | null
+          supplier_notes?: string | null
+          tolerable_upper_limit_adult_mg?: number | null
+          tolerable_upper_limit_pediatric_mg?: number | null
+          typical_cogs_cents_per_mg?: number | null
+          typical_dose_mg?: number | null
+        }
+        Relationships: []
+      }
+      ingredient_library_interactions: {
+        Row: {
+          added_at: string
+          added_by: string | null
+          blocks_formulation: boolean
+          clinical_significance: string | null
+          id: string
+          ingredient_a_id: string
+          ingredient_b_id: string
+          mechanism: string
+          severity: string
+          source_reference: string | null
+        }
+        Insert: {
+          added_at?: string
+          added_by?: string | null
+          blocks_formulation?: boolean
+          clinical_significance?: string | null
+          id?: string
+          ingredient_a_id: string
+          ingredient_b_id: string
+          mechanism: string
+          severity: string
+          source_reference?: string | null
+        }
+        Update: {
+          added_at?: string
+          added_by?: string | null
+          blocks_formulation?: boolean
+          clinical_significance?: string | null
+          id?: string
+          ingredient_a_id?: string
+          ingredient_b_id?: string
+          mechanism?: string
+          severity?: string
+          source_reference?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ingredient_library_interactions_ingredient_a_id_fkey"
+            columns: ["ingredient_a_id"]
+            isOneToOne: false
+            referencedRelation: "ingredient_library"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ingredient_library_interactions_ingredient_b_id_fkey"
+            columns: ["ingredient_b_id"]
+            isOneToOne: false
+            referencedRelation: "ingredient_library"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ingredients: {
         Row: {
           created_at: string
@@ -4859,6 +5560,98 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      level_4_enrollments: {
+        Row: {
+          created_at: string
+          enrolled_at: string
+          exclusive_use_agreement_signed: boolean
+          exclusive_use_agreement_signed_at: string | null
+          exclusive_use_agreement_url: string | null
+          first_formulation_approved_at: string | null
+          first_formulation_production_delivered_at: string | null
+          id: string
+          level_3_delivered_order_id: string | null
+          level_3_delivered_verified_at: string | null
+          level_3_enrollment_id: string | null
+          lifetime_formulations_approved: number
+          lifetime_formulations_developed: number
+          lifetime_production_orders: number
+          lifetime_production_revenue_cents: number
+          master_practitioner_cert_id: string | null
+          master_practitioner_verified_at: string | null
+          metadata: Json
+          practitioner_id: string
+          status: string
+          suspended_at: string | null
+          suspended_reason: string | null
+          terminated_at: string | null
+          terminated_reason: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          enrolled_at?: string
+          exclusive_use_agreement_signed?: boolean
+          exclusive_use_agreement_signed_at?: string | null
+          exclusive_use_agreement_url?: string | null
+          first_formulation_approved_at?: string | null
+          first_formulation_production_delivered_at?: string | null
+          id?: string
+          level_3_delivered_order_id?: string | null
+          level_3_delivered_verified_at?: string | null
+          level_3_enrollment_id?: string | null
+          lifetime_formulations_approved?: number
+          lifetime_formulations_developed?: number
+          lifetime_production_orders?: number
+          lifetime_production_revenue_cents?: number
+          master_practitioner_cert_id?: string | null
+          master_practitioner_verified_at?: string | null
+          metadata?: Json
+          practitioner_id: string
+          status?: string
+          suspended_at?: string | null
+          suspended_reason?: string | null
+          terminated_at?: string | null
+          terminated_reason?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          enrolled_at?: string
+          exclusive_use_agreement_signed?: boolean
+          exclusive_use_agreement_signed_at?: string | null
+          exclusive_use_agreement_url?: string | null
+          first_formulation_approved_at?: string | null
+          first_formulation_production_delivered_at?: string | null
+          id?: string
+          level_3_delivered_order_id?: string | null
+          level_3_delivered_verified_at?: string | null
+          level_3_enrollment_id?: string | null
+          lifetime_formulations_approved?: number
+          lifetime_formulations_developed?: number
+          lifetime_production_orders?: number
+          lifetime_production_revenue_cents?: number
+          master_practitioner_cert_id?: string | null
+          master_practitioner_verified_at?: string | null
+          metadata?: Json
+          practitioner_id?: string
+          status?: string
+          suspended_at?: string | null
+          suspended_reason?: string | null
+          terminated_at?: string | null
+          terminated_reason?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "level_4_enrollments_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: true
+            referencedRelation: "practitioners"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       margin_waterfall: {
         Row: {
@@ -11841,6 +12634,13 @@ export type Database = {
           scheduled_for: string
           target_action: string
           target_value: Json
+        }[]
+      }
+      claim_pending_proposal_activations: {
+        Args: { p_limit?: number }
+        Returns: {
+          id: string
+          initiated_by: string
         }[]
       }
       enrichment_queue: {
