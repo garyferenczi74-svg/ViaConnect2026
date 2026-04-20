@@ -5,37 +5,14 @@
 
 import { createClient } from '@/lib/supabase/server';
 import type { SherlockPage } from './sherlock-stub';
+import { PRACTITIONER_PENDING_REASON, type QueryOutcome } from './constants';
 
-export type DependencyStatus = 'live' | 'dependency_pending';
-
-export interface QueryOutcome<T> {
-  status: DependencyStatus;
-  /** Present when status === 'live'. */
-  data?: T;
-  /** Friendly label for the missing dependency (e.g.
-   *  "clients + bio_optimization_scores"). */
-  pendingReason?: string;
-}
-
-/** Materialized-view names per Prompt #99 §5. Kept in one place so the
- *  page scaffolds can reference them without stringly-typed typos, and
- *  so Path B can flip them to 'live' one-by-one. */
-export const PRACTITIONER_MV: Record<SherlockPage, string> = {
-  practice_health: 'practitioner_practice_health_mv',
-  cohorts: 'practitioner_cohort_outcomes_mv',
-  protocols: 'practitioner_protocol_effectiveness_mv',
-  revenue: 'practitioner_revenue_rollup_mv',
-  engagement: 'practitioner_engagement_summary_mv',
-};
-
-/** Pending-reason strings shown in the dependency banner. */
-export const PRACTITIONER_PENDING_REASON: Record<SherlockPage, string> = {
-  practice_health: 'clients + bio_optimization_scores',
-  cohorts: 'clients + bio_optimization_scores + caq_submissions',
-  protocols: 'user_protocols + interaction_events',
-  revenue: 'whitelabel_orders + referral_commissions + practitioner_transactions',
-  engagement: 'engagement_score_snapshots + wearables',
-};
+export {
+  PRACTITIONER_MV,
+  PRACTITIONER_PENDING_REASON,
+  type DependencyStatus,
+  type QueryOutcome,
+} from './constants';
 
 /** Fetches the cached Sherlock insight row for a page if one exists.
  *  This table IS live (migration 20260419000010), so it's safe to

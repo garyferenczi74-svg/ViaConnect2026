@@ -11,7 +11,7 @@ import { SherlockInsightCard } from '@/components/practitioner/analytics/Sherloc
 import { MedicalDisclaimer } from '@/components/practitioner/analytics/MedicalDisclaimer';
 import { DependencyPendingBanner } from '@/components/practitioner/analytics/DependencyPendingBanner';
 import { getSherlockStubInsight } from '@/lib/practitioner-analytics/sherlock-stub';
-import { PRACTITIONER_PENDING_REASON } from '@/lib/practitioner-analytics/queries';
+import { PRACTITIONER_PENDING_REASON } from '@/lib/practitioner-analytics/constants';
 
 export default function RevenueAnalyticsPage() {
   const insight = getSherlockStubInsight('revenue');

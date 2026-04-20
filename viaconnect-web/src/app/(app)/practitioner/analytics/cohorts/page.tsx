@@ -13,7 +13,7 @@ import { DependencyPendingBanner } from '@/components/practitioner/analytics/Dep
 import {
   getSherlockStubInsight,
 } from '@/lib/practitioner-analytics/sherlock-stub';
-import { PRACTITIONER_PENDING_REASON } from '@/lib/practitioner-analytics/queries';
+import { PRACTITIONER_PENDING_REASON } from '@/lib/practitioner-analytics/constants';
 
 export default function CohortsPage() {
   const insight = getSherlockStubInsight('cohorts');

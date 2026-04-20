@@ -1,11 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import Link from "next/link";
 import {
   Users,
   Activity,
   ClipboardCheck,
   DollarSign,
+  TrendingUp,
+  BarChart3,
 } from "lucide-react";
 import { Card, StatCard } from "@/components/ui";
 import { PageTransition, StaggerChild } from "@/lib/motion";
@@ -26,6 +29,22 @@ import {
   Cell,
   CartesianGrid,
 } from "recharts";
+import { createClient } from "@/lib/supabase/client";
+import { SherlockInsightCard } from "@/components/practitioner/analytics/SherlockInsightCard";
+import { MedicalDisclaimer } from "@/components/practitioner/analytics/MedicalDisclaimer";
+import { DependencyPendingBanner } from "@/components/practitioner/analytics/DependencyPendingBanner";
+import { KPICard } from "@/components/practitioner/analytics/KPICard";
+import { getSherlockStubInsight } from "@/lib/practitioner-analytics/sherlock-stub";
+import {
+  fetchPracticeHealth,
+  type PracticeHealthRow,
+} from "@/lib/practitioner-analytics/queries-client";
+import { PRACTITIONER_PENDING_REASON } from "@/lib/practitioner-analytics/constants";
+import {
+  formatBioOptScore,
+  formatEngagementScore,
+  formatSignedDelta,
+} from "@/lib/practitioner-analytics/formatters";
 
 // ─── Date Range ──────────────────────────────────────────────────────────────
 
@@ -126,11 +145,77 @@ const tooltipStyle = {
 
 export default function AnalyticsPage() {
   const [range, setRange] = useState<Range>("30D");
+  const insight = getSherlockStubInsight("practice_health");
+  const [practice, setPractice] = useState<PracticeHealthRow | null>(null);
+  const [practicePending, setPracticePending] = useState(true);
+
+  useEffect(() => {
+    const run = async () => {
+      const supabase = createClient();
+      const outcome = await fetchPracticeHealth(supabase);
+      if (outcome.status === "live" && outcome.data) {
+        setPractice(outcome.data);
+        setPracticePending(false);
+      } else {
+        setPracticePending(true);
+      }
+    };
+    run().catch(() => setPracticePending(true));
+  }, []);
 
   return (
     <PageTransition className="min-h-screen bg-dark-bg p-6 md:p-10">
       <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
+        {/* Prompt #99 Phase 2 — Practice Health live KPIs */}
+        <StaggerChild className="space-y-4">
+          <div className="flex items-center gap-2">
+            <BarChart3 className="h-5 w-5 text-[#E8803A]" strokeWidth={1.5} />
+            <h2 className="text-lg font-semibold text-white">Practice Health</h2>
+          </div>
+          {practicePending && (
+            <DependencyPendingBanner pendingReason={PRACTITIONER_PENDING_REASON.practice_health} />
+          )}
+          {!practicePending && practice && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              <KPICard
+                icon={Users}
+                label="Active clients"
+                value={String(practice.totalActiveClients)}
+                sub={`${practice.newClients30d} new in 30d`}
+                delta={practice.newClients30d > 0 ? formatSignedDelta(practice.newClients30d) : null}
+                deltaDirection={practice.newClients30d > 0 ? "up" : "flat"}
+              />
+              <KPICard
+                icon={TrendingUp}
+                label="Avg Bio Optimization"
+                value={formatBioOptScore(practice.avgBioOptimizationScore)}
+                sub={`${practice.clientsBioOptHigh} high, ${practice.clientsBioOptMid} mid, ${practice.clientsBioOptLow} low`}
+              />
+              <KPICard
+                icon={Activity}
+                label="Avg engagement"
+                value={formatEngagementScore(practice.avgEngagementScore)}
+                sub="0 to 100 aggregate"
+              />
+              <KPICard
+                icon={Users}
+                label="New clients, 90d"
+                value={String(practice.newClients90d)}
+                sub="rolling window"
+              />
+            </div>
+          )}
+          <SherlockInsightCard insight={insight} />
+          <div className="flex flex-wrap gap-2 text-[11px]">
+            <Link href="/practitioner/analytics/cohorts" className="rounded-lg border border-white/[0.1] bg-white/[0.04] hover:bg-white/[0.08] px-3 py-1.5 text-white/80">Cohorts</Link>
+            <Link href="/practitioner/analytics/protocols" className="rounded-lg border border-white/[0.1] bg-white/[0.04] hover:bg-white/[0.08] px-3 py-1.5 text-white/80">Protocols</Link>
+            <Link href="/practitioner/analytics/revenue" className="rounded-lg border border-white/[0.1] bg-white/[0.04] hover:bg-white/[0.08] px-3 py-1.5 text-white/80">Revenue</Link>
+            <Link href="/practitioner/analytics/engagement" className="rounded-lg border border-white/[0.1] bg-white/[0.04] hover:bg-white/[0.08] px-3 py-1.5 text-white/80">Engagement</Link>
+          </div>
+          <div className="border-t border-white/[0.06]" />
+        </StaggerChild>
+
+        {/* Legacy header + mock charts — left intact pending Bio Opt score data in production */}
         <StaggerChild className="flex items-center justify-between">
           <h1 className="text-2xl font-bold text-white">Analytics</h1>
           <div className="flex items-center gap-1 p-1 rounded-lg bg-white/[0.04] border border-white/[0.06]">
@@ -279,6 +364,8 @@ export default function AnalyticsPage() {
             </ResponsiveContainer>
           </Card>
         </StaggerChild>
+
+        <MedicalDisclaimer />
       </div>
     </PageTransition>
   );

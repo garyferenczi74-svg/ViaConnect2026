@@ -22,6 +22,10 @@ const REPO_ROOT = process.cwd();
 const ANALYTICS_LIB = join(REPO_ROOT, 'src/lib/practitioner-analytics');
 const ANALYTICS_COMPONENTS = join(REPO_ROOT, 'src/components/practitioner/analytics');
 const ANALYTICS_PAGES_ROOT = join(REPO_ROOT, 'src/app/(app)/practitioner/analytics');
+const PHASE_2_MIGRATION = join(
+  REPO_ROOT,
+  'supabase/migrations/20260420000001_practitioner_analytics_mvs_phase_2a.sql',
+);
 
 /** The guardrails module itself MUST contain the forbidden tokens
  *  (it's the source of truth for them). Skip it in the tree scan. */
@@ -30,10 +34,10 @@ const GUARDRAIL_SELF_REFERENCE = join(
   'guardrails.ts',
 ).replace(/\\/g, '/');
 
-/** Phase 1 (Path A) scaffolds only. The legacy
- *  /practitioner/analytics/page.tsx predates Prompt #99 and is out of
- *  Path A scope — migrating it is Phase 2. */
-const PHASE_1_PAGE_ROUTES: readonly string[] = [
+/** Phase 1 Path A scaffolds + Phase 2 landing page migration. The
+ *  MedicalDisclaimer is mandatory on every analytics surface per §3.4. */
+const ANALYTICS_PAGE_ROUTES: readonly string[] = [
+  'page.tsx',
   'cohorts',
   'protocols',
   'revenue',
@@ -54,11 +58,12 @@ function normalize(p: string): string {
   return p.replace(/\\/g, '/');
 }
 
-function isPhase1ScaffoldPage(filePath: string): boolean {
+function isAnalyticsPage(filePath: string): boolean {
   const norm = normalize(filePath);
-  return PHASE_1_PAGE_ROUTES.some((route) =>
-    norm.endsWith(`/practitioner/analytics/${route}/page.tsx`),
-  );
+  return ANALYTICS_PAGE_ROUTES.some((route) => {
+    if (route === 'page.tsx') return norm.endsWith('/practitioner/analytics/page.tsx');
+    return norm.endsWith(`/practitioner/analytics/${route}/page.tsx`);
+  });
 }
 
 describe('scanForForbiddenTokens', () => {
@@ -173,19 +178,67 @@ describe('practitioner analytics tree — static scan', () => {
     expect(bad).toEqual([]);
   });
 
-  it('every Phase 1 scaffold page renders the MedicalDisclaimer component', () => {
-    const scaffoldPages = pageFiles.filter(isPhase1ScaffoldPage);
-    expect(scaffoldPages.length).toBe(PHASE_1_PAGE_ROUTES.length);
+  it('every analytics page renders the MedicalDisclaimer component (landing + 4 scaffolds)', () => {
+    const allPages = pageFiles.filter(isAnalyticsPage);
+    expect(allPages.length).toBe(ANALYTICS_PAGE_ROUTES.length);
     const missing: string[] = [];
-    for (const file of scaffoldPages) {
+    for (const file of allPages) {
       const raw = readFileSync(file, 'utf8');
       if (!raw.includes('MedicalDisclaimer')) {
         missing.push(normalize(file.replace(REPO_ROOT, '')));
       }
     }
     if (missing.length) {
-      throw new Error(`Scaffold pages missing MedicalDisclaimer:\n${missing.join('\n')}`);
+      throw new Error(`Pages missing MedicalDisclaimer:\n${missing.join('\n')}`);
     }
     expect(missing).toEqual([]);
+  });
+});
+
+describe('Phase 2 MV migration — Helix isolation', () => {
+  it('migration SQL contains no forbidden helix_* identifier (EXCLUDES header comment is the sanctioned exception per Prompt #99 §5)', () => {
+    const sql = readFileSync(PHASE_2_MIGRATION, 'utf8');
+    // The EXCLUDES header is mandated by the prompt and references the
+    // token declaratively. Strip it before scanning; any remaining
+    // match is a real violation.
+    const stripped = sql
+      .split('\n')
+      .filter((line) => !/^--\s*EXCLUDES:/i.test(line.trim()))
+      .join('\n');
+    expect(containsHelixReference(stripped)).toBe(false);
+  });
+
+  it('migration SQL defines all three materialized views', () => {
+    const sql = readFileSync(PHASE_2_MIGRATION, 'utf8');
+    expect(sql).toMatch(/practitioner_engagement_summary_mv/);
+    expect(sql).toMatch(/practitioner_protocol_effectiveness_mv/);
+    expect(sql).toMatch(/practitioner_practice_health_mv/);
+  });
+
+  it('migration SQL defines the three RLS-equivalent wrapper views', () => {
+    const sql = readFileSync(PHASE_2_MIGRATION, 'utf8');
+    expect(sql).toMatch(/v_practitioner_engagement_summary/);
+    expect(sql).toMatch(/v_practitioner_protocol_effectiveness/);
+    expect(sql).toMatch(/v_practitioner_practice_health/);
+  });
+
+  it('migration SQL enforces patient consent flags for engagement + protocol surfaces', () => {
+    const sql = readFileSync(PHASE_2_MIGRATION, 'utf8');
+    expect(sql).toMatch(/consent_share_engagement_score\s*=\s*true/);
+    expect(sql).toMatch(/consent_share_protocol\s*=\s*true/);
+  });
+
+  it('migration SQL revokes all access on MVs from PUBLIC', () => {
+    const sql = readFileSync(PHASE_2_MIGRATION, 'utf8');
+    expect(sql).toMatch(/REVOKE ALL ON public\.practitioner_engagement_summary_mv FROM PUBLIC/i);
+    expect(sql).toMatch(/REVOKE ALL ON public\.practitioner_protocol_effectiveness_mv FROM PUBLIC/i);
+    expect(sql).toMatch(/REVOKE ALL ON public\.practitioner_practice_health_mv FROM PUBLIC/i);
+  });
+
+  it('migration SQL grants view SELECT to authenticated role', () => {
+    const sql = readFileSync(PHASE_2_MIGRATION, 'utf8');
+    expect(sql).toMatch(/GRANT SELECT ON public\.v_practitioner_engagement_summary TO authenticated/i);
+    expect(sql).toMatch(/GRANT SELECT ON public\.v_practitioner_protocol_effectiveness TO authenticated/i);
+    expect(sql).toMatch(/GRANT SELECT ON public\.v_practitioner_practice_health TO authenticated/i);
   });
 });
