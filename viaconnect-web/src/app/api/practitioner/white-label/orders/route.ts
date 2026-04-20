@@ -17,6 +17,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 import { calculateProductionQuote } from '@/lib/white-label/production-quote';
+import { loadGovernedWhiteLabelParameters } from '@/lib/white-label/governed-params';
 
 export const runtime = 'nodejs';
 
@@ -132,9 +133,18 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     };
   });
 
+  // Load governance-controlled parameters; fall back to spec defaults
+  // when Phase 7 tables are absent or empty.
+  const { params, tiers } = await loadGovernedWhiteLabelParameters(supabase);
+
   let quote;
   try {
-    quote = calculateProductionQuote({ items: quoteItems, timeline: parsed.data.timeline });
+    quote = calculateProductionQuote({
+      items: quoteItems,
+      timeline: parsed.data.timeline,
+      tiers,
+      params,
+    });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 400 });
   }
