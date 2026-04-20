@@ -31,9 +31,21 @@ interface DetailPayload {
     reviewed_at: string | null;
     review_notes: string | null;
   };
-  attribution: any;
-  milestone_event: any;
-  referral_code: any;
+  attribution: {
+    status: string;
+    attributed_at: string;
+    referring_practitioner_id: string | null;
+    referred_practitioner_id: string | null;
+  } | null;
+  milestone_event: {
+    milestone_id: string;
+    vesting_status: string;
+    hold_expires_at: string | null;
+  } | null;
+  referral_code: {
+    code: string;
+    is_active: boolean;
+  } | null;
   referrer: { practice_name: string | null; display_name: string | null; account_status: string | null } | null;
   historic_flags: Array<{ id: string; flag_type: string; severity: string; status: string; created_at: string }>;
 }

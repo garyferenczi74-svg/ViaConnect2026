@@ -43,18 +43,21 @@ export async function PATCH(
   if (body.w9_on_file === true) {
     update.w9_on_file = true;
     update.w9_collected_at = nowIso;
+    update.w9_collected_by = user.id;
     if (typeof body.w9_document_url === 'string' && body.w9_document_url.length > 0) {
       update.w9_document_url = body.w9_document_url;
     }
   } else if (body.w9_on_file === false) {
     update.w9_on_file = false;
     update.w9_collected_at = null;
+    update.w9_collected_by = null;
     update.w9_document_url = null;
   }
 
   if (body.form_1099_generated === true) {
     update.form_1099_generated = true;
     update.form_1099_generated_at = nowIso;
+    update.form_1099_generated_by = user.id;
     if (typeof body.form_1099_document_url === 'string' && body.form_1099_document_url.length > 0) {
       update.form_1099_document_url = body.form_1099_document_url;
     }

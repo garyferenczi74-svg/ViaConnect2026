@@ -32,8 +32,10 @@ interface Deps {
   supabase: SupabaseClient | unknown;
 }
 
+// SupabaseClient typing is cast at the call site; insertFlag accepts
+// the same unknown-typed handle every other orchestrator uses.
 async function insertFlag(
-  sb: any,
+  sb: SupabaseClient,
   params: {
     attribution_id?: string;
     milestone_event_id?: string;
