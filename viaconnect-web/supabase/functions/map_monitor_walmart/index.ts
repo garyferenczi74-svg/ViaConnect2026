@@ -6,7 +6,6 @@
 // deno-lint-ignore-file no-explicit-any
 import {
   credentialsMissingResponse,
-  fetchL1L2Products,
   getSupabaseClient,
   jsonResponse,
   persistObservations,
@@ -20,19 +19,10 @@ Deno.serve(async (_req) => {
 
   const supabase = getSupabaseClient();
   const ctx = { supabase, source: 'walmart' as const, parserVersion: 'walmart_partner@1.0.0' };
-  const products = await fetchL1L2Products(supabase);
+  // TODO(#101-phase-a): when Walmart Partner API credentials + seller
+  // ID mapping land, loop over fetchL1L2Products(supabase) and call
+  // https://marketplace.walmartapis.com/v3/items?sku={sku} per item.
   const observations: ScrapedObservation[] = [];
-
-  // Real Partner API call deferred until seller accounts are linked.
-  // Marker + loop stay so scope + plumbing land; zero observations
-  // until credentials + seller ID mapping are in place.
-  for (const _product of products) {
-    // Hit https://marketplace.walmartapis.com/v3/items?sku={sku}
-  }
-
-  const inserted = await persistObservations(
-    { ...ctx, source: 'walmart' },
-    observations.map((o) => ({ ...o })),
-  );
+  const inserted = await persistObservations(ctx, observations);
   return jsonResponse({ observed: inserted, phase: 2 });
 });

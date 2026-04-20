@@ -17,7 +17,6 @@ import {
   validateVIPMargin,
   validateVIPWindow,
 } from '@/lib/map/vip/validation';
-import { hashSensitiveContent } from '@/lib/map/vip/encryption';
 
 const REASON_OPTIONS: Array<{ value: MAPVIPExemptionReason; label: string }> = [
   { value: 'long_term_patient', label: 'Long-term patient' },
@@ -85,18 +84,24 @@ export default function NewVIPExemptionPage() {
       if (iErr) throw iErr;
 
       if (reasonRequiresEncryptedNote(reason) && sensitiveNote.trim().length > 0) {
-        // Encryption happens server-side via pgcrypto once the
-        // VIP_SENSITIVE_NOTE_KEY is provisioned. For now, store the
-        // plaintext-hashed record with a placeholder BYTEA so the
-        // practitioner's submission is captured; the admin reviewer
-        // is the one who decrypts / re-encrypts with the key.
-        const hash = hashSensitiveContent(sensitiveNote);
-        await supabase.from('map_vip_exemption_sensitive_notes').insert({
-          vip_exemption_id: inserted.vip_exemption_id,
-          encrypted_content: new TextEncoder().encode(sensitiveNote),
-          content_hash: hash,
-          created_by: userId,
+        // Encryption round-trip via the create_vip_sensitive_note RPC.
+        // The RPC encrypts with pgp_sym_encrypt(app.vip_sensitive_note_key).
+        // If the operator has not provisioned the key yet, the RPC
+        // raises VIP_NOTE_KEY_NOT_PROVISIONED; surface that specifically
+        // so the user knows the attachment was not persisted.
+        const { error: noteError } = await supabase.rpc('create_vip_sensitive_note', {
+          p_vip_exemption_id: inserted.vip_exemption_id,
+          p_plaintext: sensitiveNote,
         });
+        if (noteError) {
+          const msg = String(noteError.message ?? '');
+          if (msg.includes('VIP_NOTE_KEY_NOT_PROVISIONED')) {
+            throw new Error(
+              'Sensitive note storage is not yet available on this environment. Your exemption request was submitted, but the attached note was not saved. Contact admin to provision the encryption key before re-attaching sensitive context.',
+            );
+          }
+          throw noteError;
+        }
       }
 
       router.push('/practitioner/map/vip-exemptions');

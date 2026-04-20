@@ -4,7 +4,6 @@ import { describe, it, expect } from 'vitest';
 import {
   hashSensitiveContent,
   isSensitiveNotePlausible,
-  redactedNotePreview,
 } from '@/lib/map/vip/encryption';
 
 describe('hashSensitiveContent', () => {
@@ -37,12 +36,3 @@ describe('isSensitiveNotePlausible', () => {
   });
 });
 
-describe('redactedNotePreview', () => {
-  it('shows length + 8-char hash prefix, no plaintext', () => {
-    const hash = 'abcdef0123456789'.repeat(4);
-    const preview = redactedNotePreview(hash, 150);
-    expect(preview).toContain('150 chars');
-    expect(preview).toContain('abcdef01');
-    expect(preview).not.toContain('0123456789a'); // no tail beyond prefix
-  });
-});

@@ -6,7 +6,6 @@
 // deno-lint-ignore-file no-explicit-any
 import {
   credentialsMissingResponse,
-  fetchL1L2Products,
   getSupabaseClient,
   jsonResponse,
   persistObservations,
@@ -19,15 +18,11 @@ Deno.serve(async (_req) => {
 
   const supabase = getSupabaseClient();
   const ctx = { supabase, source: 'tiktok_shop' as const, parserVersion: 'tiktok_shop@1.0.0' };
-  const products = await fetchL1L2Products(supabase);
-
-  // Real Seller Center call deferred until app keys approved. Rate
-  // limits matter; the shared.ts helper could gain a per-source
-  // backoff wrapper in a future pass.
-  for (const _product of products) {
-    // Hit https://open-api.tiktokglobalshop.com/api/products/search
-  }
-
+  // TODO(#101-phase-a): when TikTok Shop app keys are approved,
+  // loop fetchL1L2Products(supabase) → POST
+  // https://open-api.tiktokglobalshop.com/api/products/search with
+  // per-source backoff; populate is_flash_sale + flash_sale_ends_at
+  // from the promo banner metadata.
   const inserted = await persistObservations(ctx, []);
   return jsonResponse({ observed: inserted, phase: 2 });
 });
