@@ -11,8 +11,10 @@ const TONE: Record<MAPPillState, string> = {
   monitored: 'bg-amber-500/15 text-amber-300 border-amber-500/30',
   warning: 'bg-orange-500/15 text-orange-300 border-orange-500/30',
   violation: 'bg-red-500/15 text-red-300 border-red-500/30',
-  critical: 'bg-red-600/25 text-red-200 border-red-600/40 animate-pulse',
+  critical: 'bg-red-600/25 text-red-200 border-red-600/40 motion-safe:animate-pulse',
   exempt: 'bg-white/[0.06] text-white/55 border-white/10',
+  waived: 'bg-teal-500/15 text-teal-300 border-teal-500/30',
+  vip_exempt: 'bg-violet-500/15 text-violet-300 border-violet-500/30',
 };
 
 const LABEL: Record<MAPPillState, string> = {
@@ -22,6 +24,8 @@ const LABEL: Record<MAPPillState, string> = {
   violation: 'Violation',
   critical: 'Critical',
   exempt: 'Exempt',
+  waived: 'Waived',
+  vip_exempt: 'VIP Exempt',
 };
 
 export function MAPStatusPill({
@@ -39,6 +43,24 @@ export function MAPStatusPill({
   const classes = `inline-flex items-center text-[10px] font-semibold rounded-md px-1.5 py-0.5 border ${TONE[state]}`;
 
   const body = <span className={classes}>{label}</span>;
+  if (state === 'waived') {
+    return (
+      <Link href="/practitioner/map/waivers" className="hover:opacity-80" aria-label="View active waivers">
+        {body}
+      </Link>
+    );
+  }
+  if (state === 'vip_exempt') {
+    return (
+      <Link
+        href="/practitioner/map/vip-exemptions"
+        className="hover:opacity-80"
+        aria-label="View VIP exemptions"
+      >
+        {body}
+      </Link>
+    );
+  }
   if (linkToRemediation && violationId && state !== 'compliant' && state !== 'exempt') {
     return (
       <Link
