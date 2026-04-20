@@ -26,6 +26,14 @@ const PHASE_2_MIGRATION = join(
   REPO_ROOT,
   'supabase/migrations/20260420000001_practitioner_analytics_mvs_phase_2a.sql',
 );
+const PHASE_2_LOCKDOWN_FIX = join(
+  REPO_ROOT,
+  'supabase/migrations/20260420000002_practitioner_analytics_mvs_phase_2a_lockdown_fix.sql',
+);
+const PHASE_2_FUNCTION_LOCKDOWN = join(
+  REPO_ROOT,
+  'supabase/migrations/20260420000003_practitioner_analytics_phase_2a_function_lockdown.sql',
+);
 
 /** The guardrails module itself MUST contain the forbidden tokens
  *  (it's the source of truth for them). Skip it in the tree scan. */
@@ -240,5 +248,74 @@ describe('Phase 2 MV migration — Helix isolation', () => {
     expect(sql).toMatch(/GRANT SELECT ON public\.v_practitioner_engagement_summary TO authenticated/i);
     expect(sql).toMatch(/GRANT SELECT ON public\.v_practitioner_protocol_effectiveness TO authenticated/i);
     expect(sql).toMatch(/GRANT SELECT ON public\.v_practitioner_practice_health TO authenticated/i);
+  });
+});
+
+describe('Phase 2 lockdown fix migration', () => {
+  it('contains no forbidden helix_* identifier', () => {
+    const sql = readFileSync(PHASE_2_LOCKDOWN_FIX, 'utf8');
+    const stripped = sql
+      .split('\n')
+      .filter((line) => !/^--\s*EXCLUDES:/i.test(line.trim()))
+      .join('\n');
+    expect(containsHelixReference(stripped)).toBe(false);
+  });
+
+  it('revokes all on each MV from anon AND authenticated', () => {
+    const sql = readFileSync(PHASE_2_LOCKDOWN_FIX, 'utf8');
+    for (const mv of [
+      'practitioner_engagement_summary_mv',
+      'practitioner_protocol_effectiveness_mv',
+      'practitioner_practice_health_mv',
+    ]) {
+      expect(sql).toMatch(
+        new RegExp(`REVOKE ALL ON public\\.${mv} FROM anon`, 'i'),
+      );
+      expect(sql).toMatch(
+        new RegExp(`REVOKE ALL ON public\\.${mv} FROM authenticated`, 'i'),
+      );
+    }
+  });
+
+  it('re-affirms wrapper view SELECT grants to authenticated', () => {
+    const sql = readFileSync(PHASE_2_LOCKDOWN_FIX, 'utf8');
+    for (const view of [
+      'v_practitioner_engagement_summary',
+      'v_practitioner_protocol_effectiveness',
+      'v_practitioner_practice_health',
+    ]) {
+      expect(sql).toMatch(
+        new RegExp(`GRANT SELECT ON public\\.${view} TO authenticated`, 'i'),
+      );
+    }
+  });
+});
+
+describe('Phase 2 function lockdown migration', () => {
+  it('contains no forbidden helix_* identifier', () => {
+    const sql = readFileSync(PHASE_2_FUNCTION_LOCKDOWN, 'utf8');
+    const stripped = sql
+      .split('\n')
+      .filter((line) => !/^--\s*EXCLUDES:/i.test(line.trim()))
+      .join('\n');
+    expect(containsHelixReference(stripped)).toBe(false);
+  });
+
+  it('revokes EXECUTE on refresh function from PUBLIC, anon, and authenticated', () => {
+    const sql = readFileSync(PHASE_2_FUNCTION_LOCKDOWN, 'utf8');
+    expect(sql).toMatch(/REVOKE EXECUTE ON FUNCTION public\.refresh_practitioner_analytics_phase_2a\(\) FROM PUBLIC/i);
+    expect(sql).toMatch(/REVOKE EXECUTE ON FUNCTION public\.refresh_practitioner_analytics_phase_2a\(\) FROM anon/i);
+    expect(sql).toMatch(/REVOKE EXECUTE ON FUNCTION public\.refresh_practitioner_analytics_phase_2a\(\) FROM authenticated/i);
+  });
+
+  it('re-grants EXECUTE only to service_role', () => {
+    const sql = readFileSync(PHASE_2_FUNCTION_LOCKDOWN, 'utf8');
+    expect(sql).toMatch(/GRANT EXECUTE ON FUNCTION public\.refresh_practitioner_analytics_phase_2a\(\) TO service_role/i);
+  });
+
+  it('annotates protocol + practice_health MVs with explicit EXCLUDES clause', () => {
+    const sql = readFileSync(PHASE_2_FUNCTION_LOCKDOWN, 'utf8');
+    expect(sql).toMatch(/COMMENT ON MATERIALIZED VIEW public\.practitioner_protocol_effectiveness_mv[\s\S]*EXCLUDES/i);
+    expect(sql).toMatch(/COMMENT ON MATERIALIZED VIEW public\.practitioner_practice_health_mv[\s\S]*EXCLUDES/i);
   });
 });

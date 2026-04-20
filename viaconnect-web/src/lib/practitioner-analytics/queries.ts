@@ -1,11 +1,11 @@
-// Prompt #99 Phase 1 (Path A): Supabase query helpers for practitioner
-// analytics. In Path A most materialized views are not yet live — the
-// helpers return a `dependency_pending` result so page scaffolds can
-// render a banner instead of throwing at the Supabase boundary.
+// Prompt #99 (Path A): Server-side Supabase query helpers for
+// practitioner analytics. Currently narrow — only the Sherlock cache
+// reader lives here. Live MV reads use queries-client.ts from the
+// browser side. Path B will add a server-side Sherlock generator that
+// writes to the same cache table.
 
 import { createClient } from '@/lib/supabase/server';
 import type { SherlockPage } from './sherlock-stub';
-import { PRACTITIONER_PENDING_REASON, type QueryOutcome } from './constants';
 
 export {
   PRACTITIONER_MV,
@@ -15,8 +15,10 @@ export {
 } from './constants';
 
 /** Fetches the cached Sherlock insight row for a page if one exists.
- *  This table IS live (migration 20260419000010), so it's safe to
- *  query. Returns null when no cache exists for today. */
+ *  The sherlock_insights_cache table is live (migration 20260419000010),
+ *  so callers on the server can hit this now. Returns null when no
+ *  cache row exists for today. Consumed in Path B by the narrative
+ *  generator + Monday-morning digest edge function. */
 export async function fetchCachedSherlockInsight(
   practitionerId: string,
   page: SherlockPage,
@@ -53,15 +55,5 @@ export async function fetchCachedSherlockInsight(
     suggestedAction: row.suggested_action,
     confidence: row.confidence,
     generatedAt: row.generated_at,
-  };
-}
-
-/** Path A placeholder for the MV read. Returns 'dependency_pending'
- *  for every surface so the UI renders the banner. Path B flips this
- *  one page at a time as dependencies land. */
-export function fetchMaterializedView<T>(page: SherlockPage): QueryOutcome<T> {
-  return {
-    status: 'dependency_pending',
-    pendingReason: PRACTITIONER_PENDING_REASON[page],
   };
 }

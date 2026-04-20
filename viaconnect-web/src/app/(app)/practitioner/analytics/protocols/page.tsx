@@ -24,6 +24,9 @@ export default function ProtocolsAnalyticsPage() {
   const insight = getSherlockStubInsight('protocols');
   const [rows, setRows] = useState<ProtocolEffectivenessRow[]>([]);
   const [pending, setPending] = useState(true);
+  const [pendingReason, setPendingReason] = useState(
+    PRACTITIONER_PENDING_REASON.protocols,
+  );
 
   useEffect(() => {
     const run = async () => {
@@ -34,10 +37,14 @@ export default function ProtocolsAnalyticsPage() {
         setPending(false);
       } else {
         setRows([]);
+        setPendingReason(outcome.pendingReason ?? PRACTITIONER_PENDING_REASON.protocols);
         setPending(true);
       }
     };
-    run().catch(() => setPending(true));
+    run().catch((err) => {
+      console.error('practitioner analytics: protocol effectiveness load failed', err);
+      setPending(true);
+    });
   }, []);
 
   return (
@@ -61,9 +68,7 @@ export default function ProtocolsAnalyticsPage() {
           </p>
         </div>
 
-        {pending && (
-          <DependencyPendingBanner pendingReason={PRACTITIONER_PENDING_REASON.protocols} />
-        )}
+        {pending && <DependencyPendingBanner pendingReason={pendingReason} />}
 
         {!pending && rows.length > 0 && (
           <section className="rounded-2xl border border-white/[0.08] bg-[#1A2744]/60 p-4">

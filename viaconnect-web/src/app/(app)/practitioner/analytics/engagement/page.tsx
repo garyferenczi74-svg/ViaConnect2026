@@ -41,7 +41,10 @@ export default function EngagementAnalyticsPage() {
         setPending(true);
       }
     };
-    run().catch(() => setPending(true));
+    run().catch((err) => {
+      console.error('practitioner analytics: engagement summary load failed', err);
+      setPending(true);
+    });
   }, []);
 
   return (

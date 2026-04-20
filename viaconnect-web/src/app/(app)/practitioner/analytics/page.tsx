@@ -53,9 +53,6 @@ type Range = (typeof ranges)[number];
 
 // ─── Mock Data ───────────────────────────────────────────────────────────────
 
-// Months used by chart data xAxis
-const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]; // eslint-disable-line @typescript-eslint/no-unused-vars
-
 const outcomesData = [
   { month: "Jan", vitality: 61, adherence: 64 },
   { month: "Feb", vitality: 63, adherence: 66 },
@@ -148,6 +145,9 @@ export default function AnalyticsPage() {
   const insight = getSherlockStubInsight("practice_health");
   const [practice, setPractice] = useState<PracticeHealthRow | null>(null);
   const [practicePending, setPracticePending] = useState(true);
+  const [practicePendingReason, setPracticePendingReason] = useState(
+    PRACTITIONER_PENDING_REASON.practice_health,
+  );
 
   useEffect(() => {
     const run = async () => {
@@ -157,10 +157,16 @@ export default function AnalyticsPage() {
         setPractice(outcome.data);
         setPracticePending(false);
       } else {
+        setPracticePendingReason(
+          outcome.pendingReason ?? PRACTITIONER_PENDING_REASON.practice_health,
+        );
         setPracticePending(true);
       }
     };
-    run().catch(() => setPracticePending(true));
+    run().catch((err) => {
+      console.error("practitioner analytics: practice health load failed", err);
+      setPracticePending(true);
+    });
   }, []);
 
   return (
@@ -173,7 +179,7 @@ export default function AnalyticsPage() {
             <h2 className="text-lg font-semibold text-white">Practice Health</h2>
           </div>
           {practicePending && (
-            <DependencyPendingBanner pendingReason={PRACTITIONER_PENDING_REASON.practice_health} />
+            <DependencyPendingBanner pendingReason={practicePendingReason} />
           )}
           {!practicePending && practice && (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
