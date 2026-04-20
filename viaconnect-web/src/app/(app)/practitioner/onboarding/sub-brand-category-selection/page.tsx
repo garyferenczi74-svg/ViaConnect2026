@@ -1,4 +1,4 @@
-// Prompt #103 Phase 5: Practitioner onboarding — sub-brand + category opt-in.
+// Prompt #103 Phase 5: Practitioner onboarding, sub-brand + category opt-in.
 
 import SelectorClient from './selector-client';
 

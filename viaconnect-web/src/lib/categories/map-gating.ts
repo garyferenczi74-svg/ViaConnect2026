@@ -3,7 +3,7 @@
 // Mirrors the DB trigger auto_generate_map_policy_for_new_sku()
 // decisions in pure TypeScript so we can unit-test the policy without
 // hitting a live database. Any divergence between this file and the
-// SQL function is a bug — the SQL function is the runtime authority.
+// SQL function is a bug; the SQL function is the runtime authority.
 
 import type { CategorySlug } from './types';
 

@@ -60,7 +60,7 @@ export const CRITICAL_ISSUE_CODES = new Set<ComplianceIssueCode>([
   'capacity_or_dose_mismatch',
 ]);
 
-// Major codes — human review required, remediation expected.
+// Major codes: human review required, remediation expected.
 export const MAJOR_ISSUE_CODES = new Set<ComplianceIssueCode>([
   'wrong_wordmark',
   'wrong_tagline',
