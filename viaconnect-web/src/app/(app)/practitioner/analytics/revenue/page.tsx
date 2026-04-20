@@ -14,6 +14,7 @@ import { SherlockInsightCard } from '@/components/practitioner/analytics/Sherloc
 import { MedicalDisclaimer } from '@/components/practitioner/analytics/MedicalDisclaimer';
 import { DependencyPendingBanner } from '@/components/practitioner/analytics/DependencyPendingBanner';
 import { MAPStatusPill } from '@/components/practitioner/map/MAPStatusPill';
+import { BrandCategoryFilterChips } from '@/components/shop/BrandCategoryFilterChips';
 import { getSherlockStubInsight } from '@/lib/practitioner-analytics/sherlock-stub';
 import { PRACTITIONER_PENDING_REASON } from '@/lib/practitioner-analytics/constants';
 import {
@@ -25,13 +26,18 @@ export default function RevenueAnalyticsPage() {
   const insight = getSherlockStubInsight('revenue');
   const [statuses, setStatuses] = useState<ProductMAPStatus[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const [brandId, setBrandId] = useState<string | null>(null);
+  const [categoryId, setCategoryId] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
     const supabase = createClient();
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const loose = supabase as unknown as any;
-      const { data: products } = await loose.from('products').select('id').eq('active', true).limit(25);
+      let q = loose.from('products').select('id').eq('active', true).limit(25);
+      if (brandId) q = q.eq('brand_id', brandId);
+      if (categoryId) q = q.eq('product_category_id', categoryId);
+      const { data: products } = await q;
       const ids = ((products ?? []) as Array<{ id: string }>).map((p) => p.id);
       if (ids.length === 0) {
         setStatuses([]);
@@ -43,7 +49,7 @@ export default function RevenueAnalyticsPage() {
     } finally {
       setLoaded(true);
     }
-  }, []);
+  }, [brandId, categoryId]);
 
   useEffect(() => { refresh(); }, [refresh]);
 
@@ -67,6 +73,15 @@ export default function RevenueAnalyticsPage() {
         </div>
 
         <DependencyPendingBanner pendingReason={PRACTITIONER_PENDING_REASON.revenue} />
+
+        <section className="rounded-2xl border border-white/[0.08] bg-[#1A2744]/60 p-4">
+          <h2 className="text-sm font-semibold mb-3">Filter</h2>
+          <BrandCategoryFilterChips
+            selectedBrandId={brandId}
+            selectedCategoryId={categoryId}
+            onChange={(next) => { setBrandId(next.brandId); setCategoryId(next.categoryId); }}
+          />
+        </section>
 
         {loaded && statuses.length > 0 && (
           <section className="rounded-2xl border border-white/[0.08] bg-[#1A2744]/60 p-4">
