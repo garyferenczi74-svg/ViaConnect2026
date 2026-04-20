@@ -53,7 +53,7 @@ interface Item {
 }
 
 const fmtUsd = (c: number) => `$${(c / 100).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
-const fmtDate = (iso: string | null) => iso ? new Date(iso).toLocaleString() : '—';
+const fmtDate = (iso: string | null) => iso ? new Date(iso).toLocaleString() : 'n/a';
 
 export default function OrderDetailPage({ params }: { params: { orderId: string } }) {
   const router = useRouter();
@@ -214,7 +214,7 @@ export default function OrderDetailPage({ params }: { params: { orderId: string 
           <p className="text-xs uppercase tracking-wider text-gray-400 mb-2 inline-flex items-center gap-1">
             <Truck className="w-3 h-3" strokeWidth={1.5} /> Shipping
           </p>
-          <p className="text-sm">{order.carrier ?? '—'}; tracking <span className="font-mono">{order.tracking_number ?? '—'}</span></p>
+          <p className="text-sm">{order.carrier ?? 'n/a'}; tracking <span className="font-mono">{order.tracking_number ?? 'n/a'}</span></p>
           <p className="text-xs text-gray-400 mt-1">Shipped {fmtDate(order.shipped_at)}; delivered {fmtDate(order.delivered_at)}.</p>
         </section>
       )}

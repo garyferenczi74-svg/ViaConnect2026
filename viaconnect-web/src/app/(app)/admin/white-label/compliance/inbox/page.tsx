@@ -138,7 +138,9 @@ export default function ComplianceInboxPage() {
       )}
 
       {!loading && rows.length > 0 && (
-        <div className="rounded-xl border border-white/10 bg-white/[0.03] overflow-hidden">
+        <>
+        <p className="md:hidden text-xs text-gray-400 mb-2">Scroll horizontally to see all columns.</p>
+        <div className="overflow-x-auto rounded-xl border border-white/10 bg-white/[0.03]">
           <table className="w-full text-sm">
             <thead className="text-xs text-gray-400">
               <tr>
@@ -172,6 +174,7 @@ export default function ComplianceInboxPage() {
             </tbody>
           </table>
         </div>
+        </>
       )}
     </div>
   );

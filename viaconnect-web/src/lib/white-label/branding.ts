@@ -44,6 +44,43 @@ export interface ValidationResult {
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+// WCAG AA minimum contrast ratio for normal text against a background.
+// 4.5:1 is the standard; we use this to validate that the practitioner's
+// primary brand color produces a usable patient dispensary CTA when the
+// system renders white text on top of the primary color.
+export const WCAG_AA_NORMAL_RATIO = 4.5;
+
+function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
+  const m = /^#([0-9A-Fa-f]{6})$/.exec(hex);
+  if (!m) return null;
+  const n = parseInt(m[1], 16);
+  return { r: (n >> 16) & 0xff, g: (n >> 8) & 0xff, b: n & 0xff };
+}
+
+function relativeLuminance({ r, g, b }: { r: number; g: number; b: number }): number {
+  const channel = (c: number) => {
+    const s = c / 255;
+    return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+  };
+  return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b);
+}
+
+/**
+ * Returns the WCAG contrast ratio between two hex colors, or null if either
+ * input is malformed. Used by validateBrandConfiguration to guard against
+ * brand palettes that would render the patient dispensary CTA unreadable.
+ */
+export function contrastRatio(fgHex: string, bgHex: string): number | null {
+  const fg = hexToRgb(fgHex);
+  const bg = hexToRgb(bgHex);
+  if (!fg || !bg) return null;
+  const l1 = relativeLuminance(fg);
+  const l2 = relativeLuminance(bg);
+  const lighter = Math.max(l1, l2);
+  const darker = Math.min(l1, l2);
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
 export function validateBrandConfiguration(input: BrandConfigInput): ValidationResult {
   const errors: ValidationError[] = [];
 
@@ -84,6 +121,18 @@ export function validateBrandConfiguration(input: BrandConfigInput): ValidationR
       field: 'practice_prefix',
       message: 'Practice prefix is required for the prefix-plus-ViaCura naming scheme.',
     });
+  }
+
+  // Contrast guard: the patient dispensary CTA renders white text on the
+  // primary color. Reject palettes where that combination fails WCAG AA.
+  if (input.primary_color_hex && isValidHexColor(input.primary_color_hex)) {
+    const ratio = contrastRatio('#FFFFFF', input.primary_color_hex);
+    if (ratio !== null && ratio < WCAG_AA_NORMAL_RATIO) {
+      errors.push({
+        field: 'primary_color_hex',
+        message: `Primary color must give 4.5:1 contrast against white CTA text (got ${ratio.toFixed(2)}:1). Choose a darker shade.`,
+      });
+    }
   }
 
   return { ok: errors.length === 0, errors };

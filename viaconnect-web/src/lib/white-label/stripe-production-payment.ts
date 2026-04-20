@@ -131,7 +131,7 @@ export async function createWhiteLabelPaymentIntent(
 export async function handleWhiteLabelPaymentSucceeded(
   paymentIntent: Stripe.PaymentIntent,
   supabase: SupabaseClient,
-): Promise<{ matched: boolean; order_id?: string; new_status?: string }> {
+): Promise<{ matched: boolean; order_id?: string; new_status?: string; outcome?: string }> {
   const productionOrderId = paymentIntent.metadata?.production_order_id;
   const paymentType = paymentIntent.metadata?.payment_type as WhiteLabelPaymentType | undefined;
   if (!productionOrderId || !paymentType) return { matched: false };
@@ -139,26 +139,50 @@ export async function handleWhiteLabelPaymentSucceeded(
   const sb = supabase as any;
   const { data: order } = await sb
     .from('white_label_production_orders')
-    .select('id, status')
+    .select('id, status, deposit_paid_at, final_payment_paid_at, stripe_deposit_payment_intent_id, stripe_final_payment_intent_id')
     .eq('id', productionOrderId)
     .maybeSingle();
-  if (!order) return { matched: true };
+  if (!order) return { matched: true, outcome: 'order_not_found' };
+
+  // Idempotency: if this PaymentIntent already corresponds to a recorded
+  // payment timestamp, treat the second event as a no-op replay.
+  if (paymentType === 'deposit'
+      && order.stripe_deposit_payment_intent_id === paymentIntent.id
+      && order.deposit_paid_at) {
+    console.log(`[wl-webhook] dedupe: deposit ${paymentIntent.id} already recorded for order ${productionOrderId}`);
+    return { matched: true, order_id: productionOrderId, outcome: 'duplicate_replay' };
+  }
+  if (paymentType === 'final'
+      && order.stripe_final_payment_intent_id === paymentIntent.id
+      && order.final_payment_paid_at) {
+    console.log(`[wl-webhook] dedupe: final ${paymentIntent.id} already recorded for order ${productionOrderId}`);
+    return { matched: true, order_id: productionOrderId, outcome: 'duplicate_replay' };
+  }
+
+  // Status guard: refuse to advance from a wrong pre-state. A canceled,
+  // shipped, or delivered order receiving a stale payment success event
+  // is logged but never silently transitioned.
+  const expectedStatus = paymentType === 'deposit'
+    ? 'labels_approved_pending_deposit'
+    : 'final_payment_pending';
+  if (order.status !== expectedStatus) {
+    console.warn(
+      `[wl-webhook] status_mismatch: order ${productionOrderId} is in ${order.status}, ` +
+      `cannot accept ${paymentType} PI ${paymentIntent.id}. ` +
+      `Investigate: late event or already-advanced order.`,
+    );
+    return { matched: true, order_id: productionOrderId, outcome: 'status_mismatch' };
+  }
 
   const now = new Date().toISOString();
   const update: Record<string, unknown> = { updated_at: now };
-
-  if (paymentType === 'deposit' && order.status === 'labels_approved_pending_deposit') {
+  if (paymentType === 'deposit') {
     update.status = 'deposit_paid';
     update.deposit_paid_at = now;
-  } else if (paymentType === 'final' && order.status === 'final_payment_pending') {
+  } else {
     update.status = 'shipped';
     update.final_payment_paid_at = now;
     update.shipped_at = now;
-  } else {
-    // Already advanced or wrong state; record the timestamp regardless
-    // for audit but do not change status.
-    if (paymentType === 'deposit') update.deposit_paid_at = now;
-    if (paymentType === 'final') update.final_payment_paid_at = now;
   }
 
   await sb
@@ -166,5 +190,5 @@ export async function handleWhiteLabelPaymentSucceeded(
     .update(update)
     .eq('id', productionOrderId);
 
-  return { matched: true, order_id: productionOrderId, new_status: update.status as string | undefined };
+  return { matched: true, order_id: productionOrderId, new_status: update.status as string, outcome: 'advanced' };
 }

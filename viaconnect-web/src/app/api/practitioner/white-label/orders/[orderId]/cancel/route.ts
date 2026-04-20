@@ -79,39 +79,70 @@ export async function POST(
     return NextResponse.json({ error: outcome.reason, outcome }, { status: 400 });
   }
 
-  // Stripe refund (best-effort; Stripe handles async settlement).
-  let refundId: string | null = null;
-  if (outcome.refund_cents > 0 && order.stripe_deposit_payment_intent_id) {
-    try {
-      const stripe = getStripe();
-      const refund = await stripe.refunds.create({
-        payment_intent: order.stripe_deposit_payment_intent_id,
-        amount: outcome.refund_cents,
-        reason: parsed.data.admin_override ? 'requested_by_customer' : 'requested_by_customer',
-        metadata: {
-          production_order_id: params.orderId,
-          cancellation_stage: stage,
-          admin_override: String(!!parsed.data.admin_override),
-        },
-      });
-      refundId = refund.id;
-    } catch (e) {
-      console.warn('[wl-cancel] Stripe refund failed', (e as Error).message);
-      return NextResponse.json({ error: 'Refund failed', details: (e as Error).message }, { status: 502 });
-    }
-  }
-
+  // Refund flow (Jeffery audit fix):
+  //   1. Mark the order canceled FIRST. If Stripe fails after, the order
+  //      is in a terminal state and a recovery cron / manual replay can
+  //      attempt the refund again.
+  //   2. Use a deterministic Stripe idempotency_key derived from the
+  //      order id + cancellation_stage so a retry never double-refunds.
+  //   3. Persist the refund id back to the order before returning.
+  const nowIso = new Date().toISOString();
   await sb
     .from('white_label_production_orders')
     .update({
       status: 'canceled',
-      canceled_at: new Date().toISOString(),
+      canceled_at: nowIso,
       canceled_by: user.id,
       canceled_reason: parsed.data.reason,
-      deposit_refunded: outcome.refund_cents > 0,
-      updated_at: new Date().toISOString(),
+      deposit_refunded: false,
+      updated_at: nowIso,
     })
     .eq('id', params.orderId);
+
+  let refundId: string | null = null;
+  if (outcome.refund_cents > 0 && order.stripe_deposit_payment_intent_id) {
+    try {
+      const stripe = getStripe();
+      const refund = await stripe.refunds.create(
+        {
+          payment_intent: order.stripe_deposit_payment_intent_id,
+          amount: outcome.refund_cents,
+          reason: 'requested_by_customer',
+          metadata: {
+            production_order_id: params.orderId,
+            cancellation_stage: stage,
+            admin_override: String(!!parsed.data.admin_override),
+          },
+        },
+        {
+          idempotencyKey: `wl-cancel-${params.orderId}-${stage}-${parsed.data.admin_override ? 'admin' : 'self'}`,
+        },
+      );
+      refundId = refund.id;
+      await sb
+        .from('white_label_production_orders')
+        .update({
+          deposit_refunded: true,
+          stripe_refund_id: refund.id,
+          refund_amount_cents: outcome.refund_cents,
+          refund_recorded_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', params.orderId);
+    } catch (e) {
+      console.error('[wl-cancel] Stripe refund failed; order is canceled but deposit refund pending', {
+        orderId: params.orderId,
+        message: (e as Error).message,
+      });
+      // The order is canceled; the practitioner sees a soft warning so
+      // they know to expect a follow-up rather than re-cancelling.
+      return NextResponse.json({
+        outcome,
+        stripe_refund_id: null,
+        warning: 'Order is canceled. The deposit refund could not be issued automatically. Operations will reach out within one business day.',
+      }, { status: 200 });
+    }
+  }
 
   return NextResponse.json({ outcome, stripe_refund_id: refundId });
 }

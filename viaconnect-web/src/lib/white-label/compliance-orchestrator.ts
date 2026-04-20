@@ -88,6 +88,14 @@ export async function runAutomatedComplianceChecklist(
 /**
  * Open reviewer assignment rows for the given roles. Idempotent:
  * upsert on (label_design_id, reviewer_role).
+ *
+ * Audit fix: when a label is revised the new version gets a fresh
+ * label_design_id, but pending assignments tied to the prior version
+ * remain in the table and would still surface in the inbox view if it
+ * did not filter by is_current_version. We delete pending assignments
+ * for prior versions of the same (practitioner, product) before
+ * upserting the new ones so the inbox stays clean even without
+ * relying on the view filter.
  */
 export async function openReviewerAssignments(
   labelDesignId: string,
@@ -96,6 +104,30 @@ export async function openReviewerAssignments(
 ): Promise<void> {
   const sb = deps.supabase as any;
   if (roles.length === 0) return;
+
+  const { data: design } = await sb
+    .from('white_label_label_designs')
+    .select('practitioner_id, product_catalog_id')
+    .eq('id', labelDesignId)
+    .maybeSingle();
+
+  if (design) {
+    const { data: priorVersions } = await sb
+      .from('white_label_label_designs')
+      .select('id')
+      .eq('practitioner_id', design.practitioner_id)
+      .eq('product_catalog_id', design.product_catalog_id)
+      .eq('is_current_version', false);
+    const priorIds = ((priorVersions ?? []) as Array<{ id: string }>).map((d) => d.id);
+    if (priorIds.length > 0) {
+      await sb
+        .from('white_label_reviewer_assignments')
+        .delete()
+        .in('label_design_id', priorIds)
+        .eq('status', 'pending');
+    }
+  }
+
   const rows = roles.map((role) => ({
     label_design_id: labelDesignId,
     reviewer_role: role,

@@ -77,6 +77,20 @@ describe('validateBrandConfiguration', () => {
     expect(r.ok).toBe(false);
     expect(r.errors.find((e) => e.field === 'practice_email')).toBeTruthy();
   });
+
+  it('rejects a primary color that fails WCAG AA contrast against white CTA text', () => {
+    // #FFFF99 is pale yellow; white-on-pale-yellow is unreadable.
+    const r = validateBrandConfiguration({ ...validBrand, primary_color_hex: '#FFFF99' });
+    expect(r.ok).toBe(false);
+    const err = r.errors.find((e) => e.field === 'primary_color_hex');
+    expect(err).toBeTruthy();
+    expect(err?.message).toMatch(/contrast/i);
+  });
+
+  it('accepts a dark primary color that passes WCAG AA against white', () => {
+    const r = validateBrandConfiguration({ ...validBrand, primary_color_hex: '#1a3b6e' });
+    expect(r.ok).toBe(true);
+  });
 });
 
 describe('resolveProductName', () => {

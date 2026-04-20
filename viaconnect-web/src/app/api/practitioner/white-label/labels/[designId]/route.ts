@@ -70,11 +70,20 @@ export async function PATCH(request: NextRequest, { params }: { params: { design
 
   const body = (await request.json().catch(() => null)) ?? {};
 
+  // Strict reject of non-canonical manufacturer_line so a misconfigured form
+  // surfaces a clear error instead of silently dropping the field.
   if (body.manufacturer_line !== undefined && body.manufacturer_line !== CANONICAL_MANUFACTURER_LINE) {
-    console.warn('[wl-label-PATCH] attempted to mutate manufacturer_line for design', params.designId);
+    console.warn('[wl-label-PATCH] rejected manufacturer_line mutation for design', params.designId);
+    return NextResponse.json({
+      error: 'manufacturer_line is non-editable. Drop the field from your request to save.',
+      canonical: CANONICAL_MANUFACTURER_LINE,
+    }, { status: 400 });
   }
   if (body.supplement_facts_panel_data !== undefined) {
-    console.warn('[wl-label-PATCH] attempted to mutate supplement_facts_panel_data for design', params.designId);
+    console.warn('[wl-label-PATCH] rejected supplement_facts_panel_data mutation for design', params.designId);
+    return NextResponse.json({
+      error: 'supplement_facts_panel_data is auto-populated and non-editable. Drop the field from your request to save.',
+    }, { status: 400 });
   }
 
   const update: Record<string, unknown> = { updated_at: new Date().toISOString() };
