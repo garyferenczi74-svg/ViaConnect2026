@@ -26,6 +26,8 @@ type SnapshotState =
   | 'draft' | 'computing' | 'computed'
   | 'cfo_review' | 'cfo_approved' | 'locked' | 'failed';
 
+// SOURCE OF TRUTH: src/lib/executiveReporting/aggregation/snapshotLifecycle.ts
+// (ALLOWED_AGG_TRANSITIONS). Keep in sync — Deno cannot import Node TS directly.
 const ALLOWED: Record<SnapshotState, SnapshotState[]> = {
   draft: ['computing', 'failed'],
   computing: ['computed', 'failed'],

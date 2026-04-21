@@ -25,6 +25,16 @@
 // exceljs, and pptxgenjs. That route attaches artifacts referencing the
 // distribution_id created here.
 //
+// KNOWN LIMITATION (Michelangelo flagged; deferred): state flip and
+// distribution inserts span separate PG connections — the endpoint is
+// not one atomic unit. If the runtime dies after the state flip but
+// before distributions complete, the pack is 'issued' with missing
+// distributions. This is RECOVERABLE by re-invoking with the pack
+// already issued (function would 409 on the guarded UPDATE) and running
+// an administrative distribution-rebuild. Full atomicity requires
+// moving this logic into a public.exec_issue_pack() SQL function —
+// tracked as a Phase 2b improvement.
+//
 // Contract:
 //   POST { packId, typedConfirmation }
 //   Response { pack_id, state, distributions: [...], excluded: [...] }
@@ -39,11 +49,14 @@ import {
   resolveActor,
 } from '../_exec_reporting_shared/shared.ts';
 
+// SOURCE OF TRUTH: src/lib/executiveReporting/packs/approvalChain.ts
+// (CEO_ISSUE_CONFIRMATION_PHRASE). Keep in sync.
 const CEO_ISSUE_CONFIRMATION_PHRASE = 'ISSUE PACK';
 
 /**
  * Crypto-strong 22-char URL-safe base64 token (128 bits of entropy).
- * Mirrors generateWatermarkToken in src/lib/executiveReporting/distribution/watermarker.ts.
+ * SOURCE OF TRUTH: src/lib/executiveReporting/distribution/watermarker.ts
+ * (generateWatermarkToken). Keep in sync.
  */
 function generateWatermarkToken(): string {
   const bytes = new Uint8Array(16);
@@ -127,16 +140,28 @@ Deno.serve(async (req) => {
 
   const nowIso = new Date().toISOString();
 
-  // Gate 6: transition to issued.
-  const { error: uErr } = await admin
+  // Gate 6: transition to issued. The .eq('state', 'pending_ceo_approval')
+  // filter is the optimistic-locking guard against concurrent issue attempts:
+  // only the first CEO session to land here sees affected-rows > 0; any
+  // concurrent call observes state already != pending_ceo_approval and
+  // aborts without a duplicate audit entry or second distribution pass.
+  const { data: updated, error: uErr } = await admin
     .from('board_packs')
     .update({
       state: 'issued',
       ceo_issued_by: actor.userId,
       ceo_issued_at: nowIso,
     })
-    .eq('pack_id', body.packId);
+    .eq('pack_id', body.packId)
+    .eq('state', 'pending_ceo_approval')
+    .select('pack_id');
   if (uErr) return jsonResponse({ error: EXEC_ERRORS.INTERNAL, detail: uErr.message }, 500);
+  if (!Array.isArray(updated) || updated.length === 0) {
+    return jsonResponse({
+      error: EXEC_ERRORS.CONFLICT,
+      detail: 'pack state changed during issue; another issue attempt may have just won the race',
+    }, 409);
+  }
 
   // Gate 7: resolve eligible board members.
   const { data: allMembers, error: mErr } = await admin

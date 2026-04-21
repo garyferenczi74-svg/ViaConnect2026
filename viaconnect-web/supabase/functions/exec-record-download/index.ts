@@ -23,8 +23,9 @@ import {
 } from '../_exec_reporting_shared/shared.ts';
 
 /**
- * Constant-time string equality. Mirrors tokensMatch in
- * src/lib/executiveReporting/distribution/watermarker.ts.
+ * Constant-time string equality.
+ * SOURCE OF TRUTH: src/lib/executiveReporting/distribution/watermarker.ts
+ * (tokensMatch). Keep in sync.
  */
 function tokensMatch(a: string, b: string): boolean {
   if (typeof a !== 'string' || typeof b !== 'string') return false;
@@ -78,13 +79,29 @@ Deno.serve(async (req) => {
 
   const { data: dist, error: dErr } = await admin
     .from('board_pack_distributions')
-    .select('distribution_id, pack_id, member_id, watermark_token, access_revoked_at')
+    .select(`
+      distribution_id,
+      pack_id,
+      member_id,
+      watermark_token,
+      access_revoked_at,
+      board_members!inner(auth_user_id)
+    `)
     .eq('distribution_id', body.distributionId)
     .maybeSingle();
   if (dErr) return jsonResponse({ error: EXEC_ERRORS.INTERNAL, detail: dErr.message }, 500);
   if (!dist) return jsonResponse({ error: EXEC_ERRORS.NOT_FOUND }, 404);
 
-  const validated = !dist.access_revoked_at && tokensMatch(dist.watermark_token, body.presentedToken);
+  // Cross-reference identity: the authenticated actor must match the
+  // board_member that received this distribution. Presenting the correct
+  // watermark token from the wrong auth session is a tampering signal,
+  // not a valid download. Record it; never treat it as validated.
+  const memberAuthId = (dist as any).board_members?.auth_user_id as string | null;
+  const identityMatch = memberAuthId !== null && memberAuthId === actor.userId;
+
+  const tokenMatch = tokensMatch(dist.watermark_token, body.presentedToken);
+  const accessActive = !dist.access_revoked_at;
+  const validated = identityMatch && tokenMatch && accessActive;
 
   const { data: event, error: eErr } = await admin
     .from('board_pack_download_events')
@@ -118,6 +135,8 @@ Deno.serve(async (req) => {
     context_json: {
       artifact_format: body.artifactFormat,
       validated,
+      identity_match: identityMatch,
+      token_match: tokenMatch,
       access_revoked: !!dist.access_revoked_at,
     },
     ip_address: actor.ipAddress,

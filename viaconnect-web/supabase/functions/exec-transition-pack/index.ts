@@ -28,7 +28,8 @@ type PackState =
   | 'cfo_approved' | 'pending_ceo_approval' | 'issued'
   | 'erratum_issued' | 'archived';
 
-// Mirrors ALLOWED_PACK_TRANSITIONS in src/lib/executiveReporting/packs/stateMachine.ts.
+// SOURCE OF TRUTH: src/lib/executiveReporting/packs/stateMachine.ts
+// (ALLOWED_PACK_TRANSITIONS). Keep in sync — Deno cannot import Node TS directly.
 // `issued` target is intentionally REMOVED from pending_ceo_approval here —
 // only exec-issue-pack may perform that transition.
 const ALLOWED: Record<PackState, PackState[]> = {

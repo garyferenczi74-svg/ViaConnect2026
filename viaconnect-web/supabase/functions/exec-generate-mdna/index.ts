@@ -34,7 +34,8 @@ const EDITABLE_PACK_STATES = new Set([
   'draft', 'mdna_pending', 'mdna_drafted', 'cfo_review',
 ]);
 
-// Inline PII patterns. Mirror of src/lib/executiveReporting/mdna/piiRedactor.ts.
+// SOURCE OF TRUTH: src/lib/executiveReporting/mdna/piiRedactor.ts (PII_PATTERNS).
+// Keep in sync — Deno cannot import Node TS directly.
 const PII_PATTERNS: Array<{ name: string; re: RegExp }> = [
   { name: 'ssn', re: /\b\d{3}-\d{2}-\d{4}\b/ },
   { name: 'ein', re: /\b\d{2}-\d{7}\b/ },
@@ -53,7 +54,9 @@ function scanPII(text: string): string[] {
   return hits;
 }
 
-// Inline post-gen patterns. Mirror of postGenerationValidator.ts.
+// SOURCE OF TRUTH: src/lib/executiveReporting/mdna/postGenerationValidator.ts
+// (INVESTMENT_ADVICE_PATTERNS, UNBOUNDED_FORECAST_PATTERNS, INDIVIDUAL_ATTRIBUTION_PATTERNS).
+// Keep in sync — Deno cannot import Node TS directly.
 const INVESTMENT_ADVICE = [
   'buy the stock', 'sell the stock', 'investors should',
   'we recommend investors', 'investment recommendation', 'not investment advice',
@@ -198,6 +201,17 @@ Deno.serve(async (req) => {
   const aiJson = await aiResp.json();
   const commentary: string = (aiJson?.content?.[0]?.text ?? '').toString();
 
+  // Reject empty or unusably short commentary before persisting — a silent
+  // sentinel 'ai_drafted' row becomes an audit anomaly a reviewer then has
+  // to discover and clean up. Fail fast instead.
+  if (commentary.trim().length < 120) {
+    return jsonResponse({
+      error: 'CLAUDE_EMPTY_OUTPUT',
+      detail: 'Claude returned empty or too-short commentary; not persisting',
+      commentary_length: commentary.trim().length,
+    }, 502);
+  }
+
   // 6. Post-generation validator.
   const findings = validateOutput(commentary);
 
@@ -241,9 +255,26 @@ Deno.serve(async (req) => {
     user_agent: actor.userAgent,
   });
 
-  // Transition pack to mdna_drafted if currently mdna_pending.
+  // Transition pack to mdna_drafted if currently mdna_pending. Emit an
+  // explicit pack-state audit row so the state change is self-evident
+  // without a reviewer correlating timestamps across mdna_draft and pack
+  // audit categories.
   if (pack.state === 'mdna_pending') {
     await admin.from('board_packs').update({ state: 'mdna_drafted' }).eq('pack_id', body.packId);
+    await admin.from('executive_reporting_audit_log').insert({
+      action_category: 'pack',
+      action_verb: 'pack.mdna_drafted',
+      target_table: 'board_packs',
+      target_id: body.packId,
+      pack_id: body.packId,
+      actor_user_id: actor.userId,
+      actor_role: actor.role,
+      before_state_json: { state: 'mdna_pending' },
+      after_state_json: { state: 'mdna_drafted' },
+      context_json: { section_id: sec.section_id },
+      ip_address: actor.ipAddress,
+      user_agent: actor.userAgent,
+    });
   }
 
   return jsonResponse({

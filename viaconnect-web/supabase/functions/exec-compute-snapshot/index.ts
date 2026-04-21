@@ -63,6 +63,8 @@ function sha256Hex(input: string): Promise<string> {
 // Conservative guardrail: reject any KPI whose source_table or kpi_id
 // references a forbidden upstream. Mirrors the library-side scanForForbiddenExecTokens
 // but runs here so bad data can't be persisted.
+// SOURCE OF TRUTH: src/lib/executiveReporting/guardrails.ts (FORBIDDEN_EXEC_TOKENS).
+// Deno cannot import Node TS directly; keep this list in sync if the lib changes.
 const FORBIDDEN_SUBSTRINGS = [
   'helix_challenges',
   'helix_redemptions.user_id',
