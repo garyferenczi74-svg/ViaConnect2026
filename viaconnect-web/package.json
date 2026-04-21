@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.30.1",
     "@mediapipe/pose": "^0.5.1675469404",
     "@mediapipe/selfie_segmentation": "^0.1.1675465747",
     "@radix-ui/react-avatar": "^1.1.11",
@@ -29,11 +30,13 @@
     "@tensorflow/tfjs": "^4.22.0",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
+    "exceljs": "^4.4.0",
     "framer-motion": "^12.38.0",
     "html5-qrcode": "^2.3.8",
     "lucide-react": "^0.577.0",
     "next": "14.2.35",
     "pdf-lib": "^1.17.1",
+    "pptxgenjs": "^3.12.0",
     "react": "^18",
     "react-dom": "^18",
     "react-hot-toast": "^2.6.0",
