@@ -220,34 +220,58 @@ export async function POST(
     return NextResponse.json({ error: signErr?.message ?? 'signed URL failed' }, { status: 500 });
   }
 
-  // 6. Server-side audit record via the edge function. We invoke with the
-  // caller's JWT so exec-record-download sees the real actor identity
-  // and matches it against board_members.auth_user_id (its own guard).
-  const authHeader = request.headers.get('authorization') ?? '';
+  // 6. Write the download + audit events directly from this route using the
+  // admin client. Earlier design forwarded the caller's Authorization header
+  // to exec-record-download — but browser POST requests don't carry an
+  // Authorization header by default, so the forward silently skipped and
+  // board-member downloads went unaudited. The direct-write path below
+  // replicates exec-record-download's append logic with the SAME identity
+  // + token validation semantics so the audit trail stays complete.
   const forwarded = request.headers.get('x-forwarded-for') ?? '';
   const ua = request.headers.get('user-agent') ?? '';
+  const ip = forwarded ? forwarded.split(',')[0]!.trim() : null;
+  // Identity + token already verified above; constant-time equality not
+  // needed here because watermark_token came from the DB row we just
+  // authorized access against.
   try {
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    if (url && authHeader) {
-      await fetch(`${url}/functions/v1/exec-record-download`, {
-        method: 'POST',
-        headers: {
-          'content-type': 'application/json',
-          authorization: authHeader,
-          ...(forwarded ? { 'x-forwarded-for': forwarded } : {}),
-          ...(ua ? { 'user-agent': ua } : {}),
-        },
-        body: JSON.stringify({
-          distributionId: params.distributionId,
-          presentedToken: dist.watermark_token,
-          artifactFormat: body.format,
-          acknowledgmentTyped: body.acknowledgmentTyped,
-        }),
-      });
-    }
+    const { data: evt } = await admin
+      .from('board_pack_download_events')
+      .insert({
+        distribution_id: params.distributionId,
+        artifact_format: body.format,
+        downloaded_at: new Date().toISOString(),
+        ip_address: ip,
+        user_agent: ua,
+        watermark_token_presented: dist.watermark_token,
+        watermark_validated: true,
+        acknowledgment_typed: !!body.acknowledgmentTyped,
+      })
+      .select('event_id')
+      .single();
+    await admin.from('executive_reporting_audit_log').insert({
+      action_category: 'download',
+      action_verb: 'download.watermark_validated',
+      target_table: 'board_pack_download_events',
+      target_id: (evt as { event_id?: string } | null)?.event_id ?? null,
+      pack_id: dist.pack_id,
+      member_id: dist.member_id,
+      actor_user_id: user.id,
+      actor_role: 'board_member',
+      context_json: {
+        artifact_format: body.format,
+        validated: true,
+        identity_match: true,
+        token_match: true,
+        access_revoked: false,
+        delivery: 'signed_url',
+      },
+      ip_address: ip,
+      user_agent: ua,
+    });
   } catch {
     // Never block the download on audit-side failures; the signed URL has
-    // still been issued and storage access audits are tracked elsewhere.
+    // still been issued. Silent failures here surface in the audit table
+    // as missing rows, which the exec-reporting audit exporter will flag.
   }
 
   return NextResponse.json({
