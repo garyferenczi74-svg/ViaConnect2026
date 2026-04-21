@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, AlertTriangle } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { InlineReasonForm } from '@/components/admin/shared/InlineReasonForm';
 
 interface Dispute {
   dispute_id: string;
@@ -19,6 +20,7 @@ interface Dispute {
 export default function AdminDisputesQueuePage() {
   const [rows, setRows] = useState<Dispute[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
+  const [openReasonFor, setOpenReasonFor] = useState<{ id: string; outcome: 'approve' | 'reject' } | null>(null);
 
   const refresh = useCallback(async () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -33,21 +35,20 @@ export default function AdminDisputesQueuePage() {
 
   useEffect(() => { refresh(); }, [refresh]);
 
-  const act = async (id: string, outcome: 'approve' | 'reject') => {
+  const resolve = async (id: string, outcome: 'approve' | 'reject', notes: string) => {
     setBusy(id);
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const supabase = createClient() as unknown as any;
       const { data: user } = await supabase.auth.getUser();
       const userId = user?.user?.id;
-      const notes = prompt(`${outcome === 'approve' ? 'Resolution' : 'Rejection'} notes:`);
-      if (!notes) return;
       await supabase.from('payout_disputes').update({
         status: outcome === 'approve' ? 'approved' : 'rejected',
         reviewer_id: userId,
         resolved_at: new Date().toISOString(),
         resolution_notes: notes,
       }).eq('dispute_id', id);
+      setOpenReasonFor(null);
       await refresh();
     } finally { setBusy(null); }
   };
@@ -80,13 +81,23 @@ export default function AdminDisputesQueuePage() {
                 </div>
                 <p className="text-[11px] text-white/70 line-clamp-4">{d.practitioner_explanation}</p>
                 <div className="flex items-center gap-2">
-                  <button onClick={() => act(d.dispute_id, 'approve')} disabled={busy === d.dispute_id} className="rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/30 px-3 py-1 text-[11px] text-emerald-200 font-semibold disabled:opacity-50">
+                  <button onClick={() => setOpenReasonFor({ id: d.dispute_id, outcome: 'approve' })} disabled={busy === d.dispute_id} className="rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/30 px-3 py-1 text-[11px] text-emerald-200 font-semibold disabled:opacity-50" aria-label="Approve dispute">
                     Approve
                   </button>
-                  <button onClick={() => act(d.dispute_id, 'reject')} disabled={busy === d.dispute_id} className="rounded-lg bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 px-3 py-1 text-[11px] text-red-200 disabled:opacity-50">
+                  <button onClick={() => setOpenReasonFor({ id: d.dispute_id, outcome: 'reject' })} disabled={busy === d.dispute_id} className="rounded-lg bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 px-3 py-1 text-[11px] text-red-200 disabled:opacity-50" aria-label="Reject dispute">
                     Reject
                   </button>
                 </div>
+                {openReasonFor?.id === d.dispute_id && (
+                  <InlineReasonForm
+                    placeholder={openReasonFor.outcome === 'approve' ? 'Resolution notes' : 'Rejection reason'}
+                    submitLabel={openReasonFor.outcome === 'approve' ? 'Approve + release' : 'Reject'}
+                    submitTone={openReasonFor.outcome === 'approve' ? 'emerald' : 'red'}
+                    disabled={busy === d.dispute_id}
+                    onSubmit={(notes) => resolve(d.dispute_id, openReasonFor.outcome, notes)}
+                    onCancel={() => setOpenReasonFor(null)}
+                  />
+                )}
               </li>
             ))}
           </ul>

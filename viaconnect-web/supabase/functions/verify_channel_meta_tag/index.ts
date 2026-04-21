@@ -89,7 +89,9 @@ Deno.serve(async (req) => {
     }).eq('channel_id', channelId);
     return jsonResponse({ verified: false, reason: found ? 'token_mismatch' : 'tag_not_found' });
   } catch (err) {
-    console.error('meta-tag fetch error', err);
+    // Scrub URL + token from the log; we only want to know this call
+    // errored. The kind + name are enough for diagnostics.
+    console.error('meta-tag fetch error', { name: (err as Error)?.name ?? 'unknown' });
     return jsonResponse({ verified: false, reason: 'network_error' });
   }
 });
