@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Network } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { InlineReasonForm } from '@/components/admin/shared/InlineReasonForm';
 
 interface PendingChannel {
   channel_id: string;
@@ -20,6 +21,7 @@ interface PendingChannel {
 export default function AdminChannelVerificationQueuePage() {
   const [rows, setRows] = useState<PendingChannel[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
+  const [rejectingId, setRejectingId] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -35,7 +37,7 @@ export default function AdminChannelVerificationQueuePage() {
 
   useEffect(() => { refresh(); }, [refresh]);
 
-  const act = async (id: string, outcome: 'approve' | 'reject') => {
+  const approve = async (id: string) => {
     setBusy(id);
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -43,27 +45,31 @@ export default function AdminChannelVerificationQueuePage() {
       const { data: user } = await supabase.auth.getUser();
       const userId = user?.user?.id;
       if (!userId) return;
+      const reVerify = new Date(); reVerify.setDate(reVerify.getDate() + 90);
+      await supabase.from('practitioner_verified_channels').update({
+        state: 'verified',
+        verified_at: new Date().toISOString(),
+        re_verify_due_at: reVerify.toISOString(),
+      }).eq('channel_id', id);
+      await supabase.from('practitioner_operations_audit_log').insert({
+        action_category: 'channel', action_verb: 'channel.verified',
+        target_table: 'practitioner_verified_channels', target_id: id,
+        actor_user_id: userId, actor_role: 'admin',
+        context_json: { method: 'manual_document_upload' },
+      });
+      await refresh();
+    } finally { setBusy(null); }
+  };
 
-      if (outcome === 'approve') {
-        const reVerify = new Date(); reVerify.setDate(reVerify.getDate() + 90);
-        await supabase.from('practitioner_verified_channels').update({
-          state: 'verified',
-          verified_at: new Date().toISOString(),
-          re_verify_due_at: reVerify.toISOString(),
-        }).eq('channel_id', id);
-        await supabase.from('practitioner_operations_audit_log').insert({
-          action_category: 'channel', action_verb: 'channel.verified',
-          target_table: 'practitioner_verified_channels', target_id: id,
-          actor_user_id: userId, actor_role: 'admin',
-          context_json: { method: 'manual_document_upload' },
-        });
-      } else {
-        const reason = prompt('Rejection reason:');
-        if (!reason) return;
-        await supabase.from('practitioner_verified_channels').update({
-          state: 'verification_failed', notes: reason,
-        }).eq('channel_id', id);
-      }
+  const reject = async (id: string, reason: string) => {
+    setBusy(id);
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const supabase = createClient() as unknown as any;
+      await supabase.from('practitioner_verified_channels').update({
+        state: 'verification_failed', notes: reason,
+      }).eq('channel_id', id);
+      setRejectingId(null);
       await refresh();
     } finally { setBusy(null); }
   };
@@ -96,13 +102,23 @@ export default function AdminChannelVerificationQueuePage() {
                 </div>
                 <p className="text-[11px] text-white/60 break-all">{c.channel_url}</p>
                 <div className="flex items-center gap-2">
-                  <button onClick={() => act(c.channel_id, 'approve')} disabled={busy === c.channel_id} className="rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/30 px-3 py-1 text-[11px] text-emerald-200 font-semibold disabled:opacity-50">
+                  <button onClick={() => approve(c.channel_id)} disabled={busy === c.channel_id} className="rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/30 px-3 py-1 text-[11px] text-emerald-200 font-semibold disabled:opacity-50" aria-label="Approve channel">
                     Approve
                   </button>
-                  <button onClick={() => act(c.channel_id, 'reject')} disabled={busy === c.channel_id} className="rounded-lg bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 px-3 py-1 text-[11px] text-red-200 disabled:opacity-50">
+                  <button onClick={() => setRejectingId(rejectingId === c.channel_id ? null : c.channel_id)} disabled={busy === c.channel_id} className="rounded-lg bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 px-3 py-1 text-[11px] text-red-200 disabled:opacity-50" aria-label="Reject channel">
                     Reject
                   </button>
                 </div>
+                {rejectingId === c.channel_id && (
+                  <InlineReasonForm
+                    placeholder="Rejection reason (visible to practitioner)"
+                    submitLabel="Reject"
+                    submitTone="red"
+                    disabled={busy === c.channel_id}
+                    onSubmit={(reason) => reject(c.channel_id, reason)}
+                    onCancel={() => setRejectingId(null)}
+                  />
+                )}
               </li>
             ))}
           </ul>
