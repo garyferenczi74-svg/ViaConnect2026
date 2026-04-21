@@ -71,22 +71,88 @@ export async function POST(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const admin = createAdminClient() as unknown as any;
 
-  // 1. Resolve distribution + identity cross-check.
+  // 1. Resolve distribution + identity cross-check + live NDA recheck.
+  // enforce_distribution_nda_gate only fires on INSERT, so a member whose
+  // NDA expires AFTER a distribution was granted retains a valid row. We
+  // re-verify nda_status + nda_expires_at + departure_date here so the
+  // forensic trail stops at the NDA wall even for stale distributions.
   const { data: dist } = await admin
     .from('board_pack_distributions')
     .select(`
       distribution_id, pack_id, member_id, watermark_token,
       distributed_at, access_revoked_at,
-      board_members!inner(auth_user_id, display_name, email_distribution)
+      board_members!inner(
+        auth_user_id, display_name, email_distribution,
+        nda_status, nda_expires_at, departure_date
+      )
     `)
     .eq('distribution_id', params.distributionId)
     .maybeSingle();
   if (!dist) return NextResponse.json({ error: 'not_found' }, { status: 404 });
-  if ((dist.board_members as { auth_user_id: string }).auth_user_id !== user.id) {
+  const bmRow = dist.board_members as {
+    auth_user_id: string;
+    display_name: string;
+    email_distribution: string;
+    nda_status: string;
+    nda_expires_at: string | null;
+    departure_date: string | null;
+  };
+  if (bmRow.auth_user_id !== user.id) {
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   }
   if (dist.access_revoked_at) {
     return NextResponse.json({ error: 'access_revoked' }, { status: 403 });
+  }
+  if (bmRow.nda_status !== 'on_file') {
+    await admin.from('executive_reporting_audit_log').insert({
+      action_category: 'download',
+      action_verb: 'download.nda_gate_failed',
+      target_table: 'board_pack_distributions',
+      target_id: params.distributionId,
+      pack_id: dist.pack_id,
+      member_id: dist.member_id,
+      actor_user_id: user.id,
+      actor_role: 'board_member',
+      context_json: { reason: 'nda_not_on_file', nda_status: bmRow.nda_status },
+    });
+    return NextResponse.json({
+      error: 'nda_gate_failed',
+      detail: `NDA status is ${bmRow.nda_status}; required on_file`,
+    }, { status: 403 });
+  }
+  if (bmRow.nda_expires_at && new Date(bmRow.nda_expires_at) < new Date()) {
+    await admin.from('executive_reporting_audit_log').insert({
+      action_category: 'download',
+      action_verb: 'download.nda_gate_failed',
+      target_table: 'board_pack_distributions',
+      target_id: params.distributionId,
+      pack_id: dist.pack_id,
+      member_id: dist.member_id,
+      actor_user_id: user.id,
+      actor_role: 'board_member',
+      context_json: { reason: 'nda_expired', nda_expires_at: bmRow.nda_expires_at },
+    });
+    return NextResponse.json({
+      error: 'nda_gate_failed',
+      detail: 'NDA has expired',
+    }, { status: 403 });
+  }
+  if (bmRow.departure_date && new Date(bmRow.departure_date) <= new Date()) {
+    await admin.from('executive_reporting_audit_log').insert({
+      action_category: 'download',
+      action_verb: 'download.nda_gate_failed',
+      target_table: 'board_pack_distributions',
+      target_id: params.distributionId,
+      pack_id: dist.pack_id,
+      member_id: dist.member_id,
+      actor_user_id: user.id,
+      actor_role: 'board_member',
+      context_json: { reason: 'departed', departure_date: bmRow.departure_date },
+    });
+    return NextResponse.json({
+      error: 'departed',
+      detail: 'Member has departed',
+    }, { status: 403 });
   }
 
   // 2. Load pack + verify state.
@@ -151,7 +217,7 @@ export async function POST(
       commentarySource: s.commentary_source as 'system' | 'ai_drafted' | 'human_authored' | 'ai_drafted_human_edited',
     }));
 
-    const bm = dist.board_members as { display_name: string; email_distribution: string };
+    const bm = bmRow;
     let bytes: Uint8Array;
     if (body.format === 'pdf') {
       bytes = await renderBoardPackPdf({

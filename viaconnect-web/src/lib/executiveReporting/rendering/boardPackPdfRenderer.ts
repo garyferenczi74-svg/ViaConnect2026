@@ -71,19 +71,28 @@ function formatDeltaPct(delta: number | null): string {
 }
 
 function wrapText(text: string, maxCharsPerLine: number): string[] {
-  const words = text.replace(/\r/g, '').split(/\s+/);
+  // Preserve paragraph structure: split on blank lines first, then wrap
+  // each paragraph independently, interleaving empty lines as spacing.
+  // MD&A from Claude uses \n\n for paragraph breaks; losing those
+  // collapses an entire section into one wall of text.
+  const paragraphs = text.replace(/\r/g, '').split(/\n\s*\n/);
   const lines: string[] = [];
-  let current = '';
-  for (const w of words) {
-    if (!current) { current = w; continue; }
-    if ((current + ' ' + w).length > maxCharsPerLine) {
-      lines.push(current);
-      current = w;
-    } else {
-      current = `${current} ${w}`;
+  paragraphs.forEach((para, idx) => {
+    const words = para.trim().split(/\s+/);
+    let current = '';
+    for (const w of words) {
+      if (!w) continue;
+      if (!current) { current = w; continue; }
+      if ((current + ' ' + w).length > maxCharsPerLine) {
+        lines.push(current);
+        current = w;
+      } else {
+        current = `${current} ${w}`;
+      }
     }
-  }
-  if (current) lines.push(current);
+    if (current) lines.push(current);
+    if (idx < paragraphs.length - 1) lines.push(''); // blank line between paragraphs
+  });
   return lines;
 }
 
@@ -176,7 +185,10 @@ export async function renderBoardPackPdf(input: BoardPackPdfInput): Promise<Uint
   ctx.page.drawText('KPI', { x: 50, y: ctx.y, size: 9, font: bold });
   ctx.page.drawText('Value', { x: 310, y: ctx.y, size: 9, font: bold });
   ctx.page.drawText('Prior', { x: 420, y: ctx.y, size: 9, font: bold });
-  ctx.page.drawText('Δ', { x: 510, y: ctx.y, size: 9, font: bold });
+  // "Chg" instead of Greek Δ — StandardFonts Helvetica uses WinAnsi
+  // encoding which cannot emit 0x0394. Using ASCII avoids embedding a
+  // Unicode font just for one header cell.
+  ctx.page.drawText('Chg', { x: 510, y: ctx.y, size: 9, font: bold });
   ctx.y -= 4;
   ctx.page.drawLine({
     start: { x: 50, y: ctx.y }, end: { x: 562, y: ctx.y },
@@ -215,7 +227,9 @@ export async function renderBoardPackPdf(input: BoardPackPdfInput): Promise<Uint
       const lines = wrapText(s.commentaryMd, 105);
       for (const line of lines) {
         ctx = ensureRoom(ctx, input, 14);
-        ctx.page.drawText(line, { x: 50, y: ctx.y, size: 10, font });
+        if (line.length > 0) {
+          ctx.page.drawText(line, { x: 50, y: ctx.y, size: 10, font });
+        }
         ctx.y -= 13;
       }
     }
