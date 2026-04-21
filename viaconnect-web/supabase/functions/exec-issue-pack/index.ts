@@ -1,39 +1,20 @@
-// Prompt #105 Phase 2a §3.7 — CEO issue bright-line.
+// Prompt #105 Phase 2b.1 §3.7 — CEO issue bright-line (thin RPC wrapper).
 //
-// THIS IS THE ONLY PATH from pending_ceo_approval → issued.
-// Every gate below is a hard deny; missing any one means the pack does not
-// issue and no distributions are created.
+// All fiduciary logic now lives in public.exec_issue_pack() — one atomic
+// SQL transaction that enforces:
+//   1. Actor has CEO role (resolved from profiles.role — not trusted from caller).
+//   2. Typed confirmation exactly equals 'ISSUE PACK'.
+//   3. Pack in state 'pending_ceo_approval' (FOR UPDATE row lock serializes
+//      concurrent issue attempts).
+//   4. CFO approval on file.
+//   5. Pack transition + per-member distributions + audit log all land in
+//      the same transaction; any failure rolls the whole issue back.
 //
-// Gates (in order):
-//   1. Actor authenticated.
-//   2. Actor has CEO role (admin is NOT a substitute here — by design).
-//   3. Pack is in state 'pending_ceo_approval'.
-//   4. Pack has a recorded cfo_approved_at (not null).
-//   5. Typed confirmation exactly equals 'ISSUE PACK' (case-sensitive).
-//
-// After all gates pass:
-//   6. Transition pack pending_ceo_approval → issued.
-//   7. Resolve eligible board members (NDA on_file + scope match +
-//      not departed + access not revoked).
-//   8. For each, generate a unique 22-char URL-safe watermark token and
-//      insert board_pack_distributions (trigger re-verifies NDA on INSERT).
-//   9. Append audit: one pack.ceo_issued entry + one distribution.granted
-//      per successful insert.
-//
-// Artifact rendering (PDF/XLSX/PPTX) is OUT OF SCOPE for this function —
-// it runs server-side via the Next.js /api route that owns pdf-lib,
-// exceljs, and pptxgenjs. That route attaches artifacts referencing the
-// distribution_id created here.
-//
-// KNOWN LIMITATION (Michelangelo flagged; deferred): state flip and
-// distribution inserts span separate PG connections — the endpoint is
-// not one atomic unit. If the runtime dies after the state flip but
-// before distributions complete, the pack is 'issued' with missing
-// distributions. This is RECOVERABLE by re-invoking with the pack
-// already issued (function would 409 on the guarded UPDATE) and running
-// an administrative distribution-rebuild. Full atomicity requires
-// moving this logic into a public.exec_issue_pack() SQL function —
-// tracked as a Phase 2b improvement.
+// This edge function's only responsibilities:
+//   - Authenticate caller.
+//   - Forward IP + user-agent + caller identity to the RPC.
+//   - Translate P0001 error codes into HTTP responses with stable shapes
+//     the UI can match.
 //
 // Contract:
 //   POST { packId, typedConfirmation }
@@ -44,41 +25,36 @@ import {
   adminClient,
   corsPreflight,
   EXEC_ERRORS,
-  isCEO,
   jsonResponse,
   resolveActor,
 } from '../_exec_reporting_shared/shared.ts';
-
-// SOURCE OF TRUTH: src/lib/executiveReporting/packs/approvalChain.ts
-// (CEO_ISSUE_CONFIRMATION_PHRASE). Keep in sync.
-const CEO_ISSUE_CONFIRMATION_PHRASE = 'ISSUE PACK';
-
-/**
- * Crypto-strong 22-char URL-safe base64 token (128 bits of entropy).
- * SOURCE OF TRUTH: src/lib/executiveReporting/distribution/watermarker.ts
- * (generateWatermarkToken). Keep in sync.
- */
-function generateWatermarkToken(): string {
-  const bytes = new Uint8Array(16);
-  crypto.getRandomValues(bytes);
-  let b64 = btoa(String.fromCharCode(...bytes));
-  b64 = b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
-  return b64.slice(0, 22);
-}
 
 interface IssueRequest {
   packId: string;
   typedConfirmation: string;
 }
 
-interface BoardMemberRow {
-  member_id: string;
-  display_name: string;
-  role: string;
-  nda_status: string;
-  departure_date: string | null;
-  board_reporting_scope: string[] | null;
-  access_revoked_at: string | null;
+// Map RPC P0001 messages to HTTP status codes + stable API error codes.
+function mapRpcError(message: string): { status: number; error: string } {
+  const head = message.split(/\s+/, 1)[0] ?? '';
+  const bare = message.trim();
+  const known = new Set([
+    'MISSING_CEO_ROLE',
+    'CEO_CONFIRMATION_TEXT_MISMATCH',
+    'PACK_NOT_FOUND',
+    'PACK_NOT_IN_PENDING_CEO_APPROVAL',
+    'CFO_APPROVAL_MISSING',
+  ]);
+  for (const code of known) {
+    if (bare.startsWith(code) || head === code) {
+      if (code === 'PACK_NOT_FOUND') return { status: 404, error: code };
+      if (code === 'MISSING_CEO_ROLE') return { status: 403, error: code };
+      if (code === 'CEO_CONFIRMATION_TEXT_MISMATCH') return { status: 403, error: code };
+      if (code === 'PACK_NOT_IN_PENDING_CEO_APPROVAL') return { status: 409, error: code };
+      if (code === 'CFO_APPROVAL_MISSING') return { status: 409, error: code };
+    }
+  }
+  return { status: 500, error: EXEC_ERRORS.INTERNAL };
 }
 
 Deno.serve(async (req) => {
@@ -87,15 +63,6 @@ Deno.serve(async (req) => {
 
   const actor = await resolveActor(req);
   if (!actor) return jsonResponse({ error: EXEC_ERRORS.MISSING_JWT }, 401);
-
-  // Gate 2: CEO role required (bright line — admin cannot substitute).
-  if (!isCEO(actor.role)) {
-    return jsonResponse({
-      error: 'MISSING_CEO_ROLE',
-      detail: 'CEO role required; admin cannot substitute for the bright-line issue action',
-      role: actor.role,
-    }, 403);
-  }
 
   let body: IssueRequest;
   try {
@@ -106,167 +73,26 @@ Deno.serve(async (req) => {
   if (!body.packId) {
     return jsonResponse({ error: EXEC_ERRORS.BAD_REQUEST, detail: 'packId required' }, 400);
   }
-
-  // Gate 5: typed confirmation.
-  if (body.typedConfirmation !== CEO_ISSUE_CONFIRMATION_PHRASE) {
-    return jsonResponse({
-      error: 'CEO_CONFIRMATION_TEXT_MISMATCH',
-      detail: `typedConfirmation must exactly equal "${CEO_ISSUE_CONFIRMATION_PHRASE}"`,
-    }, 403);
+  if (typeof body.typedConfirmation !== 'string') {
+    return jsonResponse({ error: EXEC_ERRORS.BAD_REQUEST, detail: 'typedConfirmation required' }, 400);
   }
 
   const admin = adminClient() as any;
-
-  // Gates 3 + 4.
-  const { data: pack, error: pErr } = await admin
-    .from('board_packs')
-    .select('pack_id, state, cfo_approved_at, period_type')
-    .eq('pack_id', body.packId)
-    .maybeSingle();
-  if (pErr) return jsonResponse({ error: EXEC_ERRORS.INTERNAL, detail: pErr.message }, 500);
-  if (!pack) return jsonResponse({ error: EXEC_ERRORS.NOT_FOUND }, 404);
-  if (pack.state !== 'pending_ceo_approval') {
-    return jsonResponse({
-      error: 'PACK_NOT_IN_PENDING_CEO_APPROVAL',
-      detail: `pack in state ${pack.state}`,
-    }, 409);
-  }
-  if (!pack.cfo_approved_at) {
-    return jsonResponse({
-      error: 'CFO_APPROVAL_MISSING',
-      detail: 'cfo_approved_at is null; cannot issue without CFO approval on file',
-    }, 409);
-  }
-
-  const nowIso = new Date().toISOString();
-
-  // Gate 6: transition to issued. The .eq('state', 'pending_ceo_approval')
-  // filter is the optimistic-locking guard against concurrent issue attempts:
-  // only the first CEO session to land here sees affected-rows > 0; any
-  // concurrent call observes state already != pending_ceo_approval and
-  // aborts without a duplicate audit entry or second distribution pass.
-  const { data: updated, error: uErr } = await admin
-    .from('board_packs')
-    .update({
-      state: 'issued',
-      ceo_issued_by: actor.userId,
-      ceo_issued_at: nowIso,
-    })
-    .eq('pack_id', body.packId)
-    .eq('state', 'pending_ceo_approval')
-    .select('pack_id');
-  if (uErr) return jsonResponse({ error: EXEC_ERRORS.INTERNAL, detail: uErr.message }, 500);
-  if (!Array.isArray(updated) || updated.length === 0) {
-    return jsonResponse({
-      error: EXEC_ERRORS.CONFLICT,
-      detail: 'pack state changed during issue; another issue attempt may have just won the race',
-    }, 409);
-  }
-
-  // Gate 7: resolve eligible board members.
-  const { data: allMembers, error: mErr } = await admin
-    .from('board_members')
-    .select('member_id, display_name, role, nda_status, departure_date, board_reporting_scope, access_revoked_at');
-  if (mErr) return jsonResponse({ error: EXEC_ERRORS.INTERNAL, detail: mErr.message }, 500);
-
-  const eligible: BoardMemberRow[] = [];
-  const excluded: Array<{ member_id: string; reason: string }> = [];
-
-  const nowMs = Date.now();
-  for (const m of (allMembers ?? []) as BoardMemberRow[]) {
-    if (m.access_revoked_at) {
-      excluded.push({ member_id: m.member_id, reason: 'access_revoked' });
-      continue;
-    }
-    if (m.departure_date && new Date(m.departure_date).getTime() <= nowMs) {
-      excluded.push({ member_id: m.member_id, reason: 'departed' });
-      continue;
-    }
-    if (m.nda_status !== 'on_file') {
-      excluded.push({ member_id: m.member_id, reason: 'nda_not_on_file' });
-      continue;
-    }
-    const scope = Array.isArray(m.board_reporting_scope) ? m.board_reporting_scope : [];
-    if (!scope.includes(pack.period_type)) {
-      excluded.push({ member_id: m.member_id, reason: 'scope_mismatch' });
-      continue;
-    }
-    eligible.push(m);
-  }
-
-  // Gate 8: create distribution rows. Insert one at a time so a single
-  // NDA-trigger failure doesn't abort the whole batch.
-  const distributions: Array<{
-    distribution_id: string; member_id: string; watermark_token: string;
-  }> = [];
-  const distributionErrors: Array<{ member_id: string; error: string }> = [];
-
-  for (const m of eligible) {
-    const token = generateWatermarkToken();
-    const { data: dist, error: dErr } = await admin
-      .from('board_pack_distributions')
-      .insert({
-        pack_id: body.packId,
-        member_id: m.member_id,
-        watermark_token: token,
-        distributed_at: nowIso,
-      })
-      .select('distribution_id')
-      .single();
-    if (dErr || !dist) {
-      distributionErrors.push({
-        member_id: m.member_id,
-        error: dErr?.message ?? 'insert failed',
-      });
-      continue;
-    }
-    distributions.push({
-      distribution_id: dist.distribution_id,
-      member_id: m.member_id,
-      watermark_token: token,
-    });
-
-    await admin.from('executive_reporting_audit_log').insert({
-      action_category: 'distribution',
-      action_verb: 'distribution.granted',
-      target_table: 'board_pack_distributions',
-      target_id: dist.distribution_id,
-      pack_id: body.packId,
-      member_id: m.member_id,
-      actor_user_id: actor.userId,
-      actor_role: actor.role,
-      context_json: { period_type: pack.period_type },
-      ip_address: actor.ipAddress,
-      user_agent: actor.userAgent,
-    });
-  }
-
-  // Final issue-pack audit entry.
-  await admin.from('executive_reporting_audit_log').insert({
-    action_category: 'pack',
-    action_verb: 'pack.ceo_issued',
-    target_table: 'board_packs',
-    target_id: body.packId,
-    pack_id: body.packId,
-    actor_user_id: actor.userId,
-    actor_role: actor.role,
-    before_state_json: { state: 'pending_ceo_approval' },
-    after_state_json: { state: 'issued', ceo_issued_at: nowIso },
-    context_json: {
-      distributions_created: distributions.length,
-      excluded_count: excluded.length,
-      distribution_errors_count: distributionErrors.length,
-    },
-    ip_address: actor.ipAddress,
-    user_agent: actor.userAgent,
+  const { data, error } = await admin.rpc('exec_issue_pack', {
+    p_pack_id: body.packId,
+    p_ceo_user_id: actor.userId,
+    p_typed_confirmation: body.typedConfirmation,
+    p_ip_address: actor.ipAddress,
+    p_user_agent: actor.userAgent,
   });
 
-  return jsonResponse({
-    pack_id: body.packId,
-    state: 'issued',
-    ceo_issued_at: nowIso,
-    distributions,
-    excluded,
-    distribution_errors: distributionErrors,
-  });
+  if (error) {
+    const mapped = mapRpcError(error.message ?? '');
+    return jsonResponse({
+      error: mapped.error,
+      detail: error.message,
+    }, mapped.status);
+  }
+
+  return jsonResponse(data as Record<string, unknown>);
 });
