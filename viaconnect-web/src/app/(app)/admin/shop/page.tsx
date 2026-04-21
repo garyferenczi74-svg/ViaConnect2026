@@ -4,7 +4,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Package, Upload, ListChecks, FileText, ScrollText } from 'lucide-react';
+import { ArrowLeft, Package, Upload, ListChecks, FileText, ScrollText, RefreshCw } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
 interface Counts {
@@ -61,6 +61,7 @@ export default function ShopRefreshLanding() {
 
         <div className="grid sm:grid-cols-2 gap-3 pt-4">
           <Tile href="/admin/shop/image-upload" icon={<Upload className="h-4 w-4" strokeWidth={1.5} />} title="Image upload" sub="Drag + drop bottle renders with EXIF strip" />
+          <Tile href="/admin/shop/image-swap" icon={<RefreshCw className="h-4 w-4" strokeWidth={1.5} />} title="Image swap" sub="Primary binding flip for versioned renders" />
           <Tile href="/admin/shop/reconciliation" icon={<ListChecks className="h-4 w-4" strokeWidth={1.5} />} title="Reconciliation" sub="Three-way diff findings" />
           <Tile href="/admin/shop/pending-publication" icon={<FileText className="h-4 w-4" strokeWidth={1.5} />} title="Pending publication" sub="Gap-fill + activation queue" />
           <Tile href="/admin/shop/audit" icon={<ScrollText className="h-4 w-4" strokeWidth={1.5} />} title="Audit log" sub="All state changes, append only" />
