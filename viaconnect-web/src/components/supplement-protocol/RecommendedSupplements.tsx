@@ -7,6 +7,7 @@ import { Sparkles, Zap, Shield, Info, ChevronDown, ChevronUp, Plus, X, RotateCcw
 import { buildPurchaseLink, buildViewLink } from '@/lib/utils/shopLinks';
 // Prompt #60 v2 — Layer 6 confidence scoring (browser-safe, no Node deps)
 import { score as scoreConfidence } from '@/lib/ultrathink/confidenceScorer';
+import { ProductImage } from '@/components/shared/ProductImage';
 
 // Map evidence_level (already present on every Recommendation) to a numeric
 // data_confidence 0..1. Outcome data is null pre-launch — confidenceScorer
@@ -27,6 +28,9 @@ interface Recommendation {
   rationale: string; health_signals: string[]; bioavailability_note: string | null;
   interaction_check: string; synergy_with: string[]; replaces_current: string | null;
   evidence_level: string; is_accepted: boolean; is_dismissed: boolean;
+  image_url: string | null;
+  // API may also return the raw column name from ultrathink_recommendations.
+  farmceutica_product?: string | null;
 }
 
 interface Protocol {
@@ -174,11 +178,19 @@ export default function RecommendedSupplements() {
           return (
             <div key={rec.id} className={`rounded-2xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.05)] overflow-hidden hover:border-[rgba(255,255,255,0.15)] transition-all duration-200 ${isAcc ? 'ring-2 ring-[rgba(45,165,160,0.50)]' : ''}`}>
               <div className="px-4 py-3.5 flex items-start gap-3 hover:bg-[rgba(255,255,255,0.04)] transition-colors">
-                <div className="flex flex-col items-center gap-1 flex-shrink-0 w-10">
-                  <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#1A2744] to-[#2DA5A0] flex items-center justify-center">
-                    <span className="text-white text-xs font-bold">{rec.rank}</span>
+                <div className="flex flex-col items-center gap-1 flex-shrink-0 w-14">
+                  <ProductImage
+                    src={rec.image_url ?? null}
+                    alt={rec.product}
+                    variant="thumb"
+                    className="w-12 h-12"
+                  />
+                  <div className="flex items-center gap-1">
+                    <div className="w-5 h-5 rounded bg-gradient-to-br from-[#1A2744] to-[#2DA5A0] flex items-center justify-center">
+                      <span className="text-white text-[10px] font-bold">{rec.rank}</span>
+                    </div>
+                    <PriIcon className="w-3.5 h-3.5 text-[rgba(255,255,255,0.35)]" strokeWidth={1.5} />
                   </div>
-                  <PriIcon className="w-4 h-4 text-[rgba(255,255,255,0.35)]" strokeWidth={1.5} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start gap-2 flex-wrap">

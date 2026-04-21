@@ -22,6 +22,43 @@ interface ExtendedContext extends UltrathinkContext {
 
 export const dynamic = 'force-dynamic';
 
+// Normalize a product name for cross-table matching: strip the ™ symbol
+// (protocol_rules has it; product_catalog does not) and lowercase/trim.
+function productMatchKey(name: string | null | undefined): string {
+  return (name ?? '').replace(/[™®]/g, '').trim().toLowerCase();
+}
+
+type RecRow = Record<string, unknown> & {
+  product?: string | null;
+  farmceutica_product?: string | null;
+  image_url?: string | null;
+};
+
+async function attachImageUrls(
+  supabase: SupabaseClient<Database>,
+  recommendations: RecRow[],
+): Promise<void> {
+  if (recommendations.length === 0) return;
+  const { data: catalog } = await supabase
+    .from('product_catalog')
+    .select('name, image_url');
+  const imageByKey = new Map<string, string | null>();
+  for (const row of (catalog ?? []) as Array<{ name: string | null; image_url: string | null }>) {
+    const k = productMatchKey(row.name);
+    if (!k) continue;
+    // If the same normalized key appears multiple times (duplicates in the
+    // catalog), prefer the first row that has a non-null image_url.
+    if (!imageByKey.has(k) || (imageByKey.get(k) == null && row.image_url != null)) {
+      imageByKey.set(k, row.image_url);
+    }
+  }
+  for (const rec of recommendations) {
+    const name = rec.product ?? rec.farmceutica_product ?? null;
+    const key = productMatchKey(name);
+    rec.image_url = key ? imageByKey.get(key) ?? null : null;
+  }
+}
+
 export async function GET() {
   try {
     const supabase = createClient();
@@ -30,7 +67,11 @@ export async function GET() {
 
     // Try RPC first
     const { data: rpcData, error: rpcErr } = await supabase.rpc('get_active_protocol', { p_user_id: user.id });
-    if (!rpcErr && rpcData?.length > 0) return NextResponse.json({ protocol: rpcData[0] });
+    if (!rpcErr && rpcData?.length > 0) {
+      const protocol = rpcData[0] as { recommendations?: RecRow[] } & Record<string, unknown>;
+      await attachImageUrls(supabase, protocol.recommendations ?? []);
+      return NextResponse.json({ protocol });
+    }
 
     // Fallback: direct query
     const { data: proto } = await supabase.from('ultrathink_protocols').select('*')
@@ -40,7 +81,10 @@ export async function GET() {
     const { data: recs } = await supabase.from('ultrathink_recommendations').select('*')
       .eq('protocol_id', proto.id).eq('is_dismissed', false).order('rank');
 
-    return NextResponse.json({ protocol: { ...proto, protocol_id: proto.id, recommendations: recs ?? [] } });
+    const recsArr = (recs ?? []) as RecRow[];
+    await attachImageUrls(supabase, recsArr);
+
+    return NextResponse.json({ protocol: { ...proto, protocol_id: proto.id, recommendations: recsArr } });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Unknown error';
     return NextResponse.json({ error: message, protocol: null }, { status: 500 });
