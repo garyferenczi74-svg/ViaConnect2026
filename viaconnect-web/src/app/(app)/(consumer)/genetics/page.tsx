@@ -154,7 +154,7 @@ export default function GeneticsPage() {
       <div className="mx-auto max-w-5xl space-y-8 px-4 py-6 sm:px-6 lg:px-10">
 
         {/* ═══ PREMIUM HEADER ═══ */}
-        <header className="relative overflow-hidden rounded-2xl bg-white/[0.03] border border-white/[0.08] p-6 md:p-8">
+        <header className="relative overflow-hidden rounded-2xl bg-[#1E3054]/45 backdrop-blur-md border border-white/[0.08] p-6 md:p-8">
           <div className="absolute inset-0 opacity-[0.03]">
             <svg className="w-full h-full" viewBox="0 0 400 100"><path d="M0,50 Q100,20 200,50 T400,50" fill="none" stroke="#2DA5A0" strokeWidth="1" /><path d="M0,50 Q100,80 200,50 T400,50" fill="none" stroke="#B75E18" strokeWidth="1" /></svg>
           </div>
