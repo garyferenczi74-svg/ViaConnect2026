@@ -91,7 +91,7 @@ export default function NutritionPage() {
               Link MyFitnessPal, Cronometer, Strava, Apple Health and more so your
               nutrition log learns from your daily routine.
             </p>
-            <div className="mt-3 inline-flex min-h-[40px] items-center gap-2 rounded-xl border border-[#B75E18]/30 bg-[#B75E18]/15 px-4 py-2 text-sm font-semibold text-[#B75E18] transition-all group-hover:border-[#B75E18]/50 group-hover:bg-[#B75E18]/25">
+            <div className="mt-3 inline-flex min-h-[40px] items-center gap-2 rounded-xl border border-[#B75E18]/30 bg-[#B75E18]/15 px-4 py-2 text-sm font-semibold text-white transition-all group-hover:border-[#B75E18]/50 group-hover:bg-[#B75E18]/25">
               <Smartphone className="h-4 w-4" strokeWidth={1.5} />
               Browse Apps
               <ChevronRight className="h-4 w-4" strokeWidth={1.5} />
