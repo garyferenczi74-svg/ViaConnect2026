@@ -1,11 +1,15 @@
 // Photo Sync prompt: shared types for the audit + sync pipeline.
 
 export const SUPABASE_PROJECT_HOST = 'nnhkcufyqjojdbvdrpky.supabase.co';
-// Prompt #110 correction (2026-04-21): bucket is 'Products' (capital P).
-// #109 originally shipped with 'supplement-photos' which does not exist
-// in this project. Do not change without verifying against the Supabase
-// dashboard: /dashboard/project/nnhkcufyqjojdbvdrpky/storage/files/buckets/Products.
-export const PHOTO_BUCKET = 'Products';
+// Bucket correction rollup (2026-04-21):
+//   #109 original:     supplement-photos
+//   #110 §1 (wrong):   Products
+//   evening of #110:   supplement-photos  <-- confirmed via Gary's upload
+//                                              dashboard URL. All 26 SNP +
+//                                              GeneX360 files live here.
+// If the dashboard ever moves them, update this constant first. Do not
+// change based on a prompt without verifying the live bucket URL.
+export const PHOTO_BUCKET = 'supplement-photos';
 export const PUBLIC_PREFIX = `https://${SUPABASE_PROJECT_HOST}/storage/v1/object/public/${PHOTO_BUCKET}/`;
 
 export type ImageUrlClassification =

@@ -43,7 +43,7 @@ export async function GET(_request: NextRequest): Promise<NextResponse> {
   // Pull the bucket contents once so we can flag stale URLs.
   const bucketPaths = new Set<string>();
   async function recurse(prefix: string): Promise<void> {
-    const { data, error } = await sb.storage.from('Products').list(prefix, { limit: 1000 });
+    const { data, error } = await sb.storage.from('supplement-photos').list(prefix, { limit: 1000 });
     if (error) return;
     for (const obj of (data ?? []) as Array<{ id: string | null; name: string }>) {
       const isFolder = obj.id == null;
@@ -78,7 +78,7 @@ export async function GET(_request: NextRequest): Promise<NextResponse> {
 
   return NextResponse.json({
     rows: missingOrStale,
-    bucket_dashboard_url: 'https://supabase.com/dashboard/project/nnhkcufyqjojdbvdrpky/storage/files/buckets/Products',
+    bucket_dashboard_url: 'https://supabase.com/dashboard/project/nnhkcufyqjojdbvdrpky/storage/files/buckets/supplement-photos',
     counts: {
       total_active_products: rows.length,
       missing_or_stale: missingOrStale.length,

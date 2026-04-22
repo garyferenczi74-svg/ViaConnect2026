@@ -24,7 +24,7 @@ interface RawObj {
 
 async function listAll(client: ReturnType<typeof getServiceRoleClient>, prefix: string, out: BucketObject[], rejected: BucketObject[]): Promise<void> {
   const { data, error } = await client.storage
-    .from('Products')
+    .from('supplement-photos')
     .list(prefix, { limit: 1000, sortBy: { column: 'name', order: 'asc' } });
   if (error) throw new Error(`bucket list failed for prefix "${prefix}": ${error.message}`);
   const rows = (data ?? []) as RawObj[];

@@ -35,7 +35,7 @@ interface ClassifiedRow {
 async function loadBucketPathSet(client: ReturnType<typeof getServiceRoleClient>): Promise<Set<string>> {
   const set = new Set<string>();
   async function recurse(prefix: string): Promise<void> {
-    const { data, error } = await client.storage.from('Products').list(prefix, { limit: 1000, sortBy: { column: 'name', order: 'asc' } });
+    const { data, error } = await client.storage.from('supplement-photos').list(prefix, { limit: 1000, sortBy: { column: 'name', order: 'asc' } });
     if (error) throw new Error(`bucket list failed for prefix "${prefix}": ${error.message}`);
     for (const obj of data ?? []) {
       const isFolder = obj.id == null;

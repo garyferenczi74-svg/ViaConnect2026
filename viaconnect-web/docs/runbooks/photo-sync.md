@@ -1,11 +1,11 @@
 # Photo Sync Runbook
 
-Synchronizes `products.image_url` with files in the `Products` Supabase Storage bucket (capital P; Prompt #110 corrected the name from `supplement-photos`). Read-only audit, then dry-run, then human-reviewed apply.
+Synchronizes `product_catalog.image_url` with files in the `supplement-photos` Supabase Storage bucket. Read-only audit, then dry-run, then human-reviewed apply. (Bucket-name history: #109 shipped with `supplement-photos`; #110 §1 wrongly renamed to `Products`; 2026-04-21 evening confirmed `supplement-photos` is the real bucket per the upload dashboard URL.)
 
 ## Prerequisites
 
 - Env var `SUPABASE_SERVICE_ROLE_KEY` set in `.env.local` (server-side only; never commit; never log).
-- Read access to bucket `Products` in project `nnhkcufyqjojdbvdrpky`.
+- Read access to bucket `supplement-photos` in project `nnhkcufyqjojdbvdrpky`.
 - Write access to `public.products` and `public.products_image_audit`.
 - Output directory writable: defaults to `/tmp/viaconnect/`. Override with `PHOTO_SYNC_OUT_DIR=...`.
 
@@ -64,7 +64,7 @@ npx tsx scripts/audit/generate-reconciliation-report.ts
 
 ### 5. Triage still-missing SKUs
 
-The admin surface at `/admin/catalog-health` lists every active product whose image is `NULL`, `STALE_SUPABASE`, or `PLACEHOLDER`. Each row deep-links to the bucket dashboard. Upload the missing image to `Products` with the matching SKU as the filename, then re-run §1 + §2 + §3.
+The admin surface at `/admin/catalog-health` lists every active product whose image is `NULL`, `STALE_SUPABASE`, or `PLACEHOLDER`. Each row deep-links to the bucket dashboard. Upload the missing image to `supplement-photos` with the matching SKU as the filename, then re-run §1 + §2 + §3.
 
 ### 6. Rollback (if needed)
 
@@ -138,7 +138,7 @@ npx tsx scripts/upload-snp-assets.ts --source ./incoming-snp-assets --apply
 
 Pre-flight validates filename regex (`^[a-z0-9]+(-[a-z0-9]+)*\.webp$`), size bounds (50 KB to 5 MB), and MIME. Subfolder structure is preserved (so `services/genex-m.webp` lands at `Products/services/genex-m.webp`). Default behavior auto-runs the reality-check → mapping → sync chain after a successful upload; pass `--no-auto-sync` to stop after upload.
 
-**Write policy reminder:** The `Products` bucket's write policy must remain admin-only. `upload-snp-assets.ts` is the only script in #110 that writes to the bucket; all other scripts are read-only.
+**Write policy reminder:** The `supplement-photos` bucket's write policy must remain admin-only. `upload-snp-assets.ts` is the only script in #110 that writes to the bucket; all other scripts are read-only.
 
 ### 6. Reconcile
 
@@ -167,7 +167,7 @@ Asserts every SNP card + service card has `naturalWidth > 0` (i.e., the image ac
 | Symptom | Cause | Fix |
 |---|---|---|
 | `FATAL: SUPABASE_SERVICE_ROLE_KEY not set` | Missing env var | Add to `.env.local`. Never commit. |
-| `bucket list failed: Bucket not found` | Bucket renamed or not provisioned | Confirm bucket id in Supabase dashboard is `Products` (capital P) with public read RLS. Edit `PHOTO_BUCKET` in `src/lib/photoSync/types.ts` if the id changed. |
+| `bucket list failed: Bucket not found` | Bucket renamed or not provisioned | Confirm bucket id in Supabase dashboard is `supplement-photos` with public read RLS. Edit `PHOTO_BUCKET` in `src/lib/photoSync/types.ts` if the id changed. |
 | `RLS-blocked` on products UPDATE | Service role key not used | Confirm script is using service-role client (see `scripts/audit/_supabase-client.ts`). |
 | `match-plan: ... NONE` count high | Filenames in bucket don't match SKU/slug pattern | Either rename bucket files (separate prompt) or upload SKU-named copies. |
 | Image too large (>5MB) listed in REJECTED_UPLOAD | File above bucket size cap | Compress + re-upload. Lossy compression to 1MB target, WebP preferred. |
