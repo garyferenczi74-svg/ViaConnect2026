@@ -176,24 +176,26 @@ export default function GeneticsPage() {
 
         {/* ═══ YOUR VARIANTS EXPLORER ═══ */}
         <section className="space-y-4">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-            <div>
-              <h2 className="text-lg md:text-xl font-bold text-white">Your Variants</h2>
-              <p className="text-xs text-white/30 mt-0.5">{VARIANTS.length} genetic variants analyzed</p>
+          <div className="rounded-2xl border border-white/15 bg-white/10 backdrop-blur-md p-4 sm:p-5 space-y-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div>
+                <h2 className="text-lg md:text-xl font-bold text-white">Your Variants</h2>
+                <p className="text-xs text-white/60 mt-0.5">{VARIANTS.length} genetic variants analyzed</p>
+              </div>
+              <div className="flex gap-2">
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-400/15 border border-red-400/20 text-red-400 font-medium">{riskCounts.High} High</span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-yellow-400/15 border border-yellow-400/20 text-yellow-400 font-medium">{riskCounts.Moderate} Moderate</span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-green-400/15 border border-green-400/20 text-green-400 font-medium">{riskCounts.Low} Low</span>
+              </div>
             </div>
-            <div className="flex gap-2">
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-400/15 border border-red-400/20 text-red-400 font-medium">{riskCounts.High} High</span>
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-yellow-400/15 border border-yellow-400/20 text-yellow-400 font-medium">{riskCounts.Moderate} Moderate</span>
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-green-400/15 border border-green-400/20 text-green-400 font-medium">{riskCounts.Low} Low</span>
-            </div>
-          </div>
 
-          {/* Filter + Search */}
-          <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1" style={{ WebkitOverflowScrolling: "touch" }}>
-            {(["All", "High", "Moderate", "Low"] as const).map((tab) => {
-              const active = variantFilter === tab;
-              return <button key={tab} onClick={() => setVariantFilter(tab)} className={`flex-shrink-0 min-h-[36px] px-4 py-1.5 rounded-full text-xs font-medium text-[#1b4539] transition-all ${active ? "bg-teal-400/15 border border-teal-400/30" : "bg-white/5 border border-white/[0.06] hover:bg-white/10"}`}>{tab}</button>;
-            })}
+            {/* Filter tabs */}
+            <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1" style={{ WebkitOverflowScrolling: "touch" }}>
+              {(["All", "High", "Moderate", "Low"] as const).map((tab) => {
+                const active = variantFilter === tab;
+                return <button key={tab} onClick={() => setVariantFilter(tab)} className={`flex-shrink-0 min-h-[36px] px-4 py-1.5 rounded-full text-xs font-medium text-[#1b4539] transition-all ${active ? "bg-teal-400/15 border border-teal-400/30" : "bg-white/15 border border-white/20 hover:bg-white/25"}`}>{tab}</button>;
+              })}
+            </div>
           </div>
           <div className="flex items-center gap-3 rounded-xl bg-[#1E3054]/45 backdrop-blur-md border border-white/[0.06] px-4 py-3">
             <Search className="h-4 w-4 shrink-0 text-white/25" strokeWidth={1.5} />
@@ -201,7 +203,7 @@ export default function GeneticsPage() {
           </div>
 
           {/* Variant Cards */}
-          <div className="space-y-2">
+          <div className="rounded-2xl border border-white/10 bg-[#1E3054]/45 backdrop-blur-md p-3 sm:p-4 space-y-2">
             {filteredVariants.length === 0 && (
               <div className="rounded-xl bg-white/[0.02] border border-white/5 p-8 text-center">
                 <Dna className="mx-auto mb-3 h-8 w-8 text-white/15" strokeWidth={1.5} />
@@ -347,8 +349,7 @@ export default function GeneticsPage() {
             tabIndex={0}
             onClick={() => goToShop(p.id)}
             onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); goToShop(p.id); } }}
-            className="rounded-2xl p-5 md:p-6 border border-teal-400/20 hover:border-teal-400/40 hover:shadow-[0_0_40px_rgba(45,165,160,0.1)] transition-all duration-300 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-400/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744]"
-            style={{ background: "linear-gradient(135deg, rgba(45,165,160,0.12) 0%, rgba(96,165,250,0.06) 50%, rgba(183,94,24,0.06) 100%)" }}>
+            className="rounded-2xl p-5 md:p-6 border border-teal-400/20 bg-[#1E3054]/45 backdrop-blur-md hover:border-teal-400/40 hover:shadow-[0_0_40px_rgba(45,165,160,0.1)] transition-all duration-300 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-400/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744]">
             <div className="flex flex-col sm:flex-row gap-4 items-start">
               <PremiumIcon icon={p.icon} color={p.color} size="lg" />
               <div className="flex-1">
@@ -378,7 +379,7 @@ export default function GeneticsPage() {
               tabIndex={0}
               onClick={() => goToShop(panel.id)}
               onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); goToShop(panel.id); } }}
-              className="rounded-2xl p-4 md:p-5 border border-white/[0.08] bg-white/[0.03] hover:border-white/20 hover:bg-white/[0.05] transition-all duration-200 cursor-pointer group focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744]"
+              className="rounded-2xl p-4 md:p-5 border border-white/[0.08] bg-[#1E3054]/45 backdrop-blur-md hover:border-white/20 hover:bg-[#1E3054]/55 transition-all duration-200 cursor-pointer group focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744]"
               style={{ ['--tw-ring-color' as any]: `${panel.color}99` }}
               onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.boxShadow = `0 0 30px ${panel.color}18`; }}
               onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.boxShadow = "none"; }}>
