@@ -24,8 +24,8 @@ export default function BodyTrackerLayout({
         flipX
       />
       <div className="relative z-10 min-h-screen text-white">
-        {/* Tab navigation — transparent on mobile so hero shows through */}
-        <div className="sticky top-[60px] z-30 md:border-b md:border-white/[0.08] md:bg-[#1A2744]/90 md:backdrop-blur-md">
+        {/* Tab navigation — transparent so hero shows through */}
+        <div className="sticky top-[60px] z-30">
           <BodyTrackerTabs />
         </div>
         {/* Page content */}
