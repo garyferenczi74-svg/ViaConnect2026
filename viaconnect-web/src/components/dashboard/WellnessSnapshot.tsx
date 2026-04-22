@@ -221,10 +221,12 @@ export function WellnessSnapshot({ autoFetch = true }: WellnessSnapshotProps) {
 
           <Link
             href="/wellness-analytics"
-            className="mt-3 inline-flex min-h-[40px] w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2 text-xs font-medium text-white/70 transition-all hover:border-white/20 hover:bg-white/[0.08] hover:text-white"
+            className="group relative mt-3 flex items-center justify-center gap-1.5 overflow-hidden rounded-lg px-3 py-2 text-[11px] font-semibold text-white transition-all hover:shadow-[0_0_16px_rgba(45,165,160,0.35)] active:scale-[0.97]"
+            style={{ background: 'linear-gradient(135deg, #2DA5A0 0%, #1E3054 100%)' }}
           >
-            View Full Analytics
-            <ArrowRight className="h-3.5 w-3.5" strokeWidth={1.5} />
+            <span className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
+            <span className="relative">View Full Analytics</span>
+            <ArrowRight className="relative h-3 w-3" strokeWidth={2} />
           </Link>
         </>
       )}

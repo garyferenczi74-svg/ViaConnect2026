@@ -96,15 +96,15 @@ export function ConnectCard({ type, href, connectedCount = 0 }: ConnectCardProps
       {/* CTA */}
       <Link
         href={href}
-        className="mt-4 inline-flex min-h-[40px] w-full items-center justify-center gap-2 rounded-xl border px-4 py-2 text-sm font-medium transition-all"
+        className="group relative mt-4 flex min-h-[40px] w-full items-center justify-center gap-2 overflow-hidden rounded-xl px-4 py-2 text-sm font-semibold text-white transition-all hover:shadow-[0_0_16px_var(--cta-shadow)] active:scale-[0.97]"
         style={{
-          background: `${cfg.accent}1A`,
-          borderColor: `${cfg.accent}4D`,
-          color: cfg.accent,
-        }}
+          background: `linear-gradient(135deg, ${cfg.accent} 0%, #1E3054 100%)`,
+          ['--cta-shadow' as string]: `${cfg.accent}59`,
+        } as React.CSSProperties}
       >
-        {cfg.cta}
-        <ArrowRight className="h-4 w-4" strokeWidth={1.5} />
+        <span className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
+        <span className="relative">{cfg.cta}</span>
+        <ArrowRight className="relative h-4 w-4" strokeWidth={2} />
       </Link>
     </section>
   );
