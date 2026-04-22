@@ -190,6 +190,7 @@ const SKU_IMAGE_URL_FALLBACK: Record<string, string> = {
   "HormoneIQ™ Genetic Hormone Panel":                "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Products/HormoneIQ%20Genetic%20Hormone.png",
   "EpigenHQ™ Epigenetic Aging Panel":                "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Products/EpiGenDX%20Biological%20Age.png",
   "CannabisIQ™ Genetic Cannabinoid Panel":           "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Products/CannabisIQ.png",
+  "PeptideIQ™ Genetic Peptide Response Panel":       "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Products/PeptidesIQ%20Genetic%20Peptide%20Optimization%20Protocol.png",
   "GeneX360™ Complete Genetic Panel":                "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Products/GeneX360.png",
   "30-Day Custom Vitamin Package":                   "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Products/30%20Day%20Custom%20Vitamin%20Package.png",
 };
