@@ -10,7 +10,6 @@ import { DailyScoresPanel } from '@/components/dashboard/DailyScoresPanel';
 import { HelixRewardsSummary } from '@/components/dashboard/HelixRewardsSummary';
 import { QuickActionsGrid } from '@/components/dashboard/QuickActionsGrid';
 import { DailyInsightsCard } from '@/components/dashboard/DailyInsightsCard';
-import { QuickReassessmentCard } from '@/components/dashboard/QuickReassessmentCard';
 import { PatternCirclePreview } from '@/components/community/PatternCirclePreview';
 import { ConnectCard } from '@/components/dashboard/ConnectCard';
 import { DashboardLinkCard } from '@/components/dashboard/DashboardLinkCard';
@@ -104,13 +103,6 @@ export default function ConsumerDashboard() {
   const helixPoints = helixBalance?.current_balance ?? 0;
   const currentStreak = streak?.current_count ?? 0;
   const longestStreak = streak?.longest_count ?? 0;
-
-  const daysSinceCAQ = profile?.caq_completed_at
-    ? Math.floor(
-        (Date.now() - new Date(profile.caq_completed_at).getTime()) /
-          (1000 * 60 * 60 * 24),
-      )
-    : 0;
 
   return (
     // ── Full-page fixed background (Prompt #62L — true Sonar pattern) ──
@@ -212,8 +204,6 @@ export default function ConsumerDashboard() {
 
         {/* ── Daily Insights (Prompt #61, replaces DailyUltrathinkTip) ── */}
         <DailyInsightsCard profile={profile} supplements={supplements} />
-
-        <QuickReassessmentCard daysElapsed={daysSinceCAQ || 0} />
 
         <PatternCirclePreview
           userPatterns={['HPA Axis Dysregulation', 'Methylation Pathway']}

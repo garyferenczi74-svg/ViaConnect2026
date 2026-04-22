@@ -39,9 +39,6 @@ export function QuickReassessmentCard({ daysElapsed }: QuickReassessmentCardProp
           </p>
         </div>
         <div className="flex flex-shrink-0 items-center gap-1.5">
-          {!open && (
-            <span className="text-[10px] font-medium text-[#2DA5A0]/70">Tap to expand</span>
-          )}
           <ChevronDown
             className={`h-4 w-4 text-white/45 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
             strokeWidth={1.5}
