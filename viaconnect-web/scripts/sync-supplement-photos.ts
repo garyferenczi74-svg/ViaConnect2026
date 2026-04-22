@@ -1,11 +1,25 @@
 // Photo Sync prompt §3.5: sync runner.
 //
 // Modes:
-//   --dry-run                  (default; no DB writes)
-//   --apply                    (single transaction, idempotent)
-//   --confidence=HIGH          (default; rejects LOW)
-//   --category=<name>          (scope to one category)
-//   --rollback=<run_id>        (revert a previous --apply run)
+//   --dry-run                       (default; no DB writes)
+//   --apply                         (single transaction, idempotent)
+//   --confidence=HIGH               (default; rejects LOW)
+//   --category=<name>               (scope; case-insensitive substring
+//                                    match against products.category so
+//                                    --category=SNP matches 'snp_support')
+//   --product-type=<name>           (scope; exact case-insensitive match
+//                                    on products.product_type. No-op if
+//                                    the column is absent.)
+//   --service-category=<name>       (scope; case-insensitive substring
+//                                    match on products.category. Added
+//                                    by Prompt #110 for GeneX360-style
+//                                    service catalogs.)
+//   --plan-file=<path>              (explicit plan override; bypasses
+//                                    the default pickLatest('match-plan-')
+//                                    behavior. Added by Prompt #110 so
+//                                    the deterministic SNP mapping plan
+//                                    can shadow the #109 fuzzy plan.)
+//   --rollback=<run_id>             (revert a previous --apply run)
 //
 // All UPDATE statements are guarded by `image_url IS DISTINCT FROM`.
 // Re-running --apply immediately produces zero writes.
@@ -16,16 +30,23 @@ import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { getServiceRoleClient, AUDIT_OUT_DIR, nowIsoForFilename, safeLog } from './audit/_supabase-client';
 import type { MatchPlan, MatchPlanRow } from '../src/lib/photoSync/types';
+import { rowPassesScope } from '../src/lib/photoSync/scopeFilter';
 
 interface CliFlags {
   apply: boolean;
   confidence: 'HIGH';
   category: string | null;
+  product_type: string | null;
+  service_category: string | null;
+  plan_file: string | null;
   rollback_run_id: string | null;
 }
 
 function parseFlags(argv: ReadonlyArray<string>): CliFlags {
-  const flags: CliFlags = { apply: false, confidence: 'HIGH', category: null, rollback_run_id: null };
+  const flags: CliFlags = {
+    apply: false, confidence: 'HIGH', category: null,
+    product_type: null, service_category: null, plan_file: null, rollback_run_id: null,
+  };
   for (const a of argv) {
     if (a === '--apply') flags.apply = true;
     else if (a === '--dry-run') flags.apply = false;
@@ -38,10 +59,14 @@ function parseFlags(argv: ReadonlyArray<string>): CliFlags {
       flags.confidence = 'HIGH';
     }
     else if (a.startsWith('--category=')) flags.category = a.slice('--category='.length);
+    else if (a.startsWith('--product-type=')) flags.product_type = a.slice('--product-type='.length);
+    else if (a.startsWith('--service-category=')) flags.service_category = a.slice('--service-category='.length);
+    else if (a.startsWith('--plan-file=')) flags.plan_file = a.slice('--plan-file='.length);
     else if (a.startsWith('--rollback=')) flags.rollback_run_id = a.slice('--rollback='.length);
   }
   return flags;
 }
+
 
 function pickLatest(prefix: string): string {
   const entries = readdirSync(AUDIT_OUT_DIR)
@@ -75,18 +100,22 @@ async function applyRun(flags: CliFlags): Promise<void> {
     };
   };
 
-  const planPath = pickLatest('match-plan-');
-  safeLog(`sync: plan = ${planPath}`);
+  const planPath = flags.plan_file ?? pickLatest('match-plan-');
+  safeLog(`sync: plan = ${planPath}${flags.plan_file ? '  (explicit --plan-file override)' : ''}`);
   const plan = JSON.parse(readFileSync(planPath, 'utf8')) as MatchPlan;
 
   const eligible = plan.rows.filter((r): r is MatchPlanRow & { matched_public_url: string } =>
     r.match_confidence === flags.confidence
     && r.matched_public_url != null
     && r.current_image_url !== r.matched_public_url
-    && (flags.category == null || r.category === flags.category),
+    && rowPassesScope(r, flags),
   );
 
-  safeLog(`sync: eligible writes = ${eligible.length} (confidence=${flags.confidence}${flags.category ? `, category=${flags.category}` : ''})`);
+  const scopeBits: string[] = [`confidence=${flags.confidence}`];
+  if (flags.category) scopeBits.push(`category~=${flags.category}`);
+  if (flags.product_type) scopeBits.push(`product_type=${flags.product_type}`);
+  if (flags.service_category) scopeBits.push(`service_category~=${flags.service_category}`);
+  safeLog(`sync: eligible writes = ${eligible.length} (${scopeBits.join(', ')})`);
 
   if (!flags.apply) {
     safeLog('---- DRY RUN: rows that would update ----');
@@ -112,7 +141,7 @@ async function applyRun(flags: CliFlags): Promise<void> {
 
   for (const r of eligible) {
     const { error: upErr } = await sb
-      .from('products')
+      .from('product_catalog')
       .update({ image_url: r.matched_public_url })
       .eq('id', r.product_id)
       .neq('image_url', r.matched_public_url);  // idempotency guard
@@ -202,7 +231,7 @@ async function rollbackRun(run_id: string): Promise<void> {
     const previous_image_url = (row.previous_image_url as string | null) ?? '';
     const sku = row.sku as string;
     // Restore previous_image_url even if it was null; supabase-js sends null fine.
-    const { error: upErr } = await sb.from('products')
+    const { error: upErr } = await sb.from('product_catalog')
       .update({ image_url: row.previous_image_url })
       .eq('id', product_id);
     if (upErr) throw new Error(`rollback: UPDATE failed for sku=${sku}: ${upErr.message}`);

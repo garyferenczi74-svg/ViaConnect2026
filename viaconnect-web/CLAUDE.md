@@ -86,3 +86,28 @@ Every component, page, and feature must be developed for BOTH desktop AND mobile
 - Living spec: docs/agents/michelangelo-spec.md
 - Config (legacy): docs/agents/michelangelo-config.json
 - Source (legacy): src/lib/agents/michelangelo/
+
+---
+
+## Scripts
+
+### Photo sync (Prompt #109 → corrected by #110)
+Pipeline that keeps `products.image_url` in sync with the `Products` bucket (capital P; #110 corrected the name from `supplement-photos`). Full walkthrough in `docs/runbooks/photo-sync.md`.
+
+**Broad sync:**
+- **Audit:** `npm run photos:audit` (runs current-image-state, list-bucket-objects, match-products-to-files in sequence)
+- **Sync:** `npm run photos:sync -- --dry-run` then `npm run photos:sync -- --apply`; rollback via `npm run photos:sync -- --rollback=<run_id>`
+- **Reconcile:** `npm run photos:report` (diffs post-apply audit against the plan; exits non-zero if any HIGH row failed to flip)
+
+**SNP targeted flow (Prompt #110, scope-locked to `Methylation / GeneX360` + `Testing & Diagnostics` per 2026-04-21 addendum):**
+- `npx tsx scripts/audit/snp-bucket-reality-check.ts` classifies 20 SNP SKUs + 6 Testing & Diagnostics service cards into Classes A/B/C/D. Products query is category-filtered; out-of-scope rows never enter the plan.
+- `npx tsx scripts/audit/snp-filename-mapping.ts` emits a MatchPlan-compatible plan at `snp-plan-{ts}.json` with `category` populated for the sync runner's `--category` filter.
+- Remap Class B/D by running the sync once per locked category:
+  - `npx tsx scripts/sync-supplement-photos.ts --plan-file=<path> --category="Methylation / GeneX360" --apply`
+  - `npx tsx scripts/sync-supplement-photos.ts --plan-file=<path> --category="Testing & Diagnostics" --apply`
+- `npx tsx scripts/audit/snp-generation-manifest.ts` emits `snp-asset-generation-manifest.{md,csv}` for Class C artwork (stable reference at `docs/manifests/prompt-110-asset-generation.md`).
+- `npx tsx scripts/upload-snp-assets.ts --source <dir> --apply` uploads new artwork at bucket root (services flat, no subfolder) then auto-syncs.
+- `npx tsx scripts/audit/snp-reconciliation.ts` produces the PR-ready status report.
+- Playwright: `npx playwright test` runs `tests/e2e/snp-image-coverage.spec.ts` across 5 viewports.
+
+Artifacts land in `/tmp/viaconnect/` (override with `PHOTO_SYNC_OUT_DIR`). Direct `npx tsx scripts/...` invocations also work and are documented in the runbook.

@@ -158,6 +158,40 @@ function matchesCurrentSupplement(productName: string, currentSupplements: strin
   });
 }
 
+// Prompt #110 hotfix (2026-04-21): card image with graceful onError
+// fallback. Previously the raw <img> tag would render a browser-default
+// broken-image icon whenever product_catalog.image_url pointed at a
+// bucket object that didn't exist yet. Now any load error drops back
+// to the brand-consistent gradient+SKU placeholder already used when
+// image_url is null. Kept inside this file because it is the only
+// consumer; extract to src/components/shop/ if more surfaces adopt it.
+function ShopCardImage({
+  imageUrl,
+  sku,
+  name,
+}: {
+  imageUrl: string | null;
+  sku: string;
+  name: string;
+}): JSX.Element {
+  const [errored, setErrored] = useState(false);
+  if (!imageUrl || errored) {
+    return (
+      <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-copper/15 to-teal/10 flex items-center justify-center">
+        <span className="text-copper text-xl font-bold">{sku.padStart(2, "0")}</span>
+      </div>
+    );
+  }
+  return (
+    <img
+      src={imageUrl}
+      alt={name}
+      className="w-full h-full object-contain mix-blend-multiply"
+      onError={() => setErrored(true)}
+    />
+  );
+}
+
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export default function SupplementShopPage() {
@@ -700,19 +734,11 @@ function ShopContent() {
 
                   {/* Product Image / Placeholder */}
                   <div className="aspect-square bg-white flex items-center justify-center p-4 relative">
-                    {product.imageUrl ? (
-                      <img
-                        src={product.imageUrl}
-                        alt={product.Name}
-                        className="w-full h-full object-contain mix-blend-multiply"
-                      />
-                    ) : (
-                      <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-copper/15 to-teal/10 flex items-center justify-center">
-                        <span className="text-copper text-xl font-bold">
-                          {product.SKU.padStart(2, "0")}
-                        </span>
-                      </div>
-                    )}
+                    <ShopCardImage
+                      imageUrl={product.imageUrl ?? null}
+                      sku={product.SKU}
+                      name={product.Name}
+                    />
 
                     {/* Quick-add overlay */}
                     <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">

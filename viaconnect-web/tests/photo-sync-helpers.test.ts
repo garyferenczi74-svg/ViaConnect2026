@@ -6,6 +6,12 @@ import { classifyImageUrl } from '@/lib/photoSync/classifyImageUrl';
 import { normalizeFilename, normalizePathToKey, basename, folderOf, isAcceptableObject } from '@/lib/photoSync/normalizeFilename';
 import { levenshteinDistance } from '@/lib/photoSync/levenshtein';
 import { matchProductToFile } from '@/lib/photoSync/matchProductToFile';
+import { classifyOutcome, ERROR_OUTCOMES } from '@/lib/photoSync/reconcileOutcome';
+import { rowPassesScope } from '@/lib/photoSync/scopeFilter';
+import {
+  isInScopeCategory, expectedServicePath, legacyServiceSubfolderPath,
+  IN_SCOPE_CATEGORIES, IN_SCOPE_CATEGORY_SLUGS,
+} from '@/lib/photoSync/snpTargets';
 import { PUBLIC_PREFIX, type BucketObject } from '@/lib/photoSync/types';
 
 const PRESENT = new Set(['snp-support-formulations/mthfr-plus-folate-metabolism.png']);
@@ -201,5 +207,192 @@ describe('matchProductToFile', () => {
     });
     expect(r.confidence).toBe('NONE');
     expect(r.chosen).toBeNull();
+  });
+});
+
+describe('classifyOutcome (reconciliation report)', () => {
+  it('HIGH plan + post VALID => flipped_to_valid', () => {
+    expect(classifyOutcome({ pre: 'NULL', post: 'VALID_SUPABASE', confidence: 'HIGH' })).toBe('flipped_to_valid');
+    expect(classifyOutcome({ pre: 'STALE_SUPABASE', post: 'VALID_SUPABASE', confidence: 'HIGH' })).toBe('flipped_to_valid');
+    expect(classifyOutcome({ pre: 'PLACEHOLDER', post: 'VALID_SUPABASE', confidence: 'HIGH' })).toBe('flipped_to_valid');
+  });
+
+  it('HIGH plan + post NOT VALID => failed_to_flip (ERROR)', () => {
+    expect(classifyOutcome({ pre: 'NULL', post: 'NULL', confidence: 'HIGH' })).toBe('failed_to_flip');
+    expect(classifyOutcome({ pre: 'STALE_SUPABASE', post: 'STALE_SUPABASE', confidence: 'HIGH' })).toBe('failed_to_flip');
+    expect(classifyOutcome({ pre: 'PLACEHOLDER', post: 'PLACEHOLDER', confidence: 'HIGH' })).toBe('failed_to_flip');
+  });
+
+  it('LOW plan never auto-applies => unchanged_stale when not VALID', () => {
+    expect(classifyOutcome({ pre: 'NULL', post: 'NULL', confidence: 'LOW' })).toBe('unchanged_stale');
+    expect(classifyOutcome({ pre: 'STALE_SUPABASE', post: 'STALE_SUPABASE', confidence: 'LOW' })).toBe('unchanged_stale');
+  });
+
+  it('LOW plan manually flipped => flipped_to_valid', () => {
+    // Admin manually uploaded an image matching the LOW fuzzy match.
+    expect(classifyOutcome({ pre: 'NULL', post: 'VALID_SUPABASE', confidence: 'LOW' })).toBe('flipped_to_valid');
+  });
+
+  it('NONE plan stays in its pre-bucket', () => {
+    expect(classifyOutcome({ pre: 'NULL', post: 'NULL', confidence: 'NONE' })).toBe('unchanged_null');
+    expect(classifyOutcome({ pre: 'PLACEHOLDER', post: 'PLACEHOLDER', confidence: 'NONE' })).toBe('unchanged_placeholder');
+    expect(classifyOutcome({ pre: 'STALE_SUPABASE', post: 'STALE_SUPABASE', confidence: 'NONE' })).toBe('unchanged_stale');
+  });
+
+  it('EXTERNAL pre is always unchanged_external regardless of confidence', () => {
+    expect(classifyOutcome({ pre: 'EXTERNAL', post: 'EXTERNAL', confidence: 'NONE' })).toBe('unchanged_external');
+    // Even if confidence somehow says HIGH (spec forbids auto-rewrite), still treat as skipped.
+    expect(classifyOutcome({ pre: 'EXTERNAL', post: 'EXTERNAL', confidence: 'HIGH' })).toBe('unchanged_external');
+  });
+
+  it('VALID pre + non-VALID post ALWAYS => unexpected_regress (ERROR)', () => {
+    // Regression dominates confidence entirely — a row that was valid must stay valid.
+    expect(classifyOutcome({ pre: 'VALID_SUPABASE', post: 'STALE_SUPABASE', confidence: 'NONE' })).toBe('unexpected_regress');
+    expect(classifyOutcome({ pre: 'VALID_SUPABASE', post: 'NULL', confidence: 'HIGH' })).toBe('unexpected_regress');
+    expect(classifyOutcome({ pre: 'VALID_SUPABASE', post: 'PLACEHOLDER', confidence: 'LOW' })).toBe('unexpected_regress');
+  });
+
+  it('VALID pre + VALID post (no change needed) => already_valid', () => {
+    expect(classifyOutcome({ pre: 'VALID_SUPABASE', post: 'VALID_SUPABASE', confidence: 'NONE' })).toBe('already_valid');
+  });
+
+  it('audit-only row (no plan entry) => no_plan_entry', () => {
+    expect(classifyOutcome({ pre: null, post: 'NULL', confidence: null })).toBe('no_plan_entry');
+    expect(classifyOutcome({ pre: null, post: 'VALID_SUPABASE', confidence: null })).toBe('no_plan_entry');
+  });
+
+  it('ERROR_OUTCOMES contains exactly the two blocking outcomes', () => {
+    expect(ERROR_OUTCOMES.has('failed_to_flip')).toBe(true);
+    expect(ERROR_OUTCOMES.has('unexpected_regress')).toBe(true);
+    expect(ERROR_OUTCOMES.has('flipped_to_valid')).toBe(false);
+    expect(ERROR_OUTCOMES.has('unchanged_external')).toBe(false);
+    expect(ERROR_OUTCOMES.size).toBe(2);
+  });
+});
+
+describe('rowPassesScope (Prompt #110 sync scope flags)', () => {
+  const EMPTY = { category: null, product_type: null, service_category: null };
+
+  it('passes everything when no flag is set', () => {
+    expect(rowPassesScope({ category: null }, EMPTY)).toBe(true);
+    expect(rowPassesScope({ category: 'snp_support' }, EMPTY)).toBe(true);
+    expect(rowPassesScope({ category: 'anything' }, EMPTY)).toBe(true);
+  });
+
+  it('--category does case-insensitive substring match', () => {
+    const f = { ...EMPTY, category: 'SNP' };
+    expect(rowPassesScope({ category: 'snp_support' }, f)).toBe(true);   // ergonomic match
+    expect(rowPassesScope({ category: 'SNP Support' }, f)).toBe(true);
+    expect(rowPassesScope({ category: 'Methylation / SNP' }, f)).toBe(true);
+    expect(rowPassesScope({ category: 'base_formulas' }, f)).toBe(false);
+    expect(rowPassesScope({ category: null }, f)).toBe(false);
+  });
+
+  it('--category preserves the literal-value use case', () => {
+    const f = { ...EMPTY, category: 'snp_support' };
+    expect(rowPassesScope({ category: 'snp_support' }, f)).toBe(true);
+    // Case-insensitive, so caller can pass either casing.
+    expect(rowPassesScope({ category: 'SNP_SUPPORT' }, f)).toBe(true);
+  });
+
+  it('--service-category substring-matches on category', () => {
+    const f = { ...EMPTY, service_category: 'GeneX360' };
+    expect(rowPassesScope({ category: 'genex360_testing' }, f)).toBe(true);
+    expect(rowPassesScope({ category: 'GeneX360 Panels' }, f)).toBe(true);
+    expect(rowPassesScope({ category: 'snp_support' }, f)).toBe(false);
+  });
+
+  it('--product-type is tolerant when the column is absent', () => {
+    const f = { ...EMPTY, product_type: 'service' };
+    // Column absent entirely (undefined): pass.
+    expect(rowPassesScope({ category: 'any' }, f)).toBe(true);
+    // Column present but null: pass.
+    expect(rowPassesScope({ category: 'any', product_type: null }, f)).toBe(true);
+    // Column present and matching: pass.
+    expect(rowPassesScope({ category: 'any', product_type: 'service' }, f)).toBe(true);
+    expect(rowPassesScope({ category: 'any', product_type: 'SERVICE' }, f)).toBe(true);
+    // Column present and mismatched: reject.
+    expect(rowPassesScope({ category: 'any', product_type: 'supplement' }, f)).toBe(false);
+  });
+
+  it('multiple flags AND together', () => {
+    const f = { category: 'snp', product_type: null, service_category: null };
+    expect(rowPassesScope({ category: 'snp_support', product_type: null }, f)).toBe(true);
+
+    const fMulti = { category: 'snp', product_type: 'supplement', service_category: null };
+    expect(rowPassesScope({ category: 'snp_support', product_type: 'supplement' }, fMulti)).toBe(true);
+    expect(rowPassesScope({ category: 'snp_support', product_type: 'service' }, fMulti)).toBe(false);
+    expect(rowPassesScope({ category: 'base_formulas', product_type: 'supplement' }, fMulti)).toBe(false);
+  });
+});
+
+describe('isInScopeCategory (Prompt #110 scope-lock guard)', () => {
+  it('accepts the two locked display strings', () => {
+    expect(isInScopeCategory('Methylation / GeneX360')).toBe(true);
+    expect(isInScopeCategory('Testing & Diagnostics')).toBe(true);
+  });
+
+  it('accepts the seeded slug variants for transition', () => {
+    expect(isInScopeCategory('snp_support')).toBe(true);
+    expect(isInScopeCategory('genex360_testing')).toBe(true);
+    expect(isInScopeCategory('methylation-genex360')).toBe(true);
+    expect(isInScopeCategory('testing-diagnostics')).toBe(true);
+  });
+
+  it('accepts MASTER_SKUS CategoryKey values used on /shop', () => {
+    // farmceutica_master_skus.json Category field and CategoryKey union
+    // in shop/page.tsx use these short forms. product_catalog.category
+    // may mirror them.
+    expect(isInScopeCategory('SNP')).toBe(true);
+    expect(isInScopeCategory('Testing')).toBe(true);
+    expect(isInScopeCategory('Methylation')).toBe(true);
+    expect(isInScopeCategory('GeneX360')).toBe(true);
+    expect(isInScopeCategory('Diagnostics')).toBe(true);
+  });
+
+  it('is case-insensitive', () => {
+    expect(isInScopeCategory('methylation / genex360')).toBe(true);
+    expect(isInScopeCategory('TESTING & DIAGNOSTICS')).toBe(true);
+    expect(isInScopeCategory('Snp_Support')).toBe(true);
+  });
+
+  it('rejects every out-of-scope category', () => {
+    expect(isInScopeCategory('base_formulas')).toBe(false);              // Proprietary Base
+    expect(isInScopeCategory('peptides')).toBe(false);
+    expect(isInScopeCategory('functional_mushrooms')).toBe(false);
+    expect(isInScopeCategory('womens_health')).toBe(false);
+    expect(isInScopeCategory('childrens_methylated')).toBe(false);
+    expect(isInScopeCategory('advanced_formulas')).toBe(false);
+    expect(isInScopeCategory('anything-else')).toBe(false);
+  });
+
+  it('rejects null / empty / whitespace', () => {
+    expect(isInScopeCategory(null)).toBe(false);
+    expect(isInScopeCategory(undefined)).toBe(false);
+    expect(isInScopeCategory('')).toBe(false);
+    expect(isInScopeCategory('   ')).toBe(false);
+  });
+
+  it('IN_SCOPE_CATEGORIES has exactly two entries', () => {
+    expect(IN_SCOPE_CATEGORIES).toHaveLength(2);
+    expect(IN_SCOPE_CATEGORIES).toContain('Methylation / GeneX360');
+    expect(IN_SCOPE_CATEGORIES).toContain('Testing & Diagnostics');
+  });
+
+  it('IN_SCOPE_CATEGORY_SLUGS includes transitional values', () => {
+    expect(IN_SCOPE_CATEGORY_SLUGS).toContain('snp_support');
+    expect(IN_SCOPE_CATEGORY_SLUGS).toContain('genex360_testing');
+  });
+});
+
+describe('expectedServicePath (flat-root addendum)', () => {
+  it('returns {slug}.webp at bucket root, no subfolder', () => {
+    expect(expectedServicePath({ slug: 'genex-m' })).toBe('genex-m.webp');
+    expect(expectedServicePath({ slug: 'nutrigendx' })).toBe('nutrigendx.webp');
+    expect(expectedServicePath({ slug: 'cannabisiq' })).toBe('cannabisiq.webp');
+  });
+
+  it('legacyServiceSubfolderPath keeps services/ for stale-upload detection', () => {
+    expect(legacyServiceSubfolderPath({ slug: 'genex-m' })).toBe('services/genex-m.webp');
   });
 });

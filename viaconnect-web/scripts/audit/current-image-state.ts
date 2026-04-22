@@ -35,7 +35,7 @@ interface ClassifiedRow {
 async function loadBucketPathSet(client: ReturnType<typeof getServiceRoleClient>): Promise<Set<string>> {
   const set = new Set<string>();
   async function recurse(prefix: string): Promise<void> {
-    const { data, error } = await client.storage.from('supplement-photos').list(prefix, { limit: 1000, sortBy: { column: 'name', order: 'asc' } });
+    const { data, error } = await client.storage.from('Products').list(prefix, { limit: 1000, sortBy: { column: 'name', order: 'asc' } });
     if (error) throw new Error(`bucket list failed for prefix "${prefix}": ${error.message}`);
     for (const obj of data ?? []) {
       const isFolder = obj.id == null;
@@ -59,13 +59,17 @@ async function main(): Promise<void> {
   const bucketSet = await loadBucketPathSet(sb);
   safeLog(`audit: bucket has ${bucketSet.size} objects`);
 
-  safeLog('audit: loading products...');
+  // /shop reads from product_catalog, not products — that's the table
+  // whose image_url actually drives consumer-facing rendering. See
+  // src/app/(app)/(consumer)/shop/page.tsx line 239 and Prompt #110
+  // hotfix notes (2026-04-21).
+  safeLog('audit: loading product_catalog...');
   const { data: products, error } = await sb
-    .from('products')
-    .select('id, sku, name, category, image_url, pricing_tier')
+    .from('product_catalog')
+    .select('id, sku, name, category, image_url')
     .order('category', { nullsFirst: false })
     .order('sku');
-  if (error) throw new Error(`products select failed: ${error.message}`);
+  if (error) throw new Error(`product_catalog select failed: ${error.message}`);
 
   const rows: ClassifiedRow[] = [];
   const products_typed = (products ?? []) as Array<Pick<ProductRow, 'id' | 'sku' | 'name' | 'category' | 'image_url'> & { pricing_tier: string | null }>;

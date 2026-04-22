@@ -6,7 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "photos:audit": "npx tsx scripts/audit/current-image-state.ts && npx tsx scripts/audit/list-bucket-objects.ts && npx tsx scripts/audit/match-products-to-files.ts",
+    "photos:sync": "npx tsx scripts/sync-supplement-photos.ts",
+    "photos:report": "npx tsx scripts/audit/generate-reconciliation-report.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.30.1",

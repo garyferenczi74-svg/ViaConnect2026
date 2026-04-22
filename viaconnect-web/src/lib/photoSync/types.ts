@@ -1,7 +1,11 @@
 // Photo Sync prompt: shared types for the audit + sync pipeline.
 
 export const SUPABASE_PROJECT_HOST = 'nnhkcufyqjojdbvdrpky.supabase.co';
-export const PHOTO_BUCKET = 'supplement-photos';
+// Prompt #110 correction (2026-04-21): bucket is 'Products' (capital P).
+// #109 originally shipped with 'supplement-photos' which does not exist
+// in this project. Do not change without verifying against the Supabase
+// dashboard: /dashboard/project/nnhkcufyqjojdbvdrpky/storage/files/buckets/Products.
+export const PHOTO_BUCKET = 'Products';
 export const PUBLIC_PREFIX = `https://${SUPABASE_PROJECT_HOST}/storage/v1/object/public/${PHOTO_BUCKET}/`;
 
 export type ImageUrlClassification =

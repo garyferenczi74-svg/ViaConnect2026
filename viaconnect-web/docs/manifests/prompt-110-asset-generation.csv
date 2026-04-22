@@ -1,0 +1,25 @@
+display_name,category,target_filename,bucket_path
+"ACAT+ Mitochondrial Support","Methylation / GeneX360",acat-support.webp,Products/acat-support.webp
+"ACHY+ Acetylcholine Support","Methylation / GeneX360",achy-support.webp,Products/achy-support.webp
+"ADO Support+ Purine Metabolism","Methylation / GeneX360",ado-support.webp,Products/ado-support.webp
+"BHMT+ Methylation Support","Methylation / GeneX360",bhmt-support.webp,Products/bhmt-support.webp
+"CBS Support+ Sulfur Pathway","Methylation / GeneX360",cbs-support.webp,Products/cbs-support.webp
+"COMT+ Neurotransmitter Balance","Methylation / GeneX360",comt-support.webp,Products/comt-support.webp
+"GST+ Cellular Detox","Methylation / GeneX360",gst-support.webp,Products/gst-support.webp
+"MAOA+ Neurochemical Balance","Methylation / GeneX360",maoa-support.webp,Products/maoa-support.webp
+"MTHFR+ Folate Metabolism","Methylation / GeneX360",mthfr-support.webp,Products/mthfr-support.webp
+"MTR+ Methylation Matrix","Methylation / GeneX360",mtr-support.webp,Products/mtr-support.webp
+"MTRR+ Methylcobalamin Regen","Methylation / GeneX360",mtrr-support.webp,Products/mtrr-support.webp
+"NOS+ Vascular Integrity","Methylation / GeneX360",nos-support.webp,Products/nos-support.webp
+"RFC1 Support+ Folate Transport","Methylation / GeneX360",rfc1-support.webp,Products/rfc1-support.webp
+"SHMT+ Glycine-Folate Balance","Methylation / GeneX360",shmt-support.webp,Products/shmt-support.webp
+"SOD+ Antioxidant Defense","Methylation / GeneX360",sod-support.webp,Products/sod-support.webp
+"SUOX+ Sulfite Clearance","Methylation / GeneX360",suox-support.webp,Products/suox-support.webp
+"TCN2+ B12 Transport","Methylation / GeneX360",tcn2-support.webp,Products/tcn2-support.webp
+"VDR+ Receptor Activation","Methylation / GeneX360",vdr-support.webp,Products/vdr-support.webp
+GeneX-M,"Testing & Diagnostics",genex-m.webp,Products/genex-m.webp
+NutrigenDX,"Testing & Diagnostics",nutrigendx.webp,Products/nutrigendx.webp
+HormoneIQ,"Testing & Diagnostics",hormoneiq.webp,Products/hormoneiq.webp
+EpigenHQ,"Testing & Diagnostics",epigenhq.webp,Products/epigenhq.webp
+PeptideIQ,"Testing & Diagnostics",peptideiq.webp,Products/peptideiq.webp
+CannabisIQ,"Testing & Diagnostics",cannabisiq.webp,Products/cannabisiq.webp
