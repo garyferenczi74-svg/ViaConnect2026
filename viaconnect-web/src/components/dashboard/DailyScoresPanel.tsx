@@ -427,7 +427,7 @@ export function DailyScoresPanel({ checkinRaw, previewRaw }: DailyScoresPanelPro
         {/* LOADED: gauges (never resets to empty) */}
         {scoreState === 'loaded' && result && (
           <div className={`relative grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6 ${isPreview ? 'ring-1 ring-[#2DA5A0]/20 rounded-2xl p-1' : ''}`}>
-            <DailyScoreGauge {...result.sleep} dataMode={result.dataMode} icon={Bed} isPreview={isPreview} />
+            <DailyScoreGauge {...result.sleep} color="#004aad" dataMode={result.dataMode} icon={Bed} isPreview={isPreview} />
             <DailyScoreGauge {...result.energy} dataMode={result.dataMode} icon={Zap} isPreview={isPreview} />
             <DailyScoreGauge {...result.moodStress} dataMode={result.dataMode} icon={Brain} isPreview={isPreview} />
             <DailyScoreGauge {...result.nutrition} dataMode={result.dataMode} icon={Apple} isPreview={isPreview} />
