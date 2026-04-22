@@ -199,7 +199,7 @@ export function DailyInsightsCard({ profile, supplements }: DailyInsightsCardPro
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        className="flex w-full items-center gap-3 p-4 text-left transition-colors hover:bg-white/[0.03] sm:p-5"
+        className="relative flex w-full items-center gap-3 p-4 text-left transition-colors hover:bg-white/[0.03] sm:p-5"
       >
         <Sparkles className="h-4 w-4 flex-shrink-0 text-[#2DA5A0]" strokeWidth={1.5} />
         <div className="min-w-0 flex-1">
@@ -220,9 +220,12 @@ export function DailyInsightsCard({ profile, supplements }: DailyInsightsCardPro
           <span className="relative">Research Hub</span>
           <ArrowRight className="relative h-3.5 w-3.5" strokeWidth={2} />
         </Link>
-        <div className="flex flex-shrink-0 items-center gap-1.5">
+        <div className="pointer-events-none absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-0 leading-none">
+          <span className="text-[9px] font-medium uppercase tracking-wider text-white/50">
+            {open ? 'Collapse' : 'Expand'}
+          </span>
           <ChevronDown
-            className={`h-4 w-4 text-white/45 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+            className={`h-4 w-4 text-white/50 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
             strokeWidth={1.5}
           />
         </div>
