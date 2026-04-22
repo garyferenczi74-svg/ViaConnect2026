@@ -67,7 +67,7 @@ export const CATEGORY_CONFIG: Record<string, CategoryConfig> = {
     description: 'Core building blocks. The foundation of every FarmCeutica protocol',
   },
   TESTING: {
-    label: 'Testing & Diagnostics',
+    label: 'GeneX360 Testing & Diagnostics',
     order: 6,
     color: '#A78BFA',
     gradientFrom: 'rgba(167,139,250,0.15)',
