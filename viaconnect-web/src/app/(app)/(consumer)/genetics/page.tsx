@@ -192,10 +192,10 @@ export default function GeneticsPage() {
           <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1" style={{ WebkitOverflowScrolling: "touch" }}>
             {(["All", "High", "Moderate", "Low"] as const).map((tab) => {
               const active = variantFilter === tab;
-              return <button key={tab} onClick={() => setVariantFilter(tab)} className={`flex-shrink-0 min-h-[36px] px-4 py-1.5 rounded-full text-xs font-medium transition-all ${active ? "bg-teal-400/15 border border-teal-400/30 text-teal-400" : "bg-white/5 border border-white/[0.06] text-white/40 hover:text-white/60"}`}>{tab}</button>;
+              return <button key={tab} onClick={() => setVariantFilter(tab)} className={`flex-shrink-0 min-h-[36px] px-4 py-1.5 rounded-full text-xs font-medium text-[#1b4539] transition-all ${active ? "bg-teal-400/15 border border-teal-400/30" : "bg-white/5 border border-white/[0.06] hover:bg-white/10"}`}>{tab}</button>;
             })}
           </div>
-          <div className="flex items-center gap-3 rounded-xl bg-white/[0.03] border border-white/[0.06] px-4 py-3">
+          <div className="flex items-center gap-3 rounded-xl bg-[#1E3054]/45 backdrop-blur-md border border-white/[0.06] px-4 py-3">
             <Search className="h-4 w-4 shrink-0 text-white/25" strokeWidth={1.5} />
             <input type="text" placeholder="Search by gene name or rs number..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full bg-transparent text-sm text-base text-white placeholder:text-white/25 outline-none" />
           </div>
