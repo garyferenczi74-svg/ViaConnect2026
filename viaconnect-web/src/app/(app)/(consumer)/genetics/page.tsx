@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search, ChevronDown, ChevronUp, Dna, Sparkles, ArrowRight,
@@ -116,11 +117,14 @@ function BuyNowButton({ panelId, compact = false }: { panelId: string; compact?:
 /* ═══════════════════════════════════════════════════════════════════════ */
 
 export default function GeneticsPage() {
+  const router = useRouter();
   const [variantFilter, setVariantFilter] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [expandedVariant, setExpandedVariant] = useState<number | null>(null);
   const dnaInputRef = useRef<HTMLInputElement>(null);
   const labInputRef = useRef<HTMLInputElement>(null);
+
+  const goToShop = (panelId: string) => router.push(getGeneticsShopUrl(panelId));
 
   const filteredVariants = VARIANTS.filter((v) => {
     const matchesFilter = variantFilter === "All" || v.impact === variantFilter;
@@ -338,7 +342,12 @@ export default function GeneticsPage() {
 
         {/* ═══ GENEX360 COMPLETE (HERO) ═══ */}
         {(() => { const p = PANELS[0]; return (
-          <div className="rounded-2xl p-5 md:p-6 border border-teal-400/20 hover:border-teal-400/40 hover:shadow-[0_0_40px_rgba(45,165,160,0.1)] transition-all duration-300 cursor-pointer"
+          <div
+            role="link"
+            tabIndex={0}
+            onClick={() => goToShop(p.id)}
+            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); goToShop(p.id); } }}
+            className="rounded-2xl p-5 md:p-6 border border-teal-400/20 hover:border-teal-400/40 hover:shadow-[0_0_40px_rgba(45,165,160,0.1)] transition-all duration-300 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-400/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744]"
             style={{ background: "linear-gradient(135deg, rgba(45,165,160,0.12) 0%, rgba(96,165,250,0.06) 50%, rgba(183,94,24,0.06) 100%)" }}>
             <div className="flex flex-col sm:flex-row gap-4 items-start">
               <PremiumIcon icon={p.icon} color={p.color} size="lg" />
@@ -364,7 +373,13 @@ export default function GeneticsPage() {
         {/* ═══ 6 INDIVIDUAL PANELS ═══ */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
           {PANELS.slice(1).map((panel) => (
-            <div key={panel.id} className="rounded-2xl p-4 md:p-5 border border-white/[0.08] bg-white/[0.03] hover:border-white/20 hover:bg-white/[0.05] transition-all duration-200 cursor-pointer group"
+            <div key={panel.id}
+              role="link"
+              tabIndex={0}
+              onClick={() => goToShop(panel.id)}
+              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); goToShop(panel.id); } }}
+              className="rounded-2xl p-4 md:p-5 border border-white/[0.08] bg-white/[0.03] hover:border-white/20 hover:bg-white/[0.05] transition-all duration-200 cursor-pointer group focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744]"
+              style={{ ['--tw-ring-color' as any]: `${panel.color}99` }}
               onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.boxShadow = `0 0 30px ${panel.color}18`; }}
               onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.boxShadow = "none"; }}>
               <div className="flex items-center justify-between mb-3">
