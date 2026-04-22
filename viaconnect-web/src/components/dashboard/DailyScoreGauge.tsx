@@ -117,14 +117,14 @@ export function DailyScoreGauge({
       </div>
 
       <div className="mt-2 flex items-center gap-1.5">
-        {GaugeIcon && <GaugeIcon className="h-3 w-3 text-white/40" strokeWidth={1.5} />}
-        <p className="text-[10px] font-semibold uppercase tracking-wider text-white/60">{label}</p>
+        {GaugeIcon && <GaugeIcon className="h-3 w-3" strokeWidth={1.5} style={{ color: noData ? 'rgba(255,255,255,0.4)' : color }} />}
+        <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: noData ? 'rgba(255,255,255,0.6)' : color }}>{label}</p>
       </div>
 
       {confidence > 0 && (
         <div className="mt-1 flex items-center gap-1">
-          <ModeIcon className="h-2.5 w-2.5 text-white/25" strokeWidth={1.5} />
-          <span className="text-[8px] text-white/25">
+          <ModeIcon className="h-2.5 w-2.5" strokeWidth={1.5} style={{ color, opacity: 0.7 }} />
+          <span className="text-[8px]" style={{ color, opacity: 0.7 }}>
             {dataMode === 'manual' ? 'Check-in' : dataMode === 'wearable' ? 'Device' : 'Blended'}
           </span>
         </div>

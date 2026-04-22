@@ -18,11 +18,11 @@ interface MacroValues { protein: number; carbs: number; fat: number; healthyFat:
 
 const DEFAULT_MACROS: MacroValues = { protein: 5, carbs: 5, fat: 5, healthyFat: 5, sugar: 3 };
 
-const MEAL_TABS: { id: MealType; label: string; icon: React.ReactNode }[] = [
-  { id: 'breakfast', label: 'Breakfast', icon: <Coffee className="h-4 w-4" strokeWidth={1.5} /> },
-  { id: 'lunch', label: 'Lunch', icon: <UtensilsCrossed className="h-4 w-4" strokeWidth={1.5} /> },
-  { id: 'dinner', label: 'Dinner', icon: <UtensilsCrossed className="h-4 w-4" strokeWidth={1.5} /> },
-  { id: 'snacks', label: 'Snacks', icon: <Cookie className="h-4 w-4" strokeWidth={1.5} /> },
+const MEAL_TABS: { id: MealType; label: string; icon: React.ReactNode; color: string }[] = [
+  { id: 'breakfast', label: 'Breakfast', icon: <Coffee className="h-4 w-4" strokeWidth={1.5} />, color: '#FBBF24' },
+  { id: 'lunch', label: 'Lunch', icon: <UtensilsCrossed className="h-4 w-4" strokeWidth={1.5} />, color: '#2DA5A0' },
+  { id: 'dinner', label: 'Dinner', icon: <UtensilsCrossed className="h-4 w-4" strokeWidth={1.5} />, color: '#60A5FA' },
+  { id: 'snacks', label: 'Snacks', icon: <Cookie className="h-4 w-4" strokeWidth={1.5} />, color: '#A855F7' },
 ];
 
 interface QuickMealLogWidgetProps {
@@ -315,28 +315,35 @@ export function QuickMealLogWidget({ hideHeader = false, onSaved }: QuickMealLog
           const isActive = activeTab === tab.id;
           const isSaved = savedMeals.has(tab.id);
           const isSkipped = skippedMeals.has(tab.id);
-          const iconColor = isActive
-            ? 'text-[#2DA5A0]'
-            : isSaved
-              ? 'text-[#22C55E]'
+          const iconTextColor = isSaved
+            ? '#22C55E'
+            : isActive
+              ? '#2DA5A0'
               : isSkipped
-                ? 'text-white/40'
-                : 'text-white/50';
+                ? 'rgba(255,255,255,0.4)'
+                : tab.color;
+          const idleStyle: React.CSSProperties = {
+            background: `${tab.color}22`,
+            borderColor: `${tab.color}40`,
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)',
+          };
           return (
             <button
               key={tab.id}
               onClick={() => setActiveTab(isActive ? null : tab.id)}
-              className={`flex flex-col items-center gap-1.5 rounded-lg py-3 transition-all ${
+              className={`flex flex-col items-center gap-1.5 rounded-lg border py-3 transition-all ${
                 isActive
-                  ? 'border border-[#2DA5A0]/40 bg-[#2DA5A0]/15'
+                  ? 'border-[#2DA5A0]/40 bg-[#2DA5A0]/20 backdrop-blur-md'
                   : isSaved
-                    ? 'border border-[#22C55E]/30 bg-[#22C55E]/10'
+                    ? 'border-[#22C55E]/50 bg-[#22C55E]/20 backdrop-blur-md'
                     : isSkipped
-                      ? 'border border-white/10 bg-white/[0.03]'
-                      : 'border border-transparent bg-white/[0.04] hover:bg-white/[0.08]'
+                      ? 'border-white/10 bg-white/[0.03]'
+                      : ''
               }`}
+              style={isActive || isSaved || isSkipped ? undefined : idleStyle}
             >
-              <span className={iconColor}>
+              <span style={{ color: iconTextColor }}>
                 {!isActive && isSaved ? (
                   <Check className="h-4 w-4" strokeWidth={1.5} />
                 ) : !isActive && isSkipped ? (
@@ -345,7 +352,7 @@ export function QuickMealLogWidget({ hideHeader = false, onSaved }: QuickMealLog
                   tab.icon
                 )}
               </span>
-              <span className={`text-xs ${iconColor} ${isActive || isSaved ? 'font-medium' : ''}`}>
+              <span className={`text-xs ${isActive || isSaved ? 'font-medium' : ''}`} style={{ color: iconTextColor }}>
                 {tab.label}
               </span>
             </button>
