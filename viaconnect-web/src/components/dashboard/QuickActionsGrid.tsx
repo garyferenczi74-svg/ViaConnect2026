@@ -9,6 +9,7 @@ import { motion } from 'framer-motion';
 import {
   Activity,
   MessageCircleHeart,
+  PersonStanding,
   ShoppingBag,
   type LucideIcon,
 } from 'lucide-react';
@@ -23,6 +24,7 @@ interface QuickAction {
 
 const ACTIONS: QuickAction[] = [
   { label: 'Hannah AI Wellness Assistant', href: '/wellness/advisor', icon: MessageCircleHeart, color: '#2DA5A0', description: 'Chat with your personal AI assistant' },
+  { label: 'Body Tracker',              href: '/body-tracker',     icon: PersonStanding,     color: '#22C55E', description: 'Weight, composition & muscle trends' },
   { label: 'Wearable Data',             href: '/wearables',        icon: Activity,           color: '#7C6FE0', description: 'Recovery, sleep & strain insights' },
   { label: 'Shop',                      href: '/shop',             icon: ShoppingBag,        color: '#B75E18', description: 'Browse supplements, peptides & tests' },
 ];
@@ -33,7 +35,7 @@ export function QuickActionsGrid() {
       <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-white/50">
         Quick Actions
       </h2>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {ACTIONS.map((action) => {
           const Icon = action.icon;
           return (
