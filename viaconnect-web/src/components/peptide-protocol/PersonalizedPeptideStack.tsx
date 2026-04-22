@@ -339,7 +339,7 @@ export function PersonalizedPeptideStack({ userId }: { userId?: string } = {}) {
             }))} />
 
             {/* Timestamp */}
-            <p className="text-xs text-center pt-2" style={{ color: '#B75E18' }}>
+            <p className="text-sm font-medium text-center pt-2" style={{ color: '#1b4539' }}>
               Generated {new Date(protocol.generated_at).toLocaleString()} · Powered by Jeffery AI · $0
             </p>
           </motion.div>
