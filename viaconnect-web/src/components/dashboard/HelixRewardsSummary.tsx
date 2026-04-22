@@ -145,24 +145,28 @@ export function HelixRewardsSummary({ totalPoints, currentStreak, longestStreak 
       </div>
 
       {/* Streak */}
-      <div className="mt-3 flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-3.5 py-3">
+      <div className={`mt-3 flex items-center gap-2 rounded-xl border px-3.5 py-3 backdrop-blur-sm ${currentStreak === 0 ? 'border-[#CE2029]/40 bg-[#CE2029]/15' : 'border-white/10 bg-white/[0.04]'}`}>
         <motion.div
           animate={currentStreak >= 7 ? { y: [0, -2, 0] } : {}}
           transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
         >
           <Flame
-            className={`h-5 w-5 ${currentStreak >= 7 ? 'text-[#B75E18]' : 'text-white/40'}`}
+            className={`h-5 w-5 ${currentStreak === 0 ? 'text-[#CE2029]' : currentStreak >= 7 ? 'text-[#B75E18]' : 'text-white/40'}`}
             strokeWidth={1.5}
           />
         </motion.div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-white">
+          <p className={`text-sm font-semibold ${currentStreak === 0 ? 'text-[#CE2029]' : 'text-white'}`}>
             {currentStreak > 0 ? `${currentStreak}-day active streak` : 'Start your streak today'}
           </p>
           {longestStreak > 0 && (
             <p className="text-[10px] text-white/40">Best: {longestStreak} days</p>
           )}
         </div>
+        <ArrowRight
+          className={`h-4 w-4 flex-shrink-0 ${currentStreak === 0 ? 'text-[#CE2029]' : 'text-white/40'}`}
+          strokeWidth={1.5}
+        />
       </div>
 
       {/* Progress */}
