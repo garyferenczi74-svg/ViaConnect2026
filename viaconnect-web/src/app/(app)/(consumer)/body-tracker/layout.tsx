@@ -21,6 +21,7 @@ export default function BodyTrackerLayout({
         overlayOpacity={0.55}
         objectPosition="center center"
         priority
+        flipX
       />
       <div className="relative z-10 min-h-screen text-white">
         {/* Tab navigation — transparent on mobile so hero shows through */}

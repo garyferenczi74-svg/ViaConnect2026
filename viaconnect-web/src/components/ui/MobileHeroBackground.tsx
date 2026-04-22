@@ -14,6 +14,7 @@ interface MobileHeroBackgroundProps {
   quality?: number;
   objectPosition?: string;
   zIndex?: number;
+  flipX?: boolean;
 }
 
 export function MobileHeroBackground({
@@ -27,6 +28,7 @@ export function MobileHeroBackground({
   quality = 85,
   objectPosition = 'center 45%',
   zIndex = 0,
+  flipX = false,
 }: MobileHeroBackgroundProps) {
   const [isLoaded, setIsLoaded] = useState(false);
   const [viewportHeight, setViewportHeight] = useState<string>('100vh');
@@ -98,6 +100,7 @@ export function MobileHeroBackground({
           objectPosition,
           backfaceVisibility: 'hidden',
           WebkitBackfaceVisibility: 'hidden',
+          ...(flipX ? { transform: 'scaleX(-1)' } : {}),
         }}
       />
 
