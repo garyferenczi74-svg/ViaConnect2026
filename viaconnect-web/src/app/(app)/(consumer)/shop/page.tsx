@@ -158,6 +158,42 @@ function matchesCurrentSupplement(productName: string, currentSupplements: strin
   });
 }
 
+// Direct SKU-name to bucket-URL map. Used as a last-resort fallback when
+// product_catalog.image_url is NULL for a row we know has an uploaded
+// file. Sourced from Gary's 2026-04-21 evening upload listing. Keeps
+// the shop from going dark while the DB catches up; once product_catalog
+// is backfilled, dbInfo.image_url takes precedence naturally.
+const SKU_IMAGE_URL_FALLBACK: Record<string, string> = {
+  // 18 SNP supplement bottles — supplement-photos bucket
+  "ACAT+ Mitochondrial Support":     "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/supplement-photos/ACAT%20Support+.png",
+  "ACHY+ Acetylcholine Support":     "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/supplement-photos/ACHY%20Support+.png",
+  "ADO Support+ Purine Metabolism":  "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/supplement-photos/ADO%20Support+.png",
+  "BHMT+ Methylation Support":       "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/supplement-photos/BHMT%20Support+.png",
+  "CBS Support+ Sulfur Pathway":     "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/supplement-photos/CBS%20Support+.png",
+  "COMT+ Neurotransmitter Balance":  "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/supplement-photos/COMT%20Support%20+%20.png",
+  "GST+ Cellular Detox":             "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/supplement-photos/GST%20Support+.png",
+  "MAOA+ Neurochemical Balance":     "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/supplement-photos/MAOA%20Support+.png",
+  "MTHFR+ Folate Metabolism":        "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/supplement-photos/MTHFR%20Support+.png",
+  "MTR+ Methylation Matrix":         "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/supplement-photos/MTR%20Support+%20.png",
+  "MTRR+ Methylcobalamin Regen":     "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/supplement-photos/MTRR%20Support+%20.png",
+  "NOS+ Vascular Integrity":         "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/supplement-photos/NOS%20Support+.png",
+  "RFC1 Support+ Folate Transport":  "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/supplement-photos/RFC1%20Support+.png",
+  "SHMT+ Glycine-Folate Balance":    "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/supplement-photos/SHMT%20Support+.png",
+  "SOD+ Antioxidant Defense":        "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/supplement-photos/SOD%20Support+.png",
+  "SUOX+ Sulfite Clearance":         "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/supplement-photos/SUOX%20%20Support+.png",
+  "TCN2+ B12 Transport":             "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/supplement-photos/TCN2%20Support+.png",
+  "VDR+ Receptor Activation":        "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/supplement-photos/VDR%20Support+.png",
+
+  // 6 Testing & Diagnostics service cards + GeneX360 bundle + 30-Day Vitamin — Products bucket
+  "GeneX-M™ Methylation Panel":                      "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Products/GenexM%20Genetic%20Methylation.png",
+  "NutrigenDX™ Genetic Nutrition Panel":             "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Products/NutrigenDX%20Genetic%20Nutrition.png",
+  "HormoneIQ™ Genetic Hormone Panel":                "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Products/HormoneIQ%20Genetic%20Hormone.png",
+  "EpigenHQ™ Epigenetic Aging Panel":                "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Products/EpiGenDX%20Biological%20Age.png",
+  "CannabisIQ™ Genetic Cannabinoid Panel":           "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Products/CannabisIQ.png",
+  "GeneX360™ Complete Genetic Panel":                "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Products/GeneX360.png",
+  "30-Day Custom Vitamin Package":                   "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Products/30%20Day%20Custom%20Vitamin%20Package.png",
+};
+
 // Prompt #110 hotfix (2026-04-21): card image with graceful onError
 // fallback. Previously the raw <img> tag would render a browser-default
 // broken-image icon whenever product_catalog.image_url pointed at a
@@ -375,7 +411,7 @@ function ShopContent() {
         isCurrentRegime,
         description: dbInfo?.description ?? null,
         shortName: dbInfo?.short_name ?? null,
-        imageUrl: dbInfo?.image_url ?? null,
+        imageUrl: dbInfo?.image_url ?? SKU_IMAGE_URL_FALLBACK[sku.Name] ?? null,
         deliveryType: dbInfo?.delivery_type ?? null,
         shortDescription:
           masterFormulation?.marketingDescription ?? dbInfo?.short_description ?? null,
