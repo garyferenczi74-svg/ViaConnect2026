@@ -257,7 +257,7 @@ export default function GeneticsPage() {
                 Browse Full SNP Support Formulations
               </h3>
               <p className="text-sm text-white/40 mt-0.5">
-                Methylation / GeneX360™ catalog · MTHFR, COMT, VDR &amp; 80+ variants
+                Methylation SNP Support catalog · MTHFR, COMT, VDR &amp; 80+ variants
               </p>
             </div>
           </div>

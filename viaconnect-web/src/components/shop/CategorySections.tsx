@@ -47,7 +47,7 @@ export const CATEGORY_CONFIG: Record<string, CategoryConfig> = {
     description: 'Adaptogenic mushroom extracts for immune, cognitive, and metabolic support',
   },
   SNP: {
-    label: 'Methylation / GeneX360™',
+    label: 'Methylation SNP Support',
     order: 4,
     color: '#B75E18',
     gradientFrom: 'rgba(183,94,24,0.15)',
