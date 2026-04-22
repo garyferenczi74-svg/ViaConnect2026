@@ -791,15 +791,7 @@ export default function AnalyticsPage() {
         {/* RIGHT: stacked trio sharing the left column's height */}
         <div className="grid grid-rows-3 gap-4 h-full">
           {/* Symptom Profile */}
-          <Card
-            className="p-5 overflow-hidden flex flex-col min-h-0"
-            style={{
-              background: "rgba(30,48,84,0.45)",
-              border: "1px solid rgba(45,165,160,0.18)",
-              boxShadow:
-                "0 4px 30px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06), inset 0 0 0 1px rgba(255,255,255,0.03)",
-            }}
-          >
+          <div className="glass-panel p-5 overflow-hidden flex flex-col min-h-0">
             <div className="flex items-center justify-between mb-3 flex-shrink-0">
               <h3 className="text-sm font-semibold text-white">Symptom Profile</h3>
               <Link href="/onboarding/i-caq-intro" className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-orange-400/10 border border-orange-400/25 text-orange-400 text-xs font-medium hover:bg-orange-400/15 hover:border-orange-400/35 transition-all no-underline">
@@ -832,18 +824,10 @@ export default function AnalyticsPage() {
                 })}
               </div>
             )}
-          </Card>
+          </div>
 
           {/* Genetic Risk */}
-          <Card
-            className="p-5 overflow-hidden flex flex-col min-h-0"
-            style={{
-              background: "rgba(30,48,84,0.45)",
-              border: "1px solid rgba(45,165,160,0.18)",
-              boxShadow:
-                "0 4px 30px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06), inset 0 0 0 1px rgba(255,255,255,0.03)",
-            }}
-          >
+          <div className="glass-panel p-5 overflow-hidden flex flex-col min-h-0">
             <div className="flex items-center gap-2 mb-3 flex-shrink-0">
               <Dna className="w-4 h-4 text-teal" />
               <h3 className="text-sm font-semibold text-white">Genetic Risk</h3>
@@ -884,18 +868,10 @@ export default function AnalyticsPage() {
                 </div>
               </div>
             )}
-          </Card>
+          </div>
 
           {/* Protocol Match */}
-          <Card
-            className="p-5 overflow-hidden flex flex-col min-h-0"
-            style={{
-              background: "rgba(30,48,84,0.45)",
-              border: "1px solid rgba(45,165,160,0.18)",
-              boxShadow:
-                "0 4px 30px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06), inset 0 0 0 1px rgba(255,255,255,0.03)",
-            }}
-          >
+          <div className="glass-panel p-5 overflow-hidden flex flex-col min-h-0">
             <div className="flex items-center gap-2 mb-3 flex-shrink-0">
               <Target className="w-4 h-4 text-copper" />
               <h3 className="text-sm font-semibold text-white">Supplement Recommendations</h3>
@@ -935,21 +911,13 @@ export default function AnalyticsPage() {
                 </div>
               </div>
             )}
-          </Card>
+          </div>
         </div>
       </StaggerChild>
 
       {/* ── Row 5: Time-of-Day Distribution ── */}
       <StaggerChild>
-        <Card
-          className="p-5"
-          style={{
-            background: "rgba(30,48,84,0.45)",
-            border: "1px solid rgba(45,165,160,0.18)",
-            boxShadow:
-              "0 4px 30px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06), inset 0 0 0 1px rgba(255,255,255,0.03)",
-          }}
-        >
+        <div className="glass-panel p-5">
           <h3 className="text-sm font-semibold text-white mb-4">Supplement Schedule Distribution</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {(["morning", "noon", "evening", "bedtime"] as const).map((tod) => {
@@ -970,7 +938,7 @@ export default function AnalyticsPage() {
               );
             })}
           </div>
-        </Card>
+        </div>
       </StaggerChild>
     </PageTransition>
     </div>
