@@ -251,8 +251,8 @@ export default function GeneticsPage() {
 
         {/* ═══ BROWSE FULL SNP SUPPORT FORMULATIONS → /shop#category-snp ═══ */}
         <section
-          className="rounded-2xl border border-orange-400/20 p-6 md:p-8 relative overflow-hidden"
-          style={{ background: "linear-gradient(135deg, #1A2744, #2A1F15)" }}
+          className="rounded-2xl border border-orange-400/20 p-6 md:p-8 relative overflow-hidden backdrop-blur-md"
+          style={{ background: "linear-gradient(135deg, rgba(26,39,68,0.45), rgba(42,31,21,0.50))" }}
         >
           <div className="flex items-center gap-4 mb-4">
             <PremiumIcon icon={Dna} color="#B75E18" size="lg" />
@@ -281,7 +281,7 @@ export default function GeneticsPage() {
         </section>
 
         {/* ═══ DNA UPLOAD (TEAL ACCENT) ═══ */}
-        <section className="rounded-2xl border border-teal-400/15 p-6 md:p-8 relative overflow-hidden" style={{ background: "linear-gradient(135deg, #141E33, #1A2E3E)" }}>
+        <section className="rounded-2xl border border-teal-400/15 p-6 md:p-8 relative overflow-hidden backdrop-blur-md" style={{ background: "linear-gradient(135deg, rgba(20,30,51,0.45), rgba(26,46,62,0.50))" }}>
           <div className="absolute top-4 right-4 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-teal-400/10 border border-teal-400/20 z-10">
             <Lock className="w-3 h-3 text-teal-400" strokeWidth={1.5} /><span className="text-[10px] text-teal-400 font-medium">256-bit Encrypted</span>
           </div>
@@ -305,7 +305,7 @@ export default function GeneticsPage() {
         </section>
 
         {/* ═══ LAB RESULTS UPLOAD (ORANGE ACCENT) ═══ */}
-        <section className="rounded-2xl border border-orange-400/15 p-6 md:p-8 relative overflow-hidden" style={{ background: "linear-gradient(135deg, #1A2744, #2A1F15)" }}>
+        <section className="rounded-2xl border border-orange-400/15 p-6 md:p-8 relative overflow-hidden backdrop-blur-md" style={{ background: "linear-gradient(135deg, rgba(26,39,68,0.45), rgba(42,31,21,0.50))" }}>
           <div className="absolute top-4 right-4 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-orange-400/10 border border-orange-400/20 z-10">
             <Shield className="w-3 h-3 text-orange-400" strokeWidth={1.5} /><span className="text-[10px] text-orange-400 font-medium">HIPAA Compliant</span>
           </div>
@@ -404,7 +404,7 @@ export default function GeneticsPage() {
         </div>
 
         {/* ═══ ORDER CTA ═══ */}
-        <div className="rounded-2xl p-6 md:p-8 border border-white/[0.06] relative overflow-hidden" style={{ background: "linear-gradient(135deg, #1A2744, #1E2D4A, #1A2744)" }}>
+        <div className="rounded-2xl p-6 md:p-8 border border-white/[0.06] relative overflow-hidden backdrop-blur-md" style={{ background: "linear-gradient(135deg, rgba(26,39,68,0.45), rgba(30,45,74,0.50), rgba(26,39,68,0.45))" }}>
           <div className="absolute inset-0" style={{ background: "linear-gradient(135deg, rgba(45,165,160,0.05), transparent, rgba(183,94,24,0.05))" }} />
           <div className="relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
