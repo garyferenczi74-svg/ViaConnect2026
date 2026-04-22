@@ -97,6 +97,9 @@ html, body {
   --orange-600: #994E14;
   --orange-100: #FDF0E4;
 
+  /* === ACCENT — FOREST === */
+  --forest-700: #1b4539;
+
   /* === TEXT === */
   --text-primary: #FFFFFF;
   --text-secondary: #A0AEC0;
