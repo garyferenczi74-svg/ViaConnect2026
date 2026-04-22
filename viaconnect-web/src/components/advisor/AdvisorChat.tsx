@@ -30,6 +30,11 @@ interface AdvisorChatProps {
   subtitle: string;
   icon: React.ReactNode;
   suggestedPrompts: string[];
+  /**
+   * Optional message to auto-send once on mount. Used by entry points like
+   * "View Full Report with Hannah" to pre-populate a personalized report.
+   */
+  initialPrompt?: string;
 }
 
 interface ChatMessage {
@@ -45,15 +50,24 @@ export default function AdvisorChat({
   subtitle,
   icon,
   suggestedPrompts,
+  initialPrompt,
 }: AdvisorChatProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const didAutoSendRef = useRef(false);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages]);
+
+  useEffect(() => {
+    if (!initialPrompt || didAutoSendRef.current) return;
+    didAutoSendRef.current = true;
+    void sendMessage(initialPrompt);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialPrompt]);
 
   const sendMessage = async (override?: string) => {
     const userMsg = (override ?? input).trim();
@@ -119,7 +133,7 @@ export default function AdvisorChat({
 
       {/* Messages area */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 md:px-6 py-4 space-y-4">
-        {messages.length === 0 ? (
+        {messages.length === 0 && !isStreaming ? (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -153,6 +167,11 @@ export default function AdvisorChat({
               <div className="flex items-center gap-2 text-white/40 text-sm">
                 <Loader2 className="w-4 h-4 animate-spin" strokeWidth={1.5} />
                 <span>Thinking...</span>
+              </div>
+            )}
+            {!isStreaming && messages[messages.length - 1]?.role === "assistant" && (
+              <div className="pt-2">
+                <SuggestedPrompts prompts={suggestedPrompts} onPick={(p) => sendMessage(p)} accentColor={accentColor} />
               </div>
             )}
           </>

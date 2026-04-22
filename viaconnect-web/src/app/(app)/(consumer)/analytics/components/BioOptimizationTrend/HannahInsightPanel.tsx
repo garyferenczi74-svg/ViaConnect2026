@@ -4,6 +4,21 @@ import Link from "next/link";
 import { Sparkles, Target, TrendingUp, ArrowRight } from "lucide-react";
 import type { HannahInsight } from "./hooks/useHannahInsights";
 
+function stashReport(insight: HannahInsight) {
+  try {
+    sessionStorage.setItem(
+      "hannah-pending-report",
+      JSON.stringify({
+        greeting: insight.greeting,
+        analysis: insight.analysis,
+        recommendation: insight.recommendation,
+        focusArea: insight.focusArea,
+        estimatedImpact: insight.estimatedImpact,
+      }),
+    );
+  } catch { /* no-op */ }
+}
+
 export function HannahInsightPanel({ insight }: { insight: HannahInsight }) {
   return (
     <div className="glass-panel p-5 md:p-6 relative overflow-hidden">
@@ -73,7 +88,8 @@ export function HannahInsightPanel({ insight }: { insight: HannahInsight }) {
       </div>
 
       <Link
-        href="/wellness/advisor"
+        href="/wellness/advisor?report=bio-optimization"
+        onClick={() => stashReport(insight)}
         className="inline-flex items-center justify-between w-full rounded-lg px-3 py-2 text-xs font-medium transition-colors hover:bg-white/5"
         style={{
           background: "rgba(45,165,160,0.14)",
