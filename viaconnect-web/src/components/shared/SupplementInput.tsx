@@ -118,14 +118,17 @@ export default function SupplementInput({ portal, onProductAdded }: SupplementIn
               placeholder="Search by brand, product, or ingredient..."
               style={{
                 width: '100%', padding: '12px 12px 12px 40px',
-                border: '2px solid #e5e7eb', borderRadius: '12px',
+                border: '1px solid rgba(255,255,255,0.12)', borderRadius: '12px',
+                background: 'rgba(30,48,84,0.45)',
+                backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
+                color: '#ffffff',
                 fontSize: '14px', outline: 'none', boxSizing: 'border-box',
-                transition: 'border-color 0.15s',
+                transition: 'border-color 0.15s, background-color 0.15s',
               }}
-              onFocus={(e) => { e.target.style.borderColor = '#2DA5A0'; }}
-              onBlur={(e) => { if (!searchResults.length) e.target.style.borderColor = '#e5e7eb'; }}
+              onFocus={(e) => { e.target.style.borderColor = 'rgba(45,165,160,0.6)'; }}
+              onBlur={(e) => { if (!searchResults.length) e.target.style.borderColor = 'rgba(255,255,255,0.12)'; }}
             />
-            <Search size={16} color="#999" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
+            <Search size={16} color="rgba(255,255,255,0.6)" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
             {view === 'searching' && (
               <Loader2 size={16} color="#2DA5A0" style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', animation: 'spin 1s linear infinite' }} />
             )}
