@@ -251,10 +251,12 @@ export function TodaysProtocol({ supplements }: TodaysProtocolProps) {
       <div className="border-t border-white/5 p-4 sm:p-5">
         <Link
           href="/supplements"
-          className="inline-flex min-h-[40px] items-center gap-2 rounded-xl border border-[#2DA5A0]/30 bg-[#2DA5A0]/10 px-4 py-2 text-sm font-medium text-[#2DA5A0] transition-all hover:border-[#2DA5A0]/50 hover:bg-[#2DA5A0]/20"
+          className="group relative inline-flex min-h-[40px] items-center gap-2 overflow-hidden rounded-xl px-4 py-2 text-sm font-semibold text-white transition-all hover:shadow-[0_0_16px_rgba(45,165,160,0.35)] active:scale-[0.97]"
+          style={{ background: 'linear-gradient(135deg, #2DA5A0 0%, #1E3054 100%)' }}
         >
-          View Full Protocol
-          <ArrowRight className="h-4 w-4" strokeWidth={1.5} />
+          <span className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
+          <span className="relative">View Full Protocol</span>
+          <ArrowRight className="relative h-4 w-4" strokeWidth={2} />
         </Link>
       </div>
     </section>
