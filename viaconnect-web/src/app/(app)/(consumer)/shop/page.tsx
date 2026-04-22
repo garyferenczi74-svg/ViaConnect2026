@@ -411,7 +411,7 @@ function ShopContent() {
         isCurrentRegime,
         description: dbInfo?.description ?? null,
         shortName: dbInfo?.short_name ?? null,
-        imageUrl: dbInfo?.image_url ?? SKU_IMAGE_URL_FALLBACK[sku.Name] ?? null,
+        imageUrl: SKU_IMAGE_URL_FALLBACK[sku.Name] ?? dbInfo?.image_url ?? null,
         deliveryType: dbInfo?.delivery_type ?? null,
         shortDescription:
           masterFormulation?.marketingDescription ?? dbInfo?.short_description ?? null,
