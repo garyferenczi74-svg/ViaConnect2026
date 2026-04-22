@@ -6,7 +6,7 @@ import { MobileHeroBackground } from '@/components/ui/MobileHeroBackground';
 const HERO_IMAGE =
   'https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Images/Athlete%2027.png';
 const HERO_IMAGE_MOBILE =
-  'https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Mobile%20Hero/Athlete%2018%20Mobile.png';
+  'https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Mobile%20Hero/Athlete%2027%20Mobile.png';
 
 export default function BodyTrackerLayout({
   children,
