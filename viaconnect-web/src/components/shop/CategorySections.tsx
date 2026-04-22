@@ -57,8 +57,8 @@ export const CATEGORY_CONFIG: Record<string, CategoryConfig> = {
     description: 'Precision formulas targeting MTHFR, COMT, VDR and 80+ genetic variants',
   },
   BASE: {
-    label: 'Proprietary Base',
-    order: 5,
+    label: 'Base Formulations',
+    order: 0,
     color: '#2DA5A0',
     gradientFrom: 'rgba(26,39,68,0.60)',
     gradientTo: 'rgba(45,165,160,0.10)',
