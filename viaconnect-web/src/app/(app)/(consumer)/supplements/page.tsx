@@ -197,8 +197,11 @@ export default function SupplementsPage() {
                 <div key={slot.id} className="rounded-xl bg-white/[0.02] border border-white/5 overflow-hidden flex flex-col">
                   <div className="flex items-center gap-3 px-4 md:px-5 py-3 border-b border-white/5">
                     <PIcon icon={slot.icon} color={slot.color} size="sm" />
-                    <div className="flex-1 min-w-0"><h4 className="text-sm font-semibold text-white">{slot.label}</h4><p className="text-[10px] text-white/25">{slot.time}</p></div>
-                    <span className="text-xs text-white/20">{items.length}</span>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-sm font-semibold" style={{ color: slot.color }}>{slot.label}</h4>
+                      <p className="text-[10px]" style={{ color: slot.color }}>{slot.time}</p>
+                    </div>
+                    <span className="text-xs" style={{ color: slot.color }}>{items.length}</span>
                   </div>
                   {items.length > 0 ? (
                     <div className="divide-y divide-white/[0.03]">{items.map((item) => <ItemRow key={item.id} item={item} slot={slot.id} taken={isTaken(item, slot.id)} onToggle={handleToggle} />)}</div>
@@ -223,10 +226,10 @@ export default function SupplementsPage() {
                   <div className="flex items-center gap-3 px-4 py-3 border-b border-white/5">
                     <PIcon icon={headerSlot.icon} color={headerSlot.color} size="sm" />
                     <div className="flex-1 min-w-0">
-                      <h4 className="text-sm font-semibold text-white">{headerSlot.label}</h4>
-                      <p className="text-[10px] text-white/25">{headerSlot.time} · now</p>
+                      <h4 className="text-sm font-semibold" style={{ color: headerSlot.color }}>{headerSlot.label}</h4>
+                      <p className="text-[10px]" style={{ color: headerSlot.color }}>{headerSlot.time} · now</p>
                     </div>
-                    <span className="text-xs text-white/20">{items.length}</span>
+                    <span className="text-xs" style={{ color: headerSlot.color }}>{items.length}</span>
                   </div>
                   {items.length > 0 ? (
                     <div className="divide-y divide-white/[0.03]">{items.map((item) => <ItemRow key={item.id} item={item} slot={currentSlotId} taken={isTaken(item, currentSlotId)} onToggle={handleToggle} />)}</div>
