@@ -91,7 +91,7 @@ export function MobileNavBar({ role }: { role: string }) {
           className="absolute left-0 z-10 h-full px-1 bg-gradient-to-r from-[#0d1520] to-transparent"
           aria-label="Scroll left"
         >
-          <ChevronLeft size={14} className="text-white/40" />
+          <ChevronLeft size={14} strokeWidth={1.5} className="text-white/40" />
         </button>
 
         {/* Scrollable nav items */}
@@ -111,13 +111,13 @@ export function MobileNavBar({ role }: { role: string }) {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap flex-shrink-0 transition-all ${
+                className={`min-h-[44px] flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium whitespace-nowrap flex-shrink-0 transition-all ${
                   isActive
                     ? 'bg-[rgba(45,165,160,0.15)] text-[#2DA5A0] border border-[rgba(45,165,160,0.3)]'
                     : 'text-[#718096] hover:text-white hover:bg-white/[0.04] border border-transparent'
                 }`}
               >
-                <Icon size={14} />
+                <Icon size={14} strokeWidth={1.5} />
                 {item.label}
               </Link>
             );
@@ -130,7 +130,7 @@ export function MobileNavBar({ role }: { role: string }) {
           className="absolute right-0 z-10 h-full px-1 bg-gradient-to-l from-[#0d1520] to-transparent"
           aria-label="Scroll right"
         >
-          <ChevronRight size={14} className="text-white/40" />
+          <ChevronRight size={14} strokeWidth={1.5} className="text-white/40" />
         </button>
       </div>
     </div>

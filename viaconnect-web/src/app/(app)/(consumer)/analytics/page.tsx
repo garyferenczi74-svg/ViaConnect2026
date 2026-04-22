@@ -321,7 +321,7 @@ export default function AnalyticsPage() {
     enabled: !!userId,
   });
 
-  // Current vitality score
+  // Current Bio Optimization score
   const { data: profileData } = useQuery({
     queryKey: ["analytics-profile", userId],
     queryFn: async () => {
@@ -699,7 +699,7 @@ export default function AnalyticsPage() {
           Wellness Analytics
         </h1>
         <p className="text-[#B75E18] text-sm mt-1">
-          Track your vitality, adherence, symptoms, and wellness journey over time.
+          Track your Bio Optimization, adherence, symptoms, and wellness journey over time.
         </p>
       </StaggerChild>
 
