@@ -289,6 +289,15 @@ body {
     inset 0 0 0 1px rgba(255, 255, 255, 0.03);
 }
 
+/* Sub-card pattern for nested cards INSIDE a .glass-panel. Darker
+ * than the panel so the hierarchy reads; no border (the parent
+ * provides the boundary). Adopted across BioOptimizationTrend
+ * component tree. */
+.glass-sub {
+  background: rgba(22, 36, 64, 0.4);
+  border-radius: 12px;
+}
+
 /* ─── Skeleton shimmer ─────────────────────────────────────────────────────── */
 
 @keyframes shimmer {

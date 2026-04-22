@@ -90,15 +90,7 @@ export function TrendChart({
   }, [bioPoints, xTickCount]);
 
   return (
-    <div
-      className="relative rounded-2xl p-4 md:p-6"
-      style={{
-        background: "rgba(30,48,84,0.45)",
-        border: "1px solid rgba(45,165,160,0.18)",
-        boxShadow:
-          "0 4px 30px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06), inset 0 0 0 1px rgba(255,255,255,0.03)",
-      }}
-    >
+    <div className="glass-panel relative p-4 md:p-6">
       {/* Legend */}
       <div className="flex flex-wrap items-center gap-3 mb-3 text-[10px] uppercase tracking-wider text-white/50">
         <span className="inline-flex items-center gap-1.5">

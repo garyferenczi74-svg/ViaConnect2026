@@ -63,15 +63,7 @@ export function BioOptimizationTrend({
   const active = countDaysActive(bioPoints);
 
   return (
-    <section
-      className="relative rounded-3xl overflow-hidden"
-      style={{
-        background: "rgba(30,48,84,0.45)",
-        border: "1px solid rgba(45,165,160,0.18)",
-        boxShadow:
-          "0 4px 30px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06), inset 0 0 0 1px rgba(255,255,255,0.03)",
-      }}
-    >
+    <section className="glass-panel relative rounded-3xl overflow-hidden">
 <div className="relative z-10 p-4 md:p-6 space-y-4 md:space-y-5">
         {/* Header row */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
