@@ -28,6 +28,7 @@ export default defineConfig({
         'src/lib/agents/jeffery/**/*.ts',
         'src/lib/arnold/**/*.ts',
         'src/lib/body-tracker/**/*.ts',
+        'src/lib/international/**/*.ts',
       ],
       exclude: [
         '**/types.ts',
