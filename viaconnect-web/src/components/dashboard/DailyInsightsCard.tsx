@@ -213,15 +213,14 @@ export function DailyInsightsCard({ profile, supplements }: DailyInsightsCardPro
         <Link
           href="/media-sources"
           onClick={(e) => e.stopPropagation()}
-          className="hidden min-h-[36px] items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[11px] font-medium text-white/70 transition-all hover:border-white/20 hover:bg-white/[0.08] hover:text-white sm:inline-flex"
+          className="group/cta relative hidden min-h-[36px] items-center gap-1.5 overflow-hidden rounded-xl px-3 py-1.5 text-[11px] font-semibold text-white transition-all hover:shadow-[0_0_16px_rgba(45,165,160,0.35)] active:scale-[0.97] sm:inline-flex"
+          style={{ background: 'linear-gradient(135deg, #2DA5A0 0%, #1E3054 100%)' }}
         >
-          Research Hub
-          <ArrowRight className="h-3.5 w-3.5" strokeWidth={1.5} />
+          <span className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 transition-opacity group-hover/cta:opacity-100" />
+          <span className="relative">Research Hub</span>
+          <ArrowRight className="relative h-3.5 w-3.5" strokeWidth={2} />
         </Link>
         <div className="flex flex-shrink-0 items-center gap-1.5">
-          {!open && (
-            <span className="text-[10px] font-medium text-[#2DA5A0]/70">Tap to expand</span>
-          )}
           <ChevronDown
             className={`h-4 w-4 text-white/45 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
             strokeWidth={1.5}
