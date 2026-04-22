@@ -33,7 +33,7 @@ export function BodyTrackerTabs() {
             className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3.5 py-2 text-xs font-medium backdrop-blur-sm transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[#27AE60]/50 focus-visible:ring-offset-0 [-webkit-tap-highlight-color:transparent] ${
               isActive
                 ? 'border-[#27AE60]/60 bg-[#27AE60]/25 text-[#27AE60]'
-                : 'border-white/30 bg-white/90 text-[#1A2744] hover:bg-white'
+                : 'border-white/40 bg-white/25 text-[#1A2744] hover:bg-white/40'
             }`}
           >
             <Icon className="h-3.5 w-3.5" strokeWidth={1.5} />
