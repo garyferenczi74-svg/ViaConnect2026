@@ -143,13 +143,107 @@ These `.well-known` files are tiny static JSON — add them to `public/.well-kno
 
 Because 95 % of changes are web-only, the app-store release cadence is gated by the web release cadence, not the store review cycle.
 
-## Open questions to resolve before first submission
+## Answered decisions (Prompt #117, 2026-04-22)
 
-1. **Bundle ID**: `com.farmceutica.viaconnect` chosen in `capacitor.config.ts`. Confirm this matches the Apple Developer team identifier. If the FarmCeutica Apple account uses a different reverse-DNS, change it **before** `cap add ios` — changing later means re-creating the project.
-2. **Display name**: `ViaConnect` on both stores, or `ViaConnect GeneX360`? The Capacitor `appName` is `ViaConnect`; App Store / Play Console names are set separately and should match the home-screen label users see.
-3. **HIPAA posture**: is ViaConnect positioned as a HIPAA-covered entity or as a wellness tool? Affects the privacy disclosures on both stores and the legal copy in-app.
-4. **Subscription model**: any recurring revenue on the app requires Apple's IAP (30 % fee) unless it's a "reader app" (not our category). Plan now.
-5. **Brand assets**: who produces the 1024×1024 icon + splash?
+The 5 questions that blocked `npx cap add ios` are closed. Each entry records the decision, the rationale, and where the value is wired in so a future change has one place to edit.
+
+### 1. Bundle ID / Application ID
+
+**Decision:** `com.farmceutica.viaconnect`
+
+**Rationale:**
+- Reverse-DNS convention; matches parent entity FarmCeutica Wellness LLC.
+- Distinct namespace from any future CedarGrowth portal app.
+- 25 characters, well inside iOS (155) and Android (255) limits.
+
+**Wired at:**
+- `capacitor.config.ts` → `appId`
+- `ios/App/App.xcodeproj` (auto-generated from `appId` at `cap add ios` time)
+- `android/app/build.gradle` → `applicationId`
+
+**Irrevocable after first submission.** Changing the bundle ID post-submission means a new store listing from scratch (lost reviews, ratings, downloads). Confirmed before `cap add` runs.
+
+### 2. Display name + short name
+
+**Decision:** `ViaConnect` for both. 10 characters; well under the ~12-character truncation threshold both stores apply to home-screen labels.
+
+**Wired at:**
+- `capacitor.config.ts` → `appName`
+- `ios/App/App/Info.plist` → `CFBundleDisplayName`
+- `android/app/src/main/res/values/strings.xml` → `<string name="app_name">ViaConnect</string>`
+
+Localization (Spanish, Mandarin for practitioner B2B) deferred to post-launch sprint; additive, no resubmission required.
+
+### 3. Developer account identifiers
+
+**Apple Developer Program:**
+- Account type: **Business / Organization** (required for Medical category; see §5)
+- Team ID: look up at https://developer.apple.com/account → Membership → Team ID. 10-character alphanumeric. Paste into this runbook once enrolled.
+- Annual cost: $99 USD
+- Enrollment check: verify status before first TestFlight upload. Medical-category first-submission verification can take 24-72 hours or longer.
+- D-U-N-S number for FarmCeutica Wellness LLC required during enrollment.
+
+**Google Play Console:**
+- Developer identity: FarmCeutica Wellness LLC (organization account)
+- Package name must match `com.farmceutica.viaconnect` exactly.
+- One-time cost: $25 USD
+- Identity verification (gov-issued ID + proof of address) must be complete before first upload.
+
+### 4. Minimum OS versions + push notification strategy
+
+**iOS minimum: 15.0**
+- Covers 95%+ of active Apple devices as of 2026.
+- Enables modern SwiftUI bridges, async/await native integration, and the WKWebView features Capacitor 7 assumes.
+- Wired at: `ios/App/Podfile` (`platform :ios, '15.0'`) + Xcode target General tab.
+
+**Android minimum: API 24 (Android 7.0 Nougat)**
+- Covers 97%+ of active Android devices per Play Console distribution data.
+- Enables Web App Manifest support, modern TLS, file-provider APIs.
+- Wired at: `android/variables.gradle` → `minSdkVersion = 24`.
+
+**Push notifications: deferred to Phase 2.**
+- APNs requires a `.p8` key from Apple Developer (one-time download; cannot re-download if lost).
+- FCM requires a Firebase project + `google-services.json` in `android/app/` + notification channel registration.
+- Neither is blocking for first submission. Schedule: add before Month 2 of public launch.
+
+### 5. Privacy, support, marketing URLs + store category + age rating
+
+**Required URLs** (must resolve with real content before submission; both stores reject empty pages):
+
+| Purpose | URL |
+|---|---|
+| Privacy Policy | https://via-connect2026.vercel.app/legal/privacy |
+| Terms of Service | https://via-connect2026.vercel.app/legal/terms |
+| Support | https://via-connect2026.vercel.app/support (or mailto:support@farmceutica.com) |
+| Marketing | https://via-connect2026.vercel.app |
+
+**Store category:**
+- **iOS primary: Medical.** Secondary: Health & Fitness. Medical triggers expanded App Review (budget 2-5 extra business days for first-time health submissions) and requires the Business/Organization Apple Developer account from §3. More accurate than Health & Fitness given the clinical protocol tooling. Fallback: Health & Fitness primary with "clinical tools" positioning if Medical review creates schedule risk.
+- **Android: Health & Fitness** top-level (Play has no standalone Medical category), sub-category **Medical Services & Information**.
+
+**Age rating:**
+- **iOS: 17+.** App Store Review Guideline 1.4.1 triggers this for treatment information, medication interaction guidance, and peptide protocols. CAQ output qualifies.
+- **Google Play: Mature 17+.** Same reasoning plus Retatrutide injectable reference triggers drug/medication content flags.
+
+**HIPAA posture:**
+- Positioned as HIPAA-covered for PHI surfaces; supporting BAAs in place:
+  - Supabase BAA (from Prompt #88 Hannah/Tavus integration)
+  - Vercel HIPAA-ready deployment config
+  - Anthropic Claude API BAA (verify coverage in App Store privacy disclosure)
+- Both stores increasingly audit BAA coverage for health apps; be prepared to document.
+
+### Adjacent decisions (recorded for completeness)
+
+- **Version numbering:** semver `MAJOR.MINOR.PATCH`, starting at `1.0.0`. Android `versionCode` auto-increments per upload; iOS `CFBundleVersion` must increment monotonically.
+- **Code signing (iOS):** Automatic for local dev; Manual with a downloaded distribution provisioning profile for App Store uploads.
+- **Code signing (Android):** release keystore generated once, stored OUTSIDE the repo (1Password). `*.keystore` in `.gitignore`. Keystore loss means no future updates on Play Store; back up to a secure vault.
+- **TestFlight / Internal Testing group:** Gary, Dr. Dagher (Medical Director), Thomas Rosengren (CTO) first. Expand to Domenic Romeo (CFO) and Steve Rica (Compliance) for external TestFlight round.
+- **Deep link scheme:** `viaconnect://` for basic in-app URL handling. Universal Links + App Links deferred to Phase 2 (require hosting `apple-app-site-association` + `assetlinks.json` at `public/.well-known/`).
+- **Hannah Avatar / Tavus CVI:** per Prompt #88, runs inside the PWA via Tavus. Native shell needs no special handling; Capacitor WebView passes the Tavus session through. BAA gating stays at the API layer.
+
+### Webpack / Capacitor strategy note
+
+`capacitor.config.ts` uses `webDir: 'public'` with `server.url: 'https://viaconnectapp.com'` — the hosted-web shell strategy (web changes ship via Vercel; most updates skip store review). Prompt #117 §5.3 shows a sample with `webDir: '.next'`; that would be correct for a static-export strategy. We stay with hosted-web as approved in the preceding commit batch (commit `be3a5ee`).
 
 ## Support scripts (registered in package.json)
 
@@ -157,3 +251,10 @@ Because 95 % of changes are web-only, the app-store release cadence is gated by 
 - `npm run cap:open:ios` — open Xcode
 - `npm run cap:open:android` — open Android Studio
 - `npm run cap:assets` — regenerate icons + splash from `assets/icon.png` + `assets/splash.png`
+
+## Brand-asset generator scripts (added 2026-04-22)
+
+- `node scripts/generate-app-store-assets.mjs` — produces `assets/icon.png` (1024x1024) and `assets/splash.png` (2732x2732) from ViaConnect design tokens. Deterministic, re-runnable.
+- `node scripts/generate-pwa-icons.mjs` — fallback PWA icon generator if `@capacitor/assets` skips `public/icons/`. Derives all three (192, 512, 512-maskable) from `assets/icon.png`.
+
+Both scripts require `sharp` as a devDependency. Prompt #117 §3.4 flags this as the one additive package.json edit needing explicit approval before `npm install --save-dev sharp` runs.
