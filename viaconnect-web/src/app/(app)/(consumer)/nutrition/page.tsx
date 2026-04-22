@@ -79,7 +79,7 @@ export default function NutritionPage() {
       {/* Connect Your App */}
       <Link
         href="/plugins/apps"
-        className="group block rounded-2xl border border-[#B75E18]/20 bg-gradient-to-br from-[#B75E18]/10 via-[#B75E18]/[0.04] to-transparent p-5 transition-all hover:border-[#B75E18]/40 hover:shadow-[0_0_30px_rgba(183,94,24,0.10)]"
+        className="group block rounded-2xl border border-[#B75E18]/30 bg-[#B75E18]/20 backdrop-blur-md p-5 transition-all hover:border-[#B75E18]/50 hover:bg-[#B75E18]/25 hover:shadow-[0_0_30px_rgba(183,94,24,0.15)]"
       >
         <div className="flex items-start gap-4">
           <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl border border-[#B75E18]/30 bg-gradient-to-br from-[#1A2744] to-[#B75E18]">
