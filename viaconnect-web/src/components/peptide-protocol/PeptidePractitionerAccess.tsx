@@ -17,7 +17,7 @@ export function PeptidePractitionerAccess() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Practitioner card */}
-        <div className="group rounded-2xl border border-[rgba(45,165,160,0.20)] bg-gradient-to-br from-[rgba(45,165,160,0.08)] to-[#1E3054] p-5 hover:border-[rgba(45,165,160,0.40)] hover:shadow-lg hover:shadow-[rgba(45,165,160,0.10)] transition-all duration-200">
+        <div className="group rounded-2xl border border-[rgba(45,165,160,0.20)] bg-[#1E3054]/45 backdrop-blur-md p-5 hover:border-[rgba(45,165,160,0.40)] hover:shadow-lg hover:shadow-[rgba(45,165,160,0.10)] transition-all duration-200">
           <div className="flex items-start gap-3 mb-4">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#1A2744] to-[#2DA5A0] flex items-center justify-center shrink-0">
               <Stethoscope className="w-5 h-5 text-white" strokeWidth={1.5} />
@@ -47,7 +47,7 @@ export function PeptidePractitionerAccess() {
         </div>
 
         {/* Naturopath card */}
-        <div className="group rounded-2xl border border-[rgba(5,150,105,0.25)] bg-gradient-to-br from-[rgba(5,150,105,0.08)] to-[#1E3054] p-5 hover:border-[rgba(5,150,105,0.45)] hover:shadow-lg hover:shadow-[rgba(5,150,105,0.10)] transition-all duration-200">
+        <div className="group rounded-2xl border border-[rgba(5,150,105,0.25)] bg-[#1E3054]/45 backdrop-blur-md p-5 hover:border-[rgba(5,150,105,0.45)] hover:shadow-lg hover:shadow-[rgba(5,150,105,0.10)] transition-all duration-200">
           <div className="flex items-start gap-3 mb-4">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#065F46] to-[#059669] flex items-center justify-center shrink-0">
               <Leaf className="w-5 h-5 text-white" strokeWidth={1.5} />
@@ -77,7 +77,7 @@ export function PeptidePractitionerAccess() {
         </div>
       </div>
 
-      <div className="flex items-start gap-2 rounded-xl bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] p-3">
+      <div className="flex items-start gap-2 rounded-xl bg-[#1E3054]/45 backdrop-blur-md border border-[rgba(255,255,255,0.08)] p-3">
         <FlaskConical className="w-4 h-4 text-[rgba(255,255,255,0.25)] mt-0.5 shrink-0" strokeWidth={1.5} />
         <p className="text-xs text-[rgba(255,255,255,0.40)] leading-relaxed">
           Your Ultrathink™ peptide protocol summary, including detected CAQ patterns, recommended stack, and cycling schedule, is automatically pre-filled when you connect with a provider through ViaConnect™.

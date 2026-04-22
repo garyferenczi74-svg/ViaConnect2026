@@ -106,7 +106,7 @@ export function PeptideSearchBar() {
   };
 
   return (
-    <div ref={wrapperRef} className="space-y-3">
+    <div ref={wrapperRef} className="rounded-2xl border border-white/15 bg-white/10 backdrop-blur-md p-4 sm:p-5 space-y-3">
       <div className="flex items-center gap-2">
         <Search className="w-4 h-4 text-[#2DA5A0]" strokeWidth={1.5} />
         <span className="text-sm font-semibold text-white">Search Peptides</span>
@@ -131,7 +131,7 @@ export function PeptideSearchBar() {
       </div>
 
       <div className="relative">
-        <div className="flex items-center gap-2 px-4 py-3 rounded-2xl bg-[#172542]/60 backdrop-blur-md border border-[rgba(255,255,255,0.15)] focus-within:border-[#2DA5A0] focus-within:ring-2 focus-within:ring-[#2DA5A0]/15 transition-all">
+        <div className="flex items-center gap-2 px-4 py-3 rounded-2xl bg-[#1E3054]/45 backdrop-blur-md border border-[rgba(255,255,255,0.15)] focus-within:border-[#2DA5A0] focus-within:ring-2 focus-within:ring-[#2DA5A0]/15 transition-all">
           {isSearching
             ? <Loader2 className="w-4 h-4 text-[#2DA5A0] animate-spin shrink-0" strokeWidth={1.5} />
             : <Search className="w-4 h-4 text-[rgba(255,255,255,0.35)] shrink-0" strokeWidth={1.5} />

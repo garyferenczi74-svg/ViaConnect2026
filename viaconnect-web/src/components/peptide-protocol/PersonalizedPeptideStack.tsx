@@ -92,12 +92,18 @@ export function PersonalizedPeptideStack({ userId }: { userId?: string } = {}) {
   const patterns: string[] = protocol?.detected_patterns || [];
 
   return (
-    <div className="space-y-4">
+    <div className="rounded-2xl border border-white/15 bg-white/10 backdrop-blur-md p-4 sm:p-5 space-y-4">
 
       {/* ── HEADER ── */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1.5 bg-[rgba(45,165,160,0.15)] text-[#2DA5A0] px-3 py-1.5 rounded-full text-xs font-semibold border border-[rgba(45,165,160,0.30)]">
+          <div
+            className="animate-gradient-shift flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-white border border-white/25 shadow-[0_0_12px_rgba(168,85,247,0.3)]"
+            style={{
+              background: 'linear-gradient(135deg, #2DA5A0 0%, #60A5FA 33%, #A855F7 66%, #EC4899 100%)',
+              backgroundSize: '300% 100%',
+            }}
+          >
             <Sparkles className="w-3.5 h-3.5" strokeWidth={1.5} />
             Ultrathink™ AI
           </div>
@@ -201,7 +207,7 @@ export function PersonalizedPeptideStack({ userId }: { userId?: string } = {}) {
             )}
 
             {/* Rationale */}
-            <div className="rounded-2xl border border-[rgba(45,165,160,0.20)] bg-gradient-to-br from-[rgba(45,165,160,0.08)] to-[rgba(26,39,68,0.60)] p-4 text-sm text-[rgba(255,255,255,0.65)] leading-relaxed">
+            <div className="rounded-2xl border border-[rgba(45,165,160,0.20)] bg-[#1E3054]/45 backdrop-blur-md p-4 text-sm text-[rgba(255,255,255,0.65)] leading-relaxed">
               {protocol.rationale}
             </div>
 
@@ -235,7 +241,7 @@ export function PersonalizedPeptideStack({ userId }: { userId?: string } = {}) {
                     initial={{ opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: idx * 0.06 }}
-                    className="rounded-2xl border border-[rgba(255,255,255,0.08)] bg-[#1E3054]/35 backdrop-blur-md overflow-hidden hover:border-[rgba(255,255,255,0.15)] transition-all"
+                    className="rounded-2xl border border-[rgba(255,255,255,0.08)] bg-[#1E3054]/45 backdrop-blur-md overflow-hidden hover:border-[rgba(255,255,255,0.15)] transition-all"
                   >
                     <button
                       onClick={() => setExpandedIndex(isExpanded ? null : idx)}

@@ -63,7 +63,7 @@ export function PeptideCatalogSection() {
   const totalPeptides = categories.reduce((sum, c) => sum + c.products.length, 0);
 
   return (
-    <section className="rounded-2xl border border-[rgba(255,255,255,0.08)] bg-[#1E3054]/35 backdrop-blur-md overflow-hidden">
+    <section className="rounded-2xl border border-[rgba(255,255,255,0.08)] bg-[#1E3054]/45 backdrop-blur-md overflow-hidden">
       {/* Header / toggle */}
       <button
         type="button"

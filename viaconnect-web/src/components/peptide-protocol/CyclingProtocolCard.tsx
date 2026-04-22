@@ -4,9 +4,9 @@ import { RotateCcw, ShieldAlert, FlaskConical } from 'lucide-react';
 
 // ── Dark Theme Tokens ──
 const DT = {
-  cardBg:        'rgba(30, 48, 84, 0.35)',
-  cardBgAlt:     'rgba(36, 59, 106, 0.35)',
-  cardBgDeep:    'rgba(23, 37, 66, 0.35)',
+  cardBg:        'rgba(30, 48, 84, 0.45)',
+  cardBgAlt:     'rgba(36, 59, 106, 0.45)',
+  cardBgDeep:    'rgba(23, 37, 66, 0.45)',
   textPrimary:   '#FFFFFF',
   textSecondary: 'rgba(255,255,255,0.55)',
   textMuted:     'rgba(255,255,255,0.35)',

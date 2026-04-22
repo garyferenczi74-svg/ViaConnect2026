@@ -10,7 +10,7 @@ import { PeptidePractitionerAccess } from "@/components/peptide-protocol/Peptide
 import { ShareProtocolButton } from "@/components/consumer/ShareProtocolButton";
 
 const PEPTIDE_HERO_DESKTOP =
-  "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Images/Fit%20couple%202.png";
+  "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Images/Athlete%2032.png";
 const PEPTIDE_HERO_MOBILE =
   "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Mobile%20Hero/Athlete%2011%20mobile.png";
 
@@ -28,9 +28,11 @@ export default function PeptideProtocolRoute() {
 
   return (
     <>
-      {/* HERO — fixed behind everything, inline styles to guarantee rendering */}
+      {/* HERO — fixed behind the content. Uses z-0 (not -z-10) so it
+          paints above the body's navy background but below the
+          content wrapper (z-10). */}
       <div
-        className="fixed inset-0 -z-10 overflow-hidden"
+        className="fixed inset-0 z-0 overflow-hidden pointer-events-none"
         style={{ width: '100vw', height: '100vh', top: 0, left: 0 }}
       >
         <img
@@ -59,8 +61,9 @@ export default function PeptideProtocolRoute() {
             Desktop: content flush below the nav bar (Prompt #81). */}
         <div className="h-[80px] md:hidden" />
 
-        {/* Deep Navy content starts below the hero visible area */}
-        <div className="min-h-screen rounded-t-3xl bg-[#0D1520] px-4 py-8 md:px-8">
+        {/* Content sits on top of the fixed hero — no solid panel so the
+            translucent glass containers let the hero show through. */}
+        <div className="min-h-screen rounded-t-3xl px-4 py-8 md:px-8">
           <div className="mx-auto max-w-3xl space-y-5">
 
             {/* Page header */}
