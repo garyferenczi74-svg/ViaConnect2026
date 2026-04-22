@@ -247,6 +247,31 @@ body {
   border-radius: 16px;
 }
 
+/* iOS / Android safe-area inset utilities. Pair with
+ * `viewportFit: "cover"` in src/app/layout.tsx so the app can sit
+ * edge-to-edge while interactive elements clear the notch and
+ * home-indicator.
+ *
+ * Body-level padding ONLY applies when the app is launched standalone
+ * (iOS home-screen install, Capacitor WebView, or Android TWA). Keeps
+ * the regular in-browser web experience unchanged.
+ *
+ * For fine control, pages can use the utility classes pt-safe /
+ * pb-safe / pl-safe / pr-safe anywhere — those always apply. */
+@media (display-mode: standalone) {
+  body {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+}
+
+.pt-safe { padding-top: max(1rem, env(safe-area-inset-top)); }
+.pb-safe { padding-bottom: max(1rem, env(safe-area-inset-bottom)); }
+.pl-safe { padding-left: max(1rem, env(safe-area-inset-left)); }
+.pr-safe { padding-right: max(1rem, env(safe-area-inset-right)); }
+
 /* Consolidated from inline rgba blocks scattered in consumer pages
  * (analytics and several tiles). Teal-tinted border + layered
  * inset highlights create the "deep panel" look that sits above the

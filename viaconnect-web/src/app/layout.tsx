@@ -6,6 +6,10 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
+  // viewportFit: "cover" lets content sit under the iOS status bar /
+  // home indicator. Pair with env(safe-area-inset-*) padding in CSS
+  // so interactive elements stay clear of the notch + gesture area.
+  viewportFit: "cover",
   themeColor: "#0B1120",
   colorScheme: "dark",
 };
@@ -66,6 +70,12 @@ export const metadata: Metadata = {
       { url: "/icon.svg", type: "image/svg+xml" },
     ],
     apple: "/apple-touch-icon.png",
+  },
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    title: "ViaConnect",
+    statusBarStyle: "black-translucent",
   },
   robots: {
     index: true,
