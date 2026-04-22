@@ -32,9 +32,9 @@ interface ScheduleBlock {
 }
 
 const TIME_BLOCKS: { id: ProtocolSlot; label: string; icon: LucideIcon; time: string; color: string }[] = [
-  { id: 'morning', label: 'Morning', icon: Sunrise, time: '12 AM to 12 PM', color: '#FFB347' },
-  { id: 'afternoon', label: 'Afternoon', icon: Sun, time: '12 PM to 6 PM', color: '#2DA5A0' },
-  { id: 'evening', label: 'Night', icon: Moon, time: '6 PM to 12 AM', color: '#7C6FE0' },
+  { id: 'morning', label: 'Morning', icon: Sunrise, time: '12 AM to 12 PM', color: '#FBBF24' },
+  { id: 'afternoon', label: 'Afternoon', icon: Sun, time: '12 PM to 6 PM', color: '#B75E18' },
+  { id: 'evening', label: 'Night', icon: Moon, time: '6 PM to 12 AM', color: '#60A5FA' },
   { id: 'asNeeded', label: 'As Needed', icon: Clock, time: 'Flexible', color: '#9CA3AF' },
 ];
 
@@ -216,11 +216,11 @@ export function TodaysProtocol({ supplements }: TodaysProtocolProps) {
                   <Icon className="h-3.5 w-3.5" strokeWidth={1.5} style={{ color: headerConfig.color }} />
                 </div>
                 <div className="flex-1">
-                  <h4 className="text-xs font-semibold text-white">
+                  <h4 className="text-xs font-semibold" style={{ color: headerConfig.color }}>
                     {headerConfig.label}
-                    <span className="ml-1.5 text-[10px] font-normal text-white/40">· now</span>
+                    <span className="ml-1.5 text-[10px] font-normal" style={{ color: headerConfig.color, opacity: 0.7 }}>· now</span>
                   </h4>
-                  <p className="text-[10px] text-white/35">
+                  <p className="text-[10px]" style={{ color: headerConfig.color, opacity: 0.7 }}>
                     {blockDone} of {items.length} done
                   </p>
                 </div>
