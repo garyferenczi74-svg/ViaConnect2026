@@ -12,6 +12,31 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.4"
   }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
       advisor_agent_config: {
@@ -222,6 +247,57 @@ export type Database = {
           total_advisories?: number | null
           trigger_type?: string
           warning_count?: number | null
+        }
+        Relationships: []
+      }
+      aggregation_snapshots: {
+        Row: {
+          as_of_timestamp: string
+          cfo_review_notes: string | null
+          cfo_reviewed_at: string | null
+          cfo_reviewer_id: string | null
+          computation_ended_at: string | null
+          computation_started_at: string | null
+          created_at: string
+          period_end: string
+          period_start: string
+          period_type: Database["public"]["Enums"]["aggregation_period_type"]
+          snapshot_id: string
+          state: Database["public"]["Enums"]["aggregation_snapshot_state"]
+          total_kpis_computed: number
+          updated_at: string
+        }
+        Insert: {
+          as_of_timestamp: string
+          cfo_review_notes?: string | null
+          cfo_reviewed_at?: string | null
+          cfo_reviewer_id?: string | null
+          computation_ended_at?: string | null
+          computation_started_at?: string | null
+          created_at?: string
+          period_end: string
+          period_start: string
+          period_type: Database["public"]["Enums"]["aggregation_period_type"]
+          snapshot_id?: string
+          state?: Database["public"]["Enums"]["aggregation_snapshot_state"]
+          total_kpis_computed?: number
+          updated_at?: string
+        }
+        Update: {
+          as_of_timestamp?: string
+          cfo_review_notes?: string | null
+          cfo_reviewed_at?: string | null
+          cfo_reviewer_id?: string | null
+          computation_ended_at?: string | null
+          computation_started_at?: string | null
+          created_at?: string
+          period_end?: string
+          period_start?: string
+          period_type?: Database["public"]["Enums"]["aggregation_period_type"]
+          snapshot_id?: string
+          state?: Database["public"]["Enums"]["aggregation_snapshot_state"]
+          total_kpis_computed?: number
+          updated_at?: string
         }
         Relationships: []
       }
@@ -469,6 +545,111 @@ export type Database = {
         }
         Relationships: []
       }
+      board_meetings: {
+        Row: {
+          actual_date: string | null
+          agenda_md: string | null
+          attendees: string[] | null
+          created_at: string
+          location_description: string | null
+          meeting_code: string
+          meeting_id: string
+          meeting_type: string
+          minutes_storage_path: string | null
+          scheduled_date: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          actual_date?: string | null
+          agenda_md?: string | null
+          attendees?: string[] | null
+          created_at?: string
+          location_description?: string | null
+          meeting_code: string
+          meeting_id?: string
+          meeting_type: string
+          minutes_storage_path?: string | null
+          scheduled_date: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          actual_date?: string | null
+          agenda_md?: string | null
+          attendees?: string[] | null
+          created_at?: string
+          location_description?: string | null
+          meeting_code?: string
+          meeting_id?: string
+          meeting_type?: string
+          minutes_storage_path?: string | null
+          scheduled_date?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      board_members: {
+        Row: {
+          access_revoked_at: string | null
+          appointment_date: string
+          auth_user_id: string | null
+          board_reporting_scope: Json
+          created_at: string
+          departure_date: string | null
+          display_name: string
+          email_distribution: string
+          email_primary: string
+          member_id: string
+          nda_effective_date: string | null
+          nda_expires_at: string | null
+          nda_status: Database["public"]["Enums"]["nda_status"]
+          nda_vault_ref: string | null
+          notes: string | null
+          role: Database["public"]["Enums"]["board_member_role"]
+          updated_at: string
+        }
+        Insert: {
+          access_revoked_at?: string | null
+          appointment_date: string
+          auth_user_id?: string | null
+          board_reporting_scope?: Json
+          created_at?: string
+          departure_date?: string | null
+          display_name: string
+          email_distribution: string
+          email_primary: string
+          member_id?: string
+          nda_effective_date?: string | null
+          nda_expires_at?: string | null
+          nda_status?: Database["public"]["Enums"]["nda_status"]
+          nda_vault_ref?: string | null
+          notes?: string | null
+          role: Database["public"]["Enums"]["board_member_role"]
+          updated_at?: string
+        }
+        Update: {
+          access_revoked_at?: string | null
+          appointment_date?: string
+          auth_user_id?: string | null
+          board_reporting_scope?: Json
+          created_at?: string
+          departure_date?: string | null
+          display_name?: string
+          email_distribution?: string
+          email_primary?: string
+          member_id?: string
+          nda_effective_date?: string | null
+          nda_expires_at?: string | null
+          nda_status?: Database["public"]["Enums"]["nda_status"]
+          nda_vault_ref?: string | null
+          notes?: string | null
+          role?: Database["public"]["Enums"]["board_member_role"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       board_metrics: {
         Row: {
           active_customers: number
@@ -535,6 +716,510 @@ export type Database = {
           risk_factors?: string[] | null
           rule_of_40?: number
           total_revenue_pipeline?: number
+        }
+        Relationships: []
+      }
+      board_pack_ai_prompts: {
+        Row: {
+          created_at: string
+          output_schema_json: Json
+          prompt_id: string
+          reviewed_at_cfo: string | null
+          reviewed_by_cfo_id: string | null
+          section_type: string
+          status: string
+          system_prompt_md: string
+          token_budget: number
+          version: number
+        }
+        Insert: {
+          created_at?: string
+          output_schema_json: Json
+          prompt_id?: string
+          reviewed_at_cfo?: string | null
+          reviewed_by_cfo_id?: string | null
+          section_type: string
+          status?: string
+          system_prompt_md: string
+          token_budget?: number
+          version: number
+        }
+        Update: {
+          created_at?: string
+          output_schema_json?: Json
+          prompt_id?: string
+          reviewed_at_cfo?: string | null
+          reviewed_by_cfo_id?: string | null
+          section_type?: string
+          status?: string
+          system_prompt_md?: string
+          token_budget?: number
+          version?: number
+        }
+        Relationships: []
+      }
+      board_pack_artifacts: {
+        Row: {
+          artifact_format: string
+          artifact_id: string
+          byte_size: number | null
+          distribution_id: string | null
+          pack_id: string
+          rendered_at: string
+          sha256_hash: string
+          storage_path: string
+        }
+        Insert: {
+          artifact_format: string
+          artifact_id?: string
+          byte_size?: number | null
+          distribution_id?: string | null
+          pack_id: string
+          rendered_at?: string
+          sha256_hash: string
+          storage_path: string
+        }
+        Update: {
+          artifact_format?: string
+          artifact_id?: string
+          byte_size?: number | null
+          distribution_id?: string | null
+          pack_id?: string
+          rendered_at?: string
+          sha256_hash?: string
+          storage_path?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "board_pack_artifacts_pack_id_fkey"
+            columns: ["pack_id"]
+            isOneToOne: false
+            referencedRelation: "board_packs"
+            referencedColumns: ["pack_id"]
+          },
+        ]
+      }
+      board_pack_distributions: {
+        Row: {
+          access_revoked_at: string | null
+          distributed_at: string
+          distribution_id: string
+          email_notification_sent_at: string | null
+          member_id: string
+          pack_id: string
+          revocation_reason: string | null
+          watermark_token: string
+        }
+        Insert: {
+          access_revoked_at?: string | null
+          distributed_at?: string
+          distribution_id?: string
+          email_notification_sent_at?: string | null
+          member_id: string
+          pack_id: string
+          revocation_reason?: string | null
+          watermark_token: string
+        }
+        Update: {
+          access_revoked_at?: string | null
+          distributed_at?: string
+          distribution_id?: string
+          email_notification_sent_at?: string | null
+          member_id?: string
+          pack_id?: string
+          revocation_reason?: string | null
+          watermark_token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "board_pack_distributions_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "board_members"
+            referencedColumns: ["member_id"]
+          },
+          {
+            foreignKeyName: "board_pack_distributions_pack_id_fkey"
+            columns: ["pack_id"]
+            isOneToOne: false
+            referencedRelation: "board_packs"
+            referencedColumns: ["pack_id"]
+          },
+        ]
+      }
+      board_pack_download_events: {
+        Row: {
+          acknowledgment_typed: boolean
+          artifact_format: string
+          byte_size_served: number | null
+          distribution_id: string
+          download_duration_ms: number | null
+          downloaded_at: string
+          event_id: string
+          ip_address: unknown
+          user_agent: string | null
+          watermark_token_presented: string
+          watermark_validated: boolean
+        }
+        Insert: {
+          acknowledgment_typed?: boolean
+          artifact_format: string
+          byte_size_served?: number | null
+          distribution_id: string
+          download_duration_ms?: number | null
+          downloaded_at?: string
+          event_id?: string
+          ip_address?: unknown
+          user_agent?: string | null
+          watermark_token_presented: string
+          watermark_validated: boolean
+        }
+        Update: {
+          acknowledgment_typed?: boolean
+          artifact_format?: string
+          byte_size_served?: number | null
+          distribution_id?: string
+          download_duration_ms?: number | null
+          downloaded_at?: string
+          event_id?: string
+          ip_address?: unknown
+          user_agent?: string | null
+          watermark_token_presented?: string
+          watermark_validated?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "board_pack_download_events_distribution_id_fkey"
+            columns: ["distribution_id"]
+            isOneToOne: false
+            referencedRelation: "board_pack_distributions"
+            referencedColumns: ["distribution_id"]
+          },
+        ]
+      }
+      board_pack_kpi_snapshots: {
+        Row: {
+          aggregation_snapshot_id: string
+          comparison_delta_pct: number | null
+          computed_at: string
+          computed_value_integer: number | null
+          computed_value_json: Json | null
+          computed_value_numeric: number | null
+          kpi_id: string
+          kpi_version: number
+          prior_period_value: number | null
+          provenance_json: Json
+          snapshot_id: string
+          unit: string
+        }
+        Insert: {
+          aggregation_snapshot_id: string
+          comparison_delta_pct?: number | null
+          computed_at?: string
+          computed_value_integer?: number | null
+          computed_value_json?: Json | null
+          computed_value_numeric?: number | null
+          kpi_id: string
+          kpi_version: number
+          prior_period_value?: number | null
+          provenance_json: Json
+          snapshot_id?: string
+          unit: string
+        }
+        Update: {
+          aggregation_snapshot_id?: string
+          comparison_delta_pct?: number | null
+          computed_at?: string
+          computed_value_integer?: number | null
+          computed_value_json?: Json | null
+          computed_value_numeric?: number | null
+          kpi_id?: string
+          kpi_version?: number
+          prior_period_value?: number | null
+          provenance_json?: Json
+          snapshot_id?: string
+          unit?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "board_pack_kpi_snapshots_aggregation_snapshot_id_fkey"
+            columns: ["aggregation_snapshot_id"]
+            isOneToOne: false
+            referencedRelation: "aggregation_snapshots"
+            referencedColumns: ["snapshot_id"]
+          },
+          {
+            foreignKeyName: "board_pack_kpi_snapshots_kpi_id_kpi_version_fkey"
+            columns: ["kpi_id", "kpi_version"]
+            isOneToOne: false
+            referencedRelation: "kpi_library"
+            referencedColumns: ["kpi_id", "version"]
+          },
+        ]
+      }
+      board_pack_sections: {
+        Row: {
+          ai_model: string | null
+          ai_prompt_version: number | null
+          ai_thinking_tokens: number | null
+          cfo_reviewed_at: string | null
+          cfo_reviewed_by: string | null
+          commentary_md: string | null
+          commentary_source: string
+          content_json: Json
+          created_at: string
+          pack_id: string
+          section_id: string
+          section_order: number
+          section_type: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          ai_model?: string | null
+          ai_prompt_version?: number | null
+          ai_thinking_tokens?: number | null
+          cfo_reviewed_at?: string | null
+          cfo_reviewed_by?: string | null
+          commentary_md?: string | null
+          commentary_source?: string
+          content_json: Json
+          created_at?: string
+          pack_id: string
+          section_id?: string
+          section_order: number
+          section_type: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          ai_model?: string | null
+          ai_prompt_version?: number | null
+          ai_thinking_tokens?: number | null
+          cfo_reviewed_at?: string | null
+          cfo_reviewed_by?: string | null
+          commentary_md?: string | null
+          commentary_source?: string
+          content_json?: Json
+          created_at?: string
+          pack_id?: string
+          section_id?: string
+          section_order?: number
+          section_type?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "board_pack_sections_pack_id_fkey"
+            columns: ["pack_id"]
+            isOneToOne: false
+            referencedRelation: "board_packs"
+            referencedColumns: ["pack_id"]
+          },
+        ]
+      }
+      board_pack_templates: {
+        Row: {
+          counsel_reviewed_at: string | null
+          counsel_reviewer_id: string | null
+          created_at: string
+          default_board_scope: string[]
+          section_schema_json: Json
+          status: string
+          template_id: string
+          template_name: string
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          counsel_reviewed_at?: string | null
+          counsel_reviewer_id?: string | null
+          created_at?: string
+          default_board_scope?: string[]
+          section_schema_json: Json
+          status?: string
+          template_id?: string
+          template_name: string
+          updated_at?: string
+          version: number
+        }
+        Update: {
+          counsel_reviewed_at?: string | null
+          counsel_reviewer_id?: string | null
+          created_at?: string
+          default_board_scope?: string[]
+          section_schema_json?: Json
+          status?: string
+          template_id?: string
+          template_name?: string
+          updated_at?: string
+          version?: number
+        }
+        Relationships: []
+      }
+      board_packs: {
+        Row: {
+          aggregation_snapshot_id: string
+          ceo_issued_at: string | null
+          ceo_issued_by: string | null
+          cfo_approved_at: string | null
+          cfo_approved_by: string | null
+          created_at: string
+          created_by: string
+          erratum_description_md: string | null
+          meeting_id: string | null
+          pack_id: string
+          pack_title: string
+          period_end: string
+          period_start: string
+          period_type: Database["public"]["Enums"]["aggregation_period_type"]
+          short_code: string
+          state: Database["public"]["Enums"]["pack_state"]
+          supersedes_pack_id: string | null
+          template_id: string
+          template_version: number
+          updated_at: string
+        }
+        Insert: {
+          aggregation_snapshot_id: string
+          ceo_issued_at?: string | null
+          ceo_issued_by?: string | null
+          cfo_approved_at?: string | null
+          cfo_approved_by?: string | null
+          created_at?: string
+          created_by: string
+          erratum_description_md?: string | null
+          meeting_id?: string | null
+          pack_id?: string
+          pack_title: string
+          period_end: string
+          period_start: string
+          period_type: Database["public"]["Enums"]["aggregation_period_type"]
+          short_code: string
+          state?: Database["public"]["Enums"]["pack_state"]
+          supersedes_pack_id?: string | null
+          template_id: string
+          template_version: number
+          updated_at?: string
+        }
+        Update: {
+          aggregation_snapshot_id?: string
+          ceo_issued_at?: string | null
+          ceo_issued_by?: string | null
+          cfo_approved_at?: string | null
+          cfo_approved_by?: string | null
+          created_at?: string
+          created_by?: string
+          erratum_description_md?: string | null
+          meeting_id?: string | null
+          pack_id?: string
+          pack_title?: string
+          period_end?: string
+          period_start?: string
+          period_type?: Database["public"]["Enums"]["aggregation_period_type"]
+          short_code?: string
+          state?: Database["public"]["Enums"]["pack_state"]
+          supersedes_pack_id?: string | null
+          template_id?: string
+          template_version?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "board_packs_aggregation_snapshot_id_fkey"
+            columns: ["aggregation_snapshot_id"]
+            isOneToOne: false
+            referencedRelation: "aggregation_snapshots"
+            referencedColumns: ["snapshot_id"]
+          },
+          {
+            foreignKeyName: "board_packs_supersedes_pack_id_fkey"
+            columns: ["supersedes_pack_id"]
+            isOneToOne: false
+            referencedRelation: "board_packs"
+            referencedColumns: ["pack_id"]
+          },
+          {
+            foreignKeyName: "board_packs_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "board_pack_templates"
+            referencedColumns: ["template_id"]
+          },
+        ]
+      }
+      body_graphic_interactions: {
+        Row: {
+          created_at: string
+          gender: string
+          id: string
+          interaction_type: string
+          mode: string
+          region_id: string
+          session_id: string | null
+          user_id: string
+          view: string
+        }
+        Insert: {
+          created_at?: string
+          gender: string
+          id?: string
+          interaction_type: string
+          mode: string
+          region_id: string
+          session_id?: string | null
+          user_id: string
+          view: string
+        }
+        Update: {
+          created_at?: string
+          gender?: string
+          id?: string
+          interaction_type?: string
+          mode?: string
+          region_id?: string
+          session_id?: string | null
+          user_id?: string
+          view?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "body_graphic_interactions_region_id_fkey"
+            columns: ["region_id"]
+            isOneToOne: false
+            referencedRelation: "body_regions"
+            referencedColumns: ["region_id"]
+          },
+        ]
+      }
+      body_graphics_preferences: {
+        Row: {
+          default_gender: string
+          default_view: string
+          preferred_size: string
+          show_anatomical_detail: boolean
+          show_region_labels: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          default_gender?: string
+          default_view?: string
+          preferred_size?: string
+          show_anatomical_detail?: boolean
+          show_region_labels?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          default_gender?: string
+          default_view?: string
+          preferred_size?: string
+          show_anatomical_detail?: boolean
+          show_region_labels?: boolean
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -666,6 +1351,50 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "body_tracker_entries"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      body_regions: {
+        Row: {
+          anatomical_group: string
+          applicable_views: string[]
+          display_name: string
+          display_name_fr: string | null
+          display_order: number
+          is_bilateral: boolean
+          parent_region: string | null
+          region_id: string
+          region_type: string
+        }
+        Insert: {
+          anatomical_group: string
+          applicable_views?: string[]
+          display_name: string
+          display_name_fr?: string | null
+          display_order?: number
+          is_bilateral?: boolean
+          parent_region?: string | null
+          region_id: string
+          region_type: string
+        }
+        Update: {
+          anatomical_group?: string
+          applicable_views?: string[]
+          display_name?: string
+          display_name_fr?: string | null
+          display_order?: number
+          is_bilateral?: boolean
+          parent_region?: string | null
+          region_id?: string
+          region_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "body_regions_parent_region_fkey"
+            columns: ["parent_region"]
+            isOneToOne: false
+            referencedRelation: "body_regions"
+            referencedColumns: ["region_id"]
           },
         ]
       }
@@ -1924,6 +2653,103 @@ export type Database = {
         }
         Relationships: []
       }
+      channel_verification_attempts: {
+        Row: {
+          attempt_id: string
+          attempt_status: string
+          attempt_token: string
+          channel_id: string
+          created_at: string
+          evidence_json: Json
+          expires_at: string
+          failure_reason: string | null
+          method: Database["public"]["Enums"]["verification_method"]
+          resolved_at: string | null
+        }
+        Insert: {
+          attempt_id?: string
+          attempt_status?: string
+          attempt_token: string
+          channel_id: string
+          created_at?: string
+          evidence_json?: Json
+          expires_at: string
+          failure_reason?: string | null
+          method: Database["public"]["Enums"]["verification_method"]
+          resolved_at?: string | null
+        }
+        Update: {
+          attempt_id?: string
+          attempt_status?: string
+          attempt_token?: string
+          channel_id?: string
+          created_at?: string
+          evidence_json?: Json
+          expires_at?: string
+          failure_reason?: string | null
+          method?: Database["public"]["Enums"]["verification_method"]
+          resolved_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "channel_verification_attempts_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_verified_channels"
+            referencedColumns: ["channel_id"]
+          },
+        ]
+      }
+      channel_volume_checks: {
+        Row: {
+          apparent_retail_volume_cents: number
+          channel_id: string
+          check_id: string
+          check_period_end: string
+          check_period_start: string
+          created_at: string
+          flag_triggered: boolean
+          ratio_observed: number | null
+          resolution_notes: string | null
+          resolved: boolean
+          wholesale_inventory_volume_cents: number
+        }
+        Insert: {
+          apparent_retail_volume_cents: number
+          channel_id: string
+          check_id?: string
+          check_period_end: string
+          check_period_start: string
+          created_at?: string
+          flag_triggered?: boolean
+          ratio_observed?: number | null
+          resolution_notes?: string | null
+          resolved?: boolean
+          wholesale_inventory_volume_cents: number
+        }
+        Update: {
+          apparent_retail_volume_cents?: number
+          channel_id?: string
+          check_id?: string
+          check_period_end?: string
+          check_period_start?: string
+          created_at?: string
+          flag_triggered?: boolean
+          ratio_observed?: number | null
+          resolution_notes?: string | null
+          resolved?: boolean
+          wholesale_inventory_volume_cents?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "channel_volume_checks_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_verified_channels"
+            referencedColumns: ["channel_id"]
+          },
+        ]
+      }
       clinical_assessments: {
         Row: {
           allergies: string | null
@@ -2099,6 +2925,115 @@ export type Database = {
         }
         Relationships: []
       }
+      commission_accruals: {
+        Row: {
+          accrual_amount_cents: number
+          accrual_date: string
+          accrual_id: string
+          accrual_reason: string
+          commission_rate_pct: number | null
+          created_at: string
+          practitioner_id: string
+          reconciled_at: string | null
+          reconciliation_run_id: string | null
+          source_order_id: string | null
+          source_order_item_id: string | null
+          status: string
+        }
+        Insert: {
+          accrual_amount_cents: number
+          accrual_date?: string
+          accrual_id?: string
+          accrual_reason: string
+          commission_rate_pct?: number | null
+          created_at?: string
+          practitioner_id: string
+          reconciled_at?: string | null
+          reconciliation_run_id?: string | null
+          source_order_id?: string | null
+          source_order_item_id?: string | null
+          status?: string
+        }
+        Update: {
+          accrual_amount_cents?: number
+          accrual_date?: string
+          accrual_id?: string
+          accrual_reason?: string
+          commission_rate_pct?: number | null
+          created_at?: string
+          practitioner_id?: string
+          reconciled_at?: string | null
+          reconciliation_run_id?: string | null
+          source_order_id?: string | null
+          source_order_item_id?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commission_accruals_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_engagement_summary_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "commission_accruals_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_practice_health_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "commission_accruals_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_protocol_effectiveness_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "commission_accruals_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commission_accruals_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_engagement_summary"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "commission_accruals_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_practice_health"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "commission_accruals_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_protocol_effectiveness"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "commission_accruals_source_order_id_fkey"
+            columns: ["source_order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commission_accruals_source_order_item_id_fkey"
+            columns: ["source_order_item_id"]
+            isOneToOne: false
+            referencedRelation: "order_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       commission_payouts: {
         Row: {
           annual_gross_profit: number
@@ -2161,6 +3096,166 @@ export type Database = {
           type?: string
         }
         Relationships: []
+      }
+      commission_reconciliation_lines: {
+        Row: {
+          amount_cents: number
+          created_at: string
+          description: string | null
+          line_id: string
+          line_type: string
+          related_violation_id: string | null
+          run_id: string
+          source_accrual_id: string | null
+          source_order_id: string | null
+        }
+        Insert: {
+          amount_cents: number
+          created_at?: string
+          description?: string | null
+          line_id?: string
+          line_type: string
+          related_violation_id?: string | null
+          run_id: string
+          source_accrual_id?: string | null
+          source_order_id?: string | null
+        }
+        Update: {
+          amount_cents?: number
+          created_at?: string
+          description?: string | null
+          line_id?: string
+          line_type?: string
+          related_violation_id?: string | null
+          run_id?: string
+          source_accrual_id?: string | null
+          source_order_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commission_reconciliation_lines_related_violation_id_fkey"
+            columns: ["related_violation_id"]
+            isOneToOne: false
+            referencedRelation: "map_violations"
+            referencedColumns: ["violation_id"]
+          },
+          {
+            foreignKeyName: "commission_reconciliation_lines_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "commission_reconciliation_runs"
+            referencedColumns: ["run_id"]
+          },
+          {
+            foreignKeyName: "commission_reconciliation_lines_source_accrual_id_fkey"
+            columns: ["source_accrual_id"]
+            isOneToOne: false
+            referencedRelation: "commission_accruals"
+            referencedColumns: ["accrual_id"]
+          },
+          {
+            foreignKeyName: "commission_reconciliation_lines_source_order_id_fkey"
+            columns: ["source_order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      commission_reconciliation_runs: {
+        Row: {
+          gross_accrued_cents: number
+          margin_floor_breach: boolean
+          net_payable_cents: number
+          notes: string | null
+          period_end: string
+          period_start: string
+          practitioner_id: string
+          run_at: string
+          run_id: string
+          status: string
+          total_clawbacks_cents: number
+          total_holds_cents: number
+        }
+        Insert: {
+          gross_accrued_cents?: number
+          margin_floor_breach?: boolean
+          net_payable_cents?: number
+          notes?: string | null
+          period_end: string
+          period_start: string
+          practitioner_id: string
+          run_at?: string
+          run_id?: string
+          status?: string
+          total_clawbacks_cents?: number
+          total_holds_cents?: number
+        }
+        Update: {
+          gross_accrued_cents?: number
+          margin_floor_breach?: boolean
+          net_payable_cents?: number
+          notes?: string | null
+          period_end?: string
+          period_start?: string
+          practitioner_id?: string
+          run_at?: string
+          run_id?: string
+          status?: string
+          total_clawbacks_cents?: number
+          total_holds_cents?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commission_reconciliation_runs_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_engagement_summary_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "commission_reconciliation_runs_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_practice_health_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "commission_reconciliation_runs_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_protocol_effectiveness_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "commission_reconciliation_runs_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commission_reconciliation_runs_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_engagement_summary"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "commission_reconciliation_runs_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_practice_health"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "commission_reconciliation_runs_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_protocol_effectiveness"
+            referencedColumns: ["practitioner_id"]
+          },
+        ]
       }
       competitor_pricing: {
         Row: {
@@ -2653,8 +3748,50 @@ export type Database = {
             foreignKeyName: "custom_formulations_exclusive_to_practitioner_id_fkey"
             columns: ["exclusive_to_practitioner_id"]
             isOneToOne: false
+            referencedRelation: "practitioner_engagement_summary_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "custom_formulations_exclusive_to_practitioner_id_fkey"
+            columns: ["exclusive_to_practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_practice_health_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "custom_formulations_exclusive_to_practitioner_id_fkey"
+            columns: ["exclusive_to_practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_protocol_effectiveness_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "custom_formulations_exclusive_to_practitioner_id_fkey"
+            columns: ["exclusive_to_practitioner_id"]
+            isOneToOne: false
             referencedRelation: "practitioners"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custom_formulations_exclusive_to_practitioner_id_fkey"
+            columns: ["exclusive_to_practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_engagement_summary"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "custom_formulations_exclusive_to_practitioner_id_fkey"
+            columns: ["exclusive_to_practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_practice_health"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "custom_formulations_exclusive_to_practitioner_id_fkey"
+            columns: ["exclusive_to_practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_protocol_effectiveness"
+            referencedColumns: ["practitioner_id"]
           },
           {
             foreignKeyName: "custom_formulations_parent_formulation_id_fkey"
@@ -2667,8 +3804,50 @@ export type Database = {
             foreignKeyName: "custom_formulations_practitioner_id_fkey"
             columns: ["practitioner_id"]
             isOneToOne: false
+            referencedRelation: "practitioner_engagement_summary_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "custom_formulations_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_practice_health_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "custom_formulations_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_protocol_effectiveness_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "custom_formulations_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
             referencedRelation: "practitioners"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custom_formulations_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_engagement_summary"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "custom_formulations_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_practice_health"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "custom_formulations_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_protocol_effectiveness"
+            referencedColumns: ["practitioner_id"]
           },
           {
             foreignKeyName: "custom_formulations_product_catalog_id_fkey"
@@ -3339,6 +4518,75 @@ export type Database = {
           },
         ]
       }
+      executive_reporting_audit_log: {
+        Row: {
+          action_category: string
+          action_verb: string
+          actor_role: string | null
+          actor_user_id: string | null
+          after_state_json: Json | null
+          audit_id: string
+          before_state_json: Json | null
+          context_json: Json | null
+          ip_address: unknown
+          member_id: string | null
+          occurred_at: string
+          pack_id: string | null
+          target_id: string | null
+          target_table: string
+          user_agent: string | null
+        }
+        Insert: {
+          action_category: string
+          action_verb: string
+          actor_role?: string | null
+          actor_user_id?: string | null
+          after_state_json?: Json | null
+          audit_id?: string
+          before_state_json?: Json | null
+          context_json?: Json | null
+          ip_address?: unknown
+          member_id?: string | null
+          occurred_at?: string
+          pack_id?: string | null
+          target_id?: string | null
+          target_table: string
+          user_agent?: string | null
+        }
+        Update: {
+          action_category?: string
+          action_verb?: string
+          actor_role?: string | null
+          actor_user_id?: string | null
+          after_state_json?: Json | null
+          audit_id?: string
+          before_state_json?: Json | null
+          context_json?: Json | null
+          ip_address?: unknown
+          member_id?: string | null
+          occurred_at?: string
+          pack_id?: string | null
+          target_id?: string | null
+          target_table?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "executive_reporting_audit_log_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "board_members"
+            referencedColumns: ["member_id"]
+          },
+          {
+            foreignKeyName: "executive_reporting_audit_log_pack_id_fkey"
+            columns: ["pack_id"]
+            isOneToOne: false
+            referencedRelation: "board_packs"
+            referencedColumns: ["pack_id"]
+          },
+        ]
+      }
       executive_risks: {
         Row: {
           action: string
@@ -3832,6 +5080,65 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "membership_tiers"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      genex360_purchase_currency_details: {
+        Row: {
+          created_at: string
+          currency_code: Database["public"]["Enums"]["currency_code"]
+          detail_id: string
+          fx_rate_to_usd_at_order_time: number
+          inclusive_of_tax: boolean
+          market_code: Database["public"]["Enums"]["market_code"]
+          purchase_id: string
+          shipping_cents: number
+          stripe_payment_intent_id: string | null
+          stripe_tax_calculation_id: string | null
+          subtotal_cents: number
+          tax_cents: number
+          total_cents: number
+          vat_invoice_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          currency_code: Database["public"]["Enums"]["currency_code"]
+          detail_id?: string
+          fx_rate_to_usd_at_order_time: number
+          inclusive_of_tax: boolean
+          market_code: Database["public"]["Enums"]["market_code"]
+          purchase_id: string
+          shipping_cents?: number
+          stripe_payment_intent_id?: string | null
+          stripe_tax_calculation_id?: string | null
+          subtotal_cents: number
+          tax_cents?: number
+          total_cents: number
+          vat_invoice_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          currency_code?: Database["public"]["Enums"]["currency_code"]
+          detail_id?: string
+          fx_rate_to_usd_at_order_time?: number
+          inclusive_of_tax?: boolean
+          market_code?: Database["public"]["Enums"]["market_code"]
+          purchase_id?: string
+          shipping_cents?: number
+          stripe_payment_intent_id?: string | null
+          stripe_tax_calculation_id?: string | null
+          subtotal_cents?: number
+          tax_cents?: number
+          total_cents?: number
+          vat_invoice_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "genex360_purchase_currency_details_vat_invoice_id_fkey"
+            columns: ["vat_invoice_id"]
+            isOneToOne: false
+            referencedRelation: "international_vat_invoices"
+            referencedColumns: ["invoice_id"]
           },
         ]
       }
@@ -5112,6 +6419,467 @@ export type Database = {
         }
         Relationships: []
       }
+      international_audit_log: {
+        Row: {
+          action_category: string
+          action_verb: string
+          actor_role: string | null
+          actor_user_id: string | null
+          after_state_json: Json | null
+          audit_id: string
+          before_state_json: Json | null
+          currency_code: Database["public"]["Enums"]["currency_code"] | null
+          ip_address: unknown
+          market_code: Database["public"]["Enums"]["market_code"] | null
+          occurred_at: string
+          target_id: string | null
+          target_table: string | null
+          typed_confirmation_text: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          action_category: string
+          action_verb: string
+          actor_role?: string | null
+          actor_user_id?: string | null
+          after_state_json?: Json | null
+          audit_id?: string
+          before_state_json?: Json | null
+          currency_code?: Database["public"]["Enums"]["currency_code"] | null
+          ip_address?: unknown
+          market_code?: Database["public"]["Enums"]["market_code"] | null
+          occurred_at?: string
+          target_id?: string | null
+          target_table?: string | null
+          typed_confirmation_text?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          action_category?: string
+          action_verb?: string
+          actor_role?: string | null
+          actor_user_id?: string | null
+          after_state_json?: Json | null
+          audit_id?: string
+          before_state_json?: Json | null
+          currency_code?: Database["public"]["Enums"]["currency_code"] | null
+          ip_address?: unknown
+          market_code?: Database["public"]["Enums"]["market_code"] | null
+          occurred_at?: string
+          target_id?: string | null
+          target_table?: string | null
+          typed_confirmation_text?: string | null
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
+      international_country_to_market: {
+        Row: {
+          country_code: string
+          created_at: string
+          eu_member_state: boolean
+          market_code: Database["public"]["Enums"]["market_code"]
+        }
+        Insert: {
+          country_code: string
+          created_at?: string
+          eu_member_state?: boolean
+          market_code: Database["public"]["Enums"]["market_code"]
+        }
+        Update: {
+          country_code?: string
+          created_at?: string
+          eu_member_state?: boolean
+          market_code?: Database["public"]["Enums"]["market_code"]
+        }
+        Relationships: []
+      }
+      international_fx_drift_findings: {
+        Row: {
+          acknowledged_at: string | null
+          acknowledged_by: string | null
+          detected_at: string
+          drift_pct: number
+          finding_id: string
+          implied_usd_cents: number
+          market_code: Database["public"]["Enums"]["market_code"]
+          market_msrp_cents: number
+          resolution: string | null
+          sku: string
+          status: string
+          us_msrp_cents: number
+        }
+        Insert: {
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          detected_at?: string
+          drift_pct: number
+          finding_id?: string
+          implied_usd_cents: number
+          market_code: Database["public"]["Enums"]["market_code"]
+          market_msrp_cents: number
+          resolution?: string | null
+          sku: string
+          status?: string
+          us_msrp_cents: number
+        }
+        Update: {
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          detected_at?: string
+          drift_pct?: number
+          finding_id?: string
+          implied_usd_cents?: number
+          market_code?: Database["public"]["Enums"]["market_code"]
+          market_msrp_cents?: number
+          resolution?: string | null
+          sku?: string
+          status?: string
+          us_msrp_cents?: number
+        }
+        Relationships: []
+      }
+      international_fx_rate_history: {
+        Row: {
+          base_currency: Database["public"]["Enums"]["currency_code"]
+          quote_currency: Database["public"]["Enums"]["currency_code"]
+          rate: number
+          rate_date: string
+          rate_id: string
+          rate_source: string
+          retrieved_at: string
+        }
+        Insert: {
+          base_currency: Database["public"]["Enums"]["currency_code"]
+          quote_currency: Database["public"]["Enums"]["currency_code"]
+          rate: number
+          rate_date: string
+          rate_id?: string
+          rate_source: string
+          retrieved_at?: string
+        }
+        Update: {
+          base_currency?: Database["public"]["Enums"]["currency_code"]
+          quote_currency?: Database["public"]["Enums"]["currency_code"]
+          rate?: number
+          rate_date?: string
+          rate_id?: string
+          rate_source?: string
+          retrieved_at?: string
+        }
+        Relationships: []
+      }
+      international_market_config: {
+        Row: {
+          currency_code: Database["public"]["Enums"]["currency_code"]
+          default_language: string
+          display_tax_label: string
+          enforce_88_ending: boolean
+          inclusive_of_tax: boolean
+          market_code: Database["public"]["Enums"]["market_code"]
+          shipping_available: boolean
+          updated_at: string
+          updated_by_user_id: string | null
+        }
+        Insert: {
+          currency_code: Database["public"]["Enums"]["currency_code"]
+          default_language?: string
+          display_tax_label: string
+          enforce_88_ending?: boolean
+          inclusive_of_tax: boolean
+          market_code: Database["public"]["Enums"]["market_code"]
+          shipping_available?: boolean
+          updated_at?: string
+          updated_by_user_id?: string | null
+        }
+        Update: {
+          currency_code?: Database["public"]["Enums"]["currency_code"]
+          default_language?: string
+          display_tax_label?: string
+          enforce_88_ending?: boolean
+          inclusive_of_tax?: boolean
+          market_code?: Database["public"]["Enums"]["market_code"]
+          shipping_available?: boolean
+          updated_at?: string
+          updated_by_user_id?: string | null
+        }
+        Relationships: []
+      }
+      international_refunds: {
+        Row: {
+          fx_rate_at_refund: number
+          order_id: string
+          original_purchase_currency: Database["public"]["Enums"]["currency_code"]
+          refund_amount_cents: number
+          refund_id: string
+          refund_reason: string | null
+          refunded_at: string
+          refunded_by_user_id: string | null
+          status: string
+          stripe_refund_id: string
+          usd_equivalent_cents_at_refund: number
+        }
+        Insert: {
+          fx_rate_at_refund: number
+          order_id: string
+          original_purchase_currency: Database["public"]["Enums"]["currency_code"]
+          refund_amount_cents: number
+          refund_id?: string
+          refund_reason?: string | null
+          refunded_at?: string
+          refunded_by_user_id?: string | null
+          status?: string
+          stripe_refund_id: string
+          usd_equivalent_cents_at_refund: number
+        }
+        Update: {
+          fx_rate_at_refund?: number
+          order_id?: string
+          original_purchase_currency?: Database["public"]["Enums"]["currency_code"]
+          refund_amount_cents?: number
+          refund_id?: string
+          refund_reason?: string | null
+          refunded_at?: string
+          refunded_by_user_id?: string | null
+          status?: string
+          stripe_refund_id?: string
+          usd_equivalent_cents_at_refund?: number
+        }
+        Relationships: []
+      }
+      international_settlement_daily_reports: {
+        Row: {
+          discrepancy_flag: boolean
+          generated_at: string
+          per_currency_json: Json
+          report_date: string
+          report_id: string
+          total_fx_spread_impact_cents: number
+          total_usd_settled_cents: number
+        }
+        Insert: {
+          discrepancy_flag?: boolean
+          generated_at?: string
+          per_currency_json: Json
+          report_date: string
+          report_id?: string
+          total_fx_spread_impact_cents: number
+          total_usd_settled_cents: number
+        }
+        Update: {
+          discrepancy_flag?: boolean
+          generated_at?: string
+          per_currency_json?: Json
+          report_date?: string
+          report_id?: string
+          total_fx_spread_impact_cents?: number
+          total_usd_settled_cents?: number
+        }
+        Relationships: []
+      }
+      international_tax_registrations: {
+        Row: {
+          compliance_contact_email: string
+          compliance_contact_phone: string | null
+          created_at: string
+          effective_date: string
+          expiration_date: string | null
+          jurisdiction_code: string
+          next_renewal_statement_due: string | null
+          notes: string | null
+          registered_entity_name: string
+          registration_certificate_sha256: string | null
+          registration_certificate_vault_ref: string | null
+          registration_id: string
+          registration_number: string
+          registration_type: string
+          status: Database["public"]["Enums"]["tax_registration_status"]
+          stripe_tax_registration_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          compliance_contact_email: string
+          compliance_contact_phone?: string | null
+          created_at?: string
+          effective_date: string
+          expiration_date?: string | null
+          jurisdiction_code: string
+          next_renewal_statement_due?: string | null
+          notes?: string | null
+          registered_entity_name: string
+          registration_certificate_sha256?: string | null
+          registration_certificate_vault_ref?: string | null
+          registration_id?: string
+          registration_number: string
+          registration_type: string
+          status?: Database["public"]["Enums"]["tax_registration_status"]
+          stripe_tax_registration_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          compliance_contact_email?: string
+          compliance_contact_phone?: string | null
+          created_at?: string
+          effective_date?: string
+          expiration_date?: string | null
+          jurisdiction_code?: string
+          next_renewal_statement_due?: string | null
+          notes?: string | null
+          registered_entity_name?: string
+          registration_certificate_sha256?: string | null
+          registration_certificate_vault_ref?: string | null
+          registration_id?: string
+          registration_number?: string
+          registration_type?: string
+          status?: Database["public"]["Enums"]["tax_registration_status"]
+          stripe_tax_registration_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      international_vat_invoice_sequences: {
+        Row: {
+          current_value: number
+          last_issued_at: string | null
+          prefix: string
+          sequence_name: string
+          updated_at: string
+        }
+        Insert: {
+          current_value?: number
+          last_issued_at?: string | null
+          prefix?: string
+          sequence_name: string
+          updated_at?: string
+        }
+        Update: {
+          current_value?: number
+          last_issued_at?: string | null
+          prefix?: string
+          sequence_name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      international_vat_invoices: {
+        Row: {
+          created_at: string
+          currency_code: Database["public"]["Enums"]["currency_code"]
+          customer_address: string
+          customer_name: string
+          customer_vat_number: string | null
+          customer_vat_validated: boolean | null
+          gross_amount_cents: number
+          invoice_id: string
+          invoice_number: string
+          invoice_pdf_sha256: string | null
+          invoice_pdf_vault_ref: string | null
+          issue_date: string
+          jurisdiction_code: string
+          net_amount_cents: number
+          order_id: string
+          reverse_charge_applied: boolean
+          status: Database["public"]["Enums"]["vat_invoice_status"]
+          superseded_by_invoice_id: string | null
+          supplier_vat_number: string
+          supply_date: string
+          vat_amount_cents: number
+          vat_rate_pct: number
+          voided_reason: string | null
+        }
+        Insert: {
+          created_at?: string
+          currency_code: Database["public"]["Enums"]["currency_code"]
+          customer_address: string
+          customer_name: string
+          customer_vat_number?: string | null
+          customer_vat_validated?: boolean | null
+          gross_amount_cents: number
+          invoice_id?: string
+          invoice_number: string
+          invoice_pdf_sha256?: string | null
+          invoice_pdf_vault_ref?: string | null
+          issue_date?: string
+          jurisdiction_code: string
+          net_amount_cents: number
+          order_id: string
+          reverse_charge_applied?: boolean
+          status?: Database["public"]["Enums"]["vat_invoice_status"]
+          superseded_by_invoice_id?: string | null
+          supplier_vat_number: string
+          supply_date: string
+          vat_amount_cents: number
+          vat_rate_pct: number
+          voided_reason?: string | null
+        }
+        Update: {
+          created_at?: string
+          currency_code?: Database["public"]["Enums"]["currency_code"]
+          customer_address?: string
+          customer_name?: string
+          customer_vat_number?: string | null
+          customer_vat_validated?: boolean | null
+          gross_amount_cents?: number
+          invoice_id?: string
+          invoice_number?: string
+          invoice_pdf_sha256?: string | null
+          invoice_pdf_vault_ref?: string | null
+          issue_date?: string
+          jurisdiction_code?: string
+          net_amount_cents?: number
+          order_id?: string
+          reverse_charge_applied?: boolean
+          status?: Database["public"]["Enums"]["vat_invoice_status"]
+          superseded_by_invoice_id?: string | null
+          supplier_vat_number?: string
+          supply_date?: string
+          vat_amount_cents?: number
+          vat_rate_pct?: number
+          voided_reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "international_vat_invoices_superseded_by_invoice_id_fkey"
+            columns: ["superseded_by_invoice_id"]
+            isOneToOne: false
+            referencedRelation: "international_vat_invoices"
+            referencedColumns: ["invoice_id"]
+          },
+        ]
+      }
+      international_vat_number_validations: {
+        Row: {
+          jurisdiction_code: string
+          order_id: string | null
+          validated_at: string
+          validation_id: string
+          validation_response_raw: Json | null
+          validation_result: string
+          validation_service: string
+          vat_number: string
+        }
+        Insert: {
+          jurisdiction_code: string
+          order_id?: string | null
+          validated_at?: string
+          validation_id?: string
+          validation_response_raw?: Json | null
+          validation_result: string
+          validation_service: string
+          vat_number: string
+        }
+        Update: {
+          jurisdiction_code?: string
+          order_id?: string | null
+          validated_at?: string
+          validation_id?: string
+          validation_response_raw?: Json | null
+          validation_result?: string
+          validation_service?: string
+          vat_number?: string
+        }
+        Relationships: []
+      }
       inventory_reorder: {
         Row: {
           annual_demand: number
@@ -5519,6 +7287,63 @@ export type Database = {
         }
         Relationships: []
       }
+      kpi_library: {
+        Row: {
+          comparison_kpi_ids: string[]
+          computation_type: string
+          created_at: string
+          definition_md: string
+          direction_of_good: string
+          display_format: string
+          display_name: string
+          kpi_id: string
+          owner_role: string
+          source_prompt: string
+          source_query_sha256: string
+          source_table: string
+          status: string
+          unit: string
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          comparison_kpi_ids?: string[]
+          computation_type: string
+          created_at?: string
+          definition_md: string
+          direction_of_good: string
+          display_format: string
+          display_name: string
+          kpi_id: string
+          owner_role: string
+          source_prompt: string
+          source_query_sha256: string
+          source_table: string
+          status?: string
+          unit: string
+          updated_at?: string
+          version: number
+        }
+        Update: {
+          comparison_kpi_ids?: string[]
+          computation_type?: string
+          created_at?: string
+          definition_md?: string
+          direction_of_good?: string
+          display_format?: string
+          display_name?: string
+          kpi_id?: string
+          owner_role?: string
+          source_prompt?: string
+          source_query_sha256?: string
+          source_table?: string
+          status?: string
+          unit?: string
+          updated_at?: string
+          version?: number
+        }
+        Relationships: []
+      }
       launch_phases: {
         Row: {
           activation_status: string
@@ -5648,8 +7473,1108 @@ export type Database = {
             foreignKeyName: "level_4_enrollments_practitioner_id_fkey"
             columns: ["practitioner_id"]
             isOneToOne: true
+            referencedRelation: "practitioner_engagement_summary_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "level_4_enrollments_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: true
+            referencedRelation: "practitioner_practice_health_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "level_4_enrollments_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: true
+            referencedRelation: "practitioner_protocol_effectiveness_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "level_4_enrollments_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: true
             referencedRelation: "practitioners"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "level_4_enrollments_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: true
+            referencedRelation: "v_practitioner_engagement_summary"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "level_4_enrollments_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: true
+            referencedRelation: "v_practitioner_practice_health"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "level_4_enrollments_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: true
+            referencedRelation: "v_practitioner_protocol_effectiveness"
+            referencedColumns: ["practitioner_id"]
+          },
+        ]
+      }
+      level_4_parameters: {
+        Row: {
+          admin_fee_on_refund_cents: number
+          development_fee_cents: number
+          expedited_surcharge_percent: number
+          id: string
+          manufacturing_overhead_percent: number
+          markup_percent: number
+          medical_review_fee_cents: number
+          minimum_order_value_cents: number
+          moq_per_formulation: number
+          packaging_labor_percent: number
+          qa_qc_percent: number
+          updated_at: string
+        }
+        Insert: {
+          admin_fee_on_refund_cents?: number
+          development_fee_cents?: number
+          expedited_surcharge_percent?: number
+          id?: string
+          manufacturing_overhead_percent?: number
+          markup_percent?: number
+          medical_review_fee_cents?: number
+          minimum_order_value_cents?: number
+          moq_per_formulation?: number
+          packaging_labor_percent?: number
+          qa_qc_percent?: number
+          updated_at?: string
+        }
+        Update: {
+          admin_fee_on_refund_cents?: number
+          development_fee_cents?: number
+          expedited_surcharge_percent?: number
+          id?: string
+          manufacturing_overhead_percent?: number
+          markup_percent?: number
+          medical_review_fee_cents?: number
+          minimum_order_value_cents?: number
+          moq_per_formulation?: number
+          packaging_labor_percent?: number
+          qa_qc_percent?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      manual_customers: {
+        Row: {
+          created_at: string
+          display_name: string
+          id_verification_doc_path: string
+          manual_customer_id: string
+          practitioner_id: string
+          relationship_notes: string | null
+          verified_by_admin_at: string | null
+          verified_by_admin_user: string | null
+        }
+        Insert: {
+          created_at?: string
+          display_name: string
+          id_verification_doc_path: string
+          manual_customer_id?: string
+          practitioner_id: string
+          relationship_notes?: string | null
+          verified_by_admin_at?: string | null
+          verified_by_admin_user?: string | null
+        }
+        Update: {
+          created_at?: string
+          display_name?: string
+          id_verification_doc_path?: string
+          manual_customer_id?: string
+          practitioner_id?: string
+          relationship_notes?: string | null
+          verified_by_admin_at?: string | null
+          verified_by_admin_user?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "manual_customers_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_engagement_summary_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "manual_customers_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_practice_health_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "manual_customers_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_protocol_effectiveness_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "manual_customers_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "manual_customers_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_engagement_summary"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "manual_customers_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_practice_health"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "manual_customers_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_protocol_effectiveness"
+            referencedColumns: ["practitioner_id"]
+          },
+        ]
+      }
+      map_compliance_scores: {
+        Row: {
+          black_violations_90d: number
+          calculated_at: string
+          calculated_date: string
+          days_since_last_violation: number
+          map_compliance_tier: string
+          orange_violations_90d: number
+          practitioner_id: string
+          red_violations_90d: number
+          score: number
+          score_id: string
+          self_reported_remediations: number
+          yellow_violations_90d: number
+        }
+        Insert: {
+          black_violations_90d?: number
+          calculated_at?: string
+          calculated_date?: string
+          days_since_last_violation?: number
+          map_compliance_tier: string
+          orange_violations_90d?: number
+          practitioner_id: string
+          red_violations_90d?: number
+          score: number
+          score_id?: string
+          self_reported_remediations?: number
+          yellow_violations_90d?: number
+        }
+        Update: {
+          black_violations_90d?: number
+          calculated_at?: string
+          calculated_date?: string
+          days_since_last_violation?: number
+          map_compliance_tier?: string
+          orange_violations_90d?: number
+          practitioner_id?: string
+          red_violations_90d?: number
+          score?: number
+          score_id?: string
+          self_reported_remediations?: number
+          yellow_violations_90d?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "map_compliance_scores_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_engagement_summary_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "map_compliance_scores_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_practice_health_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "map_compliance_scores_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_protocol_effectiveness_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "map_compliance_scores_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "map_compliance_scores_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_engagement_summary"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "map_compliance_scores_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_practice_health"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "map_compliance_scores_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_protocol_effectiveness"
+            referencedColumns: ["practitioner_id"]
+          },
+        ]
+      }
+      map_policies: {
+        Row: {
+          created_at: string
+          ingredient_cost_floor_cents: number
+          map_enforcement_start_date: string
+          map_exemption_window_end: string | null
+          map_exemption_window_start: string | null
+          map_minimum_discount_pct_allowed: number
+          map_price_cents: number
+          map_published_url: string | null
+          msrp_cents: number
+          policy_id: string
+          product_id: string
+          tier: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          ingredient_cost_floor_cents: number
+          map_enforcement_start_date: string
+          map_exemption_window_end?: string | null
+          map_exemption_window_start?: string | null
+          map_minimum_discount_pct_allowed?: number
+          map_price_cents: number
+          map_published_url?: string | null
+          msrp_cents: number
+          policy_id?: string
+          product_id: string
+          tier: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          ingredient_cost_floor_cents?: number
+          map_enforcement_start_date?: string
+          map_exemption_window_end?: string | null
+          map_exemption_window_start?: string | null
+          map_minimum_discount_pct_allowed?: number
+          map_price_cents?: number
+          map_published_url?: string | null
+          msrp_cents?: number
+          policy_id?: string
+          product_id?: string
+          tier?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "map_policies_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      map_policy_change_log: {
+        Row: {
+          admin_2fa_verified_at: string
+          change_id: string
+          change_type: string
+          changed_by: string
+          created_at: string
+          justification: string
+          new_value: Json
+          policy_id: string
+          previous_value: Json | null
+        }
+        Insert: {
+          admin_2fa_verified_at: string
+          change_id?: string
+          change_type: string
+          changed_by: string
+          created_at?: string
+          justification: string
+          new_value: Json
+          policy_id: string
+          previous_value?: Json | null
+        }
+        Update: {
+          admin_2fa_verified_at?: string
+          change_id?: string
+          change_type?: string
+          changed_by?: string
+          created_at?: string
+          justification?: string
+          new_value?: Json
+          policy_id?: string
+          previous_value?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "map_policy_change_log_policy_id_fkey"
+            columns: ["policy_id"]
+            isOneToOne: false
+            referencedRelation: "map_policies"
+            referencedColumns: ["policy_id"]
+          },
+        ]
+      }
+      map_price_observations: {
+        Row: {
+          created_at: string
+          flash_sale_ends_at: string | null
+          is_flash_sale: boolean
+          observation_id: string
+          observed_at: string
+          observed_price_cents: number
+          observer_confidence: number
+          parser_version: string
+          phase: number
+          post_context_storage_path: string | null
+          practitioner_confidence: number | null
+          practitioner_id: string | null
+          product_id: string
+          raw_html_storage_path: string | null
+          screenshot_storage_path: string | null
+          source: string
+          source_url: string
+        }
+        Insert: {
+          created_at?: string
+          flash_sale_ends_at?: string | null
+          is_flash_sale?: boolean
+          observation_id?: string
+          observed_at?: string
+          observed_price_cents: number
+          observer_confidence: number
+          parser_version: string
+          phase?: number
+          post_context_storage_path?: string | null
+          practitioner_confidence?: number | null
+          practitioner_id?: string | null
+          product_id: string
+          raw_html_storage_path?: string | null
+          screenshot_storage_path?: string | null
+          source: string
+          source_url: string
+        }
+        Update: {
+          created_at?: string
+          flash_sale_ends_at?: string | null
+          is_flash_sale?: boolean
+          observation_id?: string
+          observed_at?: string
+          observed_price_cents?: number
+          observer_confidence?: number
+          parser_version?: string
+          phase?: number
+          post_context_storage_path?: string | null
+          practitioner_confidence?: number | null
+          practitioner_id?: string | null
+          product_id?: string
+          raw_html_storage_path?: string | null
+          screenshot_storage_path?: string | null
+          source?: string
+          source_url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "map_price_observations_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_engagement_summary_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "map_price_observations_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_practice_health_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "map_price_observations_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_protocol_effectiveness_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "map_price_observations_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "map_price_observations_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_engagement_summary"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "map_price_observations_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_practice_health"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "map_price_observations_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_protocol_effectiveness"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "map_price_observations_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      map_remediation_evidence: {
+        Row: {
+          created_at: string
+          evidence_id: string
+          practitioner_id: string
+          practitioner_notes: string | null
+          scanned_price_cents: number | null
+          screenshot_storage_path: string
+          url_scanned: string
+          verified_at: string | null
+          verified_by_system: boolean
+          violation_id: string
+        }
+        Insert: {
+          created_at?: string
+          evidence_id?: string
+          practitioner_id: string
+          practitioner_notes?: string | null
+          scanned_price_cents?: number | null
+          screenshot_storage_path: string
+          url_scanned: string
+          verified_at?: string | null
+          verified_by_system?: boolean
+          violation_id: string
+        }
+        Update: {
+          created_at?: string
+          evidence_id?: string
+          practitioner_id?: string
+          practitioner_notes?: string | null
+          scanned_price_cents?: number | null
+          screenshot_storage_path?: string
+          url_scanned?: string
+          verified_at?: string | null
+          verified_by_system?: boolean
+          violation_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "map_remediation_evidence_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_engagement_summary_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "map_remediation_evidence_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_practice_health_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "map_remediation_evidence_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_protocol_effectiveness_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "map_remediation_evidence_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "map_remediation_evidence_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_engagement_summary"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "map_remediation_evidence_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_practice_health"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "map_remediation_evidence_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_protocol_effectiveness"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "map_remediation_evidence_violation_id_fkey"
+            columns: ["violation_id"]
+            isOneToOne: false
+            referencedRelation: "map_violations"
+            referencedColumns: ["violation_id"]
+          },
+        ]
+      }
+      map_violations: {
+        Row: {
+          acknowledged_at: string | null
+          created_at: string
+          discount_pct_below_map: number
+          dismissal_reason: string | null
+          dismissed_at: string | null
+          escalated_at: string | null
+          grace_period_ends_at: string
+          map_price_cents: number
+          notified_at: string | null
+          observation_id: string
+          observed_price_cents: number
+          policy_id: string
+          practitioner_id: string | null
+          product_id: string
+          remediated_at: string | null
+          remediation_deadline_at: string
+          severity: string
+          source_url: string | null
+          status: string
+          updated_at: string
+          violation_id: string
+        }
+        Insert: {
+          acknowledged_at?: string | null
+          created_at?: string
+          discount_pct_below_map: number
+          dismissal_reason?: string | null
+          dismissed_at?: string | null
+          escalated_at?: string | null
+          grace_period_ends_at: string
+          map_price_cents: number
+          notified_at?: string | null
+          observation_id: string
+          observed_price_cents: number
+          policy_id: string
+          practitioner_id?: string | null
+          product_id: string
+          remediated_at?: string | null
+          remediation_deadline_at: string
+          severity: string
+          source_url?: string | null
+          status?: string
+          updated_at?: string
+          violation_id?: string
+        }
+        Update: {
+          acknowledged_at?: string | null
+          created_at?: string
+          discount_pct_below_map?: number
+          dismissal_reason?: string | null
+          dismissed_at?: string | null
+          escalated_at?: string | null
+          grace_period_ends_at?: string
+          map_price_cents?: number
+          notified_at?: string | null
+          observation_id?: string
+          observed_price_cents?: number
+          policy_id?: string
+          practitioner_id?: string | null
+          product_id?: string
+          remediated_at?: string | null
+          remediation_deadline_at?: string
+          severity?: string
+          source_url?: string | null
+          status?: string
+          updated_at?: string
+          violation_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "map_violations_observation_id_fkey"
+            columns: ["observation_id"]
+            isOneToOne: false
+            referencedRelation: "map_price_observations"
+            referencedColumns: ["observation_id"]
+          },
+          {
+            foreignKeyName: "map_violations_policy_id_fkey"
+            columns: ["policy_id"]
+            isOneToOne: false
+            referencedRelation: "map_policies"
+            referencedColumns: ["policy_id"]
+          },
+          {
+            foreignKeyName: "map_violations_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_engagement_summary_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "map_violations_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_practice_health_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "map_violations_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_protocol_effectiveness_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "map_violations_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "map_violations_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_engagement_summary"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "map_violations_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_practice_health"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "map_violations_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_protocol_effectiveness"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "map_violations_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      map_vip_exemption_sensitive_notes: {
+        Row: {
+          content_hash: string
+          created_at: string
+          created_by: string
+          encrypted_content: string
+          note_id: string
+          vip_exemption_id: string
+        }
+        Insert: {
+          content_hash: string
+          created_at?: string
+          created_by: string
+          encrypted_content: string
+          note_id?: string
+          vip_exemption_id: string
+        }
+        Update: {
+          content_hash?: string
+          created_at?: string
+          created_by?: string
+          encrypted_content?: string
+          note_id?: string
+          vip_exemption_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "map_vip_exemption_sensitive_notes_vip_exemption_id_fkey"
+            columns: ["vip_exemption_id"]
+            isOneToOne: false
+            referencedRelation: "map_vip_exemptions"
+            referencedColumns: ["vip_exemption_id"]
+          },
+        ]
+      }
+      map_vip_exemptions: {
+        Row: {
+          auto_expiry_at: string
+          created_at: string
+          customer_client_id: string | null
+          customer_verification_doc_path: string | null
+          exempted_price_cents: number
+          exemption_end_at: string
+          exemption_start_at: string
+          ingredient_cost_floor_cents: number
+          last_order_at: string | null
+          manual_customer_id: string | null
+          practitioner_id: string
+          product_id: string
+          reason: Database["public"]["Enums"]["map_vip_exemption_reason"]
+          requested_by: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          revocation_reason: string | null
+          revoked_at: string | null
+          revoked_by: string | null
+          status: Database["public"]["Enums"]["map_vip_exemption_status"]
+          tier: string
+          updated_at: string
+          vip_exemption_id: string
+        }
+        Insert: {
+          auto_expiry_at?: string
+          created_at?: string
+          customer_client_id?: string | null
+          customer_verification_doc_path?: string | null
+          exempted_price_cents: number
+          exemption_end_at: string
+          exemption_start_at?: string
+          ingredient_cost_floor_cents: number
+          last_order_at?: string | null
+          manual_customer_id?: string | null
+          practitioner_id: string
+          product_id: string
+          reason: Database["public"]["Enums"]["map_vip_exemption_reason"]
+          requested_by: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          revocation_reason?: string | null
+          revoked_at?: string | null
+          revoked_by?: string | null
+          status?: Database["public"]["Enums"]["map_vip_exemption_status"]
+          tier: string
+          updated_at?: string
+          vip_exemption_id?: string
+        }
+        Update: {
+          auto_expiry_at?: string
+          created_at?: string
+          customer_client_id?: string | null
+          customer_verification_doc_path?: string | null
+          exempted_price_cents?: number
+          exemption_end_at?: string
+          exemption_start_at?: string
+          ingredient_cost_floor_cents?: number
+          last_order_at?: string | null
+          manual_customer_id?: string | null
+          practitioner_id?: string
+          product_id?: string
+          reason?: Database["public"]["Enums"]["map_vip_exemption_reason"]
+          requested_by?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          revocation_reason?: string | null
+          revoked_at?: string | null
+          revoked_by?: string | null
+          status?: Database["public"]["Enums"]["map_vip_exemption_status"]
+          tier?: string
+          updated_at?: string
+          vip_exemption_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "map_vip_exemptions_manual_customer_id_fkey"
+            columns: ["manual_customer_id"]
+            isOneToOne: false
+            referencedRelation: "manual_customers"
+            referencedColumns: ["manual_customer_id"]
+          },
+          {
+            foreignKeyName: "map_vip_exemptions_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_engagement_summary_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "map_vip_exemptions_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_practice_health_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "map_vip_exemptions_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_protocol_effectiveness_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "map_vip_exemptions_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "map_vip_exemptions_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_engagement_summary"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "map_vip_exemptions_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_practice_health"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "map_vip_exemptions_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_protocol_effectiveness"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "map_vip_exemptions_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      map_waiver_evidence: {
+        Row: {
+          evidence_id: string
+          evidence_type: string
+          storage_path: string
+          uploaded_at: string
+          uploaded_by: string
+          waiver_id: string
+        }
+        Insert: {
+          evidence_id?: string
+          evidence_type: string
+          storage_path: string
+          uploaded_at?: string
+          uploaded_by: string
+          waiver_id: string
+        }
+        Update: {
+          evidence_id?: string
+          evidence_type?: string
+          storage_path?: string
+          uploaded_at?: string
+          uploaded_by?: string
+          waiver_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "map_waiver_evidence_waiver_id_fkey"
+            columns: ["waiver_id"]
+            isOneToOne: false
+            referencedRelation: "map_waivers"
+            referencedColumns: ["waiver_id"]
+          },
+        ]
+      }
+      map_waiver_skus: {
+        Row: {
+          created_at: string
+          ingredient_cost_floor_cents: number
+          product_id: string
+          tier: string
+          waived_price_cents: number
+          waiver_id: string
+          waiver_sku_id: string
+        }
+        Insert: {
+          created_at?: string
+          ingredient_cost_floor_cents: number
+          product_id: string
+          tier: string
+          waived_price_cents: number
+          waiver_id: string
+          waiver_sku_id?: string
+        }
+        Update: {
+          created_at?: string
+          ingredient_cost_floor_cents?: number
+          product_id?: string
+          tier?: string
+          waived_price_cents?: number
+          waiver_id?: string
+          waiver_sku_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "map_waiver_skus_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "map_waiver_skus_waiver_id_fkey"
+            columns: ["waiver_id"]
+            isOneToOne: false
+            referencedRelation: "map_waivers"
+            referencedColumns: ["waiver_id"]
+          },
+        ]
+      }
+      map_waivers: {
+        Row: {
+          created_at: string
+          justification: string
+          practitioner_id: string
+          rejection_reason: string | null
+          requested_by: string
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          revocation_reason: string | null
+          revoked_at: string | null
+          revoked_by: string | null
+          scope_description: string
+          scope_physical_locations: Json | null
+          scope_urls: Json
+          status: Database["public"]["Enums"]["map_waiver_status"]
+          updated_at: string
+          waiver_end_at: string
+          waiver_id: string
+          waiver_start_at: string
+          waiver_type: Database["public"]["Enums"]["map_waiver_type"]
+        }
+        Insert: {
+          created_at?: string
+          justification: string
+          practitioner_id: string
+          rejection_reason?: string | null
+          requested_by: string
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          revocation_reason?: string | null
+          revoked_at?: string | null
+          revoked_by?: string | null
+          scope_description: string
+          scope_physical_locations?: Json | null
+          scope_urls?: Json
+          status?: Database["public"]["Enums"]["map_waiver_status"]
+          updated_at?: string
+          waiver_end_at: string
+          waiver_id?: string
+          waiver_start_at: string
+          waiver_type: Database["public"]["Enums"]["map_waiver_type"]
+        }
+        Update: {
+          created_at?: string
+          justification?: string
+          practitioner_id?: string
+          rejection_reason?: string | null
+          requested_by?: string
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          revocation_reason?: string | null
+          revoked_at?: string | null
+          revoked_by?: string | null
+          scope_description?: string
+          scope_physical_locations?: Json | null
+          scope_urls?: Json
+          status?: Database["public"]["Enums"]["map_waiver_status"]
+          updated_at?: string
+          waiver_end_at?: string
+          waiver_id?: string
+          waiver_start_at?: string
+          waiver_type?: Database["public"]["Enums"]["map_waiver_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "map_waivers_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_engagement_summary_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "map_waivers_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_practice_health_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "map_waivers_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_protocol_effectiveness_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "map_waivers_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "map_waivers_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_engagement_summary"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "map_waivers_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_practice_health"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "map_waivers_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_protocol_effectiveness"
+            referencedColumns: ["practitioner_id"]
           },
         ]
       }
@@ -5769,6 +8694,78 @@ export type Database = {
           updated_at?: string | null
           wholesale?: number
           ws_margin?: number
+        }
+        Relationships: []
+      }
+      master_skus_market_pricing: {
+        Row: {
+          created_at: string
+          currency_code: Database["public"]["Enums"]["currency_code"]
+          effective_from: string | null
+          effective_until: string | null
+          governance_rejection_reason: string | null
+          inclusive_of_tax: boolean
+          is_available_in_market: boolean
+          margin_floor_met_at_msrp: boolean | null
+          market_availability_default_reasoning: string | null
+          market_code: Database["public"]["Enums"]["market_code"]
+          msrp_cents: number
+          price_approved_at: string | null
+          price_approved_by_user_id: string | null
+          price_set_at: string | null
+          price_set_by_user_id: string | null
+          pricing_id: string
+          sku: string
+          status: Database["public"]["Enums"]["pricing_status"]
+          tax_code: string
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          created_at?: string
+          currency_code: Database["public"]["Enums"]["currency_code"]
+          effective_from?: string | null
+          effective_until?: string | null
+          governance_rejection_reason?: string | null
+          inclusive_of_tax?: boolean
+          is_available_in_market?: boolean
+          margin_floor_met_at_msrp?: boolean | null
+          market_availability_default_reasoning?: string | null
+          market_code: Database["public"]["Enums"]["market_code"]
+          msrp_cents: number
+          price_approved_at?: string | null
+          price_approved_by_user_id?: string | null
+          price_set_at?: string | null
+          price_set_by_user_id?: string | null
+          pricing_id?: string
+          sku: string
+          status?: Database["public"]["Enums"]["pricing_status"]
+          tax_code: string
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          created_at?: string
+          currency_code?: Database["public"]["Enums"]["currency_code"]
+          effective_from?: string | null
+          effective_until?: string | null
+          governance_rejection_reason?: string | null
+          inclusive_of_tax?: boolean
+          is_available_in_market?: boolean
+          margin_floor_met_at_msrp?: boolean | null
+          market_availability_default_reasoning?: string | null
+          market_code?: Database["public"]["Enums"]["market_code"]
+          msrp_cents?: number
+          price_approved_at?: string | null
+          price_approved_by_user_id?: string | null
+          price_set_at?: string | null
+          price_set_by_user_id?: string | null
+          pricing_id?: string
+          sku?: string
+          status?: Database["public"]["Enums"]["pricing_status"]
+          tax_code?: string
+          updated_at?: string
+          version?: number
         }
         Relationships: []
       }
@@ -6212,6 +9209,547 @@ export type Database = {
         }
         Relationships: []
       }
+      notification_batch_queue: {
+        Row: {
+          context_ref: string
+          defer_reason: string
+          dispatch_digest_id: string | null
+          dispatched_at: string | null
+          event_code: string
+          legal_ops_recipient_id: string | null
+          practitioner_id: string | null
+          priority: Database["public"]["Enums"]["notification_priority"]
+          queue_id: string
+          queued_at: string
+        }
+        Insert: {
+          context_ref: string
+          defer_reason: string
+          dispatch_digest_id?: string | null
+          dispatched_at?: string | null
+          event_code: string
+          legal_ops_recipient_id?: string | null
+          practitioner_id?: string | null
+          priority: Database["public"]["Enums"]["notification_priority"]
+          queue_id?: string
+          queued_at?: string
+        }
+        Update: {
+          context_ref?: string
+          defer_reason?: string
+          dispatch_digest_id?: string | null
+          dispatched_at?: string | null
+          event_code?: string
+          legal_ops_recipient_id?: string | null
+          practitioner_id?: string | null
+          priority?: Database["public"]["Enums"]["notification_priority"]
+          queue_id?: string
+          queued_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_batch_queue_event_code_fkey"
+            columns: ["event_code"]
+            isOneToOne: false
+            referencedRelation: "notification_event_registry"
+            referencedColumns: ["event_code"]
+          },
+          {
+            foreignKeyName: "notification_batch_queue_legal_ops_recipient_id_fkey"
+            columns: ["legal_ops_recipient_id"]
+            isOneToOne: false
+            referencedRelation: "notification_legal_ops_recipients"
+            referencedColumns: ["recipient_id"]
+          },
+        ]
+      }
+      notification_channel_credentials: {
+        Row: {
+          apns_device_tokens: Json
+          created_at: string
+          credential_id: string
+          fcm_device_tokens: Json
+          is_legal_ops: boolean
+          practitioner_id: string
+          push_subscriptions: Json
+          slack_access_token_vault_ref: string | null
+          slack_default_channel_id: string | null
+          slack_installed_at: string | null
+          slack_is_dm: boolean | null
+          slack_workspace_id: string | null
+          slack_workspace_name: string | null
+          sms_opt_in_completed_at: string | null
+          sms_opt_in_verification_sid: string | null
+          sms_pending_verification_code: string | null
+          sms_phone_number: string | null
+          sms_verification_sent_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          apns_device_tokens?: Json
+          created_at?: string
+          credential_id?: string
+          fcm_device_tokens?: Json
+          is_legal_ops?: boolean
+          practitioner_id: string
+          push_subscriptions?: Json
+          slack_access_token_vault_ref?: string | null
+          slack_default_channel_id?: string | null
+          slack_installed_at?: string | null
+          slack_is_dm?: boolean | null
+          slack_workspace_id?: string | null
+          slack_workspace_name?: string | null
+          sms_opt_in_completed_at?: string | null
+          sms_opt_in_verification_sid?: string | null
+          sms_pending_verification_code?: string | null
+          sms_phone_number?: string | null
+          sms_verification_sent_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          apns_device_tokens?: Json
+          created_at?: string
+          credential_id?: string
+          fcm_device_tokens?: Json
+          is_legal_ops?: boolean
+          practitioner_id?: string
+          push_subscriptions?: Json
+          slack_access_token_vault_ref?: string | null
+          slack_default_channel_id?: string | null
+          slack_installed_at?: string | null
+          slack_is_dm?: boolean | null
+          slack_workspace_id?: string | null
+          slack_workspace_name?: string | null
+          sms_opt_in_completed_at?: string | null
+          sms_opt_in_verification_sid?: string | null
+          sms_pending_verification_code?: string | null
+          sms_phone_number?: string | null
+          sms_verification_sent_at?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      notification_event_registry: {
+        Row: {
+          attorney_work_product: boolean
+          created_at: string
+          deep_link_path_template: string | null
+          default_channels: Database["public"]["Enums"]["notification_channel"][]
+          default_enabled: boolean
+          default_priority: Database["public"]["Enums"]["notification_priority"]
+          description: string
+          display_name: string
+          emission_source: string | null
+          event_code: string
+          external_body_template: string
+          in_app_body_template: string | null
+          legal_ops_scope: boolean
+          organizational_compliance_required: boolean
+          phi_redaction_rules: Json
+          push_body_template: string | null
+          push_title_template: string | null
+          rate_limit_override: number | null
+          reemission_allowed: boolean
+          slack_blocks_template: Json | null
+          sms_body_template: string | null
+          source_prompt: string | null
+          updated_at: string
+        }
+        Insert: {
+          attorney_work_product?: boolean
+          created_at?: string
+          deep_link_path_template?: string | null
+          default_channels?: Database["public"]["Enums"]["notification_channel"][]
+          default_enabled?: boolean
+          default_priority?: Database["public"]["Enums"]["notification_priority"]
+          description: string
+          display_name: string
+          emission_source?: string | null
+          event_code: string
+          external_body_template: string
+          in_app_body_template?: string | null
+          legal_ops_scope?: boolean
+          organizational_compliance_required?: boolean
+          phi_redaction_rules?: Json
+          push_body_template?: string | null
+          push_title_template?: string | null
+          rate_limit_override?: number | null
+          reemission_allowed?: boolean
+          slack_blocks_template?: Json | null
+          sms_body_template?: string | null
+          source_prompt?: string | null
+          updated_at?: string
+        }
+        Update: {
+          attorney_work_product?: boolean
+          created_at?: string
+          deep_link_path_template?: string | null
+          default_channels?: Database["public"]["Enums"]["notification_channel"][]
+          default_enabled?: boolean
+          default_priority?: Database["public"]["Enums"]["notification_priority"]
+          description?: string
+          display_name?: string
+          emission_source?: string | null
+          event_code?: string
+          external_body_template?: string
+          in_app_body_template?: string | null
+          legal_ops_scope?: boolean
+          organizational_compliance_required?: boolean
+          phi_redaction_rules?: Json
+          push_body_template?: string | null
+          push_title_template?: string | null
+          rate_limit_override?: number | null
+          reemission_allowed?: boolean
+          slack_blocks_template?: Json | null
+          sms_body_template?: string | null
+          source_prompt?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      notification_events_inbox: {
+        Row: {
+          context_data: Json
+          context_ref: string
+          emitted_at: string
+          event_code: string
+          inbox_id: string
+          last_error: string | null
+          legal_ops: boolean
+          practitioner_ids: string[]
+          priority_override:
+            | Database["public"]["Enums"]["notification_priority"]
+            | null
+          processed_at: string | null
+          processing_attempts: number
+          processing_started_at: string | null
+          source_prompt_of_emitter: string | null
+        }
+        Insert: {
+          context_data?: Json
+          context_ref: string
+          emitted_at?: string
+          event_code: string
+          inbox_id?: string
+          last_error?: string | null
+          legal_ops?: boolean
+          practitioner_ids?: string[]
+          priority_override?:
+            | Database["public"]["Enums"]["notification_priority"]
+            | null
+          processed_at?: string | null
+          processing_attempts?: number
+          processing_started_at?: string | null
+          source_prompt_of_emitter?: string | null
+        }
+        Update: {
+          context_data?: Json
+          context_ref?: string
+          emitted_at?: string
+          event_code?: string
+          inbox_id?: string
+          last_error?: string | null
+          legal_ops?: boolean
+          practitioner_ids?: string[]
+          priority_override?:
+            | Database["public"]["Enums"]["notification_priority"]
+            | null
+          processed_at?: string | null
+          processing_attempts?: number
+          processing_started_at?: string | null
+          source_prompt_of_emitter?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_events_inbox_event_code_fkey"
+            columns: ["event_code"]
+            isOneToOne: false
+            referencedRelation: "notification_event_registry"
+            referencedColumns: ["event_code"]
+          },
+        ]
+      }
+      notification_legal_ops_preferences: {
+        Row: {
+          created_at: string
+          email_enabled: boolean
+          event_code: string
+          in_app_enabled: boolean
+          opt_out_cosigned_at: string | null
+          opt_out_cosigned_by_user_id: string | null
+          opt_out_pending: boolean
+          opt_out_reason: string | null
+          opt_out_requested_at: string | null
+          preference_id: string
+          priority_override:
+            | Database["public"]["Enums"]["notification_priority"]
+            | null
+          push_enabled: boolean
+          recipient_id: string
+          slack_enabled: boolean
+          sms_enabled: boolean
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email_enabled?: boolean
+          event_code: string
+          in_app_enabled?: boolean
+          opt_out_cosigned_at?: string | null
+          opt_out_cosigned_by_user_id?: string | null
+          opt_out_pending?: boolean
+          opt_out_reason?: string | null
+          opt_out_requested_at?: string | null
+          preference_id?: string
+          priority_override?:
+            | Database["public"]["Enums"]["notification_priority"]
+            | null
+          push_enabled?: boolean
+          recipient_id: string
+          slack_enabled?: boolean
+          sms_enabled?: boolean
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email_enabled?: boolean
+          event_code?: string
+          in_app_enabled?: boolean
+          opt_out_cosigned_at?: string | null
+          opt_out_cosigned_by_user_id?: string | null
+          opt_out_pending?: boolean
+          opt_out_reason?: string | null
+          opt_out_requested_at?: string | null
+          preference_id?: string
+          priority_override?:
+            | Database["public"]["Enums"]["notification_priority"]
+            | null
+          push_enabled?: boolean
+          recipient_id?: string
+          slack_enabled?: boolean
+          sms_enabled?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_legal_ops_preferences_event_code_fkey"
+            columns: ["event_code"]
+            isOneToOne: false
+            referencedRelation: "notification_event_registry"
+            referencedColumns: ["event_code"]
+          },
+          {
+            foreignKeyName: "notification_legal_ops_preferences_recipient_id_fkey"
+            columns: ["recipient_id"]
+            isOneToOne: false
+            referencedRelation: "notification_legal_ops_recipients"
+            referencedColumns: ["recipient_id"]
+          },
+        ]
+      }
+      notification_legal_ops_recipients: {
+        Row: {
+          created_at: string
+          designated_alternate_user_id: string | null
+          designation_notes: string | null
+          effective_from: string
+          recipient_id: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          designated_alternate_user_id?: string | null
+          designation_notes?: string | null
+          effective_from?: string
+          recipient_id?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          designated_alternate_user_id?: string | null
+          designation_notes?: string | null
+          effective_from?: string
+          recipient_id?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      notification_phi_redaction_failures: {
+        Row: {
+          body_attempted: string
+          channel: Database["public"]["Enums"]["notification_channel"]
+          event_code: string
+          failure_id: string
+          intended_recipient: string | null
+          occurred_at: string
+          resolution_notes: string | null
+          resolved_at: string | null
+          resolved_by_user_id: string | null
+          template_version: string | null
+          violations_json: Json
+        }
+        Insert: {
+          body_attempted: string
+          channel: Database["public"]["Enums"]["notification_channel"]
+          event_code: string
+          failure_id?: string
+          intended_recipient?: string | null
+          occurred_at?: string
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by_user_id?: string | null
+          template_version?: string | null
+          violations_json: Json
+        }
+        Update: {
+          body_attempted?: string
+          channel?: Database["public"]["Enums"]["notification_channel"]
+          event_code?: string
+          failure_id?: string
+          intended_recipient?: string | null
+          occurred_at?: string
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by_user_id?: string | null
+          template_version?: string | null
+          violations_json?: Json
+        }
+        Relationships: []
+      }
+      notification_preferences: {
+        Row: {
+          created_at: string
+          email_enabled: boolean
+          event_code: string
+          in_app_enabled: boolean
+          practitioner_id: string
+          preference_id: string
+          priority_override:
+            | Database["public"]["Enums"]["notification_priority"]
+            | null
+          push_enabled: boolean
+          slack_enabled: boolean
+          sms_enabled: boolean
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email_enabled?: boolean
+          event_code: string
+          in_app_enabled?: boolean
+          practitioner_id: string
+          preference_id?: string
+          priority_override?:
+            | Database["public"]["Enums"]["notification_priority"]
+            | null
+          push_enabled?: boolean
+          slack_enabled?: boolean
+          sms_enabled?: boolean
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email_enabled?: boolean
+          event_code?: string
+          in_app_enabled?: boolean
+          practitioner_id?: string
+          preference_id?: string
+          priority_override?:
+            | Database["public"]["Enums"]["notification_priority"]
+            | null
+          push_enabled?: boolean
+          slack_enabled?: boolean
+          sms_enabled?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_preferences_event_code_fkey"
+            columns: ["event_code"]
+            isOneToOne: false
+            referencedRelation: "notification_event_registry"
+            referencedColumns: ["event_code"]
+          },
+        ]
+      }
+      notification_quiet_hours: {
+        Row: {
+          active: boolean
+          created_at: string
+          day_of_week: number
+          end_local_time: string
+          practitioner_id: string
+          quiet_hours_id: string
+          start_local_time: string
+          timezone: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          day_of_week: number
+          end_local_time: string
+          practitioner_id: string
+          quiet_hours_id?: string
+          start_local_time: string
+          timezone?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          day_of_week?: number
+          end_local_time?: string
+          practitioner_id?: string
+          quiet_hours_id?: string
+          start_local_time?: string
+          timezone?: string
+        }
+        Relationships: []
+      }
+      notification_sms_opt_in_log: {
+        Row: {
+          action: string
+          ip_address: unknown
+          log_id: string
+          message_body_sent: string | null
+          message_sid: string | null
+          occurred_at: string
+          phone_number: string
+          practitioner_id: string
+          reply_body: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          action: string
+          ip_address?: unknown
+          log_id?: string
+          message_body_sent?: string | null
+          message_sid?: string | null
+          occurred_at?: string
+          phone_number: string
+          practitioner_id: string
+          reply_body?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          action?: string
+          ip_address?: unknown
+          log_id?: string
+          message_body_sent?: string | null
+          message_sid?: string | null
+          occurred_at?: string
+          phone_number?: string
+          practitioner_id?: string
+          reply_body?: string | null
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string | null
@@ -6250,6 +9788,170 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications_dispatched: {
+        Row: {
+          attorney_work_product_bypass: boolean
+          carrier_message_id: string | null
+          channel: Database["public"]["Enums"]["notification_channel"]
+          context_ref: string | null
+          delivery_receipt_json: Json | null
+          delivery_status: string
+          dispatch_id: string
+          dispatcher_version: string | null
+          event_code: string
+          external_body_rendered: string | null
+          inbox_id: string | null
+          legal_ops_recipient_id: string | null
+          occurred_at: string
+          phi_redaction_result: Json | null
+          priority_resolved:
+            | Database["public"]["Enums"]["notification_priority"]
+            | null
+          recipient_practitioner_id: string | null
+          retry_count: number
+        }
+        Insert: {
+          attorney_work_product_bypass?: boolean
+          carrier_message_id?: string | null
+          channel: Database["public"]["Enums"]["notification_channel"]
+          context_ref?: string | null
+          delivery_receipt_json?: Json | null
+          delivery_status: string
+          dispatch_id?: string
+          dispatcher_version?: string | null
+          event_code: string
+          external_body_rendered?: string | null
+          inbox_id?: string | null
+          legal_ops_recipient_id?: string | null
+          occurred_at?: string
+          phi_redaction_result?: Json | null
+          priority_resolved?:
+            | Database["public"]["Enums"]["notification_priority"]
+            | null
+          recipient_practitioner_id?: string | null
+          retry_count?: number
+        }
+        Update: {
+          attorney_work_product_bypass?: boolean
+          carrier_message_id?: string | null
+          channel?: Database["public"]["Enums"]["notification_channel"]
+          context_ref?: string | null
+          delivery_receipt_json?: Json | null
+          delivery_status?: string
+          dispatch_id?: string
+          dispatcher_version?: string | null
+          event_code?: string
+          external_body_rendered?: string | null
+          inbox_id?: string | null
+          legal_ops_recipient_id?: string | null
+          occurred_at?: string
+          phi_redaction_result?: Json | null
+          priority_resolved?:
+            | Database["public"]["Enums"]["notification_priority"]
+            | null
+          recipient_practitioner_id?: string | null
+          retry_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_dispatched_inbox_id_fkey"
+            columns: ["inbox_id"]
+            isOneToOne: false
+            referencedRelation: "notification_events_inbox"
+            referencedColumns: ["inbox_id"]
+          },
+          {
+            foreignKeyName: "notifications_dispatched_legal_ops_recipient_id_fkey"
+            columns: ["legal_ops_recipient_id"]
+            isOneToOne: false
+            referencedRelation: "notification_legal_ops_recipients"
+            referencedColumns: ["recipient_id"]
+          },
+        ]
+      }
+      order_currency_details: {
+        Row: {
+          b2b_customer: boolean
+          created_at: string
+          currency_code: Database["public"]["Enums"]["currency_code"]
+          customer_vat_number: string | null
+          customer_vat_validated_at: string | null
+          customer_vat_validation_status: string | null
+          detail_id: string
+          discount_cents: number
+          fx_rate_date: string
+          fx_rate_source: string
+          fx_rate_to_usd_at_order_time: number
+          inclusive_of_tax: boolean
+          market_code: Database["public"]["Enums"]["market_code"]
+          order_id: string
+          reverse_charge_applied: boolean
+          shipping_cents: number
+          stripe_payment_intent_id: string | null
+          stripe_tax_calculation_id: string | null
+          subtotal_cents: number
+          tax_cents: number
+          total_cents: number
+          vat_invoice_id: string | null
+        }
+        Insert: {
+          b2b_customer?: boolean
+          created_at?: string
+          currency_code: Database["public"]["Enums"]["currency_code"]
+          customer_vat_number?: string | null
+          customer_vat_validated_at?: string | null
+          customer_vat_validation_status?: string | null
+          detail_id?: string
+          discount_cents?: number
+          fx_rate_date: string
+          fx_rate_source: string
+          fx_rate_to_usd_at_order_time: number
+          inclusive_of_tax: boolean
+          market_code: Database["public"]["Enums"]["market_code"]
+          order_id: string
+          reverse_charge_applied?: boolean
+          shipping_cents?: number
+          stripe_payment_intent_id?: string | null
+          stripe_tax_calculation_id?: string | null
+          subtotal_cents: number
+          tax_cents?: number
+          total_cents: number
+          vat_invoice_id?: string | null
+        }
+        Update: {
+          b2b_customer?: boolean
+          created_at?: string
+          currency_code?: Database["public"]["Enums"]["currency_code"]
+          customer_vat_number?: string | null
+          customer_vat_validated_at?: string | null
+          customer_vat_validation_status?: string | null
+          detail_id?: string
+          discount_cents?: number
+          fx_rate_date?: string
+          fx_rate_source?: string
+          fx_rate_to_usd_at_order_time?: number
+          inclusive_of_tax?: boolean
+          market_code?: Database["public"]["Enums"]["market_code"]
+          order_id?: string
+          reverse_charge_applied?: boolean
+          shipping_cents?: number
+          stripe_payment_intent_id?: string | null
+          stripe_tax_calculation_id?: string | null
+          subtotal_cents?: number
+          tax_cents?: number
+          total_cents?: number
+          vat_invoice_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_currency_details_vat_invoice_id_fkey"
+            columns: ["vat_invoice_id"]
+            isOneToOne: false
+            referencedRelation: "international_vat_invoices"
+            referencedColumns: ["invoice_id"]
           },
         ]
       }
@@ -6468,8 +10170,433 @@ export type Database = {
             foreignKeyName: "patient_practitioner_relationships_practitioner_id_fkey"
             columns: ["practitioner_id"]
             isOneToOne: false
+            referencedRelation: "practitioner_engagement_summary_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "patient_practitioner_relationships_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_practice_health_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "patient_practitioner_relationships_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_protocol_effectiveness_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "patient_practitioner_relationships_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
             referencedRelation: "practitioners"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_practitioner_relationships_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_engagement_summary"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "patient_practitioner_relationships_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_practice_health"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "patient_practitioner_relationships_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_protocol_effectiveness"
+            referencedColumns: ["practitioner_id"]
+          },
+        ]
+      }
+      payout_batch_lines: {
+        Row: {
+          batch_id: string
+          created_at: string
+          failed_reason: string | null
+          hold_reason: string | null
+          line_id: string
+          net_payable_cents: number
+          paid_at: string | null
+          payout_method_id: string | null
+          practitioner_id: string
+          rail_used: Database["public"]["Enums"]["payout_rail"] | null
+          reconciliation_run_id: string
+          status: string
+          transaction_reference: string | null
+          updated_at: string
+        }
+        Insert: {
+          batch_id: string
+          created_at?: string
+          failed_reason?: string | null
+          hold_reason?: string | null
+          line_id?: string
+          net_payable_cents: number
+          paid_at?: string | null
+          payout_method_id?: string | null
+          practitioner_id: string
+          rail_used?: Database["public"]["Enums"]["payout_rail"] | null
+          reconciliation_run_id: string
+          status?: string
+          transaction_reference?: string | null
+          updated_at?: string
+        }
+        Update: {
+          batch_id?: string
+          created_at?: string
+          failed_reason?: string | null
+          hold_reason?: string | null
+          line_id?: string
+          net_payable_cents?: number
+          paid_at?: string | null
+          payout_method_id?: string | null
+          practitioner_id?: string
+          rail_used?: Database["public"]["Enums"]["payout_rail"] | null
+          reconciliation_run_id?: string
+          status?: string
+          transaction_reference?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payout_batch_lines_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "payout_batches"
+            referencedColumns: ["batch_id"]
+          },
+          {
+            foreignKeyName: "payout_batch_lines_payout_method_id_fkey"
+            columns: ["payout_method_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_payout_methods"
+            referencedColumns: ["method_id"]
+          },
+          {
+            foreignKeyName: "payout_batch_lines_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_engagement_summary_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "payout_batch_lines_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_practice_health_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "payout_batch_lines_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_protocol_effectiveness_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "payout_batch_lines_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payout_batch_lines_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_engagement_summary"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "payout_batch_lines_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_practice_health"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "payout_batch_lines_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_protocol_effectiveness"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "payout_batch_lines_reconciliation_run_id_fkey"
+            columns: ["reconciliation_run_id"]
+            isOneToOne: false
+            referencedRelation: "commission_reconciliation_runs"
+            referencedColumns: ["run_id"]
+          },
+        ]
+      }
+      payout_batches: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          batch_id: string
+          batch_label: string
+          completed_at: string | null
+          created_at: string
+          created_by: string
+          executed_at: string | null
+          period_end: string
+          period_start: string
+          status: string
+          total_held_cents: number
+          total_held_count: number
+          total_lines_count: number
+          total_payout_cents: number
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          batch_id?: string
+          batch_label: string
+          completed_at?: string | null
+          created_at?: string
+          created_by: string
+          executed_at?: string | null
+          period_end: string
+          period_start: string
+          status?: string
+          total_held_cents?: number
+          total_held_count?: number
+          total_lines_count?: number
+          total_payout_cents?: number
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          batch_id?: string
+          batch_label?: string
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string
+          executed_at?: string | null
+          period_end?: string
+          period_start?: string
+          status?: string
+          total_held_cents?: number
+          total_held_count?: number
+          total_lines_count?: number
+          total_payout_cents?: number
+        }
+        Relationships: []
+      }
+      payout_disputes: {
+        Row: {
+          created_at: string
+          dispute_id: string
+          dispute_reason: string
+          practitioner_explanation: string
+          practitioner_id: string
+          reconciliation_line_id: string
+          resolution_notes: string | null
+          resolved_amount_cents: number | null
+          resolved_at: string | null
+          reviewer_id: string | null
+          status: string
+          supporting_docs_paths: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          dispute_id?: string
+          dispute_reason: string
+          practitioner_explanation: string
+          practitioner_id: string
+          reconciliation_line_id: string
+          resolution_notes?: string | null
+          resolved_amount_cents?: number | null
+          resolved_at?: string | null
+          reviewer_id?: string | null
+          status?: string
+          supporting_docs_paths?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          dispute_id?: string
+          dispute_reason?: string
+          practitioner_explanation?: string
+          practitioner_id?: string
+          reconciliation_line_id?: string
+          resolution_notes?: string | null
+          resolved_amount_cents?: number | null
+          resolved_at?: string | null
+          reviewer_id?: string | null
+          status?: string
+          supporting_docs_paths?: string[] | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payout_disputes_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_engagement_summary_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "payout_disputes_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_practice_health_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "payout_disputes_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_protocol_effectiveness_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "payout_disputes_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payout_disputes_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_engagement_summary"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "payout_disputes_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_practice_health"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "payout_disputes_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_protocol_effectiveness"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "payout_disputes_reconciliation_line_id_fkey"
+            columns: ["reconciliation_line_id"]
+            isOneToOne: false
+            referencedRelation: "commission_reconciliation_lines"
+            referencedColumns: ["line_id"]
+          },
+        ]
+      }
+      payout_transactions: {
+        Row: {
+          amount_cents: number
+          batch_line_id: string
+          currency: string
+          external_response_json: Json | null
+          external_status: string | null
+          external_transaction_id: string
+          fee_cents: number | null
+          initiated_at: string
+          practitioner_id: string
+          rail: Database["public"]["Enums"]["payout_rail"]
+          settled_at: string | null
+          txn_id: string
+        }
+        Insert: {
+          amount_cents: number
+          batch_line_id: string
+          currency?: string
+          external_response_json?: Json | null
+          external_status?: string | null
+          external_transaction_id: string
+          fee_cents?: number | null
+          initiated_at?: string
+          practitioner_id: string
+          rail: Database["public"]["Enums"]["payout_rail"]
+          settled_at?: string | null
+          txn_id?: string
+        }
+        Update: {
+          amount_cents?: number
+          batch_line_id?: string
+          currency?: string
+          external_response_json?: Json | null
+          external_status?: string | null
+          external_transaction_id?: string
+          fee_cents?: number | null
+          initiated_at?: string
+          practitioner_id?: string
+          rail?: Database["public"]["Enums"]["payout_rail"]
+          settled_at?: string | null
+          txn_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payout_transactions_batch_line_id_fkey"
+            columns: ["batch_line_id"]
+            isOneToOne: false
+            referencedRelation: "payout_batch_lines"
+            referencedColumns: ["line_id"]
+          },
+          {
+            foreignKeyName: "payout_transactions_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_engagement_summary_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "payout_transactions_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_practice_health_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "payout_transactions_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_protocol_effectiveness_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "payout_transactions_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payout_transactions_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_engagement_summary"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "payout_transactions_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_practice_health"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "payout_transactions_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_protocol_effectiveness"
+            referencedColumns: ["practitioner_id"]
           },
         ]
       }
@@ -7080,6 +11207,515 @@ export type Database = {
         }
         Relationships: []
       }
+      practitioner_operations_audit_log: {
+        Row: {
+          action_category: string
+          action_verb: string
+          actor_role: string | null
+          actor_user_id: string | null
+          after_state_json: Json | null
+          audit_id: string
+          before_state_json: Json | null
+          context_json: Json | null
+          ip_address: unknown
+          occurred_at: string
+          practitioner_id: string | null
+          target_id: string | null
+          target_table: string
+          user_agent: string | null
+        }
+        Insert: {
+          action_category: string
+          action_verb: string
+          actor_role?: string | null
+          actor_user_id?: string | null
+          after_state_json?: Json | null
+          audit_id?: string
+          before_state_json?: Json | null
+          context_json?: Json | null
+          ip_address?: unknown
+          occurred_at?: string
+          practitioner_id?: string | null
+          target_id?: string | null
+          target_table: string
+          user_agent?: string | null
+        }
+        Update: {
+          action_category?: string
+          action_verb?: string
+          actor_role?: string | null
+          actor_user_id?: string | null
+          after_state_json?: Json | null
+          audit_id?: string
+          before_state_json?: Json | null
+          context_json?: Json | null
+          ip_address?: unknown
+          occurred_at?: string
+          practitioner_id?: string | null
+          target_id?: string | null
+          target_table?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "practitioner_operations_audit_log_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_engagement_summary_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "practitioner_operations_audit_log_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_practice_health_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "practitioner_operations_audit_log_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_protocol_effectiveness_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "practitioner_operations_audit_log_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "practitioner_operations_audit_log_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_engagement_summary"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "practitioner_operations_audit_log_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_practice_health"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "practitioner_operations_audit_log_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_protocol_effectiveness"
+            referencedColumns: ["practitioner_id"]
+          },
+        ]
+      }
+      practitioner_payout_methods: {
+        Row: {
+          created_at: string
+          display_label: string
+          last_used_at: string | null
+          metadata_json: Json
+          method_id: string
+          paypal_email: string | null
+          practitioner_id: string
+          priority: number
+          rail: Database["public"]["Enums"]["payout_rail"]
+          status: Database["public"]["Enums"]["payout_method_status"]
+          stripe_connect_account_id: string | null
+          updated_at: string
+          verified_at: string | null
+          wire_instructions_vault_ref: string | null
+        }
+        Insert: {
+          created_at?: string
+          display_label: string
+          last_used_at?: string | null
+          metadata_json?: Json
+          method_id?: string
+          paypal_email?: string | null
+          practitioner_id: string
+          priority?: number
+          rail: Database["public"]["Enums"]["payout_rail"]
+          status?: Database["public"]["Enums"]["payout_method_status"]
+          stripe_connect_account_id?: string | null
+          updated_at?: string
+          verified_at?: string | null
+          wire_instructions_vault_ref?: string | null
+        }
+        Update: {
+          created_at?: string
+          display_label?: string
+          last_used_at?: string | null
+          metadata_json?: Json
+          method_id?: string
+          paypal_email?: string | null
+          practitioner_id?: string
+          priority?: number
+          rail?: Database["public"]["Enums"]["payout_rail"]
+          status?: Database["public"]["Enums"]["payout_method_status"]
+          stripe_connect_account_id?: string | null
+          updated_at?: string
+          verified_at?: string | null
+          wire_instructions_vault_ref?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "practitioner_payout_methods_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_engagement_summary_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "practitioner_payout_methods_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_practice_health_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "practitioner_payout_methods_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_protocol_effectiveness_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "practitioner_payout_methods_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "practitioner_payout_methods_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_engagement_summary"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "practitioner_payout_methods_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_practice_health"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "practitioner_payout_methods_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_protocol_effectiveness"
+            referencedColumns: ["practitioner_id"]
+          },
+        ]
+      }
+      practitioner_statements: {
+        Row: {
+          emailed_at: string | null
+          generated_at: string
+          net_payable_cents: number
+          payout_transaction_id: string | null
+          period_end: string
+          period_start: string
+          practitioner_id: string
+          statement_id: string
+          storage_path: string
+          template_version: string
+          ytd_paid_cents: number
+        }
+        Insert: {
+          emailed_at?: string | null
+          generated_at?: string
+          net_payable_cents: number
+          payout_transaction_id?: string | null
+          period_end: string
+          period_start: string
+          practitioner_id: string
+          statement_id?: string
+          storage_path: string
+          template_version: string
+          ytd_paid_cents: number
+        }
+        Update: {
+          emailed_at?: string | null
+          generated_at?: string
+          net_payable_cents?: number
+          payout_transaction_id?: string | null
+          period_end?: string
+          period_start?: string
+          practitioner_id?: string
+          statement_id?: string
+          storage_path?: string
+          template_version?: string
+          ytd_paid_cents?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "practitioner_statements_payout_transaction_id_fkey"
+            columns: ["payout_transaction_id"]
+            isOneToOne: false
+            referencedRelation: "payout_transactions"
+            referencedColumns: ["txn_id"]
+          },
+          {
+            foreignKeyName: "practitioner_statements_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_engagement_summary_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "practitioner_statements_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_practice_health_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "practitioner_statements_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_protocol_effectiveness_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "practitioner_statements_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "practitioner_statements_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_engagement_summary"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "practitioner_statements_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_practice_health"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "practitioner_statements_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_protocol_effectiveness"
+            referencedColumns: ["practitioner_id"]
+          },
+        ]
+      }
+      practitioner_tax_documents: {
+        Row: {
+          country_of_residence: string
+          created_at: string
+          encrypted_pii_vault_ref: string
+          expires_at: string | null
+          form_type: Database["public"]["Enums"]["tax_form_type"]
+          legal_name_redacted: string | null
+          practitioner_id: string
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewer_id: string | null
+          status: Database["public"]["Enums"]["tax_info_status"]
+          storage_path: string
+          submitted_at: string | null
+          tax_doc_id: string
+        }
+        Insert: {
+          country_of_residence: string
+          created_at?: string
+          encrypted_pii_vault_ref: string
+          expires_at?: string | null
+          form_type: Database["public"]["Enums"]["tax_form_type"]
+          legal_name_redacted?: string | null
+          practitioner_id: string
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewer_id?: string | null
+          status?: Database["public"]["Enums"]["tax_info_status"]
+          storage_path: string
+          submitted_at?: string | null
+          tax_doc_id?: string
+        }
+        Update: {
+          country_of_residence?: string
+          created_at?: string
+          encrypted_pii_vault_ref?: string
+          expires_at?: string | null
+          form_type?: Database["public"]["Enums"]["tax_form_type"]
+          legal_name_redacted?: string | null
+          practitioner_id?: string
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewer_id?: string | null
+          status?: Database["public"]["Enums"]["tax_info_status"]
+          storage_path?: string
+          submitted_at?: string | null
+          tax_doc_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "practitioner_tax_documents_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_engagement_summary_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "practitioner_tax_documents_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_practice_health_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "practitioner_tax_documents_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_protocol_effectiveness_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "practitioner_tax_documents_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "practitioner_tax_documents_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_engagement_summary"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "practitioner_tax_documents_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_practice_health"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "practitioner_tax_documents_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_protocol_effectiveness"
+            referencedColumns: ["practitioner_id"]
+          },
+        ]
+      }
+      practitioner_verified_channels: {
+        Row: {
+          channel_display_name: string
+          channel_id: string
+          channel_type: Database["public"]["Enums"]["channel_type"]
+          channel_url: string
+          created_at: string
+          metadata_json: Json
+          notes: string | null
+          oauth_token_vault_ref: string | null
+          practitioner_id: string
+          re_verify_due_at: string | null
+          state: Database["public"]["Enums"]["channel_state"]
+          updated_at: string
+          verification_method:
+            | Database["public"]["Enums"]["verification_method"]
+            | null
+          verified_at: string | null
+        }
+        Insert: {
+          channel_display_name: string
+          channel_id?: string
+          channel_type: Database["public"]["Enums"]["channel_type"]
+          channel_url: string
+          created_at?: string
+          metadata_json?: Json
+          notes?: string | null
+          oauth_token_vault_ref?: string | null
+          practitioner_id: string
+          re_verify_due_at?: string | null
+          state?: Database["public"]["Enums"]["channel_state"]
+          updated_at?: string
+          verification_method?:
+            | Database["public"]["Enums"]["verification_method"]
+            | null
+          verified_at?: string | null
+        }
+        Update: {
+          channel_display_name?: string
+          channel_id?: string
+          channel_type?: Database["public"]["Enums"]["channel_type"]
+          channel_url?: string
+          created_at?: string
+          metadata_json?: Json
+          notes?: string | null
+          oauth_token_vault_ref?: string | null
+          practitioner_id?: string
+          re_verify_due_at?: string | null
+          state?: Database["public"]["Enums"]["channel_state"]
+          updated_at?: string
+          verification_method?:
+            | Database["public"]["Enums"]["verification_method"]
+            | null
+          verified_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "practitioner_verified_channels_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_engagement_summary_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "practitioner_verified_channels_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_practice_health_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "practitioner_verified_channels_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_protocol_effectiveness_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "practitioner_verified_channels_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "practitioner_verified_channels_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_engagement_summary"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "practitioner_verified_channels_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_practice_health"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "practitioner_verified_channels_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_protocol_effectiveness"
+            referencedColumns: ["practitioner_id"]
+          },
+        ]
+      }
       practitioners: {
         Row: {
           created_at: string
@@ -7543,6 +12179,7 @@ export type Database = {
           image_url: string | null
           name: string
           price: number
+          pricing_tier: string
           short_name: string
           sku: string
         }
@@ -7555,6 +12192,7 @@ export type Database = {
           image_url?: string | null
           name: string
           price?: number
+          pricing_tier?: string
           short_name: string
           sku: string
         }
@@ -7567,8 +12205,51 @@ export type Database = {
           image_url?: string | null
           name?: string
           price?: number
+          pricing_tier?: string
           short_name?: string
           sku?: string
+        }
+        Relationships: []
+      }
+      products_image_audit: {
+        Row: {
+          applied_at: string
+          applied_by: string
+          id: string
+          match_confidence: string
+          match_source: string
+          new_image_url: string
+          previous_image_url: string | null
+          product_id: string | null
+          run_id: string | null
+          sku: string
+          variant_id: string | null
+        }
+        Insert: {
+          applied_at?: string
+          applied_by?: string
+          id?: string
+          match_confidence: string
+          match_source: string
+          new_image_url: string
+          previous_image_url?: string | null
+          product_id?: string | null
+          run_id?: string | null
+          sku: string
+          variant_id?: string | null
+        }
+        Update: {
+          applied_at?: string
+          applied_by?: string
+          id?: string
+          match_confidence?: string
+          match_source?: string
+          new_image_url?: string
+          previous_image_url?: string | null
+          product_id?: string | null
+          run_id?: string | null
+          sku?: string
+          variant_id?: string | null
         }
         Relationships: []
       }
@@ -8271,6 +12952,570 @@ export type Database = {
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "product_catalog_enriched"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      regulatory_alerts: {
+        Row: {
+          action_required: string | null
+          created_at: string
+          effective_date: string
+          id: string
+          ingredients_affected: string[]
+          kelsey_severity: number | null
+          kelsey_triaged_at: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          skus_affected: string[]
+          source: string
+          summary: string | null
+          title: string
+          url: string
+        }
+        Insert: {
+          action_required?: string | null
+          created_at?: string
+          effective_date: string
+          id?: string
+          ingredients_affected?: string[]
+          kelsey_severity?: number | null
+          kelsey_triaged_at?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          skus_affected?: string[]
+          source: string
+          summary?: string | null
+          title: string
+          url: string
+        }
+        Update: {
+          action_required?: string | null
+          created_at?: string
+          effective_date?: string
+          id?: string
+          ingredients_affected?: string[]
+          kelsey_severity?: number | null
+          kelsey_triaged_at?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          skus_affected?: string[]
+          source?: string
+          summary?: string | null
+          title?: string
+          url?: string
+        }
+        Relationships: []
+      }
+      regulatory_audit_log: {
+        Row: {
+          action: string
+          actor_id: string | null
+          actor_role: string | null
+          after_value: Json | null
+          before_value: Json | null
+          created_at: string
+          id: number
+          ip_address: unknown
+          jurisdiction_id: string | null
+          justification: string | null
+          target_id: string | null
+          target_type: string
+          user_agent: string | null
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          actor_role?: string | null
+          after_value?: Json | null
+          before_value?: Json | null
+          created_at?: string
+          id?: number
+          ip_address?: unknown
+          jurisdiction_id?: string | null
+          justification?: string | null
+          target_id?: string | null
+          target_type: string
+          user_agent?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          actor_role?: string | null
+          after_value?: Json | null
+          before_value?: Json | null
+          created_at?: string
+          id?: number
+          ip_address?: unknown
+          jurisdiction_id?: string | null
+          justification?: string | null
+          target_id?: string | null
+          target_type?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "regulatory_audit_log_jurisdiction_id_fkey"
+            columns: ["jurisdiction_id"]
+            isOneToOne: false
+            referencedRelation: "regulatory_jurisdictions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      regulatory_claim_library: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          claim_hash: string
+          claim_text: string
+          claim_type: string
+          created_at: string
+          dose_condition: string | null
+          id: string
+          ingredient_id: string | null
+          jurisdiction_id: string
+          kelsey_rationale: string | null
+          kelsey_reviewed_at: string | null
+          kelsey_verdict: string | null
+          retired_at: string | null
+          sku_scope: string[]
+          status: string
+          substantiation_tier: string | null
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          claim_hash: string
+          claim_text: string
+          claim_type: string
+          created_at?: string
+          dose_condition?: string | null
+          id?: string
+          ingredient_id?: string | null
+          jurisdiction_id: string
+          kelsey_rationale?: string | null
+          kelsey_reviewed_at?: string | null
+          kelsey_verdict?: string | null
+          retired_at?: string | null
+          sku_scope?: string[]
+          status: string
+          substantiation_tier?: string | null
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          claim_hash?: string
+          claim_text?: string
+          claim_type?: string
+          created_at?: string
+          dose_condition?: string | null
+          id?: string
+          ingredient_id?: string | null
+          jurisdiction_id?: string
+          kelsey_rationale?: string | null
+          kelsey_reviewed_at?: string | null
+          kelsey_verdict?: string | null
+          retired_at?: string | null
+          sku_scope?: string[]
+          status?: string
+          substantiation_tier?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "regulatory_claim_library_ingredient_id_fkey"
+            columns: ["ingredient_id"]
+            isOneToOne: false
+            referencedRelation: "ingredients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "regulatory_claim_library_jurisdiction_id_fkey"
+            columns: ["jurisdiction_id"]
+            isOneToOne: false
+            referencedRelation: "regulatory_jurisdictions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      regulatory_disclaimer_events: {
+        Row: {
+          displayed: boolean
+          id: number
+          jurisdiction_id: string
+          rendered_at: string
+          suppression_attempt: boolean
+          surface: string
+          surface_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          displayed: boolean
+          id?: number
+          jurisdiction_id: string
+          rendered_at?: string
+          suppression_attempt?: boolean
+          surface: string
+          surface_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          displayed?: boolean
+          id?: number
+          jurisdiction_id?: string
+          rendered_at?: string
+          suppression_attempt?: boolean
+          surface?: string
+          surface_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "regulatory_disclaimer_events_jurisdiction_id_fkey"
+            columns: ["jurisdiction_id"]
+            isOneToOne: false
+            referencedRelation: "regulatory_jurisdictions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      regulatory_disease_dictionary: {
+        Row: {
+          created_at: string
+          icd10_code: string | null
+          id: string
+          jurisdiction_id: string | null
+          notes: string | null
+          severity_level: number
+          term: string
+          variant_group: string | null
+        }
+        Insert: {
+          created_at?: string
+          icd10_code?: string | null
+          id?: string
+          jurisdiction_id?: string | null
+          notes?: string | null
+          severity_level: number
+          term: string
+          variant_group?: string | null
+        }
+        Update: {
+          created_at?: string
+          icd10_code?: string | null
+          id?: string
+          jurisdiction_id?: string | null
+          notes?: string | null
+          severity_level?: number
+          term?: string
+          variant_group?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "regulatory_disease_dictionary_jurisdiction_id_fkey"
+            columns: ["jurisdiction_id"]
+            isOneToOne: false
+            referencedRelation: "regulatory_jurisdictions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      regulatory_ingredients: {
+        Row: {
+          contraindications: Json | null
+          dose_max_mg_day: number | null
+          dose_min_mg_day: number | null
+          dose_unit: string | null
+          id: string
+          ingredient_id: string
+          jurisdiction_id: string
+          last_verified_at: string
+          monograph_ref: string | null
+          ndi_number: string | null
+          ndi_response: string | null
+          ndi_submitted_at: string | null
+          notes: string | null
+          status: string
+          verified_by: string | null
+        }
+        Insert: {
+          contraindications?: Json | null
+          dose_max_mg_day?: number | null
+          dose_min_mg_day?: number | null
+          dose_unit?: string | null
+          id?: string
+          ingredient_id: string
+          jurisdiction_id: string
+          last_verified_at?: string
+          monograph_ref?: string | null
+          ndi_number?: string | null
+          ndi_response?: string | null
+          ndi_submitted_at?: string | null
+          notes?: string | null
+          status: string
+          verified_by?: string | null
+        }
+        Update: {
+          contraindications?: Json | null
+          dose_max_mg_day?: number | null
+          dose_min_mg_day?: number | null
+          dose_unit?: string | null
+          id?: string
+          ingredient_id?: string
+          jurisdiction_id?: string
+          last_verified_at?: string
+          monograph_ref?: string | null
+          ndi_number?: string | null
+          ndi_response?: string | null
+          ndi_submitted_at?: string | null
+          notes?: string | null
+          status?: string
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "regulatory_ingredients_ingredient_id_fkey"
+            columns: ["ingredient_id"]
+            isOneToOne: false
+            referencedRelation: "ingredients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "regulatory_ingredients_jurisdiction_id_fkey"
+            columns: ["jurisdiction_id"]
+            isOneToOne: false
+            referencedRelation: "regulatory_jurisdictions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      regulatory_jurisdictions: {
+        Row: {
+          code: string
+          created_at: string
+          disclaimer_text: string | null
+          id: string
+          is_active: boolean
+          name: string
+          primary_agency: string
+          statute_ref: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          disclaimer_text?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          primary_agency: string
+          statute_ref: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          disclaimer_text?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          primary_agency?: string
+          statute_ref?: string
+        }
+        Relationships: []
+      }
+      regulatory_kelsey_reviews: {
+        Row: {
+          confidence: number | null
+          id: string
+          jurisdiction_id: string
+          rationale: string
+          reviewed_at: string
+          reviewer_model: string
+          rule_references: string[]
+          stage_1_flags: Json
+          stage_2_raw: Json | null
+          subject_id: string
+          subject_text_excerpt: string
+          subject_text_hash: string
+          subject_type: string
+          suggested_rewrite: string | null
+          verdict: string
+        }
+        Insert: {
+          confidence?: number | null
+          id?: string
+          jurisdiction_id: string
+          rationale: string
+          reviewed_at?: string
+          reviewer_model?: string
+          rule_references?: string[]
+          stage_1_flags?: Json
+          stage_2_raw?: Json | null
+          subject_id: string
+          subject_text_excerpt: string
+          subject_text_hash: string
+          subject_type: string
+          suggested_rewrite?: string | null
+          verdict: string
+        }
+        Update: {
+          confidence?: number | null
+          id?: string
+          jurisdiction_id?: string
+          rationale?: string
+          reviewed_at?: string
+          reviewer_model?: string
+          rule_references?: string[]
+          stage_1_flags?: Json
+          stage_2_raw?: Json | null
+          subject_id?: string
+          subject_text_excerpt?: string
+          subject_text_hash?: string
+          subject_type?: string
+          suggested_rewrite?: string | null
+          verdict?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "regulatory_kelsey_reviews_jurisdiction_id_fkey"
+            columns: ["jurisdiction_id"]
+            isOneToOne: false
+            referencedRelation: "regulatory_jurisdictions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      regulatory_peptide_classifications: {
+        Row: {
+          can_make_sf_claims: boolean
+          compliance_class: string
+          id: string
+          injectable_only: boolean
+          rationale: string | null
+          reviewed_at: string
+          reviewed_by: string | null
+          sku_id: string
+        }
+        Insert: {
+          can_make_sf_claims?: boolean
+          compliance_class: string
+          id?: string
+          injectable_only?: boolean
+          rationale?: string | null
+          reviewed_at?: string
+          reviewed_by?: string | null
+          sku_id: string
+        }
+        Update: {
+          can_make_sf_claims?: boolean
+          compliance_class?: string
+          id?: string
+          injectable_only?: boolean
+          rationale?: string | null
+          reviewed_at?: string
+          reviewed_by?: string | null
+          sku_id?: string
+        }
+        Relationships: []
+      }
+      regulatory_sku_jurisdiction_status: {
+        Row: {
+          din_hm: string | null
+          id: string
+          is_saleable: boolean
+          jurisdiction_id: string
+          last_verified_at: string
+          license_class: string | null
+          license_expires_at: string | null
+          license_file_path: string | null
+          license_issued_at: string | null
+          npn: string | null
+          site_license_chain: Json
+          sku_id: string
+        }
+        Insert: {
+          din_hm?: string | null
+          id?: string
+          is_saleable?: boolean
+          jurisdiction_id: string
+          last_verified_at?: string
+          license_class?: string | null
+          license_expires_at?: string | null
+          license_file_path?: string | null
+          license_issued_at?: string | null
+          npn?: string | null
+          site_license_chain?: Json
+          sku_id: string
+        }
+        Update: {
+          din_hm?: string | null
+          id?: string
+          is_saleable?: boolean
+          jurisdiction_id?: string
+          last_verified_at?: string
+          license_class?: string | null
+          license_expires_at?: string | null
+          license_file_path?: string | null
+          license_issued_at?: string | null
+          npn?: string | null
+          site_license_chain?: Json
+          sku_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "regulatory_sku_jurisdiction_status_jurisdiction_id_fkey"
+            columns: ["jurisdiction_id"]
+            isOneToOne: false
+            referencedRelation: "regulatory_jurisdictions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      regulatory_substantiation: {
+        Row: {
+          citation: string
+          claim_id: string
+          doi: string | null
+          evidence_type: string
+          id: string
+          loe_grade: string | null
+          notes: string | null
+          pdf_path: string | null
+          reviewed_at: string
+          reviewed_by: string | null
+          url: string | null
+        }
+        Insert: {
+          citation: string
+          claim_id: string
+          doi?: string | null
+          evidence_type: string
+          id?: string
+          loe_grade?: string | null
+          notes?: string | null
+          pdf_path?: string | null
+          reviewed_at?: string
+          reviewed_by?: string | null
+          url?: string | null
+        }
+        Update: {
+          citation?: string
+          claim_id?: string
+          doi?: string | null
+          evidence_type?: string
+          id?: string
+          loe_grade?: string | null
+          notes?: string | null
+          pdf_path?: string | null
+          reviewed_at?: string
+          reviewed_by?: string | null
+          url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "regulatory_substantiation_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "regulatory_claim_library"
             referencedColumns: ["id"]
           },
         ]
@@ -9236,6 +14481,101 @@ export type Database = {
           },
         ]
       }
+      sherlock_insights_cache: {
+        Row: {
+          body: string
+          confidence: string
+          created_at: string
+          generated_at: string
+          headline: string
+          id: string
+          model_id: string
+          page: string
+          practitioner_id: string
+          prompt_version: string
+          raw_response: Json | null
+          suggested_action: string | null
+        }
+        Insert: {
+          body: string
+          confidence?: string
+          created_at?: string
+          generated_at?: string
+          headline: string
+          id?: string
+          model_id?: string
+          page: string
+          practitioner_id: string
+          prompt_version?: string
+          raw_response?: Json | null
+          suggested_action?: string | null
+        }
+        Update: {
+          body?: string
+          confidence?: string
+          created_at?: string
+          generated_at?: string
+          headline?: string
+          id?: string
+          model_id?: string
+          page?: string
+          practitioner_id?: string
+          prompt_version?: string
+          raw_response?: Json | null
+          suggested_action?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sherlock_insights_cache_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_engagement_summary_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "sherlock_insights_cache_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_practice_health_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "sherlock_insights_cache_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_protocol_effectiveness_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "sherlock_insights_cache_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sherlock_insights_cache_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_engagement_summary"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "sherlock_insights_cache_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_practice_health"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "sherlock_insights_cache_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_protocol_effectiveness"
+            referencedColumns: ["practitioner_id"]
+          },
+        ]
+      }
       sherlock_task_queue: {
         Row: {
           assigned_at: string | null
@@ -9572,6 +14912,99 @@ export type Database = {
           tracking_url?: string | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      shop_refresh_audit_log: {
+        Row: {
+          action_category: string
+          action_verb: string
+          actor_role: string | null
+          actor_user_id: string | null
+          after_state_json: Json | null
+          audit_id: string
+          before_state_json: Json | null
+          context_json: Json | null
+          ip_address: unknown
+          occurred_at: string
+          sku: string | null
+          target_id: string | null
+          target_table: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          action_category: string
+          action_verb: string
+          actor_role?: string | null
+          actor_user_id?: string | null
+          after_state_json?: Json | null
+          audit_id?: string
+          before_state_json?: Json | null
+          context_json?: Json | null
+          ip_address?: unknown
+          occurred_at?: string
+          sku?: string | null
+          target_id?: string | null
+          target_table?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          action_category?: string
+          action_verb?: string
+          actor_role?: string | null
+          actor_user_id?: string | null
+          after_state_json?: Json | null
+          audit_id?: string
+          before_state_json?: Json | null
+          context_json?: Json | null
+          ip_address?: unknown
+          occurred_at?: string
+          sku?: string | null
+          target_id?: string | null
+          target_table?: string | null
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
+      shop_refresh_reconciliation_findings: {
+        Row: {
+          canonical_payload_json: Json | null
+          catalog_payload_json: Json | null
+          created_at: string
+          finding_id: string
+          finding_type: Database["public"]["Enums"]["shop_finding_type"]
+          reconciliation_run_id: string
+          resolution_reason: string | null
+          resolution_status: Database["public"]["Enums"]["shop_finding_resolution"]
+          resolved_at: string | null
+          resolved_by_user_id: string | null
+          sku: string
+        }
+        Insert: {
+          canonical_payload_json?: Json | null
+          catalog_payload_json?: Json | null
+          created_at?: string
+          finding_id?: string
+          finding_type: Database["public"]["Enums"]["shop_finding_type"]
+          reconciliation_run_id: string
+          resolution_reason?: string | null
+          resolution_status?: Database["public"]["Enums"]["shop_finding_resolution"]
+          resolved_at?: string | null
+          resolved_by_user_id?: string | null
+          sku: string
+        }
+        Update: {
+          canonical_payload_json?: Json | null
+          catalog_payload_json?: Json | null
+          created_at?: string
+          finding_id?: string
+          finding_type?: Database["public"]["Enums"]["shop_finding_type"]
+          reconciliation_run_id?: string
+          resolution_reason?: string | null
+          resolution_status?: Database["public"]["Enums"]["shop_finding_resolution"]
+          resolved_at?: string | null
+          resolved_by_user_id?: string | null
+          sku?: string
         }
         Relationships: []
       }
@@ -10048,6 +15481,89 @@ export type Database = {
           requires_genex360_complete?: boolean
           requires_subscription?: boolean
           rule_priority?: number
+        }
+        Relationships: []
+      }
+      supplement_photo_bindings: {
+        Row: {
+          archived_at: string | null
+          binding_id: string
+          bound_at: string
+          bound_by_user_id: string | null
+          inventory_id: string
+          is_primary: boolean
+          sku: string
+          version: number
+        }
+        Insert: {
+          archived_at?: string | null
+          binding_id?: string
+          bound_at?: string
+          bound_by_user_id?: string | null
+          inventory_id: string
+          is_primary?: boolean
+          sku: string
+          version?: number
+        }
+        Update: {
+          archived_at?: string | null
+          binding_id?: string
+          bound_at?: string
+          bound_by_user_id?: string | null
+          inventory_id?: string
+          is_primary?: boolean
+          sku?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supplement_photo_bindings_inventory_id_fkey"
+            columns: ["inventory_id"]
+            isOneToOne: false
+            referencedRelation: "supplement_photo_inventory"
+            referencedColumns: ["inventory_id"]
+          },
+        ]
+      }
+      supplement_photo_inventory: {
+        Row: {
+          bucket_name: string
+          byte_size: number
+          content_type: string
+          deleted_at: string | null
+          first_seen_at: string
+          inventory_id: string
+          last_modified_at: string
+          last_verified_at: string
+          object_path: string
+          scope: Database["public"]["Enums"]["photo_scope"]
+          sha256_hash: string
+        }
+        Insert: {
+          bucket_name?: string
+          byte_size: number
+          content_type: string
+          deleted_at?: string | null
+          first_seen_at?: string
+          inventory_id?: string
+          last_modified_at: string
+          last_verified_at?: string
+          object_path: string
+          scope?: Database["public"]["Enums"]["photo_scope"]
+          sha256_hash: string
+        }
+        Update: {
+          bucket_name?: string
+          byte_size?: number
+          content_type?: string
+          deleted_at?: string | null
+          first_seen_at?: string
+          inventory_id?: string
+          last_modified_at?: string
+          last_verified_at?: string
+          object_path?: string
+          scope?: Database["public"]["Enums"]["photo_scope"]
+          sha256_hash?: string
         }
         Relationships: []
       }
@@ -12517,6 +18033,49 @@ export type Database = {
       }
     }
     Views: {
+      practitioner_engagement_summary_mv: {
+        Row: {
+          avg_engagement_score: number | null
+          clients_high_engagement: number | null
+          clients_low_engagement: number | null
+          clients_medium_engagement: number | null
+          clients_very_high_engagement: number | null
+          clients_with_score: number | null
+          consenting_client_count: number | null
+          p50_engagement_score: number | null
+          p90_engagement_score: number | null
+          practitioner_id: string | null
+          refreshed_at: string | null
+        }
+        Relationships: []
+      }
+      practitioner_practice_health_mv: {
+        Row: {
+          avg_bio_optimization_score: number | null
+          avg_engagement_score: number | null
+          clients_bio_opt_high: number | null
+          clients_bio_opt_low: number | null
+          clients_bio_opt_mid: number | null
+          new_clients_30d: number | null
+          new_clients_90d: number | null
+          practitioner_id: string | null
+          refreshed_at: string | null
+          total_active_clients: number | null
+        }
+        Relationships: []
+      }
+      practitioner_protocol_effectiveness_mv: {
+        Row: {
+          active_client_count: number | null
+          avg_confidence_score: number | null
+          most_recent_assignment: string | null
+          practitioner_id: string | null
+          protocol_name: string | null
+          refreshed_at: string | null
+          total_client_count: number | null
+        }
+        Relationships: []
+      }
       product_catalog_enriched: {
         Row: {
           active: boolean | null
@@ -12571,8 +18130,55 @@ export type Database = {
         }
         Relationships: []
       }
+      v_practitioner_engagement_summary: {
+        Row: {
+          avg_engagement_score: number | null
+          clients_high_engagement: number | null
+          clients_low_engagement: number | null
+          clients_medium_engagement: number | null
+          clients_very_high_engagement: number | null
+          clients_with_score: number | null
+          consenting_client_count: number | null
+          p50_engagement_score: number | null
+          p90_engagement_score: number | null
+          practitioner_id: string | null
+          refreshed_at: string | null
+        }
+        Relationships: []
+      }
+      v_practitioner_practice_health: {
+        Row: {
+          avg_bio_optimization_score: number | null
+          avg_engagement_score: number | null
+          clients_bio_opt_high: number | null
+          clients_bio_opt_low: number | null
+          clients_bio_opt_mid: number | null
+          new_clients_30d: number | null
+          new_clients_90d: number | null
+          practitioner_id: string | null
+          refreshed_at: string | null
+          total_active_clients: number | null
+        }
+        Relationships: []
+      }
+      v_practitioner_protocol_effectiveness: {
+        Row: {
+          active_client_count: number | null
+          avg_confidence_score: number | null
+          most_recent_assignment: string | null
+          practitioner_id: string | null
+          protocol_name: string | null
+          refreshed_at: string | null
+          total_client_count: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      allocate_vat_invoice_number: {
+        Args: { p_sequence_name: string }
+        Returns: string
+      }
       brand_autocomplete: {
         Args: { result_limit?: number; search_query: string }
         Returns: {
@@ -12582,6 +18188,33 @@ export type Database = {
           product_count: number
           tier: number
           tier_label: string
+        }[]
+      }
+      calculate_map_compliance_scores: {
+        Args: never
+        Returns: {
+          rows_written: number
+        }[]
+      }
+      check_active_vip_exemption: {
+        Args: {
+          p_observed_at: string
+          p_practitioner_id: string
+          p_product_id: string
+          p_source_url: string
+        }
+        Returns: boolean
+      }
+      check_active_waiver_for_observation: {
+        Args: {
+          p_observed_at: string
+          p_practitioner_id: string
+          p_product_id: string
+          p_source_url: string
+        }
+        Returns: {
+          waived_price_cents: number
+          waiver_id: string
         }[]
       }
       check_missing_fk_indexes: {
@@ -12643,6 +18276,25 @@ export type Database = {
           initiated_by: string
         }[]
       }
+      classify_map_severity: {
+        Args: {
+          ingredient_floor_cents: number
+          map_cents: number
+          observed_cents: number
+        }
+        Returns: string
+      }
+      create_vip_sensitive_note: {
+        Args: { p_plaintext: string; p_vip_exemption_id: string }
+        Returns: string
+      }
+      current_user_jurisdiction: { Args: never; Returns: string }
+      detect_map_violations: {
+        Args: never
+        Returns: {
+          detected: number
+        }[]
+      }
       enrichment_queue: {
         Args: { batch_limit?: number }
         Returns: {
@@ -12653,6 +18305,17 @@ export type Database = {
           scan_count: number
           tier: number
         }[]
+      }
+      exec_generate_watermark_token: { Args: never; Returns: string }
+      exec_issue_pack: {
+        Args: {
+          p_ceo_user_id: string
+          p_ip_address?: unknown
+          p_pack_id: string
+          p_typed_confirmation: string
+          p_user_agent?: string
+        }
+        Returns: Json
       }
       fuzzy_brand_match: {
         Args: { max_distance?: number; search_term: string }
@@ -12847,6 +18510,7 @@ export type Database = {
           template_id: string
         }[]
       }
+      map_grace_hours: { Args: { severity: string }; Returns: number }
       match_knowledge_chunks: {
         Args: {
           filter_specialty?: string
@@ -12859,6 +18523,18 @@ export type Database = {
           id: string
           metadata: Json
           similarity: number
+        }[]
+      }
+      process_expired_map_grace_periods: {
+        Args: never
+        Returns: {
+          escalated: number
+        }[]
+      }
+      process_reconciliation_for_period: {
+        Args: { p_period_end?: string; p_period_start?: string }
+        Returns: {
+          runs_written: number
         }[]
       }
       product_autocomplete: {
@@ -13132,6 +18808,14 @@ export type Database = {
           share_wellness: boolean
         }[]
       }
+      read_vault_pii: {
+        Args: { p_field: string; p_purpose: string; p_vault_ref: string }
+        Returns: Json
+      }
+      refresh_practitioner_analytics_phase_2a: {
+        Args: never
+        Returns: undefined
+      }
       search_peptides: {
         Args: { result_limit?: number; search_query: string }
         Returns: {
@@ -13337,7 +19021,45 @@ export type Database = {
       waitlist_stats: { Args: never; Returns: Json }
     }
     Enums: {
+      aggregation_period_type:
+        | "monthly"
+        | "quarterly"
+        | "annual"
+        | "trailing_12_months"
+        | "ytd"
+        | "ad_hoc"
+      aggregation_snapshot_state:
+        | "draft"
+        | "computing"
+        | "computed"
+        | "cfo_review"
+        | "cfo_approved"
+        | "locked"
+        | "failed"
       alert_severity: "INFO" | "WARNING" | "ALERT" | "CRITICAL"
+      board_member_role:
+        | "director"
+        | "advisor"
+        | "observer"
+        | "executive"
+        | "auditor"
+      channel_state:
+        | "pending_verification"
+        | "verified"
+        | "verification_lapsed"
+        | "verification_failed"
+        | "volume_flagged"
+        | "suspended"
+      channel_type:
+        | "own_website"
+        | "amazon_storefront"
+        | "etsy_shop"
+        | "shopify_store"
+        | "tiktok_shop"
+        | "physical_clinic_pos"
+        | "wholesale_partner_storefront"
+        | "pop_up_event"
+      currency_code: "USD" | "EUR" | "GBP" | "AUD"
       form_type:
         | "TINCTURE"
         | "ENCAPSULATION"
@@ -13345,10 +19067,101 @@ export type Database = {
         | "TEA"
         | "TOPICAL"
         | "OTHER"
+      map_vip_exemption_reason:
+        | "long_term_patient"
+        | "immediate_family"
+        | "documented_financial_hardship"
+        | "returning_chronic_illness_subscription"
+        | "clinical_trial_compassionate_use"
+        | "other_documented"
+      map_vip_exemption_status:
+        | "pending_approval"
+        | "active"
+        | "expired_auto"
+        | "revoked"
+        | "rejected"
+      map_waiver_status:
+        | "draft"
+        | "pending_approval"
+        | "info_requested"
+        | "active"
+        | "expired"
+        | "revoked"
+        | "rejected"
+      map_waiver_type:
+        | "seasonal_promotion"
+        | "charity_event"
+        | "clinic_in_person_only"
+        | "clinical_study_recruitment"
+        | "new_patient_onboarding"
+      market_code: "US" | "EU" | "UK" | "AU"
+      nda_status:
+        | "not_submitted"
+        | "submitted"
+        | "under_review"
+        | "on_file"
+        | "expired"
+      notification_channel: "sms" | "slack" | "push" | "email" | "in_app"
+      notification_priority: "urgent" | "high" | "normal" | "low"
+      pack_state:
+        | "draft"
+        | "mdna_pending"
+        | "mdna_drafted"
+        | "cfo_review"
+        | "cfo_approved"
+        | "pending_ceo_approval"
+        | "issued"
+        | "erratum_issued"
+        | "archived"
+      payout_method_status:
+        | "pending_setup"
+        | "verified"
+        | "failed_verification"
+        | "revoked"
+      payout_rail:
+        | "stripe_connect_ach"
+        | "paypal"
+        | "domestic_wire_us"
+        | "international_wire"
+      photo_scope: "in_scope" | "out_of_scope"
+      pricing_status:
+        | "draft"
+        | "pending_governance"
+        | "pending_approval"
+        | "active"
+        | "rejected"
+        | "superseded"
       protocol_status: "DRAFT" | "ACTIVE" | "COMPLETED" | "ARCHIVED"
+      shop_finding_resolution:
+        | "pending_review"
+        | "approved_to_insert"
+        | "approved_to_retire"
+        | "approved_to_correct"
+        | "rejected"
+      shop_finding_type:
+        | "missing_in_catalog"
+        | "catalog_not_in_canonical"
+        | "mismatched_name"
+        | "mismatched_category"
+        | "mismatched_price"
       task_type: "SUPPLEMENT" | "EXERCISE" | "MEAL_LOG" | "LAB_TEST" | "CUSTOM"
+      tax_form_type: "w9" | "w8ben" | "w8bene" | "t4a_registration"
+      tax_info_status:
+        | "not_submitted"
+        | "submitted"
+        | "under_review"
+        | "on_file"
+        | "rejected_re_upload_required"
+      tax_registration_status: "pending" | "active" | "suspended" | "retired"
       tier_level: "BRONZE" | "SILVER" | "GOLD" | "PLATINUM"
       transaction_type: "EARN" | "REDEEM" | "BONUS" | "ADJUSTMENT"
+      vat_invoice_status: "draft" | "issued" | "void" | "superseded"
+      verification_method:
+        | "domain_meta_tag"
+        | "dns_txt_record"
+        | "marketplace_oauth"
+        | "manual_document_upload"
+        | "email_from_domain"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -13474,9 +19287,55 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
+      aggregation_period_type: [
+        "monthly",
+        "quarterly",
+        "annual",
+        "trailing_12_months",
+        "ytd",
+        "ad_hoc",
+      ],
+      aggregation_snapshot_state: [
+        "draft",
+        "computing",
+        "computed",
+        "cfo_review",
+        "cfo_approved",
+        "locked",
+        "failed",
+      ],
       alert_severity: ["INFO", "WARNING", "ALERT", "CRITICAL"],
+      board_member_role: [
+        "director",
+        "advisor",
+        "observer",
+        "executive",
+        "auditor",
+      ],
+      channel_state: [
+        "pending_verification",
+        "verified",
+        "verification_lapsed",
+        "verification_failed",
+        "volume_flagged",
+        "suspended",
+      ],
+      channel_type: [
+        "own_website",
+        "amazon_storefront",
+        "etsy_shop",
+        "shopify_store",
+        "tiktok_shop",
+        "physical_clinic_pos",
+        "wholesale_partner_storefront",
+        "pop_up_event",
+      ],
+      currency_code: ["USD", "EUR", "GBP", "AUD"],
       form_type: [
         "TINCTURE",
         "ENCAPSULATION",
@@ -13485,55 +19344,114 @@ export const Constants = {
         "TOPICAL",
         "OTHER",
       ],
+      map_vip_exemption_reason: [
+        "long_term_patient",
+        "immediate_family",
+        "documented_financial_hardship",
+        "returning_chronic_illness_subscription",
+        "clinical_trial_compassionate_use",
+        "other_documented",
+      ],
+      map_vip_exemption_status: [
+        "pending_approval",
+        "active",
+        "expired_auto",
+        "revoked",
+        "rejected",
+      ],
+      map_waiver_status: [
+        "draft",
+        "pending_approval",
+        "info_requested",
+        "active",
+        "expired",
+        "revoked",
+        "rejected",
+      ],
+      map_waiver_type: [
+        "seasonal_promotion",
+        "charity_event",
+        "clinic_in_person_only",
+        "clinical_study_recruitment",
+        "new_patient_onboarding",
+      ],
+      market_code: ["US", "EU", "UK", "AU"],
+      nda_status: [
+        "not_submitted",
+        "submitted",
+        "under_review",
+        "on_file",
+        "expired",
+      ],
+      notification_channel: ["sms", "slack", "push", "email", "in_app"],
+      notification_priority: ["urgent", "high", "normal", "low"],
+      pack_state: [
+        "draft",
+        "mdna_pending",
+        "mdna_drafted",
+        "cfo_review",
+        "cfo_approved",
+        "pending_ceo_approval",
+        "issued",
+        "erratum_issued",
+        "archived",
+      ],
+      payout_method_status: [
+        "pending_setup",
+        "verified",
+        "failed_verification",
+        "revoked",
+      ],
+      payout_rail: [
+        "stripe_connect_ach",
+        "paypal",
+        "domestic_wire_us",
+        "international_wire",
+      ],
+      photo_scope: ["in_scope", "out_of_scope"],
+      pricing_status: [
+        "draft",
+        "pending_governance",
+        "pending_approval",
+        "active",
+        "rejected",
+        "superseded",
+      ],
       protocol_status: ["DRAFT", "ACTIVE", "COMPLETED", "ARCHIVED"],
+      shop_finding_resolution: [
+        "pending_review",
+        "approved_to_insert",
+        "approved_to_retire",
+        "approved_to_correct",
+        "rejected",
+      ],
+      shop_finding_type: [
+        "missing_in_catalog",
+        "catalog_not_in_canonical",
+        "mismatched_name",
+        "mismatched_category",
+        "mismatched_price",
+      ],
       task_type: ["SUPPLEMENT", "EXERCISE", "MEAL_LOG", "LAB_TEST", "CUSTOM"],
+      tax_form_type: ["w9", "w8ben", "w8bene", "t4a_registration"],
+      tax_info_status: [
+        "not_submitted",
+        "submitted",
+        "under_review",
+        "on_file",
+        "rejected_re_upload_required",
+      ],
+      tax_registration_status: ["pending", "active", "suspended", "retired"],
       tier_level: ["BRONZE", "SILVER", "GOLD", "PLATINUM"],
       transaction_type: ["EARN", "REDEEM", "BONUS", "ADJUSTMENT"],
+      vat_invoice_status: ["draft", "issued", "void", "superseded"],
+      verification_method: [
+        "domain_meta_tag",
+        "dns_txt_record",
+        "marketplace_oauth",
+        "manual_document_upload",
+        "email_from_domain",
+      ],
     },
   },
 } as const
-
-// ════════════════════════════════════════════════════════════════════════
-//  LEGACY ALIASES — manually maintained
-//  DO NOT REMOVE WHEN REGENERATING WITH `supabase gen types`.
-//  Re-add this block (or copy from git history) after every regen.
-//  These re-export Row types and helper enums that older code paths
-//  still import directly from "@/lib/supabase/types".
-//  Tables that no longer exist in the live schema are aliased to `any`
-//  so calling code keeps compiling; runtime behavior is unchanged.
-// ════════════════════════════════════════════════════════════════════════
-
-// Existing tables — proper Database row extracts
-export type Profile = Database["public"]["Tables"]["profiles"]["Row"]
-export type AssessmentResult = Database["public"]["Tables"]["assessment_results"]["Row"]
-export type GeneticProfile = Database["public"]["Tables"]["genetic_profiles"]["Row"]
-export type Notification = Database["public"]["Tables"]["notifications"]["Row"]
-export type Product = Database["public"]["Tables"]["products"]["Row"]
-export type UserProtocol = Database["public"]["Tables"]["user_protocols"]["Row"]
-export type TokenTransaction = Database["public"]["Tables"]["token_transactions"]["Row"]
-export type Order = Database["public"]["Tables"]["orders"]["Row"]
-export type AuditLog = Database["public"]["Tables"]["audit_logs"]["Row"]
-
-// Tables removed from the live schema — typed as any so legacy callers
-// keep compiling. Drop these aliases when the code paths are migrated.
-export type SupplementLog = any
-export type GeneticVariant = any
-export type Conversation = any
-export type Message = any
-export type Achievement = any
-export type UserAchievement = any
-export type Subscription = any
-
-// Role helpers (originally lived in the hand-rolled types.ts)
-export type DatabaseRole = "patient" | "practitioner" | "admin" | "naturopath"
-export type UserRole = "consumer" | "practitioner" | "naturopath" | "admin"
-
-export function mapDatabaseRoleToUserRole(dbRole: DatabaseRole | string): UserRole {
-  switch (dbRole) {
-    case "patient": return "consumer"
-    case "practitioner": return "practitioner"
-    case "naturopath": return "naturopath"
-    case "admin": return "admin"
-    default: return "consumer"
-  }
-}

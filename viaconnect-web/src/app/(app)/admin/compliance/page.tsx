@@ -5,9 +5,18 @@ import Link from "next/link";
 
 async function getCounts() {
   const sb = createClient();
-  const c = async (table: string, filter?: (q: ReturnType<typeof sb.from>) => ReturnType<typeof sb.from>) => {
-    let q: ReturnType<typeof sb.from> = sb.from(table);
-    if (filter) q = filter(q);
+  // Type escape hatch: Supabase's `from<T>()` returns a
+  // PostgrestQueryBuilder<Row-for-T> that narrows per table, so a single
+  // variable typed against one table can't hold a builder for another.
+  // Every call site in this function already uses the filter pattern with
+  // `(q: any) => q.someMethod(...)` and casts the final query to any
+  // before `.select("*", ...)`, so this helper follows the same
+  // precedent rather than introducing a fresh generic.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const c = async (table: string, filter?: (q: any) => any) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const base: any = sb.from(table as never);
+    const q = filter ? filter(base) : base;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const r = await (q as any).select("*", { count: "exact", head: true });
     return (r.count as number | null) ?? 0;
