@@ -22,7 +22,16 @@ export type LegalAuditCategory =
   | 'privileged_comm'
   | 'settlement'
   | 'pii_access'
-  | 'privileged_access';
+  | 'privileged_access'
+  // Prompt #114 customs lane. DB CHECK extended in
+  // 20260424000250_prompt_114_audit_category_extension.sql.
+  | 'customs_recordation'
+  | 'customs_detention'
+  | 'customs_seizure'
+  | 'customs_iprs'
+  | 'customs_e_allegation'
+  | 'customs_moiety'
+  | 'customs_counsel_review';
 
 export interface LegalAuditEntry {
   actor_user_id: string | null;

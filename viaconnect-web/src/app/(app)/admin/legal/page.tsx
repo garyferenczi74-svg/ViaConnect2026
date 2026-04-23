@@ -8,7 +8,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import {
-  Gavel, FolderSearch, Users, FileText, ScaleIcon, Briefcase, Loader2, AlertCircle,
+  Gavel, FolderSearch, Users, FileText, ScaleIcon, Briefcase, ShieldCheck, Loader2, AlertCircle,
 } from 'lucide-react';
 
 interface CaseRow {
@@ -24,6 +24,7 @@ const SECTION_LINKS = [
   { href: '/admin/legal/templates',       label: 'Templates',      Icon: FileText },
   { href: '/admin/legal/counsel',         label: 'Outside counsel', Icon: Briefcase },
   { href: '/admin/legal/settlements',     label: 'Settlements',    Icon: ScaleIcon },
+  { href: '/admin/legal/customs',         label: 'Customs',        Icon: ShieldCheck },
 ];
 
 export default function LegalOpsDashboardPage() {
