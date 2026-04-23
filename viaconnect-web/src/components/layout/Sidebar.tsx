@@ -153,6 +153,7 @@ const NATUROPATH: PortalConfig = {
 const ADMIN: PortalConfig = {
   nav: [
     { href: "/admin/jeffery", label: "Jeffery™ Command Center", icon: Cpu },
+    { href: "/admin/marshall", label: "Marshall", icon: Shield },
     { href: "/admin", label: "Admin Dashboard", icon: LayoutDashboard },
     { href: "/admin/board", label: "Board Metrics", icon: BarChart3 },
     { href: "/admin/analytics", label: "Unit Economics", icon: TrendingUp },

@@ -58,6 +58,7 @@ const PORTAL_NAV: Record<string, NavItem[]> = {
   ],
   admin: [
     { href: '/admin', label: 'Admin', icon: LayoutDashboard },
+    { href: '/admin/marshall', label: 'Marshall', icon: Shield },
     { href: '/admin/board', label: 'Board', icon: BarChart3 },
     { href: '/admin/skus', label: 'SKUs', icon: Pill },
     { href: '/admin/alerts', label: 'Alerts', icon: AlertTriangle },
