@@ -8,6 +8,7 @@ import {
   Beef, Wheat, Droplets, Candy, Loader2, Ban, Leaf, Plus, Minus, GlassWater,
 } from 'lucide-react';
 import Link from 'next/link';
+import { detectTimezone, localDateString } from '@/lib/timezone';
 import { CheckInSlider } from './CheckInSlider';
 import { computeMealScore, mealScoreLabel, mealScoreColor } from '@/lib/scoring/mealQualityScore';
 
@@ -51,7 +52,7 @@ export function QuickMealLogWidget({ hideHeader = false, onSaved }: QuickMealLog
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      const today = new Date().toISOString().split('T')[0];
+      const today = localDateString(detectTimezone());
 
       // Prompt #84: Read meal state from meal_logs (independent data stream).
       // Fallback to daily_checkins for backward compat with pre-#84 data.
@@ -171,7 +172,7 @@ export function QuickMealLogWidget({ hideHeader = false, onSaved }: QuickMealLog
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { setSaving(false); return; }
-      const today = new Date().toISOString().split('T')[0];
+      const today = localDateString(detectTimezone());
 
       // Prompt #84: Write meal data ONLY to meal_logs (never daily_checkins).
       // meal_logs and daily_checkins are independent data streams — a partial
@@ -223,7 +224,7 @@ export function QuickMealLogWidget({ hideHeader = false, onSaved }: QuickMealLog
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { setSaving(false); return; }
-      const today = new Date().toISOString().split('T')[0];
+      const today = localDateString(detectTimezone());
 
       // Prompt #84: Only touch meal_logs — never write to daily_checkins from
       // the meal widget. Remove the meal entry so nutrition gauge drops it.
@@ -254,7 +255,7 @@ export function QuickMealLogWidget({ hideHeader = false, onSaved }: QuickMealLog
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { setWaterSaving(false); return; }
-      const today = new Date().toISOString().split('T')[0];
+      const today = localDateString(detectTimezone());
 
       // Prompt #84: Hydration is a daily_checkins field. Use fetch-merge-upsert
       // so that a partial payload does not null out check-in columns.

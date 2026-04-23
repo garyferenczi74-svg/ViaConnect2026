@@ -14,6 +14,15 @@ import {
 } from '@/lib/scoring/dailyScoreEngineV2';
 import { EngagementNudge } from './EngagementNudge';
 import { topNudge } from '@/lib/scoring/engagementNudges';
+import { detectTimezone, localDateString } from '@/lib/timezone';
+
+// Local-date helper shared across all date-keyed reads/writes so the panel,
+// the check-in hooks, the meal widget, and the daily_checkins row all key on
+// the same date (user local). Prevents UTC-boundary rows that would appear
+// empty to a user who hasn't crossed their own local midnight.
+function todayLocal(): string {
+  return localDateString(detectTimezone());
+}
 
 interface DailyScoresPanelProps {
   checkinRaw?: Record<string, any> | null;
@@ -41,7 +50,7 @@ function getCachedScores(): DailyScoreResult | null {
     const raw = sessionStorage.getItem(CACHE_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw);
-    if (parsed.date !== new Date().toISOString().split('T')[0]) return null;
+    if (parsed.date !== todayLocal()) return null;
     return parsed.scores;
   } catch { return null; }
 }
@@ -49,7 +58,7 @@ function getCachedScores(): DailyScoreResult | null {
 function setCachedScores(scores: DailyScoreResult) {
   try {
     sessionStorage.setItem(CACHE_KEY, JSON.stringify({
-      date: new Date().toISOString().split('T')[0],
+      date: todayLocal(),
       scores,
     }));
   } catch {}
@@ -61,7 +70,7 @@ function getCachedMeals(): LocalMeal[] {
     const raw = localStorage.getItem(MEALS_CACHE_KEY);
     if (!raw) return [];
     const parsed = JSON.parse(raw);
-    if (parsed.date !== new Date().toISOString().split('T')[0]) return [];
+    if (parsed.date !== todayLocal()) return [];
     return parsed.meals ?? [];
   } catch { return []; }
 }
@@ -69,7 +78,7 @@ function getCachedMeals(): LocalMeal[] {
 function setCachedMeals(meals: LocalMeal[]) {
   try {
     localStorage.setItem(MEALS_CACHE_KEY, JSON.stringify({
-      date: new Date().toISOString().split('T')[0],
+      date: todayLocal(),
       meals,
     }));
   } catch {}
@@ -94,7 +103,7 @@ export function DailyScoresPanel({ checkinRaw, previewRaw }: DailyScoresPanelPro
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       if (!user || cancelled) return;
-      const today = new Date().toISOString().split('T')[0];
+      const today = todayLocal();
 
       let checkinData: DailyCheckinData | null = overrideCheckin ?? null;
       let rawCheckin: Record<string, any> | null = null;

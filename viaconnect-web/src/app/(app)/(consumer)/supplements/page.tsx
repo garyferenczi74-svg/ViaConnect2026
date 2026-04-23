@@ -273,10 +273,14 @@ export default function SupplementsPage() {
                   methylated, minerals, amino acids, botanicals, and specialty
                   formulas. All curated for genomics-guided protocols.
                 </p>
-                <div className="mt-3 inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-teal-400/30 bg-teal-400/15 px-4 py-2.5 text-sm font-semibold text-teal-400 transition-all group-hover:border-teal-400/50 group-hover:bg-teal-400/25">
-                  <ShoppingBag className="h-4 w-4" strokeWidth={1.5} />
-                  Visit the Shop
-                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" strokeWidth={1.5} />
+                <div
+                  className="relative mt-3 inline-flex min-h-[44px] items-center gap-2 overflow-hidden rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition-all group-hover:shadow-[0_0_16px_rgba(45,165,160,0.35)]"
+                  style={{ background: 'linear-gradient(135deg, #2DA5A0 0%, #1E3054 100%)' }}
+                >
+                  <span className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
+                  <ShoppingBag className="relative h-4 w-4" strokeWidth={2} />
+                  <span className="relative">Visit the Shop</span>
+                  <ArrowRight className="relative h-4 w-4 transition-transform group-hover:translate-x-0.5" strokeWidth={2} />
                 </div>
               </div>
             </div>
