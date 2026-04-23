@@ -20,18 +20,26 @@ export default function CommentBox({ messageId, onCommentSubmitted }: CommentBox
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      await supabase.from("jeffery_message_comments").insert({
-        message_id: messageId,
-        author_id: user.id,
-        content: content.trim(),
-        is_directive: isDirective,
-      });
+      const { data: inserted } = await supabase
+        .from("jeffery_message_comments")
+        .insert({
+          message_id: messageId,
+          author_id: user.id,
+          content: content.trim(),
+          is_directive: isDirective,
+        })
+        .select("id")
+        .single();
 
       if (isDirective) {
         await fetch("/api/admin/jeffery/process-comment-directive", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ messageId, comment: content.trim() }),
+          body: JSON.stringify({
+            messageId,
+            comment: content.trim(),
+            commentId: inserted?.id,
+          }),
         });
       }
 
@@ -65,7 +73,7 @@ export default function CommentBox({ messageId, onCommentSubmitted }: CommentBox
           onClick={() => submit(true)}
           disabled={!content.trim() || busy}
           className="px-3 py-2 rounded-lg bg-[#B75E18]/15 text-[#B75E18] text-xs font-medium hover:bg-[#B75E18]/25 transition-colors disabled:opacity-30"
-          title="Send as a directive — Jeffery will learn from this"
+          title="Send as a directive: Jeffery will learn from this"
         >
           Directive
         </button>

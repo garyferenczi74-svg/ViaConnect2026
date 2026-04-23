@@ -13,6 +13,7 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { emitJefferyMessage } from "./message-bus";
 
 const ANTHROPIC_MODEL = "claude-sonnet-4-6";
+const ANTHROPIC_TIMEOUT_MS = 30_000;
 
 interface DirectiveRow {
   id: string;
@@ -79,6 +80,8 @@ export async function processDirective(directiveId: string): Promise<{ ok: boole
     const systemPrompt = `You are Jeffery, the Self-Evolution Engine for ViaConnect — Gary's CEO/founder admin assistant. The CEO has given you a directive. Acknowledge it warmly, then explain your plan to implement it in 3-5 concrete steps (numbered). Reference specific agents and systems by name. Keep total response under 250 words.`;
     const userMsg = `Directive: "${d.instruction}"\nTitle: ${d.title}\nScope: ${d.scope}\nPriority: ${d.priority}`;
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), ANTHROPIC_TIMEOUT_MS);
     try {
       const r = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
@@ -93,6 +96,7 @@ export async function processDirective(directiveId: string): Promise<{ ok: boole
           system: systemPrompt,
           messages: [{ role: "user", content: userMsg }],
         }),
+        signal: controller.signal,
       });
       if (!r.ok) throw new Error(`anthropic HTTP ${r.status}`);
       const data = await r.json() as { content?: Array<{ type: string; text?: string }> };
@@ -100,7 +104,13 @@ export async function processDirective(directiveId: string): Promise<{ ok: boole
       if (!acknowledgment) acknowledgment = `Directive "${d.title}" acknowledged.`;
       steps = parseStepsFromResponse(acknowledgment);
     } catch (e) {
-      return { ok: false, error: (e as Error).message };
+      const err = e as Error;
+      const msg = err.name === "AbortError"
+        ? `anthropic request timed out after ${ANTHROPIC_TIMEOUT_MS}ms`
+        : err.message;
+      return { ok: false, error: msg };
+    } finally {
+      clearTimeout(timeoutId);
     }
   }
 
@@ -146,10 +156,14 @@ export async function processDirective(directiveId: string): Promise<{ ok: boole
 
 /**
  * Process an inline directive sent as a comment on a specific message.
- * Lighter-weight than processDirective — just logs the directive into the
- * learning_log and marks the comment as acknowledged.
+ * Prefers commentId for the acknowledgment update because duplicate comment
+ * text would otherwise collide when matching by content equality.
  */
-export async function processCommentDirective(messageId: string, comment: string): Promise<{ ok: boolean }> {
+export async function processCommentDirective(
+  messageId: string,
+  comment: string,
+  commentId?: string,
+): Promise<{ ok: boolean }> {
   const client = buildServiceClient();
   await client.from("jeffery_learning_log").insert({
     source_type: "comment_directive",
@@ -159,14 +173,29 @@ export async function processCommentDirective(messageId: string, comment: string
     config_changes: null,
     applied_to_agents: ["global"],
   });
-  await client
+
+  const update = client
     .from("jeffery_message_comments")
     .update({
       directive_acknowledged: true,
       directive_acknowledged_at: new Date().toISOString(),
-    })
-    .eq("message_id", messageId)
-    .eq("is_directive", true)
-    .eq("content", comment);
+    });
+
+  if (commentId) {
+    await update.eq("id", commentId);
+  } else {
+    // Fallback for legacy callers that didn't pass commentId: acknowledge the
+    // most recent directive comment on the message instead of blindly matching
+    // content, which broke whenever the same text appeared twice.
+    const { data: latest } = await client
+      .from("jeffery_message_comments")
+      .select("id")
+      .eq("message_id", messageId)
+      .eq("is_directive", true)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (latest?.id) await update.eq("id", latest.id);
+  }
   return { ok: true };
 }

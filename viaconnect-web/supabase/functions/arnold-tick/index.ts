@@ -51,6 +51,32 @@ async function heartbeat(db: SupabaseClient, runId: string, ok: boolean, payload
   }
 }
 
+// Emit a message into Jeffery's Command Center feed via the SECURITY DEFINER
+// RPC, so Arnold's work surfaces in /admin/jeffery alongside every other agent.
+async function emitJeffery(db: SupabaseClient, input: {
+  category: string;
+  severity: 'info' | 'advisory' | 'review_required' | 'critical';
+  title: string;
+  summary: string;
+  detail: Record<string, unknown>;
+  proposedAction?: Record<string, unknown>;
+}) {
+  try {
+    await db.rpc('jeffery_emit_message', {
+      p_category: input.category,
+      p_severity: input.severity,
+      p_title: input.title,
+      p_summary: input.summary,
+      p_detail: input.detail,
+      p_source_agent: 'arnold',
+      p_source_context: null,
+      p_proposed_action: input.proposedAction ?? null,
+    });
+  } catch (e) {
+    console.warn('[arnold-tick] jeffery emit failed', (e as Error).message);
+  }
+}
+
 async function sweepStaleScores(db: SupabaseClient): Promise<number> {
   // Users with entries newer than their latest score row need a recompute.
   const { data: entriesRecent } = await db
@@ -123,6 +149,27 @@ serve(async (req: Request) => {
       durationMs: Date.now() - startedAt,
     });
 
+    // Surface sweep activity in Jeffery's Live Feed. Stuck sessions are
+    // treated as review_required (potential scan pipeline issue); a clean
+    // sweep with queued recomputes is info; an idle sweep is skipped.
+    if (stuckFailed > 0) {
+      await emitJeffery(db, {
+        category: 'error_escalation',
+        severity: 'critical',
+        title: `Arnold failed ${stuckFailed} stuck vision session${stuckFailed === 1 ? '' : 's'}`,
+        summary: `${stuckFailed} body_photo_session row${stuckFailed === 1 ? '' : 's'} stayed in analyzing state over 30m; marked failed.`,
+        detail: { runId, stuckSessionsFailed: stuckFailed, queuedRecomputes: queued },
+      });
+    } else if (queued > 0) {
+      await emitJeffery(db, {
+        category: 'data_ingestion',
+        severity: 'info',
+        title: `Arnold queued ${queued} score recompute${queued === 1 ? '' : 's'}`,
+        summary: `Detected ${queued} user${queued === 1 ? '' : 's'} with fresh body_tracker entries; queued for score recompute.`,
+        detail: { runId, queuedRecomputes: queued, durationMs: Date.now() - startedAt },
+      });
+    }
+
     return json({
       status: 'ok',
       runId,
@@ -132,6 +179,13 @@ serve(async (req: Request) => {
   } catch (e) {
     const msg = e instanceof Error ? e.message : 'Unknown error';
     await heartbeat(db, runId, false, { error: msg });
+    await emitJeffery(db, {
+      category: 'error_escalation',
+      severity: 'critical',
+      title: 'Arnold tick failed',
+      summary: msg,
+      detail: { runId, error: msg },
+    });
     return json({ status: 'failed', error: msg }, 500);
   }
 });

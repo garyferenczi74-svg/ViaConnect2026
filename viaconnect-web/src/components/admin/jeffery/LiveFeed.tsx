@@ -29,15 +29,41 @@ export default function LiveFeed() {
 
   useEffect(() => { load(); }, [load]);
 
-  // Realtime subscription
+  // Realtime subscription: INSERT prepends, UPDATE patches in place,
+  // DELETE removes. Approve/reject/flag writes on the server push status
+  // changes here without the admin having to refresh.
   useEffect(() => {
     const channel = supabase
       .channel("jeffery-live-feed")
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "jeffery_messages" },
-        (msg: { new: JefferyMessage }) => {
-          setMessages(prev => [{ ...msg.new, jeffery_message_comments: [] }, ...prev]);
+        (payload: { new: Record<string, unknown> }) => {
+          const row = payload?.new as unknown as JefferyMessage | undefined;
+          if (!row) return;
+          setMessages(prev => [{ ...row, jeffery_message_comments: [] }, ...prev]);
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "jeffery_messages" },
+        (payload: { new: Record<string, unknown> }) => {
+          const row = payload?.new as unknown as JefferyMessage | undefined;
+          if (!row) return;
+          setMessages(prev => prev.map(m =>
+            m.id === row.id
+              ? { ...row, jeffery_message_comments: m.jeffery_message_comments ?? [] }
+              : m
+          ));
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "DELETE", schema: "public", table: "jeffery_messages" },
+        (payload: { old: Record<string, unknown> }) => {
+          const oldId = (payload?.old as { id?: string } | undefined)?.id;
+          if (!oldId) return;
+          setMessages(prev => prev.filter(m => m.id !== oldId));
         }
       )
       .subscribe();

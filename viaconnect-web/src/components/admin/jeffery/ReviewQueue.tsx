@@ -33,6 +33,30 @@ export default function ReviewQueue({ onCountChange }: ReviewQueueProps) {
 
   useEffect(() => { load(); }, [load]);
 
+  // Realtime: when another tab approves/rejects/flags a message, or when a new
+  // review_required message arrives, reload so the badge count stays accurate.
+  useEffect(() => {
+    const channel = supabase
+      .channel("jeffery-review-queue")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "jeffery_messages" },
+        () => { load(); }
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "jeffery_messages" },
+        () => { load(); }
+      )
+      .on(
+        "postgres_changes",
+        { event: "DELETE", schema: "public", table: "jeffery_messages" },
+        () => { load(); }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [supabase, load]);
+
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2 mb-2">

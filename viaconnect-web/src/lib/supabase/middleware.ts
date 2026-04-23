@@ -76,8 +76,17 @@ export async function updateSession(request: NextRequest) {
 
   // If authenticated, enforce role-based routing
   if (user) {
-    // Normalize role: DB uses patient/admin, app uses consumer/practitioner/naturopath
-    const rawRole = user.user_metadata?.role as string | undefined;
+    // Source of truth for role is profiles.role (same as every /api/admin route).
+    // user_metadata.role is kept as a fallback ONLY for non-admin routing
+    // decisions; admin gating strictly requires a profiles.role='admin' row so
+    // the middleware and the API layer cannot drift apart.
+    const { data: profileRow } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .maybeSingle();
+    const profileRole = profileRow?.role as string | undefined;
+    const rawRole = profileRole ?? (user.user_metadata?.role as string | undefined);
     const role = normalizeRole(rawRole);
 
     // Redirect authenticated users away from auth pages
@@ -91,8 +100,9 @@ export async function updateSession(request: NextRequest) {
       return NextResponse.redirect(url);
     }
 
-    // Admin role has access to ALL portals (consumer, practitioner, naturopath, admin)
-    const isAdmin = rawRole === "admin";
+    // Admin role has access to ALL portals. Must match /api/admin/** gating
+    // exactly: profiles.role='admin' is the only path to isAdmin=true.
+    const isAdmin = profileRole === "admin";
 
     // Detect if the user is crossing portal boundaries so the client can
     // clear stale cached data (auth store + React Query) on arrival.

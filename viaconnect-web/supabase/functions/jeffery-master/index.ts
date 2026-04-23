@@ -96,6 +96,7 @@ serve(async (req) => {
     const skippedCircuit: string[] = [];
     const skippedBudget: string[] = [];
     const skippedNotImpl: string[] = [];
+    const dispatchErrors: Array<{ target: string; kind: 'feed' | 'internal'; error: string }> = [];
 
     for (const f of (feeds ?? []) as FeedRow[]) {
       if (f.circuit_open_until && f.circuit_open_until > nowIso) {
@@ -120,8 +121,10 @@ serve(async (req) => {
         dispatched.push({ source: f.source, status: r.status });
         await logDecision(db, runId, 'dispatch_feed', f.source, `external_feed_due`, { http_status: r.status, slug: INGEST_MAP[f.source] });
       } catch (e) {
+        const msg = (e as Error).message;
         dispatched.push({ source: f.source, status: 0 });
-        console.warn(`dispatch ${f.source}: ${(e as Error).message}`);
+        dispatchErrors.push({ target: f.source, kind: 'feed', error: msg });
+        console.warn(`dispatch ${f.source}: ${msg}`);
       }
       const interval = APPROX_INTERVAL_MIN[f.source] ?? 1440;
       await db.from('ultrathink_data_feeds').update({ next_run_at: new Date(Date.now() + interval * 60_000).toISOString() }).eq('id', f.id);
@@ -152,7 +155,9 @@ serve(async (req) => {
         internalDispatched.push({ agent: ia.agent_name, status: r.status, reason: 'dispatched' });
         await logDecision(db, runId, 'dispatch_internal_agent', ia.agent_name, `cadence_due_${ia.period_min}min`, { http_status: r.status });
       } catch (e) {
-        internalDispatched.push({ agent: ia.agent_name, status: 0, reason: `error: ${(e as Error).message}` });
+        const msg = (e as Error).message;
+        internalDispatched.push({ agent: ia.agent_name, status: 0, reason: `error: ${msg}` });
+        dispatchErrors.push({ target: ia.agent_name, kind: 'internal', error: msg });
       }
     }
 
@@ -221,6 +226,26 @@ serve(async (req) => {
         }).then(() => {}, () => {});
       }
     } catch (e) { console.warn(`auto-tune: ${(e as Error).message}`); }
+
+    // ── 7. Surface dispatch errors in Jeffery's Live Feed ─────────────
+    // Silent console.warn was fine at dev scale; pre-launch we want Gary to
+    // see dispatch failures in /admin/jeffery instead of having to tail logs.
+    if (dispatchErrors.length > 0) {
+      try {
+        await db.rpc('jeffery_emit_message', {
+          p_category: 'error_escalation',
+          p_severity: 'critical',
+          p_title: `Master tick dispatch errors (${dispatchErrors.length})`,
+          p_summary: `${dispatchErrors.length} dispatch${dispatchErrors.length === 1 ? '' : 'es'} failed this tick: ${dispatchErrors.map(e => e.target).slice(0, 5).join(', ')}${dispatchErrors.length > 5 ? '...' : ''}`,
+          p_detail: { runId, errors: dispatchErrors },
+          p_source_agent: 'jeffery_master',
+          p_source_context: null,
+          p_proposed_action: null,
+        });
+      } catch (e) {
+        console.warn(`jeffery emit failed: ${(e as Error).message}`);
+      }
+    }
 
     // ── Final sync log + heartbeat ────────────────────────────────────
     await db.rpc('ultrathink_record_sync', {

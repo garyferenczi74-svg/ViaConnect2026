@@ -15,6 +15,7 @@ import { createClient } from "@supabase/supabase-js";
 import { buildAdvisorContext, type AdvisorRole } from "@/lib/jeffery/advisor-context-builder";
 import { streamAdvisorResponse } from "@/lib/jeffery/advisor-stream";
 import { logAdvisorQuery, persistConversationTurn } from "@/lib/jeffery/advisor-telemetry";
+import { emitJefferyMessage } from "@/lib/jeffery/message-bus";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -101,8 +102,11 @@ export async function POST(req: Request) {
   // ── 7. Stream Claude response ───────────────────────────────────────
   const { stream, meta } = streamAdvisorResponse(ctx, message);
 
-  // Post-flight: when meta resolves, persist the conversation turn.
-  // This is fire-and-forget — we don't await it inside the response.
+  // Post-flight: when meta resolves, persist the conversation turn AND emit a
+  // message into Jeffery's Command Center so Hannah/Gordon activity surfaces
+  // in /admin/jeffery. Errors escalate to critical; healthy turns are logged
+  // as advisory_insight so admins can spot tone/quality drift.
+  // Fire-and-forget — we don't await it inside the response.
   void meta.then(async (m) => {
     try {
       await persistConversationTurn(serviceDb, {
@@ -119,6 +123,47 @@ export async function POST(req: Request) {
       });
     } catch (e) {
       console.warn(`[advisor/chat] persist failed: ${(e as Error).message}`);
+    }
+    try {
+      const sourceAgent = role === "consumer" ? "hannah" : role === "naturopath" ? "hannah_naturopath" : "hannah_practitioner";
+      if (m.error) {
+        await emitJefferyMessage({
+          category: "error_escalation",
+          severity: "critical",
+          title: `Advisor chat error (${role})`,
+          summary: m.error.slice(0, 240),
+          detail: {
+            role,
+            userId: user.id,
+            patientId,
+            durationMs: m.duration_ms,
+            inputTokens: m.input_tokens,
+            outputTokens: m.output_tokens,
+            error: m.error,
+          },
+          sourceAgent,
+        }, serviceDb);
+      } else {
+        await emitJefferyMessage({
+          category: "advisor_insight",
+          severity: "advisory",
+          title: `Advisor turn (${role})`,
+          summary: `${ctx.contextVariables?.userDisplayName ?? "User"} asked Hannah; reply generated in ${m.duration_ms}ms.`,
+          detail: {
+            role,
+            userId: user.id,
+            patientId,
+            userMessage: message.slice(0, 400),
+            assistantMessage: m.full_text.slice(0, 600),
+            durationMs: m.duration_ms,
+            inputTokens: m.input_tokens,
+            outputTokens: m.output_tokens,
+          },
+          sourceAgent,
+        }, serviceDb);
+      }
+    } catch (e) {
+      console.warn(`[advisor/chat] jeffery emit failed: ${(e as Error).message}`);
     }
   });
 

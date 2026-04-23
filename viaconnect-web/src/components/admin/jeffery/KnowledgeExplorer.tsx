@@ -35,13 +35,15 @@ export default function KnowledgeExplorer() {
     if (typeFilter !== "all") query.eq("entry_type", typeFilter);
     if (verifiedOnly === "verified") query.eq("admin_verified", true);
     if (verifiedOnly === "unverified") query.eq("admin_verified", false);
-    const { data } = await query;
-    let rows = (data ?? []) as KnowledgeEntry[];
-    if (searchTerm.trim()) {
-      const t = searchTerm.toLowerCase();
-      rows = rows.filter(r => r.entry_title.toLowerCase().includes(t) || (r.entry_summary ?? "").toLowerCase().includes(t));
+    // Server-side ilike search across title OR summary. Trigram indexes on
+    // both columns keep this fast at scale (see append-only migration).
+    const term = searchTerm.trim();
+    if (term) {
+      const escaped = term.replace(/[%_]/g, "\\$&");
+      query.or(`entry_title.ilike.%${escaped}%,entry_summary.ilike.%${escaped}%`);
     }
-    setEntries(rows);
+    const { data } = await query;
+    setEntries((data ?? []) as KnowledgeEntry[]);
   }, [supabase, typeFilter, verifiedOnly, searchTerm]);
 
   useEffect(() => { load(); }, [load]);
@@ -121,7 +123,7 @@ export default function KnowledgeExplorer() {
               )}
               <div className="flex items-center justify-between mt-auto pt-2 border-t border-white/[0.05]">
                 <span className="text-[10px] text-white/30">
-                  {e.source_name ?? "—"} · conf {e.confidence?.toFixed(2) ?? "—"}
+                  {e.source_name ?? "n/a"} · conf {e.confidence?.toFixed(2) ?? "n/a"}
                 </span>
                 {!e.admin_verified && (
                   <button

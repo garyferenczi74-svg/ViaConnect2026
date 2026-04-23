@@ -6,6 +6,17 @@ import { createClient } from "@/lib/supabase/client";
 
 const SCOPES = [
   { value: "global", label: "All Systems" },
+  // ViaConnect agent fleet
+  { value: "jeffery", label: "Jeffery (Brain)" },
+  { value: "michelangelo", label: "Michelangelo (Sr Dev)" },
+  { value: "hannah", label: "Hannah (AI Nutrition, Genomics)" },
+  { value: "gordan", label: "Gordan (Nutrition Agent)" },
+  { value: "arnold", label: "Arnold (Body Tracker)" },
+  { value: "hounddog", label: "Hounddog (Web Scraping)" },
+  { value: "sherlock", label: "Sherlock (Social Media)" },
+  { value: "security_advisor", label: "Security Advisor" },
+  { value: "performance_advisor", label: "Performance Advisor" },
+  // Product subsystems
   { value: "consumer_advisor", label: "Consumer Advisor" },
   { value: "practitioner_advisor", label: "Practitioner Advisor" },
   { value: "naturopath_advisor", label: "Naturopath Advisor" },

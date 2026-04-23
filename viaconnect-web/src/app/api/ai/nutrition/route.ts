@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { GORDAN_SYSTEM_PROMPT, GORDAN_TASK_PROMPTS } from '@/lib/agents/gordan/systemPrompt';
 import type { GordanTask } from '@/lib/agents/gordan/taskRegistry';
+import { emitJefferyMessage } from '@/lib/jeffery/message-bus';
 
 interface GordanRequest {
   task: GordanTask;
@@ -144,11 +145,32 @@ export async function POST(req: NextRequest) {
 
     await logActivity(supabase, user.id, task, tokensUsed, latency, true);
 
+    // Surface Gordan activity in Jeffery's Live Feed. Fire-and-forget; don't
+    // block the user response on observability.
+    void emitJefferyMessage({
+      category: 'advisor_insight',
+      severity: 'advisory',
+      title: `Gordan: ${task.replace(/_/g, ' ')}`,
+      summary: `Gordan completed ${task} for user ${user.id.slice(0, 8)} in ${latency}ms (${tokensUsed} tokens).`,
+      detail: { task, userId: user.id, tokensUsed, latencyMs: latency, payloadKeys: Object.keys(payload ?? {}) },
+      sourceAgent: 'gordan',
+    }).catch(() => { /* emit is best effort */ });
+
     return NextResponse.json(result);
   } catch (err: any) {
     const latency = Date.now() - start;
     await logActivity(supabase, user.id, task, 0, latency, false, err.message);
     console.error(`gordan/${task}:`, err);
+
+    void emitJefferyMessage({
+      category: 'error_escalation',
+      severity: 'critical',
+      title: `Gordan failed: ${task}`,
+      summary: (err.message ?? 'Unknown error').slice(0, 240),
+      detail: { task, userId: user.id, latencyMs: latency, error: err.message },
+      sourceAgent: 'gordan',
+    }).catch(() => { /* emit is best effort */ });
+
     return NextResponse.json({ error: err.message || 'Internal error' }, { status: 500 });
   }
 }

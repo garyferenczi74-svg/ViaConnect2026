@@ -102,9 +102,9 @@ export default function EvolutionTimeline() {
                   <>
                     {item.metric_name && (
                       <p className="text-xs text-white/60 mt-1">
-                        {item.metric_name}: {item.metric_value?.toFixed(2) ?? "—"}
+                        {item.metric_name}: {item.metric_value?.toFixed(2) ?? "n/a"}
                         {item.rolling_30d_avg != null && (
-                          <span className="text-white/30"> &nbsp;(30d avg {item.rolling_30d_avg.toFixed(2)}, {item.delta_pct != null ? `${item.delta_pct > 0 ? "+" : ""}${item.delta_pct.toFixed(1)}%` : "—"})</span>
+                          <span className="text-white/30"> &nbsp;(30d avg {item.rolling_30d_avg.toFixed(2)}, {item.delta_pct != null ? `${item.delta_pct > 0 ? "+" : ""}${item.delta_pct.toFixed(1)}%` : "n/a"})</span>
                         )}
                       </p>
                     )}
