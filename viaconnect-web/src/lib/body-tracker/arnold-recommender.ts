@@ -13,6 +13,7 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { validateRecommendationText } from '@/lib/agents/jeffery/guardrails';
 import { arnoldNotifyHannah, arnoldEscalateToJeffery } from '@/lib/agents/message-bus';
+import { reviewServerText } from '@/lib/compliance/review-server-text';
 
 const ANTHROPIC_MODEL = 'claude-sonnet-4-6';
 const MAX_RECS_PER_DAY = 3;
@@ -416,10 +417,9 @@ export async function generateDailyRecommendations(
   // Enrich with AI (graceful fallback)
   recommendations = await enrichWithAI(recommendations, context);
 
-  // Guardrail enforcement: route every recommendation through Jeffery's
-  // canonical validator (Semaglutide / Retatrutide / blocked brands /
-  // bioavailability range). Any violation drops the rec and escalates to
-  // Jeffery for audit.
+  // Guardrail enforcement layer 1: Jeffery's canonical validator
+  // (Semaglutide / Retatrutide / blocked brands / bioavailability range).
+  // Keyword-level block list; fast, deterministic.
   const blocked: Array<{ title: string; codes: string[] }> = [];
   recommendations = recommendations.filter((r) => {
     const text = `${r.title} ${r.body} ${r.suggestedAction ?? ''}`;
@@ -427,7 +427,7 @@ export async function generateDailyRecommendations(
     if (!result.ok) {
       blocked.push({ title: r.title, codes: result.violations.map((v) => v.code) });
       console.warn(
-        `[arnold-recommender] Guardrail blocked "${r.title}": ${result.violations.map((v) => v.code).join(', ')}`,
+        `[arnold-recommender] Jeffery blocked "${r.title}": ${result.violations.map((v) => v.code).join(', ')}`,
       );
       return false;
     }
@@ -436,6 +436,67 @@ export async function generateDailyRecommendations(
 
   if (blocked.length > 0) {
     void arnoldEscalateToJeffery('guardrail_block', { blocked }, userId);
+  }
+
+  // Guardrail enforcement layer 2: Kelsey Stage-1 + Stage-2 review
+  // (Prompt #113 P0 #2 hotfix). Every Claude-voiced recommendation must
+  // clear the disease-claim detector + Kelsey LLM verdict before render
+  // or persistence. Semantic-level gate; catches what Jeffery's keyword
+  // matcher cannot (structure/function claim violations, superiority
+  // patterns, jurisdiction-specific phrasing).
+  //
+  // Failure mode is fail-closed: BLOCKED / ESCALATE / LLM-unavailable
+  // drop the candidate. CONDITIONAL with a suggested_rewrite swaps in
+  // the sanitized text.
+  const kelseyBlocked: Array<{ title: string; decision: string; reviewId?: string }> = [];
+  const kelseyReviewed: Recommendation[] = [];
+  for (const r of recommendations) {
+    const originalText = `${r.title}. ${r.body} ${r.suggestedAction ?? ''}`.trim();
+    // Jurisdiction defaults to US; profiles.billing_country not yet
+    // wired into the recommender context. When it ships, thread it
+    // through UserContext and pass r.jurisdiction here.
+    const verdict = await reviewServerText({
+      text: originalText,
+      jurisdiction: 'US',
+      // subject_id left undefined — the review helper mints a UUID per
+      // review. Using r.relatedMilestoneId would conflate many
+      // recommendations under one milestone's review row.
+      subject_type: 'protocol',
+      acting_user_id: userId,
+      actor_role: 'arnold_recommender',
+    });
+
+    if (verdict.text == null) {
+      // BLOCKED / ESCALATE / LLM unavailable. Drop.
+      kelseyBlocked.push({ title: r.title, decision: verdict.decision, reviewId: verdict.review_id });
+      console.warn(
+        `[arnold-recommender] Kelsey ${verdict.decision} "${r.title}" (review_id=${verdict.review_id ?? 'n/a'})`,
+      );
+      continue;
+    }
+
+    if (verdict.sanitized && verdict.text !== originalText) {
+      // CONDITIONAL with rewrite. Keep the original title + category +
+      // priority; replace the user-visible body with Kelsey's sanitized
+      // version. Preserve the suggestedAction since rewrites usually
+      // target the body copy, not the CTA.
+      kelseyReviewed.push({
+        ...r,
+        body: verdict.text,
+        supportingData: { ...r.supportingData, kelsey_review_id: verdict.review_id, kelsey_sanitized: true },
+      });
+    } else {
+      kelseyReviewed.push(
+        verdict.review_id
+          ? { ...r, supportingData: { ...r.supportingData, kelsey_review_id: verdict.review_id } }
+          : r,
+      );
+    }
+  }
+  recommendations = kelseyReviewed;
+
+  if (kelseyBlocked.length > 0) {
+    void arnoldEscalateToJeffery('kelsey_block', { blocked: kelseyBlocked }, userId);
   }
 
   // Store

@@ -31,6 +31,8 @@ export default defineConfig({
         'src/lib/international/**/*.ts',
         'src/lib/notifications/**/*.ts',
         'src/lib/compliance/**/*.ts',
+        'src/components/body-tracker/body-graphic/**/*.{ts,tsx}',
+        'src/lib/feature-flags.ts',
       ],
       exclude: [
         '**/types.ts',
