@@ -43,7 +43,7 @@ export function MealAnalysisCard({ analysis }: { analysis: MealAnalysisResult })
   const tier = qualityTier(analysis.mealQualityScore);
 
   return (
-    <div className="space-y-4 rounded-xl border border-white/10 bg-[#1E3054]/60 backdrop-blur-md p-4">
+    <div className="space-y-4 rounded-xl border border-white/10 bg-[#1E3054]/35 backdrop-blur-md p-4">
       <div className="flex items-center justify-between">
         <div>
           <p className="text-[10px] uppercase tracking-wider text-white/40">Meal Quality</p>

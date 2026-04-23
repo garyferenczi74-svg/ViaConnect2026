@@ -64,7 +64,7 @@ export function MealHistory() {
   if (days.length === 0) return null;
 
   return (
-    <div className="rounded-xl border border-white/10 bg-[#1E3054]/60 backdrop-blur-md p-4 sm:p-5">
+    <div className="rounded-xl border border-white/10 bg-[#1E3054]/35 backdrop-blur-md p-4 sm:p-5">
       <div className="mb-4 flex items-center gap-2">
         <Calendar className="h-4 w-4 text-[#2DA5A0]" strokeWidth={1.5} />
         <h3 className="text-xs font-semibold uppercase tracking-wider text-white/50">

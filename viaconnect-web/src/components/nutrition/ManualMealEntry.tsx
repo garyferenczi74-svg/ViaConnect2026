@@ -4,7 +4,12 @@ import { useState, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { Check, ChevronDown, PenLine } from 'lucide-react';
 
-const MEAL_TYPES = ['Breakfast', 'Lunch', 'Dinner', 'Snack'] as const;
+const MEAL_TYPES: { label: string; color: string }[] = [
+  { label: 'Breakfast', color: '#FBBF24' },
+  { label: 'Lunch',     color: '#2DA5A0' },
+  { label: 'Dinner',    color: '#60A5FA' },
+  { label: 'Snack',     color: '#A855F7' },
+];
 
 export function ManualMealEntry({ onSaved }: { onSaved?: () => void }) {
   const [mealType, setMealType] = useState<string | null>(null);
@@ -81,19 +86,26 @@ export function ManualMealEntry({ onSaved }: { onSaved?: () => void }) {
       </div>
 
       <div className="grid grid-cols-4 gap-2">
-        {MEAL_TYPES.map((t) => (
-          <button
-            key={t}
-            onClick={() => setMealType(t.toLowerCase())}
-            className={`rounded-lg py-2 text-xs font-medium transition-all ${
-              mealType === t.toLowerCase()
-                ? 'border border-[#B75E18]/40 bg-[#B75E18]/20 text-[#B75E18]'
-                : 'border border-white/[0.06] bg-white/[0.04] text-white/50 hover:bg-white/[0.08]'
-            }`}
-          >
-            {t}
-          </button>
-        ))}
+        {MEAL_TYPES.map((t) => {
+          const isActive = mealType === t.label.toLowerCase();
+          const style: React.CSSProperties = {
+            background: isActive ? `${t.color}33` : `${t.color}22`,
+            borderColor: isActive ? `${t.color}80` : `${t.color}40`,
+            color: t.color,
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)',
+          };
+          return (
+            <button
+              key={t.label}
+              onClick={() => setMealType(t.label.toLowerCase())}
+              className="rounded-lg border py-2 text-xs font-medium transition-all"
+              style={style}
+            >
+              {t.label}
+            </button>
+          );
+        })}
       </div>
 
       {mealType && (

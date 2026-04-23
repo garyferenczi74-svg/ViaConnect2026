@@ -12,7 +12,7 @@ export function MealInsightCard({ analysis, supplementCount }: MealInsightCardPr
   const insight = generateMealInsight(analysis, supplementCount);
 
   return (
-    <div className="rounded-xl border border-white/10 bg-[#1E3054]/60 backdrop-blur-md p-4">
+    <div className="rounded-xl border border-white/10 bg-[#1E3054]/35 backdrop-blur-md p-4">
       <div className="mb-3 flex items-center gap-2">
         <Brain className="h-4 w-4 text-[#2DA5A0]" strokeWidth={1.5} />
         <span className="text-xs font-semibold text-white">Hannah's Take</span>

@@ -20,7 +20,7 @@ export function NutritionScoreCard({ score, mealsLoggedToday }: NutritionScoreCa
   const pct = Math.min(100, Math.max(0, score));
 
   return (
-    <div className="rounded-xl border border-white/10 bg-[#1E3054]/60 backdrop-blur-md p-5">
+    <div className="rounded-xl border border-white/10 bg-[#1E3054]/35 backdrop-blur-md p-5">
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Apple className="h-5 w-5 text-[#2DA5A0]" strokeWidth={1.5} />

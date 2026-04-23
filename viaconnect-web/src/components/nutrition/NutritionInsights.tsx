@@ -11,7 +11,7 @@ export function NutritionInsights({ mealsLoggedToday, score }: NutritionInsights
   const insight = generateInsight(mealsLoggedToday, score);
 
   return (
-    <div className="rounded-xl border border-white/10 bg-[#1E3054]/60 backdrop-blur-md p-4 sm:p-5">
+    <div className="rounded-xl border border-white/10 bg-[#1E3054]/35 backdrop-blur-md p-4 sm:p-5">
       <div className="mb-3 flex items-center gap-2">
         <Brain className="h-5 w-5 text-[#2DA5A0]" strokeWidth={1.5} />
         <h3 className="text-sm font-semibold text-white">Nutrition Insights</h3>
