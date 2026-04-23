@@ -37,22 +37,19 @@ export function ManualInputModal({
             </Dialog.Overlay>
             <Dialog.Content asChild>
               <motion.div
-                className="fixed z-[61] flex flex-col overflow-hidden border shadow-2xl
-                           inset-x-0 bottom-0 max-h-[92vh] rounded-t-2xl
-                           sm:inset-auto sm:left-1/2 sm:top-1/2 sm:w-full sm:max-w-2xl sm:max-h-[88vh]
-                           sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-2xl"
+                className="fixed z-[61] flex flex-col overflow-hidden border shadow-2xl rounded-2xl
+                           left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2
+                           w-[calc(100vw-1.5rem)] max-w-2xl max-h-[calc(100vh-2rem)]
+                           sm:w-full sm:max-h-[88vh]"
                 style={{
                   background: '#111827',
                   borderColor: 'rgba(255,255,255,0.08)',
                 }}
-                initial={{ opacity: 0, y: 40 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 40 }}
+                initial={{ opacity: 0, scale: 0.96 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.96 }}
                 transition={{ duration: 0.2, ease: 'easeOut' }}
               >
-                <div className="sm:hidden pt-2 pb-1 flex justify-center">
-                  <span className="h-1 w-10 rounded-full bg-white/20" />
-                </div>
                 <div
                   className="flex items-start justify-between gap-4 px-4 pt-3 pb-4 sm:px-6 sm:pt-6"
                   style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}
