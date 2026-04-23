@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Hexagon, Plus, Star } from 'lucide-react';
-import { AchievementBadge } from '@/components/body-tracker/AchievementBadge';
+import { ChevronLeft, ChevronRight, Hexagon, Plus, Star, Trophy } from 'lucide-react';
+import { MilestoneGauge } from '@/components/body-tracker/MilestoneGauge';
 import { getMilestoneMessage } from '@/lib/body-tracker/calculations';
 import { MilestoneCreatorForm } from '@/components/body-tracker/manual-input/forms/MilestoneCreatorForm';
 
@@ -105,17 +105,14 @@ export default function MilestonesPage() {
           </div>
 
           <div className="flex justify-center">
-            <AchievementBadge grade={m.grade} size="lg" animated colors={m.colors} />
+            <MilestoneGauge grade={m.grade} title={m.title} colors={m.colors} size="md" icon={Trophy} animate />
           </div>
         </div>
 
-        {/* Desktop: all badges in a row */}
-        <div className="hidden md:flex md:flex-wrap md:justify-center md:gap-10">
+        {/* Desktop: all gauges in a row */}
+        <div className="hidden md:flex md:flex-wrap md:justify-center md:gap-4">
           {SAMPLE_MILESTONES.map((ms) => (
-            <div key={ms.id} className="flex flex-col items-center gap-2">
-              <AchievementBadge grade={ms.grade} size="lg" animated colors={ms.colors} />
-              <p className="text-xs font-semibold" style={{ color: ms.colors.mid }}>{ms.title}</p>
-            </div>
+            <MilestoneGauge key={ms.id} grade={ms.grade} title={ms.title} colors={ms.colors} size="md" icon={Trophy} animate />
           ))}
         </div>
       </div>
