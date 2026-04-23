@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ShieldCheck, Gavel, Scale, FileWarning, ClipboardCheck, Database, Users, AlertOctagon, TrendingUp, BookOpen, FileText } from "lucide-react";
+import { ShieldCheck, Gavel, Scale, FileWarning, ClipboardCheck, Database, Users, AlertOctagon, TrendingUp, BookOpen, FileText, Radio } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import MarshallBulletinBoard from "@/components/compliance/MarshallBulletinBoard";
 
@@ -14,6 +14,7 @@ const TILES = [
   { href: "/admin/marshall/dsar", label: "DSAR", icon: FileText },
   { href: "/admin/marshall/vendors", label: "Vendor BAAs", icon: Users },
   { href: "/admin/marshall/dashboards", label: "Dashboards", icon: TrendingUp },
+  { href: "/admin/marshall/hounddog", label: "Hounddog bridge", icon: Radio },
 ];
 
 export default async function MarshallLandingPage() {

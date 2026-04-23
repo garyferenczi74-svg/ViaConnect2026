@@ -13,6 +13,7 @@ import { commsRules } from "./comms";
 import { privacyRules } from "./privacy";
 import { brandRules } from "./brand";
 import { auditRules } from "./audit";
+import { socialRules } from "./social";
 
 export const allRules: Rule[] = [
   ...claimsRules,
@@ -24,6 +25,7 @@ export const allRules: Rule[] = [
   ...privacyRules,
   ...brandRules,
   ...auditRules,
+  ...socialRules,
 ];
 
 export {
@@ -36,4 +38,5 @@ export {
   privacyRules,
   brandRules,
   auditRules,
+  socialRules,
 };

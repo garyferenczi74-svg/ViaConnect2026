@@ -71,7 +71,10 @@ export async function updateSession(request: NextRequest) {
     pathname.startsWith("/trust-compliance/") ||
     pathname === "/dsar" ||
     pathname.startsWith("/compliance-hold") ||
-    pathname === "/api/marshall/dsar";
+    pathname === "/api/marshall/dsar" ||
+    // Hounddog bridge cron (Prompt #120). Authorized via CRON_SECRET inside
+    // the handler; must bypass the session redirect so Vercel Cron can reach it.
+    pathname === "/api/hounddog/collectors/tick";
 
   // If not authenticated and trying to access protected route, redirect to login
   if (!user && !isPublicRoute) {
