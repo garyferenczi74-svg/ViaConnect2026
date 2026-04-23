@@ -15,6 +15,7 @@ const TILES = [
   { href: "/admin/marshall/vendors", label: "Vendor BAAs", icon: Users },
   { href: "/admin/marshall/dashboards", label: "Dashboards", icon: TrendingUp },
   { href: "/admin/marshall/hounddog", label: "Hounddog bridge", icon: Radio },
+  { href: "/admin/marshall/precheck", label: "Pre-check", icon: Gavel },
 ];
 
 export default async function MarshallLandingPage() {

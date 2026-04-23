@@ -1,0 +1,44 @@
+{
+  "manifest_version": 3,
+  "name": "Marshall Pre-Check",
+  "version": "0.1.0",
+  "description": "Pre-publication compliance scan for FarmCeutica practitioners.",
+  "action": { "default_popup": "popup/popup.html", "default_title": "Marshall Pre-Check" },
+  "background": { "service_worker": "sw.js", "type": "module" },
+  "permissions": ["activeTab", "identity", "storage", "contextMenus"],
+  "host_permissions": [
+    "https://www.instagram.com/*",
+    "https://www.linkedin.com/*",
+    "https://x.com/*",
+    "https://twitter.com/*",
+    "https://www.facebook.com/*",
+    "https://www.tiktok.com/tiktokstudio/*",
+    "https://studio.youtube.com/*",
+    "https://*.substack.com/*",
+    "https://*.wordpress.com/*",
+    "https://medium.com/*",
+    "https://app.beehiiv.com/*",
+    "https://app.kit.com/*",
+    "https://app.convertkit.com/*",
+    "https://*.admin.mailchimp.com/*",
+    "https://via-connect2026.vercel.app/*"
+  ],
+  "content_scripts": [
+    { "matches": ["https://www.instagram.com/*"], "js": ["content/adapters/instagram.js"], "run_at": "document_idle" },
+    { "matches": ["https://www.linkedin.com/*"], "js": ["content/adapters/linkedin.js"], "run_at": "document_idle" },
+    { "matches": ["https://x.com/*", "https://twitter.com/*"], "js": ["content/adapters/x.js"], "run_at": "document_idle" },
+    { "matches": ["https://www.facebook.com/*"], "js": ["content/adapters/facebook.js"], "run_at": "document_idle" },
+    { "matches": ["https://www.tiktok.com/tiktokstudio/*"], "js": ["content/adapters/tiktok.js"], "run_at": "document_idle" },
+    { "matches": ["https://studio.youtube.com/*"], "js": ["content/adapters/youtubeStudio.js"], "run_at": "document_idle" },
+    { "matches": ["https://*.substack.com/*"], "js": ["content/adapters/substack.js"], "run_at": "document_idle" },
+    { "matches": ["https://*.wordpress.com/*"], "js": ["content/adapters/wordpress.js"], "run_at": "document_idle" },
+    { "matches": ["https://medium.com/*"], "js": ["content/adapters/medium.js"], "run_at": "document_idle" },
+    { "matches": ["https://app.beehiiv.com/*"], "js": ["content/adapters/beehiiv.js"], "run_at": "document_idle" },
+    { "matches": ["https://app.kit.com/*", "https://app.convertkit.com/*"], "js": ["content/adapters/convertkit.js"], "run_at": "document_idle" },
+    { "matches": ["https://*.admin.mailchimp.com/*"], "js": ["content/adapters/mailchimp.js"], "run_at": "document_idle" }
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  },
+  "web_accessible_resources": []
+}

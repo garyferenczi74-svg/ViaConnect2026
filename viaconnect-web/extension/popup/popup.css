@@ -1,0 +1,40 @@
+:root {
+  color-scheme: dark light;
+  font-family: "Instrument Sans", ui-sans-serif, system-ui, sans-serif;
+}
+body {
+  width: 360px;
+  min-height: 200px;
+  margin: 0;
+  background: #1a2744;
+  color: #ffffff;
+  padding: 12px 16px;
+}
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+p { font-size: 12px; color: rgba(255, 255, 255, 0.7); margin: 0; }
+ul { margin: 0; padding-left: 18px; }
+li { font-size: 12px; margin-bottom: 6px; }
+button {
+  background: rgba(183, 94, 24, 0.2);
+  color: #b75e18;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 12px;
+  cursor: pointer;
+}
+button:hover { background: rgba(183, 94, 24, 0.3); }
+code { font-size: 11px; background: rgba(0, 0, 0, 0.3); padding: 2px 4px; border-radius: 4px; }
+a { color: #b75e18; font-size: 12px; }
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}

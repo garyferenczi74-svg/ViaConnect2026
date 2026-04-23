@@ -133,20 +133,44 @@ export async function persistSignalAndFindings(input: WriteInput, db?: SupabaseC
   const now = new Date();
 
   for (const finding of findings) {
+    // Prompt #121 cross-check: if the published content matches a Marshall
+    // clearance receipt, soften severity one step; if drift detected, raise
+    // one step. The adjustment row is written inside applyClearanceAdjustment
+    // for full audit trail.
+    let adjustedFinding = finding;
+    try {
+      const { applyClearanceAdjustment } = await import("@/lib/marshall/precheck/crosscheck");
+      const cross = await applyClearanceAdjustment(
+        {
+          finding,
+          signal: {
+            matchedPractitionerId: signal.author.matchedPractitionerId ?? null,
+            content: { textDerived: signal.content.textDerived },
+          },
+        },
+        client,
+      );
+      if (cross.adjusted) {
+        adjustedFinding = { ...finding, severity: cross.severityAfter };
+      }
+    } catch {
+      // cross-check failure never blocks the write; defaults to original severity.
+    }
+
     const { data: findingRow, error: findingErr } = await client
       .from("compliance_findings")
       .insert({
-        finding_id: finding.findingId,
-        rule_id: finding.ruleId,
-        severity: finding.severity,
-        surface: finding.surface,
+        finding_id: adjustedFinding.findingId,
+        rule_id: adjustedFinding.ruleId,
+        severity: adjustedFinding.severity,
+        surface: adjustedFinding.surface,
         source: "runtime",
-        location: { ...finding.location, agent: "hounddog", signalId },
-        excerpt: finding.excerpt,
-        message: finding.message,
-        citation: finding.citation,
-        remediation: finding.remediation,
-        escalated_to: finding.escalation?.to ?? null,
+        location: { ...adjustedFinding.location, agent: "hounddog", signalId },
+        excerpt: adjustedFinding.excerpt,
+        message: adjustedFinding.message,
+        citation: adjustedFinding.citation,
+        remediation: adjustedFinding.remediation,
+        escalated_to: adjustedFinding.escalation?.to ?? null,
         evidence_bundle_id: evidenceBundle?.id ?? null,
       })
       .select("id")
@@ -160,10 +184,12 @@ export async function persistSignalAndFindings(input: WriteInput, db?: SupabaseC
     }
     persistedFindingIds.push((findingRow as { id: string }).id);
 
-    // Practitioner notice (only if attributable)
+    // Practitioner notice (only if attributable). Uses the clearance-adjusted
+    // severity so good-faith credits apply to remediation windows and strike
+    // calculations too.
     const practitionerId = signal.author.matchedPractitionerId;
     if (practitionerId && (signal.author.practitionerMatchConfidence ?? 0) >= 0.85) {
-      const hours = REMEDIATION_WINDOW_HOURS[finding.severity];
+      const hours = REMEDIATION_WINDOW_HOURS[adjustedFinding.severity];
       const due = new Date(now.getTime() + hours * 3600 * 1000);
       const nid = noticeIdFor(practitionerId, persistedFindingIds.length, now);
       const { data: notice } = await client
@@ -172,7 +198,7 @@ export async function persistSignalAndFindings(input: WriteInput, db?: SupabaseC
           notice_id: nid,
           practitioner_id: practitionerId,
           finding_id: (findingRow as { id: string }).id,
-          severity: finding.severity,
+          severity: adjustedFinding.severity,
           status: "issued",
           remediation_due_at: due.toISOString(),
         })

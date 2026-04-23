@@ -1,0 +1,25 @@
+/// <reference types="chrome" />
+/** Beehiiv composer adapter — STUB. */
+import type { ComposerAdapter } from "../types";
+import { observeComposer } from "../base";
+
+const adapter: ComposerAdapter = {
+  id: "beehiiv",
+  host: "app.beehiiv.com",
+  matches: (url) => url.hostname === "app.beehiiv.com",
+  findComposer: () => document.querySelector<HTMLElement>('div.ProseMirror[contenteditable="true"]'),
+  extractDraftText: (el) => (el.innerText ?? el.textContent ?? "").trim(),
+  applyRewrite: (el, rewrite) => {
+    const sel = window.getSelection();
+    if (!sel) return;
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    sel.removeAllRanges();
+    sel.addRange(range);
+    document.execCommand("insertText", false, rewrite);
+  },
+  getAttachedMediaUrls: () => [],
+};
+
+if (adapter.matches(new URL(location.href))) observeComposer(adapter, "body");
+export {};

@@ -1,0 +1,2 @@
+# Extension scaffold: text files stay LF for cross-platform bundler compatibility.
+* text=auto eol=lf

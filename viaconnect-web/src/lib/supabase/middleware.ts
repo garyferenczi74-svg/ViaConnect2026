@@ -74,7 +74,10 @@ export async function updateSession(request: NextRequest) {
     pathname === "/api/marshall/dsar" ||
     // Hounddog bridge cron (Prompt #120). Authorized via CRON_SECRET inside
     // the handler; must bypass the session redirect so Vercel Cron can reach it.
-    pathname === "/api/hounddog/collectors/tick";
+    pathname === "/api/hounddog/collectors/tick" ||
+    // Marshall pre-check public JWKS (Prompt #121). Standard .well-known
+    // discovery endpoint for third parties verifying clearance receipts.
+    pathname === "/.well-known/marshall-clearance-jwks.json";
 
   // If not authenticated and trying to access protected route, redirect to login
   if (!user && !isPublicRoute) {

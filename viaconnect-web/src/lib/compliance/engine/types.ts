@@ -27,7 +27,10 @@ export type Surface =
   | "checkout"
   | "email"
   | "sms"
-  | "marketing_page";
+  | "marketing_page"
+  // Prompt #121: proactive pre-check surface. Same rule evaluators,
+  // tighter confidence gates, cooperative coaching tone.
+  | "precheck_draft";
 
 export type FindingSource = "claude_code" | "runtime";
 
