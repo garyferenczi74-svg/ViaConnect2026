@@ -113,13 +113,26 @@ This directive is memorialized in Claude's persistent memory and applies to all 
 
 ### Pre-existing references flagged to Gary, not silently removed (per Section 5.4)
 
-| File | Content | Disposition |
+| File | Content | Gary's disposition (2026-04-23) |
 | --- | --- | --- |
-| `src/data/testingDiagnosticsInfo.ts` | `CannabisIQ` pharmacogenomic panel (CB1/CB2 receptor density, THC metabolism, COMT anxiety sensitivity) | Appears to be a legitimate FarmCeutica genetic-testing product line, not cannabis compliance. Awaiting Gary's review. |
-| `src/types/custom-formulations.ts` | Comment "CBD / cannabis derivatives" on a formulation type | Formulation categorization; appears in-scope. Awaiting Gary's review. |
-| `src/components/media-sources/tagColors.ts` and `sourceData.ts` | Research-journal categorization including "Cannabis and Cannabinoid Research" plus "Medical Cannabis" / "Cannabis Science" tag colors | Research source catalog for ingestion pipeline; appears in-scope. Awaiting Gary's review. |
+| `src/data/testingDiagnosticsInfo.ts` | `CannabisIQ` pharmacogenomic panel (CB1/CB2 receptor density, THC metabolism, COMT anxiety sensitivity) | **Keep. In-scope.** Cannabis pharmacogenomics is a legitimate FarmCeutica genetic-testing product line, entirely decoupled from CedarGrowth Organics. |
+| `src/types/custom-formulations.ts` | Comment "CBD / cannabis derivatives" on a formulation type | **Keep. In-scope.** |
+| `src/components/media-sources/tagColors.ts` and `sourceData.ts` | Research-journal categorization including "Cannabis and Cannabinoid Research" plus "Medical Cannabis" / "Cannabis Science" tag colors | **Keep. In-scope.** Research-source catalog for the ingestion pipeline. |
 
 No cannabis-compliance infrastructure, no `MARSHALL.CANNABIS.*` namespace, no CedarGrowth or Via Cura Ranch references were found in #119 or #120 deliverable code other than the `viacura` brand-term violation already corrected above.
+
+### Cannabis scope clarification (Gary, 2026-04-23)
+
+Cannabis **pharmacogenomics and research-source content are in-scope** for ViaConnect as part of FarmCeutica's genetic-testing and media-intelligence product lines. New cannabis content may be added or expanded on those surfaces.
+
+Cannabis content in ViaConnect must never be connected to CedarGrowth Organics in any way. CedarGrowth is not part of this project.
+
+What remains blocked in ViaConnect:
+
+- Cannabis-compliance infrastructure (METRC integration, state dispensary compliance, cultivation/sale regulation, seed-to-sale tracking)
+- `MARSHALL.CANNABIS.*` rule namespace
+- CedarGrowth branding or cross-references
+- Via Cura Ranch references and Alberta/Canada psychedelic-therapy modules
 
 ### Commits
 
