@@ -18,7 +18,6 @@ const config: CapacitorConfig = {
   appId: 'com.farmceutica.viaconnect',
   appName: 'ViaConnect',
   webDir: 'public',
-  bundledWebRuntime: false,
   server: {
     url: 'https://viaconnectapp.com',
     androidScheme: 'https',

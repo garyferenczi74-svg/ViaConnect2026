@@ -1,11 +1,11 @@
 // Prompt #117 §4.4: ViaConnect brand asset generator.
 //
 // Produces assets/icon.png (1024x1024) and assets/splash.png (2732x2732)
-// from the locked ViaConnect design tokens. Deterministic; no random
-// seeds. Safe to re-run.
+// from the authoritative ViaConnect brand mark at public/icon.svg.
+// Deterministic; no random seeds. Safe to re-run.
 //
-// Prerequisites (one-time):
-//   npm install --save-dev sharp
+// Prerequisites:
+//   sharp (already in dependencies from Prompt #106)
 //
 // Run:
 //   node scripts/generate-app-store-assets.mjs
@@ -13,61 +13,31 @@
 // Output consumed by:
 //   npx capacitor-assets generate --assetPath assets
 //
-// Design anchors (Prompt #117 §4.1):
-//   - Deep Navy #1A2744   canvas / background (full bleed, 0 alpha)
-//   - Teal #2DA5A0        primary DNA helix mark
-//   - Orange #B75E18      DNA rung accents (brand dual-accent)
-//   - Ink #F5F7FB         splash wordmark typography
-//   - Instrument Sans     splash wordmark + tagline (mark-only on icon)
-//
 // Safe-zone rationale:
-//   - Icon 1024: centered 820x820 (80.1%) carries the mark so Android
-//     adaptive icons + iOS corner-radius clipping keep it intact.
-//   - Splash 2732: centered 1200x1200 (43.9%) carries mark + wordmark
-//     so Capacitor's center-crop survives every aspect ratio from
-//     9:16 phones to 4:3 iPads.
-//   - Zero alpha anywhere — iOS App Store rejects icons with any
-//     transparency. `flatten()` on both outputs enforces this.
+//   - Icon 1024: mark rendered at 80% (820x820) centered; iOS corner-
+//     radius clipping + Android adaptive crop both preserve it.
+//   - Splash 2732: mark + wordmark + tagline stay within centered
+//     1200x1200 so Capacitor center-crop survives every device aspect
+//     ratio (9:16 phones through 4:3 iPads).
+//   - Zero alpha (`flatten`) — iOS App Store rejects any transparency.
 
 import sharp from 'sharp';
-import { mkdir } from 'node:fs/promises';
+import { readFile, mkdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
 const BRAND = {
-  navy:   '#1A2744',
-  card:   '#1E3054',
-  teal:   '#2DA5A0',
-  orange: '#B75E18',
-  ink:    '#F5F7FB',
+  navy:   '#0B1120',   // matches public/icon.svg background
+  teal:   '#22D3EE',   // matches public/icon.svg ring color
+  orange: '#B75F19',   // matches public/icon.svg V letter
+  ink:    '#F5F7FB',   // splash wordmark color
 };
 
 const REPO_ROOT = resolve(process.cwd());
-
-/**
- * ViaConnect DNA helix mark.
- * 420x420 viewport for clean scaling to 614px (icon) and 600px (splash).
- * Two intertwining strands in teal + four crossbar rungs in orange.
- */
-function logoMarkSVG() {
-  return `
-    <svg width="420" height="420" viewBox="0 0 420 420" xmlns="http://www.w3.org/2000/svg">
-      <g stroke="${BRAND.teal}" stroke-width="18" fill="none" stroke-linecap="round">
-        <path d="M 130 40 C 280 130, 140 210, 290 300 C 440 390, 130 380, 130 380" />
-        <path d="M 290 40 C 140 130, 280 210, 130 300 C -20 390, 290 380, 290 380" />
-      </g>
-      <g stroke="${BRAND.orange}" stroke-width="10" stroke-linecap="round">
-        <line x1="160" y1="105" x2="260" y2="105" />
-        <line x1="160" y1="175" x2="260" y2="175" />
-        <line x1="160" y1="245" x2="260" y2="245" />
-        <line x1="160" y1="315" x2="260" y2="315" />
-      </g>
-    </svg>
-  `;
-}
+const BRAND_SVG_PATH = resolve(REPO_ROOT, 'public/icon.svg');
 
 /**
  * Splash wordmark: "ViaConnect" + tagline "BUILT FOR YOUR BIOLOGY".
- * No emojis; no em-dashes (standing rule).
+ * Paired with the brand mark above. No emojis; no em-dashes.
  */
 function wordmarkSVG({ width = 1400, height = 360 } = {}) {
   return `
@@ -84,22 +54,37 @@ function wordmarkSVG({ width = 1400, height = 360 } = {}) {
   `;
 }
 
+/**
+ * Strip the rounded-corner background from the brand SVG so we can
+ * composite the MARK ONLY onto our own canvas. The original icon.svg
+ * has a rx="6" rect; iOS applies its own corner radius and rejects
+ * rounded-corner source images, so we want a full-bleed square canvas
+ * with just the foreground elements.
+ */
+async function extractMarkSVG() {
+  const original = await readFile(BRAND_SVG_PATH, 'utf8');
+  // Remove the <rect> background; keep the foreground (V letter + circle + dot).
+  // Regex tolerates attribute order or whitespace variations.
+  return original.replace(/<rect\b[^>]*\/>/i, '');
+}
+
 async function generateIcon() {
   const size = 1024;
-  const logoSize = Math.round(size * 0.60);         // 614px mark
-  const offset = Math.round((size - logoSize) / 2); // centered
+  const markSize = Math.round(size * 0.80);          // 820x820 safe-zone
+  const offset = Math.round((size - markSize) / 2);  // centered
 
   const canvas = await sharp({
     create: { width: size, height: size, channels: 4, background: BRAND.navy },
   }).png().toBuffer();
 
-  const logo = await sharp(Buffer.from(logoMarkSVG()))
-    .resize(logoSize, logoSize)
+  const markSVG = await extractMarkSVG();
+  const mark = await sharp(Buffer.from(markSVG))
+    .resize(markSize, markSize)
     .png()
     .toBuffer();
 
   await sharp(canvas)
-    .composite([{ input: logo, top: offset, left: offset }])
+    .composite([{ input: mark, top: offset, left: offset }])
     .flatten({ background: BRAND.navy })
     .png({ compressionLevel: 9 })
     .toFile(resolve(REPO_ROOT, 'assets/icon.png'));
@@ -114,12 +99,13 @@ async function generateSplash() {
     create: { width: size, height: size, channels: 4, background: BRAND.navy },
   }).png().toBuffer();
 
-  // DNA mark: upper portion of the 1200x1200 safe zone
+  // Brand mark: upper portion of the 1200x1200 safe zone
   const markSize = 600;
   const markLeft = Math.round((size - markSize) / 2);
   const markTop  = Math.round(size / 2 - markSize - 60);
 
-  const mark = await sharp(Buffer.from(logoMarkSVG()))
+  const markSVG = await extractMarkSVG();
+  const mark = await sharp(Buffer.from(markSVG))
     .resize(markSize, markSize)
     .png()
     .toBuffer();
@@ -151,6 +137,7 @@ async function main() {
   await generateIcon();
   await generateSplash();
   console.log('');
+  console.log('Source mark: public/icon.svg');
   console.log('Next steps:');
   console.log('  1. Visual QA checklist (Prompt #117 §4.7)');
   console.log('  2. npx capacitor-assets generate --assetPath assets');
