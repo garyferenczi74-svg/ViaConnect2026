@@ -3,13 +3,28 @@
 import { motion } from 'framer-motion';
 import { Star } from 'lucide-react';
 
+export interface BadgeColors {
+  light: string;
+  mid: string;
+  dark: string;
+  text: string;
+}
+
 interface AchievementBadgeProps {
   grade: string;
   size?: 'sm' | 'md' | 'lg';
   animated?: boolean;
+  colors?: BadgeColors;
 }
 
 const SIZES = { sm: 40, md: 80, lg: 120 };
+
+const DEFAULT_COLORS: BadgeColors = {
+  light: '#FBBF24',
+  mid: '#F59E0B',
+  dark: '#D97706',
+  text: '#78350F',
+};
 
 function ConfettiParticle({ delay, angle }: { delay: number; angle: number }) {
   const colors = ['#2DA5A0', '#B75E18', '#FFD700', '#FFFFFF'];
@@ -24,7 +39,7 @@ function ConfettiParticle({ delay, angle }: { delay: number; angle: number }) {
   );
 }
 
-export function AchievementBadge({ grade, size = 'lg', animated = true }: AchievementBadgeProps) {
+export function AchievementBadge({ grade, size = 'lg', animated = true, colors = DEFAULT_COLORS }: AchievementBadgeProps) {
   const px = SIZES[size];
   const fontSize = size === 'lg' ? 'text-3xl' : size === 'md' ? 'text-xl' : 'text-sm';
   const starSize = size === 'lg' ? 16 : size === 'md' ? 12 : 8;
@@ -43,15 +58,16 @@ export function AchievementBadge({ grade, size = 'lg', animated = true }: Achiev
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
         transition={{ type: 'spring', stiffness: 200, damping: 15 }}
-        className="flex flex-col items-center justify-center rounded-full shadow-lg shadow-yellow-500/30"
+        className="flex flex-col items-center justify-center rounded-full shadow-lg"
         style={{
           width: px,
           height: px,
-          background: 'radial-gradient(circle at 40% 35%, #FBBF24, #F59E0B, #D97706)',
+          background: `radial-gradient(circle at 40% 35%, ${colors.light}, ${colors.mid}, ${colors.dark})`,
+          boxShadow: `0 10px 15px -3px ${colors.mid}4D, 0 4px 6px -4px ${colors.mid}4D`,
         }}
       >
-        <Star className="text-yellow-900/60" style={{ width: starSize, height: starSize }} strokeWidth={1.5} />
-        <span className={`font-bold text-yellow-900 ${fontSize}`}>{grade}</span>
+        <Star style={{ width: starSize, height: starSize, color: `${colors.text}99` }} strokeWidth={1.5} />
+        <span className={`font-bold ${fontSize}`} style={{ color: colors.text }}>{grade}</span>
       </motion.div>
     </div>
   );

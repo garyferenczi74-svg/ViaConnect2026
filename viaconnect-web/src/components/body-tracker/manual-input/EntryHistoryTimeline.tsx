@@ -90,8 +90,8 @@ export function EntryHistoryTimeline({ category, limit = 10, onChanged }: EntryH
   }
   if (entries.length === 0) {
     return (
-      <div className="rounded-xl border border-white/[0.08] bg-white/[0.02] px-4 py-6 text-center">
-        <p className="text-xs text-white/50">No entries yet. Tap Log entry above to add your first reading.</p>
+      <div className="rounded-xl border border-white/[0.08] bg-[#1E3054]/35 backdrop-blur-sm px-4 py-6 text-center">
+        <p className="text-xs text-white/70">No entries yet. Tap Log entry above to add your first reading.</p>
       </div>
     );
   }

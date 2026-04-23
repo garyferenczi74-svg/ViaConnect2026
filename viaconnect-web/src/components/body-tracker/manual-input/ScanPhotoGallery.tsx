@@ -80,9 +80,9 @@ export function ScanPhotoGallery({ category }: ScanPhotoGalleryProps) {
   }
   if (photos.length === 0) {
     return (
-      <div className="rounded-xl border border-white/[0.08] bg-white/[0.02] px-4 py-8 text-center">
-        <Camera className="h-5 w-5 mx-auto mb-2 text-white/30" strokeWidth={1.5} />
-        <p className="text-xs text-white/50">No scan photos yet. Attach one when logging an entry.</p>
+      <div className="rounded-xl border border-white/[0.08] bg-[#1E3054]/35 backdrop-blur-sm px-4 py-8 text-center">
+        <Camera className="h-5 w-5 mx-auto mb-2 text-white/50" strokeWidth={1.5} />
+        <p className="text-xs text-white/70">No scan photos yet. Attach one when logging an entry.</p>
       </div>
     );
   }
