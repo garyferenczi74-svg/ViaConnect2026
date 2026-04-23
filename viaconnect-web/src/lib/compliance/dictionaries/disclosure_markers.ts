@@ -44,11 +44,14 @@ export function hasDisclosure(text: string): boolean {
   return DISCLOSURE_MARKERS.some((m) => lower.includes(m));
 }
 
+// FarmCeutica Wellness LLC brand terms only. Separate entities (CedarGrowth
+// Organics, Via Cura Ranch) are intentionally NOT listed here per the
+// #119/#120 Scope Correction Amendment (2026-04-23) — those companies have
+// separate legal entities, separate codebases, and are out of scope for the
+// ViaConnect compliance surface.
 export const BRAND_TERMS: readonly string[] = [
   "farmceutica",
   "viaconnect",
-  "viacura",
-  "via cura",
   "genex360",
   "gene x360",
   "helix rewards",
