@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { GORDAN_SYSTEM_PROMPT, GORDAN_TASK_PROMPTS } from '@/lib/agents/gordan/systemPrompt';
 import type { GordanTask } from '@/lib/agents/gordan/taskRegistry';
 import { emitJefferyMessage } from '@/lib/jeffery/message-bus';
+import { scanAiOutput } from '@/lib/compliance/adapters/ai_output';
 
 interface GordanRequest {
   task: GordanTask;
@@ -144,6 +145,15 @@ export async function POST(req: NextRequest) {
     const latency = Date.now() - start;
 
     await logActivity(supabase, user.id, task, tokensUsed, latency, true);
+
+    // Marshall post-flight scan. Findings persist + audit + escalate.
+    // Fire-and-forget; keeps Gordan responsive.
+    void scanAiOutput({
+      agent: 'gordan',
+      userId: user.id,
+      userRole: 'consumer',
+      text,
+    }).catch(() => { /* best-effort */ });
 
     // Surface Gordan activity in Jeffery's Live Feed. Fire-and-forget; don't
     // block the user response on observability.

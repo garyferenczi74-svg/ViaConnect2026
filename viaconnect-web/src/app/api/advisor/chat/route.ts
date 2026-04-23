@@ -16,6 +16,7 @@ import { buildAdvisorContext, type AdvisorRole } from "@/lib/jeffery/advisor-con
 import { streamAdvisorResponse } from "@/lib/jeffery/advisor-stream";
 import { logAdvisorQuery, persistConversationTurn } from "@/lib/jeffery/advisor-telemetry";
 import { emitJefferyMessage } from "@/lib/jeffery/message-bus";
+import { scanAiOutput } from "@/lib/compliance/adapters/ai_output";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -123,6 +124,20 @@ export async function POST(req: Request) {
       });
     } catch (e) {
       console.warn(`[advisor/chat] persist failed: ${(e as Error).message}`);
+    }
+    // Marshall post-flight scan of the full assistant text. Findings are
+    // persisted + audit-logged; P0 hits escalate via EscalationRouter.
+    try {
+      const agentLabel = role === "consumer" ? "hannah" : role === "naturopath" ? "hannah_naturopath" : "hannah_practitioner";
+      await scanAiOutput({
+        agent: agentLabel,
+        userId: user.id,
+        userRole: role,
+        text: m.full_text ?? "",
+        patientId,
+      });
+    } catch (e) {
+      console.warn(`[advisor/chat] marshall scan failed: ${(e as Error).message}`);
     }
     try {
       const sourceAgent = role === "consumer" ? "hannah" : role === "naturopath" ? "hannah_naturopath" : "hannah_practitioner";

@@ -64,7 +64,14 @@ export async function updateSession(request: NextRequest) {
     pathname.startsWith("/api/auth/") ||
     pathname.startsWith("/api/stripe/webhook") ||
     pathname.startsWith("/api/webhooks/") ||
-    pathname.startsWith("/api/pricing/");
+    pathname.startsWith("/api/pricing/") ||
+    // Marshall compliance surfaces (Prompt #119): public DSAR form, trust
+    // page, incident history, and the DSAR submit endpoint.
+    pathname === "/trust-compliance" ||
+    pathname.startsWith("/trust-compliance/") ||
+    pathname === "/dsar" ||
+    pathname.startsWith("/compliance-hold") ||
+    pathname === "/api/marshall/dsar";
 
   // If not authenticated and trying to access protected route, redirect to login
   if (!user && !isPublicRoute) {

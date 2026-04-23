@@ -21,6 +21,13 @@ export interface AdvisorMessage {
   content: string;
 }
 
+export interface AdvisorComplianceContext {
+  activeWaiverRuleIds: string[];
+  hasGenex360Consent: boolean;
+  jurisdiction: string;
+  practitionerScope: string[];
+}
+
 export interface AdvisorContext {
   role: AdvisorRole;
   userId: string;
@@ -30,6 +37,7 @@ export interface AdvisorContext {
   conversationHistory: AdvisorMessage[];
   jefferyInstructions: string[];
   protocolConfidencePct: number;
+  complianceContext?: AdvisorComplianceContext;
 }
 
 /**
