@@ -234,10 +234,9 @@ export function DailyCheckIn({ onScoresUpdate, onSliderChange }: DailyCheckInPro
     })();
   }, [checkInDate]);
 
-  // ── Auto-collapse when all cards submitted ─────────────
-  useEffect(() => {
-    if (allSubmitted && !collapsed) setCollapsed(true);
-  }, [allSubmitted, collapsed]);
+  // No auto-collapse after submission. The user should be able to
+  // expand, update, and re-save their check-in any time during the
+  // day; useMidnightReset above resets the form at local midnight.
 
   // ── Pending cards summary for minimized state ──────────
   const pendingCards = [

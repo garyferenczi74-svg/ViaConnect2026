@@ -319,8 +319,13 @@ export function DailyScoresPanel({ checkinRaw, previewRaw }: DailyScoresPanelPro
         scoresLoadedRef.current = true;
         setCachedScores(scores);
       }
+
+      // Defensive: also re-fetch from DB so the panel reconciles with the
+      // upserted daily_checkins row (in case the local map is missing
+      // columns or the user's rawState diverges from what was persisted).
+      void computeScores();
     }
-  }, [checkinRaw]);
+  }, [checkinRaw, computeScores]);
 
   // Live preview from slider changes
   useEffect(() => {
