@@ -31,6 +31,11 @@ import { hashSubject, lookupCached } from "./kelsey/cache";
 import { callKelseyLLM } from "./kelsey/client";
 import { getJurisdictionId } from "./jurisdiction";
 import { recordRegulatoryAudit } from "./audit-logger";
+import {
+  kelseyEscalateToJeffery,
+  kelseyAskSherlock,
+  kelseyNotifyHannah,
+} from "@/lib/agents/message-bus";
 import type { JurisdictionCode, KelseyVerdictType, SubjectType } from "./types";
 
 export type ServerReviewDecision =
@@ -223,6 +228,36 @@ export async function reviewServerText(input: ServerReviewInput): Promise<Server
     console.warn("[review-server-text] audit log failed:", (err as Error).message);
   });
 
+  // Escalation event emission (Prompt #113 P0 #5). Every non-APPROVED
+  // verdict fires a structured message on the agent bus so Jeffery can
+  // route (to Sherlock for substantiation, Hannah for disclaimer UX,
+  // Arnold for coaching retract). Fire-and-forget; failures log but
+  // never block the verdict return.
+  if (verdict !== "APPROVED") {
+    const eventPayload = {
+      verdict,
+      review_id: reviewId,
+      subject_type: input.subject_type,
+      subject_id: input.subject_id ?? null,
+      jurisdiction: input.jurisdiction,
+      stage_1_score: stage1.total_score,
+      stage_1_flag_count: stage1.flags.length,
+      rationale,
+      suggested_route: pickEscalationRoute(verdict, input.subject_type),
+    };
+    void kelseyEscalateToJeffery(`kelsey_${verdict.toLowerCase()}`, eventPayload, input.acting_user_id);
+    // Parallel channels for specific downstreams. Sherlock pulls
+    // substantiation when the rationale flags missing citations;
+    // Hannah is notified whenever a rendered surface may need a
+    // disclaimer refresh.
+    if (verdict === "ESCALATE") {
+      void kelseyAskSherlock("substantiation_request", eventPayload, input.acting_user_id);
+    }
+    if (verdict === "BLOCKED" || verdict === "CONDITIONAL") {
+      void kelseyNotifyHannah("claim_surface_refresh", eventPayload, input.acting_user_id);
+    }
+  }
+
   // Decision handling.
   switch (verdict) {
     case "APPROVED":
@@ -258,4 +293,15 @@ export async function reviewServerText(input: ServerReviewInput): Promise<Server
         review_id: reviewId,
       };
   }
+}
+
+/**
+ * Suggests which downstream agent should pick up the escalation first.
+ * Jeffery sees the `suggested_route` in the payload and can override.
+ */
+function pickEscalationRoute(verdict: KelseyVerdictType, subject: SubjectType): string {
+  if (verdict === "BLOCKED") return subject === "marketing_copy" ? "hannah" : "arnold";
+  if (verdict === "CONDITIONAL") return "hannah";
+  if (verdict === "ESCALATE") return "human";
+  return "jeffery";
 }

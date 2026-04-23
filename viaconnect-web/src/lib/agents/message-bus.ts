@@ -15,7 +15,7 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 // Types
 // ---------------------------------------------------------------------------
 
-type AgentName = 'arnold' | 'hannah' | 'jeffery' | 'michelangelo' | 'sherlock';
+type AgentName = 'arnold' | 'hannah' | 'jeffery' | 'michelangelo' | 'sherlock' | 'kelsey';
 type AgentTarget = AgentName | 'all';
 type MessageStatus = 'pending' | 'acknowledged' | 'in_progress' | 'resolved' | 'rejected';
 
@@ -108,6 +108,92 @@ export async function arnoldEscalateToJeffery(
   return sendAgentMessage({
     fromAgent: 'arnold',
     toAgent: 'jeffery',
+    messageType: type,
+    userId,
+    payload,
+  });
+}
+
+/**
+ * Kelsey escalates a verdict to Jeffery for orchestration.
+ *
+ * Closes Prompt #113 P0 #5: structured escalation events replace the
+ * previous "Kelsey prints prose into the rationale field" pattern.
+ * Every ESCALATE verdict from the server review helper fires this so
+ * Jeffery can route to Sherlock (substantiation lookup), Hannah
+ * (disclaimer surface), or Arnold (retract coaching) as appropriate.
+ *
+ * Payload shape:
+ *   verdict           "ESCALATE" | "BLOCKED" | "CONDITIONAL"
+ *   review_id         uuid of the regulatory_kelsey_reviews row
+ *   subject_type      protocol / claim / marketing_copy / etc.
+ *   subject_id        subject's own id when known
+ *   jurisdiction      "US" | "CA"
+ *   stage_1_score     numeric severity from the detector
+ *   rationale         Kelsey's free-text reason (for Jeffery logs, not UI)
+ *   suggested_route   "sherlock" | "hannah" | "arnold" | "human"
+ */
+export async function kelseyEscalateToJeffery(
+  type: string,
+  payload: Record<string, unknown>,
+  userId?: string,
+): Promise<string | null> {
+  return sendAgentMessage({
+    fromAgent: 'kelsey',
+    toAgent: 'jeffery',
+    messageType: type,
+    userId,
+    payload,
+  });
+}
+
+/**
+ * Kelsey asks Sherlock to pull substantiation for a flagged claim.
+ */
+export async function kelseyAskSherlock(
+  type: string,
+  payload: Record<string, unknown>,
+  userId?: string,
+): Promise<string | null> {
+  return sendAgentMessage({
+    fromAgent: 'kelsey',
+    toAgent: 'sherlock',
+    messageType: type,
+    userId,
+    payload,
+  });
+}
+
+/**
+ * Kelsey tells Hannah to surface a disclaimer or retract a rendered claim.
+ */
+export async function kelseyNotifyHannah(
+  type: string,
+  payload: Record<string, unknown>,
+  userId?: string,
+): Promise<string | null> {
+  return sendAgentMessage({
+    fromAgent: 'kelsey',
+    toAgent: 'hannah',
+    messageType: type,
+    userId,
+    payload,
+  });
+}
+
+/**
+ * Kelsey tells Arnold to retract or suppress a coaching recommendation
+ * that failed post-render review (e.g., a cache-refresh invalidated a
+ * previously approved verdict).
+ */
+export async function kelseyNotifyArnold(
+  type: string,
+  payload: Record<string, unknown>,
+  userId?: string,
+): Promise<string | null> {
+  return sendAgentMessage({
+    fromAgent: 'kelsey',
+    toAgent: 'arnold',
     messageType: type,
     userId,
     payload,
