@@ -30,6 +30,7 @@ export default defineConfig({
         'src/lib/body-tracker/**/*.ts',
         'src/lib/international/**/*.ts',
         'src/lib/notifications/**/*.ts',
+        'src/lib/compliance/**/*.ts',
       ],
       exclude: [
         '**/types.ts',
