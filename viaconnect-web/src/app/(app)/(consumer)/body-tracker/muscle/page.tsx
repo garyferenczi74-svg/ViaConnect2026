@@ -2,9 +2,15 @@
 
 import { useState } from 'react';
 import { Plus } from 'lucide-react';
-import { MaleBack } from '@/components/body-tracker/body-graphic/assets/MaleBack';
+import { BodySilhouette } from '@/components/body-tracker/BodySilhouette';
 import { MuscleAnalysisForm } from '@/components/body-tracker/manual-input/forms/MuscleAnalysisForm';
 import { EntryHistoryTimeline, ScanPhotoGallery } from '@/components/body-tracker/manual-input';
+
+const SAMPLE_MUSCLE = {
+  right_arm_lbs: 6.2, left_arm_lbs: 5.9, trunk_lbs: 54.1,
+  right_leg_lbs: 18.9, left_leg_lbs: 18.9,
+  total_muscle_mass_lbs: 63.8, skeletal_muscle_mass_lbs: 28.3,
+};
 
 export default function MusclePage() {
   const [open, setOpen] = useState(false);
@@ -28,6 +34,7 @@ export default function MusclePage() {
       </div>
       <MuscleAnalysisForm open={open} onOpenChange={setOpen} onSaved={() => setRefreshKey((k) => k + 1)} />
 
+      {/* Summary stats */}
       <div className="flex flex-wrap gap-3">
         {[
           { label: 'Total Muscle Mass', value: '63.8 lbs' },
@@ -42,10 +49,9 @@ export default function MusclePage() {
         ))}
       </div>
 
-      <div className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/75 p-6 backdrop-blur-sm flex justify-center">
-        <div className="w-full max-w-[360px] text-[#2DA5A0]">
-          <MaleBack showAnatomicalDetail={true} showMuscleRegions={true} />
-        </div>
+      <div className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/75 p-6 backdrop-blur-sm">
+        <h3 className="mb-4 text-xs font-semibold uppercase tracking-wider text-white/40">Segmental Muscle Analysis</h3>
+        <BodySilhouette mode="muscle" segmentalData={SAMPLE_MUSCLE} />
       </div>
 
       <EntryHistoryTimeline category="muscle" onChanged={() => setRefreshKey((k) => k + 1)} />

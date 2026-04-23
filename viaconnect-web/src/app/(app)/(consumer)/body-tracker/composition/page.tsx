@@ -2,9 +2,14 @@
 
 import { useState } from 'react';
 import { Plus } from 'lucide-react';
-import { MaleFront } from '@/components/body-tracker/body-graphic/assets/MaleFront';
+import { BodySilhouette } from '@/components/body-tracker/BodySilhouette';
 import { SegmentalFatForm } from '@/components/body-tracker/manual-input/forms/SegmentalFatForm';
 import { EntryHistoryTimeline, ScanPhotoGallery } from '@/components/body-tracker/manual-input';
+
+const SAMPLE_FAT = {
+  right_arm_pct: 18.2, left_arm_pct: 17.9, trunk_pct: 26.6,
+  right_leg_pct: 19.4, left_leg_pct: 19.7, total_body_fat_pct: 21.3,
+};
 
 export default function CompositionPage() {
   const [open, setOpen] = useState(false);
@@ -41,11 +46,9 @@ export default function CompositionPage() {
           ))}
         </div>
       </div>
-
-      <div className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 p-6 backdrop-blur-sm flex justify-center" key={refreshKey}>
-        <div className="w-full max-w-[360px] text-[#2DA5A0]">
-          <MaleFront showAnatomicalDetail={true} />
-        </div>
+      <div className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 p-6 backdrop-blur-sm" key={refreshKey}>
+        <h3 className="mb-4 text-xs font-semibold uppercase tracking-wider text-white/40">Segmental Body Fat Analysis</h3>
+        <BodySilhouette mode="fat" segmentalData={SAMPLE_FAT} />
       </div>
 
       <SegmentalFatForm open={open} onOpenChange={setOpen} onSaved={() => setRefreshKey((k) => k + 1)} />
