@@ -47,7 +47,7 @@ export function BodyScoreGauge({ score, previousScore, confidencePct, tier }: Bo
   const fillLength = (Math.min(score, 1000) / 1000) * arcLength;
 
   return (
-    <div className="mx-auto flex w-fit flex-col items-center gap-4 rounded-2xl border border-white/[0.08] bg-[#1E3054]/40 p-5 backdrop-blur-lg md:p-6">
+    <div className="mx-auto flex w-fit flex-col items-center gap-4 rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 p-5 backdrop-blur-sm md:p-6">
       {/* Gauge */}
       <div className="relative" style={{ width: size, height: size / 2 + 30 }}>
         <svg

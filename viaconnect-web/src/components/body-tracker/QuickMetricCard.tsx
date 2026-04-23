@@ -22,7 +22,7 @@ const STATUS_STYLES: Record<MetricStatus, { color: string; bg: string; border: s
 export function QuickMetricCard({ icon: Icon, label, value, unit, status, trend }: QuickMetricCardProps) {
   const st = STATUS_STYLES[status];
   return (
-    <div className="flex flex-col gap-2 rounded-xl border border-white/[0.08] bg-white/5 p-4 backdrop-blur-md">
+    <div className="flex flex-col gap-2 rounded-xl border border-white/[0.08] bg-[#1E3054]/35 p-4 backdrop-blur-sm">
       <div className="flex items-center gap-2">
         <Icon className="h-4 w-4 text-white/50" strokeWidth={1.5} />
         <span className="text-[11px] text-white/50">{label}</span>

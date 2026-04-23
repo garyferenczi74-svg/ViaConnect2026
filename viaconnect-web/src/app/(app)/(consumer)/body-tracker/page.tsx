@@ -145,7 +145,7 @@ export default function BodyTrackerDashboard() {
       </div>
 
       {/* Contributors Breakdown */}
-      <div className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/75 p-5 backdrop-blur-sm">
+      <div className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 p-5 backdrop-blur-sm">
         <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-white/50">
           Score Contributors
         </h3>
@@ -167,7 +167,7 @@ export default function BodyTrackerDashboard() {
       {/* Weekly Report CTA */}
       <Link
         href="/body-tracker"
-        className="flex items-center justify-between rounded-2xl border border-[#2DA5A0]/30 bg-[#2DA5A0]/10 p-5 transition-all hover:bg-[#2DA5A0]/20"
+        className="flex items-center justify-between rounded-2xl border border-[#2DA5A0]/30 bg-[#1E3054]/35 p-5 backdrop-blur-sm transition-all hover:bg-[#1E3054]/45"
       >
         <div className="flex items-center gap-3">
           <FileText className="h-5 w-5 text-[#2DA5A0]" strokeWidth={1.5} />

@@ -46,7 +46,7 @@ export function QuickLogCards({ onSaved }: QuickLogCardsProps) {
               key={c.id}
               type="button"
               onClick={() => setActive(c.id)}
-              className="flex flex-col items-center justify-center gap-2 rounded-xl border bg-white/5 p-4 min-h-[96px] backdrop-blur-md hover:bg-white/10 transition-colors"
+              className="flex flex-col items-center justify-center gap-2 rounded-xl border bg-[#1E3054]/35 p-4 min-h-[96px] backdrop-blur-sm hover:bg-[#1E3054]/45 transition-colors"
               style={{ borderColor: `${c.accent}40` }}
             >
               <span

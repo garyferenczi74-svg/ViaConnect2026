@@ -29,6 +29,7 @@ export default defineConfig({
         'src/lib/arnold/**/*.ts',
         'src/lib/body-tracker/**/*.ts',
         'src/lib/international/**/*.ts',
+        'src/lib/notifications/**/*.ts',
       ],
       exclude: [
         '**/types.ts',
