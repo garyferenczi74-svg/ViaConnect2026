@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0B1120" />
+  <title>ViaConnect</title>
+  <!--
+    Capacitor hosted-web shell offline fallback.
+
+    Next.js serves all production pages dynamically from viaconnectapp.com,
+    so there is no build-time index.html in `public/`. Capacitor needs one
+    as the webDir root, which is what this file provides. Shown only when
+    the native shell cannot reach the server (first launch before network,
+    offline, or server.url unreachable).
+
+    Aesthetic matches splash.png so the transition is seamless if the
+    shell flips to this page and back.
+  -->
+  <style>
+    html, body { margin: 0; padding: 0; height: 100%; background: #0B1120; color: #F5F7FB; font-family: "Instrument Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; }
+    body { display: flex; align-items: center; justify-content: center; padding: 24px; padding-top: max(24px, env(safe-area-inset-top)); padding-bottom: max(24px, env(safe-area-inset-bottom)); }
+    .card { max-width: 440px; width: 100%; text-align: center; }
+    .mark { width: 120px; height: 120px; margin: 0 auto 24px; }
+    h1 { margin: 0 0 8px; font-size: 28px; font-weight: 600; letter-spacing: -0.01em; }
+    .tag { margin: 0 0 32px; color: #22D3EE; font-size: 12px; font-weight: 400; letter-spacing: 0.4em; }
+    p { margin: 0 0 24px; color: rgba(245, 247, 251, 0.65); font-size: 15px; line-height: 1.5; }
+    button { min-height: 44px; padding: 12px 28px; border-radius: 999px; border: 1px solid rgba(34, 211, 238, 0.35); background: rgba(34, 211, 238, 0.12); color: #22D3EE; font-size: 14px; font-weight: 500; cursor: pointer; font-family: inherit; }
+    button:hover { background: rgba(34, 211, 238, 0.18); }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <svg class="mark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" aria-hidden="true">
+      <rect width="32" height="32" rx="6" fill="#0B1120"/>
+      <text x="4" y="24" font-family="Inter,system-ui,sans-serif" font-weight="700" font-size="22" fill="#B75F19">V</text>
+      <circle cx="24" cy="10" r="4" fill="none" stroke="#22D3EE" stroke-width="1.5"/>
+      <circle cx="24" cy="10" r="1.5" fill="#22D3EE"/>
+    </svg>
+    <h1>ViaConnect</h1>
+    <p class="tag">BUILT FOR YOUR BIOLOGY</p>
+    <p id="message">Connecting to the server, one moment.</p>
+    <button id="retry" type="button" onclick="location.reload()">Retry</button>
+  </div>
+  <script>
+    // If we are online, try loading the live site after a short delay. If
+    // Capacitor is already redirecting us via server.url this never fires.
+    if (navigator.onLine) {
+      setTimeout(function () { window.location.replace('https://viaconnectapp.com/'); }, 1500);
+    } else {
+      document.getElementById('message').textContent = 'You appear to be offline. Reconnect and retry.';
+    }
+    window.addEventListener('online', function () { location.reload(); });
+  </script>
+</body>
+</html>

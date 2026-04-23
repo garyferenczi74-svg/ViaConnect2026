@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">ViaConnect</string>
+    <string name="title_activity_main">ViaConnect</string>
+    <string name="package_name">com.farmceutica.viaconnect</string>
+    <string name="custom_url_scheme">com.farmceutica.viaconnect</string>
+</resources>
