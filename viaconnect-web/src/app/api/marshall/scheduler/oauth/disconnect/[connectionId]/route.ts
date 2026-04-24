@@ -9,6 +9,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { createClient as createServerClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { bufferAdapter } from '@/lib/marshall/scheduler/adapters/buffer';
+import { hootsuiteAdapter } from '@/lib/marshall/scheduler/adapters/hootsuite';
 import { supabaseTokenVault } from '@/lib/marshall/scheduler/tokenVault';
 import { schedulerLogger } from '@/lib/marshall/scheduler/logging';
 import type { SchedulerPlatform, DisconnectReason } from '@/lib/marshall/scheduler/types';
@@ -22,7 +23,8 @@ const VALID_REASONS = new Set<DisconnectReason>([
 
 function adapterFor(platform: SchedulerPlatform): SchedulerAdapter | null {
   switch (platform) {
-    case 'buffer': return bufferAdapter();
+    case 'buffer':    return bufferAdapter();
+    case 'hootsuite': return hootsuiteAdapter();
     default: return null;
   }
 }

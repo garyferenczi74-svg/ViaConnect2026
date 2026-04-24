@@ -135,10 +135,10 @@ export default async function SchedulerPortalPage({
                     </button>
                   </form>
                 </div>
-              ) : p === 'buffer' ? (
+              ) : p === 'buffer' || p === 'hootsuite' ? (
                 <div className="mt-3">
                   <Link
-                    href="/api/marshall/scheduler/oauth/start/buffer"
+                    href={`/api/marshall/scheduler/oauth/start/${p}`}
                     className="inline-flex items-center gap-1.5 rounded-md bg-[#B75E18] hover:bg-[#a75217] text-white px-3 py-1.5 text-xs"
                   >
                     <Shield className="w-3.5 h-3.5" strokeWidth={1.5} />
