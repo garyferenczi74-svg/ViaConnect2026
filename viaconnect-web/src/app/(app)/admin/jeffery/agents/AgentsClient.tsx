@@ -22,6 +22,7 @@ interface AgentsClientProps {
   initialHeartbeats: AgentHeartbeat[];
   initialTasks: AgentCurrentTask[];
   initialEvents: AgentActivityEvent[];
+  embedded?: boolean;
 }
 
 export default function AgentsClient({
@@ -29,6 +30,7 @@ export default function AgentsClient({
   initialHeartbeats,
   initialTasks,
   initialEvents,
+  embedded = false,
 }: AgentsClientProps) {
   const firstId = (initialRegistry[0]?.agent_id ?? "jeffery") as AgentId;
   const { activeAgent, setActiveAgent } = useAgentDeepLink(firstId);
@@ -49,24 +51,32 @@ export default function AgentsClient({
   const activeHeartbeat = heartbeatByAgent.get(activeAgent) ?? null;
   const PanelComponent = AGENT_PANELS[activeAgent];
 
-  return (
-    <div className="min-h-screen bg-[#1A2744]">
-      <div className="px-4 md:px-8 py-4 md:py-5 border-b border-white/[0.08]">
-        <div className="flex items-center gap-3 flex-wrap">
-          <div className="w-10 h-10 rounded-xl bg-[#B75E18]/20 border border-[#B75E18]/33 flex items-center justify-center flex-shrink-0">
-            <Cpu className="w-5 h-5 text-[#B75E18]" strokeWidth={1.5} />
+  const body = (
+    <>
+      {!embedded && (
+        <div className="px-4 md:px-8 py-4 md:py-5 border-b border-white/[0.08]">
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="w-10 h-10 rounded-xl bg-[#B75E18]/20 border border-[#B75E18]/33 flex items-center justify-center flex-shrink-0">
+              <Cpu className="w-5 h-5 text-[#B75E18]" strokeWidth={1.5} />
+            </div>
+            <div className="min-w-0">
+              <h1 className="text-lg md:text-xl font-bold text-white">Agents</h1>
+              <p className="text-xs text-white/40">Per-agent activity, tasks, heartbeat, and KPI widgets.</p>
+            </div>
+            {reconnecting && (
+              <span className="ml-auto text-xs text-amber-300" role="status" aria-live="polite">
+                Reconnecting realtime stream
+              </span>
+            )}
           </div>
-          <div className="min-w-0">
-            <h1 className="text-lg md:text-xl font-bold text-white">Agents</h1>
-            <p className="text-xs text-white/40">Per-agent activity, tasks, heartbeat, and KPI widgets.</p>
-          </div>
-          {reconnecting && (
-            <span className="ml-auto text-xs text-amber-300" role="status" aria-live="polite">
-              Reconnecting realtime stream
-            </span>
-          )}
         </div>
-      </div>
+      )}
+
+      {embedded && reconnecting && (
+        <div className="px-4 md:px-8 pt-3 text-xs text-amber-300" role="status" aria-live="polite">
+          Reconnecting realtime stream
+        </div>
+      )}
 
       <AgentTabBar
         registry={initialRegistry}
@@ -76,7 +86,12 @@ export default function AgentsClient({
         deriveStatus={(hb) => deriveStatus(hb)}
       />
 
-      <div id={`agent-panel-${activeAgent}`} role="tabpanel" aria-labelledby={`agent-tab-${activeAgent}`} className="px-4 md:px-8 py-6">
+      <div
+        id={`agent-panel-${activeAgent}`}
+        role="tabpanel"
+        aria-labelledby={`agent-tab-${activeAgent}`}
+        className="px-4 md:px-8 py-6"
+      >
         {activeRegistry && PanelComponent && (
           <AgentPanelShell
             registry={activeRegistry}
@@ -93,6 +108,9 @@ export default function AgentsClient({
           </AgentPanelShell>
         )}
       </div>
-    </div>
+    </>
   );
+
+  if (embedded) return body;
+  return <div className="min-h-screen bg-[#1A2744]">{body}</div>;
 }
