@@ -9,7 +9,7 @@
 // the caption text alone. We reuse #121's normalizeText rules verbatim
 // (NFKD, CRLF->LF, zero-width strip, whitespace collapse, triple-newline
 // collapse, trim). Hashtags, mention handles, and media are rich context
-// but don't participate in the hash — they already flow into the rule
+// but don't participate in the hash; they already flow into the rule
 // evaluator via the SchedulerDraft itself.
 
 import { createHash } from 'node:crypto';

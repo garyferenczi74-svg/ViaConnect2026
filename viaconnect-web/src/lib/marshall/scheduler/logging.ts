@@ -33,6 +33,12 @@ function looksLikeEmail(value: string): boolean {
 }
 
 function redactString(key: string, value: string, stats: RedactionStats): string {
+  // Content-typed fields take the truncation path first so a long caption
+  // doesn't match the opaque-bearer regex by accident.
+  if (DRAFT_KEY_HINT.test(key) && value.length > 200) {
+    stats.truncated += 1;
+    return `${value.slice(0, 100)}... [TRUNCATED ${value.length - 100} chars]`;
+  }
   if (looksLikeToken(value)) {
     stats.redacted += 1;
     return '[REDACTED:oauth_token]';
@@ -40,10 +46,6 @@ function redactString(key: string, value: string, stats: RedactionStats): string
   if (looksLikeEmail(value)) {
     stats.redacted += 1;
     return value.replace(EMAIL_PATTERN, '[REDACTED:email]');
-  }
-  if (DRAFT_KEY_HINT.test(key) && value.length > 200) {
-    stats.truncated += 1;
-    return `${value.slice(0, 100)}... [TRUNCATED ${value.length - 100} chars]`;
   }
   return value;
 }

@@ -122,6 +122,8 @@ CREATE INDEX IF NOT EXISTS idx_scheduler_scans_receipt_issued
   ON public.scheduler_scans (receipt_issued_id) WHERE receipt_issued_id IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_scheduler_scans_vision
   ON public.scheduler_scans (vision_determination_id) WHERE vision_determination_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_scheduler_scans_precheck_session
+  ON public.scheduler_scans (precheck_session_id) WHERE precheck_session_id IS NOT NULL;
 
 -- ---------------------------------------------------------------------------
 -- 4. scheduler_interceptions
