@@ -135,7 +135,7 @@ export default async function SchedulerPortalPage({
                     </button>
                   </form>
                 </div>
-              ) : p === 'buffer' || p === 'hootsuite' || p === 'later' ? (
+              ) : p === 'buffer' || p === 'hootsuite' || p === 'later' || p === 'sprout_social' ? (
                 <div className="mt-3">
                   <Link
                     href={`/api/marshall/scheduler/oauth/start/${p}`}

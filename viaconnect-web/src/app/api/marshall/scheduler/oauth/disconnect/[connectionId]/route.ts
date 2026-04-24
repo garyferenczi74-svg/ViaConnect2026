@@ -11,6 +11,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { bufferAdapter } from '@/lib/marshall/scheduler/adapters/buffer';
 import { hootsuiteAdapter } from '@/lib/marshall/scheduler/adapters/hootsuite';
 import { laterAdapter } from '@/lib/marshall/scheduler/adapters/later';
+import { sproutAdapter } from '@/lib/marshall/scheduler/adapters/sprout';
 import { supabaseTokenVault } from '@/lib/marshall/scheduler/tokenVault';
 import { schedulerLogger } from '@/lib/marshall/scheduler/logging';
 import type { SchedulerPlatform, DisconnectReason } from '@/lib/marshall/scheduler/types';
@@ -24,9 +25,10 @@ const VALID_REASONS = new Set<DisconnectReason>([
 
 function adapterFor(platform: SchedulerPlatform): SchedulerAdapter | null {
   switch (platform) {
-    case 'buffer':    return bufferAdapter();
-    case 'hootsuite': return hootsuiteAdapter();
-    case 'later':     return laterAdapter();
+    case 'buffer':        return bufferAdapter();
+    case 'hootsuite':     return hootsuiteAdapter();
+    case 'later':         return laterAdapter();
+    case 'sprout_social': return sproutAdapter();
     default: return null;
   }
 }
