@@ -38,6 +38,8 @@ import { assembleDeterministicZip, type PacketFileInput } from './zipper';
 import { sha256 } from './merkle';
 import { frozenTimer, sha256Hex, utf8 } from '../collectors/helpers';
 import { generatePacketHmacKey } from '../redaction/pseudonymize';
+import { loadRegistry } from '@/lib/compliance/frameworks/registry';
+import type { FrameworkId } from '@/lib/compliance/frameworks/types';
 
 export interface ManualEvidenceFile {
   /** Relative path inside the ZIP, starting with one of SOC2_CATEGORY_DIRS values. */
@@ -83,6 +85,15 @@ export interface OrchestratorInput {
 
   /** Override generatedAt timestamp (for tests). */
   nowIso?: string;
+
+  /**
+   * #127 P2: optional framework identifier. When set to 'soc2' (or unset),
+   * this orchestrator produces a SOC 2 packet with byte-identical output
+   * to pre-refactor. Future phases (P3 HIPAA, P5 ISO) either extend this
+   * orchestrator or ship separate assemblers; the framework_id is pinned
+   * on the GeneratedPacket regardless.
+   */
+  frameworkId?: FrameworkId;
 }
 
 export interface GeneratedPacket {
@@ -102,6 +113,10 @@ export interface GeneratedPacket {
   coverageGaps: readonly Soc2TscCode[];
   manualEvidenceIds: readonly string[];
   totalFiles: number;
+  /** #127 P2: framework ID pinned into the packet (defaults to 'soc2'). */
+  frameworkId: FrameworkId;
+  /** #127 P2: registry version at generation time. Auditors reviewing a historical packet can reproduce the exact rule set. */
+  frameworkRegistryVersion: string;
 }
 
 /**
@@ -114,6 +129,15 @@ export async function generateSoc2Packet(input: OrchestratorInput): Promise<Gene
   const attestationType = input.attestationType ?? 'Type II';
   const tscInScope = (input.tscInScope ?? SOC2_TSC_CODES).slice();
   const nowIso = input.nowIso ?? new Date().toISOString();
+
+  // #127 P2: resolve the framework ID + registry version. Defaulting to
+  // 'soc2' makes this a no-op for pre-refactor callers. The registry is
+  // validated at load time so `loadRegistry()` either returns a
+  // well-formed record or throws; we only pin the version string here.
+  const frameworkId: FrameworkId = input.frameworkId ?? 'soc2';
+  const registry = loadRegistry();
+  const frameworkRegistryVersion = registry.frameworks[frameworkId]?.registryVersion
+    ?? registry.registryVersion;
 
   // 1. Run every collector against the real-or-fixture fetcher. When nowIso
   //    is provided, thread a frozen timer through ctx so every collector's
@@ -232,6 +256,8 @@ export async function generateSoc2Packet(input: OrchestratorInput): Promise<Gene
     coverageGaps,
     manualEvidenceIds: manualIds,
     totalFiles: zipInputs.length,
+    frameworkId,
+    frameworkRegistryVersion,
   };
 }
 
