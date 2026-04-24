@@ -19,13 +19,16 @@ const PERIOD = { start: '2026-01-01T00:00:00Z', end: '2026-03-31T23:59:59Z' };
 // ─── HIPAA registry ────────────────────────────────────────────────────────
 
 describe('HIPAA framework registry', () => {
-  it('registry now lists HIPAA as populated (P1 → P3 transition)', () => {
-    expect(populatedFrameworkIds().sort()).toEqual(['hipaa_security', 'soc2']);
+  it('registry includes HIPAA and SOC 2 among populated frameworks (post-P3)', () => {
+    const populated = populatedFrameworkIds().sort();
+    expect(populated).toContain('soc2');
+    expect(populated).toContain('hipaa_security');
   });
 
-  it('registry version bumped for P3', () => {
+  it('registry version is at P3 or later (>= v1.1.0)', () => {
     const reg = loadRegistry();
-    expect(reg.registryVersion).toBe('v1.1.0');
+    // P3 bumped to v1.1.0; P5 bumped to v1.2.0. Either is acceptable here.
+    expect(reg.registryVersion).toMatch(/^v1\.[12]\.0$/);
   });
 
   it('HIPAA definition has the expected attestor role and type', () => {

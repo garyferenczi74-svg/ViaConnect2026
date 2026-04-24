@@ -37,10 +37,11 @@ describe('framework registry', () => {
 
   it('activeFrameworkIds returns all three; populatedFrameworkIds grows as phases land', () => {
     expect(activeFrameworkIds().sort()).toEqual(['hipaa_security', 'iso_27001_2022', 'soc2']);
-    // SOC 2 populated since P1, HIPAA since P3. ISO stays a stub through P4.
+    // SOC 2 populated since P1, HIPAA since P3, ISO 27001 since P5.
     const populated = populatedFrameworkIds().sort();
     expect(populated).toContain('soc2');
-    expect(populated).not.toContain('iso_27001_2022');
+    expect(populated).toContain('hipaa_security');
+    expect(populated).toContain('iso_27001_2022');
   });
 });
 
@@ -122,8 +123,8 @@ describe('getControlPoint', () => {
     expect(getControlPoint('soc2', 'CC99.99')).toBeNull();
   });
 
-  it('returns null for ISO stub (no control points through P4)', () => {
-    expect(getControlPoint('iso_27001_2022', 'A.8.15')).toBeNull();
+  it('returns null for unknown ISO control id', () => {
+    expect(getControlPoint('iso_27001_2022', 'A.999.999')).toBeNull();
   });
 });
 
@@ -131,9 +132,9 @@ describe('crosswalk', () => {
   it('marshall-findings-collector maps to SOC 2 CC4.1, CC4.2, CC7.2', () => {
     const cw = crosswalk('marshall-findings-collector');
     expect(cw.soc2.sort()).toEqual(['CC4.1', 'CC4.2', 'CC7.2']);
-    // HIPAA may map this collector via the Risk Management or Info System
-    // Activity Review safeguards since P3; ISO remains a stub through P4.
-    expect(cw.iso_27001_2022).toEqual([]);
+    // HIPAA maps this collector via Risk Management and Info System Activity
+    // Review safeguards since P3. ISO maps it to A.8.16 since P5.
+    expect(cw.iso_27001_2022).toContain('A.8.16');
   });
 
   it('unknown collector returns empty lists', () => {
@@ -171,8 +172,8 @@ describe('allControlsForCollector', () => {
     const out = allControlsForCollector('marshall-findings-collector');
     const soc2Entries = out.filter((e) => e.framework === 'soc2');
     expect(soc2Entries.map((e) => e.controlId).sort()).toEqual(['CC4.1', 'CC4.2', 'CC7.2']);
-    // HIPAA references may or may not appear depending on P3 mapping; just
-    // assert at least one SOC 2 entry exists and none are from the ISO stub.
-    expect(out.some((e) => e.framework === 'iso_27001_2022')).toBe(false);
+    // ISO 27001 A.8.16 (Monitoring activities) consumes this collector since P5.
+    const isoEntries = out.filter((e) => e.framework === 'iso_27001_2022');
+    expect(isoEntries.map((e) => e.controlId)).toContain('A.8.16');
   });
 });

@@ -10,47 +10,17 @@
 
 import { SOC2_FRAMEWORK } from './definitions/soc2';
 import { HIPAA_FRAMEWORK } from './definitions/hipaa';
+import { ISO27001_FRAMEWORK } from './definitions/iso27001';
 import type { FrameworkDefinition, FrameworkId, FrameworkRegistry } from './types';
 import { FRAMEWORK_IDS } from './types';
-
-// ISO stub stays through P4 and is replaced with HIPAA-level population in P5.
-
-const ISO_STUB: FrameworkDefinition = {
-  id: 'iso_27001_2022',
-  version: 'iso-27001-2022',
-  displayName: 'ISO/IEC 27001:2022',
-  registryVersion: 'v1.0.0-stub',
-  attestationType: 'certification_audit',
-  attestorRole: 'isms_manager',
-  attestationLanguage:
-    `I, the undersigned ISMS Manager of FarmCeutica Wellness LLC, attest that the foregoing descriptions accurately describe FarmCeutica's implementation and effectiveness of the identified ISO/IEC 27001:2022 controls during the period specified.`,
-  controlPoints: [],
-  specialArtifacts: [],
-  scopeDeclaration: { shape: 'iso_isms_scope', label: 'ISMS scope statement' },
-  categoryDirs: {
-    clause_4:     'isms-clauses/clause-4-context',
-    clause_5:     'isms-clauses/clause-5-leadership',
-    clause_6:     'isms-clauses/clause-6-planning',
-    clause_7:     'isms-clauses/clause-7-support',
-    clause_8:     'isms-clauses/clause-8-operation',
-    clause_9:     'isms-clauses/clause-9-performance-evaluation',
-    clause_10:    'isms-clauses/clause-10-improvement',
-    annex_a_5:    'annex-a-controls/A-5-organizational',
-    annex_a_6:    'annex-a-controls/A-6-people',
-    annex_a_7:    'annex-a-controls/A-7-physical',
-    annex_a_8:    'annex-a-controls/A-8-technological',
-  },
-  narratorPromptAddendum:
-    'ISO voice: cite Annex A controls as A.x.y and ISMS clauses as Clause N.N. For each control describe objective, implementation mechanism, and effectiveness separately. Respect SoA exclusions: excluded controls receive justification text, not implementation narrative.',
-};
 
 const REGISTRY: FrameworkRegistry = {
   frameworks: {
     soc2: SOC2_FRAMEWORK,
     hipaa_security: HIPAA_FRAMEWORK,
-    iso_27001_2022: ISO_STUB,
+    iso_27001_2022: ISO27001_FRAMEWORK,
   },
-  registryVersion: 'v1.1.0', // bumped at P3: HIPAA now populated
+  registryVersion: 'v1.2.0', // P1 v1.0.0 (SOC2) -> P3 v1.1.0 (HIPAA) -> P5 v1.2.0 (ISO)
 };
 
 /** Returns the registry loaded from code. Stable across a process lifetime. */
