@@ -7,6 +7,35 @@ import GateASignoffForm from '@/components/compliance/GateASignoffForm';
 
 export const dynamic = 'force-dynamic';
 
+// Prompt #127 P8: Gate A sign-off admin page.
+//
+// Reads from compliance_gate_a_signoffs using the generic polymorphic gate
+// schema (gate_key + subject_type + subject_id + signoff_status + metadata).
+// The narrow Gate A attributes live in metadata JSONB; we normalize them
+// into a Row on the server.
+
+const GATE_KEY = 'p127_gate_a';
+
+interface SignoffMetadata {
+  attestor_role?: string;
+  signed_name?: string;
+  registry_version?: string;
+  scope_summary?: string;
+  outstanding_flags_critical?: number;
+  outstanding_flags_warning?: number;
+}
+
+interface RawRow {
+  id: string;
+  framework_id: string;
+  subject_id: string;
+  signoff_status: string;
+  signed_by: string;
+  signed_at: string;
+  note: string | null;
+  metadata: SignoffMetadata | null;
+}
+
 interface Row {
   id: string;
   framework_id: string;
@@ -19,7 +48,6 @@ interface Row {
   outstanding_flags_critical: number;
   outstanding_flags_warning: number;
   attestation_text: string;
-  revoked: boolean;
 }
 
 const FRAMEWORK_TO_ROLE: Record<FrameworkId, 'compliance_officer' | 'security_officer' | 'isms_manager'> = {
@@ -37,11 +65,29 @@ export default async function GateAPage({ searchParams }: PageProps) {
   const supabase = createClient() as any;
   const { data } = await supabase
     .from('compliance_gate_a_signoffs')
-    .select('id, framework_id, attestor_role, signed_by, signed_name, signed_at, registry_version, scope_summary, outstanding_flags_critical, outstanding_flags_warning, attestation_text, revoked')
-    .eq('revoked', false)
+    .select('id, framework_id, subject_id, signoff_status, signed_by, signed_at, note, metadata')
+    .eq('gate_key', GATE_KEY)
+    .eq('subject_type', 'framework')
+    .eq('signoff_status', 'signed')
     .order('signed_at', { ascending: false })
     .limit(50);
-  const rows: Row[] = (data as Row[] | null) ?? [];
+  const raw: RawRow[] = (data as RawRow[] | null) ?? [];
+  const rows: Row[] = raw.map((r) => {
+    const meta = r.metadata ?? {};
+    return {
+      id: r.id,
+      framework_id: r.framework_id,
+      attestor_role: meta.attestor_role ?? '',
+      signed_by: r.signed_by,
+      signed_name: meta.signed_name ?? '',
+      signed_at: r.signed_at,
+      registry_version: meta.registry_version ?? '',
+      scope_summary: meta.scope_summary ?? '',
+      outstanding_flags_critical: meta.outstanding_flags_critical ?? 0,
+      outstanding_flags_warning: meta.outstanding_flags_warning ?? 0,
+      attestation_text: r.note ?? '',
+    };
+  });
   const requestedFramework = (searchParams.framework ?? '').trim();
 
   const registry = loadRegistry();
@@ -49,6 +95,7 @@ export default async function GateAPage({ searchParams }: PageProps) {
 
   const activeByKey = new Map<string, Row>();
   for (const r of rows) {
+    if (!r.attestor_role) continue;
     activeByKey.set(`${r.framework_id}|${r.attestor_role}`, r);
   }
 

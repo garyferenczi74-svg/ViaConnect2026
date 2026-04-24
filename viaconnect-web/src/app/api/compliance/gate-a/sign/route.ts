@@ -1,11 +1,26 @@
 // Prompt #127 P8: Gate A sign-off.
 //
-// Records a single framework + role sign-off for the #127 multi-framework
-// compliance initiative. Callers identify their own role for the
-// framework (compliance_officer for SOC 2, security_officer for HIPAA,
-// isms_manager for ISO 27001). One active row per (framework, role); a
-// new sign-off supersedes prior ones by flipping them to revoked, then
-// inserting the new row as active.
+// Records a Gate A sign-off against the polymorphic gate_signoff table.
+// One row per framework (DB-enforced via UNIQUE on
+// (framework_id, gate_key, subject_type, subject_id)); re-signing upserts
+// the same row and records the prior signer in metadata.previous_signers.
+//
+// Table shape (as applied):
+//   id, framework_id, gate_key, subject_type, subject_id,
+//   signoff_status, signed_by, signed_at, note, metadata
+//
+// Mapping for Gate A:
+//   gate_key       = 'p127_gate_a'
+//   subject_type   = 'framework'
+//   subject_id     = framework_id
+//   signoff_status = 'signed'
+//   note           = attestation_text
+//   metadata       = { attestor_role, signed_name, registry_version,
+//                      scope_summary, outstanding_flags_critical,
+//                      outstanding_flags_warning, previous_signers }
+//
+// Attestor role derives from framework per FRAMEWORK_TO_ATTESTOR_ROLE:
+//   compliance_officer (SOC 2), security_officer (HIPAA), isms_manager (ISO).
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient as createServerClient } from '@/lib/supabase/server';
@@ -14,6 +29,7 @@ import type { FrameworkId } from '@/lib/compliance/frameworks/types';
 
 export const runtime = 'nodejs';
 
+const GATE_KEY = 'p127_gate_a';
 const SIGN_ROLES = new Set(['compliance_officer', 'compliance_admin', 'admin', 'superadmin']);
 
 const FRAMEWORK_TO_ATTESTOR_ROLE: Record<FrameworkId, 'compliance_officer' | 'security_officer' | 'isms_manager'> = {
@@ -73,45 +89,78 @@ export async function POST(req: NextRequest) {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const sb = session as any;
+  const nowIso = new Date().toISOString();
 
-  // Supersede any active prior sign-off for this (framework, role) pair.
-  const { error: revokeErr } = await sb
+  // Pull the prior row so we can preserve its signer chain in metadata.
+  const { data: priorRow } = await sb
     .from('compliance_gate_a_signoffs')
-    .update({
-      revoked: true,
-      revoked_at: new Date().toISOString(),
-      revoked_by: user.id,
-      revocation_reason: 'Superseded by new sign-off.',
-    })
-    .eq('framework_id', frameworkId)
-    .eq('attestor_role', attestorRole)
-    .eq('revoked', false);
-  if (revokeErr) {
-    // eslint-disable-next-line no-console
-    console.error('[gate-a sign] supersede failed', { message: revokeErr.message });
-    return NextResponse.json({ error: 'supersede_failed' }, { status: 500 });
-  }
+    .select('id, signed_by, signed_at, metadata')
+    .eq('gate_key', GATE_KEY)
+    .eq('subject_type', 'framework')
+    .eq('subject_id', frameworkId)
+    .maybeSingle();
+  type PriorRow = {
+    id: string;
+    signed_by: string;
+    signed_at: string;
+    metadata: Record<string, unknown> | null;
+  };
+  const prior = priorRow as PriorRow | null;
+  const priorMeta = prior?.metadata ?? {};
+  const priorSigners = Array.isArray((priorMeta as { previous_signers?: unknown[] }).previous_signers)
+    ? ((priorMeta as { previous_signers: unknown[] }).previous_signers)
+    : [];
+  const previousSigners = prior
+    ? [
+        ...priorSigners,
+        {
+          signed_by: prior.signed_by,
+          signed_at: prior.signed_at,
+          signed_name: (priorMeta as { signed_name?: string }).signed_name ?? null,
+          attestor_role: (priorMeta as { attestor_role?: string }).attestor_role ?? null,
+          registry_version: (priorMeta as { registry_version?: string }).registry_version ?? null,
+        },
+      ]
+    : priorSigners;
+
+  const metadata = {
+    attestor_role: attestorRole,
+    signed_name: signedName,
+    registry_version: registry.registryVersion,
+    scope_summary: scopeSummary,
+    outstanding_flags_critical: outstandingCritical,
+    outstanding_flags_warning: outstandingWarning,
+    previous_signers: previousSigners,
+    updated_at: nowIso,
+  };
 
   const { data, error } = await sb
     .from('compliance_gate_a_signoffs')
-    .insert({
+    .upsert({
       framework_id: frameworkId,
-      attestor_role: attestorRole,
+      gate_key: GATE_KEY,
+      subject_type: 'framework',
+      subject_id: frameworkId,
+      signoff_status: 'signed',
       signed_by: user.id,
-      signed_name: signedName,
-      registry_version: registry.registryVersion,
-      scope_summary: scopeSummary,
-      outstanding_flags_critical: outstandingCritical,
-      outstanding_flags_warning: outstandingWarning,
-      attestation_text: attestationText,
-    })
+      signed_at: nowIso,
+      note: attestationText,
+      metadata,
+    }, { onConflict: 'framework_id,gate_key,subject_type,subject_id' })
     .select('id, signed_at')
     .single();
   if (error) {
     // eslint-disable-next-line no-console
-    console.error('[gate-a sign] insert failed', { message: error.message });
-    return NextResponse.json({ error: 'insert_failed' }, { status: 500 });
+    console.error('[gate-a sign] upsert failed', { message: error.message });
+    return NextResponse.json({ error: 'upsert_failed' }, { status: 500 });
   }
   const row = data as { id: string; signed_at: string };
-  return NextResponse.json({ ok: true, id: row.id, signedAt: row.signed_at, frameworkId, attestorRole });
+  return NextResponse.json({
+    ok: true,
+    id: row.id,
+    signedAt: row.signed_at,
+    frameworkId,
+    attestorRole,
+    previousSignersCount: previousSigners.length,
+  });
 }
