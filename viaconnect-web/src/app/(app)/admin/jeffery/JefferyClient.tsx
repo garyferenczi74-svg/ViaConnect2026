@@ -29,11 +29,11 @@ import type {
 
 const TABS = [
   { id: "feed",      label: "Live Feed",      icon: Radio },
+  { id: "agents",    label: "Agents",         icon: Users },
   { id: "review",    label: "Review Queue",   icon: ClipboardCheck },
   { id: "steer",     label: "Steering",       icon: Compass },
   { id: "evolution", label: "Evolution",      icon: Brain },
   { id: "knowledge", label: "Knowledge",      icon: Database },
-  { id: "agents",    label: "Agents",         icon: Users },
 ] as const;
 
 type TabId = (typeof TABS)[number]["id"];
