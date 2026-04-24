@@ -49,6 +49,12 @@
 - Full policy: `docs/prompts/prompt-129-external-repo-governance-policy.md`; nine-agent binding: `docs/prompts/prompt-129a-nine-agent-binding-addendum.md`
 - **Only Gary can lift this restriction by directly asking.**
 
+### Supply-chain security scanner
+
+The ViaConnect repository runs Socket.dev as its primary supply-chain security scanner, installed per Prompt #133. Pull request scanning is automatic. Tier 1 findings (per Prompt #133 §4.1) hard-block merge; Tier 2 findings require explicit Gary override on the PR. Sherlock's §4.9 (Known Vulnerabilities) evaluations include Socket.dev scan output for any externally-evaluated package.
+
+Do not disable Socket.dev on any pull request, branch, or repository-wide setting without an explicit prompt-library amendment superseding Prompt #133.
+
 ---
 
 ## DESKTOP + MOBILE SYNCHRONISM (Standing Rule)
