@@ -12,7 +12,8 @@
  */
 
 import { useState } from "react";
-import { Cpu, Radio, ClipboardCheck, Compass, Brain, Database } from "lucide-react";
+import Link from "next/link";
+import { Cpu, Radio, ClipboardCheck, Compass, Brain, Database, Users } from "lucide-react";
 import LiveFeed from "@/components/admin/jeffery/LiveFeed";
 import ReviewQueue from "@/components/admin/jeffery/ReviewQueue";
 import SteeringConsole from "@/components/admin/jeffery/SteeringConsole";
@@ -45,12 +46,21 @@ export default function JefferyCommandCenter() {
             <h1 className="text-lg md:text-xl font-bold text-white">Jeffery™ Command Center</h1>
             <p className="text-xs text-white/40">Self-Evolution Engine — Human-in-the-Loop Intelligence</p>
           </div>
-          <div className="ml-auto flex items-center gap-2">
-            <span className="relative flex h-2.5 w-2.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
-            </span>
-            <span className="text-xs text-emerald-400 font-medium">Jeffery Online</span>
+          <div className="ml-auto flex items-center gap-3">
+            <Link
+              href="/admin/jeffery/agents"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-white/5 text-white/70 hover:bg-white/10"
+            >
+              <Users className="w-3.5 h-3.5" strokeWidth={1.5} />
+              Agents
+            </Link>
+            <div className="flex items-center gap-2">
+              <span className="relative flex h-2.5 w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
+              </span>
+              <span className="text-xs text-emerald-400 font-medium">Jeffery Online</span>
+            </div>
           </div>
         </div>
 
