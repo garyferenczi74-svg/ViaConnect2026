@@ -15,7 +15,10 @@ export type Pillar =
   | "COMMS"
   | "PRIVACY"
   | "BRAND"
-  | "AUDIT";
+  | "AUDIT"
+  // Prompt #124: counterfeit detection lives in its own pillar so takedown
+  // workflows can filter findings by rule namespace without a string match.
+  | "COUNTERFEIT";
 
 export type Surface =
   | "source_code"
@@ -30,7 +33,9 @@ export type Surface =
   | "marketing_page"
   // Prompt #121: proactive pre-check surface. Same rule evaluators,
   // tighter confidence gates, cooperative coaching tone.
-  | "precheck_draft";
+  | "precheck_draft"
+  // Prompt #124: suspect product images evaluated by Marshall Vision.
+  | "product_image";
 
 export type FindingSource = "claude_code" | "runtime";
 

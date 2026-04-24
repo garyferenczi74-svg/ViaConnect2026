@@ -339,7 +339,7 @@ CREATE POLICY pna_self_insert ON public.practitioner_notice_appeals
     submitted_by = auth.uid()
     AND EXISTS (
       SELECT 1 FROM public.practitioner_notices pn
-      WHERE pn.id = notice_id AND public.is_practitioner_self(pn.practitioner_id)
+      WHERE pn.id = practitioner_notice_appeals.notice_id AND public.is_practitioner_self(pn.practitioner_id)
     )
   );
 CREATE POLICY pna_self_read ON public.practitioner_notice_appeals
@@ -349,7 +349,7 @@ CREATE POLICY pna_self_read ON public.practitioner_notice_appeals
     OR public.is_compliance_reader()
     OR EXISTS (
       SELECT 1 FROM public.practitioner_notices pn
-      WHERE pn.id = notice_id AND public.is_practitioner_self(pn.practitioner_id)
+      WHERE pn.id = practitioner_notice_appeals.notice_id AND public.is_practitioner_self(pn.practitioner_id)
     )
   );
 CREATE POLICY pna_compliance_update ON public.practitioner_notice_appeals
