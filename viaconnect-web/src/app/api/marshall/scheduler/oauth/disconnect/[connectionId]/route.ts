@@ -12,6 +12,7 @@ import { bufferAdapter } from '@/lib/marshall/scheduler/adapters/buffer';
 import { hootsuiteAdapter } from '@/lib/marshall/scheduler/adapters/hootsuite';
 import { laterAdapter } from '@/lib/marshall/scheduler/adapters/later';
 import { sproutAdapter } from '@/lib/marshall/scheduler/adapters/sprout';
+import { planolyAdapter } from '@/lib/marshall/scheduler/adapters/planoly';
 import { supabaseTokenVault } from '@/lib/marshall/scheduler/tokenVault';
 import { schedulerLogger } from '@/lib/marshall/scheduler/logging';
 import type { SchedulerPlatform, DisconnectReason } from '@/lib/marshall/scheduler/types';
@@ -29,6 +30,7 @@ function adapterFor(platform: SchedulerPlatform): SchedulerAdapter | null {
     case 'hootsuite':     return hootsuiteAdapter();
     case 'later':         return laterAdapter();
     case 'sprout_social': return sproutAdapter();
+    case 'planoly':       return planolyAdapter();
     default: return null;
   }
 }

@@ -135,7 +135,7 @@ export default async function SchedulerPortalPage({
                     </button>
                   </form>
                 </div>
-              ) : p === 'buffer' || p === 'hootsuite' || p === 'later' || p === 'sprout_social' ? (
+              ) : (
                 <div className="mt-3">
                   <Link
                     href={`/api/marshall/scheduler/oauth/start/${p}`}
@@ -144,10 +144,6 @@ export default async function SchedulerPortalPage({
                     <Shield className="w-3.5 h-3.5" strokeWidth={1.5} />
                     Connect
                   </Link>
-                </div>
-              ) : (
-                <div className="mt-3 text-[11px] text-white/40 italic">
-                  Connection flow rolls out with a later phase.
                 </div>
               )}
             </article>
