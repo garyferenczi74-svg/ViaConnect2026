@@ -153,6 +153,7 @@ const NATUROPATH: PortalConfig = {
 const ADMIN: PortalConfig = {
   nav: [
     { href: "/admin/jeffery", label: "Jeffery™ Command Center", icon: Cpu },
+    { href: "/admin/hounddog", label: "Hounddog", icon: Target },
     { href: "/admin/marshall", label: "Marshall", icon: Shield },
     { href: "/admin", label: "Admin Dashboard", icon: LayoutDashboard },
     { href: "/admin/board", label: "Board Metrics", icon: BarChart3 },
@@ -160,7 +161,6 @@ const ADMIN: PortalConfig = {
     { href: "/admin/skus", label: "SKU Portfolio", icon: Pill },
     { href: "/admin/alerts", label: "Alerts & Risks", icon: AlertTriangle },
     { href: "/admin/inventory", label: "Inventory", icon: ClipboardList },
-    { href: "/admin/hounddog", label: "Hounddog", icon: Target },
     { href: "/profile", label: "Profile", icon: UserIcon },
     { href: "/practitioner/settings", label: "Settings", icon: Settings },
   ],
