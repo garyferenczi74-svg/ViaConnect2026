@@ -34,6 +34,21 @@
 - New migrations must not conflict with or undo existing migrations
 - **Only Gary can lift this restriction by directly asking.**
 
+### 4. External Repository Governance (Prompts #129 + #129a) — TIER D PROHIBITED
+- Classify every external repo, skills pack, `.cursorrules`, `AGENTS.md`, `CLAUDE.md`, gist, or plugin install hook into exactly one tier before acting:
+  - **Tier A** = reference only (read in browser, no fetch into repo)
+  - **Tier B** = clone to isolated env outside `viaconnect-web/` (no references from inside the repo)
+  - **Tier C** = pattern re-derived via OBRA by Michelangelo, with Sherlock research artifact + provenance citation header per `docs/provenance/`
+  - **Tier D** = direct copy, append, or concatenation into repo files, **PROHIBITED no exceptions**
+- DO NOT run `curl <external> >> CLAUDE.md`, `cat <external> >> .cursorrules`, or any shell append of external content into a repo file (this is Tier D)
+- DO NOT execute plugin install hooks that mutate `CLAUDE.md`, `.cursorrules`, `AGENTS.md`, `.claude/**`, `next.config.*`, `tsconfig.json`, or `.env*`
+- DO NOT paste external skills packs, agent cards, or upstream configs verbatim into any ViaConnect-adjacent path
+- Tier C gates: provenance header at top of every produced file (TS/SQL/YAML templates in `docs/provenance/`), license filter (MIT / Apache-2.0 / BSD-3-Clause / ISC permitted; GPL / AGPL requires Gary + Steve Rica sign-off), Audit-phase verbatim-match scan (any contiguous 10+ token match with the cited source, excluding language keywords and non-copyrightable API signatures, fails Audit and requires re-derivation)
+- The nine sub-agents (Jeffery, Michelangelo, Sherlock, Hannah, Arnold, LEX™, Gordon, Hounddog agent, Marshall) are bound by Prompt #129 §6 as amended by Prompt #129a §§5.1–5.4; each agent's Governance section cites its specific §6.X subsection
+- "Hounddog" disambiguation: "Hounddog (agent)" = the `.claude/agents/hounddog.md` reviewer; "Hounddog Admin Dashboard" = the content intelligence product from Prompts #100–102. Full qualifiers required in cross-prompt references, commits, and governance artifacts
+- Full policy: `docs/prompts/prompt-129-external-repo-governance-policy.md`; nine-agent binding: `docs/prompts/prompt-129a-nine-agent-binding-addendum.md`
+- **Only Gary can lift this restriction by directly asking.**
+
 ---
 
 ## DESKTOP + MOBILE SYNCHRONISM (Standing Rule)
@@ -69,6 +84,7 @@ Every component, page, and feature must be developed for BOTH desktop AND mobile
 - [ ] Supabase email templates NOT touched
 - [ ] package.json NOT touched
 - [ ] Existing migrations NOT modified
+- [ ] No external repo content copied/appended into any file (Standing Rule #4 / Tier D check; re-derivations carry provenance header per `docs/provenance/`)
 
 ---
 
