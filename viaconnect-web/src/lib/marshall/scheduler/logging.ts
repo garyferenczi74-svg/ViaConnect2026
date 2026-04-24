@@ -15,6 +15,11 @@ const OAUTH_TOKEN_PATTERNS: RegExp[] = [
   /\b(?:bearer|access_token|refresh_token|client_secret|signing_secret)[=:\s"']+[A-Za-z0-9._~+/-]{16,}/i,
 ];
 
+// P2 hardening: keys whose names imply a secret get the token redaction
+// unconditionally. This catches embedded unlabeled tokens that slip past
+// the ^...$-anchored opaque-bearer regex.
+const SECRET_KEY_HINT = /\b(?:token|secret|credential|api_?key|bearer|refresh|access_key)\b/i;
+
 const EMAIL_PATTERN = /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i;
 
 const DRAFT_KEY_HINT = /caption|body|text|content|message/i;
@@ -38,6 +43,13 @@ function redactString(key: string, value: string, stats: RedactionStats): string
   if (DRAFT_KEY_HINT.test(key) && value.length > 200) {
     stats.truncated += 1;
     return `${value.slice(0, 100)}... [TRUNCATED ${value.length - 100} chars]`;
+  }
+  // Keys whose names imply a secret get redacted regardless of pattern
+  // match (defense against embedded unlabeled tokens, empty strings,
+  // or novel token shapes the regex list doesn't cover yet).
+  if (SECRET_KEY_HINT.test(key) && value.length > 0) {
+    stats.redacted += 1;
+    return '[REDACTED:oauth_token]';
   }
   if (looksLikeToken(value)) {
     stats.redacted += 1;
