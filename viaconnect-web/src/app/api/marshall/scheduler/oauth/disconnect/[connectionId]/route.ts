@@ -10,6 +10,7 @@ import { createClient as createServerClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { bufferAdapter } from '@/lib/marshall/scheduler/adapters/buffer';
 import { hootsuiteAdapter } from '@/lib/marshall/scheduler/adapters/hootsuite';
+import { laterAdapter } from '@/lib/marshall/scheduler/adapters/later';
 import { supabaseTokenVault } from '@/lib/marshall/scheduler/tokenVault';
 import { schedulerLogger } from '@/lib/marshall/scheduler/logging';
 import type { SchedulerPlatform, DisconnectReason } from '@/lib/marshall/scheduler/types';
@@ -25,6 +26,7 @@ function adapterFor(platform: SchedulerPlatform): SchedulerAdapter | null {
   switch (platform) {
     case 'buffer':    return bufferAdapter();
     case 'hootsuite': return hootsuiteAdapter();
+    case 'later':     return laterAdapter();
     default: return null;
   }
 }
