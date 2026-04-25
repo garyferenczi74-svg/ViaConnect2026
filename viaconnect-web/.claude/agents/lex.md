@@ -23,7 +23,7 @@ description: >
     violation over to legal action)
   - Any edit to src/lib/legal/ or src/app/(app)/admin/legal/ NOT inside a
     customs/ subfolder (customs routes to Marshall)
-tools: Read, Grep, Glob
+tools: Read, Grep, Glob, Edit, WebFetch, WebSearch
 ---
 
 ## Governance

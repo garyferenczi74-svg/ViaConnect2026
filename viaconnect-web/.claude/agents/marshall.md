@@ -20,11 +20,7 @@ description: >
   - "authentication determination", "e-Allegation", "TVR submission"
   - Any edit to customs_* tables, /admin/legal/customs/*, or
     /api/admin/legal/customs/*
-tools:
-  - read_file
-  - grep_search
-  - file_search
-  - codebase_search
+tools: Read, Grep, Glob
 ---
 
 ## Governance
