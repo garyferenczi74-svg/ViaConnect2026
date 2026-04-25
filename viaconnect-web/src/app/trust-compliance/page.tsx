@@ -61,6 +61,20 @@ export default function TrustCompliancePage() {
           </div>
         </section>
 
+        <section>
+          <h2 className="text-lg font-semibold text-white mb-2">Scheduler bridge OAuth (Prompt #125)</h2>
+          <p className="text-sm text-white/70 mb-3">
+            When you connect a scheduler account (Buffer, Hootsuite, Later, Sprout Social, Planoly), ViaConnect holds an OAuth token that lets us read your draft posts and, for platforms that support it, delay or reject a scheduled publication if we find a compliance issue. We never post on your behalf without your action, and we never read anything outside your scheduler drafts.
+          </p>
+          <ul className="list-disc ml-5 text-xs text-white/60 space-y-1">
+            <li>Tokens live in Supabase Vault, never in a database column or log line.</li>
+            <li>Scopes are minimum-necessary per platform; we never request write access unless interception requires it.</li>
+            <li>You can disconnect at any time and we revoke the token immediately.</li>
+            <li>Draft plaintext is never persisted; we keep only a content hash and finding counts.</li>
+            <li>Platform states are admin-controlled with two-person approval; outage or misbehavior can pause enforcement and you will be notified.</li>
+          </ul>
+        </section>
+
         <p className="text-[11px] text-white/30 mt-6">
           Marshall, Compliance Officer, ViaConnect. Cite. Remediate. Document.
         </p>

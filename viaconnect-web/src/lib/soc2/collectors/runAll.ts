@@ -38,7 +38,10 @@ import { npiReverifyCollector } from './npi-reverify';
 // ─── Prompt #124 collector ─────────────────────────────────────────────────
 import { counterfeitDeterminationsCollector } from './counterfeit-determinations';
 
-/** All 25 collectors (14 P3 + 10 P4 + 1 from #124 Marshall Vision). */
+// ─── Prompt #125 collector ─────────────────────────────────────────────────
+import { schedulerBridgeCollector } from './scheduler-bridge';
+
+/** All 26 collectors (14 P3 + 10 P4 + 1 from #124 Marshall Vision + 1 from #125 scheduler bridge). */
 export const DB_COLLECTORS: readonly SOC2Collector[] = [
   // P3
   marshallFindingsCollector,
@@ -68,6 +71,8 @@ export const DB_COLLECTORS: readonly SOC2Collector[] = [
   npiReverifyCollector,
   // #124 Marshall Vision
   counterfeitDeterminationsCollector,
+  // #125 Scheduler Bridge
+  schedulerBridgeCollector,
 ];
 
 export interface RunAllResult {

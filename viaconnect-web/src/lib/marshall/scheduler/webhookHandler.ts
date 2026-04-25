@@ -16,11 +16,13 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { schedulerLogger } from './logging';
 import type { SchedulerAdapter } from './adapters/types';
 import type { SchedulerEvent, SchedulerPlatform } from './types';
+import { readPlatformMode, shouldSkipIngestion } from './platformState';
 
 export type WebhookOutcome =
   | { outcome: 'rejected_invalid_signature' }
   | { outcome: 'rejected_parse_error'; error: string }
   | { outcome: 'deduplicated'; externalEventId: string }
+  | { outcome: 'platform_disabled'; platform: SchedulerPlatform }
   | { outcome: 'accepted'; eventRowId: string; event: SchedulerEvent };
 
 export interface WebhookHandlerInput {
@@ -47,6 +49,18 @@ export async function handleSchedulerWebhook(input: WebhookHandlerInput): Promis
   } catch (err) {
     schedulerLogger.warn('[webhook] parse failed', { platform: input.adapter.platform, error: (err as Error).message });
     return { outcome: 'rejected_parse_error', error: (err as Error).message };
+  }
+
+  // P10 kill-switch: if the platform is disabled, skip ingestion entirely.
+  // We still return 200 so the platform stops retrying; an operator
+  // flipped this deliberately via the dual-approved kill-switch flow.
+  const platformMode = await readPlatformMode(input.supabase, input.adapter.platform);
+  if (shouldSkipIngestion(platformMode)) {
+    schedulerLogger.info('[webhook] skipped by kill-switch', {
+      platform: input.adapter.platform,
+      mode: platformMode,
+    });
+    return { outcome: 'platform_disabled', platform: input.adapter.platform };
   }
 
   const insertRow = {

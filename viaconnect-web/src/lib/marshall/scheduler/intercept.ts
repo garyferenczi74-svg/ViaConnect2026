@@ -1,14 +1,22 @@
 // Prompt #125 P2: Interception dispatcher.
+// Prompt #125 P10: Kill-switch enforcement.
 //
 // Given a scan + adapter + live OAuth token, attempt the platform's hold
 // mechanism and persist the attempt to scheduler_interceptions. Never
 // throws: platform-side failure is captured in the row so the caller can
 // fall back to notification-only.
+//
+// P10 gate: if scheduler_platform_states.mode is 'scan_only' or
+// 'disabled' the dispatcher short-circuits BEFORE calling the platform
+// API; a row is persisted with succeeded=false + mechanism
+// 'manual_block_note' + errorMessage='platform_mode:{mode}' so the
+// audit trail reflects why we did not reach out to the platform.
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { schedulerLogger } from './logging';
 import type { SchedulerAdapter } from './adapters/types';
 import type { InterceptionResult } from './types';
+import { readPlatformMode, shouldSkipInterception } from './platformState';
 
 export interface InterceptInput {
   supabase: SupabaseClient;
@@ -26,12 +34,27 @@ export interface InterceptOutcome {
 }
 
 export async function attemptInterception(input: InterceptInput): Promise<InterceptOutcome> {
-  const result = await input.adapter.attemptInterception({
-    connectionId: input.connectionId,
-    externalPostId: input.externalPostId,
-    accessToken: input.accessToken,
-    reason: input.reason,
-  });
+  const mode = await readPlatformMode(input.supabase, input.adapter.platform);
+  let result: InterceptionResult;
+  if (shouldSkipInterception(mode)) {
+    schedulerLogger.info('[intercept] skipped by kill-switch', {
+      platform: input.adapter.platform,
+      scanId: input.scanId,
+      mode,
+    });
+    result = {
+      mechanism: 'manual_block_note',
+      succeeded: false,
+      errorMessage: `platform_mode:${mode}`,
+    };
+  } else {
+    result = await input.adapter.attemptInterception({
+      connectionId: input.connectionId,
+      externalPostId: input.externalPostId,
+      accessToken: input.accessToken,
+      reason: input.reason,
+    });
+  }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const sb = input.supabase as any;

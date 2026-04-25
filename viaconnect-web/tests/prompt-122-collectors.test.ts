@@ -272,8 +272,8 @@ function buildCtx(fixtures: Record<string, Array<Record<string, unknown>>>): Col
 }
 
 describe('DB_COLLECTORS — registry shape', () => {
-  it('registers all 25 collectors (14 P3 + 10 P4 + 1 from #124 Marshall Vision)', () => {
-    expect(DB_COLLECTORS).toHaveLength(25);
+  it('registers all 26 collectors (14 P3 + 10 P4 + 1 #124 Vision + 1 #125 scheduler bridge)', () => {
+    expect(DB_COLLECTORS).toHaveLength(26);
   });
 
   it('every collector has a stable id, version, and dataSource', () => {

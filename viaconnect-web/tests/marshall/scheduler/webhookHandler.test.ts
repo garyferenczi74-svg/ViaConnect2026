@@ -20,7 +20,17 @@ function adapter(
 function mockSupabase(insertBehavior: 'ok' | 'dup' | 'err'): { supabase: any; insertedRows: unknown[] } {
   const insertedRows: unknown[] = [];
   const supabase = {
-    from(_t: string) {
+    from(table: string) {
+      if (table === 'scheduler_platform_states') {
+        // P10 kill-switch read before ingest; legacy tests assume 'active'.
+        return {
+          select: () => ({
+            eq: () => ({
+              async maybeSingle() { return { data: { mode: 'active' }, error: null }; },
+            }),
+          }),
+        };
+      }
       return {
         insert(row: unknown) {
           insertedRows.push(row);

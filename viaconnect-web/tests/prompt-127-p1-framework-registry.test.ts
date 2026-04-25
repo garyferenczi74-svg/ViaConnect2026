@@ -76,7 +76,7 @@ describe('SOC 2 framework definition', () => {
   });
 
   it('every evidence source reference targets an existing #122 collector id', () => {
-    // Hardcoded list matches the 25 collectors registered in runAll.ts
+    // Hardcoded list matches the 26 collectors registered in runAll.ts
     const validCollectors = new Set([
       'marshall-findings-collector', 'marshall-incidents-collector', 'marshall-audit-chain-collector',
       'hounddog-signals-collector', 'hounddog-findings-collector',
@@ -89,6 +89,7 @@ describe('SOC 2 framework definition', () => {
       'cert-expiry-collector', 'mfa-enforcement-collector', 'key-rotation-collector',
       'npi-reverify-collector',
       'counterfeit-determinations-collector',
+      'scheduler-bridge-collector',
     ]);
     for (const c of SOC2_CONTROL_POINTS) {
       for (const src of c.evidenceSources) {

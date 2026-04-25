@@ -51,6 +51,8 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'parse_error', detail: outcome.error }, { status: 400 });
       case 'deduplicated':
         return NextResponse.json({ ok: true, deduplicated: true });
+      case 'platform_disabled':
+        return NextResponse.json({ ok: true, skipped: 'platform_disabled' });
       case 'accepted':
         return NextResponse.json({ ok: true, eventRowId: outcome.eventRowId });
     }

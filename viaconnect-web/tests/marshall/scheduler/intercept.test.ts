@@ -18,7 +18,18 @@ function adapter(result: InterceptionResult): SchedulerAdapter {
 function mockSupabase(insertOk = true): { supabase: any; inserts: unknown[] } {
   const inserts: unknown[] = [];
   const supabase = {
-    from(_t: string) {
+    from(table: string) {
+      if (table === 'scheduler_platform_states') {
+        // P10 adds a kill-switch read before the adapter call; the legacy
+        // intercept tests assume 'active' mode (no kill-switch engaged).
+        return {
+          select: () => ({
+            eq: () => ({
+              async maybeSingle() { return { data: { mode: 'active' }, error: null }; },
+            }),
+          }),
+        };
+      }
       return {
         insert(row: unknown) {
           inserts.push(row);
