@@ -8,6 +8,7 @@ import { Menu, X, ChevronRight } from 'lucide-react'
 import { useScroll, motion } from 'framer-motion'
 import { TabDropdownPanel } from './TabDropdownPanel'
 import type { TabId } from './TabContent'
+import { HowItWorksStrip } from './HowItWorksStrip'
 
 const menuItems: { name: string; id: TabId }[] = [
     { name: 'Features', id: 'features' },
@@ -127,6 +128,7 @@ export function HeroSection() {
                                 <p className="mt-4 max-w-md mx-auto lg:mx-0 text-sm sm:text-base text-slate-400 leading-relaxed text-balance">
                                     Precision health insights from your DNA, delivered through formulations engineered for your unique genome
                                 </p>
+                                <HowItWorksStrip />
                                 <div className="mt-10 sm:mt-14 flex flex-col items-center justify-center gap-4 sm:flex-row lg:justify-start">
                                     <Link
                                         href="/signup"
