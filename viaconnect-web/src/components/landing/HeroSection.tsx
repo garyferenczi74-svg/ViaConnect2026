@@ -96,7 +96,23 @@ function HeroHeader({ activeTab, onTabClick, onClose }: { activeTab: TabId | nul
     )
 }
 
-export function HeroSection() {
+// Prompt #138a Phase 4: optional copy props for hero variant rendering.
+// Defaults preserve the original control copy when no variant is active, so
+// the visual non-disruption guarantee in spec section 3 holds for the
+// untouched homepage.
+export interface HeroSectionProps {
+    variantHeadline?: string;
+    variantSubheadline?: string;
+    variantCtaLabel?: string;
+    variantCtaHref?: string;
+}
+
+export function HeroSection({
+    variantHeadline,
+    variantSubheadline,
+    variantCtaLabel,
+    variantCtaHref,
+}: HeroSectionProps = {}) {
     const [activeTab, setActiveTab] = useState<TabId | null>(null)
 
     const handleTabClick = useCallback((id: TabId) => {
@@ -119,21 +135,35 @@ export function HeroSection() {
                         <div className="relative z-10 mx-auto flex max-w-7xl flex-col px-6 lg:block lg:px-12">
                             <div className="mx-auto max-w-lg text-center lg:ml-0 lg:max-w-full lg:text-left">
                                 <h1 className="mt-8 max-w-2xl text-balance text-3xl sm:text-4xl md:text-5xl lg:mt-16 lg:text-6xl xl:text-7xl font-bold text-white leading-[1.1]">
-                                    <span className="block">Precision Personal Health</span>
-                                    <span className="block text-[#B75E18]">Powered by Your Data</span>
+                                    {variantHeadline ? (
+                                        <span className="block">{variantHeadline}</span>
+                                    ) : (
+                                        <>
+                                            <span className="block">Precision Personal Health</span>
+                                            <span className="block text-[#B75E18]">Powered by Your Data</span>
+                                        </>
+                                    )}
                                 </h1>
-                                <p className="mt-8 sm:mt-10 max-w-2xl text-balance text-base sm:text-lg text-slate-300 leading-relaxed">
-                                    One Genome  One Formulation  One Life at a Time
-                                </p>
-                                <p className="mt-4 max-w-md mx-auto lg:mx-0 text-sm sm:text-base text-slate-400 leading-relaxed text-balance">
-                                    Precision health insights from your DNA, delivered through formulations engineered for your unique genome
-                                </p>
+                                {variantSubheadline ? (
+                                    <p className="mt-8 sm:mt-10 max-w-2xl text-balance text-base sm:text-lg text-slate-300 leading-relaxed">
+                                        {variantSubheadline}
+                                    </p>
+                                ) : (
+                                    <>
+                                        <p className="mt-8 sm:mt-10 max-w-2xl text-balance text-base sm:text-lg text-slate-300 leading-relaxed">
+                                            One Genome  One Formulation  One Life at a Time
+                                        </p>
+                                        <p className="mt-4 max-w-md mx-auto lg:mx-0 text-sm sm:text-base text-slate-400 leading-relaxed text-balance">
+                                            Precision health insights from your DNA, delivered through formulations engineered for your unique genome
+                                        </p>
+                                    </>
+                                )}
                                 <HowItWorksStrip />
                                 <div className="mt-10 sm:mt-14 flex flex-col items-center justify-center gap-4 sm:flex-row lg:justify-start">
                                     <Link
-                                        href="/signup"
+                                        href={variantCtaHref ?? "/signup"}
                                         className="inline-flex h-14 sm:h-12 w-full sm:w-auto items-center justify-center rounded-full bg-[#b75e18] pl-6 pr-4 text-base font-semibold text-white shadow-[0_0_20px_rgba(183,94,24,0.4)] transition-all duration-300 hover:bg-[#d4741f] hover:shadow-[0_0_30px_rgba(183,94,24,0.6)]">
-                                        <span>Your Journey Starts Here</span>
+                                        <span>{variantCtaLabel ?? "Your Journey Starts Here"}</span>
                                         <ChevronRight className="ml-1" />
                                     </Link>
                                     <Link
