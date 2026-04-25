@@ -16,6 +16,7 @@ import { auditRules } from "./audit";
 import { socialRules } from "./social";
 import { precheckRules } from "./precheck";
 import { counterfeitRules } from "./counterfeit";
+import { marketingRules } from "./marketing";
 
 export const allRules: Rule[] = [
   ...claimsRules,
@@ -30,6 +31,7 @@ export const allRules: Rule[] = [
   ...socialRules,
   ...precheckRules,
   ...counterfeitRules,
+  ...marketingRules,
 ];
 
 export {
@@ -45,4 +47,5 @@ export {
   socialRules,
   precheckRules,
   counterfeitRules,
+  marketingRules,
 };

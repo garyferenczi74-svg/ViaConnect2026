@@ -37,7 +37,7 @@ export const BIO_OPTIMIZATION_NAMING: Rule<string> = {
   id: "MARSHALL.BRAND.BIO_OPTIMIZATION_NAMING",
   pillar: "BRAND",
   severity: "P0",
-  surfaces: ["source_code", "content_cms", "ai_output", "marketing_page"],
+  surfaces: ["source_code", "content_cms", "ai_output", "marketing_page", "marketing_copy"],
   citation: "ViaConnect Standing Rule §0.1",
   description: "Score name is exactly Bio Optimization; Vitality Score / Vitality Index / Wellness Score forbidden.",
   evaluate: (text, ctx = defaultCtx()) => {
@@ -84,7 +84,7 @@ export const BIOAVAILABILITY_RANGE: Rule<string> = {
   id: "MARSHALL.BRAND.BIOAVAILABILITY_RANGE",
   pillar: "BRAND",
   severity: "P0",
-  surfaces: ["source_code", "content_cms", "ai_output", "marketing_page", "email", "sms"],
+  surfaces: ["source_code", "content_cms", "ai_output", "marketing_page", "marketing_copy", "email", "sms"],
   citation: "ViaConnect Standing Rule §0.2",
   description: "Bioavailability range is exactly 10-27 times.",
   evaluate: (text, ctx = defaultCtx()) => {
@@ -303,7 +303,7 @@ export const NO_EMOJIS_IN_OUTPUT: Rule<string> = {
   id: "MARSHALL.BRAND.NO_EMOJIS_IN_OUTPUT",
   pillar: "BRAND",
   severity: "P2",
-  surfaces: ["ai_output", "content_cms", "email", "sms", "marketing_page"],
+  surfaces: ["ai_output", "content_cms", "email", "sms", "marketing_page", "marketing_copy"],
   citation: "ViaConnect Standing Rule §0.4",
   description: "No emojis in client-facing content.",
   evaluate: (text, ctx = defaultCtx()) => {

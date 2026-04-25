@@ -97,6 +97,17 @@ describe("lib/compliance scope guards", () => {
       "scope-guards.ts",
       `detector${path.sep}regex-layer.ts`,
       `kelsey${path.sep}prompt.ts`,
+      // Guard surfaces that must enumerate the prohibited string in order to
+      // detect it. forbidden_phrases.ts has predated the test; rules/marketing.ts
+      // (Prompt #138d INTERVENTION_SPECIFICITY corpus) joined under #138a/c/d.
+      `dictionaries${path.sep}forbidden_phrases.ts`,
+      `dictionaries${path.sep}unapproved_peptides.ts`,
+      `rules${path.sep}marketing.ts`,
+      `rules${path.sep}peptide.ts`,
+      `rules${path.sep}social.ts`,
+      `__tests__${path.sep}engine.test.ts`,
+      `__tests__${path.sep}integration.test.ts`,
+      `__tests__${path.sep}peptide.test.ts`,
     ];
     for (const f of files) {
       if (exemptEndings.some((e) => f.endsWith(e))) continue;

@@ -18,7 +18,12 @@ export type Pillar =
   | "AUDIT"
   // Prompt #124: counterfeit detection lives in its own pillar so takedown
   // workflows can filter findings by rule namespace without a string match.
-  | "COUNTERFEIT";
+  | "COUNTERFEIT"
+  // Prompts #138a + #138c + #138d: homepage hero variants, trust band content,
+  // and composite case-study walkthroughs share a marketing-specific rule
+  // namespace MARSHALL.MARKETING.* so conversion-stack content can be filtered
+  // and gated independently from product/practitioner copy.
+  | "MARKETING";
 
 export type Surface =
   | "source_code"
@@ -35,7 +40,13 @@ export type Surface =
   // tighter confidence gates, cooperative coaching tone.
   | "precheck_draft"
   // Prompt #124: suspect product images evaluated by Marshall Vision.
-  | "product_image";
+  | "product_image"
+  // Prompts #138a + #138c + #138d: homepage hero variants, trust band copy,
+  // and Sarah Scenario composite case-study copy. Distinct from
+  // 'marketing_page' (which gates the whole landing page surface) — this
+  // surface is for the per-row variant/clinician-card/copy-block content
+  // that flows through the marketing_copy_variants lifecycle gate.
+  | "marketing_copy";
 
 export type FindingSource = "claude_code" | "runtime";
 

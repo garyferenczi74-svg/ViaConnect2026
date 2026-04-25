@@ -44,7 +44,7 @@ export const DISEASE_CLAIM: Rule<string> = {
   id: "MARSHALL.CLAIMS.DISEASE_CLAIM",
   pillar: "CLAIMS",
   severity: "P1",
-  surfaces: ["content_cms", "user_content", "ai_output", "marketing_page", "email"],
+  surfaces: ["content_cms", "user_content", "ai_output", "marketing_page", "marketing_copy", "email"],
   citation: "21 CFR 101.93; FTC 16 CFR Part 255",
   description: "Structure/function only; no disease claims.",
   evaluate: (text, ctx = defaultCtx()) => {
@@ -77,7 +77,7 @@ export const DSHEA_DISCLAIMER_MISSING: Rule<string> = {
   id: "MARSHALL.CLAIMS.DSHEA_DISCLAIMER_MISSING",
   pillar: "CLAIMS",
   severity: "P2",
-  surfaces: ["content_cms", "marketing_page"],
+  surfaces: ["content_cms", "marketing_page", "marketing_copy"],
   citation: "DSHEA 1994, 21 USC 343(r)(6)",
   description: "Every supplement page must include the DSHEA structure/function disclaimer.",
   evaluate: (text, ctx = defaultCtx()) => {
@@ -112,7 +112,7 @@ export const UNSUBSTANTIATED_EFFICACY: Rule<{ text: string; citations?: string[]
   id: "MARSHALL.CLAIMS.UNSUBSTANTIATED_EFFICACY",
   pillar: "CLAIMS",
   severity: "P1",
-  surfaces: ["content_cms", "ai_output", "marketing_page"],
+  surfaces: ["content_cms", "ai_output", "marketing_page", "marketing_copy"],
   citation: "FTC Act §5; Guides Concerning Endorsements",
   description: "Numeric efficacy claims must be backed by a research citation.",
   evaluate: (input, ctx = defaultCtx()) => {
@@ -146,7 +146,7 @@ export const TESTIMONIAL_DISCLOSURE: Rule<{ text: string; hasMaterialConnection?
   id: "MARSHALL.CLAIMS.TESTIMONIAL_DISCLOSURE",
   pillar: "CLAIMS",
   severity: "P2",
-  surfaces: ["content_cms", "marketing_page"],
+  surfaces: ["content_cms", "marketing_page", "marketing_copy"],
   citation: "FTC Endorsement Guides 2023 rev.",
   description: "Testimonials with material connection require disclosure.",
   evaluate: (input, ctx = defaultCtx()) => {
@@ -171,7 +171,7 @@ export const FORBIDDEN_PHRASE_SCAN: Rule<string> = {
   id: "MARSHALL.CLAIMS.FORBIDDEN_PHRASE",
   pillar: "CLAIMS",
   severity: "P1",
-  surfaces: ["content_cms", "ai_output", "marketing_page", "email", "sms"],
+  surfaces: ["content_cms", "ai_output", "marketing_page", "marketing_copy", "email", "sms"],
   citation: "ViaConnect compliance memo 2026-03-01",
   description: "Catch-all scan for high-risk forbidden marketing phrases.",
   evaluate: (text, ctx = defaultCtx()) => {
