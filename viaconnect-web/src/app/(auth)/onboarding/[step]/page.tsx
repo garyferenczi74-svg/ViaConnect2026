@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { ArrowLeft, ArrowRight, Loader2, Plus, X, Sparkles, Zap, Brain, Moon, Flame, Heart, CheckCircle2, Crown, Star, Calendar, ChevronDown, Info, Camera, FolderOpen, SkipForward, BrainCircuit, RefreshCw } from "lucide-react";
@@ -25,6 +26,12 @@ import BrandProductSearch from "@/components/caq/phase6/BrandProductSearch";
 import { PEPTIDE_REGISTRY, searchPeptides } from "@/config/peptide-database/registry";
 import { InteractionBanner } from "@/components/interactions/InteractionBanner";
 import { emitDataEvent } from "@/lib/ai/emit-event";
+import {
+  genSupplementId,
+  transitionPendingTo,
+  markRowPending,
+  type SupplementSaveState,
+} from "@/lib/caq/supplement-save-state";
 
 // ─── Phase Definitions ──────────────────────────────────────────────────────
 // Interstitial steps use "i-<id>" as their step ID
@@ -421,7 +428,22 @@ export default function OnboardingStepPage() {
   });
 
   // Phase 4b state — Current Supplements (ViaConnect search + AI product lookup)
-  const [userSupplements, setUserSupplements] = useState<{ name: string; brand: string; source: string; deliveryMethod: string; dosage: string; unit: string; frequency: string; reason: string; ingredientBreakdown?: { name: string; amount: number; unit: string; category?: string; dailyValuePercent?: number | null }[] }[]>([]);
+  type UserSupplementBreakdown = { name: string; amount: number; unit: string; category?: string; dailyValuePercent?: number | null };
+  type UserSupplement = {
+    _id?: string;
+    name: string;
+    brand: string;
+    source: string;
+    deliveryMethod: string;
+    dosage: string;
+    unit: string;
+    frequency: string;
+    reason: string;
+    ingredientBreakdown?: UserSupplementBreakdown[];
+  };
+  const [userSupplements, setUserSupplements] = useState<UserSupplement[]>([]);
+  const [supplementSaveState, setSupplementSaveState] = useState<Record<string, SupplementSaveState>>({});
+  const supplementSaveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [suppSearchQuery, setSuppSearchQuery] = useState("");
   const [suppSearchResults, setSuppSearchResults] = useState<{ name: string; search_name: string; category: string; delivery_method: string }[]>([]);
   // Live database search results (2,189 products from 20+ brands)
@@ -626,6 +648,66 @@ export default function OnboardingStepPage() {
       updated_at: new Date().toISOString(),
     }, { onConflict: "user_id,phase" });
   }
+
+  // Per-row save state machinery for CAQ Phase 4 supplements (Prompt #39 §7.3.4).
+  // Adds are optimistic in local state and debounced to a single savePhase("4")
+  // write 800 ms after the last add. Each row tracks pending / saved / failed
+  // so the user gets a visible "Saved" checkmark or a retry button.
+  async function emitSupplementAddedEvent(name: string, brand: string, source: string) {
+    try {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) await emitDataEvent(user.id, "supplement_added", { name, brand, source });
+    } catch { /* fire and forget */ }
+  }
+
+  // Ref carries latest medications + userSupplements into the debounced save
+  // closure. Without this the 800 ms timeout would capture stale state from the
+  // render that scheduled it and the just-added supplement would be dropped.
+  const phase4DataRef = useRef<{ medications: MedicationsData; userSupplements: UserSupplement[] }>({ medications, userSupplements });
+  useEffect(() => {
+    phase4DataRef.current = { medications, userSupplements };
+  }, [medications, userSupplements]);
+
+  const runSupplementSave = useCallback(async () => {
+    const { medications: medsSnapshot, userSupplements: suppsSnapshot } = phase4DataRef.current;
+    try {
+      await savePhase("4", { ...medsSnapshot, userSupplements: suppsSnapshot });
+      setSupplementSaveState((prev) => transitionPendingTo(prev, "saved"));
+    } catch {
+      setSupplementSaveState((prev) => transitionPendingTo(prev, "failed"));
+      toast.error("Could not save your supplement. Tap retry on the row.");
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const scheduleSupplementSave = useCallback(() => {
+    if (supplementSaveTimeoutRef.current) clearTimeout(supplementSaveTimeoutRef.current);
+    supplementSaveTimeoutRef.current = setTimeout(() => {
+      void runSupplementSave();
+    }, 800);
+  }, [runSupplementSave]);
+
+  function commitSupplement(supp: Omit<UserSupplement, "_id">) {
+    const _id = genSupplementId();
+    const newSupp: UserSupplement = { ...supp, _id };
+    setUserSupplements((prev) => [...prev, newSupp]);
+    setSupplementSaveState((prev) => ({ ...prev, [_id]: "pending" }));
+    const label = `${supp.brand ? supp.brand + " " : ""}${supp.name}`.trim();
+    toast.success(`${label} added!`);
+    void emitSupplementAddedEvent(supp.name, supp.brand, supp.source);
+    scheduleSupplementSave();
+  }
+
+  function retrySupplementSave(id: string) {
+    setSupplementSaveState((prev) => markRowPending(prev, id));
+    scheduleSupplementSave();
+  }
+
+  // Cleanup pending debounced save on unmount.
+  useEffect(() => () => {
+    if (supplementSaveTimeoutRef.current) clearTimeout(supplementSaveTimeoutRef.current);
+  }, []);
 
   // Handle next / complete
   const handleNext = useCallback(async () => {
@@ -1492,7 +1574,21 @@ export default function OnboardingStepPage() {
 
             {/* Supplements — FarmCeutica Search */}
             <div>
-              <label className="block text-base font-semibold text-white mb-1">What You Are Currently Taking</label>
+              <label className="text-base font-semibold text-white mb-1 flex items-center gap-2">
+                What You Are Currently Taking
+                {userSupplements.length > 0 && !userSupplements.some((s) => s.name === "None") && (
+                  <motion.span
+                    key={userSupplements.length}
+                    initial={{ scale: 0.6, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ type: "spring", stiffness: 500, damping: 25 }}
+                    className="text-xs px-2 py-0.5 rounded-full bg-teal-400/15 border border-teal-400/30 text-teal-400 font-medium"
+                    aria-label={`${userSupplements.length} supplements added`}
+                  >
+                    {userSupplements.length}
+                  </motion.span>
+                )}
+              </label>
               <p className="text-sm text-white/40 mb-3">Add every supplement, vitamin, and mineral you take regularly</p>
 
               {/* Brand + Product Search — powered by 2,472 products from 113 brands in Supabase */}
@@ -1534,7 +1630,7 @@ export default function OnboardingStepPage() {
                       void product;
                     }}
                     onProductAdded={(product) => {
-                      setUserSupplements([...userSupplements, {
+                      commitSupplement({
                         name: `${product.brand || ""} ${product.productName || "Supplement"}`.trim(),
                         brand: product.brand || "",
                         source: "photo_ai",
@@ -1549,8 +1645,13 @@ export default function OnboardingStepPage() {
                           unit: ing.unit || "mg",
                           category: "standard_actives",
                         })),
-                      }]);
-                      toast.success(`${product.brand || ""} ${product.productName || "Supplement"} added!`);
+                      });
+                    }}
+                    onLowConfidence={(suggestedName) => {
+                      setShowDosageModal(suggestedName);
+                      setDosageForm({ deliveryMethod: "", dosage: "", unit: "mg", frequency: "", reason: "" });
+                      setAiLookupResult(null);
+                      setAiLookupError("");
                     }}
                   />
                 </>
@@ -1620,12 +1721,12 @@ export default function OnboardingStepPage() {
                   {/* Actions */}
                   <div className="p-5 pt-0 flex gap-3">
                     <button type="button" onClick={() => {
-                      setUserSupplements([...userSupplements, {
+                      commitSupplement({
                         name: aiLookupResult.fullName, brand: aiLookupResult.brand, source: "ai_search",
                         deliveryMethod: "standard_actives", dosage: "1", unit: aiLookupResult.servingSize?.includes("capsule") ? "capsule" : "serving",
                         frequency: aiLookupResult.recommendedFrequency || "once_daily", reason: "",
                         ingredientBreakdown: aiLookupResult.ingredients,
-                      }]);
+                      });
                       setAiLookupResult(null);
                     }} className="flex-1 py-3 rounded-xl bg-teal-400/15 border border-teal-400/40 text-teal-400 font-medium text-sm hover:bg-teal-400/20 transition-all flex items-center justify-center gap-2">
                       <CheckCircle2 className="w-4 h-4" /> Add All Ingredients
@@ -1663,12 +1764,12 @@ export default function OnboardingStepPage() {
                   ))}
                   <div className="flex gap-3 pt-2">
                     <button type="button" onClick={() => {
-                      setUserSupplements([...userSupplements, {
+                      commitSupplement({
                         name: aiLookupResult.fullName, brand: aiLookupResult.brand, source: "ai_search",
                         deliveryMethod: "standard_actives", dosage: "1", unit: "serving",
                         frequency: aiLookupResult.recommendedFrequency || "once_daily", reason: "",
                         ingredientBreakdown: aiLookupResult.ingredients,
-                      }]);
+                      });
                       setAiLookupResult(null); setAiEditMode(false);
                     }} className="flex-1 py-2.5 rounded-xl bg-teal-400/15 border border-teal-400/40 text-teal-400 text-sm font-medium">Save &amp; Add</button>
                     <button type="button" onClick={() => setAiEditMode(false)}
@@ -1760,11 +1861,11 @@ export default function OnboardingStepPage() {
                       <button type="button" disabled={!isComplete}
                         onClick={() => {
                           const isFc = SEED_INGREDIENTS.some((ing) => ing.name === showDosageModal);
-                          setUserSupplements([...userSupplements, {
+                          commitSupplement({
                             name: showDosageModal, brand: isFc ? "FarmCeutica" : "External",
                             source: isFc ? "farmceutica" : "manual", deliveryMethod: dosageForm.deliveryMethod,
                             dosage: dosageForm.dosage, unit: dosageForm.unit, frequency: dosageForm.frequency, reason: dosageForm.reason,
-                          }]);
+                          });
                           setShowDosageModal(null);
                         }}
                         className={`flex-1 py-3 rounded-xl font-medium text-sm transition-all ${
@@ -1784,47 +1885,75 @@ export default function OnboardingStepPage() {
               {/* Added Supplements List */}
               {userSupplements.length > 0 && !userSupplements.some(s => s.name === "None") && (
                 <div className="space-y-2 mt-3">
-                  {userSupplements.map((supp, i) => {
-                    const methodLabel = supp.deliveryMethod ? supp.deliveryMethod.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase()) : "";
-                    const hasBreakdown = supp.ingredientBreakdown && supp.ingredientBreakdown.length > 0;
-                    return (
-                      <div key={`${supp.name}-${i}`} className="rounded-lg border border-white/5 bg-white/[0.02]">
-                        <div className="flex items-center justify-between px-3 py-2.5">
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm text-white/90">{supp.name}</span>
-                              <span className={`text-[10px] px-1.5 py-0.5 rounded-full border ${
-                                supp.source === "farmceutica" ? "bg-teal-400/10 border-teal-400/20 text-teal-400"
-                                : supp.source === "ai_search" ? "bg-purple-400/10 border-purple-400/20 text-purple-400"
-                                : "bg-orange-400/10 border-orange-400/20 text-orange-400"
-                              }`}>{supp.source === "farmceutica" ? "FC" : supp.source === "ai_search" ? "AI" : "Ext"}</span>
+                  <AnimatePresence initial={false}>
+                    {userSupplements.map((supp, i) => {
+                      const methodLabel = supp.deliveryMethod ? supp.deliveryMethod.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase()) : "";
+                      const hasBreakdown = supp.ingredientBreakdown && supp.ingredientBreakdown.length > 0;
+                      const rowKey = supp._id ?? `${supp.name}-${i}`;
+                      const saveState = supp._id ? supplementSaveState[supp._id] : undefined;
+                      return (
+                        <motion.div
+                          key={rowKey}
+                          layout
+                          initial={{ opacity: 0, y: -4, boxShadow: "0 0 0 2px rgba(45, 165, 160, 0.55)" }}
+                          animate={{ opacity: 1, y: 0, boxShadow: "0 0 0 0px rgba(45, 165, 160, 0)" }}
+                          exit={{ opacity: 0, y: -4 }}
+                          transition={{ duration: 0.6, ease: "easeOut" }}
+                          className="rounded-lg border border-white/5 bg-white/[0.02]"
+                        >
+                          <div className="flex items-center justify-between px-3 py-2.5">
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm text-white/90">{supp.name}</span>
+                                <span className={`text-[10px] px-1.5 py-0.5 rounded-full border ${
+                                  supp.source === "farmceutica" ? "bg-teal-400/10 border-teal-400/20 text-teal-400"
+                                  : supp.source === "ai_search" ? "bg-purple-400/10 border-purple-400/20 text-purple-400"
+                                  : "bg-orange-400/10 border-orange-400/20 text-orange-400"
+                                }`}>{supp.source === "farmceutica" ? "FC" : supp.source === "ai_search" ? "AI" : "Ext"}</span>
+                                {saveState === "pending" && (
+                                  <Loader2 strokeWidth={1.5} className="w-3.5 h-3.5 text-teal-400/70 animate-spin" aria-label="Saving" />
+                                )}
+                                {saveState === "saved" && (
+                                  <CheckCircle2 strokeWidth={1.5} className="w-3.5 h-3.5 text-teal-400" aria-label="Saved" />
+                                )}
+                                {saveState === "failed" && supp._id && (
+                                  <button
+                                    type="button"
+                                    onClick={() => retrySupplementSave(supp._id!)}
+                                    className="flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full bg-red-400/10 border border-red-400/30 text-red-400 hover:bg-red-400/20 transition-colors"
+                                    aria-label="Retry save"
+                                  >
+                                    <RefreshCw strokeWidth={1.5} className="w-3 h-3" /> Retry
+                                  </button>
+                                )}
+                              </div>
+                              <p className="text-xs text-white/30 mt-0.5">
+                                {supp.brand && `${supp.brand} · `}{methodLabel && `${methodLabel} · `}{supp.dosage}{supp.unit} · {supp.frequency.replace(/_/g, " ")}
+                                {hasBreakdown && ` · ${supp.ingredientBreakdown!.length} ingredients`}
+                              </p>
                             </div>
-                            <p className="text-xs text-white/30 mt-0.5">
-                              {supp.brand && `${supp.brand} · `}{methodLabel && `${methodLabel} · `}{supp.dosage}{supp.unit} · {supp.frequency.replace(/_/g, " ")}
-                              {hasBreakdown && ` · ${supp.ingredientBreakdown!.length} ingredients`}
-                            </p>
+                            <button type="button" onClick={() => setUserSupplements(userSupplements.filter((_, idx) => idx !== i))}>
+                              <X className="w-3.5 h-3.5 text-white/30 hover:text-white/70" />
+                            </button>
                           </div>
-                          <button type="button" onClick={() => setUserSupplements(userSupplements.filter((_, idx) => idx !== i))}>
-                            <X className="w-3.5 h-3.5 text-white/30 hover:text-white/70" />
-                          </button>
-                        </div>
-                        {/* Expandable ingredient breakdown for AI-searched products */}
-                        {hasBreakdown && (
-                          <details className="border-t border-white/[0.03]">
-                            <summary className="px-3 py-2 text-xs text-teal-400/60 cursor-pointer hover:text-teal-400/80">View ingredient breakdown</summary>
-                            <div className="px-3 pb-3 space-y-0.5">
-                              {supp.ingredientBreakdown!.map((ing, j) => (
-                                <div key={j} className="flex justify-between text-xs">
-                                  <span className="text-white/50">{ing.name}</span>
-                                  <span className="text-white/40">{ing.amount} {ing.unit}</span>
-                                </div>
-                              ))}
-                            </div>
-                          </details>
-                        )}
-                      </div>
-                    );
-                  })}
+                          {/* Expandable ingredient breakdown for AI-searched products */}
+                          {hasBreakdown && (
+                            <details className="border-t border-white/[0.03]">
+                              <summary className="px-3 py-2 text-xs text-teal-400/60 cursor-pointer hover:text-teal-400/80">View ingredient breakdown</summary>
+                              <div className="px-3 pb-3 space-y-0.5">
+                                {supp.ingredientBreakdown!.map((ing, j) => (
+                                  <div key={j} className="flex justify-between text-xs">
+                                    <span className="text-white/50">{ing.name}</span>
+                                    <span className="text-white/40">{ing.amount} {ing.unit}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </details>
+                          )}
+                        </motion.div>
+                      );
+                    })}
+                  </AnimatePresence>
                 </div>
               )}
 

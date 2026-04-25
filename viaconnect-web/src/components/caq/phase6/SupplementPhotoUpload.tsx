@@ -21,11 +21,18 @@ interface IdentifiedProduct {
 interface Props {
   onProductIdentified?: (product: IdentifiedProduct) => void;
   onProductAdded?: (product: IdentifiedProduct) => void;
+  /**
+   * Invoked when Vision returns `overallConfidence === 'low'`. Parent should
+   * route to the manual entry form pre-filled with the suggested name. When
+   * provided, the low-confidence result card replaces its primary CTA with
+   * "Enter Manually" instead of "Add to My Supplements".
+   */
+  onLowConfidence?: (suggestedName: string) => void;
 }
 
 type State = 'idle' | 'compressing' | 'analyzing' | 'complete' | 'error';
 
-export default function SupplementPhotoUpload({ onProductIdentified, onProductAdded }: Props) {
+export default function SupplementPhotoUpload({ onProductIdentified, onProductAdded, onLowConfidence }: Props) {
   const [state, setState] = useState<State>('idle');
   const [product, setProduct] = useState<IdentifiedProduct | null>(null);
   const [errorMsg, setErrorMsg] = useState('');
@@ -160,9 +167,9 @@ export default function SupplementPhotoUpload({ onProductIdentified, onProductAd
           )}
           <div className="w-10 h-10 mx-auto mb-3 border-3 border-teal-400 border-t-transparent rounded-full animate-spin" />
           <p className="text-sm font-medium text-teal-400">
-            {state === 'compressing' ? 'Processing image...' : 'Reading your supplement label...'}
+            {state === 'compressing' ? 'Processing image...' : 'Identifying your supplement...'}
           </p>
-          <p className="text-xs text-white/30 mt-1">This may take 10-15 seconds</p>
+          <p className="text-xs text-white/30 mt-1">This may take 10 to 15 seconds</p>
         </div>
       )}
 
@@ -217,21 +224,42 @@ export default function SupplementPhotoUpload({ onProductIdentified, onProductAd
           )}
 
           {product.overallConfidence === 'low' && (
-            <p className="text-xs text-amber-400/70 mb-3">
-              Low confidence. Try photographing the Supplement Facts panel for better accuracy.
+            <p className="text-xs text-amber-400/80 mb-3">
+              We couldn&apos;t identify this with confidence. Please enter the details manually.
             </p>
           )}
 
-          <div className="flex gap-3">
-            <button type="button" onClick={(e) => { e.preventDefault(); reset(); }}
-              className="flex-1 py-2.5 text-sm text-white/50 border border-white/15 rounded-lg hover:bg-white/5 transition-colors">
-              Cancel
-            </button>
-            <button type="button" onClick={(e) => { e.preventDefault(); if (product && onProductAdded) onProductAdded(product); reset(); }}
-              className="flex-1 py-2.5 text-sm font-semibold text-white bg-teal-400/20 border border-teal-400/30 rounded-lg hover:bg-teal-400/30 transition-colors">
-              Add to My Supplements
-            </button>
-          </div>
+          {product.overallConfidence === 'low' && onLowConfidence ? (
+            <div className="flex gap-3">
+              <button type="button" onClick={(e) => { e.preventDefault(); reset(); }}
+                className="flex-1 py-2.5 text-sm text-white/50 border border-white/15 rounded-lg hover:bg-white/5 transition-colors">
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  const suggestedName = `${product.brand || ''} ${product.productName || 'Supplement'}`.trim();
+                  onLowConfidence(suggestedName);
+                  reset();
+                }}
+                className="flex-1 py-2.5 text-sm font-semibold text-white bg-amber-400/20 border border-amber-400/40 rounded-lg hover:bg-amber-400/30 transition-colors"
+              >
+                Enter Manually
+              </button>
+            </div>
+          ) : (
+            <div className="flex gap-3">
+              <button type="button" onClick={(e) => { e.preventDefault(); reset(); }}
+                className="flex-1 py-2.5 text-sm text-white/50 border border-white/15 rounded-lg hover:bg-white/5 transition-colors">
+                Cancel
+              </button>
+              <button type="button" onClick={(e) => { e.preventDefault(); if (product && onProductAdded) onProductAdded(product); reset(); }}
+                className="flex-1 py-2.5 text-sm font-semibold text-white bg-teal-400/20 border border-teal-400/30 rounded-lg hover:bg-teal-400/30 transition-colors">
+                Add to My Supplements
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>
