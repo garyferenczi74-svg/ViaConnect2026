@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { detectWebView, type WebViewDetection } from '@/lib/device/detect-webview';
 
 interface IdentifiedProduct {
   brand: string | null;
@@ -29,26 +30,47 @@ export default function SupplementPhotoUpload({ onProductIdentified, onProductAd
   const [product, setProduct] = useState<IdentifiedProduct | null>(null);
   const [errorMsg, setErrorMsg] = useState('');
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [webview, setWebview] = useState<WebViewDetection | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (typeof navigator !== 'undefined') {
+      setWebview(detectWebView(navigator.userAgent));
+    }
+  }, []);
 
   async function processImage(file: File) {
     setState('compressing');
     setErrorMsg('');
     setProduct(null);
 
+    const isHeic =
+      file.type === 'image/heic' ||
+      file.type === 'image/heif' ||
+      /\.(heic|heif)$/i.test(file.name);
+
     try {
       setPreviewUrl(URL.createObjectURL(file));
 
       let processedFile = file;
-      if (file.size > 3 * 1024 * 1024) {
-        const bitmap = await createImageBitmap(file);
-        const canvas = document.createElement('canvas');
-        const scale = Math.min(1800 / Math.max(bitmap.width, bitmap.height), 1);
-        canvas.width = bitmap.width * scale;
-        canvas.height = bitmap.height * scale;
-        canvas.getContext('2d')!.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-        const blob = await new Promise<Blob>(r => canvas.toBlob(b => r(b!), 'image/jpeg', 0.75));
-        processedFile = new File([blob], 'photo.jpg', { type: 'image/jpeg' });
+      if (isHeic || file.size > 3 * 1024 * 1024) {
+        try {
+          const bitmap = await createImageBitmap(file);
+          const canvas = document.createElement('canvas');
+          const scale = Math.min(1800 / Math.max(bitmap.width, bitmap.height), 1);
+          canvas.width = bitmap.width * scale;
+          canvas.height = bitmap.height * scale;
+          canvas.getContext('2d')!.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+          const blob = await new Promise<Blob>(r => canvas.toBlob(b => r(b!), 'image/jpeg', 0.75));
+          processedFile = new File([blob], 'photo.jpg', { type: 'image/jpeg' });
+        } catch (convertErr) {
+          if (isHeic) {
+            setState('error');
+            setErrorMsg('Could not process this HEIC photo. Try retaking in JPG mode via iPhone Settings, or upload a different photo.');
+            return;
+          }
+          throw convertErr;
+        }
       }
 
       const base64 = await new Promise<string>((resolve, reject) => {
@@ -99,9 +121,21 @@ export default function SupplementPhotoUpload({ onProductIdentified, onProductAd
     setPreviewUrl(null);
   }
 
+  if (webview?.isWebView) {
+    return (
+      <div className="border-2 border-amber-400/40 rounded-xl p-6 text-center bg-amber-400/[0.04]">
+        <div className="w-12 h-12 rounded-full bg-amber-400/10 flex items-center justify-center mx-auto mb-3">
+          <svg className="w-6 h-6 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        </div>
+        <p className="text-sm font-medium text-white mb-2">Open in Safari or Chrome to upload a photo</p>
+        <p className="text-xs text-white/50">In-app browsers cannot reach your camera or photo library. Tap the menu in your current app, choose Open in Browser, then return to this step.</p>
+      </div>
+    );
+  }
+
   return (
     <div>
-      <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/webp,image/heic" capture="environment" onChange={handleFileSelect} style={{ display: 'none' }} tabIndex={-1} />
+      <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif" capture="environment" onChange={handleFileSelect} style={{ display: 'none' }} tabIndex={-1} />
 
       {state === 'idle' && (
         <div
