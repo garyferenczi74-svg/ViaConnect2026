@@ -12,6 +12,7 @@ export const runtime = 'nodejs';
 
 const COMPLIANCE_ROLES = new Set(['compliance_officer', 'compliance_admin', 'admin', 'superadmin']);
 const MAX_EXPIRY_DAYS = 90;
+const VALID_FRAMEWORKS = new Set(['soc2', 'hipaa_security', 'iso_27001_2022']);
 
 async function requireCompliance(): Promise<
   { ok: true; userId: string } | { ok: false; response: NextResponse }
@@ -36,7 +37,7 @@ export async function GET(_req: NextRequest) {
   const sb = supabase as any;
   const { data, error } = await sb
     .from('soc2_auditor_grants')
-    .select('id, auditor_email, auditor_firm, packet_ids, granted_by, granted_at, expires_at, revoked, revoked_at, revoked_by, access_count')
+    .select('id, auditor_email, auditor_firm, framework_id, packet_ids, granted_by, granted_at, expires_at, revoked, revoked_at, revoked_by, access_count')
     .order('granted_at', { ascending: false })
     .limit(200);
   if (error) {
@@ -50,6 +51,7 @@ interface CreateBody {
   auditorFirm: string;
   packetIds: string[];
   expiresAt: string; // ISO
+  frameworkId?: string; // Prompt #127 P8. Defaults to 'soc2'.
 }
 
 export async function POST(req: NextRequest) {
@@ -63,6 +65,10 @@ export async function POST(req: NextRequest) {
   const email = (body.auditorEmail ?? '').trim().toLowerCase();
   const firm = (body.auditorFirm ?? '').trim();
   const packetIds = Array.isArray(body.packetIds) ? body.packetIds.filter((s) => typeof s === 'string') : [];
+  const frameworkId = (body.frameworkId ?? 'soc2').trim();
+  if (!VALID_FRAMEWORKS.has(frameworkId)) {
+    return NextResponse.json({ error: 'invalid_framework_id' }, { status: 400 });
+  }
 
   if (!email || !/^[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,}$/i.test(email)) {
     return NextResponse.json({ error: 'invalid_auditor_email' }, { status: 400 });
@@ -95,6 +101,7 @@ export async function POST(req: NextRequest) {
     .insert({
       auditor_email: email,
       auditor_firm: firm,
+      framework_id: frameworkId,
       packet_ids: packetIds,
       granted_by: auth.userId,
       expires_at: expiresAt.toISOString(),

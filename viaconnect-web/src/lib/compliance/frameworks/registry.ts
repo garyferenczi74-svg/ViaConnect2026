@@ -4,9 +4,8 @@
 // packet pins `registryVersion` so auditors reviewing a 2027 packet can
 // identify exactly which rules were in effect when it was built.
 //
-// HIPAA + ISO definitions are stubs in P1 (no control points) so the
-// registry loads cleanly but only SOC 2 drives live packet generation.
-// P3 + P5 will replace the stub definitions with fully-populated ones.
+// P1 seeded all three frameworks with SOC 2 populated and HIPAA/ISO as
+// stubs. P3 populated HIPAA; P5 populates ISO 27001:2022 (this file).
 
 import { SOC2_FRAMEWORK } from './definitions/soc2';
 import { HIPAA_FRAMEWORK } from './definitions/hipaa';
