@@ -6,13 +6,13 @@
 
 import { type NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { requireAdmin } from '@/lib/flags/admin-guard';
+import { requireMarketingAdmin } from '@/lib/flags/admin-guard';
 import type { VariantSurface } from '@/lib/marketing/variants/types';
 
 const VALID_SURFACES: VariantSurface[] = ['hero'];
 
 export async function GET(request: NextRequest) {
-  const auth = await requireAdmin();
+  const auth = await requireMarketingAdmin();
   if (auth.kind === 'error') return auth.response;
 
   const url = new URL(request.url);
@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const auth = await requireAdmin();
+  const auth = await requireMarketingAdmin();
   if (auth.kind === 'error') return auth.response;
 
   const body = (await request.json().catch(() => null)) as {

@@ -7,14 +7,14 @@
 
 import { type NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { requireAdmin } from '@/lib/flags/admin-guard';
+import { requireMarketingAdmin } from '@/lib/flags/admin-guard';
 import { logVariantEvent } from '@/lib/marketing/variants/logging';
 
 export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } },
 ) {
-  const auth = await requireAdmin();
+  const auth = await requireMarketingAdmin();
   if (auth.kind === 'error') return auth.response;
 
   const body = (await request.json().catch(() => null)) as { archived?: boolean } | null;

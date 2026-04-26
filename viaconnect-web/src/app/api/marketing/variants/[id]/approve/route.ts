@@ -10,7 +10,7 @@
 
 import { type NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { requireAdmin } from '@/lib/flags/admin-guard';
+import { requireMarketingAdmin } from '@/lib/flags/admin-guard';
 import { logVariantEvent } from '@/lib/marketing/variants/logging';
 
 const STEVE_LEVEL_ROLES = new Set(['compliance_admin', 'superadmin', 'admin', 'founder']);
@@ -19,7 +19,7 @@ export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } },
 ) {
-  const auth = await requireAdmin();
+  const auth = await requireMarketingAdmin();
   if (auth.kind === 'error') return auth.response;
   if (!STEVE_LEVEL_ROLES.has(auth.user.role)) {
     return NextResponse.json({ error: 'Forbidden: approval requires compliance_admin or superadmin.' }, { status: 403 });

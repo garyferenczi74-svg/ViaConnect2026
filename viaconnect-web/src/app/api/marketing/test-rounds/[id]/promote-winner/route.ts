@@ -9,7 +9,7 @@
 
 import { type NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { requireAdmin } from '@/lib/flags/admin-guard';
+import { requireMarketingAdmin } from '@/lib/flags/admin-guard';
 import type { TestRoundEndedReason } from '@/lib/marketing/variants/types';
 
 const VALID_REASONS: TestRoundEndedReason[] = [
@@ -22,7 +22,7 @@ export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } },
 ) {
-  const auth = await requireAdmin();
+  const auth = await requireMarketingAdmin();
   if (auth.kind === 'error') return auth.response;
   if (!STEVE_LEVEL_ROLES.has(auth.user.role)) {
     return NextResponse.json(
