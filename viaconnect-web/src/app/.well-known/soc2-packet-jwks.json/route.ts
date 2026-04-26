@@ -15,6 +15,11 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { buildJwks, type SigningKeyRow } from '@/lib/soc2/assemble/jwks';
 
 export const runtime = 'nodejs';
+// Route depends on the live soc2_signing_keys table and the service-role key,
+// neither of which is available during Vercel's static export phase. Without
+// this opt-out, Next.js attempts to pre-render the JWKS at build time and
+// createAdminClient throws on missing SUPABASE_SERVICE_ROLE_KEY.
+export const dynamic = 'force-dynamic';
 
 export async function GET(): Promise<NextResponse> {
   // Keys table RLS restricts SELECT to compliance readers, but the

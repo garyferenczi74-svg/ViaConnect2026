@@ -5,6 +5,12 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { BodyGraphicPreferencesRow } from "@/components/body-tracker/body-graphic/BodyGraphic.types";
 
+// Route requires a user session (auth.getUser) and the service-role admin
+// client for upserts; both are runtime-only. Opt out of static pre-render
+// so Vercel's build phase does not invoke them with no env or request.
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   const sb = createClient();
   const { data: { user } } = await sb.auth.getUser();
