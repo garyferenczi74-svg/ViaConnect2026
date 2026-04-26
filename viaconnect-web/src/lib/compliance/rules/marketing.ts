@@ -1,9 +1,9 @@
 /**
- * Pillar 11 — Marketing copy guardrails (Prompts #138a + #138c + #138d).
+ * Pillar 11 — Marketing copy guardrails (Prompts #138a + #138c + #138d + #138e).
  *
- * Nine rules under MARSHALL.MARKETING.* that gate the conversion-stack
+ * Eleven rules under MARSHALL.MARKETING.* that gate the conversion-stack
  * surfaces (homepage hero variants, trust band content, Sarah Scenario
- * composite case-study walkthroughs):
+ * composite case-study walkthroughs, outcome timeline categorical phase):
  *
  *   #138a §7.3 — NAMED_PERSON_CONNECTION (P1)
  *                TIME_CLAIM_SUBSTANTIATION (P1)
@@ -17,9 +17,12 @@
  *   #138d §6.3 — COMPOSITE_DISCLOSURE (P0)
  *                INTERVENTION_SPECIFICITY (P0)
  *
- * COMPOSITE_DISCLOSURE and INTERVENTION_SPECIFICITY are the automated
- * enforcement teeth of the #138d scope-reduction commitment; both are P0
- * and have no override path at the content-author level.
+ *   #138e §6.3 — SCORE_AS_TRACKING_NOT_OUTCOME (P0)
+ *                OUTCOME_TIMELINE_QUALIFIER_REQUIRED (P0)
+ *
+ * The four #138d/#138e P0 rules are the automated enforcement teeth of the
+ * scope-reduction commitments documented in those specs; none have an
+ * override path at the content-author level.
  */
 
 import type { EvaluationContext, Finding, Rule } from "../engine/types";
@@ -69,7 +72,7 @@ export interface MarketingCopyInput {
    * #138d case-study-only rules (composite disclosure required, intervention
    * specificity forbidden). Other kinds skip those rules.
    */
-  contentKind?: "hero_variant" | "trust_band" | "case_study" | "testimonial" | "other";
+  contentKind?: "hero_variant" | "trust_band" | "case_study" | "testimonial" | "outcome_timeline" | "other";
   /**
    * Set true when a clinician's written-consent record is on file for the
    * specific copy block being evaluated. Required to clear NAMED_PERSON_CONNECTION
@@ -104,6 +107,15 @@ export interface MarketingCopyInput {
   endorserConsentMeta?: {
     consentKeyResolved: boolean;
     materialConnectionDisclosed: boolean;
+  };
+  /**
+   * For outcome-timeline copy: an honest qualifier block must render in-element
+   * adjacent to the phase cards (not as a footnote). Omitted or footnote-only
+   * qualifier is P0 per #138e §6.3 OUTCOME_TIMELINE_QUALIFIER_REQUIRED.
+   */
+  outcomeTimelineMeta?: {
+    hasAdjacentQualifier: boolean;
+    qualifierIsFootnote: boolean;
   };
 }
 
@@ -640,6 +652,113 @@ export const INTERVENTION_SPECIFICITY: Rule<MarketingCopyInput> = {
   lastReviewed: LAST_REVIEWED,
 };
 
+// ─── #138e §6.3 — SCORE_AS_TRACKING_NOT_OUTCOME (P0) ─────────────────────────
+
+// Detects forbidden Score-as-outcome framings:
+//   - Specific Score values: "Score of 82", "reaches a Score of"
+//   - Score change rates: "Score rise 12 points", "Score increased by"
+//   - Cohort-segmented Score claims: "Tier 2 users see their Score rise faster"
+//   - Comparison-to-baseline Score framing: "Score X% higher than"
+// Permitted: Score as a tracking mechanism without numerical/comparative claim.
+const SCORE_OUTCOME_VIOLATIONS: Array<[RegExp, string]> = [
+  [/\bScore\s+(?:of|reaches?|hit)\s*\d/gi, "specific Score value"],
+  [/\bScore\s+(?:rises?|rise[ds]?|increases?|increased|gains?|jumps?|grows?|climbs?)\s+(?:by|to)?\s*\d/gi, "Score change rate with number"],
+  [/(?:users?|patients?|customers?|members?)\s+see\s+(?:their\s+)?Score\s+(?:rise|increase|grow|jump|climb)/gi, "user-cohort Score claim"],
+  [/\bTier\s+\d.{0,40}Score/gi, "Tier-segmented Score claim"],
+  [/Score\s+\d+\s*(?:%|percent|points?)/gi, "Score quantified outcome"],
+  [/(?:by\s+day\s+\d+).{0,40}Score|Score.{0,40}by\s+day\s+\d+/gi, "Score-by-day claim"],
+];
+
+export const SCORE_AS_TRACKING_NOT_OUTCOME: Rule<MarketingCopyInput | string> = {
+  id: "MARSHALL.MARKETING.SCORE_AS_TRACKING_NOT_OUTCOME",
+  pillar: "MARKETING",
+  severity: "P0",
+  surfaces: ["marketing_copy", "marketing_page", "content_cms", "ai_output"],
+  citation: "Prompt #138e §6.3",
+  description:
+    "Bio Optimization Score may be referenced as a tracking mechanism but MUST NOT be cited as a marketing-claimed outcome metric. Specific values, change rates, cohort claims, and comparison framing are P0; Score-as-outcome surfacing is reserved for #138e-b once the aggregate outcomes pipeline is verified live.",
+  evaluate: (input, ctx = defaultCtx()) => {
+    const text = typeof input === "string" ? input : input.text;
+    if (typeof text !== "string" || text.length === 0) return [];
+    const findings: Finding[] = [];
+    for (const [re, label] of SCORE_OUTCOME_VIOLATIONS) {
+      re.lastIndex = 0;
+      let m: RegExpExecArray | null;
+      while ((m = re.exec(text)) !== null) {
+        findings.push(
+          baseFinding(
+            "MARSHALL.MARKETING.SCORE_AS_TRACKING_NOT_OUTCOME",
+            "P0",
+            `Finding: copy contains "${m[0]}" matching "${label}". Score-as-outcome surfacing is reserved for #138e-b; the present prompt allows the Score only as a tracking mechanism (e.g., "your Score reflects your trajectory").`,
+            "Prompt #138e §6.3",
+            redactExcerpt(text, m.index, 120),
+            {
+              kind: "manual",
+              summary:
+                "Reframe to tracking-mechanism language: the Score evolves as the visitor does, captures inputs, reflects trajectory. Drop specific values, change rates, cohort comparisons, and day-anchored Score claims.",
+            },
+            ctx,
+          ),
+        );
+      }
+    }
+    return findings;
+  },
+  lastReviewed: LAST_REVIEWED,
+};
+
+// ─── #138e §6.3 — OUTCOME_TIMELINE_QUALIFIER_REQUIRED (P0) ───────────────────
+
+export const OUTCOME_TIMELINE_QUALIFIER_REQUIRED: Rule<MarketingCopyInput> = {
+  id: "MARSHALL.MARKETING.OUTCOME_TIMELINE_QUALIFIER_REQUIRED",
+  pillar: "MARKETING",
+  severity: "P0",
+  surfaces: ["marketing_copy"],
+  citation: "Prompt #138e §6.3",
+  description:
+    "30/60/90-style outcome-timeline content MUST be adjacent to a qualifier block acknowledging individual variance. The qualifier MUST render in-element with the timeline, not as a footnote.",
+  evaluate: (input, ctx = defaultCtx()) => {
+    if (input.contentKind !== "outcome_timeline") return [];
+    const meta = input.outcomeTimelineMeta;
+    const findings: Finding[] = [];
+    if (!meta || !meta.hasAdjacentQualifier) {
+      findings.push(
+        baseFinding(
+          "MARSHALL.MARKETING.OUTCOME_TIMELINE_QUALIFIER_REQUIRED",
+          "P0",
+          "Finding: outcome-timeline copy is rendered without an adjacent qualifier block. Categorical timeline content requires an in-element qualifier acknowledging individual variance per #138e §3.7.",
+          "Prompt #138e §6.3",
+          redactExcerpt(input.text, 0, 200),
+          {
+            kind: "manual",
+            summary:
+              "Render the qualifier block adjacent to the phase cards on every viewport size. Required language pattern: \"Not everyone experiences the same pattern, and some categories shift faster than others depending on individual biology.\"",
+          },
+          ctx,
+        ),
+      );
+    } else if (meta.qualifierIsFootnote) {
+      findings.push(
+        baseFinding(
+          "MARSHALL.MARKETING.OUTCOME_TIMELINE_QUALIFIER_REQUIRED",
+          "P0",
+          "Finding: outcome-timeline qualifier is rendered as a footnote. The qualifier must render in-element at body weight, not below the timeline as fine print.",
+          "Prompt #138e §6.3",
+          redactExcerpt(input.text, 0, 200),
+          {
+            kind: "manual",
+            summary:
+              "Move the qualifier into the same visual element family as the phase cards. No size reduction, no opacity reduction, no footnote treatment.",
+          },
+          ctx,
+        ),
+      );
+    }
+    return findings;
+  },
+  lastReviewed: LAST_REVIEWED,
+};
+
 // ─── Aggregate export ────────────────────────────────────────────────────────
 
 export const marketingRules: Rule[] = [
@@ -652,4 +771,6 @@ export const marketingRules: Rule[] = [
   REGULATORY_FRAMEWORK_NAMING,
   COMPOSITE_DISCLOSURE,
   INTERVENTION_SPECIFICITY,
+  SCORE_AS_TRACKING_NOT_OUTCOME,
+  OUTCOME_TIMELINE_QUALIFIER_REQUIRED,
 ];

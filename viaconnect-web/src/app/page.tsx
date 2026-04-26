@@ -1,19 +1,22 @@
 import { HeroVariantRenderer } from "@/components/landing/HeroVariantRenderer";
 import { TrustBandSection } from "@/components/home/TrustBandSection";
+import { OutcomeTimelineSection } from "@/components/home/OutcomeTimelineSection";
 
-// Prompt #138a Phase 4: HeroVariantRenderer wraps HeroSection with the
-// variant lifecycle. Falls back to HeroSection's control copy when no
-// test round is active. Visual non-disruption guarantee section 3 holds.
+// Conversion stack composition (top to bottom):
+//   #138a Hero  variant-tested headline + subhead + CTA
+//   #138c Trust Band  regulatory paragraph, clinician card, trust chips
+//   #138e Outcome Timeline  30/60/90 categorical future-state framing
 //
-// Prompt #138c: TrustBandSection renders below the hero. Returns null
-// when no trust band content is active, so the page stays unchanged
-// during Phase A operational rollout. Visual non-disruption inherited
-// from #138 section 3: the band is a new section, not a modification.
+// Each section renders null when its content is not active in the DB,
+// so the homepage stays clean during Phase A operational rollout when
+// nothing has been activated yet. Visual non-disruption guarantee from
+// #138 section 3 holds across all three sections; each is additive.
 export default function HomePage() {
   return (
     <>
       <HeroVariantRenderer />
       <TrustBandSection />
+      <OutcomeTimelineSection />
     </>
   );
 }

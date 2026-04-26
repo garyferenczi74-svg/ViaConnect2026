@@ -273,8 +273,8 @@ describe("MARSHALL.MARKETING.INTERVENTION_SPECIFICITY", () => {
 });
 
 describe("marketingRules aggregate", () => {
-  it("exports exactly 9 rules", () => {
-    expect(marketingRules.length).toBe(9);
+  it("exports exactly 11 rules (5 from #138a + 2 from #138c + 2 from #138d + 2 from #138e)", () => {
+    expect(marketingRules.length).toBe(11);
   });
   it("every rule pillar is MARKETING", () => {
     for (const r of marketingRules) {
