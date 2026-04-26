@@ -137,7 +137,7 @@ function PillarCard({
       <div
         className="pillar-inner relative flex h-full min-h-[200px] flex-col overflow-hidden rounded-3xl border border-white/10 p-[22px_20px_20px] transition-[border-color,box-shadow,background-color] duration-[400ms] sm:min-h-[280px] sm:p-8"
         style={{
-          background: `${pillar.surfaceOverlay}, rgba(30, 48, 84, 0.72)`,
+          background: `${pillar.surfaceOverlay}, rgba(30, 48, 84, 0.40)`,
           backdropFilter: 'blur(24px)',
           WebkitBackdropFilter: 'blur(24px)',
         }}
