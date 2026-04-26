@@ -8,7 +8,7 @@ import { Menu, X, ChevronRight } from 'lucide-react'
 import { useScroll, motion } from 'framer-motion'
 import { TabDropdownPanel } from './TabDropdownPanel'
 import type { TabId } from './TabContent'
-import { HeroInfoCards } from './HeroInfoCards'
+import { HeroPillars } from './HeroPillars'
 
 const menuItems: { name: string; id: TabId }[] = [
     { name: 'Features', id: 'features' },
@@ -158,7 +158,7 @@ export function HeroSection({
                                         </p>
                                     </>
                                 )}
-                                <HeroInfoCards />
+                                <HeroPillars />
                                 <div className="mt-10 sm:mt-14 flex flex-col items-center justify-center gap-4 sm:flex-row lg:justify-start">
                                     <Link
                                         href={variantCtaHref ?? "/signup"}
