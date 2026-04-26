@@ -41,7 +41,10 @@ import { counterfeitDeterminationsCollector } from './counterfeit-determinations
 // ─── Prompt #125 collector ─────────────────────────────────────────────────
 import { schedulerBridgeCollector } from './scheduler-bridge';
 
-/** All 26 collectors (14 P3 + 10 P4 + 1 from #124 Marshall Vision + 1 from #125 scheduler bridge). */
+// ─── Prompt #138a collector ────────────────────────────────────────────────
+import { marketingCopyActivityCollector } from './marketing-copy-activity';
+
+/** All 27 collectors (14 P3 + 10 P4 + 1 from #124 Marshall Vision + 1 from #125 scheduler bridge + 1 from #138a marketing copy). */
 export const DB_COLLECTORS: readonly SOC2Collector[] = [
   // P3
   marshallFindingsCollector,
@@ -73,6 +76,8 @@ export const DB_COLLECTORS: readonly SOC2Collector[] = [
   counterfeitDeterminationsCollector,
   // #125 Scheduler Bridge
   schedulerBridgeCollector,
+  // #138a Marketing-Copy Activity
+  marketingCopyActivityCollector,
 ];
 
 export interface RunAllResult {
