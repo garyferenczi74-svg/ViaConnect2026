@@ -46,7 +46,12 @@ export type Surface =
   // 'marketing_page' (which gates the whole landing page surface) — this
   // surface is for the per-row variant/clinician-card/copy-block content
   // that flows through the marketing_copy_variants lifecycle gate.
-  | "marketing_copy";
+  | "marketing_copy"
+  // Prompt #123: surface for Marshall's drafted rebuttal responses to
+  // practitioner appeals. Same rule evaluators run against the draft text
+  // before it reaches Steve so a defense of (e.g.) a disease-claim finding
+  // cannot accidentally itself contain disease-claim language.
+  | "rebuttal_draft";
 
 export type FindingSource = "claude_code" | "runtime";
 
