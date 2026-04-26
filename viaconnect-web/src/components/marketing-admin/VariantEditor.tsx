@@ -88,9 +88,9 @@ export function VariantEditor({ state, onChange, lockIdentity = false, disabled 
 
       <Field
         label="Headline"
-        hint={`${wc.headlineWordCount} of ${WORD_COUNT_BUDGETS.headline_max} words`}
-        statusOk={wc.headlineWordCount > 0 && wc.headlineWithinBudget}
-        statusErr={!wc.headlineWithinBudget}
+        hint={`${wc.headlineWords} of ${WORD_COUNT_BUDGETS.headline_max} words`}
+        statusOk={wc.headlineWords > 0 && wc.headlineWords <= WORD_COUNT_BUDGETS.headline_max}
+        statusErr={wc.headlineWords > WORD_COUNT_BUDGETS.headline_max}
       >
         <textarea
           rows={2}
@@ -104,9 +104,9 @@ export function VariantEditor({ state, onChange, lockIdentity = false, disabled 
 
       <Field
         label="Subheadline"
-        hint={`${wc.subheadlineWordCount} of ${WORD_COUNT_BUDGETS.subheadline_max} words`}
-        statusOk={wc.subheadlineWordCount > 0 && wc.subheadlineWithinBudget}
-        statusErr={!wc.subheadlineWithinBudget}
+        hint={`${wc.subheadlineWords} of ${WORD_COUNT_BUDGETS.subheadline_max} words`}
+        statusOk={wc.subheadlineWords > 0 && wc.subheadlineWords <= WORD_COUNT_BUDGETS.subheadline_max}
+        statusErr={wc.subheadlineWords > WORD_COUNT_BUDGETS.subheadline_max}
       >
         <textarea
           rows={3}
