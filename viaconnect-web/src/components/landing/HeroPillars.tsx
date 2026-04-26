@@ -135,7 +135,7 @@ function PillarCard({
       data-accent-rgb={pillar.accent.rgb}
     >
       <div
-        className="pillar-inner relative flex h-full min-h-[200px] flex-col overflow-hidden rounded-3xl border border-white/10 p-[22px_20px_20px] transition-[border-color,box-shadow,background-color] duration-400 sm:min-h-[280px] sm:p-8"
+        className="pillar-inner relative flex h-full min-h-[200px] flex-col overflow-hidden rounded-3xl border border-white/10 p-[22px_20px_20px] transition-[border-color,box-shadow,background-color] duration-[400ms] sm:min-h-[280px] sm:p-8"
         style={{
           background: `${pillar.surfaceOverlay}, rgba(30, 48, 84, 0.72)`,
           backdropFilter: 'blur(24px)',
@@ -144,7 +144,7 @@ function PillarCard({
       >
         <motion.div
           aria-hidden="true"
-          className="pointer-events-none absolute inset-0 z-[1] opacity-0 transition-opacity duration-400 group-hover:opacity-100"
+          className="pointer-events-none absolute inset-0 z-[1] opacity-0 transition-opacity duration-[400ms] group-hover:opacity-100"
           style={{ background: spotlightBg }}
         />
 
