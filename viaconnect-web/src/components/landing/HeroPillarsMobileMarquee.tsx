@@ -194,7 +194,7 @@ function MarqueePillarCard({
       style={{ width: CARD_WIDTH_PX, flexShrink: 0 }}
     >
       <div
-        className="relative flex flex-col justify-center overflow-hidden rounded-[18px] border border-white/[0.06]"
+        className="relative flex h-full flex-col justify-center overflow-hidden rounded-[18px] border border-white/[0.06]"
         style={{
           minHeight: 220,
           padding: '24px 22px',
