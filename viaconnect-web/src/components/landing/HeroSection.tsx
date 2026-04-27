@@ -210,7 +210,7 @@ export function HeroSection({
                                         <span className="text-sm font-semibold tracking-wider uppercase whitespace-nowrap">10-28X Bioavailability</span>
                                     </div>
                                     <div className="flex items-center gap-2 text-slate-400">
-                                        <span className="text-sm font-semibold tracking-wider uppercase whitespace-nowrap">27-Product Peptide Portfolio</span>
+                                        <span className="text-sm font-semibold tracking-wider uppercase whitespace-nowrap">28-Peptide Product Data</span>
                                     </div>
                                     <div className="flex items-center gap-2 text-slate-400">
                                         <span className="text-sm font-semibold tracking-wider uppercase whitespace-nowrap">SNP-Targeted Nutraceuticals</span>
