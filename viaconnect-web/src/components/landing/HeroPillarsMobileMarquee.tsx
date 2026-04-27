@@ -39,27 +39,22 @@ const SLIDE_UNIT_PX = CARD_WIDTH_PX + CARD_GUTTER_PX // 296
 
 interface MobileOverride {
   surfaceOverlay: string
-  numeralFill: string
+  numeralStroke: string
   shineRgba: string
 }
 
 // Per-card mobile overrides. Surface overlays per spec §4.2 (boosted
 // from desktop's 0.05-0.06 alpha so the colour reads through on a
-// single full-width card).
-//
-// Numeral rendering switched from -webkit-text-stroke to a soft fill
-// on 2026-04-27. iOS WebKit rasterizes stroked glyphs at 96px with a
-// "weird character" artifact on the curved counter of "2" that paint-
-// order + text-rendering hints did not eliminate. Fill bypasses the
-// stroke path entirely. Alpha values (0.22 teal / 0.24 orange) chosen
-// to give a visual weight comparable to the prior 1.2px stroke at
-// 0.55/0.40 alpha; numeral remains a faint ghost on the navy gradient.
+// single full-width card). Numerals are rendered as outlined ghosts via
+// -webkit-text-stroke with a transparent fill, matching the original
+// design language. Stroke alphas boosted above the spec literal so the
+// outline reads on the navy gradient at 96px.
 function getMobileOverride(realIndex: number): MobileOverride {
   if (realIndex === 0) {
     return {
       surfaceOverlay:
         'radial-gradient(ellipse 80% 60% at 0% 100%, rgba(69,122,0,0.14), transparent 60%)',
-      numeralFill: 'rgba(69,122,0,0.55)',
+      numeralStroke: 'rgba(69,122,0,0.55)',
       shineRgba: 'rgba(69,122,0,0.7)',
     }
   }
@@ -67,14 +62,14 @@ function getMobileOverride(realIndex: number): MobileOverride {
     return {
       surfaceOverlay:
         'linear-gradient(135deg, rgba(45,165,160,0.12) 0%, rgba(226,122,44,0.12) 100%)',
-      numeralFill: 'rgba(45,165,160,0.22)',
+      numeralStroke: 'rgba(45,165,160,0.55)',
       shineRgba: 'rgba(45,165,160,0.7)',
     }
   }
   return {
     surfaceOverlay:
       'radial-gradient(ellipse 80% 60% at 100% 0%, rgba(226,122,44,0.16), transparent 60%)',
-    numeralFill: 'rgba(226,122,44,0.24)',
+    numeralStroke: 'rgba(226,122,44,0.40)',
     shineRgba: 'rgba(226,122,44,0.7)',
   }
 }
@@ -209,7 +204,9 @@ function MarqueePillarCard({
           style={{
             fontSize: 96,
             letterSpacing: '-0.06em',
-            color: override.numeralFill,
+            color: 'transparent',
+            WebkitTextStroke: `1.2px ${override.numeralStroke}`,
+            paintOrder: 'stroke fill',
             textRendering: 'geometricPrecision',
             WebkitFontSmoothing: 'antialiased',
             MozOsxFontSmoothing: 'grayscale',
@@ -238,7 +235,6 @@ function MarqueePillarCard({
               marginBottom: 12,
               lineHeight: 1.05,
               letterSpacing: '-0.02em',
-              ...(pillar.headlineColor ? { color: pillar.headlineColor } : null),
             }}
           >
             {pillar.headline}

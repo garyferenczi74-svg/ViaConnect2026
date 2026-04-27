@@ -28,9 +28,6 @@ export type PillarData = {
   body: string
   accent: AccentTheme
   surfaceOverlay: string
-  // Optional override for the headline color. Defaults to white when
-  // omitted. Card 1 uses #457a00 to match its olive-green theme.
-  headlineColor?: string
 }
 
 export const PILLARS: PillarData[] = [
@@ -43,7 +40,6 @@ export const PILLARS: PillarData[] = [
     accent: OLIVE_GREEN,
     surfaceOverlay:
       'radial-gradient(ellipse 80% 60% at 0% 100%, rgba(69,122,0,0.06), transparent 60%)',
-    headlineColor: '#457a00',
   },
   {
     numeral: '02',
@@ -105,8 +101,12 @@ function PillarCard({
     mouseY.set(0)
   }
 
+  // Idle numeral stroke: orange uses 0.20 (the original spec value), every
+  // other accent (teal, olive-green, future) uses 0.18 with its own rgb.
   const numeralStrokeIdle =
-    pillar.accent === TEAL ? 'rgba(45,165,160,0.18)' : 'rgba(226,122,44,0.20)'
+    pillar.accent === ORANGE
+      ? 'rgba(226,122,44,0.20)'
+      : `rgba(${pillar.accent.rgb}, 0.18)`
 
   return (
     <motion.article
@@ -176,10 +176,7 @@ function PillarCard({
             {pillar.eyebrow}
           </span>
 
-          <h3
-            className="mb-1.5 text-[20px] font-semibold leading-[1.05] tracking-[-0.02em] text-white sm:mb-2 sm:text-[22px]"
-            style={pillar.headlineColor ? { color: pillar.headlineColor } : undefined}
-          >
+          <h3 className="mb-1.5 text-[20px] font-semibold leading-[1.05] tracking-[-0.02em] text-white sm:mb-2 sm:text-[22px]">
             {pillar.headline}
           </h3>
 
