@@ -220,15 +220,15 @@ export function HeroPillars() {
 
       <div
         role="list"
-        className="mt-6 grid grid-cols-1 gap-[6px] sm:mt-6 sm:grid-cols-2 sm:gap-3 lg:grid-cols-3 lg:gap-4"
+        className="mt-6 flex overflow-x-auto snap-x snap-mandatory gap-3 px-4 -mx-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mt-6 sm:grid sm:grid-cols-2 sm:gap-3 sm:overflow-visible sm:px-0 sm:mx-0 lg:grid-cols-3 lg:gap-4"
       >
         {PILLARS.map((pillar, index) => (
           <div
             key={pillar.numeral}
             className={
               index === 2
-                ? 'sm:col-span-2 sm:mx-auto sm:w-full sm:max-w-[480px] lg:col-span-1 lg:max-w-none'
-                : ''
+                ? 'flex-shrink-0 w-[160px] h-[160px] snap-center sm:w-full sm:h-auto sm:flex-shrink sm:col-span-2 sm:mx-auto sm:max-w-[480px] lg:col-span-1 lg:max-w-none'
+                : 'flex-shrink-0 w-[160px] h-[160px] snap-center sm:w-auto sm:h-auto sm:flex-shrink'
             }
           >
             <PillarCard
