@@ -131,7 +131,7 @@ function PillarCard({
       data-accent-rgb={pillar.accent.rgb}
     >
       <div
-        className="pillar-inner relative flex h-full min-h-[80px] flex-col overflow-hidden rounded-2xl border border-white/[0.06] p-[10px_12px] transition-[border-color,box-shadow,background-color] duration-[400ms] sm:min-h-[140px] sm:rounded-[18px] sm:p-[18px_20px]"
+        className="pillar-inner relative flex h-full min-h-[110px] flex-col overflow-hidden rounded-2xl border border-white/[0.06] p-[8px_8px] transition-[border-color,box-shadow,background-color] duration-[400ms] sm:min-h-[140px] sm:rounded-[18px] sm:p-[18px_20px]"
         style={{
           background: `${pillar.surfaceOverlay}, rgba(30, 48, 84, 0.18)`,
           backdropFilter: 'blur(32px)',
@@ -146,7 +146,7 @@ function PillarCard({
 
         <span
           aria-hidden="true"
-          className="pillar-numeral pointer-events-none absolute right-[-2px] top-[-6px] z-[1] select-none text-[40px] font-bold leading-none tracking-[-0.06em] sm:right-[-4px] sm:top-[-10px] sm:text-[90px] lg:text-[110px]"
+          className="pillar-numeral pointer-events-none absolute right-[-2px] top-[-4px] z-[1] select-none text-[28px] font-bold leading-none tracking-[-0.06em] sm:right-[-4px] sm:top-[-10px] sm:text-[90px] lg:text-[110px]"
           style={{
             color: 'transparent',
             WebkitTextStroke: `1.2px ${numeralStrokeIdle}`,
@@ -164,17 +164,17 @@ function PillarCard({
         >
           <span
             aria-label={pillar.ariaChapter}
-            className="mb-[3px] text-[8px] font-semibold uppercase tracking-[0.18em] sm:mb-1.5 sm:text-[10.5px]"
+            className="mb-[2px] text-[7px] font-semibold uppercase tracking-[0.15em] sm:mb-1.5 sm:text-[10.5px]"
             style={{ color: `rgba(${pillar.accent.rgb}, 0.95)` }}
           >
             {pillar.eyebrow}
           </span>
 
-          <h3 className="mb-1 text-[14px] font-semibold leading-[1.05] tracking-[-0.02em] text-white sm:mb-2 sm:text-[22px]">
+          <h3 className="mb-0.5 text-[11px] font-semibold leading-[1.05] tracking-[-0.02em] text-white sm:mb-2 sm:text-[22px]">
             {pillar.headline}
           </h3>
 
-          <p className="flex-1 text-[11px] leading-[1.35] text-white/72 sm:text-[13.5px] sm:leading-[1.45]">
+          <p className="flex-1 text-[8px] leading-[1.3] text-white/72 sm:text-[13.5px] sm:leading-[1.45]">
             {pillar.body}
           </p>
         </div>
@@ -220,15 +220,15 @@ export function HeroPillars() {
 
       <div
         role="list"
-        className="mt-6 flex w-full flex-row overflow-x-auto snap-x snap-mandatory gap-3 pb-2 sm:mt-6 sm:grid sm:grid-cols-2 sm:gap-3 sm:overflow-x-visible sm:pb-0 lg:grid-cols-3 lg:gap-4"
+        className="mt-6 flex w-full flex-row flex-nowrap items-stretch justify-center overflow-x-auto snap-x snap-mandatory gap-2 pb-2 sm:mt-6 sm:grid sm:grid-cols-2 sm:gap-3 sm:overflow-x-visible sm:pb-0 lg:grid-cols-3 lg:gap-4"
       >
         {PILLARS.map((pillar, index) => (
           <div
             key={pillar.numeral}
             className={
               index === 2
-                ? 'flex-shrink-0 w-[160px] h-[160px] snap-center sm:w-full sm:h-auto sm:flex-shrink sm:col-span-2 sm:mx-auto sm:max-w-[480px] lg:col-span-1 lg:max-w-none'
-                : 'flex-shrink-0 w-[160px] h-[160px] snap-center sm:w-auto sm:h-auto sm:flex-shrink'
+                ? 'flex-shrink-0 w-[110px] h-[110px] snap-center sm:w-full sm:h-auto sm:flex-shrink sm:col-span-2 sm:mx-auto sm:max-w-[480px] lg:col-span-1 lg:max-w-none'
+                : 'flex-shrink-0 w-[110px] h-[110px] snap-center sm:w-auto sm:h-auto sm:flex-shrink'
             }
           >
             <PillarCard
