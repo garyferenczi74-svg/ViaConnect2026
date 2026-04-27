@@ -86,29 +86,29 @@ export const BIOAVAILABILITY_RANGE: Rule<string> = {
   severity: "P0",
   surfaces: ["source_code", "content_cms", "ai_output", "marketing_page", "marketing_copy", "email", "sms"],
   citation: "ViaConnect Standing Rule §0.2",
-  description: "Bioavailability range is exactly 10-27 times.",
+  description: "Bioavailability range is exactly 10-28 times.",
   evaluate: (text, ctx = defaultCtx()) => {
     if (typeof text !== "string" || text.length === 0) return [];
     const findings: Finding[] = [];
     // Flag any numeric range adjacent to "bioavailable" / "bioavailability"
-    // that is NOT the canonical 10-27.
+    // that is NOT the canonical 10-28.
     const re = /(\d{1,3})\s*(?:to|[-–—])\s*(\d{1,3})\s*[×x]?\s*(?:more\s+)?(?:bioavailab(?:le|ility))/gi;
     let m: RegExpExecArray | null;
     while ((m = re.exec(text)) !== null) {
       const low = Number(m[1]);
       const high = Number(m[2]);
-      if (!(low === 10 && high === 27)) {
+      if (!(low === 10 && high === 28)) {
         findings.push(
           baseFinding(
             "MARSHALL.BRAND.BIOAVAILABILITY_RANGE",
             "P0",
-            `Finding: bioavailability range "${low}-${high}" is not the canonical 10-27 times.`,
+            `Finding: bioavailability range "${low}-${high}" is not the canonical 10-28 times.`,
             "ViaConnect Standing Rule §0.2",
             redactExcerpt(text, m.index, 80),
             {
               kind: "auto",
-              summary: "Normalize to the canonical 10-27x bioavailability.",
-              action: "REPLACE_RANGE:10-27×",
+              summary: "Normalize to the canonical 10-28x bioavailability.",
+              action: "REPLACE_RANGE:10-28×",
             },
             ctx,
           ),
@@ -121,7 +121,7 @@ export const BIOAVAILABILITY_RANGE: Rule<string> = {
     if (typeof text !== "string") return text;
     return text.replace(
       /(\d{1,3})\s*(?:to|[-–—])\s*(\d{1,3})\s*([×x]?)\s*((?:more\s+)?(?:bioavailab(?:le|ility)))/gi,
-      (_full, _a, _b, _x, tail) => `10-27× ${tail}`,
+      (_full, _a, _b, _x, tail) => `10-28× ${tail}`,
     );
   },
   lastReviewed: LAST_REVIEWED,

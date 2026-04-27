@@ -35,17 +35,17 @@ describe("MARSHALL.BRAND.BIOAVAILABILITY_RANGE", () => {
       expect(hits.length).toBeGreaterThanOrEqual(1);
     }
   });
-  it("passes canonical 10-27x", async () => {
-    const hits = await BIOAVAILABILITY_RANGE.evaluate("10-27x bioavailable formulation");
+  it("passes canonical 10-28x", async () => {
+    const hits = await BIOAVAILABILITY_RANGE.evaluate("10-28x bioavailable formulation");
     expect(hits.length).toBe(0);
   });
-  it("passes 10-27 times bioavailability", async () => {
-    const hits = await BIOAVAILABILITY_RANGE.evaluate("10 to 27 times bioavailability");
+  it("passes 10-28 times bioavailability", async () => {
+    const hits = await BIOAVAILABILITY_RANGE.evaluate("10 to 28 times bioavailability");
     expect(hits.length).toBe(0);
   });
-  it("auto-remediates to 10-27x", async () => {
+  it("auto-remediates to 10-28x", async () => {
     const fixed = await BIOAVAILABILITY_RANGE.autoRemediate!("5-27x more bioavailable", {} as any);
-    expect(fixed).toMatch(/10-27/);
+    expect(fixed).toMatch(/10-28/);
   });
 });
 

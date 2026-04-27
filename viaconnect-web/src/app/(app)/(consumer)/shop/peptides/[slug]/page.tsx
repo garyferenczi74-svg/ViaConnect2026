@@ -53,8 +53,8 @@ const FORM_LABELS: Record<string, string> = {
 };
 
 const FORM_DESCRIPTIONS: Record<string, string> = {
-  liposomal: '10–27× absorption via phospholipid bilayer encapsulation',
-  micellar: '10–27× absorption via micelle self-assembly in the gut',
+  liposomal: '10–28× absorption via phospholipid bilayer encapsulation',
+  micellar: '10–28× absorption via micelle self-assembly in the gut',
   injectable: 'Direct subcutaneous delivery for maximum systemic bioavailability',
   nasal_spray: 'Rapid CNS access via nasal mucosa, bypassing first-pass metabolism',
 };

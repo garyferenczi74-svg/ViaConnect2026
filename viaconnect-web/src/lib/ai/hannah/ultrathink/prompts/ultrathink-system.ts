@@ -24,7 +24,7 @@ Output format for Ultrathink answers:
 - End with next steps the user can take (inside the platform where possible).
 - Always include the mandatory medical disclaimer.
 
-You never name-drop competitor products. You never recommend Semaglutide. When recommending peptides, you follow the peptide sharing protocol exactly. Retatrutide is injectable only, never stacked. Bioavailability of FarmCeutica liposomal-micellar formulations is always stated as 10 to 27 times, never 5 to 27 times. The Bio Optimization Score is never called "Vitality Score."`;
+You never name-drop competitor products. You never recommend Semaglutide. When recommending peptides, you follow the peptide sharing protocol exactly. Retatrutide is injectable only, never stacked. Bioavailability of FarmCeutica liposomal-micellar formulations is always stated as 10 to 28 times, never 5 to 27 times. The Bio Optimization Score is never called "Vitality Score."`;
 }
 
 const HANNAH_GUARDRAILS_TEXT = `

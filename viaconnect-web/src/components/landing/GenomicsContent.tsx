@@ -14,26 +14,26 @@ export function GenomicsContent() {
       <TabH2>The GeneX360&trade; Six-Panel System</TabH2>
       <TabP>&ldquo;No test on the market goes this deep. A simple saliva kit. Results in 7 to14 days. A lifetime of precision.&rdquo;</TabP>
 
-      <TabH3>GENEX-M&trade; ($288.88)</TabH3>
+      <TabH3>GENEX-M&trade;</TabH3>
       <TabP>25+ SNPs : methylation (MTHFR, MTRR, MTR, BHMT, CBS), detox/neuro (COMT, MAOA, DAO, SOD2, GST), drug metabolism (CYP2D6, CYP2C19, CYP2C9), nutrients (VDR, APOE, FTO).</TabP>
 
-      <TabH3>NUTRIGEN-DX&trade; ($388.88)</TabH3>
+      <TabH3>NUTRIGEN-DX&trade;</TabH3>
       <TabP>Complete nutrient genetics : vitamin metabolism, mineral utilization, macronutrient response, fatty acids, food sensitivities.</TabP>
 
-      <TabH3>HormoneIQ&trade; ($508.88)</TabH3>
+      <TabH3>HormoneIQ&trade;</TabH3>
       <TabP>DUTCH Complete : 40+ hormones via 24-hour urine. Sex hormones, cortisol rhythm, estrogen metabolites, neurotransmitter metabolites.</TabP>
 
-      <TabH3>EpigenHQ&trade; ($448.88)</TabH3>
+      <TabH3>EpigenHQ&trade;</TabH3>
       <TabP>Illumina 850K array, 4 aging clocks (Horvath, Hannum, PhenoAge, GrimAge). Accuracy: &plusmn;2.8 years.</TabP>
 
-      <TabH3>PeptideIQ&trade; ($428.88) : WORLD&apos;S FIRST</TabH3>
+      <TabH3>PeptideIQ&trade; : WORLD&apos;S FIRST</TabH3>
       <TabP>Growth Hormone Axis (GHSR, IGF1), Collagen &amp; Repair (COL1A1, MMP1), Peptide Transport (SLC15A1, DPP4), Immune &amp; Thymic (FOXN1, IL-7R). Zero competitors.</TabP>
 
-      <TabH3>CannabisIQ&trade; ($398.88) : WORLD&apos;S FIRST</TabH3>
+      <TabH3>CannabisIQ&trade; : WORLD&apos;S FIRST</TabH3>
       <TabP>Cannabinoid Metabolism (CYP2C9, CYP3A4), Receptor Sensitivity (CNR1, CNR2, FAAH), Adverse Reaction Risk (AKT1, COMT, DRD2), Terpene Response (OR genes, TRPV1). Zero competitors.</TabP>
 
-      <TabH3>GeneX360&trade; COMPLETE ($988.88)</TabH3>
-      <TabP><TabBold>All 6 panels. Save $1,473 (59.8%).</TabBold> 6 months Platinum included ($173.28 value). HSA/FSA eligible.</TabP>
+      <TabH3>GeneX360&trade; COMPLETE</TabH3>
+      <TabP><TabBold>All 6 panels.</TabBold> 6 months Platinum included. HSA/FSA eligible.</TabP>
 
       <TabH2>SNP-Targeted Nutraceuticals</TabH2>
       <TabP>&ldquo;ViaConnect doesn&apos;t make supplements then figure out who to sell them to. We identify genetic variants, research the biochemistry, then formulate exactly what that variant demands.&rdquo;</TabP>
@@ -43,7 +43,7 @@ export function GenomicsContent() {
       <TabP>&ldquo;Your current supplements absorb at less than 10%. Some below 1%. You&apos;re paying for 100% and getting less than 10%.&rdquo;</TabP>
       <TabP><TabBold>Liposomal:</TabBold> 50 to200nm, sunflower lecithin, 20,000 PSI, &gt;85% encapsulation, lymphatic bypass, 4 to8 hour sustained.</TabP>
       <TabP><TabBold>Micellar:</TabBold> 10 to50nm, Quillaja saponin, 50 to1,000x solubilization, no fat required, 30 to60 min rapid.</TabP>
-      <TabP><TabBold>Combined:</TabBold> 10 to27x bioavailability. PK studies: N=24 liposomal (Cmax +1,055%, AUC +1,079%), N=32 micellar (Cmax +2,594%, 27x bioavailability).</TabP>
+      <TabP><TabBold>Combined:</TabBold> 10 to28x bioavailability. PK studies: N=24 liposomal (Cmax +1,055%, AUC +1,079%), N=32 micellar (Cmax +2,594%, 27x bioavailability).</TabP>
 
       <TabTable
         headers={["Nutrient", "Standard", "ViaConnect", "Improvement"]}

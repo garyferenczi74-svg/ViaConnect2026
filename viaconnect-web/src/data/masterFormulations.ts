@@ -82,7 +82,7 @@ export const MASTER_FORMULATIONS: ProductFormulation[] = [
       ing('Liposomal B9 – Methyl Folate (5-MTHF)', '0.5'),
       ing('Liposomal B12 – Methylcobalamin', '0.8'),
     ],
-    marketingDescription: `A fully methylated B-complex engineered for individuals with compromised methylation pathways, MethylB Complete+™ delivers all eight essential B vitamins in their most bioactive forms, including 5-MTHF folate and methylcobalamin B12, wrapped in FarmCeutica's dual liposomal-micellar delivery system for 10–27× greater absorption than standard supplements. This foundational formula serves as the methylation backbone across the entire FarmCeutica product line, ensuring your body can convert nutrients into cellular energy, support neurotransmitter production, and maintain optimal homocysteine levels from day one.`,
+    marketingDescription: `A fully methylated B-complex engineered for individuals with compromised methylation pathways, MethylB Complete+™ delivers all eight essential B vitamins in their most bioactive forms, including 5-MTHF folate and methylcobalamin B12, wrapped in FarmCeutica's dual liposomal-micellar delivery system for 10–28× greater absorption than standard supplements. This foundational formula serves as the methylation backbone across the entire FarmCeutica product line, ensuring your body can convert nutrients into cellular energy, support neurotransmitter production, and maintain optimal homocysteine levels from day one.`,
   },
 
   {

@@ -84,7 +84,7 @@ export const KNOWLEDGE_SOURCES = {
     description: "Complete ViaConnect 56-SKU product database",
     indexingStrategy: "chunk by product, metadata: category, delivery_method, key_ingredients",
     categories: [
-      "Liposomal delivery formulations (10-27x bioavailability)",
+      "Liposomal delivery formulations (10-28x bioavailability)",
       "Micellar delivery formulations",
       "Methylated B-vitamins",
       "Minerals, amino acids, botanicals, enzymes, specialty compounds",
