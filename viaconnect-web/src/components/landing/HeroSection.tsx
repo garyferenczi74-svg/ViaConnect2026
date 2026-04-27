@@ -1,5 +1,5 @@
 'use client'
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { InfiniteSlider } from '@/components/ui/infinite-slider'
 import { ProgressiveBlur } from '@/components/ui/progressive-blur'
@@ -123,6 +123,44 @@ export function HeroSection({
         setActiveTab(null)
     }, [])
 
+    // iOS Safari pauses background videos in several scenarios that the
+    // bare <video autoPlay loop muted playsInline> attributes don't cover:
+    // Low Power Mode, scrolled-out-of-viewport, tab backgrounding, system
+    // overlays, ringtone interruption. Listen for the pause event and
+    // visibility change and re-issue play() so the hero DNA loop never
+    // stalls. play() returns a Promise that may reject if the browser
+    // refuses (Low Power Mode); swallow that case silently and let the
+    // next visibility change try again.
+    const videoRef = useRef<HTMLVideoElement>(null)
+    useEffect(() => {
+        const video = videoRef.current
+        if (!video) return
+
+        function tryPlay() {
+            if (!video) return
+            const promise = video.play()
+            if (promise !== undefined) {
+                promise.catch(() => { /* iOS may refuse; retry on next event */ })
+            }
+        }
+
+        function handlePause() { tryPlay() }
+        function handleVisibility() {
+            if (document.visibilityState === 'visible') tryPlay()
+        }
+        function handleFocus() { tryPlay() }
+
+        tryPlay()
+        video.addEventListener('pause', handlePause)
+        document.addEventListener('visibilitychange', handleVisibility)
+        window.addEventListener('focus', handleFocus)
+        return () => {
+            video.removeEventListener('pause', handlePause)
+            document.removeEventListener('visibilitychange', handleVisibility)
+            window.removeEventListener('focus', handleFocus)
+        }
+    }, [])
+
     return (
         <>
             <HeroHeader activeTab={activeTab} onTabClick={handleTabClick} onClose={handleClose} />
@@ -176,10 +214,13 @@ export function HeroSection({
                         </div>
                         <div className="absolute inset-0 overflow-hidden border border-white/5">
                             <video
+                                ref={videoRef}
                                 autoPlay
                                 loop
                                 muted
                                 playsInline
+                                preload="auto"
+                                disablePictureInPicture
                                 className="size-full object-cover opacity-30 lg:opacity-50"
                                 src="https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Assets/DNA%20HD.mp4"
                             />
