@@ -18,6 +18,7 @@ export type AccentTheme = {
 
 export const TEAL: AccentTheme = { primary: '#2DA5A0', rgb: '45,165,160' }
 export const ORANGE: AccentTheme = { primary: '#E27A2C', rgb: '226,122,44' }
+export const OLIVE_GREEN: AccentTheme = { primary: '#457a00', rgb: '69,122,0' }
 
 export type PillarData = {
   numeral: string
@@ -27,6 +28,9 @@ export type PillarData = {
   body: string
   accent: AccentTheme
   surfaceOverlay: string
+  // Optional override for the headline color. Defaults to white when
+  // omitted. Card 1 uses #457a00 to match its olive-green theme.
+  headlineColor?: string
 }
 
 export const PILLARS: PillarData[] = [
@@ -36,9 +40,10 @@ export const PILLARS: PillarData[] = [
     ariaChapter: 'Chapter one, discovery',
     headline: 'Your Story',
     body: 'In 8 minutes, our onboarding assessment captures 200+ biological data points and translates them into a precision wellness protocol built for your unique physiology.',
-    accent: TEAL,
+    accent: OLIVE_GREEN,
     surfaceOverlay:
-      'radial-gradient(ellipse 80% 60% at 0% 100%, rgba(45,165,160,0.06), transparent 60%)',
+      'radial-gradient(ellipse 80% 60% at 0% 100%, rgba(69,122,0,0.06), transparent 60%)',
+    headlineColor: '#457a00',
   },
   {
     numeral: '02',
@@ -171,7 +176,10 @@ function PillarCard({
             {pillar.eyebrow}
           </span>
 
-          <h3 className="mb-1.5 text-[20px] font-semibold leading-[1.05] tracking-[-0.02em] text-white sm:mb-2 sm:text-[22px]">
+          <h3
+            className="mb-1.5 text-[20px] font-semibold leading-[1.05] tracking-[-0.02em] text-white sm:mb-2 sm:text-[22px]"
+            style={pillar.headlineColor ? { color: pillar.headlineColor } : undefined}
+          >
             {pillar.headline}
           </h3>
 
@@ -202,6 +210,9 @@ export function HeroPillars() {
           -webkit-text-stroke-color: rgba(45,165,160,0.34) !important;
           transform: translate(-3px, 3px);
         }
+        .pillar-card.pillar-card--0.group:hover .pillar-numeral {
+          -webkit-text-stroke-color: rgba(69,122,0,0.40) !important;
+        }
         .pillar-card.pillar-card--2.group:hover .pillar-numeral {
           -webkit-text-stroke-color: rgba(226,122,44,0.40) !important;
         }
@@ -209,6 +220,12 @@ export function HeroPillars() {
           border-color: rgba(45,165,160,0.40);
           box-shadow:
             0 16px 36px -14px rgba(45,165,160,0.26),
+            0 4px 12px -6px rgba(26,39,68,0.45);
+        }
+        .pillar-card.pillar-card--0.group:hover .pillar-inner {
+          border-color: rgba(69,122,0,0.45);
+          box-shadow:
+            0 16px 36px -14px rgba(69,122,0,0.26),
             0 4px 12px -6px rgba(26,39,68,0.45);
         }
         .pillar-card.pillar-card--2.group:hover .pillar-inner {

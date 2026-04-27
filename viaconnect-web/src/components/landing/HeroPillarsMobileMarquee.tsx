@@ -58,9 +58,9 @@ function getMobileOverride(realIndex: number): MobileOverride {
   if (realIndex === 0) {
     return {
       surfaceOverlay:
-        'radial-gradient(ellipse 80% 60% at 0% 100%, rgba(45,165,160,0.14), transparent 60%)',
-      numeralFill: 'rgba(45,165,160,0.22)',
-      shineRgba: 'rgba(45,165,160,0.7)',
+        'radial-gradient(ellipse 80% 60% at 0% 100%, rgba(69,122,0,0.14), transparent 60%)',
+      numeralFill: 'rgba(69,122,0,0.55)',
+      shineRgba: 'rgba(69,122,0,0.7)',
     }
   }
   if (realIndex === 1) {
@@ -238,6 +238,7 @@ function MarqueePillarCard({
               marginBottom: 12,
               lineHeight: 1.05,
               letterSpacing: '-0.02em',
+              ...(pillar.headlineColor ? { color: pillar.headlineColor } : null),
             }}
           >
             {pillar.headline}
