@@ -9,7 +9,7 @@ import {
   useTransform,
 } from 'framer-motion'
 import { useRef, type MouseEvent, type CSSProperties } from 'react'
-import { HeroPillarsMobileCarousel } from './HeroPillarsMobileCarousel'
+import { HeroPillarsMobileMarquee } from './HeroPillarsMobileMarquee'
 
 export type AccentTheme = {
   primary: string
@@ -219,11 +219,12 @@ export function HeroPillars() {
         }
       `}</style>
 
-      {/* Mobile: Pattern C 4-slide carousel (3 real + 1 clone) with
-          auto-advance, dot indicators, swipe, Page Visibility pause,
-          and prefers-reduced-motion gate. See HeroPillarsMobileCarousel
-          for spec details (Prompt 138k). */}
-      <HeroPillarsMobileCarousel pillars={PILLARS} />
+      {/* Mobile: continuous CSS marquee, 3 sets of 3 cards, right-to-left
+          at constant velocity, footer × 1/1.3 cycle duration, pause on
+          touch + tab hidden + reduced-motion. Replaces the 138k Pattern C
+          discrete slideshow. See HeroPillarsMobileMarquee for spec
+          details (Prompt 138k v2). */}
+      <HeroPillarsMobileMarquee pillars={PILLARS} />
 
       {/* Tablet and desktop: existing grid */}
       <div
