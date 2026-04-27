@@ -227,7 +227,7 @@ export function HeroPillars() {
       <div className="mt-6 w-full overflow-hidden sm:hidden">
         <InfiniteSlider speed={36} speedOnHover={18} gap={16} className="![mask-image:none]">
           {PILLARS.map((pillar, index) => (
-            <div key={pillar.numeral} className="w-[275px] h-[175px]">
+            <div key={pillar.numeral} className="w-[344px] h-[219px]">
               <PillarCard
                 pillar={pillar}
                 index={index}
