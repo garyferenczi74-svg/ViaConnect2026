@@ -223,11 +223,16 @@ export function HeroPillars() {
         }
       `}</style>
 
-      {/* Mobile: auto-scrolling InfiniteSlider carousel (scrolls left) */}
+      {/* Mobile: auto-scrolling InfiniteSlider carousel (scrolls left).
+          gap={0} + mr-4 on each card so all 6 cards (3 originals + 3 clones
+          inserted by InfiniteSlider's addAnimation effect) carry a trailing
+          16px spacer. Total scroller width = 6 × 344 + 6 × 16 = 2160px and
+          translateX(-50%) = -1080 lands exactly on the clone of card 1, so
+          the loop is seamless with no perceived "space" at the reset. */}
       <div className="mt-6 w-full overflow-hidden sm:hidden">
-        <InfiniteSlider speed={36} speedOnHover={18} gap={16} className="![mask-image:none]">
+        <InfiniteSlider speed={36} speedOnHover={18} gap={0} className="![mask-image:none]">
           {PILLARS.map((pillar, index) => (
-            <div key={pillar.numeral} className="w-[344px] h-[219px]">
+            <div key={pillar.numeral} className="w-[344px] h-[219px] mr-4">
               <PillarCard
                 pillar={pillar}
                 index={index}
