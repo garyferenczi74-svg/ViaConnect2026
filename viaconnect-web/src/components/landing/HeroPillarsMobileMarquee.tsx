@@ -172,19 +172,43 @@ export function HeroPillarsMobileMarquee({ pillars }: Props) {
 }
 
 /**
- * Renders the ghosted numeral as an inline SVG <text> element instead
- * of CSS -webkit-text-stroke. iOS Safari's WebKit rasterizes text-stroke
- * on the "2" glyph at 96px with a star-shaped artifact in the curl of
- * the bottom-right (a long-standing rendering quirk on curved-meets-
- * diagonal stroke joins). SVG text uses a different stroke rasterizer
- * path and does not produce the artifact.
+ * Renders the ghosted numeral as hand-traced SVG <path> elements rather
+ * than text. CSS -webkit-text-stroke and SVG <text> stroke both go
+ * through the same glyph rasterizer pipeline on iOS, which produces a
+ * star-shaped artifact at the bottom-right curl of the "2" glyph at
+ * 96px. Hand-traced paths bypass the glyph rasterizer entirely so the
+ * artifact cannot occur regardless of font, font features, or stroke
+ * algorithm.
  *
- * Visual parity: same 96px size, weight 700, -0.06em letter-spacing,
- * 1.2px stroke width, transparent fill, paint-order: stroke. Positioned
- * absolutely at top-right of the parent card via the wrapper article's
- * relative coordinates, matching the prior <span> placement.
+ * Each digit is traced into a 60×96 box (matching font-size 96px and
+ * approximate width of a bold sans-serif numeral). Outer outline traces
+ * the bold glyph perimeter, inner counter (for "0") traces the closed
+ * shape inside. Transparent fill + 1.2px stroke yields the same
+ * "ghosted outline" aesthetic as the prior text approach.
  */
+const DIGIT_BOX_W = 60
+const DIGIT_PATHS: Record<string, string[]> = {
+  // "0": outer rounded rectangle outline + inner counter
+  '0': [
+    'M 12,18 C 12,12 18,8 30,8 C 42,8 48,12 48,18 L 48,78 C 48,84 42,88 30,88 C 18,88 12,84 12,78 Z',
+    'M 24,28 C 24,24 26,22 30,22 C 34,22 36,24 36,28 L 36,68 C 36,72 34,74 30,74 C 26,74 24,72 24,68 Z',
+  ],
+  // "1": bold vertical bar with top flag and base
+  '1': [
+    'M 22,18 L 36,8 L 36,80 L 46,80 L 46,88 L 14,88 L 14,80 L 24,80 L 24,22 L 18,26 Z',
+  ],
+  // "2": top curve, diagonal, bottom horizontal — modern bold "2"
+  '2': [
+    'M 10,28 C 10,16 18,8 30,8 C 42,8 50,16 50,28 C 50,38 44,44 36,52 L 18,72 L 50,72 L 50,88 L 8,88 L 8,76 L 30,52 C 36,46 40,40 40,32 C 40,24 36,20 30,20 C 24,20 20,24 20,30 L 10,30 Z',
+  ],
+  // "3": two stacked arcs forming the right side
+  '3': [
+    'M 10,22 C 14,12 22,8 30,8 C 42,8 50,16 50,26 C 50,34 44,40 36,42 C 46,44 52,52 52,62 C 52,76 42,90 28,90 C 18,90 10,84 8,76 L 18,72 C 20,78 24,82 30,82 C 38,82 42,76 42,68 C 42,60 36,54 26,54 L 26,46 C 34,46 40,42 40,34 C 40,28 36,22 30,22 C 24,22 20,26 20,30 L 10,30 Z',
+  ],
+}
+
 function NumeralSvg({ digits, stroke }: { digits: string; stroke: string }) {
+  const totalWidth = digits.length * DIGIT_BOX_W
   return (
     <svg
       aria-hidden="true"
@@ -193,27 +217,33 @@ function NumeralSvg({ digits, stroke }: { digits: string; stroke: string }) {
         top: -8,
         right: -2,
         height: 96,
-        width: 130,
+        width: totalWidth,
         overflow: 'visible',
       }}
-      viewBox="0 0 130 96"
+      viewBox={`0 0 ${totalWidth} 96`}
       preserveAspectRatio="xMaxYMax meet"
+      shapeRendering="geometricPrecision"
     >
-      <text
-        x="130"
-        y="84"
-        textAnchor="end"
-        fontFamily="inherit"
-        fontSize="96"
-        fontWeight="700"
-        letterSpacing="-5.76"
-        fill="transparent"
-        stroke={stroke}
-        strokeWidth="1.2"
-        paintOrder="stroke"
-      >
-        {digits}
-      </text>
+      {digits.split('').map((digit, idx) => {
+        const offset = idx * DIGIT_BOX_W
+        const paths = DIGIT_PATHS[digit] ?? []
+        return (
+          <g key={idx} transform={`translate(${offset}, 0)`}>
+            {paths.map((d, pi) => (
+              <path
+                key={pi}
+                d={d}
+                fill="transparent"
+                stroke={stroke}
+                strokeWidth="1.2"
+                strokeLinecap="butt"
+                strokeLinejoin="miter"
+                vectorEffect="non-scaling-stroke"
+              />
+            ))}
+          </g>
+        )
+      })}
     </svg>
   )
 }
