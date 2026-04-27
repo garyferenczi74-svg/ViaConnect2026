@@ -131,7 +131,7 @@ export function HeroSection({
                 <div className="fixed inset-0 bg-gradient-to-b from-[#0d1225] to-[#141c35] -z-10" />
                 <div className="fixed top-0 right-0 w-[55vw] h-[55vh] bg-[radial-gradient(ellipse_at_top_right,rgba(120,60,180,0.12),transparent_65%)] pointer-events-none -z-10" />
                 <section className="relative flex-1 flex flex-col">
-                    <div className="relative flex-1 pt-[80px] pb-[100px] md:pt-0 md:pb-0 md:flex md:flex-col md:justify-center">
+                    <div className="relative flex-1 pt-[150px] pb-[80px] md:pt-0 md:pb-0 md:flex md:flex-col md:justify-center">
                         <div className="relative z-10 mx-auto flex max-w-7xl flex-col px-6 lg:block lg:px-12">
                             <div className="mx-auto max-w-lg text-center lg:ml-0 lg:max-w-full lg:text-left">
                                 <h1 className="max-w-2xl lg:max-w-5xl text-balance text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-white leading-[1.1]">
@@ -145,21 +145,21 @@ export function HeroSection({
                                     )}
                                 </h1>
                                 {!variantSubheadline && (
-                                    <p className="mt-4 mx-auto lg:mx-0 text-sm sm:text-base text-slate-400 leading-relaxed text-balance lg:whitespace-nowrap">
+                                    <p className="mt-6 sm:mt-4 mx-auto lg:mx-0 text-sm sm:text-base text-slate-400 leading-relaxed text-balance lg:whitespace-nowrap">
                                         Precision health insights from your DNA, delivered through formulations engineered for your unique genome
                                     </p>
                                 )}
                                 <HeroPillars />
                                 {variantSubheadline ? (
-                                    <p className="mt-4 sm:mt-10 max-w-2xl text-balance text-base sm:text-lg text-slate-300 leading-relaxed">
+                                    <p className="mt-6 sm:mt-10 max-w-2xl text-balance text-base sm:text-lg text-slate-300 leading-relaxed">
                                         {variantSubheadline}
                                     </p>
                                 ) : (
-                                    <p className="mt-4 sm:mt-10 max-w-2xl text-balance text-base sm:text-lg text-slate-300 leading-relaxed">
+                                    <p className="mt-6 sm:mt-10 max-w-2xl text-balance text-base sm:text-lg text-slate-300 leading-relaxed">
                                         One Genome  One Formulation  One Life at a Time
                                     </p>
                                 )}
-                                <div className="mt-4 sm:mt-10 flex flex-col items-center justify-center gap-3 sm:gap-4 sm:flex-row lg:justify-start">
+                                <div className="mt-6 sm:mt-10 flex flex-col items-center justify-center gap-3 sm:gap-4 sm:flex-row lg:justify-start">
                                     <Link
                                         href={variantCtaHref ?? "/signup"}
                                         className="inline-flex h-14 sm:h-12 w-full sm:w-auto items-center justify-center rounded-full bg-[#b75e18]/30 backdrop-blur-xl border border-[#b75e18]/40 pl-6 pr-4 text-base font-semibold text-white shadow-[0_0_20px_rgba(183,94,24,0.4)] transition-all duration-300 hover:bg-[#b75e18]/50 hover:border-[#b75e18]/60 hover:shadow-[0_0_30px_rgba(183,94,24,0.6)]">

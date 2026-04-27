@@ -220,7 +220,7 @@ export function HeroPillars() {
 
       <div
         role="list"
-        className="mt-2 grid grid-cols-1 gap-[6px] sm:mt-6 sm:grid-cols-2 sm:gap-3 lg:grid-cols-3 lg:gap-4"
+        className="mt-6 grid grid-cols-1 gap-[6px] sm:mt-6 sm:grid-cols-2 sm:gap-3 lg:grid-cols-3 lg:gap-4"
       >
         {PILLARS.map((pillar, index) => (
           <div
