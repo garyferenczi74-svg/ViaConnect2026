@@ -221,7 +221,7 @@ export function HeroPillars() {
 
       {/* Mobile: auto-scrolling InfiniteSlider carousel (scrolls left) */}
       <div className="mt-6 sm:hidden">
-        <InfiniteSlider speed={45} speedOnHover={90} gap={16}>
+        <InfiniteSlider speed={40} speedOnHover={20} gap={16} className="![mask-image:none]">
           {PILLARS.map((pillar, index) => (
             <div key={pillar.numeral} className="w-[220px] h-[140px]">
               <PillarCard
