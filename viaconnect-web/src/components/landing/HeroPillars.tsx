@@ -158,7 +158,7 @@ function PillarCard({
         </span>
 
         <div
-          className="relative z-[2] flex h-full flex-col"
+          className="relative z-[2] flex h-full flex-col text-left sm:text-inherit"
           style={
             reduceMotion ? undefined : { transform: 'translateZ(28px)' }
           }
@@ -217,13 +217,17 @@ export function HeroPillars() {
             0 16px 36px -14px rgba(226,122,44,0.26),
             0 4px 12px -6px rgba(26,39,68,0.45);
         }
+        @media (max-width: 639px) {
+          .pillar-card .pillar-numeral { -webkit-text-stroke-color: rgba(45,165,160,0.55) !important; }
+          .pillar-card.pillar-card--2 .pillar-numeral { -webkit-text-stroke-color: rgba(226,122,44,0.60) !important; }
+        }
       `}</style>
 
       {/* Mobile: auto-scrolling InfiniteSlider carousel (scrolls left) */}
       <div className="mt-6 w-full overflow-hidden sm:hidden">
-        <InfiniteSlider speed={40} speedOnHover={20} gap={16} className="![mask-image:none]">
+        <InfiniteSlider speed={36} speedOnHover={18} gap={16} className="![mask-image:none]">
           {PILLARS.map((pillar, index) => (
-            <div key={pillar.numeral} className="w-[220px] h-[140px]">
+            <div key={pillar.numeral} className="w-[275px] h-[175px]">
               <PillarCard
                 pillar={pillar}
                 index={index}
