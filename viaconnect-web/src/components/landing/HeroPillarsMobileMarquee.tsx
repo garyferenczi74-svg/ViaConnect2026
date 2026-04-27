@@ -59,16 +59,10 @@ function getMobileOverride(realIndex: number): MobileOverride {
     }
   }
   if (realIndex === 1) {
-    // Card 2 stroke alpha held at 0.40 (not 0.55). The "02" character
-    // pair triggers an iOS WebKit -webkit-text-stroke rasterization
-    // artifact on the curved counter at higher alpha; same mitigation
-    // pattern as Card 3's 0.40. paint-order + text-rendering hints +
-    // antialiased font-smoothing alone weren't enough at 0.55 so the
-    // alpha reduction does the rest.
     return {
       surfaceOverlay:
         'linear-gradient(135deg, rgba(45,165,160,0.12) 0%, rgba(226,122,44,0.12) 100%)',
-      numeralStroke: 'rgba(45,165,160,0.40)',
+      numeralStroke: 'rgba(45,165,160,0.55)',
       shineRgba: 'rgba(45,165,160,0.7)',
     }
   }
@@ -177,6 +171,53 @@ export function HeroPillarsMobileMarquee({ pillars }: Props) {
   )
 }
 
+/**
+ * Renders the ghosted numeral as an inline SVG <text> element instead
+ * of CSS -webkit-text-stroke. iOS Safari's WebKit rasterizes text-stroke
+ * on the "2" glyph at 96px with a star-shaped artifact in the curl of
+ * the bottom-right (a long-standing rendering quirk on curved-meets-
+ * diagonal stroke joins). SVG text uses a different stroke rasterizer
+ * path and does not produce the artifact.
+ *
+ * Visual parity: same 96px size, weight 700, -0.06em letter-spacing,
+ * 1.2px stroke width, transparent fill, paint-order: stroke. Positioned
+ * absolutely at top-right of the parent card via the wrapper article's
+ * relative coordinates, matching the prior <span> placement.
+ */
+function NumeralSvg({ digits, stroke }: { digits: string; stroke: string }) {
+  return (
+    <svg
+      aria-hidden="true"
+      className="pointer-events-none absolute z-[1] select-none"
+      style={{
+        top: -8,
+        right: -2,
+        height: 96,
+        width: 130,
+        overflow: 'visible',
+      }}
+      viewBox="0 0 130 96"
+      preserveAspectRatio="xMaxYMax meet"
+    >
+      <text
+        x="130"
+        y="84"
+        textAnchor="end"
+        fontFamily="inherit"
+        fontSize="96"
+        fontWeight="700"
+        letterSpacing="-5.76"
+        fill="transparent"
+        stroke={stroke}
+        strokeWidth="1.2"
+        paintOrder="stroke"
+      >
+        {digits}
+      </text>
+    </svg>
+  )
+}
+
 function MarqueePillarCard({
   pillar,
   realIndex,
@@ -204,22 +245,7 @@ function MarqueePillarCard({
           WebkitBackdropFilter: 'blur(32px)',
         }}
       >
-        <span
-          aria-hidden="true"
-          className="pointer-events-none absolute right-[-2px] top-[-8px] z-[1] select-none font-bold leading-none"
-          style={{
-            fontSize: 96,
-            letterSpacing: '-0.06em',
-            color: 'transparent',
-            WebkitTextStroke: `1.2px ${override.numeralStroke}`,
-            paintOrder: 'stroke fill',
-            textRendering: 'geometricPrecision',
-            WebkitFontSmoothing: 'antialiased',
-            MozOsxFontSmoothing: 'grayscale',
-          }}
-        >
-          {pillar.numeral}
-        </span>
+        <NumeralSvg digits={pillar.numeral} stroke={override.numeralStroke} />
 
         <div className="relative z-[2] flex flex-col text-left">
           <span
