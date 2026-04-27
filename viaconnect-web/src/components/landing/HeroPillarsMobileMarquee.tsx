@@ -59,10 +59,16 @@ function getMobileOverride(realIndex: number): MobileOverride {
     }
   }
   if (realIndex === 1) {
+    // Card 2 stroke alpha held at 0.40 (not 0.55). The "02" character
+    // pair triggers an iOS WebKit -webkit-text-stroke rasterization
+    // artifact on the curved counter at higher alpha; same mitigation
+    // pattern as Card 3's 0.40. paint-order + text-rendering hints +
+    // antialiased font-smoothing alone weren't enough at 0.55 so the
+    // alpha reduction does the rest.
     return {
       surfaceOverlay:
         'linear-gradient(135deg, rgba(45,165,160,0.12) 0%, rgba(226,122,44,0.12) 100%)',
-      numeralStroke: 'rgba(45,165,160,0.55)',
+      numeralStroke: 'rgba(45,165,160,0.40)',
       shineRgba: 'rgba(45,165,160,0.7)',
     }
   }
