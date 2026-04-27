@@ -220,7 +220,7 @@ export function HeroPillars() {
 
       <div
         role="list"
-        className="mt-6 flex overflow-x-auto snap-x snap-mandatory gap-3 px-4 -mx-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mt-6 sm:grid sm:grid-cols-2 sm:gap-3 sm:overflow-visible sm:px-0 sm:mx-0 lg:grid-cols-3 lg:gap-4"
+        className="mt-6 flex w-full flex-row overflow-x-auto snap-x snap-mandatory gap-3 pb-2 sm:mt-6 sm:grid sm:grid-cols-2 sm:gap-3 sm:overflow-x-visible sm:pb-0 lg:grid-cols-3 lg:gap-4"
       >
         {PILLARS.map((pillar, index) => (
           <div
