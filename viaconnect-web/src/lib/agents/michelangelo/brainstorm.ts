@@ -82,7 +82,7 @@ function extractConstraints(task: AgentTask): string[] {
     'Lucide React icons only, strokeWidth={1.5}, no emojis',
     'Desktop AND Mobile responsive from the start',
     'getDisplayName utility for all client name display',
-    'Bioavailability stated as 10-27x',
+    'Bioavailability stated as 10-28x',
     'Semaglutide excluded from all recommendations',
     'Retatrutide = injectable only, never stacked',
     'Score name: Bio Optimization',

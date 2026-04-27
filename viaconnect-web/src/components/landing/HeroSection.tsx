@@ -42,7 +42,7 @@ function HeroHeader({ activeTab, onTabClick, onClose }: { activeTab: TabId | nul
             <nav
                 data-state={menuState ? 'active' : 'inactive'}
                 className="group fixed z-20 w-full px-2">
-                <div className={cn('mx-auto mt-2 max-w-6xl px-6 transition-all duration-300 lg:px-12', isScrolled && 'bg-[#0d1225]/80 max-w-4xl rounded-3xl border border-white/5 backdrop-blur-2xl lg:px-5')}>
+                <div className={cn('mx-auto mt-2 max-w-2xl px-6 transition-all duration-300 lg:max-w-7xl lg:px-12', isScrolled && 'bg-[#0d1225]/80 max-w-4xl rounded-3xl border border-white/5 backdrop-blur-2xl lg:px-5')}>
                     <div className="relative flex flex-wrap items-center justify-between gap-6 py-3 md:gap-0 md:py-4">
                         <div className="flex w-full items-center justify-between lg:w-auto">
                             <Link href="/" aria-label="home" onClick={() => onClose()}>
@@ -84,7 +84,7 @@ function HeroHeader({ activeTab, onTabClick, onClose }: { activeTab: TabId | nul
                                 </Link>
                                 <Link
                                     href="/signup"
-                                    className="inline-flex items-center justify-center rounded-md border-0 bg-[#b75e18] px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-[#d4741f]">
+                                    className="inline-flex items-center justify-center rounded-md bg-[#b75e18]/30 backdrop-blur-xl border border-[#b75e18]/40 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-[#b75e18]/50 hover:border-[#b75e18]/60">
                                     <span>Sign Up</span>
                                 </Link>
                             </div>
@@ -127,14 +127,14 @@ export function HeroSection({
         <>
             <HeroHeader activeTab={activeTab} onTabClick={handleTabClick} onClose={handleClose} />
             <TabDropdownPanel activeTab={activeTab} onClose={handleClose} />
-            <main className="overflow-x-hidden">
+            <main className="overflow-x-hidden flex min-h-[100svh] flex-col relative">
                 <div className="fixed inset-0 bg-gradient-to-b from-[#0d1225] to-[#141c35] -z-10" />
                 <div className="fixed top-0 right-0 w-[55vw] h-[55vh] bg-[radial-gradient(ellipse_at_top_right,rgba(120,60,180,0.12),transparent_65%)] pointer-events-none -z-10" />
-                <section className="relative">
-                    <div className="relative min-h-[100svh] flex items-center py-32 md:pb-36 lg:pb-40 lg:pt-72">
+                <section className="relative flex-1 flex flex-col">
+                    <div className="relative flex-1 flex flex-col justify-center">
                         <div className="relative z-10 mx-auto flex max-w-7xl flex-col px-6 lg:block lg:px-12">
                             <div className="mx-auto max-w-lg text-center lg:ml-0 lg:max-w-full lg:text-left">
-                                <h1 className="mt-8 max-w-2xl text-balance text-3xl sm:text-4xl md:text-5xl lg:mt-16 lg:text-6xl xl:text-7xl font-bold text-white leading-[1.1]">
+                                <h1 className="max-w-2xl lg:max-w-5xl text-balance text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-white leading-[1.1]">
                                     {variantHeadline ? (
                                         <span className="block">{variantHeadline}</span>
                                     ) : (
@@ -144,25 +144,25 @@ export function HeroSection({
                                         </>
                                     )}
                                 </h1>
+                                {!variantSubheadline && (
+                                    <p className="mt-4 mx-auto lg:mx-0 text-sm sm:text-base text-slate-400 leading-relaxed text-balance lg:whitespace-nowrap">
+                                        Precision health insights from your DNA, delivered through formulations engineered for your unique genome
+                                    </p>
+                                )}
+                                <HeroPillars />
                                 {variantSubheadline ? (
                                     <p className="mt-8 sm:mt-10 max-w-2xl text-balance text-base sm:text-lg text-slate-300 leading-relaxed">
                                         {variantSubheadline}
                                     </p>
                                 ) : (
-                                    <>
-                                        <p className="mt-8 sm:mt-10 max-w-2xl text-balance text-base sm:text-lg text-slate-300 leading-relaxed">
-                                            One Genome  One Formulation  One Life at a Time
-                                        </p>
-                                        <p className="mt-4 max-w-md mx-auto lg:mx-0 text-sm sm:text-base text-slate-400 leading-relaxed text-balance">
-                                            Precision health insights from your DNA, delivered through formulations engineered for your unique genome
-                                        </p>
-                                    </>
+                                    <p className="mt-8 sm:mt-10 max-w-2xl text-balance text-base sm:text-lg text-slate-300 leading-relaxed">
+                                        One Genome  One Formulation  One Life at a Time
+                                    </p>
                                 )}
-                                <HeroPillars />
-                                <div className="mt-10 sm:mt-14 flex flex-col items-center justify-center gap-4 sm:flex-row lg:justify-start">
+                                <div className="mt-8 sm:mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row lg:justify-start">
                                     <Link
                                         href={variantCtaHref ?? "/signup"}
-                                        className="inline-flex h-14 sm:h-12 w-full sm:w-auto items-center justify-center rounded-full bg-[#b75e18] pl-6 pr-4 text-base font-semibold text-white shadow-[0_0_20px_rgba(183,94,24,0.4)] transition-all duration-300 hover:bg-[#d4741f] hover:shadow-[0_0_30px_rgba(183,94,24,0.6)]">
+                                        className="inline-flex h-14 sm:h-12 w-full sm:w-auto items-center justify-center rounded-full bg-[#b75e18]/30 backdrop-blur-xl border border-[#b75e18]/40 pl-6 pr-4 text-base font-semibold text-white shadow-[0_0_20px_rgba(183,94,24,0.4)] transition-all duration-300 hover:bg-[#b75e18]/50 hover:border-[#b75e18]/60 hover:shadow-[0_0_30px_rgba(183,94,24,0.6)]">
                                         <span>{variantCtaLabel ?? "Your Journey Starts Here"}</span>
                                         <ChevronRight className="ml-1" />
                                     </Link>
@@ -174,7 +174,7 @@ export function HeroSection({
                                 </div>
                             </div>
                         </div>
-                        <div className="absolute inset-0 overflow-hidden rounded-3xl border border-white/5 lg:rounded-[3rem]">
+                        <div className="absolute inset-0 overflow-hidden border border-white/5">
                             <video
                                 autoPlay
                                 loop
@@ -186,14 +186,14 @@ export function HeroSection({
                         </div>
                     </div>
                 </section>
-                <section className="bg-[#0d1225] pb-2">
-                    <div className="group relative m-auto max-w-7xl px-6">
+                <section className="absolute bottom-0 left-0 right-0 pb-2">
+                    <div className="group relative">
                         <div className="flex flex-col items-center md:flex-row">
-                            <div className="md:max-w-44 md:border-r md:border-white/10 md:pr-6">
-                                <p className="text-end text-sm text-slate-400">Backed by science</p>
-                            </div>
-                            <div className="relative py-6 md:w-[calc(100%-11rem)]">
+                            <div className="relative py-6 w-full">
                                 <InfiniteSlider speedOnHover={20} speed={40} gap={112}>
+                                    <div className="flex items-center gap-2 text-slate-400">
+                                        <span className="text-sm font-semibold tracking-wider uppercase whitespace-nowrap">Backed by Science</span>
+                                    </div>
                                     <div className="flex items-center gap-2 text-slate-400">
                                         <span className="text-sm font-semibold tracking-wider uppercase whitespace-nowrap">HIPAA Compliant</span>
                                     </div>
@@ -207,7 +207,7 @@ export function HeroSection({
                                         <span className="text-sm font-semibold tracking-wider uppercase whitespace-nowrap">Dual Liposomal-Micellar Delivery</span>
                                     </div>
                                     <div className="flex items-center gap-2 text-slate-400">
-                                        <span className="text-sm font-semibold tracking-wider uppercase whitespace-nowrap">10-27x Bioavailability</span>
+                                        <span className="text-sm font-semibold tracking-wider uppercase whitespace-nowrap">10-28X Bioavailability</span>
                                     </div>
                                     <div className="flex items-center gap-2 text-slate-400">
                                         <span className="text-sm font-semibold tracking-wider uppercase whitespace-nowrap">27-Product Peptide Portfolio</span>
@@ -216,8 +216,6 @@ export function HeroSection({
                                         <span className="text-sm font-semibold tracking-wider uppercase whitespace-nowrap">SNP-Targeted Nutraceuticals</span>
                                     </div>
                                 </InfiniteSlider>
-                                <div className="absolute inset-y-0 left-0 w-20 bg-gradient-to-r from-[#0d1225] to-transparent" />
-                                <div className="absolute inset-y-0 right-0 w-20 bg-gradient-to-l from-[#0d1225] to-transparent" />
                             </div>
                         </div>
                     </div>

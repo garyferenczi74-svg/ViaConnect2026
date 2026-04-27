@@ -66,7 +66,7 @@ export interface ScheduledItem {
 export const SCHEDULED: ScheduledItem[] = [
   { id: '1', title: 'Why Your Supplements Fail (DNA Proof)', platform: 'TikTok', platformColor: '#00f2ea', time: 'Today 6:30 PM', status: 'queued', aiScore: 94 },
   { id: '2', title: 'Morning Routine: Gene-Guided Stack', platform: 'Instagram', platformColor: '#E1306C', time: 'Tomorrow 8:00 AM', status: 'drafting', aiScore: 87 },
-  { id: '3', title: '10-27x Bioavailability Explained', platform: 'YouTube', platformColor: '#FF0000', time: 'Wed 2:00 PM', status: 'writing', aiScore: 91 },
+  { id: '3', title: '10-28x Bioavailability Explained', platform: 'YouTube', platformColor: '#FF0000', time: 'Wed 2:00 PM', status: 'writing', aiScore: 91 },
   { id: '4', title: 'MTHFR: What Your Doctor Misses', platform: 'TikTok', platformColor: '#00f2ea', time: 'Thu 6:30 PM', status: 'queued', aiScore: 89 },
 ]
 

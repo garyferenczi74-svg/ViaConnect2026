@@ -106,8 +106,8 @@ describe("MARSHALL.PRECHECK.BIOAVAILABILITY_COACHING", () => {
     const hits = await BIOAVAILABILITY_COACHING.evaluate("5-27x more bioavailable formulation");
     expect(hits.length).toBe(1);
   });
-  it("passes canonical 10-27x", async () => {
-    expect((await BIOAVAILABILITY_COACHING.evaluate("10-27x bioavailability")).length).toBe(0);
+  it("passes canonical 10-28x", async () => {
+    expect((await BIOAVAILABILITY_COACHING.evaluate("10-28x bioavailability")).length).toBe(0);
   });
 });
 

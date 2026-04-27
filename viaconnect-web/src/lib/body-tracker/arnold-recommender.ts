@@ -266,7 +266,7 @@ async function enrichWithAI(
     '- NEVER recommend semaglutide, Ozempic, Wegovy, or any GLP-1 agonist.',
     '- NEVER recommend oral retatrutide; retatrutide is injectable only and never stacked.',
     '- Only mention supplements from the FarmCeutica Wellness product line.',
-    '- Bioavailability of FarmCeutica liposomal formulations: always 10 to 27 times.',
+    '- Bioavailability of FarmCeutica liposomal formulations: always 10 to 28 times.',
     '- Return valid JSON: an array of objects with keys: title, body, suggestedAction.',
   ].join('\n');
 

@@ -154,7 +154,7 @@ export function ProductInfoButtons({ description, formulationJson, deliveryForm 
           )}
           <p className="text-xs text-[rgba(255,255,255,0.70)] leading-relaxed">{description}</p>
           <p className="text-[10px] text-[rgba(45,165,160,0.80)] mt-2 font-medium">
-            FarmCeutica dual delivery · 10–27× bioavailability
+            FarmCeutica dual delivery · 10–28× bioavailability
           </p>
         </div>
       </InfoPanel>

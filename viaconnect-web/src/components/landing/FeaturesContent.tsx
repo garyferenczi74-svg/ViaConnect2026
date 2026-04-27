@@ -13,14 +13,14 @@ export function FeaturesContent() {
       <TabP>You take supplements every day. So do 170 million other Americans. And here&apos;s the part nobody talks about: almost none of you are taking the right ones.</TabP>
       <TabP>Not because you&apos;re not trying. Because the supplement industry was never built to help you. It was built to sell the same bottle to everyone,regardless of whether your body can even absorb what&apos;s inside.</TabP>
       <TabP>ViaConnect&trade; GeneX360&trade; changes that. Permanently.</TabP>
-      <TabP>We read your genetic code across six diagnostic panels. We identify exactly which enzymes are underperforming, which receptors are over-expressed, which metabolic pathways are running at half capacity. Then we build a supplement protocol that matches YOUR genome,not the average genome, not a population estimate, YOURS,and deliver it through absorption technology that is 10 to 27 times more effective than anything on a shelf at Whole Foods.</TabP>
+      <TabP>We read your genetic code across six diagnostic panels. We identify exactly which enzymes are underperforming, which receptors are over-expressed, which metabolic pathways are running at half capacity. Then we build a supplement protocol that matches YOUR genome,not the average genome, not a population estimate, YOURS,and deliver it through absorption technology that is 10 to 28 times more effective than anything on a shelf at Whole Foods.</TabP>
 
       <TabAccent>This is not a wellness trend. This is the end of guessing.</TabAccent>
 
       <TabStat stats={[
         { value: "6", label: "Diagnostic Panels" },
         { value: "150+", label: "Genetic Variants" },
-        { value: "10\u201327x", label: "Bioavailability" },
+        { value: "10\u201328x", label: "Bioavailability" },
         { value: "5", label: "AI Sources" },
       ]} />
 
@@ -41,7 +41,7 @@ export function FeaturesContent() {
       <TabP>Other wellness apps give you a chatbot. We give you five independent intelligence sources,Claude, OpenAI, Perplexity Sonar, OpenEvidence, and PubMed with 36 million citations,all cross-referencing every recommendation before it reaches you. A safety gating system blocks any flagged interaction regardless of what any individual AI suggests.</TabP>
 
       <TabH3>4. Dual-Delivery Absorption Technology</TabH3>
-      <TabP>Standard supplements absorb at less than 10%. Some below 1%. ViaConnect&apos;s proprietary dual liposomal-micellar technology delivers 10 to 27 times greater bioavailability,validated in clinical pharmacokinetic studies. Micelles hit fast (30 to60 minutes). Liposomes sustain (4 to8 hours).</TabP>
+      <TabP>Standard supplements absorb at less than 10%. Some below 1%. ViaConnect&apos;s proprietary dual liposomal-micellar technology delivers 10 to 28 times greater bioavailability,validated in clinical pharmacokinetic studies. Micelles hit fast (30 to60 minutes). Liposomes sustain (4 to8 hours).</TabP>
 
       <TabH3>5. Three Portals, One Ecosystem</TabH3>
       <TabP>You get your own health command center. Your doctor gets a clinical decision support system with EHR integration. Your naturopath gets an herb-gene interaction database with 500+ botanicals. Everyone sees the same genetic data. Everyone works from the same protocol.</TabP>

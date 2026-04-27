@@ -207,7 +207,7 @@ export const DISEASE_CLAIM_EXTERNAL: Rule<SocialSignalLike> = {
 const BRAND_FORBIDDEN_PATTERNS: Array<[RegExp, string]> = [
   [/\bvitality\s+(?:score|index)\b/i, "Vitality Score/Index forbidden; use Bio Optimization"],
   [/\bwellness\s+score\b/i, "Wellness Score forbidden; use Bio Optimization"],
-  [/\b5\s*[-–—]\s*27\s*[×x]\s*(?:more\s+)?bioavailab/i, "Bioavailability must read exactly 10-27x"],
+  [/\b5\s*[-–—]\s*27\s*[×x]\s*(?:more\s+)?bioavailab/i, "Bioavailability must read exactly 10-28x"],
   [/\bsemaglutide\b/i, "Semaglutide is prohibited platform-wide"],
 ];
 
