@@ -11,8 +11,8 @@
  * never sees: at the loop boundary, set 2's first card occupies the
  * same viewport slot that set 1's first card had at translate(0).
  *
- * Speed: T_hero = T_footer / 1.3. Footer marquee
- * (HeroSection.tsx, InfiniteSlider speed=40) is 40s, so hero = 31s.
+ * Speed: T_hero = T_footer / 1.6 (hero is 1.6x faster than the footer
+ * "Backed by Science" marquee). Footer is 40s, so hero = 25s.
  *
  * Implementation matches the footer's CSS @keyframes pattern per spec
  * §5.3 decision rule. No Framer Motion animation cost; only useState
@@ -29,7 +29,9 @@ import { useEffect, useState, type TouchEvent as ReactTouchEvent } from 'react'
 import type { PillarData } from './HeroPillars'
 
 const FOOTER_DURATION_S = 40
-const HERO_DURATION_S = Math.round(FOOTER_DURATION_S / 1.3) // 31s
+// T_hero = T_footer / 1.6 (hero scrolls 1.6x faster than the footer
+// "Backed by Science" marquee). Bumped from /1.3 on 2026-04-27.
+const HERO_DURATION_S = Math.round(FOOTER_DURATION_S / 1.6) // 25s
 
 const CARD_WIDTH_PX = 280
 const CARD_GUTTER_PX = 16
