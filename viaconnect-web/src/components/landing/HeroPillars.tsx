@@ -55,7 +55,7 @@ export const PILLARS: PillarData[] = [
     eyebrow: 'Transformation',
     ariaChapter: 'Chapter three, transformation',
     headline: 'Your Protocol',
-    body: 'Personalized formulations with exact products, doses, and timing.',
+    body: 'Personalized precision-formulated protocols specifying every product, dose, and administration window, calibrated to your physiology.',
     accent: ORANGE,
     surfaceOverlay:
       'radial-gradient(ellipse 80% 60% at 100% 0%, rgba(226,122,44,0.06), transparent 60%)',
