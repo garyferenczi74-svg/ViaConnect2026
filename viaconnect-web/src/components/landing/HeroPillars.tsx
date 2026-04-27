@@ -45,7 +45,7 @@ export const PILLARS: PillarData[] = [
     eyebrow: 'Precision',
     ariaChapter: 'Chapter two, precision',
     headline: 'Your Biology',
-    body: 'Layer in genetics, labs, and supplements for sharper precision.',
+    body: 'Layer in your genetics, lab markers, and current supplement stack. Every additional data layer refines your protocol, transforming general guidance into recommendations engineered for your exact physiology.',
     accent: TEAL,
     surfaceOverlay:
       'linear-gradient(135deg, rgba(45,165,160,0.05) 0%, rgba(226,122,44,0.05) 100%)',
