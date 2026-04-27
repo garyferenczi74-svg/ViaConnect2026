@@ -9,17 +9,17 @@ import {
   useTransform,
 } from 'framer-motion'
 import { useRef, type MouseEvent, type CSSProperties } from 'react'
-import { InfiniteSlider } from '@/components/ui/infinite-slider'
+import { HeroPillarsMobileCarousel } from './HeroPillarsMobileCarousel'
 
-type AccentTheme = {
+export type AccentTheme = {
   primary: string
   rgb: string
 }
 
-const TEAL: AccentTheme = { primary: '#2DA5A0', rgb: '45,165,160' }
-const ORANGE: AccentTheme = { primary: '#E27A2C', rgb: '226,122,44' }
+export const TEAL: AccentTheme = { primary: '#2DA5A0', rgb: '45,165,160' }
+export const ORANGE: AccentTheme = { primary: '#E27A2C', rgb: '226,122,44' }
 
-type PillarData = {
+export type PillarData = {
   numeral: string
   eyebrow: string
   ariaChapter: string
@@ -29,7 +29,7 @@ type PillarData = {
   surfaceOverlay: string
 }
 
-const PILLARS: PillarData[] = [
+export const PILLARS: PillarData[] = [
   {
     numeral: '01',
     eyebrow: 'Discovery',
@@ -217,31 +217,13 @@ export function HeroPillars() {
             0 16px 36px -14px rgba(226,122,44,0.26),
             0 4px 12px -6px rgba(26,39,68,0.45);
         }
-        @media (max-width: 639px) {
-          .pillar-card .pillar-numeral { -webkit-text-stroke-color: rgba(45,165,160,0.55) !important; }
-          .pillar-card.pillar-card--2 .pillar-numeral { -webkit-text-stroke-color: rgba(226,122,44,0.60) !important; }
-        }
       `}</style>
 
-      {/* Mobile: auto-scrolling InfiniteSlider carousel (scrolls left).
-          gap={0} + mr-4 on each card so all 6 cards (3 originals + 3 clones
-          inserted by InfiniteSlider's addAnimation effect) carry a trailing
-          16px spacer. Total scroller width = 6 × 344 + 6 × 16 = 2160px and
-          translateX(-50%) = -1080 lands exactly on the clone of card 1, so
-          the loop is seamless with no perceived "space" at the reset. */}
-      <div className="mt-6 w-full overflow-hidden sm:hidden">
-        <InfiniteSlider speed={36} speedOnHover={18} gap={0} className="![mask-image:none]">
-          {PILLARS.map((pillar, index) => (
-            <div key={pillar.numeral} className="w-[344px] h-[219px] mr-4">
-              <PillarCard
-                pillar={pillar}
-                index={index}
-                reduceMotion={shouldReduceMotion}
-              />
-            </div>
-          ))}
-        </InfiniteSlider>
-      </div>
+      {/* Mobile: Pattern C 4-slide carousel (3 real + 1 clone) with
+          auto-advance, dot indicators, swipe, Page Visibility pause,
+          and prefers-reduced-motion gate. See HeroPillarsMobileCarousel
+          for spec details (Prompt 138k). */}
+      <HeroPillarsMobileCarousel pillars={PILLARS} />
 
       {/* Tablet and desktop: existing grid */}
       <div
