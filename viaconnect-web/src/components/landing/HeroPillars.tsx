@@ -37,7 +37,7 @@ const PILLARS: PillarData[] = [
     body: 'A 12-minute questionnaire. 200+ data points map your biology.',
     accent: TEAL,
     surfaceOverlay:
-      'radial-gradient(ellipse 80% 60% at 0% 100%, rgba(45,165,160,0.06), transparent 60%)',
+      'radial-gradient(ellipse 80% 60% at 0% 100%, rgba(45,165,160,0.14), transparent 60%)',
   },
   {
     numeral: '02',
@@ -47,7 +47,7 @@ const PILLARS: PillarData[] = [
     body: 'Layer in genetics, labs, and supplements for sharper precision.',
     accent: TEAL,
     surfaceOverlay:
-      'linear-gradient(135deg, rgba(45,165,160,0.05) 0%, rgba(226,122,44,0.05) 100%)',
+      'linear-gradient(135deg, rgba(45,165,160,0.12) 0%, rgba(226,122,44,0.12) 100%)',
   },
   {
     numeral: '03',
@@ -57,7 +57,7 @@ const PILLARS: PillarData[] = [
     body: 'Personalized formulations with exact products, doses, and timing.',
     accent: ORANGE,
     surfaceOverlay:
-      'radial-gradient(ellipse 80% 60% at 100% 0%, rgba(226,122,44,0.06), transparent 60%)',
+      'radial-gradient(ellipse 80% 60% at 100% 0%, rgba(226,122,44,0.16), transparent 60%)',
   },
 ]
 
@@ -133,7 +133,7 @@ function PillarCard({
       <div
         className="pillar-inner relative flex h-full min-h-[120px] flex-col overflow-hidden rounded-2xl border border-white/[0.06] p-[16px_18px] transition-[border-color,box-shadow,background-color] duration-[400ms] sm:min-h-[140px] sm:rounded-[18px] sm:p-[18px_20px]"
         style={{
-          background: `${pillar.surfaceOverlay}, rgba(30, 48, 84, 0.18)`,
+          background: `${pillar.surfaceOverlay}, rgba(30, 48, 84, 0.45)`,
           backdropFilter: 'blur(32px)',
           WebkitBackdropFilter: 'blur(32px)',
         }}

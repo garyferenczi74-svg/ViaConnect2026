@@ -79,11 +79,11 @@ export function validateRecommendationText(text: string): GuardrailResult {
     }
   }
 
-  // Bioavailability copy must read 10-28x, never 5-27x
+  // Bioavailability copy must read 10-27x, never 5-27x
   if (/\b5\s*(?:to|\-|–)\s*27x?\b/i.test(text) || /\b5x?\s*to\s*27x?\b/i.test(text)) {
     violations.push({
       code: "bioavailability_range",
-      detail: "Bioavailability must be stated as 10 to 28 times, never 5 to 27.",
+      detail: "Bioavailability must be stated as 10 to 27 times, never 5 to 27.",
     });
   }
 

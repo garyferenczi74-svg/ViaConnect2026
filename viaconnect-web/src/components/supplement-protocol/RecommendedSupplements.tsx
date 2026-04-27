@@ -256,7 +256,7 @@ export default function RecommendedSupplements() {
                   )}
                   {rec.bioavailability_note && (
                     <div className="px-3 py-2 rounded-lg bg-[rgba(45,165,160,0.10)] border border-[rgba(45,165,160,0.25)]">
-                      <p className="text-xs text-[#2DA5A0] font-medium">10-28x Bioavailability Advantage</p>
+                      <p className="text-xs text-[#2DA5A0] font-medium">10-27x Bioavailability Advantage</p>
                       <p className="text-xs text-[rgba(255,255,255,0.55)] mt-0.5">{rec.bioavailability_note}</p>
                     </div>
                   )}

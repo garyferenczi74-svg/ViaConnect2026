@@ -62,7 +62,7 @@ const MOCK_PATIENTS: Patient[] = [
 ];
 
 const MOCK_RECOMMENDATIONS: Recommendation[] = [
-  { gene: "MTHFR", variant: "C677T (heterozygous)", product: "MTHFR+", productId: "prod1", rationale: "Supports impaired methylation with bioavailable folate and B12. 10-28x bioavailability." },
+  { gene: "MTHFR", variant: "C677T (heterozygous)", product: "MTHFR+", productId: "prod1", rationale: "Supports impaired methylation with bioavailable folate and B12. 10-27x bioavailability." },
   { gene: "COMT", variant: "Val158Met (slow)", product: "COMT+", productId: "prod2", rationale: "Optimizes catechol metabolism with targeted magnesium and SAMe support." },
   { gene: "CYP1A2", variant: "rs762551 (slow metabolizer)", product: "FOCUS+", productId: "prod3", rationale: "Enhances Phase I detox and cognitive clarity for slow CYP1A2 metabolizers." },
   { gene: "VDR", variant: "FokI (TT genotype)", product: "D3", productId: "prod8", rationale: "High-dose vitamin D3 with K2 for impaired VDR receptor binding." },

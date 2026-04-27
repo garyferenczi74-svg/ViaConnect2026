@@ -54,7 +54,7 @@ export function ProtocolConfidenceCTA({
             Lift Protocol Confidence: {currentConfidence}% to {targetConfidence}%
           </p>
           <p className="text-xs text-white/60 leading-relaxed">
-            Add your genetic profile so Hannah can match compounds to your genotype. Bioavailability ranges 10 to 28 times with precision dosing.
+            Add your genetic profile so Hannah can match compounds to your genotype. Bioavailability ranges 10 to 27 times with precision dosing.
           </p>
         </div>
 

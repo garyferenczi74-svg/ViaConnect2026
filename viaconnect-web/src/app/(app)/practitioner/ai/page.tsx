@@ -58,7 +58,7 @@ const PROMPT_TEMPLATES = [
 const MOCK_RESPONSES: Record<string, string> = {
   claude:
     "Based on Sarah Mitchell's heterozygous MTHFR C677T variant, I recommend continuing the current methylfolate supplementation at 1,000 mcg daily. Given her homozygous COMT V158M status, we should monitor catecholamine metabolism closely. The combination of MTHFR+ and COMT+ in her current protocol addresses both methylation and catecholamine pathways effectively. Her 78% adherence rate is adequate but could benefit from protocol simplification.",
-  grok: "Recent literature (Zhang et al., 2026, J Nutrigenomics) confirms that heterozygous MTHFR C677T carriers show 35% reduced enzyme activity. Current research supports methylfolate over folic acid, with a 10-28x bioavailability advantage in the ViaConnect formulation. The APOE E3/E4 finding warrants cardiovascular monitoring per latest AHA guidelines published this month.",
+  grok: "Recent literature (Zhang et al., 2026, J Nutrigenomics) confirms that heterozygous MTHFR C677T carriers show 35% reduced enzyme activity. Current research supports methylfolate over folic acid, with a 10-27x bioavailability advantage in the ViaConnect formulation. The APOE E3/E4 finding warrants cardiovascular monitoring per latest AHA guidelines published this month.",
   gpt4o:
     "Extracted protocol summary for Sarah Mitchell:\n- MTHFR+ (Methylfolate 1,000 mcg) - Active\n- COMT+ (SAMe 200 mg + Magnesium 400 mg) - Active\n- NAD+ (NMN 250 mg) - Active\n\nGenetic risk matrix: MTHFR moderate, COMT high, CYP1A2 normal, APOE elevated. No contraindicated interactions detected in current supplement stack.",
 };

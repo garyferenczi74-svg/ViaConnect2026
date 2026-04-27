@@ -120,8 +120,8 @@ export async function POST(request: Request) {
     // Build rationale
     const patternNames = patterns.map(p => p.label).join(', ');
     const rationale = patterns.length > 0
-      ? `Based on your health assessment, Ultrathink detected ${patterns.length} pattern${patterns.length > 1 ? 's' : ''}: ${patternNames}. Your personalized ViaConnect protocol addresses these with 10-28x bioavailable formulations targeting your specific needs.`
-      : `Based on your ${context.goals.length} health goals and lifestyle profile, your personalized ViaConnect protocol delivers 10-28x bioavailable formulations targeting your specific needs.`;
+      ? `Based on your health assessment, Ultrathink detected ${patterns.length} pattern${patterns.length > 1 ? 's' : ''}: ${patternNames}. Your personalized ViaConnect protocol addresses these with 10-27x bioavailable formulations targeting your specific needs.`
+      : `Based on your ${context.goals.length} health goals and lifestyle profile, your personalized ViaConnect protocol delivers 10-27x bioavailable formulations targeting your specific needs.`;
 
     // Archive old protocol
     await supabase.from('ultrathink_protocols').update({ status: 'archived' }).eq('user_id', user.id).eq('status', 'active');

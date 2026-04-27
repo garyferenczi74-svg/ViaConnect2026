@@ -60,7 +60,7 @@ const TEMPLATES: Record<string, Array<{ title: (s: string) => string; summary: (
   ],
   platforms: [
     { title: (s) => `${s}: Practical guide to ${'$FOCUS$'}`, summary: (s, f) => `${s} publishes a hands-on practitioner guide for working with ${f} in clinical practice.`, tags: ['practical', 'guide'] },
-    { title: (s) => `${s} — Supplement bioavailability deep dive`, summary: (s) => `${s} compares liposomal, micellar, and standard supplement forms for absorption (10–28× variance).`, tags: ['bioavailability', 'liposomal'] },
+    { title: (s) => `${s} — Supplement bioavailability deep dive`, summary: (s) => `${s} compares liposomal, micellar, and standard supplement forms for absorption (10–27× variance).`, tags: ['bioavailability', 'liposomal'] },
     { title: (s) => `${s}: Top wellness trends for 2026`, summary: (s) => `${s} editorial on emerging precision wellness, peptide therapies, and AI-guided protocols.`, tags: ['trends', 'wellness'] },
     { title: (s) => `${s} — Sleep optimization & circadian protocols`, summary: (s) => `${s} breaks down evidence-based protocols for sleep latency, deep sleep, and recovery.`, tags: ['sleep', 'circadian'] },
   ],

@@ -274,7 +274,7 @@ export const BIOAVAILABILITY_COACHING: Rule<PrecheckDraft | string> = {
   severity: "P3",
   surfaces: ["precheck_draft"],
   citation: "ViaConnect Standing Rule Section 0.2",
-  description: "Coaching: bioavailability range 10 to 28 times is canonical.",
+  description: "Coaching: bioavailability range 10 to 27 times is canonical.",
   evaluate: (input, ctx = defaultCtx()) => {
     const text = typeof input === "string" ? input : (input?.text ?? "");
     const re = /(\d{1,3})\s*(?:to|[-–—])\s*(\d{1,3})\s*[×x]?\s*(?:more\s+)?(?:bioavailab(?:le|ility))/gi;
@@ -283,15 +283,15 @@ export const BIOAVAILABILITY_COACHING: Rule<PrecheckDraft | string> = {
     while ((m = re.exec(text)) !== null) {
       const low = Number(m[1]);
       const high = Number(m[2]);
-      if (!(low === 10 && high === 28)) {
+      if (!(low === 10 && high === 27)) {
         hits.push(
           f(
             "MARSHALL.PRECHECK.BIOAVAILABILITY_COACHING",
             "P3",
-            `Coaching: bioavailability range "${low} to ${high}" is not canonical. Use 10 to 28 times before publishing.`,
+            `Coaching: bioavailability range "${low} to ${high}" is not canonical. Use 10 to 27 times before publishing.`,
             "ViaConnect Standing Rule Section 0.2",
             redactExcerpt(text, m.index, 80),
-            { kind: "auto", summary: "Normalize to 10 to 28 times bioavailability.", action: "REPLACE_RANGE:10-28" },
+            { kind: "auto", summary: "Normalize to 10 to 27 times bioavailability.", action: "REPLACE_RANGE:10-27" },
             ctx,
           ),
         );

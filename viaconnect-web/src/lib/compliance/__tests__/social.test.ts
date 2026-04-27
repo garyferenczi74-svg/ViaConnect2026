@@ -81,8 +81,8 @@ describe("MARSHALL.SOCIAL.BRAND_MISUSE_EXTERNAL", () => {
     const s = mkSignal({ content: { textDerived: "Up to 5-27x bioavailable formulation" } });
     expect((await BRAND_MISUSE_EXTERNAL.evaluate(s)).length).toBeGreaterThanOrEqual(1);
   });
-  it("passes canonical 10-28x", async () => {
-    const s = mkSignal({ content: { textDerived: "10-28x bioavailability confirmed" } });
+  it("passes canonical 10-27x", async () => {
+    const s = mkSignal({ content: { textDerived: "10-27x bioavailability confirmed" } });
     expect((await BRAND_MISUSE_EXTERNAL.evaluate(s)).length).toBe(0);
   });
 });

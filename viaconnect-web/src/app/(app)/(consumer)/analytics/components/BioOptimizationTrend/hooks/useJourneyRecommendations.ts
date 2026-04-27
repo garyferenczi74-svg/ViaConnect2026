@@ -27,7 +27,7 @@ function buildDefaults(current: number): JourneyRec[] {
     {
       id: "omega-stack",
       title: "Add Omega 3 Elite",
-      description: "Bioavailable EPA/DHA at 10 to 28 times absorption, paired with breakfast.",
+      description: "Bioavailable EPA/DHA at 10 to 27 times absorption, paired with breakfast.",
       category: "Supplement",
       estimatedImpact: 6,
       icon: "supplement",

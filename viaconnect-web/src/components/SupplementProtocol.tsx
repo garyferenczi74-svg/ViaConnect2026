@@ -291,7 +291,7 @@ export default function SupplementProtocol() {
             {'\uD83D\uDD04'} Upgrade Your Current Supplements
           </p>
           <p className="text-white/50 text-[10px] sm:text-xs mb-3">
-            We found ViaConnect replacements with 10-28x bioavailability for supplements you&apos;re already taking:
+            We found ViaConnect replacements with 10-27x bioavailability for supplements you&apos;re already taking:
           </p>
           <div className="space-y-2">
             {replacements.map((r) => (
