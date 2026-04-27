@@ -35,7 +35,7 @@ export const PILLARS: PillarData[] = [
     eyebrow: 'Discovery',
     ariaChapter: 'Chapter one, discovery',
     headline: 'Your Story',
-    body: 'A 12-minute questionnaire. 200+ data points map your biology.',
+    body: 'In 8 minutes, our onboarding assessment captures 200+ biological data points and translates them into a precision wellness protocol built for your unique physiology.',
     accent: TEAL,
     surfaceOverlay:
       'radial-gradient(ellipse 80% 60% at 0% 100%, rgba(45,165,160,0.06), transparent 60%)',
