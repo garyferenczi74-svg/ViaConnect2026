@@ -12,7 +12,7 @@ export function LandingHeroCarousel() {
     return (
         <section
             aria-hidden="true"
-            className="absolute left-0 right-0 z-[2] pb-2 pointer-events-none top-[calc(100svh-100px)]"
+            className="hidden lg:block absolute left-0 right-0 z-[2] pb-2 pointer-events-none top-[calc(100svh-100px)]"
         >
             <div className="group relative pointer-events-auto">
                 <div className="flex flex-col items-center md:flex-row">
