@@ -82,7 +82,7 @@ export function GenomicsSectionDesktop() {
         <SectionAnchor
             id={SECTION_IDS.genomics}
             ariaLabel="ViaConnect Genomics"
-            className="min-h-screen py-32 px-12 bg-[rgba(13,18,37,0.85)] backdrop-blur-xl"
+            className="min-h-screen py-32 px-12"
         >
             <div className="max-w-7xl mx-auto">
                 <motion.div

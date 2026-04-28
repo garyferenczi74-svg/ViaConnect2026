@@ -52,7 +52,7 @@ export function GenomicsSectionMobile() {
         <SectionAnchor
             id={SECTION_IDS.genomics}
             ariaLabel="ViaConnect Genomics"
-            className="min-h-screen py-20 px-5 bg-[rgba(13,18,37,0.9)] backdrop-blur-xl"
+            className="min-h-screen py-20 px-5"
         >
             <div className="max-w-md mx-auto">
                 <motion.div

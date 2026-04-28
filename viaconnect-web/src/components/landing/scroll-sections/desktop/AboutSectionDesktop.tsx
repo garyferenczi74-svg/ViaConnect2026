@@ -29,7 +29,7 @@ export function AboutSectionDesktop() {
         <SectionAnchor
             id={SECTION_IDS.about}
             ariaLabel="About ViaConnect"
-            className="min-h-screen py-32 px-12 bg-[rgba(26,39,68,0.85)] backdrop-blur-xl"
+            className="min-h-screen py-32 px-12"
         >
             <div className="max-w-7xl mx-auto">
                 <motion.div

@@ -36,18 +36,21 @@ export function useSmoothScrollAnchor(navOffsetPx: number = 80) {
             }
         }
 
-        if ('onscrollend' in window) {
+        // Bare setTimeout / requestAnimationFrame avoid the TS narrowing issue
+        // where `'onscrollend' in window` narrows `window` weirdly in the else branch.
+        const supportsScrollEnd = 'onscrollend' in window
+        if (supportsScrollEnd) {
             const handleEnd = () => {
-                window.removeEventListener('scrollend', handleEnd)
+                window.removeEventListener('scrollend' as keyof WindowEventMap, handleEnd)
                 moveFocus()
             }
-            window.addEventListener('scrollend', handleEnd)
-            window.setTimeout(() => {
-                window.removeEventListener('scrollend', handleEnd)
+            window.addEventListener('scrollend' as keyof WindowEventMap, handleEnd)
+            setTimeout(() => {
+                window.removeEventListener('scrollend' as keyof WindowEventMap, handleEnd)
             }, 1500)
         } else {
-            window.setTimeout(() => {
-                window.requestAnimationFrame(moveFocus)
+            setTimeout(() => {
+                requestAnimationFrame(moveFocus)
             }, 120)
         }
     }, [navOffsetPx])

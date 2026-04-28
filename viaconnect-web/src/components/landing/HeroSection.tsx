@@ -130,8 +130,13 @@ export function HeroSection({
         const video = videoRef.current
         if (!video) return
 
+        const mql = window.matchMedia('(prefers-reduced-motion: reduce)')
+
         function tryPlay() {
             if (!video) return
+            // Honor prefers-reduced-motion: skip play attempts when set, so the
+            // iOS pause/visibility/focus retry chain never re-starts the video.
+            if (mql.matches) return
             const promise = video.play()
             if (promise !== undefined) {
                 promise.catch(() => { /* iOS may refuse; retry on next event */ })
@@ -143,15 +148,29 @@ export function HeroSection({
             if (document.visibilityState === 'visible') tryPlay()
         }
         function handleFocus() { tryPlay() }
+        function handleReducedMotionChange() {
+            if (!video) return
+            if (mql.matches) {
+                video.pause()
+            } else {
+                tryPlay()
+            }
+        }
 
-        tryPlay()
+        if (mql.matches) {
+            video.pause()
+        } else {
+            tryPlay()
+        }
         video.addEventListener('pause', handlePause)
         document.addEventListener('visibilitychange', handleVisibility)
         window.addEventListener('focus', handleFocus)
+        mql.addEventListener('change', handleReducedMotionChange)
         return () => {
             video.removeEventListener('pause', handlePause)
             document.removeEventListener('visibilitychange', handleVisibility)
             window.removeEventListener('focus', handleFocus)
+            mql.removeEventListener('change', handleReducedMotionChange)
         }
     }, [])
 
@@ -208,6 +227,10 @@ export function HeroSection({
                             </div>
                         </HeroOverlayScrollWrapper>
                         <div className="absolute inset-0 overflow-hidden border border-white/5">
+                            {/* TODO(human): extract /public/images/hero-poster.jpg via ffmpeg from the Supabase Assets video.
+                                ffmpeg -i "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Assets/DNA HD.mp4" -ss 00:00:01 -frames:v 1 -q:v 2 public/images/hero-poster.jpg
+                                Then add poster="/images/hero-poster.jpg" to the <video> element below.
+                                Until added, reduced-motion users see the video paused on its last-painted frame, which is acceptable degradation. */}
                             <video
                                 ref={videoRef}
                                 autoPlay

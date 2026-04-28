@@ -29,7 +29,7 @@ export function AboutSectionMobile() {
         <SectionAnchor
             id={SECTION_IDS.about}
             ariaLabel="About ViaConnect"
-            className="min-h-screen py-20 px-5 bg-[rgba(26,39,68,0.9)] backdrop-blur-xl"
+            className="min-h-screen py-20 px-5"
         >
             <div className="max-w-md mx-auto">
                 <motion.div
