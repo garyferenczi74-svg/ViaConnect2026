@@ -76,9 +76,9 @@ export function AboutSectionDesktop() {
                     whileInView={{ opacity: 1 }}
                     viewport={{ once: true, amount: 0.3 }}
                     transition={{ duration: 0.8 }}
-                    className="border-l-2 border-[#B75E18] pl-8 max-w-4xl"
+                    className="border-l-2 border-[#B75E18] pl-8"
                 >
-                    <p className="text-white/90 text-2xl font-light leading-relaxed italic mb-3">
+                    <p className="text-white/90 text-2xl font-light leading-relaxed italic mb-3 whitespace-nowrap">
                         &ldquo;{TAGLINES.philosophy}&rdquo;
                     </p>
                     <p className="text-white/50 text-sm uppercase tracking-wider">FarmCeutica Wellness LLC</p>
