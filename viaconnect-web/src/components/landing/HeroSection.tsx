@@ -1,12 +1,10 @@
 'use client'
-import React, { useState, useCallback, useEffect, useRef } from 'react'
+import React, { useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { InfiniteSlider } from '@/components/ui/infinite-slider'
 import { cn } from '@/lib/utils'
 import { Menu, X, ChevronRight } from 'lucide-react'
 import { useScroll } from 'framer-motion'
-import { TabDropdownPanel } from './TabDropdownPanel'
-import type { TabId } from './TabContent'
 import { HeroPillars } from './HeroPillars'
 import { useActiveSection } from './scroll-sections/shared/useActiveSection'
 import { useSmoothScrollAnchor } from './scroll-sections/shared/useSmoothScrollAnchor'
@@ -21,7 +19,7 @@ const Logo = () => {
     )
 }
 
-function HeroHeader({ onClose }: { onClose: () => void }) {
+function HeroHeader() {
     const [menuState, setMenuState] = React.useState(false)
     const [isScrolled, setIsScrolled] = React.useState(false)
 
@@ -45,7 +43,7 @@ function HeroHeader({ onClose }: { onClose: () => void }) {
                 <div className={cn('mx-auto mt-2 max-w-2xl px-6 transition-all duration-300 lg:max-w-7xl lg:px-12', isScrolled && 'bg-[#0d1225]/80 max-w-4xl rounded-3xl border border-white/5 backdrop-blur-2xl lg:px-5')}>
                     <div className="relative flex flex-wrap items-center justify-between gap-6 py-3 md:gap-0 md:py-4">
                         <div className="flex w-full items-center justify-between lg:w-auto">
-                            <Link href="/" aria-label="home" onClick={() => onClose()}>
+                            <Link href="/" aria-label="home">
                                 <Logo />
                             </Link>
                             <button
@@ -119,13 +117,6 @@ export function HeroSection({
     variantCtaLabel,
     variantCtaHref,
 }: HeroSectionProps = {}) {
-    const [activeTab] = useState<TabId | null>(null)
-
-    const handleClose = useCallback(() => {
-        // Tab dropdown system is retired by Prompt #139; activeTab stays null.
-        // Logo onClick keeps the close hook for future-proofing.
-    }, [])
-
     // iOS Safari pauses background videos in several scenarios that the
     // bare <video autoPlay loop muted playsInline> attributes don't cover:
     // Low Power Mode, scrolled-out-of-viewport, tab backgrounding, system
@@ -166,8 +157,7 @@ export function HeroSection({
 
     return (
         <>
-            <HeroHeader onClose={handleClose} />
-            <TabDropdownPanel activeTab={activeTab} onClose={handleClose} />
+            <HeroHeader />
             <div className="flex min-h-[100svh] flex-col relative">
                 <div className="fixed inset-0 bg-gradient-to-b from-[#0d1225] to-[#141c35] -z-10" />
                 <div className="fixed top-0 right-0 w-[55vw] h-[55vh] bg-[radial-gradient(ellipse_at_top_right,rgba(120,60,180,0.12),transparent_65%)] pointer-events-none -z-10" />
