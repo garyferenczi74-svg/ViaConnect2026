@@ -3,8 +3,13 @@
 @tailwind utilities;
 
 /* ─── Mobile: Prevent horizontal overflow ────────────────────────────────── */
+/* overflow-x: clip (not hidden) so position: sticky descendants still work.
+   overflow-x: hidden on html/body creates a scroll container at the root,
+   which silently breaks any sticky element on the page (it falls back to
+   relative positioning). clip clips horizontally without creating a scroll
+   container. Browser support: Chrome 90+, Firefox 81+, Safari 16+. */
 html, body {
-  overflow-x: hidden;
+  overflow-x: clip;
   max-width: 100vw;
 }
 

@@ -18,6 +18,14 @@ const nextConfig = {
       },
     ],
   },
+  async redirects() {
+    return [
+      { source: '/features', destination: '/#features', permanent: true },
+      { source: '/genomics', destination: '/#genomics', permanent: true },
+      { source: '/process', destination: '/#process', permanent: true },
+      { source: '/about', destination: '/#about', permanent: true },
+    ];
+  },
 };
 
 export default nextConfig;

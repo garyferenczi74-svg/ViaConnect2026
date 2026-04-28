@@ -65,7 +65,7 @@ export async function SarahScenarioSection() {
   const ctaLead = content.blocks.get('walkthrough.hand_off_cta_lead');
 
   return (
-    <section className="bg-[#0d1225] border-t border-white/[0.04]">
+    <section className="relative bg-[rgba(13,18,37,0.85)] backdrop-blur-xl border-t border-white/[0.04]">
       <div className="max-w-7xl mx-auto px-6 py-12 sm:py-16 lg:py-20 space-y-8 sm:space-y-10">
         {sectionTitle && (
           <div className="text-center max-w-3xl mx-auto space-y-4">

@@ -243,7 +243,7 @@ export default function GeneticUploadPage() {
                 )}
               </div>
               <div className="mt-4 flex items-center gap-4 text-xs text-gray-500">
-                <div className="flex items-center gap-1"><Shield className="w-3.5 h-3.5" /> HIPAA Compliant</div>
+                <div className="flex items-center gap-1"><Shield className="w-3.5 h-3.5" /> HIPAA-aware</div>
                 <div className="flex items-center gap-1"><Zap className="w-3.5 h-3.5" /> Instant Analysis</div>
                 <div className="flex items-center gap-1"><Dna className="w-3.5 h-3.5" /> 6-Panel Complete</div>
               </div>

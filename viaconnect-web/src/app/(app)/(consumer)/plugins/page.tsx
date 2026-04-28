@@ -46,7 +46,7 @@ const whyConnectCards = [
 ];
 
 const privacyItems = [
-  { icon: Shield, text: 'HIPAA Compliant' },
+  { icon: Shield, text: 'HIPAA-aware' },
   { icon: Lock, text: 'End-to-end Encryption' },
   { icon: Shield, text: 'We Never Sell Your Data' },
   { icon: Lock, text: 'Disconnect Anytime' },
