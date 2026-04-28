@@ -21,7 +21,7 @@ export function AboutSectionDesktop() {
         <SectionAnchor
             id={SECTION_IDS.about}
             ariaLabel="About ViaConnect"
-            className="min-h-screen py-32 px-12"
+            className="pt-32 pb-16 px-12"
         >
             <div className="max-w-7xl mx-auto">
                 <motion.div

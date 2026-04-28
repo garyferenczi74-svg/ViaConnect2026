@@ -22,7 +22,7 @@ export function PricingSection() {
         <SectionAnchor
             id={SECTION_IDS.pricing}
             ariaLabel="ViaConnect Pricing"
-            className="min-h-screen py-20 px-5 md:py-32 md:px-12"
+            className="pt-12 pb-20 px-5 md:pt-16 md:pb-32 md:px-12"
         >
             <div className="max-w-7xl mx-auto">
                 <motion.div
