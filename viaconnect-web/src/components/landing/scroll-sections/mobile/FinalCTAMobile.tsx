@@ -38,10 +38,10 @@ export function FinalCTAMobile() {
                     </Link>
                     <Link
                         href="/practitioner"
-                        className="text-white/70 text-base hover:text-white transition-colors inline-flex items-center justify-center"
+                        className="inline-flex items-center justify-center rounded-full bg-[#2DA5A0]/30 backdrop-blur-xl border border-[#2DA5A0]/40 px-8 py-4 text-base font-semibold text-white shadow-[0_0_20px_rgba(45,165,160,0.4)] transition-all duration-300 active:bg-[#2DA5A0]/50 active:border-[#2DA5A0]/60"
                     >
-                        I am a practitioner
-                        <ArrowRight strokeWidth={1.5} className="ml-2 w-4 h-4" />
+                        I am a Practitioner or Naturopath
+                        <ArrowRight strokeWidth={1.5} className="ml-2 w-5 h-5" />
                     </Link>
                 </div>
                 <p className="text-white/50 text-xs">

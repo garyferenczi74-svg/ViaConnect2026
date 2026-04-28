@@ -2,6 +2,7 @@ import { HeroVariantRenderer } from "@/components/landing/HeroVariantRenderer";
 import { TrustBandSection } from "@/components/home/TrustBandSection";
 import { SarahScenarioSection } from "@/components/home/SarahScenarioSection";
 import { OutcomeTimelineSection } from "@/components/home/OutcomeTimelineSection";
+import { LandingNav } from "@/components/landing/LandingNav";
 import { StickyHeroWrapper } from "@/components/landing/StickyHeroWrapper";
 import { LandingHeroCarousel } from "@/components/landing/LandingHeroCarousel";
 import { LandingScrollSections } from "@/components/landing/scroll-sections/LandingScrollSections";
@@ -18,15 +19,18 @@ import { LandingScrollSections } from "@/components/landing/scroll-sections/Land
 // would create a containing block and break sticky descendants).
 export default function HomePage() {
   return (
-    <main className="relative overflow-x-clip">
-      <StickyHeroWrapper>
-        <HeroVariantRenderer />
-      </StickyHeroWrapper>
-      <LandingHeroCarousel />
-      <TrustBandSection />
-      <SarahScenarioSection />
-      <OutcomeTimelineSection />
-      <LandingScrollSections />
-    </main>
+    <>
+      <LandingNav />
+      <main className="relative overflow-x-clip">
+        <StickyHeroWrapper>
+          <HeroVariantRenderer />
+        </StickyHeroWrapper>
+        <LandingHeroCarousel />
+        <TrustBandSection />
+        <SarahScenarioSection />
+        <OutcomeTimelineSection />
+        <LandingScrollSections />
+      </main>
+    </>
   );
 }
