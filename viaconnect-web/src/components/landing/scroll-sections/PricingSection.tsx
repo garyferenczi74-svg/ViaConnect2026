@@ -36,7 +36,7 @@ export function PricingSection() {
                         ViaConnect&trade; Membership
                     </p>
                     <h2 className="text-white text-4xl md:text-6xl font-light leading-tight mb-4 md:mb-6">
-                        Pick the plan that fits your journey.
+                        Pick the plan that fits your journey
                     </h2>
                     <p className="text-white/70 text-base md:text-xl max-w-3xl mx-auto leading-relaxed">
                         Every tier includes the CAQ assessment and Bio Optimization Score. Upgrade to unlock dynamic tracking, GeneX360 integration, and family coordination.

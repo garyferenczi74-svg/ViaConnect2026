@@ -66,7 +66,7 @@ export function FeaturesSectionDesktop() {
                         What You Get
                     </p>
                     <h2 className="text-white text-6xl font-light leading-tight mb-6">
-                        Features built for your biology.
+                        Features built for your biology
                     </h2>
                     <p className="text-white/70 text-xl max-w-3xl leading-relaxed">
                         One platform. Genomic testing, AI protocols, peptide therapeutics, real-time analytics, and a three-portal ecosystem connecting you to clinical expertise.

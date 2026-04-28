@@ -66,7 +66,7 @@ export function FeaturesSectionMobile() {
                         What You Get
                     </p>
                     <h2 className="text-white text-4xl font-light leading-tight mb-4">
-                        Features built for your biology.
+                        Features built for your biology
                     </h2>
                     <p className="text-white/70 text-base leading-relaxed">
                         One platform. Genomic testing, AI protocols, peptide therapeutics, and a three-portal ecosystem.

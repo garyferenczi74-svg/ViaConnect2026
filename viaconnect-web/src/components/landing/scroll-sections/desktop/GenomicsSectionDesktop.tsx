@@ -96,7 +96,7 @@ export function GenomicsSectionDesktop() {
                         The Science
                     </p>
                     <h2 className="text-white text-7xl font-light leading-tight mb-3">
-                        {TAGLINES.master}.
+                        {TAGLINES.master}
                     </h2>
                     <p className="text-[#2DA5A0] text-2xl font-light tracking-wide mb-6">
                         {TAGLINES.snpSubLine}

@@ -35,7 +35,7 @@ export function AboutSectionMobile() {
                         Who Is Behind This
                     </p>
                     <h2 className="text-white text-3xl font-light leading-tight mb-6">
-                        Built by clinicians, engineers, and operators who refused to settle for generic.
+                        Built by clinicians, engineers, and operators who refused to settle for generic
                     </h2>
                     <p className="text-white/80 text-base leading-relaxed">
                         FarmCeutica Wellness LLC was founded by Gary Ferenczi, an entrepreneur with 30+ years of experience in construction and GMP facility development. After seeing his own family struggle with generic supplement protocols that ignored individual biology, Gary built ViaConnect to put precision biology into everyday wellness.

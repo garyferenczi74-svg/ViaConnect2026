@@ -66,7 +66,7 @@ export function GenomicsSectionMobile() {
                         The Science
                     </p>
                     <h2 className="text-white text-4xl font-light leading-tight mb-2">
-                        {TAGLINES.master}.
+                        {TAGLINES.master}
                     </h2>
                     <p className="text-[#2DA5A0] text-lg font-light tracking-wide mb-4">
                         {TAGLINES.snpSubLine}

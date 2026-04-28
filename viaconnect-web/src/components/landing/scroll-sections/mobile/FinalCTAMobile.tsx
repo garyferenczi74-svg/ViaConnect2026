@@ -23,7 +23,7 @@ export function FinalCTAMobile() {
                     Start Today
                 </p>
                 <h2 className="text-white text-5xl font-light leading-tight mb-6">
-                    Your protocol is waiting.
+                    Your protocol is waiting
                 </h2>
                 <p className="text-white/70 text-base leading-relaxed mb-10">
                     Take the assessment. Get your personalized protocol within minutes. Add genetics or labs anytime to deepen your protocol.

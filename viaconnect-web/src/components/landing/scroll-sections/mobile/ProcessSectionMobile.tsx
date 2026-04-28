@@ -55,7 +55,7 @@ export function ProcessSectionMobile() {
                         How It Works
                     </p>
                     <h2 className="text-white text-4xl font-light leading-tight mb-4">
-                        From your DNA to your daily protocol.
+                        From your DNA to your daily protocol
                     </h2>
                     <p className="text-white/70 text-base leading-relaxed">
                         A guided assessment, then your personalized plan. Add genetics or labs anytime to deepen the protocol.
