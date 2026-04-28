@@ -10,7 +10,7 @@ export function FinalCTADesktop() {
         <SectionAnchor
             id={SECTION_IDS.finalCta}
             ariaLabel="Start Today"
-            className="min-h-screen py-32 px-12 bg-[#1A2744] flex items-center"
+            className="min-h-screen py-32 px-12 flex items-center"
         >
             <motion.div
                 initial={{ opacity: 0, y: 40 }}

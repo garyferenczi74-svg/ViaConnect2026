@@ -154,17 +154,17 @@ export function GenomicsSectionDesktop() {
                 <div className="flex flex-col sm:flex-row items-center gap-6">
                     <Link
                         href="/shop?category=methylation"
-                        className="inline-flex items-center justify-center rounded-full bg-[#B75E18] px-8 py-4 text-base font-semibold text-white transition-all duration-300 hover:bg-[#B75E18]/90 hover:shadow-[0_0_30px_rgba(183,94,24,0.4)]"
+                        className="inline-flex items-center justify-center rounded-full bg-[#b75e18]/30 backdrop-blur-xl border border-[#b75e18]/40 px-8 py-4 text-base font-semibold text-white shadow-[0_0_20px_rgba(183,94,24,0.4)] transition-all duration-300 hover:bg-[#b75e18]/50 hover:border-[#b75e18]/60 hover:shadow-[0_0_30px_rgba(183,94,24,0.6)]"
                     >
                         Order GeneX360
                         <ArrowRight strokeWidth={1.5} className="ml-2 w-5 h-5" />
                     </Link>
                     <Link
                         href="/genetics/upload"
-                        className="text-white/70 text-sm hover:text-white transition-colors inline-flex items-center"
+                        className="inline-flex items-center justify-center rounded-full bg-[#2DA5A0]/30 backdrop-blur-xl border border-[#2DA5A0]/40 px-8 py-4 text-base font-semibold text-white shadow-[0_0_20px_rgba(45,165,160,0.4)] transition-all duration-300 hover:bg-[#2DA5A0]/50 hover:border-[#2DA5A0]/60 hover:shadow-[0_0_30px_rgba(45,165,160,0.6)]"
                     >
                         Already tested elsewhere? Upload your raw data
-                        <ArrowRight strokeWidth={1.5} className="ml-2 w-4 h-4" />
+                        <ArrowRight strokeWidth={1.5} className="ml-2 w-5 h-5" />
                     </Link>
                 </div>
             </div>

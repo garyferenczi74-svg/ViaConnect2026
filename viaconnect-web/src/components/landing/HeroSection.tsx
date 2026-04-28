@@ -1,7 +1,6 @@
 'use client'
 import React, { useEffect, useRef } from 'react'
 import Link from 'next/link'
-import { InfiniteSlider } from '@/components/ui/infinite-slider'
 import { cn } from '@/lib/utils'
 import { Menu, X, ChevronRight } from 'lucide-react'
 import { useScroll } from 'framer-motion'
@@ -222,6 +221,11 @@ export function HeroSection({
                                             className="inline-flex h-14 sm:h-12 w-full sm:w-auto items-center justify-center rounded-full border border-white/20 px-6 text-base font-semibold text-white backdrop-blur-sm transition-all duration-300 hover:border-white/30 hover:bg-white/10">
                                             <span>Sign In</span>
                                         </Link>
+                                        <Link
+                                            href="/practitioner"
+                                            className="inline-flex h-14 sm:h-12 w-full sm:w-auto items-center justify-center rounded-full bg-[#2DA5A0]/30 backdrop-blur-xl border border-[#2DA5A0]/40 px-6 text-base font-semibold text-white shadow-[0_0_20px_rgba(45,165,160,0.4)] transition-all duration-300 hover:bg-[#2DA5A0]/50 hover:border-[#2DA5A0]/60 hover:shadow-[0_0_30px_rgba(45,165,160,0.6)]">
+                                            <span>I am a Practitioner or Naturopath</span>
+                                        </Link>
                                     </div>
                                 </div>
                             </div>
@@ -242,40 +246,6 @@ export function HeroSection({
                                 className="size-full object-cover opacity-30 lg:opacity-50"
                                 src="https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Assets/DNA%20HD.mp4"
                             />
-                        </div>
-                    </div>
-                </section>
-                <section className="absolute bottom-0 left-0 right-0 pb-2 pointer-events-auto">
-                    <div className="group relative">
-                        <div className="flex flex-col items-center md:flex-row">
-                            <div className="relative py-6 w-full">
-                                <InfiniteSlider speedOnHover={20} speed={40} gap={112}>
-                                    <div className="flex items-center gap-2 text-slate-400">
-                                        <span className="text-sm font-semibold tracking-wider uppercase whitespace-nowrap">Backed by Science</span>
-                                    </div>
-                                    <div className="flex items-center gap-2 text-slate-400">
-                                        <span className="text-sm font-semibold tracking-wider uppercase whitespace-nowrap">HIPAA-aware</span>
-                                    </div>
-                                    <div className="flex items-center gap-2 text-slate-400">
-                                        <span className="text-sm font-semibold tracking-wider uppercase whitespace-nowrap">GMP Certified</span>
-                                    </div>
-                                    <div className="flex items-center gap-2 text-slate-400">
-                                        <span className="text-sm font-semibold tracking-wider uppercase whitespace-nowrap">CAP/CLIA Lab Partners</span>
-                                    </div>
-                                    <div className="flex items-center gap-2 text-slate-400">
-                                        <span className="text-sm font-semibold tracking-wider uppercase whitespace-nowrap">Dual Liposomal-Micellar Delivery</span>
-                                    </div>
-                                    <div className="flex items-center gap-2 text-slate-400">
-                                        <span className="text-sm font-semibold tracking-wider uppercase whitespace-nowrap">10-28X Bioavailability</span>
-                                    </div>
-                                    <div className="flex items-center gap-2 text-slate-400">
-                                        <span className="text-sm font-semibold tracking-wider uppercase whitespace-nowrap">28-Peptide Product Data</span>
-                                    </div>
-                                    <div className="flex items-center gap-2 text-slate-400">
-                                        <span className="text-sm font-semibold tracking-wider uppercase whitespace-nowrap">SNP-Targeted Nutraceuticals</span>
-                                    </div>
-                                </InfiniteSlider>
-                            </div>
                         </div>
                     </div>
                 </section>

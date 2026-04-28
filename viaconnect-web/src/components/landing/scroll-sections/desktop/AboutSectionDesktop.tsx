@@ -1,6 +1,5 @@
 'use client'
 import { motion } from 'framer-motion'
-import { MapPin, BadgeCheck, Building, Hammer } from 'lucide-react'
 import { SectionAnchor } from '../shared/SectionAnchor'
 import { SECTION_IDS, TAGLINES } from '../shared/sectionConstants'
 
@@ -15,13 +14,6 @@ const TEAM = [
         role: 'CTO',
         bio: 'Architects the unified data ecosystem connecting the assessment, genomics, labs, and analytics layers. Drives the engineering roadmap.',
     },
-]
-
-const TRUST_ITEMS = [
-    { icon: MapPin, label: 'Buffalo, NY' },
-    { icon: BadgeCheck, label: 'GMP Compliant' },
-    { icon: Building, label: 'Cedarland Facility Owned' },
-    { icon: Hammer, label: '30+ Years Construction and GMP' },
 ]
 
 export function AboutSectionDesktop() {
@@ -78,18 +70,6 @@ export function AboutSectionDesktop() {
                         Beyond our named scientific leadership, ViaConnect is supported by a broader leadership group spanning compliance and regulatory oversight, financial stewardship, and day-to-day operations. Each function is led by senior practitioners with multi-decade track records in their respective fields, working alongside the science team to keep the platform HIPAA-aware, financially disciplined, and operationally accountable to the people we serve.
                     </p>
                 </motion.div>
-
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-16">
-                    {TRUST_ITEMS.map((item) => {
-                        const Icon = item.icon
-                        return (
-                            <div key={item.label} className="flex items-center gap-3">
-                                <Icon strokeWidth={1.5} className="w-6 h-6 text-[#2DA5A0] flex-shrink-0" />
-                                <p className="text-white/80 text-sm font-medium">{item.label}</p>
-                            </div>
-                        )
-                    })}
-                </div>
 
                 <motion.blockquote
                     initial={{ opacity: 0 }}
