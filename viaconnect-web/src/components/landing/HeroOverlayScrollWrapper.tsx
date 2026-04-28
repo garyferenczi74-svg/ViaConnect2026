@@ -1,6 +1,6 @@
 'use client'
 import { motion, useScroll, useTransform } from 'framer-motion'
-import { ReactNode } from 'react'
+import { ReactNode, useEffect, useState } from 'react'
 
 interface HeroOverlayScrollWrapperProps {
     children: ReactNode
@@ -8,8 +8,22 @@ interface HeroOverlayScrollWrapperProps {
 
 export function HeroOverlayScrollWrapper({ children }: HeroOverlayScrollWrapperProps) {
     const { scrollY } = useScroll()
-    const opacity = useTransform(scrollY, [0, 400], [1, 0])
-    const y = useTransform(scrollY, [0, 400], [0, -120])
+
+    // Desktop fades over 0-400px scroll (original spec). Mobile uses a wider
+    // 0-800px range so the hero CTAs stay readable + tappable through the
+    // sticky-cover transition. SSR-safe: state defaults to desktop range and
+    // syncs to the viewport on mount + resize.
+    const [fadeMax, setFadeMax] = useState(400)
+    useEffect(() => {
+        const mql = window.matchMedia('(max-width: 639px)')
+        const update = () => setFadeMax(mql.matches ? 800 : 400)
+        update()
+        mql.addEventListener('change', update)
+        return () => mql.removeEventListener('change', update)
+    }, [])
+
+    const opacity = useTransform(scrollY, [0, fadeMax], [1, 0])
+    const y = useTransform(scrollY, [0, fadeMax], [0, -120])
 
     return (
         <motion.div style={{ opacity, y }} className="relative z-10">
