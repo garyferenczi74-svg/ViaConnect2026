@@ -33,7 +33,7 @@ export function FinalCTADesktop() {
                         href="/signup"
                         className="inline-flex items-center justify-center rounded-full bg-[#b75e18]/30 backdrop-blur-xl border border-[#b75e18]/40 px-10 py-5 text-base font-semibold text-white shadow-[0_0_20px_rgba(183,94,24,0.4)] transition-all duration-300 hover:bg-[#b75e18]/50 hover:border-[#b75e18]/60 hover:shadow-[0_0_40px_rgba(183,94,24,0.5)]"
                     >
-                        Start Your Assessment
+                        Your Journey Starts Here
                         <ArrowRight strokeWidth={1.5} className="ml-2 w-5 h-5" />
                     </Link>
                     <Link
