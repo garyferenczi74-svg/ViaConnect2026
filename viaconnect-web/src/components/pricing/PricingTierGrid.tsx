@@ -1,12 +1,15 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import Link from 'next/link';
 import { Loader2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { TierCard } from '@/components/pricing/TierCard';
 import { FamilyConfigurator } from '@/components/pricing/FamilyConfigurator';
+import { PractitionerToggleButton } from '@/components/landing/scroll-sections/shared/PractitionerToggleButton';
 import type { MembershipTier, TierId } from '@/types/pricing';
 import { createClient } from '@/lib/supabase/client';
+import { trackPractitionerPricingExpanded } from '@/lib/analytics';
 
 // Shared pricing body. Used both by /pricing standalone route and by the
 // landing PricingSection scroll wrapper. Owns the billing-cycle toggle, the
@@ -71,6 +74,33 @@ export function PricingTierGrid({ className = '' }: PricingTierGridProps) {
   const [tiers, setTiers] = useState<MembershipTier[] | null>(null);
   const [currentTier, setCurrentTier] = useState<TierId>('free');
   const [showFamilyConfig, setShowFamilyConfig] = useState(false);
+  const [isPractitionerOpen, setIsPractitionerOpen] = useState(false);
+
+  // useId guarantees unique aria-controls/aria-labelledby pairing even when
+  // PricingTierGrid renders inside both desktop + mobile scroll trees.
+  const toggleId = useId();
+  const regionId = `${toggleId}-region`;
+
+  const handlePractitionerToggle = () => {
+    const next = !isPractitionerOpen;
+    setIsPractitionerOpen(next);
+    if (next) {
+      trackPractitionerPricingExpanded();
+      // Mobile: scroll the expanded region into view so users on small
+      // screens see the new content without manual scrolling. Respects
+      // prefers-reduced-motion (auto behavior when set).
+      requestAnimationFrame(() => {
+        const region = document.getElementById(regionId);
+        if (region) {
+          const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+          region.scrollIntoView({
+            behavior: prefersReducedMotion ? 'auto' : 'smooth',
+            block: 'nearest',
+          });
+        }
+      });
+    }
+  };
 
   useEffect(() => {
     let mounted = true;
@@ -166,6 +196,53 @@ export function PricingTierGrid({ className = '' }: PricingTierGridProps) {
           </div>
         </section>
       )}
+
+      {/* Practitioner & Naturopath pricing toggle scaffold (#139e Path C3).
+          Toggle UX is live; the practitioner tier cards themselves are held
+          pending Hannah validation + Steve Rica clearance on public-surface
+          copy and prices. Once cleared, swap the "Coming soon" panel for
+          actual TierCard renders against the practitioner_tiers table. */}
+      <div className="mt-12 flex justify-center">
+        <PractitionerToggleButton
+          id={toggleId}
+          ariaControls={regionId}
+          isOpen={isPractitionerOpen}
+          onToggle={handlePractitionerToggle}
+        />
+      </div>
+
+      <AnimatePresence initial={false}>
+        {isPractitionerOpen && (
+          <motion.div
+            key="practitioner-tier-region"
+            id={regionId}
+            role="region"
+            aria-labelledby={toggleId}
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{
+              height: { duration: 0.4, ease: [0.16, 1, 0.3, 1] },
+              opacity: { duration: 0.3, ease: 'easeInOut' },
+            }}
+            className="overflow-hidden"
+          >
+            <div className="pt-8 max-w-2xl mx-auto">
+              <div className="bg-black/30 backdrop-blur-sm border border-[#2DA5A0]/40 rounded-2xl p-8 text-center">
+                <p className="text-[#2DA5A0] uppercase tracking-[0.2em] text-xs mb-3 font-medium">
+                  Coming Soon
+                </p>
+                <h3 className="text-white text-2xl font-light mb-3">
+                  Practitioner &amp; Naturopath pricing
+                </h3>
+                <p className="text-white/70 text-sm leading-relaxed">
+                  Tier details for practitioners and naturopaths are in final review. Public pricing announcement coming shortly.
+                </p>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <p className="mt-16 text-center text-[11px] text-white/50 leading-relaxed max-w-2xl mx-auto">
         Supplement recommendations are informational only and do not replace medical advice. Speak
