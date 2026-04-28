@@ -33,9 +33,10 @@ const FOOTER_DURATION_S = 40
 // "Backed by Science" marquee). Bumped from /1.3 on 2026-04-27.
 const HERO_DURATION_S = Math.round(FOOTER_DURATION_S / 1.6) // 25s
 
-const CARD_WIDTH_PX = 280
-const CARD_GUTTER_PX = 16
-const SLIDE_UNIT_PX = CARD_WIDTH_PX + CARD_GUTTER_PX // 296
+// Prompt #139h: -15% reduction on card size + text. SLIDE_UNIT_PX auto-updates.
+const CARD_WIDTH_PX = 238
+const CARD_GUTTER_PX = 14
+const SLIDE_UNIT_PX = CARD_WIDTH_PX + CARD_GUTTER_PX // 252
 
 interface MobileOverride {
   surfaceOverlay: string
@@ -192,8 +193,8 @@ function MarqueePillarCard({
       <div
         className="relative flex h-full flex-col justify-center overflow-hidden rounded-[18px] border border-white/[0.06]"
         style={{
-          minHeight: 220,
-          padding: '24px 22px',
+          minHeight: 187,
+          padding: '20px 19px',
           background: `${override.surfaceOverlay}, rgba(30, 48, 84, 0.45)`,
           backdropFilter: 'blur(32px)',
           WebkitBackdropFilter: 'blur(32px)',
@@ -203,10 +204,10 @@ function MarqueePillarCard({
           aria-hidden="true"
           className="pointer-events-none absolute right-[-2px] top-[-8px] z-[1] select-none font-bold leading-none"
           style={{
-            fontSize: 96,
+            fontSize: 82,
             letterSpacing: '-0.06em',
             color: 'transparent',
-            WebkitTextStroke: `1.2px ${override.numeralStroke}`,
+            WebkitTextStroke: `1px ${override.numeralStroke}`,
             paintOrder: 'stroke fill',
             textRendering: 'geometricPrecision',
             WebkitFontSmoothing: 'antialiased',
@@ -229,8 +230,8 @@ function MarqueePillarCard({
             aria-label={isClone ? undefined : pillar.ariaChapter}
             className="font-semibold uppercase"
             style={{
-              fontSize: 11,
-              marginBottom: 10,
+              fontSize: 9,
+              marginBottom: 9,
               letterSpacing: '0.18em',
               color: `rgba(${pillar.accent.rgb}, 0.95)`,
             }}
@@ -240,8 +241,8 @@ function MarqueePillarCard({
           <h3
             className="font-semibold text-white"
             style={{
-              fontSize: 30,
-              marginBottom: 12,
+              fontSize: 26,
+              marginBottom: 10,
               lineHeight: 1.05,
               letterSpacing: '-0.02em',
             }}
@@ -250,7 +251,7 @@ function MarqueePillarCard({
           </h3>
           <p
             style={{
-              fontSize: 15,
+              fontSize: 13,
               lineHeight: 1.5,
               color: 'rgba(255,255,255,0.72)',
             }}
@@ -263,8 +264,8 @@ function MarqueePillarCard({
           aria-hidden="true"
           className="pointer-events-none absolute z-[2]"
           style={{
-            left: 22,
-            right: 22,
+            left: 19,
+            right: 19,
             bottom: 0,
             height: 1,
             opacity: 0.6,
