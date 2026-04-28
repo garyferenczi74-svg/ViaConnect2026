@@ -3,6 +3,7 @@ export const SECTION_IDS = {
     process: 'process',
     genomics: 'genomics',
     about: 'about',
+    pricing: 'pricing',
     finalCta: 'final-cta',
 } as const
 
@@ -11,6 +12,7 @@ export const SECTION_ORDER: Array<keyof typeof SECTION_IDS> = [
     'process',
     'genomics',
     'about',
+    'pricing',
     'finalCta',
 ]
 
@@ -19,6 +21,7 @@ export const NAV_ITEMS = [
     { id: SECTION_IDS.process, label: 'Process' },
     { id: SECTION_IDS.genomics, label: 'Genomics' },
     { id: SECTION_IDS.about, label: 'About' },
+    { id: SECTION_IDS.pricing, label: 'Pricing' },
 ] as const
 
 export const TAGLINES = {

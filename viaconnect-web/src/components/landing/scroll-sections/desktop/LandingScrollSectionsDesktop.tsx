@@ -3,6 +3,7 @@ import { FeaturesSectionDesktop } from './FeaturesSectionDesktop'
 import { ProcessSectionDesktop } from './ProcessSectionDesktop'
 import { GenomicsSectionDesktop } from './GenomicsSectionDesktop'
 import { AboutSectionDesktop } from './AboutSectionDesktop'
+import { PricingSection } from '../PricingSection'
 import { FinalCTADesktop } from './FinalCTADesktop'
 
 export function LandingScrollSectionsDesktop() {
@@ -12,6 +13,7 @@ export function LandingScrollSectionsDesktop() {
             <ProcessSectionDesktop />
             <GenomicsSectionDesktop />
             <AboutSectionDesktop />
+            <PricingSection />
             <FinalCTADesktop />
         </div>
     )

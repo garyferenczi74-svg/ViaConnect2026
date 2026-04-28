@@ -3,6 +3,7 @@ import { FeaturesSectionMobile } from './FeaturesSectionMobile'
 import { ProcessSectionMobile } from './ProcessSectionMobile'
 import { GenomicsSectionMobile } from './GenomicsSectionMobile'
 import { AboutSectionMobile } from './AboutSectionMobile'
+import { PricingSection } from '../PricingSection'
 import { FinalCTAMobile } from './FinalCTAMobile'
 
 export function LandingScrollSectionsMobile() {
@@ -12,6 +13,7 @@ export function LandingScrollSectionsMobile() {
             <ProcessSectionMobile />
             <GenomicsSectionMobile />
             <AboutSectionMobile />
+            <PricingSection />
             <FinalCTAMobile />
         </div>
     )
