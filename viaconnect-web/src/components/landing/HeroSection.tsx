@@ -84,7 +84,7 @@ export function HeroSection({
                 <div className="fixed inset-0 bg-gradient-to-b from-[#0d1225] to-[#141c35] -z-10" />
                 <div className="fixed top-0 right-0 w-[55vw] h-[55vh] bg-[radial-gradient(ellipse_at_top_right,rgba(120,60,180,0.12),transparent_65%)] pointer-events-none -z-10" />
                 <section className="relative flex-1 flex flex-col">
-                    <div className="relative flex-1 pt-[150px] pb-[80px] md:pt-0 md:pb-0 md:flex md:flex-col md:justify-center">
+                    <div className="relative flex-1 pt-[113px] pb-[80px] md:pt-0 md:pb-0 md:flex md:flex-col md:justify-center">
                         <HeroOverlayScrollWrapper>
                             <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-col items-center px-6 lg:items-stretch lg:block lg:px-12">
                                 <div className="w-full mx-auto max-w-lg text-center lg:ml-0 lg:max-w-full lg:text-left">
