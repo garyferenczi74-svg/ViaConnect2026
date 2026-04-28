@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useRef } from 'react'
 import Link from 'next/link'
-import { ChevronRight, MousePointer2 } from 'lucide-react'
+import { ChevronRight, ArrowDown } from 'lucide-react'
 import { HeroPillars } from './HeroPillars'
 import { HeroOverlayScrollWrapper } from './HeroOverlayScrollWrapper'
 
@@ -132,7 +132,7 @@ export function HeroSection({
                                         </Link>
                                     </div>
                                     <div className="mt-3 sm:hidden flex justify-center" aria-hidden="true">
-                                        <MousePointer2 className="w-4 h-4 text-white/50" strokeWidth={1.5} />
+                                        <ArrowDown className="w-4 h-4 text-white/50" strokeWidth={1.5} />
                                     </div>
                                 </div>
                             </div>
