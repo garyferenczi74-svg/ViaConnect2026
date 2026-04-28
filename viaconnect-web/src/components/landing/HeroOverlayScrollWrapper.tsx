@@ -10,13 +10,13 @@ export function HeroOverlayScrollWrapper({ children }: HeroOverlayScrollWrapperP
     const { scrollY } = useScroll()
 
     // Desktop fades over 0-400px scroll (original spec). Mobile uses a wider
-    // 0-800px range so the hero CTAs stay readable + tappable through the
+    // 0-1500px range so the hero CTAs stay readable + tappable through the
     // sticky-cover transition. SSR-safe: state defaults to desktop range and
     // syncs to the viewport on mount + resize.
     const [fadeMax, setFadeMax] = useState(400)
     useEffect(() => {
         const mql = window.matchMedia('(max-width: 639px)')
-        const update = () => setFadeMax(mql.matches ? 800 : 400)
+        const update = () => setFadeMax(mql.matches ? 1500 : 400)
         update()
         mql.addEventListener('change', update)
         return () => mql.removeEventListener('change', update)
