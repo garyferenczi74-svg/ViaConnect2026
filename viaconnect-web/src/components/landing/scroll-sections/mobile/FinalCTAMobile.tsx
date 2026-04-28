@@ -31,7 +31,7 @@ export function FinalCTAMobile() {
                 <div className="flex flex-col items-stretch gap-4 mb-8">
                     <Link
                         href="/signup"
-                        className="inline-flex items-center justify-center rounded-full bg-[#B75E18] px-8 py-4 text-base font-semibold text-white transition-all duration-300 active:bg-[#B75E18]/90"
+                        className="inline-flex items-center justify-center rounded-full bg-[#b75e18]/30 backdrop-blur-xl border border-[#b75e18]/40 px-8 py-4 text-base font-semibold text-white shadow-[0_0_20px_rgba(183,94,24,0.4)] transition-all duration-300 active:bg-[#b75e18]/50 active:border-[#b75e18]/60"
                     >
                         Start Your Assessment
                         <ArrowRight strokeWidth={1.5} className="ml-2 w-5 h-5" />

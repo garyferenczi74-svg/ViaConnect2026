@@ -137,8 +137,10 @@ export function PricingTierGrid({ className = '' }: PricingTierGridProps) {
           <button
             type="button"
             onClick={() => setBillingCycle('monthly')}
-            className={`px-5 py-2 rounded-lg font-medium min-h-[40px] transition-colors ${
-              billingCycle === 'monthly' ? 'bg-[#2DA5A0] text-[#0B1520]' : 'text-white/65'
+            className={`px-5 py-2 rounded-lg font-medium min-h-[40px] transition-all ${
+              billingCycle === 'monthly'
+                ? 'bg-[#2DA5A0]/30 backdrop-blur-xl border border-[#2DA5A0]/40 text-white shadow-[0_0_15px_rgba(45,165,160,0.3)]'
+                : 'text-white/65'
             }`}
           >
             Monthly
@@ -146,8 +148,10 @@ export function PricingTierGrid({ className = '' }: PricingTierGridProps) {
           <button
             type="button"
             onClick={() => setBillingCycle('annual')}
-            className={`px-5 py-2 rounded-lg font-medium min-h-[40px] transition-colors ${
-              billingCycle === 'annual' ? 'bg-[#2DA5A0] text-[#0B1520]' : 'text-white/65'
+            className={`px-5 py-2 rounded-lg font-medium min-h-[40px] transition-all ${
+              billingCycle === 'annual'
+                ? 'bg-[#2DA5A0]/30 backdrop-blur-xl border border-[#2DA5A0]/40 text-white shadow-[0_0_15px_rgba(45,165,160,0.3)]'
+                : 'text-white/65'
             }`}
           >
             Annual

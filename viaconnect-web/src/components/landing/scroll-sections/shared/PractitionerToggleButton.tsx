@@ -23,7 +23,7 @@ export function PractitionerToggleButton({ id, ariaControls, isOpen, onToggle }:
             onClick={onToggle}
             aria-expanded={isOpen}
             aria-controls={ariaControls}
-            className="group inline-flex items-center justify-center gap-3 px-8 py-4 rounded-2xl bg-black/30 backdrop-blur-sm border border-[#2DA5A0]/40 text-white text-base font-medium tracking-wide transition-all duration-200 hover:border-[#2DA5A0] hover:bg-black/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent w-full max-w-sm sm:w-auto"
+            className="group inline-flex items-center justify-center gap-3 px-8 py-4 rounded-2xl bg-[#2DA5A0]/30 backdrop-blur-xl border border-[#2DA5A0]/40 text-white text-base font-medium tracking-wide shadow-[0_0_20px_rgba(45,165,160,0.4)] transition-all duration-200 hover:bg-[#2DA5A0]/50 hover:border-[#2DA5A0]/60 hover:shadow-[0_0_30px_rgba(45,165,160,0.6)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent w-full max-w-sm sm:w-auto"
         >
             <span>Practitioner &amp; Naturopath Pricing</span>
             <motion.span

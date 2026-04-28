@@ -32,8 +32,11 @@ export function PricingSection() {
                     transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
                     className="mb-12 md:mb-20 text-center"
                 >
-                    <p className="text-[#2DA5A0] uppercase tracking-[0.2em] text-xs md:text-sm mb-3 md:mb-4 font-medium">
-                        ViaConnect&trade; Membership
+                    <p
+                        className="text-[#CD7F32] tracking-[0.2em] text-4xl md:text-6xl font-light leading-tight mb-4 md:mb-6"
+                        style={{ fontVariantCaps: 'small-caps' }}
+                    >
+                        Membership Options
                     </p>
                     <h2 className="text-white text-4xl md:text-6xl font-light leading-tight mb-4 md:mb-6">
                         Pick the plan that fits your journey
