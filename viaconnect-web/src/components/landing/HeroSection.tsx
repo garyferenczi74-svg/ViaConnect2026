@@ -4,7 +4,6 @@ import Link from 'next/link'
 import { ChevronRight } from 'lucide-react'
 import { HeroPillars } from './HeroPillars'
 import { HeroOverlayScrollWrapper } from './HeroOverlayScrollWrapper'
-import { HeroScrollCue } from './HeroScrollCue'
 
 // Prompt #138a Phase 4: optional copy props for hero variant rendering.
 // Defaults preserve the original control copy when no variant is active, so
@@ -154,7 +153,6 @@ export function HeroSection({
                         </div>
                     </div>
                 </section>
-                <HeroScrollCue />
             </div>
     )
 }

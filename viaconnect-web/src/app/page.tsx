@@ -25,6 +25,11 @@ export default function HomePage() {
         <StickyHeroWrapper>
           <HeroVariantRenderer />
         </StickyHeroWrapper>
+        {/* Mobile-only buffer below the sticky hero so TrustBand doesn't immediately
+            cover the bottom CTA buttons (Practitioner/Naturopath) as the user scrolls.
+            Without this, TrustBand starts entering the viewport at ~14px scroll and
+            covers the third button before it can be tapped. */}
+        <div aria-hidden="true" className="sm:hidden h-[280px]" />
         <LandingHeroCarousel />
         <TrustBandSection />
         <SarahScenarioSection />
