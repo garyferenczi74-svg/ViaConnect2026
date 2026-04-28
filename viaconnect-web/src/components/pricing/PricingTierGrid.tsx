@@ -244,7 +244,7 @@ export function PricingTierGrid({ className = '' }: PricingTierGridProps) {
         )}
       </AnimatePresence>
 
-      <p className="mt-16 text-center text-[11px] text-white/50 leading-relaxed max-w-2xl mx-auto">
+      <p className="mt-8 text-center text-[11px] text-white/50 leading-relaxed max-w-2xl mx-auto">
         Supplement recommendations are informational only and do not replace medical advice. Speak
         with a qualified healthcare provider before starting new supplements.
       </p>
