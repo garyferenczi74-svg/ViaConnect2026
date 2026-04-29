@@ -49,9 +49,9 @@ export default function NutritionPage() {
   useEffect(() => { loadMealCount(); }, []);
 
   const TABS = [
-    { id: 'quick' as const, label: 'Quick Log', icon: Apple },
-    { id: 'photo' as const, label: 'Photo AI', icon: Camera },
-    { id: 'manual' as const, label: 'Log Full Meal', icon: PenLine },
+    { id: 'quick' as const, label: 'Quick Log', icon: Apple, gradient: 'linear-gradient(135deg, #27AE60 0%, #1E3054 100%)', glow: 'rgba(39,174,96,0.35)' },
+    { id: 'photo' as const, label: 'Photo AI', icon: Camera, gradient: 'linear-gradient(135deg, #2DA5A0 0%, #1E3054 100%)', glow: 'rgba(45,165,160,0.35)' },
+    { id: 'manual' as const, label: 'Log Full Meal', icon: PenLine, gradient: 'linear-gradient(135deg, #B75E18 0%, #1E3054 100%)', glow: 'rgba(183,94,24,0.35)' },
   ];
 
   return (
@@ -81,11 +81,10 @@ export default function NutritionPage() {
               <button
                 key={t.id}
                 onClick={() => setTab(t.id)}
-                className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] font-medium transition-all ${
-                  isActive
-                    ? 'border border-[#B75E18]/40 bg-[#B75E18]/20 text-[#B75E18]'
-                    : 'border border-white/[0.06] text-white/50 hover:bg-white/[0.06]'
+                className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] font-semibold text-white transition-all ${
+                  isActive ? 'opacity-100' : 'opacity-55 hover:opacity-85'
                 }`}
+                style={{ background: t.gradient, boxShadow: isActive ? `0 0 12px ${t.glow}` : undefined }}
               >
                 <Icon className="h-3 w-3" strokeWidth={1.5} />
                 {t.label}
