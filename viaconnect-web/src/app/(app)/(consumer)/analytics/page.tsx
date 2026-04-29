@@ -775,7 +775,8 @@ export default function AnalyticsPage() {
             </div>
             <Link
               href="/supplements"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-copper/10 border border-copper/25 text-copper text-xs font-medium hover:bg-copper/15 transition-all no-underline"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-white text-xs font-semibold transition-all hover:shadow-[0_0_12px_rgba(183,94,24,0.35)] no-underline"
+              style={{ background: 'linear-gradient(135deg, #B75E18 0%, #1E3054 100%)' }}
             >
               Manage
               <TrendingUp className="w-3.5 h-3.5" strokeWidth={1.5} />
