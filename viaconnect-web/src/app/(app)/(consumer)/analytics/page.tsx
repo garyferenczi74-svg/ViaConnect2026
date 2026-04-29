@@ -717,7 +717,7 @@ export default function AnalyticsPage() {
               )}
             </div>
             <p className="text-3xl font-bold text-white">{currentScore}</p>
-            <p className="text-xs text-gray-500 mt-1">Bio Optimization</p>
+            <p className="text-xs text-white mt-1">Bio Optimization</p>
           </MotionCard>
         </Link>
 
@@ -733,7 +733,7 @@ export default function AnalyticsPage() {
               )}
             </div>
             <p className="text-3xl font-bold text-white">{adherence.overall}%</p>
-            <p className="text-xs text-gray-500 mt-1">30-Day Adherence</p>
+            <p className="text-xs text-white mt-1">30-Day Adherence</p>
           </MotionCard>
         </Link>
 
@@ -741,7 +741,7 @@ export default function AnalyticsPage() {
           <MotionCard className="p-5 cursor-pointer">
             <Flame className="w-4 h-4 text-portal-yellow mb-2" />
             <p className="text-3xl font-bold text-white">{checkinStreak}</p>
-            <p className="text-xs text-gray-500 mt-1">Day Streak</p>
+            <p className="text-xs text-white mt-1">Day Streak</p>
           </MotionCard>
         </Link>
 
@@ -749,7 +749,7 @@ export default function AnalyticsPage() {
           <MotionCard className="p-5 cursor-pointer">
             <Pill className="w-4 h-4 text-plum mb-2" />
             <p className="text-3xl font-bold text-white">{protocolCount}</p>
-            <p className="text-xs text-gray-500 mt-1">Active Supplements</p>
+            <p className="text-xs text-white mt-1">Active Supplements</p>
           </MotionCard>
         </Link>
       </StaggerChild>
