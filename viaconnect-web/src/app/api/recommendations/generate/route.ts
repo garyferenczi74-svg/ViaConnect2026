@@ -1,6 +1,8 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { runPostCAQPipeline, type CAQResponses } from '@/lib/recommendation-engine';
+import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
+import { safeLog } from '@/lib/utils/safe-log';
 
 /**
  * Normalize raw assessment_results phase data into the CAQResponses shape
@@ -243,7 +245,20 @@ export async function POST(request: NextRequest) {
     const caqResponses = normalizePhaseData(phases.map(p => ({ phase: p.phase, data: p.data })));
 
     const body = await request.json().catch(() => ({}));
-    const result = await runPostCAQPipeline(supabase, user.id, caqResponses, body.assessment_id);
+    let result;
+    try {
+      result = await withTimeout(
+        runPostCAQPipeline(supabase, user.id, caqResponses, body.assessment_id),
+        20000,
+        'api.recommendations.generate.pipeline',
+      );
+    } catch (err) {
+      if (isTimeoutError(err)) {
+        safeLog.error('api.recommendations.generate', 'pipeline timeout', { userId: user.id, error: err });
+        return NextResponse.json({ error: 'Recommendation generation took too long. Please try again.' }, { status: 504 });
+      }
+      throw err;
+    }
 
     // Find ViaConnect replacements for user's current supplements
     const replacements = findSupplementReplacements(caqResponses.current_supplements || []);
@@ -285,7 +300,7 @@ export async function POST(request: NextRequest) {
       replacement_count: replacements.length,
     });
   } catch (error: any) {
-    console.error('Recommendation generation error:', error);
+    safeLog.error('api.recommendations.generate', 'unexpected error', { error });
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

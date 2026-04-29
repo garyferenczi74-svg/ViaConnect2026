@@ -4,30 +4,47 @@ import { GORDAN_SYSTEM_PROMPT, GORDAN_TASK_PROMPTS } from '@/lib/agents/gordan/s
 import type { GordanTask } from '@/lib/agents/gordan/taskRegistry';
 import { emitJefferyMessage } from '@/lib/jeffery/message-bus';
 import { scanAiOutput } from '@/lib/compliance/adapters/ai_output';
+import { withAbortTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
+import { safeLog } from '@/lib/utils/safe-log';
+import { getCircuitBreaker, isCircuitBreakerError } from '@/lib/utils/circuit-breaker';
+
+const claudeBreaker = getCircuitBreaker('claude-api');
+const visionBreaker = getCircuitBreaker('claude-vision');
 
 interface GordanRequest {
   task: GordanTask;
   payload: Record<string, any>;
 }
 
-async function callClaude(system: string, userContent: any[], maxTokens = 2048) {
+async function callClaude(system: string, userContent: any[], maxTokens = 2048, isVision = false) {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) throw new Error('ANTHROPIC_API_KEY not configured');
 
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-    },
-    body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: maxTokens,
-      system,
-      messages: [{ role: 'user', content: userContent }],
-    }),
-  });
+  const breaker = isVision ? visionBreaker : claudeBreaker;
+  const timeoutMs = isVision ? 25000 : 15000;
+  const scope = isVision ? 'api.ai.nutrition.claude-vision' : 'api.ai.nutrition.claude';
+
+  const res = await breaker.execute(() =>
+    withAbortTimeout(
+      (signal) => fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: maxTokens,
+          system,
+          messages: [{ role: 'user', content: userContent }],
+        }),
+        signal,
+      }),
+      timeoutMs,
+      scope,
+    )
+  );
 
   if (!res.ok) {
     const err = await res.text();
@@ -139,7 +156,8 @@ export async function POST(req: NextRequest) {
     }
 
     const { text, tokensUsed } = await callClaude(systemPrompt, userContent,
-      task === 'meal_vision_analysis' ? 4096 : 1024);
+      task === 'meal_vision_analysis' ? 4096 : 1024,
+      task === 'meal_vision_analysis');
 
     const result = parseJSON(text);
     const latency = Date.now() - start;
@@ -170,7 +188,15 @@ export async function POST(req: NextRequest) {
   } catch (err: any) {
     const latency = Date.now() - start;
     await logActivity(supabase, user.id, task, 0, latency, false, err.message);
-    console.error(`gordan/${task}:`, err);
+    if (isCircuitBreakerError(err)) {
+      safeLog.warn('api.ai.nutrition', 'claude circuit open', { task, userId: user.id, error: err });
+      return NextResponse.json({ error: 'AI service temporarily unavailable.' }, { status: 503 });
+    }
+    if (isTimeoutError(err)) {
+      safeLog.warn('api.ai.nutrition', 'claude timeout', { task, userId: user.id, error: err });
+      return NextResponse.json({ error: 'AI took too long. Please try again.' }, { status: 504 });
+    }
+    safeLog.error('api.ai.nutrition', 'task failed', { task, userId: user.id, error: err });
 
     void emitJefferyMessage({
       category: 'error_escalation',

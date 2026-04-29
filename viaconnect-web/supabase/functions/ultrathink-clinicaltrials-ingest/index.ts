@@ -11,6 +11,11 @@
 
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
+import { withAbortTimeout, isTimeoutError } from '../_shared/with-timeout.ts';
+import { safeLog } from '../_shared/safe-log.ts';
+import { getCircuitBreaker, isCircuitBreakerError } from '../_shared/circuit-breaker.ts';
+
+const ctgBreaker = getCircuitBreaker('clinicaltrials-api');
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_KEY  = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -132,6 +137,9 @@ serve(async (req) => {
     return json({ ok: true, run_id: runId, fetched, added, skipped });
   } catch (e) {
     const msg = (e as Error).message;
+    if (isCircuitBreakerError(e)) safeLog.warn('ultrathink.clinicaltrials-ingest', 'ctg circuit open', { runId, error: e });
+    else if (isTimeoutError(e)) safeLog.warn('ultrathink.clinicaltrials-ingest', 'ctg timeout', { runId, error: e });
+    else safeLog.error('ultrathink.clinicaltrials-ingest', 'ingest failed', { runId, error: e });
     await db.rpc('ultrathink_record_sync', {
       p_run_id: runId, p_source: 'clinicaltrials_gov', p_action: 'ingest_error',
       p_in: fetched, p_added: added, p_skipped: skipped, p_error: 1,

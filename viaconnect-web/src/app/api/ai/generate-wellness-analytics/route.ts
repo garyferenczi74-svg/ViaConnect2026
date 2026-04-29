@@ -6,13 +6,26 @@ import {
 } from "@/lib/scoring/unified/unifiedScoringEngine";
 import type { DataLayer, UnifiedHealthData } from "@/lib/scoring/unified/types";
 import { calculateConfidencePercentage } from "@/lib/scoring/unified/confidenceTiers";
+import { withTimeout, isTimeoutError } from "@/lib/utils/with-timeout";
+import { safeLog } from "@/lib/utils/safe-log";
 
 export async function POST(request: Request) {
   try {
     const body = await request.json().catch(() => ({}));
     const trigger = body.trigger || "manual";
     const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+
+    let user;
+    try {
+      const authResult = await withTimeout(supabase.auth.getUser(), 5000, "api.ai.generate-wellness.auth");
+      user = authResult.data.user;
+    } catch (err) {
+      if (isTimeoutError(err)) {
+        safeLog.error("api.ai.generate-wellness-analytics", "auth timeout", { error: err });
+        return NextResponse.json({ error: "Authentication check timed out." }, { status: 503 });
+      }
+      throw err;
+    }
     if (!user) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 
     // ── Assemble UnifiedHealthData from all sources in parallel ──
@@ -277,7 +290,7 @@ export async function POST(request: Request) {
       calculatedAt: result.calculatedAt,
     });
   } catch (err) {
-    console.error("[generate-wellness-analytics]", err);
+    safeLog.error("api.ai.generate-wellness-analytics", "unexpected error", { error: err });
     return NextResponse.json({ error: "Analytics generation failed" }, { status: 500 });
   }
 }

@@ -1,5 +1,10 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { withAbortTimeout, isTimeoutError } from "@/lib/utils/with-timeout";
+import { safeLog } from "@/lib/utils/safe-log";
+import { getCircuitBreaker, isCircuitBreakerError } from "@/lib/utils/circuit-breaker";
+
+const claudeBreaker = getCircuitBreaker("claude-api");
 
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || "";
 
@@ -127,19 +132,29 @@ export async function POST(request: Request) {
       interactions = findLocalInteractions(medications, allSupplements);
     } else {
       try {
-        const response = await fetch("https://api.anthropic.com/v1/messages", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "x-api-key": ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01" },
-          body: JSON.stringify({
-            model: "claude-sonnet-4-20250514",
-            max_tokens: 4096,
-            messages: [{ role: "user", content: buildPrompt(medications, supplements || [], recommendations || [], allergies || []) }],
-          }),
-        });
+        const response = await claudeBreaker.execute(() =>
+          withAbortTimeout(
+            (signal) => fetch("https://api.anthropic.com/v1/messages", {
+              method: "POST",
+              headers: { "Content-Type": "application/json", "x-api-key": ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01" },
+              body: JSON.stringify({
+                model: "claude-sonnet-4-20250514",
+                max_tokens: 4096,
+                messages: [{ role: "user", content: buildPrompt(medications, supplements || [], recommendations || [], allergies || []) }],
+              }),
+              signal,
+            }),
+            15000,
+            "api.ai.check-interactions.claude",
+          )
+        );
         const data = await response.json();
         const text = data.content?.filter((b: { type: string }) => b.type === "text").map((b: { text: string }) => b.text).join("") || "[]";
         interactions = JSON.parse(text.replace(/```json|```/g, "").trim());
-      } catch {
+      } catch (err) {
+        if (isCircuitBreakerError(err)) safeLog.warn("api.ai.check-interactions", "claude circuit open, falling back to local", { error: err });
+        else if (isTimeoutError(err)) safeLog.warn("api.ai.check-interactions", "claude timeout, falling back to local", { error: err });
+        else safeLog.warn("api.ai.check-interactions", "claude failed, falling back to local", { error: err });
         interactions = findLocalInteractions(medications, allSupplements);
       }
     }
@@ -188,7 +203,8 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({ interactions, summary, blockedProducts, notifications: { consumer: [], practitioner: [], naturopath: [] } });
-  } catch {
+  } catch (err) {
+    safeLog.error("api.ai.check-interactions", "unexpected error", { error: err });
     return NextResponse.json({ interactions: [], summary: { major: 0, moderate: 0, minor: 0, synergistic: 0 }, blockedProducts: [], error: "Interaction check failed" });
   }
 }

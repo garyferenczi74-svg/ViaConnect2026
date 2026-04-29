@@ -1,4 +1,9 @@
 import { NextResponse } from "next/server";
+import { withAbortTimeout, isTimeoutError } from "@/lib/utils/with-timeout";
+import { safeLog } from "@/lib/utils/safe-log";
+import { getCircuitBreaker, isCircuitBreakerError } from "@/lib/utils/circuit-breaker";
+
+const visionBreaker = getCircuitBreaker("claude-vision");
 
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || "";
 
@@ -78,26 +83,47 @@ export async function POST(request: Request) {
 
     console.log("identify-product-photo: Calling Claude Vision API with", imageContents.length, "image(s)");
 
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": ANTHROPIC_API_KEY,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
-        max_tokens: 4096,
-        messages: [{
-          role: "user",
-          content: [...imageContents, { type: "text", text: PHOTO_PROMPT }],
-        }],
-      }),
-    });
+    let response: Response;
+    try {
+      response = await visionBreaker.execute(() =>
+        withAbortTimeout(
+          (signal) => fetch("https://api.anthropic.com/v1/messages", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-api-key": ANTHROPIC_API_KEY,
+              "anthropic-version": "2023-06-01",
+            },
+            body: JSON.stringify({
+              model: "claude-sonnet-4-20250514",
+              max_tokens: 4096,
+              messages: [{
+                role: "user",
+                content: [...imageContents, { type: "text", text: PHOTO_PROMPT }],
+              }],
+            }),
+            signal,
+          }),
+          25000,
+          "api.ai.identify-product-photo.claude-vision",
+        )
+      );
+    } catch (apiErr) {
+      if (isCircuitBreakerError(apiErr)) {
+        safeLog.warn("api.ai.identify-product-photo", "vision circuit open", { error: apiErr });
+        return NextResponse.json({ found: false, error: "AI service temporarily unavailable. Please try again or add manually." });
+      }
+      if (isTimeoutError(apiErr)) {
+        safeLog.warn("api.ai.identify-product-photo", "vision timeout", { error: apiErr });
+        return NextResponse.json({ found: false, error: "Photo analysis took too long. Please try again or add manually." });
+      }
+      safeLog.error("api.ai.identify-product-photo", "vision fetch failed", { error: apiErr });
+      return NextResponse.json({ found: false, error: "AI service error. Please try again or add manually." });
+    }
 
     if (!response.ok) {
       const errText = await response.text();
-      console.error("identify-product-photo: API error", response.status, errText.substring(0, 300));
+      safeLog.error("api.ai.identify-product-photo", "vision non-2xx", { status: response.status, errBody: errText.slice(0, 200) });
       return NextResponse.json({
         found: false,
         error: response.status === 401 ? "AI service authentication failed. Contact support."
@@ -125,7 +151,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json(result);
   } catch (err) {
-    console.error("identify-product-photo: Error:", err);
+    safeLog.error("api.ai.identify-product-photo", "unexpected error", { error: err });
     return NextResponse.json({
       found: false,
       error: "Could not identify the product from the photo. Try a clearer image or search by name.",

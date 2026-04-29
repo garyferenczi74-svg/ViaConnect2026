@@ -1,5 +1,10 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { withAbortTimeout, isTimeoutError } from "@/lib/utils/with-timeout";
+import { safeLog } from "@/lib/utils/safe-log";
+import { getCircuitBreaker, isCircuitBreakerError } from "@/lib/utils/circuit-breaker";
+
+const claudeBreaker = getCircuitBreaker("claude-api");
 
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || "";
 
@@ -99,19 +104,26 @@ export async function POST(request: Request) {
   }
 
   try {
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": ANTHROPIC_API_KEY,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
-        max_tokens: 4096,
-        messages: [{ role: "user", content: buildPrompt(query) }],
-      }),
-    });
+    const response = await claudeBreaker.execute(() =>
+      withAbortTimeout(
+        (signal) => fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-api-key": ANTHROPIC_API_KEY,
+            "anthropic-version": "2023-06-01",
+          },
+          body: JSON.stringify({
+            model: "claude-sonnet-4-20250514",
+            max_tokens: 4096,
+            messages: [{ role: "user", content: buildPrompt(query) }],
+          }),
+          signal,
+        }),
+        15000,
+        "api.ai.product-lookup.claude",
+      )
+    );
 
     const data = await response.json();
     const textContent = data.content
@@ -132,7 +144,10 @@ export async function POST(request: Request) {
     }, { onConflict: "query_normalized" }).then(() => {}, () => {});
 
     return NextResponse.json(result);
-  } catch {
+  } catch (err) {
+    if (isCircuitBreakerError(err)) safeLog.warn("api.ai.product-lookup", "claude circuit open", { query, error: err });
+    else if (isTimeoutError(err)) safeLog.warn("api.ai.product-lookup", "claude timeout", { query, error: err });
+    else safeLog.error("api.ai.product-lookup", "lookup failed", { query, error: err });
     return NextResponse.json({
       found: false,
       error: "Failed to look up product. Try a more specific search.",

@@ -1,13 +1,26 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createHash } from 'crypto';
+import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
+import { safeLog } from '@/lib/utils/safe-log';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
     const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+
+    let user;
+    try {
+      const authResult = await withTimeout(supabase.auth.getUser(), 5000, 'api.interactions.evaluate.auth-get');
+      user = authResult.data.user;
+    } catch (err) {
+      if (isTimeoutError(err)) {
+        safeLog.error('api.interactions.evaluate', 'auth timeout (GET)', { error: err });
+        return NextResponse.json({ error: 'Authentication check timed out.' }, { status: 503 });
+      }
+      throw err;
+    }
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     // Check cache first
@@ -31,6 +44,8 @@ export async function GET() {
 
     return evaluateAndCache(user.id, supabase);
   } catch (err: any) {
+    if (isTimeoutError(err)) safeLog.warn('api.interactions.evaluate', 'GET timeout', { error: err });
+    else safeLog.error('api.interactions.evaluate', 'GET unexpected error', { error: err });
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
@@ -38,11 +53,24 @@ export async function GET() {
 export async function POST() {
   try {
     const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+
+    let user;
+    try {
+      const authResult = await withTimeout(supabase.auth.getUser(), 5000, 'api.interactions.evaluate.auth-post');
+      user = authResult.data.user;
+    } catch (err) {
+      if (isTimeoutError(err)) {
+        safeLog.error('api.interactions.evaluate', 'auth timeout (POST)', { error: err });
+        return NextResponse.json({ error: 'Authentication check timed out.' }, { status: 503 });
+      }
+      throw err;
+    }
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     return evaluateAndCache(user.id, supabase);
   } catch (err: any) {
+    if (isTimeoutError(err)) safeLog.warn('api.interactions.evaluate', 'POST timeout', { error: err });
+    else safeLog.error('api.interactions.evaluate', 'POST unexpected error', { error: err });
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }

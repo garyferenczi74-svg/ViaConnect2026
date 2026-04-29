@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { buildPeptideStack } from '@/lib/ultrathink/peptideEngine';
+import { isTimeoutError } from '@/lib/utils/with-timeout';
+import { safeLog } from '@/lib/utils/safe-log';
 
 export const dynamic = 'force-dynamic';
 
@@ -127,6 +129,8 @@ export async function POST() {
 
     return NextResponse.json({ protocol: saved });
   } catch (err: any) {
+    if (isTimeoutError(err)) safeLog.warn('api.ultrathink.peptide-stack', 'timeout', { error: err });
+    else safeLog.error('api.ultrathink.peptide-stack', 'generation failed', { error: err });
     return NextResponse.json({ error: err.message || 'Generation failed' }, { status: 500 });
   }
 }

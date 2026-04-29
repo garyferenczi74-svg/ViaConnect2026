@@ -1,4 +1,9 @@
 import { NextResponse } from "next/server";
+import { withAbortTimeout, isTimeoutError } from "@/lib/utils/with-timeout";
+import { safeLog } from "@/lib/utils/safe-log";
+import { getCircuitBreaker, isCircuitBreakerError } from "@/lib/utils/circuit-breaker";
+
+const visionBreaker = getCircuitBreaker("claude-vision");
 
 export async function POST(req: Request) {
   try {
@@ -15,30 +20,34 @@ export async function POST(req: Request) {
 
     console.log("supplement-photo: Received image,", image.length, "chars, type:", mediaType);
 
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
-        max_tokens: 1500,
-        messages: [{
-          role: "user",
-          content: [
-            {
-              type: "image",
-              source: {
-                type: "base64",
-                media_type: (mediaType || "image/jpeg") as "image/jpeg" | "image/png" | "image/gif" | "image/webp",
-                data: image,
-              },
+    let response: Response;
+    try {
+      response = await visionBreaker.execute(() =>
+        withAbortTimeout(
+          (signal) => fetch("https://api.anthropic.com/v1/messages", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-api-key": apiKey,
+              "anthropic-version": "2023-06-01",
             },
-            {
-              type: "text",
-              text: `You are an expert supplement label reader. Look at this supplement product image carefully.
+            body: JSON.stringify({
+              model: "claude-sonnet-4-20250514",
+              max_tokens: 1500,
+              messages: [{
+                role: "user",
+                content: [
+                  {
+                    type: "image",
+                    source: {
+                      type: "base64",
+                      media_type: (mediaType || "image/jpeg") as "image/jpeg" | "image/png" | "image/gif" | "image/webp",
+                      data: image,
+                    },
+                  },
+                  {
+                    type: "text",
+                    text: `You are an expert supplement label reader. Look at this supplement product image carefully.
 
 READ THE ACTUAL LABEL TEXT. Extract every detail you can see:
 
@@ -75,15 +84,32 @@ If too blurry or not a supplement, return:
 {"error": "Could not identify supplement. Please try a clearer photo of the front label."}
 
 JSON only. No markdown. No backticks.`,
-            },
-          ],
-        }],
-      }),
-    });
+                  },
+                ],
+              }],
+            }),
+            signal,
+          }),
+          25000,
+          "api.ai.supplement-photo.claude-vision",
+        )
+      );
+    } catch (apiErr) {
+      if (isCircuitBreakerError(apiErr)) {
+        safeLog.warn("api.ai.supplement-photo", "vision circuit open", { error: apiErr });
+        return NextResponse.json({ success: false, error: "AI service temporarily unavailable. Please try again." });
+      }
+      if (isTimeoutError(apiErr)) {
+        safeLog.warn("api.ai.supplement-photo", "vision timeout", { error: apiErr });
+        return NextResponse.json({ success: false, error: "Photo analysis took too long. Please try again." });
+      }
+      safeLog.error("api.ai.supplement-photo", "vision fetch failed", { error: apiErr });
+      return NextResponse.json({ success: false, error: "AI service error. Please try again." });
+    }
 
     if (!response.ok) {
       const errText = await response.text();
-      console.error("supplement-photo: API error", response.status, errText.substring(0, 200));
+      safeLog.error("api.ai.supplement-photo", "vision non-2xx", { status: response.status, errBody: errText.slice(0, 200) });
       return NextResponse.json({
         success: false,
         error: response.status === 401 ? "AI service authentication failed."
@@ -106,7 +132,7 @@ JSON only. No markdown. No backticks.`,
     console.log("supplement-photo: Identified:", parsed.brand, parsed.productName);
     return NextResponse.json({ success: true, product: parsed });
   } catch (error) {
-    console.error("supplement-photo: Error:", error);
+    safeLog.error("api.ai.supplement-photo", "unexpected error", { error });
     return NextResponse.json({
       success: false,
       error: "Failed to analyze image. Please try again or add the supplement manually.",

@@ -1,4 +1,9 @@
 import { NextResponse } from "next/server";
+import { withAbortTimeout, isTimeoutError } from "@/lib/utils/with-timeout";
+import { safeLog } from "@/lib/utils/safe-log";
+import { getCircuitBreaker, isCircuitBreakerError } from "@/lib/utils/circuit-breaker";
+
+const claudeBreaker = getCircuitBreaker("claude-api");
 
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || "";
 
@@ -72,20 +77,24 @@ export async function POST(req: Request) {
 
     console.log("supplement-search: Enriching", brand, productName);
 
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": ANTHROPIC_API_KEY,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
-        max_tokens: 4096,
-        system: SEARCH_PROMPT,
-        messages: [{
-          role: "user",
-          content: `Find the complete Supplement Facts for:
+    let response: Response;
+    try {
+      response = await claudeBreaker.execute(() =>
+        withAbortTimeout(
+          (signal) => fetch("https://api.anthropic.com/v1/messages", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-api-key": ANTHROPIC_API_KEY,
+              "anthropic-version": "2023-06-01",
+            },
+            body: JSON.stringify({
+              model: "claude-sonnet-4-20250514",
+              max_tokens: 4096,
+              system: SEARCH_PROMPT,
+              messages: [{
+                role: "user",
+                content: `Find the complete Supplement Facts for:
 Brand: ${brand}
 Product: ${productName}
 
@@ -93,12 +102,18 @@ OCR detected these ingredients for cross-validation:
 ${JSON.stringify(ocrIngredients || [], null, 2)}
 
 Search the web and return the full ingredient breakdown.`,
-        }],
-      }),
-    });
-
-    if (!response.ok) {
-      console.error("supplement-search: API error", response.status);
+              }],
+            }),
+            signal,
+          }),
+          15000,
+          "api.ai.supplement-search.claude",
+        )
+      );
+    } catch (apiErr) {
+      if (isCircuitBreakerError(apiErr)) safeLog.warn("api.ai.supplement-search", "claude circuit open", { brand, productName, error: apiErr });
+      else if (isTimeoutError(apiErr)) safeLog.warn("api.ai.supplement-search", "claude timeout", { brand, productName, error: apiErr });
+      else safeLog.error("api.ai.supplement-search", "claude fetch failed", { brand, productName, error: apiErr });
       return NextResponse.json({
         fullIngredients: ocrIngredients || [],
         nonMedicinalIngredients: [],
@@ -107,6 +122,21 @@ Search the web and return the full ingredient breakdown.`,
         enrichmentConfidence: 0.3,
         isProprietaryBlend: false,
         proprietaryBlendDetails: null,
+        stale: true,
+      });
+    }
+
+    if (!response.ok) {
+      safeLog.error("api.ai.supplement-search", "claude non-2xx", { brand, productName, status: response.status });
+      return NextResponse.json({
+        fullIngredients: ocrIngredients || [],
+        nonMedicinalIngredients: [],
+        allergenWarnings: [],
+        sourceUrls: [],
+        enrichmentConfidence: 0.3,
+        isProprietaryBlend: false,
+        proprietaryBlendDetails: null,
+        stale: true,
       });
     }
 
@@ -121,7 +151,7 @@ Search the web and return the full ingredient breakdown.`,
 
     return NextResponse.json(parsed);
   } catch (err) {
-    console.error("supplement-search: Error:", err);
+    safeLog.error("api.ai.supplement-search", "unexpected error", { error: err });
     return NextResponse.json({ error: "Enrichment failed" }, { status: 500 });
   }
 }

@@ -13,6 +13,8 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { registerAgent, type RegisterPayload } from "@/lib/ultrathink/agentRegistry";
+import { withTimeout, isTimeoutError } from "@/lib/utils/with-timeout";
+import { safeLog } from "@/lib/utils/safe-log";
 
 const VALID_AGENT_TYPES = new Set([
   "data","safety","scoring","analytics","infra","engagement",
@@ -62,7 +64,11 @@ export async function POST(req: Request) {
   const db = createClient(url, expectedKey, { auth: { autoRefreshToken: false, persistSession: false } });
 
   try {
-    const result = await registerAgent(db, body as RegisterPayload);
+    const result = await withTimeout(
+      registerAgent(db, body as RegisterPayload),
+      10000,
+      "api.ultrathink.agents.register",
+    );
     return NextResponse.json({
       ok: true,
       created: result.created,
@@ -70,6 +76,11 @@ export async function POST(req: Request) {
       next_step: "Agent will be picked up by orchestrator health sweep on the next 10-min tick.",
     });
   } catch (e) {
+    if (isTimeoutError(e)) {
+      safeLog.error("api.ultrathink.agents.register", "registration timeout", { agentName: body.agent_name, error: e });
+      return NextResponse.json({ error: "Registration took too long. Please try again." }, { status: 504 });
+    }
+    safeLog.error("api.ultrathink.agents.register", "registration failed", { agentName: body.agent_name, error: e });
     return NextResponse.json({ error: (e as Error).message }, { status: 500 });
   }
 }

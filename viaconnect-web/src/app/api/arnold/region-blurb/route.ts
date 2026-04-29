@@ -9,6 +9,11 @@ import { createClient } from "@/lib/supabase/server";
 import { detectDiseaseClaim } from "@/lib/compliance/detector";
 import { callKelseyLLM } from "@/lib/compliance/kelsey/client";
 import { getDisplayName } from "@/components/body-tracker/body-graphic/utils/region-lookup";
+import { isTimeoutError } from "@/lib/utils/with-timeout";
+import { safeLog } from "@/lib/utils/safe-log";
+import { getCircuitBreaker, isCircuitBreakerError } from "@/lib/utils/circuit-breaker";
+
+const claudeBreaker = getCircuitBreaker("claude-api");
 
 const ARNOLD_MODEL = process.env.ARNOLD_MODEL ?? "claude-sonnet-4-6";
 const GENERIC_FALLBACK = "Your metric updated. Keep at it, champ.";
@@ -63,20 +68,25 @@ export async function POST(request: Request) {
     ? `Region: ${regionName}. Current value: ${body.metric.value}${body.metric.unit ?? ""}. Trend: ${trendPhrase}.`
     : `Region: ${regionName}. No measurement yet.`;
 
-  const client = new Anthropic({ apiKey });
+  const client = new Anthropic({ apiKey, timeout: 10000, maxRetries: 0 });
   let arnoldRaw: string;
   try {
-    const resp = await client.messages.create({
-      model: ARNOLD_MODEL,
-      max_tokens: 400,
-      temperature: 0.4,
-      system: ARNOLD_SYSTEM_PROMPT,
-      messages: [{ role: "user", content: contextLine }],
-    });
+    const resp = await claudeBreaker.execute(() =>
+      client.messages.create({
+        model: ARNOLD_MODEL,
+        max_tokens: 400,
+        temperature: 0.4,
+        system: ARNOLD_SYSTEM_PROMPT,
+        messages: [{ role: "user", content: contextLine }],
+      })
+    );
     arnoldRaw = resp.content
       .filter((b): b is { type: "text"; text: string } => b.type === "text")
       .map((b) => b.text).join("\n");
-  } catch {
+  } catch (err) {
+    if (isCircuitBreakerError(err)) safeLog.warn("api.arnold.region-blurb", "claude circuit open", { error: err });
+    else if (isTimeoutError(err)) safeLog.warn("api.arnold.region-blurb", "claude timeout", { error: err });
+    else safeLog.warn("api.arnold.region-blurb", "claude call failed", { error: err });
     return NextResponse.json({
       blurb: GENERIC_FALLBACK, kelsey_verdict: "ESCALATE",
       disclaimer_required: false, cached: false, latency_ms: Date.now() - start,

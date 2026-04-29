@@ -1,5 +1,12 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
+import { withTimeout, withAbortTimeout, isTimeoutError } from "@/lib/utils/with-timeout";
+import { safeLog } from "@/lib/utils/safe-log";
+import { getCircuitBreaker, isCircuitBreakerError } from "@/lib/utils/circuit-breaker";
+
+const claudeBreaker = getCircuitBreaker("claude-api");
+const grokBreaker = getCircuitBreaker("grok-api");
+const gptBreaker = getCircuitBreaker("openai-api");
 
 const ALLOWED_PROVIDERS = ["claude", "grok", "gpt", "consensus"] as const;
 type Provider = (typeof ALLOWED_PROVIDERS)[number];
@@ -82,23 +89,30 @@ async function callClaude(
     .filter(Boolean)
     .join("\n");
 
-  const response = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": apiKey,
-      "anthropic-version": "2023-06-01",
-    },
-    body: JSON.stringify({
-      model: "claude-sonnet-4-20250514",
-      max_tokens: 4096,
-      system: systemPrompt,
-      messages: messages.map((m) => ({
-        role: m.role === "user" ? "user" : "assistant",
-        content: m.content,
-      })),
-    }),
-  });
+  const response = await claudeBreaker.execute(() =>
+    withAbortTimeout(
+      (signal) => fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": apiKey,
+          "anthropic-version": "2023-06-01",
+        },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 4096,
+          system: systemPrompt,
+          messages: messages.map((m) => ({
+            role: m.role === "user" ? "user" : "assistant",
+            content: m.content,
+          })),
+        }),
+        signal,
+      }),
+      15000,
+      "api.ai.provider.claude",
+    )
+  );
 
   if (!response.ok) {
     const err = await response.text();
@@ -130,21 +144,28 @@ async function callGrok(
     .filter(Boolean)
     .join("\n");
 
-  const response = await fetch("https://api.x.ai/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model: "grok-beta",
-      messages: [
-        { role: "system", content: systemMessage },
-        ...messages,
-      ],
-      max_tokens: 4096,
-    }),
-  });
+  const response = await grokBreaker.execute(() =>
+    withAbortTimeout(
+      (signal) => fetch("https://api.x.ai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model: "grok-beta",
+          messages: [
+            { role: "system", content: systemMessage },
+            ...messages,
+          ],
+          max_tokens: 4096,
+        }),
+        signal,
+      }),
+      15000,
+      "api.ai.provider.grok",
+    )
+  );
 
   if (!response.ok) {
     const err = await response.text();
@@ -175,21 +196,28 @@ async function callGpt(
     .filter(Boolean)
     .join("\n");
 
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model: "gpt-4o",
-      messages: [
-        { role: "system", content: systemMessage },
-        ...messages,
-      ],
-      max_tokens: 4096,
-    }),
-  });
+  const response = await gptBreaker.execute(() =>
+    withAbortTimeout(
+      (signal) => fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model: "gpt-4o",
+          messages: [
+            { role: "system", content: systemMessage },
+            ...messages,
+          ],
+          max_tokens: 4096,
+        }),
+        signal,
+      }),
+      15000,
+      "api.ai.provider.gpt",
+    )
+  );
 
   if (!response.ok) {
     const err = await response.text();
@@ -433,15 +461,18 @@ export async function POST(
     return NextResponse.json(apiEnvelope(true, result));
   } catch (err) {
     const message = err instanceof Error ? err.message : "AI request failed";
-
-    await writeAuditLog(user.id, "ai_error", "ai_proxy", {
-      provider,
-      error: message,
-    }, ip);
-
-    return NextResponse.json(
-      apiEnvelope(false, undefined, message, "AI_ERROR"),
-      { status: 502 }
-    );
+    if (isCircuitBreakerError(err)) {
+      safeLog.warn("api.ai.provider", "circuit open", { provider, userId: user.id, error: err });
+      await writeAuditLog(user.id, "ai_error", "ai_proxy", { provider, error: message, code: "circuit-open" }, ip);
+      return NextResponse.json(apiEnvelope(false, undefined, "AI service temporarily unavailable.", "CIRCUIT_OPEN"), { status: 503 });
+    }
+    if (isTimeoutError(err)) {
+      safeLog.warn("api.ai.provider", "timeout", { provider, userId: user.id, error: err });
+      await writeAuditLog(user.id, "ai_error", "ai_proxy", { provider, error: message, code: "timeout" }, ip);
+      return NextResponse.json(apiEnvelope(false, undefined, "AI request took too long. Please try again.", "TIMEOUT"), { status: 504 });
+    }
+    safeLog.error("api.ai.provider", "request failed", { provider, userId: user.id, error: err });
+    await writeAuditLog(user.id, "ai_error", "ai_proxy", { provider, error: message }, ip);
+    return NextResponse.json(apiEnvelope(false, undefined, message, "AI_ERROR"), { status: 502 });
   }
 }

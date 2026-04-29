@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { withTimeout, isTimeoutError } from "@/lib/utils/with-timeout";
+import { safeLog } from "@/lib/utils/safe-log";
 
 export const dynamic = "force-dynamic";
 
@@ -16,25 +18,37 @@ export async function GET(req: Request) {
   const supabase = createClient();
 
   try {
-    // Use the enhanced v2 search RPC
-    const { data, error } = await supabase.rpc("search_supplements_v2", {
-      query_text: query,
-      result_limit: limit,
-      brand_filter: brandId,
-    });
+    const { data, error } = await withTimeout(
+      (async () => supabase.rpc("search_supplements_v2", {
+        query_text: query,
+        result_limit: limit,
+        brand_filter: brandId,
+      }))(),
+      8000,
+      "api.supplements.search.v2",
+    );
 
     if (error) {
-      console.error("Search RPC error:", error);
-      // Fallback to old search_supplements
-      const { data: fallback } = await supabase.rpc("search_supplements", {
-        search_query: query.toLowerCase(),
-        result_limit: limit,
-      });
-      return NextResponse.json({
-        results: fallback || [],
-        grouped: { brands: [], products: fallback || [], ingredients: [] },
-        total: (fallback || []).length,
-      });
+      safeLog.warn("api.supplements.search", "v2 RPC error, falling back to v1", { query, error });
+      try {
+        const { data: fallback } = await withTimeout(
+          (async () => supabase.rpc("search_supplements", {
+            search_query: query.toLowerCase(),
+            result_limit: limit,
+          }))(),
+          8000,
+          "api.supplements.search.v1-fallback",
+        );
+        return NextResponse.json({
+          results: fallback || [],
+          grouped: { brands: [], products: fallback || [], ingredients: [] },
+          total: (fallback || []).length,
+          stale: true,
+        });
+      } catch (fbErr) {
+        safeLog.error("api.supplements.search", "v1 fallback also failed", { query, error: fbErr });
+        return NextResponse.json({ results: [], grouped: { brands: [], products: [], ingredients: [] }, total: 0, stale: true });
+      }
     }
 
     const results = data || [];
@@ -46,7 +60,8 @@ export async function GET(req: Request) {
 
     return NextResponse.json({ results, grouped, total: results.length, query });
   } catch (err) {
-    console.error("Search error:", err);
-    return NextResponse.json({ results: [], grouped: { brands: [], products: [], ingredients: [] }, total: 0 });
+    if (isTimeoutError(err)) safeLog.warn("api.supplements.search", "timeout", { query, error: err });
+    else safeLog.error("api.supplements.search", "unexpected error", { query, error: err });
+    return NextResponse.json({ results: [], grouped: { brands: [], products: [], ingredients: [] }, total: 0, stale: true });
   }
 }

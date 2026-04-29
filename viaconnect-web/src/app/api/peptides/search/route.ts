@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { withTimeout, isTimeoutError } from "@/lib/utils/with-timeout";
+import { safeLog } from "@/lib/utils/safe-log";
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
@@ -13,13 +15,17 @@ export async function GET(req: Request) {
   const supabase = createClient();
 
   try {
-    const { data, error } = await supabase.rpc("search_peptides", {
-      search_query: query,
-      result_limit: 8,
-    });
+    const { data, error } = await withTimeout(
+      (async () => supabase.rpc("search_peptides", {
+        search_query: query,
+        result_limit: 8,
+      }))(),
+      8000,
+      "api.peptides.search.rpc",
+    );
 
     if (error) {
-      console.error("Peptide search RPC error:", error);
+      safeLog.warn("api.peptides.search", "RPC error", { query, error });
       return NextResponse.json({ results: [] });
     }
 
@@ -50,7 +56,8 @@ export async function GET(req: Request) {
 
     return NextResponse.json({ results: enriched });
   } catch (err) {
-    console.error("Peptide search error:", err);
+    if (isTimeoutError(err)) safeLog.warn("api.peptides.search", "timeout", { query, error: err });
+    else safeLog.error("api.peptides.search", "unexpected error", { query, error: err });
     return NextResponse.json({ results: [] });
   }
 }

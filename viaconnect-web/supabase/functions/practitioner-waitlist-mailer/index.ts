@@ -13,6 +13,11 @@
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
 import { SMTPClient } from 'https://deno.land/x/denomailer@1.6.0/mod.ts';
+import { withTimeout, isTimeoutError } from '../_shared/with-timeout.ts';
+import { safeLog } from '../_shared/safe-log.ts';
+import { getCircuitBreaker, isCircuitBreakerError } from '../_shared/circuit-breaker.ts';
+
+const smtpBreaker = getCircuitBreaker('smtp-email');
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_KEY  = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -198,12 +203,18 @@ serve(async (req: Request) => {
 
     const rendered = renderEmail(row.step, w);
     try {
-      await sendViaSupabaseSmtp({
-        to: w.email,
-        subject: rendered.subject,
-        text: rendered.text,
-        html: rendered.html,
-      });
+      await smtpBreaker.execute(() =>
+        withTimeout(
+          sendViaSupabaseSmtp({
+            to: w.email,
+            subject: rendered.subject,
+            text: rendered.text,
+            html: rendered.html,
+          }),
+          15000,
+          `practitioner-waitlist-mailer.send.step-${row.step}`,
+        )
+      );
       await db.from('practitioner_email_queue')
         .update({ status: 'sent', sent_at: new Date().toISOString(), updated_at: new Date().toISOString() })
         .eq('id', row.id);
@@ -213,6 +224,9 @@ serve(async (req: Request) => {
       sent++;
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'send failed';
+      if (isCircuitBreakerError(e)) safeLog.warn('practitioner-waitlist-mailer', 'smtp circuit open', { queueId: row.id, step: row.step, error: e });
+      else if (isTimeoutError(e)) safeLog.warn('practitioner-waitlist-mailer', 'smtp timeout', { queueId: row.id, step: row.step, error: e });
+      else safeLog.error('practitioner-waitlist-mailer', 'smtp send failed', { queueId: row.id, step: row.step, error: e });
       const isPermanent = row.attempts + 1 >= 5;
       await db.from('practitioner_email_queue')
         .update({

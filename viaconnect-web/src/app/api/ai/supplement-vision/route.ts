@@ -1,5 +1,10 @@
 import { NextResponse } from 'next/server';
 import sharp from 'sharp';
+import { withAbortTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
+import { safeLog } from '@/lib/utils/safe-log';
+import { getCircuitBreaker, isCircuitBreakerError } from '@/lib/utils/circuit-breaker';
+
+const visionBreaker = getCircuitBreaker('claude-vision');
 
 export const maxDuration = 60;
 export const dynamic = 'force-dynamic';
@@ -48,20 +53,45 @@ export async function POST(request: Request) {
       );
     }
 
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 4096,
-        messages: [{ role: 'user', content: [
-          { type: 'image', source: { type: 'base64', media_type: normalizedMime, data: normalizedBase64 } },
-          { type: 'text', text: 'You are a supplement product identification engine. Look at this supplement product photo and extract ALL information. Return ONLY valid JSON (no markdown, no backticks): {"brand":"string","productName":"string","servingSize":"string","totalCount":0,"ingredients":[{"name":"string","form":"string or null","amount":0,"unit":"mg","isPartOfBlend":false}],"overallConfidence":"high or medium or low"}' }
-        ]}]
-      }),
-    });
+    let res: Response;
+    try {
+      res = await visionBreaker.execute(() =>
+        withAbortTimeout(
+          (signal) => fetch('https://api.anthropic.com/v1/messages', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
+            body: JSON.stringify({
+              model: 'claude-sonnet-4-20250514',
+              max_tokens: 4096,
+              messages: [{ role: 'user', content: [
+                { type: 'image', source: { type: 'base64', media_type: normalizedMime, data: normalizedBase64 } },
+                { type: 'text', text: 'You are a supplement product identification engine. Look at this supplement product photo and extract ALL information. Return ONLY valid JSON (no markdown, no backticks): {"brand":"string","productName":"string","servingSize":"string","totalCount":0,"ingredients":[{"name":"string","form":"string or null","amount":0,"unit":"mg","isPartOfBlend":false}],"overallConfidence":"high or medium or low"}' }
+              ]}]
+            }),
+            signal,
+          }),
+          30000,
+          'api.ai.supplement-vision.claude-vision',
+        )
+      );
+    } catch (apiErr) {
+      if (isCircuitBreakerError(apiErr)) {
+        safeLog.warn('api.ai.supplement-vision', 'vision circuit open', { error: apiErr });
+        return NextResponse.json({ success: false, error: 'Vision service temporarily unavailable.' }, { status: 503 });
+      }
+      if (isTimeoutError(apiErr)) {
+        safeLog.warn('api.ai.supplement-vision', 'vision timeout', { error: apiErr });
+        return NextResponse.json({ success: false, error: 'Vision analysis took too long.' }, { status: 504 });
+      }
+      safeLog.error('api.ai.supplement-vision', 'vision fetch failed', { error: apiErr });
+      return NextResponse.json({ success: false, error: 'Vision API call failed.' }, { status: 502 });
+    }
 
-    if (!res.ok) { const e = await res.text(); return NextResponse.json({ success: false, error: 'API ' + res.status + ': ' + e.substring(0,200) }, { status: 500 }); }
+    if (!res.ok) {
+      const e = await res.text();
+      safeLog.error('api.ai.supplement-vision', 'vision non-2xx', { status: res.status, errBody: e.slice(0, 200) });
+      return NextResponse.json({ success: false, error: 'API ' + res.status + ': ' + e.substring(0,200) }, { status: 500 });
+    }
 
     const data = await res.json();
     const text = data.content?.find((b: { type: string; text?: string }) => b.type === 'text')?.text || '';
@@ -71,6 +101,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ success: true, data: JSON.parse(m[0]) });
   } catch (err: unknown) {
+    safeLog.error('api.ai.supplement-vision', 'unexpected error', { error: err });
     return NextResponse.json({ success: false, error: err instanceof Error ? err.message : 'Unknown error' }, { status: 500 });
   }
 }

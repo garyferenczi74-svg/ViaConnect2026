@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { buildUltrathinkContext, UltrathinkContext, SymptomEntry } from '@/lib/ultrathink/buildContext';
 import { detectPatterns } from '@/lib/ultrathink/patternDetection';
+import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
+import { safeLog } from '@/lib/utils/safe-log';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/lib/supabase/types';
 
@@ -169,7 +171,11 @@ export async function POST(request: Request) {
 
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Unknown error';
-    console.error('[ultrathink POST]', message);
+    if (isTimeoutError(err)) {
+      safeLog.warn('api.ultrathink.recommend', 'context build timeout', { error: err });
+    } else {
+      safeLog.error('api.ultrathink.recommend', 'protocol generation failed', { error: err });
+    }
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

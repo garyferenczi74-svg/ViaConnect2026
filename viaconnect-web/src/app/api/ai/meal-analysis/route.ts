@@ -1,4 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { withAbortTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
+import { safeLog } from '@/lib/utils/safe-log';
+import { getCircuitBreaker, isCircuitBreakerError } from '@/lib/utils/circuit-breaker';
+
+const visionBreaker = getCircuitBreaker('claude-vision');
 
 export async function POST(req: NextRequest) {
   try {
@@ -59,28 +64,49 @@ Respond ONLY with valid JSON matching this schema — no markdown, no preamble:
   "analysisConfidence": 0
 }`;
 
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 4096,
-        messages: [
-          {
-            role: 'user',
-            content: [...imageContent, { type: 'text', text: prompt }],
-          },
-        ],
-      }),
-    });
+    let response: Response;
+    try {
+      response = await visionBreaker.execute(() =>
+        withAbortTimeout(
+          (signal) => fetch('https://api.anthropic.com/v1/messages', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-api-key': apiKey,
+              'anthropic-version': '2023-06-01',
+            },
+            body: JSON.stringify({
+              model: 'claude-sonnet-4-20250514',
+              max_tokens: 4096,
+              messages: [
+                {
+                  role: 'user',
+                  content: [...imageContent, { type: 'text', text: prompt }],
+                },
+              ],
+            }),
+            signal,
+          }),
+          25000,
+          'api.ai.meal-analysis.claude-vision',
+        )
+      );
+    } catch (apiErr) {
+      if (isCircuitBreakerError(apiErr)) {
+        safeLog.warn('api.ai.meal-analysis', 'vision circuit open', { error: apiErr });
+        return NextResponse.json({ error: 'Vision service temporarily unavailable.' }, { status: 503 });
+      }
+      if (isTimeoutError(apiErr)) {
+        safeLog.warn('api.ai.meal-analysis', 'vision timeout', { error: apiErr });
+        return NextResponse.json({ error: 'Vision analysis took too long.' }, { status: 504 });
+      }
+      safeLog.error('api.ai.meal-analysis', 'vision fetch failed', { error: apiErr });
+      return NextResponse.json({ error: 'Vision API error.' }, { status: 502 });
+    }
 
     if (!response.ok) {
       const err = await response.text();
-      console.error('meal-analysis: Anthropic error', response.status, err);
+      safeLog.error('api.ai.meal-analysis', 'vision non-2xx', { status: response.status, errBody: err.slice(0, 200) });
       return NextResponse.json({ error: `Vision API error: ${response.status}` }, { status: 502 });
     }
 
@@ -96,7 +122,7 @@ Respond ONLY with valid JSON matching this schema — no markdown, no preamble:
     const analysis = JSON.parse(jsonMatch[0]);
     return NextResponse.json(analysis);
   } catch (err: any) {
-    console.error('meal-analysis: Error', err);
+    safeLog.error('api.ai.meal-analysis', 'unexpected error', { error: err });
     return NextResponse.json({ error: err.message || 'Internal error' }, { status: 500 });
   }
 }

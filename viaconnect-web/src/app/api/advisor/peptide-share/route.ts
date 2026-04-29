@@ -15,6 +15,8 @@
 import { NextResponse } from "next/server";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { sharePeptideWithPractitioner } from "@/lib/jeffery/peptide-share";
+import { withTimeout, isTimeoutError } from "@/lib/utils/with-timeout";
+import { safeLog } from "@/lib/utils/safe-log";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -22,7 +24,18 @@ export const dynamic = "force-dynamic";
 export async function POST(req: Request) {
   // ── auth ──────────────────────────────────────────────────────────────
   const supabase = createServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
+
+  let user;
+  try {
+    const authResult = await withTimeout(supabase.auth.getUser(), 5000, "api.advisor.peptide-share.auth");
+    user = authResult.data.user;
+  } catch (err) {
+    if (isTimeoutError(err)) {
+      safeLog.error("api.advisor.peptide-share", "auth timeout", { error: err });
+      return NextResponse.json({ error: "Authentication check timed out." }, { status: 503 });
+    }
+    throw err;
+  }
   if (!user) {
     return NextResponse.json({ error: "Unauthenticated" }, { status: 401 });
   }
@@ -57,14 +70,23 @@ export async function POST(req: Request) {
 
   // ── Route through the share helper ────────────────────────────────────
   try {
-    const result = await sharePeptideWithPractitioner({
-      patientId: user.id,
-      peptideName: body.peptideName,
-      originalQuestion,
-      advisorResponse: body.advisorResponse,
-    });
+    const result = await withTimeout(
+      sharePeptideWithPractitioner({
+        patientId: user.id,
+        peptideName: body.peptideName,
+        originalQuestion,
+        advisorResponse: body.advisorResponse,
+      }),
+      10000,
+      "api.advisor.peptide-share.helper",
+    );
     return NextResponse.json(result);
   } catch (e) {
+    if (isTimeoutError(e)) {
+      safeLog.error("api.advisor.peptide-share", "share helper timeout", { userId: user.id, error: e });
+      return NextResponse.json({ success: false, error: "Sharing took too long. Please try again." }, { status: 504 });
+    }
+    safeLog.error("api.advisor.peptide-share", "share failed", { userId: user.id, error: e });
     return NextResponse.json({ success: false, error: (e as Error).message }, { status: 500 });
   }
 }

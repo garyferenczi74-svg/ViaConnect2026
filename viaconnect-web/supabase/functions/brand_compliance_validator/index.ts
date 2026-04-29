@@ -17,6 +17,11 @@
 
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
+import { withTimeout, withAbortTimeout, isTimeoutError } from '../_shared/with-timeout.ts';
+import { safeLog } from '../_shared/safe-log.ts';
+import { getCircuitBreaker, isCircuitBreakerError } from '../_shared/circuit-breaker.ts';
+
+const visionBreaker = getCircuitBreaker('claude-vision');
 
 const SUPABASE_URL    = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_KEY     = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -207,25 +212,41 @@ serve(async (req) => {
     // Call Claude Vision.
     const validationPrompt = buildValidationPrompt({ product, brand, category, certificationSlugs });
 
-    const vResp = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': ANTHROPIC_KEY,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model: 'claude-opus-4-7',
-        max_tokens: 2048,
-        messages: [{
-          role: 'user',
-          content: [
-            { type: 'image', source: { type: 'base64', media_type: mediaType, data: imageBase64 } },
-            { type: 'text', text: validationPrompt },
-          ],
-        }],
-      }),
-    });
+    let vResp: Response;
+    try {
+      vResp = await visionBreaker.execute(() =>
+        withAbortTimeout(
+          (signal) => fetch('https://api.anthropic.com/v1/messages', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-api-key': ANTHROPIC_KEY,
+              'anthropic-version': '2023-06-01',
+            },
+            body: JSON.stringify({
+              model: 'claude-opus-4-7',
+              max_tokens: 2048,
+              messages: [{
+                role: 'user',
+                content: [
+                  { type: 'image', source: { type: 'base64', media_type: mediaType, data: imageBase64 } },
+                  { type: 'text', text: validationPrompt },
+                ],
+              }],
+            }),
+            signal,
+          }),
+          30000,
+          'brand-compliance-validator.claude-vision',
+        )
+      );
+    } catch (apiErr) {
+      if (isCircuitBreakerError(apiErr)) safeLog.warn('brand-compliance-validator', 'vision circuit open', { productId, error: apiErr });
+      else if (isTimeoutError(apiErr)) safeLog.warn('brand-compliance-validator', 'vision timeout', { productId, error: apiErr });
+      else safeLog.error('brand-compliance-validator', 'vision fetch failed', { productId, error: apiErr });
+      await heartbeat(db, runId, 'error', { stage: 'vision_fetch', error: (apiErr as Error)?.message });
+      return new Response(JSON.stringify({ error: 'vision API unavailable' }), { status: 503 });
+    }
     const visionResult = await vResp.json();
 
     // Extract the strict-JSON response from the first text block.
@@ -296,6 +317,7 @@ serve(async (req) => {
     );
   } catch (e) {
     const msg = (e as Error).message;
+    safeLog.error('brand-compliance-validator', 'fatal', { runId, error: e });
     await heartbeat(db, runId, 'error', { message: msg });
     return new Response(JSON.stringify({ error: msg }), { status: 500 });
   }

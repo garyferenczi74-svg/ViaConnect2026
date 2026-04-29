@@ -19,6 +19,11 @@
 
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
+import { withAbortTimeout, isTimeoutError } from '../_shared/with-timeout.ts';
+import { safeLog } from '../_shared/safe-log.ts';
+import { getCircuitBreaker, isCircuitBreakerError } from '../_shared/circuit-breaker.ts';
+
+const claudeBreaker = getCircuitBreaker('claude-api');
 
 const SUPABASE_URL  = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_KEY   = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -114,7 +119,9 @@ Return up to 5 facts. If no extractable facts, return [].`;
     const valid = arr.filter(f => f.subject && f.predicate && f.object && f.domain && f.evidence_level);
     return { facts: valid, cost: estimateCost(j.usage) };
   } catch (e) {
-    console.warn(`[claude] ${article.external_id}: ${(e as Error).message}`);
+    if (isCircuitBreakerError(e)) safeLog.warn('ultrathink.knowledge-processor', 'claude circuit open', { externalId: article.external_id, error: e });
+    else if (isTimeoutError(e)) safeLog.warn('ultrathink.knowledge-processor', 'claude timeout', { externalId: article.external_id, error: e });
+    else safeLog.warn('ultrathink.knowledge-processor', 'claude extract failed', { externalId: article.external_id, error: e });
     return { facts: [], cost: 0 };
   }
 }
@@ -296,6 +303,8 @@ serve(async (req) => {
     return json({ ok: true, run_id: runId, processed, facts_added: factsAdded, cost_usd: totalCost });
   } catch (e) {
     const msg = (e as Error).message;
+    if (isTimeoutError(e)) safeLog.warn('ultrathink.knowledge-processor', 'cycle timeout', { runId, error: e });
+    else safeLog.error('ultrathink.knowledge-processor', 'cycle failed', { runId, error: e });
     await db.rpc('ultrathink_record_sync', {
       p_run_id: runId, p_source: 'knowledge_processor', p_action: 'fatal',
       p_in: 0, p_added: factsAdded, p_skipped: 0, p_error: 1,

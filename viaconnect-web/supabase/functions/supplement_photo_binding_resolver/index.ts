@@ -11,6 +11,8 @@
 import {
   adminClient, corsPreflight, isAdmin, jsonResponse, resolveShopActor,
 } from '../_shop_refresh_shared/shared.ts';
+import { isTimeoutError } from '../_shared/with-timeout.ts';
+import { safeLog } from '../_shared/safe-log.ts';
 
 // SOURCE OF TRUTH: src/lib/shopRefresh/upload/canonicalNaming.ts
 function slugifyForPath(input: string): string {
@@ -125,7 +127,10 @@ Deno.serve(async (req) => {
     })
     .select('binding_id, version, is_primary')
     .single();
-  if (insErr || !inserted) return jsonResponse({ error: insErr?.message ?? 'insert failed' }, 500);
+  if (insErr || !inserted) {
+    safeLog.error('supplement-photo-binding-resolver', 'binding insert failed', { sku, inventoryId, error: insErr });
+    return jsonResponse({ error: insErr?.message ?? 'insert failed' }, 500);
+  }
 
   await admin.from('shop_refresh_audit_log').insert({
     action_category: 'binding_create',

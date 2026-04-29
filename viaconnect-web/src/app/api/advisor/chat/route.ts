@@ -17,6 +17,8 @@ import { streamAdvisorResponse } from "@/lib/jeffery/advisor-stream";
 import { logAdvisorQuery, persistConversationTurn } from "@/lib/jeffery/advisor-telemetry";
 import { emitJefferyMessage } from "@/lib/jeffery/message-bus";
 import { scanAiOutput } from "@/lib/compliance/adapters/ai_output";
+import { withTimeout, isTimeoutError } from "@/lib/utils/with-timeout";
+import { safeLog } from "@/lib/utils/safe-log";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -47,7 +49,17 @@ export async function POST(req: Request) {
 
   // ── 2. Auth ──────────────────────────────────────────────────────────
   const userClient = createServerClient();
-  const { data: { user } } = await userClient.auth.getUser();
+  let user;
+  try {
+    const authResult = await withTimeout(userClient.auth.getUser(), 5000, "api.advisor.chat.auth");
+    user = authResult.data.user;
+  } catch (err) {
+    if (isTimeoutError(err)) {
+      safeLog.error("api.advisor.chat", "auth timeout", { error: err });
+      return new Response(JSON.stringify({ error: "Authentication check timed out." }), { status: 503, headers: { "Content-Type": "application/json" } });
+    }
+    throw err;
+  }
   if (!user) return new Response(JSON.stringify({ error: "Unauthenticated" }), { status: 401, headers: { "Content-Type": "application/json" } });
 
   // ── 3. Role gate ─────────────────────────────────────────────────────
@@ -86,8 +98,17 @@ export async function POST(req: Request) {
 
   let ctx;
   try {
-    ctx = await buildAdvisorContext(serviceDb, role as AdvisorRole, user.id, patientId);
+    ctx = await withTimeout(
+      buildAdvisorContext(serviceDb, role as AdvisorRole, user.id, patientId),
+      10000,
+      "api.advisor.chat.context-build",
+    );
   } catch (e) {
+    if (isTimeoutError(e)) {
+      safeLog.error("api.advisor.chat", "context build timeout", { userId: user.id, role, error: e });
+      return new Response(JSON.stringify({ error: "Loading your context took too long. Please try again." }), { status: 504, headers: { "Content-Type": "application/json" } });
+    }
+    safeLog.error("api.advisor.chat", "context build failed", { userId: user.id, role, error: e });
     return new Response(JSON.stringify({ error: `Context build failed: ${(e as Error).message}` }), { status: 500, headers: { "Content-Type": "application/json" } });
   }
 

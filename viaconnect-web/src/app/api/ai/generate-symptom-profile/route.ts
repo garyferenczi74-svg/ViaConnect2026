@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { withTimeout, isTimeoutError } from "@/lib/utils/with-timeout";
+import { safeLog } from "@/lib/utils/safe-log";
 
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || "";
 
@@ -12,7 +14,18 @@ RULES: Do NOT diagnose. Say "patterns suggest" or "worth investigating." Referen
 export async function POST() {
   try {
     const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+
+    let user;
+    try {
+      const authResult = await withTimeout(supabase.auth.getUser(), 5000, "api.ai.generate-symptom-profile.auth");
+      user = authResult.data.user;
+    } catch (err) {
+      if (isTimeoutError(err)) {
+        safeLog.error("api.ai.generate-symptom-profile", "auth timeout", { error: err });
+        return NextResponse.json({ error: "Authentication check timed out." }, { status: 503 });
+      }
+      throw err;
+    }
     if (!user) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 
     const { data: profile } = await supabase.from("profiles").select("symptoms_physical, symptoms_neurological, symptoms_emotional, health_concerns, family_history, bio_optimization_score, date_of_birth, ethnicity").eq("id", user.id).single();
@@ -201,7 +214,8 @@ export async function POST() {
     await supabase.from("wellness_analytics").upsert({ user_id: user.id, summary: result.summary, categories: result, trigger: "symptom_profile", calculated_at: new Date().toISOString() }, { onConflict: "user_id,calculated_at" }).then(() => {}, () => {});
 
     return NextResponse.json(result);
-  } catch {
+  } catch (err) {
+    safeLog.error("api.ai.generate-symptom-profile", "unexpected error", { error: err });
     return NextResponse.json({ error: "Symptom profile generation failed" }, { status: 500 });
   }
 }

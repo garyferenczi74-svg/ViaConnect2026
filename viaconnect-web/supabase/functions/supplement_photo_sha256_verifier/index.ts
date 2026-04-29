@@ -11,6 +11,8 @@ import {
   adminClient, CANONICAL_BUCKET, corsPreflight, isAdmin, jsonResponse,
   resolveShopActor, sha256Hex,
 } from '../_shop_refresh_shared/shared.ts';
+import { withTimeout, isTimeoutError } from '../_shared/with-timeout.ts';
+import { safeLog } from '../_shared/safe-log.ts';
 
 interface VerifyRequest {
   inventoryId?: string;
@@ -38,9 +40,23 @@ Deno.serve(async (req) => {
     : await q.eq('bucket_name', CANONICAL_BUCKET).eq('object_path', body.objectPath!).maybeSingle();
   if (!row) return jsonResponse({ error: 'NOT_FOUND' }, 404);
 
-  const { data: blob, error: dlErr } = await admin.storage
-    .from(CANONICAL_BUCKET).download(row.object_path);
-  if (dlErr || !blob) return jsonResponse({ error: 'DOWNLOAD_FAILED', detail: dlErr?.message }, 502);
+  let blob;
+  try {
+    const dlRes = await withTimeout(
+      admin.storage.from(CANONICAL_BUCKET).download(row.object_path),
+      15000,
+      'sha256-verifier.storage-download',
+    );
+    if (dlRes.error || !dlRes.data) {
+      safeLog.error('supplement-photo-sha256-verifier', 'download failed', { objectPath: row.object_path, error: dlRes.error });
+      return jsonResponse({ error: 'DOWNLOAD_FAILED', detail: dlRes.error?.message }, 502);
+    }
+    blob = dlRes.data;
+  } catch (dlErr) {
+    if (isTimeoutError(dlErr)) safeLog.warn('supplement-photo-sha256-verifier', 'download timeout', { objectPath: row.object_path });
+    else safeLog.error('supplement-photo-sha256-verifier', 'download error', { objectPath: row.object_path, error: dlErr });
+    return jsonResponse({ error: 'DOWNLOAD_FAILED', detail: (dlErr as Error)?.message }, 502);
+  }
 
   const bytes = new Uint8Array(await blob.arrayBuffer());
   const actual = await sha256Hex(bytes);
