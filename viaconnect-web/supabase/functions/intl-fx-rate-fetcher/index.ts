@@ -12,6 +12,12 @@
 
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { withAbortTimeout, isTimeoutError } from "../_shared/with-timeout.ts";
+import { safeLog } from "../_shared/safe-log.ts";
+import { getCircuitBreaker, isCircuitBreakerError } from "../_shared/circuit-breaker.ts";
+
+const ecbBreaker = getCircuitBreaker("ecb-fx-api");
+const oandaBreaker = getCircuitBreaker("oanda-fx-api");
 
 const SB_URL = Deno.env.get("SUPABASE_URL")!;
 const SVC    = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -30,9 +36,16 @@ interface RateRow {
 }
 
 async function fetchEcbEurBaseRates(): Promise<Record<string, number>> {
-  const resp = await fetch("https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml", {
-    headers: { accept: "application/xml" },
-  });
+  const resp = await ecbBreaker.execute(() =>
+    withAbortTimeout(
+      (signal) => fetch("https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml", {
+        headers: { accept: "application/xml" },
+        signal,
+      }),
+      10000,
+      "intl-fx-rate-fetcher.ecb",
+    )
+  );
   if (!resp.ok) throw new Error(`ECB HTTP ${resp.status}`);
   const xml = await resp.text();
   const rates: Record<string, number> = {};
@@ -45,7 +58,13 @@ async function fetchEcbEurBaseRates(): Promise<Record<string, number>> {
 async function fetchOandaUsdRates(): Promise<Record<string, number>> {
   if (!OANDA_KEY) throw new Error("OANDA_API_KEY missing");
   const url = "https://www.oanda.com/rates/api/v2/rates/spot.json?base=USD&quote=EUR,GBP,AUD";
-  const resp = await fetch(url, { headers: { authorization: `Bearer ${OANDA_KEY}` } });
+  const resp = await oandaBreaker.execute(() =>
+    withAbortTimeout(
+      (signal) => fetch(url, { headers: { authorization: `Bearer ${OANDA_KEY}` }, signal }),
+      10000,
+      "intl-fx-rate-fetcher.oanda",
+    )
+  );
   if (!resp.ok) throw new Error(`OANDA HTTP ${resp.status}`);
   const body = await resp.json();
   const out: Record<string, number> = {};

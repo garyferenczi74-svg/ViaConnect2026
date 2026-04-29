@@ -4,6 +4,11 @@
 
 // deno-lint-ignore-file no-explicit-any
 import { getSupabaseClient, jsonResponse } from '../_operations_shared/shared.ts';
+import { withAbortTimeout, isTimeoutError } from '../_shared/with-timeout.ts';
+import { safeLog } from '../_shared/safe-log.ts';
+import { getCircuitBreaker, isCircuitBreakerError } from '../_shared/circuit-breaker.ts';
+
+const channelHttpBreaker = getCircuitBreaker('channel-http-fetch');
 
 function extractMetaTagToken(html: string): string | null {
   const patterns = [
@@ -47,7 +52,13 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const resp = await fetch(channel.channel_url, { headers: { Accept: 'text/html' } });
+    const resp = await channelHttpBreaker.execute(() =>
+      withAbortTimeout(
+        (signal) => fetch(channel.channel_url, { headers: { Accept: 'text/html' }, signal }),
+        10000,
+        'verify-channel-meta-tag.fetch',
+      )
+    );
     if (!resp.ok) {
       await supabase.from('channel_verification_attempts')
         .update({ attempt_status: 'failed', failure_reason: `http_${resp.status}`, resolved_at: new Date().toISOString() })
@@ -89,9 +100,9 @@ Deno.serve(async (req) => {
     }).eq('channel_id', channelId);
     return jsonResponse({ verified: false, reason: found ? 'token_mismatch' : 'tag_not_found' });
   } catch (err) {
-    // Scrub URL + token from the log; we only want to know this call
-    // errored. The kind + name are enough for diagnostics.
-    console.error('meta-tag fetch error', { name: (err as Error)?.name ?? 'unknown' });
+    if (isCircuitBreakerError(err)) safeLog.warn('verify-channel-meta-tag', 'circuit open', { errorName: (err as Error)?.name ?? 'unknown' });
+    else if (isTimeoutError(err)) safeLog.warn('verify-channel-meta-tag', 'fetch timeout', { errorName: (err as Error)?.name ?? 'unknown' });
+    else safeLog.error('verify-channel-meta-tag', 'fetch error', { errorName: (err as Error)?.name ?? 'unknown' });
     return jsonResponse({ verified: false, reason: 'network_error' });
   }
 });

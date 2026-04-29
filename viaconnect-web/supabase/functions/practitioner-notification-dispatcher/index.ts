@@ -14,6 +14,11 @@
 
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { withAbortTimeout, isTimeoutError } from "../_shared/with-timeout.ts";
+import { safeLog } from "../_shared/safe-log.ts";
+import { getCircuitBreaker, isCircuitBreakerError } from "../_shared/circuit-breaker.ts";
+
+const twilioBreaker = getCircuitBreaker("twilio-sms");
 
 const SB_URL = Deno.env.get("SUPABASE_URL")!;
 const SVC    = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -183,11 +188,26 @@ async function sendSmsViaTwilio(to: string, body: string): Promise<{ ok: boolean
   form.set("MessagingServiceSid", TWILIO_MSG_SID);
   form.set("Body", body);
   const auth = btoa(`${TWILIO_SID}:${TWILIO_TOKEN}`);
-  const resp = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${TWILIO_SID}/Messages.json`, {
-    method: "POST",
-    headers: { authorization: `Basic ${auth}`, "content-type": "application/x-www-form-urlencoded" },
-    body: form,
-  });
+  let resp: Response;
+  try {
+    resp = await twilioBreaker.execute(() =>
+      withAbortTimeout(
+        (signal) => fetch(`https://api.twilio.com/2010-04-01/Accounts/${TWILIO_SID}/Messages.json`, {
+          method: "POST",
+          headers: { authorization: `Basic ${auth}`, "content-type": "application/x-www-form-urlencoded" },
+          body: form.toString(),
+          signal,
+        }),
+        10000,
+        "practitioner-notification-dispatcher.twilio.send",
+      )
+    );
+  } catch (twErr) {
+    if (isCircuitBreakerError(twErr)) safeLog.warn("practitioner-notification-dispatcher", "twilio circuit open", { error: twErr });
+    else if (isTimeoutError(twErr)) safeLog.warn("practitioner-notification-dispatcher", "twilio timeout", { error: twErr });
+    else safeLog.warn("practitioner-notification-dispatcher", "twilio fetch failed", { error: twErr });
+    return { ok: false, err: (twErr as Error).message };
+  }
   const json = await resp.json().catch(() => ({}));
   if (!resp.ok) return { ok: false, err: json };
   return { ok: true, sid: json.sid };

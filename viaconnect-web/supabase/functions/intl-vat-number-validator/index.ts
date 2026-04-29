@@ -11,6 +11,13 @@
 
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { withAbortTimeout, isTimeoutError } from "../_shared/with-timeout.ts";
+import { safeLog } from "../_shared/safe-log.ts";
+import { getCircuitBreaker, isCircuitBreakerError } from "../_shared/circuit-breaker.ts";
+
+const viesBreaker = getCircuitBreaker("vies-eu-vat");
+const hmrcBreaker = getCircuitBreaker("hmrc-uk-vat");
+const abrBreaker = getCircuitBreaker("abr-au-vat");
 
 const SB_URL = Deno.env.get("SUPABASE_URL")!;
 const SVC    = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -34,11 +41,20 @@ async function validateVies(vatFull: string): Promise<{ result: "valid" | "inval
   const num = m[2];
   try {
     const url = `https://ec.europa.eu/taxation_customs/vies/rest-api/ms/${cc}/vat/${encodeURIComponent(num)}`;
-    const r = await fetch(url, { headers: { accept: "application/json" } });
+    const r = await viesBreaker.execute(() =>
+      withAbortTimeout(
+        (signal) => fetch(url, { headers: { accept: "application/json" }, signal }),
+        10000,
+        "intl-vat-number-validator.vies",
+      )
+    );
     if (!r.ok) return { result: "service_unavailable", raw: { status: r.status } };
     const body = await r.json();
     return { result: body?.isValid ? "valid" : "invalid", raw: body };
   } catch (e) {
+    if (isCircuitBreakerError(e)) safeLog.warn("intl-vat-number-validator", "vies circuit open", { cc, error: e });
+    else if (isTimeoutError(e)) safeLog.warn("intl-vat-number-validator", "vies timeout", { cc, error: e });
+    else safeLog.warn("intl-vat-number-validator", "vies error", { cc, error: e });
     return { result: "service_unavailable", raw: { error: String(e) } };
   }
 }

@@ -10,6 +10,8 @@
 import {
   adminClient, corsPreflight, isAdmin, jsonResponse, resolveShopActor,
 } from '../_shop_refresh_shared/shared.ts';
+import { isTimeoutError } from '../_shared/with-timeout.ts';
+import { safeLog } from '../_shared/safe-log.ts';
 
 // SOURCE OF TRUTH: src/lib/shopRefresh/reconciliation/categoryNormalizer.ts
 const NORMALIZE: Record<string, string> = {

@@ -14,6 +14,8 @@ import {
   adminClient, assertBucketIsCanonical, CANONICAL_BUCKET,
   corsPreflight, jsonResponse, sha256Hex,
 } from '../_shop_refresh_shared/shared.ts';
+import { isTimeoutError } from '../_shared/with-timeout.ts';
+import { safeLog } from '../_shared/safe-log.ts';
 
 const IN_SCOPE_PREFIXES = [
   'base-formulations/', 'advanced-formulations/', 'womens-health/',

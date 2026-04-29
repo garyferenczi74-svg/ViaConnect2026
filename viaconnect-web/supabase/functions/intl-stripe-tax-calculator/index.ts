@@ -7,6 +7,11 @@
 // =============================================================================
 
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
+import { withAbortTimeout, isTimeoutError } from "../_shared/with-timeout.ts";
+import { safeLog } from "../_shared/safe-log.ts";
+import { getCircuitBreaker, isCircuitBreakerError } from "../_shared/circuit-breaker.ts";
+
+const stripeBreaker = getCircuitBreaker("stripe-api");
 
 const STRIPE_KEY = Deno.env.get("STRIPE_SECRET_KEY") ?? "";
 

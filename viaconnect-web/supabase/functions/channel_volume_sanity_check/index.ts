@@ -5,9 +5,12 @@
 
 // deno-lint-ignore-file no-explicit-any
 import { getSupabaseClient, jsonResponse } from '../_operations_shared/shared.ts';
+import { isTimeoutError } from '../_shared/with-timeout.ts';
+import { safeLog } from '../_shared/safe-log.ts';
 
 Deno.serve(async (_req) => {
-  const supabase = getSupabaseClient() as any;
+  try {
+    const supabase = getSupabaseClient() as any;
 
   const { data: channels } = await supabase
     .from('practitioner_verified_channels')
@@ -71,5 +74,10 @@ Deno.serve(async (_req) => {
       flaggedCount += 1;
     }
   }
-  return jsonResponse({ checked: rows.length, flagged: flaggedCount });
+    return jsonResponse({ checked: rows.length, flagged: flaggedCount });
+  } catch (e) {
+    if (isTimeoutError(e)) safeLog.warn('channel-volume-sanity-check', 'cycle timeout', { error: e });
+    else safeLog.error('channel-volume-sanity-check', 'cycle failed', { error: e });
+    return jsonResponse({ error: (e as Error).message }, 500);
+  }
 });

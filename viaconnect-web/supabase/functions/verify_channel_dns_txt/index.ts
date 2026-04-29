@@ -4,6 +4,8 @@
 
 // deno-lint-ignore-file no-explicit-any
 import { getSupabaseClient, jsonResponse } from '../_operations_shared/shared.ts';
+import { isTimeoutError } from '../_shared/with-timeout.ts';
+import { safeLog } from '../_shared/safe-log.ts';
 
 function recordName(url: string): string {
   const apex = url.replace(/^https?:\/\//i, '').replace(/\/$/, '').replace(/^www\./i, '');
@@ -37,7 +39,8 @@ Deno.serve(async (req) => {
     const result = await Deno.resolveDns(name, 'TXT');
     txtRecords = result.flat();
   } catch (err) {
-    console.warn('dns resolve error (propagation grace)', err);
+    if (isTimeoutError(err)) safeLog.warn('verify-channel-dns-txt', 'dns timeout (propagation grace)', { name, error: err });
+    else safeLog.warn('verify-channel-dns-txt', 'dns resolve error (propagation grace)', { name, error: err });
   }
 
   const match = txtRecords.some((r) => {

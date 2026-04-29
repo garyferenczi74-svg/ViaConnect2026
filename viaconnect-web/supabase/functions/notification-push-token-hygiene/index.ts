@@ -8,6 +8,8 @@
 
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { isTimeoutError } from "../_shared/with-timeout.ts";
+import { safeLog } from "../_shared/safe-log.ts";
 
 const SB_URL = Deno.env.get("SUPABASE_URL")!;
 const SVC    = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -17,7 +19,8 @@ function admin(): SupabaseClient {
 }
 
 serve(async (_req: Request) => {
-  const db = admin();
+  try {
+    const db = admin();
   const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
   const { data } = await db
     .from("notification_channel_credentials")
@@ -35,5 +38,10 @@ serve(async (_req: Request) => {
         .eq("credential_id", row.credential_id);
     }
   }
-  return new Response(JSON.stringify({ ok: true, pruned }), { headers: { "content-type": "application/json" } });
+    return new Response(JSON.stringify({ ok: true, pruned }), { headers: { "content-type": "application/json" } });
+  } catch (e) {
+    if (isTimeoutError(e)) safeLog.warn("notification-push-token-hygiene", "prune timeout", { error: e });
+    else safeLog.error("notification-push-token-hygiene", "prune failed", { error: e });
+    return new Response(JSON.stringify({ ok: false, error: (e as Error).message }), { status: 500, headers: { "content-type": "application/json" } });
+  }
 });

@@ -13,6 +13,8 @@ import {
   adminClient, CANONICAL_BUCKET, corsPreflight, isAdmin, jsonResponse,
   resolveShopActor, assertTableIsWritable,
 } from '../_shop_refresh_shared/shared.ts';
+import { isTimeoutError } from '../_shared/with-timeout.ts';
+import { safeLog } from '../_shared/safe-log.ts';
 
 // SOURCE OF TRUTH: src/lib/shopRefresh/reconciliation/categoryNormalizer.ts
 const SHORT_TO_SLUG: Record<string, string> = {

@@ -12,6 +12,8 @@ import {
   adminClient, corsPreflight, isAdmin, jsonResponse, resolveShopActor,
   publishBatchPhrase, assertTableIsWritable,
 } from '../_shop_refresh_shared/shared.ts';
+import { isTimeoutError } from '../_shared/with-timeout.ts';
+import { safeLog } from '../_shared/safe-log.ts';
 
 interface ActivateRequest {
   skus: string[];
