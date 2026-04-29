@@ -1,60 +1,109 @@
 'use client'
-import { motion } from 'framer-motion'
-import { Dna, Pill, FlaskConical, Activity, Users, Trophy, BarChart3, Stethoscope } from 'lucide-react'
+import { useState, type KeyboardEvent } from 'react'
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
+import {
+    Dna,
+    Pill,
+    FlaskConical,
+    Activity,
+    Users,
+    Trophy,
+    BarChart3,
+    Stethoscope,
+    ChevronDown,
+    type LucideIcon,
+} from 'lucide-react'
 import { SectionAnchor } from '../shared/SectionAnchor'
 import { SECTION_IDS } from '../shared/sectionConstants'
 
-const FEATURES = [
+interface FeatureCard {
+    id: string
+    icon: LucideIcon
+    title: string
+    teaser: string
+    description: string
+}
+
+const FEATURES: FeatureCard[] = [
     {
+        id: 'genomic-testing',
         icon: Dna,
         title: 'Precision Genomic Testing',
+        teaser: 'Six clinical panels with actionable insights.',
         description: 'Comprehensive panel suite across six clinical pillars. Built for actionable insights, not raw data dumps.',
     },
     {
+        id: 'ai-protocols',
         icon: Pill,
         title: 'AI-Driven Supplement Protocols',
+        teaser: 'Formulations matched to your biology and bioavailability.',
         description: 'Personalized formulations matched to your biology. Bioavailability optimized per delivery method.',
     },
     {
+        id: 'peptide-protocols',
         icon: FlaskConical,
         title: 'Peptide Protocols',
+        teaser: 'Clinician-developed across multiple delivery forms.',
         description: 'Clinician-developed peptide protocols across multiple delivery forms, matched to your variant profile.',
     },
     {
+        id: 'bio-optimization',
         icon: Activity,
         title: 'Bio Optimization Score',
+        teaser: 'Daily score across recovery, sleep, and regimen.',
         description: 'Daily score tracking recovery, sleep, strain, and regimen adherence.',
     },
     {
+        id: 'wellness-analytics',
         icon: BarChart3,
         title: 'Wellness Analytics',
+        teaser: 'Real-time intelligence across health categories.',
         description: 'Real-time health intelligence across nutrient, symptom, risk, and protocol categories.',
     },
     {
+        id: 'three-portal',
         icon: Users,
         title: 'Three-Portal Ecosystem',
+        teaser: 'Consumer, Practitioner, Naturopath on one data model.',
         description: 'Consumer, Practitioner, and Naturopath portals on one unified data model.',
     },
     {
+        id: 'interaction-engine',
         icon: Stethoscope,
         title: 'Medical and Herbal Interaction Engine',
+        teaser: 'Safety checks across medications, supplements, and allergies.',
         description: 'Multi-layer safety check across medications, supplements, and allergies.',
     },
     {
+        id: 'helix-rewards',
         icon: Trophy,
         title: 'Helix Rewards',
+        teaser: 'Earn. Compete. Reward. Consumer portal only.',
         description: 'Earn. Compete. Reward. Engagement-driven loyalty system on the consumer portal.',
     },
 ]
 
 export function FeaturesSectionMobile() {
+    const [openId, setOpenId] = useState<string | null>(null)
+    const reduceMotion = useReducedMotion()
+
+    const handleToggle = (id: string) => {
+        setOpenId((current) => (current === id ? null : id))
+    }
+
+    const handleKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
+        if (e.key === 'Escape' && openId) {
+            setOpenId(null)
+        }
+    }
+
     return (
         <SectionAnchor
             id={SECTION_IDS.features}
             ariaLabel="ViaConnect Features"
             className="min-h-screen py-20 px-5"
         >
-            <div className="max-w-md mx-auto">
+            <div className="max-w-md mx-auto" onKeyDown={handleKeyDown}>
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
@@ -73,26 +122,134 @@ export function FeaturesSectionMobile() {
                     </p>
                 </motion.div>
 
-                <div className="grid grid-cols-1 gap-4">
-                    {FEATURES.map((feature, i) => {
-                        const Icon = feature.icon
-                        return (
-                            <motion.div
-                                key={feature.title}
-                                initial={{ opacity: 0, y: 20 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true, amount: 0.3 }}
-                                transition={{ duration: 0.4, delay: i * 0.04 }}
-                                className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-6 active:bg-white/10 transition-colors"
-                            >
-                                <Icon strokeWidth={1.5} className="w-7 h-7 text-[#2DA5A0] mb-4" />
-                                <h3 className="text-white text-lg font-medium mb-2">{feature.title}</h3>
-                                <p className="text-white/60 text-sm leading-relaxed">{feature.description}</p>
-                            </motion.div>
-                        )
-                    })}
+                <div className="flex flex-col gap-3">
+                    {FEATURES.map((feature, i) => (
+                        <AccordionCard
+                            key={feature.id}
+                            feature={feature}
+                            isOpen={openId === feature.id}
+                            onToggle={handleToggle}
+                            index={i}
+                            reduceMotion={!!reduceMotion}
+                        />
+                    ))}
                 </div>
             </div>
         </SectionAnchor>
+    )
+}
+
+interface AccordionCardProps {
+    feature: FeatureCard
+    isOpen: boolean
+    onToggle: (id: string) => void
+    index: number
+    reduceMotion: boolean
+}
+
+function AccordionCard({ feature, isOpen, onToggle, index, reduceMotion }: AccordionCardProps) {
+    const Icon = feature.icon
+    const headlineId = `feature-headline-${feature.id}`
+    const bodyId = `feature-body-${feature.id}`
+
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.3 }}
+            transition={{ duration: 0.4, delay: index * 0.04 }}
+        >
+            <motion.div
+                animate={{
+                    borderColor: isOpen ? 'rgba(45,165,160,1)' : 'rgba(255,255,255,0.08)',
+                    backgroundColor: isOpen ? 'rgba(26,39,68,0.85)' : 'rgba(255,255,255,0.05)',
+                    boxShadow: isOpen ? '0 0 24px rgba(45,165,160,0.15)' : '0 0 0px rgba(45,165,160,0)',
+                }}
+                transition={{ duration: reduceMotion ? 0 : 0.22, ease: 'easeOut' }}
+                className="rounded-xl backdrop-blur-sm border"
+            >
+                <h3 className="m-0">
+                    <button
+                        type="button"
+                        onClick={() => onToggle(feature.id)}
+                        aria-expanded={isOpen}
+                        aria-controls={bodyId}
+                        className="flex w-full items-center gap-3 px-5 py-4 text-left rounded-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2DA5A0]"
+                    >
+                        <motion.span
+                            animate={{
+                                backgroundColor: isOpen ? 'rgba(45,165,160,0.15)' : 'rgba(45,165,160,0)',
+                                width: isOpen ? 40 : 28,
+                                height: isOpen ? 40 : 28,
+                            }}
+                            transition={{ duration: reduceMotion ? 0 : 0.22, ease: 'easeOut' }}
+                            className="flex flex-shrink-0 items-center justify-center rounded-full"
+                        >
+                            <Icon strokeWidth={1.5} className="w-6 h-6 text-[#2DA5A0]" />
+                        </motion.span>
+                        <span className="flex-1 min-w-0">
+                            <span id={headlineId} className="block text-white text-base font-medium leading-snug">
+                                {feature.title}
+                            </span>
+                            {!isOpen && (
+                                <span className="block text-white/60 text-xs mt-1 leading-relaxed">
+                                    {feature.teaser}
+                                </span>
+                            )}
+                        </span>
+                        <motion.span
+                            animate={{ rotate: isOpen ? 180 : 0 }}
+                            transition={{ duration: reduceMotion ? 0.1 : 0.24, ease: 'easeOut' }}
+                            className="flex-shrink-0 text-white/50"
+                        >
+                            <ChevronDown className="w-5 h-5" strokeWidth={1.5} />
+                        </motion.span>
+                    </button>
+                </h3>
+
+                <AnimatePresence initial={false}>
+                    {isOpen && (
+                        <motion.div
+                            id={bodyId}
+                            role="region"
+                            aria-labelledby={headlineId}
+                            initial={{ height: 0 }}
+                            animate={{
+                                height: 'auto',
+                                transition: reduceMotion
+                                    ? { duration: 0 }
+                                    : { duration: 0.28, ease: [0.16, 1, 0.3, 1] },
+                            }}
+                            exit={{
+                                height: 0,
+                                transition: reduceMotion
+                                    ? { duration: 0 }
+                                    : { duration: 0.22, ease: [0.4, 0, 1, 1] },
+                            }}
+                            style={{ overflow: 'hidden' }}
+                        >
+                            <motion.p
+                                initial={{ opacity: 0 }}
+                                animate={{
+                                    opacity: 1,
+                                    transition: reduceMotion
+                                        ? { duration: 0 }
+                                        : { duration: 0.2, delay: 0.05 },
+                                }}
+                                exit={{
+                                    opacity: 0,
+                                    transition: reduceMotion
+                                        ? { duration: 0 }
+                                        : { duration: 0.2, delay: 0 },
+                                }}
+                                className="text-white/70 text-sm leading-relaxed px-5 pb-5"
+                            >
+                                {feature.description}
+                            </motion.p>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+            </motion.div>
+        </motion.div>
     )
 }
