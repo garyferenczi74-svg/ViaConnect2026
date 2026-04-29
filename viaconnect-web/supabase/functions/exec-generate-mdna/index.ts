@@ -25,6 +25,11 @@ import {
   jsonResponse,
   resolveActor,
 } from '../_exec_reporting_shared/shared.ts';
+import { withAbortTimeout, isTimeoutError } from '../_shared/with-timeout.ts';
+import { safeLog } from '../_shared/safe-log.ts';
+import { getCircuitBreaker, isCircuitBreakerError } from '../_shared/circuit-breaker.ts';
+
+const claudeBreaker = getCircuitBreaker('claude-api');
 
 const ANTHROPIC_KEY = Deno.env.get('ANTHROPIC_API_KEY') ?? '';
 const MDNA_MODEL = Deno.env.get('EXEC_MDNA_MODEL') ?? 'claude-sonnet-4-6';

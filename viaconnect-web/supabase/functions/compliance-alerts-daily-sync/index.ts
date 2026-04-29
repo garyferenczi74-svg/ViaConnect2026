@@ -14,6 +14,13 @@
 
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { withAbortTimeout, isTimeoutError } from "../_shared/with-timeout.ts";
+import { safeLog } from "../_shared/safe-log.ts";
+import { getCircuitBreaker, isCircuitBreakerError } from "../_shared/circuit-breaker.ts";
+
+const fdaBreaker = getCircuitBreaker("fda-api");
+const hcBreaker = getCircuitBreaker("health-canada-api");
+const ftcBreaker = getCircuitBreaker("ftc-api");
 
 const SB_URL = Deno.env.get("SUPABASE_URL")!;
 const SVC    = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;

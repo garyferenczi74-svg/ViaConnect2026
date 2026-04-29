@@ -7,6 +7,8 @@
 // deno-lint-ignore-file no-explicit-any
 import { PDFDocument, StandardFonts, rgb } from 'https://esm.sh/pdf-lib@1.17.1';
 import { getSupabaseClient, jsonResponse } from '../_operations_shared/shared.ts';
+import { isTimeoutError } from '../_shared/with-timeout.ts';
+import { safeLog } from '../_shared/safe-log.ts';
 
 function formatCents(cents: number): string {
   const sign = cents < 0 ? '-' : '';

@@ -6,6 +6,8 @@
 // deno-lint-ignore-file no-explicit-any
 import { PDFDocument, StandardFonts } from 'https://esm.sh/pdf-lib@1.17.1';
 import { getSupabaseClient, jsonResponse } from '../_operations_shared/shared.ts';
+import { isTimeoutError } from '../_shared/with-timeout.ts';
+import { safeLog } from '../_shared/safe-log.ts';
 
 const US_1099_THRESHOLD_CENTS = 600_00;
 const CA_T4A_THRESHOLD_CENTS = 500_00;

@@ -13,6 +13,8 @@ import {
   type MonitorContext,
   type ScrapedObservation,
 } from '../_map_shared/shared.ts';
+import { isTimeoutError } from '../_shared/with-timeout.ts';
+import { safeLog } from '../_shared/safe-log.ts';
 
 Deno.serve(async (_req) => {
   const missing = requireEnv([

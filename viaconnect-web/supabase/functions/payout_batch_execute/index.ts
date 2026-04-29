@@ -5,20 +5,32 @@
 
 // deno-lint-ignore-file no-explicit-any
 import { getSupabaseClient, jsonResponse, requireEnv } from '../_operations_shared/shared.ts';
+import { withAbortTimeout, isTimeoutError } from '../_shared/with-timeout.ts';
+import { safeLog } from '../_shared/safe-log.ts';
+import { getCircuitBreaker, isCircuitBreakerError } from '../_shared/circuit-breaker.ts';
+
+const stripeBreaker = getCircuitBreaker('stripe-api');
 
 async function executeStripeTransfer(stripeSecret: string, destinationAccountId: string, amountCents: number, currency: string): Promise<{ id: string; status: string }> {
-  const resp = await fetch('https://api.stripe.com/v1/transfers', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${stripeSecret}`,
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
-    body: new URLSearchParams({
-      amount: String(amountCents),
-      currency: currency.toLowerCase(),
-      destination: destinationAccountId,
-    }),
-  });
+  const resp = await stripeBreaker.execute(() =>
+    withAbortTimeout(
+      (signal) => fetch('https://api.stripe.com/v1/transfers', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${stripeSecret}`,
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+          amount: String(amountCents),
+          currency: currency.toLowerCase(),
+          destination: destinationAccountId,
+        }),
+        signal,
+      }),
+      15000,
+      'payout-batch-execute.stripe-transfer',
+    )
+  );
   const body = await resp.json();
   if (!resp.ok) throw new Error(`stripe_${body.error?.code ?? 'unknown'}`);
   return { id: body.id as string, status: body.status as string ?? 'pending' };
