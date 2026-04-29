@@ -23,6 +23,11 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import {
+    serverInitialSync,
+    serverReplaceCart,
+    type SyncCartLine,
+} from '@/lib/shop/cart-actions'
 
 const CART_STORAGE_KEY = 'viaconnect-shop-cart'
 const HELIX_STORAGE_KEY = 'viaconnect-shop-applied-helix'
@@ -173,6 +178,46 @@ export function openCartDrawer(): void {
     window.dispatchEvent(new Event(CART_OPEN_EVENT))
 }
 
+function localToSync(lines: CartLine[]): SyncCartLine[] {
+    return lines.map((l) => ({
+        productSlug: l.sku,
+        productName: l.name,
+        productType: 'supplement',
+        deliveryForm: l.format,
+        quantity: l.quantity,
+        unitPriceCents: Math.round(l.price * 100),
+        metadata: {
+            sku: l.sku,
+            productId: l.productId,
+            image: l.image ?? null,
+        },
+    }))
+}
+
+function syncToLocal(lines: SyncCartLine[]): CartLine[] {
+    return lines.map((l) => {
+        const meta = (l.metadata ?? {}) as { sku?: string; productId?: string; image?: string | null }
+        return {
+            sku: meta.sku ?? l.productSlug,
+            productId: meta.productId ?? '',
+            name: l.productName,
+            format: l.deliveryForm,
+            image: meta.image ?? null,
+            price: (l.unitPriceCents ?? 0) / 100,
+            quantity: l.quantity,
+        }
+    })
+}
+
+export async function pushCartToServer(): Promise<void> {
+    if (typeof window === 'undefined') return
+    try {
+        await serverReplaceCart(localToSync(readCartLines()))
+    } catch {
+        // best-effort; localStorage stays canonical and the next mount will retry
+    }
+}
+
 export interface CartSummary {
     lines: CartLine[]
     subtotal: number
@@ -223,7 +268,7 @@ function summarize(
     }
 }
 
-export function useCart(): CartSummary & {
+export function useCart(userId?: string | null): CartSummary & {
     addToCart: typeof addToCart
     updateQuantity: typeof updateQuantity
     removeFromCart: typeof removeFromCart
@@ -261,6 +306,27 @@ export function useCart(): CartSummary & {
             window.removeEventListener('storage', onStorage)
         }
     }, [])
+
+    // Phase F2.5: server-side cart sync when authenticated. Mounts run once
+    // per userId; merge favors local on conflicts (user just modified
+    // locally, that intent wins) and preserves server-only items added on
+    // other devices.
+    useEffect(() => {
+        if (!userId) return
+        let cancelled = false
+        const localSync = localToSync(readCartLines())
+        serverInitialSync(localSync)
+            .then((merged) => {
+                if (cancelled) return
+                writeJson(CART_STORAGE_KEY, syncToLocal(merged))
+            })
+            .catch(() => {
+                // swallow; local stays canonical and we retry on next mount
+            })
+        return () => {
+            cancelled = true
+        }
+    }, [userId])
 
     const summary = summarize(lines, appliedHelix, appliedPromo)
     return {

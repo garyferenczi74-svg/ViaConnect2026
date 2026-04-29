@@ -20,7 +20,7 @@ import { CategoryFallbackImage } from '@/components/shop/CategoryFallbackImage'
 import { PdpRightRail } from '@/components/shop/PdpRightRail'
 import { getShopCategoryBySlug } from '@/lib/shop/categories'
 import { getProductBySlug } from '@/lib/shop/queries'
-import { getCurrentShopRole, isConsumerSession } from '@/lib/shop/role'
+import { getCurrentShopSession, isConsumerSession } from '@/lib/shop/role'
 
 interface PageProps {
     params: { slug: string }
@@ -38,9 +38,12 @@ export async function generateMetadata({ params }: PageProps) {
 }
 
 export default async function ProductDetailPage({ params }: PageProps) {
-    const [product, role] = await Promise.all([getProductBySlug(params.slug), getCurrentShopRole()])
+    const [product, session] = await Promise.all([
+        getProductBySlug(params.slug),
+        getCurrentShopSession(),
+    ])
     if (!product) notFound()
-    const consumerSession = isConsumerSession(role)
+    const consumerSession = isConsumerSession(session.role)
 
     const category = product.category_slug ? getShopCategoryBySlug(product.category_slug) : null
     const variant = category?.cardVariant ?? 'supplement'
@@ -114,7 +117,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
                     <PdpRightRail product={product} variant={variant} />
                 </div>
             </div>
-            <CartChrome consumerSession={consumerSession} />
+            <CartChrome consumerSession={consumerSession} userId={session.userId} />
         </div>
     )
 }

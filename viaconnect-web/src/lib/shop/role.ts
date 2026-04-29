@@ -28,14 +28,26 @@ function normalizeRole(raw: string | null | undefined): ShopRole {
 }
 
 export async function getCurrentShopRole(): Promise<ShopRole> {
+    const session = await getCurrentShopSession()
+    return session.role
+}
+
+export interface ShopSession {
+    role: ShopRole
+    userId: string | null
+}
+
+export async function getCurrentShopSession(): Promise<ShopSession> {
     try {
         const supabase = createClient()
         const userResult = await withTimeout(
             supabase.auth.getUser(),
             2000,
-            'shop.role.getUser',
+            'shop.session.getUser',
         )
-        if (userResult.error || !userResult.data.user) return null
+        if (userResult.error || !userResult.data.user) {
+            return { role: null, userId: null }
+        }
         const userId = userResult.data.user.id
         const metadataRole = (userResult.data.user.user_metadata?.role as string | undefined) ?? undefined
 
@@ -55,27 +67,27 @@ export async function getCurrentShopRole(): Promise<ShopRole> {
             const profileResult = await withTimeout(
                 sb.from('profiles').select('role').eq('id', userId).maybeSingle(),
                 1500,
-                'shop.role.profiles',
+                'shop.session.profiles',
             )
             const role = profileResult.data?.role ?? metadataRole
-            return normalizeRole(role)
+            return { role: normalizeRole(role), userId }
         } catch (error) {
             if (isTimeoutError(error)) {
-                safeLog.warn('shop.role', 'profiles role lookup timed out, falling back to user_metadata', {
+                safeLog.warn('shop.session', 'profiles role lookup timed out, falling back to user_metadata', {
                     error,
                 })
             } else {
-                safeLog.warn('shop.role', 'profiles role lookup failed', { error })
+                safeLog.warn('shop.session', 'profiles role lookup failed', { error })
             }
-            return normalizeRole(metadataRole)
+            return { role: normalizeRole(metadataRole), userId }
         }
     } catch (error) {
         if (isTimeoutError(error)) {
-            safeLog.warn('shop.role', 'getUser timed out', { error })
+            safeLog.warn('shop.session', 'getUser timed out', { error })
         } else {
-            safeLog.error('shop.role', 'getCurrentShopRole failed', { error })
+            safeLog.error('shop.session', 'getCurrentShopSession failed', { error })
         }
-        return null
+        return { role: null, userId: null }
     }
 }
 

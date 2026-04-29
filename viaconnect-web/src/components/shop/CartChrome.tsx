@@ -35,6 +35,7 @@ import {
     applyPromo,
     clearAppliedHelix,
     clearAppliedPromo,
+    pushCartToServer,
     removeFromCart,
     updateQuantity,
     useCart,
@@ -46,20 +47,31 @@ function formatPrice(value: number): string {
 
 interface CartChromeProps {
     consumerSession?: boolean
+    userId?: string | null
 }
 
-export function CartChrome({ consumerSession = true }: CartChromeProps) {
+export function CartChrome({ consumerSession = true, userId = null }: CartChromeProps) {
     const [isOpen, setIsOpen] = useState(false)
     const [helixInput, setHelixInput] = useState('')
     const [promoInput, setPromoInput] = useState('')
     const [promoError, setPromoError] = useState<string | null>(null)
-    const cart = useCart()
+    const cart = useCart(userId)
 
     useEffect(() => {
         const onOpen = () => setIsOpen(true)
         window.addEventListener(CART_OPEN_EVENT_NAME, onOpen)
         return () => window.removeEventListener(CART_OPEN_EVENT_NAME, onOpen)
     }, [])
+
+    const closeDrawer = () => {
+        setIsOpen(false)
+        if (userId) {
+            // Best-effort mirror of the local cart up to shop_cart_items so
+            // cross-device sessions stay consistent. Failure here is silent;
+            // the next mount's serverInitialSync re-syncs.
+            void pushCartToServer()
+        }
+    }
 
     const subtotal = cart.subtotal
     const helixInputNumeric = Number(helixInput) || 0
@@ -102,7 +114,7 @@ export function CartChrome({ consumerSession = true }: CartChromeProps) {
             {isOpen && (
                 <div
                     className="fixed inset-0 z-40 flex bg-black/55 backdrop-blur-sm"
-                    onClick={() => setIsOpen(false)}
+                    onClick={() => closeDrawer()}
                     role="dialog"
                     aria-modal="true"
                     aria-label="Shopping cart"
@@ -116,7 +128,7 @@ export function CartChrome({ consumerSession = true }: CartChromeProps) {
                             <button
                                 type="button"
                                 aria-label="Close cart"
-                                onClick={() => setIsOpen(false)}
+                                onClick={() => closeDrawer()}
                                 className="rounded-full p-2 text-white/60 transition-colors hover:bg-white/[0.06] hover:text-white"
                             >
                                 <X className="h-5 w-5" strokeWidth={1.5} />
@@ -130,7 +142,7 @@ export function CartChrome({ consumerSession = true }: CartChromeProps) {
                                     <p className="mt-4 text-sm text-white/65">Your cart is empty.</p>
                                     <Link
                                         href="/shop"
-                                        onClick={() => setIsOpen(false)}
+                                        onClick={() => closeDrawer()}
                                         className="mt-3 text-sm text-[#2DA5A0] underline-offset-4 hover:underline"
                                     >
                                         Browse the shop
@@ -328,14 +340,14 @@ export function CartChrome({ consumerSession = true }: CartChromeProps) {
 
                                 <Link
                                     href="/shop/checkout"
-                                    onClick={() => setIsOpen(false)}
+                                    onClick={() => closeDrawer()}
                                     className="mt-4 flex items-center justify-center gap-2 rounded-xl bg-[#2DA5A0] py-3 font-medium text-white transition-colors hover:bg-[#26918d]"
                                 >
                                     Checkout
                                 </Link>
                                 <Link
                                     href="/shop/cart"
-                                    onClick={() => setIsOpen(false)}
+                                    onClick={() => closeDrawer()}
                                     className="mt-2 block text-center text-xs text-white/55 underline-offset-4 hover:text-white/85 hover:underline"
                                 >
                                     View full cart

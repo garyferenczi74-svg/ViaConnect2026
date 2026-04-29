@@ -17,7 +17,7 @@
 import { Suspense } from 'react'
 import { SHOP_CATEGORIES } from '@/lib/shop/categories'
 import { getShopCategories } from '@/lib/shop/queries'
-import { getCurrentShopRole, isConsumerSession } from '@/lib/shop/role'
+import { getCurrentShopSession, isConsumerSession } from '@/lib/shop/role'
 import { CartChrome } from '@/components/shop/CartChrome'
 import { CollectionTile } from '@/components/shop/CollectionTile'
 
@@ -48,8 +48,11 @@ const BENTO_ORDER: readonly string[] = [
 ]
 
 export default async function ShopLandingPage() {
-    const [dbCategories, role] = await Promise.all([getShopCategories(), getCurrentShopRole()])
-    const consumerSession = isConsumerSession(role)
+    const [dbCategories, session] = await Promise.all([
+        getShopCategories(),
+        getCurrentShopSession(),
+    ])
+    const consumerSession = isConsumerSession(session.role)
     const heroBySlug = new Map(dbCategories.map((c) => [c.slug, c.hero_image_url]))
 
     const orderedCategories = BENTO_ORDER.map((slug) =>
@@ -86,7 +89,7 @@ export default async function ShopLandingPage() {
                     </div>
                 </Suspense>
             </div>
-            <CartChrome consumerSession={consumerSession} />
+            <CartChrome consumerSession={consumerSession} userId={session.userId} />
         </div>
     )
 }
