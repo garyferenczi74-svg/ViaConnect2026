@@ -16,6 +16,8 @@
 
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
+import { withTimeout, isTimeoutError } from '../_shared/with-timeout.ts';
+import { safeLog } from '../_shared/safe-log.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_KEY  = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -94,8 +96,8 @@ serve(async (req) => {
     const week_starting = new Date(Date.now() - 7 * 86400_000).toISOString().slice(0, 10);
 
     for (const role of ROLES) {
-      const week = await metricsFor(db, role, week_ago);
-      const month = await metricsFor(db, role, month_ago);
+      const week = await withTimeout(metricsFor(db, role, week_ago), 30000, `edge-function.jeffery-advisor-review.metrics-week.${role}`);
+      const month = await withTimeout(metricsFor(db, role, month_ago), 30000, `edge-function.jeffery-advisor-review.metrics-month.${role}`);
 
       // Detect degradation
       const satisfactionDrop = (month.satisfaction_rate != null && week.satisfaction_rate != null)
@@ -155,9 +157,15 @@ serve(async (req) => {
       p_severity: 'info',
     }).then(() => {}, () => {});
 
+    safeLog.info('jeffery.advisor-review', 'cycle complete', { runId, durationMs: Date.now() - t0, reportCount: reports.length, nudgeCount: nudgesInserted.length });
     return json({ ok: true, run_id: runId, duration_ms: Date.now() - t0, reports, nudges_inserted: nudgesInserted });
   } catch (e) {
     const msg = (e as Error).message;
+    if (isTimeoutError(e)) {
+      safeLog.warn('jeffery.advisor-review', 'metric loop timeout', { runId, error: e });
+    } else {
+      safeLog.error('jeffery.advisor-review', 'fatal', { runId, error: e });
+    }
     await db.rpc('ultrathink_record_sync', {
       p_run_id: runId, p_source: 'jeffery_advisor_review', p_action: 'fatal',
       p_in: 0, p_added: reports.length, p_skipped: 0, p_error: 1,

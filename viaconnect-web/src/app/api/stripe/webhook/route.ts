@@ -2,9 +2,14 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 import type { Json } from "@/lib/supabase/types";
+import { withTimeout, isTimeoutError } from "@/lib/utils/with-timeout";
+import { safeLog } from "@/lib/utils/safe-log";
+import { getCircuitBreaker, isCircuitBreakerError } from "@/lib/utils/circuit-breaker";
+
+const stripeBreaker = getCircuitBreaker("stripe-api");
 
 function getStripe() {
-  return new Stripe(process.env.STRIPE_SECRET_KEY!);
+  return new Stripe(process.env.STRIPE_SECRET_KEY!, { timeout: 10000, maxNetworkRetries: 0 });
 }
 
 function getServiceSupabase() {
@@ -75,7 +80,7 @@ async function handleCheckoutCompleted(
         ? session.subscription
         : (session.subscription as unknown as Record<string, unknown>).id as string;
 
-    const subscription = await stripe.subscriptions.retrieve(subId);
+    const subscription = await stripeBreaker.execute(() => stripe.subscriptions.retrieve(subId));
     const subData = subscription as unknown as Record<string, unknown>;
     const period = getSubscriptionPeriod(subData);
 
@@ -275,57 +280,81 @@ export async function POST(request: Request) {
   }
 
   const supabase = getServiceSupabase();
+  const requestId = request.headers.get("x-request-id") ?? crypto.randomUUID();
 
   try {
-    switch (event.type) {
-      case "checkout.session.completed":
-        await handleCheckoutCompleted(
-          supabase,
-          event.data.object as Stripe.Checkout.Session
-        );
-        break;
+    await withTimeout(
+      (async () => {
+        switch (event.type) {
+          case "checkout.session.completed":
+            await handleCheckoutCompleted(
+              supabase,
+              event.data.object as Stripe.Checkout.Session
+            );
+            break;
 
-      case "customer.subscription.updated":
-        await handleSubscriptionUpdated(
-          supabase,
-          event.data.object as Stripe.Subscription
-        );
-        break;
+          case "customer.subscription.updated":
+            await handleSubscriptionUpdated(
+              supabase,
+              event.data.object as Stripe.Subscription
+            );
+            break;
 
-      case "customer.subscription.deleted":
-        await handleSubscriptionDeleted(
-          supabase,
-          event.data.object as Stripe.Subscription
-        );
-        break;
+          case "customer.subscription.deleted":
+            await handleSubscriptionDeleted(
+              supabase,
+              event.data.object as Stripe.Subscription
+            );
+            break;
 
-      case "invoice.payment_succeeded":
-        await handleInvoiceEvent(
-          supabase,
-          event.data.object as Stripe.Invoice,
-          true
-        );
-        break;
+          case "invoice.payment_succeeded":
+            await handleInvoiceEvent(
+              supabase,
+              event.data.object as Stripe.Invoice,
+              true
+            );
+            break;
 
-      case "invoice.payment_failed":
-        await handleInvoiceEvent(
-          supabase,
-          event.data.object as Stripe.Invoice,
-          false
-        );
-        break;
+          case "invoice.payment_failed":
+            await handleInvoiceEvent(
+              supabase,
+              event.data.object as Stripe.Invoice,
+              false
+            );
+            break;
 
-      default:
-        await writeAuditLog(supabase, null, "webhook_unhandled", {
-          event_type: event.type,
-          event_id: event.id,
-        });
-    }
+          default:
+            await writeAuditLog(supabase, null, "webhook_unhandled", {
+              event_type: event.type,
+              event_id: event.id,
+            });
+        }
+      })(),
+      25000,
+      `api.stripe.webhook.dispatch.${event.type}`
+    );
 
+    safeLog.info("api.stripe.webhook", "event processed", {
+      requestId, eventId: event.id, eventType: event.type,
+    });
     return NextResponse.json(apiEnvelope(true, { received: true }));
   } catch (err) {
-    const message =
-      err instanceof Error ? err.message : "Webhook processing failed";
+    if (isCircuitBreakerError(err)) {
+      safeLog.warn("api.stripe.webhook", "stripe circuit open", { requestId, eventId: event.id, error: err });
+      return NextResponse.json(
+        apiEnvelope(false, undefined, "Stripe API temporarily unavailable", "STRIPE_CIRCUIT_OPEN"),
+        { status: 503 }
+      );
+    }
+    if (isTimeoutError(err)) {
+      safeLog.error("api.stripe.webhook", "dispatch timeout", { requestId, eventId: event.id, eventType: event.type, error: err });
+      return NextResponse.json(
+        apiEnvelope(false, undefined, "Webhook processing timed out", "WEBHOOK_TIMEOUT"),
+        { status: 504 }
+      );
+    }
+    const message = err instanceof Error ? err.message : "Webhook processing failed";
+    safeLog.error("api.stripe.webhook", "processing failed", { requestId, eventId: event.id, eventType: event.type, error: err });
     return NextResponse.json(
       apiEnvelope(false, undefined, message, "WEBHOOK_PROCESSING_ERROR"),
       { status: 500 }

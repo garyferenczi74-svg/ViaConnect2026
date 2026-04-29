@@ -17,6 +17,11 @@
 
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
+import { withTimeout, withAbortTimeout, isTimeoutError } from '../_shared/with-timeout.ts';
+import { safeLog } from '../_shared/safe-log.ts';
+import { getCircuitBreaker, isCircuitBreakerError } from '../_shared/circuit-breaker.ts';
+
+const claudeBreaker = getCircuitBreaker('claude-api');
 
 // ---------- types -----------------------------------------------------------
 
@@ -201,22 +206,29 @@ async function fetchClaude(brandName: string, gaps: { needPrice: boolean; needIn
   if (!ANTHROPIC_KEY) return [];
   try {
     const userMsg = `List the top 5 best-selling supplement products from the brand "${brandName}". For each, return JSON with keys: product_name, product_category, serving_size, ingredient_breakdown (array of {name, amount}), retail_price_usd, product_url. Respond with ONLY a valid JSON array, no commentary.`;
-    const r = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': ANTHROPIC_KEY,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model: 'claude-opus-4-6',
-        max_tokens: 2000,
-        tools: [{ type: 'web_search_20250305', name: 'web_search' }],
-        messages: [{ role: 'user', content: userMsg }],
-      }),
-    });
+    const r = await claudeBreaker.execute(() =>
+      withAbortTimeout(
+        (signal) => fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': ANTHROPIC_KEY,
+            'anthropic-version': '2023-06-01',
+          },
+          body: JSON.stringify({
+            model: 'claude-opus-4-6',
+            max_tokens: 2000,
+            tools: [{ type: 'web_search_20250305', name: 'web_search' }],
+            messages: [{ role: 'user', content: userMsg }],
+          }),
+          signal,
+        }),
+        15000,
+        'edge-function.brand-enricher.claude-api',
+      )
+    );
     if (!r.ok) {
-      console.warn(`[claude] ${brandName}: HTTP ${r.status}`);
+      safeLog.warn('brand-enricher.claude', 'non-2xx', { brandName, status: r.status });
       return [];
     }
     const j = await r.json() as { content?: Array<{ type: string; text?: string }> };
@@ -237,7 +249,13 @@ async function fetchClaude(brandName: string, gaps: { needPrice: boolean; needIn
       enrichment_confidence:  0.4,
     })).filter(p => p.product_name);
   } catch (e) {
-    console.warn(`[claude] ${brandName}: ${(e as Error).message}`);
+    if (isCircuitBreakerError(e)) {
+      safeLog.warn('brand-enricher.claude', 'circuit open', { brandName, error: e });
+    } else if (isTimeoutError(e)) {
+      safeLog.warn('brand-enricher.claude', 'timeout', { brandName, error: e });
+    } else {
+      safeLog.warn('brand-enricher.claude', 'fetch failed', { brandName, error: e });
+    }
     return [];
   }
 }
@@ -469,7 +487,7 @@ serve(async (req) => {
     });
   } catch (e) {
     const msg = (e as Error).message;
-    console.error(`[brand-enricher] fatal: ${msg}`);
+    safeLog.error('brand-enricher', 'fatal', { runId, error: e });
     await db.from('brand_agent_log').insert({
       run_id: runId,
       brand_name: '_runner_',

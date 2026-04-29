@@ -19,6 +19,8 @@
 
 // @ts-nocheck — Deno runtime, not Node. Import URL works in Supabase Edge Functions.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.7';
+import { withTimeout, isTimeoutError } from '../_shared/with-timeout.ts';
+import { safeLog } from '../_shared/safe-log.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
 const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
@@ -414,12 +416,19 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const result = await runSherlockCycle(supabase, trigger);
+    safeLog.info('sherlock.research-hub', 'cycle started', { trigger });
+    const result = await withTimeout(runSherlockCycle(supabase, trigger), 120000, 'edge-function.sherlock.cycle');
+    safeLog.info('sherlock.research-hub', 'cycle complete', { trigger, result });
     return new Response(JSON.stringify(result), {
       status: 200,
       headers: { 'content-type': 'application/json' },
     });
   } catch (e: any) {
+    if (isTimeoutError(e)) {
+      safeLog.error('sherlock.research-hub', 'cycle timeout', { trigger, error: e });
+    } else {
+      safeLog.error('sherlock.research-hub', 'cycle failed', { trigger, error: e });
+    }
     await supabase.from('sherlock_activity_log').insert({
       action: 'cycle_failed',
       details: { error: e?.message || 'unknown' },

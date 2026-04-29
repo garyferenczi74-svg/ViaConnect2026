@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getAppDef } from '@/lib/integrations/appRegistry';
+import { withTimeout, withAbortTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
+import { safeLog } from '@/lib/utils/safe-log';
+import { getCircuitBreaker, isCircuitBreakerError } from '@/lib/utils/circuit-breaker';
 
 export async function GET(req: NextRequest, { params }: { params: { appId: string } }) {
   const { appId } = params;
@@ -24,12 +27,27 @@ export async function GET(req: NextRequest, { params }: { params: { appId: strin
 
   try {
     const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+
+    let user;
+    try {
+      const authResult = await withTimeout(
+        supabase.auth.getUser(),
+        5000,
+        `api.integrations.oauth.${appId}.auth`
+      );
+      user = authResult.data.user;
+    } catch (err) {
+      if (isTimeoutError(err)) {
+        safeLog.error(`api.integrations.oauth.${appId}`, 'auth timeout', { error: err });
+        return NextResponse.redirect(new URL('/settings/integrations?error=auth_timeout', req.url));
+      }
+      throw err;
+    }
+
     if (!user) {
       return NextResponse.redirect(new URL('/login', req.url));
     }
 
-    // Exchange code for tokens (app-specific token URLs are in tokenManager)
     const envPrefix = appId.toUpperCase().replace(/[^A-Z]/g, '');
     const clientId = process.env[`${envPrefix}_CLIENT_ID`];
     const clientSecret = process.env[`${envPrefix}_CLIENT_SECRET`];
@@ -39,43 +57,80 @@ export async function GET(req: NextRequest, { params }: { params: { appId: strin
       return NextResponse.redirect(new URL('/settings/integrations?error=not_configured', req.url));
     }
 
-    const tokenRes = await fetch(getTokenUrl(appId), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        grant_type: 'authorization_code',
-        code,
-        client_id: clientId,
-        client_secret: clientSecret,
-        redirect_uri: redirectUri,
-      }),
-    });
+    const oauthBreaker = getCircuitBreaker(`oauth-${appId}`);
+    let tokenRes: Response;
+    try {
+      tokenRes = await oauthBreaker.execute(() =>
+        withAbortTimeout(
+          (signal) => fetch(getTokenUrl(appId), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({
+              grant_type: 'authorization_code',
+              code,
+              client_id: clientId,
+              client_secret: clientSecret,
+              redirect_uri: redirectUri,
+            }),
+            signal,
+          }),
+          10000,
+          `api.integrations.oauth.${appId}.token-exchange`
+        )
+      );
+    } catch (err) {
+      if (isCircuitBreakerError(err)) {
+        safeLog.warn(`api.integrations.oauth.${appId}`, 'oauth circuit open', { error: err });
+        return NextResponse.redirect(new URL('/settings/integrations?error=service_unavailable', req.url));
+      }
+      if (isTimeoutError(err)) {
+        safeLog.warn(`api.integrations.oauth.${appId}`, 'token exchange timeout', { error: err });
+        return NextResponse.redirect(new URL('/settings/integrations?error=token_timeout', req.url));
+      }
+      safeLog.error(`api.integrations.oauth.${appId}`, 'token exchange failed', { error: err });
+      return NextResponse.redirect(new URL('/settings/integrations?error=token_failed', req.url));
+    }
 
     if (!tokenRes.ok) {
-      const err = await tokenRes.text();
-      console.error(`oauth/${appId}: Token exchange failed`, err);
+      const errBody = await tokenRes.text();
+      safeLog.error(`api.integrations.oauth.${appId}`, 'token exchange non-2xx', {
+        status: tokenRes.status, errBody,
+      });
       return NextResponse.redirect(new URL('/settings/integrations?error=token_failed', req.url));
     }
 
     const tokens = await tokenRes.json();
 
-    // Store connection
-    // @ts-expect-error -- data_source_connections table not in generated Database type
-    await supabase.from('data_source_connections').upsert({
-      user_id: user.id,
-      source_id: appId,
-      source_type: appDef.category === 'nutrition' ? 'nutrition_app' : appDef.category === 'mindfulness' ? 'mindfulness_app' : 'wearable',
-      source_name: appDef.name,
-      access_token: tokens.access_token,
-      refresh_token: tokens.refresh_token,
-      token_expires_at: new Date(Date.now() + (tokens.expires_in ?? 3600) * 1000).toISOString(),
-      is_active: true,
-      last_sync_at: new Date().toISOString(),
-    }, { onConflict: 'user_id,source_id' });
+    try {
+      await withTimeout(
+        // @ts-expect-error -- data_source_connections table not in generated Database type
+        (async () => supabase.from('data_source_connections').upsert({
+          user_id: user.id,
+          source_id: appId,
+          source_type: appDef.category === 'nutrition' ? 'nutrition_app' : appDef.category === 'mindfulness' ? 'mindfulness_app' : 'wearable',
+          source_name: appDef.name,
+          access_token: tokens.access_token,
+          refresh_token: tokens.refresh_token,
+          token_expires_at: new Date(Date.now() + (tokens.expires_in ?? 3600) * 1000).toISOString(),
+          is_active: true,
+          last_sync_at: new Date().toISOString(),
+        }, { onConflict: 'user_id,source_id' }))(),
+        8000,
+        `api.integrations.oauth.${appId}.connection-upsert`
+      );
+    } catch (err) {
+      if (isTimeoutError(err)) {
+        safeLog.error(`api.integrations.oauth.${appId}`, 'connection upsert timeout', { userId: user.id, error: err });
+        return NextResponse.redirect(new URL('/settings/integrations?error=db_timeout', req.url));
+      }
+      safeLog.error(`api.integrations.oauth.${appId}`, 'connection upsert failed', { userId: user.id, error: err });
+      return NextResponse.redirect(new URL('/settings/integrations?error=db_error', req.url));
+    }
 
+    safeLog.info(`api.integrations.oauth.${appId}`, 'connection established', { userId: user.id });
     return NextResponse.redirect(new URL('/settings/integrations?connected=' + appId, req.url));
   } catch (err: unknown) {
-    console.error(`oauth/${appId}:`, err);
+    safeLog.error(`api.integrations.oauth.${appId}`, 'unexpected error', { error: err });
     return NextResponse.redirect(new URL('/settings/integrations?error=internal', req.url));
   }
 }

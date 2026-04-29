@@ -13,6 +13,11 @@
 
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
+import { withTimeout, withAbortTimeout, isTimeoutError } from '../_shared/with-timeout.ts';
+import { safeLog } from '../_shared/safe-log.ts';
+import { getCircuitBreaker, isCircuitBreakerError } from '../_shared/circuit-breaker.ts';
+
+const visionBreaker = getCircuitBreaker('claude-vision');
 
 // ---------- env ---------------------------------------------------------------
 
@@ -514,23 +519,50 @@ serve(async (req) => {
     // covering this data flow. Verify before enabling Arnold Vision in
     // production (June 2026 launch). Owner: gary@farmceuticawellness.com.
     // ──────────────────────────────────────────────────────────────────────
-    const apiResponse = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'content-type': 'application/json',
-        'x-api-key': ANTHROPIC_KEY,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model: VISION_MODEL,
-        max_tokens: 4000,
-        system: ARNOLD_SYSTEM_PROMPT,
-        messages: [{ role: 'user', content }],
-      }),
-    });
+    let apiResponse: Response;
+    try {
+      apiResponse = await visionBreaker.execute(() =>
+        withAbortTimeout(
+          (signal) => fetch('https://api.anthropic.com/v1/messages', {
+            method: 'POST',
+            headers: {
+              'content-type': 'application/json',
+              'x-api-key': ANTHROPIC_KEY,
+              'anthropic-version': '2023-06-01',
+            },
+            body: JSON.stringify({
+              model: VISION_MODEL,
+              max_tokens: 4000,
+              system: ARNOLD_SYSTEM_PROMPT,
+              messages: [{ role: 'user', content }],
+            }),
+            signal,
+          }),
+          25000,
+          'edge-function.arnold-vision-analyze.claude-vision-api',
+        )
+      );
+    } catch (apiErr) {
+      let errMsg = 'Vision API call failed';
+      if (isCircuitBreakerError(apiErr)) {
+        errMsg = 'Vision API circuit open';
+        safeLog.warn('arnold.vision-analyze', 'vision circuit open', { sessionId, error: apiErr });
+      } else if (isTimeoutError(apiErr)) {
+        errMsg = 'Vision API timeout';
+        safeLog.warn('arnold.vision-analyze', 'vision timeout', { sessionId, error: apiErr });
+      } else {
+        safeLog.error('arnold.vision-analyze', 'vision fetch failed', { sessionId, error: apiErr });
+      }
+      await db
+        .from('body_photo_sessions')
+        .update({ arnold_status: 'failed', arnold_error: errMsg })
+        .eq('id', sessionId);
+      return json({ status: 'failed', error: errMsg }, isCircuitBreakerError(apiErr) ? 503 : isTimeoutError(apiErr) ? 504 : 502);
+    }
 
     if (!apiResponse.ok) {
       const errTxt = await apiResponse.text();
+      safeLog.error('arnold.vision-analyze', 'vision non-2xx', { sessionId, status: apiResponse.status, errTxt: errTxt.slice(0, 200) });
       await db
         .from('body_photo_sessions')
         .update({ arnold_status: 'failed', arnold_error: `Vision API ${apiResponse.status}: ${errTxt.slice(0, 500)}` })
@@ -624,7 +656,7 @@ serve(async (req) => {
     return json({ status: 'complete', analysis: calibrated });
   } catch (e) {
     const msg = e instanceof Error ? e.message : 'Unknown error';
-    console.error('[arnold-vision-analyze] fatal', msg);
+    safeLog.error('arnold.vision-analyze', 'fatal', { error: e });
     return json({ status: 'failed', error: msg }, 500);
   }
 });

@@ -15,6 +15,8 @@
 
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
+import { withTimeout, isTimeoutError } from '../_shared/with-timeout.ts';
+import { safeLog } from '../_shared/safe-log.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_KEY  = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -140,8 +142,9 @@ serve(async (req: Request) => {
   const startedAt = Date.now();
 
   try {
-    const queued = await sweepStaleScores(db);
-    const stuckFailed = await failStuckSessions(db);
+    safeLog.info('arnold.tick', 'sweep started', { runId });
+    const queued = await withTimeout(sweepStaleScores(db), 25000, 'edge-function.arnold-tick.sweep-stale');
+    const stuckFailed = await withTimeout(failStuckSessions(db), 15000, 'edge-function.arnold-tick.fail-stuck');
 
     await heartbeat(db, runId, true, {
       queuedRecomputes: queued,
@@ -178,6 +181,11 @@ serve(async (req: Request) => {
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : 'Unknown error';
+    if (isTimeoutError(e)) {
+      safeLog.warn('arnold.tick', 'sweep timeout', { runId, error: e });
+    } else {
+      safeLog.error('arnold.tick', 'sweep failed', { runId, error: e });
+    }
     await heartbeat(db, runId, false, { error: msg });
     await emitJeffery(db, {
       category: 'error_escalation',

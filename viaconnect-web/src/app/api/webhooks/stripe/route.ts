@@ -13,11 +13,16 @@ import {
   mapCheckoutSessionCompletion,
 } from '@/lib/pricing/stripe-webhook-handlers';
 import { handleWhiteLabelPaymentSucceeded } from '@/lib/white-label/stripe-production-payment';
+import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
+import { safeLog } from '@/lib/utils/safe-log';
 
 export const runtime = 'nodejs'; // Stripe SDK needs Node APIs
 export const dynamic = 'force-dynamic';
+export const maxDuration = 30;
 
 export async function POST(request: NextRequest) {
+  const requestId = request.headers.get('x-request-id') ?? crypto.randomUUID();
+
   const signature = request.headers.get('stripe-signature');
   if (!signature) {
     return NextResponse.json({ error: 'Missing stripe-signature header' }, { status: 400 });
@@ -31,16 +36,22 @@ export async function POST(request: NextRequest) {
     event = stripe.webhooks.constructEvent(rawBody, signature, getWebhookSecret());
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Signature verification failed';
+    safeLog.warn('api.webhooks.stripe', 'signature verification failed', { requestId, error: err });
     return NextResponse.json({ error: `Webhook signature failed: ${msg}` }, { status: 400 });
   }
 
   try {
-    await handleEvent(event);
+    await withTimeout(handleEvent(event), 25000, `api.webhooks.stripe.handle.${event.type}`);
+    safeLog.info('api.webhooks.stripe', 'event processed', { requestId, eventId: event.id, eventType: event.type });
     return NextResponse.json({ received: true, type: event.type });
   } catch (err) {
+    if (isTimeoutError(err)) {
+      safeLog.error('api.webhooks.stripe', 'handler timeout', { requestId, eventId: event.id, eventType: event.type, error: err });
+      return NextResponse.json({ error: 'Webhook handler timed out' }, { status: 504 });
+    }
     const msg = err instanceof Error ? err.message : 'Webhook handler failed';
-    console.error('[stripe-webhook]', event.type, msg);
-    // Return 500 so Stripe retries; log-level tells ops this is a handler bug.
+    safeLog.error('api.webhooks.stripe', 'handler failed', { requestId, eventId: event.id, eventType: event.type, error: err });
+    // Return 500 so Stripe retries.
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }

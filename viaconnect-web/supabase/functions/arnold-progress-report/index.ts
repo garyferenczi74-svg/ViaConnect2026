@@ -11,6 +11,11 @@
 
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
+import { withTimeout, withAbortTimeout, isTimeoutError } from '../_shared/with-timeout.ts';
+import { safeLog } from '../_shared/safe-log.ts';
+import { getCircuitBreaker, isCircuitBreakerError } from '../_shared/circuit-breaker.ts';
+
+const claudeBreaker = getCircuitBreaker('claude-api');
 
 const SUPABASE_URL   = Deno.env.get('SUPABASE_URL')!;
 const ANON_KEY       = Deno.env.get('SUPABASE_ANON_KEY')!;
@@ -217,19 +222,41 @@ serve(async (req) => {
       'Generate the progress report JSON now.',
     ].join('\n');
 
-    const apiResponse = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json', 'x-api-key': ANTHROPIC_KEY, 'anthropic-version': '2023-06-01' },
-      body: JSON.stringify({
-        model: MODEL,
-        max_tokens: 2000,
-        system: SYSTEM_PROMPT,
-        messages: [{ role: 'user', content: userPrompt }],
-      }),
-    });
+    let apiResponse: Response;
+    try {
+      apiResponse = await claudeBreaker.execute(() =>
+        withAbortTimeout(
+          (signal) => fetch('https://api.anthropic.com/v1/messages', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json', 'x-api-key': ANTHROPIC_KEY, 'anthropic-version': '2023-06-01' },
+            body: JSON.stringify({
+              model: MODEL,
+              max_tokens: 2000,
+              system: SYSTEM_PROMPT,
+              messages: [{ role: 'user', content: userPrompt }],
+            }),
+            signal,
+          }),
+          15000,
+          'edge-function.arnold-progress-report.claude-api',
+        )
+      );
+    } catch (apiErr) {
+      if (isCircuitBreakerError(apiErr)) {
+        safeLog.warn('arnold.progress-report', 'claude circuit open', { userId, error: apiErr });
+        return json({ status: 'failed', error: 'AI service temporarily unavailable. Please retry shortly.' }, 503);
+      }
+      if (isTimeoutError(apiErr)) {
+        safeLog.warn('arnold.progress-report', 'claude timeout', { userId, error: apiErr });
+        return json({ status: 'failed', error: 'Report generation timed out. Please try again.' }, 504);
+      }
+      safeLog.error('arnold.progress-report', 'claude fetch failed', { userId, error: apiErr });
+      return json({ status: 'failed', error: 'AI service error.' }, 502);
+    }
 
     if (!apiResponse.ok) {
       const errTxt = await apiResponse.text();
+      safeLog.error('arnold.progress-report', 'claude non-2xx', { userId, status: apiResponse.status, errTxt: errTxt.slice(0, 200) });
       return json({ status: 'failed', error: `Report API ${apiResponse.status}: ${errTxt.slice(0, 500)}` }, 502);
     }
 
@@ -251,7 +278,7 @@ serve(async (req) => {
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : 'Unknown error';
-    console.error('[arnold-progress-report] fatal', msg);
+    safeLog.error('arnold.progress-report', 'fatal', { error: e });
     return json({ status: 'failed', error: msg }, 500);
   }
 });
