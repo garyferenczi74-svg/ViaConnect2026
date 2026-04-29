@@ -19,15 +19,17 @@
 import { Suspense } from 'react'
 import Link from 'next/link'
 import { ChevronRight } from 'lucide-react'
-import { ProductCard } from '@/components/shop/ProductCard'
+import { PlpProductGrid } from '@/components/shop/PlpProductGrid'
+import { FilterSortDrawer } from '@/components/shop/FilterSortDrawer'
 import { getShopCategoryBySlug } from '@/lib/shop/categories'
 import { getProductsByCategory } from '@/lib/shop/queries'
 
 interface ShopCategoryPageProps {
     slug: string
+    hasCaqOnFile?: boolean
 }
 
-export async function ShopCategoryPage({ slug }: ShopCategoryPageProps) {
+export async function ShopCategoryPage({ slug, hasCaqOnFile }: ShopCategoryPageProps) {
     const category = getShopCategoryBySlug(slug)
     const products = await getProductsByCategory(slug)
     const variant = category?.cardVariant ?? 'supplement'
@@ -35,7 +37,7 @@ export async function ShopCategoryPage({ slug }: ShopCategoryPageProps) {
     const tagline = category?.tagline ?? ''
 
     return (
-        <div className="min-h-screen bg-[#0F1A2E] text-white">
+        <div className="min-h-screen bg-[#0F1A2E] pb-24 text-white">
             <div className="mx-auto max-w-7xl px-4 py-10 md:px-6 md:py-14 lg:py-16">
                 <nav aria-label="Breadcrumb" className="mb-6 flex items-center gap-2 text-xs text-white/55">
                     <Link href="/shop" className="hover:text-white/85">
@@ -57,31 +59,15 @@ export async function ShopCategoryPage({ slug }: ShopCategoryPageProps) {
                 </header>
 
                 <Suspense>
-                    {products.length === 0 ? (
-                        <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-10 text-center backdrop-blur-sm">
-                            <p className="text-base text-white/65">
-                                Products in this category are coming online. Check back soon, or browse other
-                                categories from{' '}
-                                <Link href="/shop" className="text-[#2DA5A0] underline-offset-4 hover:underline">
-                                    the shop
-                                </Link>
-                                .
-                            </p>
-                        </div>
-                    ) : (
-                        <div className="grid grid-cols-2 gap-6 md:grid-cols-3 md:gap-8 xl:grid-cols-4">
-                            {products.map((product) => (
-                                <ProductCard
-                                    key={product.id}
-                                    product={product}
-                                    variant={variant}
-                                    href={`/shop/product/${product.slug ?? product.sku}`}
-                                />
-                            ))}
-                        </div>
-                    )}
+                    <PlpProductGrid
+                        products={products}
+                        variant={variant}
+                        categorySlug={slug}
+                        hasCaqOnFile={hasCaqOnFile}
+                    />
                 </Suspense>
             </div>
+            <FilterSortDrawer hasCaqOnFile={hasCaqOnFile} />
         </div>
     )
 }
