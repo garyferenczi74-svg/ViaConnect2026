@@ -795,9 +795,13 @@ export default function AnalyticsPage() {
           <div className="glass-panel p-5 overflow-hidden flex flex-col min-h-0">
             <div className="flex items-center justify-between mb-3 flex-shrink-0">
               <h3 className="text-sm font-semibold text-white">Symptom Profile</h3>
-              <Link href="/onboarding/i-caq-intro" className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-orange-400/10 border border-orange-400/25 text-orange-400 text-xs font-medium hover:bg-orange-400/15 hover:border-orange-400/35 transition-all no-underline">
+              <Link
+                href="/onboarding/i-caq-intro"
+                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-white text-xs font-semibold transition-all hover:shadow-[0_0_12px_rgba(251,146,60,0.35)] no-underline"
+                style={{ background: 'linear-gradient(135deg, #FB923C 0%, #1E3054 100%)' }}
+              >
                 <RefreshCw className="w-3.5 h-3.5" strokeWidth={1.5} />
-                Retake
+                Update Your Assessment
               </Link>
             </div>
             {symptomBreakdown.length === 0 ? (
