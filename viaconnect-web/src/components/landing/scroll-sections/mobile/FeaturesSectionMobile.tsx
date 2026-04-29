@@ -1,87 +1,10 @@
 'use client'
 import { useState, type KeyboardEvent } from 'react'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
-import {
-    Dna,
-    Pill,
-    FlaskConical,
-    Activity,
-    Users,
-    Trophy,
-    BarChart3,
-    Stethoscope,
-    ChevronDown,
-    type LucideIcon,
-} from 'lucide-react'
+import { ChevronDown } from 'lucide-react'
 import { SectionAnchor } from '../shared/SectionAnchor'
 import { SECTION_IDS } from '../shared/sectionConstants'
-
-interface FeatureCard {
-    id: string
-    icon: LucideIcon
-    title: string
-    teaser: string
-    description: string
-}
-
-const FEATURES: FeatureCard[] = [
-    {
-        id: 'genomic-testing',
-        icon: Dna,
-        title: 'Precision Genomic Testing',
-        teaser: 'Six clinical panels with actionable insights.',
-        description: 'Comprehensive panel suite across six clinical pillars. Built for actionable insights, not raw data dumps.',
-    },
-    {
-        id: 'ai-protocols',
-        icon: Pill,
-        title: 'AI-Driven Supplement Protocols',
-        teaser: 'Formulations matched to your biology and bioavailability.',
-        description: 'Personalized formulations matched to your biology. Bioavailability optimized per delivery method.',
-    },
-    {
-        id: 'peptide-protocols',
-        icon: FlaskConical,
-        title: 'Peptide Protocols',
-        teaser: 'Clinician-developed across multiple delivery forms.',
-        description: 'Clinician-developed peptide protocols across multiple delivery forms, matched to your variant profile.',
-    },
-    {
-        id: 'bio-optimization',
-        icon: Activity,
-        title: 'Bio Optimization Score',
-        teaser: 'Daily score across recovery, sleep, and regimen.',
-        description: 'Daily score tracking recovery, sleep, strain, and regimen adherence.',
-    },
-    {
-        id: 'wellness-analytics',
-        icon: BarChart3,
-        title: 'Wellness Analytics',
-        teaser: 'Real-time intelligence across health categories.',
-        description: 'Real-time health intelligence across nutrient, symptom, risk, and protocol categories.',
-    },
-    {
-        id: 'three-portal',
-        icon: Users,
-        title: 'Three-Portal Ecosystem',
-        teaser: 'Consumer, Practitioner, Naturopath on one data model.',
-        description: 'Consumer, Practitioner, and Naturopath portals on one unified data model.',
-    },
-    {
-        id: 'interaction-engine',
-        icon: Stethoscope,
-        title: 'Medical and Herbal Interaction Engine',
-        teaser: 'Safety checks across medications, supplements, and allergies.',
-        description: 'Multi-layer safety check across medications, supplements, and allergies.',
-    },
-    {
-        id: 'helix-rewards',
-        icon: Trophy,
-        title: 'Helix Rewards',
-        teaser: 'Earn. Compete. Reward. Consumer portal only.',
-        description: 'Earn. Compete. Reward. Engagement-driven loyalty system on the consumer portal.',
-    },
-]
+import { featureCards, type FeatureCard } from '../shared/featureCards'
 
 export function FeaturesSectionMobile() {
     const [openId, setOpenId] = useState<string | null>(null)
@@ -123,7 +46,7 @@ export function FeaturesSectionMobile() {
                 </motion.div>
 
                 <div className="flex flex-col gap-3">
-                    {FEATURES.map((feature, i) => (
+                    {featureCards.map((feature, i) => (
                         <AccordionCard
                             key={feature.id}
                             feature={feature}
@@ -189,7 +112,7 @@ function AccordionCard({ feature, isOpen, onToggle, index, reduceMotion }: Accor
                         </motion.span>
                         <span className="flex-1 min-w-0">
                             <span id={headlineId} className="block text-white text-base font-medium leading-snug">
-                                {feature.title}
+                                {feature.headline}
                             </span>
                             {!isOpen && (
                                 <span className="block text-white/60 text-xs mt-1 leading-relaxed">
@@ -244,7 +167,7 @@ function AccordionCard({ feature, isOpen, onToggle, index, reduceMotion }: Accor
                                 }}
                                 className="text-white/70 text-sm leading-relaxed px-5 pb-5"
                             >
-                                {feature.description}
+                                {feature.body}
                             </motion.p>
                         </motion.div>
                     )}

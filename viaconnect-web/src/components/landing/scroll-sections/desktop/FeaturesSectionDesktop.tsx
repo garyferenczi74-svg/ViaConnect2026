@@ -1,51 +1,8 @@
 'use client'
 import { motion } from 'framer-motion'
-import { Dna, Pill, FlaskConical, Activity, Users, Trophy, BarChart3, Stethoscope } from 'lucide-react'
 import { SectionAnchor } from '../shared/SectionAnchor'
 import { SECTION_IDS } from '../shared/sectionConstants'
-
-const FEATURES = [
-    {
-        icon: Dna,
-        title: 'Precision Genomic Testing',
-        description: 'Comprehensive panel suite across six clinical pillars. Built for actionable insights, not raw data dumps.',
-    },
-    {
-        icon: Pill,
-        title: 'AI-Driven Supplement Protocols',
-        description: 'Personalized formulations matched to your biology. Bioavailability optimized per delivery method.',
-    },
-    {
-        icon: FlaskConical,
-        title: 'Peptide Protocols',
-        description: 'Clinician-developed peptide protocols across multiple delivery forms, matched to your variant profile.',
-    },
-    {
-        icon: Activity,
-        title: 'Bio Optimization Score',
-        description: 'Daily score tracking recovery, sleep, strain, and regimen adherence. Five tiers from foundational to optimized.',
-    },
-    {
-        icon: BarChart3,
-        title: 'Wellness Analytics',
-        description: 'Real-time health intelligence across nutrient, symptom, risk, protocol, sleep, stress, metabolic, and immune categories.',
-    },
-    {
-        icon: Users,
-        title: 'Three-Portal Ecosystem',
-        description: 'Consumer, Practitioner, and Naturopath portals on one unified data model. Role-based views protect privacy and clinical authority.',
-    },
-    {
-        icon: Stethoscope,
-        title: 'Medical and Herbal Interaction Engine',
-        description: 'Multi-layer safety check across medications, supplements, and allergies. Practitioner override available.',
-    },
-    {
-        icon: Trophy,
-        title: 'Helix Rewards',
-        description: 'Earn. Compete. Reward. Engagement-driven loyalty system on the consumer portal.',
-    },
-]
+import { featureCards } from '../shared/featureCards'
 
 export function FeaturesSectionDesktop() {
     return (
@@ -73,22 +30,22 @@ export function FeaturesSectionDesktop() {
                     </p>
                 </motion.div>
 
-                <div className="grid grid-cols-2 xl:grid-cols-4 gap-6">
-                    {FEATURES.map((feature, i) => {
-                        const Icon = feature.icon
+                <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 lg:gap-3">
+                    {featureCards.map((card, i) => {
+                        const Icon = card.icon
                         return (
-                            <motion.div
-                                key={feature.title}
+                            <motion.article
+                                key={card.id}
                                 initial={{ opacity: 0, y: 30 }}
                                 whileInView={{ opacity: 1, y: 0 }}
                                 viewport={{ once: true, amount: 0.3 }}
                                 transition={{ duration: 0.5, delay: i * 0.05, ease: [0.16, 1, 0.3, 1] }}
-                                className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-8 hover:bg-white/10 hover:border-[#2DA5A0]/40 transition-all duration-300"
+                                className="bg-white/[0.02] backdrop-blur-sm border border-white/[0.08] rounded-2xl p-6 lg:p-5 flex flex-col gap-3 h-full hover:bg-white/[0.05] hover:border-[#2DA5A0]/40 transition-all duration-300"
                             >
-                                <Icon strokeWidth={1.5} className="w-8 h-8 text-[#2DA5A0] mb-6" />
-                                <h3 className="text-white text-xl font-medium mb-3">{feature.title}</h3>
-                                <p className="text-white/60 text-sm leading-relaxed">{feature.description}</p>
-                            </motion.div>
+                                <Icon strokeWidth={1.5} className="w-7 h-7 lg:w-6 lg:h-6 text-[#2DA5A0]" />
+                                <h3 className="text-white text-lg lg:text-base font-semibold leading-tight">{card.headline}</h3>
+                                <p className="text-white/60 text-base lg:text-sm leading-relaxed lg:leading-snug">{card.body}</p>
+                            </motion.article>
                         )
                     })}
                 </div>
