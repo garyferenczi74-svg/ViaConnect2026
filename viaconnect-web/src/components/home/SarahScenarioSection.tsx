@@ -20,6 +20,8 @@
 import Link from 'next/link';
 import { ChevronRight } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
+import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
+import { safeLog } from '@/lib/utils/safe-log';
 import type {
   ScenarioPersonaRow,
   ScenarioCategoryRow,
@@ -135,6 +137,22 @@ export async function SarahScenarioSection() {
 }
 
 async function loadActiveContent(): Promise<ActiveContent | null> {
+  // Prompt #140a Pattern C (fail-soft): timeout 8000ms; on timeout or error,
+  // return null so SarahScenarioSection renders null. The component already
+  // handles the null case gracefully.
+  try {
+    return await withTimeout(loadActiveContentInner(), 8000, 'home.sarah-scenario.loadActiveContent');
+  } catch (error) {
+    if (isTimeoutError(error)) {
+      safeLog.warn('home.sarah-scenario', 'load timed out, rendering null', { error });
+    } else {
+      safeLog.error('home.sarah-scenario', 'load failed', { error });
+    }
+    return null;
+  }
+}
+
+async function loadActiveContentInner(): Promise<ActiveContent | null> {
   try {
     const supabase = createClient();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -1,6 +1,13 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { withTimeout, isTimeoutError } from "@/lib/utils/with-timeout";
+import { safeLog } from "@/lib/utils/safe-log";
 
+// Prompt #140a Layer 1 hardening. Every Supabase auth + data call is wrapped
+// with withTimeout. On timeout: treat as unauthenticated and let the public-
+// route allowlist decide whether to allow or redirect. On unexpected error:
+// log via safeLog and same fallback behavior. Role lookup uses fallback chain
+// (user_metadata.role) when the profiles query fails.
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({
     request: {
@@ -43,9 +50,35 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // Auth check. Timeout 2000ms; on timeout/error treat as unauthenticated.
+  let user: Awaited<ReturnType<typeof supabase.auth.getUser>>["data"]["user"] | null = null;
+  try {
+    const { data, error } = await withTimeout(
+      supabase.auth.getUser(),
+      2000,
+      "middleware.auth.getUser"
+    );
+    if (error) {
+      safeLog.warn("middleware.auth", "getUser returned error", {
+        path: request.nextUrl.pathname,
+        error,
+      });
+    } else {
+      user = data.user;
+    }
+  } catch (error) {
+    if (isTimeoutError(error)) {
+      safeLog.warn("middleware.auth", "getUser timed out, treating as unauthenticated", {
+        path: request.nextUrl.pathname,
+        error,
+      });
+    } else {
+      safeLog.error("middleware.auth", "getUser failed unexpectedly", {
+        path: request.nextUrl.pathname,
+        error,
+      });
+    }
+  }
 
   const pathname = request.nextUrl.pathname;
 
@@ -81,6 +114,9 @@ export async function updateSession(request: NextRequest) {
 
   // If not authenticated and trying to access protected route, redirect to login
   if (!user && !isPublicRoute) {
+    safeLog.info("middleware.auth", "redirecting unauthenticated request to login", {
+      path: pathname,
+    });
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     url.searchParams.set("redirectTo", pathname);
@@ -93,12 +129,39 @@ export async function updateSession(request: NextRequest) {
     // user_metadata.role is kept as a fallback ONLY for non-admin routing
     // decisions; admin gating strictly requires a profiles.role='admin' row so
     // the middleware and the API layer cannot drift apart.
-    const { data: profileRow } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
-      .maybeSingle();
-    const profileRole = profileRow?.role as string | undefined;
+    let profileRole: string | undefined;
+    try {
+      // Wrapped in async IIFE because PostgrestBuilder is thenable but not
+      // strictly typed as Promise<T>; withTimeout's signature requires Promise.
+      profileRole = await withTimeout(
+        (async () => {
+          const { data: profileRow } = await supabase
+            .from("profiles")
+            .select("role")
+            .eq("id", user.id)
+            .maybeSingle();
+          return profileRow?.role as string | undefined;
+        })(),
+        1500,
+        "middleware.profiles.role"
+      );
+    } catch (error) {
+      if (isTimeoutError(error)) {
+        safeLog.warn("middleware.role", "profiles role lookup timed out, falling back to user_metadata.role", {
+          path: pathname,
+          userId: user.id,
+          error,
+        });
+      } else {
+        safeLog.error("middleware.role", "profiles role lookup failed", {
+          path: pathname,
+          userId: user.id,
+          error,
+        });
+      }
+      profileRole = undefined;
+    }
+
     const rawRole = profileRole ?? (user.user_metadata?.role as string | undefined);
     const role = normalizeRole(rawRole);
 
@@ -115,19 +178,10 @@ export async function updateSession(request: NextRequest) {
 
     // Admin role has access to ALL portals. Must match /api/admin/** gating
     // exactly: profiles.role='admin' is the only path to isAdmin=true.
+    // Note: when the role lookup timed out, profileRole is undefined here, so
+    // isAdmin becomes false. Admin routes will then redirect (fail-CLOSED for
+    // admin gating, which is the safe default).
     const isAdmin = profileRole === "admin";
-
-    // Detect if the user is crossing portal boundaries so the client can
-    // clear stale cached data (auth store + React Query) on arrival.
-    // Note the trailing slash on /practitioner/ — without it, this would
-    // also match /practitioners (the public landing/waitlist page).
-    const currentPortal = pathname.startsWith("/practitioner/")
-      ? "practitioner"
-      : pathname.startsWith("/naturopath/")
-      ? "naturopath"
-      : pathname.startsWith("/admin")
-      ? "admin"
-      : "consumer";
 
     // Admin-only routes
     if (pathname.startsWith("/admin") && !isAdmin) {
@@ -137,7 +191,7 @@ export async function updateSession(request: NextRequest) {
       return NextResponse.redirect(url);
     }
 
-    // Enforce portal access based on role — block cross-portal access.
+    // Enforce portal access based on role, block cross-portal access.
     // Trailing slash matters: /practitioner/ is the practitioner portal,
     // /practitioners is the public marketing/waitlist page.
     if (pathname.startsWith("/practitioner/") && role !== "practitioner" && !isAdmin) {

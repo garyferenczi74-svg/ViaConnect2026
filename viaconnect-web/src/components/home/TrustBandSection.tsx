@@ -13,6 +13,8 @@
  */
 
 import { createClient } from '@/lib/supabase/server';
+import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
+import { safeLog } from '@/lib/utils/safe-log';
 import type {
   RegulatoryParagraphRow,
   ClinicianCardRow,
@@ -74,34 +76,46 @@ export async function TrustBandSection() {
 async function loadActiveContent(): Promise<ActiveContent | null> {
   try {
     const supabase = createClient();
-    const [regResp, clinResp, chipsResp] = await Promise.all([
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (supabase as any)
-        .from('trust_band_regulatory_paragraphs')
-        .select('*')
-        .eq('active', true)
-        .limit(1)
-        .maybeSingle(),
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (supabase as any)
-        .from('trust_band_clinician_cards')
-        .select('*')
-        .eq('active', true)
-        .order('display_order', { ascending: true }),
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (supabase as any)
-        .from('trust_band_chips')
-        .select('*')
-        .eq('active', true)
-        .order('display_order', { ascending: true }),
-    ]);
+    // Prompt #140a Pattern C (fail-soft): wrap the parallel fetch with an
+    // 8000ms timeout. On timeout or error, return null and let the parent
+    // section render null gracefully (component already handles this case).
+    const [regResp, clinResp, chipsResp] = await withTimeout(
+      Promise.all([
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (supabase as any)
+          .from('trust_band_regulatory_paragraphs')
+          .select('*')
+          .eq('active', true)
+          .limit(1)
+          .maybeSingle(),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (supabase as any)
+          .from('trust_band_clinician_cards')
+          .select('*')
+          .eq('active', true)
+          .order('display_order', { ascending: true }),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (supabase as any)
+          .from('trust_band_chips')
+          .select('*')
+          .eq('active', true)
+          .order('display_order', { ascending: true }),
+      ]),
+      8000,
+      'home.trust-band.loadActiveContent'
+    );
 
     return {
       regulatory: (regResp.data ?? null) as RegulatoryParagraphRow | null,
       clinicians: (clinResp.data ?? []) as ClinicianCardRow[],
       chips: (chipsResp.data ?? []) as TrustChipRow[],
     };
-  } catch {
+  } catch (error) {
+    if (isTimeoutError(error)) {
+      safeLog.warn('home.trust-band', 'load timed out, rendering null', { error });
+    } else {
+      safeLog.error('home.trust-band', 'load failed', { error });
+    }
     return null;
   }
 }

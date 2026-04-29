@@ -13,6 +13,8 @@
  */
 
 import { createClient } from '@/lib/supabase/server';
+import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
+import { safeLog } from '@/lib/utils/safe-log';
 import type {
   OutcomeVariantSetRow,
   OutcomePhaseRow,
@@ -102,6 +104,20 @@ export async function OutcomeTimelineSection() {
 }
 
 async function loadActiveContent(): Promise<ActiveContent | null> {
+  // Prompt #140a Pattern C (fail-soft): timeout 8000ms.
+  try {
+    return await withTimeout(loadActiveContentInner(), 8000, 'home.outcome-timeline.loadActiveContent');
+  } catch (error) {
+    if (isTimeoutError(error)) {
+      safeLog.warn('home.outcome-timeline', 'load timed out, rendering null', { error });
+    } else {
+      safeLog.error('home.outcome-timeline', 'load failed', { error });
+    }
+    return null;
+  }
+}
+
+async function loadActiveContentInner(): Promise<ActiveContent | null> {
   try {
     const supabase = createClient();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
