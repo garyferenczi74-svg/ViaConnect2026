@@ -698,7 +698,7 @@ export default function AnalyticsPage() {
           <BarChart3 className="w-6 h-6 text-copper" />
           Wellness Analytics
         </h1>
-        <p className="text-[#B75E18] text-sm mt-1">
+        <p className="text-white text-[16.1px] mt-1">
           Track your Bio Optimization, adherence, symptoms, and wellness journey over time.
         </p>
       </StaggerChild>
