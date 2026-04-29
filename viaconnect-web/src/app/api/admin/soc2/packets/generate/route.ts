@@ -19,6 +19,8 @@ import { distributePacket } from '@/lib/soc2/distribute';
 import { buildSupabaseFetcher } from '@/lib/soc2/collectors/supabaseFetcher';
 import { loadActiveSigningKey } from '@/lib/soc2/assemble/signingKey';
 import { loadActiveManualEvidence } from '@/lib/soc2/manualEvidence/loader';
+import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
+import { safeLog } from '@/lib/utils/safe-log';
 
 export const runtime = 'nodejs';
 export const maxDuration = 300;
@@ -50,19 +52,23 @@ async function authenticate(req: NextRequest): Promise<
 
   // Path 2: admin user session.
   const supabase = createServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user } } = await withTimeout(supabase.auth.getUser(), 5000, 'api.soc2.packets.generate.auth');
   if (!user) {
     return {
       ok: false,
       response: NextResponse.json({ error: 'Authentication required' }, { status: 401 }),
     };
   }
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .maybeSingle();
-  const role = (profile as { role?: string } | null)?.role ?? '';
+  const profileRes = await withTimeout(
+    (async () => supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .maybeSingle())(),
+    5000,
+    'api.soc2.packets.generate.load-profile',
+  );
+  const role = (profileRes.data as { role?: string } | null)?.role ?? '';
   if (!ADMIN_ROLES.has(role)) {
     return {
       ok: false,
@@ -151,6 +157,11 @@ export async function POST(req: NextRequest) {
       distribution,
     });
   } catch (err) {
+    if (isTimeoutError(err)) {
+      safeLog.error('api.soc2.packets.generate', 'database timeout', { error: err });
+      return NextResponse.json({ error: 'Database operation timed out. Please try again.' }, { status: 503 });
+    }
+    safeLog.error('api.soc2.packets.generate', 'unexpected error', { error: err });
     return NextResponse.json(
       { ok: false, error: (err as Error).message },
       { status: 500 },

@@ -17,6 +17,8 @@ import {
   type ClickRecord,
   type PractitionerSignals,
 } from '@/lib/practitioner-referral/attribution-resolver';
+import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
+import { safeLog } from '@/lib/utils/safe-log';
 
 export const runtime = 'nodejs';
 
@@ -26,25 +28,47 @@ const schema = z.object({
 });
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
-  const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+  const requestId = request.headers.get('x-request-id') ?? crypto.randomUUID();
+  try {
+    const supabase = createClient();
 
-  const json = await request.json().catch(() => null);
-  const parsed = schema.safeParse(json ?? {});
-  if (!parsed.success) {
-    return NextResponse.json({ error: 'Invalid body', details: parsed.error.issues }, { status: 400 });
-  }
+    let user;
+    try {
+      const authResult = await withTimeout(
+        supabase.auth.getUser(),
+        5000,
+        'api.practitioner.referrals.resolve-attribution.auth',
+      );
+      user = authResult.data.user;
+    } catch (err) {
+      if (isTimeoutError(err)) {
+        safeLog.error('api.practitioner.referrals.resolve-attribution', 'auth timeout', { requestId, error: err });
+        return NextResponse.json({ error: 'Authentication timed out. Please try again.' }, { status: 503 });
+      }
+      throw err;
+    }
+    if (!user) return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
 
-  const sb = supabase as any;
+    const json = await request.json().catch(() => null);
+    const parsed = schema.safeParse(json ?? {});
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Invalid body', details: parsed.error.issues }, { status: 400 });
+    }
 
-  // Look up the calling user's practitioner row.
-  const { data: practitioner } = await sb
-    .from('practitioners')
-    .select('id, user_id, practice_name, practice_street_address, practice_city, practice_state, practice_postal_code, practice_phone')
-    .eq('user_id', user.id)
-    .maybeSingle();
-  if (!practitioner) return NextResponse.json({ error: 'No practitioner record' }, { status: 404 });
+    const sb = supabase as any;
+
+    // Look up the calling user's practitioner row.
+    const practitionerRes = await withTimeout(
+      (async () => sb
+        .from('practitioners')
+        .select('id, user_id, practice_name, practice_street_address, practice_city, practice_state, practice_postal_code, practice_phone')
+        .eq('user_id', user.id)
+        .maybeSingle())(),
+      8000,
+      'api.practitioner.referrals.resolve-attribution.practitioner-load',
+    );
+    const practitioner = practitionerRes.data;
+    if (!practitioner) return NextResponse.json({ error: 'No practitioner record' }, { status: 404 });
 
   const referredSignals: PractitionerSignals = {
     practitioner_id: practitioner.id,
@@ -176,10 +200,18 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     });
   }
 
-  return NextResponse.json({
-    attributed: result.attributed,
-    attribution_id: attribution?.id,
-    reason: result.reason,
-    proposed_status: result.proposed_status,
-  });
+    return NextResponse.json({
+      attributed: result.attributed,
+      attribution_id: attribution?.id,
+      reason: result.reason,
+      proposed_status: result.proposed_status,
+    });
+  } catch (err) {
+    if (isTimeoutError(err)) {
+      safeLog.error('api.practitioner.referrals.resolve-attribution', 'database timeout', { requestId, error: err });
+      return NextResponse.json({ error: 'Database operation timed out. Please try again.' }, { status: 503 });
+    }
+    safeLog.error('api.practitioner.referrals.resolve-attribution', 'unexpected error', { requestId, error: err });
+    return NextResponse.json({ error: 'An unexpected error occurred.' }, { status: 500 });
+  }
 }

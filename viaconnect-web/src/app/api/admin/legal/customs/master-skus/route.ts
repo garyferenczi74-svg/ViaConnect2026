@@ -12,6 +12,8 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
+import { safeLog } from '@/lib/utils/safe-log';
 
 export const runtime = 'nodejs';
 
@@ -23,7 +25,7 @@ interface ProfileLite {
 }
 
 async function requireLegalOrExec(supabase: ReturnType<typeof createClient>) {
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user } } = await withTimeout(supabase.auth.getUser(), 5000, 'api.admin.legal.customs.master-skus.auth');
   if (!user) {
     return {
       ok: false as const,
@@ -58,21 +60,30 @@ async function requireLegalOrExec(supabase: ReturnType<typeof createClient>) {
 }
 
 export async function GET(): Promise<NextResponse> {
-  const supabase = createClient();
-  const ctx = await requireLegalOrExec(supabase);
-  if (!ctx.ok) return ctx.response;
+  try {
+    const supabase = createClient();
+    const ctx = await requireLegalOrExec(supabase);
+    if (!ctx.ok) return ctx.response;
 
-  const admin = createAdminClient();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sb = admin as any;
-  const { data, error } = await sb
-    .from('master_skus')
-    .select('sku, name, category, msrp')
-    .order('category', { ascending: true })
-    .order('name', { ascending: true });
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const admin = createAdminClient();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const sb = admin as any;
+    const { data, error } = await sb
+      .from('master_skus')
+      .select('sku, name, category, msrp')
+      .order('category', { ascending: true })
+      .order('name', { ascending: true });
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ rows: data ?? [] });
+  } catch (err) {
+    if (isTimeoutError(err)) {
+      safeLog.warn('api.admin.legal.customs.master-skus', 'GET timeout', { error: err });
+      return NextResponse.json({ error: 'Request timed out.' }, { status: 503 });
+    }
+    safeLog.error('api.admin.legal.customs.master-skus', 'unexpected error', { error: err });
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
-
-  return NextResponse.json({ rows: data ?? [] });
 }

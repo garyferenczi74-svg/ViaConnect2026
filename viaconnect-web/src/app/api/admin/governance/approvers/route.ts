@@ -14,28 +14,31 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { requireGovernanceAdmin } from '@/lib/governance/admin-guard';
 import { buildConfigLogRow } from '@/lib/governance/config-log';
+import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
+import { safeLog } from '@/lib/utils/safe-log';
 
 const VALID_ROLES = new Set(['ceo', 'cfo', 'advisory_cto', 'advisory_medical', 'board_member']);
 
 export async function POST(request: NextRequest) {
-  const auth = await requireGovernanceAdmin();
-  if (auth.kind === 'error') return auth.response;
+  try {
+    const auth = await requireGovernanceAdmin();
+    if (auth.kind === 'error') return auth.response;
 
-  const body = (await request.json().catch(() => null)) as
-    | {
-        action?: 'assign' | 'unassign';
-        approver_role?: string;
-        user_id?: string;
-        assignment_id?: string;
-        justification?: string;
-      }
-    | null;
+    const body = (await request.json().catch(() => null)) as
+      | {
+          action?: 'assign' | 'unassign';
+          approver_role?: string;
+          user_id?: string;
+          assignment_id?: string;
+          justification?: string;
+        }
+      | null;
 
-  if (!body?.action || !body.justification) {
-    return NextResponse.json({ error: 'action and justification required' }, { status: 400 });
-  }
+    if (!body?.action || !body.justification) {
+      return NextResponse.json({ error: 'action and justification required' }, { status: 400 });
+    }
 
-  const supabase = createClient();
+    const supabase = createClient();
 
   if (body.action === 'assign') {
     if (!body.approver_role || !body.user_id) {
@@ -132,5 +135,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: true });
   }
 
-  return NextResponse.json({ error: 'Unknown action' }, { status: 400 });
+    return NextResponse.json({ error: 'Unknown action' }, { status: 400 });
+  } catch (err) {
+    if (isTimeoutError(err)) {
+      safeLog.error('api.admin.governance.approvers', 'timeout', { error: err });
+      return NextResponse.json({ error: 'Database operation timed out.' }, { status: 503 });
+    }
+    safeLog.error('api.admin.governance.approvers', 'unexpected error', { error: err });
+    return NextResponse.json({ error: 'Internal error' }, { status: 500 });
+  }
 }

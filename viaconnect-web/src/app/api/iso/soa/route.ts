@@ -9,6 +9,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient as createServerClient } from '@/lib/supabase/server';
+import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
+import { safeLog } from '@/lib/utils/safe-log';
 
 export const runtime = 'nodejs';
 
@@ -26,16 +28,22 @@ interface Body {
 }
 
 export async function POST(req: NextRequest) {
-  const session = createServerClient();
-  const { data: { user } } = await session.auth.getUser();
-  if (!user) return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
-  const { data: profile } = await session.from('profiles').select('role').eq('id', user.id).maybeSingle();
-  const role = (profile as { role?: string } | null)?.role ?? '';
-  if (!ISO_ADMIN_ROLES.has(role)) return NextResponse.json({ error: 'ISO admin role required' }, { status: 403 });
+  try {
+    const session = createServerClient();
+    const { data: { user } } = await withTimeout(session.auth.getUser(), 5000, 'api.iso.soa.auth');
+    if (!user) return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+    const { data: profile } = await withTimeout(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (async () => (session as any).from('profiles').select('role').eq('id', user.id).maybeSingle())(),
+      8000,
+      'api.iso.soa.profile',
+    );
+    const role = (profile as { role?: string } | null)?.role ?? '';
+    if (!ISO_ADMIN_ROLES.has(role)) return NextResponse.json({ error: 'ISO admin role required' }, { status: 403 });
 
-  let body: Body;
-  try { body = (await req.json()) as Body; }
-  catch { return NextResponse.json({ error: 'invalid_json' }, { status: 400 }); }
+    let body: Body;
+    try { body = (await req.json()) as Body; }
+    catch { return NextResponse.json({ error: 'invalid_json' }, { status: 400 }); }
 
   const controlRef = (body.controlRef ?? '').trim();
   const applicability = (body.applicability ?? '').trim();
@@ -53,35 +61,50 @@ export async function POST(req: NextRequest) {
   const sb = session as any;
 
   // Auto-bump version: latest version for this control ref + 1, or 1 if none exist.
-  const { data: priorRow } = await sb
-    .from('iso_statements_of_applicability')
-    .select('version')
-    .eq('control_ref', controlRef)
-    .order('version', { ascending: false })
-    .limit(1)
-    .maybeSingle();
+  const { data: priorRow } = await withTimeout(
+    (async () => sb
+      .from('iso_statements_of_applicability')
+      .select('version')
+      .eq('control_ref', controlRef)
+      .order('version', { ascending: false })
+      .limit(1)
+      .maybeSingle())(),
+    8000,
+    'api.iso.soa.priorRow',
+  );
   const priorVersion = (priorRow as { version?: number } | null)?.version ?? 0;
   const nextVersion = priorVersion + 1;
 
-  const { data, error } = await sb
-    .from('iso_statements_of_applicability')
-    .insert({
-      control_ref: controlRef,
-      version: nextVersion,
-      applicability,
-      justification,
-      implementation_status: implementationStatus,
-      effective_from: effectiveFrom,
-      effective_until: body.effectiveUntil ?? null,
-      recorded_by: user.id,
-    })
-    .select('id, version')
-    .single();
+  const { data, error } = await withTimeout(
+    (async () => sb
+      .from('iso_statements_of_applicability')
+      .insert({
+        control_ref: controlRef,
+        version: nextVersion,
+        applicability,
+        justification,
+        implementation_status: implementationStatus,
+        effective_from: effectiveFrom,
+        effective_until: body.effectiveUntil ?? null,
+        recorded_by: user.id,
+      })
+      .select('id, version')
+      .single())(),
+    8000,
+    'api.iso.soa.insert',
+  );
   if (error) {
-    // eslint-disable-next-line no-console
-    console.error('[iso soa] insert failed', { message: error.message });
+    safeLog.error('api.iso.soa', 'insert failed', { message: error.message });
     return NextResponse.json({ error: 'insert_failed' }, { status: 500 });
   }
   const row = data as { id: string; version: number };
   return NextResponse.json({ ok: true, id: row.id, version: row.version });
+  } catch (err) {
+    if (isTimeoutError(err)) {
+      safeLog.warn('api.iso.soa', 'timeout', { error: err });
+      return NextResponse.json({ error: 'timeout' }, { status: 503 });
+    }
+    safeLog.error('api.iso.soa', 'unexpected error', { error: err });
+    return NextResponse.json({ error: 'unexpected_error' }, { status: 500 });
+  }
 }

@@ -13,6 +13,8 @@ import {
   generatePatientInvitationToken,
   buildPatientInvitationUrl,
 } from '@/lib/practitioner/patient-invitations';
+import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
+import { safeLog } from '@/lib/utils/safe-log';
 
 export const runtime = 'nodejs';
 
@@ -35,6 +37,8 @@ const invitePatientSchema = z.object({
 });
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
+  const requestId = request.headers.get('x-request-id') ?? crypto.randomUUID();
+
   let body: unknown;
   try {
     body = await request.json();
@@ -50,97 +54,137 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     );
   }
 
-  const supabase = createClient();
-
-  // Caller must be authenticated.
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
-  }
-
-  // Caller must have an active practitioner row.
-  const { data: practitioner } = await (supabase as any)
-    .from('practitioners')
-    .select('id, account_status, display_name, practice_name')
-    .eq('user_id', user.id)
-    .eq('account_status', 'active')
-    .maybeSingle();
-
-  if (!practitioner) {
-    return NextResponse.json(
-      { error: 'Active practitioner account required' },
-      { status: 403 },
-    );
-  }
-
-  const token = generatePatientInvitationToken();
-  const presets = parsed.data.consentPresets ?? {};
-
-  const { data: relRow, error: insertErr } = await (supabase as any)
-    .from('practitioner_patients')
-    .insert({
-      practitioner_id: user.id,
-      // patient_id stays null until the patient accepts via the
-      // accept_practitioner_invitation RPC. Migration _150 made this
-      // column nullable to support invitation rows that have not yet
-      // been claimed.
-      patient_id: null,
-      invited_email:      parsed.data.patientEmail.toLowerCase().trim(),
-      invited_first_name: parsed.data.patientFirstName.trim(),
-      invited_last_name:  parsed.data.patientLastName.trim(),
-      relationship_type: 'primary',
-      status: 'invited',
-      invitation_token: token,
-      invited_at: new Date().toISOString(),
-      invitation_note: parsed.data.invitationNote ?? null,
-      consent_share_caq: presets.consent_share_caq ?? false,
-      consent_share_engagement_score: presets.consent_share_engagement_score ?? true,
-      consent_share_protocols: presets.consent_share_protocols ?? true,
-      consent_share_nutrition: presets.consent_share_nutrition ?? false,
-      can_view_genetics: presets.can_view_genetics ?? false,
-    })
-    .select('id')
-    .single();
-
-  if (insertErr || !relRow) {
-    return NextResponse.json(
-      { error: insertErr?.message ?? 'Could not create invitation' },
-      { status: 500 },
-    );
-  }
-
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://viacurawellness.com';
-  const invitationUrl = buildPatientInvitationUrl(baseUrl, token);
-
-  // Best-effort fan-out to Jeffery so the admin LiveFeed sees the invite.
   try {
-    await (supabase as any).from('agent_messages').insert({
-      from_agent: 'jeffery',
-      to_agent: 'jeffery',
-      message_type: 'patient_invitation_sent',
-      user_id: user.id,
-      payload: {
-        relationship_id: relRow.id,
-        practitioner_user_id: user.id,
-        patient_email: parsed.data.patientEmail,
-        invitation_url: invitationUrl,
-      },
-      status: 'pending',
-    });
-  } catch (e) {
-    console.warn('[invite-patient] agent_messages emit failed (non-fatal)', e);
-  }
+    const supabase = createClient();
 
-  return NextResponse.json(
-    {
-      success: true,
-      relationshipId: relRow.id,
-      invitationUrl,
-      practitioner: {
-        displayName: practitioner.display_name,
-        practiceName: practitioner.practice_name,
+    // Caller must be authenticated.
+    let user;
+    try {
+      const authResult = await withTimeout(
+        supabase.auth.getUser(),
+        5000,
+        'api.practitioner.invite-patient.auth',
+      );
+      user = authResult.data.user;
+    } catch (err) {
+      if (isTimeoutError(err)) {
+        safeLog.error('api.practitioner.invite-patient', 'auth timeout', { requestId, error: err });
+        return NextResponse.json({ error: 'Authentication timed out. Please try again.' }, { status: 503 });
+      }
+      throw err;
+    }
+    if (!user) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+    }
+
+    // Caller must have an active practitioner row.
+    const sb = supabase as any;
+    const practitionerRes = await withTimeout(
+      (async () => sb
+        .from('practitioners')
+        .select('id, account_status, display_name, practice_name')
+        .eq('user_id', user.id)
+        .eq('account_status', 'active')
+        .maybeSingle())(),
+      8000,
+      'api.practitioner.invite-patient.practitioner-load',
+    );
+    const practitioner = practitionerRes.data;
+
+    if (!practitioner) {
+      return NextResponse.json(
+        { error: 'Active practitioner account required' },
+        { status: 403 },
+      );
+    }
+
+    const token = generatePatientInvitationToken();
+    const presets = parsed.data.consentPresets ?? {};
+
+    const insertRes = await withTimeout(
+      (async () => sb
+        .from('practitioner_patients')
+        .insert({
+          practitioner_id: user.id,
+          // patient_id stays null until the patient accepts via the
+          // accept_practitioner_invitation RPC. Migration _150 made this
+          // column nullable to support invitation rows that have not yet
+          // been claimed.
+          patient_id: null,
+          invited_email:      parsed.data.patientEmail.toLowerCase().trim(),
+          invited_first_name: parsed.data.patientFirstName.trim(),
+          invited_last_name:  parsed.data.patientLastName.trim(),
+          relationship_type: 'primary',
+          status: 'invited',
+          invitation_token: token,
+          invited_at: new Date().toISOString(),
+          invitation_note: parsed.data.invitationNote ?? null,
+          consent_share_caq: presets.consent_share_caq ?? false,
+          consent_share_engagement_score: presets.consent_share_engagement_score ?? true,
+          consent_share_protocols: presets.consent_share_protocols ?? true,
+          consent_share_nutrition: presets.consent_share_nutrition ?? false,
+          can_view_genetics: presets.can_view_genetics ?? false,
+        })
+        .select('id')
+        .single())(),
+      8000,
+      'api.practitioner.invite-patient.insert',
+    );
+    const relRow = insertRes.data;
+    const insertErr = insertRes.error;
+
+    if (insertErr || !relRow) {
+      safeLog.error('api.practitioner.invite-patient', 'insert failed', { requestId, error: insertErr });
+      return NextResponse.json(
+        { error: insertErr?.message ?? 'Could not create invitation' },
+        { status: 500 },
+      );
+    }
+
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://viacurawellness.com';
+    const invitationUrl = buildPatientInvitationUrl(baseUrl, token);
+
+    // Best-effort fan-out to Jeffery so the admin LiveFeed sees the invite.
+    try {
+      await withTimeout(
+        (async () => sb.from('agent_messages').insert({
+          from_agent: 'jeffery',
+          to_agent: 'jeffery',
+          message_type: 'patient_invitation_sent',
+          user_id: user.id,
+          payload: {
+            relationship_id: relRow.id,
+            practitioner_user_id: user.id,
+            patient_email: parsed.data.patientEmail,
+            invitation_url: invitationUrl,
+          },
+          status: 'pending',
+        }))(),
+        5000,
+        'api.practitioner.invite-patient.agent-emit',
+      );
+    } catch (e) {
+      safeLog.warn('api.practitioner.invite-patient', 'agent_messages emit failed (non-fatal)', { requestId, error: e });
+    }
+
+    return NextResponse.json(
+      {
+        success: true,
+        relationshipId: relRow.id,
+        invitationUrl,
+        practitioner: {
+          displayName: practitioner.display_name,
+          practiceName: practitioner.practice_name,
+        },
       },
-    },
-    { status: 201 },
-  );
+      { status: 201 },
+    );
+  } catch (err) {
+    if (isTimeoutError(err)) {
+      safeLog.error('api.practitioner.invite-patient', 'database timeout', { requestId, error: err });
+      return NextResponse.json({ error: 'Database operation timed out. Please try again.' }, { status: 503 });
+    }
+    safeLog.error('api.practitioner.invite-patient', 'unexpected error', { requestId, error: err });
+    return NextResponse.json({ error: 'An unexpected error occurred.' }, { status: 500 });
+  }
 }

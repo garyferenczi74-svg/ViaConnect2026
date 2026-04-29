@@ -9,6 +9,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createHash, randomUUID } from 'node:crypto';
 import { createClient as createServerClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
+import { safeLog } from '@/lib/utils/safe-log';
 
 export const runtime = 'nodejs';
 
@@ -16,12 +18,18 @@ const ISO_ADMIN_ROLES = new Set(['compliance_officer', 'compliance_admin', 'admi
 const MAX_BYTES = 100 * 1024 * 1024;
 
 export async function POST(req: NextRequest) {
-  const session = createServerClient();
-  const { data: { user } } = await session.auth.getUser();
-  if (!user) return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
-  const { data: profile } = await session.from('profiles').select('role').eq('id', user.id).maybeSingle();
-  const role = (profile as { role?: string } | null)?.role ?? '';
-  if (!ISO_ADMIN_ROLES.has(role)) return NextResponse.json({ error: 'ISO admin role required' }, { status: 403 });
+  try {
+    const session = createServerClient();
+    const { data: { user } } = await withTimeout(session.auth.getUser(), 5000, 'api.iso.isms-scope.auth');
+    if (!user) return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+    const { data: profile } = await withTimeout(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (async () => (session as any).from('profiles').select('role').eq('id', user.id).maybeSingle())(),
+      8000,
+      'api.iso.isms-scope.profile',
+    );
+    const role = (profile as { role?: string } | null)?.role ?? '';
+    if (!ISO_ADMIN_ROLES.has(role)) return NextResponse.json({ error: 'ISO admin role required' }, { status: 403 });
 
   let fd: FormData;
   try { fd = await req.formData(); }
@@ -77,8 +85,7 @@ export async function POST(req: NextRequest) {
     .from('iso-evidence')
     .upload(storageKey, buf, { contentType: file.type || 'application/pdf', upsert: false });
   if (uploadErr) {
-    // eslint-disable-next-line no-console
-    console.error('[iso isms-scope] upload failed', { message: uploadErr.message });
+    safeLog.error('api.iso.isms-scope', 'upload failed', { message: uploadErr.message });
     return NextResponse.json({ error: 'upload_failed' }, { status: 500 });
   }
 
@@ -97,10 +104,17 @@ export async function POST(req: NextRequest) {
     .select('id, version')
     .single();
   if (error) {
-    // eslint-disable-next-line no-console
-    console.error('[iso isms-scope] insert failed', { message: error.message });
+    safeLog.error('api.iso.isms-scope', 'insert failed', { message: error.message });
     return NextResponse.json({ error: 'insert_failed', sha256 }, { status: 500 });
   }
   const row = data as { id: string; version: number };
   return NextResponse.json({ ok: true, id: row.id, version: row.version, storageKey, sha256 });
+  } catch (err) {
+    if (isTimeoutError(err)) {
+      safeLog.warn('api.iso.isms-scope', 'timeout', { error: err });
+      return NextResponse.json({ error: 'timeout' }, { status: 503 });
+    }
+    safeLog.error('api.iso.isms-scope', 'unexpected error', { error: err });
+    return NextResponse.json({ error: 'unexpected_error' }, { status: 500 });
+  }
 }

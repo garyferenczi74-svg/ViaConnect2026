@@ -4,6 +4,8 @@ import { createClient } from "@supabase/supabase-js";
 import { proposeAndRevalidate } from "@/lib/marshall/precheck/remediate";
 import { checkRateLimit } from "@/lib/marshall/precheck/rateLimit";
 import type { PrecheckFindingDto } from "@/lib/marshall/precheck/types";
+import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
+import { safeLog } from '@/lib/utils/safe-log';
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -16,38 +18,47 @@ function serviceClient() {
 }
 
 export async function POST(req: Request) {
-  const userClient = createServerClient();
-  const { data: { user } } = await userClient.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthenticated" }, { status: 401 });
-
-  let body: { finding?: PrecheckFindingDto; fullDraft?: string };
   try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
-  }
-  if (!body.finding || !body.fullDraft) {
-    return NextResponse.json({ error: "finding and fullDraft required" }, { status: 400 });
-  }
-  if (body.fullDraft.length > 20000) {
-    return NextResponse.json({ error: "fullDraft too long" }, { status: 413 });
-  }
+    const userClient = createServerClient();
+    const { data: { user } } = await withTimeout(userClient.auth.getUser(), 5000, 'api.marshall.precheck.remediate.auth');
+    if (!user) return NextResponse.json({ error: "Unauthenticated" }, { status: 401 });
 
-  // Rate limit the LLM rewrite endpoint on its own bucket. Shares the
-  // precheck_sessions counter as a proxy; a burst of remediate calls without
-  // intervening scans still consumes the practitioner's hourly budget.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const svc = serviceClient() as any;
-  const { data: prac } = await svc.from("practitioners").select("id").eq("user_id", user.id).maybeSingle();
-  if (!prac?.id) return NextResponse.json({ error: "Practitioner profile required" }, { status: 403 });
-  const rate = await checkRateLimit(svc, prac.id, "portal");
-  if (!rate.allowed) {
-    return NextResponse.json(
-      { error: "rate_limit_exceeded", remaining: rate.remaining, resetAt: rate.resetAt },
-      { status: 429 },
-    );
-  }
+    let body: { finding?: PrecheckFindingDto; fullDraft?: string };
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+    }
+    if (!body.finding || !body.fullDraft) {
+      return NextResponse.json({ error: "finding and fullDraft required" }, { status: 400 });
+    }
+    if (body.fullDraft.length > 20000) {
+      return NextResponse.json({ error: "fullDraft too long" }, { status: 413 });
+    }
 
-  const res = await proposeAndRevalidate(body.finding, body.fullDraft);
-  return NextResponse.json(res);
+    // Rate limit the LLM rewrite endpoint on its own bucket. Shares the
+    // precheck_sessions counter as a proxy; a burst of remediate calls without
+    // intervening scans still consumes the practitioner's hourly budget.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const svc = serviceClient() as any;
+    const { data: prac } = await svc.from("practitioners").select("id").eq("user_id", user.id).maybeSingle();
+    if (!prac?.id) return NextResponse.json({ error: "Practitioner profile required" }, { status: 403 });
+    const rate = await checkRateLimit(svc, prac.id, "portal");
+    if (!rate.allowed) {
+      return NextResponse.json(
+        { error: "rate_limit_exceeded", remaining: rate.remaining, resetAt: rate.resetAt },
+        { status: 429 },
+      );
+    }
+
+    const res = await proposeAndRevalidate(body.finding, body.fullDraft);
+    return NextResponse.json(res);
+  } catch (err) {
+    if (isTimeoutError(err)) {
+      safeLog.warn('api.marshall.precheck.remediate', 'request timeout', { error: err });
+      return NextResponse.json({ error: 'timeout' }, { status: 503 });
+    }
+    safeLog.error('api.marshall.precheck.remediate', 'unexpected error', { error: err });
+    return NextResponse.json({ error: 'internal_error' }, { status: 500 });
+  }
 }

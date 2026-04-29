@@ -17,6 +17,8 @@ import {
   type CACMode,
 } from '@/lib/analytics/cac-engine';
 import { ACQUISITION_CHANNELS } from '@/lib/analytics/acquisition-attribution';
+import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
+import { safeLog } from '@/lib/utils/safe-log';
 
 export const runtime = 'nodejs';
 
@@ -28,59 +30,73 @@ const querySchema = z.object({
 });
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
-  const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
-  }
+  try {
+    const supabase = createClient();
+    const { data: { user } } = await withTimeout(supabase.auth.getUser(), 5000, 'api.analytics.cac.auth');
+    if (!user) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+    }
 
-  // Admin-only at the route layer; RLS would also block but a friendly 403
-  // beats a silent empty payload.
-  const { data: profile } = await (supabase as any)
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .maybeSingle();
-  if (!profile || profile.role !== 'admin') {
-    return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
-  }
-
-  const url = new URL(request.url);
-  const rawQuery = {
-    month: url.searchParams.get('month') ?? '',
-    segment_type: url.searchParams.get('segment_type') ?? 'overall',
-    channel: url.searchParams.get('channel') ?? undefined,
-    mode: url.searchParams.get('mode') ?? 'same_month',
-  };
-  const parsed = querySchema.safeParse(rawQuery);
-  if (!parsed.success) {
-    return NextResponse.json(
-      { error: 'Invalid query', details: parsed.error.issues },
-      { status: 400 },
+    // Admin-only at the route layer; RLS would also block but a friendly 403
+    // beats a silent empty payload.
+    const profileRes = await withTimeout(
+      (async () => (supabase as any)
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .maybeSingle())(),
+      5000,
+      'api.analytics.cac.load-profile',
     );
-  }
+    const profile = profileRes.data as { role?: string } | null;
+    if (!profile || profile.role !== 'admin') {
+      return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
+    }
 
-  // Normalize the month to the first day in case caller passed mid-month.
-  const month = `${parsed.data.month.slice(0, 7)}-01`;
-  const mode = parsed.data.mode as CACMode;
-
-  if (parsed.data.segment_type === 'channel') {
-    if (!parsed.data.channel) {
+    const url = new URL(request.url);
+    const rawQuery = {
+      month: url.searchParams.get('month') ?? '',
+      segment_type: url.searchParams.get('segment_type') ?? 'overall',
+      channel: url.searchParams.get('channel') ?? undefined,
+      mode: url.searchParams.get('mode') ?? 'same_month',
+    };
+    const parsed = querySchema.safeParse(rawQuery);
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: 'channel is required when segment_type=channel' },
+        { error: 'Invalid query', details: parsed.error.issues },
         { status: 400 },
       );
     }
-    if (!ACQUISITION_CHANNELS.includes(parsed.data.channel as any)) {
-      return NextResponse.json(
-        { error: `Unknown channel: ${parsed.data.channel}` },
-        { status: 400 },
-      );
+
+    // Normalize the month to the first day in case caller passed mid-month.
+    const month = `${parsed.data.month.slice(0, 7)}-01`;
+    const mode = parsed.data.mode as CACMode;
+
+    if (parsed.data.segment_type === 'channel') {
+      if (!parsed.data.channel) {
+        return NextResponse.json(
+          { error: 'channel is required when segment_type=channel' },
+          { status: 400 },
+        );
+      }
+      if (!ACQUISITION_CHANNELS.includes(parsed.data.channel as any)) {
+        return NextResponse.json(
+          { error: `Unknown channel: ${parsed.data.channel}` },
+          { status: 400 },
+        );
+      }
+      const result = await buildChannelCAC(month, parsed.data.channel, mode, { supabase });
+      return NextResponse.json(result);
     }
-    const result = await buildChannelCAC(month, parsed.data.channel, mode, { supabase });
+
+    const result = await buildBlendedCAC(month, mode, { supabase });
     return NextResponse.json(result);
+  } catch (err) {
+    if (isTimeoutError(err)) {
+      safeLog.error('api.analytics.cac', 'database timeout', { error: err });
+      return NextResponse.json({ error: 'Database operation timed out. Please try again.' }, { status: 503 });
+    }
+    safeLog.error('api.analytics.cac', 'unexpected error', { error: err });
+    return NextResponse.json({ error: 'An unexpected error occurred.' }, { status: 500 });
   }
-
-  const result = await buildBlendedCAC(month, mode, { supabase });
-  return NextResponse.json(result);
 }

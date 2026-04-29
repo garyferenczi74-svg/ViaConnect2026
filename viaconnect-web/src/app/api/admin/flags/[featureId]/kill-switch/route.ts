@@ -10,55 +10,74 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/flags/admin-guard';
 import { invalidateFlag } from '@/lib/flags/cache';
+import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
+import { safeLog } from '@/lib/utils/safe-log';
 
 export async function POST(
   request: NextRequest,
   { params }: { params: { featureId: string } },
 ) {
-  const auth = await requireAdmin();
-  if (auth.kind === 'error') return auth.response;
+  try {
+    const auth = await requireAdmin();
+    if (auth.kind === 'error') return auth.response;
 
-  const body = (await request.json().catch(() => null)) as
-    | { action?: 'engage' | 'release'; reason?: string }
-    | null;
-  if (!body?.action || (body.action !== 'engage' && body.action !== 'release')) {
-    return NextResponse.json({ error: 'action must be engage or release' }, { status: 400 });
-  }
-  if (body.action === 'engage' && !body.reason?.trim()) {
-    return NextResponse.json(
-      { error: 'Reason is required when engaging the kill switch' },
-      { status: 400 },
+    const body = (await request.json().catch(() => null)) as
+      | { action?: 'engage' | 'release'; reason?: string }
+      | null;
+    if (!body?.action || (body.action !== 'engage' && body.action !== 'release')) {
+      return NextResponse.json({ error: 'action must be engage or release' }, { status: 400 });
+    }
+    if (body.action === 'engage' && !body.reason?.trim()) {
+      return NextResponse.json(
+        { error: 'Reason is required when engaging the kill switch' },
+        { status: 400 },
+      );
+    }
+
+    const supabase = createClient();
+    const engage = body.action === 'engage';
+
+    const updateRes = await withTimeout(
+      (async () => supabase
+        .from('features')
+        .update({
+          kill_switch_engaged: engage,
+          kill_switch_engaged_at: engage ? new Date().toISOString() : null,
+          kill_switch_engaged_by: engage ? auth.user.id : null,
+          kill_switch_reason: engage ? body.reason?.trim() ?? null : null,
+        })
+        .eq('id', params.featureId))(),
+      8000,
+      'api.flags.kill-switch.update',
     );
+    if (updateRes.error) {
+      return NextResponse.json({ error: updateRes.error.message }, { status: 500 });
+    }
+
+    await withTimeout(
+      (async () => supabase.from('feature_flag_audit').insert({
+        feature_id: params.featureId,
+        change_type: engage ? 'kill_switch_engaged' : 'kill_switch_released',
+        previous_state: { kill_switch_engaged: !engage },
+        new_state: { kill_switch_engaged: engage },
+        change_reason: body.reason?.trim() ?? null,
+        changed_by: auth.user.id,
+        user_agent: request.headers.get('user-agent'),
+        ip_address: request.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? null,
+      }))(),
+      8000,
+      'api.flags.kill-switch.audit-insert',
+    );
+
+    await invalidateFlag(params.featureId);
+
+    return NextResponse.json({ ok: true, kill_switch_engaged: engage });
+  } catch (err) {
+    if (isTimeoutError(err)) {
+      safeLog.error('api.flags.kill-switch', 'database timeout', { featureId: params.featureId, error: err });
+      return NextResponse.json({ error: 'Database operation timed out. Please try again.' }, { status: 503 });
+    }
+    safeLog.error('api.flags.kill-switch', 'unexpected error', { featureId: params.featureId, error: err });
+    return NextResponse.json({ error: 'An unexpected error occurred.' }, { status: 500 });
   }
-
-  const supabase = createClient();
-  const engage = body.action === 'engage';
-
-  const { error } = await supabase
-    .from('features')
-    .update({
-      kill_switch_engaged: engage,
-      kill_switch_engaged_at: engage ? new Date().toISOString() : null,
-      kill_switch_engaged_by: engage ? auth.user.id : null,
-      kill_switch_reason: engage ? body.reason?.trim() ?? null : null,
-    })
-    .eq('id', params.featureId);
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-
-  await supabase.from('feature_flag_audit').insert({
-    feature_id: params.featureId,
-    change_type: engage ? 'kill_switch_engaged' : 'kill_switch_released',
-    previous_state: { kill_switch_engaged: !engage },
-    new_state: { kill_switch_engaged: engage },
-    change_reason: body.reason?.trim() ?? null,
-    changed_by: auth.user.id,
-    user_agent: request.headers.get('user-agent'),
-    ip_address: request.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? null,
-  });
-
-  await invalidateFlag(params.featureId);
-
-  return NextResponse.json({ ok: true, kill_switch_engaged: engage });
 }

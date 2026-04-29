@@ -11,6 +11,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { validateBrandConfiguration, type BrandConfigInput } from '@/lib/white-label/branding';
+import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
+import { safeLog } from '@/lib/utils/safe-log';
 
 export const runtime = 'nodejs';
 
@@ -35,21 +37,35 @@ const VALIDATABLE_FIELDS = new Set([
 ]);
 
 async function loadPractitionerAndEnrollment(supabase: ReturnType<typeof createClient>) {
-  const { data: { user } } = await supabase.auth.getUser();
+  const authResult = await withTimeout(
+    supabase.auth.getUser(),
+    5000,
+    'api.white-label.brand.auth',
+  );
+  const user = authResult.data.user;
   if (!user) return { ok: false as const, response: NextResponse.json({ error: 'Authentication required' }, { status: 401 }) };
 
   const sb = supabase as any;
-  const { data: practitioner } = await sb
-    .from('practitioners').select('id').eq('user_id', user.id).maybeSingle();
+  const practitionerRes = await withTimeout(
+    (async () => sb.from('practitioners').select('id').eq('user_id', user.id).maybeSingle())(),
+    8000,
+    'api.white-label.brand.practitioner-load',
+  );
+  const practitioner = practitionerRes.data;
   if (!practitioner) {
     return { ok: false as const, response: NextResponse.json({ error: 'No practitioner record for this user' }, { status: 404 }) };
   }
 
-  const { data: enrollment } = await sb
-    .from('white_label_enrollments')
-    .select('id, status')
-    .eq('practitioner_id', practitioner.id)
-    .maybeSingle();
+  const enrollmentRes = await withTimeout(
+    (async () => sb
+      .from('white_label_enrollments')
+      .select('id, status')
+      .eq('practitioner_id', practitioner.id)
+      .maybeSingle())(),
+    8000,
+    'api.white-label.brand.enrollment-load',
+  );
+  const enrollment = enrollmentRes.data;
   if (!enrollment) {
     return { ok: false as const, response: NextResponse.json({ error: 'Enroll in white-label before creating a brand' }, { status: 403 }) };
   }
@@ -60,109 +76,173 @@ async function loadPractitionerAndEnrollment(supabase: ReturnType<typeof createC
   return { ok: true as const, user, practitionerId: practitioner.id, enrollmentId: enrollment.id };
 }
 
-export async function GET(): Promise<NextResponse> {
-  const supabase = createClient();
-  const ctx = await loadPractitionerAndEnrollment(supabase);
-  if (!ctx.ok) return ctx.response;
+function handleOuterError(err: unknown, requestId: string, scope: string): NextResponse {
+  if (isTimeoutError(err)) {
+    safeLog.error(scope, 'database timeout', { requestId, error: err });
+    return NextResponse.json({ error: 'Database operation timed out. Please try again.' }, { status: 503 });
+  }
+  safeLog.error(scope, 'unexpected error', { requestId, error: err });
+  return NextResponse.json({ error: 'An unexpected error occurred.' }, { status: 500 });
+}
 
-  const sb = supabase as any;
-  const { data, error } = await sb
-    .from('practitioner_brand_configurations')
-    .select('*')
-    .eq('practitioner_id', ctx.practitionerId)
-    .maybeSingle();
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  if (!data) return NextResponse.json({ brand: null });
-  return NextResponse.json({ brand: data });
+export async function GET(request: NextRequest): Promise<NextResponse> {
+  const requestId = request.headers.get('x-request-id') ?? crypto.randomUUID();
+  try {
+    const supabase = createClient();
+    const ctx = await loadPractitionerAndEnrollment(supabase);
+    if (!ctx.ok) return ctx.response;
+
+    const sb = supabase as any;
+    const res = await withTimeout(
+      (async () => sb
+        .from('practitioner_brand_configurations')
+        .select('*')
+        .eq('practitioner_id', ctx.practitionerId)
+        .maybeSingle())(),
+      8000,
+      'api.white-label.brand.get',
+    );
+    const data = res.data;
+    const error = res.error;
+    if (error) {
+      safeLog.error('api.white-label.brand', 'get failed', { requestId, error });
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    if (!data) return NextResponse.json({ brand: null });
+    return NextResponse.json({ brand: data });
+  } catch (err) {
+    return handleOuterError(err, requestId, 'api.white-label.brand');
+  }
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
-  const supabase = createClient();
-  const ctx = await loadPractitionerAndEnrollment(supabase);
-  if (!ctx.ok) return ctx.response;
+  const requestId = request.headers.get('x-request-id') ?? crypto.randomUUID();
+  try {
+    const supabase = createClient();
+    const ctx = await loadPractitionerAndEnrollment(supabase);
+    if (!ctx.ok) return ctx.response;
 
-  const body = (await request.json().catch(() => null)) ?? {};
-  const validation = validateBrandConfiguration(body as BrandConfigInput);
-  if (!validation.ok) {
-    return NextResponse.json({ error: 'Brand validation failed', errors: validation.errors }, { status: 400 });
+    const body = (await request.json().catch(() => null)) ?? {};
+    const validation = validateBrandConfiguration(body as BrandConfigInput);
+    if (!validation.ok) {
+      return NextResponse.json({ error: 'Brand validation failed', errors: validation.errors }, { status: 400 });
+    }
+
+    const insertRow: Record<string, unknown> = {
+      practitioner_id: ctx.practitionerId,
+      enrollment_id: ctx.enrollmentId,
+    };
+    for (const k of FIELD_KEYS) {
+      if (body[k] !== undefined) insertRow[k] = body[k];
+    }
+
+    const sb = supabase as any;
+    const existingRes = await withTimeout(
+      (async () => sb.from('practitioner_brand_configurations').select('id').eq('practitioner_id', ctx.practitionerId).maybeSingle())(),
+      8000,
+      'api.white-label.brand.post-existing-check',
+    );
+    const existing = existingRes.data;
+    if (existing) {
+      return NextResponse.json({ error: 'Brand already exists; use PATCH to update' }, { status: 409 });
+    }
+
+    const insertRes = await withTimeout(
+      (async () => sb
+        .from('practitioner_brand_configurations')
+        .insert(insertRow)
+        .select('*')
+        .maybeSingle())(),
+      8000,
+      'api.white-label.brand.post-insert',
+    );
+    const data = insertRes.data;
+    const error = insertRes.error;
+    if (error) {
+      safeLog.error('api.white-label.brand', 'post insert failed', { requestId, error });
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    // Advance enrollment to brand_setup if it was at eligibility_verified.
+    await withTimeout(
+      (async () => sb
+        .from('white_label_enrollments')
+        .update({ status: 'brand_setup', updated_at: new Date().toISOString() })
+        .eq('id', ctx.enrollmentId)
+        .eq('status', 'eligibility_verified'))(),
+      8000,
+      'api.white-label.brand.post-advance-enrollment',
+    );
+
+    return NextResponse.json({ brand: data }, { status: 201 });
+  } catch (err) {
+    return handleOuterError(err, requestId, 'api.white-label.brand');
   }
-
-  const insertRow: Record<string, unknown> = {
-    practitioner_id: ctx.practitionerId,
-    enrollment_id: ctx.enrollmentId,
-  };
-  for (const k of FIELD_KEYS) {
-    if (body[k] !== undefined) insertRow[k] = body[k];
-  }
-
-  const sb = supabase as any;
-  const { data: existing } = await sb
-    .from('practitioner_brand_configurations').select('id').eq('practitioner_id', ctx.practitionerId).maybeSingle();
-  if (existing) {
-    return NextResponse.json({ error: 'Brand already exists; use PATCH to update' }, { status: 409 });
-  }
-
-  const { data, error } = await sb
-    .from('practitioner_brand_configurations')
-    .insert(insertRow)
-    .select('*')
-    .maybeSingle();
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-
-  // Advance enrollment to brand_setup if it was at eligibility_verified.
-  await sb
-    .from('white_label_enrollments')
-    .update({ status: 'brand_setup', updated_at: new Date().toISOString() })
-    .eq('id', ctx.enrollmentId)
-    .eq('status', 'eligibility_verified');
-
-  return NextResponse.json({ brand: data }, { status: 201 });
 }
 
 export async function PATCH(request: NextRequest): Promise<NextResponse> {
-  const supabase = createClient();
-  const ctx = await loadPractitionerAndEnrollment(supabase);
-  if (!ctx.ok) return ctx.response;
+  const requestId = request.headers.get('x-request-id') ?? crypto.randomUUID();
+  try {
+    const supabase = createClient();
+    const ctx = await loadPractitionerAndEnrollment(supabase);
+    if (!ctx.ok) return ctx.response;
 
-  const body = (await request.json().catch(() => null)) ?? {};
+    const body = (await request.json().catch(() => null)) ?? {};
 
-  const sb = supabase as any;
-  const { data: existing } = await sb
-    .from('practitioner_brand_configurations')
-    .select('*')
-    .eq('practitioner_id', ctx.practitionerId)
-    .maybeSingle();
-  if (!existing) {
-    return NextResponse.json({ error: 'Brand does not exist; use POST to create' }, { status: 404 });
-  }
-
-  const merged = { ...existing, ...body };
-  const validation = validateBrandConfiguration(merged as BrandConfigInput);
-  if (!validation.ok) {
-    return NextResponse.json({ error: 'Brand validation failed', errors: validation.errors }, { status: 400 });
-  }
-
-  const update: Record<string, unknown> = { updated_at: new Date().toISOString() };
-  let approvalAffected = false;
-  for (const k of FIELD_KEYS) {
-    if (body[k] !== undefined && body[k] !== existing[k]) {
-      update[k] = body[k];
-      if (VALIDATABLE_FIELDS.has(k)) approvalAffected = true;
+    const sb = supabase as any;
+    const existingRes = await withTimeout(
+      (async () => sb
+        .from('practitioner_brand_configurations')
+        .select('*')
+        .eq('practitioner_id', ctx.practitionerId)
+        .maybeSingle())(),
+      8000,
+      'api.white-label.brand.patch-existing-load',
+    );
+    const existing = existingRes.data;
+    if (!existing) {
+      return NextResponse.json({ error: 'Brand does not exist; use POST to create' }, { status: 404 });
     }
-  }
-  if (approvalAffected && existing.brand_config_approved) {
-    update.brand_config_approved = false;
-    update.brand_config_approved_at = null;
-    update.brand_config_approved_by = null;
-  }
 
-  const { data, error } = await sb
-    .from('practitioner_brand_configurations')
-    .update(update)
-    .eq('id', existing.id)
-    .select('*')
-    .maybeSingle();
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    const merged = { ...existing, ...body };
+    const validation = validateBrandConfiguration(merged as BrandConfigInput);
+    if (!validation.ok) {
+      return NextResponse.json({ error: 'Brand validation failed', errors: validation.errors }, { status: 400 });
+    }
 
-  return NextResponse.json({ brand: data, approval_revoked: approvalAffected && existing.brand_config_approved });
+    const update: Record<string, unknown> = { updated_at: new Date().toISOString() };
+    let approvalAffected = false;
+    for (const k of FIELD_KEYS) {
+      if (body[k] !== undefined && body[k] !== existing[k]) {
+        update[k] = body[k];
+        if (VALIDATABLE_FIELDS.has(k)) approvalAffected = true;
+      }
+    }
+    if (approvalAffected && existing.brand_config_approved) {
+      update.brand_config_approved = false;
+      update.brand_config_approved_at = null;
+      update.brand_config_approved_by = null;
+    }
+
+    const updateRes = await withTimeout(
+      (async () => sb
+        .from('practitioner_brand_configurations')
+        .update(update)
+        .eq('id', existing.id)
+        .select('*')
+        .maybeSingle())(),
+      8000,
+      'api.white-label.brand.patch-update',
+    );
+    const data = updateRes.data;
+    const error = updateRes.error;
+    if (error) {
+      safeLog.error('api.white-label.brand', 'patch update failed', { requestId, error });
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ brand: data, approval_revoked: approvalAffected && existing.brand_config_approved });
+  } catch (err) {
+    return handleOuterError(err, requestId, 'api.white-label.brand');
+  }
 }

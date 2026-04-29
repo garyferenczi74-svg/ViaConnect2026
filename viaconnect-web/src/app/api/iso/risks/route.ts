@@ -3,6 +3,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient as createServerClient } from '@/lib/supabase/server';
+import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
+import { safeLog } from '@/lib/utils/safe-log';
 
 export const runtime = 'nodejs';
 
@@ -31,16 +33,22 @@ function isInt1to5(n: unknown): n is number {
 }
 
 export async function POST(req: NextRequest) {
-  const session = createServerClient();
-  const { data: { user } } = await session.auth.getUser();
-  if (!user) return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
-  const { data: profile } = await session.from('profiles').select('role').eq('id', user.id).maybeSingle();
-  const role = (profile as { role?: string } | null)?.role ?? '';
-  if (!ISO_ADMIN_ROLES.has(role)) return NextResponse.json({ error: 'ISO admin role required' }, { status: 403 });
+  try {
+    const session = createServerClient();
+    const { data: { user } } = await withTimeout(session.auth.getUser(), 5000, 'api.iso.risks.auth');
+    if (!user) return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+    const { data: profile } = await withTimeout(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (async () => (session as any).from('profiles').select('role').eq('id', user.id).maybeSingle())(),
+      8000,
+      'api.iso.risks.profile',
+    );
+    const role = (profile as { role?: string } | null)?.role ?? '';
+    if (!ISO_ADMIN_ROLES.has(role)) return NextResponse.json({ error: 'ISO admin role required' }, { status: 403 });
 
-  let body: Body;
-  try { body = (await req.json()) as Body; }
-  catch { return NextResponse.json({ error: 'invalid_json' }, { status: 400 }); }
+    let body: Body;
+    try { body = (await req.json()) as Body; }
+    catch { return NextResponse.json({ error: 'invalid_json' }, { status: 400 }); }
 
   const riskRef = (body.riskRef ?? '').trim();
   const threat = (body.threat ?? '').trim();
@@ -71,33 +79,44 @@ export async function POST(req: NextRequest) {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const sb = session as any;
-  const { data, error } = await sb
-    .from('iso_risk_register')
-    .insert({
-      risk_ref: riskRef,
-      asset: body.asset ?? null,
-      threat,
-      vulnerability,
-      description,
-      likelihood: body.likelihood,
-      impact: body.impact,
-      treatment_option: treatmentOption,
-      residual_likelihood: residualLikelihood ?? null,
-      residual_impact: residualImpact ?? null,
-      status,
-      identified_at: identifiedAt,
-      next_review_date: body.nextReviewDate ?? null,
-      recorded_by: user.id,
-    })
-    .select('id')
-    .single();
+  const { data, error } = await withTimeout(
+    (async () => sb
+      .from('iso_risk_register')
+      .insert({
+        risk_ref: riskRef,
+        asset: body.asset ?? null,
+        threat,
+        vulnerability,
+        description,
+        likelihood: body.likelihood,
+        impact: body.impact,
+        treatment_option: treatmentOption,
+        residual_likelihood: residualLikelihood ?? null,
+        residual_impact: residualImpact ?? null,
+        status,
+        identified_at: identifiedAt,
+        next_review_date: body.nextReviewDate ?? null,
+        recorded_by: user.id,
+      })
+      .select('id')
+      .single())(),
+    8000,
+    'api.iso.risks.insert',
+  );
   if (error) {
-    // eslint-disable-next-line no-console
-    console.error('[iso risks] insert failed', { message: error.message });
+    safeLog.error('api.iso.risks', 'insert failed', { message: error.message });
     if (error.message?.includes('duplicate')) {
       return NextResponse.json({ error: 'duplicate_risk_ref' }, { status: 409 });
     }
     return NextResponse.json({ error: 'insert_failed' }, { status: 500 });
   }
   return NextResponse.json({ ok: true, id: (data as { id: string }).id });
+  } catch (err) {
+    if (isTimeoutError(err)) {
+      safeLog.warn('api.iso.risks', 'timeout', { error: err });
+      return NextResponse.json({ error: 'timeout' }, { status: 503 });
+    }
+    safeLog.error('api.iso.risks', 'unexpected error', { error: err });
+    return NextResponse.json({ error: 'unexpected_error' }, { status: 500 });
+  }
 }

@@ -11,55 +11,74 @@ import {
   detectDuplicates,
   type FormulationSnapshot,
 } from '@/lib/custom-formulations/duplicate-detection';
+import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
+import { safeLog } from '@/lib/utils/safe-log';
 
 export async function GET(
   _request: NextRequest,
   { params }: { params: { id: string } },
 ) {
-  const auth = await requireCustomFormulationsAdmin();
-  if (auth.kind === 'error') return auth.response;
+  try {
+    const auth = await requireCustomFormulationsAdmin();
+    if (auth.kind === 'error') return auth.response;
 
-  const supabase = createClient();
+    const supabase = createClient();
 
-  const [targetResp, othersResp] = await Promise.all([
-    supabase
-      .from('custom_formulations')
-      .select('id, practitioner_id, internal_name, custom_formulation_ingredients(ingredient_id, dose_per_serving)')
-      .eq('id', params.id)
-      .maybeSingle(),
-    supabase
-      .from('custom_formulations')
-      .select('id, practitioner_id, internal_name, custom_formulation_ingredients(ingredient_id, dose_per_serving)')
-      .eq('status', 'approved_production_ready'),
-  ]);
+    const [targetResp, othersResp] = await Promise.all([
+      withTimeout(
+        (async () => supabase
+          .from('custom_formulations')
+          .select('id, practitioner_id, internal_name, custom_formulation_ingredients(ingredient_id, dose_per_serving)')
+          .eq('id', params.id)
+          .maybeSingle())(),
+        8000,
+        'api.custom-formulations.duplicates.load-target',
+      ),
+      withTimeout(
+        (async () => supabase
+          .from('custom_formulations')
+          .select('id, practitioner_id, internal_name, custom_formulation_ingredients(ingredient_id, dose_per_serving)')
+          .eq('status', 'approved_production_ready'))(),
+        10000,
+        'api.custom-formulations.duplicates.load-others',
+      ),
+    ]);
 
-  type RawFormulation = {
-    id: string;
-    practitioner_id: string;
-    internal_name: string;
-    custom_formulation_ingredients: Array<{ ingredient_id: string; dose_per_serving: number }>;
-  };
+    type RawFormulation = {
+      id: string;
+      practitioner_id: string;
+      internal_name: string;
+      custom_formulation_ingredients: Array<{ ingredient_id: string; dose_per_serving: number }>;
+    };
 
-  const target = targetResp.data as RawFormulation | null;
-  if (!target) {
-    return NextResponse.json({ error: 'Formulation not found' }, { status: 404 });
+    const target = targetResp.data as RawFormulation | null;
+    if (!target) {
+      return NextResponse.json({ error: 'Formulation not found' }, { status: 404 });
+    }
+
+    const toSnapshot = (r: RawFormulation): FormulationSnapshot => ({
+      id: r.id,
+      practitionerId: r.practitioner_id,
+      internalName: r.internal_name,
+      ingredients: (r.custom_formulation_ingredients ?? []).map((i) => ({
+        ingredientId: i.ingredient_id,
+        dosePerServing: Number(i.dose_per_serving),
+      })),
+    });
+
+    const targetSnap = toSnapshot(target);
+    const others = ((othersResp.data ?? []) as RawFormulation[])
+      .filter((r) => r.id !== target.id)
+      .map(toSnapshot);
+
+    const result = detectDuplicates(targetSnap, others);
+    return NextResponse.json(result);
+  } catch (err) {
+    if (isTimeoutError(err)) {
+      safeLog.error('api.custom-formulations.duplicates', 'database timeout', { id: params.id, error: err });
+      return NextResponse.json({ error: 'Database operation timed out. Please try again.' }, { status: 503 });
+    }
+    safeLog.error('api.custom-formulations.duplicates', 'unexpected error', { id: params.id, error: err });
+    return NextResponse.json({ error: 'An unexpected error occurred.' }, { status: 500 });
   }
-
-  const toSnapshot = (r: RawFormulation): FormulationSnapshot => ({
-    id: r.id,
-    practitionerId: r.practitioner_id,
-    internalName: r.internal_name,
-    ingredients: (r.custom_formulation_ingredients ?? []).map((i) => ({
-      ingredientId: i.ingredient_id,
-      dosePerServing: Number(i.dose_per_serving),
-    })),
-  });
-
-  const targetSnap = toSnapshot(target);
-  const others = ((othersResp.data ?? []) as RawFormulation[])
-    .filter((r) => r.id !== target.id)
-    .map(toSnapshot);
-
-  const result = detectDuplicates(targetSnap, others);
-  return NextResponse.json(result);
 }

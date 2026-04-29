@@ -11,24 +11,33 @@ import {
   type VersionSnapshot,
 } from '@/lib/custom-formulations/version-diff';
 import { classifyRevision } from '@/lib/custom-formulations/revision-classification';
+import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
+import { safeLog } from '@/lib/utils/safe-log';
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: { id: string; otherId: string } },
 ) {
-  const auth = await requirePractitioner();
-  if (auth.kind === 'error') return auth.response;
+  const requestId = request.headers.get('x-request-id') ?? crypto.randomUUID();
+  try {
+    const auth = await requirePractitioner();
+    if (auth.kind === 'error') return auth.response;
 
-  const supabase = createClient();
+    const supabase = createClient();
 
-  const { data } = await supabase
-    .from('custom_formulations')
-    .select(
-      'id, practitioner_id, internal_name, delivery_form, units_per_serving, servings_per_container, intended_adult_use, intended_pediatric_use, intended_pregnancy_use, proposed_structure_function_claims, custom_formulation_ingredients(ingredient_id, dose_per_serving, dose_unit, is_active_ingredient)',
-    )
-    .in('id', [params.id, params.otherId]);
+    const dataRes = await withTimeout(
+      (async () => supabase
+        .from('custom_formulations')
+        .select(
+          'id, practitioner_id, internal_name, delivery_form, units_per_serving, servings_per_container, intended_adult_use, intended_pediatric_use, intended_pregnancy_use, proposed_structure_function_claims, custom_formulation_ingredients(ingredient_id, dose_per_serving, dose_unit, is_active_ingredient)',
+        )
+        .in('id', [params.id, params.otherId]))(),
+      8000,
+      'api.practitioner.custom-formulations.compare.load',
+    );
+    const data = dataRes.data;
 
-  const rows = (data ?? []) as Array<{
+    const rows = (data ?? []) as Array<{
     id: string;
     practitioner_id: string;
     internal_name: string;
@@ -107,5 +116,13 @@ export async function GET(
     },
   });
 
-  return NextResponse.json({ diff, classification });
+    return NextResponse.json({ diff, classification });
+  } catch (err) {
+    if (isTimeoutError(err)) {
+      safeLog.error('api.practitioner.custom-formulations.compare', 'database timeout', { requestId, error: err });
+      return NextResponse.json({ error: 'Database operation timed out. Please try again.' }, { status: 503 });
+    }
+    safeLog.error('api.practitioner.custom-formulations.compare', 'unexpected error', { requestId, error: err });
+    return NextResponse.json({ error: 'An unexpected error occurred.' }, { status: 500 });
+  }
 }

@@ -12,17 +12,25 @@ import { callKelseyLLM } from "@/lib/compliance/kelsey/client";
 import { getJurisdictionId } from "@/lib/compliance/jurisdiction";
 import { recordRegulatoryAudit } from "@/lib/compliance/audit-logger";
 import type { KelseyReviewRequest, KelseyVerdict } from "@/lib/compliance/types";
+import { withTimeout, isTimeoutError } from "@/lib/utils/with-timeout";
+import { safeLog } from "@/lib/utils/safe-log";
 
 export async function POST(request: Request) {
-  const sb = createClient();
-  const { data: { user } } = await sb.auth.getUser();
-  if (!user) return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
+  try {
+    const sb = createClient();
+    const { data: { user } } = await withTimeout(sb.auth.getUser(), 5000, 'api.compliance.kelsey.auth');
+    if (!user) return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
 
-  const { data: profile } = await sb.from("profiles").select("role").eq("id", user.id).maybeSingle();
-  const role = (profile as { role?: string } | null)?.role;
-  if (!role || !["admin", "compliance_admin", "medical"].includes(role)) {
-    return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
-  }
+    const { data: profile } = await withTimeout(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (async () => (sb as any).from("profiles").select("role").eq("id", user.id).maybeSingle())(),
+      8000,
+      'api.compliance.kelsey.profile',
+    );
+    const role = (profile as { role?: string } | null)?.role;
+    if (!role || !["admin", "compliance_admin", "medical"].includes(role)) {
+      return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
+    }
 
   const body = (await request.json().catch(() => null)) as KelseyReviewRequest | null;
   if (!body || typeof body.text !== "string" || body.text.trim().length === 0) {
@@ -160,4 +168,12 @@ export async function POST(request: Request) {
     review_id: reviewId,
   };
   return NextResponse.json({ ok: true, cached: false, ...verdict });
+  } catch (err) {
+    if (isTimeoutError(err)) {
+      safeLog.warn('api.compliance.kelsey', 'auth/db timeout', { error: err });
+      return NextResponse.json({ ok: false, error: 'timeout' }, { status: 503 });
+    }
+    safeLog.error('api.compliance.kelsey', 'unexpected error', { error: err });
+    return NextResponse.json({ ok: false, error: 'unexpected_error' }, { status: 500 });
+  }
 }

@@ -12,33 +12,42 @@ import {
   calculateLevel4Quote,
   type Level4Parameters,
 } from '@/lib/custom-formulations/pricing-calculator';
+import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
+import { safeLog } from '@/lib/utils/safe-log';
 
 export async function POST(request: NextRequest) {
-  const auth = await requirePractitioner();
-  if (auth.kind === 'error') return auth.response;
+  const requestId = request.headers.get('x-request-id') ?? crypto.randomUUID();
+  try {
+    const auth = await requirePractitioner();
+    if (auth.kind === 'error') return auth.response;
 
-  const body = (await request.json().catch(() => null)) as
-    | {
-        items?: Array<{ custom_formulation_id: string; quantity: number }>;
-        timeline?: 'standard' | 'expedited';
-      }
-    | null;
+    const body = (await request.json().catch(() => null)) as
+      | {
+          items?: Array<{ custom_formulation_id: string; quantity: number }>;
+          timeline?: 'standard' | 'expedited';
+        }
+      | null;
 
-  if (!body?.items || body.items.length === 0) {
-    return NextResponse.json({ error: 'items array required' }, { status: 400 });
-  }
-  const timeline = body.timeline ?? 'standard';
-  if (!['standard', 'expedited'].includes(timeline)) {
-    return NextResponse.json({ error: 'timeline must be standard or expedited' }, { status: 400 });
-  }
+    if (!body?.items || body.items.length === 0) {
+      return NextResponse.json({ error: 'items array required' }, { status: 400 });
+    }
+    const timeline = body.timeline ?? 'standard';
+    if (!['standard', 'expedited'].includes(timeline)) {
+      return NextResponse.json({ error: 'timeline must be standard or expedited' }, { status: 400 });
+    }
 
-  const supabase = createClient();
+    const supabase = createClient();
 
-  const formulationIds = body.items.map((i) => i.custom_formulation_id);
-  const { data: formulations } = await supabase
-    .from('custom_formulations')
-    .select('id, practitioner_id, status, estimated_cogs_per_unit_cents, internal_name')
-    .in('id', formulationIds);
+    const formulationIds = body.items.map((i) => i.custom_formulation_id);
+    const formulationsRes = await withTimeout(
+      (async () => supabase
+        .from('custom_formulations')
+        .select('id, practitioner_id, status, estimated_cogs_per_unit_cents, internal_name')
+        .in('id', formulationIds))(),
+      8000,
+      'api.practitioner.custom-formulations.quote.formulations-load',
+    );
+    const formulations = formulationsRes.data;
   const formulationRows = (formulations ?? []) as Array<{
     id: string;
     practitioner_id: string;
@@ -83,12 +92,17 @@ export async function POST(request: NextRequest) {
       };
     };
   };
-  const { data: paramRow } = await dynamic
-    .from('level_4_parameters')
-    .select('*')
-    .eq('id', 'default')
-    .maybeSingle();
-  const raw = paramRow;
+    const paramRes = await withTimeout(
+      (async () => dynamic
+        .from('level_4_parameters')
+        .select('*')
+        .eq('id', 'default')
+        .maybeSingle())(),
+      8000,
+      'api.practitioner.custom-formulations.quote.params-load',
+    );
+    const paramRow = paramRes.data;
+    const raw = paramRow;
   const parameters: Level4Parameters = raw
     ? {
         developmentFeeCents: Number(raw.development_fee_cents ?? DEFAULT_LEVEL_4_PARAMETERS.developmentFeeCents),
@@ -106,10 +120,15 @@ export async function POST(request: NextRequest) {
   // For each item, look up whether this is the first production order for
   // that formulation. Simple check: has any development fee refund row
   // already recorded `applied_to_first_production_order`?
-  const { data: feeRows } = await supabase
-    .from('custom_formulation_development_fees')
-    .select('custom_formulation_id, refund_reason')
-    .in('custom_formulation_id', formulationIds);
+    const feeRes = await withTimeout(
+      (async () => supabase
+        .from('custom_formulation_development_fees')
+        .select('custom_formulation_id, refund_reason')
+        .in('custom_formulation_id', formulationIds))(),
+      8000,
+      'api.practitioner.custom-formulations.quote.fees-load',
+    );
+    const feeRows = feeRes.data;
   const firstOrderMap = new Map<string, boolean>();
   for (const id of formulationIds) {
     const fees = (feeRows ?? []).filter(
@@ -134,5 +153,13 @@ export async function POST(request: NextRequest) {
     parameters,
   });
 
-  return NextResponse.json(quote);
+    return NextResponse.json(quote);
+  } catch (err) {
+    if (isTimeoutError(err)) {
+      safeLog.error('api.practitioner.custom-formulations.quote', 'database timeout', { requestId, error: err });
+      return NextResponse.json({ error: 'Database operation timed out. Please try again.' }, { status: 503 });
+    }
+    safeLog.error('api.practitioner.custom-formulations.quote', 'unexpected error', { requestId, error: err });
+    return NextResponse.json({ error: 'An unexpected error occurred.' }, { status: 500 });
+  }
 }

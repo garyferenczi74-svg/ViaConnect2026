@@ -9,21 +9,32 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/flags/admin-guard';
 import { evaluateFlag } from '@/lib/flags/evaluation-engine';
+import { isTimeoutError } from '@/lib/utils/with-timeout';
+import { safeLog } from '@/lib/utils/safe-log';
 
 export async function POST(
   request: NextRequest,
   { params }: { params: { featureId: string } },
 ) {
-  const auth = await requireAdmin();
-  if (auth.kind === 'error') return auth.response;
+  try {
+    const auth = await requireAdmin();
+    if (auth.kind === 'error') return auth.response;
 
-  const body = (await request.json().catch(() => null)) as { userId?: string | null } | null;
-  const targetUserId = body?.userId ?? null;
+    const body = (await request.json().catch(() => null)) as { userId?: string | null } | null;
+    const targetUserId = body?.userId ?? null;
 
-  const result = await evaluateFlag({
-    userId: targetUserId,
-    featureId: params.featureId,
-  });
+    const result = await evaluateFlag({
+      userId: targetUserId,
+      featureId: params.featureId,
+    });
 
-  return NextResponse.json({ inspected_user: targetUserId, result });
+    return NextResponse.json({ inspected_user: targetUserId, result });
+  } catch (err) {
+    if (isTimeoutError(err)) {
+      safeLog.error('api.flags.evaluate-for', 'database timeout', { featureId: params.featureId, error: err });
+      return NextResponse.json({ error: 'Database operation timed out. Please try again.' }, { status: 503 });
+    }
+    safeLog.error('api.flags.evaluate-for', 'unexpected error', { featureId: params.featureId, error: err });
+    return NextResponse.json({ error: 'An unexpected error occurred.' }, { status: 500 });
+  }
 }

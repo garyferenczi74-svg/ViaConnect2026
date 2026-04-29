@@ -18,6 +18,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient as createServerClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { extractRequestMetadata } from '@/lib/soc2/auditor/accessLog';
+import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
+import { safeLog } from '@/lib/utils/safe-log';
 
 export const runtime = 'nodejs';
 
@@ -31,15 +33,16 @@ interface Body {
 }
 
 export async function POST(req: NextRequest) {
-  const session = createServerClient();
-  const { data: { user } } = await session.auth.getUser();
-  if (!user || !user.email) {
-    return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
-  }
+  try {
+    const session = createServerClient();
+    const { data: { user } } = await withTimeout(session.auth.getUser(), 5000, 'api.auditor.pseudonym.auth');
+    if (!user || !user.email) {
+      return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
+    }
 
-  let body: Body;
-  try { body = (await req.json()) as Body; }
-  catch { return NextResponse.json({ error: 'invalid_json' }, { status: 400 }); }
+    let body: Body;
+    try { body = (await req.json()) as Body; }
+    catch { return NextResponse.json({ error: 'invalid_json' }, { status: 400 }); }
 
   const packetId = (body.packetId ?? '').trim();
   const pseudonym = (body.pseudonym ?? '').trim().toUpperCase();
@@ -59,38 +62,45 @@ export async function POST(req: NextRequest) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const sb = admin as any;
 
-  const { data: grant } = await sb
-    .from('soc2_auditor_grants')
-    .select('id')
-    .eq('auditor_email', user.email.toLowerCase())
-    .eq('revoked', false)
-    .gt('expires_at', new Date().toISOString())
-    .contains('packet_ids', [packetId])
-    .limit(1)
-    .maybeSingle();
+  const { data: grant } = await withTimeout(
+    (async () => sb
+      .from('soc2_auditor_grants')
+      .select('id')
+      .eq('auditor_email', (user.email ?? '').toLowerCase())
+      .eq('revoked', false)
+      .gt('expires_at', new Date().toISOString())
+      .contains('packet_ids', [packetId])
+      .limit(1)
+      .maybeSingle())(),
+    8000,
+    'api.auditor.pseudonym.grant',
+  );
   if (!grant) {
     return NextResponse.json({ error: 'no_active_grant' }, { status: 403 });
   }
 
   const { ipAddress, userAgent } = extractRequestMetadata(req);
 
-  const { data: logRow, error: logErr } = await sb
-    .from('soc2_auditor_access_log')
-    .insert({
-      grant_id: (grant as { id: string }).id,
-      packet_id: packetId,
-      action: 'pseudonym_resolve_request',
-      target_path: null,
-      resolved_pseudonym: pseudonym,
-      justification,
-      ip_address: ipAddress,
-      user_agent: userAgent,
-    })
-    .select('id, occurred_at')
-    .single();
+  const { data: logRow, error: logErr } = await withTimeout(
+    (async () => sb
+      .from('soc2_auditor_access_log')
+      .insert({
+        grant_id: (grant as { id: string }).id,
+        packet_id: packetId,
+        action: 'pseudonym_resolve_request',
+        target_path: null,
+        resolved_pseudonym: pseudonym,
+        justification,
+        ip_address: ipAddress,
+        user_agent: userAgent,
+      })
+      .select('id, occurred_at')
+      .single())(),
+    8000,
+    'api.auditor.pseudonym.insert',
+  );
   if (logErr) {
-    // eslint-disable-next-line no-console
-    console.error('[auditor pseudonym-resolve-request] insert failed', { message: logErr.message });
+    safeLog.error('api.auditor.pseudonym', 'insert failed', { message: logErr.message });
     return NextResponse.json({ error: 'log_insert_failed' }, { status: 500 });
   }
 
@@ -101,4 +111,12 @@ export async function POST(req: NextRequest) {
     requestedAt: row.occurred_at,
     nextSteps: 'Steve Rica (Compliance) and Thomas Rosengren (Legal) must both approve before the pseudonym can be resolved. You will receive the resolved identity by secure email if approved.',
   }, { status: 202 });
+  } catch (err) {
+    if (isTimeoutError(err)) {
+      safeLog.warn('api.auditor.pseudonym', 'timeout', { error: err });
+      return NextResponse.json({ error: 'timeout' }, { status: 503 });
+    }
+    safeLog.error('api.auditor.pseudonym', 'unexpected error', { error: err });
+    return NextResponse.json({ error: 'unexpected_error' }, { status: 500 });
+  }
 }

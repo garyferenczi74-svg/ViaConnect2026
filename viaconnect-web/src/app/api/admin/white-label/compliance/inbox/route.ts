@@ -9,48 +9,71 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
+import { safeLog } from '@/lib/utils/safe-log';
 
 export const runtime = 'nodejs';
 
 const VALID_ROLES = new Set(['compliance_officer', 'medical_director']);
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
-  const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+  try {
+    const supabase = createClient();
+    const { data: { user } } = await withTimeout(supabase.auth.getUser(), 5000, 'api.white-label.compliance-inbox.auth');
+    if (!user) return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
 
-  const sb = supabase as any;
-  const { data: profile } = await sb
-    .from('profiles').select('role').eq('id', user.id).maybeSingle();
-  if (!profile || profile.role !== 'admin') {
-    return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
-  }
-
-  const url = new URL(request.url);
-  const roleParam = url.searchParams.get('role');
-  let roles: string[] = [];
-  if (roleParam) {
-    if (!VALID_ROLES.has(roleParam)) {
-      return NextResponse.json({ error: `Unknown role: ${roleParam}` }, { status: 400 });
+    const sb = supabase as any;
+    const profileRes = await withTimeout(
+      (async () => sb.from('profiles').select('role').eq('id', user.id).maybeSingle())(),
+      5000,
+      'api.white-label.compliance-inbox.load-profile',
+    );
+    const profile = profileRes.data as { role?: string } | null;
+    if (!profile || profile.role !== 'admin') {
+      return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
     }
-    roles = [roleParam];
-  } else {
-    const { data: held } = await sb
-      .from('white_label_compliance_reviewer_roles')
-      .select('reviewer_role')
-      .eq('user_id', user.id)
-      .eq('is_active', true);
-    roles = (held ?? []).map((r: { reviewer_role: string }) => r.reviewer_role);
-    if (roles.length === 0) roles = Array.from(VALID_ROLES); // admin without explicit role assignment sees all
+
+    const url = new URL(request.url);
+    const roleParam = url.searchParams.get('role');
+    let roles: string[] = [];
+    if (roleParam) {
+      if (!VALID_ROLES.has(roleParam)) {
+        return NextResponse.json({ error: `Unknown role: ${roleParam}` }, { status: 400 });
+      }
+      roles = [roleParam];
+    } else {
+      const heldRes = await withTimeout(
+        (async () => sb
+          .from('white_label_compliance_reviewer_roles')
+          .select('reviewer_role')
+          .eq('user_id', user.id)
+          .eq('is_active', true))(),
+        8000,
+        'api.white-label.compliance-inbox.load-roles',
+      );
+      roles = (heldRes.data ?? []).map((r: { reviewer_role: string }) => r.reviewer_role);
+      if (roles.length === 0) roles = Array.from(VALID_ROLES); // admin without explicit role assignment sees all
+    }
+
+    const { data, error } = await withTimeout(
+      (async () => sb
+        .from('wl_pending_reviews_with_sla')
+        .select('*')
+        .in('reviewer_role', roles)
+        .order('assigned_at', { ascending: true })
+        .limit(500))(),
+      10000,
+      'api.white-label.compliance-inbox.list',
+    );
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+    return NextResponse.json({ rows: data ?? [], roles });
+  } catch (err) {
+    if (isTimeoutError(err)) {
+      safeLog.error('api.white-label.compliance-inbox', 'database timeout', { error: err });
+      return NextResponse.json({ error: 'Database operation timed out. Please try again.' }, { status: 503 });
+    }
+    safeLog.error('api.white-label.compliance-inbox', 'unexpected error', { error: err });
+    return NextResponse.json({ error: 'An unexpected error occurred.' }, { status: 500 });
   }
-
-  const { data, error } = await sb
-    .from('wl_pending_reviews_with_sla')
-    .select('*')
-    .in('reviewer_role', roles)
-    .order('assigned_at', { ascending: true })
-    .limit(500);
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-
-  return NextResponse.json({ rows: data ?? [], roles });
 }

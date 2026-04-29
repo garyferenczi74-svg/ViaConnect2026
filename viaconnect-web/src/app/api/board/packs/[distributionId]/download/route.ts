@@ -30,6 +30,8 @@ import { renderBoardPackPdf } from '@/lib/executiveReporting/rendering/boardPack
 import { renderBoardPackXlsx } from '@/lib/executiveReporting/rendering/boardPackXlsxRenderer';
 import { renderBoardPackPptx } from '@/lib/executiveReporting/rendering/boardPackPptxRenderer';
 import { sha256Hex } from '@/lib/legal/evidence/hashing';
+import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
+import { safeLog } from '@/lib/utils/safe-log';
 
 export const runtime = 'nodejs';
 
@@ -50,10 +52,11 @@ export async function POST(
   request: NextRequest,
   { params }: { params: { distributionId: string } },
 ): Promise<NextResponse> {
-  const supabase = createClient();
-  const { data: userData } = await supabase.auth.getUser();
-  const user = userData.user;
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  try {
+    const supabase = createClient();
+    const { data: userData } = await withTimeout(supabase.auth.getUser(), 5000, 'api.board.download.auth');
+    const user = userData.user;
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   let body: DownloadBody;
   try {
@@ -345,4 +348,12 @@ export async function POST(
     storage_path: storagePath,
     format: body.format,
   });
+  } catch (err) {
+    if (isTimeoutError(err)) {
+      safeLog.warn('api.board.download', 'timeout', { error: err });
+      return NextResponse.json({ error: 'timeout' }, { status: 503 });
+    }
+    safeLog.error('api.board.download', 'unexpected error', { error: err });
+    return NextResponse.json({ error: 'unexpected_error' }, { status: 500 });
+  }
 }

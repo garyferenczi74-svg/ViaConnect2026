@@ -27,6 +27,8 @@ import { supabaseTokenVault } from '@/lib/marshall/scheduler/tokenVault';
 import { runPollTick } from '@/lib/marshall/scheduler/pollWorker';
 import { schedulerLogger } from '@/lib/marshall/scheduler/logging';
 import type { SchedulerConnection, SchedulerPlatform } from '@/lib/marshall/scheduler/types';
+import { isTimeoutError } from '@/lib/utils/with-timeout';
+import { safeLog } from '@/lib/utils/safe-log';
 
 export const runtime = 'nodejs';
 
@@ -43,96 +45,106 @@ function authorize(req: NextRequest): boolean {
 }
 
 export async function POST(req: NextRequest, { params }: { params: { connectionId: string } }) {
-  if (!authorize(req)) {
-    return NextResponse.json({ error: 'poll_auth_required' }, { status: 401 });
-  }
-  const connectionId = (params.connectionId ?? '').trim();
-  if (!connectionId) return NextResponse.json({ error: 'missing_connection_id' }, { status: 400 });
-
-  const admin = createAdminClient();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sb = admin as any;
-
-  const { data: row, error: readErr } = await sb
-    .from('scheduler_connections')
-    .select('id, practitioner_id, platform, external_account_id, external_account_label, scopes_granted, token_vault_ref, active, connected_at, last_verified_at, last_event_at')
-    .eq('id', connectionId)
-    .maybeSingle();
-  if (readErr) return NextResponse.json({ error: 'read_failed' }, { status: 500 });
-  if (!row) return NextResponse.json({ error: 'not_found' }, { status: 404 });
-
-  const connection: SchedulerConnection = {
-    id: row.id,
-    practitionerId: row.practitioner_id,
-    platform: row.platform as SchedulerPlatform,
-    externalAccountId: row.external_account_id,
-    externalAccountLabel: row.external_account_label,
-    scopesGranted: row.scopes_granted ?? [],
-    tokenVaultRef: row.token_vault_ref,
-    active: row.active,
-    connectedAt: row.connected_at,
-    lastVerifiedAt: row.last_verified_at,
-    lastEventAt: row.last_event_at,
-  };
-
-  const vault = supabaseTokenVault(admin);
-
-  const poll = async (conn: SchedulerConnection): Promise<{ ok: true } | { ok: false; error: string }> => {
-    let accessToken: string;
-    try {
-      const bundle = await vault.read(conn.tokenVaultRef, `scheduler:${conn.platform}:poll`);
-      accessToken = bundle.accessToken;
-    } catch (err) {
-      return { ok: false, error: `vault_read_failed:${(err as Error).message}` };
-    }
-
-    try {
-      if (conn.platform === 'later') {
-        const queue = await fetchLaterQueue(accessToken);
-        // Synthesize a SchedulerEvent per queued post. The idempotency
-        // key is (platform, external_event_id) and we derive event_id
-        // as 'poll:<post_id>' so repeated ticks on the same post dedup
-        // via the UNIQUE constraint.
-        for (const post of queue) {
-          const externalEventId = `poll:${post.id}`;
-          const { error } = await sb
-            .from('scheduler_events')
-            .insert({
-              platform: 'later',
-              external_event_id: externalEventId,
-              event_type: 'poll.tick',
-              connection_id: conn.id,
-              external_post_id: post.id,
-              raw_payload: { synthesized_from_poll: true, post_id: post.id, scheduled_at: post.scheduled_at },
-              processing_status: 'pending',
-            });
-          // 23505 conflict = already synthesized on a prior tick, fine.
-          if (error && error.code !== '23505' && !/unique|duplicate/i.test(error.message ?? '')) {
-            return { ok: false, error: `later_event_insert:${error.code ?? 'unknown'}` };
-          }
-        }
-        return { ok: true };
-      }
-      // Other platforms go through webhook ingest, so a poll tick for
-      // them is a no-op health check.
-      return { ok: true };
-    } catch (err) {
-      return { ok: false, error: (err as Error).message };
-    }
-  };
-
   try {
-    const outcome = await runPollTick({ supabase: admin, connection, poll });
-    if (outcome.outcome === 'error') {
-      schedulerLogger.warn('[poll] tick errored', { connectionId, error: outcome.errorMessage });
+    if (!authorize(req)) {
+      return NextResponse.json({ error: 'poll_auth_required' }, { status: 401 });
     }
-    return NextResponse.json({
-      ok: outcome.outcome !== 'error',
-      outcome: outcome.outcome,
-      nextPollAt: outcome.nextPollAt,
-      errorMessage: outcome.errorMessage,
-    });
+    const connectionId = (params.connectionId ?? '').trim();
+    if (!connectionId) return NextResponse.json({ error: 'missing_connection_id' }, { status: 400 });
+
+    const admin = createAdminClient();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const sb = admin as any;
+
+    const { data: row, error: readErr } = await sb
+      .from('scheduler_connections')
+      .select('id, practitioner_id, platform, external_account_id, external_account_label, scopes_granted, token_vault_ref, active, connected_at, last_verified_at, last_event_at')
+      .eq('id', connectionId)
+      .maybeSingle();
+    if (readErr) return NextResponse.json({ error: 'read_failed' }, { status: 500 });
+    if (!row) return NextResponse.json({ error: 'not_found' }, { status: 404 });
+
+    const connection: SchedulerConnection = {
+      id: row.id,
+      practitionerId: row.practitioner_id,
+      platform: row.platform as SchedulerPlatform,
+      externalAccountId: row.external_account_id,
+      externalAccountLabel: row.external_account_label,
+      scopesGranted: row.scopes_granted ?? [],
+      tokenVaultRef: row.token_vault_ref,
+      active: row.active,
+      connectedAt: row.connected_at,
+      lastVerifiedAt: row.last_verified_at,
+      lastEventAt: row.last_event_at,
+    };
+
+    const vault = supabaseTokenVault(admin);
+
+    const poll = async (conn: SchedulerConnection): Promise<{ ok: true } | { ok: false; error: string }> => {
+      let accessToken: string;
+      try {
+        const bundle = await vault.read(conn.tokenVaultRef, `scheduler:${conn.platform}:poll`);
+        accessToken = bundle.accessToken;
+      } catch (err) {
+        return { ok: false, error: `vault_read_failed:${(err as Error).message}` };
+      }
+
+      try {
+        if (conn.platform === 'later') {
+          const queue = await fetchLaterQueue(accessToken);
+          // Synthesize a SchedulerEvent per queued post. The idempotency
+          // key is (platform, external_event_id) and we derive event_id
+          // as 'poll:<post_id>' so repeated ticks on the same post dedup
+          // via the UNIQUE constraint.
+          for (const post of queue) {
+            const externalEventId = `poll:${post.id}`;
+            const { error } = await sb
+              .from('scheduler_events')
+              .insert({
+                platform: 'later',
+                external_event_id: externalEventId,
+                event_type: 'poll.tick',
+                connection_id: conn.id,
+                external_post_id: post.id,
+                raw_payload: { synthesized_from_poll: true, post_id: post.id, scheduled_at: post.scheduled_at },
+                processing_status: 'pending',
+              });
+            // 23505 conflict = already synthesized on a prior tick, fine.
+            if (error && error.code !== '23505' && !/unique|duplicate/i.test(error.message ?? '')) {
+              return { ok: false, error: `later_event_insert:${error.code ?? 'unknown'}` };
+            }
+          }
+          return { ok: true };
+        }
+        // Other platforms go through webhook ingest, so a poll tick for
+        // them is a no-op health check.
+        return { ok: true };
+      } catch (err) {
+        return { ok: false, error: (err as Error).message };
+      }
+    };
+
+    try {
+      const outcome = await runPollTick({ supabase: admin, connection, poll });
+      if (outcome.outcome === 'error') {
+        schedulerLogger.warn('[poll] tick errored', { connectionId, error: outcome.errorMessage });
+      }
+      return NextResponse.json({
+        ok: outcome.outcome !== 'error',
+        outcome: outcome.outcome,
+        nextPollAt: outcome.nextPollAt,
+        errorMessage: outcome.errorMessage,
+      });
+    } catch (err) {
+      safeLog.error('api.marshall.scheduler.poll', 'poll tick failed', { connectionId, error: err });
+      return NextResponse.json({ error: 'poll_tick_failed', detail: (err as Error).message }, { status: 500 });
+    }
   } catch (err) {
-    return NextResponse.json({ error: 'poll_tick_failed', detail: (err as Error).message }, { status: 500 });
+    if (isTimeoutError(err)) {
+      safeLog.warn('api.marshall.scheduler.poll', 'request timeout', { error: err });
+      return NextResponse.json({ error: 'timeout' }, { status: 503 });
+    }
+    safeLog.error('api.marshall.scheduler.poll', 'unexpected error', { error: err });
+    return NextResponse.json({ error: 'internal_error' }, { status: 500 });
   }
 }

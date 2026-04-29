@@ -1,5 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
+import { withTimeout, withAbortTimeout, isTimeoutError } from "@/lib/utils/with-timeout";
+import { safeLog } from "@/lib/utils/safe-log";
+import { getCircuitBreaker, isCircuitBreakerError } from "@/lib/utils/circuit-breaker";
+
+const sendgridBreaker = getCircuitBreaker('sendgrid-api');
 
 function apiEnvelope(
   success: boolean,
@@ -55,17 +60,34 @@ const NOTIFICATION_TEMPLATES: Record<
 };
 
 export async function POST(request: Request) {
-  const supabase = createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const requestId = request.headers.get('x-request-id') ?? crypto.randomUUID();
+  try {
+    const supabase = createClient();
+    let user;
+    try {
+      const authResult = await withTimeout(
+        supabase.auth.getUser(),
+        5000,
+        'api.notifications.auth',
+      );
+      user = authResult.data.user;
+    } catch (err) {
+      if (isTimeoutError(err)) {
+        safeLog.error('api.notifications', 'auth timeout', { requestId, error: err });
+        return NextResponse.json(
+          apiEnvelope(false, undefined, "Authentication timed out", "AUTH_TIMEOUT"),
+          { status: 503 }
+        );
+      }
+      throw err;
+    }
 
-  if (!user) {
-    return NextResponse.json(
-      apiEnvelope(false, undefined, "Unauthorized", "AUTH_REQUIRED"),
-      { status: 401 }
-    );
-  }
+    if (!user) {
+      return NextResponse.json(
+        apiEnvelope(false, undefined, "Unauthorized", "AUTH_REQUIRED"),
+        { status: 401 }
+      );
+    }
 
   let body: {
     userId?: string;
@@ -112,140 +134,191 @@ export async function POST(request: Request) {
   const ip = request.headers.get("x-forwarded-for")?.split(",")[0] ?? null;
   const results: { email?: boolean; in_app?: boolean } = {};
 
-  try {
-    // In-app notification
-    if (channel === "in_app" || channel === "both") {
-      const { error: dbError } = await supabase
-        .from("notifications")
-        .insert({
-          user_id: userId,
-          notification_type: type,
-          title: subject,
-          message,
-        });
+    try {
+      // In-app notification
+      if (channel === "in_app" || channel === "both") {
+        const dbRes = await withTimeout(
+          (async () => supabase
+            .from("notifications")
+            .insert({
+              user_id: userId,
+              notification_type: type,
+              title: subject,
+              message,
+            }))(),
+          8000,
+          'api.notifications.in-app-insert',
+        );
+        results.in_app = !dbRes.error;
+      }
 
-      results.in_app = !dbError;
-    }
+      // Email notification via SendGrid
+      if (channel === "email" || channel === "both") {
+        const sendgridKey = process.env.SENDGRID_API_KEY;
 
-    // Email notification via SendGrid
-    if (channel === "email" || channel === "both") {
-      const sendgridKey = process.env.SENDGRID_API_KEY;
+        if (sendgridKey) {
+          // Look up user email
+          const profileRes = await withTimeout(
+            (async () => supabase
+              .from("profiles")
+              .select("id")
+              .eq("id", userId)
+              .single())(),
+            8000,
+            'api.notifications.profile-load',
+          );
+          const profile = profileRes.data;
 
-      if (sendgridKey) {
-        // Look up user email
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("id")
-          .eq("id", userId)
-          .single();
+          if (profile) {
+            // Get the target user's email from auth
+            const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+            const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-        if (profile) {
-          // Get the target user's email from auth
-          // Since we can't access auth.users from client, use the provided userId
-          // The email is fetched from the user's auth record via service role
-          const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-          const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+            let recipientEmail: string | null = null;
 
-          let recipientEmail: string | null = null;
+            if (serviceKey) {
+              try {
+                const authResponse = await withAbortTimeout(
+                  (signal) => fetch(
+                    `${supabaseUrl}/auth/v1/admin/users/${userId}`,
+                    {
+                      headers: {
+                        Authorization: `Bearer ${serviceKey}`,
+                        apikey: serviceKey,
+                      },
+                      signal,
+                    }
+                  ),
+                  10000,
+                  'api.notifications.auth-admin-lookup',
+                );
 
-          if (serviceKey) {
-            const authResponse = await fetch(
-              `${supabaseUrl}/auth/v1/admin/users/${userId}`,
-              {
-                headers: {
-                  Authorization: `Bearer ${serviceKey}`,
-                  apikey: serviceKey,
-                },
+                if (authResponse.ok) {
+                  const authData = await authResponse.json();
+                  recipientEmail = authData.email ?? null;
+                }
+              } catch (lookupErr) {
+                safeLog.warn('api.notifications', 'admin user lookup failed', { requestId, error: lookupErr });
               }
-            );
+            }
 
-            if (authResponse.ok) {
-              const authData = await authResponse.json();
-              recipientEmail = authData.email ?? null;
+            if (recipientEmail) {
+              try {
+                const emailResponse = await sendgridBreaker.execute(() =>
+                  withAbortTimeout(
+                    (signal) => fetch(
+                      "https://api.sendgrid.com/v3/mail/send",
+                      {
+                        method: "POST",
+                        headers: {
+                          "Content-Type": "application/json",
+                          Authorization: `Bearer ${sendgridKey}`,
+                        },
+                        body: JSON.stringify({
+                          personalizations: [
+                            {
+                              to: [{ email: recipientEmail }],
+                              subject,
+                            },
+                          ],
+                          from: {
+                            email: "noreply@viaconnect.health",
+                            name: "ViaConnect GeneX360",
+                          },
+                          content: [
+                            {
+                              type: "text/html",
+                              value: `
+                                <div style="font-family: Inter, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px;">
+                                  <div style="background: #224852; padding: 16px 24px; border-radius: 8px 8px 0 0;">
+                                    <h1 style="color: white; font-size: 20px; margin: 0;">ViaConnect GeneX360</h1>
+                                  </div>
+                                  <div style="background: #f9fafb; padding: 24px; border-radius: 0 0 8px 8px; border: 1px solid #e5e7eb;">
+                                    <h2 style="color: #224852; margin-top: 0;">${subject}</h2>
+                                    <p style="color: #374151; line-height: 1.6;">${message}</p>
+                                    <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;" />
+                                    <p style="color: #9ca3af; font-size: 12px;">
+                                      ViaConnect, Buffalo, NY<br/>
+                                      One Genome. One Formulation. One Life at a Time.
+                                    </p>
+                                  </div>
+                                </div>
+                              `.trim(),
+                            },
+                          ],
+                        }),
+                        signal,
+                      }
+                    ),
+                    15000,
+                    'api.notifications.sendgrid',
+                  )
+                );
+                results.email = emailResponse.ok;
+              } catch (sendErr) {
+                if (isCircuitBreakerError(sendErr)) {
+                  safeLog.warn('api.notifications', 'sendgrid circuit open', { requestId, error: sendErr });
+                } else if (isTimeoutError(sendErr)) {
+                  safeLog.error('api.notifications', 'sendgrid timeout', { requestId, error: sendErr });
+                } else {
+                  safeLog.error('api.notifications', 'sendgrid failed', { requestId, error: sendErr });
+                }
+                results.email = false;
+              }
+            } else {
+              results.email = false;
             }
           }
-
-          if (recipientEmail) {
-            const emailResponse = await fetch(
-              "https://api.sendgrid.com/v3/mail/send",
-              {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                  Authorization: `Bearer ${sendgridKey}`,
-                },
-                body: JSON.stringify({
-                  personalizations: [
-                    {
-                      to: [{ email: recipientEmail }],
-                      subject,
-                    },
-                  ],
-                  from: {
-                    email: "noreply@viaconnect.health",
-                    name: "ViaConnect GeneX360",
-                  },
-                  content: [
-                    {
-                      type: "text/html",
-                      value: `
-                        <div style="font-family: Inter, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px;">
-                          <div style="background: #224852; padding: 16px 24px; border-radius: 8px 8px 0 0;">
-                            <h1 style="color: white; font-size: 20px; margin: 0;">ViaConnect GeneX360</h1>
-                          </div>
-                          <div style="background: #f9fafb; padding: 24px; border-radius: 0 0 8px 8px; border: 1px solid #e5e7eb;">
-                            <h2 style="color: #224852; margin-top: 0;">${subject}</h2>
-                            <p style="color: #374151; line-height: 1.6;">${message}</p>
-                            <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;" />
-                            <p style="color: #9ca3af; font-size: 12px;">
-                              ViaConnect · Buffalo, NY<br/>
-                              One Genome. One Formulation. One Life at a Time.
-                            </p>
-                          </div>
-                        </div>
-                      `.trim(),
-                    },
-                  ],
-                }),
-              }
-            );
-
-            results.email = emailResponse.ok;
-          } else {
-            results.email = false;
-          }
+        } else {
+          results.email = false;
         }
-      } else {
-        results.email = false;
       }
+
+      // Audit log, typegen rejects jsonb metadata payload, cast supabase
+      await withTimeout(
+        (async () => (supabase as any).from("audit_logs").insert({
+          user_id: user.id,
+          action: "notification_sent",
+          resource_type: "notification",
+          metadata: {
+            target_user_id: userId,
+            type,
+            channel,
+            results,
+          },
+          ip_address: ip,
+        }))(),
+        5000,
+        'api.notifications.audit-log',
+      );
+
+      return NextResponse.json(
+        apiEnvelope(true, {
+          sent: true,
+          channel,
+          results,
+        })
+      );
+    } catch (err) {
+      if (isTimeoutError(err)) {
+        safeLog.error('api.notifications', 'database timeout', { requestId, error: err });
+        return NextResponse.json(
+          apiEnvelope(false, undefined, "Database operation timed out", "DB_TIMEOUT"),
+          { status: 503 }
+        );
+      }
+      const errorMessage =
+        err instanceof Error ? err.message : "Notification send failed";
+      safeLog.error('api.notifications', 'send failed', { requestId, error: err });
+      return NextResponse.json(
+        apiEnvelope(false, undefined, errorMessage, "NOTIFICATION_ERROR"),
+        { status: 500 }
+      );
     }
-
-    // Audit log — typegen rejects jsonb metadata payload, cast supabase
-    await (supabase as any).from("audit_logs").insert({
-      user_id: user.id,
-      action: "notification_sent",
-      resource_type: "notification",
-      metadata: {
-        target_user_id: userId,
-        type,
-        channel,
-        results,
-      },
-      ip_address: ip,
-    });
-
+  } catch (outer) {
+    safeLog.error('api.notifications', 'unexpected error', { requestId, error: outer });
     return NextResponse.json(
-      apiEnvelope(true, {
-        sent: true,
-        channel,
-        results,
-      })
-    );
-  } catch (err) {
-    const errorMessage =
-      err instanceof Error ? err.message : "Notification send failed";
-    return NextResponse.json(
-      apiEnvelope(false, undefined, errorMessage, "NOTIFICATION_ERROR"),
+      apiEnvelope(false, undefined, "An unexpected error occurred", "UNEXPECTED_ERROR"),
       { status: 500 }
     );
   }

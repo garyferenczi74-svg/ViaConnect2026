@@ -12,6 +12,8 @@ import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { writeLegalAudit } from '@/lib/legalAudit/operationsAuditLog';
 import { nextCaseLabel } from '@/lib/legal/caseLabel';
+import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
+import { safeLog } from '@/lib/utils/safe-log';
 
 export const runtime = 'nodejs';
 
@@ -22,7 +24,7 @@ interface ProfileLite {
 }
 
 async function requireLegalOps(supabase: ReturnType<typeof createClient>) {
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user } } = await withTimeout(supabase.auth.getUser(), 5000, 'api.admin.legal.customs.alerts.open-as-case.auth');
   if (!user) {
     return {
       ok: false as const,
@@ -52,121 +54,130 @@ export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } },
 ): Promise<NextResponse> {
-  const supabase = createClient();
-  const ctx = await requireLegalOps(supabase);
-  if (!ctx.ok) return ctx.response;
+  try {
+    const supabase = createClient();
+    const ctx = await requireLegalOps(supabase);
+    if (!ctx.ok) return ctx.response;
 
-  const body = (await request.json().catch(() => null)) ?? {};
-  const priority: string = typeof body.priority === 'string' ? body.priority : 'p3_normal';
-  const notes: string | null = typeof body.notes === 'string' ? body.notes : null;
+    const body = (await request.json().catch(() => null)) ?? {};
+    const priority: string = typeof body.priority === 'string' ? body.priority : 'p3_normal';
+    const notes: string | null = typeof body.notes === 'string' ? body.notes : null;
 
-  const admin = createAdminClient();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sb = admin as any;
+    const admin = createAdminClient();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const sb = admin as any;
 
-  const { data: alert } = await sb
-    .from('customs_iprs_scan_results')
-    .select('*')
-    .eq('scan_result_id', params.id)
-    .maybeSingle();
-  if (!alert) {
-    return NextResponse.json({ error: 'Alert not found' }, { status: 404 });
-  }
-  if (alert.case_id) {
-    return NextResponse.json(
-      { error: 'Alert already linked to case ' + alert.case_id },
-      { status: 409 },
-    );
-  }
+    const { data: alert } = await sb
+      .from('customs_iprs_scan_results')
+      .select('*')
+      .eq('scan_result_id', params.id)
+      .maybeSingle();
+    if (!alert) {
+      return NextResponse.json({ error: 'Alert not found' }, { status: 404 });
+    }
+    if (alert.case_id) {
+      return NextResponse.json(
+        { error: 'Alert already linked to case ' + alert.case_id },
+        { status: 409 },
+      );
+    }
 
-  const year = new Date().getUTCFullYear();
-  const { data: existingLabels } = await sb
-    .from('legal_investigation_cases')
-    .select('case_label')
-    .like('case_label', `LEG-${year}-%`);
-  const labels = ((existingLabels ?? []) as Array<{ case_label: string }>).map((r) => r.case_label);
-  const newLabel = nextCaseLabel({ year, existing_labels_for_year: labels });
+    const year = new Date().getUTCFullYear();
+    const { data: existingLabels } = await sb
+      .from('legal_investigation_cases')
+      .select('case_label')
+      .like('case_label', `LEG-${year}-%`);
+    const labels = ((existingLabels ?? []) as Array<{ case_label: string }>).map((r) => r.case_label);
+    const newLabel = nextCaseLabel({ year, existing_labels_for_year: labels });
 
-  const { data: createdCase, error: caseError } = await sb
-    .from('legal_investigation_cases')
-    .insert({
-      case_label: newLabel,
-      bucket: 'counterfeit',
-      priority,
-      notes: notes ?? `Opened from IPRS alert ${params.id}`,
-      metadata_json: {
+    const { data: createdCase, error: caseError } = await sb
+      .from('legal_investigation_cases')
+      .insert({
+        case_label: newLabel,
+        bucket: 'counterfeit',
+        priority,
+        notes: notes ?? `Opened from IPRS alert ${params.id}`,
+        metadata_json: {
+          origin: 'customs_iprs_alert',
+          scan_result_id: params.id,
+          listing_url: alert.listing_url,
+        },
+      })
+      .select('case_id, case_label, state, bucket')
+      .maybeSingle();
+    if (caseError || !createdCase) {
+      return NextResponse.json(
+        { error: caseError?.message ?? 'Case insert failed' },
+        { status: 500 },
+      );
+    }
+
+    // Atomically link the alert to the new case. If this fails we
+    // compensate by deleting the freshly created case so no orphans.
+    const { error: linkError } = await sb
+      .from('customs_iprs_scan_results')
+      .update({
+        case_id: createdCase.case_id,
+        status: 'case_opened',
+        reviewed_by: ctx.user_id,
+        reviewed_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq('scan_result_id', params.id);
+    if (linkError) {
+      await sb
+        .from('legal_investigation_cases')
+        .delete()
+        .eq('case_id', createdCase.case_id);
+      return NextResponse.json(
+        { error: 'Link failed, case rolled back: ' + linkError.message },
+        { status: 500 },
+      );
+    }
+
+    await writeLegalAudit(sb, {
+      actor_user_id: ctx.user_id,
+      actor_role: ctx.role,
+      action_category: 'customs_iprs',
+      action_verb: 'case_opened_from_alert',
+      target_table: 'customs_iprs_scan_results',
+      target_id: params.id,
+      case_id: createdCase.case_id,
+      after_state_json: {
+        case_label: createdCase.case_label,
+        bucket: createdCase.bucket,
+        priority,
+      },
+    });
+
+    await writeLegalAudit(sb, {
+      actor_user_id: ctx.user_id,
+      actor_role: ctx.role,
+      action_category: 'case',
+      action_verb: 'opened',
+      target_table: 'legal_investigation_cases',
+      target_id: createdCase.case_id,
+      case_id: createdCase.case_id,
+      after_state_json: {
+        case_label: createdCase.case_label,
+        bucket: createdCase.bucket,
+        state: createdCase.state,
+        priority,
         origin: 'customs_iprs_alert',
         scan_result_id: params.id,
-        listing_url: alert.listing_url,
       },
-    })
-    .select('case_id, case_label, state, bucket')
-    .maybeSingle();
-  if (caseError || !createdCase) {
+    });
+
     return NextResponse.json(
-      { error: caseError?.message ?? 'Case insert failed' },
-      { status: 500 },
+      { case: createdCase, alert_id: params.id },
+      { status: 201 },
     );
+  } catch (err) {
+    if (isTimeoutError(err)) {
+      safeLog.warn('api.admin.legal.customs.alerts.open-as-case', 'POST timeout', { error: err });
+      return NextResponse.json({ error: 'Request timed out.' }, { status: 503 });
+    }
+    safeLog.error('api.admin.legal.customs.alerts.open-as-case', 'unexpected error', { error: err });
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
-
-  // Atomically link the alert to the new case. If this fails we
-  // compensate by deleting the freshly created case so no orphans.
-  const { error: linkError } = await sb
-    .from('customs_iprs_scan_results')
-    .update({
-      case_id: createdCase.case_id,
-      status: 'case_opened',
-      reviewed_by: ctx.user_id,
-      reviewed_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    })
-    .eq('scan_result_id', params.id);
-  if (linkError) {
-    await sb
-      .from('legal_investigation_cases')
-      .delete()
-      .eq('case_id', createdCase.case_id);
-    return NextResponse.json(
-      { error: 'Link failed, case rolled back: ' + linkError.message },
-      { status: 500 },
-    );
-  }
-
-  await writeLegalAudit(sb, {
-    actor_user_id: ctx.user_id,
-    actor_role: ctx.role,
-    action_category: 'customs_iprs',
-    action_verb: 'case_opened_from_alert',
-    target_table: 'customs_iprs_scan_results',
-    target_id: params.id,
-    case_id: createdCase.case_id,
-    after_state_json: {
-      case_label: createdCase.case_label,
-      bucket: createdCase.bucket,
-      priority,
-    },
-  });
-
-  await writeLegalAudit(sb, {
-    actor_user_id: ctx.user_id,
-    actor_role: ctx.role,
-    action_category: 'case',
-    action_verb: 'opened',
-    target_table: 'legal_investigation_cases',
-    target_id: createdCase.case_id,
-    case_id: createdCase.case_id,
-    after_state_json: {
-      case_label: createdCase.case_label,
-      bucket: createdCase.bucket,
-      state: createdCase.state,
-      priority,
-      origin: 'customs_iprs_alert',
-      scan_result_id: params.id,
-    },
-  });
-
-  return NextResponse.json(
-    { case: createdCase, alert_id: params.id },
-    { status: 201 },
-  );
 }

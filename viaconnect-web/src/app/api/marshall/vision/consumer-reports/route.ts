@@ -22,6 +22,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient as createServerClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { submitConsumerReport, ConsumerIntakeError } from '@/lib/marshall/vision/consumerIntake';
+import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
+import { safeLog } from '@/lib/utils/safe-log';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -39,85 +41,93 @@ const RATE_LIMIT = 5;
 const ipBuckets = new Map<string, number[]>();
 
 export async function POST(req: NextRequest) {
-  const ip = clientIp(req);
-  if (!acceptIp(ip)) {
-    return NextResponse.json(
-      { error: 'rate_limited', message: 'Too many submissions from this IP. Try again later.' },
-      { status: 429 },
-    );
-  }
-
-  let form: FormData;
   try {
-    form = await req.formData();
-  } catch {
-    return NextResponse.json({ error: 'invalid_form' }, { status: 400 });
-  }
-
-  // Honeypot: any non-empty value indicates a bot.
-  if ((form.get('honeypot') as string | null)?.trim()) {
-    // Return 200 to avoid signaling the bot; log nothing identifying.
-    return NextResponse.json({ ok: true, reportId: 'drop' });
-  }
-
-  const concernDescription = String(form.get('concernDescription') ?? '').trim();
-  const purchaseLocation = strOrNull(form.get('purchaseLocation'));
-  const purchaseDate = strOrNull(form.get('purchaseDate'));
-  const orderNumber = strOrNull(form.get('orderNumber'));
-  const email = strOrNull(form.get('email'));
-
-  const images: Array<{ bytes: Uint8Array; declaredContentType?: string }> = [];
-  const imageFields = form.getAll('images');
-  for (const v of imageFields) {
-    if (!(v instanceof Blob)) continue;
-    if (v.size > MAX_IMAGE_BYTES) {
+    const ip = clientIp(req);
+    if (!acceptIp(ip)) {
       return NextResponse.json(
-        { error: 'image_too_large', message: `Each image must be <= ${MAX_IMAGE_BYTES / 1024 / 1024} MB` },
-        { status: 400 },
+        { error: 'rate_limited', message: 'Too many submissions from this IP. Try again later.' },
+        { status: 429 },
       );
     }
-    if (v.type && !ALLOWED_CONTENT_TYPES.has(v.type)) {
-      return NextResponse.json(
-        { error: 'unsupported_image_type', message: `Allowed: JPEG, PNG, WebP, HEIC. Got: ${v.type}` },
-        { status: 400 },
-      );
+
+    let form: FormData;
+    try {
+      form = await req.formData();
+    } catch {
+      return NextResponse.json({ error: 'invalid_form' }, { status: 400 });
     }
-    const ab = await v.arrayBuffer();
-    images.push({ bytes: new Uint8Array(ab), declaredContentType: v.type || undefined });
-    if (images.length >= MAX_IMAGES) break;
-  }
 
-  // Optional user context (if the consumer is logged in).
-  const sessionClient = createServerClient();
-  const { data: { user } } = await sessionClient.auth.getUser();
+    // Honeypot: any non-empty value indicates a bot.
+    if ((form.get('honeypot') as string | null)?.trim()) {
+      // Return 200 to avoid signaling the bot; log nothing identifying.
+      return NextResponse.json({ ok: true, reportId: 'drop' });
+    }
 
-  const supabaseWriter = createAdminClient();
+    const concernDescription = String(form.get('concernDescription') ?? '').trim();
+    const purchaseLocation = strOrNull(form.get('purchaseLocation'));
+    const purchaseDate = strOrNull(form.get('purchaseDate'));
+    const orderNumber = strOrNull(form.get('orderNumber'));
+    const email = strOrNull(form.get('email'));
 
-  try {
-    const result = await submitConsumerReport({
-      supabase: supabaseWriter,
-      submission: {
-        submittedByUserId: user?.id,
-        submittedByEmail: email ?? undefined,
-        purchaseLocation: purchaseLocation ?? undefined,
-        purchaseDate: purchaseDate ?? undefined,
-        orderNumber: orderNumber ?? undefined,
-        concernDescription,
-        images,
-      },
-    });
-    return NextResponse.json({
-      ok: true,
-      reportId: result.reportId,
-      phiRedactionApplied: result.phiRedactionApplied,
-      acknowledgment: result.acknowledgment,
-    });
+    const images: Array<{ bytes: Uint8Array; declaredContentType?: string }> = [];
+    const imageFields = form.getAll('images');
+    for (const v of imageFields) {
+      if (!(v instanceof Blob)) continue;
+      if (v.size > MAX_IMAGE_BYTES) {
+        return NextResponse.json(
+          { error: 'image_too_large', message: `Each image must be <= ${MAX_IMAGE_BYTES / 1024 / 1024} MB` },
+          { status: 400 },
+        );
+      }
+      if (v.type && !ALLOWED_CONTENT_TYPES.has(v.type)) {
+        return NextResponse.json(
+          { error: 'unsupported_image_type', message: `Allowed: JPEG, PNG, WebP, HEIC. Got: ${v.type}` },
+          { status: 400 },
+        );
+      }
+      const ab = await v.arrayBuffer();
+      images.push({ bytes: new Uint8Array(ab), declaredContentType: v.type || undefined });
+      if (images.length >= MAX_IMAGES) break;
+    }
+
+    // Optional user context (if the consumer is logged in).
+    const sessionClient = createServerClient();
+    const { data: { user } } = await withTimeout(sessionClient.auth.getUser(), 5000, 'api.marshall.vision.consumer-reports.auth');
+
+    const supabaseWriter = createAdminClient();
+
+    try {
+      const result = await submitConsumerReport({
+        supabase: supabaseWriter,
+        submission: {
+          submittedByUserId: user?.id,
+          submittedByEmail: email ?? undefined,
+          purchaseLocation: purchaseLocation ?? undefined,
+          purchaseDate: purchaseDate ?? undefined,
+          orderNumber: orderNumber ?? undefined,
+          concernDescription,
+          images,
+        },
+      });
+      return NextResponse.json({
+        ok: true,
+        reportId: result.reportId,
+        phiRedactionApplied: result.phiRedactionApplied,
+        acknowledgment: result.acknowledgment,
+      });
+    } catch (err) {
+      if (err instanceof ConsumerIntakeError) {
+        return NextResponse.json({ error: err.code, message: err.message }, { status: 400 });
+      }
+      safeLog.error('api.marshall.vision.consumer-reports', 'submit failed', { error: err });
+      return NextResponse.json({ error: 'internal_error' }, { status: 500 });
+    }
   } catch (err) {
-    if (err instanceof ConsumerIntakeError) {
-      return NextResponse.json({ error: err.code, message: err.message }, { status: 400 });
+    if (isTimeoutError(err)) {
+      safeLog.warn('api.marshall.vision.consumer-reports', 'request timeout', { error: err });
+      return NextResponse.json({ error: 'timeout' }, { status: 503 });
     }
-    // eslint-disable-next-line no-console
-    console.error('[consumer-report] submit failed', err);
+    safeLog.error('api.marshall.vision.consumer-reports', 'unexpected error', { error: err });
     return NextResponse.json({ error: 'internal_error' }, { status: 500 });
   }
 }

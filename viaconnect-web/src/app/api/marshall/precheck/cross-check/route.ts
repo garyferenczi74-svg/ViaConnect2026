@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { applyClearanceAdjustment } from "@/lib/marshall/precheck/crosscheck";
 import type { Finding } from "@/lib/compliance/engine/types";
+import { isTimeoutError } from '@/lib/utils/with-timeout';
+import { safeLog } from '@/lib/utils/safe-log';
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -16,22 +18,31 @@ function serviceClient() {
 }
 
 export async function POST(req: Request) {
-  const secret = process.env.INTERNAL_WRITE_SECRET;
-  if (secret) {
-    const auth = req.headers.get("x-internal-secret") ?? "";
-    if (auth !== secret) return NextResponse.json({ error: "forbidden" }, { status: 403 });
-  }
-
-  let body: { finding?: Finding; signal?: { matchedPractitionerId?: string | null; content: { textDerived?: string } } };
   try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+    const secret = process.env.INTERNAL_WRITE_SECRET;
+    if (secret) {
+      const auth = req.headers.get("x-internal-secret") ?? "";
+      if (auth !== secret) return NextResponse.json({ error: "forbidden" }, { status: 403 });
+    }
+
+    let body: { finding?: Finding; signal?: { matchedPractitionerId?: string | null; content: { textDerived?: string } } };
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+    }
+    if (!body.finding || !body.signal) {
+      return NextResponse.json({ error: "finding and signal required" }, { status: 400 });
+    }
+    const db = serviceClient();
+    const result = await applyClearanceAdjustment({ finding: body.finding, signal: body.signal }, db);
+    return NextResponse.json(result);
+  } catch (err) {
+    if (isTimeoutError(err)) {
+      safeLog.warn('api.marshall.precheck.cross-check', 'request timeout', { error: err });
+      return NextResponse.json({ error: 'timeout' }, { status: 503 });
+    }
+    safeLog.error('api.marshall.precheck.cross-check', 'unexpected error', { error: err });
+    return NextResponse.json({ error: 'internal_error' }, { status: 500 });
   }
-  if (!body.finding || !body.signal) {
-    return NextResponse.json({ error: "finding and signal required" }, { status: 400 });
-  }
-  const db = serviceClient();
-  const result = await applyClearanceAdjustment({ finding: body.finding, signal: body.signal }, db);
-  return NextResponse.json(result);
 }

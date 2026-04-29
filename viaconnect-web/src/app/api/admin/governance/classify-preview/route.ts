@@ -9,57 +9,68 @@ import { requireGovernanceAdmin } from '@/lib/governance/admin-guard';
 import { classifyWithRules } from '@/lib/governance/classify-with-rules';
 import { estimateAffectedCustomers } from '@/lib/governance/affected-customers';
 import { computeUeProjection } from '@/lib/governance/ue-projection';
+import { isTimeoutError } from '@/lib/utils/with-timeout';
+import { safeLog } from '@/lib/utils/safe-log';
 import type {
   ChangeType,
   PricingDomainCategory,
 } from '@/types/governance';
 
 export async function POST(request: NextRequest) {
-  const auth = await requireGovernanceAdmin();
-  if (auth.kind === 'error') return auth.response;
+  try {
+    const auth = await requireGovernanceAdmin();
+    if (auth.kind === 'error') return auth.response;
 
-  const body = (await request.json().catch(() => null)) as
-    | {
-        domainCategory?: PricingDomainCategory;
-        pricingDomainId?: string;
-        targetObjectIds?: string[];
-        currentValueCents?: number | null;
-        proposedValueCents?: number | null;
-        currentValuePercent?: number | null;
-        proposedValuePercent?: number | null;
-        changeType?: ChangeType;
-      }
-    | null;
+    const body = (await request.json().catch(() => null)) as
+      | {
+          domainCategory?: PricingDomainCategory;
+          pricingDomainId?: string;
+          targetObjectIds?: string[];
+          currentValueCents?: number | null;
+          proposedValueCents?: number | null;
+          currentValuePercent?: number | null;
+          proposedValuePercent?: number | null;
+          changeType?: ChangeType;
+        }
+      | null;
 
-  if (!body?.domainCategory || !body.changeType) {
-    return NextResponse.json(
-      { error: 'domainCategory and changeType required' },
-      { status: 400 },
-    );
+    if (!body?.domainCategory || !body.changeType) {
+      return NextResponse.json(
+        { error: 'domainCategory and changeType required' },
+        { status: 400 },
+      );
+    }
+
+    const affected = body.pricingDomainId
+      ? await estimateAffectedCustomers(body.pricingDomainId, body.targetObjectIds ?? [])
+      : { count: 0, method: 'no_domain_specified', notes: [] };
+
+    const classification = await classifyWithRules({
+      domainCategory: body.domainCategory,
+      currentValueCents: body.currentValueCents ?? null,
+      proposedValueCents: body.proposedValueCents ?? null,
+      currentValuePercent: body.currentValuePercent ?? null,
+      proposedValuePercent: body.proposedValuePercent ?? null,
+      changeType: body.changeType,
+      estimatedAffectedCustomers: affected.count,
+    });
+
+    const ueProjection = await computeUeProjection({
+      domainCategory: body.domainCategory,
+      currentValueCents: body.currentValueCents ?? null,
+      proposedValueCents: body.proposedValueCents ?? null,
+      currentValuePercent: body.currentValuePercent ?? null,
+      proposedValuePercent: body.proposedValuePercent ?? null,
+      estimatedAffectedCustomers: affected.count,
+    });
+
+    return NextResponse.json({ classification, affected, ueProjection });
+  } catch (err) {
+    if (isTimeoutError(err)) {
+      safeLog.error('api.governance.classify-preview', 'database timeout', { error: err });
+      return NextResponse.json({ error: 'Database operation timed out. Please try again.' }, { status: 503 });
+    }
+    safeLog.error('api.governance.classify-preview', 'unexpected error', { error: err });
+    return NextResponse.json({ error: 'An unexpected error occurred.' }, { status: 500 });
   }
-
-  const affected = body.pricingDomainId
-    ? await estimateAffectedCustomers(body.pricingDomainId, body.targetObjectIds ?? [])
-    : { count: 0, method: 'no_domain_specified', notes: [] };
-
-  const classification = await classifyWithRules({
-    domainCategory: body.domainCategory,
-    currentValueCents: body.currentValueCents ?? null,
-    proposedValueCents: body.proposedValueCents ?? null,
-    currentValuePercent: body.currentValuePercent ?? null,
-    proposedValuePercent: body.proposedValuePercent ?? null,
-    changeType: body.changeType,
-    estimatedAffectedCustomers: affected.count,
-  });
-
-  const ueProjection = await computeUeProjection({
-    domainCategory: body.domainCategory,
-    currentValueCents: body.currentValueCents ?? null,
-    proposedValueCents: body.proposedValueCents ?? null,
-    currentValuePercent: body.currentValuePercent ?? null,
-    proposedValuePercent: body.proposedValuePercent ?? null,
-    estimatedAffectedCustomers: affected.count,
-  });
-
-  return NextResponse.json({ classification, affected, ueProjection });
 }

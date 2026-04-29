@@ -5,6 +5,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createHash, randomUUID } from 'node:crypto';
 import { createClient as createServerClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
+import { safeLog } from '@/lib/utils/safe-log';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -13,12 +15,18 @@ const HIPAA_ADMIN_ROLES = new Set(['compliance_officer', 'compliance_admin', 'ad
 const BUCKET = 'hipaa-evidence';
 
 export async function POST(req: NextRequest) {
-  const session = createServerClient();
-  const { data: { user } } = await session.auth.getUser();
-  if (!user) return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
-  const { data: profile } = await session.from('profiles').select('role').eq('id', user.id).maybeSingle();
-  const role = (profile as { role?: string } | null)?.role ?? '';
-  if (!HIPAA_ADMIN_ROLES.has(role)) return NextResponse.json({ error: 'HIPAA admin role required' }, { status: 403 });
+  try {
+    const session = createServerClient();
+    const { data: { user } } = await withTimeout(session.auth.getUser(), 5000, 'api.hipaa.risk-analysis.auth');
+    if (!user) return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+    const { data: profile } = await withTimeout(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (async () => (session as any).from('profiles').select('role').eq('id', user.id).maybeSingle())(),
+      8000,
+      'api.hipaa.risk-analysis.profile',
+    );
+    const role = (profile as { role?: string } | null)?.role ?? '';
+    if (!HIPAA_ADMIN_ROLES.has(role)) return NextResponse.json({ error: 'HIPAA admin role required' }, { status: 403 });
 
   let form: FormData;
   try { form = await req.formData(); }
@@ -52,24 +60,35 @@ export async function POST(req: NextRequest) {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const sb = admin as any;
-  const { data, error } = await sb
-    .from('hipaa_risk_analyses')
-    .insert({
-      version,
-      storage_key: storageKey,
-      sha256,
-      valid_from: validFrom,
-      valid_until: validUntil,
-      scope_summary: scopeSummary,
-      methodology_summary: methodologySummary,
-      uploaded_by: user.id,
-    })
-    .select('id')
-    .single();
+  const { data, error } = await withTimeout(
+    (async () => sb
+      .from('hipaa_risk_analyses')
+      .insert({
+        version,
+        storage_key: storageKey,
+        sha256,
+        valid_from: validFrom,
+        valid_until: validUntil,
+        scope_summary: scopeSummary,
+        methodology_summary: methodologySummary,
+        uploaded_by: user.id,
+      })
+      .select('id')
+      .single())(),
+    8000,
+    'api.hipaa.risk-analysis.insert',
+  );
   if (error) {
-    // eslint-disable-next-line no-console
-    console.error('[hipaa risk-analysis] insert failed', { message: error.message });
+    safeLog.error('api.hipaa.risk-analysis', 'insert failed', { message: error.message });
     return NextResponse.json({ error: 'insert_failed' }, { status: 500 });
   }
   return NextResponse.json({ ok: true, id: (data as { id: string }).id, storageKey });
+  } catch (err) {
+    if (isTimeoutError(err)) {
+      safeLog.warn('api.hipaa.risk-analysis', 'timeout', { error: err });
+      return NextResponse.json({ error: 'timeout' }, { status: 503 });
+    }
+    safeLog.error('api.hipaa.risk-analysis', 'unexpected error', { error: err });
+    return NextResponse.json({ error: 'unexpected_error' }, { status: 500 });
+  }
 }

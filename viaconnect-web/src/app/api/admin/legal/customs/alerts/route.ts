@@ -12,6 +12,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
+import { safeLog } from '@/lib/utils/safe-log';
 
 export const runtime = 'nodejs';
 
@@ -23,7 +25,7 @@ interface ProfileLite {
 }
 
 async function requireLegalOrExec(supabase: ReturnType<typeof createClient>) {
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user } } = await withTimeout(supabase.auth.getUser(), 5000, 'api.admin.legal.customs.alerts.auth');
   if (!user) {
     return {
       ok: false as const,
@@ -87,76 +89,85 @@ interface RecordationLite {
 }
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
-  const supabase = createClient();
-  const ctx = await requireLegalOrExec(supabase);
-  if (!ctx.ok) return ctx.response;
+  try {
+    const supabase = createClient();
+    const ctx = await requireLegalOrExec(supabase);
+    if (!ctx.ok) return ctx.response;
 
-  const url = new URL(request.url);
-  const status = url.searchParams.get('status');
-  const recordationId = url.searchParams.get('recordationId');
-  const scannedAfter = url.searchParams.get('scannedAfter');
-  const includeSynthetic = url.searchParams.get('includeSynthetic') === '1';
+    const url = new URL(request.url);
+    const status = url.searchParams.get('status');
+    const recordationId = url.searchParams.get('recordationId');
+    const scannedAfter = url.searchParams.get('scannedAfter');
+    const includeSynthetic = url.searchParams.get('includeSynthetic') === '1';
 
-  const admin = createAdminClient();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sb = admin as any;
+    const admin = createAdminClient();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const sb = admin as any;
 
-  let q = sb
-    .from('customs_iprs_scan_results')
-    .select(`
-      scan_result_id,
-      case_id,
-      recordation_id,
-      scan_date,
-      scanned_at,
-      listing_title,
-      listing_title_normalized,
-      listing_url,
-      listing_source,
-      observed_price_cents,
-      mark_distance_score,
-      content_hash,
-      status,
-      reviewed_by,
-      reviewed_at,
-      review_notes,
-      is_synthetic,
-      created_at,
-      updated_at
-    `)
-    .order('scanned_at', { ascending: false })
-    .limit(200);
+    let q = sb
+      .from('customs_iprs_scan_results')
+      .select(`
+        scan_result_id,
+        case_id,
+        recordation_id,
+        scan_date,
+        scanned_at,
+        listing_title,
+        listing_title_normalized,
+        listing_url,
+        listing_source,
+        observed_price_cents,
+        mark_distance_score,
+        content_hash,
+        status,
+        reviewed_by,
+        reviewed_at,
+        review_notes,
+        is_synthetic,
+        created_at,
+        updated_at
+      `)
+      .order('scanned_at', { ascending: false })
+      .limit(200);
 
-  if (status) q = q.eq('status', status);
-  if (recordationId) q = q.eq('recordation_id', recordationId);
-  if (scannedAfter) q = q.gte('scanned_at', scannedAfter);
-  if (!includeSynthetic) q = q.eq('is_synthetic', false);
+    if (status) q = q.eq('status', status);
+    if (recordationId) q = q.eq('recordation_id', recordationId);
+    if (scannedAfter) q = q.gte('scanned_at', scannedAfter);
+    if (!includeSynthetic) q = q.eq('is_synthetic', false);
 
-  const { data, error } = await q;
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-
-  const rows = (data ?? []) as AlertRow[];
-  const recordationIds = Array.from(
-    new Set(rows.map((r) => r.recordation_id).filter((x): x is string => x !== null)),
-  );
-
-  const recordationMap: Record<string, RecordationLite> = {};
-  if (recordationIds.length > 0) {
-    const { data: recs } = await sb
-      .from('customs_recordations')
-      .select('recordation_id, recordation_type, mark_text, copyright_registration_number')
-      .in('recordation_id', recordationIds);
-    for (const r of (recs ?? []) as RecordationLite[]) {
-      recordationMap[r.recordation_id] = r;
+    const { data, error } = await q;
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
     }
+
+    const rows = (data ?? []) as AlertRow[];
+    const recordationIds = Array.from(
+      new Set(rows.map((r) => r.recordation_id).filter((x): x is string => x !== null)),
+    );
+
+    const recordationMap: Record<string, RecordationLite> = {};
+    if (recordationIds.length > 0) {
+      const { data: recs } = await sb
+        .from('customs_recordations')
+        .select('recordation_id, recordation_type, mark_text, copyright_registration_number')
+        .in('recordation_id', recordationIds);
+      for (const r of (recs ?? []) as RecordationLite[]) {
+        recordationMap[r.recordation_id] = r;
+      }
+    }
+
+    const enriched = rows.map((r) => ({
+      ...r,
+      recordation: r.recordation_id ? recordationMap[r.recordation_id] ?? null : null,
+    }));
+
+    return NextResponse.json({ rows: enriched });
+  } catch (err) {
+    if (isTimeoutError(err)) {
+      safeLog.warn('api.admin.legal.customs.alerts', 'GET timeout', { error: err });
+      return NextResponse.json({ error: 'Request timed out.' }, { status: 503 });
+    }
+    safeLog.error('api.admin.legal.customs.alerts', 'unexpected error', { error: err });
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
-
-  const enriched = rows.map((r) => ({
-    ...r,
-    recordation: r.recordation_id ? recordationMap[r.recordation_id] ?? null : null,
-  }));
-
-  return NextResponse.json({ rows: enriched });
 }

@@ -12,6 +12,8 @@ import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 import { isValidTransition } from '@/lib/white-label/production-state-machine';
 import { PRODUCTION_ORDER_STATUSES } from '@/lib/white-label/schema-types';
+import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
+import { safeLog } from '@/lib/utils/safe-log';
 
 export const runtime = 'nodejs';
 
@@ -42,66 +44,92 @@ export async function POST(
   request: NextRequest,
   { params }: { params: { orderId: string } },
 ): Promise<NextResponse> {
-  const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+  try {
+    const supabase = createClient();
+    const { data: { user } } = await withTimeout(supabase.auth.getUser(), 5000, 'api.white-label.production-transition.auth');
+    if (!user) return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
 
-  const sb = supabase as any;
-  const { data: profile } = await sb
-    .from('profiles').select('role').eq('id', user.id).maybeSingle();
-  if (!profile || profile.role !== 'admin') {
-    return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
-  }
-
-  const json = await request.json().catch(() => null);
-  const parsed = schema.safeParse(json);
-  if (!parsed.success) {
-    return NextResponse.json({ error: 'Invalid body', details: parsed.error.issues }, { status: 400 });
-  }
-
-  const { data: order } = await sb
-    .from('white_label_production_orders')
-    .select('id, status')
-    .eq('id', params.orderId)
-    .maybeSingle();
-  if (!order) return NextResponse.json({ error: 'Order not found' }, { status: 404 });
-
-  if (!isValidTransition(order.status, parsed.data.to)) {
-    return NextResponse.json({
-      error: `Invalid transition: ${order.status} -> ${parsed.data.to}`,
-    }, { status: 400 });
-  }
-
-  const now = new Date().toISOString();
-  const tsField = TIMESTAMP_FIELD[parsed.data.to];
-  const update: Record<string, unknown> = { status: parsed.data.to, updated_at: now };
-  if (tsField) update[tsField] = now;
-  if (parsed.data.tracking) {
-    update.carrier = parsed.data.tracking.carrier;
-    update.tracking_number = parsed.data.tracking.tracking_number;
-  }
-
-  await sb
-    .from('white_label_production_orders')
-    .update(update)
-    .eq('id', params.orderId);
-
-  // Lot/QC updates per line.
-  if (parsed.data.lot_updates) {
-    for (const u of parsed.data.lot_updates) {
-      await sb
-        .from('white_label_production_order_items')
-        .update({
-          lot_number: u.lot_number,
-          expiration_date: u.expiration_date,
-          qc_passed: u.qc_passed,
-          qc_notes: u.qc_notes ?? null,
-          updated_at: now,
-        })
-        .eq('id', u.item_id)
-        .eq('production_order_id', params.orderId);
+    const sb = supabase as any;
+    const profileRes = await withTimeout(
+      (async () => sb.from('profiles').select('role').eq('id', user.id).maybeSingle())(),
+      5000,
+      'api.white-label.production-transition.load-profile',
+    );
+    const profile = profileRes.data as { role?: string } | null;
+    if (!profile || profile.role !== 'admin') {
+      return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
     }
-  }
 
-  return NextResponse.json({ ok: true, new_status: parsed.data.to });
+    const json = await request.json().catch(() => null);
+    const parsed = schema.safeParse(json);
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Invalid body', details: parsed.error.issues }, { status: 400 });
+    }
+
+    const orderRes = await withTimeout(
+      (async () => sb
+        .from('white_label_production_orders')
+        .select('id, status')
+        .eq('id', params.orderId)
+        .maybeSingle())(),
+      8000,
+      'api.white-label.production-transition.load-order',
+    );
+    const order = orderRes.data;
+    if (!order) return NextResponse.json({ error: 'Order not found' }, { status: 404 });
+
+    if (!isValidTransition(order.status, parsed.data.to)) {
+      return NextResponse.json({
+        error: `Invalid transition: ${order.status} -> ${parsed.data.to}`,
+      }, { status: 400 });
+    }
+
+    const now = new Date().toISOString();
+    const tsField = TIMESTAMP_FIELD[parsed.data.to];
+    const update: Record<string, unknown> = { status: parsed.data.to, updated_at: now };
+    if (tsField) update[tsField] = now;
+    if (parsed.data.tracking) {
+      update.carrier = parsed.data.tracking.carrier;
+      update.tracking_number = parsed.data.tracking.tracking_number;
+    }
+
+    await withTimeout(
+      (async () => sb
+        .from('white_label_production_orders')
+        .update(update)
+        .eq('id', params.orderId))(),
+      8000,
+      'api.white-label.production-transition.update-order',
+    );
+
+    // Lot/QC updates per line.
+    if (parsed.data.lot_updates) {
+      for (const u of parsed.data.lot_updates) {
+        await withTimeout(
+          (async () => sb
+            .from('white_label_production_order_items')
+            .update({
+              lot_number: u.lot_number,
+              expiration_date: u.expiration_date,
+              qc_passed: u.qc_passed,
+              qc_notes: u.qc_notes ?? null,
+              updated_at: now,
+            })
+            .eq('id', u.item_id)
+            .eq('production_order_id', params.orderId))(),
+          8000,
+          'api.white-label.production-transition.update-item',
+        );
+      }
+    }
+
+    return NextResponse.json({ ok: true, new_status: parsed.data.to });
+  } catch (err) {
+    if (isTimeoutError(err)) {
+      safeLog.error('api.white-label.production-transition', 'database timeout', { orderId: params.orderId, error: err });
+      return NextResponse.json({ error: 'Database operation timed out. Please try again.' }, { status: 503 });
+    }
+    safeLog.error('api.white-label.production-transition', 'unexpected error', { orderId: params.orderId, error: err });
+    return NextResponse.json({ error: 'An unexpected error occurred.' }, { status: 500 });
+  }
 }

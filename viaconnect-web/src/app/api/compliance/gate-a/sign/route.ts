@@ -26,6 +26,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient as createServerClient } from '@/lib/supabase/server';
 import { loadRegistry } from '@/lib/compliance/frameworks/registry';
 import type { FrameworkId } from '@/lib/compliance/frameworks/types';
+import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
+import { safeLog } from '@/lib/utils/safe-log';
 
 export const runtime = 'nodejs';
 
@@ -48,12 +50,18 @@ interface Body {
 }
 
 export async function POST(req: NextRequest) {
-  const session = createServerClient();
-  const { data: { user } } = await session.auth.getUser();
-  if (!user) return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
-  const { data: profile } = await session.from('profiles').select('role').eq('id', user.id).maybeSingle();
-  const role = (profile as { role?: string } | null)?.role ?? '';
-  if (!SIGN_ROLES.has(role)) return NextResponse.json({ error: 'Compliance role required' }, { status: 403 });
+  try {
+    const session = createServerClient();
+    const { data: { user } } = await withTimeout(session.auth.getUser(), 5000, 'api.compliance.gate-a.auth');
+    if (!user) return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+    const { data: profile } = await withTimeout(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (async () => (session as any).from('profiles').select('role').eq('id', user.id).maybeSingle())(),
+      8000,
+      'api.compliance.gate-a.profile',
+    );
+    const role = (profile as { role?: string } | null)?.role ?? '';
+    if (!SIGN_ROLES.has(role)) return NextResponse.json({ error: 'Compliance role required' }, { status: 403 });
 
   let body: Body;
   try { body = (await req.json()) as Body; }
@@ -92,13 +100,17 @@ export async function POST(req: NextRequest) {
   const nowIso = new Date().toISOString();
 
   // Pull the prior row so we can preserve its signer chain in metadata.
-  const { data: priorRow } = await sb
-    .from('compliance_gate_a_signoffs')
-    .select('id, signed_by, signed_at, metadata')
-    .eq('gate_key', GATE_KEY)
-    .eq('subject_type', 'framework')
-    .eq('subject_id', frameworkId)
-    .maybeSingle();
+  const { data: priorRow } = await withTimeout(
+    (async () => sb
+      .from('compliance_gate_a_signoffs')
+      .select('id, signed_by, signed_at, metadata')
+      .eq('gate_key', GATE_KEY)
+      .eq('subject_type', 'framework')
+      .eq('subject_id', frameworkId)
+      .maybeSingle())(),
+    8000,
+    'api.compliance.gate-a.priorRow',
+  );
   type PriorRow = {
     id: string;
     signed_by: string;
@@ -134,24 +146,27 @@ export async function POST(req: NextRequest) {
     updated_at: nowIso,
   };
 
-  const { data, error } = await sb
-    .from('compliance_gate_a_signoffs')
-    .upsert({
-      framework_id: frameworkId,
-      gate_key: GATE_KEY,
-      subject_type: 'framework',
-      subject_id: frameworkId,
-      signoff_status: 'signed',
-      signed_by: user.id,
-      signed_at: nowIso,
-      note: attestationText,
-      metadata,
-    }, { onConflict: 'framework_id,gate_key,subject_type,subject_id' })
-    .select('id, signed_at')
-    .single();
+  const { data, error } = await withTimeout(
+    (async () => sb
+      .from('compliance_gate_a_signoffs')
+      .upsert({
+        framework_id: frameworkId,
+        gate_key: GATE_KEY,
+        subject_type: 'framework',
+        subject_id: frameworkId,
+        signoff_status: 'signed',
+        signed_by: user.id,
+        signed_at: nowIso,
+        note: attestationText,
+        metadata,
+      }, { onConflict: 'framework_id,gate_key,subject_type,subject_id' })
+      .select('id, signed_at')
+      .single())(),
+    8000,
+    'api.compliance.gate-a.upsert',
+  );
   if (error) {
-    // eslint-disable-next-line no-console
-    console.error('[gate-a sign] upsert failed', { message: error.message });
+    safeLog.error('api.compliance.gate-a', 'upsert failed', { message: error.message });
     return NextResponse.json({ error: 'upsert_failed' }, { status: 500 });
   }
   const row = data as { id: string; signed_at: string };
@@ -163,4 +178,12 @@ export async function POST(req: NextRequest) {
     attestorRole,
     previousSignersCount: previousSigners.length,
   });
+  } catch (err) {
+    if (isTimeoutError(err)) {
+      safeLog.warn('api.compliance.gate-a', 'timeout', { error: err });
+      return NextResponse.json({ error: 'timeout' }, { status: 503 });
+    }
+    safeLog.error('api.compliance.gate-a', 'unexpected error', { error: err });
+    return NextResponse.json({ error: 'unexpected_error' }, { status: 500 });
+  }
 }

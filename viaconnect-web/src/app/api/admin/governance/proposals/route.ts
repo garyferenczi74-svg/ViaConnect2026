@@ -6,6 +6,8 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { requireGovernanceAdmin } from '@/lib/governance/admin-guard';
+import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
+import { safeLog } from '@/lib/utils/safe-log';
 
 export async function POST(request: NextRequest) {
   const auth = await requireGovernanceAdmin();
@@ -29,31 +31,45 @@ export async function POST(request: NextRequest) {
 
   const supabase = createClient();
 
-  const { data, error } = await supabase
-    .from('pricing_proposals')
-    .insert({
-      title: body.title,
-      summary: body.summary,
-      pricing_domain_id: body.pricing_domain_id,
-      change_type: body.change_type,
-      target_object_ids: [],
-      proposed_value_cents: body.change_type === 'price_amount' ? 0 : null,
-      proposed_value_percent: body.change_type === 'discount_percent' ? 0 : null,
-      impact_tier: 'minor',
-      auto_classified_tier: 'minor',
-      rationale: '',
-      proposed_effective_date: new Date(Date.now() + 30 * 86_400_000)
-        .toISOString()
-        .slice(0, 10),
-      grandfathering_policy: 'no_grandfathering',
-      status: 'draft',
-      initiated_by: auth.userId,
-    } as never)
-    .select('id, proposal_number')
-    .single();
+  try {
+    const insertRes = await withTimeout(
+      (async () => supabase
+        .from('pricing_proposals')
+        .insert({
+          title: body.title,
+          summary: body.summary,
+          pricing_domain_id: body.pricing_domain_id,
+          change_type: body.change_type,
+          target_object_ids: [],
+          proposed_value_cents: body.change_type === 'price_amount' ? 0 : null,
+          proposed_value_percent: body.change_type === 'discount_percent' ? 0 : null,
+          impact_tier: 'minor',
+          auto_classified_tier: 'minor',
+          rationale: '',
+          proposed_effective_date: new Date(Date.now() + 30 * 86_400_000)
+            .toISOString()
+            .slice(0, 10),
+          grandfathering_policy: 'no_grandfathering',
+          status: 'draft',
+          initiated_by: auth.userId,
+        } as never)
+        .select('id, proposal_number')
+        .single())(),
+      8000,
+      'api.admin.governance.proposals.create',
+    );
 
-  if (error || !data) {
-    return NextResponse.json({ error: error?.message ?? 'Insert failed' }, { status: 500 });
+    if (insertRes.error || !insertRes.data) {
+      safeLog.error('api.admin.governance.proposals', 'create failed', { error: insertRes.error });
+      return NextResponse.json({ error: insertRes.error?.message ?? 'Insert failed' }, { status: 500 });
+    }
+    return NextResponse.json(insertRes.data);
+  } catch (err) {
+    if (isTimeoutError(err)) {
+      safeLog.error('api.admin.governance.proposals', 'create timeout', { error: err });
+      return NextResponse.json({ error: 'Database operation timed out.' }, { status: 503 });
+    }
+    safeLog.error('api.admin.governance.proposals', 'unexpected error', { error: err });
+    return NextResponse.json({ error: 'Internal error' }, { status: 500 });
   }
-  return NextResponse.json(data);
 }

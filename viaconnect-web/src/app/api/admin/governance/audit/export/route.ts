@@ -10,10 +10,13 @@ import {
   serializeGovernanceAuditCsv,
   type AuditEventRow,
 } from '@/lib/governance/audit-csv';
+import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
+import { safeLog } from '@/lib/utils/safe-log';
 
 export async function GET(request: NextRequest) {
-  const auth = await requireGovernanceAdmin();
-  if (auth.kind === 'error') return auth.response;
+  try {
+    const auth = await requireGovernanceAdmin();
+    if (auth.kind === 'error') return auth.response;
 
   const { searchParams } = request.nextUrl;
   const since = searchParams.get('since');
@@ -151,16 +154,24 @@ export async function GET(request: NextRequest) {
     });
   }
 
-  events.sort((a, b) => (a.event_time < b.event_time ? 1 : -1));
+    events.sort((a, b) => (a.event_time < b.event_time ? 1 : -1));
 
-  const csv = serializeGovernanceAuditCsv(events);
-  const filename = `governance-audit-${new Date().toISOString().slice(0, 10)}.csv`;
-  return new NextResponse(csv, {
-    status: 200,
-    headers: {
-      'Content-Type': 'text/csv; charset=utf-8',
-      'Content-Disposition': `attachment; filename="${filename}"`,
-      'Cache-Control': 'no-store',
-    },
-  });
+    const csv = serializeGovernanceAuditCsv(events);
+    const filename = `governance-audit-${new Date().toISOString().slice(0, 10)}.csv`;
+    return new NextResponse(csv, {
+      status: 200,
+      headers: {
+        'Content-Type': 'text/csv; charset=utf-8',
+        'Content-Disposition': `attachment; filename="${filename}"`,
+        'Cache-Control': 'no-store',
+      },
+    });
+  } catch (err) {
+    if (isTimeoutError(err)) {
+      safeLog.error('api.governance.audit-export', 'database timeout', { error: err });
+      return NextResponse.json({ error: 'Database operation timed out. Please try again.' }, { status: 503 });
+    }
+    safeLog.error('api.governance.audit-export', 'unexpected error', { error: err });
+    return NextResponse.json({ error: 'An unexpected error occurred.' }, { status: 500 });
+  }
 }

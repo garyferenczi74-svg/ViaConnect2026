@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { createClient } from "@supabase/supabase-js";
+import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
+import { safeLog } from '@/lib/utils/safe-log';
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -18,37 +20,46 @@ const SLA_DAYS: Record<string, number> = {
 };
 
 export async function POST(req: Request) {
-  let body: { email?: string; requestType?: string; jurisdiction?: string; notes?: string };
-  try { body = await req.json(); } catch { return NextResponse.json({ error: "Invalid JSON" }, { status: 400 }); }
-  const email = (body.email ?? "").trim();
-  const requestType = body.requestType ?? "access";
-  const jurisdiction = body.jurisdiction ?? "ccpa";
-  if (!email) return NextResponse.json({ error: "email required" }, { status: 400 });
-  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return NextResponse.json({ error: "invalid email" }, { status: 400 });
+  try {
+    let body: { email?: string; requestType?: string; jurisdiction?: string; notes?: string };
+    try { body = await req.json(); } catch { return NextResponse.json({ error: "Invalid JSON" }, { status: 400 }); }
+    const email = (body.email ?? "").trim();
+    const requestType = body.requestType ?? "access";
+    const jurisdiction = body.jurisdiction ?? "ccpa";
+    if (!email) return NextResponse.json({ error: "email required" }, { status: 400 });
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return NextResponse.json({ error: "invalid email" }, { status: 400 });
 
-  const userClient = createServerClient();
-  const { data: { user } } = await userClient.auth.getUser();
+    const userClient = createServerClient();
+    const { data: { user } } = await withTimeout(userClient.auth.getUser(), 5000, 'api.marshall.dsar.auth');
 
-  const slaDays = SLA_DAYS[jurisdiction] ?? 45;
-  const slaDue = new Date(Date.now() + slaDays * 86_400_000).toISOString();
+    const slaDays = SLA_DAYS[jurisdiction] ?? 45;
+    const slaDue = new Date(Date.now() + slaDays * 86_400_000).toISOString();
 
-  const svc = serviceClient();
-  const { error } = await svc.from("dsar_requests").insert({
-    user_id: user?.id ?? null,
-    email,
-    request_type: requestType,
-    jurisdiction,
-    sla_due_at: slaDue,
-    notes: body.notes ?? null,
-  });
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    const svc = serviceClient();
+    const { error } = await svc.from("dsar_requests").insert({
+      user_id: user?.id ?? null,
+      email,
+      request_type: requestType,
+      jurisdiction,
+      sla_due_at: slaDue,
+      notes: body.notes ?? null,
+    });
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  await svc.from("compliance_audit_log").insert({
-    event_type: "dsar.submitted",
-    actor_type: "user",
-    actor_id: user?.id ?? email,
-    payload: { email, requestType, jurisdiction, slaDue },
-  });
+    await svc.from("compliance_audit_log").insert({
+      event_type: "dsar.submitted",
+      actor_type: "user",
+      actor_id: user?.id ?? email,
+      payload: { email, requestType, jurisdiction, slaDue },
+    });
 
-  return NextResponse.json({ ok: true, slaDue });
+    return NextResponse.json({ ok: true, slaDue });
+  } catch (err) {
+    if (isTimeoutError(err)) {
+      safeLog.warn('api.marshall.dsar', 'request timeout', { error: err });
+      return NextResponse.json({ error: 'timeout' }, { status: 503 });
+    }
+    safeLog.error('api.marshall.dsar', 'unexpected error', { error: err });
+    return NextResponse.json({ error: 'internal_error' }, { status: 500 });
+  }
 }

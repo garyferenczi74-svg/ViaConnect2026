@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { createClient } from "@supabase/supabase-js";
+import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
+import { safeLog } from '@/lib/utils/safe-log';
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -13,32 +15,41 @@ function serviceClient() {
 }
 
 export async function POST(req: Request) {
-  const userClient = createServerClient();
-  const { data: { user } } = await userClient.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthenticated" }, { status: 401 });
-  const { data: profile } = await userClient.from("profiles").select("role").eq("id", user.id).maybeSingle();
-  if (!profile || !["admin", "superadmin", "compliance_officer", "compliance_admin"].includes(profile.role as string)) {
-    return NextResponse.json({ error: "Compliance role required" }, { status: 403 });
+  try {
+    const userClient = createServerClient();
+    const { data: { user } } = await withTimeout(userClient.auth.getUser(), 5000, 'api.marshall.rules.review.auth');
+    if (!user) return NextResponse.json({ error: "Unauthenticated" }, { status: 401 });
+    const { data: profile } = await userClient.from("profiles").select("role").eq("id", user.id).maybeSingle();
+    if (!profile || !["admin", "superadmin", "compliance_officer", "compliance_admin"].includes(profile.role as string)) {
+      return NextResponse.json({ error: "Compliance role required" }, { status: 403 });
+    }
+
+    const form = await req.formData().catch(() => null);
+    const ruleId = form?.get("ruleId");
+    if (typeof ruleId !== "string") return NextResponse.json({ error: "ruleId required" }, { status: 400 });
+
+    const today = new Date().toISOString().slice(0, 10);
+    const svc = serviceClient();
+    const { error } = await svc
+      .from("compliance_rules")
+      .update({ last_reviewed: today, reviewed_by: user.id })
+      .eq("id", ruleId);
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+    await svc.from("compliance_audit_log").insert({
+      event_type: "rule.reviewed",
+      actor_type: "user",
+      actor_id: user.id,
+      payload: { ruleId, reviewedOn: today },
+    });
+
+    return NextResponse.redirect(new URL(`/admin/marshall/rules/${encodeURIComponent(ruleId)}`, req.url), { status: 303 });
+  } catch (err) {
+    if (isTimeoutError(err)) {
+      safeLog.warn('api.marshall.rules.review', 'request timeout', { error: err });
+      return NextResponse.json({ error: 'timeout' }, { status: 503 });
+    }
+    safeLog.error('api.marshall.rules.review', 'unexpected error', { error: err });
+    return NextResponse.json({ error: 'internal_error' }, { status: 500 });
   }
-
-  const form = await req.formData().catch(() => null);
-  const ruleId = form?.get("ruleId");
-  if (typeof ruleId !== "string") return NextResponse.json({ error: "ruleId required" }, { status: 400 });
-
-  const today = new Date().toISOString().slice(0, 10);
-  const svc = serviceClient();
-  const { error } = await svc
-    .from("compliance_rules")
-    .update({ last_reviewed: today, reviewed_by: user.id })
-    .eq("id", ruleId);
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-
-  await svc.from("compliance_audit_log").insert({
-    event_type: "rule.reviewed",
-    actor_type: "user",
-    actor_id: user.id,
-    payload: { ruleId, reviewedOn: today },
-  });
-
-  return NextResponse.redirect(new URL(`/admin/marshall/rules/${encodeURIComponent(ruleId)}`, req.url), { status: 303 });
 }

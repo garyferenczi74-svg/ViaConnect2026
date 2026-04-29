@@ -7,6 +7,8 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { requireGovernanceAdmin } from '@/lib/governance/admin-guard';
+import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
+import { safeLog } from '@/lib/utils/safe-log';
 
 const ALLOWED_FIELDS = new Set([
   'title',
@@ -60,33 +62,51 @@ export async function PATCH(
 
   const supabase = createClient();
 
-  const { data: existing } = await supabase
-    .from('pricing_proposals')
-    .select('id, status, initiated_by')
-    .eq('id', params.id)
-    .maybeSingle();
-  const row = existing as
-    | { id: string; status: string; initiated_by: string }
-    | null;
-  if (!row) return NextResponse.json({ error: 'Proposal not found' }, { status: 404 });
-
-  if (row.status !== 'draft') {
-    return NextResponse.json(
-      { error: `Cannot edit proposal in status ${row.status}` },
-      { status: 409 },
+  try {
+    const existingRes = await withTimeout(
+      (async () => supabase
+        .from('pricing_proposals')
+        .select('id, status, initiated_by')
+        .eq('id', params.id)
+        .maybeSingle())(),
+      8000,
+      'api.admin.governance.proposals.patch.load',
     );
-  }
-  if (row.initiated_by !== auth.userId) {
-    return NextResponse.json({ error: 'Only initiator may edit this draft' }, { status: 403 });
-  }
+    const row = existingRes.data as
+      | { id: string; status: string; initiated_by: string }
+      | null;
+    if (!row) return NextResponse.json({ error: 'Proposal not found' }, { status: 404 });
 
-  const { error: updateErr } = await supabase
-    .from('pricing_proposals')
-    .update({ ...patch, updated_at: new Date().toISOString() } as never)
-    .eq('id', params.id);
+    if (row.status !== 'draft') {
+      return NextResponse.json(
+        { error: `Cannot edit proposal in status ${row.status}` },
+        { status: 409 },
+      );
+    }
+    if (row.initiated_by !== auth.userId) {
+      return NextResponse.json({ error: 'Only initiator may edit this draft' }, { status: 403 });
+    }
 
-  if (updateErr) {
-    return NextResponse.json({ error: updateErr.message }, { status: 500 });
+    const updateRes = await withTimeout(
+      (async () => supabase
+        .from('pricing_proposals')
+        .update({ ...patch, updated_at: new Date().toISOString() } as never)
+        .eq('id', params.id))(),
+      8000,
+      'api.admin.governance.proposals.patch.update',
+    );
+
+    if (updateRes.error) {
+      safeLog.error('api.admin.governance.proposals.patch', 'update failed', { proposalId: params.id, error: updateRes.error });
+      return NextResponse.json({ error: updateRes.error.message }, { status: 500 });
+    }
+    return NextResponse.json({ ok: true, fields_updated: Object.keys(patch).length });
+  } catch (err) {
+    if (isTimeoutError(err)) {
+      safeLog.error('api.admin.governance.proposals.patch', 'timeout', { proposalId: params.id, error: err });
+      return NextResponse.json({ error: 'Database operation timed out.' }, { status: 503 });
+    }
+    safeLog.error('api.admin.governance.proposals.patch', 'unexpected error', { proposalId: params.id, error: err });
+    return NextResponse.json({ error: 'Internal error' }, { status: 500 });
   }
-  return NextResponse.json({ ok: true, fields_updated: Object.keys(patch).length });
 }

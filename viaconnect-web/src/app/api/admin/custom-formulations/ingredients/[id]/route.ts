@@ -4,6 +4,8 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { requireCustomFormulationsAdmin } from '@/lib/custom-formulations/admin-guard';
+import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
+import { safeLog } from '@/lib/utils/safe-log';
 
 const ALLOWED_FIELDS = new Set([
   'common_name', 'scientific_name', 'alternate_names',
@@ -28,33 +30,46 @@ export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } },
 ) {
-  const auth = await requireCustomFormulationsAdmin();
-  if (auth.kind === 'error') return auth.response;
+  try {
+    const auth = await requireCustomFormulationsAdmin();
+    if (auth.kind === 'error') return auth.response;
 
-  const body = (await request.json().catch(() => null)) as Record<string, unknown> | null;
-  if (!body) {
-    return NextResponse.json({ error: 'Body required' }, { status: 400 });
+    const body = (await request.json().catch(() => null)) as Record<string, unknown> | null;
+    if (!body) {
+      return NextResponse.json({ error: 'Body required' }, { status: 400 });
+    }
+
+    const patch: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(body)) {
+      if (ALLOWED_FIELDS.has(k)) patch[k] = v;
+    }
+    if (Object.keys(patch).length === 0) {
+      return NextResponse.json({ error: 'No allowed fields in patch' }, { status: 400 });
+    }
+
+    patch.last_reviewed_at = new Date().toISOString();
+    patch.last_reviewed_by = auth.userId;
+
+    const supabase = createClient();
+    const updateRes = await withTimeout(
+      (async () => supabase
+        .from('ingredient_library')
+        .update(patch as never)
+        .eq('id', params.id))(),
+      8000,
+      'api.custom-formulations.ingredients.update',
+    );
+
+    if (updateRes.error) {
+      return NextResponse.json({ error: updateRes.error.message }, { status: 500 });
+    }
+    return NextResponse.json({ ok: true, fields_updated: Object.keys(patch).length });
+  } catch (err) {
+    if (isTimeoutError(err)) {
+      safeLog.error('api.custom-formulations.ingredients', 'database timeout', { id: params.id, error: err });
+      return NextResponse.json({ error: 'Database operation timed out. Please try again.' }, { status: 503 });
+    }
+    safeLog.error('api.custom-formulations.ingredients', 'unexpected error', { id: params.id, error: err });
+    return NextResponse.json({ error: 'An unexpected error occurred.' }, { status: 500 });
   }
-
-  const patch: Record<string, unknown> = {};
-  for (const [k, v] of Object.entries(body)) {
-    if (ALLOWED_FIELDS.has(k)) patch[k] = v;
-  }
-  if (Object.keys(patch).length === 0) {
-    return NextResponse.json({ error: 'No allowed fields in patch' }, { status: 400 });
-  }
-
-  patch.last_reviewed_at = new Date().toISOString();
-  patch.last_reviewed_by = auth.userId;
-
-  const supabase = createClient();
-  const { error } = await supabase
-    .from('ingredient_library')
-    .update(patch as never)
-    .eq('id', params.id);
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-  return NextResponse.json({ ok: true, fields_updated: Object.keys(patch).length });
 }

@@ -10,6 +10,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient as createServerClient } from '@/lib/supabase/server';
+import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
+import { safeLog } from '@/lib/utils/safe-log';
 
 export const runtime = 'nodejs';
 
@@ -32,63 +34,72 @@ interface Body {
 }
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
-  const supabase = createServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
-  }
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .maybeSingle();
-  const role = (profile as { role?: string } | null)?.role ?? '';
-  if (!COMPLIANCE_ROLES.has(role)) {
-    return NextResponse.json({ error: 'Compliance role required' }, { status: 403 });
-  }
-
-  let body: Body;
   try {
-    body = (await req.json()) as Body;
-  } catch {
-    return NextResponse.json({ error: 'invalid_json' }, { status: 400 });
-  }
-  if (!VALID_DISPOSITIONS.has(body.disposition)) {
-    return NextResponse.json({ error: 'invalid_disposition' }, { status: 400 });
-  }
-  if (body.disposition === 'confirmed_counterfeit' || body.disposition === 'referred_to_legal') {
-    if (!body.confirmationNote || body.confirmationNote.trim().length < 10) {
-      return NextResponse.json({ error: 'confirmation_note_required' }, { status: 400 });
+    const supabase = createServerClient();
+    const { data: { user } } = await withTimeout(supabase.auth.getUser(), 5000, 'api.marshall.vision.disposition.auth');
+    if (!user) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .maybeSingle();
+    const role = (profile as { role?: string } | null)?.role ?? '';
+    if (!COMPLIANCE_ROLES.has(role)) {
+      return NextResponse.json({ error: 'Compliance role required' }, { status: 403 });
+    }
+
+    let body: Body;
+    try {
+      body = (await req.json()) as Body;
+    } catch {
+      return NextResponse.json({ error: 'invalid_json' }, { status: 400 });
+    }
+    if (!VALID_DISPOSITIONS.has(body.disposition)) {
+      return NextResponse.json({ error: 'invalid_disposition' }, { status: 400 });
+    }
+    if (body.disposition === 'confirmed_counterfeit' || body.disposition === 'referred_to_legal') {
+      if (!body.confirmationNote || body.confirmationNote.trim().length < 10) {
+        return NextResponse.json({ error: 'confirmation_note_required' }, { status: 400 });
+      }
+    }
+
+    const determinationId = params.id;
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const sb = supabase as any;
+    const { data, error } = await sb
+      .from('counterfeit_dispositions')
+      .insert({
+        determination_id: determinationId,
+        disposition: body.disposition,
+        confirmation_note: body.confirmationNote ?? null,
+        decided_by: user.id,
+        disagreed_with_model: body.disagreedWithModel === true,
+      })
+      .select('id, decided_at')
+      .single();
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    const row = data as { id: string; decided_at: string };
+    return NextResponse.json({
+      ok: true,
+      dispositionId: row.id,
+      decidedAt: row.decided_at,
+      nextSteps: nextStepsFor(body.disposition),
+    });
+  } catch (err) {
+    if (isTimeoutError(err)) {
+      safeLog.warn('api.marshall.vision.disposition', 'request timeout', { error: err });
+      return NextResponse.json({ error: 'timeout' }, { status: 503 });
+    }
+    safeLog.error('api.marshall.vision.disposition', 'unexpected error', { error: err });
+    return NextResponse.json({ error: 'internal_error' }, { status: 500 });
   }
-
-  const determinationId = params.id;
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sb = supabase as any;
-  const { data, error } = await sb
-    .from('counterfeit_dispositions')
-    .insert({
-      determination_id: determinationId,
-      disposition: body.disposition,
-      confirmation_note: body.confirmationNote ?? null,
-      decided_by: user.id,
-      disagreed_with_model: body.disagreedWithModel === true,
-    })
-    .select('id, decided_at')
-    .single();
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-
-  const row = data as { id: string; decided_at: string };
-  return NextResponse.json({
-    ok: true,
-    dispositionId: row.id,
-    decidedAt: row.decided_at,
-    nextSteps: nextStepsFor(body.disposition),
-  });
 }
 
 function nextStepsFor(disposition: string): string[] {

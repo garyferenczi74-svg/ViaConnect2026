@@ -13,79 +13,102 @@ import { requireMarketingAdmin } from '@/lib/flags/admin-guard';
 import { preCheckVariant } from '@/lib/marketing/variants/precheck';
 import { validateWordCounts } from '@/lib/marketing/variants/wordCount';
 import { logVariantEvent } from '@/lib/marketing/variants/logging';
+import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
+import { safeLog } from '@/lib/utils/safe-log';
 
 export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } },
 ) {
-  const auth = await requireMarketingAdmin();
-  if (auth.kind === 'error') return auth.response;
+  try {
+    const auth = await requireMarketingAdmin();
+    if (auth.kind === 'error') return auth.response;
 
-  const body = (await request.json().catch(() => null)) as {
-    clinicianConsentOnFile?: boolean;
-    timeSubstantiationOnFile?: boolean;
-    scientificSubstantiationOnFile?: boolean;
-  } | null;
+    const body = (await request.json().catch(() => null)) as {
+      clinicianConsentOnFile?: boolean;
+      timeSubstantiationOnFile?: boolean;
+      scientificSubstantiationOnFile?: boolean;
+    } | null;
 
-  const supabase = createClient();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: variant, error: readErr } = await (supabase as any)
-    .from('marketing_copy_variants')
-    .select('id, headline_text, subheadline_text, cta_label, archived')
-    .eq('id', params.id)
-    .maybeSingle();
-  if (readErr) return NextResponse.json({ error: readErr.message }, { status: 500 });
-  if (!variant) return NextResponse.json({ error: 'Not found' }, { status: 404 });
-  if (variant.archived) {
-    return NextResponse.json({ error: 'Cannot pre-check archived variant.' }, { status: 409 });
-  }
-
-  // Word-count validation precondition.
-  const wc = validateWordCounts(variant.headline_text, variant.subheadline_text);
-  if (!wc.ok) {
-    return NextResponse.json(
-      { error: 'Word-count validation failed.', wordCount: wc },
-      { status: 422 },
+    const supabase = createClient();
+    const { data: variant, error: readErr } = await withTimeout(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (async () => (supabase as any)
+        .from('marketing_copy_variants')
+        .select('id, headline_text, subheadline_text, cta_label, archived')
+        .eq('id', params.id)
+        .maybeSingle())(),
+      8000,
+      'api.marketing.variants.precheck.read',
     );
-  }
+    if (readErr) return NextResponse.json({ error: readErr.message }, { status: 500 });
+    if (!variant) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    if (variant.archived) {
+      return NextResponse.json({ error: 'Cannot pre-check archived variant.' }, { status: 409 });
+    }
 
-  const result = await preCheckVariant({
-    headline: variant.headline_text,
-    subheadline: variant.subheadline_text,
-    ctaLabel: variant.cta_label,
-    clinicianConsentOnFile: body?.clinicianConsentOnFile,
-    timeSubstantiationOnFile: body?.timeSubstantiationOnFile,
-    scientificSubstantiationOnFile: body?.scientificSubstantiationOnFile,
-  });
+    // Word-count validation precondition.
+    const wc = validateWordCounts(variant.headline_text, variant.subheadline_text);
+    if (!wc.ok) {
+      return NextResponse.json(
+        { error: 'Word-count validation failed.', wordCount: wc },
+        { status: 422 },
+      );
+    }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error: updErr } = await (supabase as any)
-    .from('marketing_copy_variants')
-    .update({
-      word_count_validated: true,
-      marshall_precheck_passed: result.passed,
-    })
-    .eq('id', params.id);
-  if (updErr) return NextResponse.json({ error: updErr.message }, { status: 500 });
+    const result = await withTimeout(
+      preCheckVariant({
+        headline: variant.headline_text,
+        subheadline: variant.subheadline_text,
+        ctaLabel: variant.cta_label,
+        clinicianConsentOnFile: body?.clinicianConsentOnFile,
+        timeSubstantiationOnFile: body?.timeSubstantiationOnFile,
+        scientificSubstantiationOnFile: body?.scientificSubstantiationOnFile,
+      }),
+      30000,
+      'api.marketing.variants.precheck.run',
+    );
 
-  await logVariantEvent(supabase, {
-    variantId: params.id,
-    eventKind: 'precheck_completed',
-    eventDetail: {
+    const { error: updErr } = await withTimeout(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (async () => (supabase as any)
+        .from('marketing_copy_variants')
+        .update({
+          word_count_validated: true,
+          marshall_precheck_passed: result.passed,
+        })
+        .eq('id', params.id))(),
+      8000,
+      'api.marketing.variants.precheck.update',
+    );
+    if (updErr) return NextResponse.json({ error: updErr.message }, { status: 500 });
+
+    await logVariantEvent(supabase, {
+      variantId: params.id,
+      eventKind: 'precheck_completed',
+      eventDetail: {
+        passed: result.passed,
+        blocker_count: result.blockerCount,
+        warn_count: result.warnCount,
+        finding_rule_ids: result.findings.map((f) => f.ruleId),
+      },
+      actorUserId: auth.user.id,
+    });
+
+    return NextResponse.json({
+      ok: true,
+      wordCount: wc,
       passed: result.passed,
-      blocker_count: result.blockerCount,
-      warn_count: result.warnCount,
-      finding_rule_ids: result.findings.map((f) => f.ruleId),
-    },
-    actorUserId: auth.user.id,
-  });
-
-  return NextResponse.json({
-    ok: true,
-    wordCount: wc,
-    passed: result.passed,
-    blockerCount: result.blockerCount,
-    warnCount: result.warnCount,
-    findings: result.findings,
-  });
+      blockerCount: result.blockerCount,
+      warnCount: result.warnCount,
+      findings: result.findings,
+    });
+  } catch (err) {
+    if (isTimeoutError(err)) {
+      safeLog.warn('api.marketing.variants.precheck', 'timeout', { error: err });
+      return NextResponse.json({ error: 'Operation timed out.' }, { status: 503 });
+    }
+    safeLog.error('api.marketing.variants.precheck', 'unexpected error', { error: err });
+    return NextResponse.json({ error: 'An unexpected error occurred.' }, { status: 500 });
+  }
 }

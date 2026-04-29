@@ -11,6 +11,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { nextCaseLabel } from '@/lib/legal/caseLabel';
 import { writeLegalAudit } from '@/lib/legalAudit/operationsAuditLog';
+import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
+import { safeLog } from '@/lib/utils/safe-log';
 
 export const runtime = 'nodejs';
 
@@ -31,7 +33,7 @@ interface CaseQueueRow {
 }
 
 async function requireLegalOps(supabase: ReturnType<typeof createClient>) {
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user } } = await withTimeout(supabase.auth.getUser(), 5000, 'api.admin.legal.cases.auth');
   if (!user) return { ok: false as const, response: NextResponse.json({ error: 'Authentication required' }, { status: 401 }) };
   const sb = supabase as unknown as { from: (t: string) => { select: (s: string) => { eq: (k: string, v: string) => { maybeSingle: () => Promise<{ data: ProfileLite | null }> } } } };
   const { data: profile } = await sb.from('profiles').select('role').eq('id', user.id).maybeSingle();
@@ -42,94 +44,112 @@ async function requireLegalOps(supabase: ReturnType<typeof createClient>) {
 }
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
-  const supabase = createClient();
-  const ctx = await requireLegalOps(supabase);
-  if (!ctx.ok) return ctx.response;
+  try {
+    const supabase = createClient();
+    const ctx = await requireLegalOps(supabase);
+    if (!ctx.ok) return ctx.response;
 
-  const url = new URL(request.url);
-  const state = url.searchParams.get('state');
-  const bucket = url.searchParams.get('bucket');
-  const priority = url.searchParams.get('priority');
+    const url = new URL(request.url);
+    const state = url.searchParams.get('state');
+    const bucket = url.searchParams.get('bucket');
+    const priority = url.searchParams.get('priority');
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sb = supabase as any;
-  let q = sb.from('legal_investigation_cases')
-    .select(`
-      case_id, case_label, state, bucket, priority, has_medical_claim_flag,
-      intake_at, estimated_damages_cents, counterparty_id,
-      legal_counterparties ( display_label )
-    `)
-    .order('intake_at', { ascending: false })
-    .limit(200);
-  if (state) q = q.eq('state', state);
-  if (bucket) q = q.eq('bucket', bucket);
-  if (priority) q = q.eq('priority', priority);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const sb = supabase as any;
+    let q = sb.from('legal_investigation_cases')
+      .select(`
+        case_id, case_label, state, bucket, priority, has_medical_claim_flag,
+        intake_at, estimated_damages_cents, counterparty_id,
+        legal_counterparties ( display_label )
+      `)
+      .order('intake_at', { ascending: false })
+      .limit(200);
+    if (state) q = q.eq('state', state);
+    if (bucket) q = q.eq('bucket', bucket);
+    if (priority) q = q.eq('priority', priority);
 
-  const { data, error } = await q;
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    const { data, error } = await q;
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  const rows = ((data ?? []) as CaseQueueRow[]).map((r) => ({
-    case_id: r.case_id,
-    case_label: r.case_label,
-    state: r.state,
-    bucket: r.bucket,
-    priority: r.priority,
-    has_medical_claim_flag: r.has_medical_claim_flag,
-    intake_at: r.intake_at,
-    estimated_damages_cents: r.estimated_damages_cents,
-    counterparty_id: r.counterparty_id,
-    counterparty_label: r.legal_counterparties?.display_label ?? null,
-  }));
+    const rows = ((data ?? []) as CaseQueueRow[]).map((r) => ({
+      case_id: r.case_id,
+      case_label: r.case_label,
+      state: r.state,
+      bucket: r.bucket,
+      priority: r.priority,
+      has_medical_claim_flag: r.has_medical_claim_flag,
+      intake_at: r.intake_at,
+      estimated_damages_cents: r.estimated_damages_cents,
+      counterparty_id: r.counterparty_id,
+      counterparty_label: r.legal_counterparties?.display_label ?? null,
+    }));
 
-  return NextResponse.json({ rows });
+    return NextResponse.json({ rows });
+  } catch (err) {
+    if (isTimeoutError(err)) {
+      safeLog.warn('api.admin.legal.cases', 'GET timeout', { error: err });
+      return NextResponse.json({ error: 'Request timed out.' }, { status: 503 });
+    }
+    safeLog.error('api.admin.legal.cases', 'unexpected error', { error: err });
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
-  const supabase = createClient();
-  const ctx = await requireLegalOps(supabase);
-  if (!ctx.ok) return ctx.response;
+  try {
+    const supabase = createClient();
+    const ctx = await requireLegalOps(supabase);
+    if (!ctx.ok) return ctx.response;
 
-  const body = (await request.json().catch(() => null)) ?? {};
-  const sourceViolationId: string | null = typeof body.source_violation_id === 'string' ? body.source_violation_id : null;
-  const priority: string = typeof body.priority === 'string' ? body.priority : 'p3_normal';
-  const notes: string | null = typeof body.notes === 'string' ? body.notes : null;
-  const hasMedicalClaim: boolean = body.has_medical_claim_flag === true;
+    const body = (await request.json().catch(() => null)) ?? {};
+    const sourceViolationId: string | null = typeof body.source_violation_id === 'string' ? body.source_violation_id : null;
+    const priority: string = typeof body.priority === 'string' ? body.priority : 'p3_normal';
+    const notes: string | null = typeof body.notes === 'string' ? body.notes : null;
+    const hasMedicalClaim: boolean = body.has_medical_claim_flag === true;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sb = supabase as any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const sb = supabase as any;
 
-  const year = new Date().getUTCFullYear();
-  const { data: existingLabels } = await sb
-    .from('legal_investigation_cases')
-    .select('case_label')
-    .like('case_label', `LEG-${year}-%`);
-  const labels = ((existingLabels ?? []) as Array<{ case_label: string }>).map((r) => r.case_label);
-  const newLabel = nextCaseLabel({ year, existing_labels_for_year: labels });
+    const year = new Date().getUTCFullYear();
+    const { data: existingLabels } = await sb
+      .from('legal_investigation_cases')
+      .select('case_label')
+      .like('case_label', `LEG-${year}-%`);
+    const labels = ((existingLabels ?? []) as Array<{ case_label: string }>).map((r) => r.case_label);
+    const newLabel = nextCaseLabel({ year, existing_labels_for_year: labels });
 
-  const { data: created, error } = await sb
-    .from('legal_investigation_cases')
-    .insert({
-      case_label: newLabel,
-      source_violation_id: sourceViolationId,
-      priority,
-      has_medical_claim_flag: hasMedicalClaim,
-      notes,
-    })
-    .select('case_id, case_label, state')
-    .maybeSingle();
-  if (error || !created) return NextResponse.json({ error: error?.message ?? 'Insert failed' }, { status: 500 });
+    const { data: created, error } = await sb
+      .from('legal_investigation_cases')
+      .insert({
+        case_label: newLabel,
+        source_violation_id: sourceViolationId,
+        priority,
+        has_medical_claim_flag: hasMedicalClaim,
+        notes,
+      })
+      .select('case_id, case_label, state')
+      .maybeSingle();
+    if (error || !created) return NextResponse.json({ error: error?.message ?? 'Insert failed' }, { status: 500 });
 
-  await writeLegalAudit(sb, {
-    actor_user_id: ctx.user_id,
-    actor_role: ctx.role,
-    action_category: 'case',
-    action_verb: 'opened',
-    target_table: 'legal_investigation_cases',
-    target_id: created.case_id,
-    case_id: created.case_id,
-    after_state_json: { case_label: created.case_label, state: created.state, priority, has_medical_claim_flag: hasMedicalClaim },
-    context_json: { source_violation_id: sourceViolationId },
-  });
+    await writeLegalAudit(sb, {
+      actor_user_id: ctx.user_id,
+      actor_role: ctx.role,
+      action_category: 'case',
+      action_verb: 'opened',
+      target_table: 'legal_investigation_cases',
+      target_id: created.case_id,
+      case_id: created.case_id,
+      after_state_json: { case_label: created.case_label, state: created.state, priority, has_medical_claim_flag: hasMedicalClaim },
+      context_json: { source_violation_id: sourceViolationId },
+    });
 
-  return NextResponse.json({ case: created }, { status: 201 });
+    return NextResponse.json({ case: created }, { status: 201 });
+  } catch (err) {
+    if (isTimeoutError(err)) {
+      safeLog.warn('api.admin.legal.cases', 'POST timeout', { error: err });
+      return NextResponse.json({ error: 'Request timed out.' }, { status: 503 });
+    }
+    safeLog.error('api.admin.legal.cases', 'unexpected error', { error: err });
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
 }

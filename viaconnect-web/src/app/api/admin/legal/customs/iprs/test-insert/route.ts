@@ -16,6 +16,8 @@ import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { writeLegalAudit } from '@/lib/legalAudit/operationsAuditLog';
 import { createHash } from 'node:crypto';
+import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
+import { safeLog } from '@/lib/utils/safe-log';
 
 export const runtime = 'nodejs';
 
@@ -26,7 +28,7 @@ interface ProfileLite {
 }
 
 async function requireLegalOps(supabase: ReturnType<typeof createClient>) {
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user } } = await withTimeout(supabase.auth.getUser(), 5000, 'api.admin.legal.customs.iprs.test-insert.auth');
   if (!user) {
     return {
       ok: false as const,
@@ -61,78 +63,87 @@ function normalizeTitle(raw: string): string {
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
-  if (process.env.ENABLE_IPRS_TEST_INSERT !== 'true') {
-    return NextResponse.json(
-      { error: 'test-insert endpoint is disabled; set ENABLE_IPRS_TEST_INSERT=true to enable' },
-      { status: 403 },
-    );
-  }
+  try {
+    if (process.env.ENABLE_IPRS_TEST_INSERT !== 'true') {
+      return NextResponse.json(
+        { error: 'test-insert endpoint is disabled; set ENABLE_IPRS_TEST_INSERT=true to enable' },
+        { status: 403 },
+      );
+    }
 
-  const supabase = createClient();
-  const ctx = await requireLegalOps(supabase);
-  if (!ctx.ok) return ctx.response;
+    const supabase = createClient();
+    const ctx = await requireLegalOps(supabase);
+    if (!ctx.ok) return ctx.response;
 
-  const body = (await request.json().catch(() => null)) ?? {};
-  const listingTitle: string =
-    typeof body.listing_title === 'string' && body.listing_title.trim().length > 0
-      ? body.listing_title.trim()
-      : `Synthetic test listing ${new Date().toISOString()}`;
-  const normalized = normalizeTitle(listingTitle);
-  const contentHash = createHash('sha256')
-    .update(normalized + '|' + (body.listing_url ?? '') + '|' + (body.observed_price_cents ?? ''))
-    .digest('hex');
+    const body = (await request.json().catch(() => null)) ?? {};
+    const listingTitle: string =
+      typeof body.listing_title === 'string' && body.listing_title.trim().length > 0
+        ? body.listing_title.trim()
+        : `Synthetic test listing ${new Date().toISOString()}`;
+    const normalized = normalizeTitle(listingTitle);
+    const contentHash = createHash('sha256')
+      .update(normalized + '|' + (body.listing_url ?? '') + '|' + (body.observed_price_cents ?? ''))
+      .digest('hex');
 
-  const insertRow: Record<string, unknown> = {
-    recordation_id: typeof body.recordation_id === 'string' ? body.recordation_id : null,
-    scan_date: new Date().toISOString().slice(0, 10),
-    scanned_at: new Date().toISOString(),
-    listing_title: listingTitle,
-    listing_title_normalized: normalized,
-    listing_url: typeof body.listing_url === 'string' ? body.listing_url : 'https://example.test/iprs-synthetic',
-    listing_source: typeof body.listing_source === 'string' ? body.listing_source : 'test-insert',
-    observed_price_cents:
-      Number.isInteger(body.observed_price_cents) && body.observed_price_cents >= 0
-        ? body.observed_price_cents
-        : null,
-    mark_distance_score:
-      typeof body.mark_distance_score === 'number' &&
-      body.mark_distance_score >= 0 &&
-      body.mark_distance_score <= 1
-        ? body.mark_distance_score
-        : 0.12,
-    content_hash: contentHash,
-    status: 'requires_review',
-    is_synthetic: true,
-  };
-
-  const admin = createAdminClient();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sb = admin as any;
-
-  const { data: created, error } = await sb
-    .from('customs_iprs_scan_results')
-    .insert(insertRow)
-    .select('*')
-    .maybeSingle();
-  if (error || !created) {
-    return NextResponse.json(
-      { error: error?.message ?? 'Insert failed' },
-      { status: 500 },
-    );
-  }
-
-  await writeLegalAudit(sb, {
-    actor_user_id: ctx.user_id,
-    actor_role: ctx.role,
-    action_category: 'customs_iprs',
-    action_verb: 'synthetic_alert_seeded',
-    target_table: 'customs_iprs_scan_results',
-    target_id: created.scan_result_id,
-    after_state_json: {
-      listing_title: created.listing_title,
+    const insertRow: Record<string, unknown> = {
+      recordation_id: typeof body.recordation_id === 'string' ? body.recordation_id : null,
+      scan_date: new Date().toISOString().slice(0, 10),
+      scanned_at: new Date().toISOString(),
+      listing_title: listingTitle,
+      listing_title_normalized: normalized,
+      listing_url: typeof body.listing_url === 'string' ? body.listing_url : 'https://example.test/iprs-synthetic',
+      listing_source: typeof body.listing_source === 'string' ? body.listing_source : 'test-insert',
+      observed_price_cents:
+        Number.isInteger(body.observed_price_cents) && body.observed_price_cents >= 0
+          ? body.observed_price_cents
+          : null,
+      mark_distance_score:
+        typeof body.mark_distance_score === 'number' &&
+        body.mark_distance_score >= 0 &&
+        body.mark_distance_score <= 1
+          ? body.mark_distance_score
+          : 0.12,
+      content_hash: contentHash,
+      status: 'requires_review',
       is_synthetic: true,
-    },
-  });
+    };
 
-  return NextResponse.json({ alert: created }, { status: 201 });
+    const admin = createAdminClient();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const sb = admin as any;
+
+    const { data: created, error } = await sb
+      .from('customs_iprs_scan_results')
+      .insert(insertRow)
+      .select('*')
+      .maybeSingle();
+    if (error || !created) {
+      return NextResponse.json(
+        { error: error?.message ?? 'Insert failed' },
+        { status: 500 },
+      );
+    }
+
+    await writeLegalAudit(sb, {
+      actor_user_id: ctx.user_id,
+      actor_role: ctx.role,
+      action_category: 'customs_iprs',
+      action_verb: 'synthetic_alert_seeded',
+      target_table: 'customs_iprs_scan_results',
+      target_id: created.scan_result_id,
+      after_state_json: {
+        listing_title: created.listing_title,
+        is_synthetic: true,
+      },
+    });
+
+    return NextResponse.json({ alert: created }, { status: 201 });
+  } catch (err) {
+    if (isTimeoutError(err)) {
+      safeLog.warn('api.admin.legal.customs.iprs.test-insert', 'POST timeout', { error: err });
+      return NextResponse.json({ error: 'Request timed out.' }, { status: 503 });
+    }
+    safeLog.error('api.admin.legal.customs.iprs.test-insert', 'unexpected error', { error: err });
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
 }

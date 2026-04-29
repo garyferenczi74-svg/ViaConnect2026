@@ -9,38 +9,53 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { requireMarketingAdmin } from '@/lib/flags/admin-guard';
 import { logVariantEvent } from '@/lib/marketing/variants/logging';
+import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
+import { safeLog } from '@/lib/utils/safe-log';
 
 export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } },
 ) {
-  const auth = await requireMarketingAdmin();
-  if (auth.kind === 'error') return auth.response;
+  try {
+    const auth = await requireMarketingAdmin();
+    if (auth.kind === 'error') return auth.response;
 
-  const body = (await request.json().catch(() => null)) as { archived?: boolean } | null;
-  if (typeof body?.archived !== 'boolean') {
-    return NextResponse.json({ error: 'archived boolean required' }, { status: 400 });
+    const body = (await request.json().catch(() => null)) as { archived?: boolean } | null;
+    if (typeof body?.archived !== 'boolean') {
+      return NextResponse.json({ error: 'archived boolean required' }, { status: 400 });
+    }
+
+    const supabase = createClient();
+    const now = new Date().toISOString();
+    const { error } = await withTimeout(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (async () => (supabase as any)
+        .from('marketing_copy_variants')
+        .update({
+          archived: body.archived,
+          archived_at: body.archived ? now : null,
+          // Archiving deactivates; restoring does NOT auto-activate.
+          ...(body.archived ? { active_in_test: false } : {}),
+        })
+        .eq('id', params.id))(),
+      8000,
+      'api.marketing.variants.archive.update',
+    );
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+    await logVariantEvent(supabase, {
+      variantId: params.id,
+      eventKind: body.archived ? 'archived' : 'restored',
+      actorUserId: auth.user.id,
+    });
+
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    if (isTimeoutError(err)) {
+      safeLog.warn('api.marketing.variants.archive', 'timeout', { error: err });
+      return NextResponse.json({ error: 'Operation timed out.' }, { status: 503 });
+    }
+    safeLog.error('api.marketing.variants.archive', 'unexpected error', { error: err });
+    return NextResponse.json({ error: 'An unexpected error occurred.' }, { status: 500 });
   }
-
-  const supabase = createClient();
-  const now = new Date().toISOString();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error } = await (supabase as any)
-    .from('marketing_copy_variants')
-    .update({
-      archived: body.archived,
-      archived_at: body.archived ? now : null,
-      // Archiving deactivates; restoring does NOT auto-activate.
-      ...(body.archived ? { active_in_test: false } : {}),
-    })
-    .eq('id', params.id);
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-
-  await logVariantEvent(supabase, {
-    variantId: params.id,
-    eventKind: body.archived ? 'archived' : 'restored',
-    actorUserId: auth.user.id,
-  });
-
-  return NextResponse.json({ ok: true });
 }

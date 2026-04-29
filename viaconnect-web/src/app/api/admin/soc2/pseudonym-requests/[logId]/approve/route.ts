@@ -17,6 +17,8 @@ import {
   snapshotApproval,
 } from '@/lib/soc2/auditor/pseudonymApprovals';
 import { CONTEXT_TO_TABLE, resolvePseudonym } from '@/lib/soc2/auditor/resolvePseudonym';
+import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
+import { safeLog } from '@/lib/utils/safe-log';
 
 export const runtime = 'nodejs';
 
@@ -30,16 +32,21 @@ interface Body {
 
 export async function POST(req: NextRequest, { params }: { params: { logId: string } }) {
   const logId = Number.parseInt(params.logId, 10);
+  try {
   if (!Number.isFinite(logId)) {
     return NextResponse.json({ error: 'invalid_log_id' }, { status: 400 });
   }
 
   const session = createServerClient();
-  const { data: { user } } = await session.auth.getUser();
+  const { data: { user } } = await withTimeout(session.auth.getUser(), 5000, 'api.soc2.pseudonym-requests.approve.auth');
   if (!user) return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
 
-  const { data: profile } = await session.from('profiles').select('role').eq('id', user.id).maybeSingle();
-  const role = (profile as { role?: string } | null)?.role ?? '';
+  const profileRes = await withTimeout(
+    (async () => session.from('profiles').select('role').eq('id', user.id).maybeSingle())(),
+    5000,
+    'api.soc2.pseudonym-requests.approve.load-profile',
+  );
+  const role = (profileRes.data as { role?: string } | null)?.role ?? '';
 
   let body: Body;
   try { body = (await req.json()) as Body; }
@@ -104,10 +111,13 @@ export async function POST(req: NextRequest, { params }: { params: { logId: stri
   if (slot === 'steve') approvalInsert.approver_steve = user.id;
   else                  approvalInsert.approver_thomas = user.id;
 
-  const { error: insertErr } = await sb.from('soc2_auditor_access_log').insert(approvalInsert);
-  if (insertErr) {
-    // eslint-disable-next-line no-console
-    console.error('[pseudonym-requests approve] approval insert failed', { logId, message: insertErr.message });
+  const insertRes = await withTimeout(
+    (async () => sb.from('soc2_auditor_access_log').insert(approvalInsert))(),
+    8000,
+    'api.soc2.pseudonym-requests.approve.insert',
+  );
+  if (insertRes.error) {
+    safeLog.error('api.soc2.pseudonym-requests.approve', 'approval insert failed', { logId, message: insertRes.error.message });
     return NextResponse.json({ error: 'insert_failed' }, { status: 500 });
   }
 
@@ -211,4 +221,12 @@ export async function POST(req: NextRequest, { params }: { params: { logId: stri
     candidatesChecked: resolverResult.candidatesChecked,
     collision: resolverResult.collision,
   });
+  } catch (err) {
+    if (isTimeoutError(err)) {
+      safeLog.error('api.soc2.pseudonym-requests.approve', 'database timeout', { logId, error: err });
+      return NextResponse.json({ error: 'Database operation timed out. Please try again.' }, { status: 503 });
+    }
+    safeLog.error('api.soc2.pseudonym-requests.approve', 'unexpected error', { logId, error: err });
+    return NextResponse.json({ error: 'An unexpected error occurred.' }, { status: 500 });
+  }
 }

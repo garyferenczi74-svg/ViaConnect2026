@@ -26,6 +26,8 @@ import { renderBoardPackPdf } from '@/lib/executiveReporting/rendering/boardPack
 import { renderBoardPackXlsx } from '@/lib/executiveReporting/rendering/boardPackXlsxRenderer';
 import { renderBoardPackPptx } from '@/lib/executiveReporting/rendering/boardPackPptxRenderer';
 import { sha256Hex } from '@/lib/legal/evidence/hashing';
+import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
+import { safeLog } from '@/lib/utils/safe-log';
 
 export const runtime = 'nodejs';
 
@@ -49,26 +51,27 @@ export async function POST(
   request: NextRequest,
   { params }: { params: { packId: string } },
 ): Promise<NextResponse> {
-  const auth = await requireExecReportingAdmin();
-  if (auth.kind === 'error') return auth.response;
-
-  let body: RenderBody;
   try {
-    body = (await request.json()) as RenderBody;
-  } catch {
-    return NextResponse.json({ error: 'invalid JSON' }, { status: 400 });
-  }
-  if (!body.format || !['pdf', 'xlsx', 'pptx'].includes(body.format)) {
-    return NextResponse.json({ error: 'format must be pdf|xlsx|pptx' }, { status: 400 });
-  }
-  if (body.distributionId && body.format !== 'pdf') {
-    return NextResponse.json(
-      { error: 'watermarked distribution rendering only supported for PDF' },
-      { status: 400 },
-    );
-  }
+    const auth = await requireExecReportingAdmin();
+    if (auth.kind === 'error') return auth.response;
 
-  const sb = createAdminClient() as unknown as {
+    let body: RenderBody;
+    try {
+      body = (await request.json()) as RenderBody;
+    } catch {
+      return NextResponse.json({ error: 'invalid JSON' }, { status: 400 });
+    }
+    if (!body.format || !['pdf', 'xlsx', 'pptx'].includes(body.format)) {
+      return NextResponse.json({ error: 'format must be pdf|xlsx|pptx' }, { status: 400 });
+    }
+    if (body.distributionId && body.format !== 'pdf') {
+      return NextResponse.json(
+        { error: 'watermarked distribution rendering only supported for PDF' },
+        { status: 400 },
+      );
+    }
+
+    const sb = createAdminClient() as unknown as {
     from: (t: string) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       select: (s: string) => any;
@@ -264,12 +267,20 @@ export async function POST(
     },
   });
 
-  return NextResponse.json({
-    artifact_id: artifact.artifact_id,
-    storage_path: path,
-    sha256: sha,
-    byte_size: bytes.byteLength,
-    distribution_id: distributionIdForArtifact,
-    file_kind: recipient ? 'distribution' : 'preview',
-  });
+    return NextResponse.json({
+      artifact_id: artifact.artifact_id,
+      storage_path: path,
+      sha256: sha,
+      byte_size: bytes.byteLength,
+      distribution_id: distributionIdForArtifact,
+      file_kind: recipient ? 'distribution' : 'preview',
+    });
+  } catch (err) {
+    if (isTimeoutError(err)) {
+      safeLog.error('api.exec-reporting.render', 'database timeout', { packId: params.packId, error: err });
+      return NextResponse.json({ error: 'Database operation timed out. Please try again.' }, { status: 503 });
+    }
+    safeLog.error('api.exec-reporting.render', 'unexpected error', { packId: params.packId, error: err });
+    return NextResponse.json({ error: 'An unexpected error occurred.' }, { status: 500 });
+  }
 }
