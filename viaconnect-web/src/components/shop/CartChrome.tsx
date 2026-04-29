@@ -9,18 +9,19 @@
  * successful add.
  *
  * Drawer (slide from right): line items with thumb + name + format + qty
- * stepper + price + remove; subtotal block; Helix earn preview line;
- * Helix burn input (capped at 20% of subtotal per spec §5.4); promo code
- * input; full-width teal Checkout CTA; link to full-page /shop/cart.
+ * stepper + price + remove; subtotal block; applied Helix / promo lines
+ * (with Remove buttons); Helix burn input (capped at 20% of subtotal per
+ * spec §5.4); promo code input; full-width teal Checkout CTA; link to
+ * full-page /shop/cart.
  *
- * Helix burn / promo code Apply buttons are Phase F1 stubs (write the URL
- * via console.info; persistence and discount math land in later phases).
- * Checkout CTA navigates to /shop/checkout which is created in Phase F4.
+ * Helix earn preview line is gated by the `consumerSession` prop per spec
+ * §5.4 ("Consumer-only. Hide for practitioner and naturopath sessions.").
+ * The prop is resolved server-side via lib/shop/role.ts and passed in by
+ * the bento, the PLP template, and the PDP.
  *
- * Helix earn preview is consumer-only per spec; Phase F1 surfaces the line
- * universally because role detection is not yet wired into the shop
- * chrome. The role gate lands in a later phase alongside cart server
- * persistence.
+ * Helix and promo Apply buttons now persist to localStorage (Phase F2).
+ * Server-side cart persistence and real Helix ledger writes land in F2.5
+ * and F5 respectively.
  */
 'use client'
 
@@ -28,16 +29,30 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { Minus, Plus, ShoppingBag, Trash2, X } from 'lucide-react'
-import { CART_OPEN_EVENT_NAME, removeFromCart, updateQuantity, useCart } from '@/lib/shop/cart-store'
+import {
+    CART_OPEN_EVENT_NAME,
+    applyHelix,
+    applyPromo,
+    clearAppliedHelix,
+    clearAppliedPromo,
+    removeFromCart,
+    updateQuantity,
+    useCart,
+} from '@/lib/shop/cart-store'
 
 function formatPrice(value: number): string {
     return `$${value.toFixed(2)}`
 }
 
-export function CartChrome() {
+interface CartChromeProps {
+    consumerSession?: boolean
+}
+
+export function CartChrome({ consumerSession = true }: CartChromeProps) {
     const [isOpen, setIsOpen] = useState(false)
-    const [helixBurn, setHelixBurn] = useState('')
-    const [promoCode, setPromoCode] = useState('')
+    const [helixInput, setHelixInput] = useState('')
+    const [promoInput, setPromoInput] = useState('')
+    const [promoError, setPromoError] = useState<string | null>(null)
     const cart = useCart()
 
     useEffect(() => {
@@ -47,17 +62,25 @@ export function CartChrome() {
     }, [])
 
     const subtotal = cart.subtotal
-    const helixBurnNumeric = Number(helixBurn) || 0
-    const helixBurnCap = Math.floor(subtotal * 0.2)
-    const helixBurnValid = helixBurnNumeric > 0 && helixBurnNumeric <= helixBurnCap
+    const helixInputNumeric = Number(helixInput) || 0
+    const helixInputCap = Math.floor(subtotal * 0.2)
+    const helixInputValid = helixInputNumeric > 0 && helixInputNumeric <= helixInputCap
 
-    const applyHelix = () => {
-        if (!helixBurnValid) return
-        console.info('[shop] Apply Helix tokens (stub)', { tokens: helixBurnNumeric, cap: helixBurnCap })
+    const handleApplyHelix = () => {
+        if (!helixInputValid) return
+        const ok = applyHelix(helixInputNumeric, subtotal)
+        if (ok) setHelixInput('')
     }
-    const applyPromo = () => {
-        if (!promoCode.trim()) return
-        console.info('[shop] Apply promo code (stub)', { code: promoCode.trim() })
+    const handleApplyPromo = () => {
+        const code = promoInput.trim()
+        if (!code) return
+        const result = applyPromo(code)
+        if (result) {
+            setPromoInput('')
+            setPromoError(null)
+        } else {
+            setPromoError('Code not recognized.')
+        }
     }
 
     return (
@@ -195,6 +218,42 @@ export function CartChrome() {
                                         <span className="text-white/65">Subtotal</span>
                                         <span className="tabular-nums text-white">{formatPrice(subtotal)}</span>
                                     </div>
+                                    {cart.appliedHelix > 0 && (
+                                        <div className="flex items-center justify-between text-[#2DA5A0]">
+                                            <span className="flex items-center gap-2">
+                                                <span>{cart.appliedHelix} Helix tokens</span>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => clearAppliedHelix()}
+                                                    aria-label="Remove Helix tokens"
+                                                    className="text-xs text-white/45 underline-offset-4 hover:text-white/85 hover:underline"
+                                                >
+                                                    Remove
+                                                </button>
+                                            </span>
+                                            <span className="tabular-nums">
+                                                {formatPrice(-cart.helixDiscount)}
+                                            </span>
+                                        </div>
+                                    )}
+                                    {cart.appliedPromo && (
+                                        <div className="flex items-center justify-between text-[#2DA5A0]">
+                                            <span className="flex items-center gap-2">
+                                                <span>Promo {cart.appliedPromo.code}</span>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => clearAppliedPromo()}
+                                                    aria-label="Remove promo code"
+                                                    className="text-xs text-white/45 underline-offset-4 hover:text-white/85 hover:underline"
+                                                >
+                                                    Remove
+                                                </button>
+                                            </span>
+                                            <span className="tabular-nums">
+                                                {formatPrice(-cart.promoDiscount)}
+                                            </span>
+                                        </div>
+                                    )}
                                     <div className="flex items-center justify-between text-xs text-white/45">
                                         <span>Shipping</span>
                                         <span>Calculated at checkout</span>
@@ -203,13 +262,21 @@ export function CartChrome() {
                                         <span>Tax</span>
                                         <span>Calculated at checkout</span>
                                     </div>
+                                    {cart.discountTotal > 0 && (
+                                        <div className="flex items-center justify-between border-t border-white/[0.06] pt-1.5 text-base font-medium">
+                                            <span className="text-white">Total</span>
+                                            <span className="tabular-nums text-white">{formatPrice(cart.total)}</span>
+                                        </div>
+                                    )}
                                 </div>
 
-                                <div className="mt-4 rounded-xl border border-[#2DA5A0]/30 bg-[#2DA5A0]/5 px-3 py-2">
-                                    <p className="text-xs text-[#2DA5A0]">
-                                        Earn {cart.helixEarnPreview} Helix on this order
-                                    </p>
-                                </div>
+                                {consumerSession && (
+                                    <div className="mt-4 rounded-xl border border-[#2DA5A0]/30 bg-[#2DA5A0]/5 px-3 py-2">
+                                        <p className="text-xs text-[#2DA5A0]">
+                                            Earn {cart.helixEarnPreview} Helix on this order
+                                        </p>
+                                    </div>
+                                )}
 
                                 <div className="mt-4 grid grid-cols-1 gap-2">
                                     <div className="flex gap-2">
@@ -217,37 +284,45 @@ export function CartChrome() {
                                             type="number"
                                             inputMode="numeric"
                                             min={0}
-                                            max={helixBurnCap}
-                                            value={helixBurn}
-                                            onChange={(e) => setHelixBurn(e.target.value)}
-                                            placeholder={`Apply Helix tokens (max ${helixBurnCap})`}
+                                            max={helixInputCap}
+                                            value={helixInput}
+                                            onChange={(e) => setHelixInput(e.target.value)}
+                                            placeholder={`Apply Helix tokens (max ${helixInputCap})`}
                                             className="flex-1 rounded-lg border border-white/10 bg-white/[0.02] px-3 py-2 text-xs text-white placeholder:text-white/35 focus:border-[#2DA5A0] focus:outline-none"
                                         />
                                         <button
                                             type="button"
-                                            disabled={!helixBurnValid}
-                                            onClick={applyHelix}
+                                            disabled={!helixInputValid}
+                                            onClick={handleApplyHelix}
                                             className="rounded-lg border border-white/15 bg-white/[0.04] px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-40"
                                         >
                                             Apply
                                         </button>
                                     </div>
-                                    <div className="flex gap-2">
-                                        <input
-                                            type="text"
-                                            value={promoCode}
-                                            onChange={(e) => setPromoCode(e.target.value)}
-                                            placeholder="Promo code"
-                                            className="flex-1 rounded-lg border border-white/10 bg-white/[0.02] px-3 py-2 text-xs text-white placeholder:text-white/35 focus:border-[#2DA5A0] focus:outline-none"
-                                        />
-                                        <button
-                                            type="button"
-                                            disabled={!promoCode.trim()}
-                                            onClick={applyPromo}
-                                            className="rounded-lg border border-white/15 bg-white/[0.04] px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-40"
-                                        >
-                                            Apply
-                                        </button>
+                                    <div>
+                                        <div className="flex gap-2">
+                                            <input
+                                                type="text"
+                                                value={promoInput}
+                                                onChange={(e) => {
+                                                    setPromoInput(e.target.value)
+                                                    if (promoError) setPromoError(null)
+                                                }}
+                                                placeholder="Promo code"
+                                                className="flex-1 rounded-lg border border-white/10 bg-white/[0.02] px-3 py-2 text-xs text-white placeholder:text-white/35 focus:border-[#2DA5A0] focus:outline-none"
+                                            />
+                                            <button
+                                                type="button"
+                                                disabled={!promoInput.trim()}
+                                                onClick={handleApplyPromo}
+                                                className="rounded-lg border border-white/15 bg-white/[0.04] px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-40"
+                                            >
+                                                Apply
+                                            </button>
+                                        </div>
+                                        {promoError && (
+                                            <p className="mt-1 text-xs text-rose-400/85">{promoError}</p>
+                                        )}
                                     </div>
                                 </div>
 

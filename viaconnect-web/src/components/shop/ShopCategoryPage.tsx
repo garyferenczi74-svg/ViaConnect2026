@@ -24,6 +24,7 @@ import { PlpProductGrid } from '@/components/shop/PlpProductGrid'
 import { FilterSortDrawer } from '@/components/shop/FilterSortDrawer'
 import { getShopCategoryBySlug } from '@/lib/shop/categories'
 import { getProductsByCategory } from '@/lib/shop/queries'
+import { getCurrentShopRole, isConsumerSession } from '@/lib/shop/role'
 
 interface ShopCategoryPageProps {
     slug: string
@@ -32,7 +33,8 @@ interface ShopCategoryPageProps {
 
 export async function ShopCategoryPage({ slug, hasCaqOnFile }: ShopCategoryPageProps) {
     const category = getShopCategoryBySlug(slug)
-    const products = await getProductsByCategory(slug)
+    const [products, role] = await Promise.all([getProductsByCategory(slug), getCurrentShopRole()])
+    const consumerSession = isConsumerSession(role)
     const variant = category?.cardVariant ?? 'supplement'
     const displayName = category?.name ?? slug
     const tagline = category?.tagline ?? ''
@@ -69,7 +71,7 @@ export async function ShopCategoryPage({ slug, hasCaqOnFile }: ShopCategoryPageP
                 </Suspense>
             </div>
             <FilterSortDrawer hasCaqOnFile={hasCaqOnFile} />
-            <CartChrome />
+            <CartChrome consumerSession={consumerSession} />
         </div>
     )
 }
