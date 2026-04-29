@@ -15,6 +15,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ChevronRight } from 'lucide-react'
+import { CartChrome } from '@/components/shop/CartChrome'
 import { CategoryFallbackImage } from '@/components/shop/CategoryFallbackImage'
 import { PdpRightRail } from '@/components/shop/PdpRightRail'
 import { getShopCategoryBySlug } from '@/lib/shop/categories'
@@ -111,6 +112,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
                     <PdpRightRail product={product} variant={variant} />
                 </div>
             </div>
+            <CartChrome />
         </div>
     )
 }

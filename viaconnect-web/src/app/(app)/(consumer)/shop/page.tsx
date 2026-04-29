@@ -17,6 +17,7 @@
 import { Suspense } from 'react'
 import { SHOP_CATEGORIES } from '@/lib/shop/categories'
 import { getShopCategories } from '@/lib/shop/queries'
+import { CartChrome } from '@/components/shop/CartChrome'
 import { CollectionTile } from '@/components/shop/CollectionTile'
 
 export const metadata = {
@@ -83,6 +84,7 @@ export default async function ShopLandingPage() {
                     </div>
                 </Suspense>
             </div>
+            <CartChrome />
         </div>
     )
 }

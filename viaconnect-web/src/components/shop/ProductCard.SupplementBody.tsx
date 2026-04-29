@@ -13,6 +13,7 @@ import { useState } from 'react'
 import { ShoppingBag } from 'lucide-react'
 import { CardTabStrip } from './CardTabStrip'
 import { FormatIndicator } from './FormatIndicator'
+import { addToCart } from '@/lib/shop/cart-store'
 import type { ShopProduct } from '@/lib/shop/queries'
 
 const SUPPLEMENT_TABS = [
@@ -75,7 +76,17 @@ export function ProductCardSupplementBody({ product }: ProductCardSupplementBody
                 onClick={(e) => {
                     e.preventDefault()
                     e.stopPropagation()
-                    console.info('[shop] Add to Cart clicked', { sku: product.sku })
+                    addToCart(
+                        {
+                            sku: product.sku,
+                            productId: product.id,
+                            name: product.name,
+                            format: product.format,
+                            image: (product.image_urls && product.image_urls[0]) || product.image_url || null,
+                            price: product.price_msrp ?? product.price ?? 0,
+                        },
+                        { openDrawer: true },
+                    )
                 }}
                 className="mt-2 flex items-center justify-center gap-2 w-full bg-[#2DA5A0] hover:bg-[#26918d] text-white font-medium py-3 rounded-xl transition-colors"
             >

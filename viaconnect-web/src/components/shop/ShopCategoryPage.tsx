@@ -19,6 +19,7 @@
 import { Suspense } from 'react'
 import Link from 'next/link'
 import { ChevronRight } from 'lucide-react'
+import { CartChrome } from '@/components/shop/CartChrome'
 import { PlpProductGrid } from '@/components/shop/PlpProductGrid'
 import { FilterSortDrawer } from '@/components/shop/FilterSortDrawer'
 import { getShopCategoryBySlug } from '@/lib/shop/categories'
@@ -68,6 +69,7 @@ export async function ShopCategoryPage({ slug, hasCaqOnFile }: ShopCategoryPageP
                 </Suspense>
             </div>
             <FilterSortDrawer hasCaqOnFile={hasCaqOnFile} />
+            <CartChrome />
         </div>
     )
 }

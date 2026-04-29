@@ -20,6 +20,7 @@ import { useState } from 'react'
 import { Bookmark, Minus, Plus, ShoppingBag } from 'lucide-react'
 import { CardTabStrip } from './CardTabStrip'
 import { FormatIndicator } from './FormatIndicator'
+import { addToCart } from '@/lib/shop/cart-store'
 import type { ShopCardVariant } from '@/lib/shop/categories'
 import type { ShopProduct } from '@/lib/shop/queries'
 
@@ -109,7 +110,21 @@ export function PdpRightRail({ product, variant }: PdpRightRailProps) {
                 <button
                     type="button"
                     onClick={() =>
-                        console.info('[shop] PDP Add to Cart', { sku: product.sku, qty: quantity })
+                        addToCart(
+                            {
+                                sku: product.sku,
+                                productId: product.id,
+                                name: product.name,
+                                format: product.format,
+                                image:
+                                    (product.image_urls && product.image_urls[0]) ||
+                                    product.image_url ||
+                                    null,
+                                price: product.price_msrp ?? product.price ?? 0,
+                                quantity,
+                            },
+                            { openDrawer: true },
+                        )
                     }
                     className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#2DA5A0] py-3 font-medium text-white transition-colors hover:bg-[#26918d]"
                 >
@@ -119,7 +134,7 @@ export function PdpRightRail({ product, variant }: PdpRightRailProps) {
                 {variant === 'supplement' && (
                     <button
                         type="button"
-                        onClick={() => console.info('[shop] PDP Add to Bundle', { sku: product.sku })}
+                        onClick={() => console.info('[shop] PDP Add to Bundle (stub)', { sku: product.sku })}
                         className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/[0.04] py-3 font-medium text-white transition-colors hover:bg-white/[0.08]"
                     >
                         <Bookmark className="h-4 w-4" strokeWidth={1.5} />
