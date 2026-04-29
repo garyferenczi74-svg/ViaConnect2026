@@ -4,13 +4,14 @@ import { runUltrathink } from '@/lib/ai/hannah/ultrathink/engine';
 import { extractFeatures, routeTier } from '@/lib/ai/hannah/ultrathink/router';
 import { isFeatureEnabled } from '@/lib/config/feature-flags';
 import { createHash } from 'crypto';
+import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
+import { safeLog } from '@/lib/utils/safe-log';
 
 export async function POST(request: Request) {
-  const supabase = createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  try {
+    const supabase = createClient();
+    const { data: { user } } = await withTimeout(supabase.auth.getUser(), 5000, 'api.hannah.ultrathink.auth');
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   if (!isFeatureEnabled('hannah_ultrathink_enabled', user.id)) {
     return NextResponse.json({ error: 'Feature disabled' }, { status: 403 });
@@ -50,13 +51,27 @@ export async function POST(request: Request) {
   });
 
   // Run the reasoning engine
-  const response = await runUltrathink({
-    userId: user.id,
-    query,
-    tier: decision.tier,
-    modality: 'text',
-    phiAllowed: true,
-  });
+  let response;
+  try {
+    response = await withTimeout(
+      runUltrathink({
+        userId: user.id,
+        query,
+        tier: decision.tier,
+        modality: 'text',
+        phiAllowed: true,
+      }),
+      60000,
+      'api.hannah.ultrathink.engine',
+    );
+  } catch (engineErr) {
+    if (isTimeoutError(engineErr)) {
+      safeLog.warn('api.hannah.ultrathink', 'engine timeout', { userId: user.id, tier: decision.tier, error: engineErr });
+      return NextResponse.json({ error: 'Reasoning engine took too long. Please try again.' }, { status: 504 });
+    }
+    safeLog.error('api.hannah.ultrathink', 'engine failed', { userId: user.id, tier: decision.tier, error: engineErr });
+    return NextResponse.json({ error: 'Reasoning engine failed.' }, { status: 502 });
+  }
 
   // Persist session
   const { data: session } = await (supabase as any)
@@ -103,11 +118,19 @@ export async function POST(request: Request) {
     );
   }
 
-  return NextResponse.json({
-    answer: response.answer,
-    tier: response.tier,
-    citations: response.citations,
-    confidence: response.confidence,
-    sessionId: session?.id,
-  });
+    return NextResponse.json({
+      answer: response.answer,
+      tier: response.tier,
+      citations: response.citations,
+      confidence: response.confidence,
+      sessionId: session?.id,
+    });
+  } catch (err) {
+    if (isTimeoutError(err)) {
+      safeLog.warn('api.hannah.ultrathink', 'auth/db timeout', { error: err });
+      return NextResponse.json({ error: 'Operation timed out.' }, { status: 503 });
+    }
+    safeLog.error('api.hannah.ultrathink', 'unexpected error', { error: err });
+    return NextResponse.json({ error: 'An unexpected error occurred.' }, { status: 500 });
+  }
 }

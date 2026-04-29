@@ -7,10 +7,26 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { slackOAuthExchange } from "@/lib/notifications/adapters/slack";
+import { withTimeout, isTimeoutError } from "@/lib/utils/with-timeout";
+import { safeLog } from "@/lib/utils/safe-log";
+import { getCircuitBreaker, isCircuitBreakerError } from "@/lib/utils/circuit-breaker";
+
+const slackBreaker = getCircuitBreaker("slack-oauth");
 
 export async function GET(request: Request) {
   const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+
+  let user;
+  try {
+    const authResult = await withTimeout(supabase.auth.getUser(), 5000, "api.notifications.slack.install.auth");
+    user = authResult.data.user;
+  } catch (err) {
+    if (isTimeoutError(err)) {
+      safeLog.error("api.notifications.slack.install", "auth timeout", { error: err });
+      return NextResponse.redirect(new URL("/login?error=auth_timeout", request.url));
+    }
+    throw err;
+  }
   if (!user) return NextResponse.redirect(new URL("/login", request.url));
 
   const url = new URL(request.url);
@@ -24,7 +40,27 @@ export async function GET(request: Request) {
     return NextResponse.redirect(new URL("/practitioner/notifications/slack/connect?error=slack_not_configured", request.url));
   }
 
-  const slackResp = await slackOAuthExchange({ client_id: clientId, client_secret: clientSecret, code, redirect_uri: redirectUri });
+  let slackResp;
+  try {
+    slackResp = await slackBreaker.execute(() =>
+      withTimeout(
+        slackOAuthExchange({ client_id: clientId, client_secret: clientSecret, code, redirect_uri: redirectUri }),
+        10000,
+        "api.notifications.slack.install.oauth-exchange",
+      )
+    );
+  } catch (err) {
+    if (isCircuitBreakerError(err)) {
+      safeLog.warn("api.notifications.slack.install", "slack oauth circuit open", { error: err });
+      return NextResponse.redirect(new URL("/practitioner/notifications/slack/connect?error=service_unavailable", request.url));
+    }
+    if (isTimeoutError(err)) {
+      safeLog.warn("api.notifications.slack.install", "slack oauth timeout", { error: err });
+      return NextResponse.redirect(new URL("/practitioner/notifications/slack/connect?error=token_timeout", request.url));
+    }
+    safeLog.error("api.notifications.slack.install", "slack oauth failed", { error: err });
+    return NextResponse.redirect(new URL("/practitioner/notifications/slack/connect?error=token_exchange_failed", request.url));
+  }
   if (!slackResp) {
     return NextResponse.redirect(new URL("/practitioner/notifications/slack/connect?error=token_exchange_failed", request.url));
   }

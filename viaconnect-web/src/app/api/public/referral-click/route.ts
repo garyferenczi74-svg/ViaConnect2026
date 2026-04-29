@@ -18,6 +18,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 import crypto from 'node:crypto';
+import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
+import { safeLog } from '@/lib/utils/safe-log';
 
 export const runtime = 'nodejs';
 
@@ -52,26 +54,38 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const ip_hash = dnt ? null : hash(ipRaw);
   const ua_hash = dnt ? null : hash(uaRaw);
 
-  // Use the anonymous SECURITY DEFINER RPC; it returns null for
-  // unknown / inactive codes without leaking state.
   const supabase = createClient();
   const sb = supabase as any;
-  const { data: clickId, error } = await sb.rpc('record_referral_link_click', {
-    p_code_slug: parsed.data.code_slug,
-    p_visitor_uuid: parsed.data.visitor_uuid,
-    p_ip_hash: ip_hash,
-    p_user_agent_hash: ua_hash,
-    p_landing_url: parsed.data.landing_url ?? null,
-    p_utm_source: parsed.data.utm_source ?? null,
-    p_utm_medium: parsed.data.utm_medium ?? null,
-    p_utm_campaign: parsed.data.utm_campaign ?? null,
-    p_referrer_url: parsed.data.referrer_url ?? null,
-  });
+
+  let clickId, error;
+  try {
+    const result = await withTimeout(
+      (async () => sb.rpc('record_referral_link_click', {
+        p_code_slug: parsed.data.code_slug,
+        p_visitor_uuid: parsed.data.visitor_uuid,
+        p_ip_hash: ip_hash,
+        p_user_agent_hash: ua_hash,
+        p_landing_url: parsed.data.landing_url ?? null,
+        p_utm_source: parsed.data.utm_source ?? null,
+        p_utm_medium: parsed.data.utm_medium ?? null,
+        p_utm_campaign: parsed.data.utm_campaign ?? null,
+        p_referrer_url: parsed.data.referrer_url ?? null,
+      }))(),
+      8000,
+      'api.public.referral-click.rpc',
+    );
+    clickId = (result as { data: unknown; error: unknown }).data;
+    error = (result as { data: unknown; error: unknown }).error;
+  } catch (err) {
+    if (isTimeoutError(err)) safeLog.warn('api.public.referral-click', 'rpc timeout', { error: err });
+    else safeLog.error('api.public.referral-click', 'rpc unexpected', { error: err });
+    return NextResponse.json({ recorded: false, reason: 'timeout' }, { status: 503 });
+  }
 
   if (error) {
+    safeLog.warn('api.public.referral-click', 'rpc error', { error });
     return NextResponse.json({ recorded: false, reason: 'rpc_error' }, { status: 500 });
   }
 
-  // null = unknown / inactive code; do not leak that fact to the caller.
   return NextResponse.json({ recorded: clickId !== null, dnt_respected: dnt });
 }

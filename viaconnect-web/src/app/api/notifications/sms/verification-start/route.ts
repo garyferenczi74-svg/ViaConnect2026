@@ -8,25 +8,45 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendSms, generateVerificationCode } from "@/lib/notifications/adapters/sms";
 import { recordOptInAction } from "@/lib/notifications/audit-logger";
+import { withTimeout, isTimeoutError } from "@/lib/utils/with-timeout";
+import { safeLog } from "@/lib/utils/safe-log";
+import { getCircuitBreaker, isCircuitBreakerError } from "@/lib/utils/circuit-breaker";
+
+const smsBreaker = getCircuitBreaker("sms-provider");
 
 export async function POST(request: Request) {
-  const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
+  try {
+    const supabase = createClient();
+    const { data: { user } } = await withTimeout(supabase.auth.getUser(), 5000, "api.notifications.sms.verification-start.auth");
+    if (!user) return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
 
-  const { phone } = await request.json().catch(() => ({ phone: "" }));
-  if (!phone || !/^\+?[1-9]\d{7,14}$/.test(String(phone))) {
-    return NextResponse.json({ ok: false, error: "invalid_phone_format" }, { status: 400 });
-  }
+    const { phone } = await request.json().catch(() => ({ phone: "" }));
+    if (!phone || !/^\+?[1-9]\d{7,14}$/.test(String(phone))) {
+      return NextResponse.json({ ok: false, error: "invalid_phone_format" }, { status: 400 });
+    }
 
-  const code = generateVerificationCode();
-  const admin = createAdminClient();
-  const msg = `ViaConnect verification code: ${code}. Reply with this code to confirm your phone.`;
+    const code = generateVerificationCode();
+    const admin = createAdminClient();
+    const msg = `ViaConnect verification code: ${code}. Reply with this code to confirm your phone.`;
 
-  const sent = await sendSms(phone, msg);
-  if (!sent.ok) {
-    return NextResponse.json({ ok: false, error: "sms_send_failed", detail: sent.error }, { status: 502 });
-  }
+    let sent;
+    try {
+      sent = await smsBreaker.execute(() => withTimeout(sendSms(phone, msg), 10000, "api.notifications.sms.verification-start.send"));
+    } catch (smsErr) {
+      if (isCircuitBreakerError(smsErr)) {
+        safeLog.warn("api.notifications.sms.verification-start", "sms circuit open", { error: smsErr });
+        return NextResponse.json({ ok: false, error: "sms_unavailable" }, { status: 503 });
+      }
+      if (isTimeoutError(smsErr)) {
+        safeLog.warn("api.notifications.sms.verification-start", "sms send timeout", { error: smsErr });
+        return NextResponse.json({ ok: false, error: "sms_timeout" }, { status: 504 });
+      }
+      throw smsErr;
+    }
+    if (!sent.ok) {
+      safeLog.warn("api.notifications.sms.verification-start", "sms send failed", { detail: sent.error });
+      return NextResponse.json({ ok: false, error: "sms_send_failed", detail: sent.error }, { status: 502 });
+    }
 
   const { data: existing } = await admin
     .from("notification_channel_credentials")
@@ -65,5 +85,13 @@ export async function POST(request: Request) {
     user_agent: request.headers.get("user-agent") ?? undefined,
   });
 
-  return NextResponse.json({ ok: true, verification_message_sid: sent.message_sid });
+    return NextResponse.json({ ok: true, verification_message_sid: sent.message_sid });
+  } catch (err) {
+    if (isTimeoutError(err)) {
+      safeLog.warn("api.notifications.sms.verification-start", "auth/db timeout", { error: err });
+      return NextResponse.json({ ok: false, error: "timeout" }, { status: 503 });
+    }
+    safeLog.error("api.notifications.sms.verification-start", "unexpected error", { error: err });
+    return NextResponse.json({ ok: false, error: "server" }, { status: 500 });
+  }
 }

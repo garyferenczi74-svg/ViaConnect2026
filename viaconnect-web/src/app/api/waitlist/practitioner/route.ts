@@ -16,6 +16,8 @@ import {
   type WaitlistSubmission,
 } from '@/lib/practitioner/waitlistSchema';
 import { validateInvitationToken } from '@/lib/practitioner/invitations';
+import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
+import { safeLog } from '@/lib/utils/safe-log';
 
 export const runtime = 'nodejs';
 
@@ -58,7 +60,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }
   }
 
-  const { data, error } = await (supabase as any)
+  let data, error;
+  try {
+    const result = await withTimeout(
+      (async () => (supabase as any)
     .from('practitioner_waitlist')
     .insert({
       email: validated.email.toLowerCase().trim(),
@@ -101,7 +106,20 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       utm_campaign: validated.utmCampaign ?? null,
     })
     .select('id')
-    .single();
+    .single())(),
+      10000,
+      'api.waitlist.practitioner.insert',
+    );
+    data = result.data;
+    error = result.error;
+  } catch (err) {
+    if (isTimeoutError(err)) {
+      safeLog.error('api.waitlist.practitioner', 'insert timeout', { error: err });
+      return NextResponse.json({ error: 'Submission took too long. Please try again.' }, { status: 503 });
+    }
+    safeLog.error('api.waitlist.practitioner', 'insert exception', { error: err });
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
 
   if (error) {
     if ((error as { code?: string }).code === '23505') {
@@ -110,7 +128,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         { status: 409 },
       );
     }
-    console.error('[waitlist] insert failed', error);
+    safeLog.error('api.waitlist.practitioner', 'insert failed', { error });
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 

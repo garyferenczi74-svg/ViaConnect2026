@@ -8,6 +8,8 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/flags/admin-guard';
+import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
+import { safeLog } from '@/lib/utils/safe-log';
 
 export async function POST(
   request: NextRequest,
@@ -38,17 +40,33 @@ export async function POST(
     return NextResponse.json({ error: 'Activation already canceled' }, { status: 409 });
   }
 
-  const { error } = await supabase
-    .from('scheduled_flag_activations')
-    .update({
-      canceled_at: new Date().toISOString(),
-      canceled_by: auth.user.id,
-      cancel_reason: body?.reason?.trim() ?? null,
-      execution_result: 'canceled',
-    })
-    .eq('id', params.id);
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  let updateError;
+  try {
+    const result = await withTimeout(
+      (async () => supabase
+        .from('scheduled_flag_activations')
+        .update({
+          canceled_at: new Date().toISOString(),
+          canceled_by: auth.user.id,
+          cancel_reason: body?.reason?.trim() ?? null,
+          execution_result: 'canceled',
+        })
+        .eq('id', params.id))(),
+      8000,
+      'api.admin.scheduled-activations.cancel',
+    );
+    updateError = result.error;
+  } catch (err) {
+    if (isTimeoutError(err)) {
+      safeLog.error('api.admin.scheduled-activations.cancel', 'update timeout', { activationId: params.id, error: err });
+      return NextResponse.json({ error: 'Database operation timed out.' }, { status: 503 });
+    }
+    safeLog.error('api.admin.scheduled-activations.cancel', 'update error', { activationId: params.id, error: err });
+    return NextResponse.json({ error: 'Database error' }, { status: 500 });
+  }
+  if (updateError) {
+    safeLog.error('api.admin.scheduled-activations.cancel', 'update returned error', { activationId: params.id, error: updateError });
+    return NextResponse.json({ error: updateError.message }, { status: 500 });
   }
 
   await supabase.from('feature_flag_audit').insert({

@@ -6,11 +6,17 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendSms, SMS_TCPA_COMPLIANT_OPT_IN_COPY } from "@/lib/notifications/adapters/sms";
 import { recordOptInAction } from "@/lib/notifications/audit-logger";
+import { withTimeout, isTimeoutError } from "@/lib/utils/with-timeout";
+import { safeLog } from "@/lib/utils/safe-log";
+import { getCircuitBreaker, isCircuitBreakerError } from "@/lib/utils/circuit-breaker";
+
+const smsBreaker = getCircuitBreaker("sms-provider");
 
 export async function POST(request: Request) {
-  const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
+  try {
+    const supabase = createClient();
+    const { data: { user } } = await withTimeout(supabase.auth.getUser(), 5000, "api.notifications.sms.compliant-optin-send.auth");
+    if (!user) return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
 
   const admin = createAdminClient();
   const { data: cred } = await admin
@@ -28,7 +34,20 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: "already_opted_in" }, { status: 409 });
   }
 
-  const sent = await sendSms(c.sms_phone_number, SMS_TCPA_COMPLIANT_OPT_IN_COPY);
+  let sent;
+  try {
+    sent = await smsBreaker.execute(() => withTimeout(sendSms(c.sms_phone_number!, SMS_TCPA_COMPLIANT_OPT_IN_COPY), 10000, "api.notifications.sms.compliant-optin-send.send"));
+  } catch (smsErr) {
+    if (isCircuitBreakerError(smsErr)) {
+      safeLog.warn("api.notifications.sms.compliant-optin-send", "sms circuit open", { error: smsErr });
+      return NextResponse.json({ ok: false, error: "sms_unavailable" }, { status: 503 });
+    }
+    if (isTimeoutError(smsErr)) {
+      safeLog.warn("api.notifications.sms.compliant-optin-send", "sms send timeout", { error: smsErr });
+      return NextResponse.json({ ok: false, error: "sms_timeout" }, { status: 504 });
+    }
+    throw smsErr;
+  }
   if (!sent.ok) return NextResponse.json({ ok: false, error: sent.error }, { status: 502 });
 
   await recordOptInAction({
@@ -41,5 +60,13 @@ export async function POST(request: Request) {
     user_agent: request.headers.get("user-agent") ?? undefined,
   });
 
-  return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    if (isTimeoutError(err)) {
+      safeLog.warn("api.notifications.sms.compliant-optin-send", "auth/db timeout", { error: err });
+      return NextResponse.json({ ok: false, error: "timeout" }, { status: 503 });
+    }
+    safeLog.error("api.notifications.sms.compliant-optin-send", "unexpected error", { error: err });
+    return NextResponse.json({ ok: false, error: "server" }, { status: 500 });
+  }
 }

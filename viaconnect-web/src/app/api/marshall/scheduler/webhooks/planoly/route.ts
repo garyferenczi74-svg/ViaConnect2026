@@ -11,6 +11,8 @@ import { planolyAdapter } from '@/lib/marshall/scheduler/adapters/planoly';
 import { getWebhookSigningSecret } from '@/lib/marshall/scheduler/platformConfigs';
 import { handleSchedulerWebhook } from '@/lib/marshall/scheduler/webhookHandler';
 import { schedulerLogger } from '@/lib/marshall/scheduler/logging';
+import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
+import { safeLog } from '@/lib/utils/safe-log';
 
 export const runtime = 'nodejs';
 
@@ -26,13 +28,17 @@ export async function POST(req: NextRequest) {
   const adapter = planolyAdapter();
 
   try {
-    const outcome = await handleSchedulerWebhook({
-      supabase: createAdminClient(),
-      adapter,
-      rawBody,
-      headers: req.headers,
-      signingSecret,
-    });
+    const outcome = await withTimeout(
+      handleSchedulerWebhook({
+        supabase: createAdminClient(),
+        adapter,
+        rawBody,
+        headers: req.headers,
+        signingSecret,
+      }),
+      15000,
+      'api.marshall.scheduler.webhooks.planoly',
+    );
 
     switch (outcome.outcome) {
       case 'rejected_invalid_signature':
@@ -47,7 +53,12 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ ok: true, eventRowId: outcome.eventRowId });
     }
   } catch (err) {
+    if (isTimeoutError(err)) {
+      safeLog.warn('api.marshall.scheduler.webhooks.planoly', 'webhook handler timeout', { error: err });
+      return NextResponse.json({ error: 'timeout' }, { status: 504 });
+    }
     schedulerLogger.error('[webhook/planoly] persist error', { error: (err as Error).message });
+    safeLog.error('api.marshall.scheduler.webhooks.planoly', 'persist failed', { error: err });
     return NextResponse.json({ error: 'persist_failed' }, { status: 500 });
   }
 }

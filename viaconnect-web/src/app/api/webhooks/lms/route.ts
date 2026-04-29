@@ -23,6 +23,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { syncProgress } from '@/lib/certification/enrollment';
+import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
+import { safeLog } from '@/lib/utils/safe-log';
 
 export const runtime = 'nodejs';
 
@@ -61,34 +63,49 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: 'Missing enrollment id' }, { status: 400 });
   }
 
-  const supabase = createClient();
+  try {
+    const supabase = createClient();
 
-  // Locate the certification row by LMS enrollment id.
-  const { data: row } = await (supabase as any)
-    .from('practitioner_certifications')
-    .select('id, certification_level_id, status, expires_at')
-    .eq('lms_enrollment_id', enrollmentId)
-    .maybeSingle();
+    const { data: row } = await withTimeout(
+      (async () => (supabase as any)
+        .from('practitioner_certifications')
+        .select('id, certification_level_id, status, expires_at')
+        .eq('lms_enrollment_id', enrollmentId)
+        .maybeSingle())(),
+      8000,
+      'api.webhooks.lms.lookup',
+    );
 
-  if (!row) {
-    // Idempotent: unknown enrollment is a 200 so the LMS does not retry.
-    return NextResponse.json({ status: 'ignored', reason: 'no matching certification' });
+    if (!row) {
+      return NextResponse.json({ status: 'ignored', reason: 'no matching certification' });
+    }
+
+    const progressPercent = Number(body?.payload?.percentage_completed ?? 0);
+    const completedRaw = body?.payload?.completed_at ?? null;
+    const completedAt = completedRaw ? new Date(completedRaw) : null;
+    const validityMonths = VALIDITY_BY_LEVEL[row.certification_level_id as string] ?? 24;
+
+    await withTimeout(
+      syncProgress(
+        {
+          certificationId: row.id as string,
+          progressPercent,
+          completedAt,
+          validityMonths,
+        },
+        { supabase },
+      ),
+      10000,
+      'api.webhooks.lms.sync-progress',
+    );
+
+    return NextResponse.json({ status: 'ok' });
+  } catch (err) {
+    if (isTimeoutError(err)) {
+      safeLog.error('api.webhooks.lms', 'sync timeout', { enrollmentId, error: err });
+      return NextResponse.json({ error: 'sync_timeout' }, { status: 504 });
+    }
+    safeLog.error('api.webhooks.lms', 'sync failed', { enrollmentId, error: err });
+    return NextResponse.json({ error: 'sync_failed' }, { status: 500 });
   }
-
-  const progressPercent = Number(body?.payload?.percentage_completed ?? 0);
-  const completedRaw = body?.payload?.completed_at ?? null;
-  const completedAt = completedRaw ? new Date(completedRaw) : null;
-  const validityMonths = VALIDITY_BY_LEVEL[row.certification_level_id as string] ?? 24;
-
-  await syncProgress(
-    {
-      certificationId: row.id as string,
-      progressPercent,
-      completedAt,
-      validityMonths,
-    },
-    { supabase },
-  );
-
-  return NextResponse.json({ status: 'ok' });
 }

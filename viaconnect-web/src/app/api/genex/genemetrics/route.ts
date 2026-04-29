@@ -1,5 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
+import { withAbortTimeout, isTimeoutError } from "@/lib/utils/with-timeout";
+import { safeLog } from "@/lib/utils/safe-log";
+import { getCircuitBreaker, isCircuitBreakerError } from "@/lib/utils/circuit-breaker";
+
+const genemetricsBreaker = getCircuitBreaker("genemetrics-api");
 
 /**
  * Genemetrics API Integration for ViaConnect GENEX360
@@ -84,12 +89,19 @@ export async function POST(request: NextRequest) {
     if (GENEMETRICS_API_KEY) {
       try {
         const barcodes = kits.map((k) => k.kit_barcode).join(",");
-        const res = await fetch(`${GENEMETRICS_BASE_URL}/results/status?partner=${GENEMETRICS_PARTNER_ID}&barcodes=${barcodes}`, {
-          headers: {
-            "Authorization": `Bearer ${GENEMETRICS_API_KEY}`,
-            "X-Partner-ID": GENEMETRICS_PARTNER_ID,
-          },
-        });
+        const res = await genemetricsBreaker.execute(() =>
+          withAbortTimeout(
+            (signal) => fetch(`${GENEMETRICS_BASE_URL}/results/status?partner=${GENEMETRICS_PARTNER_ID}&barcodes=${barcodes}`, {
+              headers: {
+                "Authorization": `Bearer ${GENEMETRICS_API_KEY}`,
+                "X-Partner-ID": GENEMETRICS_PARTNER_ID,
+              },
+              signal,
+            }),
+            10000,
+            "api.genex.genemetrics.check",
+          )
+        );
 
         if (res.ok) {
           const data = await res.json();
@@ -104,8 +116,10 @@ export async function POST(request: NextRequest) {
             },
           });
         }
-      } catch {
-        // Fall through to kit-based check
+      } catch (apiErr) {
+        if (isCircuitBreakerError(apiErr)) safeLog.warn("api.genex.genemetrics", "check circuit open, falling back", { error: apiErr });
+        else if (isTimeoutError(apiErr)) safeLog.warn("api.genex.genemetrics", "check timeout, falling back", { error: apiErr });
+        else safeLog.warn("api.genex.genemetrics", "check failed, falling back to db", { error: apiErr });
       }
     }
 
@@ -149,12 +163,19 @@ export async function POST(request: NextRequest) {
     if (GENEMETRICS_API_KEY) {
       for (const kit of kits) {
         try {
-          const res = await fetch(`${GENEMETRICS_BASE_URL}/results/${kit.kit_barcode}?partner=${GENEMETRICS_PARTNER_ID}`, {
-            headers: {
-              "Authorization": `Bearer ${GENEMETRICS_API_KEY}`,
-              "X-Partner-ID": GENEMETRICS_PARTNER_ID,
-            },
-          });
+          const res = await genemetricsBreaker.execute(() =>
+            withAbortTimeout(
+              (signal) => fetch(`${GENEMETRICS_BASE_URL}/results/${kit.kit_barcode}?partner=${GENEMETRICS_PARTNER_ID}`, {
+                headers: {
+                  "Authorization": `Bearer ${GENEMETRICS_API_KEY}`,
+                  "X-Partner-ID": GENEMETRICS_PARTNER_ID,
+                },
+                signal,
+              }),
+              15000,
+              "api.genex.genemetrics.import.fetch",
+            )
+          );
 
           if (!res.ok) continue;
           const result: GenemetricsResult = await res.json();
@@ -200,7 +221,10 @@ export async function POST(request: NextRequest) {
             .update({ status: "completed", updated_at: new Date().toISOString() })
             .eq("kit_barcode", kit.kit_barcode);
 
-        } catch {
+        } catch (kitErr) {
+          if (isCircuitBreakerError(kitErr)) safeLog.warn("api.genex.genemetrics", "import circuit open", { kitBarcode: kit.kit_barcode, error: kitErr });
+          else if (isTimeoutError(kitErr)) safeLog.warn("api.genex.genemetrics", "import timeout", { kitBarcode: kit.kit_barcode, error: kitErr });
+          else safeLog.warn("api.genex.genemetrics", "import kit failed", { kitBarcode: kit.kit_barcode, error: kitErr });
           continue;
         }
       }

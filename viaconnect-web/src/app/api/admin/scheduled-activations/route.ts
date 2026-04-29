@@ -8,6 +8,8 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/flags/admin-guard';
+import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
+import { safeLog } from '@/lib/utils/safe-log';
 
 const ALLOWED_ACTIONS = new Set([
   'activate', 'deactivate',
@@ -44,18 +46,35 @@ export async function POST(request: NextRequest) {
 
   const supabase = createClient();
 
-  const { data, error } = await supabase
-    .from('scheduled_flag_activations')
-    .insert({
-      feature_id: body.feature_id,
-      target_action: body.target_action,
-      target_value: (body.target_value ?? {}) as never,
-      scheduled_for: scheduledAt.toISOString(),
-      scheduled_by: auth.user.id,
-    })
-    .select('id')
-    .single();
+  let data, error;
+  try {
+    const result = await withTimeout(
+      (async () => supabase
+        .from('scheduled_flag_activations')
+        .insert({
+          feature_id: body.feature_id!,
+          target_action: body.target_action!,
+          target_value: (body.target_value ?? {}) as never,
+          scheduled_for: scheduledAt.toISOString(),
+          scheduled_by: auth.user.id,
+        })
+        .select('id')
+        .single())(),
+      8000,
+      'api.admin.scheduled-activations.insert',
+    );
+    data = result.data;
+    error = result.error;
+  } catch (err) {
+    if (isTimeoutError(err)) {
+      safeLog.error('api.admin.scheduled-activations', 'insert timeout', { error: err });
+      return NextResponse.json({ error: 'Database operation timed out.' }, { status: 503 });
+    }
+    safeLog.error('api.admin.scheduled-activations', 'insert error', { error: err });
+    return NextResponse.json({ error: 'Database error' }, { status: 500 });
+  }
   if (error || !data) {
+    safeLog.error('api.admin.scheduled-activations', 'insert returned error', { error });
     return NextResponse.json({ error: error?.message ?? 'Insert failed' }, { status: 500 });
   }
 

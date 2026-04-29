@@ -20,6 +20,11 @@ import { extractFirstJsonObject, parseTriageOutput } from '@/lib/legal/ai/triage
 import { scanForMedicalClaims } from '@/lib/legal/ai/medicalClaimDetector';
 import { canTransition } from '@/lib/legal/caseStateMachine';
 import type { LegalCaseState } from '@/lib/legal/types';
+import { withAbortTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
+import { safeLog } from '@/lib/utils/safe-log';
+import { getCircuitBreaker, isCircuitBreakerError } from '@/lib/utils/circuit-breaker';
+
+const claudeBreaker = getCircuitBreaker('claude-api');
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -110,24 +115,34 @@ export async function POST(
   const userMessage = buildTriageUserMessage(inputBundle);
   let claudeJson: unknown;
   try {
-    const r = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model: 'claude-opus-4-7',
-        max_tokens: 24000,
-        thinking: { type: 'enabled', budget_tokens: 18000 },
-        system: LEGAL_TRIAGE_SYSTEM_PROMPT,
-        messages: [{ role: 'user', content: userMessage }],
-      }),
-    });
+    const r = await claudeBreaker.execute(() =>
+      withAbortTimeout(
+        (signal) => fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': apiKey,
+            'anthropic-version': '2023-06-01',
+          },
+          body: JSON.stringify({
+            model: 'claude-opus-4-7',
+            max_tokens: 24000,
+            thinking: { type: 'enabled', budget_tokens: 18000 },
+            system: LEGAL_TRIAGE_SYSTEM_PROMPT,
+            messages: [{ role: 'user', content: userMessage }],
+          }),
+          signal,
+        }),
+        50000,
+        'api.admin.legal.triage.claude',
+      )
+    );
     claudeJson = await r.json();
     if (!r.ok) throw new Error((claudeJson as { error?: { message?: string } })?.error?.message ?? `Anthropic HTTP ${r.status}`);
   } catch (e) {
+    if (isCircuitBreakerError(e)) safeLog.warn('api.admin.legal.triage', 'claude circuit open', { caseId: params.caseId, error: e });
+    else if (isTimeoutError(e)) safeLog.warn('api.admin.legal.triage', 'claude timeout', { caseId: params.caseId, error: e });
+    else safeLog.error('api.admin.legal.triage', 'claude call failed', { caseId: params.caseId, error: e });
     await writeLegalAudit(sb, {
       actor_user_id: ctx.user_id, actor_role: ctx.role,
       action_category: 'case', action_verb: 'triage_ai_error',

@@ -1,5 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
+import { withTimeout, isTimeoutError } from "@/lib/utils/with-timeout";
+import { safeLog } from "@/lib/utils/safe-log";
 
 function apiEnvelope(
   success: boolean,
@@ -322,9 +324,18 @@ function getRecommendations(
 
 export async function POST(request: Request) {
   const supabase = createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+
+  let user;
+  try {
+    const authResult = await withTimeout(supabase.auth.getUser(), 5000, "api.genex.upload.auth");
+    user = authResult.data.user;
+  } catch (err) {
+    if (isTimeoutError(err)) {
+      safeLog.error("api.genex.upload", "auth timeout", { error: err });
+      return NextResponse.json(apiEnvelope(false, undefined, "Authentication check timed out", "AUTH_TIMEOUT"), { status: 503 });
+    }
+    throw err;
+  }
 
   if (!user) {
     return NextResponse.json(
@@ -530,6 +541,9 @@ export async function POST(request: Request) {
   } catch (err) {
     const message =
       err instanceof Error ? err.message : "Upload processing failed";
+
+    if (isTimeoutError(err)) safeLog.warn("api.genex.upload", "operation timeout", { kitId, error: err });
+    else safeLog.error("api.genex.upload", "processing error", { kitId, error: err });
 
     await (supabase as any).from("audit_logs").insert({
       user_id: user.id,

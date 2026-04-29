@@ -10,6 +10,8 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { recordImpression, categorizeReferrer, viewportFromWidth } from '@/lib/marketing/variants/impression';
 import type { Viewport } from '@/lib/marketing/variants/types';
+import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
+import { safeLog } from '@/lib/utils/safe-log';
 
 export async function POST(request: NextRequest) {
   const body = (await request.json().catch(() => null)) as {
@@ -29,15 +31,24 @@ export async function POST(request: NextRequest) {
     ?? (typeof body.viewport_width_px === 'number' ? viewportFromWidth(body.viewport_width_px) : undefined);
   const referrerCategory = categorizeReferrer(body.referrer ?? request.headers.get('referer'));
 
-  const supabase = createClient();
-  const result = await recordImpression(supabase, {
-    visitorId: body.visitor_id,
-    slotId: body.slot_id,
-    viewport,
-    referrerCategory,
-    isReturningVisitor: body.is_returning_visitor,
-  });
+  try {
+    const supabase = createClient();
+    const result = await withTimeout(
+      recordImpression(supabase, {
+        visitorId: body.visitor_id,
+        slotId: body.slot_id,
+        viewport,
+        referrerCategory,
+        isReturningVisitor: body.is_returning_visitor,
+      }),
+      8000,
+      'api.marketing.impressions.record',
+    );
 
-  // Always 200 from public surface; downstream telemetry tracks failure rate.
-  return NextResponse.json({ ok: result.ok, attempts: result.attempts });
+    return NextResponse.json({ ok: result.ok, attempts: result.attempts });
+  } catch (err) {
+    if (isTimeoutError(err)) safeLog.warn('api.marketing.impressions', 'record timeout', { error: err });
+    else safeLog.warn('api.marketing.impressions', 'record failed', { error: err });
+    return NextResponse.json({ ok: false, attempts: 0, stale: true });
+  }
 }
