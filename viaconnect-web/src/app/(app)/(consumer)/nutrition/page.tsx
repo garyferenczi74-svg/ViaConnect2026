@@ -73,7 +73,7 @@ export default function NutritionPage() {
           <ConnectedAppMealDropdown />
         </div>
 
-        <div className="mb-4 flex gap-1.5">
+        <div className="mb-4 flex flex-wrap gap-1.5">
           {TABS.map((t) => {
             const Icon = t.icon;
             const isActive = tab === t.id;
@@ -91,6 +91,14 @@ export default function NutritionPage() {
               </button>
             );
           })}
+          <Link
+            href="/plugins/apps"
+            className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] font-semibold text-white opacity-85 transition-all hover:opacity-100 hover:shadow-[0_0_12px_rgba(107,114,128,0.35)] no-underline"
+            style={{ background: 'linear-gradient(135deg, #6B7280 0%, #1E3054 100%)' }}
+          >
+            <Smartphone className="h-3 w-3" strokeWidth={1.5} />
+            Connect a Nutrition App
+          </Link>
         </div>
 
         {tab === 'quick' && <QuickMealLogWidget hideHeader onSaved={loadMealCount} />}
