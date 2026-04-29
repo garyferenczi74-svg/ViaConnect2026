@@ -771,7 +771,7 @@ export default function AnalyticsPage() {
           <div className="mb-4 flex items-center justify-between">
             <div>
               <h3 className="text-sm font-semibold text-white">Adherence by Supplement</h3>
-              <p className="text-[11px] text-orange-400 mt-0.5">CAQ recommendations and supplements in your protocol</p>
+              <p className="text-[12.65px] text-white mt-0.5">CAQ recommendations and supplements in your protocol</p>
             </div>
             <Link
               href="/supplements"
