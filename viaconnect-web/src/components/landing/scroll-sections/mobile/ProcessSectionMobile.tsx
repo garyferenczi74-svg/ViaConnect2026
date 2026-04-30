@@ -52,7 +52,7 @@ export function ProcessSectionMobile() {
                     className="mb-12"
                 >
                     <p className="text-[#2DA5A0] uppercase tracking-[0.2em] text-xs mb-3 font-medium">
-                        How It Works
+                        Onboarding Questionnaire
                     </p>
                     <h2 className="text-white text-4xl font-light leading-tight mb-4">
                         From your DNA to your daily protocol

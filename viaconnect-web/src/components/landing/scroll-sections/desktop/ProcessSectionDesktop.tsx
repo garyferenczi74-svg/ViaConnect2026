@@ -52,7 +52,7 @@ export function ProcessSectionDesktop() {
                     className="mb-20"
                 >
                     <p className="text-[#2DA5A0] uppercase tracking-[0.2em] text-sm mb-4 font-medium">
-                        How It Works
+                        Onboarding Questionnaire
                     </p>
                     <h2 className="text-white text-6xl font-light leading-tight mb-6">
                         From your DNA to your daily protocol
