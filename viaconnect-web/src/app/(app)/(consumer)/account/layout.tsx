@@ -18,6 +18,7 @@ import {
   Settings,
   LogOut,
   User as UserIcon,
+  ClipboardList,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -31,6 +32,7 @@ interface NavItem {
 
 const NAV: NavItem[] = [
   { label: "My Orders",     href: "/account/orders",        icon: Package },
+  { label: "Prescriptions", href: "/account/prescriptions", icon: ClipboardList },
   { label: "Addresses",     href: "/account/addresses",     icon: MapPin },
   { label: "Shared Access", href: "/settings/shared-access", icon: Share2 },
   { label: "Notifications", href: "/account/notifications", icon: Bell, badgeKey: "notifications" },
