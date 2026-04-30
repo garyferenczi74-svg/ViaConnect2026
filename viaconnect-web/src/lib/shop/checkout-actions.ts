@@ -44,6 +44,7 @@ import { headers } from 'next/headers'
 import { createClient } from '@/lib/supabase/server'
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout'
 import { safeLog } from '@/lib/utils/safe-log'
+import { serverIncrementPromoRedemption } from '@/lib/shop/promo-actions'
 
 const MAP_MULTIPLIER = 1.72
 
@@ -489,6 +490,17 @@ export async function finalizeShopOrder(
                         orderNumber,
                     })
                 }
+            }
+
+            // Phase F5b: bump promo_codes.times_redeemed when a promo was used.
+            if (promoCode) {
+                await serverIncrementPromoRedemption(promoCode).catch((error) => {
+                    safeLog.warn('shop.checkout', 'increment promo redemption failed', {
+                        error,
+                        promoCode,
+                        orderNumber,
+                    })
+                })
             }
 
             const earnAmount = Math.floor(totalCents / 100)

@@ -57,14 +57,15 @@ export function CartPageView({ consumerSession = true, userId = null }: CartPage
         if (!helixInputValid) return
         if (applyHelix(helixInputNumeric, subtotal)) setHelixInput('')
     }
-    const handleApplyPromo = () => {
+    const handleApplyPromo = async () => {
         const code = promoInput.trim()
         if (!code) return
-        if (applyPromo(code)) {
+        const result = await applyPromo(code, subtotal)
+        if (result.ok) {
             setPromoInput('')
             setPromoError(null)
         } else {
-            setPromoError('Code not recognized.')
+            setPromoError(result.error)
         }
     }
 

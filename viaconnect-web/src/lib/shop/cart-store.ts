@@ -28,6 +28,7 @@ import {
     serverReplaceCart,
     type SyncCartLine,
 } from '@/lib/shop/cart-actions'
+import { serverValidatePromoCode } from '@/lib/shop/promo-actions'
 
 const CART_STORAGE_KEY = 'viaconnect-shop-cart'
 const HELIX_STORAGE_KEY = 'viaconnect-shop-applied-helix'
@@ -37,10 +38,9 @@ const CART_OPEN_EVENT = 'viaconnect-cart-open'
 
 const HELIX_TO_DOLLAR = 1 // 1 Helix = $1 (Phase F2 stub; final rate set in F5)
 
-const STUB_PROMO_CODES: Record<string, AppliedPromo> = {
-    WELCOME10: { code: 'WELCOME10', kind: 'percent', value: 10 },
-    SAVE25: { code: 'SAVE25', kind: 'amount', value: 25 },
-}
+// Phase F5b: promo code validation moved to public.validate_promo_code RPC.
+// The previous in-memory STUB_PROMO_CODES whitelist (WELCOME10, SAVE25) has
+// been seeded into the live promo_codes table by migration 20260429120000.
 
 export interface CartLine {
     sku: string
@@ -160,13 +160,26 @@ export function clearAppliedHelix(): void {
     writeJson(HELIX_STORAGE_KEY, null)
 }
 
-export function applyPromo(code: string): AppliedPromo | null {
-    const normalized = code.trim().toUpperCase()
-    if (!normalized) return null
-    const match = STUB_PROMO_CODES[normalized]
-    if (!match) return null
-    writeJson(PROMO_STORAGE_KEY, match)
-    return match
+export type ApplyPromoResult =
+    | { ok: true; promo: AppliedPromo }
+    | { ok: false; error: string }
+
+export async function applyPromo(code: string, subtotal: number): Promise<ApplyPromoResult> {
+    const trimmed = code.trim()
+    if (!trimmed) {
+        return { ok: false, error: 'Code is empty.' }
+    }
+    const result = await serverValidatePromoCode(trimmed, Math.round(subtotal * 100))
+    if (!result.ok || !result.kind || result.value == null) {
+        return { ok: false, error: result.error ?? 'Code not recognized.' }
+    }
+    const promo: AppliedPromo = {
+        code: result.normalizedCode ?? trimmed.toUpperCase(),
+        kind: result.kind,
+        value: result.value,
+    }
+    writeJson(PROMO_STORAGE_KEY, promo)
+    return { ok: true, promo }
 }
 
 export function clearAppliedPromo(): void {

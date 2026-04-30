@@ -83,15 +83,15 @@ export function CartChrome({ consumerSession = true, userId = null }: CartChrome
         const ok = applyHelix(helixInputNumeric, subtotal)
         if (ok) setHelixInput('')
     }
-    const handleApplyPromo = () => {
+    const handleApplyPromo = async () => {
         const code = promoInput.trim()
         if (!code) return
-        const result = applyPromo(code)
-        if (result) {
+        const result = await applyPromo(code, subtotal)
+        if (result.ok) {
             setPromoInput('')
             setPromoError(null)
         } else {
-            setPromoError('Code not recognized.')
+            setPromoError(result.error)
         }
     }
 
