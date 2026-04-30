@@ -31,6 +31,7 @@ import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { finalizeOrderForSession } from '@/lib/shop/checkout-helpers'
+import { reverseHelixForOrder } from '@/lib/shop/helix-reversal'
 import { safeLog } from '@/lib/utils/safe-log'
 
 export const runtime = 'nodejs'
@@ -113,13 +114,47 @@ export async function POST(request: Request) {
                 .from('shop_orders')
                 .update({ status: 'refunded' })
                 .filter('metadata->>payment_intent_id', 'eq', piId)
-                .select('order_number')
+                .select('id, order_number')
             if (error) {
                 safeLog.warn('shop.webhook', 'refund status update failed', { error, piId })
+                return NextResponse.json({ ok: true })
+            }
+            const matched = Array.isArray(data) ? data : []
+            safeLog.info('shop.webhook', 'order marked refunded', {
+                piId,
+                matched: matched.length,
+            })
+
+            // Phase F6b.2: Helix reversal on full refund. Stripe charge.refunded
+            // fires for each refund event; check amount_refunded against amount
+            // and only reverse on a full refund. Partial-refund accounting
+            // (proportional Helix reversal) is F6b.5.
+            const fullRefund =
+                typeof charge.amount === 'number' &&
+                typeof charge.amount_refunded === 'number' &&
+                charge.amount > 0 &&
+                charge.amount_refunded === charge.amount
+            if (fullRefund) {
+                for (const order of matched as Array<{ id: string; order_number: string }>) {
+                    const reversal = await reverseHelixForOrder(supabase, order.id, order.order_number)
+                    // priorAmountRefunded + chargeAmount help operators spot the
+                    // partial-then-top-up path where amount_refunded climbs to
+                    // amount across multiple events. F6b.5 will replace this
+                    // log with proportional-reversal accounting keyed on
+                    // refund_id rather than this aggregate snapshot.
+                    safeLog.info('shop.webhook', 'helix reversal result', {
+                        orderId: order.id,
+                        orderNumber: order.order_number,
+                        chargeAmount: charge.amount,
+                        priorAmountRefunded: charge.amount_refunded,
+                        ...reversal,
+                    })
+                }
             } else {
-                safeLog.info('shop.webhook', 'order marked refunded', {
+                safeLog.info('shop.webhook', 'partial refund: helix reversal deferred to F6b.5', {
                     piId,
-                    matched: Array.isArray(data) ? data.length : 0,
+                    amount: charge.amount,
+                    amountRefunded: charge.amount_refunded,
                 })
             }
             return NextResponse.json({ ok: true })
