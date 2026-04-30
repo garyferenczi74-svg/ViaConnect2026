@@ -65,6 +65,10 @@ export interface RxEligibilityRow {
     hasToken: boolean
     tokenId: string | null
     expiresAt: string | null
+    // Phase F6b.3h: quantity_remaining surfaces token capacity to the
+    // checkout flow so multi-quantity L3/L4 cart lines can be validated
+    // against actual remaining fills before reaching consume.
+    quantityRemaining: number
 }
 
 export type CheckRxEligibilityResult =
@@ -193,12 +197,15 @@ export async function serverCheckRxEligibility(
             has_token: boolean
             token_id: string | null
             expires_at: string | null
+            quantity_remaining: number | null
         }>
         const rows: RxEligibilityRow[] = rawRows.map((r) => ({
             sku: r.sku,
             hasToken: Boolean(r.has_token),
             tokenId: r.token_id,
             expiresAt: r.expires_at,
+            quantityRemaining:
+                typeof r.quantity_remaining === 'number' ? r.quantity_remaining : 0,
         }))
         return { ok: true, rows }
     } catch (error) {

@@ -17,9 +17,11 @@
  *     eligibility check via serverCheckRxEligibility (lib/prescriptions
  *     /patient-actions). Eligible lines pass and the matched token ids
  *     flow through Stripe session metadata as rx_tokens_json so
- *     finalizeOrderForSession consumes them after the order insert. L3/L4
- *     lines are limited to quantity 1 in F6b.3d; multi-quantity lands in
- *     F6b.3h alongside refills.
+ *     finalizeOrderForSession consumes them after the order insert.
+ *     F6b.3h relaxed the F6b.3d quantity-1 cap: cart lines can be any
+ *     quantity provided the matched token has at least that many fills
+ *     remaining (validated against the new quantity_remaining field on
+ *     the eligibility result).
  *   - GeneX360 testing kits requiring lab draw show a banner before
  *     payment. Phase F4 ships the banner via the validateCheckout
  *     warnings array; the kit metadata determines whether to show.
@@ -85,8 +87,10 @@ export interface CheckoutValidationResult {
     // Phase F6b.3d: when L3/L4 cart lines pass eligibility, the matched
     // tokens are returned so createCheckoutSession can embed them in the
     // Stripe session metadata for finalizeOrderForSession to consume after
-    // the order insert succeeds.
-    rxTokens?: { sku: string; tokenId: string }[]
+    // the order insert succeeds. F6b.3h adds quantity per token so the
+    // finalize path can call prescription_consume_quantity with the cart
+    // line's actual quantity rather than the legacy 1-per-line.
+    rxTokens?: { sku: string; tokenId: string; quantity: number }[]
 }
 
 interface AppliedPromoSnapshot {
@@ -105,24 +109,11 @@ export async function validateCheckout(
         return { ok: false, error: 'Your cart is empty.', warnings }
     }
 
-    let rxTokensForOrder: { sku: string; tokenId: string }[] | undefined
+    let rxTokensForOrder: { sku: string; tokenId: string; quantity: number }[] | undefined
     const rxItems = cart.filter(
         (l) => l.pricingTier === 'L3' || l.pricingTier === 'L4',
     )
     if (rxItems.length > 0) {
-        // F6b.3d launch posture: L3/L4 cart lines limited to quantity 1.
-        // Multi-quantity per single prescription token requires a
-        // quantity-aware prescription_consume RPC, which lands in F6b.3h
-        // alongside refills.
-        const overQuantity = rxItems.filter((l) => l.quantity > 1)
-        if (overQuantity.length > 0) {
-            return {
-                ok: false,
-                error:
-                    'Prescription items can only be ordered one at a time. Please reduce the quantity to 1.',
-                warnings,
-            }
-        }
         const rxSkus = rxItems.map((l) => l.sku)
         const eligibility = await serverCheckRxEligibility(rxSkus)
         if (!eligibility.ok) {
@@ -142,9 +133,37 @@ export async function validateCheckout(
                 warnings,
             }
         }
+        // F6b.3h capacity check: each L3/L4 cart line's quantity must fit
+        // within the matched token's quantity_remaining. The eligibility
+        // RPC returns the active token with the earliest expiry, so a
+        // patient with multiple tokens for the same SKU consumes the
+        // soon-to-expire one first; this check applies against that
+        // selected token.
+        const insufficient: string[] = []
+        for (const line of rxItems) {
+            const elig = eligibility.rows.find((r) => r.sku === line.sku)
+            const remaining = elig?.quantityRemaining ?? 0
+            if (line.quantity > remaining) {
+                insufficient.push(`${line.productName} (${remaining} refills remaining)`)
+            }
+        }
+        if (insufficient.length > 0) {
+            return {
+                ok: false,
+                error: `Your prescription does not have enough refills remaining for: ${insufficient.join(', ')}. Contact your practitioner for a new authorization.`,
+                warnings,
+            }
+        }
         rxTokensForOrder = eligibility.rows
             .filter((r) => r.hasToken && r.tokenId)
-            .map((r) => ({ sku: r.sku, tokenId: r.tokenId as string }))
+            .map((r) => {
+                const line = rxItems.find((l) => l.sku === r.sku)
+                return {
+                    sku: r.sku,
+                    tokenId: r.tokenId as string,
+                    quantity: line?.quantity ?? 1,
+                }
+            })
     }
 
     const labDrawItems = cart.filter(

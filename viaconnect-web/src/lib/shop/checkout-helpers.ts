@@ -253,27 +253,33 @@ export async function finalizeOrderForSession(
         // Phase F6b.3d: prescription token consumption for L3/L4 line items.
         // session.metadata.rx_tokens_json was populated at session creation
         // time in createCheckoutSession after validateCheckout's eligibility
-        // check. The F6b.3d migration evolved prescription_consume to be
-        // authenticated-callable (with internal owner verification) and
-        // per-order idempotent (so neither finalize path can double-consume).
+        // check. F6b.3h evolved this to call prescription_consume_quantity
+        // with the per-line quantity (was prescription_consume hardcoded to
+        // 1 in F6b.3d). Same auth, ownership, idempotency contract.
         // Best-effort: a token revoked or expired between session creation
         // and finalize raises inside the RPC; we log and proceed because the
         // order is already paid and the goods will ship. F6b.3g audit
-        // reconciler flags any drift.
+        // reconciler reads prescription_consume_failures for drift.
         const rxTokensJson = session.metadata?.rx_tokens_json
         if (rxTokensJson) {
             try {
                 const rxTokens = JSON.parse(rxTokensJson) as Array<{
                     sku: string
                     tokenId: string
+                    quantity?: number
                 }>
                 for (const tok of rxTokens) {
                     if (!tok || !tok.tokenId) continue
+                    const consumeQuantity =
+                        typeof tok.quantity === 'number' && tok.quantity > 0
+                            ? tok.quantity
+                            : 1
                     try {
                         await withTimeout(
-                            sb.rpc('prescription_consume', {
+                            sb.rpc('prescription_consume_quantity', {
                                 p_token_id: tok.tokenId,
                                 p_order_id: orderRow.id,
+                                p_quantity: consumeQuantity,
                             }),
                             3000,
                             'shop.checkout.finalize.prescription_consume',
