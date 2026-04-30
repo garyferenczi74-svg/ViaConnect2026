@@ -47,7 +47,11 @@ export async function finalizeOrderForSession(
 
     try {
         const stripe = new Stripe(stripeKey)
-        const session = await stripe.checkout.sessions.retrieve(sessionId)
+        // Phase F5d: expand total_details + shipping_cost so we can capture
+        // Stripe Tax + shipping + Stripe-computed discount on the order row.
+        const session = await stripe.checkout.sessions.retrieve(sessionId, {
+            expand: ['total_details', 'shipping_cost.shipping_rate'],
+        })
 
         if (session.payment_status !== 'paid') {
             return { ok: false, error: 'Payment not yet confirmed.' }
@@ -93,7 +97,15 @@ export async function finalizeOrderForSession(
 
         const subtotalCents = cart.reduce((s, l) => s + l.unitPriceCents * l.quantity, 0)
         const totalCents = session.amount_total ?? subtotalCents
-        const discountCents = Math.max(0, subtotalCents - totalCents)
+        // Phase F5d: source tax + shipping + discount from Stripe's
+        // authoritative breakdown rather than back-computing. Falls back to
+        // 0 when the fields are absent (legacy F4 sessions, anonymous tax,
+        // or shipping option opted out).
+        const taxCents = session.total_details?.amount_tax ?? 0
+        const shippingCents = session.shipping_cost?.amount_total ?? 0
+        const discountCents =
+            session.total_details?.amount_discount ??
+            Math.max(0, subtotalCents - totalCents)
         const orderNumber = `VC${Date.now().toString().slice(-9)}`
 
         const { data: orderRow, error: orderErr } = await withTimeout(
@@ -115,8 +127,8 @@ export async function finalizeOrderForSession(
                     shipping_email: session.metadata?.shipping_email || null,
                     subtotal_cents: subtotalCents,
                     discount_cents: discountCents,
-                    shipping_cents: 0,
-                    tax_cents: 0,
+                    shipping_cents: shippingCents,
+                    tax_cents: taxCents,
                     total_cents: totalCents,
                     discount_code: promoCode,
                     portal_type: 'consumer',

@@ -246,6 +246,52 @@ export async function createCheckoutSession(args: {
         const promoDiscountCents = Math.max(0, appliedPromo?.discountCents ?? 0)
         const totalDiscountCents = helixDiscountCents + promoDiscountCents
 
+        // Phase F5d: shipping options. Three static tiers shown on Stripe's
+        // payment page; customer picks one. Free standard shipping unlocks
+        // automatically when cart subtotal is at or above $100. Real carrier
+        // rate APIs (Shippo / EasyPost / USPS / UPS / FedEx) defer to F5d.5.
+        const subtotalCents = cart.reduce(
+            (s, l) => s + l.unitPriceCents * l.quantity,
+            0,
+        )
+        const shippingOptions: Stripe.Checkout.SessionCreateParams.ShippingOption[] = []
+        if (subtotalCents >= 10000) {
+            shippingOptions.push({
+                shipping_rate_data: {
+                    type: 'fixed_amount',
+                    fixed_amount: { amount: 0, currency: 'usd' },
+                    display_name: 'Free standard shipping',
+                    delivery_estimate: {
+                        minimum: { unit: 'business_day', value: 5 },
+                        maximum: { unit: 'business_day', value: 7 },
+                    },
+                },
+            })
+        } else {
+            shippingOptions.push({
+                shipping_rate_data: {
+                    type: 'fixed_amount',
+                    fixed_amount: { amount: 599, currency: 'usd' },
+                    display_name: 'Standard',
+                    delivery_estimate: {
+                        minimum: { unit: 'business_day', value: 5 },
+                        maximum: { unit: 'business_day', value: 7 },
+                    },
+                },
+            })
+        }
+        shippingOptions.push({
+            shipping_rate_data: {
+                type: 'fixed_amount',
+                fixed_amount: { amount: 1499, currency: 'usd' },
+                display_name: 'Express',
+                delivery_estimate: {
+                    minimum: { unit: 'business_day', value: 1 },
+                    maximum: { unit: 'business_day', value: 3 },
+                },
+            },
+        })
+
         const discounts: Stripe.Checkout.SessionCreateParams.Discount[] = []
         if (totalDiscountCents > 0) {
             const coupon = await stripe.coupons.create({
@@ -270,6 +316,12 @@ export async function createCheckoutSession(args: {
             customer_email: form.email,
             payment_method_types: ['card'],
             shipping_address_collection: { allowed_countries: ['US', 'CA'] },
+            shipping_options: shippingOptions,
+            // Phase F5d: enable Stripe Tax for automatic US/CA tax math
+            // based on the customer's shipping address. Stripe Tax must be
+            // enabled and origin address configured in the dashboard for
+            // this to compute non-zero tax.
+            automatic_tax: { enabled: true },
             success_url: `${origin}/shop/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
             cancel_url: `${origin}/shop/cart`,
             metadata: {
