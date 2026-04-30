@@ -225,6 +225,36 @@ export async function createCheckoutSession(args: {
             }
         }
 
+        // Phase F5d.5: pre-create a Stripe Customer with the form's collected
+        // address. Stripe Checkout pre-fills its address form from this
+        // customer record, eliminating the F4 double-entry where the user
+        // typed the same address twice (once on our form, again on Stripe).
+        // The customer can still edit on Stripe's page; finalizeOrderForSession
+        // reads session.shipping_details for the final captured address.
+        // Per-checkout customer creation is acceptable for F5d.5 v1; F5d.6 can
+        // dedupe by email when a returning buyer signs in.
+        const fullName = `${form.firstName} ${form.lastName}`.trim()
+        const stripeAddress: Stripe.AddressParam = {
+            line1: form.addressLine1,
+            line2: form.addressLine2 || undefined,
+            city: form.city,
+            state: form.state,
+            postal_code: form.zip,
+            country: form.country,
+        }
+        const customer = await stripe.customers.create({
+            email: form.email,
+            name: fullName || undefined,
+            phone: form.phone || undefined,
+            address: stripeAddress,
+            shipping: {
+                name: fullName || form.email,
+                phone: form.phone || undefined,
+                address: stripeAddress,
+            },
+            metadata: { app_user_id: userId },
+        })
+
         const headersList = headers()
         const origin = headersList.get('origin') ?? 'https://viaconnectapp.com'
 
@@ -248,14 +278,19 @@ export async function createCheckoutSession(args: {
 
         // Phase F5d: shipping options. Three static tiers shown on Stripe's
         // payment page; customer picks one. Free standard shipping unlocks
-        // automatically when cart subtotal is at or above $100. Real carrier
-        // rate APIs (Shippo / EasyPost / USPS / UPS / FedEx) defer to F5d.5.
+        // automatically when cart subtotal is at or above the configured
+        // threshold (default $100, override via SHOP_FREE_SHIPPING_THRESHOLD_CENTS).
+        // Real carrier rate APIs (Shippo / EasyPost / USPS / UPS / FedEx)
+        // defer to F5d.6 (needs package.json approval for the carrier SDK).
         const subtotalCents = cart.reduce(
             (s, l) => s + l.unitPriceCents * l.quantity,
             0,
         )
+        const freeShippingThresholdCents = Number(
+            process.env.SHOP_FREE_SHIPPING_THRESHOLD_CENTS ?? '10000',
+        )
         const shippingOptions: Stripe.Checkout.SessionCreateParams.ShippingOption[] = []
-        if (subtotalCents >= 10000) {
+        if (subtotalCents >= freeShippingThresholdCents) {
             shippingOptions.push({
                 shipping_rate_data: {
                     type: 'fixed_amount',
@@ -313,7 +348,9 @@ export async function createCheckoutSession(args: {
             mode: 'payment',
             line_items: lineItems,
             discounts,
-            customer_email: form.email,
+            // Phase F5d.5: customer instead of customer_email so Stripe pre-fills
+            // shipping/billing address from the customer record we just built.
+            customer: customer.id,
             payment_method_types: ['card'],
             shipping_address_collection: { allowed_countries: ['US', 'CA'] },
             shipping_options: shippingOptions,

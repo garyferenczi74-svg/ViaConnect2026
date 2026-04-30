@@ -1,6 +1,22 @@
-// Prompt #111 — Stripe Tax client wrapper.
-// §3.3: tax math is Stripe Tax only; no fallback estimation. If the call
-// fails, the caller MUST halt checkout with a clear error — do not estimate.
+// Prompt #111 Stripe Tax client wrapper (direct tax.calculations API).
+//
+// DEPRECATED for the consumer shop flow as of Phase F5d (2026-04-29). The
+// shop checkout now uses Stripe Checkout's automatic_tax: { enabled: true }
+// flag on the session, which delegates tax math to Stripe's hosted page
+// without requiring an explicit calculation call from our server. See
+// lib/shop/checkout-actions.ts and lib/shop/checkout-helpers.ts.
+//
+// This file is preserved for future international expansion use cases that
+// need server-side tax preview before redirecting to Stripe Checkout (e.g.,
+// showing a tax estimate in the cart drawer for non-US/CA destinations).
+// Zero callers in the current runtime; safe to delete in a future cleanup
+// migration once Phase #111 is confirmed retired.
+//
+// §3.3 (original): tax math is Stripe Tax only; no fallback estimation. If
+// the call fails, the caller MUST halt checkout with a clear error. The
+// automatic_tax flag in F5d satisfies this rule structurally (a Stripe Tax
+// failure rejects the session creation, halting checkout via our existing
+// try/catch).
 
 import Stripe from "stripe";
 import type { CurrencyCode } from "./types";

@@ -95,6 +95,38 @@ export async function finalizeOrderForSession(
         const helixBurned = Number(session.metadata?.helix_tokens_burned ?? 0)
         const promoCode = session.metadata?.promo_code || null
 
+        // Phase F5d.5: prefer Stripe-collected shipping fields when present.
+        // The customer may have edited the pre-filled address on Stripe's
+        // hosted page; that edit is reflected in session.shipping_details.
+        // Fall back to session.metadata.shipping_* (form-collected) for legacy
+        // F4-F5d sessions or when shipping_details is absent.
+        const stripeShipping = session.shipping_details?.address ?? null
+        const stripeShippingName = session.shipping_details?.name ?? null
+        const [stripeFirstName, ...stripeLastNameParts] = (stripeShippingName ?? '').split(/\s+/)
+        const stripeLastName = stripeLastNameParts.join(' ') || null
+        const customerEmail = session.customer_details?.email ?? null
+        const customerPhone = session.customer_details?.phone ?? null
+        const shipFirstName =
+            (stripeFirstName && stripeFirstName.length > 0 ? stripeFirstName : null) ??
+            session.metadata?.shipping_first_name ??
+            null
+        const shipLastName =
+            stripeLastName ?? session.metadata?.shipping_last_name ?? null
+        const shipAddressLine1 =
+            stripeShipping?.line1 ?? session.metadata?.shipping_address_line1 ?? null
+        const shipAddressLine2 =
+            stripeShipping?.line2 ?? session.metadata?.shipping_address_line2 ?? null
+        const shipCity =
+            stripeShipping?.city ?? session.metadata?.shipping_city ?? null
+        const shipState =
+            stripeShipping?.state ?? session.metadata?.shipping_state ?? null
+        const shipZip =
+            stripeShipping?.postal_code ?? session.metadata?.shipping_zip ?? null
+        const shipCountry =
+            stripeShipping?.country ?? session.metadata?.shipping_country ?? null
+        const shipPhone = customerPhone ?? session.metadata?.shipping_phone ?? null
+        const shipEmail = customerEmail ?? session.metadata?.shipping_email ?? null
+
         const subtotalCents = cart.reduce((s, l) => s + l.unitPriceCents * l.quantity, 0)
         const totalCents = session.amount_total ?? subtotalCents
         // Phase F5d: source tax + shipping + discount from Stripe's
@@ -115,16 +147,16 @@ export async function finalizeOrderForSession(
                     user_id: userId || null,
                     order_number: orderNumber,
                     status: 'paid',
-                    shipping_first_name: session.metadata?.shipping_first_name || null,
-                    shipping_last_name: session.metadata?.shipping_last_name || null,
-                    shipping_address_line1: session.metadata?.shipping_address_line1 || null,
-                    shipping_address_line2: session.metadata?.shipping_address_line2 || null,
-                    shipping_city: session.metadata?.shipping_city || null,
-                    shipping_state: session.metadata?.shipping_state || null,
-                    shipping_zip: session.metadata?.shipping_zip || null,
-                    shipping_country: session.metadata?.shipping_country || null,
-                    shipping_phone: session.metadata?.shipping_phone || null,
-                    shipping_email: session.metadata?.shipping_email || null,
+                    shipping_first_name: shipFirstName,
+                    shipping_last_name: shipLastName,
+                    shipping_address_line1: shipAddressLine1,
+                    shipping_address_line2: shipAddressLine2,
+                    shipping_city: shipCity,
+                    shipping_state: shipState,
+                    shipping_zip: shipZip,
+                    shipping_country: shipCountry,
+                    shipping_phone: shipPhone,
+                    shipping_email: shipEmail,
                     subtotal_cents: subtotalCents,
                     discount_cents: discountCents,
                     shipping_cents: shippingCents,
