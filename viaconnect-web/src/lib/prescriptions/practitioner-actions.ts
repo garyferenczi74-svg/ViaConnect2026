@@ -65,9 +65,17 @@ export interface IssuedPrescription {
     consumedAt: string | null
     revokedAt: string | null
     dosageInstructions: string | null
-    clinicalNotes: string | null
     revocationReason: string | null
+    // Phase F6b.3h3: clinical_notes is deliberately NOT included in the
+    // list result. The column is now REVOKE-gated at the DB layer; the
+    // dedicated SECURITY DEFINER RPC get_my_issued_prescription_clinical_notes
+    // is called via serverGetIssuedPrescriptionClinicalNotes when a
+    // practitioner expands a card to view the notes on demand.
 }
+
+export type GetClinicalNotesResult =
+    | { ok: true; notes: string | null }
+    | { ok: false; error: string }
 
 export interface ListIssuedFilters {
     status?: PrescriptionStatus
@@ -191,7 +199,7 @@ export async function serverListMyIssuedPrescriptions(
         let query = sb
             .from('prescription_tokens')
             .select(
-                'id, patient_user_id, sku, quantity_authorized, quantity_consumed, status, issued_at, expires_at, consumed_at, revoked_at, dosage_instructions, clinical_notes, revocation_reason',
+                'id, patient_user_id, sku, quantity_authorized, quantity_consumed, status, issued_at, expires_at, consumed_at, revoked_at, dosage_instructions, revocation_reason',
             )
             .order('issued_at', { ascending: false })
         if (filters.status) {
@@ -223,7 +231,6 @@ export async function serverListMyIssuedPrescriptions(
             consumed_at: string | null
             revoked_at: string | null
             dosage_instructions: string | null
-            clinical_notes: string | null
             revocation_reason: string | null
         }>
         const prescriptions: IssuedPrescription[] = rows.map((r) => ({
@@ -238,7 +245,6 @@ export async function serverListMyIssuedPrescriptions(
             consumedAt: r.consumed_at,
             revokedAt: r.revoked_at,
             dosageInstructions: r.dosage_instructions,
-            clinicalNotes: r.clinical_notes,
             revocationReason: r.revocation_reason,
         }))
         return { ok: true, prescriptions }
@@ -253,6 +259,66 @@ export async function serverListMyIssuedPrescriptions(
             error,
         })
         return { ok: false, error: 'Could not load prescriptions. Please try again.' }
+    }
+}
+
+export async function serverGetIssuedPrescriptionClinicalNotes(
+    tokenId: string,
+): Promise<GetClinicalNotesResult> {
+    if (!tokenId) {
+        return { ok: false, error: 'Token id is required.' }
+    }
+    try {
+        const supabase = createClient()
+        const sb = supabase as unknown as {
+            rpc: (
+                fn: string,
+                args: Record<string, unknown>,
+            ) => Promise<{ data: unknown; error: unknown }>
+        }
+        const { data, error } = await withTimeout(
+            sb.rpc('get_my_issued_prescription_clinical_notes', { p_token_id: tokenId }),
+            5000,
+            'prescriptions.clinical_notes_fetch',
+        )
+        if (error) {
+            const message = (error as { message?: string }).message ?? ''
+            safeLog.warn(
+                'prescriptions.clinical_notes_fetch',
+                'get_my_issued_prescription_clinical_notes RPC error',
+                { error },
+            )
+            if (message.includes('Authentication required')) {
+                return { ok: false, error: 'Please sign in to view clinical notes.' }
+            }
+            if (message.includes('Only the issuing practitioner')) {
+                return {
+                    ok: false,
+                    error: 'Only the practitioner who issued this prescription can view its clinical notes.',
+                }
+            }
+            if (message.includes('Prescription token not found')) {
+                return { ok: false, error: 'Prescription not found.' }
+            }
+            return { ok: false, error: 'Could not load clinical notes. Please try again.' }
+        }
+        const notes = typeof data === 'string' ? data : null
+        return { ok: true, notes }
+    } catch (error) {
+        if (isTimeoutError(error)) {
+            safeLog.warn(
+                'prescriptions.clinical_notes_fetch',
+                'serverGetIssuedPrescriptionClinicalNotes timed out',
+                { error },
+            )
+            return { ok: false, error: 'Clinical notes fetch timed out. Please try again.' }
+        }
+        safeLog.error(
+            'prescriptions.clinical_notes_fetch',
+            'serverGetIssuedPrescriptionClinicalNotes failed',
+            { error },
+        )
+        return { ok: false, error: 'Could not load clinical notes. Please try again.' }
     }
 }
 

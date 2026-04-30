@@ -10,8 +10,9 @@
 'use client'
 
 import { useMemo, useState, useTransition } from 'react'
-import { AlertTriangle, CheckCircle2, Clock, X, XCircle } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, ChevronDown, ChevronUp, Clock, X, XCircle } from 'lucide-react'
 import {
+    serverGetIssuedPrescriptionClinicalNotes,
     serverRevokePrescription,
     type IssuedPrescription,
     type PrescriptionStatus,
@@ -207,18 +208,12 @@ function PrescriptionCard({
                 <Field label="Expires" value={expiresFmt} />
             </dl>
 
-            {(p.dosageInstructions || p.clinicalNotes || p.revocationReason) && (
+            {(p.dosageInstructions || p.revocationReason) && (
                 <div className="mt-3 space-y-2 border-t border-white/10 pt-3 text-sm">
                     {p.dosageInstructions && (
                         <div>
                             <span className="text-white/50">Dosage:</span>{' '}
                             <span className="text-white/80">{p.dosageInstructions}</span>
-                        </div>
-                    )}
-                    {p.clinicalNotes && (
-                        <div>
-                            <span className="text-white/50">Clinical notes:</span>{' '}
-                            <span className="text-white/80">{p.clinicalNotes}</span>
                         </div>
                     )}
                     {p.revocationReason && (
@@ -229,7 +224,66 @@ function PrescriptionCard({
                     )}
                 </div>
             )}
+
+            <ClinicalNotesSection tokenId={p.id} />
         </li>
+    )
+}
+
+function ClinicalNotesSection({ tokenId }: { tokenId: string }) {
+    const [isOpen, setIsOpen] = useState(false)
+    const [hasLoaded, setHasLoaded] = useState(false)
+    const [isLoading, setIsLoading] = useState(false)
+    const [notes, setNotes] = useState<string | null>(null)
+    const [error, setError] = useState<string | null>(null)
+
+    async function handleToggle() {
+        if (!isOpen && !hasLoaded) {
+            setIsLoading(true)
+            setError(null)
+            const result = await serverGetIssuedPrescriptionClinicalNotes(tokenId)
+            if (result.ok) {
+                setNotes(result.notes)
+            } else {
+                setError(result.error)
+            }
+            setHasLoaded(true)
+            setIsLoading(false)
+        }
+        setIsOpen((v) => !v)
+    }
+
+    return (
+        <div className="mt-3 border-t border-white/10 pt-3">
+            <button
+                type="button"
+                onClick={handleToggle}
+                className="inline-flex items-center gap-1.5 text-xs text-white/60 transition hover:text-white"
+            >
+                {isOpen ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                {isOpen ? 'Hide clinical notes' : 'View clinical notes'}
+            </button>
+            {isOpen && (
+                <div className="mt-2 text-sm">
+                    {isLoading && <span className="text-white/50">Loading...</span>}
+                    {error && (
+                        <div className="flex items-start gap-2 rounded-md border border-red-500/30 bg-red-500/10 p-2 text-red-200">
+                            <AlertTriangle className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" />
+                            <span className="text-xs">{error}</span>
+                        </div>
+                    )}
+                    {!isLoading && !error && hasLoaded && (
+                        <span className="text-white/80">
+                            {notes && notes.trim().length > 0 ? (
+                                notes
+                            ) : (
+                                <span className="italic text-white/40">No clinical notes recorded.</span>
+                            )}
+                        </span>
+                    )}
+                </div>
+            )}
+        </div>
     )
 }
 
