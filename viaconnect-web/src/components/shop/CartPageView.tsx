@@ -157,6 +157,8 @@ export function CartPageView({ consumerSession = true, userId = null }: CartPage
                                                         userId={userId}
                                                         isLoaded={rxEligibility.isLoaded}
                                                         hasToken={rxEligibility.hasToken(line.sku)}
+                                                        quantityRemaining={rxEligibility.quantityRemaining(line.sku)}
+                                                        lineQuantity={line.quantity}
                                                     />
                                                 </div>
                                             </div>

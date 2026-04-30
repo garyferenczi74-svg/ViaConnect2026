@@ -195,6 +195,8 @@ export function CartChrome({ consumerSession = true, userId = null }: CartChrome
                                                         userId={userId}
                                                         isLoaded={rxEligibility.isLoaded}
                                                         hasToken={rxEligibility.hasToken(line.sku)}
+                                                        quantityRemaining={rxEligibility.quantityRemaining(line.sku)}
+                                                        lineQuantity={line.quantity}
                                                     />
                                                 </div>
                                                 <div className="mt-2 flex items-center justify-between gap-3">

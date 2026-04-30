@@ -23,12 +23,17 @@ import { serverCheckRxEligibility } from '@/lib/prescriptions/patient-actions'
 interface RxEligibilityEntry {
     hasToken: boolean
     expiresAt: string | null
+    // Phase F6b.3h2: surface remaining capacity so the cart pill can
+    // render an amber warning state when the line quantity exceeds the
+    // matched token's remaining fills.
+    quantityRemaining: number
 }
 
 export interface RxEligibilityState {
     isLoaded: boolean
     hasToken: (sku: string) => boolean
     tokenExpiresAt: (sku: string) => string | null
+    quantityRemaining: (sku: string) => number
 }
 
 export function useRxEligibility(
@@ -57,6 +62,7 @@ export function useRxEligibility(
                     next.set(r.sku, {
                         hasToken: r.hasToken,
                         expiresAt: r.expiresAt,
+                        quantityRemaining: r.quantityRemaining,
                     })
                 }
             }
@@ -75,5 +81,6 @@ export function useRxEligibility(
         isLoaded,
         hasToken: (sku) => data.get(sku)?.hasToken === true,
         tokenExpiresAt: (sku) => data.get(sku)?.expiresAt ?? null,
+        quantityRemaining: (sku) => data.get(sku)?.quantityRemaining ?? 0,
     }
 }
