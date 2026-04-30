@@ -93,26 +93,9 @@ export async function serverValidatePromoCode(
     }
 }
 
-export async function serverIncrementPromoRedemption(code: string): Promise<void> {
-    const trimmed = (code ?? '').trim()
-    if (!trimmed) return
-    try {
-        const supabase = createClient()
-        const sb = supabase as unknown as {
-            rpc: (fn: string, args: Record<string, unknown>) => Promise<{ error: unknown }>
-        }
-        const { error } = await withTimeout(
-            sb.rpc('increment_promo_redemption', { p_code: trimmed }),
-            3000,
-            'shop.promo.increment',
-        )
-        if (error) {
-            safeLog.warn('shop.promo', 'increment_promo_redemption RPC error', {
-                error,
-                code: trimmed,
-            })
-        }
-    } catch (error) {
-        safeLog.warn('shop.promo', 'serverIncrementPromoRedemption failed', { error })
-    }
-}
+// Phase F5c.5: serverIncrementPromoRedemption removed. The hardened
+// two-arg `increment_promo_redemption(text, uuid)` RPC is now called
+// inline from lib/shop/checkout-helpers.ts (where the order_id is in
+// scope after the order insert). The transitional one-arg DB function
+// remains callable but has no in-app caller; a future cleanup migration
+// will DROP it.

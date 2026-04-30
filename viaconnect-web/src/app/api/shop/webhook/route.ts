@@ -6,10 +6,14 @@
  * Stripe pings this webhook asynchronously. Idempotency is enforced by
  * the existing-row check on shop_orders.metadata->>'stripe_session_id'.
  *
- * Refund + dispute handling deferred to F5c.5. They will read
- * `charge.refunded` and `charge.dispute.created` events, look up the
- * order by stripe_session_id, and update status (and trigger Helix
- * reversal in F6 alongside the creditEarning() integration).
+ * Phase F5c.5 additions:
+ *   - charge.refunded: marks the matching shop_orders row status='refunded'.
+ *     Lookup by metadata->>'payment_intent_id' (now stored on order at
+ *     finalize time). Helix reversal still deferred to F6 alongside
+ *     creditEarning() integration.
+ *   - charge.dispute.created: retrieves the underlying charge to extract
+ *     payment_intent, then marks the order status='disputed'. No automatic
+ *     resolution; Stripe radar alerts handle the human escalation.
  *
  * Configuration:
  *   - Add `STRIPE_SHOP_WEBHOOK_SECRET` to env (separate from any existing
@@ -91,8 +95,76 @@ export async function POST(request: Request) {
             return NextResponse.json({ ok: true, orderNumber: result.orderNumber })
         }
 
-        // F5c.5 will add charge.refunded and charge.dispute.created handlers.
-        // For now, log the event type and acknowledge.
+        if (event.type === 'charge.refunded') {
+            const charge = event.data.object as Stripe.Charge
+            const piId =
+                typeof charge.payment_intent === 'string'
+                    ? charge.payment_intent
+                    : (charge.payment_intent?.id ?? null)
+            if (!piId) {
+                safeLog.info('shop.webhook', 'charge.refunded missing payment_intent', {
+                    chargeId: charge.id,
+                })
+                return NextResponse.json({ ok: true, skipped: true })
+            }
+            const supabase = createAdminClient()
+            const sb = supabase as unknown as { from: (t: string) => any }
+            const { data, error } = await sb
+                .from('shop_orders')
+                .update({ status: 'refunded' })
+                .filter('metadata->>payment_intent_id', 'eq', piId)
+                .select('order_number')
+            if (error) {
+                safeLog.warn('shop.webhook', 'refund status update failed', { error, piId })
+            } else {
+                safeLog.info('shop.webhook', 'order marked refunded', {
+                    piId,
+                    matched: Array.isArray(data) ? data.length : 0,
+                })
+            }
+            return NextResponse.json({ ok: true })
+        }
+
+        if (event.type === 'charge.dispute.created') {
+            const dispute = event.data.object as Stripe.Dispute
+            const chargeId =
+                typeof dispute.charge === 'string' ? dispute.charge : (dispute.charge?.id ?? null)
+            if (!chargeId) {
+                safeLog.info('shop.webhook', 'charge.dispute.created missing charge id', {
+                    disputeId: dispute.id,
+                })
+                return NextResponse.json({ ok: true, skipped: true })
+            }
+            const stripeForCharge = new Stripe(stripeKey)
+            const chargeObj = await stripeForCharge.charges.retrieve(chargeId)
+            const piId =
+                typeof chargeObj.payment_intent === 'string'
+                    ? chargeObj.payment_intent
+                    : (chargeObj.payment_intent?.id ?? null)
+            if (!piId) {
+                safeLog.info('shop.webhook', 'charge.dispute.created could not resolve payment_intent', {
+                    chargeId,
+                })
+                return NextResponse.json({ ok: true, skipped: true })
+            }
+            const supabase = createAdminClient()
+            const sb = supabase as unknown as { from: (t: string) => any }
+            const { data, error } = await sb
+                .from('shop_orders')
+                .update({ status: 'disputed' })
+                .filter('metadata->>payment_intent_id', 'eq', piId)
+                .select('order_number')
+            if (error) {
+                safeLog.warn('shop.webhook', 'dispute status update failed', { error, piId })
+            } else {
+                safeLog.info('shop.webhook', 'order marked disputed', {
+                    piId,
+                    matched: Array.isArray(data) ? data.length : 0,
+                })
+            }
+            return NextResponse.json({ ok: true })
+        }
+
         safeLog.info('shop.webhook', 'unhandled event type', { type: event.type })
         return NextResponse.json({ ok: true, ignored: true })
     } catch (error) {

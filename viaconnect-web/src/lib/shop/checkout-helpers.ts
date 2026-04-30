@@ -122,6 +122,13 @@ export async function finalizeOrderForSession(
                     portal_type: 'consumer',
                     metadata: {
                         stripe_session_id: sessionId,
+                        // Phase F5c.5: store payment_intent_id so charge.refunded
+                        // and charge.dispute.created webhook handlers can find
+                        // the order from the Stripe event payload.
+                        payment_intent_id:
+                            typeof session.payment_intent === 'string'
+                                ? session.payment_intent
+                                : (session.payment_intent?.id ?? null),
                         helix_tokens_burned: helixBurned,
                         promo_code: promoCode,
                     },
@@ -133,6 +140,32 @@ export async function finalizeOrderForSession(
         )
 
         if (orderErr || !orderRow) {
+            // Phase F5c.5: handle the race where the success URL and the
+            // webhook both pass the existence check before either commits.
+            // The UNIQUE expression index on metadata->>'stripe_session_id'
+            // ensures one wins and the loser gets Postgres 23505. Without
+            // this branch the loser would surface "Could not finalize order."
+            // to a user whose order was actually created moments before by
+            // the racing path.
+            const errCode = (orderErr as { code?: string } | null)?.code
+            if (errCode === '23505') {
+                const { data: raced } = await withTimeout(
+                    sb
+                        .from('shop_orders')
+                        .select('order_number')
+                        .filter('metadata->>stripe_session_id', 'eq', sessionId)
+                        .maybeSingle(),
+                    3000,
+                    'shop.checkout.finalize.race_recheck',
+                )
+                if (raced && raced.order_number) {
+                    safeLog.info('shop.checkout', 'finalizeOrderForSession race resolved', {
+                        sessionId,
+                        orderNumber: raced.order_number,
+                    })
+                    return { ok: true, orderNumber: raced.order_number }
+                }
+            }
             safeLog.error('shop.checkout', 'finalizeOrderForSession create order failed', {
                 error: orderErr,
                 sessionId,
@@ -210,8 +243,14 @@ export async function finalizeOrderForSession(
 
             if (promoCode) {
                 try {
+                    // Phase F5c.5: hardened two-arg signature requires the
+                    // cited order to be paid with this exact discount_code,
+                    // preventing direct-RPC spam against limited codes.
                     await withTimeout(
-                        sb.rpc('increment_promo_redemption', { p_code: promoCode }),
+                        sb.rpc('increment_promo_redemption', {
+                            p_code: promoCode,
+                            p_order_id: orderRow.id,
+                        }),
                         3000,
                         'shop.checkout.finalize.promo_increment',
                     )
