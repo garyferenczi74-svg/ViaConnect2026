@@ -285,6 +285,34 @@ export async function finalizeOrderForSession(
                             tokenId: tok.tokenId,
                             orderNumber,
                         })
+                        // Phase F6b.3g: also write to prescription_consume_failures
+                        // so an admin reconciler can detect drift between paid
+                        // orders and consumed tokens without log scraping. The
+                        // RLS policy permits authenticated callers to insert
+                        // only for their own orders; the webhook's service_role
+                        // bypasses RLS. Failure to log is itself logged but
+                        // never throws.
+                        try {
+                            const failureMessage =
+                                (error as { message?: string }).message ?? 'unknown error'
+                            await withTimeout(
+                                sb.from('prescription_consume_failures').insert({
+                                    token_id: tok.tokenId,
+                                    order_id: orderRow.id,
+                                    order_number: orderNumber,
+                                    sku: tok.sku,
+                                    failure_message: failureMessage,
+                                }),
+                                3000,
+                                'shop.checkout.finalize.consume_failure_log',
+                            )
+                        } catch (logErr) {
+                            safeLog.warn('shop.checkout', 'consume_failure_log write failed', {
+                                logErr,
+                                orderNumber,
+                                tokenId: tok.tokenId,
+                            })
+                        }
                     }
                 }
             } catch (error) {
