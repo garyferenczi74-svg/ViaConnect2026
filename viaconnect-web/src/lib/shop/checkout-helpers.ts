@@ -24,6 +24,8 @@ import Stripe from 'stripe'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout'
 import { safeLog } from '@/lib/utils/safe-log'
+import { creditEarning } from '@/lib/helix/earning-engine'
+import type { PricingSupabaseClient } from '@/lib/pricing/supabase-types'
 import type { CheckoutCartLine } from '@/lib/shop/checkout-actions'
 
 export interface FinalizeOrderResult {
@@ -307,41 +309,42 @@ export async function finalizeOrderForSession(
                 }
             }
 
-            // Phase F6a: refine Helix earn to merchandise-only (subtotal post
-            // discount). Tax + shipping are excluded so customers do not earn
-            // Helix on amounts they cannot capture as savings later. Routing
-            // through creditEarning() for tier multipliers + family pools
-            // remains a F6b deliverable.
+            // Phase F6b.1: route Helix earn through creditEarning() so the
+            // earning engine applies the user's tier multiplier (per seeded
+            // helix_tiers.multiplier), enforces the per-event frequency
+            // limit, and routes via the family pool manager. The event type
+            // id is `supplement_purchase_dollar` (base_points: 1,
+            // frequency_limit: 'unlimited'); we pass merchandise dollars as
+            // customBasePoints so the earn rate is 1 Helix per $1 of
+            // post-discount merchandise spend, then the engine multiplies by
+            // the live tier value on top. Tax + shipping excluded per F6a
+            // (merchandiseCents).
+            //
+            // Free-tier users (tier 0) are skipped inside creditEarning with a
+            // skippedReason; we log info-level and proceed (order succeeds).
             const merchandiseCents = Math.max(0, totalCents - taxCents - shippingCents)
             const earnAmount = Math.floor(merchandiseCents / 100)
             if (earnAmount > 0) {
                 try {
-                    await withTimeout(
-                        sb.from('helix_transactions').insert({
-                            user_id: userId,
-                            type: 'earning',
-                            amount: earnAmount,
-                            source: 'shop_order',
-                            description: `Earn for order ${orderNumber}`,
-                            related_entity_id: orderRow.id,
-                            metadata: {
-                                order_number: orderNumber,
-                                stripe_session_id: sessionId,
-                            },
-                        }),
-                        3000,
-                        'shop.checkout.finalize.helix_earn_log',
-                    )
-                    await withTimeout(
-                        sb.rpc('helix_increment_balance', {
-                            p_user_id: userId,
-                            p_points: earnAmount,
-                        }),
-                        3000,
-                        'shop.checkout.finalize.helix_earn_rpc',
-                    )
+                    const result = await creditEarning(supabase as PricingSupabaseClient, {
+                        userId,
+                        eventTypeId: 'supplement_purchase_dollar',
+                        customBasePoints: earnAmount,
+                        referenceId: orderRow.id,
+                        metadata: {
+                            order_number: orderNumber,
+                            stripe_session_id: sessionId,
+                            merchandise_cents: merchandiseCents,
+                        },
+                    })
+                    if (!result.success) {
+                        safeLog.info('shop.checkout', 'helix earn skipped via creditEarning', {
+                            orderNumber,
+                            reason: result.skippedReason,
+                        })
+                    }
                 } catch (error) {
-                    safeLog.warn('shop.checkout', 'finalizeOrderForSession helix earn failed', {
+                    safeLog.warn('shop.checkout', 'helix earn via creditEarning failed', {
                         error,
                         orderNumber,
                     })
