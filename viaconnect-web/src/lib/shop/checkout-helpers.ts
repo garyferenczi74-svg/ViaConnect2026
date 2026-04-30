@@ -13,12 +13,20 @@
  * Client parameter: the helper accepts the Supabase client to operate
  * under. Auth-scoped client (success URL) writes shop_orders under the
  * user's auth.uid() and passes RLS. Service-role client (webhook) bypasses
- * RLS — user_id comes from Stripe-verified session.metadata, which is
- * the same source the auth path used for the WITH CHECK match anyway.
+ * RLS, with user_id sourced from Stripe-verified session.metadata, which
+ * is the same source the auth path used for the WITH CHECK match anyway.
  *
- * Inlined RPC calls (helix_increment_balance, increment_promo_redemption)
- * use the passed client. Auth-scoped client has the authenticated GRANT;
- * service-role bypasses GRANTs. Both paths work.
+ * Inlined RPC calls (helix_increment_balance, increment_promo_redemption,
+ * prescription_consume) use the passed client. Auth-scoped client has the
+ * authenticated GRANT; service-role bypasses GRANTs. Both paths work.
+ *
+ * Phase F6b.3d: after the shop_order_items insert succeeds, the helper
+ * parses `session.metadata.rx_tokens_json` (set in createCheckoutSession
+ * after validateCheckout's eligibility lookup) and calls prescription_consume
+ * once per entry. The F6b.3d migration upgraded that RPC to be
+ * authenticated-callable with internal owner verification plus per-order
+ * idempotency on metadata.last_consumed_order_id, so neither path can
+ * double-consume even if both reach the call site.
  */
 import Stripe from 'stripe'
 import type { SupabaseClient } from '@supabase/supabase-js'
@@ -240,6 +248,51 @@ export async function finalizeOrderForSession(
                 error: itemsErr,
                 sessionId,
             })
+        }
+
+        // Phase F6b.3d: prescription token consumption for L3/L4 line items.
+        // session.metadata.rx_tokens_json was populated at session creation
+        // time in createCheckoutSession after validateCheckout's eligibility
+        // check. The F6b.3d migration evolved prescription_consume to be
+        // authenticated-callable (with internal owner verification) and
+        // per-order idempotent (so neither finalize path can double-consume).
+        // Best-effort: a token revoked or expired between session creation
+        // and finalize raises inside the RPC; we log and proceed because the
+        // order is already paid and the goods will ship. F6b.3g audit
+        // reconciler flags any drift.
+        const rxTokensJson = session.metadata?.rx_tokens_json
+        if (rxTokensJson) {
+            try {
+                const rxTokens = JSON.parse(rxTokensJson) as Array<{
+                    sku: string
+                    tokenId: string
+                }>
+                for (const tok of rxTokens) {
+                    if (!tok || !tok.tokenId) continue
+                    try {
+                        await withTimeout(
+                            sb.rpc('prescription_consume', {
+                                p_token_id: tok.tokenId,
+                                p_order_id: orderRow.id,
+                            }),
+                            3000,
+                            'shop.checkout.finalize.prescription_consume',
+                        )
+                    } catch (error) {
+                        safeLog.warn('shop.checkout', 'prescription consume failed', {
+                            error,
+                            sku: tok.sku,
+                            tokenId: tok.tokenId,
+                            orderNumber,
+                        })
+                    }
+                }
+            } catch (error) {
+                safeLog.warn('shop.checkout', 'rx_tokens_json parse failed', {
+                    error,
+                    sessionId,
+                })
+            }
         }
 
         if (userId) {

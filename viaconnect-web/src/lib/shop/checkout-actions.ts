@@ -11,11 +11,15 @@
  *   - MAP pricing floor enforced server-side: final_price >= cogs * 1.72
  *     across the cart. Discount codes that would push below this are
  *     rejected. cogs lives in public.master_skus.
- *   - Prescription gate: any line with pricing_tier of L3 or L4 blocks
- *     checkout until a practitioner-issued prescription token is in cart
- *     metadata. Phase F4 ships the gate as a hard block with messaging
- *     pointing to /practitioners; the practitioner token issuance flow is
- *     a separate F6 deliverable.
+ *   - Prescription gate: any line with pricing_tier of L3 or L4 requires
+ *     a practitioner-issued prescription token. F4 shipped this as a hard
+ *     wall pointing at /practitioners. F6b.3d evolved it into a real
+ *     eligibility check via serverCheckRxEligibility (lib/prescriptions
+ *     /patient-actions). Eligible lines pass and the matched token ids
+ *     flow through Stripe session metadata as rx_tokens_json so
+ *     finalizeOrderForSession consumes them after the order insert. L3/L4
+ *     lines are limited to quantity 1 in F6b.3d; multi-quantity lands in
+ *     F6b.3h alongside refills.
  *   - GeneX360 testing kits requiring lab draw show a banner before
  *     payment. Phase F4 ships the banner via the validateCheckout
  *     warnings array; the kit metadata determines whether to show.
@@ -45,6 +49,7 @@ import { createClient } from '@/lib/supabase/server'
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout'
 import { safeLog } from '@/lib/utils/safe-log'
 import { finalizeOrderForSession } from '@/lib/shop/checkout-helpers'
+import { serverCheckRxEligibility } from '@/lib/prescriptions/patient-actions'
 
 const MAP_MULTIPLIER = 1.72
 
@@ -77,6 +82,11 @@ export interface CheckoutValidationResult {
     ok: boolean
     error?: string
     warnings: string[]
+    // Phase F6b.3d: when L3/L4 cart lines pass eligibility, the matched
+    // tokens are returned so createCheckoutSession can embed them in the
+    // Stripe session metadata for finalizeOrderForSession to consume after
+    // the order insert succeeds.
+    rxTokens?: { sku: string; tokenId: string }[]
 }
 
 interface AppliedPromoSnapshot {
@@ -95,16 +105,46 @@ export async function validateCheckout(
         return { ok: false, error: 'Your cart is empty.', warnings }
     }
 
+    let rxTokensForOrder: { sku: string; tokenId: string }[] | undefined
     const rxItems = cart.filter(
         (l) => l.pricingTier === 'L3' || l.pricingTier === 'L4',
     )
     if (rxItems.length > 0) {
-        return {
-            ok: false,
-            error:
-                'Some items in your cart require a practitioner-issued prescription. Visit our practitioners page to find a clinician.',
-            warnings,
+        // F6b.3d launch posture: L3/L4 cart lines limited to quantity 1.
+        // Multi-quantity per single prescription token requires a
+        // quantity-aware prescription_consume RPC, which lands in F6b.3h
+        // alongside refills.
+        const overQuantity = rxItems.filter((l) => l.quantity > 1)
+        if (overQuantity.length > 0) {
+            return {
+                ok: false,
+                error:
+                    'Prescription items can only be ordered one at a time. Please reduce the quantity to 1.',
+                warnings,
+            }
         }
+        const rxSkus = rxItems.map((l) => l.sku)
+        const eligibility = await serverCheckRxEligibility(rxSkus)
+        if (!eligibility.ok) {
+            return { ok: false, error: eligibility.error, warnings }
+        }
+        const missing = eligibility.rows.filter((r) => !r.hasToken)
+        if (missing.length > 0) {
+            const missingNames = missing
+                .map(
+                    (m) =>
+                        rxItems.find((l) => l.sku === m.sku)?.productName ?? m.sku,
+                )
+                .join(', ')
+            return {
+                ok: false,
+                error: `These items require a practitioner-issued prescription: ${missingNames}. Visit /practitioners to find a clinician.`,
+                warnings,
+            }
+        }
+        rxTokensForOrder = eligibility.rows
+            .filter((r) => r.hasToken && r.tokenId)
+            .map((r) => ({ sku: r.sku, tokenId: r.tokenId as string }))
     }
 
     const labDrawItems = cart.filter(
@@ -168,7 +208,7 @@ export async function validateCheckout(
             }
         }
 
-        return { ok: true, warnings }
+        return { ok: true, warnings, rxTokens: rxTokensForOrder }
     } catch (error) {
         if (isTimeoutError(error)) {
             safeLog.warn('shop.checkout', 'validateCheckout timed out', { error })
@@ -366,6 +406,15 @@ export async function createCheckoutSession(args: {
                 shipping_phone: form.phone,
                 shipping_email: form.email,
                 cart_json: JSON.stringify(cart),
+                // Phase F6b.3d: rx_tokens_json carries the per-SKU token id
+                // chosen by validateCheckout's eligibility lookup. Empty
+                // string when no L3/L4 lines exist. finalizeOrderForSession
+                // parses this and calls prescription_consume per entry after
+                // the shop_orders row commits.
+                rx_tokens_json:
+                    validation.rxTokens && validation.rxTokens.length > 0
+                        ? JSON.stringify(validation.rxTokens)
+                        : '',
             },
         })
 
