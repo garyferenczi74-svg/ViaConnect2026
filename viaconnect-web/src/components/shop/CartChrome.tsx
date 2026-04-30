@@ -27,7 +27,7 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Minus, Plus, ShoppingBag, Trash2, X } from 'lucide-react'
 import {
     CART_OPEN_EVENT_NAME,
@@ -40,6 +40,8 @@ import {
     updateQuantity,
     useCart,
 } from '@/lib/shop/cart-store'
+import { useRxEligibility } from '@/lib/shop/use-rx-eligibility'
+import { CartLineRxPill } from '@/components/shop/CartLineRxPill'
 
 function formatPrice(value: number): string {
     return `$${value.toFixed(2)}`
@@ -56,6 +58,15 @@ export function CartChrome({ consumerSession = true, userId = null }: CartChrome
     const [promoInput, setPromoInput] = useState('')
     const [promoError, setPromoError] = useState<string | null>(null)
     const cart = useCart(userId)
+
+    const rxSkus = useMemo(
+        () =>
+            cart.lines
+                .filter((l) => l.pricingTier === 'L3' || l.pricingTier === 'L4')
+                .map((l) => l.sku),
+        [cart.lines],
+    )
+    const rxEligibility = useRxEligibility(rxSkus, userId)
 
     useEffect(() => {
         const onOpen = () => setIsOpen(true)
@@ -178,6 +189,14 @@ export function CartChrome({ consumerSession = true, userId = null }: CartChrome
                                                 {line.format && (
                                                     <p className="text-xs text-white/55">({line.format.toLowerCase()})</p>
                                                 )}
+                                                <div className="mt-1.5">
+                                                    <CartLineRxPill
+                                                        pricingTier={line.pricingTier}
+                                                        userId={userId}
+                                                        isLoaded={rxEligibility.isLoaded}
+                                                        hasToken={rxEligibility.hasToken(line.sku)}
+                                                    />
+                                                </div>
                                                 <div className="mt-2 flex items-center justify-between gap-3">
                                                     <div className="flex items-center gap-1 rounded-lg border border-white/10 bg-white/[0.02] p-1">
                                                         <button
