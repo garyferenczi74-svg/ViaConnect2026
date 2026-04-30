@@ -1,10 +1,15 @@
 /**
  * CheckoutFlow is the multi-step Via Cura checkout UI per Prompt #141 v3
- * §5.5. Steps: Contact, Shipping, Review. After Review, the "Place order"
- * button calls createCheckoutSession (server action) and redirects to
- * Stripe Checkout (Stripe-hosted payment page) where Apple Pay, Google
- * Pay, and card are surfaced automatically when the Stripe domain is
- * verified.
+ * §5.5, refactored at Phase F5d.6 to two steps (Contact, Review). The
+ * Shipping step was dropped because Stripe Checkout collects shipping
+ * address on its hosted page; eliminating the form on our side removes
+ * the F4-F5d.5 double-entry where the user typed the same address twice.
+ *
+ * Steps: Contact (email, phone, first/last name) -> Review (cart + totals).
+ * After Review, the "Place order" button calls createCheckoutSession
+ * (server action) and redirects to Stripe Checkout where shipping
+ * address, payment method (Apple Pay / Google Pay / card), and tax math
+ * are all handled.
  *
  * Validation:
  *   - Per-step required-field validation client-side.
@@ -30,17 +35,11 @@ import {
     createCheckoutSession,
 } from '@/lib/shop/checkout-actions'
 
-type Step = 'contact' | 'shipping' | 'review'
+type Step = 'contact' | 'review'
 
 const STEPS: { key: Step; label: string }[] = [
     { key: 'contact', label: 'Contact' },
-    { key: 'shipping', label: 'Shipping' },
     { key: 'review', label: 'Review' },
-]
-
-const COUNTRIES = [
-    { code: 'US', label: 'United States' },
-    { code: 'CA', label: 'Canada' },
 ]
 
 function formatPrice(value: number): string {
@@ -68,13 +67,6 @@ export function CheckoutFlow({ consumerSession = true, userId = null }: Checkout
         phone: '',
         firstName: '',
         lastName: '',
-        addressLine1: '',
-        addressLine2: '',
-        city: '',
-        state: '',
-        zip: '',
-        country: 'US',
-        notes: '',
     })
     const [serverError, setServerError] = useState<string | null>(null)
     const [isPending, startTransition] = useTransition()
@@ -101,23 +93,17 @@ export function CheckoutFlow({ consumerSession = true, userId = null }: Checkout
         setForm((f) => ({ ...f, [key]: value }))
     }
 
-    const contactValid = emailValid(form.email) && nonEmpty(form.phone)
-    const shippingValid =
+    const contactValid =
+        emailValid(form.email) &&
+        nonEmpty(form.phone) &&
         nonEmpty(form.firstName) &&
-        nonEmpty(form.lastName) &&
-        nonEmpty(form.addressLine1) &&
-        nonEmpty(form.city) &&
-        nonEmpty(form.state) &&
-        nonEmpty(form.zip) &&
-        nonEmpty(form.country)
+        nonEmpty(form.lastName)
 
     const goNext = () => {
-        if (step === 'contact' && contactValid) setStep('shipping')
-        else if (step === 'shipping' && shippingValid) setStep('review')
+        if (step === 'contact' && contactValid) setStep('review')
     }
     const goBack = () => {
-        if (step === 'shipping') setStep('contact')
-        else if (step === 'review') setStep('shipping')
+        if (step === 'review') setStep('contact')
     }
 
     const placeOrder = () => {
@@ -161,9 +147,6 @@ export function CheckoutFlow({ consumerSession = true, userId = null }: Checkout
         )
     }
 
-    // Hard gate: shop_orders.user_id is NOT NULL on the live schema. An
-    // anonymous Stripe session would charge the card before the order insert
-    // could run. Block the form up front and route to sign in.
     if (!userId) {
         return (
             <div className="min-h-screen bg-[#0F1A2E] pb-12 text-white">
@@ -243,6 +226,33 @@ export function CheckoutFlow({ consumerSession = true, userId = null }: Checkout
                     {step === 'contact' && (
                         <div className="space-y-4">
                             <h2 className="text-lg font-medium text-white">Contact</h2>
+                            <p className="text-xs text-white/55">
+                                Stripe collects your shipping address securely on the next page.
+                            </p>
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label className="mb-1.5 block text-xs uppercase tracking-wider text-white/45">
+                                        First name
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={form.firstName}
+                                        onChange={(e) => set('firstName', e.target.value)}
+                                        className="w-full rounded-lg border border-white/10 bg-white/[0.02] px-3 py-2 text-sm text-white placeholder:text-white/35 focus:border-[#2DA5A0] focus:outline-none"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="mb-1.5 block text-xs uppercase tracking-wider text-white/45">
+                                        Last name
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={form.lastName}
+                                        onChange={(e) => set('lastName', e.target.value)}
+                                        className="w-full rounded-lg border border-white/10 bg-white/[0.02] px-3 py-2 text-sm text-white placeholder:text-white/35 focus:border-[#2DA5A0] focus:outline-none"
+                                    />
+                                </div>
+                            </div>
                             <div>
                                 <label className="mb-1.5 block text-xs uppercase tracking-wider text-white/45">
                                     Email
@@ -270,127 +280,20 @@ export function CheckoutFlow({ consumerSession = true, userId = null }: Checkout
                         </div>
                     )}
 
-                    {step === 'shipping' && (
-                        <div className="space-y-4">
-                            <h2 className="text-lg font-medium text-white">Shipping</h2>
-                            <div className="grid grid-cols-2 gap-3">
-                                <div>
-                                    <label className="mb-1.5 block text-xs uppercase tracking-wider text-white/45">
-                                        First name
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={form.firstName}
-                                        onChange={(e) => set('firstName', e.target.value)}
-                                        className="w-full rounded-lg border border-white/10 bg-white/[0.02] px-3 py-2 text-sm text-white placeholder:text-white/35 focus:border-[#2DA5A0] focus:outline-none"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="mb-1.5 block text-xs uppercase tracking-wider text-white/45">
-                                        Last name
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={form.lastName}
-                                        onChange={(e) => set('lastName', e.target.value)}
-                                        className="w-full rounded-lg border border-white/10 bg-white/[0.02] px-3 py-2 text-sm text-white placeholder:text-white/35 focus:border-[#2DA5A0] focus:outline-none"
-                                    />
-                                </div>
-                            </div>
-                            <div>
-                                <label className="mb-1.5 block text-xs uppercase tracking-wider text-white/45">
-                                    Address line 1
-                                </label>
-                                <input
-                                    type="text"
-                                    value={form.addressLine1}
-                                    onChange={(e) => set('addressLine1', e.target.value)}
-                                    className="w-full rounded-lg border border-white/10 bg-white/[0.02] px-3 py-2 text-sm text-white placeholder:text-white/35 focus:border-[#2DA5A0] focus:outline-none"
-                                />
-                            </div>
-                            <div>
-                                <label className="mb-1.5 block text-xs uppercase tracking-wider text-white/45">
-                                    Address line 2 (optional)
-                                </label>
-                                <input
-                                    type="text"
-                                    value={form.addressLine2 ?? ''}
-                                    onChange={(e) => set('addressLine2', e.target.value)}
-                                    className="w-full rounded-lg border border-white/10 bg-white/[0.02] px-3 py-2 text-sm text-white placeholder:text-white/35 focus:border-[#2DA5A0] focus:outline-none"
-                                />
-                            </div>
-                            <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-                                <div>
-                                    <label className="mb-1.5 block text-xs uppercase tracking-wider text-white/45">
-                                        City
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={form.city}
-                                        onChange={(e) => set('city', e.target.value)}
-                                        className="w-full rounded-lg border border-white/10 bg-white/[0.02] px-3 py-2 text-sm text-white placeholder:text-white/35 focus:border-[#2DA5A0] focus:outline-none"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="mb-1.5 block text-xs uppercase tracking-wider text-white/45">
-                                        State
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={form.state}
-                                        onChange={(e) => set('state', e.target.value)}
-                                        className="w-full rounded-lg border border-white/10 bg-white/[0.02] px-3 py-2 text-sm text-white placeholder:text-white/35 focus:border-[#2DA5A0] focus:outline-none"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="mb-1.5 block text-xs uppercase tracking-wider text-white/45">
-                                        ZIP
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={form.zip}
-                                        onChange={(e) => set('zip', e.target.value)}
-                                        className="w-full rounded-lg border border-white/10 bg-white/[0.02] px-3 py-2 text-sm text-white placeholder:text-white/35 focus:border-[#2DA5A0] focus:outline-none"
-                                    />
-                                </div>
-                            </div>
-                            <div>
-                                <label className="mb-1.5 block text-xs uppercase tracking-wider text-white/45">
-                                    Country
-                                </label>
-                                <select
-                                    value={form.country}
-                                    onChange={(e) => set('country', e.target.value)}
-                                    className="w-full rounded-lg border border-white/10 bg-white/[0.02] px-3 py-2 text-sm text-white focus:border-[#2DA5A0] focus:outline-none"
-                                >
-                                    {COUNTRIES.map((c) => (
-                                        <option key={c.code} value={c.code} className="bg-[#0F1A2E]">
-                                            {c.label}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-                        </div>
-                    )}
-
                     {step === 'review' && (
                         <div className="space-y-5">
                             <h2 className="text-lg font-medium text-white">Review</h2>
 
                             <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
-                                <p className="text-xs uppercase tracking-wider text-white/45">Ship to</p>
+                                <p className="text-xs uppercase tracking-wider text-white/45">Contact</p>
                                 <p className="mt-2 text-sm text-white">
                                     {form.firstName} {form.lastName}
                                 </p>
-                                <p className="text-xs text-white/65">{form.addressLine1}</p>
-                                {form.addressLine2 && (
-                                    <p className="text-xs text-white/65">{form.addressLine2}</p>
-                                )}
-                                <p className="text-xs text-white/65">
-                                    {form.city}, {form.state} {form.zip} {form.country}
+                                <p className="text-xs text-white/55">{form.email}</p>
+                                <p className="text-xs text-white/55">{form.phone}</p>
+                                <p className="mt-2 text-xs text-white/45">
+                                    Shipping address collected by Stripe at payment.
                                 </p>
-                                <p className="mt-2 text-xs text-white/45">{form.email}</p>
-                                <p className="text-xs text-white/45">{form.phone}</p>
                             </div>
 
                             <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
@@ -479,10 +382,7 @@ export function CheckoutFlow({ consumerSession = true, userId = null }: Checkout
                         <button
                             type="button"
                             onClick={goNext}
-                            disabled={
-                                (step === 'contact' && !contactValid) ||
-                                (step === 'shipping' && !shippingValid)
-                            }
+                            disabled={!contactValid}
                             className="rounded-xl bg-[#2DA5A0] px-6 py-2 text-sm font-medium text-white transition-colors hover:bg-[#26918d] disabled:cursor-not-allowed disabled:opacity-40"
                         >
                             Continue

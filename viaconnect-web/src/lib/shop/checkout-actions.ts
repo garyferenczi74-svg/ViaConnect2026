@@ -48,17 +48,16 @@ import { finalizeOrderForSession } from '@/lib/shop/checkout-helpers'
 
 const MAP_MULTIPLIER = 1.72
 
+// Phase F5d.6: address fields removed from CheckoutFormData. Stripe Checkout
+// collects shipping address on its hosted page; the user no longer types
+// the same address twice. Only the contact identity fields (name, email,
+// phone) are collected on our side and used to pre-create or update a
+// Stripe Customer record.
 export interface CheckoutFormData {
     email: string
     phone: string
     firstName: string
     lastName: string
-    addressLine1: string
-    addressLine2?: string
-    city: string
-    state: string
-    zip: string
-    country: string
     notes?: string
 }
 
@@ -225,35 +224,29 @@ export async function createCheckoutSession(args: {
             }
         }
 
-        // Phase F5d.5: pre-create a Stripe Customer with the form's collected
-        // address. Stripe Checkout pre-fills its address form from this
-        // customer record, eliminating the F4 double-entry where the user
-        // typed the same address twice (once on our form, again on Stripe).
-        // The customer can still edit on Stripe's page; finalizeOrderForSession
-        // reads session.shipping_details for the final captured address.
-        // Per-checkout customer creation is acceptable for F5d.5 v1; F5d.6 can
-        // dedupe by email when a returning buyer signs in.
+        // Phase F5d.6: address collection moved entirely to Stripe Checkout's
+        // hosted page (eliminates the F4-F5d.5 double-entry). Customer is
+        // pre-created/updated with identity fields only (name, email, phone);
+        // Stripe collects shipping address on its page via the existing
+        // shipping_address_collection setting. Customer is deduplicated by
+        // email so returning buyers reuse their Stripe Customer record.
         const fullName = `${form.firstName} ${form.lastName}`.trim()
-        const stripeAddress: Stripe.AddressParam = {
-            line1: form.addressLine1,
-            line2: form.addressLine2 || undefined,
-            city: form.city,
-            state: form.state,
-            postal_code: form.zip,
-            country: form.country,
-        }
-        const customer = await stripe.customers.create({
+        const customerPayload: Stripe.CustomerCreateParams = {
             email: form.email,
             name: fullName || undefined,
             phone: form.phone || undefined,
-            address: stripeAddress,
-            shipping: {
-                name: fullName || form.email,
-                phone: form.phone || undefined,
-                address: stripeAddress,
-            },
             metadata: { app_user_id: userId },
+        }
+        const existingByEmail = await stripe.customers.list({
+            email: form.email,
+            limit: 1,
         })
+        let customer: Stripe.Customer
+        if (existingByEmail.data.length > 0) {
+            customer = await stripe.customers.update(existingByEmail.data[0].id, customerPayload)
+        } else {
+            customer = await stripe.customers.create(customerPayload)
+        }
 
         const headersList = headers()
         const origin = headersList.get('origin') ?? 'https://viaconnectapp.com'
@@ -365,14 +358,11 @@ export async function createCheckoutSession(args: {
                 user_id: userId ?? '',
                 helix_tokens_burned: String(appliedHelix),
                 promo_code: appliedPromo?.code ?? '',
+                // Phase F5d.6: contact-only metadata. Address fields removed
+                // because Stripe collects them on its page; finalizeOrderForSession
+                // reads session.shipping_details for the captured address.
                 shipping_first_name: form.firstName,
                 shipping_last_name: form.lastName,
-                shipping_address_line1: form.addressLine1,
-                shipping_address_line2: form.addressLine2 ?? '',
-                shipping_city: form.city,
-                shipping_state: form.state,
-                shipping_zip: form.zip,
-                shipping_country: form.country,
                 shipping_phone: form.phone,
                 shipping_email: form.email,
                 cart_json: JSON.stringify(cart),
