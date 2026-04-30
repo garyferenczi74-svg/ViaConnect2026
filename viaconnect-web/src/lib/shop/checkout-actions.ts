@@ -20,10 +20,18 @@
  *     payment. Phase F4 ships the banner via the validateCheckout
  *     warnings array; the kit metadata determines whether to show.
  *
- * Deferred to F5:
- *   - Real Helix burn + earn writes to public.helix_transactions via the
- *     existing helix_increment_balance RPC. F4 stores helix_burned in
- *     order metadata but does not write to the helix ledger.
+ * Phase F5 additions:
+ *   - Helix burn + earn writes to public.helix_transactions paired with
+ *     the helix_increment_balance(p_user_id, p_points) RPC. Burn deducts
+ *     applied Helix from the user's balance and logs `type='spend'` with
+ *     a negative amount. Earn credits 1 Helix per $1 of post-discount
+ *     total and logs `type='earning'` matching the earning-engine
+ *     convention. Best-effort: failures are logged via safeLog and the
+ *     order itself is preserved (Helix can be reconciled later).
+ *
+ * Still deferred (F6+):
+ *   - Routing the earn through lib/helix/earning-engine.ts creditEarning()
+ *     for tier multipliers, family pool routing, and frequency limits.
  *   - Webhook-based order finalization (current pattern is success-URL
  *     redirect; happy path covered, async edge cases not).
  *   - Real tax + shipping calculation.
@@ -439,6 +447,84 @@ export async function finalizeShopOrder(
                     error,
                 })
             })
+
+            // Phase F5: Helix ledger writes. Best-effort; if any of these fail
+            // the order is still recorded. A reconciliation job can re-derive
+            // missing balance changes from helix_transactions later.
+            //
+            // Audit-trail-first ordering: log the transaction row, then call
+            // the helix_increment_balance RPC. If the RPC fails after a
+            // successful log row insert, the row exists with the intent; the
+            // balance is repairable. The other order (RPC first) leaves no
+            // record if the log insert fails.
+            if (helixBurned > 0) {
+                try {
+                    await withTimeout(
+                        sb.from('helix_transactions').insert({
+                            user_id: userId,
+                            type: 'spend',
+                            amount: -helixBurned,
+                            source: 'shop_order',
+                            description: `Helix burn for order ${orderNumber}`,
+                            related_entity_id: orderRow.id,
+                            metadata: {
+                                order_number: orderNumber,
+                                stripe_session_id: sessionId,
+                            },
+                        }),
+                        3000,
+                        'shop.checkout.finalize.helix_burn_log',
+                    )
+                    await withTimeout(
+                        sb.rpc('helix_increment_balance', {
+                            p_user_id: userId,
+                            p_points: -helixBurned,
+                        }),
+                        3000,
+                        'shop.checkout.finalize.helix_burn_rpc',
+                    )
+                } catch (error) {
+                    safeLog.warn('shop.checkout', 'helix burn ledger write failed', {
+                        error,
+                        orderNumber,
+                    })
+                }
+            }
+
+            const earnAmount = Math.floor(totalCents / 100)
+            if (earnAmount > 0) {
+                try {
+                    await withTimeout(
+                        sb.from('helix_transactions').insert({
+                            user_id: userId,
+                            type: 'earning',
+                            amount: earnAmount,
+                            source: 'shop_order',
+                            description: `Earn for order ${orderNumber}`,
+                            related_entity_id: orderRow.id,
+                            metadata: {
+                                order_number: orderNumber,
+                                stripe_session_id: sessionId,
+                            },
+                        }),
+                        3000,
+                        'shop.checkout.finalize.helix_earn_log',
+                    )
+                    await withTimeout(
+                        sb.rpc('helix_increment_balance', {
+                            p_user_id: userId,
+                            p_points: earnAmount,
+                        }),
+                        3000,
+                        'shop.checkout.finalize.helix_earn_rpc',
+                    )
+                } catch (error) {
+                    safeLog.warn('shop.checkout', 'helix earn ledger write failed', {
+                        error,
+                        orderNumber,
+                    })
+                }
+            }
         }
 
         return { ok: true, orderNumber: orderRow.order_number }
