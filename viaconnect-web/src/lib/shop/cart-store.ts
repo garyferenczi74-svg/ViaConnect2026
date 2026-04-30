@@ -50,6 +50,12 @@ export interface CartLine {
     image: string | null
     price: number
     quantity: number
+    // Phase F6a: pricingTier carries L1-L4 from products.pricing_tier so the
+    // server-side prescription gate in validateCheckout can fire on L3/L4
+    // SKUs. productType separates supplement vs testing variants so the
+    // GeneX360 lab-draw banner can detect testing kits.
+    pricingTier: string | null
+    productType: 'supplement' | 'testing'
 }
 
 export interface AppliedPromo {
@@ -81,8 +87,31 @@ function writeJson(key: string, value: unknown): void {
 }
 
 function readCartLines(): CartLine[] {
-    const raw = readJson<CartLine[]>(CART_STORAGE_KEY, [])
-    return Array.isArray(raw) ? raw : []
+    const raw = readJson<unknown>(CART_STORAGE_KEY, [])
+    if (!Array.isArray(raw)) return []
+    // Phase F6a: normalize legacy entries that pre-date pricingTier +
+    // productType. Pre-F6a localStorage carts persist with those fields
+    // undefined; without normalization the prescription gate and lab-draw
+    // warning would never fire on hydrated legacy carts. Re-adding via
+    // Add-to-Cart populates them correctly going forward.
+    return raw
+        .map((entry) => {
+            const e = entry as Partial<CartLine>
+            if (typeof e.sku !== 'string' || !e.sku) return null
+            return {
+                sku: e.sku,
+                productId: typeof e.productId === 'string' ? e.productId : '',
+                name: typeof e.name === 'string' ? e.name : '',
+                format: typeof e.format === 'string' ? e.format : null,
+                image: typeof e.image === 'string' ? e.image : null,
+                price: typeof e.price === 'number' ? e.price : 0,
+                quantity: typeof e.quantity === 'number' ? e.quantity : 1,
+                pricingTier:
+                    typeof e.pricingTier === 'string' ? e.pricingTier : null,
+                productType: e.productType === 'testing' ? 'testing' : 'supplement',
+            } as CartLine
+        })
+        .filter((l): l is CartLine => l !== null)
 }
 
 function readAppliedHelix(): number {
@@ -115,6 +144,8 @@ export function addToCart(
             image: item.image,
             price: item.price,
             quantity: qty,
+            pricingTier: item.pricingTier ?? null,
+            productType: item.productType ?? 'supplement',
         })
     }
     writeJson(CART_STORAGE_KEY, lines)
@@ -195,7 +226,7 @@ function localToSync(lines: CartLine[]): SyncCartLine[] {
     return lines.map((l) => ({
         productSlug: l.sku,
         productName: l.name,
-        productType: 'supplement',
+        productType: l.productType,
         deliveryForm: l.format,
         quantity: l.quantity,
         unitPriceCents: Math.round(l.price * 100),
@@ -203,13 +234,19 @@ function localToSync(lines: CartLine[]): SyncCartLine[] {
             sku: l.sku,
             productId: l.productId,
             image: l.image ?? null,
+            pricingTier: l.pricingTier ?? null,
         },
     }))
 }
 
 function syncToLocal(lines: SyncCartLine[]): CartLine[] {
     return lines.map((l) => {
-        const meta = (l.metadata ?? {}) as { sku?: string; productId?: string; image?: string | null }
+        const meta = (l.metadata ?? {}) as {
+            sku?: string
+            productId?: string
+            image?: string | null
+            pricingTier?: string | null
+        }
         return {
             sku: meta.sku ?? l.productSlug,
             productId: meta.productId ?? '',
@@ -218,6 +255,8 @@ function syncToLocal(lines: SyncCartLine[]): CartLine[] {
             image: meta.image ?? null,
             price: (l.unitPriceCents ?? 0) / 100,
             quantity: l.quantity,
+            pricingTier: meta.pricingTier ?? null,
+            productType: l.productType === 'testing' ? 'testing' : 'supplement',
         }
     })
 }

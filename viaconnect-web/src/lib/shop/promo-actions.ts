@@ -1,14 +1,24 @@
 /**
  * Server actions for the Via Cura shop promo code system per Prompt #141
- * v3 Phase F5b. Wraps the two SECURITY DEFINER RPCs added by migration
- * 20260429120000:
+ * v3 Phase F5b, hardened in F5c.5, narrowed in F6a.
+ *
+ * The only export remaining here is serverValidatePromoCode. The earlier
+ * serverIncrementPromoRedemption wrapper was removed in F5c.5 in favor of
+ * an inline RPC call from finalizeOrderForSession. The transitional
+ * one-arg increment_promo_redemption(text) DB function was dropped in
+ * F6a (migration 20260430000000); only the verified two-arg
+ * increment_promo_redemption(text, uuid) signature exists today.
+ *
+ * Live RPC mapping:
  *   - validate_promo_code(code, subtotal_cents) -> rich error/result row
- *   - increment_promo_redemption(code) -> void (called on order finalize)
+ *   - increment_promo_redemption(code, order_id) -> called inline from
+ *     lib/shop/checkout-helpers.ts after the order insert; not surfaced
+ *     through this module
  *
  * Anonymous users can validate (RPC GRANT EXECUTE TO anon), useful for
  * showing a discount preview before sign-in. Only authenticated users can
- * increment redemption count, which finalizeShopOrder does on payment
- * success.
+ * call the increment RPC (and only finalizeOrderForSession does, with the
+ * order_id of the just-inserted shop_orders row).
  *
  * RPCs are SECURITY DEFINER so RLS on promo_codes does not block reads.
  * Direct SELECT on promo_codes from anon/authenticated is blocked (no

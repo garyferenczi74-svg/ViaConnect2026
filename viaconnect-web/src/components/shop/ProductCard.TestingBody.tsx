@@ -71,6 +71,8 @@ export function ProductCardTestingBody({ product }: ProductCardTestingBodyProps)
                             format: product.format,
                             image: (product.image_urls && product.image_urls[0]) || product.image_url || null,
                             price: product.price_msrp ?? product.price ?? 0,
+                            pricingTier: product.pricing_tier ?? null,
+                            productType: 'testing',
                         },
                         { openDrawer: true },
                     )

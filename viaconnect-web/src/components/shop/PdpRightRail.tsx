@@ -122,6 +122,8 @@ export function PdpRightRail({ product, variant }: PdpRightRailProps) {
                                     null,
                                 price: product.price_msrp ?? product.price ?? 0,
                                 quantity,
+                                pricingTier: product.pricing_tier ?? null,
+                                productType: variant,
                             },
                             { openDrawer: true },
                         )

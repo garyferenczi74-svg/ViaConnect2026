@@ -26,13 +26,14 @@
 'use client'
 
 import Link from 'next/link'
-import { useMemo, useState, useTransition } from 'react'
-import { ChevronLeft, Lock } from 'lucide-react'
+import { useEffect, useMemo, useState, useTransition } from 'react'
+import { AlertTriangle, ChevronLeft, Lock } from 'lucide-react'
 import { useCart } from '@/lib/shop/cart-store'
 import {
     type CheckoutCartLine,
     type CheckoutFormData,
     createCheckoutSession,
+    validateCheckout,
 } from '@/lib/shop/checkout-actions'
 
 type Step = 'contact' | 'review'
@@ -79,15 +80,53 @@ export function CheckoutFlow({ consumerSession = true, userId = null }: Checkout
                 sku: l.sku,
                 productSlug: l.sku,
                 productName: l.name,
-                productType: 'supplement',
+                productType: l.productType,
                 deliveryForm: l.format,
-                pricingTier: null,
+                pricingTier: l.pricingTier,
                 quantity: l.quantity,
                 unitPriceCents: Math.round(l.price * 100),
                 image: l.image,
             })),
         [cart.lines],
     )
+
+    // Phase F6a: validate the cart server-side when the user reaches Review.
+    // Surfaces the prescription gate (L3/L4 SKUs hard-block until a
+    // practitioner-issued token is in cart, deferred to F6b) and the
+    // GeneX360 lab-draw warning before the user clicks Place order. The
+    // server action runs the same validateCheckout that createCheckoutSession
+    // calls internally, so we never see a different result post-click.
+    const [validation, setValidation] = useState<{
+        ok: boolean
+        error?: string
+        warnings: string[]
+    } | null>(null)
+    useEffect(() => {
+        if (step !== 'review' || lines.length === 0) {
+            setValidation(null)
+            return
+        }
+        let cancelled = false
+        validateCheckout(
+            lines,
+            cart.appliedHelix,
+            cart.appliedPromo
+                ? {
+                      code: cart.appliedPromo.code,
+                      discountCents: Math.round(cart.promoDiscount * 100),
+                  }
+                : null,
+        )
+            .then((result) => {
+                if (!cancelled) setValidation(result)
+            })
+            .catch(() => {
+                if (!cancelled) setValidation(null)
+            })
+        return () => {
+            cancelled = true
+        }
+    }, [step, lines, cart.appliedHelix, cart.appliedPromo, cart.promoDiscount])
 
     const set = <K extends keyof CheckoutFormData>(key: K, value: CheckoutFormData[K]) => {
         setForm((f) => ({ ...f, [key]: value }))
@@ -351,6 +390,36 @@ export function CheckoutFlow({ consumerSession = true, userId = null }: Checkout
                                 )}
                             </div>
 
+                            {validation && !validation.ok && validation.error && (
+                                <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-100">
+                                    <p>{validation.error}</p>
+                                    {validation.error.toLowerCase().includes('practitioner') && (
+                                        <Link
+                                            href="/practitioners"
+                                            className="mt-1 inline-block text-xs text-[#2DA5A0] underline-offset-4 hover:underline"
+                                        >
+                                            Find a practitioner
+                                        </Link>
+                                    )}
+                                </div>
+                            )}
+
+                            {validation && validation.ok && validation.warnings.length > 0 && (
+                                <div className="rounded-xl border border-amber-400/30 bg-amber-400/10 px-4 py-3 text-sm text-amber-100">
+                                    <div className="flex items-start gap-2">
+                                        <AlertTriangle
+                                            className="mt-0.5 h-4 w-4 shrink-0 text-amber-300"
+                                            strokeWidth={1.5}
+                                        />
+                                        <ul className="space-y-1">
+                                            {validation.warnings.map((w, i) => (
+                                                <li key={i}>{w}</li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                </div>
+                            )}
+
                             {serverError && (
                                 <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-100">
                                     {serverError}
@@ -391,7 +460,7 @@ export function CheckoutFlow({ consumerSession = true, userId = null }: Checkout
                         <button
                             type="button"
                             onClick={placeOrder}
-                            disabled={isPending}
+                            disabled={isPending || (validation !== null && !validation.ok)}
                             className="flex items-center gap-2 rounded-xl bg-[#2DA5A0] px-6 py-2 text-sm font-medium text-white transition-colors hover:bg-[#26918d] disabled:cursor-not-allowed disabled:opacity-60"
                         >
                             <Lock className="h-3.5 w-3.5" strokeWidth={1.5} />

@@ -307,7 +307,13 @@ export async function finalizeOrderForSession(
                 }
             }
 
-            const earnAmount = Math.floor(totalCents / 100)
+            // Phase F6a: refine Helix earn to merchandise-only (subtotal post
+            // discount). Tax + shipping are excluded so customers do not earn
+            // Helix on amounts they cannot capture as savings later. Routing
+            // through creditEarning() for tier multipliers + family pools
+            // remains a F6b deliverable.
+            const merchandiseCents = Math.max(0, totalCents - taxCents - shippingCents)
+            const earnAmount = Math.floor(merchandiseCents / 100)
             if (earnAmount > 0) {
                 try {
                     await withTimeout(
