@@ -1,0 +1,9 @@
+sku,name,kit_type,specimen_type,collection_method,sample_size,prep_instructions,lab_partner,clia_certified,turnaround_days,markers_tested,panel_focus,report_format,result_delivery_method,requires_practitioner_order,requires_results_upload,price_includes_shipping,test_dependency,supply_days,coverage_jurisdictions
+FC-TEST-COMBO-001,GeneX360,test_kit,,,,,,,,,,,,,,,,,
+FC-TEST-METH-001,GeneXM,test_kit,,,,,,,,,,,,,,,,,
+FC-TEST-NUTR-001,NutragenHQ,test_kit,,,,,,,,,,,,,,,,,
+FC-TEST-DUTCH-001,HormoneIQ,test_kit,,,,,,,,,,,,,,,,,
+FC-TEST-CANNABIS-001,CannabisIQ,test_kit,,,,,,,,,,,,,,,,,
+FC-TEST-EPIGEN-001,EpiGenDX,test_kit,,,,,,,,,,,,,,,,,
+FC-TEST-PEPTIDES-001,PeptidesIQ,test_kit,,,,,,,,,,,,,,,,,
+FC-CUSTOM-VIT-001,30 Day Custom Vitamin Package,compounded_supplement,,,,,,,,,,,,,,,,,
