@@ -1,0 +1,58 @@
+{
+  "methylation-snp": {
+    "bucket": "Hero Videos",
+    "filename": "Methylation SNP Support.mp4",
+    "asset_type": "video",
+    "target_column": "video_url",
+    "url": "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Videos/Methylation%20SNP%20Support.mp4",
+    "note": ""
+  },
+  "genex360": {
+    "bucket": "Hero Videos",
+    "filename": "Methylation Support genetic Scientist.mp4",
+    "asset_type": "video",
+    "target_column": "video_url",
+    "url": "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Videos/Methylation%20Support%20genetic%20Scientist.mp4",
+    "note": "Filename suggests methylation content; verify intended assignment to GeneX360 with Gary"
+  },
+  "advanced-formulas": {
+    "bucket": "Hero Videos",
+    "filename": "Advanced Formulas.mp4",
+    "asset_type": "video",
+    "target_column": "video_url",
+    "url": "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Videos/Advanced%20Formulas.mp4",
+    "note": ""
+  },
+  "base-formulations": {
+    "bucket": "Hero Videos",
+    "filename": "Doctor Hands.png",
+    "asset_type": "image",
+    "target_column": "hero_image_url",
+    "url": "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Videos/Doctor%20Hands.png",
+    "note": ""
+  },
+  "womens-health": {
+    "bucket": "Hero Videos",
+    "filename": "Woman on beach.mp4",
+    "asset_type": "video",
+    "target_column": "video_url",
+    "url": "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Videos/Woman%20on%20beach.mp4",
+    "note": ""
+  },
+  "childrens-formulations": {
+    "bucket": "Hero Videos",
+    "filename": "children on beach.mp4",
+    "asset_type": "video",
+    "target_column": "video_url",
+    "url": "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Videos/children%20on%20beach.mp4",
+    "note": ""
+  },
+  "functional-mushrooms": {
+    "bucket": "Hero Videos",
+    "filename": "Mushrooms.png",
+    "asset_type": "image",
+    "target_column": "hero_image_url",
+    "url": "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Videos/Mushrooms.png",
+    "note": ""
+  }
+}
