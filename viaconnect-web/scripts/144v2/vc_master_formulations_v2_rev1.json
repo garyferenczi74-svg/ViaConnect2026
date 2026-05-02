@@ -1,0 +1,379 @@
+[
+  {
+    "name_clean": "BHB Ketone Salts",
+    "slug": "bhb-ketone-salts",
+    "category_xlsx": "BASE FORMULAS",
+    "category_slug": "base-formulations",
+    "form_xlsx": "Tablet",
+    "format": "tablet",
+    "ingredients": [
+      { "name": "Calcium Beta-Hydroxybutyrate", "mg": 50, "unit": "mg" },
+      { "name": "Magnesium Beta-Hydroxybutyrate", "mg": 50, "unit": "mg" },
+      { "name": "Sodium Beta-Hydroxybutyrate", "mg": 50, "unit": "mg" },
+      { "name": "Liposomal Organic MCT", "mg": 20, "unit": "mg" }
+    ],
+    "total_mg_per_serving": 170
+  },
+  {
+    "name_clean": "MethylB Complete+ B Complex",
+    "slug": "methylb-complete-plus-b-complex",
+    "category_xlsx": "BASE FORMULAS",
+    "category_slug": "base-formulations",
+    "form_xlsx": "Capsule",
+    "format": "capsule",
+    "total_mg_per_serving": 76.3
+  },
+  {
+    "name_clean": "Electrolyte Blend",
+    "slug": "electrolyte-blend",
+    "category_xlsx": "BASE FORMULAS",
+    "category_slug": "base-formulations",
+    "form_xlsx": "Tablet",
+    "format": "tablet",
+    "total_mg_per_serving": 255
+  },
+  {
+    "name_clean": "Inferno + GLP-1 Activator Complex",
+    "slug": "inferno-plus-glp-1-activator-complex",
+    "category_xlsx": "BASE FORMULAS",
+    "category_slug": "base-formulations",
+    "form_xlsx": "Capsule",
+    "format": "capsule",
+    "total_mg_per_serving": 435,
+    "_diff_note": "Production slug glp-1-activator-complex; canonical wants inferno-plus-glp-1-activator-complex"
+  },
+  {
+    "name_clean": "Magnesium Synergy Matrix",
+    "slug": "magnesium-synergy-matrix",
+    "category_xlsx": "BASE FORMULAS",
+    "category_slug": "base-formulations",
+    "form_xlsx": "Capsule",
+    "format": "capsule",
+    "total_mg_per_serving": 150
+  },
+  {
+    "name_clean": "Aptigen Complex",
+    "slug": "aptigen-complex",
+    "category_xlsx": "BASE FORMULAS",
+    "category_slug": "base-formulations",
+    "form_xlsx": "Capsule",
+    "format": "capsule",
+    "total_mg_per_serving": 190,
+    "_diff_note": "Deleted in Phase L 2026-04-30 per Gary directive replace with NeuroCalm+; canonical includes for reference only, do not auto-reinsert"
+  },
+  {
+    "name_clean": "Omega-3 DHA/EPA (Algal)",
+    "slug": "omega-3-dha-epa-algal",
+    "category_xlsx": "BASE FORMULAS",
+    "category_slug": "base-formulations",
+    "form_xlsx": "Capsule",
+    "format": "capsule",
+    "total_mg_per_serving": 100
+  },
+  {
+    "name_clean": "ToxiBind Matrix",
+    "slug": "toxibind-matrix",
+    "category_xlsx": "BASE FORMULAS",
+    "category_slug": "base-formulations",
+    "form_xlsx": "Capsule",
+    "format": "capsule",
+    "total_mg_per_serving": 110
+  },
+  {
+    "name_clean": "Creatine HCL+",
+    "slug": "creatine-hcl-plus",
+    "category_xlsx": "ADVANCED FORMULA",
+    "category_slug": "advanced-formulas",
+    "form_xlsx": "Scoop Powder",
+    "format": "powder",
+    "total_mg_per_serving": 4257.9
+  },
+  {
+    "name_clean": "Catalyst+ Energy Multivitamin",
+    "slug": "catalyst-plus-energy-multivitamin",
+    "category_xlsx": "ADVANCED FORMULA",
+    "category_slug": "advanced-formulas",
+    "form_xlsx": "Capsule",
+    "format": "capsule",
+    "total_mg_per_serving": 1087.325
+  },
+  {
+    "name_clean": "Replenish NAD+",
+    "slug": "replenish-nad-plus",
+    "category_xlsx": "ADVANCED FORMULA",
+    "category_slug": "advanced-formulas",
+    "form_xlsx": "Capsule",
+    "format": "capsule",
+    "total_mg_per_serving": 740
+  },
+  {
+    "name_clean": "Balance+ Gut Repair",
+    "slug": "balance-plus-gut-repair",
+    "category_xlsx": "ADVANCED FORMULA",
+    "category_slug": "advanced-formulas",
+    "form_xlsx": "Capsule",
+    "format": "capsule",
+    "total_mg_per_serving": 985
+  },
+  {
+    "name_clean": "Blast+ Nitric Oxide Stack",
+    "slug": "blast-plus-nitric-oxide-stack",
+    "category_xlsx": "ADVANCED FORMULA",
+    "category_slug": "advanced-formulas",
+    "form_xlsx": "Capsule",
+    "format": "capsule",
+    "total_mg_per_serving": 716.8
+  },
+  {
+    "name_clean": "NeuroCalm+",
+    "slug": "neurocalm-plus",
+    "category_xlsx": "ADVANCED FORMULA",
+    "category_slug": "advanced-formulas",
+    "form_xlsx": "Capsule",
+    "format": "capsule",
+    "total_mg_per_serving": 855,
+    "_diff_note": "Phase L 2026-04-30 moved this to base-formulations per explicit Gary directive; canonical advanced-formulas is older. Holding Phase L category until Gary clarifies."
+  },
+  {
+    "name_clean": "Relax+ Sleep Support",
+    "slug": "relax-plus-sleep-support",
+    "category_xlsx": "ADVANCED FORMULA",
+    "category_slug": "advanced-formulas",
+    "form_xlsx": "Capsule",
+    "format": "capsule",
+    "total_mg_per_serving": 1093
+  },
+  {
+    "name_clean": "Clean+ Detox & Liver Health",
+    "slug": "clean-plus-detox-and-liver-health",
+    "category_xlsx": "ADVANCED FORMULA",
+    "category_slug": "advanced-formulas",
+    "form_xlsx": "Capsule",
+    "format": "capsule",
+    "total_mg_per_serving": 980
+  },
+  {
+    "name_clean": "Teloprime+ Telomere Support",
+    "slug": "teloprime-plus-telomere-support",
+    "category_xlsx": "ADVANCED FORMULA",
+    "category_slug": "advanced-formulas",
+    "form_xlsx": "Scoop Powder",
+    "format": "powder",
+    "total_mg_per_serving": 2993.4
+  },
+  {
+    "name_clean": "DigestiZorb+ Enzyme Complex",
+    "slug": "digestizorb-plus-enzyme-complex",
+    "category_xlsx": "ADVANCED FORMULA",
+    "category_slug": "advanced-formulas",
+    "form_xlsx": "Capsule",
+    "format": "capsule",
+    "total_mg_per_serving": 85
+  },
+  {
+    "name_clean": "Focus+ Nootropic Formula",
+    "slug": "focus-plus-nootropic-formula",
+    "category_xlsx": "ADVANCED FORMULA",
+    "category_slug": "advanced-formulas",
+    "form_xlsx": "Scoop Powder",
+    "format": "powder",
+    "total_mg_per_serving": 1530
+  },
+  {
+    "name_clean": "Rise+ Male Testosterone",
+    "slug": "rise-plus-male-testosterone",
+    "category_xlsx": "ADVANCED FORMULA",
+    "category_slug": "advanced-formulas",
+    "form_xlsx": "Capsule",
+    "format": "capsule",
+    "total_mg_per_serving": 865
+  },
+  {
+    "name_clean": "Flex+ Joint & Inflammation",
+    "slug": "flex-plus-joint-and-inflammation",
+    "category_xlsx": "ADVANCED FORMULA",
+    "category_slug": "advanced-formulas",
+    "form_xlsx": "Capsule",
+    "format": "capsule",
+    "total_mg_per_serving": 715
+  },
+  {
+    "name_clean": "Iron+ Red Blood Cell Support",
+    "slug": "iron-plus-red-blood-cell-support",
+    "category_xlsx": "ADVANCED FORMULA",
+    "category_slug": "advanced-formulas",
+    "form_xlsx": "Capsule",
+    "format": "capsule",
+    "total_mg_per_serving": 884.65
+  },
+  {
+    "name_clean": "NeuroCalm BH4+ (Advanced)",
+    "slug": "neurocalm-bh4-plus-advanced",
+    "category_xlsx": "ADVANCED FORMULA",
+    "category_slug": "advanced-formulas",
+    "form_xlsx": "Capsule",
+    "format": "capsule",
+    "total_mg_per_serving": 175
+  },
+  {
+    "name_clean": "Histamine Relief Protocol",
+    "slug": "histamine-relief-protocol",
+    "category_xlsx": "ADVANCED FORMULA",
+    "category_slug": "advanced-formulas",
+    "form_xlsx": "Capsule",
+    "format": "capsule",
+    "total_mg_per_serving": 657.4
+  },
+  {
+    "name_clean": "NeuroAxis+",
+    "slug": "neuroaxis-plus",
+    "category_xlsx": "ADVANCED FORMULA",
+    "category_slug": "advanced-formulas",
+    "form_xlsx": "Capsule",
+    "format": "capsule",
+    "total_mg_per_serving": 700,
+    "_diff_note": "Soft-deactivated active=false 2026-05-01 per Gary directive add later; canonical includes for reference only, do not auto-reactivate"
+  },
+  {
+    "name_clean": "ThyroCalm-G+",
+    "slug": "thyrocalm-g-plus",
+    "category_xlsx": "ADVANCED FORMULA",
+    "category_slug": "advanced-formulas",
+    "form_xlsx": "Capsule",
+    "format": "capsule",
+    "total_mg_per_serving": 770.35
+  },
+  {
+    "name_clean": "Shred+",
+    "slug": "shred-plus",
+    "category_xlsx": "ADVANCED FORMULA",
+    "category_slug": "advanced-formulas",
+    "form_xlsx": "Powder",
+    "format": "powder",
+    "total_mg_per_serving": 1232.5
+  },
+  {
+    "name_clean": "DESIRE+ Female Hormonal",
+    "slug": "desire-plus-female-hormonal",
+    "category_xlsx": "WOMEN'S HEALTH",
+    "category_slug": "womens-health",
+    "form_xlsx": "Capsule",
+    "format": "capsule",
+    "total_mg_per_serving": 500
+  },
+  {
+    "name_clean": "Grow+ Pre-Natal Formula",
+    "slug": "grow-plus-pre-natal-formula",
+    "category_xlsx": "WOMEN'S HEALTH",
+    "category_slug": "womens-health",
+    "form_xlsx": "Capsule",
+    "format": "capsule",
+    "total_mg_per_serving": 1396.9
+  },
+  {
+    "name_clean": "Revitalizher Postnatal+",
+    "slug": "revitalizher-postnatal-plus",
+    "category_xlsx": "WOMEN'S HEALTH",
+    "category_slug": "womens-health",
+    "form_xlsx": "Capsule",
+    "format": "capsule",
+    "total_mg_per_serving": 939
+  },
+  {
+    "name_clean": "Thrive+ Post-Natal GLP-1",
+    "slug": "thrive-plus-post-natal-glp-1",
+    "category_xlsx": "WOMEN'S HEALTH",
+    "category_slug": "womens-health",
+    "form_xlsx": "Capsule",
+    "format": "capsule",
+    "total_mg_per_serving": 1038.5
+  },
+  {
+    "name_clean": "CycleSync+",
+    "slug": "cyclesync-plus",
+    "category_xlsx": "WOMEN'S HEALTH",
+    "category_slug": "womens-health",
+    "form_xlsx": "Powder",
+    "format": "powder",
+    "total_mg_per_serving": 1996.4
+  },
+  {
+    "name_clean": "MenoBalance+",
+    "slug": "menobalance-plus",
+    "category_xlsx": "WOMEN'S HEALTH",
+    "category_slug": "womens-health",
+    "form_xlsx": "Powder",
+    "format": "powder",
+    "total_mg_per_serving": 2424
+  },
+  {
+    "name_clean": "Radiance+",
+    "slug": "radiance-plus",
+    "category_xlsx": "WOMEN'S HEALTH",
+    "category_slug": "womens-health",
+    "form_xlsx": "Powder",
+    "format": "powder",
+    "total_mg_per_serving": 3351.7
+  },
+  {
+    "name_clean": "ThyroBalance+",
+    "slug": "thyrobalance-plus",
+    "category_xlsx": "WOMEN'S HEALTH",
+    "category_slug": "womens-health",
+    "form_xlsx": "Powder",
+    "format": "powder",
+    "total_mg_per_serving": 2518.4
+  },
+  {
+    "name_clean": "Sproutables Infant Tincture",
+    "slug": "sproutables-infant-tincture",
+    "category_xlsx": "CHILDREN'S MULTIVITAMINS",
+    "category_slug": "childrens-formulations",
+    "form_xlsx": "Tincture",
+    "format": "tincture",
+    "total_mg_per_serving": 112.063
+  },
+  {
+    "name_clean": "Sproutables Toddler Tablets",
+    "slug": "sproutables-toddler-tablets",
+    "category_xlsx": "CHILDREN'S MULTIVITAMINS",
+    "category_slug": "childrens-formulations",
+    "form_xlsx": "Tablet",
+    "format": "tablet",
+    "total_mg_per_serving": 227.215
+  },
+  {
+    "name_clean": "Sproutables Children Gummies",
+    "slug": "sproutables-children-gummies",
+    "category_xlsx": "CHILDREN'S MULTIVITAMINS",
+    "category_slug": "childrens-formulations",
+    "form_xlsx": "Gummy",
+    "format": "gummy",
+    "total_mg_per_serving": 90.665
+  },
+  { "name_clean": "ACAT+ Mitochondrial Support", "slug": "acat-plus-mitochondrial-support", "category_xlsx": "METHYLATION SNP SUPPORT", "category_slug": "methylation-snp", "form_xlsx": "Capsule", "format": "capsule", "total_mg_per_serving": 506.8 },
+  { "name_clean": "ACHY+ Acetylcholine Support", "slug": "achy-plus-acetylcholine-support", "category_xlsx": "METHYLATION SNP SUPPORT", "category_slug": "methylation-snp", "form_xlsx": "Capsule", "format": "capsule", "total_mg_per_serving": 706.2 },
+  { "name_clean": "ADO Support+ Purine Metabolism", "slug": "ado-support-plus-purine-metabolism", "category_xlsx": "METHYLATION SNP SUPPORT", "category_slug": "methylation-snp", "form_xlsx": "Capsule", "format": "capsule", "total_mg_per_serving": 596.8 },
+  { "name_clean": "BHMT+ Methylation Support", "slug": "bhmt-plus-methylation-support", "category_xlsx": "METHYLATION SNP SUPPORT", "category_slug": "methylation-snp", "form_xlsx": "Capsule", "format": "capsule", "total_mg_per_serving": 671.8 },
+  { "name_clean": "CBS Support+ Sulfur Pathway", "slug": "cbs-support-plus-sulfur-pathway", "category_xlsx": "METHYLATION SNP SUPPORT", "category_slug": "methylation-snp", "form_xlsx": "Capsule", "format": "capsule", "total_mg_per_serving": 730.5 },
+  { "name_clean": "COMT+ Neurotransmitter Balance", "slug": "comt-plus-neurotransmitter-balance", "category_xlsx": "METHYLATION SNP SUPPORT", "category_slug": "methylation-snp", "form_xlsx": "Capsule", "format": "capsule", "total_mg_per_serving": 579.3 },
+  { "name_clean": "DAO+ Histamine Balance", "slug": "dao-plus-histamine-balance", "category_xlsx": "METHYLATION SNP SUPPORT", "category_slug": "methylation-snp", "form_xlsx": "Capsule", "format": "capsule", "total_mg_per_serving": 629 },
+  { "name_clean": "GST+ Cellular Detox", "slug": "gst-plus-cellular-detox", "category_xlsx": "METHYLATION SNP SUPPORT", "category_slug": "methylation-snp", "form_xlsx": "Capsule", "format": "capsule", "total_mg_per_serving": 757 },
+  { "name_clean": "MAOA+ Neurochemical Balance", "slug": "maoa-plus-neurochemical-balance", "category_xlsx": "METHYLATION SNP SUPPORT", "category_slug": "methylation-snp", "form_xlsx": "Capsule", "format": "capsule", "total_mg_per_serving": 651.8 },
+  { "name_clean": "MTHFR+ Folate Metabolism", "slug": "mthfr-plus-folate-metabolism", "category_xlsx": "METHYLATION SNP SUPPORT", "category_slug": "methylation-snp", "form_xlsx": "Capsule", "format": "capsule", "total_mg_per_serving": 983.2 },
+  { "name_clean": "MTR+ Methylation Matrix", "slug": "mtr-plus-methylation-matrix", "category_xlsx": "METHYLATION SNP SUPPORT", "category_slug": "methylation-snp", "form_xlsx": "Capsule", "format": "capsule", "total_mg_per_serving": 942.3 },
+  { "name_clean": "MTRR+ Methylcobalamin Regen", "slug": "mtrr-plus-methylcobalamin-regen", "category_xlsx": "METHYLATION SNP SUPPORT", "category_slug": "methylation-snp", "form_xlsx": "Capsule", "format": "capsule", "total_mg_per_serving": 707.5 },
+  { "name_clean": "NAT Support+ Acetylation", "slug": "nat-support-plus-acetylation", "category_xlsx": "METHYLATION SNP SUPPORT", "category_slug": "methylation-snp", "form_xlsx": "Capsule", "format": "capsule", "total_mg_per_serving": 976.8 },
+  { "name_clean": "NOS+ Vascular Integrity", "slug": "nos-plus-vascular-integrity", "category_xlsx": "METHYLATION SNP SUPPORT", "category_slug": "methylation-snp", "form_xlsx": "Capsule", "format": "capsule", "total_mg_per_serving": 720 },
+  { "name_clean": "RFC1 Support+ Folate Transport", "slug": "rfc1-support-plus-folate-transport", "category_xlsx": "METHYLATION SNP SUPPORT", "category_slug": "methylation-snp", "form_xlsx": "Capsule", "format": "capsule", "total_mg_per_serving": 678.3 },
+  { "name_clean": "SHMT+ Glycine-Folate Balance", "slug": "shmt-plus-glycine-folate-balance", "category_xlsx": "METHYLATION SNP SUPPORT", "category_slug": "methylation-snp", "form_xlsx": "Capsule", "format": "capsule", "total_mg_per_serving": 727.6 },
+  { "name_clean": "SOD+ Antioxidant Defense", "slug": "sod-plus-antioxidant-defense", "category_xlsx": "METHYLATION SNP SUPPORT", "category_slug": "methylation-snp", "form_xlsx": "Capsule", "format": "capsule", "total_mg_per_serving": 569 },
+  { "name_clean": "SUOX+ Sulfite Clearance", "slug": "suox-plus-sulfite-clearance", "category_xlsx": "METHYLATION SNP SUPPORT", "category_slug": "methylation-snp", "form_xlsx": "Capsule", "format": "capsule", "total_mg_per_serving": 672.3 },
+  { "name_clean": "TCN2+ B12 Transport", "slug": "tcn2-plus-b12-transport", "category_xlsx": "METHYLATION SNP SUPPORT", "category_slug": "methylation-snp", "form_xlsx": "Capsule", "format": "capsule", "total_mg_per_serving": 644.3 },
+  { "name_clean": "VDR+ Receptor Activation", "slug": "vdr-plus-receptor-activation", "category_xlsx": "METHYLATION SNP SUPPORT", "category_slug": "methylation-snp", "form_xlsx": "Capsule", "format": "capsule", "total_mg_per_serving": 475.5 },
+  { "name_clean": "Chaga Mushroom Capsules", "slug": "chaga-mushroom-capsules", "category_xlsx": "FUNCTIONAL MUSHROOMS", "category_slug": "functional-mushrooms", "form_xlsx": "Capsule", "format": "capsule", "total_mg_per_serving": 515 },
+  { "name_clean": "Cordyceps Mushroom Capsules", "slug": "cordyceps-mushroom-capsules", "category_xlsx": "FUNCTIONAL MUSHROOMS", "category_slug": "functional-mushrooms", "form_xlsx": "Capsule", "format": "capsule", "total_mg_per_serving": 515 },
+  { "name_clean": "Lion's Mane Mushroom Capsules", "slug": "lion-s-mane-mushroom-capsules", "category_xlsx": "FUNCTIONAL MUSHROOMS", "category_slug": "functional-mushrooms", "form_xlsx": "Capsule", "format": "capsule", "total_mg_per_serving": 515, "_diff_note": "Production slug lions-mane-mushroom-capsules; canonical lion-s-mane diverges via apostrophe handling" },
+  { "name_clean": "Reishi Mushroom Capsules", "slug": "reishi-mushroom-capsules", "category_xlsx": "FUNCTIONAL MUSHROOMS", "category_slug": "functional-mushrooms", "form_xlsx": "Capsule", "format": "capsule", "total_mg_per_serving": 515 },
+  { "name_clean": "Turkey Tail Mushroom Capsules", "slug": "turkey-tail-mushroom-capsules", "category_xlsx": "FUNCTIONAL MUSHROOMS", "category_slug": "functional-mushrooms", "form_xlsx": "Capsule", "format": "capsule", "total_mg_per_serving": 515 }
+]
