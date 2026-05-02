@@ -54,6 +54,8 @@ export default async function ShopLandingPage() {
     ])
     const consumerSession = isConsumerSession(session.role)
     const heroBySlug = new Map(dbCategories.map((c) => [c.slug, c.hero_image_url]))
+    const videoBySlug = new Map(dbCategories.map((c) => [c.slug, c.video_url]))
+    const videoPosterBySlug = new Map(dbCategories.map((c) => [c.slug, c.video_poster_url]))
 
     const orderedCategories = BENTO_ORDER.map((slug) =>
         SHOP_CATEGORIES.find((c) => c.slug === slug),
@@ -83,6 +85,8 @@ export default async function ShopLandingPage() {
                                 key={category.slug}
                                 category={category}
                                 heroImageUrl={heroBySlug.get(category.slug) ?? null}
+                                videoUrl={videoBySlug.get(category.slug) ?? null}
+                                videoPosterUrl={videoPosterBySlug.get(category.slug) ?? null}
                                 positionClass={BENTO_POSITION[category.slug]}
                             />
                         ))}

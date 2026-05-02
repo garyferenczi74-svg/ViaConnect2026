@@ -26,6 +26,8 @@ export interface ShopCategoryRow {
     name: string
     tagline: string
     hero_image_url: string | null
+    video_url: string | null
+    video_poster_url: string | null
     display_order: number
     card_variant: 'supplement' | 'testing'
 }
@@ -73,7 +75,9 @@ export async function getShopCategories(): Promise<ShopCategoryRow[]> {
         const { data, error } = await withTimeout(
             sb
                 .from('categories')
-                .select('slug, name, tagline, hero_image_url, display_order, card_variant')
+                .select(
+                    'slug, name, tagline, hero_image_url, video_url, video_poster_url, display_order, card_variant',
+                )
                 .order('display_order', { ascending: true }) as Promise<{
                 data: ShopCategoryRow[] | null
                 error: unknown
