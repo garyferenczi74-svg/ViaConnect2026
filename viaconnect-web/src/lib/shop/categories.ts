@@ -29,7 +29,7 @@ export interface ShopCategory {
 export const SHOP_CATEGORIES: readonly ShopCategory[] = [
     {
         slug: 'base-formulations',
-        name: 'Base formulas',
+        name: 'Base Formulas',
         tagline: 'Core building blocks. The foundation of every Via Cura protocol.',
         cardVariant: 'supplement',
     },
