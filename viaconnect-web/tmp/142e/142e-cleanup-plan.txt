@@ -1,0 +1,74 @@
+Prompt #142e Cleanup Plan
+Generated: 2026-05-02
+Authority: Gary canonical 2026-05-02 #142e spec delivery
+
+PRE-FLIGHT FINDINGS
+
+§2 Q1 (3 dropped slugs in production):
+  Only 1 of 3 remains: neuroaxis-plus (active=false, soft-deactivated 2026-05-01).
+  aptigen-complex: ALREADY HARD-DELETED 2026-05-01 via Phase L migration (run_id captured in backfill_audit source_table=phase_L_aptigen_remove_neurocalm_recategorize)
+  neurocalm-bh4-complex: ALREADY HARD-DELETED 2026-05-02 via 144v2_remove_neurocalm_bh4_complex (run_id captured in backfill_audit)
+
+§2 Q2 (neurocalm-bh4-plus-advanced check): EXISTS in advanced-formulas, active=true. Not touched per spec.
+§2 Q3 (all neurocalm rows): exactly 2 remain (NeuroCalm BH4+ Advanced + NeuroCalm+) per Gary final canonical 2026-05-02.
+§2 Q4 (peptide collisions): zero. Defensive guard satisfied.
+
+PER-SKU DISPOSITION
+
+aptigen-complex (base-formulations)
+  STATUS: already hard-deleted 2026-05-01
+  PRIOR ACTION: Phase L migration deleted the row + audited full to_jsonb in backfill_audit.columns_loaded.old_value
+  REASON: per Phase L audit "aptigen_unauthorized_delete_per_gary_directive" (Gary deauthorized prior to #142e)
+  CURRENT ACTION: no-op for #142e; reference audit data preserved
+  ROLLBACK: pull old_value from backfill_audit row source_table=phase_L_aptigen_remove_neurocalm_recategorize
+
+neuroaxis-plus (advanced-formulas)
+  STATUS: soft-deactivated 2026-05-01 via 142_neuroaxis_deactivate; active=false
+  FK REFERENCES: zero (order_items=0, helix_transactions=0, all map_* tables=0)
+  CURRENT ACTION: HARD DELETE per §4.2 default (FK refs zero); supersedes prior soft-deactivate now that Gary has confirmed permanent retirement via #142e
+  AUDIT: full to_jsonb of row pre-delete captured in old_value
+  ROLLBACK: pull old_value from new backfill_audit row source_table=142e_sku_cleanup
+  IMAGE: image_urls[0] points at supplement-photos/Advance%20Formulations/neurocalm-plus-calm-plus.png; this filename is also referenced by FC-CALM-001 NeuroCalm+ per #142d OQ2 unresolved; leave in place for FC-CALM-001 to continue using
+
+neurocalm-bh4-complex (base-formulations)
+  STATUS: already hard-deleted 2026-05-02
+  PRIOR ACTION: 144v2_remove_neurocalm_bh4_complex deleted the row + audited full to_jsonb
+  REASON: per audit "orphan_canonical_delete_per_gary_directive"; was never in v2 xlsx canonical
+  CURRENT ACTION: no-op for #142e; reference audit data preserved
+  ROLLBACK: pull old_value from backfill_audit row source_table=144v2_remove_neurocalm_bh4_complex
+
+STORAGE ORPHAN FILES (§5 evaluation)
+
+Base Formulations/aptigen-complex.png
+  STATUS: per #142d image map status=missing; no file uploaded to bucket
+  ACTION: no storage cleanup needed (no file exists)
+
+Advance Formulations/neuroaxis-plus.png
+  STATUS: per #142d image map status=missing; no file uploaded to bucket
+  ACTION: no storage cleanup needed (no file exists)
+
+Base Formulations/neurocalm-bh4-complex.png
+  STATUS: per #142d §1 root cause "orphan photo"; file exists in storage but had no canonical product match
+  ACTION RECOMMENDATION: leave in place per spec §5 default unless Gary explicitly approves storage delete in §8 Q1
+
+CANONICAL EXPORT v2_rev3 DIFF
+
+v2_rev2 supersedes by v2_rev3 with two products removed:
+  - aptigen-complex (was in BASE FORMULAS; 15 ingredient rows removed)
+  - neuroaxis-plus (was in ADVANCED FORMULA; 17 ingredient rows removed)
+
+neurocalm-bh4-complex was never in canonical, so v2_rev3 has no further change for that slug.
+
+Resulting v2_rev3 product count: 62 (down from 64 in v2_rev2 which already had Amino Acid Matrix+ added per #145).
+
+OPEN QUESTIONS DEFERRED
+
+§8 Q1 storage orphan deletion: default leave in place; Gary confirms for any change
+§8 Q2 hard vs soft delete: spec default applied; neuroaxis-plus hard-deleted (FK zero)
+§8 Q3 backup table retention: 90 days default
+§8 Q4 master xlsx update: next xlsx revision should remove aptigen-complex + neuroaxis-plus
+§8 Q5 future revivability: storage files retained per §5 default leave-in-place
+§8 Q6 neurocalm-bh4-complex root cause: row was inserted by early seeding pass before #142 v3 standardized canonical workflow; verified via prior audit logs
+§8 Q7 neurocalm-bh4-complex summary copy salvage to neurocalm-bh4-plus-advanced: deferred; out of #142e scope
+
+PROCEED to scripts/142e/migration cleanup_142e.sql for the single remaining hard-delete on neuroaxis-plus.

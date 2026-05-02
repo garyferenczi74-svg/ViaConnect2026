@@ -1,0 +1,43 @@
+{
+  "slug": "neuroaxis-plus",
+  "snapshot_at": "2026-05-02T22:30:00Z",
+  "status": "TARGET_FOR_HARD_DELETE_THIS_PHASE",
+  "current_state": {
+    "id": "eefc69ef-964f-40ce-a08f-d6699fdf1af1",
+    "sku": "FC-NEUROAXIS-001",
+    "name": "NeuroAxis+",
+    "slug": "neuroaxis-plus",
+    "category": "supplement",
+    "category_slug": "advanced-formulas",
+    "format": "capsule",
+    "active": false,
+    "price": 0,
+    "price_msrp": null,
+    "pricing_tier": "L1",
+    "ingredient_count": 17,
+    "image_url": "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/supplement-photos/Advance%20Formulations/neurocalm-plus-calm-plus.png",
+    "status_tags": ["TIER 3"],
+    "created_at": "2026-05-01T00:06:01Z (Phase G insert)"
+  },
+  "history": [
+    {"date": "2026-04-30", "action": "Phase G insert as canonical orphan resolution"},
+    {"date": "2026-05-01", "action": "soft-deactivated active=false per Gary directive add later"},
+    {"date": "2026-05-02", "action": "permanent retirement per #142e spec"}
+  ],
+  "foreign_key_references": {
+    "order_items": 0,
+    "helix_transactions": 0,
+    "map_policies": 0,
+    "map_price_observations": 0,
+    "map_violations": 0,
+    "map_vip_exemptions": 0,
+    "map_waiver_skus": 0
+  },
+  "image_urls_present": true,
+  "image_storage_files": [
+    "supplement-photos/Advance Formulations/neurocalm-plus-calm-plus.png  (NOTE: also referenced by FC-CALM-001 NeuroCalm+ per #142d OQ2; do not delete from storage even if neuroaxis-plus row deleted)"
+  ],
+  "in_canonical_xlsx": "v2_rev1 (was present); v2_rev3 (REMOVED)",
+  "decision": "HARD DELETE per §4.2 default since FK references zero across all relevant tables; supersedes prior soft-deactivate now that Gary has confirmed permanent retirement via #142e spec body delivery",
+  "rollback_path": "SELECT columns_loaded->'old_value' FROM public.backfill_audit WHERE source_table = '142e_sku_cleanup' AND columns_loaded->'old_value'->>'slug' = 'neuroaxis-plus' LIMIT 1; (post-migration)"
+}

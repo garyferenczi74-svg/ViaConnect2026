@@ -1,0 +1,41 @@
+{
+  "supersedes": "vc_master_formulations_v2_rev2.json (which superseded v2_rev1 via #145 Amino Acid Matrix+ addition)",
+  "revision_date": "2026-05-02",
+  "authority": "Gary canonical 2026-05-02 Prompt #142e",
+  "protocol": "#142 v3 §11 standing xlsx revision tracking",
+  "products_added": [],
+  "products_removed": [
+    {
+      "slug": "aptigen-complex",
+      "name_clean": "Aptigen Complex",
+      "category_slug": "base-formulations",
+      "category_xlsx": "BASE FORMULAS",
+      "ingredient_rows_removed": 15,
+      "reason": "Too close to other Base Formulations products per Gary 2026-05-02"
+    },
+    {
+      "slug": "neuroaxis-plus",
+      "name_clean": "NeuroAxis+",
+      "category_slug": "advanced-formulas",
+      "category_xlsx": "ADVANCED FORMULA",
+      "ingredient_rows_removed": 17,
+      "reason": "Too close to other Advanced Formulas products per Gary 2026-05-02"
+    }
+  ],
+  "products_changed": [],
+  "format_changes": [],
+  "category_slug_reassignments": [],
+  "ingredient_dose_changes": [],
+  "summary": "2 products removed: aptigen-complex from base-formulations (15 ingredient rows), neuroaxis-plus from advanced-formulas (17 ingredient rows). 0 added/changed. neurocalm-bh4-complex was never in canonical (phantom row only in production); deleted from production via 144v2_remove_neurocalm_bh4_complex but no canonical change. Resulting v2_rev3 product count: 62 (down from v2_rev2 at 64 which included #145 Amino Acid Matrix+ addition). Total ingredient row count drops by 32. v2_rev2 canonical preserved at scripts/145/ never modified.",
+  "production_state_at_promotion": {
+    "base_formulations_active": 9,
+    "advanced_formulas_active": 17,
+    "methylation_snp_active": 20,
+    "womens_health_active": 8,
+    "childrens_formulations_active": 3,
+    "functional_mushrooms_active": 5,
+    "genex360_active": 8,
+    "total_active_non_peptide": 70,
+    "note_on_spec_count_discrepancy": "Spec §7 expected base=8 + advanced=18 + total=62; actual base=9 + advanced=17 because spec assumed pre-Phase-L state. NeuroCalm+ was moved base→advanced by Phase L (not yet reflected in spec), and NeuroAxis+ was already inactive pre-#142e via 2026-05-01 soft-deactivate. Net total non-peptide active=70 vs spec-implied 62 because canonical drops 2 (aptigen + neuroaxis) and database has 62 + 8 testing kits = 70 active rows total."
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "slug": "aptigen-complex",
+  "snapshot_at": "2026-05-02T22:30:00Z",
+  "status": "ALREADY_DELETED_BY_PRIOR_PHASE",
+  "prior_deletion": {
+    "source_table": "phase_L_aptigen_remove_neurocalm_recategorize",
+    "applied_at": "2026-05-01T05:16:48Z",
+    "method": "aptigen_unauthorized_delete_per_gary_directive",
+    "rollback_path": "SELECT columns_loaded->'old_value' FROM public.backfill_audit WHERE source_table = 'phase_L_aptigen_remove_neurocalm_recategorize' AND columns_loaded->'old_value'->>'slug' = 'aptigen-complex' LIMIT 1;"
+  },
+  "foreign_key_references": {
+    "order_items": 0,
+    "helix_transactions": 0,
+    "map_policies": 0,
+    "map_price_observations": 0,
+    "map_violations": 0,
+    "map_vip_exemptions": 0,
+    "map_waiver_skus": 0
+  },
+  "image_urls_present": false,
+  "image_storage_files": [],
+  "in_canonical_xlsx": "v2_rev1 (was present); v2_rev3 (REMOVED)",
+  "current_action": "no-op for #142e; row already deleted; audit + rollback data preserved in prior backfill_audit row"
+}
