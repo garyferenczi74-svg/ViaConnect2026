@@ -1,25 +1,27 @@
 /**
- * Supplement card body (Variant A) per Prompt #141 v3 §4.2.
- * Slots top to bottom: name, format, price, swappable description vs
- * formulation panel, tab strip, Add to Cart button.
+ * Supplement card body (Variant A) per Prompt #141 v3 §4.2, restructured
+ * per Prompt #144 v2 §3.1.
  *
- * The Add to Cart button is a Phase C stub. Cart wiring lands in Phase F
- * (cart drawer + checkout). For now it logs the SKU and stops the card-wide
- * Link from navigating.
+ * Slots top to bottom: name, format, price, short blurb, FullDescriptionLink,
+ * FormulationDropdown, Add to Cart. The blurb stays in place when the
+ * dropdown expands (no content swap; layout pushes downward instead).
+ *
+ * Single-open accordion: isFormulationOpen + onToggleFormulation are
+ * passed down from <PlpProductGrid> so opening one card's Formulation
+ * collapses any other open card across the grid.
+ *
+ * The Add to Cart button stops the card-wide Link from navigating so
+ * direct cart adds work without leaving the PLP. Cart wiring lands in
+ * Phase F (cart drawer plus checkout); for now it logs the SKU.
  */
 'use client'
 
-import { useState } from 'react'
 import { ShoppingBag } from 'lucide-react'
-import { CardTabStrip } from './CardTabStrip'
 import { FormatIndicator } from './FormatIndicator'
+import { FormulationDropdown } from './FormulationDropdown'
+import { FullDescriptionLink } from './FullDescriptionLink'
 import { addToCart } from '@/lib/shop/cart-store'
 import type { ShopProduct } from '@/lib/shop/queries'
-
-const SUPPLEMENT_TABS = [
-    { key: 'description', label: 'Description' },
-    { key: 'formulation', label: 'Formulation' },
-]
 
 function formatPrice(price: number | null | undefined): string {
     if (price == null) return ''
@@ -28,48 +30,39 @@ function formatPrice(price: number | null | undefined): string {
 
 interface ProductCardSupplementBodyProps {
     product: ShopProduct
+    isFormulationOpen: boolean
+    onToggleFormulation: () => void
 }
 
-export function ProductCardSupplementBody({ product }: ProductCardSupplementBodyProps) {
-    const [activeTab, setActiveTab] = useState<string>('description')
+export function ProductCardSupplementBody({
+    product,
+    isFormulationOpen,
+    onToggleFormulation,
+}: ProductCardSupplementBodyProps) {
     const displayPrice = product.price_msrp ?? product.price
     const summary = product.summary ?? ''
     const description = product.description ?? ''
-    const ingredients = product.ingredients ?? []
+    const slug = product.slug ?? product.sku
 
     return (
-        <div className="flex flex-col gap-2 p-4">
-            <h3 className="text-lg font-medium text-white tracking-tight">{product.name}</h3>
+        <div className="flex flex-col gap-3 p-4">
+            <h3 className="text-lg font-medium tracking-tight text-white">{product.name}</h3>
             <FormatIndicator format={product.format} />
-            <p className="text-base text-white/75 font-medium">{formatPrice(displayPrice)}</p>
+            <p className="text-base font-medium text-white/75">{formatPrice(displayPrice)}</p>
 
-            {activeTab === 'description' ? (
-                <p className="text-sm text-white/70 leading-relaxed line-clamp-4 min-h-[5rem]">
-                    {summary || description || 'Description coming soon.'}
-                </p>
-            ) : (
-                <div className="text-sm text-white/70 leading-relaxed line-clamp-4 min-h-[5rem]">
-                    {ingredients.length === 0 ? (
-                        <span className="text-white/45">Formulation details coming soon.</span>
-                    ) : (
-                        <ul className="space-y-0.5">
-                            {ingredients.slice(0, 6).map((ing, i) => (
-                                <li key={`${ing.name}-${i}`}>
-                                    {ing.name}
-                                    {ing.dose != null && ing.unit ? ` ${ing.dose} ${ing.unit}` : ''}
-                                </li>
-                            ))}
-                        </ul>
-                    )}
-                </div>
-            )}
+            <p className="line-clamp-3 text-sm leading-relaxed text-white/70">
+                {summary || description || 'Description coming soon.'}
+            </p>
 
-            <CardTabStrip
-                tabs={SUPPLEMENT_TABS}
-                activeKey={activeTab}
-                onChange={setActiveTab}
-                className="mt-auto"
-            />
+            <div className="mt-auto flex flex-col gap-2">
+                <FullDescriptionLink slug={slug} categorySlug={product.category_slug} />
+                <FormulationDropdown
+                    ingredients={product.ingredients}
+                    totalMgPerServing={null}
+                    isOpen={isFormulationOpen}
+                    onToggle={onToggleFormulation}
+                />
+            </div>
 
             <button
                 type="button"
@@ -82,7 +75,10 @@ export function ProductCardSupplementBody({ product }: ProductCardSupplementBody
                             productId: product.id,
                             name: product.name,
                             format: product.format,
-                            image: (product.image_urls && product.image_urls[0]) || product.image_url || null,
+                            image:
+                                (product.image_urls && product.image_urls[0]) ||
+                                product.image_url ||
+                                null,
                             price: product.price_msrp ?? product.price ?? 0,
                             pricingTier: product.pricing_tier ?? null,
                             productType: 'supplement',
@@ -90,9 +86,9 @@ export function ProductCardSupplementBody({ product }: ProductCardSupplementBody
                         { openDrawer: true },
                     )
                 }}
-                className="mt-2 flex items-center justify-center gap-2 w-full bg-[#2DA5A0] hover:bg-[#26918d] text-white font-medium py-3 rounded-xl transition-colors"
+                className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-[#2DA5A0] py-3 font-medium text-white transition-colors hover:bg-[#26918d]"
             >
-                <ShoppingBag className="w-4 h-4" strokeWidth={1.5} />
+                <ShoppingBag className="h-4 w-4" strokeWidth={1.5} />
                 Add to Cart
             </button>
         </div>

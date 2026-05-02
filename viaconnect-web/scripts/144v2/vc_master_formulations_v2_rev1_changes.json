@@ -1,0 +1,40 @@
+{
+  "supersedes": "vc_master_formulations_v2.json",
+  "revision_date": "2026-05-02",
+  "authority": "Gary canonical 2026-05-02",
+  "protocol": "#142 v3 §11 standing xlsx revision tracking",
+  "changes": [
+    {
+      "slug": "bhb-ketone-salts",
+      "field": "format",
+      "v2_value": "powder",
+      "v2_rev1_value": "capsule",
+      "v2_form_xlsx": "Scoop Powder",
+      "v2_rev1_form_xlsx": "Capsule",
+      "category": "format_change",
+      "review_required": "shop-team_signed_off_by_Gary_2026_05_02"
+    },
+    {
+      "slug": "electrolyte-blend",
+      "field": "format",
+      "v2_value": "powder",
+      "v2_rev1_value": "tablet",
+      "v2_form_xlsx": "Scoop Powder",
+      "v2_rev1_form_xlsx": "Tablet",
+      "category": "format_change",
+      "note": "tablet token added to #141 v3 allowed format set as documentation amendment",
+      "review_required": "shop-team_signed_off_by_Gary_2026_05_02"
+    }
+  ],
+  "no_change_slugs": [
+    {
+      "slug": "blast-plus-nitric-oxide-stack",
+      "note": "v2 canonical already correct (capsule); database divergence (powder) corrected via Phase 2 migration; v2_rev1 export unchanged for this slug"
+    }
+  ],
+  "ingredient_dose_changes": [],
+  "category_slug_reassignments": [],
+  "products_added": [],
+  "products_removed": [],
+  "summary": "2 format corrections (bhb-ketone-salts powder->capsule, electrolyte-blend powder->tablet); 1 database divergence corrected without canonical change (blast-plus-nitric-oxide-stack); 0 ingredient dose changes; 0 category reassignments; 0 SKUs added or removed. v2 canonical preserved at scripts/142d/ era and prior; v2_rev1 promoted to canonical post-Gary written approval 2026-05-02."
+}

@@ -14,7 +14,7 @@
  */
 'use client'
 
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { ProductCard } from './ProductCard'
 import { FilterChipRow } from './FilterChipRow'
@@ -66,6 +66,11 @@ export function PlpProductGrid({
         return applySort(filtered, filters.sort)
     }, [products, filters, categorySlug])
 
+    // Single-open accordion across the grid per Prompt #144 v2 §3.1: opening
+    // one card's Formulation/TestingMeta dropdown collapses any other open
+    // card. Tracks the currently open product id; null means none open.
+    const [openCardId, setOpenCardId] = useState<string | null>(null)
+
     return (
         <div className="flex flex-col gap-6">
             <div className="flex flex-col gap-4">
@@ -96,6 +101,10 @@ export function PlpProductGrid({
                             product={product}
                             variant={variant}
                             href={`/shop/product/${product.slug ?? product.sku}`}
+                            isFormulationOpen={openCardId === product.id}
+                            onToggleFormulation={() =>
+                                setOpenCardId((prev) => (prev === product.id ? null : product.id))
+                            }
                         />
                     ))}
                 </div>

@@ -1,0 +1,6 @@
+slug,field,v2_value,v2_rev1_value,authority,note
+bhb-ketone-salts,format,powder,capsule,Gary canonical 2026-05-02,xlsx canonical was Scoop Powder; Gary specified actual product is capsule
+bhb-ketone-salts,form_xlsx,Scoop Powder,Capsule,Gary canonical 2026-05-02,documentation alignment for next xlsx revision
+electrolyte-blend,format,powder,tablet,Gary canonical 2026-05-02,xlsx canonical was Scoop Powder; Gary specified actual product is tablet
+electrolyte-blend,form_xlsx,Scoop Powder,Tablet,Gary canonical 2026-05-02,tablet token added to #141 v3 allowed format set
+blast-plus-nitric-oxide-stack,format,capsule,capsule,no_change,xlsx canonical already capsule; database divergence (powder) corrected via Phase 2 migration to match canonical; v2_rev1 canonical unchanged for this slug

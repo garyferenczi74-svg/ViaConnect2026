@@ -44,9 +44,18 @@ interface ProductCardProps {
     variant: ShopCardVariant
     href: string
     geneMatchActive?: boolean
+    isFormulationOpen: boolean
+    onToggleFormulation: () => void
 }
 
-export function ProductCard({ product, variant, href, geneMatchActive }: ProductCardProps) {
+export function ProductCard({
+    product,
+    variant,
+    href,
+    geneMatchActive,
+    isFormulationOpen,
+    onToggleFormulation,
+}: ProductCardProps) {
     const primaryImage = (product.image_urls && product.image_urls[0]) || product.image_url || null
     const tags = product.status_tags ?? []
     const visibleTags = [
@@ -91,9 +100,17 @@ export function ProductCard({ product, variant, href, geneMatchActive }: Product
                 )}
             </div>
             {variant === 'testing' ? (
-                <ProductCardTestingBody product={product} />
+                <ProductCardTestingBody
+                    product={product}
+                    isFormulationOpen={isFormulationOpen}
+                    onToggleFormulation={onToggleFormulation}
+                />
             ) : (
-                <ProductCardSupplementBody product={product} />
+                <ProductCardSupplementBody
+                    product={product}
+                    isFormulationOpen={isFormulationOpen}
+                    onToggleFormulation={onToggleFormulation}
+                />
             )}
         </Link>
     )

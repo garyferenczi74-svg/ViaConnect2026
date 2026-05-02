@@ -1,18 +1,20 @@
 /**
  * PdpRightRail is the interactive right column of the product detail page
- * per Prompt #141 v3 §5.3. Holds tab state, quantity stepper state, and
- * the Add to Cart / Add to Bundle buttons. Tabs are expanded compared to
- * the in-card variant: Supplement gets 4 (Description, Formulation,
- * Evidence, FAQ), Testing gets 5 (What's Tested, Who It's For, What You
- * Get, Sample Report, FAQ).
+ * per Prompt #141 v3 §5.3, restructured per Prompt #144 v2 §3.6.
  *
- * Cart and bundle wiring lands in Phase F. Phase E2 stubs both buttons
- * with console.info and the visible UI, so the right rail is a faithful
- * preview of the final flow.
+ * Description and Formulation tabs are replaced with FullDescriptionLink
+ * (routes to /shop/product/<slug>/full) and FormulationDropdown (inline
+ * single-open accordion showing the FULL ingredient list). The short
+ * blurb above stays in place when the dropdown expands. Evidence and FAQ
+ * tabs remain as stub tab strip for future evidence + faq content.
  *
- * Genetic match section renders inline when product.snp_targets has any
- * entries. The full per-user CAQ check (gene_match_score >= 0.75 AND user
- * has CAQ on file) lives in a later phase that wires in the auth context.
+ * Testing variant follows the same pattern: TestingMetaDropdown replaces
+ * the What's Tested / Who It's For / What You Get tabs; Sample Report
+ * and FAQ tabs remain as stubs.
+ *
+ * Cart and bundle wiring lands in Phase F. Genetic match section renders
+ * inline when product.snp_targets has any entries; full per-user CAQ
+ * check lives in a later phase.
  */
 'use client'
 
@@ -20,21 +22,19 @@ import { useState } from 'react'
 import { Bookmark, Minus, Plus, ShoppingBag } from 'lucide-react'
 import { CardTabStrip } from './CardTabStrip'
 import { FormatIndicator } from './FormatIndicator'
+import { FormulationDropdown } from './FormulationDropdown'
+import { FullDescriptionLink } from './FullDescriptionLink'
+import { TestingMetaDropdown } from './TestingMetaDropdown'
 import { addToCart } from '@/lib/shop/cart-store'
 import type { ShopCardVariant } from '@/lib/shop/categories'
 import type { ShopProduct } from '@/lib/shop/queries'
 
 const SUPPLEMENT_TABS = [
-    { key: 'description', label: 'Description' },
-    { key: 'formulation', label: 'Formulation' },
     { key: 'evidence', label: 'Evidence' },
     { key: 'faq', label: 'FAQ' },
 ]
 
 const TESTING_TABS = [
-    { key: 'what_is_tested', label: "What's Tested" },
-    { key: 'who_its_for', label: "Who It's For" },
-    { key: 'what_you_get', label: 'What You Get' },
     { key: 'sample_report', label: 'Sample Report' },
     { key: 'faq', label: 'FAQ' },
 ]
@@ -53,11 +53,14 @@ export function PdpRightRail({ product, variant }: PdpRightRailProps) {
     const tabs = variant === 'testing' ? TESTING_TABS : SUPPLEMENT_TABS
     const [activeTab, setActiveTab] = useState<string>(tabs[0].key)
     const [quantity, setQuantity] = useState<number>(1)
+    const [dropdownOpen, setDropdownOpen] = useState<boolean>(false)
 
     const displayPrice = product.price_msrp ?? product.price
     const ctaCopy =
         variant === 'testing' && product.requires_practitioner_order ? 'Order Test Kit' : 'Add to Cart'
     const snpTargets = product.snp_targets ?? []
+    const summary = product.summary ?? ''
+    const slug = product.slug ?? product.sku
 
     return (
         <div className="flex flex-col gap-6">
@@ -78,6 +81,10 @@ export function PdpRightRail({ product, variant }: PdpRightRailProps) {
                     </p>
                 )}
             </div>
+
+            {summary && (
+                <p className="text-sm leading-relaxed text-white/75 md:text-base">{summary}</p>
+            )}
 
             {variant === 'supplement' && (
                 <div className="flex items-center gap-3">
@@ -145,6 +152,24 @@ export function PdpRightRail({ product, variant }: PdpRightRailProps) {
                 )}
             </div>
 
+            <div className="flex flex-col gap-3">
+                <FullDescriptionLink slug={slug} categorySlug={product.category_slug} />
+                {variant === 'testing' ? (
+                    <TestingMetaDropdown
+                        testingMeta={product.testing_meta}
+                        isOpen={dropdownOpen}
+                        onToggle={() => setDropdownOpen((open) => !open)}
+                    />
+                ) : (
+                    <FormulationDropdown
+                        ingredients={product.ingredients}
+                        totalMgPerServing={null}
+                        isOpen={dropdownOpen}
+                        onToggle={() => setDropdownOpen((open) => !open)}
+                    />
+                )}
+            </div>
+
             <div className="border-t border-white/[0.06] pt-6">
                 <CardTabStrip
                     tabs={tabs}
@@ -152,8 +177,8 @@ export function PdpRightRail({ product, variant }: PdpRightRailProps) {
                     onChange={setActiveTab}
                     className="overflow-x-auto"
                 />
-                <div className="mt-4 min-h-[8rem] text-sm leading-relaxed text-white/70">
-                    <PdpTabContent product={product} variant={variant} activeTab={activeTab} />
+                <div className="mt-4 min-h-[6rem] text-sm leading-relaxed text-white/70">
+                    <PdpTabContent variant={variant} activeTab={activeTab} />
                 </div>
             </div>
 
@@ -179,56 +204,26 @@ export function PdpRightRail({ product, variant }: PdpRightRailProps) {
 }
 
 function PdpTabContent({
-    product,
     variant,
     activeTab,
 }: {
-    product: ShopProduct
     variant: ShopCardVariant
     activeTab: string
 }) {
     if (variant === 'supplement') {
-        if (activeTab === 'description') {
-            return (
-                <p>
-                    {product.description || product.summary || 'Description coming soon.'}
-                </p>
-            )
+        if (activeTab === 'evidence') {
+            return <span className="text-white/45">Clinical evidence coming soon.</span>
         }
-        if (activeTab === 'formulation') {
-            const ingredients = product.ingredients ?? []
-            if (ingredients.length === 0) {
-                return <span className="text-white/45">Formulation details coming soon.</span>
-            }
-            return (
-                <ul className="space-y-1">
-                    {ingredients.map((ing, i) => (
-                        <li key={`${ing.name}-${i}`}>
-                            <span className="text-white">{ing.name}</span>
-                            {ing.dose != null && ing.unit && (
-                                <span className="text-white/55">
-                                    {' '}
-                                    {ing.dose} {ing.unit}
-                                </span>
-                            )}
-                            {ing.role && <span className="ml-2 text-white/45">({ing.role})</span>}
-                        </li>
-                    ))}
-                </ul>
-            )
+        if (activeTab === 'faq') {
+            return <span className="text-white/45">FAQ coming soon.</span>
         }
         return <span className="text-white/45">Coming soon.</span>
     }
-
-    const meta = product.testing_meta ?? {}
-    if (activeTab === 'what_is_tested') {
-        return <p>{meta.what_is_tested ?? 'Details coming soon.'}</p>
+    if (activeTab === 'sample_report') {
+        return <span className="text-white/45">Sample report viewer coming soon.</span>
     }
-    if (activeTab === 'who_its_for') {
-        return <p>{meta.who_its_for ?? 'Details coming soon.'}</p>
-    }
-    if (activeTab === 'what_you_get') {
-        return <p>{meta.what_you_get ?? 'Details coming soon.'}</p>
+    if (activeTab === 'faq') {
+        return <span className="text-white/45">FAQ coming soon.</span>
     }
     return <span className="text-white/45">Coming soon.</span>
 }
