@@ -1,0 +1,20 @@
+Prompt #145 Marshall Scan Log
+
+Scanner state: NOT script-invocable (per #142 v3 §9 open question 1, unresolved as of 2026-05-02).
+
+Per #142 v3 §6 fallback: when Marshall is not script-invocable, every string requires line-by-line human review before write.
+
+Strings scanned (human review):
+  - products.summary  (Prompt #145 §4.1 short blurb, 50 words / 312 chars)
+  - products.description  (Prompt #145 §4.2 long-form, 290 words)
+
+Review record:
+  - Authored and approved by Gary in the Prompt #145 spec body delivered 2026-05-02.
+  - Contains: amino acid scientific terminology (L-Leucine, L-Isoleucine, L-Valine, L-Lysine HCl, L-Threonine, L-Phenylalanine, L-Methionine, L-Histidine, L-Tryptophan), mTOR signaling reference, muscle protein synthesis phrase, 2:1:1 BCAA ratio.
+  - Does NOT contain: peptide names, prescription drug names, FDA disallowed disease-treatment claims, SNP names (MTHFR/COMT/etc.), FarmCeutica brand reference, em or en dashes, emoji.
+  - "muscle protein synthesis" is acknowledged as common false-positive trigger per spec §4.3; Gary's authorship indicates intentional inclusion of clinical phrasing.
+  - "L-Lysine" is acknowledged as occasional false-positive trigger per spec §4.3 (older dictionaries flag as brand name); Gary's authorship indicates intentional inclusion of standard nomenclature.
+
+Decision: WRITE APPROVED. Drafts proceed to migration insert.
+
+Authority: Gary canonical 2026-05-02 Prompt #145 delivery.

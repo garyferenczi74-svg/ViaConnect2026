@@ -1,0 +1,35 @@
+{
+  "supersedes": "vc_master_formulations_v2_rev1.json",
+  "revision_date": "2026-05-02",
+  "authority": "Gary canonical 2026-05-02 Prompt #145",
+  "protocol": "#142 v3 §11 standing xlsx revision tracking",
+  "products_added": [
+    {
+      "name_clean": "Amino Acid Matrix+",
+      "slug": "amino-acid-matrix-plus",
+      "category_xlsx": "BASE FORMULAS",
+      "category_slug": "base-formulations",
+      "form_xlsx": "Scoop Powder",
+      "format": "powder",
+      "ingredients": [
+        { "name": "L-Leucine", "mg": 500, "unit": "mg" },
+        { "name": "L-Isoleucine", "mg": 250, "unit": "mg" },
+        { "name": "L-Valine", "mg": 250, "unit": "mg" },
+        { "name": "L-Lysine HCl", "mg": 250, "unit": "mg" },
+        { "name": "L-Threonine", "mg": 200, "unit": "mg" },
+        { "name": "L-Phenylalanine", "mg": 200, "unit": "mg" },
+        { "name": "L-Methionine", "mg": 175, "unit": "mg" },
+        { "name": "L-Histidine", "mg": 100, "unit": "mg" },
+        { "name": "L-Tryptophan", "mg": 75, "unit": "mg" }
+      ],
+      "total_mg_per_serving": 2000,
+      "_note": "Production row FC-AMINO-001 already existed with slug amino-acid-matrix-plus from #142a load with ingredients=[] and stale description; Gary Option A 2026-05-02 directs UPDATE existing row with full spec data rather than INSERT new sku"
+    }
+  ],
+  "products_changed": [],
+  "products_removed": [],
+  "ingredient_dose_changes": [],
+  "format_changes": [],
+  "category_slug_reassignments": [],
+  "summary": "1 product added: amino-acid-matrix-plus to base-formulations as 9-amino-acid powder formulation; Gary signoff in writing via #145 spec delivery 2026-05-02. v2_rev1 canonical preserved at scripts/144v2/ never modified."
+}
