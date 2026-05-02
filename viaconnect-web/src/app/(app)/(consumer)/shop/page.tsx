@@ -69,7 +69,7 @@ export default async function ShopLandingPage() {
                         Shop
                     </p>
                     <h1 className="mt-3 text-4xl font-light leading-tight text-white md:text-5xl lg:text-6xl">
-                        Built for your biology
+                        Build For Your Biology
                     </h1>
                     <p className="mt-4 max-w-2xl text-base leading-relaxed text-white/70 md:text-lg">
                         Precision genomic supplements, methylation SNP support, advanced formulas,
