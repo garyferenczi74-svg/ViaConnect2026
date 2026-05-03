@@ -16,9 +16,8 @@
  * surface, not a parallel purchase surface.
  */
 import Image from 'next/image'
-import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { ChevronRight } from 'lucide-react'
+import { BreadcrumbPills, type BreadcrumbItem } from '@/components/BreadcrumbPills'
 import { CartChrome } from '@/components/shop/CartChrome'
 import { CategoryFallbackImage } from '@/components/shop/CategoryFallbackImage'
 import { FormatIndicator } from '@/components/shop/FormatIndicator'
@@ -87,31 +86,24 @@ export default async function ProductFullCardPage({ params }: PageProps) {
     return (
         <div className="min-h-screen bg-[#0F1A2E] pb-24 text-white md:pb-0">
             <div className="mx-auto max-w-7xl px-4 py-6 md:px-6 md:py-10 lg:py-12">
-                <nav
-                    aria-label="Breadcrumb"
-                    className="mb-6 flex flex-wrap items-center gap-2 text-xs text-white/55"
-                >
-                    <Link href="/shop" className="hover:text-white/85">
-                        Shop
-                    </Link>
-                    <ChevronRight className="h-3 w-3" strokeWidth={1.5} />
-                    {category && (
-                        <>
-                            <Link href={`/shop/${category.slug}`} className="hover:text-white/85">
-                                {category.name}
-                            </Link>
-                            <ChevronRight className="h-3 w-3" strokeWidth={1.5} />
-                        </>
-                    )}
-                    <Link
-                        href={`/shop/product/${product.slug ?? params.slug}`}
-                        className="hover:text-white/85"
-                    >
-                        {product.name}
-                    </Link>
-                    <ChevronRight className="h-3 w-3" strokeWidth={1.5} />
-                    <span className="text-white/85">Full Details</span>
-                </nav>
+                <BreadcrumbPills
+                    className="mb-6"
+                    items={(() => {
+                        const items: BreadcrumbItem[] = [{ label: 'Shop', href: '/shop' }]
+                        if (category) {
+                            items.push({ label: category.name, href: `/shop/${category.slug}` })
+                        }
+                        items.push({
+                            label: product.name,
+                            href: `/shop/product/${product.slug ?? params.slug}`,
+                        })
+                        items.push({
+                            label: 'Full Details',
+                            href: `/shop/product/${product.slug ?? params.slug}/full`,
+                        })
+                        return items
+                    })()}
+                />
 
                 <div className="grid grid-cols-1 gap-8 md:gap-10 lg:grid-cols-12 lg:gap-12">
                     <div className="lg:col-span-5">

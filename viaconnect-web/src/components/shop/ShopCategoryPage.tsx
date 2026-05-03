@@ -17,8 +17,7 @@
  * template renders the graceful empty-state block. No throw, no spinner.
  */
 import { Suspense } from 'react'
-import Link from 'next/link'
-import { ChevronRight } from 'lucide-react'
+import { BreadcrumbPills } from '@/components/BreadcrumbPills'
 import { CartChrome } from '@/components/shop/CartChrome'
 import { PlpProductGrid } from '@/components/shop/PlpProductGrid'
 import { FilterSortDrawer } from '@/components/shop/FilterSortDrawer'
@@ -45,13 +44,13 @@ export async function ShopCategoryPage({ slug, hasCaqOnFile }: ShopCategoryPageP
     return (
         <div className="min-h-screen bg-[#0F1A2E] pb-24 text-white">
             <div className="mx-auto max-w-7xl px-4 py-10 md:px-6 md:py-14 lg:py-16">
-                <nav aria-label="Breadcrumb" className="mb-6 flex items-center gap-2 text-xs text-white/55">
-                    <Link href="/shop" className="hover:text-white/85">
-                        Shop
-                    </Link>
-                    <ChevronRight className="h-3 w-3" strokeWidth={1.5} />
-                    <span className="text-white/85">{displayName}</span>
-                </nav>
+                <BreadcrumbPills
+                    className="mb-6"
+                    items={[
+                        { label: 'Shop', href: '/shop' },
+                        { label: displayName, href: `/shop/${slug}` },
+                    ]}
+                />
 
                 <header className="mb-10 lg:mb-14">
                     <h1 className="text-4xl font-light leading-tight text-white md:text-5xl lg:text-6xl">

@@ -1,72 +1,30 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { usePathname } from "next/navigation";
-import { Search, Menu, X } from "lucide-react";
+import { Search } from "lucide-react";
 import { ViaConnectLogo } from "@/components/ui/ViaConnectLogo";
 import { NotificationBell } from "@/components/layout/NotificationBell";
 
-// ─── Breadcrumb helpers ──────────────────────────────────────────────────────
-
-const LABEL_MAP: Record<string, string> = {
-  dashboard: "Dashboard",
-  genetics: "Genetics",
-  supplements: "Supplements",
-  tokens: "Helix Rewards",
-  helix: "Helix Rewards",
-  messages: "Messages",
-  profile: "Profile",
-  assessment: "Assessment",
-  patients: "Patients",
-  protocols: "Protocols",
-  analytics: "Analytics",
-  genomics: "Genomics",
-  interactions: "Interactions",
-  ehr: "EHR Hub",
-  ai: "AI Advisor",
-  settings: "Settings",
-  botanical: "Botanical",
-  constitutional: "Constitutional",
-  scheduler: "Scheduler",
-  compliance: "Compliance",
-  practitioner: "Practitioner",
-  naturopath: "Naturopath",
-  "formula-builder": "Formula Builder",
-  builder: "Protocol Builder",
-  onboarding: "Onboarding",
-};
-
-function formatSegment(segment: string): string {
-  // Check label map first
-  if (LABEL_MAP[segment]) return LABEL_MAP[segment];
-  // Dynamic route segments (like UUIDs or IDs) — show as-is but capitalized
-  return segment
-    .replace(/-/g, " ")
-    .replace(/\b\w/g, (c) => c.toUpperCase());
-}
-
-function buildBreadcrumbs(pathname: string): string[] {
-  const segments = pathname.split("/").filter(Boolean);
-  // Skip portal prefixes from breadcrumb display (they show in sidebar badge)
-  const skip = new Set(["practitioner", "naturopath"]);
-  return segments
-    .filter((s) => !skip.has(s))
-    .map(formatSegment);
-}
-
-// ─── Header Component ────────────────────────────────────────────────────────
+/**
+ * Header per Prompt #147 2026-05-02: the top static breadcrumb (which derived
+ * dead text from pathname.split via buildBreadcrumbs + LABEL_MAP and rendered
+ * raw lowercase slug fragments like "Methylation Snp") was removed. The new
+ * <BreadcrumbPills> component replaces it inside the hero card on each
+ * catalog page with clickable Next.js Link pills + ChevronRight separators
+ * + Framer Motion entrance/hover animations.
+ *
+ * What stays here: the mobile-only ViaConnect logo, the global Cmd+K search
+ * trigger, and the NotificationBell. A flex spacer keeps the right section
+ * right-aligned now that the breadcrumb nav is gone.
+ */
 
 export function Header({
-  onMobileMenuToggle,
-  mobileMenuOpen,
   onCommandPaletteOpen,
 }: {
-  onMobileMenuToggle: () => void;
-  mobileMenuOpen: boolean;
+  onMobileMenuToggle?: () => void;
+  mobileMenuOpen?: boolean;
   onCommandPaletteOpen: () => void;
 }) {
-  const pathname = usePathname();
-  const breadcrumbs = buildBreadcrumbs(pathname);
   const [isMac, setIsMac] = useState(false);
 
   useEffect(() => {
@@ -100,23 +58,8 @@ export function Header({
         <ViaConnectLogo size="sm" />
       </span>
 
-      {/* Breadcrumbs */}
-      <nav className="flex items-center gap-1.5 text-sm min-w-0 flex-1">
-        {breadcrumbs.map((crumb, i) => (
-          <span key={i} className="flex items-center gap-1.5 min-w-0">
-            {i > 0 && <span className="text-gray-600 select-none">&gt;</span>}
-            <span
-              className={
-                i === breadcrumbs.length - 1
-                  ? "text-white font-medium truncate"
-                  : "text-gray-500 truncate"
-              }
-            >
-              {crumb}
-            </span>
-          </span>
-        ))}
-      </nav>
+      {/* Spacer to keep right section right-aligned now that the breadcrumb nav is removed */}
+      <div aria-hidden="true" className="flex-1" />
 
       {/* Right section */}
       <div className="flex items-center gap-2 ml-4 shrink-0">
@@ -132,7 +75,7 @@ export function Header({
           <Search className="w-3.5 h-3.5" />
           <span className="text-xs hidden sm:inline">Search</span>
           <kbd className="hidden sm:inline text-[10px] text-gray-600 bg-dark-surface px-1.5 py-0.5 rounded font-mono ml-1">
-            {isMac ? "⌘" : "Ctrl+"}K
+            {isMac ? "Cmd+" : "Ctrl+"}K
           </kbd>
         </button>
 

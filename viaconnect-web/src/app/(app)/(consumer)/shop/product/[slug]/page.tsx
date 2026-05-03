@@ -12,9 +12,8 @@
  * the per-user CAQ-aware genetic match treatment land in later phases.
  */
 import Image from 'next/image'
-import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { ChevronRight } from 'lucide-react'
+import { BreadcrumbPills, type BreadcrumbItem } from '@/components/BreadcrumbPills'
 import { CartChrome } from '@/components/shop/CartChrome'
 import { CategoryFallbackImage } from '@/components/shop/CategoryFallbackImage'
 import { PdpRightRail } from '@/components/shop/PdpRightRail'
@@ -59,24 +58,20 @@ export default async function ProductDetailPage({ params }: PageProps) {
     return (
         <div className="min-h-screen bg-[#0F1A2E] text-white">
             <div className="mx-auto max-w-7xl px-4 py-6 md:px-6 md:py-10 lg:py-12">
-                <nav
-                    aria-label="Breadcrumb"
-                    className="mb-6 flex flex-wrap items-center gap-2 text-xs text-white/55"
-                >
-                    <Link href="/shop" className="hover:text-white/85">
-                        Shop
-                    </Link>
-                    <ChevronRight className="h-3 w-3" strokeWidth={1.5} />
-                    {category && (
-                        <>
-                            <Link href={`/shop/${category.slug}`} className="hover:text-white/85">
-                                {category.name}
-                            </Link>
-                            <ChevronRight className="h-3 w-3" strokeWidth={1.5} />
-                        </>
-                    )}
-                    <span className="text-white/85">{product.name}</span>
-                </nav>
+                <BreadcrumbPills
+                    className="mb-6"
+                    items={(() => {
+                        const items: BreadcrumbItem[] = [{ label: 'Shop', href: '/shop' }]
+                        if (category) {
+                            items.push({ label: category.name, href: `/shop/${category.slug}` })
+                        }
+                        items.push({
+                            label: product.name,
+                            href: `/shop/product/${product.slug ?? params.slug}`,
+                        })
+                        return items
+                    })()}
+                />
 
                 <div className="grid grid-cols-1 gap-8 md:gap-10 lg:grid-cols-2 lg:gap-12">
                     <div className="flex flex-col gap-3">
