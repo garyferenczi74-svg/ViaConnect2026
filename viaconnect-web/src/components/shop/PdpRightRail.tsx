@@ -94,7 +94,7 @@ export function PdpRightRail({ product, variant }: PdpRightRailProps) {
           }
 
     return (
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-6 lg:gap-4">
             <div>
                 <h1 className="text-balance text-3xl font-bold text-white leading-[1.1] sm:text-4xl md:text-5xl lg:text-3xl lg:font-semibold lg:leading-[1.15]">
                     {product.name}
