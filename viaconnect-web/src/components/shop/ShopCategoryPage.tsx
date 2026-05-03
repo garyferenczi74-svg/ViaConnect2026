@@ -53,7 +53,7 @@ export async function ShopCategoryPage({ slug, hasCaqOnFile }: ShopCategoryPageP
                 />
 
                 <header className="mb-10 lg:mb-14">
-                    <h1 className="text-4xl font-light leading-tight text-white md:text-5xl lg:text-6xl">
+                    <h1 className="text-2xl font-bold text-white">
                         {displayName}
                     </h1>
                     {tagline && (
