@@ -65,7 +65,7 @@ export default async function ShopLandingPage() {
         <div className="min-h-screen bg-[#0F1A2E] text-white">
             <div className="mx-auto max-w-7xl px-4 py-12 md:px-6 md:py-16 lg:py-20">
                 <header className="mb-10 lg:mb-16">
-                    <p className="text-xs font-medium uppercase tracking-[0.2em] text-[#2DA5A0]">
+                    <p className="text-2xl font-bold text-white">
                         Shop
                     </p>
                     <h1 className="mt-3 text-2xl font-bold text-white">
