@@ -68,7 +68,7 @@ export default async function ShopLandingPage() {
                     <p className="text-xs font-medium uppercase tracking-[0.2em] text-[#2DA5A0]">
                         Shop
                     </p>
-                    <h1 className="mt-3 text-4xl font-light leading-tight text-white md:text-5xl lg:text-6xl">
+                    <h1 className="mt-3 text-2xl font-bold text-white">
                         Build For Your Biology
                     </h1>
                     <p className="mt-4 max-w-2xl text-base leading-relaxed text-white/70 md:text-lg">
