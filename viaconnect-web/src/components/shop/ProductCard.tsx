@@ -39,6 +39,22 @@ import type { ShopProduct } from '@/lib/shop/queries'
 const SHOP_CARD_BLUR_DATA_URL =
     'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0IDUiPjxyZWN0IHdpZHRoPSI0IiBoZWlnaHQ9IjUiIGZpbGw9IiMxQTI3NDQiLz48L3N2Zz4='
 
+// Per Prompt #149 §4. Source PNGs for the Testing and Diagnostics panels
+// are 3000x4000 with bleed white space around the kit boxes; the parent
+// frame already carries overflow-hidden so a CSS scale on the <Image>
+// over-zooms past the bleed and lets the subject fill the frame. Keyed
+// by product.slug; absent slugs render at native scale (no-op).
+const PLP_IMAGE_OVERZOOM: Record<string, string> = {
+    'genex360': 'scale-[1.05]',
+    'cannabisiq': 'scale-[1.30]',
+    'epigendx': 'scale-[1.30]',
+    'genexm': 'scale-[1.30]',
+    'hormoneiq': 'scale-[1.30]',
+    'nutrigendx': 'scale-[1.30]',
+    'peptidesiq': 'scale-[1.30]',
+    '30-day-custom-methylation-based-vitamin-formulations': 'scale-[1.30]',
+}
+
 interface ProductCardProps {
     product: ShopProduct
     variant: ShopCardVariant
@@ -62,6 +78,7 @@ export function ProductCard({
         ...(geneMatchActive ? ['GENE MATCH'] : []),
         ...tags.filter((t) => t !== 'GENE MATCH'),
     ].slice(0, 2)
+    const overzoomClass = (product.slug && PLP_IMAGE_OVERZOOM[product.slug]) || ''
 
     return (
         <Link
@@ -83,7 +100,7 @@ export function ProductCard({
                         src={primaryImage}
                         alt={product.name}
                         fill
-                        className="object-cover object-top"
+                        className={`object-cover object-top transform-gpu ${overzoomClass}`.trim()}
                         sizes="(min-width: 1280px) 296px, (min-width: 768px) 33vw, 50vw"
                         placeholder="blur"
                         blurDataURL={SHOP_CARD_BLUR_DATA_URL}
