@@ -1,8 +1,9 @@
 /**
  * BreadcrumbPills renders an N-level breadcrumb as clickable pill buttons
  * matching the visual language of the AdminPortalDetector portal switcher
- * (rounded-full, brand teal active state, transparent inactive state with
- * subtle border) per Prompt #147 2026-05-02.
+ * per Prompt #147 2026-05-02. Visual style class strings now sourced from
+ * the shared components/ui/pill-styles module per Prompt #148 §F so this
+ * component cannot drift from TabPills.
  *
  * The active pill (last by default, or marked via item.active) is a
  * non-clickable span in brand teal. Inactive pills are Next.js Link
@@ -24,6 +25,7 @@
 import Link from 'next/link'
 import { ChevronRight } from 'lucide-react'
 import { motion, useReducedMotion } from 'framer-motion'
+import { pillActive, pillInactive, pillSizing } from './ui/pill-styles'
 
 export interface BreadcrumbItem {
     label: string
@@ -36,11 +38,8 @@ interface BreadcrumbPillsProps {
     className?: string
 }
 
-const INACTIVE_PILL_CLASS =
-    'inline-flex items-center rounded-full border border-white/15 bg-transparent px-4 py-1.5 text-sm font-medium text-white/80 backdrop-blur-sm transition-all duration-200 ease-out hover:border-[#2DA5A0]/50 hover:bg-[#2DA5A0]/5 hover:text-[#2DA5A0] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744] sm:px-4 sm:py-1.5 sm:text-sm max-sm:px-3 max-sm:py-1 max-sm:text-xs'
-
-const ACTIVE_PILL_CLASS =
-    'inline-flex cursor-default items-center rounded-full border border-[#2DA5A0] bg-[#2DA5A0]/12 px-4 py-1.5 text-sm font-medium text-[#2DA5A0] shadow-[0_0_12px_-2px_rgba(45,165,160,0.35)] backdrop-blur-sm sm:px-4 sm:py-1.5 sm:text-sm max-sm:px-3 max-sm:py-1 max-sm:text-xs'
+const INACTIVE_BREADCRUMB_PILL = `${pillInactive} ${pillSizing}`
+const ACTIVE_BREADCRUMB_PILL = `${pillActive} ${pillSizing}`
 
 export function BreadcrumbPills({ items, className }: BreadcrumbPillsProps) {
     const reducedMotion = useReducedMotion()
@@ -85,13 +84,13 @@ export function BreadcrumbPills({ items, className }: BreadcrumbPillsProps) {
                                 <motion.span
                                     {...entranceProps}
                                     aria-current="page"
-                                    className={ACTIVE_PILL_CLASS}
+                                    className={ACTIVE_BREADCRUMB_PILL}
                                 >
                                     {item.label}
                                 </motion.span>
                             ) : (
                                 <motion.span {...entranceProps} {...hoverTapProps}>
-                                    <Link href={item.href} className={INACTIVE_PILL_CLASS}>
+                                    <Link href={item.href} className={INACTIVE_BREADCRUMB_PILL}>
                                         {item.label}
                                     </Link>
                                 </motion.span>

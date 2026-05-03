@@ -1,42 +1,59 @@
 /**
- * PdpRightRail is the interactive right column of the product detail page
- * per Prompt #141 v3 §5.3, restructured per Prompt #144 v2 §3.6.
+ * PdpRightRail is the interactive right column of the product detail page,
+ * restructured per Prompt #148 §A through §I 2026-05-02.
  *
- * Description and Formulation tabs are replaced with FullDescriptionLink
- * (routes to /shop/product/<slug>/full) and FormulationDropdown (inline
- * single-open accordion showing the FULL ingredient list). The short
- * blurb above stays in place when the dropdown expands. Evidence and FAQ
- * tabs remain as stub tab strip for future evidence + faq content.
+ * Major changes from #144 v2:
+ *   - Full Description: was FullDescriptionLink button-with-arrow routing
+ *     to /shop/product/<slug>/full; now rendered inline as a permanently
+ *     visible section.
+ *   - Formulation: was FormulationDropdown single-open accordion; now
+ *     rendered inline as PdpFormulationTable (2-column ingredient table)
+ *     for supplement variant. Testing variant renders the 3 testing_meta
+ *     sections inline (What's Tested + Who It's For + What You Get).
+ *   - Evidence + FAQ: were CardTabStrip plain text tabs with underline
+ *     active state; now TabPills matching the BreadcrumbPills visual
+ *     family from Prompt #147 with shared pill-styles module.
  *
- * Testing variant follows the same pattern: TestingMetaDropdown replaces
- * the What's Tested / Who It's For / What You Get tabs; Sample Report
- * and FAQ tabs remain as stubs.
+ * Purchase flow elements (price + bioavailability + summary + quantity
+ * stepper + Add to Cart + Add to Bundle) untouched per #148 §Scope OUT.
  *
- * Cart and bundle wiring lands in Phase F. Genetic match section renders
- * inline when product.snp_targets has any entries; full per-user CAQ
- * check lives in a later phase.
+ * SectionHeading helper anchors each major section with a Lucide icon
+ * accent in brand teal. AnimatePresence cross-fades the tab panel content
+ * on tab switch (mode="wait", 0.2s easeOut).
  */
 'use client'
 
 import { useState } from 'react'
-import { Bookmark, Minus, Plus, ShoppingBag } from 'lucide-react'
-import { CardTabStrip } from './CardTabStrip'
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
+import {
+    BookOpen,
+    Bookmark,
+    FileText,
+    FlaskConical,
+    HelpCircle,
+    Info,
+    Microscope,
+    Minus,
+    Plus,
+    ShoppingBag,
+    Users,
+} from 'lucide-react'
 import { FormatIndicator } from './FormatIndicator'
-import { FormulationDropdown } from './FormulationDropdown'
-import { FullDescriptionLink } from './FullDescriptionLink'
-import { TestingMetaDropdown } from './TestingMetaDropdown'
+import { PdpFormulationTable } from './PdpFormulationTable'
+import { SectionHeading } from '@/components/ui/SectionHeading'
+import { TabPills } from '@/components/ui/TabPills'
 import { addToCart } from '@/lib/shop/cart-store'
 import type { ShopCardVariant } from '@/lib/shop/categories'
 import type { ShopProduct } from '@/lib/shop/queries'
 
-const SUPPLEMENT_TABS = [
-    { key: 'evidence', label: 'Evidence' },
-    { key: 'faq', label: 'FAQ' },
+const SUPPLEMENT_TAB_OPTIONS = [
+    { value: 'evidence', label: 'Evidence', icon: BookOpen },
+    { value: 'faq', label: 'FAQ', icon: HelpCircle },
 ]
 
-const TESTING_TABS = [
-    { key: 'sample_report', label: 'Sample Report' },
-    { key: 'faq', label: 'FAQ' },
+const TESTING_TAB_OPTIONS = [
+    { value: 'sample_report', label: 'Sample Report', icon: FileText },
+    { value: 'faq', label: 'FAQ', icon: HelpCircle },
 ]
 
 function formatPrice(price: number | null | undefined): string {
@@ -50,17 +67,30 @@ interface PdpRightRailProps {
 }
 
 export function PdpRightRail({ product, variant }: PdpRightRailProps) {
-    const tabs = variant === 'testing' ? TESTING_TABS : SUPPLEMENT_TABS
-    const [activeTab, setActiveTab] = useState<string>(tabs[0].key)
+    const tabOptions = variant === 'testing' ? TESTING_TAB_OPTIONS : SUPPLEMENT_TAB_OPTIONS
+    const [activeTab, setActiveTab] = useState<string>(tabOptions[0].value)
     const [quantity, setQuantity] = useState<number>(1)
-    const [dropdownOpen, setDropdownOpen] = useState<boolean>(false)
+    const reducedMotion = useReducedMotion()
 
     const displayPrice = product.price_msrp ?? product.price
     const ctaCopy =
-        variant === 'testing' && product.requires_practitioner_order ? 'Order Test Kit' : 'Add to Cart'
+        variant === 'testing' && product.requires_practitioner_order
+            ? 'Order Test Kit'
+            : 'Add to Cart'
     const snpTargets = product.snp_targets ?? []
     const summary = product.summary ?? ''
-    const slug = product.slug ?? product.sku
+    const description = product.description ?? ''
+    const ingredients = product.ingredients ?? []
+    const meta = product.testing_meta ?? {}
+
+    const panelTransition = reducedMotion
+        ? { initial: { opacity: 0 }, animate: { opacity: 1 }, exit: { opacity: 0 } }
+        : {
+              initial: { opacity: 0, y: 4 },
+              animate: { opacity: 1, y: 0 },
+              exit: { opacity: 0, y: -4 },
+              transition: { duration: 0.2, ease: 'easeOut' as const },
+          }
 
     return (
         <div className="flex flex-col gap-6">
@@ -152,35 +182,74 @@ export function PdpRightRail({ product, variant }: PdpRightRailProps) {
                 )}
             </div>
 
-            <div className="flex flex-col gap-3">
-                <FullDescriptionLink slug={slug} categorySlug={product.category_slug} />
-                {variant === 'testing' ? (
-                    <TestingMetaDropdown
-                        testingMeta={product.testing_meta}
-                        isOpen={dropdownOpen}
-                        onToggle={() => setDropdownOpen((open) => !open)}
-                    />
+            <section className="mt-2 border-t border-white/10 pt-8">
+                <SectionHeading icon={FileText}>Full Description</SectionHeading>
+                {description ? (
+                    <p className="whitespace-pre-line text-sm leading-relaxed text-white/80 md:text-base">
+                        {description}
+                    </p>
                 ) : (
-                    <FormulationDropdown
-                        ingredients={product.ingredients}
-                        totalMgPerServing={null}
-                        isOpen={dropdownOpen}
-                        onToggle={() => setDropdownOpen((open) => !open)}
-                    />
+                    <p className="text-sm text-white/45">Description coming soon.</p>
                 )}
-            </div>
+            </section>
 
-            <div className="border-t border-white/[0.06] pt-6">
-                <CardTabStrip
-                    tabs={tabs}
-                    activeKey={activeTab}
+            {variant === 'supplement' ? (
+                <section className="mt-2 border-t border-white/10 pt-8">
+                    <SectionHeading icon={FlaskConical}>Formulation</SectionHeading>
+                    <PdpFormulationTable ingredients={ingredients} />
+                </section>
+            ) : (
+                <section className="mt-2 border-t border-white/10 pt-8">
+                    <SectionHeading icon={Microscope}>What's Tested</SectionHeading>
+                    {meta.what_is_tested ? (
+                        <p className="text-sm leading-relaxed text-white/80 md:text-base">
+                            {meta.what_is_tested}
+                        </p>
+                    ) : (
+                        <p className="text-sm text-white/45">Details coming soon.</p>
+                    )}
+                    <div className="mt-6">
+                        <SectionHeading icon={Users}>Who It's For</SectionHeading>
+                        {meta.who_its_for ? (
+                            <p className="text-sm leading-relaxed text-white/80 md:text-base">
+                                {meta.who_its_for}
+                            </p>
+                        ) : (
+                            <p className="text-sm text-white/45">Details coming soon.</p>
+                        )}
+                    </div>
+                    <div className="mt-6">
+                        <SectionHeading icon={Info}>What You Get</SectionHeading>
+                        {meta.what_you_get ? (
+                            <p className="text-sm leading-relaxed text-white/80 md:text-base">
+                                {meta.what_you_get}
+                            </p>
+                        ) : (
+                            <p className="text-sm text-white/45">Details coming soon.</p>
+                        )}
+                    </div>
+                </section>
+            )}
+
+            <section className="mt-2 border-t border-white/10 pt-8">
+                <TabPills
+                    options={tabOptions}
+                    value={activeTab}
                     onChange={setActiveTab}
-                    className="overflow-x-auto"
+                    ariaLabel="Product information tabs"
                 />
-                <div className="mt-4 min-h-[6rem] text-sm leading-relaxed text-white/70">
-                    <PdpTabContent variant={variant} activeTab={activeTab} />
+                <div
+                    role="tabpanel"
+                    aria-labelledby={activeTab}
+                    className="mt-4 min-h-[6rem] text-sm leading-relaxed text-white/70"
+                >
+                    <AnimatePresence mode="wait">
+                        <motion.div key={activeTab} {...panelTransition}>
+                            <PdpTabContent variant={variant} activeTab={activeTab} />
+                        </motion.div>
+                    </AnimatePresence>
                 </div>
-            </div>
+            </section>
 
             {snpTargets.length > 0 && (
                 <div className="rounded-xl border border-[#2DA5A0]/30 bg-[#2DA5A0]/5 p-4">
@@ -215,7 +284,7 @@ function PdpTabContent({
             return <span className="text-white/45">Clinical evidence coming soon.</span>
         }
         if (activeTab === 'faq') {
-            return <span className="text-white/45">FAQ coming soon.</span>
+            return <span className="text-white/45">Frequently asked questions coming soon.</span>
         }
         return <span className="text-white/45">Coming soon.</span>
     }
@@ -223,7 +292,7 @@ function PdpTabContent({
         return <span className="text-white/45">Sample report viewer coming soon.</span>
     }
     if (activeTab === 'faq') {
-        return <span className="text-white/45">FAQ coming soon.</span>
+        return <span className="text-white/45">Frequently asked questions coming soon.</span>
     }
     return <span className="text-white/45">Coming soon.</span>
 }
