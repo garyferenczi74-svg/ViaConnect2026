@@ -95,7 +95,7 @@ export function PdpRightRail({ product, variant }: PdpRightRailProps) {
     return (
         <div className="flex flex-col gap-6">
             <div>
-                <h1 className="text-3xl font-light tracking-tight text-white md:text-4xl">
+                <h1 className="text-balance text-3xl font-bold text-white leading-[1.1] sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl">
                     {product.name}
                 </h1>
                 {variant === 'supplement' && (
