@@ -39,6 +39,7 @@ import {
     Users,
 } from 'lucide-react'
 import { FormatIndicator } from './FormatIndicator'
+import { PdpDesktopTabs } from './pdp/PdpDesktopTabs'
 import { PdpFormulationTable } from './PdpFormulationTable'
 import { SectionHeading } from '@/components/ui/SectionHeading'
 import { TabPills } from '@/components/ui/TabPills'
@@ -95,16 +96,21 @@ export function PdpRightRail({ product, variant }: PdpRightRailProps) {
     return (
         <div className="flex flex-col gap-6">
             <div>
-                <h1 className="text-balance text-3xl font-bold text-white leading-[1.1] sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl">
+                <h1 className="text-balance text-3xl font-bold text-white leading-[1.1] sm:text-4xl md:text-5xl lg:text-3xl lg:font-semibold lg:leading-[1.15]">
                     {product.name}
                 </h1>
                 {variant === 'supplement' && (
-                    <FormatIndicator format={product.format} className="mt-2 text-base text-white/60" />
+                    <FormatIndicator
+                        format={product.format}
+                        className="mt-2 text-base text-white/60 lg:text-xs lg:tracking-wide"
+                    />
                 )}
             </div>
 
-            <div>
-                <p className="text-3xl font-medium text-white">{formatPrice(displayPrice)}</p>
+            <div className="lg:mt-3">
+                <p className="text-3xl font-medium text-white lg:text-2xl lg:font-semibold lg:tracking-tight">
+                    {formatPrice(displayPrice)}
+                </p>
                 {product.bioavailability_pct != null && (
                     <p className="mt-1 text-xs text-white/55">
                         Bioavailability {product.bioavailability_pct}%
@@ -113,13 +119,15 @@ export function PdpRightRail({ product, variant }: PdpRightRailProps) {
             </div>
 
             {summary && (
-                <p className="text-sm leading-relaxed text-white/75 md:text-base">{summary}</p>
+                <p className="text-sm leading-relaxed text-white/75 md:text-base lg:mt-2 lg:text-sm lg:leading-relaxed lg:text-white/70">
+                    {summary}
+                </p>
             )}
 
             {variant === 'supplement' && (
                 <div className="flex items-center gap-3">
                     <span className="text-sm text-white/70">Quantity</span>
-                    <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.02] p-1">
+                    <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.02] p-1 lg:h-10 lg:w-[120px]">
                         <button
                             type="button"
                             aria-label="Decrease quantity"
@@ -143,7 +151,7 @@ export function PdpRightRail({ product, variant }: PdpRightRailProps) {
                 </div>
             )}
 
-            <div className="flex flex-col gap-3 sm:flex-row">
+            <div className="flex flex-col gap-3 sm:flex-row lg:mt-5 lg:max-w-[420px]">
                 <button
                     type="button"
                     onClick={() =>
@@ -165,7 +173,7 @@ export function PdpRightRail({ product, variant }: PdpRightRailProps) {
                             { openDrawer: true },
                         )
                     }
-                    className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#2DA5A0] py-3 font-medium text-white transition-colors hover:bg-[#26918d]"
+                    className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#2DA5A0] py-3 font-medium text-white transition-colors hover:bg-[#26918d] lg:px-5 lg:py-2.5 lg:text-sm lg:hover:bg-[#2DA5A0]/90"
                 >
                     <ShoppingBag className="h-4 w-4" strokeWidth={1.5} />
                     {ctaCopy}
@@ -174,7 +182,7 @@ export function PdpRightRail({ product, variant }: PdpRightRailProps) {
                     <button
                         type="button"
                         onClick={() => console.info('[shop] PDP Add to Bundle (stub)', { sku: product.sku })}
-                        className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/[0.04] py-3 font-medium text-white transition-colors hover:bg-white/[0.08]"
+                        className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/[0.04] py-3 font-medium text-white transition-colors hover:bg-white/[0.08] lg:border-white/20 lg:bg-transparent lg:px-5 lg:py-2.5 lg:text-sm lg:hover:border-white/30 lg:hover:bg-white/5"
                     >
                         <Bookmark className="h-4 w-4" strokeWidth={1.5} />
                         Add to Bundle
@@ -182,7 +190,11 @@ export function PdpRightRail({ product, variant }: PdpRightRailProps) {
                 )}
             </div>
 
-            <section className="mt-2 border-t border-white/10 pt-8">
+            {variant === 'supplement' && <PdpDesktopTabs product={product} />}
+
+            <section
+                className={`mt-2 border-t border-white/10 pt-8 ${variant === 'supplement' ? 'lg:hidden' : ''}`}
+            >
                 <SectionHeading icon={FileText}>Full Description</SectionHeading>
                 {description ? (
                     <p className="whitespace-pre-line text-sm leading-relaxed text-white/80 md:text-base">
@@ -194,7 +206,7 @@ export function PdpRightRail({ product, variant }: PdpRightRailProps) {
             </section>
 
             {variant === 'supplement' ? (
-                <section className="mt-2 border-t border-white/10 pt-8">
+                <section className="mt-2 border-t border-white/10 pt-8 lg:hidden">
                     <SectionHeading icon={FlaskConical}>Formulation</SectionHeading>
                     <PdpFormulationTable ingredients={ingredients} />
                 </section>
@@ -231,7 +243,9 @@ export function PdpRightRail({ product, variant }: PdpRightRailProps) {
                 </section>
             )}
 
-            <section className="mt-2 border-t border-white/10 pt-8">
+            <section
+                className={`mt-2 border-t border-white/10 pt-8 ${variant === 'supplement' ? 'lg:hidden' : ''}`}
+            >
                 <TabPills
                     options={tabOptions}
                     value={activeTab}
