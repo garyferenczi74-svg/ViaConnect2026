@@ -1,33 +1,25 @@
 /**
- * PlpProductGrid is the client-side wrapper that reads URL search params
- * and applies them to the server-fetched product array per Prompt #141 v3
- * §6. The server fetches the full per-category product set via
- * getProductsByCategory; this component subscribes to the URL and renders
- * the filtered + sorted subset, with chip rows and the empty state.
+ * PlpProductGrid is the client-side wrapper that renders the per-category
+ * product grid. The dual filter pill rows (primary chips + delivery chips +
+ * optional match chip) were removed per Prompt #146 2026-05-02 since both
+ * rows showed mostly non-discriminating or zero counts and signaled filter
+ * capability that did not exist on the underlying taxonomy.
  *
- * Counts shown on chips are computed against the un-filtered set so the
- * user can see how many products each chip would surface before clicking.
+ * Sort + search + price + in-stock + rx-required URL filters from
+ * <FilterSortDrawer> still apply via lib/shop/filters.ts applyFilters +
+ * applySort. The chip-specific URL params (primary, delivery, match) are
+ * dropped from the filter state since their UI is gone.
  *
- * Tertiary "Matched to Me" chip is gated by `hasCaqOnFile`; the wiring
- * for the user CAQ check lands in a later phase (the prop default of
- * false hides the row until that wiring is in place).
+ * Single-open accordion across the grid for the FormulationDropdown +
+ * TestingMetaDropdown components per Prompt #144 v2 §3.1: opening one
+ * card's dropdown collapses any other open card.
  */
 'use client'
 
 import { useMemo, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { ProductCard } from './ProductCard'
-import { FilterChipRow } from './FilterChipRow'
-import {
-    DELIVERY_CHIPS,
-    MATCH_CHIPS,
-    PRIMARY_CHIPS_BY_CATEGORY,
-    applyFilters,
-    applySort,
-    countByDelivery,
-    countByPrimary,
-    readFilterState,
-} from '@/lib/shop/filters'
+import { applyFilters, applySort, readFilterState } from '@/lib/shop/filters'
 import type { ShopCardVariant } from '@/lib/shop/categories'
 import type { ShopProduct } from '@/lib/shop/queries'
 
@@ -35,15 +27,9 @@ interface PlpProductGridProps {
     products: ShopProduct[]
     variant: ShopCardVariant
     categorySlug: string
-    hasCaqOnFile?: boolean
 }
 
-export function PlpProductGrid({
-    products,
-    variant,
-    categorySlug,
-    hasCaqOnFile,
-}: PlpProductGridProps) {
+export function PlpProductGrid({ products, variant, categorySlug }: PlpProductGridProps) {
     const searchParams = useSearchParams()
 
     const filters = useMemo(
@@ -51,40 +37,15 @@ export function PlpProductGrid({
         [searchParams],
     )
 
-    const primaryChips = PRIMARY_CHIPS_BY_CATEGORY[categorySlug] ?? []
-    const primaryCounts = useMemo(
-        () => countByPrimary(products, primaryChips, categorySlug),
-        [products, primaryChips, categorySlug],
-    )
-    const deliveryCounts = useMemo(
-        () => countByDelivery(products, DELIVERY_CHIPS),
-        [products],
-    )
-
     const visibleProducts = useMemo(() => {
         const filtered = applyFilters(products, filters, categorySlug)
         return applySort(filtered, filters.sort)
     }, [products, filters, categorySlug])
 
-    // Single-open accordion across the grid per Prompt #144 v2 §3.1: opening
-    // one card's Formulation/TestingMeta dropdown collapses any other open
-    // card. Tracks the currently open product id; null means none open.
     const [openCardId, setOpenCardId] = useState<string | null>(null)
 
     return (
         <div className="flex flex-col gap-6">
-            <div className="flex flex-col gap-4">
-                {primaryChips.length > 0 && (
-                    <FilterChipRow
-                        paramName="primary"
-                        chips={primaryChips}
-                        counts={primaryCounts}
-                    />
-                )}
-                <FilterChipRow paramName="delivery" chips={DELIVERY_CHIPS} counts={deliveryCounts} />
-                {hasCaqOnFile && <FilterChipRow paramName="match" chips={MATCH_CHIPS} />}
-            </div>
-
             {visibleProducts.length === 0 ? (
                 <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-10 text-center backdrop-blur-sm">
                     <p className="text-base text-white/65">

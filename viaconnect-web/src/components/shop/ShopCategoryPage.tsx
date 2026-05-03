@@ -69,7 +69,6 @@ export async function ShopCategoryPage({ slug, hasCaqOnFile }: ShopCategoryPageP
                         products={products}
                         variant={variant}
                         categorySlug={slug}
-                        hasCaqOnFile={hasCaqOnFile}
                     />
                 </Suspense>
             </div>
