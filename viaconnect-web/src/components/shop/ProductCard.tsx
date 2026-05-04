@@ -29,6 +29,7 @@ import { CategoryFallbackImage } from './CategoryFallbackImage'
 import { ProductCardSupplementBody } from './ProductCard.SupplementBody'
 import { ProductCardTestingBody } from './ProductCard.TestingBody'
 import { StatusPill } from './StatusPill'
+import { resolveDisplayConfig } from '@/lib/shop/resolve-display-config'
 import type { ShopCardVariant } from '@/lib/shop/categories'
 import type { ShopProduct } from '@/lib/shop/queries'
 
@@ -78,7 +79,9 @@ export function ProductCard({
         ...(geneMatchActive ? ['GENE MATCH'] : []),
         ...tags.filter((t) => t !== 'GENE MATCH'),
     ].slice(0, 2)
-    const overzoomClass = (product.slug && PLP_IMAGE_OVERZOOM[product.slug]) || ''
+    const display = resolveDisplayConfig(product.display_config)
+    const overzoomClass =
+        !display.hasOverride && product.slug ? PLP_IMAGE_OVERZOOM[product.slug] || '' : ''
 
     return (
         <Link
@@ -96,15 +99,32 @@ export function ProductCard({
                 "
             >
                 {primaryImage ? (
-                    <Image
-                        src={primaryImage}
-                        alt={product.name}
-                        fill
-                        className={`object-cover object-top transform-gpu ${overzoomClass}`.trim()}
-                        sizes="(min-width: 1280px) 296px, (min-width: 768px) 33vw, 50vw"
-                        placeholder="blur"
-                        blurDataURL={SHOP_CARD_BLUR_DATA_URL}
-                    />
+                    display.hasOverride ? (
+                        <div className={`absolute inset-0 ${display.bgClass}`}>
+                            <div className={`relative h-full w-full ${display.paddingClass}`}>
+                                <Image
+                                    src={primaryImage}
+                                    alt={product.name}
+                                    fill
+                                    className={`${display.fitClass} transform-gpu`}
+                                    style={display.style}
+                                    sizes="(min-width: 1280px) 296px, (min-width: 768px) 33vw, 50vw"
+                                    placeholder="blur"
+                                    blurDataURL={SHOP_CARD_BLUR_DATA_URL}
+                                />
+                            </div>
+                        </div>
+                    ) : (
+                        <Image
+                            src={primaryImage}
+                            alt={product.name}
+                            fill
+                            className={`object-cover object-top transform-gpu ${overzoomClass}`.trim()}
+                            sizes="(min-width: 1280px) 296px, (min-width: 768px) 33vw, 50vw"
+                            placeholder="blur"
+                            blurDataURL={SHOP_CARD_BLUR_DATA_URL}
+                        />
+                    )
                 ) : (
                     <CategoryFallbackImage categorySlug={product.category_slug} />
                 )}

@@ -63,6 +63,7 @@ export interface ShopProduct {
     gene_match_score: number | null
     requires_practitioner_order: boolean | null
     active: boolean
+    display_config: import('./resolve-display-config').ProductDisplayConfig | null
 }
 
 export async function getShopCategories(): Promise<ShopCategoryRow[]> {
