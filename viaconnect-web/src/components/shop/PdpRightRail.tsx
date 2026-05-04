@@ -197,9 +197,17 @@ export function PdpRightRail({ product, variant }: PdpRightRailProps) {
             >
                 <SectionHeading icon={FileText}>Full Description</SectionHeading>
                 {description ? (
-                    <p className="whitespace-pre-line text-sm leading-relaxed text-white/80 md:text-base">
-                        {description}
-                    </p>
+                    <>
+                        <p className="whitespace-pre-line text-sm leading-relaxed text-white/80 md:text-base">
+                            {description}
+                        </p>
+                        <p
+                            className="mt-3 text-[0.6875rem] font-medium uppercase italic tracking-wide text-orange-400/80"
+                            aria-hidden="false"
+                        >
+                            Built For Your Biology · Your Genetics · Your Protocol
+                        </p>
+                    </>
                 ) : (
                     <p className="text-sm text-white/45">Description coming soon.</p>
                 )}

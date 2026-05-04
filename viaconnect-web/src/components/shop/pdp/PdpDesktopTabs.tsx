@@ -176,7 +176,15 @@ export function PdpDesktopTabs({ product }: PdpDesktopTabsProps) {
                             className="text-sm leading-relaxed text-white/80"
                         >
                             {tab.key === 'description' && product.description && (
-                                <p className="whitespace-pre-line">{product.description}</p>
+                                <>
+                                    <p className="whitespace-pre-line">{product.description}</p>
+                                    <p
+                                        className="mt-3 text-[0.6875rem] font-medium uppercase italic tracking-wide text-orange-400/80"
+                                        aria-hidden="false"
+                                    >
+                                        Built For Your Biology · Your Genetics · Your Protocol
+                                    </p>
+                                </>
                             )}
                             {tab.key === 'formulation' && (
                                 <PdpFormulationTable
