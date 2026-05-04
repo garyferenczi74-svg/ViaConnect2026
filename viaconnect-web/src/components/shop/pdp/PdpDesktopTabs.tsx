@@ -27,6 +27,7 @@ import type { KeyboardEvent } from 'react'
 import { BookOpen, FileText, FlaskConical, HelpCircle } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { PdpFormulationTable } from '@/components/shop/PdpFormulationTable'
+import { renderDescriptionWithEmphasis } from '@/components/shop/PdpRightRail'
 import type { ShopProduct } from '@/lib/shop/queries'
 
 type TabKey = 'description' | 'formulation' | 'evidence' | 'faq'
@@ -177,12 +178,11 @@ export function PdpDesktopTabs({ product }: PdpDesktopTabsProps) {
                         >
                             {tab.key === 'description' && product.description && (
                                 <>
-                                    <p className="whitespace-pre-line">{product.description}</p>
-                                    <p
-                                        className="mt-3 text-[0.6875rem] font-medium uppercase italic tracking-wide text-orange-400/80"
-                                        aria-hidden="false"
-                                    >
-                                        Built For Your Biology · Your Genetics · Your Protocol
+                                    <p className="whitespace-pre-line">
+                                        {renderDescriptionWithEmphasis(product.description, product.slug)}
+                                    </p>
+                                    <p className="mt-3 text-xs italic tracking-wide text-white/60">
+                                        Via Cura | Built For Your Biology
                                     </p>
                                 </>
                             )}

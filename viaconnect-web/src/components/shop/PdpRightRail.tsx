@@ -23,7 +23,7 @@
  */
 'use client'
 
-import { useState } from 'react'
+import { Fragment, useState, type ReactNode } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import {
     BookOpen,
@@ -60,6 +60,44 @@ const TESTING_TAB_OPTIONS = [
 function formatPrice(price: number | null | undefined): string {
     if (price == null) return ''
     return `$${price.toFixed(2)}`
+}
+
+// Slug-keyed map of phrases to emphasize inside product.description.
+// Emphasized phrases render in the brand teal token at font weight 600.
+// Add a new entry here when introducing emphasis for another product.
+// Per Prompt #152b: ACHY+ slug uses the post-#142 canonical name
+// "achy-plus-acetylcholine-support" (NOT the spec's shortened "achy").
+export const PDP_EMPHASIZED_TERMS: Record<string, readonly string[]> = {
+    'achy-plus-acetylcholine-support': [
+        'precision liposomal acetylcholine support formula',
+        '10x to 28x higher bioavailability',
+        'Built For Your Biology',
+        'Bio Optimization',
+    ],
+}
+
+export function renderDescriptionWithEmphasis(text: string, slug: string | null | undefined): ReactNode {
+    if (!slug) {
+        return text
+    }
+    const terms = PDP_EMPHASIZED_TERMS[slug]
+    if (!terms || terms.length === 0) {
+        return text
+    }
+    const sortedTerms = [...terms].sort((a, b) => b.length - a.length)
+    const escaped = sortedTerms.map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+    const matcher = new RegExp(`(${escaped.join('|')})`, 'g')
+    const parts = text.split(matcher)
+    const termSet = new Set(terms)
+    return parts.map((part, idx) =>
+        termSet.has(part) ? (
+            <span key={idx} className="font-semibold text-teal-500">
+                {part}
+            </span>
+        ) : (
+            <Fragment key={idx}>{part}</Fragment>
+        ),
+    )
 }
 
 interface PdpRightRailProps {
@@ -199,13 +237,10 @@ export function PdpRightRail({ product, variant }: PdpRightRailProps) {
                 {description ? (
                     <>
                         <p className="whitespace-pre-line text-sm leading-relaxed text-white/80 md:text-base">
-                            {description}
+                            {renderDescriptionWithEmphasis(description, product.slug)}
                         </p>
-                        <p
-                            className="mt-3 text-[0.6875rem] font-medium uppercase italic tracking-wide text-orange-400/80"
-                            aria-hidden="false"
-                        >
-                            Built For Your Biology · Your Genetics · Your Protocol
+                        <p className="mt-3 text-xs italic tracking-wide text-white/60">
+                            Via Cura | Built For Your Biology
                         </p>
                     </>
                 ) : (
