@@ -1,25 +1,27 @@
 /**
- * PdpRightRail is the interactive right column of the product detail page,
- * restructured per Prompt #148 §A through §I 2026-05-02.
+ * PdpRightRail is the interactive right column of the product detail page.
  *
- * Major changes from #144 v2:
- *   - Full Description: was FullDescriptionLink button-with-arrow routing
- *     to /shop/product/<slug>/full; now rendered inline as a permanently
- *     visible section.
- *   - Formulation: was FormulationDropdown single-open accordion; now
- *     rendered inline as PdpFormulationTable (2-column ingredient table)
- *     for supplement variant. Testing variant renders the 3 testing_meta
- *     sections inline (What's Tested + Who It's For + What You Get).
- *   - Evidence + FAQ: were CardTabStrip plain text tabs with underline
- *     active state; now TabPills matching the BreadcrumbPills visual
- *     family from Prompt #147 with shared pill-styles module.
+ * Layout history:
+ *   - #144 v2: catalog-card FullDescriptionLink + FormulationDropdown.
+ *   - #148: Description and Formulation moved to inline always-visible
+ *     blocks; Evidence + FAQ became TabPills.
+ *   - #151: desktop horizontal tab strip via PdpDesktopTabs for the
+ *     supplement variant (lg+ breakpoint), inline branches retained for
+ *     mobile/tablet behind lg:hidden.
+ *   - #152p (current): Description + Formulation wrapped in the shared
+ *     Accordion component (collapsible disclosure, default collapsed on
+ *     hydrate, SSR renders expanded for SEO + JS-disabled access). The
+ *     Accordion renders universally across breakpoints, so the
+ *     PdpDesktopTabs invocation was removed. Evidence + FAQ TabPills
+ *     section retains its supplement lg:hidden gating per #148 + #151
+ *     scope; that surface is unchanged by 152p.
  *
- * Purchase flow elements (price + bioavailability + summary + quantity
- * stepper + Add to Cart + Add to Bundle) untouched per #148 §Scope OUT.
+ * Purchase flow elements (price + summary + quantity stepper + Add to
+ * Cart + Add to Bundle) untouched.
  *
- * SectionHeading helper anchors each major section with a Lucide icon
- * accent in brand teal. AnimatePresence cross-fades the tab panel content
- * on tab switch (mode="wait", 0.2s easeOut).
+ * Testing variant: renders the 3 testing_meta sections (What's Tested +
+ * Who It's For + What You Get) below the Description Accordion, with
+ * SectionHeading icon accents.
  */
 'use client'
 
@@ -28,9 +30,7 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import {
     BookOpen,
     Bookmark,
-    ChevronDown,
     FileText,
-    FlaskConical,
     HelpCircle,
     Info,
     Microscope,
@@ -39,8 +39,8 @@ import {
     ShoppingBag,
     Users,
 } from 'lucide-react'
+import { Accordion } from './Accordion'
 import { FormatIndicator } from './FormatIndicator'
-import { PdpDesktopTabs } from './pdp/PdpDesktopTabs'
 import { PdpFormulationTable } from './PdpFormulationTable'
 import { SectionHeading } from '@/components/ui/SectionHeading'
 import { TabPills } from '@/components/ui/TabPills'
@@ -311,60 +311,29 @@ export function PdpRightRail({ product, variant }: PdpRightRailProps) {
                 )}
             </div>
 
-            {variant === 'supplement' && <PdpDesktopTabs product={product} />}
-
-            <section
-                className={`mt-2 border-t border-white/10 pt-8 ${variant === 'supplement' ? 'lg:hidden' : ''}`}
-            >
-                {description ? (
-                    isStructuredDescription(description) ? (
-                        <>
-                            <details
-                                open
-                                className="group [&::-webkit-details-marker]:hidden"
-                            >
-                                <summary className="cursor-pointer list-none">
-                                    <div className="flex items-center gap-2">
-                                        <SectionHeading icon={FileText}>Full Description</SectionHeading>
-                                        <ChevronDown
-                                            className="h-4 w-4 text-white/55 transition-transform group-open:rotate-180"
-                                            strokeWidth={1.5}
-                                        />
-                                    </div>
-                                </summary>
-                                <div className="mt-2">
-                                    {renderStructuredDescription(description)}
-                                </div>
-                            </details>
-                            <p className="mt-3 text-xs italic tracking-wide text-white/60">
-                                Via Cura | Built For Your Biology
-                            </p>
-                        </>
-                    ) : (
-                        <>
-                            <SectionHeading icon={FileText}>Full Description</SectionHeading>
+            <div className="mt-2 border-t border-white/10 pt-2">
+                <Accordion heading="Full Description" id="pdp-description">
+                    {description ? (
+                        isStructuredDescription(description) ? (
+                            renderStructuredDescription(description)
+                        ) : (
                             <p className="whitespace-pre-line text-sm leading-relaxed text-white/80 md:text-base">
                                 {renderDescriptionWithEmphasis(description, product.slug)}
                             </p>
-                            <p className="mt-3 text-xs italic tracking-wide text-white/60">
-                                Via Cura | Built For Your Biology
-                            </p>
-                        </>
-                    )
-                ) : (
-                    <>
-                        <SectionHeading icon={FileText}>Full Description</SectionHeading>
+                        )
+                    ) : (
                         <p className="text-sm text-white/45">Description coming soon.</p>
-                    </>
-                )}
-            </section>
+                    )}
+                </Accordion>
 
-            {variant === 'supplement' ? (
-                <section className="mt-2 border-t border-white/10 pt-8 lg:hidden">
-                    <SectionHeading icon={FlaskConical}>Formulation</SectionHeading>
-                    <PdpFormulationTable ingredients={ingredients} />
-                </section>
-            ) : (
+                {variant === 'supplement' && (
+                    <Accordion heading="Formulation" id="pdp-formulation">
+                        <PdpFormulationTable ingredients={ingredients} />
+                    </Accordion>
+                )}
+            </div>
+
+            {variant === 'testing' && (
                 <section className="mt-2 border-t border-white/10 pt-8">
                     <SectionHeading icon={Microscope}>What's Tested</SectionHeading>
                     {meta.what_is_tested ? (
@@ -395,6 +364,12 @@ export function PdpRightRail({ product, variant }: PdpRightRailProps) {
                         )}
                     </div>
                 </section>
+            )}
+
+            {description && (
+                <p className="text-xs italic tracking-wide text-white/60">
+                    Via Cura | Built For Your Biology
+                </p>
             )}
 
             <section
