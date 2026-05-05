@@ -28,6 +28,7 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import {
     BookOpen,
     Bookmark,
+    ChevronDown,
     FileText,
     FlaskConical,
     HelpCircle,
@@ -98,6 +99,88 @@ export function renderDescriptionWithEmphasis(text: string, slug: string | null 
             <Fragment key={idx}>{part}</Fragment>
         ),
     )
+}
+
+// Per Prompt #152a-rev2: detect structured-markdown descriptions (## headings
+// + - bullets) so the renderer can switch from plain-text-with-emphasis to
+// JSX-rendered headings + bullet lists. Markdown library kept out of
+// package.json per spec; minimal inline parser handles the four token forms
+// the structured copy uses (## heading, blank line, - **Name:** body bullet,
+// **Lead:** body paragraph).
+export function isStructuredDescription(text: string | null | undefined): boolean {
+    if (!text) return false
+    return /(^|\n)## /.test(text)
+}
+
+export function renderStructuredDescription(text: string): ReactNode {
+    const lines = text.split('\n')
+    const blocks: ReactNode[] = []
+    let bulletBuffer: { name: string; mechanism: string; raw: string }[] = []
+    let blockKey = 0
+
+    const flushBullets = () => {
+        if (bulletBuffer.length === 0) return
+        const items = bulletBuffer
+        blocks.push(
+            <ul
+                key={`b-${blockKey++}`}
+                className="mt-3 ml-5 list-disc space-y-2 text-sm leading-relaxed text-white/80 md:text-base"
+            >
+                {items.map((item, i) => (
+                    <li key={i}>
+                        <strong className="font-semibold text-white">{item.name}:</strong>{' '}
+                        {item.mechanism}
+                    </li>
+                ))}
+            </ul>,
+        )
+        bulletBuffer = []
+    }
+
+    for (const line of lines) {
+        const bulletMatch = line.match(/^- \*\*(.+?):\*\*\s*(.+)$/)
+        if (bulletMatch) {
+            bulletBuffer.push({ name: bulletMatch[1], mechanism: bulletMatch[2], raw: line })
+            continue
+        }
+        flushBullets()
+        if (line.startsWith('## ')) {
+            blocks.push(
+                <h3
+                    key={`h-${blockKey++}`}
+                    className="mt-6 text-base font-semibold text-white first:mt-0 md:text-lg"
+                >
+                    {line.slice(3)}
+                </h3>,
+            )
+            continue
+        }
+        const leadMatch = line.match(/^\*\*(.+?):\*\*\s*(.+)$/)
+        if (leadMatch) {
+            blocks.push(
+                <p
+                    key={`p-${blockKey++}`}
+                    className="mt-3 text-sm leading-relaxed text-white/80 md:text-base"
+                >
+                    <strong className="font-semibold text-white">{leadMatch[1]}:</strong>{' '}
+                    {leadMatch[2]}
+                </p>,
+            )
+            continue
+        }
+        if (line.trim()) {
+            blocks.push(
+                <p
+                    key={`p-${blockKey++}`}
+                    className="mt-3 text-sm leading-relaxed text-white/80 md:text-base"
+                >
+                    {line}
+                </p>,
+            )
+        }
+    }
+    flushBullets()
+    return <>{blocks}</>
 }
 
 interface PdpRightRailProps {
@@ -233,18 +316,46 @@ export function PdpRightRail({ product, variant }: PdpRightRailProps) {
             <section
                 className={`mt-2 border-t border-white/10 pt-8 ${variant === 'supplement' ? 'lg:hidden' : ''}`}
             >
-                <SectionHeading icon={FileText}>Full Description</SectionHeading>
                 {description ? (
-                    <>
-                        <p className="whitespace-pre-line text-sm leading-relaxed text-white/80 md:text-base">
-                            {renderDescriptionWithEmphasis(description, product.slug)}
-                        </p>
-                        <p className="mt-3 text-xs italic tracking-wide text-white/60">
-                            Via Cura | Built For Your Biology
-                        </p>
-                    </>
+                    isStructuredDescription(description) ? (
+                        <>
+                            <details
+                                open
+                                className="group [&::-webkit-details-marker]:hidden"
+                            >
+                                <summary className="cursor-pointer list-none">
+                                    <div className="flex items-center gap-2">
+                                        <SectionHeading icon={FileText}>Full Description</SectionHeading>
+                                        <ChevronDown
+                                            className="h-4 w-4 text-white/55 transition-transform group-open:rotate-180"
+                                            strokeWidth={1.5}
+                                        />
+                                    </div>
+                                </summary>
+                                <div className="mt-2">
+                                    {renderStructuredDescription(description)}
+                                </div>
+                            </details>
+                            <p className="mt-3 text-xs italic tracking-wide text-white/60">
+                                Via Cura | Built For Your Biology
+                            </p>
+                        </>
+                    ) : (
+                        <>
+                            <SectionHeading icon={FileText}>Full Description</SectionHeading>
+                            <p className="whitespace-pre-line text-sm leading-relaxed text-white/80 md:text-base">
+                                {renderDescriptionWithEmphasis(description, product.slug)}
+                            </p>
+                            <p className="mt-3 text-xs italic tracking-wide text-white/60">
+                                Via Cura | Built For Your Biology
+                            </p>
+                        </>
+                    )
                 ) : (
-                    <p className="text-sm text-white/45">Description coming soon.</p>
+                    <>
+                        <SectionHeading icon={FileText}>Full Description</SectionHeading>
+                        <p className="text-sm text-white/45">Description coming soon.</p>
+                    </>
                 )}
             </section>
 
