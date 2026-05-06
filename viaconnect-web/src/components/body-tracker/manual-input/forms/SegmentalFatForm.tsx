@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 import { BodySilhouette } from '@/components/body-tracker/BodySilhouette';
 import {
-  ManualInputModal,
+  InlineEntryPanel,
   DataSourceSelector,
   DatePickerWithDefaults,
   todayIso,
@@ -157,7 +157,7 @@ export function SegmentalFatForm({ open, onOpenChange, onSaved }: SegmentalFatFo
   }
 
   return (
-    <ManualInputModal
+    <InlineEntryPanel
       open={open}
       onOpenChange={(o) => { if (!o) reset(); onOpenChange(o); }}
       title="Log body composition"
@@ -269,6 +269,6 @@ export function SegmentalFatForm({ open, onOpenChange, onSaved }: SegmentalFatFo
           </>
         )}
       </div>
-    </ManualInputModal>
+    </InlineEntryPanel>
   );
 }

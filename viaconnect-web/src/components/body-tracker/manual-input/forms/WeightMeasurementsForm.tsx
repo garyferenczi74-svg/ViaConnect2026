@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import {
-  ManualInputModal,
+  InlineEntryPanel,
   DataSourceSelector,
   DatePickerWithDefaults,
   todayIso,
@@ -165,7 +165,7 @@ export function WeightMeasurementsForm({ open, onOpenChange, onSaved }: WeightMe
   const lUnit = state.lengthUnit === 'metric' ? 'cm' : 'in';
 
   return (
-    <ManualInputModal
+    <InlineEntryPanel
       open={open}
       onOpenChange={(o) => { if (!o) reset(); onOpenChange(o); }}
       title="Log weight and measurements"
@@ -305,6 +305,6 @@ export function WeightMeasurementsForm({ open, onOpenChange, onSaved }: WeightMe
           </>
         )}
       </div>
-    </ManualInputModal>
+    </InlineEntryPanel>
   );
 }

@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 import { BodySilhouette } from '@/components/body-tracker/BodySilhouette';
 import {
-  ManualInputModal,
+  InlineEntryPanel,
   DataSourceSelector,
   DatePickerWithDefaults,
   todayIso,
@@ -162,7 +162,7 @@ export function MuscleAnalysisForm({ open, onOpenChange, onSaved }: MuscleAnalys
   }
 
   return (
-    <ManualInputModal
+    <InlineEntryPanel
       open={open}
       onOpenChange={(o) => { if (!o) reset(); onOpenChange(o); }}
       title="Log muscle analysis"
@@ -318,6 +318,6 @@ export function MuscleAnalysisForm({ open, onOpenChange, onSaved }: MuscleAnalys
           </>
         )}
       </div>
-    </ManualInputModal>
+    </InlineEntryPanel>
   );
 }

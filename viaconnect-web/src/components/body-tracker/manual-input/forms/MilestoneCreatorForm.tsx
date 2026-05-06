@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import { Target, Scale, Percent, Dumbbell, Ruler, Gauge, HeartPulse, Activity, Settings2 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import {
-  ManualInputModal,
+  InlineEntryPanel,
   DatePickerWithDefaults,
   todayIso,
   NumberField,
@@ -158,7 +158,7 @@ export function MilestoneCreatorForm({ open, onOpenChange, onSaved }: MilestoneC
   }
 
   return (
-    <ManualInputModal
+    <InlineEntryPanel
       open={open}
       onOpenChange={(o) => { if (!o) reset(); onOpenChange(o); }}
       title="Create new milestone"
@@ -300,7 +300,7 @@ export function MilestoneCreatorForm({ open, onOpenChange, onSaved }: MilestoneC
           </FormTip>
         )}
       </div>
-    </ManualInputModal>
+    </InlineEntryPanel>
   );
 }
 

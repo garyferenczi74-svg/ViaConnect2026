@@ -1,4 +1,5 @@
 export { ManualInputModal } from './ManualInputModal';
+export { InlineEntryPanel } from './InlineEntryPanel';
 export { DataSourceSelector } from './DataSourceSelector';
 export { UnitToggle } from './UnitToggle';
 export { FieldValidation, validateField, hasBlockedValues } from './SanityValidator';

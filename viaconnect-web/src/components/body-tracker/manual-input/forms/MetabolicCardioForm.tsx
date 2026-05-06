@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import {
-  ManualInputModal,
+  InlineEntryPanel,
   DataSourceSelector,
   DatePickerWithDefaults,
   todayIso,
@@ -165,7 +165,7 @@ export function MetabolicCardioForm({ open, onOpenChange, onSaved }: MetabolicCa
   }
 
   return (
-    <ManualInputModal
+    <InlineEntryPanel
       open={open}
       onOpenChange={(o) => { if (!o) reset(); onOpenChange(o); }}
       title="Log metabolic and cardiovascular"
@@ -286,6 +286,6 @@ export function MetabolicCardioForm({ open, onOpenChange, onSaved }: MetabolicCa
           </>
         )}
       </div>
-    </ManualInputModal>
+    </InlineEntryPanel>
   );
 }
