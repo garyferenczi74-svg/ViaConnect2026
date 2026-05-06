@@ -53,14 +53,13 @@ export const GAUGE_GRADIENT_STOPS = [
   { offset: 1.0,  color: '#2DA5A0' }, // teal
 ];
 
-// Tab definitions
+// Tab definitions — Prompt #85b merged Muscle into Body Composition (5 primary tabs)
 export const BODY_TRACKER_TABS = [
-  { id: 'dashboard',   label: 'Dashboard',   href: '/body-tracker' },
-  { id: 'composition', label: 'Composition', href: '/body-tracker/composition' },
-  { id: 'weight',      label: 'Weight',      href: '/body-tracker/weight' },
-  { id: 'muscle',      label: 'Muscle',      href: '/body-tracker/muscle' },
-  { id: 'milestones',  label: 'Milestones',  href: '/body-tracker/milestones' },
-  { id: 'metabolic',   label: 'Metabolic',   href: '/body-tracker/metabolic' },
-  { id: 'photos',      label: 'Photos',      href: '/body-tracker/photos' },
-  { id: 'connections', label: 'Connections', href: '/body-tracker/connections' },
+  { id: 'dashboard',   label: 'Dashboard',        href: '/body-tracker' },
+  { id: 'composition', label: 'Body Composition', href: '/body-tracker/composition' },
+  { id: 'weight',      label: 'Weight',           href: '/body-tracker/weight' },
+  { id: 'milestones',  label: 'Milestones',       href: '/body-tracker/milestones' },
+  { id: 'metabolic',   label: 'Metabolic',        href: '/body-tracker/metabolic' },
+  { id: 'photos',      label: 'Photos',           href: '/body-tracker/photos' },
+  { id: 'connections', label: 'Connections',      href: '/body-tracker/connections' },
 ] as const;

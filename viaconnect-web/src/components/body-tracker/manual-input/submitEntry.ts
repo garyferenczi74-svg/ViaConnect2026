@@ -10,7 +10,8 @@ export type DetailTable =
   | 'body_tracker_weight'
   | 'body_tracker_segmental_fat'
   | 'body_tracker_segmental_muscle'
-  | 'body_tracker_metabolic';
+  | 'body_tracker_metabolic'
+  | 'body_tracker_circumference';
 
 export interface SubmitEntryInput {
   userId: string;
@@ -66,8 +67,10 @@ export async function submitEntry(input: SubmitEntryInput): Promise<SubmitEntryR
   const entryId = (entry as { id: string }).id;
 
   for (const d of input.details) {
+    // Cast table name: body_tracker_circumference is in the live DB but not yet in
+    // generated Supabase types until next typegen pass.
     const { error: dErr } = await supabase
-      .from(d.table)
+      .from(d.table as never)
       .insert({
         ...d.row,
         entry_id: entryId,

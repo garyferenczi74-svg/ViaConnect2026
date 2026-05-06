@@ -8,6 +8,10 @@ export interface BodyScoreInput {
   bodyFatPct?: number;
   segmentalFatBalance?: number;
   visceralFatRating?: number;
+  // Prompt #85b: circumference contribution to composition score
+  circumferenceBalance?: number;     // 0..1 left/right symmetry
+  waistToHipRatio?: number;          // optional, sex-adjusted scoring
+  gender?: 'male' | 'female';
   weightTrend?: 'toward_goal' | 'away_from_goal' | 'stable' | 'no_goal';
   weightConsistency?: number;
   muscleMassTrend?: 'gaining' | 'losing' | 'stable';
@@ -53,6 +57,21 @@ function calculateCompositionScore(input: BodyScoreInput): number {
   if (input.visceralFatRating !== undefined) {
     const penalty = Math.max(0, (input.visceralFatRating - 12) * 5);
     score = Math.max(0, score - penalty);
+  }
+  // Prompt #85b: circumference balance bonus (left/right symmetry)
+  if (input.circumferenceBalance !== undefined) {
+    score += input.circumferenceBalance * 10; // up to +10
+  }
+  // Prompt #85b: waist to hip ratio (cardiovascular risk indicator)
+  if (input.waistToHipRatio !== undefined) {
+    const optimal = input.gender === 'female' ? 0.85 : 0.90;
+    if (input.waistToHipRatio <= optimal) {
+      score += 8;
+    } else if (input.waistToHipRatio <= optimal + 0.05) {
+      score += 4;
+    } else {
+      score -= 5;
+    }
   }
   return clamp(score);
 }
