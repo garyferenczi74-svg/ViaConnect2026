@@ -4,12 +4,13 @@
 
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Scale, Brain, Dumbbell, Heart, Zap, ArrowRight, FileText } from 'lucide-react';
+import { Scale, Brain, Dumbbell, Heart, ArrowRight, FileText, TrendingDown } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { BodyScoreGauge } from '@/components/body-tracker/BodyScoreGauge';
 import { QuickMetricCard } from '@/components/body-tracker/QuickMetricCard';
-import { QuickLogCards } from '@/components/body-tracker/manual-input';
+import { QuickLogCards, useCurrentUser } from '@/components/body-tracker/manual-input';
+import { useUserJourney } from '@/hooks/body-tracker/useUserJourney';
 import type { BodyScoreTier, MetricStatus } from '@/lib/body-tracker/types';
 
 // Placeholder data (populates UI immediately; replaced by Supabase when tables exist)
@@ -40,6 +41,8 @@ export default function BodyTrackerDashboard() {
   const [metrics, setMetrics] = useState(DEFAULT_METRICS);
   const [contributors, setContributors] = useState(DEFAULT_CONTRIBUTORS);
   const [refreshKey, setRefreshKey] = useState(0);
+  const { id: userId } = useCurrentUser();
+  const { activeJourney, loading: journeyLoading } = useUserJourney(userId);
 
   useEffect(() => {
     (async () => {
@@ -112,6 +115,44 @@ export default function BodyTrackerDashboard() {
 
   return (
     <div className="space-y-6">
+      {/* Journey strip */}
+      {!journeyLoading && (
+        activeJourney ? (
+          <Link
+            href="/body-tracker/journey"
+            className="flex items-center justify-between rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 p-4 backdrop-blur-sm transition-all hover:bg-[#1E3054]/45"
+          >
+            <div className="flex items-center gap-3">
+              {activeJourney === 'weight_loss' ? (
+                <TrendingDown className="h-5 w-5 text-[#2DA5A0]" strokeWidth={1.5} />
+              ) : (
+                <Dumbbell className="h-5 w-5 text-[#B75E18]" strokeWidth={1.5} />
+              )}
+              <div>
+                <p className="text-xs uppercase tracking-wider text-white/50">Active journey</p>
+                <p className="text-sm font-semibold text-white">
+                  {activeJourney === 'weight_loss' ? 'Weight Loss' : 'Muscle Building'}
+                </p>
+              </div>
+            </div>
+            <span className="text-xs text-white/50">Switch</span>
+          </Link>
+        ) : (
+          <Link
+            href="/body-tracker/journey"
+            className="flex items-center justify-between rounded-2xl border border-[#2DA5A0]/30 bg-[#2DA5A0]/10 p-4 backdrop-blur-sm transition-all hover:bg-[#2DA5A0]/15"
+          >
+            <div>
+              <p className="text-sm font-semibold text-[#2DA5A0]">Set your journey</p>
+              <p className="text-xs text-white/60">
+                Pick Weight Loss or Muscle Building so Arnold can tailor everything to your goal.
+              </p>
+            </div>
+            <ArrowRight className="h-4 w-4 text-[#2DA5A0]" strokeWidth={1.5} />
+          </Link>
+        )
+      )}
+
       {/* Body Score Gauge */}
       <BodyScoreGauge
         score={scoreData.score}

@@ -4,6 +4,8 @@
 import type { BodyScoreTier } from './types';
 import { BODY_SCORE_WEIGHTS, TIER_THRESHOLDS, GRADE_THRESHOLDS } from './constants';
 
+export type ActiveJourney = 'weight_loss' | 'muscle_building';
+
 export interface BodyScoreInput {
   bodyFatPct?: number;
   segmentalFatBalance?: number;
@@ -22,6 +24,32 @@ export interface BodyScoreInput {
   metabolicAgeDelta?: number;
   metabolicCapacity?: number;
   strainBalance?: number;
+  // Prompt #85c Phase A: journey re-weights the 5 contributors
+  journey?: ActiveJourney;
+}
+
+type ScoreWeights = Record<keyof typeof BODY_SCORE_WEIGHTS, number>;
+
+const JOURNEY_WEIGHTS: Record<ActiveJourney, ScoreWeights> = {
+  weight_loss: {
+    composition:      0.30,
+    weightManagement: 0.25,
+    muscleHealth:     0.10,
+    cardiovascular:   0.15,
+    metabolic:        0.20,
+  },
+  muscle_building: {
+    composition:      0.25,
+    weightManagement: 0.15,
+    muscleHealth:     0.30,
+    cardiovascular:   0.15,
+    metabolic:        0.15,
+  },
+};
+
+export function getJourneyWeights(journey?: ActiveJourney): ScoreWeights {
+  if (journey && JOURNEY_WEIGHTS[journey]) return JOURNEY_WEIGHTS[journey];
+  return BODY_SCORE_WEIGHTS;
 }
 
 export interface BodyScoreOutput {
@@ -127,12 +155,13 @@ export function calculateBodyScore(input: BodyScoreInput): BodyScoreOutput {
   const cardiovascularScore = calculateCardiovascularScore(input);
   const metabolicScore = calculateMetabolicScore(input);
 
+  const w = getJourneyWeights(input.journey);
   const weightedAvg =
-    compositionScore * BODY_SCORE_WEIGHTS.composition +
-    weightScore * BODY_SCORE_WEIGHTS.weightManagement +
-    muscleScore * BODY_SCORE_WEIGHTS.muscleHealth +
-    cardiovascularScore * BODY_SCORE_WEIGHTS.cardiovascular +
-    metabolicScore * BODY_SCORE_WEIGHTS.metabolic;
+    compositionScore * w.composition +
+    weightScore * w.weightManagement +
+    muscleScore * w.muscleHealth +
+    cardiovascularScore * w.cardiovascular +
+    metabolicScore * w.metabolic;
 
   const bodyScore = Math.round(weightedAvg * 10);
 

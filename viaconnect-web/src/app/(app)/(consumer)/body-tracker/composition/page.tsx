@@ -201,13 +201,9 @@ function CompositionPageInner() {
 
           <div className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 p-6 backdrop-blur-sm">
             <h3 className="mb-4 text-xs font-semibold uppercase tracking-wider text-white/40">
-              {gender === 'female' ? 'Waist and Hips Measurements' : 'Segmental Body Fat Analysis'}
+              Segmental Body Fat Analysis
             </h3>
-            {gender === 'male' ? (
-              <BodySilhouette mode="fat" segmentalData={SAMPLE_FAT} />
-            ) : (
-              <FemaleSilhouette waistIn={SAMPLE_FEMALE_MEASUREMENTS.waist_in} hipsIn={SAMPLE_FEMALE_MEASUREMENTS.hips_in} />
-            )}
+            <BodySilhouette mode="fat" segmentalData={SAMPLE_FAT} gender={gender} />
           </div>
         </>
       )}
@@ -236,7 +232,7 @@ function CompositionPageInner() {
             <h3 className="mb-4 text-xs font-semibold uppercase tracking-wider text-white/40">
               Segmental Muscle Analysis
             </h3>
-            <BodySilhouette mode="muscle" segmentalData={SAMPLE_MUSCLE} />
+            <BodySilhouette mode="muscle" segmentalData={SAMPLE_MUSCLE} gender={gender} />
           </div>
         </>
       )}
