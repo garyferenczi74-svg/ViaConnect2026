@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Plus } from 'lucide-react';
+import { Plus, Camera } from 'lucide-react';
 import { BodySilhouette } from '@/components/body-tracker/BodySilhouette';
 import {
   CompositionSectionToggle,
@@ -11,6 +11,8 @@ import {
 import { UnitToggle } from '@/components/body-tracker/UnitToggle';
 import { MeasurementsGrid } from '@/components/body-tracker/MeasurementsGrid';
 import { BodyCompositionForm } from '@/components/body-tracker/BodyCompositionForm';
+import { BodyScanUploader, type BodyScanResult } from '@/components/body-tracker/BodyScanUploader';
+import { BodyScanResults } from '@/components/body-tracker/BodyScanResults';
 import {
   InlineEntryPanel,
   EntryHistoryTimeline,
@@ -18,6 +20,7 @@ import {
   useCurrentUser,
 } from '@/components/body-tracker/manual-input';
 import { useCircumferenceData } from '@/hooks/body-tracker/useCircumferenceData';
+import { useUserBiologicalSex } from '@/hooks/body-tracker/useUserBiologicalSex';
 import type { MeasurementUnit } from '@/lib/body-tracker/circumference';
 
 const SAMPLE_FAT = {
@@ -93,11 +96,15 @@ function CompositionPageInner() {
 
   const [section, setSection] = useState<CompositionSection>(initialSection);
   const [open, setOpen] = useState(false);
+  const [scanOpen, setScanOpen] = useState(false);
+  const [scanResult, setScanResult] = useState<BodyScanResult | null>(null);
   const [unit, setUnit] = useState<MeasurementUnit>(() => readStoredUnit());
   const [refreshKey, setRefreshKey] = useState(0);
   const [gender, setGender] = useState<'male' | 'female'>('male');
+  const [genderManuallySet, setGenderManuallySet] = useState(false);
 
   const { id: userId } = useCurrentUser();
+  const { sex: caqSex } = useUserBiologicalSex(userId ?? null);
   const { data: circumferenceData, refresh: refreshCirc } = useCircumferenceData({
     userId: userId ?? null,
     displayUnit: unit,
@@ -106,6 +113,11 @@ function CompositionPageInner() {
   useEffect(() => {
     try { window.localStorage.setItem(UNIT_STORAGE_KEY, unit); } catch { /* ignore */ }
   }, [unit]);
+
+  // Default gender from CAQ biological_sex, unless user has manually toggled
+  useEffect(() => {
+    if (!genderManuallySet) setGender(caqSex);
+  }, [caqSex, genderManuallySet]);
 
   useEffect(() => {
     if (sectionParam === 'muscle' || sectionParam === 'measurements' || sectionParam === 'fat') {
@@ -124,18 +136,36 @@ function CompositionPageInner() {
     <div className="space-y-6" key={refreshKey}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <CompositionSectionToggle active={section} onChange={setSection} />
-        <button
-          type="button"
-          onClick={() => setOpen((o) => !o)}
-          className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-medium min-h-[44px] transition-all ${
-            open
-              ? 'border-[#2DA5A0]/60 bg-[#2DA5A0] text-white'
-              : 'border-[#2DA5A0]/30 bg-[#2DA5A0]/15 text-[#2DA5A0] hover:bg-[#2DA5A0]/25'
-          }`}
-        >
-          <Plus className="h-3.5 w-3.5" strokeWidth={1.5} />
-          Log Data
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              setOpen(false);
+              setScanOpen((o) => !o);
+              if (!scanOpen) setScanResult(null);
+            }}
+            className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-medium min-h-[44px] transition-all ${
+              scanOpen
+                ? 'border-white/30 bg-white/10 text-white'
+                : 'border-white/[0.08] bg-white/5 text-white/70 hover:bg-white/10'
+            }`}
+          >
+            <Camera className="h-3.5 w-3.5" strokeWidth={1.5} />
+            Scan My Body
+          </button>
+          <button
+            type="button"
+            onClick={() => { setScanOpen(false); setOpen((o) => !o); }}
+            className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-medium min-h-[44px] transition-all ${
+              open
+                ? 'border-[#2DA5A0]/60 bg-[#2DA5A0] text-white'
+                : 'border-[#2DA5A0]/30 bg-[#2DA5A0]/15 text-[#2DA5A0] hover:bg-[#2DA5A0]/25'
+            }`}
+          >
+            <Plus className="h-3.5 w-3.5" strokeWidth={1.5} />
+            Log Data
+          </button>
+        </div>
       </div>
 
       <InlineEntryPanel
@@ -150,6 +180,26 @@ function CompositionPageInner() {
           onCancel={() => setOpen(false)}
           onSaved={handleSaved}
         />
+      </InlineEntryPanel>
+
+      <InlineEntryPanel
+        open={scanOpen}
+        onOpenChange={(o) => { setScanOpen(o); if (!o) setScanResult(null); }}
+        title="Body Scan"
+        description="AI body composition estimate from 4 photos"
+      >
+        {scanResult ? (
+          <BodyScanResults
+            result={scanResult}
+            onRetake={() => setScanResult(null)}
+            onClose={() => { setScanOpen(false); setScanResult(null); }}
+          />
+        ) : (
+          <BodyScanUploader
+            onComplete={(r) => setScanResult(r)}
+            onCancel={() => setScanOpen(false)}
+          />
+        )}
       </InlineEntryPanel>
 
       {section === 'fat' && (
@@ -177,7 +227,7 @@ function CompositionPageInner() {
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => setGender('male')}
+              onClick={() => { setGenderManuallySet(true); setGender('male'); }}
               className={`flex-1 rounded-xl border px-4 py-2.5 text-sm font-medium transition-all min-h-[44px] ${
                 gender === 'male'
                   ? 'border-[#2DA5A0]/60 bg-[#2DA5A0]/15 text-[#2DA5A0]'
@@ -188,7 +238,7 @@ function CompositionPageInner() {
             </button>
             <button
               type="button"
-              onClick={() => setGender('female')}
+              onClick={() => { setGenderManuallySet(true); setGender('female'); }}
               className={`flex-1 rounded-xl border px-4 py-2.5 text-sm font-medium transition-all min-h-[44px] ${
                 gender === 'female'
                   ? 'border-[#B75E18]/60 bg-[#B75E18]/15 text-[#B75E18]'
