@@ -1,20 +1,21 @@
-// Body Tracker — Circumference (13 measurement points) shared types, labels, conversions.
+// Body Tracker — Circumference (12 measurement points) shared types, labels,
+// conversions. Updated by Prompt #85d: renamed bicep + quadriceps fields, hip
+// removed from this surface. WHR scoring sources hip from body_tracker_weight.
 
 export type MeasurementUnit = 'in' | 'cm';
 
 export const MEASUREMENT_KEYS = [
   'neck',
   'shoulderWidth',
-  'rightUpperArm',
+  'rightBicep',
   'rightForearm',
-  'leftUpperArm',
+  'leftBicep',
   'leftForearm',
   'chest',
   'waist',
-  'hip',
-  'rightUpperThigh',
+  'rightQuadriceps',
   'rightCalf',
-  'leftUpperThigh',
+  'leftQuadriceps',
   'leftCalf',
 ] as const;
 
@@ -31,33 +32,31 @@ export interface CircumferenceRecord extends CircumferenceMeasurements {
 export const MEASUREMENT_DB_COLUMN: Record<MeasurementKey, string> = {
   neck: 'neck',
   shoulderWidth: 'shoulder_width',
-  rightUpperArm: 'right_upper_arm',
+  rightBicep: 'right_bicep',
   rightForearm: 'right_forearm',
-  leftUpperArm: 'left_upper_arm',
+  leftBicep: 'left_bicep',
   leftForearm: 'left_forearm',
   chest: 'chest',
   waist: 'waist',
-  hip: 'hip',
-  rightUpperThigh: 'right_upper_thigh',
+  rightQuadriceps: 'right_quadriceps',
   rightCalf: 'right_calf',
-  leftUpperThigh: 'left_upper_thigh',
+  leftQuadriceps: 'left_quadriceps',
   leftCalf: 'left_calf',
 };
 
 export const MEASUREMENT_LABELS: Record<MeasurementKey, string> = {
-  neck: 'Neck',
+  neck: 'Neck Circumference',
   shoulderWidth: 'Shoulder Width',
-  rightUpperArm: 'R. Upper Arm',
-  leftUpperArm: 'L. Upper Arm',
-  rightForearm: 'R. Forearm',
-  leftForearm: 'L. Forearm',
-  chest: 'Chest',
-  waist: 'Waist',
-  hip: 'Hip',
-  rightUpperThigh: 'R. Upper Thigh',
-  leftUpperThigh: 'L. Upper Thigh',
-  rightCalf: 'R. Calf',
-  leftCalf: 'L. Calf',
+  rightBicep: 'Right Bicep',
+  leftBicep: 'Left Bicep',
+  rightForearm: 'Right Forearm',
+  leftForearm: 'Left Forearm',
+  chest: 'Chest Circumference',
+  waist: 'Waist Circumference',
+  rightQuadriceps: 'Right Quadriceps',
+  leftQuadriceps: 'Left Quadriceps',
+  rightCalf: 'Right Calf',
+  leftCalf: 'Left Calf',
 };
 
 export const BODY_REGIONS: Array<{
@@ -66,16 +65,16 @@ export const BODY_REGIONS: Array<{
   measurements: MeasurementKey[];
 }> = [
   { id: 'upper_body', label: 'Upper Body', measurements: ['neck', 'shoulderWidth'] },
-  { id: 'arms',       label: 'Arms',       measurements: ['rightUpperArm', 'leftUpperArm', 'rightForearm', 'leftForearm'] },
-  { id: 'torso',      label: 'Torso',      measurements: ['chest', 'waist', 'hip'] },
-  { id: 'legs',       label: 'Legs',       measurements: ['rightUpperThigh', 'leftUpperThigh', 'rightCalf', 'leftCalf'] },
+  { id: 'torso',      label: 'Torso',      measurements: ['chest', 'waist'] },
+  { id: 'arms',       label: 'Arms',       measurements: ['rightBicep', 'leftBicep', 'rightForearm', 'leftForearm'] },
+  { id: 'legs',       label: 'Legs',       measurements: ['rightQuadriceps', 'leftQuadriceps', 'rightCalf', 'leftCalf'] },
 ];
 
 // Pairs used by symmetry scoring
 export const SYMMETRY_PAIRS: Array<[MeasurementKey, MeasurementKey]> = [
-  ['rightUpperArm',   'leftUpperArm'],
+  ['rightBicep',      'leftBicep'],
   ['rightForearm',    'leftForearm'],
-  ['rightUpperThigh', 'leftUpperThigh'],
+  ['rightQuadriceps', 'leftQuadriceps'],
   ['rightCalf',       'leftCalf'],
 ];
 
@@ -135,7 +134,12 @@ export function calculateCircumferenceBalance(data: CircumferenceMeasurements): 
   return scores.reduce((a, b) => a + b, 0) / scores.length;
 }
 
-export function calculateWaistToHipRatio(data: CircumferenceMeasurements): number | null {
-  if (data.waist === null || data.hip === null || data.hip === 0) return null;
-  return Math.round((data.waist / data.hip) * 100) / 100;
+// Hip is no longer a circumference field as of Prompt #85d. Score-engine
+// passes hip from body_tracker_weight.hips_in directly to this helper.
+export function calculateWaistToHipRatio(
+  waist: number | null,
+  hip: number | null,
+): number | null {
+  if (waist === null || hip === null || hip === 0) return null;
+  return Math.round((waist / hip) * 100) / 100;
 }

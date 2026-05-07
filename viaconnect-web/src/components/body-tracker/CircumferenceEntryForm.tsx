@@ -41,16 +41,15 @@ type CircumferenceEntryFormProps = StandaloneProps | ControlledProps;
 const COPY_PAIRS: Record<MeasurementKey, MeasurementKey | undefined> = {
   neck: undefined,
   shoulderWidth: undefined,
-  rightUpperArm: undefined,
+  rightBicep: undefined,
   rightForearm: undefined,
-  leftUpperArm: 'rightUpperArm',
+  leftBicep: 'rightBicep',
   leftForearm: 'rightForearm',
   chest: undefined,
   waist: undefined,
-  hip: undefined,
-  rightUpperThigh: undefined,
+  rightQuadriceps: undefined,
   rightCalf: undefined,
-  leftUpperThigh: 'rightUpperThigh',
+  leftQuadriceps: 'rightQuadriceps',
   leftCalf: 'rightCalf',
 };
 

@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { motion } from 'framer-motion';
 import { Plus, Camera } from 'lucide-react';
 import { BodySilhouette } from '@/components/body-tracker/BodySilhouette';
 import {
@@ -265,7 +266,16 @@ function CompositionPageInner() {
             </div>
             {/* Mobile + tablet: cards in a horizontal grid above silhouette */}
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:hidden">
-              {FAT_CARDS.map((c, i) => <FloatingMetricCard key={i} {...c} />)}
+              {FAT_CARDS.map((c, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.05, duration: 0.4, ease: 'easeOut' }}
+                >
+                  <FloatingMetricCard {...c} />
+                </motion.div>
+              ))}
             </div>
           </div>
 
@@ -304,22 +314,42 @@ function CompositionPageInner() {
 
           <div className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 p-6 backdrop-blur-sm lg:grid lg:grid-cols-[1fr_auto_1fr] lg:items-center lg:gap-6">
             <div className="hidden lg:flex lg:flex-col lg:gap-3">
-              {FAT_LEFT_IDX.map((i) => <FloatingMetricCard key={i} {...FAT_CARDS[i]} />)}
+              {FAT_LEFT_IDX.map((i, order) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: order * 0.05, duration: 0.4, ease: 'easeOut' }}
+                >
+                  <FloatingMetricCard {...FAT_CARDS[i]} />
+                </motion.div>
+              ))}
             </div>
             <div>
               <h3 className="mb-4 text-xs font-semibold uppercase tracking-wider text-white/40 lg:text-center">
                 Segmental Body Fat Analysis
               </h3>
-              <BodySilhouette
-                mode="fat"
-                segmentalData={SAMPLE_FAT}
-                gender={gender}
-                journey={activeJourney}
-                journeyStartSnapshot={startingSnapshot}
-              />
+              <div style={{ filter: 'drop-shadow(0 0 20px rgba(45, 165, 160, 0.15))' }}>
+                <BodySilhouette
+                  mode="fat"
+                  segmentalData={SAMPLE_FAT}
+                  gender={gender}
+                  journey={activeJourney}
+                  journeyStartSnapshot={startingSnapshot}
+                />
+              </div>
             </div>
             <div className="hidden lg:flex lg:flex-col lg:gap-3">
-              {FAT_RIGHT_IDX.map((i) => <FloatingMetricCard key={i} {...FAT_CARDS[i]} />)}
+              {FAT_RIGHT_IDX.map((i, order) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: (order + 2) * 0.05, duration: 0.4, ease: 'easeOut' }}
+                >
+                  <FloatingMetricCard {...FAT_CARDS[i]} />
+                </motion.div>
+              ))}
             </div>
           </div>
         </>
@@ -334,27 +364,56 @@ function CompositionPageInner() {
             </div>
             {/* Mobile + tablet: cards in a horizontal grid above silhouette */}
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:hidden">
-              {MUSCLE_CARDS.map((c, i) => <FloatingMetricCard key={i} {...c} />)}
+              {MUSCLE_CARDS.map((c, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.05, duration: 0.4, ease: 'easeOut' }}
+                >
+                  <FloatingMetricCard {...c} />
+                </motion.div>
+              ))}
             </div>
           </div>
           <div className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 p-6 backdrop-blur-sm lg:grid lg:grid-cols-[1fr_auto_1fr] lg:items-center lg:gap-6">
             <div className="hidden lg:flex lg:flex-col lg:gap-3">
-              {MUSCLE_LEFT_IDX.map((i) => <FloatingMetricCard key={i} {...MUSCLE_CARDS[i]} />)}
+              {MUSCLE_LEFT_IDX.map((i, order) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: order * 0.05, duration: 0.4, ease: 'easeOut' }}
+                >
+                  <FloatingMetricCard {...MUSCLE_CARDS[i]} />
+                </motion.div>
+              ))}
             </div>
             <div>
               <h3 className="mb-4 text-xs font-semibold uppercase tracking-wider text-white/40 lg:text-center">
                 Segmental Muscle Analysis
               </h3>
-              <BodySilhouette
-                mode="muscle"
-                segmentalData={SAMPLE_MUSCLE}
-                gender={gender}
-                journey={activeJourney}
-                journeyStartSnapshot={startingSnapshot}
-              />
+              <div style={{ filter: 'drop-shadow(0 0 20px rgba(45, 165, 160, 0.15))' }}>
+                <BodySilhouette
+                  mode="muscle"
+                  segmentalData={SAMPLE_MUSCLE}
+                  gender={gender}
+                  journey={activeJourney}
+                  journeyStartSnapshot={startingSnapshot}
+                />
+              </div>
             </div>
             <div className="hidden lg:flex lg:flex-col lg:gap-3">
-              {MUSCLE_RIGHT_IDX.map((i) => <FloatingMetricCard key={i} {...MUSCLE_CARDS[i]} />)}
+              {MUSCLE_RIGHT_IDX.map((i, order) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: (order + 2) * 0.05, duration: 0.4, ease: 'easeOut' }}
+                >
+                  <FloatingMetricCard {...MUSCLE_CARDS[i]} />
+                </motion.div>
+              ))}
             </div>
           </div>
         </>
