@@ -6,6 +6,9 @@ import { ChevronLeft, ChevronRight, Hexagon, Plus, Star, Trophy } from 'lucide-r
 import { MilestoneGauge } from '@/components/body-tracker/MilestoneGauge';
 import { getMilestoneMessage } from '@/lib/body-tracker/calculations';
 import { MilestoneCreatorForm } from '@/components/body-tracker/manual-input/forms/MilestoneCreatorForm';
+import { ActivityPerformanceCard } from '@/components/body-tracker/ActivityPerformanceCard';
+import { useCurrentUser } from '@/components/body-tracker/manual-input';
+import { useUserActivityData } from '@/hooks/body-tracker/useUserActivityData';
 
 const SAMPLE_MILESTONES = [
   {
@@ -67,10 +70,14 @@ export default function MilestonesPage() {
   const [idx, setIdx] = useState(0);
   const [open, setOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const { id: userId } = useCurrentUser();
+  const { data: activityData, loading: activityLoading } = useUserActivityData(userId);
   const m = SAMPLE_MILESTONES[idx];
 
   return (
     <div className="space-y-6" key={refreshKey}>
+      <ActivityPerformanceCard data={activityData} loading={activityLoading} />
+
       <div className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 backdrop-blur-md p-4 sm:p-5 space-y-5">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-bold text-white">Milestones</h2>

@@ -17,6 +17,7 @@ interface HealthReportCardProps {
   weekOffset?: number;
   onWeekChange?: (nextOffset: number) => void;
   canGoBack?: boolean;
+  hasScoreData?: boolean;
 }
 
 function arnoldHealthSummary(score: number): string {
@@ -50,6 +51,7 @@ export function HealthReportCard({
   weekOffset = 0,
   onWeekChange,
   canGoBack = true,
+  hasScoreData = true,
 }: HealthReportCardProps) {
   const summary = arnoldHealthSummary(score);
   const showBioAge = typeof biologicalAge === 'number' && typeof chronologicalAge === 'number';
@@ -57,6 +59,7 @@ export function HealthReportCard({
   const isCurrentWeek = weekOffset === 0;
   const prevDisabled = !navEnabled || !canGoBack;
   const nextDisabled = !navEnabled || isCurrentWeek;
+  const showNoDataPill = navEnabled && !isCurrentWeek && !hasScoreData;
 
   return (
     <section className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 p-5 backdrop-blur-sm md:p-6">
@@ -90,6 +93,12 @@ export function HealthReportCard({
           )}
         </div>
       </header>
+
+      {showNoDataPill && (
+        <div className="mb-4 rounded-lg border border-white/[0.06] bg-white/[0.03] px-3 py-2 text-xs text-white/60">
+          No score data this week. Showing the latest available reading.
+        </div>
+      )}
 
       <BodyScoreGauge
         score={score}

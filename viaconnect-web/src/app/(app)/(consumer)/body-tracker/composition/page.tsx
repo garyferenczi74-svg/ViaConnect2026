@@ -13,7 +13,7 @@ import { MeasurementsGrid } from '@/components/body-tracker/MeasurementsGrid';
 import { BodyCompositionForm } from '@/components/body-tracker/BodyCompositionForm';
 import { BodyScanUploader, type BodyScanResult } from '@/components/body-tracker/BodyScanUploader';
 import { BodyScanResults } from '@/components/body-tracker/BodyScanResults';
-import { FloatingMetricCard } from '@/components/body-tracker/FloatingMetricCard';
+import { FloatingMetricCard, type MetricStatus } from '@/components/body-tracker/FloatingMetricCard';
 import {
   InlineEntryPanel,
   EntryHistoryTimeline,
@@ -34,6 +34,32 @@ const SAMPLE_MUSCLE = {
   right_leg_lbs: 18.9, left_leg_lbs: 18.9,
   total_muscle_mass_lbs: 63.8, skeletal_muscle_mass_lbs: 28.3,
 };
+
+interface MetricCardSpec {
+  label: string;
+  value: string;
+  status: MetricStatus;
+  trend?: 'up' | 'down' | 'stable';
+}
+
+// Body Fat cards: mobile renders all 4; desktop splits left [0,2] / right [1,3]
+const FAT_CARDS: MetricCardSpec[] = [
+  { label: 'Total Body Fat', value: '21.3%', status: 'Standard', trend: 'down' },
+  { label: 'Visceral Fat',   value: '8',     status: 'Standard' },
+  { label: 'BMI',            value: '24.2',  status: 'Standard' },
+  { label: 'Body Water',     value: '55.1%', status: 'Good' },
+];
+const FAT_LEFT_IDX  = [0, 2];
+const FAT_RIGHT_IDX = [1, 3];
+
+// Muscle cards: mobile renders all 3; desktop splits left [0,2] / right [1]
+const MUSCLE_CARDS: MetricCardSpec[] = [
+  { label: 'Total Muscle Mass',    value: '63.8 lbs', status: 'Good',     trend: 'up' },
+  { label: 'Skeletal Muscle Mass', value: '28.3 lbs', status: 'Standard' },
+  { label: 'Muscle Score',         value: 'B+',       status: 'Good',     trend: 'up' },
+];
+const MUSCLE_LEFT_IDX  = [0, 2];
+const MUSCLE_RIGHT_IDX = [1];
 
 const UNIT_STORAGE_KEY = 'vc.body-tracker.measurement-unit';
 
@@ -237,10 +263,7 @@ function CompositionPageInner() {
             </div>
             {/* Mobile + tablet: cards in a horizontal grid above silhouette */}
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:hidden">
-              <FloatingMetricCard label="Total Body Fat" value="21.3%" status="Standard" trend="down" />
-              <FloatingMetricCard label="Visceral Fat" value="8" status="Standard" />
-              <FloatingMetricCard label="BMI" value="24.2" status="Standard" />
-              <FloatingMetricCard label="Body Water" value="55.1%" status="Good" />
+              {FAT_CARDS.map((c, i) => <FloatingMetricCard key={i} {...c} />)}
             </div>
           </div>
 
@@ -278,10 +301,8 @@ function CompositionPageInner() {
           )}
 
           <div className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 p-6 backdrop-blur-sm lg:grid lg:grid-cols-[1fr_auto_1fr] lg:items-center lg:gap-6">
-            {/* Desktop: left-side cards */}
             <div className="hidden lg:flex lg:flex-col lg:gap-3">
-              <FloatingMetricCard label="Total Body Fat" value="21.3%" status="Standard" trend="down" />
-              <FloatingMetricCard label="BMI" value="24.2" status="Standard" />
+              {FAT_LEFT_IDX.map((i) => <FloatingMetricCard key={i} {...FAT_CARDS[i]} />)}
             </div>
             <div>
               <h3 className="mb-4 text-xs font-semibold uppercase tracking-wider text-white/40 lg:text-center">
@@ -289,10 +310,8 @@ function CompositionPageInner() {
               </h3>
               <BodySilhouette mode="fat" segmentalData={SAMPLE_FAT} gender={gender} />
             </div>
-            {/* Desktop: right-side cards */}
             <div className="hidden lg:flex lg:flex-col lg:gap-3">
-              <FloatingMetricCard label="Visceral Fat" value="8" status="Standard" />
-              <FloatingMetricCard label="Body Water" value="55.1%" status="Good" />
+              {FAT_RIGHT_IDX.map((i) => <FloatingMetricCard key={i} {...FAT_CARDS[i]} />)}
             </div>
           </div>
         </>
@@ -307,15 +326,12 @@ function CompositionPageInner() {
             </div>
             {/* Mobile + tablet: cards in a horizontal grid above silhouette */}
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:hidden">
-              <FloatingMetricCard label="Total Muscle Mass" value="63.8 lbs" status="Good" trend="up" />
-              <FloatingMetricCard label="Skeletal Muscle Mass" value="28.3 lbs" status="Standard" />
-              <FloatingMetricCard label="Muscle Score" value="B+" status="Good" trend="up" />
+              {MUSCLE_CARDS.map((c, i) => <FloatingMetricCard key={i} {...c} />)}
             </div>
           </div>
           <div className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 p-6 backdrop-blur-sm lg:grid lg:grid-cols-[1fr_auto_1fr] lg:items-center lg:gap-6">
             <div className="hidden lg:flex lg:flex-col lg:gap-3">
-              <FloatingMetricCard label="Total Muscle Mass" value="63.8 lbs" status="Good" trend="up" />
-              <FloatingMetricCard label="Muscle Score" value="B+" status="Good" trend="up" />
+              {MUSCLE_LEFT_IDX.map((i) => <FloatingMetricCard key={i} {...MUSCLE_CARDS[i]} />)}
             </div>
             <div>
               <h3 className="mb-4 text-xs font-semibold uppercase tracking-wider text-white/40 lg:text-center">
@@ -324,7 +340,7 @@ function CompositionPageInner() {
               <BodySilhouette mode="muscle" segmentalData={SAMPLE_MUSCLE} gender={gender} />
             </div>
             <div className="hidden lg:flex lg:flex-col lg:gap-3">
-              <FloatingMetricCard label="Skeletal Muscle Mass" value="28.3 lbs" status="Standard" />
+              {MUSCLE_RIGHT_IDX.map((i) => <FloatingMetricCard key={i} {...MUSCLE_CARDS[i]} />)}
             </div>
           </div>
         </>

@@ -61,6 +61,7 @@ export default function BodyTrackerDashboard() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [weekOffset, setWeekOffset] = useState(0);
   const [hasOlderScore, setHasOlderScore] = useState(true);
+  const [hasScoreThisWeek, setHasScoreThisWeek] = useState(true);
   const { id: userId } = useCurrentUser();
   const { activeJourney, startedAt, startingSnapshot, loading: journeyLoading } = useUserJourney(userId);
   const { snapshot: crossRefSnapshot, tier: crossRefTier, loading: crossRefLoading } = useUserCrossReferenceData(userId);
@@ -92,6 +93,18 @@ export default function BodyTrackerDashboard() {
           .order('score_date', { ascending: false })
           .limit(1)
           .maybeSingle();
+
+        // Did a score actually exist within the selected week's range?
+        const startDate = new Date(endDate);
+        startDate.setDate(startDate.getDate() - 6);
+        const startDateIso = startDate.toISOString().slice(0, 10);
+        const { count: thisWeekCount } = await (supabase as any)
+          .from('body_tracker_scores')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', user.id)
+          .gte('score_date', startDateIso)
+          .lte('score_date', endDateIso);
+        setHasScoreThisWeek((thisWeekCount ?? 0) > 0);
 
         // Detect if there are any score rows older than the current selection
         // (used to disable the prev-week button at the boundary)
@@ -246,6 +259,7 @@ export default function BodyTrackerDashboard() {
         weekOffset={weekOffset}
         onWeekChange={setWeekOffset}
         canGoBack={hasOlderScore}
+        hasScoreData={hasScoreThisWeek}
       />
 
       {/* Journey Timeline (only when all data is present) */}
