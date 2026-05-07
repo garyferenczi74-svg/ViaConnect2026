@@ -44,15 +44,15 @@ interface MetricCardSpec {
   trend?: 'up' | 'down' | 'stable';
 }
 
-// Body Fat cards: mobile renders all 4; desktop splits left [0,2] / right [1,3]
+// Body Fat summary cards: render in a single horizontal row below the
+// silhouette (Prompt #85e). Display order: Total Body Fat, BMI, Visceral
+// Fat, Body Water.
 const FAT_CARDS: MetricCardSpec[] = [
   { label: 'Total Body Fat', value: '21.3%', status: 'Standard', trend: 'down' },
-  { label: 'Visceral Fat',   value: '8',     status: 'Standard' },
   { label: 'BMI',            value: '24.2',  status: 'Standard' },
+  { label: 'Visceral Fat',   value: '8',     status: 'Standard' },
   { label: 'Body Water',     value: '55.1%', status: 'Good' },
 ];
-const FAT_LEFT_IDX  = [0, 2];
-const FAT_RIGHT_IDX = [1, 3];
 
 // Muscle cards: mobile renders all 3; desktop splits left [0,2] / right [1]
 const MUSCLE_CARDS: MetricCardSpec[] = [
@@ -259,24 +259,9 @@ function CompositionPageInner() {
 
       {section === 'fat' && (
         <>
-          <div className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 backdrop-blur-md p-4 sm:p-5 space-y-4">
-            <div>
-              <h2 className="text-lg font-bold text-white">Body Composition</h2>
-              <p className="text-xs text-white/60">Segmental body fat analysis</p>
-            </div>
-            {/* Mobile + tablet: cards in a horizontal grid above silhouette */}
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:hidden">
-              {FAT_CARDS.map((c, i) => (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, y: 15 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.05, duration: 0.4, ease: 'easeOut' }}
-                >
-                  <FloatingMetricCard {...c} />
-                </motion.div>
-              ))}
-            </div>
+          <div className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 backdrop-blur-md p-4 sm:p-5">
+            <h2 className="text-lg font-bold text-white">Body Composition</h2>
+            <p className="text-xs text-white/60">Segmental body fat analysis</p>
           </div>
 
           {caqSource === 'caq_other' && !genderManuallySet && (
@@ -312,42 +297,30 @@ function CompositionPageInner() {
             <p className="text-xs text-[#FCA5A5]">Could not save gender preference: {genderError}</p>
           )}
 
-          <div className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 p-6 backdrop-blur-sm lg:grid lg:grid-cols-[1fr_auto_1fr] lg:items-center lg:gap-6">
-            <div className="hidden lg:flex lg:flex-col lg:gap-3">
-              {FAT_LEFT_IDX.map((i, order) => (
+          <div className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 p-6 backdrop-blur-sm">
+            <h3 className="mb-4 text-center text-xs font-semibold uppercase tracking-wider text-white/40">
+              Segmental Body Fat Analysis
+            </h3>
+            <div style={{ filter: 'drop-shadow(0 0 20px rgba(45, 165, 160, 0.15))' }}>
+              <BodySilhouette
+                mode="fat"
+                segmentalData={SAMPLE_FAT}
+                gender={gender}
+                journey={activeJourney}
+                journeyStartSnapshot={startingSnapshot}
+              />
+            </div>
+
+            {/* Prompt #85e: summary metrics row directly below the silhouette */}
+            <div className="mx-auto mt-6 grid w-full max-w-2xl grid-cols-2 gap-3 md:grid-cols-4">
+              {FAT_CARDS.map((c, i) => (
                 <motion.div
                   key={i}
-                  initial={{ opacity: 0, y: 15 }}
+                  initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: order * 0.05, duration: 0.4, ease: 'easeOut' }}
+                  transition={{ delay: 0.6 + i * 0.08, duration: 0.35, ease: 'easeOut' }}
                 >
-                  <FloatingMetricCard {...FAT_CARDS[i]} />
-                </motion.div>
-              ))}
-            </div>
-            <div>
-              <h3 className="mb-4 text-xs font-semibold uppercase tracking-wider text-white/40 lg:text-center">
-                Segmental Body Fat Analysis
-              </h3>
-              <div style={{ filter: 'drop-shadow(0 0 20px rgba(45, 165, 160, 0.15))' }}>
-                <BodySilhouette
-                  mode="fat"
-                  segmentalData={SAMPLE_FAT}
-                  gender={gender}
-                  journey={activeJourney}
-                  journeyStartSnapshot={startingSnapshot}
-                />
-              </div>
-            </div>
-            <div className="hidden lg:flex lg:flex-col lg:gap-3">
-              {FAT_RIGHT_IDX.map((i, order) => (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, y: 15 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: (order + 2) * 0.05, duration: 0.4, ease: 'easeOut' }}
-                >
-                  <FloatingMetricCard {...FAT_CARDS[i]} />
+                  <FloatingMetricCard {...c} />
                 </motion.div>
               ))}
             </div>
