@@ -7,10 +7,14 @@ import { motion } from 'framer-motion';
 import { Scale, Brain, Dumbbell, Heart, ArrowRight, FileText, TrendingDown } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
-import { BodyScoreGauge } from '@/components/body-tracker/BodyScoreGauge';
+import { HealthReportCard } from '@/components/body-tracker/HealthReportCard';
+import { JourneyTimeline } from '@/components/body-tracker/JourneyTimeline';
+import { CrossReferenceCard } from '@/components/body-tracker/CrossReferenceCard';
 import { QuickMetricCard } from '@/components/body-tracker/QuickMetricCard';
 import { QuickLogCards, useCurrentUser } from '@/components/body-tracker/manual-input';
 import { useUserJourney } from '@/hooks/body-tracker/useUserJourney';
+import { useUserCrossReferenceData } from '@/hooks/body-tracker/useUserCrossReferenceData';
+import { estimateBiologicalAge } from '@/lib/body-tracker/biological-age';
 import type { BodyScoreTier, MetricStatus } from '@/lib/body-tracker/types';
 
 // Placeholder data (populates UI immediately; replaced by Supabase when tables exist)
@@ -36,13 +40,28 @@ const DEFAULT_CONTRIBUTORS: ContributorRow[] = [
   { label: 'Metabolic',         grade: '--', trend: 'stable' },
 ];
 
+interface AgeData {
+  chronological?: number;
+  biological?: number;
+}
+
+interface JourneySnapshot {
+  starting?: number;
+  current?: number;
+  goal?: number;
+  unit: string;
+}
+
 export default function BodyTrackerDashboard() {
   const [scoreData, setScoreData] = useState(DEFAULT_SCORE);
   const [metrics, setMetrics] = useState(DEFAULT_METRICS);
   const [contributors, setContributors] = useState(DEFAULT_CONTRIBUTORS);
+  const [age, setAge] = useState<AgeData>({});
+  const [journeyValues, setJourneyValues] = useState<JourneySnapshot>({ unit: 'lbs' });
   const [refreshKey, setRefreshKey] = useState(0);
   const { id: userId } = useCurrentUser();
-  const { activeJourney, loading: journeyLoading } = useUserJourney(userId);
+  const { activeJourney, startedAt, startingSnapshot, loading: journeyLoading } = useUserJourney(userId);
+  const { snapshot: crossRefSnapshot, tier: crossRefTier, loading: crossRefLoading } = useUserCrossReferenceData(userId);
 
   useEffect(() => {
     (async () => {
@@ -50,6 +69,13 @@ export default function BodyTrackerDashboard() {
         const supabase = createClient();
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
+
+        // Fetch profile (for chronological age)
+        const { data: profileRow } = await (supabase as any)
+          .from('profiles')
+          .select('date_of_birth')
+          .eq('id', user.id)
+          .maybeSingle();
 
         // Fetch latest body score
         const { data: scoreRow } = await (supabase as any)
@@ -79,7 +105,7 @@ export default function BodyTrackerDashboard() {
         // Fetch latest weight/body data
         const { data: weightRow } = await (supabase as any)
           .from('body_tracker_weight')
-          .select('weight_lbs, body_fat_pct')
+          .select('weight_lbs, body_fat_pct, goal_weight_lbs')
           .eq('user_id', user.id)
           .order('created_at', { ascending: false })
           .limit(1)
@@ -95,11 +121,37 @@ export default function BodyTrackerDashboard() {
 
         const { data: metabRow } = await (supabase as any)
           .from('body_tracker_metabolic')
-          .select('metabolic_age')
+          .select('metabolic_age, resting_hr_bpm, hrv_ms')
           .eq('user_id', user.id)
           .order('created_at', { ascending: false })
           .limit(1)
           .maybeSingle();
+
+        // Compute chronological + biological age
+        const dob = profileRow?.date_of_birth;
+        if (dob) {
+          const birth = new Date(dob);
+          const ageYrs = Math.max(
+            0,
+            Math.floor((Date.now() - birth.getTime()) / (365.25 * 86_400_000)),
+          );
+          const bio = estimateBiologicalAge(ageYrs, {
+            metabolicAge: metabRow?.metabolic_age ?? undefined,
+            restingHR: metabRow?.resting_hr_bpm ?? undefined,
+            hrv: metabRow?.hrv_ms ?? undefined,
+            bodyFatPct: weightRow?.body_fat_pct ?? undefined,
+          });
+          setAge({ chronological: ageYrs, biological: bio });
+        }
+
+        // Hydrate journey values for timeline (weight_loss only — Phase D will add muscle source)
+        if (weightRow) {
+          setJourneyValues((prev) => ({
+            ...prev,
+            current: weightRow.weight_lbs ?? undefined,
+            goal: weightRow.goal_weight_lbs ?? undefined,
+          }));
+        }
 
         if (weightRow || muscleRow || metabRow) {
           setMetrics([
@@ -112,6 +164,17 @@ export default function BodyTrackerDashboard() {
       } catch { /* tables may not exist yet */ }
     })();
   }, [refreshKey]);
+
+  // Sync journey starting value from snapshot when journey loads
+  useEffect(() => {
+    const start =
+      activeJourney === 'muscle_building'
+        ? startingSnapshot.muscle_mass_lbs
+        : startingSnapshot.weight_lbs;
+    if (typeof start === 'number') {
+      setJourneyValues((prev) => ({ ...prev, starting: start }));
+    }
+  }, [activeJourney, startingSnapshot.weight_lbs, startingSnapshot.muscle_mass_lbs]);
 
   return (
     <div className="space-y-6">
@@ -153,13 +216,35 @@ export default function BodyTrackerDashboard() {
         )
       )}
 
-      {/* Body Score Gauge */}
-      <BodyScoreGauge
+      {/* Health Report (gauge + Arnold summary + Biological Age) */}
+      <HealthReportCard
         score={scoreData.score}
         previousScore={scoreData.previousScore}
         confidencePct={scoreData.confidencePct}
         tier={scoreData.tier}
+        biologicalAge={age.biological}
+        chronologicalAge={age.chronological}
       />
+
+      {/* Journey Timeline (only when all data is present) */}
+      {activeJourney && startedAt &&
+        typeof journeyValues.starting === 'number' &&
+        typeof journeyValues.current === 'number' &&
+        typeof journeyValues.goal === 'number' && (
+          <JourneyTimeline
+            journeyType={activeJourney}
+            startedAt={startedAt}
+            startingValue={journeyValues.starting}
+            currentValue={journeyValues.current}
+            goalValue={journeyValues.goal}
+            unit={journeyValues.unit}
+          />
+        )}
+
+      {/* Cross-Reference Sources */}
+      {!crossRefLoading && (
+        <CrossReferenceCard snapshot={crossRefSnapshot} tier={crossRefTier} />
+      )}
 
       {/* Quick Log */}
       <QuickLogCards onSaved={() => setRefreshKey((k) => k + 1)} />

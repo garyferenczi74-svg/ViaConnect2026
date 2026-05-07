@@ -13,6 +13,7 @@ import { MeasurementsGrid } from '@/components/body-tracker/MeasurementsGrid';
 import { BodyCompositionForm } from '@/components/body-tracker/BodyCompositionForm';
 import { BodyScanUploader, type BodyScanResult } from '@/components/body-tracker/BodyScanUploader';
 import { BodyScanResults } from '@/components/body-tracker/BodyScanResults';
+import { FloatingMetricCard } from '@/components/body-tracker/FloatingMetricCard';
 import {
   InlineEntryPanel,
   EntryHistoryTimeline,
@@ -98,13 +99,24 @@ function CompositionPageInner() {
   const [open, setOpen] = useState(false);
   const [scanOpen, setScanOpen] = useState(false);
   const [scanResult, setScanResult] = useState<BodyScanResult | null>(null);
+  const [prefillBodyFat, setPrefillBodyFat] = useState<number | null>(null);
   const [unit, setUnit] = useState<MeasurementUnit>(() => readStoredUnit());
   const [refreshKey, setRefreshKey] = useState(0);
   const [gender, setGender] = useState<'male' | 'female'>('male');
   const [genderManuallySet, setGenderManuallySet] = useState(false);
+  const [genderError, setGenderError] = useState<string | null>(null);
 
   const { id: userId } = useCurrentUser();
-  const { sex: caqSex } = useUserBiologicalSex(userId ?? null);
+  const { sex: caqSex, setOverride: setGenderOverride } = useUserBiologicalSex(userId ?? null);
+
+  async function persistGender(g: 'male' | 'female') {
+    setGenderError(null);
+    try {
+      await setGenderOverride(g);
+    } catch (e) {
+      setGenderError(e instanceof Error ? e.message : 'Could not save preference');
+    }
+  }
   const { data: circumferenceData, refresh: refreshCirc } = useCircumferenceData({
     userId: userId ?? null,
     displayUnit: unit,
@@ -170,14 +182,16 @@ function CompositionPageInner() {
 
       <InlineEntryPanel
         open={open}
-        onOpenChange={setOpen}
+        onOpenChange={(o) => { setOpen(o); if (!o) setPrefillBodyFat(null); }}
         title="Log body composition"
         description="Body fat, muscle mass, or circumference measurements"
       >
         <BodyCompositionForm
+          key={`bcf-${prefillBodyFat ?? 'fresh'}`}
           initialSection={section}
           preferredUnit={unit}
-          onCancel={() => setOpen(false)}
+          prefillTotalBodyFat={prefillBodyFat}
+          onCancel={() => { setOpen(false); setPrefillBodyFat(null); }}
           onSaved={handleSaved}
         />
       </InlineEntryPanel>
@@ -193,6 +207,18 @@ function CompositionPageInner() {
             result={scanResult}
             onRetake={() => setScanResult(null)}
             onClose={() => { setScanOpen(false); setScanResult(null); }}
+            onUseAsBaseline={() => {
+              const midpoint = (
+                scanResult.estimates.estimated_body_fat_min +
+                scanResult.estimates.estimated_body_fat_max
+              ) / 2;
+              const rounded = Math.round(midpoint * 10) / 10;
+              setScanOpen(false);
+              setScanResult(null);
+              setPrefillBodyFat(rounded);
+              setSection('fat');
+              setOpen(true);
+            }}
           />
         ) : (
           <BodyScanUploader
@@ -209,25 +235,18 @@ function CompositionPageInner() {
               <h2 className="text-lg font-bold text-white">Body Composition</h2>
               <p className="text-xs text-white/60">Segmental body fat analysis</p>
             </div>
-            <div className="flex flex-wrap gap-3">
-              {[
-                { label: 'Total Body Fat', value: '21.3%' },
-                { label: 'Visceral Fat',   value: '8' },
-                { label: 'BMI',            value: '24.2' },
-                { label: 'Body Water',     value: '55.1%' },
-              ].map((s) => (
-                <div key={s.label} className="rounded-lg border border-white/[0.12] bg-white/10 px-3 py-2 backdrop-blur-sm">
-                  <p className="text-[10px] text-white/70">{s.label}</p>
-                  <p className="text-sm font-bold text-white">{s.value}</p>
-                </div>
-              ))}
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <FloatingMetricCard label="Total Body Fat" value="21.3%" status="Standard" trend="down" />
+              <FloatingMetricCard label="Visceral Fat" value="8" status="Standard" />
+              <FloatingMetricCard label="BMI" value="24.2" status="Standard" />
+              <FloatingMetricCard label="Body Water" value="55.1%" status="Good" />
             </div>
           </div>
 
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => { setGenderManuallySet(true); setGender('male'); }}
+              onClick={() => { setGenderManuallySet(true); setGender('male'); void persistGender('male'); }}
               className={`flex-1 rounded-xl border px-4 py-2.5 text-sm font-medium transition-all min-h-[44px] ${
                 gender === 'male'
                   ? 'border-[#2DA5A0]/60 bg-[#2DA5A0]/15 text-[#2DA5A0]'
@@ -238,7 +257,7 @@ function CompositionPageInner() {
             </button>
             <button
               type="button"
-              onClick={() => { setGenderManuallySet(true); setGender('female'); }}
+              onClick={() => { setGenderManuallySet(true); setGender('female'); void persistGender('female'); }}
               className={`flex-1 rounded-xl border px-4 py-2.5 text-sm font-medium transition-all min-h-[44px] ${
                 gender === 'female'
                   ? 'border-[#B75E18]/60 bg-[#B75E18]/15 text-[#B75E18]'
@@ -248,6 +267,9 @@ function CompositionPageInner() {
               Female
             </button>
           </div>
+          {genderError && (
+            <p className="text-xs text-[#FCA5A5]">Could not save gender preference: {genderError}</p>
+          )}
 
           <div className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 p-6 backdrop-blur-sm">
             <h3 className="mb-4 text-xs font-semibold uppercase tracking-wider text-white/40">
@@ -265,17 +287,10 @@ function CompositionPageInner() {
               <h2 className="text-lg font-bold text-white">Muscle Analysis</h2>
               <p className="text-xs text-white/60">Segmental muscle mass breakdown</p>
             </div>
-            <div className="flex flex-wrap gap-3">
-              {[
-                { label: 'Total Muscle Mass',    value: '63.8 lbs' },
-                { label: 'Skeletal Muscle Mass', value: '28.3 lbs' },
-                { label: 'Muscle Score',         value: 'B+' },
-              ].map((s) => (
-                <div key={s.label} className="rounded-lg border border-white/[0.12] bg-white/10 px-3 py-2 backdrop-blur-sm">
-                  <p className="text-[10px] text-white/70">{s.label}</p>
-                  <p className="text-sm font-bold text-white">{s.value}</p>
-                </div>
-              ))}
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+              <FloatingMetricCard label="Total Muscle Mass" value="63.8 lbs" status="Good" trend="up" />
+              <FloatingMetricCard label="Skeletal Muscle Mass" value="28.3 lbs" status="Standard" />
+              <FloatingMetricCard label="Muscle Score" value="B+" status="Good" trend="up" />
             </div>
           </div>
           <div className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 p-6 backdrop-blur-sm">

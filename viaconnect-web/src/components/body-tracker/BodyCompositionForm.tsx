@@ -30,6 +30,7 @@ import { getDataSource, type DataSourceId } from '@/lib/body-tracker/manual-inpu
 interface BodyCompositionFormProps {
   initialSection?: CompositionSection;
   preferredUnit?: MeasurementUnit;
+  prefillTotalBodyFat?: number | null;
   onSaved?: () => void;
   onCancel: () => void;
 }
@@ -80,6 +81,7 @@ function circumferenceRowFromState(state: CircumferenceFormState): Record<string
 export function BodyCompositionForm({
   initialSection = 'fat',
   preferredUnit = 'in',
+  prefillTotalBodyFat = null,
   onSaved,
   onCancel,
 }: BodyCompositionFormProps) {
@@ -87,9 +89,15 @@ export function BodyCompositionForm({
 
   const [section, setSection] = useState<CompositionSection>(initialSection);
   const [date, setDate] = useState<string>(todayIso());
-  const [sourceId, setSourceId] = useState<DataSourceId | null>(null);
+  const [sourceId, setSourceId] = useState<DataSourceId | null>(
+    prefillTotalBodyFat !== null ? 'other' : null,
+  );
 
-  const [fat, setFat] = useState<FatState>(EMPTY_FAT);
+  const [fat, setFat] = useState<FatState>(() =>
+    prefillTotalBodyFat !== null
+      ? { ...EMPTY_FAT, totalBodyFat: prefillTotalBodyFat }
+      : EMPTY_FAT,
+  );
   const [muscle, setMuscle] = useState<MuscleState>(EMPTY_MUSCLE);
   const [circumference, setCircumference] = useState<CircumferenceFormState>(() => ({
     unit: preferredUnit,

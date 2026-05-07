@@ -1,26 +1,36 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 
 export type BiologicalSex = 'male' | 'female';
 
+export type BiologicalSexSource = 'override' | 'caq' | 'caq_other' | 'default';
+
 export interface UseUserBiologicalSexResult {
   sex: BiologicalSex;
-  source: 'override' | 'caq' | 'default';
+  source: BiologicalSexSource;
   loading: boolean;
+  setOverride: (sex: BiologicalSex | null) => Promise<void>;
 }
 
 // Resolves a user's avatar gender in priority order:
 //   1. body_tracker_user_state.avatar_gender_override (manual user choice)
 //   2. clinical_assessments.biological_sex (CAQ Phase 1 demographics)
 //   3. 'male' fallback
+interface InternalState {
+  sex: BiologicalSex;
+  source: BiologicalSexSource;
+  loading: boolean;
+}
+
 export function useUserBiologicalSex(userId: string | null): UseUserBiologicalSexResult {
-  const [state, setState] = useState<UseUserBiologicalSexResult>({
+  const [state, setState] = useState<InternalState>({
     sex: 'male',
     source: 'default',
     loading: true,
   });
+  const [tick, setTick] = useState(0);
 
   useEffect(() => {
     if (!userId) {
@@ -80,6 +90,12 @@ export function useUserBiologicalSex(userId: string | null): UseUserBiologicalSe
           setState({ sex: 'male', source: 'caq', loading: false });
           return;
         }
+        if (caq && caq.length > 0) {
+          // CAQ recorded a non-binary value; visualization defaults to 'male'
+          // but caller can detect via source and offer a custom choice.
+          setState({ sex: 'male', source: 'caq_other', loading: false });
+          return;
+        }
 
         // 3. default
         setState({ sex: 'male', source: 'default', loading: false });
@@ -90,7 +106,27 @@ export function useUserBiologicalSex(userId: string | null): UseUserBiologicalSe
     })();
 
     return () => { cancelled = true; };
-  }, [userId]);
+  }, [userId, tick]);
 
-  return state;
+  const setOverride = useCallback(
+    async (sex: BiologicalSex | null) => {
+      if (!userId) return;
+      const supabase = createClient();
+      type Loose = {
+        from: (t: string) => {
+          upsert: (p: Record<string, unknown>) => Promise<{ error: { message: string } | null }>;
+        };
+      };
+      const sb = supabase as unknown as Loose;
+      await sb.from('body_tracker_user_state').upsert({
+        user_id: userId,
+        avatar_gender_override: sex,
+        updated_at: new Date().toISOString(),
+      });
+      setTick((t) => t + 1);
+    },
+    [userId],
+  );
+
+  return { ...state, setOverride };
 }

@@ -7,6 +7,7 @@ interface BodyScanResultsProps {
   result: BodyScanResult;
   onRetake: () => void;
   onClose: () => void;
+  onUseAsBaseline?: () => void;
 }
 
 const REGION_LABELS: Record<string, string> = {
@@ -39,7 +40,7 @@ function MuscleBar({ value }: { value: number }) {
   );
 }
 
-export function BodyScanResults({ result, onRetake, onClose }: BodyScanResultsProps) {
+export function BodyScanResults({ result, onRetake, onClose, onUseAsBaseline }: BodyScanResultsProps) {
   const { estimates, scanDate } = result;
   const confColor = CONFIDENCE_COLOR[estimates.ai_confidence];
   const formattedDate = (() => {
@@ -110,7 +111,7 @@ export function BodyScanResults({ result, onRetake, onClose }: BodyScanResultsPr
         </p>
       </div>
 
-      <div className="flex items-center justify-end gap-3">
+      <div className="flex flex-wrap items-center justify-end gap-3">
         <button
           type="button"
           onClick={onRetake}
@@ -118,6 +119,15 @@ export function BodyScanResults({ result, onRetake, onClose }: BodyScanResultsPr
         >
           Retake Photos
         </button>
+        {onUseAsBaseline && (
+          <button
+            type="button"
+            onClick={onUseAsBaseline}
+            className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-[#2DA5A0]/30 bg-[#2DA5A0]/15 px-4 py-2 text-sm font-medium text-[#2DA5A0] transition-colors hover:bg-[#2DA5A0]/25"
+          >
+            Use as Baseline
+          </button>
+        )}
         <button
           type="button"
           onClick={onClose}
