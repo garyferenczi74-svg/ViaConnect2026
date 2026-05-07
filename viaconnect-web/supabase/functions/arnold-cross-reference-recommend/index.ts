@@ -62,9 +62,11 @@ You generate ONE personalized recommendation for the user based on the multi-sou
 Your recommendation MUST:
 1. Be 1 to 3 sentences maximum.
 2. Use DSHEA structure-function language ("supports", "contributes to", "addresses"). No disease-state claims, no diagnoses, no treatment claims.
-3. Reference specific data points from the user's body tracker, supplement protocol, CAQ assessment, or genetic profile to demonstrate cross-reference thinking.
+3. Reference specific data points from the user's body tracker, supplement protocol, CAQ assessment, genetic profile, or chronic risk tracking to demonstrate cross-reference thinking.
 4. Be encouraging and constructive. Frame as a small actionable next step.
 5. Cite ONLY the data sources you actually used in the "sources" array.
+6. If the user has an Active Journey (weight_loss or muscle_building), frame the recommendation through that journey's lens (caloric deficit, fat reduction, metabolic health for weight_loss; protein synthesis, progressive overload, recovery for muscle_building). Do NOT cite "active_journey" as a source; it is meta context, not data.
+7. When chronic risk indicators are present, treat them as risk indicators only; never imply diagnosis or treatment. Use language like "areas to discuss with your healthcare provider".
 
 CRITICAL RULES:
 - Never reference Semaglutide, Ozempic, Wegovy, or Rybelsus.
@@ -75,16 +77,18 @@ CRITICAL RULES:
 Respond ONLY in JSON, no preamble, no markdown fences, with this exact shape:
 {
   "recommendation": "<1 to 3 sentence text>",
-  "sources": [<one or more of "body_tracker", "supplements", "caq", "genetics">]
+  "sources": [<one or more of "body_tracker", "supplements", "caq", "genetics", "chronic_risk">]
 }`;
 
 interface RequestBody {
   regenerate?: boolean;
 }
 
+type RecommendationSource = 'body_tracker' | 'supplements' | 'caq' | 'genetics' | 'chronic_risk';
+
 interface RecommendationOutput {
   recommendation: string;
-  sources: Array<'body_tracker' | 'supplements' | 'caq' | 'genetics'>;
+  sources: RecommendationSource[];
 }
 
 function extractJson(raw: string): unknown {
@@ -107,11 +111,13 @@ function validateOutput(parsed: unknown): RecommendationOutput {
   if (!Array.isArray(sources) || sources.length === 0) {
     throw new Error('sources must be a non empty array');
   }
-  const allowed = new Set(['body_tracker', 'supplements', 'caq', 'genetics']);
-  const cleaned: Array<'body_tracker' | 'supplements' | 'caq' | 'genetics'> = [];
+  const allowed = new Set<RecommendationSource>([
+    'body_tracker', 'supplements', 'caq', 'genetics', 'chronic_risk',
+  ]);
+  const cleaned: RecommendationSource[] = [];
   for (const s of sources) {
-    if (typeof s === 'string' && allowed.has(s)) {
-      cleaned.push(s as 'body_tracker' | 'supplements' | 'caq' | 'genetics');
+    if (typeof s === 'string' && allowed.has(s as RecommendationSource)) {
+      cleaned.push(s as RecommendationSource);
     }
   }
   if (cleaned.length === 0) throw new Error('no valid sources cited');
@@ -143,6 +149,10 @@ interface UserContext {
   caq_summary: string;
   genetics_present: boolean;
   genetics_summary: string;
+  chronic_risk_present: boolean;
+  chronic_risk_summary: string;
+  active_journey: 'weight_loss' | 'muscle_building' | null;
+  active_journey_summary: string;
 }
 
 function tierFromContext(ctx: UserContext): { tier: 1 | 2 | 3; pct: 70 | 86 | 96 } {
@@ -161,9 +171,13 @@ async function buildUserContext(sb: SupabaseClient, userId: string): Promise<Use
     caq_summary: 'No assessment completed.',
     genetics_present: false,
     genetics_summary: 'No genetic data on file.',
+    chronic_risk_present: false,
+    chronic_risk_summary: 'No chronic risk assessment yet.',
+    active_journey: null,
+    active_journey_summary: '',
   };
 
-  const [weightRes, metabRes, suppsRes, caqRes, genRes] = await Promise.all([
+  const [weightRes, metabRes, suppsRes, caqRes, genRes, chronicRes, userStateRes] = await Promise.all([
     sb.from('body_tracker_weight').select('weight_lbs, body_fat_pct, goal_weight_lbs')
       .eq('user_id', userId).order('created_at', { ascending: false }).limit(1).maybeSingle(),
     sb.from('body_tracker_metabolic').select('metabolic_age, resting_hr_bpm, hrv_ms')
@@ -174,6 +188,12 @@ async function buildUserContext(sb: SupabaseClient, userId: string): Promise<Use
       .eq('user_id', userId).order('created_at', { ascending: false }).limit(1).maybeSingle(),
     sb.from('genetic_profiles').select('mthfr_status, comt_status, cyp2d6_status')
       .eq('user_id', userId).order('created_at', { ascending: false }).limit(1).maybeSingle(),
+    sb.from('body_tracker_chronic_risk')
+      .select('overall_score, overall_grade, conditions, arnold_summary')
+      .eq('user_id', userId).order('assessment_date', { ascending: false }).limit(1).maybeSingle(),
+    sb.from('body_tracker_user_state')
+      .select('active_journey, journey_started_at')
+      .eq('user_id', userId).maybeSingle(),
   ]);
 
   const w = weightRes.data as { weight_lbs?: number; body_fat_pct?: number; goal_weight_lbs?: number } | null;
@@ -229,6 +249,59 @@ async function buildUserContext(sb: SupabaseClient, userId: string): Promise<Use
     ctx.genetics_summary = parts.join('; ');
   }
 
+  // Chronic risk: prefer pre-computed arnold_summary; fall back to grade plus
+  // count of moderate/high conditions. Treat as derivative source so it does
+  // NOT alter the confidence tier (tier reflects ground-truth coverage).
+  const chronic = chronicRes.data as {
+    overall_score?: number;
+    overall_grade?: string;
+    conditions?: Array<{ name?: string; severity?: string; riskScore?: number }>;
+    arnold_summary?: string;
+  } | null;
+  if (chronic) {
+    ctx.chronic_risk_present = true;
+    if (chronic.arnold_summary && chronic.arnold_summary.length > 0) {
+      ctx.chronic_risk_summary = chronic.arnold_summary;
+    } else {
+      const conds = Array.isArray(chronic.conditions) ? chronic.conditions : [];
+      const elevated = conds.filter(
+        (c) => c?.severity === 'Moderate' || c?.severity === 'High',
+      );
+      const parts: string[] = [];
+      if (chronic.overall_grade) parts.push(`grade ${chronic.overall_grade}`);
+      if (typeof chronic.overall_score === 'number') {
+        parts.push(`score ${chronic.overall_score} of 100`);
+      }
+      if (elevated.length > 0) {
+        parts.push(`${elevated.length} elevated risk indicator${elevated.length === 1 ? '' : 's'}`);
+      }
+      ctx.chronic_risk_summary = parts.length > 0
+        ? parts.join('; ')
+        : 'assessment completed; no elevated risk indicators';
+    }
+  }
+
+  // Active journey: meta context for narrative framing only (not a citable source).
+  const userState = userStateRes.data as {
+    active_journey?: 'weight_loss' | 'muscle_building' | null;
+    journey_started_at?: string;
+  } | null;
+  if (userState?.active_journey === 'weight_loss' || userState?.active_journey === 'muscle_building') {
+    ctx.active_journey = userState.active_journey;
+    const label = userState.active_journey === 'weight_loss' ? 'weight loss' : 'muscle building';
+    if (userState.journey_started_at) {
+      const startedMs = Date.parse(userState.journey_started_at);
+      if (Number.isFinite(startedMs)) {
+        const days = Math.max(0, Math.floor((Date.now() - startedMs) / 86_400_000));
+        ctx.active_journey_summary = `${label} for ${days} day${days === 1 ? '' : 's'}`;
+      } else {
+        ctx.active_journey_summary = label;
+      }
+    } else {
+      ctx.active_journey_summary = label;
+    }
+  }
+
   return ctx;
 }
 
@@ -238,6 +311,10 @@ function userBlock(ctx: UserContext): string {
   lines.push(`Supplement Protocol${ctx.supplements_present ? '' : ' (NOT CONNECTED)'}: ${ctx.supplements_summary}`);
   lines.push(`Wellness Assessment (CAQ)${ctx.caq_present ? '' : ' (NOT CONNECTED)'}: ${ctx.caq_summary}`);
   lines.push(`Genetic Profile${ctx.genetics_present ? '' : ' (NOT CONNECTED)'}: ${ctx.genetics_summary}`);
+  lines.push(`Chronic Risk Tracking${ctx.chronic_risk_present ? '' : ' (no assessment yet)'}: ${ctx.chronic_risk_summary}`);
+  if (ctx.active_journey) {
+    lines.push(`Active Journey (meta context, do not cite): ${ctx.active_journey_summary}`);
+  }
   return lines.join('\n');
 }
 
