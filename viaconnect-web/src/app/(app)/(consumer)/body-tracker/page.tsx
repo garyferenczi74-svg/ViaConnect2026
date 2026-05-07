@@ -10,10 +10,12 @@ import { createClient } from '@/lib/supabase/client';
 import { HealthReportCard } from '@/components/body-tracker/HealthReportCard';
 import { JourneyTimeline } from '@/components/body-tracker/JourneyTimeline';
 import { CrossReferenceCard } from '@/components/body-tracker/CrossReferenceCard';
+import { ArnoldCrossReferenceCard } from '@/components/body-tracker/ArnoldCrossReferenceCard';
 import { QuickMetricCard } from '@/components/body-tracker/QuickMetricCard';
 import { QuickLogCards, useCurrentUser } from '@/components/body-tracker/manual-input';
 import { useUserJourney } from '@/hooks/body-tracker/useUserJourney';
 import { useUserCrossReferenceData } from '@/hooks/body-tracker/useUserCrossReferenceData';
+import { useArnoldRecommendation } from '@/hooks/body-tracker/useArnoldRecommendation';
 import { estimateBiologicalAge } from '@/lib/body-tracker/biological-age';
 import type { BodyScoreTier, MetricStatus } from '@/lib/body-tracker/types';
 
@@ -65,6 +67,14 @@ export default function BodyTrackerDashboard() {
   const { id: userId } = useCurrentUser();
   const { activeJourney, startedAt, startingSnapshot, loading: journeyLoading } = useUserJourney(userId);
   const { snapshot: crossRefSnapshot, tier: crossRefTier, loading: crossRefLoading } = useUserCrossReferenceData(userId);
+  const {
+    recommendation: arnoldRec,
+    loading: recLoading,
+    generating: recGenerating,
+    error: recError,
+    generate: recGenerate,
+    dismiss: recDismiss,
+  } = useArnoldRecommendation(userId);
 
   useEffect(() => {
     (async () => {
@@ -281,6 +291,16 @@ export default function BodyTrackerDashboard() {
       {!crossRefLoading && (
         <CrossReferenceCard snapshot={crossRefSnapshot} tier={crossRefTier} />
       )}
+
+      {/* Arnold's Cross-Reference Recommendation (LLM) */}
+      <ArnoldCrossReferenceCard
+        recommendation={arnoldRec}
+        loading={recLoading}
+        generating={recGenerating}
+        error={recError}
+        onGenerate={recGenerate}
+        onDismiss={recDismiss}
+      />
 
       {/* Quick Log */}
       <QuickLogCards onSaved={() => setRefreshKey((k) => k + 1)} />
