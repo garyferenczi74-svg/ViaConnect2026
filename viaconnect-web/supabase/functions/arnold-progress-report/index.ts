@@ -53,6 +53,40 @@ function extractJson(raw: string): unknown {
   return JSON.parse(s);
 }
 
+function collectAnalysisStrings(node: unknown, out: string[]): void {
+  if (typeof node === 'string') {
+    out.push(node);
+  } else if (Array.isArray(node)) {
+    for (const v of node) collectAnalysisStrings(v, out);
+  } else if (node && typeof node === 'object') {
+    for (const v of Object.values(node)) collectAnalysisStrings(v, out);
+  }
+}
+
+// MIRRORED GUARDRAIL — keep in sync with
+// supabase/functions/arnold-vision-analyze/index.ts,
+// supabase/functions/body-scan-analyze/index.ts, and
+// supabase/functions/arnold-cross-reference-recommend/index.ts.
+// Returns an empty array on pass, or a list of violation codes on block.
+function jefferyValidateAnalysisText(text: string): string[] {
+  const haystack = text.toLowerCase();
+  const violations: string[] = [];
+  const SEMAGLUTIDE = ['semaglutide', 'ozempic', 'wegovy', 'rybelsus'];
+  const BLOCKED_BRANDS = [
+    'thorne', 'pure encapsulations', 'designs for health', 'life extension', 'now foods',
+  ];
+  for (const t of SEMAGLUTIDE) {
+    if (haystack.includes(t)) violations.push(`semaglutide:${t}`);
+  }
+  for (const b of BLOCKED_BRANDS) {
+    if (haystack.includes(b)) violations.push(`non_farmceutica:${b}`);
+  }
+  if (/\b5\s*(?:to|\-|–)\s*27x?\b/i.test(text) || /\b5x?\s*to\s*27x?\b/i.test(text)) {
+    violations.push('bioavailability_range');
+  }
+  return violations;
+}
+
 const SYSTEM_PROMPT = `
 You are Arnold, a body composition expert writing a progress report comparing two dated photo
 sessions. Base your report on: (1) the pre analyzed visual assessments from both sessions, (2) the
@@ -90,6 +124,11 @@ Rules:
 - Flag scenario patterns honestly (e.g., scale stall with visible change = recomposition).
 - For projections, extrapolate current trajectory; be conservative not aggressive.
 - If less than 2 weeks between sessions, say so and note that changes within that window are mostly noise.
+- If the user has an Active Journey in JOURNEY CONTEXT (weight_loss or muscle_building), frame recommendations through that journey's lens (caloric deficit, fat reduction, metabolic health for weight_loss; protein synthesis, progressive overload, recovery for muscle_building).
+- Never reference Semaglutide, Ozempic, Wegovy, or Rybelsus.
+- Never reference non-FarmCeutica supplement brands.
+- Never use the bioavailability range "5 to 27" or "5x to 27x"; only "10x to 28x" is approved.
+- No medical advice. No disease-state reasoning. No prescription mention.
 `.trim();
 
 function round2(n: number | null): number | null {
@@ -194,6 +233,23 @@ serve(async (req) => {
       .eq('status', 'active')
       .limit(5);
 
+    // Phase 8: pull active journey for narrative framing. Treated as meta
+    // context (not a citable source); SYSTEM_PROMPT instructs Claude to frame
+    // recommendations through this lens when present.
+    const { data: userState } = await db
+      .from('body_tracker_user_state')
+      .select('active_journey, journey_started_at')
+      .eq('user_id', userId)
+      .maybeSingle();
+    const stateRow = userState as {
+      active_journey?: 'weight_loss' | 'muscle_building' | null;
+      journey_started_at?: string;
+    } | null;
+    const journeyType =
+      stateRow?.active_journey === 'weight_loss' || stateRow?.active_journey === 'muscle_building'
+        ? stateRow.active_journey
+        : null;
+
     const days = dayDelta(before.session_date, after.session_date);
 
     const userPrompt = [
@@ -219,9 +275,25 @@ serve(async (req) => {
       'ACTIVE GOALS:',
       JSON.stringify(goals ?? [], null, 2),
       '',
+      'JOURNEY CONTEXT:',
+      journeyType
+        ? `Active Journey: ${journeyType === 'weight_loss' ? 'Weight Loss' : 'Muscle Building'}. Frame the recommendations through this journey's lens.`
+        : 'No active journey set; provide a balanced report.',
+      '',
       'Generate the progress report JSON now.',
     ].join('\n');
 
+    // ── PHI EGRESS POINT ──────────────────────────────────────────────────
+    // The pre-analyzed visual assessments + numerical body metrics + goals
+    // are being sent to Anthropic. Raw images are NOT in this payload, but
+    // the assessment text describes the user's body composition trajectory
+    // and is PHI in some compliance regimes. Production launch requires a
+    // signed Business Associate Agreement (BAA) on file with Anthropic
+    // covering this data flow. Verify before enabling Progress Report in
+    // production (June 2026 launch). Mirrors the same disclosure on
+    // arnold-vision-analyze + body-scan-analyze.
+    // Owner: gary@farmceuticawellness.com.
+    // ──────────────────────────────────────────────────────────────────────
     let apiResponse: Response;
     try {
       apiResponse = await claudeBreaker.execute(() =>
@@ -267,6 +339,17 @@ serve(async (req) => {
     catch (e) {
       const msg = e instanceof Error ? e.message : 'parse error';
       return json({ status: 'failed', error: `Parse failure: ${msg}`, raw: text.slice(0, 500) }, 500);
+    }
+
+    // Phase 8: scan ALL parsed string values for compliance violations
+    // (mirrored Jeffery guardrail). Block before returning any text the
+    // user could see if a violation is detected.
+    const collected: string[] = [];
+    collectAnalysisStrings(report, collected);
+    const violations = jefferyValidateAnalysisText(collected.join(' '));
+    if (violations.length > 0) {
+      safeLog.warn('arnold.progress-report', 'guardrail blocked', { userId, violations });
+      return json({ status: 'failed', error: 'report blocked by compliance guardrails' }, 502);
     }
 
     return json({
