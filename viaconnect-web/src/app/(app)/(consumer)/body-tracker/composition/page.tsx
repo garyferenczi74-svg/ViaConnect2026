@@ -107,7 +107,7 @@ function CompositionPageInner() {
   const [genderError, setGenderError] = useState<string | null>(null);
 
   const { id: userId } = useCurrentUser();
-  const { sex: caqSex, setOverride: setGenderOverride } = useUserBiologicalSex(userId ?? null);
+  const { sex: caqSex, source: caqSource, setOverride: setGenderOverride } = useUserBiologicalSex(userId ?? null);
 
   async function persistGender(g: 'male' | 'female') {
     setGenderError(null);
@@ -235,7 +235,8 @@ function CompositionPageInner() {
               <h2 className="text-lg font-bold text-white">Body Composition</h2>
               <p className="text-xs text-white/60">Segmental body fat analysis</p>
             </div>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {/* Mobile + tablet: cards in a horizontal grid above silhouette */}
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:hidden">
               <FloatingMetricCard label="Total Body Fat" value="21.3%" status="Standard" trend="down" />
               <FloatingMetricCard label="Visceral Fat" value="8" status="Standard" />
               <FloatingMetricCard label="BMI" value="24.2" status="Standard" />
@@ -243,6 +244,11 @@ function CompositionPageInner() {
             </div>
           </div>
 
+          {caqSource === 'caq_other' && !genderManuallySet && (
+            <div className="rounded-xl border border-[#2DA5A0]/30 bg-[#2DA5A0]/10 p-3 text-xs text-white/75">
+              We don&apos;t have your gender on file. Pick a visualization below; you can change it anytime.
+            </div>
+          )}
           <div className="flex items-center gap-2">
             <button
               type="button"
@@ -271,11 +277,23 @@ function CompositionPageInner() {
             <p className="text-xs text-[#FCA5A5]">Could not save gender preference: {genderError}</p>
           )}
 
-          <div className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 p-6 backdrop-blur-sm">
-            <h3 className="mb-4 text-xs font-semibold uppercase tracking-wider text-white/40">
-              Segmental Body Fat Analysis
-            </h3>
-            <BodySilhouette mode="fat" segmentalData={SAMPLE_FAT} gender={gender} />
+          <div className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 p-6 backdrop-blur-sm lg:grid lg:grid-cols-[1fr_auto_1fr] lg:items-center lg:gap-6">
+            {/* Desktop: left-side cards */}
+            <div className="hidden lg:flex lg:flex-col lg:gap-3">
+              <FloatingMetricCard label="Total Body Fat" value="21.3%" status="Standard" trend="down" />
+              <FloatingMetricCard label="BMI" value="24.2" status="Standard" />
+            </div>
+            <div>
+              <h3 className="mb-4 text-xs font-semibold uppercase tracking-wider text-white/40 lg:text-center">
+                Segmental Body Fat Analysis
+              </h3>
+              <BodySilhouette mode="fat" segmentalData={SAMPLE_FAT} gender={gender} />
+            </div>
+            {/* Desktop: right-side cards */}
+            <div className="hidden lg:flex lg:flex-col lg:gap-3">
+              <FloatingMetricCard label="Visceral Fat" value="8" status="Standard" />
+              <FloatingMetricCard label="Body Water" value="55.1%" status="Good" />
+            </div>
           </div>
         </>
       )}
@@ -287,17 +305,27 @@ function CompositionPageInner() {
               <h2 className="text-lg font-bold text-white">Muscle Analysis</h2>
               <p className="text-xs text-white/60">Segmental muscle mass breakdown</p>
             </div>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            {/* Mobile + tablet: cards in a horizontal grid above silhouette */}
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:hidden">
               <FloatingMetricCard label="Total Muscle Mass" value="63.8 lbs" status="Good" trend="up" />
               <FloatingMetricCard label="Skeletal Muscle Mass" value="28.3 lbs" status="Standard" />
               <FloatingMetricCard label="Muscle Score" value="B+" status="Good" trend="up" />
             </div>
           </div>
-          <div className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 p-6 backdrop-blur-sm">
-            <h3 className="mb-4 text-xs font-semibold uppercase tracking-wider text-white/40">
-              Segmental Muscle Analysis
-            </h3>
-            <BodySilhouette mode="muscle" segmentalData={SAMPLE_MUSCLE} gender={gender} />
+          <div className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 p-6 backdrop-blur-sm lg:grid lg:grid-cols-[1fr_auto_1fr] lg:items-center lg:gap-6">
+            <div className="hidden lg:flex lg:flex-col lg:gap-3">
+              <FloatingMetricCard label="Total Muscle Mass" value="63.8 lbs" status="Good" trend="up" />
+              <FloatingMetricCard label="Muscle Score" value="B+" status="Good" trend="up" />
+            </div>
+            <div>
+              <h3 className="mb-4 text-xs font-semibold uppercase tracking-wider text-white/40 lg:text-center">
+                Segmental Muscle Analysis
+              </h3>
+              <BodySilhouette mode="muscle" segmentalData={SAMPLE_MUSCLE} gender={gender} />
+            </div>
+            <div className="hidden lg:flex lg:flex-col lg:gap-3">
+              <FloatingMetricCard label="Skeletal Muscle Mass" value="28.3 lbs" status="Standard" />
+            </div>
           </div>
         </>
       )}

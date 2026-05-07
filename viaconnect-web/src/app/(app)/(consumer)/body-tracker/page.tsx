@@ -59,6 +59,8 @@ export default function BodyTrackerDashboard() {
   const [age, setAge] = useState<AgeData>({});
   const [journeyValues, setJourneyValues] = useState<JourneySnapshot>({ unit: 'lbs' });
   const [refreshKey, setRefreshKey] = useState(0);
+  const [weekOffset, setWeekOffset] = useState(0);
+  const [hasOlderScore, setHasOlderScore] = useState(true);
   const { id: userId } = useCurrentUser();
   const { activeJourney, startedAt, startingSnapshot, loading: journeyLoading } = useUserJourney(userId);
   const { snapshot: crossRefSnapshot, tier: crossRefTier, loading: crossRefLoading } = useUserCrossReferenceData(userId);
@@ -77,14 +79,31 @@ export default function BodyTrackerDashboard() {
           .eq('id', user.id)
           .maybeSingle();
 
-        // Fetch latest body score
+        // Fetch body score for the selected week (offset 0 = current week, -1 = last week, etc.)
+        const endDate = new Date();
+        endDate.setDate(endDate.getDate() + weekOffset * 7);
+        const endDateIso = endDate.toISOString().slice(0, 10);
+
         const { data: scoreRow } = await (supabase as any)
           .from('body_tracker_scores')
           .select('*')
           .eq('user_id', user.id)
+          .lte('score_date', endDateIso)
           .order('score_date', { ascending: false })
           .limit(1)
           .maybeSingle();
+
+        // Detect if there are any score rows older than the current selection
+        // (used to disable the prev-week button at the boundary)
+        const earlierEnd = new Date(endDate);
+        earlierEnd.setDate(earlierEnd.getDate() - 7);
+        const earlierEndIso = earlierEnd.toISOString().slice(0, 10);
+        const { count: olderCount } = await (supabase as any)
+          .from('body_tracker_scores')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', user.id)
+          .lte('score_date', earlierEndIso);
+        setHasOlderScore((olderCount ?? 0) > 0);
 
         if (scoreRow) {
           setScoreData({
@@ -163,7 +182,7 @@ export default function BodyTrackerDashboard() {
         }
       } catch { /* tables may not exist yet */ }
     })();
-  }, [refreshKey]);
+  }, [refreshKey, weekOffset]);
 
   // Sync journey starting value from snapshot when journey loads
   useEffect(() => {
@@ -224,6 +243,9 @@ export default function BodyTrackerDashboard() {
         tier={scoreData.tier}
         biologicalAge={age.biological}
         chronologicalAge={age.chronological}
+        weekOffset={weekOffset}
+        onWeekChange={setWeekOffset}
+        canGoBack={hasOlderScore}
       />
 
       {/* Journey Timeline (only when all data is present) */}

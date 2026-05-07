@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Info, ArrowRight } from 'lucide-react';
+import { Info, ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import { BodyScoreGauge } from './BodyScoreGauge';
 import { BiologicalAgeBar } from './BiologicalAgeBar';
 import type { BodyScoreTier } from '@/lib/body-tracker/types';
@@ -14,6 +14,9 @@ interface HealthReportCardProps {
   biologicalAge?: number;
   chronologicalAge?: number;
   weeklyBreakdownHref?: string;
+  weekOffset?: number;
+  onWeekChange?: (nextOffset: number) => void;
+  canGoBack?: boolean;
 }
 
 function arnoldHealthSummary(score: number): string {
@@ -25,13 +28,15 @@ function arnoldHealthSummary(score: number): string {
   return 'Log a few entries so Arnold can build your baseline.';
 }
 
-function thisWeekRange(): string {
+function weekRangeForOffset(offset: number): string {
   const now = new Date();
-  const start = new Date(now);
-  start.setDate(now.getDate() - 6);
+  const end = new Date(now);
+  end.setDate(now.getDate() + offset * 7);
+  const start = new Date(end);
+  start.setDate(end.getDate() - 6);
   const fmt = (d: Date) =>
     d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-  return `${fmt(start)} to ${fmt(now)}`;
+  return `${fmt(start)} to ${fmt(end)}`;
 }
 
 export function HealthReportCard({
@@ -42,15 +47,48 @@ export function HealthReportCard({
   biologicalAge,
   chronologicalAge,
   weeklyBreakdownHref,
+  weekOffset = 0,
+  onWeekChange,
+  canGoBack = true,
 }: HealthReportCardProps) {
   const summary = arnoldHealthSummary(score);
   const showBioAge = typeof biologicalAge === 'number' && typeof chronologicalAge === 'number';
+  const navEnabled = typeof onWeekChange === 'function';
+  const isCurrentWeek = weekOffset === 0;
+  const prevDisabled = !navEnabled || !canGoBack;
+  const nextDisabled = !navEnabled || isCurrentWeek;
 
   return (
     <section className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 p-5 backdrop-blur-sm md:p-6">
-      <header className="mb-4 flex items-baseline justify-between">
+      <header className="mb-4 flex items-center justify-between gap-3">
         <h2 className="text-base font-semibold text-white">Health Report</h2>
-        <span className="text-xs text-white/40">{thisWeekRange()}</span>
+        <div className="flex items-center gap-1.5">
+          {navEnabled && (
+            <button
+              type="button"
+              onClick={() => onWeekChange!(weekOffset - 1)}
+              disabled={prevDisabled}
+              aria-label="Previous week"
+              className="flex h-7 w-7 items-center justify-center rounded-md border border-white/[0.08] bg-white/[0.03] text-white/60 transition-colors hover:bg-white/[0.08] hover:text-white disabled:cursor-not-allowed disabled:opacity-30"
+            >
+              <ChevronLeft size={14} strokeWidth={1.5} />
+            </button>
+          )}
+          <span className="min-w-[110px] text-center text-xs text-white/40">
+            {weekRangeForOffset(weekOffset)}
+          </span>
+          {navEnabled && (
+            <button
+              type="button"
+              onClick={() => onWeekChange!(weekOffset + 1)}
+              disabled={nextDisabled}
+              aria-label="Next week"
+              className="flex h-7 w-7 items-center justify-center rounded-md border border-white/[0.08] bg-white/[0.03] text-white/60 transition-colors hover:bg-white/[0.08] hover:text-white disabled:cursor-not-allowed disabled:opacity-30"
+            >
+              <ChevronRight size={14} strokeWidth={1.5} />
+            </button>
+          )}
+        </div>
       </header>
 
       <BodyScoreGauge
