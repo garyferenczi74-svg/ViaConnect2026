@@ -1,14 +1,17 @@
 'use client';
 
 import { useState } from 'react';
-import { Heart, Plus, TrendingUp } from 'lucide-react';
+import { Heart, Plus, TrendingUp, RefreshCw, Sparkles } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Cell, ResponsiveContainer,
   LineChart, Line, ReferenceLine,
 } from 'recharts';
 import { CapacityStrainBars } from '@/components/body-tracker/CapacityStrainBars';
 import { MetabolicCardioForm } from '@/components/body-tracker/manual-input/forms/MetabolicCardioForm';
-import { EntryHistoryTimeline } from '@/components/body-tracker/manual-input';
+import { EntryHistoryTimeline, useCurrentUser } from '@/components/body-tracker/manual-input';
+import { ChronicRiskGauge } from '@/components/body-tracker/ChronicRiskGauge';
+import { ChronicRiskConditions } from '@/components/body-tracker/ChronicRiskConditions';
+import { useChronicRisk } from '@/hooks/body-tracker/useChronicRisk';
 
 const READINESS_COLORS: Record<string, string> = {
   optimal: '#2DA5A0', moderate: '#5B8DEF', suboptimal: '#9B59B6', low: '#E91E8C',
@@ -32,6 +35,8 @@ const momentumData = [
 export default function MetabolicPage() {
   const [open, setOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const { id: userId } = useCurrentUser();
+  const { assessment, loading, computing, error, recompute } = useChronicRisk(userId ?? null);
 
   return (
     <div className="space-y-6" key={refreshKey}>
@@ -128,6 +133,60 @@ export default function MetabolicPage() {
 
       {/* Capacity & Strain */}
       <CapacityStrainBars capacity={65} strain={42} capacityBaseline={55} strainBaseline={50} />
+
+      {/* Chronic Risk Tracking (Phase 5) */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-white/40">
+            Chronic Risk Tracking
+          </h3>
+          <button
+            type="button"
+            onClick={recompute}
+            disabled={!userId || computing}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-white/[0.08] bg-white/5 px-3 py-2 text-xs font-medium text-white/70 hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
+          >
+            {computing ? (
+              <RefreshCw className="h-3.5 w-3.5 animate-spin" strokeWidth={1.5} />
+            ) : assessment ? (
+              <RefreshCw className="h-3.5 w-3.5" strokeWidth={1.5} />
+            ) : (
+              <Sparkles className="h-3.5 w-3.5" strokeWidth={1.5} />
+            )}
+            {computing ? 'Computing' : assessment ? 'Recompute' : 'Compute My Indicators'}
+          </button>
+        </div>
+
+        {error ? (
+          <div className="rounded-xl border border-[#B75E18]/30 bg-[#B75E18]/10 p-3 text-xs text-[#B75E18]">
+            {error}
+          </div>
+        ) : null}
+
+        {loading ? (
+          <div className="rounded-2xl border border-white/[0.08] bg-white/5 backdrop-blur-md p-5 text-center text-sm text-white/60">
+            Loading risk assessment...
+          </div>
+        ) : assessment ? (
+          <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+            <ChronicRiskGauge
+              score={assessment.overall_score}
+              grade={assessment.overall_grade}
+              description={assessment.arnold_summary}
+            />
+            <ChronicRiskConditions conditions={assessment.conditions} />
+          </div>
+        ) : (
+          <div className="rounded-2xl border border-white/[0.08] bg-white/5 backdrop-blur-md p-6 text-center">
+            <p className="text-sm text-white/70 mb-2">
+              No chronic risk assessment yet.
+            </p>
+            <p className="text-xs text-white/45 leading-relaxed max-w-md mx-auto">
+              Generate an indicator profile from your CAQ assessment, body tracker, and genetic data. Indicators are areas to discuss with your healthcare provider; not a diagnosis.
+            </p>
+          </div>
+        )}
+      </div>
 
       <EntryHistoryTimeline category="metabolic" onChanged={() => setRefreshKey((k) => k + 1)} />
     </div>
