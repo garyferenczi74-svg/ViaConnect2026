@@ -318,6 +318,30 @@ function userBlock(ctx: UserContext): string {
   return lines.join('\n');
 }
 
+// SHA-256 hex of the canonical context payload. Cached recommendations match
+// only when this hash is identical, so any upstream change (supplements
+// added, CAQ updated, new genetics, chronic risk reassessed, journey type
+// switched) invalidates the cache even inside the 6 hour window.
+//
+// Note: we hash ctx.active_journey (the type 'weight_loss' or 'muscle_building'
+// or null) rather than ctx.active_journey_summary, because the summary embeds
+// "for N days" which changes nightly and would force daily regeneration.
+async function computeContextHash(ctx: UserContext): Promise<string> {
+  const payload = JSON.stringify({
+    body_tracker: ctx.body_tracker_summary,
+    supplements: ctx.supplements_summary,
+    caq: ctx.caq_summary,
+    genetics: ctx.genetics_summary,
+    chronic_risk: ctx.chronic_risk_summary,
+    active_journey: ctx.active_journey,
+  });
+  const data = new TextEncoder().encode(payload);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(hashBuffer))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: corsHeaders() });
   if (req.method !== 'POST') return json({ error: 'method not allowed' }, 405);
@@ -335,12 +359,23 @@ serve(async (req) => {
   let body: RequestBody = {};
   try { body = await req.json(); } catch { /* empty body is fine */ }
 
-  // Cache: return latest non-dismissed within window unless force regenerate
+  // Build user context from all connected sources in parallel. We do this
+  // BEFORE the cache check (Phase 4b) because cache hit requires a context
+  // hash match, which requires the current context to compare against.
+  const ctx = await buildUserContext(sb, user.id);
+  const tier = tierFromContext(ctx);
+  const contextHash = await computeContextHash(ctx);
+
+  // Cache: return latest non-dismissed within window AND with a matching
+  // context hash. Hash mismatch invalidates within the window so any
+  // upstream data change (supplements added, CAQ updated, new genetics,
+  // chronic risk reassessed, journey switched) reflects on next request.
   if (!body.regenerate) {
     const cutoffIso = new Date(Date.now() - CACHE_WINDOW_MIN * 60_000).toISOString();
     const { data: cached } = await sb.from('body_tracker_recommendations')
       .select('id, recommendation_text, source_ids, confidence_tier, confidence_pct, generated_at')
       .eq('user_id', user.id)
+      .eq('context_hash', contextHash)
       .is('dismissed_at', null)
       .gte('generated_at', cutoffIso)
       .order('generated_at', { ascending: false })
@@ -366,10 +401,6 @@ serve(async (req) => {
       });
     }
   }
-
-  // Build user context from all 4 sources in parallel
-  const ctx = await buildUserContext(sb, user.id);
-  const tier = tierFromContext(ctx);
 
   let parsed: RecommendationOutput;
   try {
@@ -429,7 +460,8 @@ serve(async (req) => {
     return json({ error: 'recommendation generation failed' }, 502);
   }
 
-  // Persist
+  // Persist with context_hash so future cache lookups can detect upstream
+  // data changes (Phase 4b cache invalidation).
   const sa = admin();
   const insertResult = await sa.from('body_tracker_recommendations').insert({
     user_id: user.id,
@@ -437,6 +469,7 @@ serve(async (req) => {
     source_ids: parsed.sources,
     confidence_tier: tier.tier,
     confidence_pct: tier.pct,
+    context_hash: contextHash,
     ai_model: REC_MODEL,
   } as never).select('id, generated_at').single();
 
