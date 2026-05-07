@@ -1,12 +1,10 @@
 'use client';
 
 import { BodyTrackerTabs } from '@/components/body-tracker/BodyTrackerTabs';
-import { MobileHeroBackground } from '@/components/ui/MobileHeroBackground';
+import { MobileHeroVideoBackground } from '@/components/ui/MobileHeroVideoBackground';
 
-const HERO_IMAGE =
-  'https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Images/Athlete%2027.png';
-const HERO_IMAGE_MOBILE =
-  'https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Mobile%20Hero/Athlete%2027%20Mobile.png';
+const HERO_VIDEO =
+  'https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Videos/body%20tracker%201.mp4';
 
 export default function BodyTrackerLayout({
   children,
@@ -15,12 +13,10 @@ export default function BodyTrackerLayout({
 }) {
   return (
     <>
-      <MobileHeroBackground
-        src={HERO_IMAGE}
-        mobileSrc={HERO_IMAGE_MOBILE}
+      <MobileHeroVideoBackground
+        src={HERO_VIDEO}
         overlayOpacity={0.55}
         objectPosition="center center"
-        priority
         flipX
       />
       <div className="relative z-10 min-h-screen text-white">
