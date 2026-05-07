@@ -295,6 +295,9 @@ export default function BodyTrackerDashboard() {
           />
         )}
 
+      {/* Quick Log */}
+      <QuickLogCards onSaved={() => setRefreshKey((k) => k + 1)} />
+
       {/* Cross-Reference Sources */}
       {!crossRefLoading && (
         <CrossReferenceCard snapshot={crossRefSnapshot} tier={crossRefTier} />
@@ -309,9 +312,6 @@ export default function BodyTrackerDashboard() {
         onGenerate={recGenerate}
         onDismiss={recDismiss}
       />
-
-      {/* Quick Log */}
-      <QuickLogCards onSaved={() => setRefreshKey((k) => k + 1)} />
 
       {/* Quick Metrics */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
