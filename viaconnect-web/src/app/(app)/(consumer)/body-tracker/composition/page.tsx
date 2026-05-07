@@ -325,6 +325,21 @@ function CompositionPageInner() {
               ))}
             </div>
           </div>
+
+          {/* Prompt #85h: 12-point body measurements grid below the fat content */}
+          <div className="mt-8 space-y-4">
+            <div className="flex flex-wrap items-center gap-3">
+              <h3 className="text-sm font-medium font-[Instrument_Sans] text-white/60">Body Measurements</h3>
+              <UnitToggle value={unit} onChange={setUnit} layoutId="composition-fat-unit" />
+            </div>
+            <div className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 p-5 backdrop-blur-sm">
+              <MeasurementsGrid
+                data={circumferenceData.latest}
+                previous={circumferenceData.previous}
+                unit={unit}
+              />
+            </div>
+          </div>
         </>
       )}
 
@@ -387,6 +402,21 @@ function CompositionPageInner() {
                   <FloatingMetricCard {...MUSCLE_CARDS[i]} />
                 </motion.div>
               ))}
+            </div>
+          </div>
+
+          {/* Prompt #85h: 12-point body measurements grid below the muscle content */}
+          <div className="mt-8 space-y-4">
+            <div className="flex flex-wrap items-center gap-3">
+              <h3 className="text-sm font-medium font-[Instrument_Sans] text-white/60">Body Measurements</h3>
+              <UnitToggle value={unit} onChange={setUnit} layoutId="composition-muscle-unit" />
+            </div>
+            <div className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 p-5 backdrop-blur-sm">
+              <MeasurementsGrid
+                data={circumferenceData.latest}
+                previous={circumferenceData.previous}
+                unit={unit}
+              />
             </div>
           </div>
         </>
