@@ -99,6 +99,14 @@ export function useUserJourney(userId: string | null): UseUserJourneyResult {
     const startedAt = new Date().toISOString();
     const finalSnapshot = snapshot ?? {};
 
+    interface InsertBuilder {
+      select: (cols: string) => {
+        single: () => Promise<{ data: { id: string } | null; error: { message: string } | null }>;
+      };
+      then: <TResult1>(
+        onfulfilled: (value: { error: { message: string } | null }) => TResult1,
+      ) => Promise<TResult1>;
+    }
     type Loose = {
       from: (t: string) => {
         upsert: (p: Record<string, unknown>) => Promise<{ error: { message: string } | null }>;
@@ -107,7 +115,7 @@ export function useUserJourney(userId: string | null): UseUserJourneyResult {
             eq: (c: string, v: boolean) => Promise<{ error: { message: string } | null }>;
           };
         };
-        insert: (p: Record<string, unknown>) => Promise<{ error: { message: string } | null }>;
+        insert: (p: Record<string, unknown>) => InsertBuilder;
       };
     };
     const sb = supabase as unknown as Loose;
@@ -120,17 +128,34 @@ export function useUserJourney(userId: string | null): UseUserJourneyResult {
       updated_at: startedAt,
     });
 
+    // End any prior active journey
+    const hadPriorActive = state.activeJourney !== null && state.activeJourney !== undefined;
     await sb.from('body_tracker_journeys')
       .update({ is_active: false, ended_at: startedAt })
       .eq('user_id', userId)
       .eq('is_active', true);
 
-    await sb.from('body_tracker_journeys').insert({
+    // Insert the new journey row and capture its id for the event log
+    const newJourneyResult = await sb.from('body_tracker_journeys').insert({
       user_id: userId,
       journey_type: journey,
       started_at: startedAt,
       starting_snapshot: finalSnapshot,
       is_active: true,
+    }).select('id').single();
+    const newJourneyId = newJourneyResult.data?.id ?? null;
+
+    // Record a Key Moments event so the JourneyTimeline picks it up
+    const journeyLabel = journey === 'weight_loss' ? 'Weight Loss' : 'Muscle Building';
+    await sb.from('body_tracker_journey_events').insert({
+      user_id: userId,
+      journey_id: newJourneyId,
+      event_type: hadPriorActive ? 'journey_switched' : 'journey_started',
+      title: hadPriorActive
+        ? `Switched to ${journeyLabel} journey`
+        : `Started ${journeyLabel} journey`,
+      occurred_at: startedAt,
+      metadata: { journey_type: journey },
     });
 
     setTick((t) => t + 1);

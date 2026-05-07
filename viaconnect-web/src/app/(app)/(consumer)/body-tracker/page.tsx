@@ -14,6 +14,7 @@ import { ArnoldCrossReferenceCard } from '@/components/body-tracker/ArnoldCrossR
 import { QuickMetricCard } from '@/components/body-tracker/QuickMetricCard';
 import { QuickLogCards, useCurrentUser } from '@/components/body-tracker/manual-input';
 import { useUserJourney } from '@/hooks/body-tracker/useUserJourney';
+import { useUserJourneyEvents } from '@/hooks/body-tracker/useUserJourneyEvents';
 import { useUserCrossReferenceData } from '@/hooks/body-tracker/useUserCrossReferenceData';
 import { useArnoldRecommendation } from '@/hooks/body-tracker/useArnoldRecommendation';
 import { estimateBiologicalAge } from '@/lib/body-tracker/biological-age';
@@ -66,6 +67,7 @@ export default function BodyTrackerDashboard() {
   const [hasScoreThisWeek, setHasScoreThisWeek] = useState(true);
   const { id: userId } = useCurrentUser();
   const { activeJourney, startedAt, startingSnapshot, loading: journeyLoading } = useUserJourney(userId);
+  const { events: journeyEvents } = useUserJourneyEvents(userId, 6);
   const { snapshot: crossRefSnapshot, tier: crossRefTier, loading: crossRefLoading } = useUserCrossReferenceData(userId);
   const {
     recommendation: arnoldRec,
@@ -284,6 +286,12 @@ export default function BodyTrackerDashboard() {
             currentValue={journeyValues.current}
             goalValue={journeyValues.goal}
             unit={journeyValues.unit}
+            events={journeyEvents.map((e) => ({
+              id: e.id,
+              title: e.title,
+              occurredAt: e.occurredAt,
+              detail: e.detail,
+            }))}
           />
         )}
 

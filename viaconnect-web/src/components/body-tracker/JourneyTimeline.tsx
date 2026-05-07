@@ -1,8 +1,15 @@
 'use client';
 
-import { TrendingDown, Dumbbell, Flag, Sparkles } from 'lucide-react';
+import { TrendingDown, Dumbbell, Flag, Sparkles, Clock } from 'lucide-react';
 
 export type JourneyTimelineType = 'weight_loss' | 'muscle_building';
+
+export interface JourneyTimelineEvent {
+  id: string;
+  title: string;
+  occurredAt: string;
+  detail?: string | null;
+}
 
 interface JourneyTimelineProps {
   journeyType: JourneyTimelineType;
@@ -11,6 +18,7 @@ interface JourneyTimelineProps {
   currentValue: number;
   goalValue: number;
   unit: string;
+  events?: JourneyTimelineEvent[];
 }
 
 function daysSince(iso: string): number {
@@ -47,6 +55,14 @@ function formatDate(iso: string): string {
   }
 }
 
+function formatEventDate(iso: string): string {
+  try {
+    return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  } catch {
+    return iso;
+  }
+}
+
 export function JourneyTimeline({
   journeyType,
   startedAt,
@@ -54,6 +70,7 @@ export function JourneyTimeline({
   currentValue,
   goalValue,
   unit,
+  events,
 }: JourneyTimelineProps) {
   const Icon = journeyType === 'weight_loss' ? TrendingDown : Dumbbell;
   const accent = journeyType === 'weight_loss' ? '#2DA5A0' : '#B75E18';
@@ -127,6 +144,30 @@ export function JourneyTimeline({
           {pct >= 100 ? ' Goal hit; nice work.' : pct >= 50 ? ' Past the halfway mark.' : ' Steady wins compound.'}
         </p>
       </div>
+
+      {events && events.length > 0 && (
+        <div className="mt-5 border-t border-white/[0.06] pt-4">
+          <div className="mb-3 flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-white/40">
+            <Clock size={11} strokeWidth={1.5} />
+            Key Moments
+          </div>
+          <ul className="space-y-2">
+            {events.map((ev) => (
+              <li key={ev.id} className="flex items-baseline gap-2 text-xs">
+                <span
+                  className="mt-1.5 h-1.5 w-1.5 flex-none rounded-full"
+                  style={{ backgroundColor: accent }}
+                  aria-hidden
+                />
+                <span className="font-medium text-white/55 whitespace-nowrap">
+                  {formatEventDate(ev.occurredAt)}:
+                </span>
+                <span className="text-white/80">{ev.title}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </section>
   );
 }

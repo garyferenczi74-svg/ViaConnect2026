@@ -327,8 +327,8 @@ serve(async (req) => {
       const errText = await apiResponse.text().catch(() => '');
       throw new Error(`anthropic ${apiResponse.status}: ${errText.slice(0, 200)}`);
     }
-    const visionJson = await apiResponse.json() as { content?: Array<{ type: string; text?: string }> };
-    const text = visionJson.content?.find((c) => c.type === 'text')?.text ?? '';
+    const recJson = await apiResponse.json() as { content?: Array<{ type: string; text?: string }> };
+    const text = recJson.content?.find((c) => c.type === 'text')?.text ?? '';
     if (!text) throw new Error('empty rec response');
 
     parsed = validateOutput(extractJson(text));
