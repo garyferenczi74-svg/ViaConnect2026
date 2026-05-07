@@ -32,6 +32,12 @@ const VISION_MODEL  = Deno.env.get('ARNOLD_VISION_MODEL') ?? 'claude-sonnet-4-6'
 const MAX_PHOTO_BYTES = 8_000_000;
 const VISION_TIMEOUT_MS = 60_000;
 
+// Anthropic Vision accepts image/jpeg, image/png, image/gif, and image/webp.
+// We allow the three common photographic formats and reject anything else
+// at the boundary so an attacker cannot smuggle a non image media_type into
+// the upstream call.
+const ALLOWED_MEDIA_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
+
 function corsHeaders(): Record<string, string> {
   return {
     'Content-Type': 'application/json',
@@ -223,9 +229,38 @@ serve(async (req) => {
     }
   }
   const mediaType = body.media_type ?? 'image/jpeg';
+  if (!ALLOWED_MEDIA_TYPES.has(mediaType)) {
+    return json({ error: 'unsupported media_type; allowed: image/jpeg, image/png, image/webp' }, 400);
+  }
+
+  // Cost monitoring: log the base64 payload size pre Anthropic call.
+  // Vision pricing is dominated by image bytes, so this lets ops correlate
+  // spend spikes to specific user_ids and photo dimensions.
+  const totalBase64Bytes = p.front.length + p.back.length + p.left_side.length + p.right_side.length;
+  safeLog.info('body-scan-analyze', 'egress', {
+    user_id: user.id,
+    media_type: mediaType,
+    total_base64_bytes: totalBase64Bytes,
+    per_photo_bytes: {
+      front: p.front.length,
+      back: p.back.length,
+      left_side: p.left_side.length,
+      right_side: p.right_side.length,
+    },
+  });
 
   let parsed: BodyScanEstimate;
   try {
+    // ── PHI EGRESS POINT ──────────────────────────────────────────────────
+    // The 4 base64 encoded body photos are PHI. Although they are NEVER
+    // stored in Supabase or any bucket and are discarded immediately after
+    // this fetch resolves, they still leave our infrastructure and reach
+    // Anthropic. Production launch requires a signed Business Associate
+    // Agreement (BAA) on file with Anthropic covering this ephemeral data
+    // flow. Verify before enabling Body Scan in production (June 2026
+    // launch). Mirrors the same disclosure on arnold-vision-analyze.
+    // Owner: gary@farmceuticawellness.com.
+    // ──────────────────────────────────────────────────────────────────────
     const apiResponse = await visionBreaker.execute(() =>
       withAbortTimeout(
         (signal) => fetch('https://api.anthropic.com/v1/messages', {
@@ -272,7 +307,7 @@ serve(async (req) => {
     collectAnalysisStrings(parsed as unknown, collected);
     const violations = jefferyValidateAnalysisText(collected.join(' '));
     if (violations.length > 0) {
-      safeLog('warn', 'body-scan-analyze guardrail blocked', {
+      safeLog.warn('body-scan-analyze', 'guardrail blocked', {
         user_id: user.id,
         violations,
       });
@@ -280,14 +315,14 @@ serve(async (req) => {
     }
   } catch (e) {
     if (isCircuitBreakerError(e)) {
-      safeLog('warn', 'body-scan-analyze breaker open', { user_id: user.id });
+      safeLog.warn('body-scan-analyze', 'breaker open', { user_id: user.id });
       return json({ error: 'vision rate limited; try again shortly' }, 503);
     }
     if (isTimeoutError(e)) {
-      safeLog('warn', 'body-scan-analyze timeout', { user_id: user.id });
+      safeLog.warn('body-scan-analyze', 'timeout', { user_id: user.id });
       return json({ error: 'vision timed out' }, 504);
     }
-    safeLog('error', 'body-scan-analyze failed', { user_id: user.id, error: String(e) });
+    safeLog.error('body-scan-analyze', 'failed', { user_id: user.id, error: String(e) });
     return json({ error: 'analysis failed' }, 502);
   }
 
@@ -308,7 +343,7 @@ serve(async (req) => {
   } as never).select('id, scan_date').single();
 
   if (insertResult.error || !insertResult.data) {
-    safeLog('error', 'body-scan-analyze insert failed', {
+    safeLog.error('body-scan-analyze', 'insert failed', {
       user_id: user.id,
       error: insertResult.error?.message ?? 'no data',
     });
