@@ -71,6 +71,12 @@ export interface IssuedPrescription {
     // dedicated SECURITY DEFINER RPC get_my_issued_prescription_clinical_notes
     // is called via serverGetIssuedPrescriptionClinicalNotes when a
     // practitioner expands a card to view the notes on demand.
+    // Phase F6b.3i: derived from metadata.admin_revoke. True when an admin
+    // revoked this token via the F6b.3g2 admin override path rather than
+    // the original issuer (the practitioner themselves). Surfaces to the
+    // F6b.3e PrescriptionsList card as an "Admin override" supplementary
+    // badge so the practitioner understands the revocation source.
+    revokedByAdmin: boolean
 }
 
 export type GetClinicalNotesResult =
@@ -199,7 +205,7 @@ export async function serverListMyIssuedPrescriptions(
         let query = sb
             .from('prescription_tokens')
             .select(
-                'id, patient_user_id, sku, quantity_authorized, quantity_consumed, status, issued_at, expires_at, consumed_at, revoked_at, dosage_instructions, revocation_reason',
+                'id, patient_user_id, sku, quantity_authorized, quantity_consumed, status, issued_at, expires_at, consumed_at, revoked_at, dosage_instructions, revocation_reason, metadata',
             )
             .order('issued_at', { ascending: false })
         if (filters.status) {
@@ -232,6 +238,7 @@ export async function serverListMyIssuedPrescriptions(
             revoked_at: string | null
             dosage_instructions: string | null
             revocation_reason: string | null
+            metadata: Record<string, unknown> | null
         }>
         const prescriptions: IssuedPrescription[] = rows.map((r) => ({
             id: r.id,
@@ -246,6 +253,7 @@ export async function serverListMyIssuedPrescriptions(
             revokedAt: r.revoked_at,
             dosageInstructions: r.dosage_instructions,
             revocationReason: r.revocation_reason,
+            revokedByAdmin: r.metadata?.admin_revoke === true,
         }))
         return { ok: true, prescriptions }
     } catch (error) {

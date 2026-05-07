@@ -10,7 +10,7 @@
 'use client'
 
 import { useMemo, useState, useTransition } from 'react'
-import { AlertTriangle, CheckCircle2, ChevronDown, ChevronUp, Clock, X, XCircle } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, ChevronDown, ChevronUp, Clock, LifeBuoy, X, XCircle } from 'lucide-react'
 import {
     serverGetIssuedPrescriptionClinicalNotes,
     serverRevokePrescription,
@@ -170,7 +170,7 @@ function PrescriptionCard({
         <li className="rounded-lg border border-white/10 bg-white/[0.03] p-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
-                    <div className="mb-1 flex items-center gap-2">
+                    <div className="mb-1 flex flex-wrap items-center gap-2">
                         <span
                             className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ${style.pill}`}
                         >
@@ -181,6 +181,12 @@ function PrescriptionCard({
                             <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2.5 py-0.5 text-xs text-amber-200 ring-1 ring-amber-400/30">
                                 <Clock className="h-3 w-3" />
                                 Expires soon
+                            </span>
+                        )}
+                        {p.status === 'revoked' && p.revokedByAdmin && (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-indigo-500/15 px-2.5 py-0.5 text-xs text-indigo-200 ring-1 ring-indigo-400/30">
+                                <LifeBuoy className="h-3 w-3" />
+                                Admin override
                             </span>
                         )}
                     </div>

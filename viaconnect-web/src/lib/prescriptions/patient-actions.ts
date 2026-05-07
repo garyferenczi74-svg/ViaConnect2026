@@ -48,6 +48,12 @@ export interface PatientPrescription {
     revokedAt: string | null
     dosageInstructions: string | null
     revocationReason: string | null
+    // Phase F6b.3i: derived from metadata.admin_revoke. True when the
+    // token was revoked by ops/admin via the F6b.3g2 admin override path
+    // rather than by the original issuing practitioner. Surfaces to the
+    // F6b.3f patient UI as a "Revoked by support" supplementary badge so
+    // patients understand the source of the revocation.
+    revokedByAdmin: boolean
 }
 
 export interface ListMyPrescriptionsFilters {
@@ -90,7 +96,7 @@ export async function serverListMyPrescriptions(
         let query = sb
             .from('prescription_tokens')
             .select(
-                'id, practitioner_user_id, sku, quantity_authorized, quantity_consumed, status, issued_at, expires_at, consumed_at, revoked_at, dosage_instructions, revocation_reason',
+                'id, practitioner_user_id, sku, quantity_authorized, quantity_consumed, status, issued_at, expires_at, consumed_at, revoked_at, dosage_instructions, revocation_reason, metadata',
             )
             .order('issued_at', { ascending: false })
 
@@ -123,6 +129,7 @@ export async function serverListMyPrescriptions(
             revoked_at: string | null
             dosage_instructions: string | null
             revocation_reason: string | null
+            metadata: Record<string, unknown> | null
         }>
         const prescriptions: PatientPrescription[] = rows.map((r) => ({
             id: r.id,
@@ -137,6 +144,7 @@ export async function serverListMyPrescriptions(
             revokedAt: r.revoked_at,
             dosageInstructions: r.dosage_instructions,
             revocationReason: r.revocation_reason,
+            revokedByAdmin: r.metadata?.admin_revoke === true,
         }))
         return { ok: true, prescriptions }
     } catch (error) {

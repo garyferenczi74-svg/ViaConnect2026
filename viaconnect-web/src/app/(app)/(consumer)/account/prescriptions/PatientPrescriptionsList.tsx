@@ -19,7 +19,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { Clock, Pill } from 'lucide-react'
+import { Clock, LifeBuoy, Pill } from 'lucide-react'
 import type {
     PatientPrescription,
     PrescriptionStatus,
@@ -171,6 +171,12 @@ function PatientPrescriptionCard({
                             <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2.5 py-0.5 text-xs text-amber-200 ring-1 ring-amber-400/30">
                                 <Clock className="h-3 w-3" />
                                 Expires soon
+                            </span>
+                        )}
+                        {p.status === 'revoked' && p.revokedByAdmin && (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-indigo-500/15 px-2.5 py-0.5 text-xs text-indigo-200 ring-1 ring-indigo-400/30">
+                                <LifeBuoy className="h-3 w-3" />
+                                Revoked by support
                             </span>
                         )}
                     </div>

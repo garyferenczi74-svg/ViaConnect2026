@@ -156,7 +156,7 @@ export default async function ProductFullCardPage({ params }: PageProps) {
                 </div>
 
                 <section id="description" className="mt-12 scroll-mt-24 md:mt-16">
-                    <h2 className="text-2xl font-light tracking-tight text-white md:text-3xl">
+                    <h2 className="text-2xl font-bold text-white">
                         Description
                     </h2>
                     <div className="mt-4 max-w-3xl text-base leading-relaxed text-white/80 md:text-lg">
@@ -170,7 +170,7 @@ export default async function ProductFullCardPage({ params }: PageProps) {
 
                 {variant === 'supplement' ? (
                     <section id="formulation" className="mt-12 scroll-mt-24 md:mt-16">
-                        <h2 className="text-2xl font-light tracking-tight text-white md:text-3xl">
+                        <h2 className="text-2xl font-bold text-white">
                             Formulation
                         </h2>
                         {ingredients.length === 0 ? (
@@ -205,7 +205,7 @@ export default async function ProductFullCardPage({ params }: PageProps) {
                 ) : (
                     <>
                         <section id="whats-tested" className="mt-12 scroll-mt-24 md:mt-16">
-                            <h2 className="text-2xl font-light tracking-tight text-white md:text-3xl">
+                            <h2 className="text-2xl font-bold text-white">
                                 What's Tested
                             </h2>
                             <div className="mt-4 max-w-3xl text-base leading-relaxed text-white/80 md:text-lg">
@@ -217,7 +217,7 @@ export default async function ProductFullCardPage({ params }: PageProps) {
                             </div>
                         </section>
                         <section id="who-its-for" className="mt-12 scroll-mt-24 md:mt-16">
-                            <h2 className="text-2xl font-light tracking-tight text-white md:text-3xl">
+                            <h2 className="text-2xl font-bold text-white">
                                 Who It's For
                             </h2>
                             <div className="mt-4 max-w-3xl text-base leading-relaxed text-white/80 md:text-lg">
@@ -229,7 +229,7 @@ export default async function ProductFullCardPage({ params }: PageProps) {
                             </div>
                         </section>
                         <section id="what-you-get" className="mt-12 scroll-mt-24 md:mt-16">
-                            <h2 className="text-2xl font-light tracking-tight text-white md:text-3xl">
+                            <h2 className="text-2xl font-bold text-white">
                                 What You Get
                             </h2>
                             <div className="mt-4 max-w-3xl text-base leading-relaxed text-white/80 md:text-lg">
