@@ -22,6 +22,7 @@ import {
 } from '@/components/body-tracker/manual-input';
 import { useCircumferenceData } from '@/hooks/body-tracker/useCircumferenceData';
 import { useUserBiologicalSex } from '@/hooks/body-tracker/useUserBiologicalSex';
+import { useUserJourney } from '@/hooks/body-tracker/useUserJourney';
 import type { MeasurementUnit } from '@/lib/body-tracker/circumference';
 
 const SAMPLE_FAT = {
@@ -134,6 +135,7 @@ function CompositionPageInner() {
 
   const { id: userId } = useCurrentUser();
   const { sex: caqSex, source: caqSource, setOverride: setGenderOverride } = useUserBiologicalSex(userId ?? null);
+  const { activeJourney, startingSnapshot } = useUserJourney(userId ?? null);
 
   async function persistGender(g: 'male' | 'female') {
     setGenderError(null);
@@ -308,7 +310,13 @@ function CompositionPageInner() {
               <h3 className="mb-4 text-xs font-semibold uppercase tracking-wider text-white/40 lg:text-center">
                 Segmental Body Fat Analysis
               </h3>
-              <BodySilhouette mode="fat" segmentalData={SAMPLE_FAT} gender={gender} />
+              <BodySilhouette
+                mode="fat"
+                segmentalData={SAMPLE_FAT}
+                gender={gender}
+                journey={activeJourney}
+                journeyStartSnapshot={startingSnapshot}
+              />
             </div>
             <div className="hidden lg:flex lg:flex-col lg:gap-3">
               {FAT_RIGHT_IDX.map((i) => <FloatingMetricCard key={i} {...FAT_CARDS[i]} />)}
@@ -337,7 +345,13 @@ function CompositionPageInner() {
               <h3 className="mb-4 text-xs font-semibold uppercase tracking-wider text-white/40 lg:text-center">
                 Segmental Muscle Analysis
               </h3>
-              <BodySilhouette mode="muscle" segmentalData={SAMPLE_MUSCLE} gender={gender} />
+              <BodySilhouette
+                mode="muscle"
+                segmentalData={SAMPLE_MUSCLE}
+                gender={gender}
+                journey={activeJourney}
+                journeyStartSnapshot={startingSnapshot}
+              />
             </div>
             <div className="hidden lg:flex lg:flex-col lg:gap-3">
               {MUSCLE_RIGHT_IDX.map((i) => <FloatingMetricCard key={i} {...MUSCLE_CARDS[i]} />)}

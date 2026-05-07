@@ -5,6 +5,14 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { getSegmentStatus, STATUS_COLORS } from '@/lib/body-tracker/calculations';
+import {
+  computeJourneyOverlay,
+  shouldShowGhostOutline,
+} from '@/lib/body-tracker/journey-overlay';
+import type {
+  JourneyType,
+  JourneyStartingSnapshot,
+} from '@/hooks/body-tracker/useUserJourney';
 import { SegmentalCallout, type SegmentKey } from './SegmentalCallout';
 
 interface SegmentalFatData {
@@ -28,6 +36,8 @@ interface SegmentalMuscleData {
 interface BodySilhouetteMaleProps {
   mode: 'fat' | 'muscle';
   segmentalData: SegmentalFatData | SegmentalMuscleData;
+  journey?: JourneyType | null;
+  journeyStartSnapshot?: JourneyStartingSnapshot | null;
   onSegmentClick?: (segment: SegmentKey) => void;
 }
 
@@ -56,7 +66,13 @@ function getValue(data: SegmentalFatData | SegmentalMuscleData, key: SegmentKey,
   return map[key] ?? 0;
 }
 
-export function BodySilhouetteMale({ mode, segmentalData, onSegmentClick }: BodySilhouetteMaleProps) {
+export function BodySilhouetteMale({
+  mode,
+  segmentalData,
+  journey,
+  journeyStartSnapshot,
+  onSegmentClick,
+}: BodySilhouetteMaleProps) {
   const [hovered, setHovered] = useState<SegmentKey | null>(null);
   const unit = mode === 'fat' ? '%' : 'lbs';
 
@@ -65,6 +81,18 @@ export function BodySilhouetteMale({ mode, segmentalData, onSegmentClick }: Body
     const status = getSegmentStatus(value, seg.segType, mode, 'male');
     return { ...seg, value, status };
   });
+
+  const totalForJourney =
+    mode === 'fat'
+      ? (segmentalData as SegmentalFatData).total_body_fat_pct
+      : (segmentalData as SegmentalMuscleData).total_muscle_mass_lbs;
+  const journeyOverlay = computeJourneyOverlay(
+    journey,
+    mode,
+    totalForJourney,
+    journeyStartSnapshot,
+  );
+  const showGhost = shouldShowGhostOutline(journey, mode, journeyStartSnapshot);
 
   return (
     <div className="flex flex-col items-center gap-6 lg:flex-row lg:items-start lg:justify-center lg:gap-8">
@@ -106,6 +134,35 @@ export function BodySilhouetteMale({ mode, segmentalData, onSegmentClick }: Body
               />
             );
           })}
+
+          {journeyOverlay && (
+            <g pointerEvents="none" aria-hidden="true">
+              {SEGMENTS.map((seg) => (
+                <path
+                  key={`overlay-${seg.key}`}
+                  d={seg.d}
+                  fill={journeyOverlay.color}
+                  fillOpacity={journeyOverlay.opacity}
+                  stroke="none"
+                />
+              ))}
+            </g>
+          )}
+
+          {showGhost && (
+            <g pointerEvents="none" aria-hidden="true">
+              {SEGMENTS.map((seg) => (
+                <path
+                  key={`ghost-${seg.key}`}
+                  d={seg.d}
+                  fill="none"
+                  stroke="rgba(255,255,255,0.35)"
+                  strokeWidth={2}
+                  strokeDasharray="4 3"
+                />
+              ))}
+            </g>
+          )}
         </svg>
       </div>
 

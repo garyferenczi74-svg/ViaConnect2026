@@ -7,6 +7,10 @@
 import { BodySilhouetteMale } from './BodySilhouetteMale';
 import { BodySilhouetteFemale } from './BodySilhouetteFemale';
 import type { SegmentKey } from './SegmentalCallout';
+import type {
+  JourneyType,
+  JourneyStartingSnapshot,
+} from '@/hooks/body-tracker/useUserJourney';
 
 interface SegmentalFatData {
   right_arm_pct: number;
@@ -30,6 +34,8 @@ interface BodySilhouetteProps {
   mode: 'fat' | 'muscle';
   segmentalData: SegmentalFatData | SegmentalMuscleData;
   gender?: 'male' | 'female';
+  journey?: JourneyType | null;
+  journeyStartSnapshot?: JourneyStartingSnapshot | null;
   onSegmentClick?: (segment: SegmentKey) => void;
 }
 
