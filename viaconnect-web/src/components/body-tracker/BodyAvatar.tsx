@@ -13,7 +13,7 @@ interface BodyAvatarProps {
 
 const AVATAR_URLS: Record<'male' | 'female', string> = {
   male:   'https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Body%20Tracker/Male%20Avatar.svg',
-  female: 'https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Body%20Tracker/Female%20Avartar.png',
+  female: 'https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Body%20Tracker/Female.svg',
 };
 
 export function BodyAvatar({ gender, className }: BodyAvatarProps) {
