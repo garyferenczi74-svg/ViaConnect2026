@@ -298,21 +298,6 @@ export default function BodyTrackerDashboard() {
       {/* Quick Log */}
       <QuickLogCards onSaved={() => setRefreshKey((k) => k + 1)} />
 
-      {/* Cross-Reference Sources */}
-      {!crossRefLoading && (
-        <CrossReferenceCard snapshot={crossRefSnapshot} tier={crossRefTier} />
-      )}
-
-      {/* Arnold's Cross-Reference Recommendation (LLM) */}
-      <ArnoldCrossReferenceCard
-        recommendation={arnoldRec}
-        loading={recLoading}
-        generating={recGenerating}
-        error={recError}
-        onGenerate={recGenerate}
-        onDismiss={recDismiss}
-      />
-
       {/* Quick Metrics */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         {metrics.map((m, i) => (
@@ -333,6 +318,21 @@ export default function BodyTrackerDashboard() {
           </motion.div>
         ))}
       </div>
+
+      {/* Cross-Reference Sources */}
+      {!crossRefLoading && (
+        <CrossReferenceCard snapshot={crossRefSnapshot} tier={crossRefTier} />
+      )}
+
+      {/* Arnold's Cross-Reference Recommendation (LLM) */}
+      <ArnoldCrossReferenceCard
+        recommendation={arnoldRec}
+        loading={recLoading}
+        generating={recGenerating}
+        error={recError}
+        onGenerate={recGenerate}
+        onDismiss={recDismiss}
+      />
 
       {/* Contributors Breakdown */}
       <div className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 p-5 backdrop-blur-sm">
