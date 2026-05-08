@@ -4,7 +4,7 @@ import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Plus, Camera } from 'lucide-react';
-import { BodySilhouette } from '@/components/body-tracker/BodySilhouette';
+import { BodyAvatar } from '@/components/body-tracker/BodyAvatar';
 import { BodyPartCallout } from '@/components/body-tracker/BodyPartCallout';
 import {
   CompositionSectionToggle,
@@ -24,7 +24,6 @@ import {
 } from '@/components/body-tracker/manual-input';
 import { useCircumferenceData } from '@/hooks/body-tracker/useCircumferenceData';
 import { useUserBiologicalSex } from '@/hooks/body-tracker/useUserBiologicalSex';
-import { useUserJourney } from '@/hooks/body-tracker/useUserJourney';
 import type { MeasurementUnit } from '@/lib/body-tracker/circumference';
 import { getSegmentStatus, type SegmentStatus } from '@/lib/body-tracker/calculations';
 
@@ -184,7 +183,6 @@ function CompositionPageInner() {
 
   const { id: userId } = useCurrentUser();
   const { sex: caqSex, source: caqSource, setOverride: setGenderOverride } = useUserBiologicalSex(userId ?? null);
-  const { activeJourney, startingSnapshot } = useUserJourney(userId ?? null);
 
   async function persistGender(g: 'male' | 'female') {
     setGenderError(null);
@@ -378,14 +376,7 @@ function CompositionPageInner() {
                 Segmental Body Fat Analysis
               </h3>
               <div style={{ filter: 'drop-shadow(0 0 20px rgba(45, 165, 160, 0.15))' }}>
-                <BodySilhouette
-                  mode="fat"
-                  segmentalData={SAMPLE_FAT}
-                  gender={gender}
-                  journey={activeJourney}
-                  journeyStartSnapshot={startingSnapshot}
-                  showSegmentalCallouts={false}
-                />
+                <BodyAvatar gender={gender} />
               </div>
 
               {/* Mobile only: 12 callouts in a 2-column grid below the avatar */}
@@ -482,14 +473,7 @@ function CompositionPageInner() {
                 Segmental Muscle Analysis
               </h3>
               <div style={{ filter: 'drop-shadow(0 0 20px rgba(45, 165, 160, 0.15))' }}>
-                <BodySilhouette
-                  mode="muscle"
-                  segmentalData={SAMPLE_MUSCLE}
-                  gender={gender}
-                  journey={activeJourney}
-                  journeyStartSnapshot={startingSnapshot}
-                  showSegmentalCallouts={false}
-                />
+                <BodyAvatar gender={gender} />
               </div>
 
               {/* Mobile only: 12 callouts in a 2-column grid below the avatar */}
