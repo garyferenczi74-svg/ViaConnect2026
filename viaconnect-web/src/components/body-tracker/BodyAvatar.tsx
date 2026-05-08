@@ -1,6 +1,6 @@
 'use client';
 
-// Prompt #85m: anatomical PNG avatar that replaces the SVG silhouette on the
+// Prompt #85m: anatomical avatar image that replaces the segmental SVG on the
 // Composition page. Gender selects between two Supabase-hosted images. The 12
 // segmental callouts (#85k) flank this avatar; segmental coloring + journey
 // overlay + ghost outline that the SVG used to provide are intentionally
@@ -12,8 +12,8 @@ interface BodyAvatarProps {
 }
 
 const AVATAR_URLS: Record<'male' | 'female', string> = {
-  male:   'https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Body%20Tracker/Male%20Avatar.png',
-  female: 'https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Body%20Tracker/Female%20Avartar.png',
+  male:   'https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Body%20Tracker/Male%20Avatar.svg',
+  female: 'https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Body%20Tracker/Female.svg',
 };
 
 export function BodyAvatar({ gender, className }: BodyAvatarProps) {
