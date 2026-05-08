@@ -62,17 +62,19 @@ export function FloatingMetricCard({
   return (
     <div className="flex h-full flex-col justify-center rounded-2xl border border-white/[0.08] bg-[#1E3054]/80 p-4 shadow-lg shadow-black/20 backdrop-blur-xl">
       <p className="flex min-h-[24px] items-center justify-center text-xs uppercase tracking-wider text-white/50">{label}</p>
-      <div className="mt-1 flex items-baseline gap-2">
+      <div className="mt-1 flex items-baseline justify-center gap-2">
         <span className="text-2xl font-bold text-white">{value}</span>
         {trend === 'up' && <TrendingUp size={14} strokeWidth={1.5} className="text-[#2DA5A0]" />}
         {trend === 'down' && <TrendingDown size={14} strokeWidth={1.5} className="text-[#B75E18]" />}
       </div>
-      <span
-        className="mt-1 inline-block rounded-full px-2 py-0.5 text-[10px] font-medium"
-        style={{ backgroundColor: `${color}1F`, color, border: `1px solid ${color}4D` }}
-      >
-        {status}
-      </span>
+      <div className="mt-1 flex justify-center">
+        <span
+          className="inline-block rounded-full px-2 py-0.5 text-[10px] font-medium"
+          style={{ backgroundColor: `${color}1F`, color, border: `1px solid ${color}4D` }}
+        >
+          {status}
+        </span>
+      </div>
 
       {sparklineData && sparklineData.length >= 2 && (
         <Sparkline data={sparklineData} color={color} />

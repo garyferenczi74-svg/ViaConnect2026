@@ -388,11 +388,10 @@ function CompositionPageInner() {
             </div>
 
             <div data-testid="center-column" className="flex flex-col lg:h-full">
-              <h3 className="mb-4 shrink-0 text-center text-xs font-semibold uppercase tracking-wider text-white/40">
+              <h3 className="mb-3 shrink-0 text-center text-xs font-semibold uppercase tracking-wider text-white/40">
                 Segmental Body Fat Analysis
               </h3>
-              {/* Prompt #153: avatar fills the available column height on desktop, capped at 60vh on mobile.
-                  Prompt #85n: BodyAvatarWithHeatmap layers a 12-region SVG overlay over the avatar. */}
+              <HeatmapLegend metric="fat" className="mb-4 shrink-0" />
               <div
                 data-testid="avatar-container"
                 className="flex max-h-[60vh] items-center justify-center px-2 py-2 lg:max-h-none lg:min-h-0 lg:flex-1"
@@ -400,9 +399,6 @@ function CompositionPageInner() {
               >
                 <BodyAvatarWithHeatmap gender={gender} changeData={fatChange.data} metric="fat" />
               </div>
-
-              {/* Prompt #85n: heat-map legend reads the three colors with fat-loss semantics. */}
-              <HeatmapLegend metric="fat" className="mt-3 shrink-0" />
 
               {/* Mobile only: 12 callouts in a 2-column grid below the avatar */}
               <div className="mt-6 grid shrink-0 grid-cols-2 gap-3 lg:hidden">
@@ -503,11 +499,10 @@ function CompositionPageInner() {
             </div>
 
             <div data-testid="center-column" className="flex flex-col lg:h-full">
-              <h3 className="mb-4 shrink-0 text-center text-xs font-semibold uppercase tracking-wider text-white/40">
+              <h3 className="mb-3 shrink-0 text-center text-xs font-semibold uppercase tracking-wider text-white/40">
                 Segmental Muscle Analysis
               </h3>
-              {/* Prompt #153: avatar fills the available column height on desktop, capped at 60vh on mobile.
-                  Prompt #85n: BodyAvatarWithHeatmap layers a 12-region SVG overlay over the avatar. */}
+              <HeatmapLegend metric="muscle" className="mb-4 shrink-0" />
               <div
                 data-testid="avatar-container"
                 className="flex max-h-[60vh] items-center justify-center px-2 py-2 lg:max-h-none lg:min-h-0 lg:flex-1"
@@ -515,9 +510,6 @@ function CompositionPageInner() {
               >
                 <BodyAvatarWithHeatmap gender={gender} changeData={muscleChange.data} metric="muscle" />
               </div>
-
-              {/* Prompt #85n: heat-map legend reads the three colors with muscle-gain semantics. */}
-              <HeatmapLegend metric="muscle" className="mt-3 shrink-0" />
 
               {/* Mobile only: 12 callouts in a 2-column grid below the avatar */}
               <div className="mt-6 grid shrink-0 grid-cols-2 gap-3 lg:hidden">
