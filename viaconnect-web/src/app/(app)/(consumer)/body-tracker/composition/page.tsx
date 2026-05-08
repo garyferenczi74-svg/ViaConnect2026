@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Plus, Camera } from 'lucide-react';
 import { BodySilhouette } from '@/components/body-tracker/BodySilhouette';
+import { BodyPartCallout } from '@/components/body-tracker/BodyPartCallout';
 import {
   CompositionSectionToggle,
   type CompositionSection,
@@ -25,6 +26,7 @@ import { useCircumferenceData } from '@/hooks/body-tracker/useCircumferenceData'
 import { useUserBiologicalSex } from '@/hooks/body-tracker/useUserBiologicalSex';
 import { useUserJourney } from '@/hooks/body-tracker/useUserJourney';
 import type { MeasurementUnit } from '@/lib/body-tracker/circumference';
+import { getSegmentStatus, type SegmentStatus } from '@/lib/body-tracker/calculations';
 
 const SAMPLE_FAT = {
   right_arm_pct: 18.2, left_arm_pct: 17.9, trunk_pct: 26.6,
@@ -54,14 +56,60 @@ const FAT_CARDS: MetricCardSpec[] = [
   { label: 'Body Water',     value: '55.1%', status: 'Good' },
 ];
 
-// Muscle cards: mobile renders all 3; desktop splits left [0,2] / right [1]
-const MUSCLE_CARDS: MetricCardSpec[] = [
-  { label: 'Total Muscle Mass',    value: '63.8 lbs', status: 'Good',     trend: 'up' },
-  { label: 'Skeletal Muscle Mass', value: '28.3 lbs', status: 'Standard' },
-  { label: 'Muscle Score',         value: 'B+',       status: 'Good',     trend: 'up' },
+// Prompt #85k: 12 finer-grained body parts that flank the silhouette.
+// Each card inherits its value from its parent segment (trunk / arm / leg)
+// and uses the parent's status thresholds via getSegmentStatus.
+type ParentSegment = 'trunk' | 'right_arm' | 'left_arm' | 'right_leg' | 'left_leg';
+type ParentSegType = 'arm' | 'trunk' | 'leg';
+
+interface BodyPartSpec {
+  key: string;
+  label: string;
+  side: 'left' | 'right';
+  parent: ParentSegment;
+  segType: ParentSegType;
+}
+
+const BODY_PARTS: BodyPartSpec[] = [
+  { key: 'neck',      label: 'Neck',          side: 'left',  parent: 'trunk',     segType: 'trunk' },
+  { key: 'shoulders', label: 'Shoulders',     side: 'right', parent: 'trunk',     segType: 'trunk' },
+  { key: 'chest',     label: 'Chest',         side: 'left',  parent: 'trunk',     segType: 'trunk' },
+  { key: 'waist',     label: 'Waist',         side: 'right', parent: 'trunk',     segType: 'trunk' },
+  { key: 'l_bicep',   label: 'L. Bicep',      side: 'left',  parent: 'left_arm',  segType: 'arm' },
+  { key: 'r_bicep',   label: 'R. Bicep',      side: 'right', parent: 'right_arm', segType: 'arm' },
+  { key: 'l_forearm', label: 'L. Forearm',    side: 'left',  parent: 'left_arm',  segType: 'arm' },
+  { key: 'r_forearm', label: 'R. Forearm',    side: 'right', parent: 'right_arm', segType: 'arm' },
+  { key: 'l_quad',    label: 'L. Quadriceps', side: 'left',  parent: 'left_leg',  segType: 'leg' },
+  { key: 'r_quad',    label: 'R. Quadriceps', side: 'right', parent: 'right_leg', segType: 'leg' },
+  { key: 'l_calf',    label: 'L. Calf',       side: 'left',  parent: 'left_leg',  segType: 'leg' },
+  { key: 'r_calf',    label: 'R. Calf',       side: 'right', parent: 'right_leg', segType: 'leg' },
 ];
-const MUSCLE_LEFT_IDX  = [0, 2];
-const MUSCLE_RIGHT_IDX = [1];
+
+interface BodyPartCard {
+  key: string;
+  label: string;
+  side: 'left' | 'right';
+  value: number;
+  unit: string;
+  status: SegmentStatus;
+}
+
+function buildBodyPartCards(
+  mode: 'fat' | 'muscle',
+  fat: typeof SAMPLE_FAT,
+  muscle: typeof SAMPLE_MUSCLE,
+  gender: 'male' | 'female',
+): BodyPartCard[] {
+  const unit = mode === 'fat' ? '%' : 'lbs';
+  return BODY_PARTS.map((p) => {
+    const value =
+      mode === 'fat'
+        ? (fat as Record<string, number>)[`${p.parent}_pct`] ?? 0
+        : (muscle as Record<string, number>)[`${p.parent}_lbs`] ?? 0;
+    const status = getSegmentStatus(value, p.segType, mode, gender);
+    return { key: p.key, label: p.label, side: p.side, value, unit, status };
+  });
+}
 
 const UNIT_STORAGE_KEY = 'vc.body-tracker.measurement-unit';
 
@@ -172,6 +220,10 @@ function CompositionPageInner() {
   };
 
   const historyCategory = section === 'muscle' ? 'muscle' : 'composition';
+
+  // Prompt #85k: 12 body-part callouts inheriting from parent segments.
+  const fatBodyPartCards = buildBodyPartCards('fat', SAMPLE_FAT, SAMPLE_MUSCLE, gender);
+  const muscleBodyPartCards = buildBodyPartCards('muscle', SAMPLE_FAT, SAMPLE_MUSCLE, gender);
 
   return (
     <div className="space-y-6" key={refreshKey}>
@@ -297,47 +349,98 @@ function CompositionPageInner() {
             <p className="text-xs text-[#FCA5A5]">Could not save gender preference: {genderError}</p>
           )}
 
-          <div className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 p-6 backdrop-blur-sm">
-            <h3 className="mb-4 text-center text-xs font-semibold uppercase tracking-wider text-white/40">
-              Segmental Body Fat Analysis
-            </h3>
-            <div style={{ filter: 'drop-shadow(0 0 20px rgba(45, 165, 160, 0.15))' }}>
-              <BodySilhouette
-                mode="fat"
-                segmentalData={SAMPLE_FAT}
-                gender={gender}
-                journey={activeJourney}
-                journeyStartSnapshot={startingSnapshot}
-              />
-            </div>
-
-            {/* Prompt #85e: summary metrics row directly below the silhouette */}
-            <div className="mx-auto mt-6 grid w-full max-w-2xl grid-cols-2 gap-3 md:grid-cols-4">
-              {FAT_CARDS.map((c, i) => (
+          {/* Prompt #85k: silhouette card with 12 body-part callouts flanking the avatar.
+              Desktop renders 6 cards on each side via lg:grid 3-column. Mobile renders
+              the avatar + 12 cards in a 2-column grid below. */}
+          <div className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 p-6 backdrop-blur-sm lg:grid lg:grid-cols-[1fr_auto_1fr] lg:items-start lg:gap-6">
+            {/* Desktop left column: 6 left-side callouts */}
+            <div className="hidden lg:flex lg:flex-col lg:gap-3">
+              {fatBodyPartCards.filter((c) => c.side === 'left').map((c, order) => (
                 <motion.div
-                  key={i}
+                  key={c.key}
                   initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.6 + i * 0.08, duration: 0.35, ease: 'easeOut' }}
+                  transition={{ delay: 0.4 + order * 0.05, duration: 0.35, ease: 'easeOut' }}
                 >
-                  <FloatingMetricCard {...c} />
+                  <BodyPartCallout
+                    label={c.label}
+                    value={c.value}
+                    unit={c.unit}
+                    status={c.status}
+                    position="left"
+                  />
                 </motion.div>
               ))}
             </div>
-          </div>
 
-          {/* Prompt #85h: 12-point body measurements grid below the fat content */}
-          <div className="mt-8 space-y-4">
-            <div className="flex flex-wrap items-center gap-3">
-              <h3 className="text-sm font-medium font-[Instrument_Sans] text-white/60">Body Measurements</h3>
-              <UnitToggle value={unit} onChange={setUnit} layoutId="composition-fat-unit" />
+            <div>
+              <h3 className="mb-4 text-center text-xs font-semibold uppercase tracking-wider text-white/40">
+                Segmental Body Fat Analysis
+              </h3>
+              <div style={{ filter: 'drop-shadow(0 0 20px rgba(45, 165, 160, 0.15))' }}>
+                <BodySilhouette
+                  mode="fat"
+                  segmentalData={SAMPLE_FAT}
+                  gender={gender}
+                  journey={activeJourney}
+                  journeyStartSnapshot={startingSnapshot}
+                  showSegmentalCallouts={false}
+                />
+              </div>
+
+              {/* Mobile only: 12 callouts in a 2-column grid below the avatar */}
+              <div className="mt-6 grid grid-cols-2 gap-3 lg:hidden">
+                {fatBodyPartCards.map((c, order) => (
+                  <motion.div
+                    key={c.key}
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.4 + order * 0.04, duration: 0.35, ease: 'easeOut' }}
+                  >
+                    <BodyPartCallout
+                      label={c.label}
+                      value={c.value}
+                      unit={c.unit}
+                      status={c.status}
+                      position="left"
+                    />
+                  </motion.div>
+                ))}
+              </div>
+
+              {/* Prompt #85e: summary metrics row directly below the silhouette */}
+              <div className="mx-auto mt-6 grid w-full max-w-2xl grid-cols-2 gap-3 md:grid-cols-4">
+                {FAT_CARDS.map((c, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.6 + i * 0.08, duration: 0.35, ease: 'easeOut' }}
+                  >
+                    <FloatingMetricCard {...c} />
+                  </motion.div>
+                ))}
+              </div>
             </div>
-            <div className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 p-5 backdrop-blur-sm">
-              <MeasurementsGrid
-                data={circumferenceData.latest}
-                previous={circumferenceData.previous}
-                unit={unit}
-              />
+
+            {/* Desktop right column: 6 right-side callouts */}
+            <div className="hidden lg:flex lg:flex-col lg:gap-3">
+              {fatBodyPartCards.filter((c) => c.side === 'right').map((c, order) => (
+                <motion.div
+                  key={c.key}
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.4 + order * 0.05, duration: 0.35, ease: 'easeOut' }}
+                >
+                  <BodyPartCallout
+                    label={c.label}
+                    value={c.value}
+                    unit={c.unit}
+                    status={c.status}
+                    position="right"
+                  />
+                </motion.div>
+              ))}
             </div>
           </div>
         </>
@@ -345,40 +448,37 @@ function CompositionPageInner() {
 
       {section === 'muscle' && (
         <>
-          <div className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 backdrop-blur-md p-4 sm:p-5 space-y-4">
-            <div>
-              <h2 className="text-lg font-bold text-white">Muscle Analysis</h2>
-              <p className="text-xs text-white/60">Segmental muscle mass breakdown</p>
-            </div>
-            {/* Mobile + tablet: cards in a horizontal grid above silhouette */}
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:hidden">
-              {MUSCLE_CARDS.map((c, i) => (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, y: 15 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.05, duration: 0.4, ease: 'easeOut' }}
-                >
-                  <FloatingMetricCard {...c} />
-                </motion.div>
-              ))}
-            </div>
+          <div className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 backdrop-blur-md p-4 sm:p-5">
+            <h2 className="text-lg font-bold text-white">Muscle Analysis</h2>
+            <p className="text-xs text-white/60">Segmental muscle mass breakdown</p>
           </div>
-          <div className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 p-6 backdrop-blur-sm lg:grid lg:grid-cols-[1fr_auto_1fr] lg:items-center lg:gap-6">
+
+          {/* Prompt #85k: silhouette card with 12 body-part callouts flanking the avatar.
+              Desktop renders 6 cards on each side via lg:grid 3-column. Mobile renders
+              the avatar + 12 cards in a 2-column grid below. */}
+          <div className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 p-6 backdrop-blur-sm lg:grid lg:grid-cols-[1fr_auto_1fr] lg:items-start lg:gap-6">
+            {/* Desktop left column: 6 left-side callouts */}
             <div className="hidden lg:flex lg:flex-col lg:gap-3">
-              {MUSCLE_LEFT_IDX.map((i, order) => (
+              {muscleBodyPartCards.filter((c) => c.side === 'left').map((c, order) => (
                 <motion.div
-                  key={i}
-                  initial={{ opacity: 0, y: 15 }}
+                  key={c.key}
+                  initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: order * 0.05, duration: 0.4, ease: 'easeOut' }}
+                  transition={{ delay: 0.4 + order * 0.05, duration: 0.35, ease: 'easeOut' }}
                 >
-                  <FloatingMetricCard {...MUSCLE_CARDS[i]} />
+                  <BodyPartCallout
+                    label={c.label}
+                    value={c.value}
+                    unit={c.unit}
+                    status={c.status}
+                    position="left"
+                  />
                 </motion.div>
               ))}
             </div>
+
             <div>
-              <h3 className="mb-4 text-xs font-semibold uppercase tracking-wider text-white/40 lg:text-center">
+              <h3 className="mb-4 text-center text-xs font-semibold uppercase tracking-wider text-white/40">
                 Segmental Muscle Analysis
               </h3>
               <div style={{ filter: 'drop-shadow(0 0 20px rgba(45, 165, 160, 0.15))' }}>
@@ -388,49 +488,63 @@ function CompositionPageInner() {
                   gender={gender}
                   journey={activeJourney}
                   journeyStartSnapshot={startingSnapshot}
+                  showSegmentalCallouts={false}
                 />
               </div>
+
+              {/* Mobile only: 12 callouts in a 2-column grid below the avatar */}
+              <div className="mt-6 grid grid-cols-2 gap-3 lg:hidden">
+                {muscleBodyPartCards.map((c, order) => (
+                  <motion.div
+                    key={c.key}
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.4 + order * 0.04, duration: 0.35, ease: 'easeOut' }}
+                  >
+                    <BodyPartCallout
+                      label={c.label}
+                      value={c.value}
+                      unit={c.unit}
+                      status={c.status}
+                      position="left"
+                    />
+                  </motion.div>
+                ))}
+              </div>
+
+              {/* Prompt #85i: Body Fat summary cards row mirrored onto the Muscle Mass section */}
+              <div className="mx-auto mt-6 grid w-full max-w-2xl grid-cols-2 gap-3 md:grid-cols-4">
+                {FAT_CARDS.map((c, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.6 + i * 0.08, duration: 0.35, ease: 'easeOut' }}
+                  >
+                    <FloatingMetricCard {...c} />
+                  </motion.div>
+                ))}
+              </div>
             </div>
+
+            {/* Desktop right column: 6 right-side callouts */}
             <div className="hidden lg:flex lg:flex-col lg:gap-3">
-              {MUSCLE_RIGHT_IDX.map((i, order) => (
+              {muscleBodyPartCards.filter((c) => c.side === 'right').map((c, order) => (
                 <motion.div
-                  key={i}
-                  initial={{ opacity: 0, y: 15 }}
+                  key={c.key}
+                  initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: (order + 2) * 0.05, duration: 0.4, ease: 'easeOut' }}
+                  transition={{ delay: 0.4 + order * 0.05, duration: 0.35, ease: 'easeOut' }}
                 >
-                  <FloatingMetricCard {...MUSCLE_CARDS[i]} />
+                  <BodyPartCallout
+                    label={c.label}
+                    value={c.value}
+                    unit={c.unit}
+                    status={c.status}
+                    position="right"
+                  />
                 </motion.div>
               ))}
-            </div>
-          </div>
-
-          {/* Prompt #85i: Body Fat summary cards row mirrored onto the Muscle Mass section */}
-          <div className="mx-auto mt-6 grid w-full max-w-2xl grid-cols-2 gap-3 md:grid-cols-4">
-            {FAT_CARDS.map((c, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.6 + i * 0.08, duration: 0.35, ease: 'easeOut' }}
-              >
-                <FloatingMetricCard {...c} />
-              </motion.div>
-            ))}
-          </div>
-
-          {/* Prompt #85h: 12-point body measurements grid below the muscle content */}
-          <div className="mt-8 space-y-4">
-            <div className="flex flex-wrap items-center gap-3">
-              <h3 className="text-sm font-medium font-[Instrument_Sans] text-white/60">Body Measurements</h3>
-              <UnitToggle value={unit} onChange={setUnit} layoutId="composition-muscle-unit" />
-            </div>
-            <div className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 p-5 backdrop-blur-sm">
-              <MeasurementsGrid
-                data={circumferenceData.latest}
-                previous={circumferenceData.previous}
-                unit={unit}
-              />
             </div>
           </div>
         </>

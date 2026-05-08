@@ -37,6 +37,9 @@ interface BodySilhouetteProps {
   journey?: JourneyType | null;
   journeyStartSnapshot?: JourneyStartingSnapshot | null;
   onSegmentClick?: (segment: SegmentKey) => void;
+  // When false, suppresses the 5 in-component segmental callout cards.
+  // Used by the Composition page (#85k) which renders 12 finer-grained cards instead.
+  showSegmentalCallouts?: boolean;
 }
 
 export function BodySilhouette({ gender = 'male', ...props }: BodySilhouetteProps) {

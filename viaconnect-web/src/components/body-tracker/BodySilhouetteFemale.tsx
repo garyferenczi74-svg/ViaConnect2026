@@ -40,6 +40,7 @@ interface BodySilhouetteFemaleProps {
   journey?: JourneyType | null;
   journeyStartSnapshot?: JourneyStartingSnapshot | null;
   onSegmentClick?: (segment: SegmentKey) => void;
+  showSegmentalCallouts?: boolean;
 }
 
 // Female anatomy: narrower shoulders (~155-245), pinched waist around y=290,
@@ -75,6 +76,7 @@ export function BodySilhouetteFemale({
   journey,
   journeyStartSnapshot,
   onSegmentClick,
+  showSegmentalCallouts = true,
 }: BodySilhouetteFemaleProps) {
   const [hovered, setHovered] = useState<SegmentKey | null>(null);
   const unit = mode === 'fat' ? '%' : 'lbs';
@@ -99,11 +101,13 @@ export function BodySilhouetteFemale({
 
   return (
     <div className="flex flex-col items-center gap-6 lg:flex-row lg:items-start lg:justify-center lg:gap-8">
-      <div className="hidden w-[180px] flex-col gap-3 lg:flex">
-        {segmentData.filter((_, i) => i % 2 === 0).map((seg) => (
-          <SegmentalCallout key={seg.key} segment={seg.key} value={seg.value} unit={unit} status={seg.status} position="left" onClick={() => onSegmentClick?.(seg.key)} />
-        ))}
-      </div>
+      {showSegmentalCallouts && (
+        <div className="hidden w-[180px] flex-col gap-3 lg:flex">
+          {segmentData.filter((_, i) => i % 2 === 0).map((seg) => (
+            <SegmentalCallout key={seg.key} segment={seg.key} value={seg.value} unit={unit} status={seg.status} position="left" onClick={() => onSegmentClick?.(seg.key)} />
+          ))}
+        </div>
+      )}
 
       <div className="relative w-[280px] lg:w-[350px]">
         <svg viewBox="0 0 400 660" className="h-auto w-full" aria-label="Female body silhouette">
@@ -169,17 +173,21 @@ export function BodySilhouetteFemale({
         </svg>
       </div>
 
-      <div className="hidden w-[180px] flex-col gap-3 lg:flex">
-        {segmentData.filter((_, i) => i % 2 === 1).map((seg) => (
-          <SegmentalCallout key={seg.key} segment={seg.key} value={seg.value} unit={unit} status={seg.status} position="right" onClick={() => onSegmentClick?.(seg.key)} />
-        ))}
-      </div>
+      {showSegmentalCallouts && (
+        <div className="hidden w-[180px] flex-col gap-3 lg:flex">
+          {segmentData.filter((_, i) => i % 2 === 1).map((seg) => (
+            <SegmentalCallout key={seg.key} segment={seg.key} value={seg.value} unit={unit} status={seg.status} position="right" onClick={() => onSegmentClick?.(seg.key)} />
+          ))}
+        </div>
+      )}
 
-      <div className="flex w-full flex-col gap-2 px-2 lg:hidden">
-        {segmentData.map((seg) => (
-          <SegmentalCallout key={seg.key} segment={seg.key} value={seg.value} unit={unit} status={seg.status} position="left" onClick={() => onSegmentClick?.(seg.key)} />
-        ))}
-      </div>
+      {showSegmentalCallouts && (
+        <div className="flex w-full flex-col gap-2 px-2 lg:hidden">
+          {segmentData.map((seg) => (
+            <SegmentalCallout key={seg.key} segment={seg.key} value={seg.value} unit={unit} status={seg.status} position="left" onClick={() => onSegmentClick?.(seg.key)} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
