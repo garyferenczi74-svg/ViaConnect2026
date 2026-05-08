@@ -60,7 +60,7 @@ export function FloatingMetricCard({
   const color = STATUS_COLORS[status];
 
   return (
-    <div className="flex h-full flex-col justify-center rounded-2xl border border-white/[0.08] bg-[#1E3054]/80 p-4 shadow-lg shadow-black/20 backdrop-blur-xl">
+    <div className="flex h-full flex-col items-center justify-center rounded-2xl border border-white/[0.08] bg-[#1E3054]/80 p-4 text-center shadow-lg shadow-black/20 backdrop-blur-xl">
       <p className="flex min-h-[24px] items-center justify-center text-xs uppercase tracking-wider text-white/50">{label}</p>
       <div className="mt-1 flex items-baseline justify-center gap-2">
         <span className="text-2xl font-bold text-white">{value}</span>
