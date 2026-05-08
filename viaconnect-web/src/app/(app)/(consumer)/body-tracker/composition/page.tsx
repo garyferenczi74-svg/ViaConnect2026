@@ -4,7 +4,8 @@ import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Plus, Camera } from 'lucide-react';
-import { BodyAvatar } from '@/components/body-tracker/BodyAvatar';
+import { BodyAvatarWithHeatmap } from '@/components/body-tracker/BodyAvatarWithHeatmap';
+import { HeatmapLegend } from '@/components/body-tracker/HeatmapLegend';
 import { BodyPartCallout } from '@/components/body-tracker/BodyPartCallout';
 import {
   CompositionSectionToggle,
@@ -24,6 +25,8 @@ import {
 } from '@/components/body-tracker/manual-input';
 import { useCircumferenceData } from '@/hooks/body-tracker/useCircumferenceData';
 import { useUserBiologicalSex } from '@/hooks/body-tracker/useUserBiologicalSex';
+import { useFatChangeData } from '@/hooks/body-tracker/useFatChangeData';
+import { useMuscleChangeData } from '@/hooks/body-tracker/useMuscleChangeData';
 import type { MeasurementUnit } from '@/lib/body-tracker/circumference';
 import { getSegmentStatus, type SegmentStatus } from '@/lib/body-tracker/calculations';
 
@@ -197,6 +200,14 @@ function CompositionPageInner() {
     displayUnit: unit,
   });
 
+  // Prompt #85n: weekly change data drives the avatar heat-map overlay and
+  // the trend row on each of the 12 callouts. Both hooks degrade quietly:
+  // missing user, missing rows, or DB error => empty map => neutral yellow.
+  const fatChange = useFatChangeData(userId ?? null);
+  const muscleChange = useMuscleChangeData(userId ?? null);
+  const fatIsFirstEntry = fatChange.hasAnyData && !fatChange.hasPreviousEntry;
+  const muscleIsFirstEntry = muscleChange.hasAnyData && !muscleChange.hasPreviousEntry;
+
   useEffect(() => {
     try { window.localStorage.setItem(UNIT_STORAGE_KEY, unit); } catch { /* ignore */ }
   }, [unit]);
@@ -368,6 +379,9 @@ function CompositionPageInner() {
                     unit={c.unit}
                     status={c.status}
                     position="left"
+                    change={fatChange.data[c.key]?.change ?? null}
+                    metric="fat"
+                    isFirstEntry={fatIsFirstEntry}
                   />
                 </motion.div>
               ))}
@@ -377,14 +391,18 @@ function CompositionPageInner() {
               <h3 className="mb-4 shrink-0 text-center text-xs font-semibold uppercase tracking-wider text-white/40">
                 Segmental Body Fat Analysis
               </h3>
-              {/* Prompt #153: avatar fills the available column height on desktop, capped at 60vh on mobile. */}
+              {/* Prompt #153: avatar fills the available column height on desktop, capped at 60vh on mobile.
+                  Prompt #85n: BodyAvatarWithHeatmap layers a 12-region SVG overlay over the avatar. */}
               <div
                 data-testid="avatar-container"
                 className="flex max-h-[60vh] items-center justify-center px-2 py-2 lg:max-h-none lg:min-h-0 lg:flex-1"
                 style={{ filter: 'drop-shadow(0 0 20px rgba(45, 165, 160, 0.15))' }}
               >
-                <BodyAvatar gender={gender} />
+                <BodyAvatarWithHeatmap gender={gender} changeData={fatChange.data} metric="fat" />
               </div>
+
+              {/* Prompt #85n: heat-map legend reads the three colors with fat-loss semantics. */}
+              <HeatmapLegend metric="fat" className="mt-3 shrink-0" />
 
               {/* Mobile only: 12 callouts in a 2-column grid below the avatar */}
               <div className="mt-6 grid shrink-0 grid-cols-2 gap-3 lg:hidden">
@@ -401,6 +419,9 @@ function CompositionPageInner() {
                       unit={c.unit}
                       status={c.status}
                       position="left"
+                      change={fatChange.data[c.key]?.change ?? null}
+                      metric="fat"
+                      isFirstEntry={fatIsFirstEntry}
                     />
                   </motion.div>
                 ))}
@@ -436,6 +457,9 @@ function CompositionPageInner() {
                     unit={c.unit}
                     status={c.status}
                     position="right"
+                    change={fatChange.data[c.key]?.change ?? null}
+                    metric="fat"
+                    isFirstEntry={fatIsFirstEntry}
                   />
                 </motion.div>
               ))}
@@ -470,6 +494,9 @@ function CompositionPageInner() {
                     unit={c.unit}
                     status={c.status}
                     position="left"
+                    change={muscleChange.data[c.key]?.change ?? null}
+                    metric="muscle"
+                    isFirstEntry={muscleIsFirstEntry}
                   />
                 </motion.div>
               ))}
@@ -479,14 +506,18 @@ function CompositionPageInner() {
               <h3 className="mb-4 shrink-0 text-center text-xs font-semibold uppercase tracking-wider text-white/40">
                 Segmental Muscle Analysis
               </h3>
-              {/* Prompt #153: avatar fills the available column height on desktop, capped at 60vh on mobile. */}
+              {/* Prompt #153: avatar fills the available column height on desktop, capped at 60vh on mobile.
+                  Prompt #85n: BodyAvatarWithHeatmap layers a 12-region SVG overlay over the avatar. */}
               <div
                 data-testid="avatar-container"
                 className="flex max-h-[60vh] items-center justify-center px-2 py-2 lg:max-h-none lg:min-h-0 lg:flex-1"
                 style={{ filter: 'drop-shadow(0 0 20px rgba(45, 165, 160, 0.15))' }}
               >
-                <BodyAvatar gender={gender} />
+                <BodyAvatarWithHeatmap gender={gender} changeData={muscleChange.data} metric="muscle" />
               </div>
+
+              {/* Prompt #85n: heat-map legend reads the three colors with muscle-gain semantics. */}
+              <HeatmapLegend metric="muscle" className="mt-3 shrink-0" />
 
               {/* Mobile only: 12 callouts in a 2-column grid below the avatar */}
               <div className="mt-6 grid shrink-0 grid-cols-2 gap-3 lg:hidden">
@@ -503,6 +534,9 @@ function CompositionPageInner() {
                       unit={c.unit}
                       status={c.status}
                       position="left"
+                      change={muscleChange.data[c.key]?.change ?? null}
+                      metric="muscle"
+                      isFirstEntry={muscleIsFirstEntry}
                     />
                   </motion.div>
                 ))}
@@ -538,6 +572,9 @@ function CompositionPageInner() {
                     unit={c.unit}
                     status={c.status}
                     position="right"
+                    change={muscleChange.data[c.key]?.change ?? null}
+                    metric="muscle"
+                    isFirstEntry={muscleIsFirstEntry}
                   />
                 </motion.div>
               ))}

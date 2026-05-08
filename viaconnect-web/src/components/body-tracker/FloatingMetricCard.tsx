@@ -60,8 +60,8 @@ export function FloatingMetricCard({
   const color = STATUS_COLORS[status];
 
   return (
-    <div className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/80 p-4 shadow-lg shadow-black/20 backdrop-blur-xl">
-      <p className="text-xs uppercase tracking-wider text-white/50">{label}</p>
+    <div className="flex h-full flex-col justify-center rounded-2xl border border-white/[0.08] bg-[#1E3054]/80 p-4 shadow-lg shadow-black/20 backdrop-blur-xl">
+      <p className="flex min-h-[24px] items-center justify-center text-xs uppercase tracking-wider text-white/50">{label}</p>
       <div className="mt-1 flex items-baseline gap-2">
         <span className="text-2xl font-bold text-white">{value}</span>
         {trend === 'up' && <TrendingUp size={14} strokeWidth={1.5} className="text-[#2DA5A0]" />}
