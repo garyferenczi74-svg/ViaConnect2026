@@ -56,6 +56,27 @@ export function getRegionFill(
   return HEATMAP_FILL[classifyForMetric(direction, metric)];
 }
 
+// Prompt #85n fix: zone-level fill for the masked-avatar overlay. Each
+// avatar zone groups several physical regions at the same vertical level
+// (e.g. chest + both biceps fall in the upper-body band). The fill averages
+// the raw change values across the zone's regions, drops null/missing
+// entries, and routes through the same fat/muscle inversion as
+// getRegionFill so the colors stay consistent with the callout cards.
+export function getZoneFill(
+  regionIds: readonly string[],
+  changeData: RegionChangeData,
+  metric: Metric,
+): string {
+  const changes = regionIds
+    .map((id) => changeData[id]?.change)
+    .filter((v): v is number => v !== null && v !== undefined);
+  if (changes.length === 0) {
+    return HEATMAP_FILL[classifyForMetric('neutral', metric)];
+  }
+  const avg = changes.reduce((a, b) => a + b, 0) / changes.length;
+  return HEATMAP_FILL[classifyForMetric(getChangeDirection(avg), metric)];
+}
+
 export function getCalloutToneClass(direction: ChangeDirection, metric: Metric): string {
   const tone = classifyForMetric(direction, metric);
   if (tone === 'good') return 'text-green-400';
