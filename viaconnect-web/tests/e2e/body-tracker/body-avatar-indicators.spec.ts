@@ -1,9 +1,8 @@
-// Prompt #85n v2: smoke tests for the per-region avatar heat-map. Each
-// of 12 body parts now ships its own clip-path + mask-image overlay
-// keyed by data-region; the prior 5-band masked layer (data-zone) is
-// retired. The test user has no DB rows, so every region falls through
-// to the neutral yellow fill and only the structural assertions and
-// legend labels are asserted here.
+// Prompt #85n v3: smoke tests for the avatar oval status indicators.
+// The avatar carries 12 small green / yellow / red ovals positioned
+// over each body part; the test user has no DB rows so every oval
+// falls through to the neutral yellow color and only the structural
+// + legend assertions are exercised here.
 
 import { test, expect } from '@playwright/test';
 
@@ -16,20 +15,20 @@ const REGION_IDS = [
   'r_quad', 'l_quad', 'r_calf', 'l_calf',
 ] as const;
 
-test.describe('Body Tracker heat-map overlay (Prompt #85n v2)', () => {
-  test('Composition fat tab: overlay renders all 12 region overlays', async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name !== 'desktop-1440', 'overlay smoke runs on desktop-1440');
+test.describe('Body Tracker avatar indicators (Prompt #85n v3)', () => {
+  test('Composition fat tab: avatar renders all 12 oval indicators', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop-1440', 'indicators smoke runs on desktop-1440');
 
     await page.goto(COMPOSITION_PATH, { waitUntil: 'domcontentloaded' });
     await page.waitForLoadState('networkidle');
 
-    const overlay = page.locator('[data-testid="body-avatar-heatmap"]');
-    await expect(overlay).toBeVisible();
+    const avatar = page.locator('[data-testid="body-avatar-indicators"]');
+    await expect(avatar).toBeVisible();
 
     for (const id of REGION_IDS) {
       await expect(
-        overlay.locator(`[data-region="${id}"]`),
-        `region overlay [data-region="${id}"] should exist`,
+        avatar.locator(`[data-region="${id}"]`),
+        `oval indicator [data-region="${id}"] should exist`,
       ).toBeAttached();
     }
   });
@@ -56,33 +55,33 @@ test.describe('Body Tracker heat-map overlay (Prompt #85n v2)', () => {
     await expect(legend).toContainText(/Muscle Loss/i);
   });
 
-  test('Segmental Muscle tab: overlay renders all 12 region overlays', async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name !== 'desktop-1440', 'overlay smoke runs on desktop-1440');
+  test('Segmental Muscle tab: avatar renders all 12 oval indicators', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop-1440', 'indicators smoke runs on desktop-1440');
 
     await page.goto(MUSCLE_PATH, { waitUntil: 'domcontentloaded' });
     await page.waitForLoadState('networkidle');
 
-    const overlay = page.locator('[data-testid="body-avatar-heatmap"]');
+    const avatar = page.locator('[data-testid="body-avatar-indicators"]');
     for (const id of REGION_IDS) {
-      await expect(overlay.locator(`[data-region="${id}"]`)).toBeAttached();
+      await expect(avatar.locator(`[data-region="${id}"]`)).toBeAttached();
     }
   });
 
-  test('overlay swaps avatar src when gender toggles', async ({ page }, testInfo) => {
+  test('avatar swaps img src when gender toggles', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'desktop-1440', 'gender toggle runs on desktop-1440');
 
     await page.goto(COMPOSITION_PATH, { waitUntil: 'domcontentloaded' });
     await page.click('[data-testid="gender-toggle-male"]');
     await page.waitForLoadState('networkidle');
     const maleSrc = await page
-      .locator('[data-testid="body-avatar-heatmap"] img')
+      .locator('[data-testid="body-avatar-indicators"] img')
       .first()
       .getAttribute('src');
 
     await page.click('[data-testid="gender-toggle-female"]');
     await page.waitForLoadState('networkidle');
     const femaleSrc = await page
-      .locator('[data-testid="body-avatar-heatmap"] img')
+      .locator('[data-testid="body-avatar-indicators"] img')
       .first()
       .getAttribute('src');
 

@@ -4,9 +4,14 @@ import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Plus, Camera } from 'lucide-react';
-import { BodyAvatarWithHeatmap } from '@/components/body-tracker/BodyAvatarWithHeatmap';
+import { BodyAvatarWithIndicators } from '@/components/body-tracker/BodyAvatarWithIndicators';
 import { HeatmapLegend } from '@/components/body-tracker/HeatmapLegend';
 import { BodyPartCallout } from '@/components/body-tracker/BodyPartCallout';
+import {
+  getOvalColorFromChange,
+  getOvalColorFromStatus,
+  type OvalColor,
+} from '@/lib/body-tracker/heatmap-colors';
 import {
   CompositionSectionToggle,
   type CompositionSection,
@@ -234,6 +239,20 @@ function CompositionPageInner() {
   const fatBodyPartCards = buildBodyPartCards('fat', SAMPLE_FAT, SAMPLE_MUSCLE, gender);
   const muscleBodyPartCards = buildBodyPartCards('muscle', SAMPLE_FAT, SAMPLE_MUSCLE, gender);
 
+  // Prompt #85n v3: per-region oval colors. Fat side reads from each
+  // body-part card's static SegmentStatus (Low / Standard / High);
+  // muscle side reads from the week-over-week change so the oval
+  // matches the change-based badge on the muscle callout card.
+  const fatRegionStatuses: Record<string, OvalColor> = Object.fromEntries(
+    fatBodyPartCards.map((c) => [c.key, getOvalColorFromStatus(c.status)]),
+  );
+  const muscleRegionStatuses: Record<string, OvalColor> = Object.fromEntries(
+    BODY_PARTS.map((p) => [
+      p.key,
+      getOvalColorFromChange(muscleChange.data[p.key]?.change ?? null, 'muscle'),
+    ]),
+  );
+
   return (
     <div className="space-y-6" key={refreshKey}>
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -397,7 +416,7 @@ function CompositionPageInner() {
                 className="flex max-h-[60vh] items-center justify-center px-2 py-2 lg:max-h-none lg:min-h-0 lg:flex-1"
                 style={{ filter: 'drop-shadow(0 0 20px rgba(45, 165, 160, 0.15))' }}
               >
-                <BodyAvatarWithHeatmap gender={gender} changeData={fatChange.data} metric="fat" />
+                <BodyAvatarWithIndicators gender={gender} regionStatuses={fatRegionStatuses} />
               </div>
 
               {/* Mobile only: 12 callouts in a 2-column grid below the avatar */}
@@ -493,6 +512,7 @@ function CompositionPageInner() {
                     change={muscleChange.data[c.key]?.change ?? null}
                     metric="muscle"
                     isFirstEntry={muscleIsFirstEntry}
+                    badgeMode="change"
                   />
                 </motion.div>
               ))}
@@ -508,7 +528,7 @@ function CompositionPageInner() {
                 className="flex max-h-[60vh] items-center justify-center px-2 py-2 lg:max-h-none lg:min-h-0 lg:flex-1"
                 style={{ filter: 'drop-shadow(0 0 20px rgba(45, 165, 160, 0.15))' }}
               >
-                <BodyAvatarWithHeatmap gender={gender} changeData={muscleChange.data} metric="muscle" />
+                <BodyAvatarWithIndicators gender={gender} regionStatuses={muscleRegionStatuses} />
               </div>
 
               {/* Mobile only: 12 callouts in a 2-column grid below the avatar */}
@@ -529,6 +549,7 @@ function CompositionPageInner() {
                       change={muscleChange.data[c.key]?.change ?? null}
                       metric="muscle"
                       isFirstEntry={muscleIsFirstEntry}
+                      badgeMode="change"
                     />
                   </motion.div>
                 ))}
@@ -567,6 +588,7 @@ function CompositionPageInner() {
                     change={muscleChange.data[c.key]?.change ?? null}
                     metric="muscle"
                     isFirstEntry={muscleIsFirstEntry}
+                    badgeMode="change"
                   />
                 </motion.div>
               ))}

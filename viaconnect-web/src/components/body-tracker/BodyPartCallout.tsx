@@ -2,21 +2,34 @@
 
 // Prompt #85k: 12 finer-grained body-part callouts that flank the silhouette.
 // Inherits the SegmentalCallout glassmorphism, swapping the 5-key label
-// constraint for a free-form label (Neck, Shoulders, Chest, Waist, R. Bicep, etc.).
+// constraint for a free-form label.
 //
-// Prompt #85n: optional change + metric + isFirstEntry props add a colored
-// trend row that matches the avatar heat-map overlay tone for this region.
-// Fat callouts color a positive change red (gain) and negative green (loss);
-// muscle callouts invert (gain green, loss red). Sub-threshold and null
-// changes render "no change" or "first entry" in muted yellow.
+// Prompt #85n: optional change + metric + isFirstEntry props add a
+// colored trend row that matches the avatar oval indicator tone for
+// this region. Fat callouts color a positive change red (gain) and
+// negative green (loss); muscle callouts invert (gain green, loss red).
+// Sub-threshold and null changes render "no change" or "first entry"
+// in muted yellow.
+//
+// Prompt #85n v3: the status badge now reads from the same green /
+// yellow / red bucket as the avatar oval. badgeMode="absolute"
+// (default) keeps the SegmentStatus label (Low / Standard / High) but
+// recolors it via getOvalColorFromStatus. badgeMode="change" replaces
+// the label with the change-direction copy (Muscle Gain / No Change /
+// Muscle Loss for muscle, Fat Loss / No Change / Fat Gain for fat) and
+// colors via getOvalColorFromChange.
 
 import { ChevronRight, TrendingUp, TrendingDown } from 'lucide-react';
-import { STATUS_COLORS, type SegmentStatus } from '@/lib/body-tracker/calculations';
+import type { SegmentStatus } from '@/lib/body-tracker/calculations';
 import {
   CHANGE_THRESHOLD,
   getCalloutToneClass,
   getChangeDirection,
+  getOvalColorFromChange,
+  getOvalColorFromStatus,
+  OVAL_HEX,
   type Metric,
+  type OvalColor,
 } from '@/lib/body-tracker/heatmap-colors';
 
 interface BodyPartCalloutProps {
@@ -28,6 +41,31 @@ interface BodyPartCalloutProps {
   change?: number | null;
   metric?: Metric;
   isFirstEntry?: boolean;
+  badgeMode?: 'absolute' | 'change';
+}
+
+interface BadgeFace {
+  readonly label: string;
+  readonly color: OvalColor;
+}
+
+function buildBadge(
+  status: SegmentStatus,
+  change: number | null,
+  metric: Metric,
+  badgeMode: 'absolute' | 'change',
+): BadgeFace {
+  if (badgeMode === 'absolute') {
+    return { label: status, color: getOvalColorFromStatus(status) };
+  }
+  const color = getOvalColorFromChange(change, metric);
+  if (color === 'yellow') {
+    return { label: 'No Change', color };
+  }
+  if (metric === 'fat') {
+    return { label: change !== null && change > 0 ? 'Fat Gain' : 'Fat Loss', color };
+  }
+  return { label: change !== null && change > 0 ? 'Muscle Gain' : 'Muscle Loss', color };
 }
 
 export function BodyPartCallout({
@@ -39,8 +77,10 @@ export function BodyPartCallout({
   change = null,
   metric = 'fat',
   isFirstEntry = false,
+  badgeMode = 'absolute',
 }: BodyPartCalloutProps) {
-  const color = STATUS_COLORS[status];
+  const badge = buildBadge(status, change, metric, badgeMode);
+  const badgeColor = OVAL_HEX[badge.color];
   const direction = getChangeDirection(change);
   const toneClass = getCalloutToneClass(direction, metric);
   const rightAlign = position === 'right';
@@ -65,9 +105,9 @@ export function BodyPartCallout({
         </p>
         <span
           className="mt-0.5 inline-block rounded-full border px-2 py-0.5 text-[10px] font-medium"
-          style={{ color, backgroundColor: `${color}22`, borderColor: `${color}44` }}
+          style={{ color: badgeColor, backgroundColor: `${badgeColor}22`, borderColor: `${badgeColor}44` }}
         >
-          {status}
+          {badge.label}
         </span>
         {hasMagnitude && (
           <div
