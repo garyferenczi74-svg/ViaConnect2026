@@ -144,7 +144,7 @@ export default function ConnectionsPage() {
       </section>
 
       {/* Wearables */}
-      <section>
+      <section id="wearables" className="scroll-mt-24">
         <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-white/40">
           Wearables
         </h2>
@@ -170,7 +170,7 @@ export default function ConnectionsPage() {
       </section>
 
       {/* Apps */}
-      <section>
+      <section id="apps" className="scroll-mt-24">
         <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-white/40">
           Apps
         </h2>

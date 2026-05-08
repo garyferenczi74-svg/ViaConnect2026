@@ -10,6 +10,8 @@ import {
   type CAQSummary,
   type GeneticsSummary,
   type SupplementProtocolSummary,
+  type WearableSummary,
+  type AppSummary,
 } from '@/lib/body-tracker/cross-reference';
 
 export interface UseUserCrossReferenceDataResult {
@@ -22,6 +24,8 @@ export interface UseUserCrossReferenceDataResult {
 const EMPTY_AVAILABILITY: CrossReferenceAvailability = {
   bodyTracker: true, // current user is on the Body Tracker, so this is always true
   supplements: false,
+  wearable: false,
+  app: false,
   caq: false,
   genetics: false,
 };
@@ -29,9 +33,49 @@ const EMPTY_AVAILABILITY: CrossReferenceAvailability = {
 const EMPTY_SNAPSHOT: CrossReferenceSnapshot = {
   availability: EMPTY_AVAILABILITY,
   supplements: null,
+  wearable: null,
+  app: null,
   caq: null,
   genetics: null,
 };
+
+// Prompt #85l: source_id catalog mirrors the registries in
+// /body-tracker/connections so the hook can identify wearables vs. apps
+// from a single body_tracker_connections fetch and surface the display name.
+const WEARABLE_SOURCE_NAMES: Record<string, string> = {
+  apple_watch:    'Apple Watch',
+  whoop:          'WHOOP',
+  oura:           'Oura Ring',
+  garmin:         'Garmin',
+  fitbit:         'Fitbit',
+  hume_body_pod:  'Hume Body Pod',
+  withings:       'Withings Body+',
+};
+
+const APP_SOURCE_NAMES: Record<string, string> = {
+  apple_health:   'Apple Health',
+  google_fit:     'Google Fit',
+  myfitnesspal:   'MyFitnessPal',
+  cronometer:     'Cronometer',
+  strava:         'Strava',
+};
+
+interface ConnectionRow {
+  source_id: string | null;
+  status: string | null;
+}
+
+function pickFirstConnected(
+  rows: ConnectionRow[],
+  catalog: Record<string, string>,
+): { sourceId: string; sourceName: string } | null {
+  for (const r of rows) {
+    if (!r.source_id || r.status !== 'connected') continue;
+    const name = catalog[r.source_id];
+    if (name) return { sourceId: r.source_id, sourceName: name };
+  }
+  return null;
+}
 
 interface SupplementRow {
   category: string | null;
@@ -127,7 +171,7 @@ export function useUserCrossReferenceData(userId: string | null): UseUserCrossRe
         };
         const sb = supabase as unknown as Loose;
 
-        const [suppsRes, caqRes, genRes] = await Promise.all([
+        const [suppsRes, caqRes, genRes, connRes] = await Promise.all([
           sb.from('user_current_supplements')
             .select('category, is_current')
             .eq('user_id', userId)
@@ -144,6 +188,10 @@ export function useUserCrossReferenceData(userId: string | null): UseUserCrossRe
             .order('created_at', { ascending: false })
             .limit(1)
             .maybeSingle(),
+          sb.from('body_tracker_connections')
+            .select('source_id, status')
+            .eq('user_id', userId)
+            .limit(50),
         ]);
 
         if (cancelled) return;
@@ -151,14 +199,19 @@ export function useUserCrossReferenceData(userId: string | null): UseUserCrossRe
         const suppRows = (suppsRes.data as SupplementRow[] | null) ?? [];
         const caqRow = caqRes.data as CAQRow | null;
         const genRow = genRes.data as GeneticsRow | null;
+        const connRows = (connRes.data as ConnectionRow[] | null) ?? [];
 
         const supplementsSummary = suppRows.length > 0 ? summarizeSupplements(suppRows) : null;
         const caqSummary = caqRow ? summarizeCAQ(caqRow) : null;
         const geneticsSummary = genRow ? summarizeGenetics(genRow) : null;
+        const wearableSummary: WearableSummary | null = pickFirstConnected(connRows, WEARABLE_SOURCE_NAMES);
+        const appSummary: AppSummary | null = pickFirstConnected(connRows, APP_SOURCE_NAMES);
 
         const availability: CrossReferenceAvailability = {
           bodyTracker: true,
           supplements: supplementsSummary !== null && supplementsSummary.count > 0,
+          wearable: wearableSummary !== null,
+          app: appSummary !== null,
           caq: caqSummary !== null && (caqSummary.completed || caqSummary.hasGoals),
           genetics:
             geneticsSummary !== null &&
@@ -168,6 +221,8 @@ export function useUserCrossReferenceData(userId: string | null): UseUserCrossRe
         setSnapshot({
           availability,
           supplements: supplementsSummary,
+          wearable: wearableSummary,
+          app: appSummary,
           caq: caqSummary,
           genetics: geneticsSummary,
         });

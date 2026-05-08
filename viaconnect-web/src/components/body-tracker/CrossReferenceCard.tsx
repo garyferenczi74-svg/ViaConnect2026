@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Activity, Pill, ClipboardList, Dna, Check, Plus, Info } from 'lucide-react';
+import { Activity, Pill, ClipboardList, Dna, Check, Plus, Info, Watch, Smartphone } from 'lucide-react';
 import {
   CROSS_REFERENCE_SOURCE_LABELS,
   type CrossReferenceSourceId,
@@ -17,6 +17,8 @@ interface CrossReferenceCardProps {
 const SOURCE_ICONS: Record<CrossReferenceSourceId, typeof Activity> = {
   body_tracker: Activity,
   supplements:  Pill,
+  wearable:     Watch,
+  app:          Smartphone,
   caq:          ClipboardList,
   genetics:     Dna,
 };
@@ -24,6 +26,8 @@ const SOURCE_ICONS: Record<CrossReferenceSourceId, typeof Activity> = {
 const SOURCE_ROUTES: Record<CrossReferenceSourceId, string> = {
   body_tracker: '/body-tracker',
   supplements:  '/account/profile',
+  wearable:     '/body-tracker/connections#wearables',
+  app:          '/body-tracker/connections#apps',
   caq:          '/profile/assessment',
   genetics:     '/genetics',
 };
@@ -31,6 +35,8 @@ const SOURCE_ROUTES: Record<CrossReferenceSourceId, string> = {
 const SOURCE_CTA_LABEL: Record<CrossReferenceSourceId, string> = {
   body_tracker: 'Log entries',
   supplements:  'Add supplements',
+  wearable:     'Connect Wearable',
+  app:          'Connect App',
   caq:          'Take assessment',
   genetics:     'Add GeneX360 results',
 };
@@ -41,12 +47,22 @@ const TIER_COLOR: Record<1 | 2 | 3, string> = {
   3: '#22C55E',
 };
 
-const SOURCE_ORDER: CrossReferenceSourceId[] = ['body_tracker', 'supplements', 'caq', 'genetics'];
+// Prompt #85l: wearable + app sit between supplements and caq.
+const SOURCE_ORDER: CrossReferenceSourceId[] = [
+  'body_tracker',
+  'supplements',
+  'wearable',
+  'app',
+  'caq',
+  'genetics',
+];
 
 function isPresent(snapshot: CrossReferenceSnapshot, id: CrossReferenceSourceId): boolean {
   switch (id) {
     case 'body_tracker': return snapshot.availability.bodyTracker;
     case 'supplements':  return snapshot.availability.supplements;
+    case 'wearable':     return snapshot.availability.wearable;
+    case 'app':          return snapshot.availability.app;
     case 'caq':          return snapshot.availability.caq;
     case 'genetics':     return snapshot.availability.genetics;
   }
@@ -61,6 +77,14 @@ function sourceDetail(snapshot: CrossReferenceSnapshot, id: CrossReferenceSource
       if (!s || s.count === 0) return null;
       return `${s.count} active item${s.count === 1 ? '' : 's'}`;
     }
+    case 'wearable':
+      return snapshot.wearable
+        ? snapshot.wearable.sourceName
+        : 'Sync data from WHOOP, Oura, Garmin, Fitbit';
+    case 'app':
+      return snapshot.app
+        ? snapshot.app.sourceName
+        : 'Sync data from Apple Health, Google Fit, Strava';
     case 'caq': {
       const c = snapshot.caq;
       if (!c) return null;
