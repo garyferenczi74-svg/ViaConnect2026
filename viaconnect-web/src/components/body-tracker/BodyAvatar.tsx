@@ -5,6 +5,11 @@
 // segmental callouts (#85k) flank this avatar; segmental coloring + journey
 // overlay + ghost outline that the SVG used to provide are intentionally
 // dropped here per spec since the callouts now carry that data.
+//
+// Prompt #153: desktop layout lifts the prior 280px width cap and switches
+// the inner image to h-full w-auto so the avatar scales to fill its parent
+// flex column. Mobile keeps the bounded mx-auto layout so the page stack
+// reflows naturally without horizontal overflow.
 
 interface BodyAvatarProps {
   gender: 'male' | 'female';
@@ -18,11 +23,13 @@ const AVATAR_URLS: Record<'male' | 'female', string> = {
 
 export function BodyAvatar({ gender, className }: BodyAvatarProps) {
   return (
-    <div className={`mx-auto w-full max-w-[200px] md:max-w-[240px] lg:max-w-[280px] ${className ?? ''}`}>
+    <div
+      className={`mx-auto flex w-full max-w-[200px] items-center justify-center md:max-w-[240px] lg:h-full lg:max-w-none ${className ?? ''}`}
+    >
       <img
         src={AVATAR_URLS[gender]}
         alt={`${gender === 'male' ? 'Male' : 'Female'} body composition avatar`}
-        className="h-auto w-full select-none object-contain"
+        className="h-auto w-full max-w-full select-none object-contain lg:h-full lg:max-h-full lg:w-auto"
         draggable={false}
       />
     </div>

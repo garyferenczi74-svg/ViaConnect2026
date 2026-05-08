@@ -322,6 +322,7 @@ function CompositionPageInner() {
           <div className="flex items-center gap-2">
             <button
               type="button"
+              data-testid="gender-toggle-male"
               onClick={() => { setGenderManuallySet(true); setGender('male'); void persistGender('male'); }}
               className={`flex-1 rounded-xl border px-4 py-2.5 text-sm font-medium transition-all min-h-[44px] ${
                 gender === 'male'
@@ -333,6 +334,7 @@ function CompositionPageInner() {
             </button>
             <button
               type="button"
+              data-testid="gender-toggle-female"
               onClick={() => { setGenderManuallySet(true); setGender('female'); void persistGender('female'); }}
               className={`flex-1 rounded-xl border px-4 py-2.5 text-sm font-medium transition-all min-h-[44px] ${
                 gender === 'female'
@@ -350,9 +352,9 @@ function CompositionPageInner() {
           {/* Prompt #85k: silhouette card with 12 body-part callouts flanking the avatar.
               Desktop renders 6 cards on each side via lg:grid 3-column. Mobile renders
               the avatar + 12 cards in a 2-column grid below. */}
-          <div className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 p-6 backdrop-blur-sm lg:grid lg:grid-cols-[1fr_auto_1fr] lg:items-start lg:gap-6">
+          <div data-testid="body-tracker-grid" className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 p-6 backdrop-blur-sm lg:grid lg:grid-cols-[minmax(180px,220px)_1fr_minmax(180px,220px)] lg:items-stretch lg:gap-6 lg:min-h-[760px]">
             {/* Desktop left column: 6 left-side callouts */}
-            <div className="hidden lg:flex lg:flex-col lg:gap-3">
+            <div className="hidden lg:flex lg:h-full lg:flex-col lg:justify-between lg:gap-3">
               {fatBodyPartCards.filter((c) => c.side === 'left').map((c, order) => (
                 <motion.div
                   key={c.key}
@@ -371,16 +373,21 @@ function CompositionPageInner() {
               ))}
             </div>
 
-            <div>
-              <h3 className="mb-4 text-center text-xs font-semibold uppercase tracking-wider text-white/40">
+            <div data-testid="center-column" className="flex flex-col lg:h-full">
+              <h3 className="mb-4 shrink-0 text-center text-xs font-semibold uppercase tracking-wider text-white/40">
                 Segmental Body Fat Analysis
               </h3>
-              <div style={{ filter: 'drop-shadow(0 0 20px rgba(45, 165, 160, 0.15))' }}>
+              {/* Prompt #153: avatar fills the available column height on desktop, capped at 60vh on mobile. */}
+              <div
+                data-testid="avatar-container"
+                className="flex max-h-[60vh] items-center justify-center px-2 py-2 lg:max-h-none lg:min-h-0 lg:flex-1"
+                style={{ filter: 'drop-shadow(0 0 20px rgba(45, 165, 160, 0.15))' }}
+              >
                 <BodyAvatar gender={gender} />
               </div>
 
               {/* Mobile only: 12 callouts in a 2-column grid below the avatar */}
-              <div className="mt-6 grid grid-cols-2 gap-3 lg:hidden">
+              <div className="mt-6 grid shrink-0 grid-cols-2 gap-3 lg:hidden">
                 {fatBodyPartCards.map((c, order) => (
                   <motion.div
                     key={c.key}
@@ -399,8 +406,8 @@ function CompositionPageInner() {
                 ))}
               </div>
 
-              {/* Prompt #85e: summary metrics row directly below the silhouette */}
-              <div className="mx-auto mt-6 grid w-full max-w-2xl grid-cols-2 gap-3 md:grid-cols-4">
+              {/* Prompt #85e + #153: summary metrics row anchored to column bottom on desktop. */}
+              <div data-testid="bottom-metrics-row" className="mx-auto mt-6 grid w-full max-w-2xl shrink-0 grid-cols-2 gap-3 md:grid-cols-4 lg:mt-auto">
                 {FAT_CARDS.map((c, i) => (
                   <motion.div
                     key={i}
@@ -415,7 +422,7 @@ function CompositionPageInner() {
             </div>
 
             {/* Desktop right column: 6 right-side callouts */}
-            <div className="hidden lg:flex lg:flex-col lg:gap-3">
+            <div className="hidden lg:flex lg:h-full lg:flex-col lg:justify-between lg:gap-3">
               {fatBodyPartCards.filter((c) => c.side === 'right').map((c, order) => (
                 <motion.div
                   key={c.key}
@@ -447,9 +454,9 @@ function CompositionPageInner() {
           {/* Prompt #85k: silhouette card with 12 body-part callouts flanking the avatar.
               Desktop renders 6 cards on each side via lg:grid 3-column. Mobile renders
               the avatar + 12 cards in a 2-column grid below. */}
-          <div className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 p-6 backdrop-blur-sm lg:grid lg:grid-cols-[1fr_auto_1fr] lg:items-start lg:gap-6">
+          <div data-testid="body-tracker-grid" className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 p-6 backdrop-blur-sm lg:grid lg:grid-cols-[minmax(180px,220px)_1fr_minmax(180px,220px)] lg:items-stretch lg:gap-6 lg:min-h-[760px]">
             {/* Desktop left column: 6 left-side callouts */}
-            <div className="hidden lg:flex lg:flex-col lg:gap-3">
+            <div className="hidden lg:flex lg:h-full lg:flex-col lg:justify-between lg:gap-3">
               {muscleBodyPartCards.filter((c) => c.side === 'left').map((c, order) => (
                 <motion.div
                   key={c.key}
@@ -468,16 +475,21 @@ function CompositionPageInner() {
               ))}
             </div>
 
-            <div>
-              <h3 className="mb-4 text-center text-xs font-semibold uppercase tracking-wider text-white/40">
+            <div data-testid="center-column" className="flex flex-col lg:h-full">
+              <h3 className="mb-4 shrink-0 text-center text-xs font-semibold uppercase tracking-wider text-white/40">
                 Segmental Muscle Analysis
               </h3>
-              <div style={{ filter: 'drop-shadow(0 0 20px rgba(45, 165, 160, 0.15))' }}>
+              {/* Prompt #153: avatar fills the available column height on desktop, capped at 60vh on mobile. */}
+              <div
+                data-testid="avatar-container"
+                className="flex max-h-[60vh] items-center justify-center px-2 py-2 lg:max-h-none lg:min-h-0 lg:flex-1"
+                style={{ filter: 'drop-shadow(0 0 20px rgba(45, 165, 160, 0.15))' }}
+              >
                 <BodyAvatar gender={gender} />
               </div>
 
               {/* Mobile only: 12 callouts in a 2-column grid below the avatar */}
-              <div className="mt-6 grid grid-cols-2 gap-3 lg:hidden">
+              <div className="mt-6 grid shrink-0 grid-cols-2 gap-3 lg:hidden">
                 {muscleBodyPartCards.map((c, order) => (
                   <motion.div
                     key={c.key}
@@ -496,8 +508,8 @@ function CompositionPageInner() {
                 ))}
               </div>
 
-              {/* Prompt #85i: Body Fat summary cards row mirrored onto the Muscle Mass section */}
-              <div className="mx-auto mt-6 grid w-full max-w-2xl grid-cols-2 gap-3 md:grid-cols-4">
+              {/* Prompt #85i + #153: Body Fat summary cards row mirrored onto Muscle Mass, anchored to column bottom on desktop. */}
+              <div data-testid="bottom-metrics-row" className="mx-auto mt-6 grid w-full max-w-2xl shrink-0 grid-cols-2 gap-3 md:grid-cols-4 lg:mt-auto">
                 {FAT_CARDS.map((c, i) => (
                   <motion.div
                     key={i}
@@ -512,7 +524,7 @@ function CompositionPageInner() {
             </div>
 
             {/* Desktop right column: 6 right-side callouts */}
-            <div className="hidden lg:flex lg:flex-col lg:gap-3">
+            <div className="hidden lg:flex lg:h-full lg:flex-col lg:justify-between lg:gap-3">
               {muscleBodyPartCards.filter((c) => c.side === 'right').map((c, order) => (
                 <motion.div
                   key={c.key}
