@@ -405,6 +405,20 @@ function CompositionPageInner() {
             </div>
           </div>
 
+          {/* Prompt #85i: Body Fat summary cards row mirrored onto the Muscle Mass section */}
+          <div className="mx-auto mt-6 grid w-full max-w-2xl grid-cols-2 gap-3 md:grid-cols-4">
+            {FAT_CARDS.map((c, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.6 + i * 0.08, duration: 0.35, ease: 'easeOut' }}
+              >
+                <FloatingMetricCard {...c} />
+              </motion.div>
+            ))}
+          </div>
+
           {/* Prompt #85h: 12-point body measurements grid below the muscle content */}
           <div className="mt-8 space-y-4">
             <div className="flex flex-wrap items-center gap-3">
