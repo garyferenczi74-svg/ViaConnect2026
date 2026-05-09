@@ -382,7 +382,7 @@ function CompositionPageInner() {
           {/* Prompt #85k: silhouette card with 12 body-part callouts flanking the avatar.
               Desktop renders 6 cards on each side via lg:grid 3-column. Mobile renders
               the avatar + 12 cards in a 2-column grid below. */}
-          <div data-testid="body-tracker-grid" className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 p-6 backdrop-blur-sm lg:grid lg:grid-cols-[88px_1fr_88px] lg:items-stretch lg:gap-3 lg:p-3 lg:min-h-[568px]">
+          <div data-testid="body-tracker-grid" className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 p-6 backdrop-blur-sm lg:grid lg:grid-cols-[88px_1fr_88px] lg:items-stretch lg:gap-3 lg:p-3 lg:h-[calc(100vh-200px)] lg:min-h-[568px] lg:overflow-hidden">
             {/* Desktop left column: 6 left-side callouts */}
             <div className="hidden lg:flex lg:h-full lg:flex-col lg:justify-between lg:gap-2">
               {fatBodyPartCards.filter((c) => c.side === 'left').map((c, order) => (
@@ -406,7 +406,7 @@ function CompositionPageInner() {
               ))}
             </div>
 
-            <div data-testid="center-column" className="flex flex-col lg:h-full">
+            <div data-testid="center-column" className="flex flex-col lg:h-full lg:min-h-0">
               <h3 className="mb-3 shrink-0 text-center text-xs font-semibold uppercase tracking-wider text-white/40 lg:mb-2">
                 Segmental Body Fat Analysis
               </h3>
@@ -493,7 +493,7 @@ function CompositionPageInner() {
           {/* Prompt #85k: silhouette card with 12 body-part callouts flanking the avatar.
               Desktop renders 6 cards on each side via lg:grid 3-column. Mobile renders
               the avatar + 12 cards in a 2-column grid below. */}
-          <div data-testid="body-tracker-grid" className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 p-6 backdrop-blur-sm lg:grid lg:grid-cols-[88px_1fr_88px] lg:items-stretch lg:gap-3 lg:p-3 lg:min-h-[568px]">
+          <div data-testid="body-tracker-grid" className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 p-6 backdrop-blur-sm lg:grid lg:grid-cols-[88px_1fr_88px] lg:items-stretch lg:gap-3 lg:p-3 lg:h-[calc(100vh-200px)] lg:min-h-[568px] lg:overflow-hidden">
             {/* Desktop left column: 6 left-side callouts */}
             <div className="hidden lg:flex lg:h-full lg:flex-col lg:justify-between lg:gap-2">
               {muscleBodyPartCards.filter((c) => c.side === 'left').map((c, order) => (
@@ -518,7 +518,7 @@ function CompositionPageInner() {
               ))}
             </div>
 
-            <div data-testid="center-column" className="flex flex-col lg:h-full">
+            <div data-testid="center-column" className="flex flex-col lg:h-full lg:min-h-0">
               <h3 className="mb-3 shrink-0 text-center text-xs font-semibold uppercase tracking-wider text-white/40 lg:mb-2">
                 Segmental Muscle Analysis
               </h3>
