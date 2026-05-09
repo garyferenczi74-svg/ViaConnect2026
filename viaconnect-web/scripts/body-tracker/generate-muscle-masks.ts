@@ -96,10 +96,25 @@ const FEMALE_REGION_MAP: RegionEntry[] = [
   { color: 'green',  centroidXPct: 60.8, centroidYPct: 76.2, segment: 'r_calf'    },
 ];
 
-const COLOR_THRESHOLDS = {
-  red:    { rMin: 180, rMax: 255, gMin:   0, gMax:  90, bMin:   0, bMax:  90 },
-  yellow: { rMin: 200, rMax: 255, gMin: 180, gMax: 255, bMin:   0, bMax: 110 },
-  green:  { rMin:   0, rMax: 130, gMin: 180, gMax: 255, bMin:   0, bMax: 130 },
+// Per-sex color thresholds. The female reference uses green on the
+// limb muscles where the male reference uses yellow; the female green
+// also has softer anti-aliased edges that fall outside the tight male
+// green range, producing thin slivers instead of full muscle masks.
+// #157c widens the female green range (rMax 130->180, gMin 180->140,
+// bMax 130->180) so the classifier captures the full anti-aliased
+// muscle silhouette. Male thresholds are unchanged so male masks
+// remain byte-identical to the #157 commit.
+const COLOR_THRESHOLDS: Record<'male' | 'female', Record<ColorBucket, { rMin: number; rMax: number; gMin: number; gMax: number; bMin: number; bMax: number }>> = {
+  male: {
+    red:    { rMin: 180, rMax: 255, gMin:   0, gMax:  90, bMin:   0, bMax:  90 },
+    yellow: { rMin: 200, rMax: 255, gMin: 180, gMax: 255, bMin:   0, bMax: 110 },
+    green:  { rMin:   0, rMax: 130, gMin: 180, gMax: 255, bMin:   0, bMax: 130 },
+  },
+  female: {
+    red:    { rMin: 180, rMax: 255, gMin:   0, gMax:  90, bMin:   0, bMax:  90 },
+    yellow: { rMin: 200, rMax: 255, gMin: 180, gMax: 255, bMin:   0, bMax: 110 },
+    green:  { rMin:   0, rMax: 180, gMin: 140, gMax: 255, bMin:   0, bMax: 180 },
+  },
 };
 
 const COLOR_CODE: Record<ColorBucket, number> = { red: 1, yellow: 2, green: 3 };
@@ -123,9 +138,10 @@ function classifyPixels(
   width: number,
   height: number,
   channels: number,
+  sex: 'male' | 'female',
 ): Uint8Array {
   const cls = new Uint8Array(width * height);
-  const t = COLOR_THRESHOLDS;
+  const t = COLOR_THRESHOLDS[sex];
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
       const i = (y * width + x) * channels;
@@ -271,7 +287,7 @@ async function generateMasksForSex(
   const { width, height, channels } = info;
   console.log(`[${sex}] reference dimensions: ${width}x${height}`);
 
-  const classification = classifyPixels(data, width, height, channels);
+  const classification = classifyPixels(data, width, height, channels, sex);
   const components = labelConnectedComponents(classification, width, height);
   console.log(`[${sex}] detected ${components.length} colored components above ${NOISE_THRESHOLD_PIXELS}-pixel noise floor`);
 
