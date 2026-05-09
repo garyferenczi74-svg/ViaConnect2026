@@ -319,9 +319,29 @@ async function generateMasksForSex(
       continue;
     }
 
+    // #157f: extend the waist mask vertically upward so the red glow
+    // covers the full rectus abdominis instead of just the navel area
+    // the reference's red region naturally captures. The chest mask
+    // sits well above; 50px is comfortably below the chest's lower
+    // edge on both 1279x2048 and 1462x2048 references.
+    let pixelsToWrite: number[] = matchedPixels;
+    if (segment === 'waist') {
+      const EXTEND_UPWARD_PX = 50;
+      const extended = new Set<number>(matchedPixels);
+      for (const pixelIdx of matchedPixels) {
+        const px = pixelIdx % width;
+        const py = (pixelIdx / width) | 0;
+        for (let dy = 1; dy <= EXTEND_UPWARD_PX; dy++) {
+          const newY = py - dy;
+          if (newY >= 0) extended.add(newY * width + px);
+        }
+      }
+      pixelsToWrite = Array.from(extended);
+    }
+
     const outPath = path.join(outputDir, `${segment}.png`);
-    await writeMaskPng(matchedPixels, width, height, outPath);
-    console.log(`[${sex}] wrote ${segment}.png (${matchedPixels.length} pixels, ${matchedCount} component(s))`);
+    await writeMaskPng(pixelsToWrite, width, height, outPath);
+    console.log(`[${sex}] wrote ${segment}.png (${pixelsToWrite.length} pixels, ${matchedCount} component(s))`);
   }
 }
 
