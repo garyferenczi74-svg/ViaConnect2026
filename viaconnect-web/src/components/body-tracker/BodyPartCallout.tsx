@@ -1,25 +1,20 @@
 'use client';
 
-// Prompt #85k: 12 finer-grained body-part callouts that flank the silhouette.
-// Inherits the SegmentalCallout glassmorphism, swapping the 5-key label
-// constraint for a free-form label.
+// Prompt #85k + #85n + #157e: 12 finer-grained body-part score cards
+// flanking the avatar. Square translucent layout with status-tinted
+// fill matching the heat map glow on the avatar (#157d). Each card
+// renders as an aspect-square pill with vertically-centered label,
+// percentage, and status badge; the card's translucent fill +
+// border tone tracks the badge color (green / yellow / red).
 //
-// Prompt #85n: optional change + metric + isFirstEntry props add a
-// colored trend row that matches the avatar oval indicator tone for
-// this region. Fat callouts color a positive change red (gain) and
-// negative green (loss); muscle callouts invert (gain green, loss red).
-// Sub-threshold and null changes render "no change" or "first entry"
-// in muted yellow.
-//
-// Prompt #85n v3: the status badge now reads from the same green /
-// yellow / red bucket as the avatar oval. badgeMode="absolute"
-// (default) keeps the SegmentStatus label (Low / Standard / High) but
-// recolors it via getOvalColorFromStatus. badgeMode="change" replaces
-// the label with the change-direction copy (Muscle Gain / No Change /
-// Muscle Loss for muscle, Fat Loss / No Change / Fat Gain for fat) and
-// colors via getOvalColorFromChange.
+// Cards are status-driven via badgeMode prop:
+//   - 'absolute' (fat default): label = SegmentStatus (Low / Standard
+//     / High); color via getOvalColorFromStatus.
+//   - 'change' (muscle default): label = directional change copy
+//     (Muscle Gain / No Change / Muscle Loss); color via
+//     getOvalColorFromChange.
 
-import { ChevronRight, TrendingUp, TrendingDown } from 'lucide-react';
+import { TrendingUp, TrendingDown } from 'lucide-react';
 import type { SegmentStatus } from '@/lib/body-tracker/calculations';
 import {
   CHANGE_THRESHOLD,
@@ -68,12 +63,23 @@ function buildBadge(
   return { label: change !== null && change > 0 ? 'Muscle Gain' : 'Muscle Loss', color };
 }
 
+const TINT_BG: Record<OvalColor, string> = {
+  green:  'rgba(34, 197, 94, 0.12)',
+  yellow: 'rgba(234, 179, 8, 0.12)',
+  red:    'rgba(239, 68, 68, 0.12)',
+};
+
+const TINT_BORDER: Record<OvalColor, string> = {
+  green:  'rgba(34, 197, 94, 0.30)',
+  yellow: 'rgba(234, 179, 8, 0.30)',
+  red:    'rgba(239, 68, 68, 0.30)',
+};
+
 export function BodyPartCallout({
   label,
   value,
   unit,
   status,
-  position,
   change = null,
   metric = 'fat',
   isFirstEntry = false,
@@ -83,7 +89,6 @@ export function BodyPartCallout({
   const badgeColor = OVAL_HEX[badge.color];
   const direction = getChangeDirection(change);
   const toneClass = getCalloutToneClass(direction, metric);
-  const rightAlign = position === 'right';
 
   const hasMagnitude = change !== null && Math.abs(change) >= CHANGE_THRESHOLD;
   const hasSubThreshold = change !== null && Math.abs(change) < CHANGE_THRESHOLD;
@@ -91,55 +96,49 @@ export function BodyPartCallout({
 
   return (
     <div
-      className={`flex w-full items-center gap-2 rounded-lg border border-white/[0.08] bg-[#1E3054]/80 p-3 backdrop-blur-sm ${
-        rightAlign ? 'flex-row-reverse text-right' : ''
-      }`}
+      className="flex aspect-square w-full flex-col items-center justify-center gap-0.5 rounded-lg p-2 text-center"
+      style={{
+        backgroundColor: TINT_BG[badge.color],
+        border: `1px solid ${TINT_BORDER[badge.color]}`,
+        backdropFilter: 'blur(8px)',
+        WebkitBackdropFilter: 'blur(8px)',
+      }}
     >
-      <div className="min-w-0 flex-1">
-        <div className={`flex items-center gap-1.5 text-xs text-white/60 ${rightAlign ? 'justify-end' : ''}`}>
-          <span>{label}</span>
-          <ChevronRight className="h-3 w-3" strokeWidth={1.5} />
-        </div>
-        <p className="mt-0.5 text-lg font-bold text-white">
-          {value.toFixed(1)} <span className="text-xs text-white/40">{unit}</span>
-        </p>
-        <span
-          className="mt-0.5 inline-block rounded-full border px-2 py-0.5 text-[10px] font-medium"
-          style={{ color: badgeColor, backgroundColor: `${badgeColor}22`, borderColor: `${badgeColor}44` }}
+      <div className="text-xs font-medium leading-tight text-white/70">{label}</div>
+      <p className="text-lg font-semibold leading-tight text-white">
+        {value.toFixed(1)}
+        <span className="text-xs text-white/40"> {unit}</span>
+      </p>
+      <span
+        className="inline-block rounded-full border px-2 py-0.5 text-[10px] font-medium leading-tight"
+        style={{ color: badgeColor, backgroundColor: `${badgeColor}22`, borderColor: `${badgeColor}44` }}
+      >
+        {badge.label}
+      </span>
+      {hasMagnitude && (
+        <div
+          className={`flex items-center gap-1 text-[10px] leading-tight ${toneClass}`}
+          data-testid="callout-change"
         >
-          {badge.label}
-        </span>
-        {hasMagnitude && (
-          <div
-            className={`mt-0.5 flex items-center gap-1 text-[10px] ${toneClass} ${rightAlign ? 'justify-end' : ''}`}
-            data-testid="callout-change"
-          >
-            {(change as number) > 0
-              ? <TrendingUp className="h-2.5 w-2.5" strokeWidth={1.5} />
-              : <TrendingDown className="h-2.5 w-2.5" strokeWidth={1.5} />}
-            <span>
-              {(change as number) > 0 ? '+' : ''}
-              {(change as number).toFixed(1)}{unit}
-            </span>
-          </div>
-        )}
-        {hasSubThreshold && (
-          <div
-            className={`mt-0.5 text-[10px] text-yellow-400/80 ${rightAlign ? 'text-right' : ''}`}
-            data-testid="callout-no-change"
-          >
-            no change
-          </div>
-        )}
-        {showFirstEntry && (
-          <div
-            className={`mt-0.5 text-[10px] text-yellow-400/80 ${rightAlign ? 'text-right' : ''}`}
-            data-testid="callout-first-entry"
-          >
-            first entry
-          </div>
-        )}
-      </div>
+          {(change as number) > 0
+            ? <TrendingUp className="h-2.5 w-2.5" strokeWidth={1.5} />
+            : <TrendingDown className="h-2.5 w-2.5" strokeWidth={1.5} />}
+          <span>
+            {(change as number) > 0 ? '+' : ''}
+            {(change as number).toFixed(1)}{unit}
+          </span>
+        </div>
+      )}
+      {hasSubThreshold && (
+        <div className="text-[10px] leading-tight text-yellow-400/80" data-testid="callout-no-change">
+          no change
+        </div>
+      )}
+      {showFirstEntry && (
+        <div className="text-[10px] leading-tight text-yellow-400/80" data-testid="callout-first-entry">
+          first entry
+        </div>
+      )}
     </div>
   );
 }

@@ -382,7 +382,7 @@ function CompositionPageInner() {
           {/* Prompt #85k: silhouette card with 12 body-part callouts flanking the avatar.
               Desktop renders 6 cards on each side via lg:grid 3-column. Mobile renders
               the avatar + 12 cards in a 2-column grid below. */}
-          <div data-testid="body-tracker-grid" className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 p-6 backdrop-blur-sm lg:grid lg:grid-cols-[minmax(180px,220px)_1fr_minmax(180px,220px)] lg:items-stretch lg:gap-6 lg:min-h-[760px]">
+          <div data-testid="body-tracker-grid" className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 p-6 backdrop-blur-sm lg:grid lg:grid-cols-[minmax(112px,140px)_1fr_minmax(112px,140px)] lg:items-stretch lg:gap-6 lg:min-h-[760px]">
             {/* Desktop left column: 6 left-side callouts */}
             <div className="hidden lg:flex lg:h-full lg:flex-col lg:justify-between lg:gap-3">
               {fatBodyPartCards.filter((c) => c.side === 'left').map((c, order) => (
@@ -493,7 +493,7 @@ function CompositionPageInner() {
           {/* Prompt #85k: silhouette card with 12 body-part callouts flanking the avatar.
               Desktop renders 6 cards on each side via lg:grid 3-column. Mobile renders
               the avatar + 12 cards in a 2-column grid below. */}
-          <div data-testid="body-tracker-grid" className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 p-6 backdrop-blur-sm lg:grid lg:grid-cols-[minmax(180px,220px)_1fr_minmax(180px,220px)] lg:items-stretch lg:gap-6 lg:min-h-[760px]">
+          <div data-testid="body-tracker-grid" className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 p-6 backdrop-blur-sm lg:grid lg:grid-cols-[minmax(112px,140px)_1fr_minmax(112px,140px)] lg:items-stretch lg:gap-6 lg:min-h-[760px]">
             {/* Desktop left column: 6 left-side callouts */}
             <div className="hidden lg:flex lg:h-full lg:flex-col lg:justify-between lg:gap-3">
               {muscleBodyPartCards.filter((c) => c.side === 'left').map((c, order) => (
