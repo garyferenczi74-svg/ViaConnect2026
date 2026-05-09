@@ -254,7 +254,7 @@ function CompositionPageInner() {
   );
 
   return (
-    <div className="space-y-6" key={refreshKey}>
+    <div className="space-y-6 lg:space-y-3" key={refreshKey}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <CompositionSectionToggle active={section} onChange={setSection} />
         <div className="flex items-center gap-2">
@@ -339,7 +339,7 @@ function CompositionPageInner() {
 
       {section === 'fat' && (
         <>
-          <div className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 backdrop-blur-md p-4 sm:p-5">
+          <div className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 backdrop-blur-md p-4 sm:p-5 lg:p-3">
             <h2 className="text-lg font-bold text-white">Body Composition</h2>
             <p className="text-xs text-white/60">Segmental body fat analysis</p>
           </div>
@@ -382,9 +382,9 @@ function CompositionPageInner() {
           {/* Prompt #85k: silhouette card with 12 body-part callouts flanking the avatar.
               Desktop renders 6 cards on each side via lg:grid 3-column. Mobile renders
               the avatar + 12 cards in a 2-column grid below. */}
-          <div data-testid="body-tracker-grid" className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 p-6 backdrop-blur-sm lg:grid lg:grid-cols-[minmax(112px,140px)_1fr_minmax(112px,140px)] lg:items-stretch lg:gap-6 lg:min-h-[760px]">
+          <div data-testid="body-tracker-grid" className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 p-6 backdrop-blur-sm lg:grid lg:grid-cols-[88px_1fr_88px] lg:items-stretch lg:gap-3 lg:p-3 lg:min-h-[568px]">
             {/* Desktop left column: 6 left-side callouts */}
-            <div className="hidden lg:flex lg:h-full lg:flex-col lg:justify-between lg:gap-3">
+            <div className="hidden lg:flex lg:h-full lg:flex-col lg:justify-between lg:gap-2">
               {fatBodyPartCards.filter((c) => c.side === 'left').map((c, order) => (
                 <motion.div
                   key={c.key}
@@ -407,10 +407,10 @@ function CompositionPageInner() {
             </div>
 
             <div data-testid="center-column" className="flex flex-col lg:h-full">
-              <h3 className="mb-3 shrink-0 text-center text-xs font-semibold uppercase tracking-wider text-white/40">
+              <h3 className="mb-3 shrink-0 text-center text-xs font-semibold uppercase tracking-wider text-white/40 lg:mb-2">
                 Segmental Body Fat Analysis
               </h3>
-              <HeatmapLegend metric="fat" className="mb-4 shrink-0" />
+              <HeatmapLegend metric="fat" className="mb-4 shrink-0 lg:mb-2" />
               <div
                 data-testid="avatar-container"
                 className="flex max-h-[60vh] items-center justify-center px-2 py-2 lg:max-h-none lg:min-h-0 lg:flex-1"
@@ -458,7 +458,7 @@ function CompositionPageInner() {
             </div>
 
             {/* Desktop right column: 6 right-side callouts */}
-            <div className="hidden lg:flex lg:h-full lg:flex-col lg:justify-between lg:gap-3">
+            <div className="hidden lg:flex lg:h-full lg:flex-col lg:justify-between lg:gap-2">
               {fatBodyPartCards.filter((c) => c.side === 'right').map((c, order) => (
                 <motion.div
                   key={c.key}
@@ -485,7 +485,7 @@ function CompositionPageInner() {
 
       {section === 'muscle' && (
         <>
-          <div className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 backdrop-blur-md p-4 sm:p-5">
+          <div className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 backdrop-blur-md p-4 sm:p-5 lg:p-3">
             <h2 className="text-lg font-bold text-white">Muscle Analysis</h2>
             <p className="text-xs text-white/60">Segmental muscle mass breakdown</p>
           </div>
@@ -493,9 +493,9 @@ function CompositionPageInner() {
           {/* Prompt #85k: silhouette card with 12 body-part callouts flanking the avatar.
               Desktop renders 6 cards on each side via lg:grid 3-column. Mobile renders
               the avatar + 12 cards in a 2-column grid below. */}
-          <div data-testid="body-tracker-grid" className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 p-6 backdrop-blur-sm lg:grid lg:grid-cols-[minmax(112px,140px)_1fr_minmax(112px,140px)] lg:items-stretch lg:gap-6 lg:min-h-[760px]">
+          <div data-testid="body-tracker-grid" className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 p-6 backdrop-blur-sm lg:grid lg:grid-cols-[88px_1fr_88px] lg:items-stretch lg:gap-3 lg:p-3 lg:min-h-[568px]">
             {/* Desktop left column: 6 left-side callouts */}
-            <div className="hidden lg:flex lg:h-full lg:flex-col lg:justify-between lg:gap-3">
+            <div className="hidden lg:flex lg:h-full lg:flex-col lg:justify-between lg:gap-2">
               {muscleBodyPartCards.filter((c) => c.side === 'left').map((c, order) => (
                 <motion.div
                   key={c.key}
@@ -519,10 +519,10 @@ function CompositionPageInner() {
             </div>
 
             <div data-testid="center-column" className="flex flex-col lg:h-full">
-              <h3 className="mb-3 shrink-0 text-center text-xs font-semibold uppercase tracking-wider text-white/40">
+              <h3 className="mb-3 shrink-0 text-center text-xs font-semibold uppercase tracking-wider text-white/40 lg:mb-2">
                 Segmental Muscle Analysis
               </h3>
-              <HeatmapLegend metric="muscle" className="mb-4 shrink-0" />
+              <HeatmapLegend metric="muscle" className="mb-4 shrink-0 lg:mb-2" />
               <div
                 data-testid="avatar-container"
                 className="flex max-h-[60vh] items-center justify-center px-2 py-2 lg:max-h-none lg:min-h-0 lg:flex-1"
@@ -571,7 +571,7 @@ function CompositionPageInner() {
             </div>
 
             {/* Desktop right column: 6 right-side callouts */}
-            <div className="hidden lg:flex lg:h-full lg:flex-col lg:justify-between lg:gap-3">
+            <div className="hidden lg:flex lg:h-full lg:flex-col lg:justify-between lg:gap-2">
               {muscleBodyPartCards.filter((c) => c.side === 'right').map((c, order) => (
                 <motion.div
                   key={c.key}
