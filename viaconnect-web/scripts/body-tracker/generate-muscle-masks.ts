@@ -261,7 +261,12 @@ async function writeMaskPng(
     buf[o + 2] = 255;
     buf[o + 3] = 255;
   }
-  await sharp(buf, { raw: { width, height, channels: 4 } }).png().toFile(outPath);
+  // #157i: feather alpha edges via Gaussian blur so the on-page heat
+  // map color fades smoothly at every muscle boundary instead of
+  // cutting off binary-hard. Sigma 4 produces ~8-12 px of soft
+  // falloff at the reference's native resolution. Tunable in the 2-8
+  // band; sigma > 10 spreads adjacent muscles into each other.
+  await sharp(buf, { raw: { width, height, channels: 4 } }).blur(4).png().toFile(outPath);
 }
 
 async function generateMasksForSex(
