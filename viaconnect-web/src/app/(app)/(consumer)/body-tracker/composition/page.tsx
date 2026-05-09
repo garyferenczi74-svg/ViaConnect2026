@@ -4,7 +4,7 @@ import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Plus, Camera } from 'lucide-react';
-import { BodyAvatarWithIndicators } from '@/components/body-tracker/BodyAvatarWithIndicators';
+import { SegmentalHeatMap } from '@/components/body-tracker/SegmentalHeatMap';
 import { HeatmapLegend } from '@/components/body-tracker/HeatmapLegend';
 import { BodyPartCallout } from '@/components/body-tracker/BodyPartCallout';
 import {
@@ -416,7 +416,7 @@ function CompositionPageInner() {
                 className="flex max-h-[60vh] items-center justify-center px-2 py-2 lg:max-h-none lg:min-h-0 lg:flex-1"
                 style={{ filter: 'drop-shadow(0 0 20px rgba(45, 165, 160, 0.15))' }}
               >
-                <BodyAvatarWithIndicators gender={gender} regionStatuses={fatRegionStatuses} />
+                <SegmentalHeatMap sex={gender} segmentStatuses={fatRegionStatuses} />
               </div>
 
               {/* Mobile only: 12 callouts in a 2-column grid below the avatar */}
@@ -528,7 +528,7 @@ function CompositionPageInner() {
                 className="flex max-h-[60vh] items-center justify-center px-2 py-2 lg:max-h-none lg:min-h-0 lg:flex-1"
                 style={{ filter: 'drop-shadow(0 0 20px rgba(45, 165, 160, 0.15))' }}
               >
-                <BodyAvatarWithIndicators gender={gender} regionStatuses={muscleRegionStatuses} />
+                <SegmentalHeatMap sex={gender} segmentStatuses={muscleRegionStatuses} />
               </div>
 
               {/* Mobile only: 12 callouts in a 2-column grid below the avatar */}

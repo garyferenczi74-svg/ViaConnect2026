@@ -37,3 +37,9 @@ next-env.d.ts
 
 # supabase CLI local state
 supabase/.temp/
+
+# Prompt #157 + #157a: transient reference images for the one-time
+# muscle mask generation script. Gary deposits these locally; the
+# generated masks ship to public/body-tracker/masks/ and the
+# reference folder is deleted after generation.
+scripts/body-tracker/157_references/
