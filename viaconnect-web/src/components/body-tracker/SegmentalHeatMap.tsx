@@ -91,13 +91,13 @@ function MuscleHighlight({ sex, segmentId, color }: MuscleHighlightProps) {
               maskRepeat: 'no-repeat',
               mixBlendMode: 'screen',
               filter: 'blur(3px)',
-              opacity: 0.75,
+              opacity: 0.45,
               transformOrigin: 'center center',
             }}
             initial={{ opacity: 0 }}
-            animate={{ opacity: 0.75 }}
+            animate={{ opacity: 0.45 }}
             whileHover={{
-              opacity: 0.95,
+              opacity: 0.65,
               scale: 1.02,
               filter: 'blur(2px) brightness(1.15)',
             }}
