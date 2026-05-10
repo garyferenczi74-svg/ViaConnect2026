@@ -1,12 +1,22 @@
 'use client';
 
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Plus, Camera } from 'lucide-react';
 import { SegmentalHeatMap } from '@/components/body-tracker/SegmentalHeatMap';
 import { HeatmapLegend } from '@/components/body-tracker/HeatmapLegend';
-import { BodyPartCallout } from '@/components/body-tracker/BodyPartCallout';
+import { HoverSystem } from '@/components/body-tracker/HoverSystem';
+import { LegendBar } from '@/components/body-tracker/HoverSystem/LegendBar';
+import { usePinnedCards } from '@/components/body-tracker/HoverSystem/usePinnedCards';
+import { useResponsivePinCap } from '@/components/body-tracker/HoverSystem/useResponsivePinCap';
+import type {
+  BodyRegionData,
+  BodyRegionId,
+  Classification,
+  Trend,
+} from '@/components/body-tracker/HoverSystem/types';
+import { CHANGE_THRESHOLD } from '@/lib/body-tracker/heatmap-colors';
 import {
   getOvalColorFromChange,
   getOvalColorFromStatus,
@@ -118,6 +128,37 @@ function buildBodyPartCards(
   });
 }
 
+// Prompt #157k: convert the 12 BodyPartCard rows into the
+// BodyRegionData shape the HoverSystem orchestrator expects. The
+// classification axis collapses Very Low / Low / Standard / High /
+// Very High into the four-bucket Low / Standard / Good / High the
+// hover-card pill recognizes; trend reads the raw change sign with a
+// sub-threshold dead band to suppress flat-noise arrows.
+function mapStatusToClassification(s: SegmentStatus): Classification {
+  if (s === 'Very Low' || s === 'Low') return 'Low';
+  if (s === 'Very High' || s === 'High') return 'High';
+  return 'Standard';
+}
+
+function changeToTrend(change: number | null | undefined): Trend {
+  if (change === null || change === undefined) return 'flat';
+  if (Math.abs(change) < CHANGE_THRESHOLD) return 'flat';
+  return change > 0 ? 'up' : 'down';
+}
+
+function buildBodyRegionData(
+  cards: BodyPartCard[],
+  changeData: Record<string, { change: number | null }>,
+): BodyRegionData[] {
+  return cards.map((c) => ({
+    id: c.key as BodyRegionId,
+    label: c.label,
+    metric: { value: c.value, unit: c.unit as '%' | 'lbs' },
+    classification: mapStatusToClassification(c.status),
+    trend: changeToTrend(changeData[c.key]?.change ?? null),
+  }));
+}
+
 const UNIT_STORAGE_KEY = 'vc.body-tracker.measurement-unit';
 
 function readStoredUnit(): MeasurementUnit {
@@ -210,8 +251,6 @@ function CompositionPageInner() {
   // missing user, missing rows, or DB error => empty map => neutral yellow.
   const fatChange = useFatChangeData(userId ?? null);
   const muscleChange = useMuscleChangeData(userId ?? null);
-  const fatIsFirstEntry = fatChange.hasAnyData && !fatChange.hasPreviousEntry;
-  const muscleIsFirstEntry = muscleChange.hasAnyData && !muscleChange.hasPreviousEntry;
 
   useEffect(() => {
     try { window.localStorage.setItem(UNIT_STORAGE_KEY, unit); } catch { /* ignore */ }
@@ -251,6 +290,36 @@ function CompositionPageInner() {
       p.key,
       getOvalColorFromChange(muscleChange.data[p.key]?.change ?? null, 'muscle'),
     ]),
+  );
+
+  // Prompt #157k: BodyRegionData arrays for the HoverSystem +
+  // LegendBar. Fat regions carry static SegmentStatus classification;
+  // muscle regions carry the same status data + trend reading from
+  // the muscle change hook. Memoized so HoverSystem children do not
+  // re-render on unrelated state churn.
+  const fatRegions = useMemo(
+    () => buildBodyRegionData(fatBodyPartCards, fatChange.data),
+    [fatBodyPartCards, fatChange.data],
+  );
+  const muscleRegions = useMemo(
+    () => buildBodyRegionData(muscleBodyPartCards, muscleChange.data),
+    [muscleBodyPartCards, muscleChange.data],
+  );
+
+  // Prompt #157k: shared pin-region store for both surfaces (figure
+  // hit map inside HoverSystem, chip toolbar inside LegendBar). Both
+  // dispatch through usePinnedCards.pinRegion with the responsive
+  // cap; HoverSystem's pinnedIds-watching effect handles analytics +
+  // aria-live for every activation source via triggerOriginById.
+  const pinnedIds = usePinnedCards((s) => s.pinnedIds);
+  const hoveredId = usePinnedCards((s) => s.hoveredId);
+  const pinRegion = usePinnedCards((s) => s.pinRegion);
+  const { pinCap } = useResponsivePinCap();
+  const handleLegendActivate = useCallback(
+    (id: BodyRegionId) => pinRegion(id, pinCap, 'legend'),
+    [pinRegion, pinCap],
+  );
+
   );
 
   return (
@@ -379,103 +448,40 @@ function CompositionPageInner() {
             <p className="text-xs text-[#FCA5A5]">Could not save gender preference: {genderError}</p>
           )}
 
-          {/* Prompt #85k: silhouette card with 12 body-part callouts flanking the avatar.
-              Desktop renders 6 cards on each side via lg:grid 3-column. Mobile renders
-              the avatar + 12 cards in a 2-column grid below. */}
-          <div data-testid="body-tracker-grid" className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 p-6 backdrop-blur-sm lg:grid lg:grid-cols-[88px_1fr_88px] lg:items-stretch lg:gap-3 lg:p-3 lg:h-[calc(100vh-200px)] lg:min-h-[568px] lg:overflow-hidden">
-            {/* Desktop left column: 6 left-side callouts */}
-            <div className="hidden lg:flex lg:h-full lg:flex-col lg:justify-between lg:gap-2">
-              {fatBodyPartCards.filter((c) => c.side === 'left').map((c, order) => (
-                <motion.div
-                  key={c.key}
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.4 + order * 0.05, duration: 0.35, ease: 'easeOut' }}
-                >
-                  <BodyPartCallout
-                    label={c.label}
-                    value={c.value}
-                    unit={c.unit}
-                    status={c.status}
-                    position="left"
-                    change={fatChange.data[c.key]?.change ?? null}
-                    metric="fat"
-                    isFirstEntry={fatIsFirstEntry}
-                  />
-                </motion.div>
-              ))}
-            </div>
-
-            <div data-testid="center-column" className="flex flex-col lg:h-full lg:min-h-0">
-              <h3 className="mb-3 shrink-0 text-center text-xs font-semibold uppercase tracking-wider text-white/40 lg:mb-2">
-                Segmental Body Fat Analysis
-              </h3>
-              <HeatmapLegend metric="fat" className="mb-4 shrink-0 lg:mb-2" />
-              <div
-                data-testid="avatar-container"
-                className="flex max-h-[60vh] items-center justify-center px-2 py-2 lg:max-h-none lg:min-h-0 lg:flex-1"
-                style={{ filter: 'drop-shadow(0 0 20px rgba(45, 165, 160, 0.15))' }}
-              >
+          {/* Prompt #157k: HoverSystem replaces the 3-column rail of
+              flanking callout cards. The figure is the primary
+              navigation surface; cards appear on hover (desktop) or
+              tap (mobile) and pin via the FIFO queue. The summary
+              KPI strip below remains persistent. */}
+          <div data-testid="body-tracker-grid" className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 p-6 backdrop-blur-sm lg:flex lg:flex-col lg:p-3 lg:h-[calc(100vh-200px)] lg:min-h-[568px] lg:overflow-hidden">
+            <h3 className="mb-3 shrink-0 text-center text-xs font-semibold uppercase tracking-wider text-white/40 lg:mb-2">
+              Segmental Body Fat Analysis
+            </h3>
+            <HeatmapLegend metric="fat" className="mb-4 shrink-0 lg:mb-2" />
+            <div
+              data-testid="avatar-container"
+              className="flex max-h-[60vh] items-center justify-center px-2 py-2 lg:max-h-none lg:min-h-0 lg:flex-1"
+              style={{ filter: 'drop-shadow(0 0 20px rgba(45, 165, 160, 0.15))' }}
+            >
+              <HoverSystem view="composition" sex={gender} regions={fatRegions} className="lg:h-full">
                 <SegmentalHeatMap sex={gender} segmentStatuses={fatRegionStatuses} />
-              </div>
-
-              {/* Mobile only: 12 callouts in a 2-column grid below the avatar */}
-              <div className="mt-6 grid shrink-0 grid-cols-2 gap-3 lg:hidden">
-                {fatBodyPartCards.map((c, order) => (
-                  <motion.div
-                    key={c.key}
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.4 + order * 0.04, duration: 0.35, ease: 'easeOut' }}
-                  >
-                    <BodyPartCallout
-                      label={c.label}
-                      value={c.value}
-                      unit={c.unit}
-                      status={c.status}
-                      position="left"
-                      change={fatChange.data[c.key]?.change ?? null}
-                      metric="fat"
-                      isFirstEntry={fatIsFirstEntry}
-                    />
-                  </motion.div>
-                ))}
-              </div>
-
-              {/* Prompt #85e + #153: summary metrics row anchored to column bottom on desktop. */}
-              <div data-testid="bottom-metrics-row" className="mx-auto mt-6 grid w-full max-w-2xl shrink-0 grid-cols-2 gap-3 md:grid-cols-4 lg:mt-auto">
-                {FAT_CARDS.map((c, i) => (
-                  <motion.div
-                    key={i}
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.6 + i * 0.08, duration: 0.35, ease: 'easeOut' }}
-                  >
-                    <FloatingMetricCard {...c} />
-                  </motion.div>
-                ))}
-              </div>
+              </HoverSystem>
             </div>
-
-            {/* Desktop right column: 6 right-side callouts */}
-            <div className="hidden lg:flex lg:h-full lg:flex-col lg:justify-between lg:gap-2">
-              {fatBodyPartCards.filter((c) => c.side === 'right').map((c, order) => (
+            <LegendBar
+              pinnedIds={pinnedIds}
+              hoveredId={hoveredId}
+              onActivate={handleLegendActivate}
+              className="mt-3 shrink-0"
+            />
+            <div data-testid="bottom-metrics-row" className="mx-auto mt-3 grid w-full max-w-2xl shrink-0 grid-cols-2 gap-3 md:grid-cols-4">
+              {FAT_CARDS.map((c, i) => (
                 <motion.div
-                  key={c.key}
+                  key={i}
                   initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.4 + order * 0.05, duration: 0.35, ease: 'easeOut' }}
+                  transition={{ delay: 0.6 + i * 0.08, duration: 0.35, ease: 'easeOut' }}
                 >
-                  <BodyPartCallout
-                    label={c.label}
-                    value={c.value}
-                    unit={c.unit}
-                    status={c.status}
-                    position="right"
-                    change={fatChange.data[c.key]?.change ?? null}
-                    metric="fat"
-                    isFirstEntry={fatIsFirstEntry}
-                  />
+                  <FloatingMetricCard {...c} />
                 </motion.div>
               ))}
             </div>
@@ -490,106 +496,38 @@ function CompositionPageInner() {
             <p className="text-xs text-white/60">Segmental muscle mass breakdown</p>
           </div>
 
-          {/* Prompt #85k: silhouette card with 12 body-part callouts flanking the avatar.
-              Desktop renders 6 cards on each side via lg:grid 3-column. Mobile renders
-              the avatar + 12 cards in a 2-column grid below. */}
-          <div data-testid="body-tracker-grid" className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 p-6 backdrop-blur-sm lg:grid lg:grid-cols-[88px_1fr_88px] lg:items-stretch lg:gap-3 lg:p-3 lg:h-[calc(100vh-200px)] lg:min-h-[568px] lg:overflow-hidden">
-            {/* Desktop left column: 6 left-side callouts */}
-            <div className="hidden lg:flex lg:h-full lg:flex-col lg:justify-between lg:gap-2">
-              {muscleBodyPartCards.filter((c) => c.side === 'left').map((c, order) => (
-                <motion.div
-                  key={c.key}
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.4 + order * 0.05, duration: 0.35, ease: 'easeOut' }}
-                >
-                  <BodyPartCallout
-                    label={c.label}
-                    value={c.value}
-                    unit={c.unit}
-                    status={c.status}
-                    position="left"
-                    change={muscleChange.data[c.key]?.change ?? null}
-                    metric="muscle"
-                    isFirstEntry={muscleIsFirstEntry}
-                    badgeMode="change"
-                  />
-                </motion.div>
-              ))}
-            </div>
-
-            <div data-testid="center-column" className="flex flex-col lg:h-full lg:min-h-0">
-              <h3 className="mb-3 shrink-0 text-center text-xs font-semibold uppercase tracking-wider text-white/40 lg:mb-2">
-                Segmental Muscle Analysis
-              </h3>
-              <HeatmapLegend metric="muscle" className="mb-4 shrink-0 lg:mb-2" />
-              <div
-                data-testid="avatar-container"
-                className="flex max-h-[60vh] items-center justify-center px-2 py-2 lg:max-h-none lg:min-h-0 lg:flex-1"
-                style={{ filter: 'drop-shadow(0 0 20px rgba(45, 165, 160, 0.15))' }}
-              >
+          {/* Prompt #157k: HoverSystem replaces the muscle 3-column
+              rail. Same FIFO pin queue + LegendBar accessibility row;
+              regions carry change-based muscle classifications. */}
+          <div data-testid="body-tracker-grid" className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 p-6 backdrop-blur-sm lg:flex lg:flex-col lg:p-3 lg:h-[calc(100vh-200px)] lg:min-h-[568px] lg:overflow-hidden">
+            <h3 className="mb-3 shrink-0 text-center text-xs font-semibold uppercase tracking-wider text-white/40 lg:mb-2">
+              Segmental Muscle Analysis
+            </h3>
+            <HeatmapLegend metric="muscle" className="mb-4 shrink-0 lg:mb-2" />
+            <div
+              data-testid="avatar-container"
+              className="flex max-h-[60vh] items-center justify-center px-2 py-2 lg:max-h-none lg:min-h-0 lg:flex-1"
+              style={{ filter: 'drop-shadow(0 0 20px rgba(45, 165, 160, 0.15))' }}
+            >
+              <HoverSystem view="muscle" sex={gender} regions={muscleRegions} className="lg:h-full">
                 <SegmentalHeatMap sex={gender} segmentStatuses={muscleRegionStatuses} />
-              </div>
-
-              {/* Mobile only: 12 callouts in a 2-column grid below the avatar */}
-              <div className="mt-6 grid shrink-0 grid-cols-2 gap-3 lg:hidden">
-                {muscleBodyPartCards.map((c, order) => (
-                  <motion.div
-                    key={c.key}
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.4 + order * 0.04, duration: 0.35, ease: 'easeOut' }}
-                  >
-                    <BodyPartCallout
-                      label={c.label}
-                      value={c.value}
-                      unit={c.unit}
-                      status={c.status}
-                      position="left"
-                      change={muscleChange.data[c.key]?.change ?? null}
-                      metric="muscle"
-                      isFirstEntry={muscleIsFirstEntry}
-                      badgeMode="change"
-                    />
-                  </motion.div>
-                ))}
-              </div>
-
-              {/* Prompt #85i + #153: Body Fat summary cards row mirrored onto Muscle Mass, anchored to column bottom on desktop. */}
-              <div data-testid="bottom-metrics-row" className="mx-auto mt-6 grid w-full max-w-2xl shrink-0 grid-cols-2 gap-3 md:grid-cols-4 lg:mt-auto">
-                {FAT_CARDS.map((c, i) => (
-                  <motion.div
-                    key={i}
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.6 + i * 0.08, duration: 0.35, ease: 'easeOut' }}
-                  >
-                    <FloatingMetricCard {...c} />
-                  </motion.div>
-                ))}
-              </div>
+              </HoverSystem>
             </div>
-
-            {/* Desktop right column: 6 right-side callouts */}
-            <div className="hidden lg:flex lg:h-full lg:flex-col lg:justify-between lg:gap-2">
-              {muscleBodyPartCards.filter((c) => c.side === 'right').map((c, order) => (
+            <LegendBar
+              pinnedIds={pinnedIds}
+              hoveredId={hoveredId}
+              onActivate={handleLegendActivate}
+              className="mt-3 shrink-0"
+            />
+            <div data-testid="bottom-metrics-row" className="mx-auto mt-3 grid w-full max-w-2xl shrink-0 grid-cols-2 gap-3 md:grid-cols-4">
+              {FAT_CARDS.map((c, i) => (
                 <motion.div
-                  key={c.key}
+                  key={i}
                   initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.4 + order * 0.05, duration: 0.35, ease: 'easeOut' }}
+                  transition={{ delay: 0.6 + i * 0.08, duration: 0.35, ease: 'easeOut' }}
                 >
-                  <BodyPartCallout
-                    label={c.label}
-                    value={c.value}
-                    unit={c.unit}
-                    status={c.status}
-                    position="right"
-                    change={muscleChange.data[c.key]?.change ?? null}
-                    metric="muscle"
-                    isFirstEntry={muscleIsFirstEntry}
-                    badgeMode="change"
-                  />
+                  <FloatingMetricCard {...c} />
                 </motion.div>
               ))}
             </div>
