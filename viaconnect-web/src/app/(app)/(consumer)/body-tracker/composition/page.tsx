@@ -320,8 +320,6 @@ function CompositionPageInner() {
     [pinRegion, pinCap],
   );
 
-  );
-
   return (
     <div className="space-y-6 lg:space-y-3" key={refreshKey}>
       <div className="flex flex-wrap items-center justify-between gap-3">
