@@ -491,11 +491,11 @@ function CompositionPageInner() {
                 aria-label="Body composition summary"
                 className="hidden lg:flex lg:w-[200px] lg:shrink-0 lg:flex-col lg:gap-3"
               >
-                <div data-testid="kpi-stack-header" className="flex flex-col items-center gap-2">
+                <div data-testid="kpi-stack-header" className="flex flex-col items-center gap-2 lg:mb-4">
                   <h3 className="text-center text-xs font-semibold uppercase tracking-wider text-white/40">
                     Segmental Body Fat Analysis
                   </h3>
-                  <ul className="flex flex-col items-center gap-1 text-[10px]">
+                  <ul className="flex flex-col gap-1 text-[10px] lg:w-fit lg:mx-auto">
                     <li className="flex items-center gap-1.5">
                       <span className="h-2.5 w-2.5 rounded-full bg-green-400" aria-hidden="true" />
                       <span className="text-white/40">Fat Loss</span>
@@ -590,11 +590,11 @@ function CompositionPageInner() {
                 aria-label="Body composition summary"
                 className="hidden lg:flex lg:w-[200px] lg:shrink-0 lg:flex-col lg:gap-3"
               >
-                <div data-testid="kpi-stack-header" className="flex flex-col items-center gap-2">
+                <div data-testid="kpi-stack-header" className="flex flex-col items-center gap-2 lg:mb-4">
                   <h3 className="text-center text-xs font-semibold uppercase tracking-wider text-white/40">
                     Segmental Muscle Analysis
                   </h3>
-                  <ul className="flex flex-col items-center gap-1 text-[10px]">
+                  <ul className="flex flex-col gap-1 text-[10px] lg:w-fit lg:mx-auto">
                     <li className="flex items-center gap-1.5">
                       <span className="h-2.5 w-2.5 rounded-full bg-green-400" aria-hidden="true" />
                       <span className="text-white/40">Muscle Gain</span>
