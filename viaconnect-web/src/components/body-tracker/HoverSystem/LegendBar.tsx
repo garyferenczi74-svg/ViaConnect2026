@@ -1,23 +1,33 @@
 'use client';
 
-// Prompt #157k + #157m: tappable legend bar of region-name chips.
+// Prompt #157k + #157m + #157q: tappable legend bar of region-name chips.
 // Two layouts share the same underlying button + state model:
 //
 //   layout="row" (default, mobile + tablet): horizontal scrollable
 //     toolbar of chips above the KPI strip. Same as the original
 //     #157k LegendBar.
 //
-//   layout="ring" (desktop): 12 pills positioned on a circular ring
-//     around the avatar at 30 degree intervals, clockwise from 12
-//     o'clock. The ring radius is computed via container query
-//     units (50cqh + 24px) so the ring scales with the avatar's
-//     rendered height without JS observers; the parent must be the
+//   layout="ring" (desktop): 12 pills positioned on an elliptical
+//     ring around the avatar at 30 degree intervals, clockwise from
+//     12 o'clock. Per #157q the ring is an ellipse rather than a
+//     circle: the horizontal radius (--ring-rx) follows the avatar's
+//     half-width and the vertical radius (--ring-ry) follows the
+//     avatar's half-height, each plus 16px breathing room. The
+//     avatar fills the avatar-container's height (lg:h-full on the
+//     SegmentalHeatMap wrapper) so 100cqh maps to the avatar's
+//     rendered height; --avatar-width is derived from --avatar-height
+//     using the canonical 1:2.1 portrait aspect ratio per #157h.
+//     Each pill's translation is calc(--ring-rx * xFactor) on x and
+//     calc(--ring-ry * yFactor) on y, where xFactor and yFactor are
+//     pre-computed sin/-cos of the angular position. Pills stay
+//     upright (translate-only, no rotation). The parent must be the
 //     positioning context (relative + container-query host).
 //
 // Both layouts read pinnedIds + hoveredId from the same Zustand
 // store so the active state stays in sync between the row legend
 // (mobile) and the ring legend (desktop).
 
+import type { CSSProperties } from 'react';
 import { ALL_BODY_REGION_IDS, REGION_LABELS } from './constants';
 import type { BodyRegionId } from './types';
 
@@ -31,7 +41,8 @@ interface LegendBarProps {
 
 interface RingPosition {
   readonly id: BodyRegionId;
-  readonly angleDeg: number;
+  readonly xFactor: number;
+  readonly yFactor: number;
 }
 
 // 12 positions, clockwise from 12 o'clock. Anatomical reading:
@@ -39,19 +50,27 @@ interface RingPosition {
 // right leg chain (R quad, R calf), waist at 6, left leg chain
 // (L calf, L quad), left arm chain (L forearm, L bicep), shoulders
 // at 11 capping the upper-left to balance chest at 1.
+//
+// Prompt #157q: xFactor and yFactor are unitless multipliers in
+// the range [-1, 1] derived from each pill's angular position
+// (xFactor = sin(angle), yFactor = -cos(angle); negative cos
+// because screen y increases downward and 12 o'clock has y less
+// than the center). At render time each factor multiplies the
+// ring's horizontal or vertical radius to place the pill on the
+// ellipse. Pre-computed; do not recompute at runtime.
 const RING_POSITIONS: readonly RingPosition[] = [
-  { id: 'neck',      angleDeg:   0 },
-  { id: 'chest',     angleDeg:  30 },
-  { id: 'r_bicep',   angleDeg:  60 },
-  { id: 'r_forearm', angleDeg:  90 },
-  { id: 'r_quad',    angleDeg: 120 },
-  { id: 'r_calf',    angleDeg: 150 },
-  { id: 'waist',     angleDeg: 180 },
-  { id: 'l_calf',    angleDeg: 210 },
-  { id: 'l_quad',    angleDeg: 240 },
-  { id: 'l_forearm', angleDeg: 270 },
-  { id: 'l_bicep',   angleDeg: 300 },
-  { id: 'shoulders', angleDeg: 330 },
+  { id: 'neck',      xFactor:  0.000, yFactor: -1.000 },
+  { id: 'chest',     xFactor:  0.500, yFactor: -0.866 },
+  { id: 'r_bicep',   xFactor:  0.866, yFactor: -0.500 },
+  { id: 'r_forearm', xFactor:  1.000, yFactor:  0.000 },
+  { id: 'r_quad',    xFactor:  0.866, yFactor:  0.500 },
+  { id: 'r_calf',    xFactor:  0.500, yFactor:  0.866 },
+  { id: 'waist',     xFactor:  0.000, yFactor:  1.000 },
+  { id: 'l_calf',    xFactor: -0.500, yFactor:  0.866 },
+  { id: 'l_quad',    xFactor: -0.866, yFactor:  0.500 },
+  { id: 'l_forearm', xFactor: -1.000, yFactor:  0.000 },
+  { id: 'l_bicep',   xFactor: -0.866, yFactor: -0.500 },
+  { id: 'shoulders', xFactor: -0.500, yFactor: -0.866 },
 ];
 
 const PILL_BASE =
@@ -84,9 +103,15 @@ export function LegendBar({
         role="toolbar"
         aria-label="Body region ring"
         className={`pointer-events-none ${className ?? ''}`}
-        style={{ containerType: 'size' }}
+        style={{
+          containerType: 'size',
+          '--avatar-height': '100cqh',
+          '--avatar-width': 'calc(var(--avatar-height) / 2.1)',
+          '--ring-rx': 'calc(var(--avatar-width) / 2 + 16px)',
+          '--ring-ry': 'calc(var(--avatar-height) / 2 + 16px)',
+        } as CSSProperties}
       >
-        {RING_POSITIONS.map(({ id, angleDeg }) => {
+        {RING_POSITIONS.map(({ id, xFactor, yFactor }) => {
           const isPinned = pinnedIds.includes(id);
           const isHovered = hoveredId === id;
           return (
@@ -101,7 +126,7 @@ export function LegendBar({
               style={{
                 top: '50%',
                 left: '50%',
-                transform: `translate(-50%, -50%) rotate(${angleDeg}deg) translateY(calc(-50cqh - 24px)) rotate(${-angleDeg}deg)`,
+                transform: `translate(-50%, -50%) translateX(calc(var(--ring-rx) * ${xFactor})) translateY(calc(var(--ring-ry) * ${yFactor}))`,
               }}
             >
               {REGION_LABELS[id]}
