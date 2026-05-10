@@ -125,7 +125,7 @@ export function SegmentalHeatMap({
 
   return (
     <div
-      className={`relative mx-auto flex w-full max-w-[200px] items-center justify-center md:max-w-[240px] lg:h-full lg:w-auto lg:max-w-none ${className ?? ''}`}
+      className={`relative mx-auto flex w-[85%] items-center justify-center lg:h-full lg:w-auto ${className ?? ''}`}
       data-testid="segmental-heat-map"
     >
       <img
