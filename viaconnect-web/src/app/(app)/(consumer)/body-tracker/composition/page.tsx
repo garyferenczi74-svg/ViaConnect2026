@@ -452,10 +452,13 @@ function CompositionPageInner() {
               tap (mobile) and pin via the FIFO queue. The summary
               KPI strip below remains persistent. */}
           <div data-testid="body-tracker-grid" className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 p-6 backdrop-blur-sm lg:flex lg:flex-col lg:p-3 lg:h-[calc(100vh-200px)] lg:min-h-[568px] lg:overflow-hidden">
-            <h3 className="mb-3 shrink-0 text-center text-xs font-semibold uppercase tracking-wider text-white/40 lg:mb-2">
+            {/* Prompt #157o: top-center title + legend now mobile/tablet
+                only. Desktop relocates them to the top of the right
+                column, above the Total Body Fat KPI card. */}
+            <h3 className="mb-3 shrink-0 text-center text-xs font-semibold uppercase tracking-wider text-white/40 lg:hidden">
               Segmental Body Fat Analysis
             </h3>
-            <HeatmapLegend metric="fat" className="mb-4 shrink-0 lg:mb-2" />
+            <HeatmapLegend metric="fat" className="mb-4 shrink-0 lg:hidden" />
             {/* Prompt #157n: desktop main row pairs the avatar (left,
                 lg:flex-1) with the KPI stack (right, fixed lg:w-[200px]).
                 On mobile / tablet the wrapper collapses to flex-col so
@@ -478,11 +481,35 @@ function CompositionPageInner() {
                   className="hidden lg:block lg:absolute lg:inset-0"
                 />
               </div>
+              {/* Prompt #157o: title + vertical legend block at the top
+                  of the desktop KPI column. Five proportionate bands
+                  (this block + 4 KPI cards) all share gap-3 from the
+                  parent flex column. Tokens mirror HeatmapLegend
+                  (bg-green-400 / yellow-400 / red-400, text-white/40). */}
               <aside
                 data-testid="kpi-stack-desktop"
                 aria-label="Body composition summary"
-                className="hidden lg:flex lg:w-[200px] lg:shrink-0 lg:flex-col lg:justify-center lg:gap-3"
+                className="hidden lg:flex lg:w-[200px] lg:shrink-0 lg:flex-col lg:gap-3"
               >
+                <div data-testid="kpi-stack-header" className="flex flex-col gap-2">
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-white/40">
+                    Segmental Body Fat Analysis
+                  </h3>
+                  <ul className="flex flex-col gap-1 text-[10px]">
+                    <li className="flex items-center gap-1.5">
+                      <span className="h-2.5 w-2.5 rounded-full bg-green-400" aria-hidden="true" />
+                      <span className="text-white/40">Fat Loss</span>
+                    </li>
+                    <li className="flex items-center gap-1.5">
+                      <span className="h-2.5 w-2.5 rounded-full bg-yellow-400" aria-hidden="true" />
+                      <span className="text-white/40">No Change</span>
+                    </li>
+                    <li className="flex items-center gap-1.5">
+                      <span className="h-2.5 w-2.5 rounded-full bg-red-400" aria-hidden="true" />
+                      <span className="text-white/40">Fat Gain</span>
+                    </li>
+                  </ul>
+                </div>
                 {FAT_CARDS.map((c, i) => (
                   <motion.div
                     key={i}
@@ -528,10 +555,13 @@ function CompositionPageInner() {
               rail. Same FIFO pin queue + LegendBar accessibility row;
               regions carry change-based muscle classifications. */}
           <div data-testid="body-tracker-grid" className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 p-6 backdrop-blur-sm lg:flex lg:flex-col lg:p-3 lg:h-[calc(100vh-200px)] lg:min-h-[568px] lg:overflow-hidden">
-            <h3 className="mb-3 shrink-0 text-center text-xs font-semibold uppercase tracking-wider text-white/40 lg:mb-2">
+            {/* Prompt #157o: top-center title + legend now mobile/tablet
+                only. Desktop relocates them to the top of the right
+                column, above the Total Body Fat KPI card. */}
+            <h3 className="mb-3 shrink-0 text-center text-xs font-semibold uppercase tracking-wider text-white/40 lg:hidden">
               Segmental Muscle Analysis
             </h3>
-            <HeatmapLegend metric="muscle" className="mb-4 shrink-0 lg:mb-2" />
+            <HeatmapLegend metric="muscle" className="mb-4 shrink-0 lg:hidden" />
             {/* Prompt #157n: desktop main row pairs the avatar with
                 the KPI stack on the right. Same shape as the fat
                 section. */}
@@ -552,11 +582,33 @@ function CompositionPageInner() {
                   className="hidden lg:block lg:absolute lg:inset-0"
                 />
               </div>
+              {/* Prompt #157o: muscle variant of the desktop title + legend
+                  block. Labels invert per HeatmapLegend's metric semantics
+                  (Muscle Gain = good, Muscle Loss = bad). */}
               <aside
                 data-testid="kpi-stack-desktop"
                 aria-label="Body composition summary"
-                className="hidden lg:flex lg:w-[200px] lg:shrink-0 lg:flex-col lg:justify-center lg:gap-3"
+                className="hidden lg:flex lg:w-[200px] lg:shrink-0 lg:flex-col lg:gap-3"
               >
+                <div data-testid="kpi-stack-header" className="flex flex-col gap-2">
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-white/40">
+                    Segmental Muscle Analysis
+                  </h3>
+                  <ul className="flex flex-col gap-1 text-[10px]">
+                    <li className="flex items-center gap-1.5">
+                      <span className="h-2.5 w-2.5 rounded-full bg-green-400" aria-hidden="true" />
+                      <span className="text-white/40">Muscle Gain</span>
+                    </li>
+                    <li className="flex items-center gap-1.5">
+                      <span className="h-2.5 w-2.5 rounded-full bg-yellow-400" aria-hidden="true" />
+                      <span className="text-white/40">No Change</span>
+                    </li>
+                    <li className="flex items-center gap-1.5">
+                      <span className="h-2.5 w-2.5 rounded-full bg-red-400" aria-hidden="true" />
+                      <span className="text-white/40">Muscle Loss</span>
+                    </li>
+                  </ul>
+                </div>
                 {FAT_CARDS.map((c, i) => (
                   <motion.div
                     key={i}
