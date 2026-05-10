@@ -456,21 +456,44 @@ function CompositionPageInner() {
               Segmental Body Fat Analysis
             </h3>
             <HeatmapLegend metric="fat" className="mb-4 shrink-0 lg:mb-2" />
-            <div
-              data-testid="avatar-container"
-              className="relative flex max-h-[60vh] items-center justify-center px-2 py-2 lg:max-h-none lg:min-h-0 lg:flex-1"
-              style={{ filter: 'drop-shadow(0 0 20px rgba(45, 165, 160, 0.15))' }}
-            >
-              <HoverSystem view="composition" sex={gender} regions={fatRegions} className="lg:h-full">
-                <SegmentalHeatMap sex={gender} segmentStatuses={fatRegionStatuses} />
-              </HoverSystem>
-              <LegendBar
-                pinnedIds={pinnedIds}
-                hoveredId={hoveredId}
-                onActivate={handleLegendActivate}
-                layout="ring"
-                className="hidden lg:block lg:absolute lg:inset-0"
-              />
+            {/* Prompt #157n: desktop main row pairs the avatar (left,
+                lg:flex-1) with the KPI stack (right, fixed lg:w-[200px]).
+                On mobile / tablet the wrapper collapses to flex-col so
+                the avatar stacks above the bottom KPI row exactly as
+                the post-#157k layout did. */}
+            <div className="flex flex-col lg:flex-1 lg:flex-row lg:items-stretch lg:gap-6 lg:min-h-0">
+              <div
+                data-testid="avatar-container"
+                className="relative flex max-h-[60vh] items-center justify-center px-2 py-2 lg:max-h-none lg:min-h-0 lg:flex-1"
+                style={{ filter: 'drop-shadow(0 0 20px rgba(45, 165, 160, 0.15))' }}
+              >
+                <HoverSystem view="composition" sex={gender} regions={fatRegions} className="lg:h-full">
+                  <SegmentalHeatMap sex={gender} segmentStatuses={fatRegionStatuses} />
+                </HoverSystem>
+                <LegendBar
+                  pinnedIds={pinnedIds}
+                  hoveredId={hoveredId}
+                  onActivate={handleLegendActivate}
+                  layout="ring"
+                  className="hidden lg:block lg:absolute lg:inset-0"
+                />
+              </div>
+              <aside
+                data-testid="kpi-stack-desktop"
+                aria-label="Body composition summary"
+                className="hidden lg:flex lg:w-[200px] lg:shrink-0 lg:flex-col lg:justify-center lg:gap-3"
+              >
+                {FAT_CARDS.map((c, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.6 + i * 0.08, duration: 0.35, ease: 'easeOut' }}
+                  >
+                    <FloatingMetricCard {...c} />
+                  </motion.div>
+                ))}
+              </aside>
             </div>
             <LegendBar
               pinnedIds={pinnedIds}
@@ -478,7 +501,7 @@ function CompositionPageInner() {
               onActivate={handleLegendActivate}
               className="mt-3 shrink-0 lg:hidden"
             />
-            <div data-testid="bottom-metrics-row" className="mx-auto mt-3 grid w-full max-w-2xl shrink-0 grid-cols-2 gap-3 md:grid-cols-4">
+            <div data-testid="bottom-metrics-row" className="mx-auto mt-3 grid w-full max-w-2xl shrink-0 grid-cols-2 gap-3 md:grid-cols-4 lg:hidden">
               {FAT_CARDS.map((c, i) => (
                 <motion.div
                   key={i}
@@ -509,21 +532,42 @@ function CompositionPageInner() {
               Segmental Muscle Analysis
             </h3>
             <HeatmapLegend metric="muscle" className="mb-4 shrink-0 lg:mb-2" />
-            <div
-              data-testid="avatar-container"
-              className="relative flex max-h-[60vh] items-center justify-center px-2 py-2 lg:max-h-none lg:min-h-0 lg:flex-1"
-              style={{ filter: 'drop-shadow(0 0 20px rgba(45, 165, 160, 0.15))' }}
-            >
-              <HoverSystem view="muscle" sex={gender} regions={muscleRegions} className="lg:h-full">
-                <SegmentalHeatMap sex={gender} segmentStatuses={muscleRegionStatuses} />
-              </HoverSystem>
-              <LegendBar
-                pinnedIds={pinnedIds}
-                hoveredId={hoveredId}
-                onActivate={handleLegendActivate}
-                layout="ring"
-                className="hidden lg:block lg:absolute lg:inset-0"
-              />
+            {/* Prompt #157n: desktop main row pairs the avatar with
+                the KPI stack on the right. Same shape as the fat
+                section. */}
+            <div className="flex flex-col lg:flex-1 lg:flex-row lg:items-stretch lg:gap-6 lg:min-h-0">
+              <div
+                data-testid="avatar-container"
+                className="relative flex max-h-[60vh] items-center justify-center px-2 py-2 lg:max-h-none lg:min-h-0 lg:flex-1"
+                style={{ filter: 'drop-shadow(0 0 20px rgba(45, 165, 160, 0.15))' }}
+              >
+                <HoverSystem view="muscle" sex={gender} regions={muscleRegions} className="lg:h-full">
+                  <SegmentalHeatMap sex={gender} segmentStatuses={muscleRegionStatuses} />
+                </HoverSystem>
+                <LegendBar
+                  pinnedIds={pinnedIds}
+                  hoveredId={hoveredId}
+                  onActivate={handleLegendActivate}
+                  layout="ring"
+                  className="hidden lg:block lg:absolute lg:inset-0"
+                />
+              </div>
+              <aside
+                data-testid="kpi-stack-desktop"
+                aria-label="Body composition summary"
+                className="hidden lg:flex lg:w-[200px] lg:shrink-0 lg:flex-col lg:justify-center lg:gap-3"
+              >
+                {FAT_CARDS.map((c, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.6 + i * 0.08, duration: 0.35, ease: 'easeOut' }}
+                  >
+                    <FloatingMetricCard {...c} />
+                  </motion.div>
+                ))}
+              </aside>
             </div>
             <LegendBar
               pinnedIds={pinnedIds}
@@ -531,7 +575,7 @@ function CompositionPageInner() {
               onActivate={handleLegendActivate}
               className="mt-3 shrink-0 lg:hidden"
             />
-            <div data-testid="bottom-metrics-row" className="mx-auto mt-3 grid w-full max-w-2xl shrink-0 grid-cols-2 gap-3 md:grid-cols-4">
+            <div data-testid="bottom-metrics-row" className="mx-auto mt-3 grid w-full max-w-2xl shrink-0 grid-cols-2 gap-3 md:grid-cols-4 lg:hidden">
               {FAT_CARDS.map((c, i) => (
                 <motion.div
                   key={i}
