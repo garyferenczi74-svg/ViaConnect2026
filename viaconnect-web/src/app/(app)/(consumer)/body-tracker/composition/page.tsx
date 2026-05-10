@@ -451,7 +451,7 @@ function CompositionPageInner() {
               navigation surface; cards appear on hover (desktop) or
               tap (mobile) and pin via the FIFO queue. The summary
               KPI strip below remains persistent. */}
-          <div data-testid="body-tracker-grid" className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 p-6 backdrop-blur-sm lg:flex lg:flex-col lg:p-3 lg:h-[calc(100vh-200px)] lg:min-h-[568px] lg:overflow-hidden">
+          <div data-testid="body-tracker-grid" className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 p-6 backdrop-blur-sm lg:mt-[25vh] lg:flex lg:flex-col lg:p-3 lg:h-[calc(100vh-200px)] lg:min-h-[568px] lg:overflow-hidden">
             {/* Prompt #157o: top-center title + legend now mobile/tablet
                 only. Desktop relocates them to the top of the right
                 column, above the Total Body Fat KPI card. */}
@@ -491,11 +491,11 @@ function CompositionPageInner() {
                 aria-label="Body composition summary"
                 className="hidden lg:flex lg:w-[200px] lg:shrink-0 lg:flex-col lg:gap-3"
               >
-                <div data-testid="kpi-stack-header" className="flex flex-col gap-2">
-                  <h3 className="text-xs font-semibold uppercase tracking-wider text-white/40">
+                <div data-testid="kpi-stack-header" className="flex flex-col items-center gap-2">
+                  <h3 className="text-center text-xs font-semibold uppercase tracking-wider text-white/40">
                     Segmental Body Fat Analysis
                   </h3>
-                  <ul className="flex flex-col gap-1 text-[10px]">
+                  <ul className="flex flex-col items-center gap-1 text-[10px]">
                     <li className="flex items-center gap-1.5">
                       <span className="h-2.5 w-2.5 rounded-full bg-green-400" aria-hidden="true" />
                       <span className="text-white/40">Fat Loss</span>
@@ -554,7 +554,7 @@ function CompositionPageInner() {
           {/* Prompt #157k: HoverSystem replaces the muscle 3-column
               rail. Same FIFO pin queue + LegendBar accessibility row;
               regions carry change-based muscle classifications. */}
-          <div data-testid="body-tracker-grid" className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 p-6 backdrop-blur-sm lg:flex lg:flex-col lg:p-3 lg:h-[calc(100vh-200px)] lg:min-h-[568px] lg:overflow-hidden">
+          <div data-testid="body-tracker-grid" className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 p-6 backdrop-blur-sm lg:mt-[25vh] lg:flex lg:flex-col lg:p-3 lg:h-[calc(100vh-200px)] lg:min-h-[568px] lg:overflow-hidden">
             {/* Prompt #157o: top-center title + legend now mobile/tablet
                 only. Desktop relocates them to the top of the right
                 column, above the Total Body Fat KPI card. */}
@@ -590,11 +590,11 @@ function CompositionPageInner() {
                 aria-label="Body composition summary"
                 className="hidden lg:flex lg:w-[200px] lg:shrink-0 lg:flex-col lg:gap-3"
               >
-                <div data-testid="kpi-stack-header" className="flex flex-col gap-2">
-                  <h3 className="text-xs font-semibold uppercase tracking-wider text-white/40">
+                <div data-testid="kpi-stack-header" className="flex flex-col items-center gap-2">
+                  <h3 className="text-center text-xs font-semibold uppercase tracking-wider text-white/40">
                     Segmental Muscle Analysis
                   </h3>
-                  <ul className="flex flex-col gap-1 text-[10px]">
+                  <ul className="flex flex-col items-center gap-1 text-[10px]">
                     <li className="flex items-center gap-1.5">
                       <span className="h-2.5 w-2.5 rounded-full bg-green-400" aria-hidden="true" />
                       <span className="text-white/40">Muscle Gain</span>
