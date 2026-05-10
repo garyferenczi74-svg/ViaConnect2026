@@ -25,13 +25,15 @@ import { OVAL_HEX, type OvalColor } from '@/lib/body-tracker/heatmap-colors';
 type Sex = 'male' | 'female';
 
 type SegmentId =
-  | 'neck' | 'shoulders' | 'chest' | 'waist'
+  | 'neck' | 'shoulders' | 'chest'
   | 'l_bicep' | 'r_bicep' | 'l_forearm' | 'r_forearm'
+  | 'hip' | 'waist'
   | 'l_quad' | 'r_quad' | 'l_calf' | 'r_calf';
 
 const ALL_SEGMENT_IDS: readonly SegmentId[] = [
-  'neck', 'shoulders', 'chest', 'waist',
+  'neck', 'shoulders', 'chest',
   'l_bicep', 'r_bicep', 'l_forearm', 'r_forearm',
+  'hip', 'waist',
   'l_quad', 'r_quad', 'l_calf', 'r_calf',
 ];
 
@@ -39,16 +41,21 @@ const ALL_SEGMENT_IDS: readonly SegmentId[] = [
 // The shoulders mask is one combined silhouette covering both
 // deltoids; if the script outputs separate left/right deltoid PNGs
 // they get unioned into shoulders.png at generation time per the
-// generate-muscle-masks.ts authoring.
+// generate-muscle-masks.ts authoring. Per #157r: hip mask added as
+// the 13th region; the hip.png asset is pending generation, until
+// then the WebkitMaskImage request 404s silently and no highlight
+// renders for the hip segment (pill + hover card + data still work
+// because they read from constants/data layer, not the mask asset).
 const SEGMENT_MASK_FILES: Record<SegmentId, readonly string[]> = {
   neck:      ['neck.png'],
   shoulders: ['shoulders.png'],
   chest:     ['chest.png'],
-  waist:     ['waist.png'],
   l_bicep:   ['l_bicep.png'],
   r_bicep:   ['r_bicep.png'],
   l_forearm: ['l_forearm.png'],
   r_forearm: ['r_forearm.png'],
+  hip:       ['hip.png'],
+  waist:     ['waist.png'],
   l_quad:    ['l_quad.png'],
   r_quad:    ['r_quad.png'],
   l_calf:    ['l_calf.png'],

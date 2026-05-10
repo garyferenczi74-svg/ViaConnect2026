@@ -8,11 +8,14 @@
 //     toolbar of chips above the KPI strip. Same as the original
 //     #157k LegendBar.
 //
-//   layout="ring" (desktop): 12 pills positioned at anatomical
+//   layout="ring" (desktop): 13 pills positioned at anatomical
 //     anchors around the avatar's silhouette. Per #157r the prior
 //     mathematical orbit (#157m circle, #157q ellipse) is replaced
 //     with explicit (xPct, yPct, side) anchors so each pill sits
 //     next to its muscle rather than on a uniform geometric curve.
+//     The 13th region is hip, paired with waist (waist left, hips
+//     right) between the forearms and the quads; quads shift down
+//     to clear the new pair.
 //     The parent passes a className that sizes the overlay to
 //     match the avatar's bounding box (aspect-ratio matched,
 //     centered horizontally) so the percent-based anchors align
@@ -51,23 +54,23 @@ interface RingAnchor {
   readonly side: AnchorSide;
 }
 
-// Prompt #157r: anatomical anchor positions for the 12 muscle-group
-// pills. Coordinates are percent of the LegendBar overlay (which
-// the parent sizes to match the avatar's bounding box via
-// aspect-ratio). Each anchor's side controls how the pill is
-// translated off the anchor point so the pill never overlaps the
-// body silhouette. Centered-body labels (neck top, waist bottom)
-// use top / bottom translation; paired side labels (shoulders /
-// chest, biceps, forearms, quads, calves) use left / right.
-// Shoulders + chest, both centered on the body in the underlying
-// muscle anatomy, are split into upper-left / upper-right corner
-// labels so the two pills do not stack vertically. xPct and yPct
-// are tuned to hug the silhouette with 8 to 16 px of breathing
-// room at the male avatar's actual 720x1152 viewBox ratio (the
-// female 720x1008 viewBox is shorter, so female-side pills sit a
-// touch farther outside the silhouette; acceptable since pills
-// never overlap the body); the side translation pushes the pill
-// body off the anchor in the direction indicated.
+// Prompt #157r: anatomical anchor positions for the 13
+// muscle-group pills. Coordinates are percent of the LegendBar
+// overlay (which the parent sizes to match the avatar's bounding
+// box via aspect-ratio). Each anchor's side controls how the pill
+// is translated off the anchor point so the pill never overlaps
+// the body silhouette. Only neck remains as a top-translated
+// centered label above the head; every other pill rides one of
+// the L/R paired positions, including the new waist (left) + hip
+// (right) pair between the forearms and quads. Quads shift down
+// to yPct 68 from 62 to clear the waist/hip pair; calves and
+// every other position from #157r preserved. xPct and yPct are
+// tuned to hug the silhouette with 8 to 16 px of breathing room
+// at the male avatar's actual 720x1152 viewBox ratio (the female
+// 720x1008 viewBox is shorter, so female-side pills sit a touch
+// farther outside the silhouette; acceptable since pills never
+// overlap the body); the side translation pushes the pill body
+// off the anchor in the direction indicated.
 const RING_ANCHORS: readonly RingAnchor[] = [
   { id: 'neck',      xPct: 50, yPct:  4, side: 'top'    },
   { id: 'shoulders', xPct: 30, yPct: 18, side: 'left'   },
@@ -76,9 +79,10 @@ const RING_ANCHORS: readonly RingAnchor[] = [
   { id: 'r_bicep',   xPct: 82, yPct: 30, side: 'right'  },
   { id: 'l_forearm', xPct: 12, yPct: 42, side: 'left'   },
   { id: 'r_forearm', xPct: 88, yPct: 42, side: 'right'  },
-  { id: 'waist',     xPct: 50, yPct: 50, side: 'top'    },
-  { id: 'l_quad',    xPct: 22, yPct: 62, side: 'left'   },
-  { id: 'r_quad',    xPct: 78, yPct: 62, side: 'right'  },
+  { id: 'hip',       xPct: 82, yPct: 55, side: 'right'  },
+  { id: 'waist',     xPct: 18, yPct: 55, side: 'left'   },
+  { id: 'l_quad',    xPct: 22, yPct: 68, side: 'left'   },
+  { id: 'r_quad',    xPct: 78, yPct: 68, side: 'right'  },
   { id: 'l_calf',    xPct: 28, yPct: 80, side: 'left'   },
   { id: 'r_calf',    xPct: 72, yPct: 80, side: 'right'  },
 ];
