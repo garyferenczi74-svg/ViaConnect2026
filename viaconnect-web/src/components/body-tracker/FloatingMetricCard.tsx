@@ -5,7 +5,7 @@ import { TrendingUp, TrendingDown } from 'lucide-react';
 export type MetricStatus = 'Standard' | 'Good' | 'High' | 'Low' | 'Optimal';
 
 const STATUS_COLORS: Record<MetricStatus, string> = {
-  Standard: '#2DA5A0',
+  Standard: '#5B8DEF',
   Good:     '#22C55E',
   Optimal:  '#22C55E',
   High:     '#B75E18',
@@ -69,7 +69,7 @@ export function FloatingMetricCard({
       </div>
       <div className="mt-1 flex justify-center">
         <span
-          className="inline-block rounded-full px-2 py-0.5 text-[10px] font-medium"
+          className="inline-block rounded-full px-2 py-0.5 text-[10px] font-medium backdrop-blur-sm"
           style={{ backgroundColor: `${color}1F`, color, border: `1px solid ${color}4D` }}
         >
           {status}
