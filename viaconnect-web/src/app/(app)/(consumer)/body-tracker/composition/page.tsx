@@ -458,18 +458,25 @@ function CompositionPageInner() {
             <HeatmapLegend metric="fat" className="mb-4 shrink-0 lg:mb-2" />
             <div
               data-testid="avatar-container"
-              className="flex max-h-[60vh] items-center justify-center px-2 py-2 lg:max-h-none lg:min-h-0 lg:flex-1"
+              className="relative flex max-h-[60vh] items-center justify-center px-2 py-2 lg:max-h-none lg:min-h-0 lg:flex-1"
               style={{ filter: 'drop-shadow(0 0 20px rgba(45, 165, 160, 0.15))' }}
             >
               <HoverSystem view="composition" sex={gender} regions={fatRegions} className="lg:h-full">
                 <SegmentalHeatMap sex={gender} segmentStatuses={fatRegionStatuses} />
               </HoverSystem>
+              <LegendBar
+                pinnedIds={pinnedIds}
+                hoveredId={hoveredId}
+                onActivate={handleLegendActivate}
+                layout="ring"
+                className="hidden lg:block lg:absolute lg:inset-0"
+              />
             </div>
             <LegendBar
               pinnedIds={pinnedIds}
               hoveredId={hoveredId}
               onActivate={handleLegendActivate}
-              className="mt-3 shrink-0"
+              className="mt-3 shrink-0 lg:hidden"
             />
             <div data-testid="bottom-metrics-row" className="mx-auto mt-3 grid w-full max-w-2xl shrink-0 grid-cols-2 gap-3 md:grid-cols-4">
               {FAT_CARDS.map((c, i) => (
@@ -504,18 +511,25 @@ function CompositionPageInner() {
             <HeatmapLegend metric="muscle" className="mb-4 shrink-0 lg:mb-2" />
             <div
               data-testid="avatar-container"
-              className="flex max-h-[60vh] items-center justify-center px-2 py-2 lg:max-h-none lg:min-h-0 lg:flex-1"
+              className="relative flex max-h-[60vh] items-center justify-center px-2 py-2 lg:max-h-none lg:min-h-0 lg:flex-1"
               style={{ filter: 'drop-shadow(0 0 20px rgba(45, 165, 160, 0.15))' }}
             >
               <HoverSystem view="muscle" sex={gender} regions={muscleRegions} className="lg:h-full">
                 <SegmentalHeatMap sex={gender} segmentStatuses={muscleRegionStatuses} />
               </HoverSystem>
+              <LegendBar
+                pinnedIds={pinnedIds}
+                hoveredId={hoveredId}
+                onActivate={handleLegendActivate}
+                layout="ring"
+                className="hidden lg:block lg:absolute lg:inset-0"
+              />
             </div>
             <LegendBar
               pinnedIds={pinnedIds}
               hoveredId={hoveredId}
               onActivate={handleLegendActivate}
-              className="mt-3 shrink-0"
+              className="mt-3 shrink-0 lg:hidden"
             />
             <div data-testid="bottom-metrics-row" className="mx-auto mt-3 grid w-full max-w-2xl shrink-0 grid-cols-2 gap-3 md:grid-cols-4">
               {FAT_CARDS.map((c, i) => (
