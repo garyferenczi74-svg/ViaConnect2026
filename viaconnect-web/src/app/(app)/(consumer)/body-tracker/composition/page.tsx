@@ -478,7 +478,7 @@ function CompositionPageInner() {
                   hoveredId={hoveredId}
                   onActivate={handleLegendActivate}
                   layout="ring"
-                  className="hidden lg:block lg:absolute lg:inset-0"
+                  className="hidden lg:block lg:absolute lg:top-2 lg:bottom-2 lg:left-1/2 lg:-translate-x-1/2 lg:aspect-[720/1152]"
                 />
               </div>
               {/* Prompt #157o: title + vertical legend block at the top
@@ -579,7 +579,7 @@ function CompositionPageInner() {
                   hoveredId={hoveredId}
                   onActivate={handleLegendActivate}
                   layout="ring"
-                  className="hidden lg:block lg:absolute lg:inset-0"
+                  className="hidden lg:block lg:absolute lg:top-2 lg:bottom-2 lg:left-1/2 lg:-translate-x-1/2 lg:aspect-[720/1152]"
                 />
               </div>
               {/* Prompt #157o: muscle variant of the desktop title + legend

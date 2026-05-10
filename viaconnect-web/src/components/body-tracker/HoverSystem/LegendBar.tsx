@@ -1,35 +1,40 @@
 'use client';
 
-// Prompt #157k + #157m + #157q: tappable legend bar of region-name chips.
-// Two layouts share the same underlying button + state model:
+// Prompt #157k + #157m + #157q + #157r: tappable legend bar of
+// region-name chips. Two layouts share the same underlying button
+// + state model:
 //
 //   layout="row" (default, mobile + tablet): horizontal scrollable
 //     toolbar of chips above the KPI strip. Same as the original
 //     #157k LegendBar.
 //
-//   layout="ring" (desktop): 12 pills positioned on an elliptical
-//     ring around the avatar at 30 degree intervals, clockwise from
-//     12 o'clock. Per #157q the ring is an ellipse rather than a
-//     circle: the horizontal radius (--ring-rx) follows the avatar's
-//     half-width and the vertical radius (--ring-ry) follows the
-//     avatar's half-height, each plus 16px breathing room. The
-//     avatar fills the avatar-container's height (lg:h-full on the
-//     SegmentalHeatMap wrapper) so 100cqh maps to the avatar's
-//     rendered height; --avatar-width is derived from --avatar-height
-//     using the canonical 1:2.1 portrait aspect ratio per #157h.
-//     Each pill's translation is calc(--ring-rx * xFactor) on x and
-//     calc(--ring-ry * yFactor) on y, where xFactor and yFactor are
-//     pre-computed sin/-cos of the angular position. Pills stay
-//     upright (translate-only, no rotation). The parent must be the
-//     positioning context (relative + container-query host).
+//   layout="ring" (desktop): 12 pills positioned at anatomical
+//     anchors around the avatar's silhouette. Per #157r the prior
+//     mathematical orbit (#157m circle, #157q ellipse) is replaced
+//     with explicit (xPct, yPct, side) anchors so each pill sits
+//     next to its muscle rather than on a uniform geometric curve.
+//     The parent passes a className that sizes the overlay to
+//     match the avatar's bounding box (aspect-ratio matched,
+//     centered horizontally) so the percent-based anchors align
+//     with the rendered silhouette. side controls the pill's
+//     translation off the anchor so it never overlaps the body:
+//     left -> pill sits to the left of the anchor x,
+//     right -> pill sits to the right,
+//     top -> pill sits above the anchor y,
+//     bottom -> pill sits below. Pills stay upright (translate
+//     only, no rotation). Sex-agnostic positions; the perimeter
+//     anchor map is the same for male and female silhouettes
+//     because the outline shape is similar at the label-position
+//     resolution.
 //
 // Both layouts read pinnedIds + hoveredId from the same Zustand
 // store so the active state stays in sync between the row legend
 // (mobile) and the ring legend (desktop).
 
-import type { CSSProperties } from 'react';
 import { ALL_BODY_REGION_IDS, REGION_LABELS } from './constants';
 import type { BodyRegionId } from './types';
+
+type AnchorSide = 'left' | 'right' | 'top' | 'bottom';
 
 interface LegendBarProps {
   readonly pinnedIds: readonly BodyRegionId[];
@@ -39,39 +44,53 @@ interface LegendBarProps {
   readonly layout?: 'row' | 'ring';
 }
 
-interface RingPosition {
+interface RingAnchor {
   readonly id: BodyRegionId;
-  readonly xFactor: number;
-  readonly yFactor: number;
+  readonly xPct: number;
+  readonly yPct: number;
+  readonly side: AnchorSide;
 }
 
-// 12 positions, clockwise from 12 o'clock. Anatomical reading:
-// neck top, chest at 1, right arm chain (R bicep, R forearm),
-// right leg chain (R quad, R calf), waist at 6, left leg chain
-// (L calf, L quad), left arm chain (L forearm, L bicep), shoulders
-// at 11 capping the upper-left to balance chest at 1.
-//
-// Prompt #157q: xFactor and yFactor are unitless multipliers in
-// the range [-1, 1] derived from each pill's angular position
-// (xFactor = sin(angle), yFactor = -cos(angle); negative cos
-// because screen y increases downward and 12 o'clock has y less
-// than the center). At render time each factor multiplies the
-// ring's horizontal or vertical radius to place the pill on the
-// ellipse. Pre-computed; do not recompute at runtime.
-const RING_POSITIONS: readonly RingPosition[] = [
-  { id: 'neck',      xFactor:  0.000, yFactor: -1.000 },
-  { id: 'chest',     xFactor:  0.500, yFactor: -0.866 },
-  { id: 'r_bicep',   xFactor:  0.866, yFactor: -0.500 },
-  { id: 'r_forearm', xFactor:  1.000, yFactor:  0.000 },
-  { id: 'r_quad',    xFactor:  0.866, yFactor:  0.500 },
-  { id: 'r_calf',    xFactor:  0.500, yFactor:  0.866 },
-  { id: 'waist',     xFactor:  0.000, yFactor:  1.000 },
-  { id: 'l_calf',    xFactor: -0.500, yFactor:  0.866 },
-  { id: 'l_quad',    xFactor: -0.866, yFactor:  0.500 },
-  { id: 'l_forearm', xFactor: -1.000, yFactor:  0.000 },
-  { id: 'l_bicep',   xFactor: -0.866, yFactor: -0.500 },
-  { id: 'shoulders', xFactor: -0.500, yFactor: -0.866 },
+// Prompt #157r: anatomical anchor positions for the 12 muscle-group
+// pills. Coordinates are percent of the LegendBar overlay (which
+// the parent sizes to match the avatar's bounding box via
+// aspect-ratio). Each anchor's side controls how the pill is
+// translated off the anchor point so the pill never overlaps the
+// body silhouette. Centered-body labels (neck top, waist bottom)
+// use top / bottom translation; paired side labels (shoulders /
+// chest, biceps, forearms, quads, calves) use left / right.
+// Shoulders + chest, both centered on the body in the underlying
+// muscle anatomy, are split into upper-left / upper-right corner
+// labels so the two pills do not stack vertically. xPct and yPct
+// are tuned to hug the silhouette with 8 to 16 px of breathing
+// room at the male avatar's actual 720x1152 viewBox ratio (the
+// female 720x1008 viewBox is shorter, so female-side pills sit a
+// touch farther outside the silhouette; acceptable since pills
+// never overlap the body); the side translation pushes the pill
+// body off the anchor in the direction indicated.
+const RING_ANCHORS: readonly RingAnchor[] = [
+  { id: 'neck',      xPct: 50, yPct:  4, side: 'top'    },
+  { id: 'shoulders', xPct: 30, yPct: 18, side: 'left'   },
+  { id: 'chest',     xPct: 70, yPct: 18, side: 'right'  },
+  { id: 'l_bicep',   xPct: 18, yPct: 30, side: 'left'   },
+  { id: 'r_bicep',   xPct: 82, yPct: 30, side: 'right'  },
+  { id: 'l_forearm', xPct: 12, yPct: 42, side: 'left'   },
+  { id: 'r_forearm', xPct: 88, yPct: 42, side: 'right'  },
+  { id: 'waist',     xPct: 50, yPct: 50, side: 'top'    },
+  { id: 'l_quad',    xPct: 22, yPct: 62, side: 'left'   },
+  { id: 'r_quad',    xPct: 78, yPct: 62, side: 'right'  },
+  { id: 'l_calf',    xPct: 28, yPct: 80, side: 'left'   },
+  { id: 'r_calf',    xPct: 72, yPct: 80, side: 'right'  },
 ];
+
+function getSideTranslation(side: AnchorSide): string {
+  switch (side) {
+    case 'left':   return 'translate(-100%, -50%)';
+    case 'right':  return 'translate(0%, -50%)';
+    case 'top':    return 'translate(-50%, -100%)';
+    case 'bottom': return 'translate(-50%, 0%)';
+  }
+}
 
 const PILL_BASE =
   'rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(45,165,160,0.7)] focus-visible:ring-offset-2 focus-visible:ring-offset-[#1E3054]';
@@ -103,15 +122,8 @@ export function LegendBar({
         role="toolbar"
         aria-label="Body region ring"
         className={`pointer-events-none ${className ?? ''}`}
-        style={{
-          containerType: 'size',
-          '--avatar-height': '100cqh',
-          '--avatar-width': 'calc(var(--avatar-height) / 2.1)',
-          '--ring-rx': 'calc(var(--avatar-width) / 2 + 16px)',
-          '--ring-ry': 'calc(var(--avatar-height) / 2 + 16px)',
-        } as CSSProperties}
       >
-        {RING_POSITIONS.map(({ id, xFactor, yFactor }) => {
+        {RING_ANCHORS.map(({ id, xPct, yPct, side }) => {
           const isPinned = pinnedIds.includes(id);
           const isHovered = hoveredId === id;
           return (
@@ -124,9 +136,9 @@ export function LegendBar({
               onClick={() => onActivate(id)}
               className={`pointer-events-auto absolute whitespace-nowrap ${PILL_BASE} ${pillStateClasses(isPinned, isHovered)}`}
               style={{
-                top: '50%',
-                left: '50%',
-                transform: `translate(-50%, -50%) translateX(calc(var(--ring-rx) * ${xFactor})) translateY(calc(var(--ring-ry) * ${yFactor}))`,
+                left: `${xPct}%`,
+                top: `${yPct}%`,
+                transform: getSideTranslation(side),
               }}
             >
               {REGION_LABELS[id]}
