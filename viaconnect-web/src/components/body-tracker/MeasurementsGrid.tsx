@@ -22,7 +22,7 @@ export function MeasurementsGrid({ data, previous, unit }: MeasurementsGridProps
           <h4 className="mb-3 border-b border-white/[0.05] pb-1 text-xs uppercase tracking-widest text-white/30">
             {region.label}
           </h4>
-          <div className="grid grid-cols-2 gap-3">
+          <div className={`grid gap-3 grid-cols-1 ${region.cols === 3 ? 'sm:grid-cols-3' : 'sm:grid-cols-2'}`}>
             {region.measurements.map((key) => (
               <MeasurementCard
                 key={key}

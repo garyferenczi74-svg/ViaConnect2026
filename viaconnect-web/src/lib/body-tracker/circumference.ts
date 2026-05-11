@@ -1,6 +1,10 @@
-// Body Tracker — Circumference (12 measurement points) shared types, labels,
+// Body Tracker — Circumference (13 measurement points) shared types, labels,
 // conversions. Updated by Prompt #85d: renamed bicep + quadriceps fields, hip
-// removed from this surface. WHR scoring sources hip from body_tracker_weight.
+// removed from this surface. Updated by Prompt #155a: hip reintroduced to the
+// measurements UI without reversing #85d's storage architecture; hip read +
+// write still go through body_tracker_weight.hips_in (NOT body_tracker_
+// circumference) per the WHR-as-source-of-truth pattern. useCircumferenceData
+// fetches it via a second query and merges into the latest/previous frames.
 
 export type MeasurementUnit = 'in' | 'cm';
 
@@ -13,6 +17,7 @@ export const MEASUREMENT_KEYS = [
   'leftForearm',
   'chest',
   'waist',
+  'hip',
   'rightQuadriceps',
   'rightCalf',
   'leftQuadriceps',
@@ -28,7 +33,13 @@ export interface CircumferenceRecord extends CircumferenceMeasurements {
   entryUnit: MeasurementUnit;
 }
 
-// Maps camelCase TS field to snake_case body_tracker_circumference column
+// Maps camelCase TS field to snake_case body_tracker_circumference column.
+// Note hip is sourced externally from body_tracker_weight.hips_in (per
+// Prompt #85d storage decision). The 'hips_in' value below documents the
+// external column name; useCircumferenceData detects MEASUREMENT_EXTERNAL_KEYS
+// and routes those reads through a separate query against
+// body_tracker_weight, so rowToMeasurements still ignores hip when iterating
+// body_tracker_circumference rows.
 export const MEASUREMENT_DB_COLUMN: Record<MeasurementKey, string> = {
   neck: 'neck',
   shoulderWidth: 'shoulder_width',
@@ -38,10 +49,20 @@ export const MEASUREMENT_DB_COLUMN: Record<MeasurementKey, string> = {
   leftForearm: 'left_forearm',
   chest: 'chest',
   waist: 'waist',
+  hip: 'hips_in',
   rightQuadriceps: 'right_quadriceps',
   rightCalf: 'right_calf',
   leftQuadriceps: 'left_quadriceps',
   leftCalf: 'left_calf',
+};
+
+// Keys that live in a separate Supabase table from body_tracker_circumference.
+// useCircumferenceData runs a second query against the named table and merges
+// the value into the latest/previous frames at the corresponding key.
+export const MEASUREMENT_EXTERNAL_KEYS: Partial<
+  Record<MeasurementKey, { table: string; column: string; storedUnit: MeasurementUnit }>
+> = {
+  hip: { table: 'body_tracker_weight', column: 'hips_in', storedUnit: 'in' },
 };
 
 export const MEASUREMENT_LABELS: Record<MeasurementKey, string> = {
@@ -53,21 +74,27 @@ export const MEASUREMENT_LABELS: Record<MeasurementKey, string> = {
   leftForearm: 'Left Forearm',
   chest: 'Chest Circumference',
   waist: 'Waist Circumference',
+  hip: 'Hip Circumference',
   rightQuadriceps: 'Right Quadriceps',
   leftQuadriceps: 'Left Quadriceps',
   rightCalf: 'Right Calf',
   leftCalf: 'Left Calf',
 };
 
+// cols controls the responsive grid width applied per region in
+// MeasurementsGrid: 2 keeps the original two-column layout for the bilateral
+// arms + legs sections; 3 spreads chest, waist, hip across a single row on
+// desktop and tablet, stacking to single-column on mobile.
 export const BODY_REGIONS: Array<{
   id: 'upper_body' | 'arms' | 'torso' | 'legs';
   label: string;
+  cols: 2 | 3;
   measurements: MeasurementKey[];
 }> = [
-  { id: 'upper_body', label: 'Upper Body', measurements: ['neck', 'shoulderWidth'] },
-  { id: 'torso',      label: 'Torso',      measurements: ['chest', 'waist'] },
-  { id: 'arms',       label: 'Arms',       measurements: ['rightBicep', 'leftBicep', 'rightForearm', 'leftForearm'] },
-  { id: 'legs',       label: 'Legs',       measurements: ['rightQuadriceps', 'leftQuadriceps', 'rightCalf', 'leftCalf'] },
+  { id: 'upper_body', label: 'Upper Body', cols: 2, measurements: ['neck', 'shoulderWidth'] },
+  { id: 'torso',      label: 'Torso',      cols: 3, measurements: ['chest', 'waist', 'hip'] },
+  { id: 'arms',       label: 'Arms',       cols: 2, measurements: ['rightBicep', 'leftBicep', 'rightForearm', 'leftForearm'] },
+  { id: 'legs',       label: 'Legs',       cols: 2, measurements: ['rightQuadriceps', 'leftQuadriceps', 'rightCalf', 'leftCalf'] },
 ];
 
 // Pairs used by symmetry scoring

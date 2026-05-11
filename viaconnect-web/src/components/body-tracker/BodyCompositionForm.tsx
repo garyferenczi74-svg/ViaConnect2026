@@ -21,6 +21,7 @@ import {
 import {
   emptyMeasurements,
   MEASUREMENT_DB_COLUMN,
+  MEASUREMENT_EXTERNAL_KEYS,
   MEASUREMENT_KEYS,
   type CircumferenceMeasurements,
   type MeasurementUnit,
@@ -73,6 +74,7 @@ function hasAnyValue(state: Record<string, number | null>): boolean {
 function circumferenceRowFromState(state: CircumferenceFormState): Record<string, unknown> {
   const row: Record<string, unknown> = { entry_unit: state.unit };
   for (const key of MEASUREMENT_KEYS) {
+    if (MEASUREMENT_EXTERNAL_KEYS[key]) continue;
     row[MEASUREMENT_DB_COLUMN[key]] = state.values[key];
   }
   return row;

@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { UnitToggle } from './UnitToggle';
 import {
   BODY_REGIONS,
+  MEASUREMENT_EXTERNAL_KEYS,
   MEASUREMENT_LABELS,
   convertAllMeasurements,
   emptyMeasurements,
@@ -47,6 +48,7 @@ const COPY_PAIRS: Record<MeasurementKey, MeasurementKey | undefined> = {
   leftForearm: 'rightForearm',
   chest: undefined,
   waist: undefined,
+  hip: undefined,
   rightQuadriceps: undefined,
   rightCalf: undefined,
   leftQuadriceps: 'rightQuadriceps',
@@ -191,7 +193,9 @@ export function CircumferenceEntryForm(props: CircumferenceEntryFormProps) {
             {region.label}
           </h4>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            {region.measurements.map(renderField)}
+            {region.measurements
+              .filter((key) => !MEASUREMENT_EXTERNAL_KEYS[key])
+              .map(renderField)}
           </div>
         </section>
       ))}

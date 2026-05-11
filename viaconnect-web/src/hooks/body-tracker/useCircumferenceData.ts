@@ -4,8 +4,10 @@ import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import {
   MEASUREMENT_DB_COLUMN,
+  MEASUREMENT_EXTERNAL_KEYS,
   MEASUREMENT_KEYS,
   convertAllMeasurements,
+  convertMeasurement,
   emptyMeasurements,
   type CircumferenceMeasurements,
   type MeasurementUnit,
@@ -86,7 +88,7 @@ export function useCircumferenceData(opts: UseCircumferenceDataOptions): UseCirc
     (async () => {
       try {
         const supabase = createClient();
-        const { data: rows, error: dbErr } = await (supabase as never as {
+        const circumferenceQuery = (supabase as never as {
           from: (t: string) => {
             select: (cols: string) => {
               eq: (col: string, val: string) => {
@@ -103,32 +105,80 @@ export function useCircumferenceData(opts: UseCircumferenceDataOptions): UseCirc
           .order('created_at', { ascending: false })
           .limit(2);
 
+        const externalWeightQuery = (supabase as never as {
+          from: (t: string) => {
+            select: (cols: string) => {
+              eq: (col: string, val: string) => {
+                order: (col: string, opts: { ascending: boolean }) => {
+                  limit: (n: number) => Promise<{ data: Array<{ hips_in: number | null }> | null; error: { message: string } | null }>;
+                };
+              };
+            };
+          };
+        })
+          .from('body_tracker_weight')
+          .select('hips_in, created_at')
+          .eq('user_id', opts.userId!)
+          .order('created_at', { ascending: false })
+          .limit(2);
+
+        const [{ data: rows, error: dbErr }, { data: weightRows, error: weightErr }] = await Promise.all([
+          circumferenceQuery,
+          externalWeightQuery,
+        ]);
+
         if (cancelled) return;
         if (dbErr) throw new Error(dbErr.message);
+        if (weightErr) throw new Error(weightErr.message);
 
         const list = rows ?? [];
-        if (list.length === 0) {
+        const weightList = weightRows ?? [];
+
+        const hipExternal = MEASUREMENT_EXTERNAL_KEYS.hip;
+        const latestHipIn = weightList[0]?.hips_in ?? null;
+        const previousHipIn = weightList[1]?.hips_in ?? null;
+        const latestHipDisplay =
+          latestHipIn !== null && hipExternal
+            ? convertMeasurement(latestHipIn, hipExternal.storedUnit, opts.displayUnit)
+            : null;
+        const previousHipDisplay =
+          previousHipIn !== null && hipExternal
+            ? convertMeasurement(previousHipIn, hipExternal.storedUnit, opts.displayUnit)
+            : null;
+
+        if (list.length === 0 && weightList.length === 0) {
           setData(EMPTY);
           setLoading(false);
           return;
         }
 
-        const latestRow = list[0];
-        const latestRaw = rowToMeasurements(latestRow);
-        const latest = convertAllMeasurements(latestRaw, latestRow.entry_unit, opts.displayUnit);
-
+        let latest: CircumferenceMeasurements | null = null;
         let previous: CircumferenceMeasurements | null = null;
-        if (list.length > 1) {
-          const prevRow = list[1];
-          const prevRaw = rowToMeasurements(prevRow);
-          previous = convertAllMeasurements(prevRaw, prevRow.entry_unit, opts.displayUnit);
+        let lastLoggedDate: string | null = null;
+
+        if (list.length > 0) {
+          const latestRow = list[0];
+          const latestRaw = rowToMeasurements(latestRow);
+          latest = convertAllMeasurements(latestRaw, latestRow.entry_unit, opts.displayUnit);
+          lastLoggedDate = latestRow.body_tracker_entries?.entry_date ?? latestRow.created_at;
+
+          if (list.length > 1) {
+            const prevRow = list[1];
+            const prevRaw = rowToMeasurements(prevRow);
+            previous = convertAllMeasurements(prevRaw, prevRow.entry_unit, opts.displayUnit);
+          }
+        } else {
+          latest = emptyMeasurements();
         }
 
-        setData({
-          latest,
-          previous,
-          lastLoggedDate: latestRow.body_tracker_entries?.entry_date ?? latestRow.created_at,
-        });
+        if (latest) latest.hip = latestHipDisplay;
+        if (previous) previous.hip = previousHipDisplay;
+        else if (previousHipDisplay !== null) {
+          previous = emptyMeasurements();
+          previous.hip = previousHipDisplay;
+        }
+
+        setData({ latest, previous, lastLoggedDate });
         setLoading(false);
       } catch (e) {
         if (cancelled) return;
