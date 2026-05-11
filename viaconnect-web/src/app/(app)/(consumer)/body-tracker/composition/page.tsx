@@ -468,7 +468,7 @@ function CompositionPageInner() {
             <div className="flex flex-col lg:flex-1 lg:flex-row lg:items-stretch lg:gap-6 lg:min-h-0">
               <div
                 data-testid="avatar-container"
-                className="relative flex max-h-[60vh] items-center justify-center px-2 py-2 lg:max-h-none lg:min-h-0 lg:flex-1"
+                className="relative flex items-center justify-center px-2 py-2 lg:min-h-0 lg:flex-1"
                 style={{ filter: 'drop-shadow(0 0 20px rgba(45, 165, 160, 0.15))' }}
               >
                 <HoverSystem view="composition" sex={gender} regions={fatRegions} className="lg:h-full">
@@ -569,7 +569,7 @@ function CompositionPageInner() {
             <div className="flex flex-col lg:flex-1 lg:flex-row lg:items-stretch lg:gap-6 lg:min-h-0">
               <div
                 data-testid="avatar-container"
-                className="relative flex max-h-[60vh] items-center justify-center px-2 py-2 lg:max-h-none lg:min-h-0 lg:flex-1"
+                className="relative flex items-center justify-center px-2 py-2 lg:min-h-0 lg:flex-1"
                 style={{ filter: 'drop-shadow(0 0 20px rgba(45, 165, 160, 0.15))' }}
               >
                 <HoverSystem view="muscle" sex={gender} regions={muscleRegions} className="lg:h-full">
