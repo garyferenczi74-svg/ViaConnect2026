@@ -73,7 +73,7 @@ export default function PeptideProtocolRoute() {
                   <FlaskConical className="w-[18px] h-[18px] text-white" strokeWidth={1.5} />
                 </div>
                 <div className="min-w-0">
-                  <h1 className="text-lg font-semibold text-white truncate">Peptide Protocol</h1>
+                  <h1 className="text-lg font-semibold text-white truncate">Peptide Education</h1>
                   <p className="text-xs text-[rgba(255,255,255,0.45)] truncate">
                     Personalized peptide stack · Powered by Ultrathink™
                   </p>

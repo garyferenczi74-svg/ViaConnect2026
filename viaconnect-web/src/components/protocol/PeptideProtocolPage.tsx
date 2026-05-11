@@ -174,7 +174,7 @@ export default function PeptideProtocolPage({ masterPatterns, helixBalance, caqC
     <div className="max-w-4xl mx-auto py-6 px-4 md:px-6 space-y-6">
       {/* Page header */}
       <div>
-        <h1 className="text-2xl md:text-3xl font-bold text-white">Peptide Protocol</h1>
+        <h1 className="text-2xl md:text-3xl font-bold text-white">Peptide Education</h1>
         <p className="text-sm text-white/40 mt-1">Personalized oral peptides, Powered by Ultrathink</p>
       </div>
 

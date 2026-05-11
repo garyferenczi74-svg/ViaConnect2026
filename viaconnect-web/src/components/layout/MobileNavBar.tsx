@@ -24,7 +24,7 @@ const PORTAL_NAV: Record<string, NavItem[]> = {
     { href: '/wearables', label: 'Wearables Data', icon: Activity },
     { href: '/helix', label: 'Helix Rewards', icon: Dna },
     { href: '/genetics', label: 'Genetics Protocol', icon: Dna },
-    { href: '/peptide-protocol', label: 'Peptide Protocol', icon: FlaskConical },
+    { href: '/peptide-protocol', label: 'Peptide Education', icon: FlaskConical },
     { href: '/plugins', label: 'Plugins', icon: Plug },
     { href: '/messages', label: 'Connect', icon: MessageSquare },
     { href: '/media-sources', label: 'Research Hub', icon: Newspaper },

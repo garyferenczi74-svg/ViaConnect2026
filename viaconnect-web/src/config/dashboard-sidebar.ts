@@ -53,7 +53,7 @@ export const DASHBOARD_SIDEBAR_SECTIONS: DashboardSidebarSection[] = [
   },
   {
     id: "peptide-protocol",
-    label: "Peptide Protocol",
+    label: "Peptide Education",
     shortLabel: "Peptides",
     icon: "FlaskConical",
     scrollTarget: "#peptide-protocol",
