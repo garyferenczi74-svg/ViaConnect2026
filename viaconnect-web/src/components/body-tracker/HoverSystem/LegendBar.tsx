@@ -54,14 +54,14 @@ interface RingAnchor {
   readonly side: AnchorSide;
 }
 
-// Prompt #157r: anatomical anchor positions for the 13
+// Prompt #157r + #155: anatomical anchor positions for the 13
 // muscle-group pills. Coordinates are percent of the LegendBar
 // overlay (which the parent sizes to match the avatar's bounding
 // box via aspect-ratio). Each anchor's side controls how the pill
 // is translated off the anchor point so the pill never overlaps
 // the body silhouette. Only neck remains as a top-translated
 // centered label above the head; every other pill rides one of
-// the L/R paired positions, including the new waist (left) + hip
+// the L/R paired positions, including the waist (left) + hip
 // (right) pair between the forearms and quads. Quads shift down
 // to yPct 68 from 62 to clear the waist/hip pair; calves and
 // every other position from #157r preserved. xPct and yPct are
@@ -70,7 +70,11 @@ interface RingAnchor {
 // 720x1008 viewBox is shorter, so female-side pills sit a touch
 // farther outside the silhouette; acceptable since pills never
 // overlap the body); the side translation pushes the pill body
-// off the anchor in the direction indicated.
+// off the anchor in the direction indicated. Per #155 the
+// waist/hip pair sits at the outermost x positions (5 / 95)
+// because the avatar's silhouette is widest at this y level
+// (hands extend out from the body at hip level), requiring more
+// horizontal clearance than the forearm/bicep/quad/calf pairs.
 const RING_ANCHORS: readonly RingAnchor[] = [
   { id: 'neck',      xPct: 50, yPct:  4, side: 'top'    },
   { id: 'shoulders', xPct: 30, yPct: 18, side: 'left'   },
@@ -79,8 +83,8 @@ const RING_ANCHORS: readonly RingAnchor[] = [
   { id: 'r_bicep',   xPct: 82, yPct: 30, side: 'right'  },
   { id: 'l_forearm', xPct: 12, yPct: 42, side: 'left'   },
   { id: 'r_forearm', xPct: 88, yPct: 42, side: 'right'  },
-  { id: 'hip',       xPct: 82, yPct: 55, side: 'right'  },
-  { id: 'waist',     xPct: 18, yPct: 55, side: 'left'   },
+  { id: 'hip',       xPct: 95, yPct: 55, side: 'right'  },
+  { id: 'waist',     xPct:  5, yPct: 55, side: 'left'   },
   { id: 'l_quad',    xPct: 22, yPct: 68, side: 'left'   },
   { id: 'r_quad',    xPct: 78, yPct: 68, side: 'right'  },
   { id: 'l_calf',    xPct: 28, yPct: 80, side: 'left'   },
