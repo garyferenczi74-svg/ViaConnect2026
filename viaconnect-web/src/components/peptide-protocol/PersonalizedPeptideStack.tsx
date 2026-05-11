@@ -132,7 +132,7 @@ export function PersonalizedPeptideStack({ userId }: { userId?: string } = {}) {
         </button>
       </div>
 
-      <p className="text-sm text-[rgba(255,255,255,0.45)]">AI-powered personalized peptide protocol by Ultrathink™</p>
+      <p className="text-sm text-[rgba(255,255,255,0.45)]">Hannah AI Assistant</p>
 
       {/* ── ERRORS ── */}
       {fetchError && (
