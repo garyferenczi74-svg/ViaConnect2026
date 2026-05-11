@@ -175,7 +175,7 @@ export default function PeptideProtocolPage({ masterPatterns, helixBalance, caqC
       {/* Page header */}
       <div>
         <h1 className="text-2xl md:text-3xl font-bold text-white">Peptide Education</h1>
-        <p className="text-sm text-white/40 mt-1">Hannah AI Assistant</p>
+        <p className="text-sm text-white/40 mt-1">Personalized oral peptides, Powered by Hannah</p>
       </div>
 
       {/* Mandatory disclaimer */}

@@ -100,7 +100,7 @@ export default function RecommendedSupplements() {
         <div className="flex items-center gap-2 flex-wrap">
           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[rgba(45,165,160,0.15)] border border-[rgba(45,165,160,0.30)]">
             <Sparkles className="w-3.5 h-3.5 text-[#2DA5A0]" strokeWidth={1.5} />
-            <span className="text-xs font-semibold text-[#2DA5A0]">Ultrathink™ AI</span>
+            <span className="text-xs font-semibold text-[#2DA5A0]">Hannah AI</span>
           </div>
           {protocol && (
             <span className="text-xs text-[#2DA5A0] font-medium bg-[rgba(45,165,160,0.10)] px-2.5 py-1 rounded-full border border-[rgba(45,165,160,0.20)]">
@@ -150,7 +150,7 @@ export default function RecommendedSupplements() {
             <Sparkles className="w-8 h-8 text-white" strokeWidth={1.5} />
           </div>
           <p className="text-base font-semibold text-white">Your personalized protocol is ready to generate</p>
-          <p className="text-sm text-[rgba(255,255,255,0.45)] max-w-sm mx-auto">Ultrathink™ AI will analyze your health profile and recommend products tailored specifically to you.</p>
+          <p className="text-sm text-[rgba(255,255,255,0.45)] max-w-sm mx-auto">Hannah AI will analyze your health profile and recommend products tailored specifically to you.</p>
           <button onClick={generate} className="mt-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#1A2744] to-[#2DA5A0] text-white text-sm font-semibold border border-[rgba(45,165,160,0.40)] shadow-lg shadow-[rgba(45,165,160,0.15)] hover:from-[#2DA5A0] hover:to-[#1A2744] transition-all duration-300">Generate My Protocol</button>
         </div>
       )}

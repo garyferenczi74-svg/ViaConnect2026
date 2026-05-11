@@ -105,7 +105,7 @@ export function PersonalizedPeptideStack({ userId }: { userId?: string } = {}) {
             }}
           >
             <Sparkles className="w-3.5 h-3.5" strokeWidth={1.5} />
-            Ultrathink™ AI
+            Hannah AI
           </div>
           {protocol && (
             <span className="text-xs text-[#2DA5A0] font-medium bg-[rgba(45,165,160,0.10)] px-2.5 py-1 rounded-full border border-[rgba(45,165,160,0.20)]">
@@ -132,7 +132,7 @@ export function PersonalizedPeptideStack({ userId }: { userId?: string } = {}) {
         </button>
       </div>
 
-      <p className="text-sm text-[rgba(255,255,255,0.45)]">Hannah AI Assistant</p>
+      <p className="text-sm text-[rgba(255,255,255,0.45)]">AI-powered personalized peptide protocol by Hannah</p>
 
       {/* ── ERRORS ── */}
       {fetchError && (
@@ -172,7 +172,7 @@ export function PersonalizedPeptideStack({ userId }: { userId?: string } = {}) {
           <div>
             <p className="text-base font-semibold text-white">Your personalized protocol is ready to generate</p>
             <p className="text-sm text-[rgba(255,255,255,0.45)] mt-1 max-w-sm">
-              Ultrathink™ AI will analyze your health profile and recommend a peptide stack tailored specifically to you.
+              Hannah AI will analyze your health profile and recommend a peptide stack tailored specifically to you.
             </p>
           </div>
           <button

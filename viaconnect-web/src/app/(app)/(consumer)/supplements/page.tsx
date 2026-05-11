@@ -249,7 +249,7 @@ export default function SupplementsPage() {
       <SupplementsRetakeCard />
 
       {/* ═══ 2. RECOMMENDED SUPPLEMENTS — Powered by Ultrathink AI ═══ */}
-      <Section icon={Sparkles} iconColor="#2DA5A0" title="Recommended Supplements" subtitle="Hannah AI Assistant">
+      <Section icon={Sparkles} iconColor="#2DA5A0" title="Recommended Supplements" subtitle="AI-powered personalized protocol by Hannah">
         <div className="p-5 md:p-6">
           <RecommendedSupplements />
         </div>

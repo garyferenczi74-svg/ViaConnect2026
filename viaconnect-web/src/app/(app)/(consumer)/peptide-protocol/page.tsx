@@ -75,7 +75,7 @@ export default function PeptideProtocolRoute() {
                 <div className="min-w-0">
                   <h1 className="text-lg font-semibold text-white truncate">Peptide Education</h1>
                   <p className="text-xs text-[rgba(255,255,255,0.45)] truncate">
-                    Hannah AI Assistant
+                    Personalized peptide stack · Powered by Hannah
                   </p>
                 </div>
               </div>
