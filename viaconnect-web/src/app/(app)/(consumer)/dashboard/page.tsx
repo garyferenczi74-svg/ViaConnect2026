@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useUserDashboardData } from '@/hooks/useUserDashboardData';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
-import { BioOptimizationGauge } from '@/components/dashboard/BioOptimizationGauge';
+import { BOSCard } from '@/components/dashboard/bos-card';
 import { TodaysProtocol } from '@/components/dashboard/TodaysProtocol';
 import { WellnessSnapshot } from '@/components/dashboard/WellnessSnapshot';
 import { DailyScoresPanel } from '@/components/dashboard/DailyScoresPanel';
@@ -44,16 +44,6 @@ function DashboardSkeleton() {
   );
 }
 
-/* ── Tier helpers ───────────────────────────────────────────── */
-const tierMultiplier = (tier: string | null): number => {
-  const t = (tier || '').toLowerCase();
-  if (t.includes('platinum')) return 5;
-  if (t.includes('diamond')) return 5;
-  if (t.includes('gold')) return 2;
-  if (t.includes('silver')) return 1.5;
-  return 1;
-};
-
 /* ── Page ───────────────────────────────────────────────────── */
 export default function ConsumerDashboard() {
   const {
@@ -61,7 +51,6 @@ export default function ConsumerDashboard() {
     profile,
     supplements,
     adherence,
-    bioHistory,
     helixBalance,
     streak,
     assessmentCompleted,
@@ -85,20 +74,6 @@ export default function ConsumerDashboard() {
   }, []);
 
   if (loading) return <DashboardSkeleton />;
-
-  const bioScore = profile?.bio_optimization_score ?? 0;
-  const bioTier = profile?.bio_optimization_tier || 'Bronze';
-
-  // Weekly delta = current score − score ~7 entries ago
-  const weeklyDelta = (() => {
-    if (bioHistory.length < 2) return 0;
-    const latest = bioHistory[bioHistory.length - 1].score;
-    const weekAgo =
-      bioHistory.length >= 8
-        ? bioHistory[bioHistory.length - 8].score
-        : bioHistory[0].score;
-    return Math.round(latest - weekAgo);
-  })();
 
   const helixPoints = helixBalance?.current_balance ?? 0;
   const currentStreak = streak?.current_count ?? 0;
@@ -140,17 +115,9 @@ export default function ConsumerDashboard() {
           <DashboardHeader />
         </div>
 
-        {/* ── Bio Optimization Gauge — semi-transparent card over image ── */}
+        {/* ── Bio Optimization Score Card (Prompt #162) ── */}
         <div className="mx-auto w-full max-w-7xl px-4 mb-8 md:px-6">
-          <BioOptimizationGauge
-            score={bioScore}
-            tier={bioTier}
-            tierMultiplier={tierMultiplier(bioTier)}
-            hasCAQ={assessmentCompleted}
-            hasLabs={false}
-            hasGenetics={false}
-            weeklyDelta={weeklyDelta}
-          />
+          <BOSCard />
         </div>
 
         {/* ── All remaining content — image fades as overlay darkens ── */}
