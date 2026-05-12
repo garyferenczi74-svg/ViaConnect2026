@@ -19,7 +19,6 @@ import { ArrowRight, Sparkles } from 'lucide-react';
 import type { BOSCurrentResponse } from '@/lib/scoring/types';
 import { BOSScoreGauge } from './bos-score-gauge';
 import { BOSStaticExplanation } from './bos-static-explanation';
-import { BOSExplanation } from './bos-explanation';
 import { BOSAccuracyRow } from './bos-accuracy-row';
 import { BOSEngagementRow } from './bos-engagement-row';
 
@@ -64,9 +63,6 @@ export function BOSCardEmptyState({ data }: BOSCardEmptyStateProps) {
 
         {/* Static teaching paragraph */}
         <BOSStaticExplanation />
-
-        {/* Hannah's pre-compute message */}
-        <BOSExplanation text={data.hannah_explanation} />
 
         {/* Accuracy row (CAQ shows incomplete; tap to start) */}
         <BOSAccuracyRow pills={data.accuracy_pills} />

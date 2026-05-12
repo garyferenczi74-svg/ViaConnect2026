@@ -1,5 +1,5 @@
 // BOSCardSkeleton: loading shimmer that mirrors the populated card's
-// six section vertical rhythm per #161e §6.9. Includes a circular
+// five section vertical rhythm per #161e §6.9. Includes a circular
 // placeholder for the gauge.
 //
 // No animation libraries; pure Tailwind animate-pulse so this can
@@ -32,14 +32,7 @@ export function BOSCardSkeleton() {
           <div className="h-3 w-5/6 animate-pulse rounded-full bg-white/10" />
         </div>
 
-        {/* 4. Hannah panel */}
-        <div className="space-y-2 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-          <div className="h-3 w-20 animate-pulse rounded-full bg-white/10" />
-          <div className="h-3 w-3/4 animate-pulse rounded-full bg-white/10" />
-          <div className="h-3 w-2/3 animate-pulse rounded-full bg-white/10" />
-        </div>
-
-        {/* 5. Accuracy row */}
+        {/* 4. Accuracy row */}
         <div className="space-y-2">
           <div className="h-3 w-28 animate-pulse rounded-full bg-white/10" />
           <div className="h-3 w-3/4 animate-pulse rounded-full bg-white/10" />
@@ -50,7 +43,7 @@ export function BOSCardSkeleton() {
           </div>
         </div>
 
-        {/* 6. Engagement row */}
+        {/* 5. Engagement row */}
         <div className="space-y-2">
           <div className="h-3 w-44 animate-pulse rounded-full bg-white/10" />
           <div className="h-3 w-5/6 animate-pulse rounded-full bg-white/10" />
