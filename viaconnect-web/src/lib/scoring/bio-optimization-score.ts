@@ -55,9 +55,6 @@ import type {
   BOSTriggerEvent,
   BOSTriggerSource,
   BOSBreakdownJSONB,
-  DiagnosticFoundation,
-  EngagementContribution,
-  EngagementLeverState,
 } from './types';
 
 // ---------------------------------------------------------------------------
@@ -65,7 +62,9 @@ import type {
 // ---------------------------------------------------------------------------
 
 const COMPUTE_VERSION = '2.0.0';
-const PROMPT_VERSION = 'hannah.bos.v2.0.0';
+// #161c Item 10: v2.0.0 -> v2.0.1 to reflect the prompt-content change (decay
+// numbers now template-substituted from HALF_LIFE_DAYS / FULL_DECAY_DAYS).
+const PROMPT_VERSION = 'hannah.bos.v2.0.1';
 const DEFAULT_MODEL = 'claude-sonnet-4-5';
 const MAX_TOKENS = 1024;
 
@@ -304,47 +303,6 @@ async function callHannahWithRetry(args: CallHannahArgs): Promise<CallHannahResu
 // Build BOSBreakdownJSONB from gathered sources + Hannah output
 // ---------------------------------------------------------------------------
 
-function buildDiagnosticFoundation(
-  caq: CAQSourceLike,
-  _labs: LabsSourceLike,
-  genetics: GeneticsSourceLike,
-): DiagnosticFoundation {
-  return {
-    caqCompletedAt: caq.completed_at,
-    bmiAtCompute: null,
-    ageAtCompute: null,
-    symptomLoad: { physical: 0, neurological: 0, emotional: 0 },
-    chronicRiskFlags: [],
-    geneticsCoverage: genetics.panel === 'genex360_v1' ? 'genex360' : 'none',
-  };
-}
-
-function buildEngagementContribution(hannah: HannahOutput): EngagementContribution {
-  const levers: EngagementLeverState[] = [];
-  // Map Hannah's 6-lever contribution payload to the legacy
-  // EngagementLeverState array shape (used by downstream renderers).
-  // Each contribution becomes one lever entry; weights default to 1/6
-  // and freshness is derived from state.
-  const entries = Object.entries(hannah.engagement) as Array<[
-    string,
-    { current_contribution_pct: number; state: string },
-  ]>;
-  for (const [key, contribution] of entries) {
-    const freshness = contribution.state === 'unused' ? 'missing' : 'fresh';
-    levers.push({
-      key: key as EngagementLeverState['key'],
-      value: contribution.current_contribution_pct,
-      weight: 1 / 6,
-      freshness: freshness as EngagementLeverState['freshness'],
-    });
-  }
-  return {
-    total: hannah.engagement_total,
-    levers,
-    blendRatio: 1,
-  };
-}
-
 interface BuildBreakdownArgs {
   caq: CAQSourceLike;
   labs: LabsSourceLike;
@@ -363,25 +321,11 @@ interface BuildBreakdownArgs {
   previous: PreviousBOSRow;
 }
 
-function buildBreakdown(args: BuildBreakdownArgs): BOSBreakdownJSONB & {
-  hannah_output: HannahOutput;
-  diagnostic_foundation: HannahInputBundle['diagnostic_foundation'];
-  engagement_state: HannahInputBundle['engagement_state'];
-  previous: PreviousBOSRow;
-  tier: BOSTier;
-  trigger: { source: BOSTriggerSource; event_id?: string; bypass_cooldown: boolean };
-  _compute_meta: BOSBreakdownJSONB['_compute_meta'] & {
-    model: string;
-    prompt_version: string;
-    compute_duration_ms: number;
-    input_token_count: number | null;
-    output_token_count: number | null;
-    api_request_id: string | null;
-  };
-} {
+// #161c Item 11: BOSBreakdownJSONB was widened to its canonical 7-key shape
+// so the prior intersection cast is now redundant. The function returns the
+// canonical type directly.
+function buildBreakdown(args: BuildBreakdownArgs): BOSBreakdownJSONB {
   return {
-    diagnostic: buildDiagnosticFoundation(args.caq, args.labs, args.genetics),
-    engagement: buildEngagementContribution(args.hannah),
     hannah_output: args.hannah,
     // Q4 (Gary 2026-05-11) locks the read API contract on these keys.
     // The bundle snapshot is persisted alongside the compact diagnostic
@@ -598,7 +542,7 @@ export async function computeBOS(
     score: hannah.score,
     tier,
     confidence,
-    breakdown: breakdown as BOSBreakdownJSONB,
+    breakdown,
     computeVersion: COMPUTE_VERSION,
     computeSeq: 1, // RPC auto-increments; we return 1 as a placeholder.
     computedAt: finishedAt,

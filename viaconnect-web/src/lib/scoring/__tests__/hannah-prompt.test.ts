@@ -11,6 +11,7 @@ import {
   buildHannahUserMessage,
   type HannahInputBundle,
 } from '../hannah-prompt';
+import { HALF_LIFE_DAYS, FULL_DECAY_DAYS } from '../types';
 
 const EM_DASH = '—';
 const EN_DASH = '–';
@@ -103,6 +104,21 @@ describe('HANNAH_SYSTEM_PROMPT brand and tone', () => {
     expect(HANNAH_SYSTEM_PROMPT.toLowerCase()).toContain('floor');
     expect(HANNAH_SYSTEM_PROMPT.toLowerCase()).toContain('ceiling');
     expect(HANNAH_SYSTEM_PROMPT.toLowerCase()).toContain('decay');
+  });
+
+  // #161c Item 10: decay numbers are substituted from HALF_LIFE_DAYS and
+  // FULL_DECAY_DAYS so the prompt and the constants stay in lockstep.
+  it('contains the substituted half-life day count', () => {
+    expect(HANNAH_SYSTEM_PROMPT).toContain(`half-life of ${HALF_LIFE_DAYS} days`);
+  });
+
+  it('contains the substituted full-decay day count', () => {
+    expect(HANNAH_SYSTEM_PROMPT).toContain(`full decay at ${FULL_DECAY_DAYS} days`);
+  });
+
+  it('contains the literal strings 7 days and 14 days (matching the canonical decay policy)', () => {
+    expect(HANNAH_SYSTEM_PROMPT).toContain('7 days');
+    expect(HANNAH_SYSTEM_PROMPT).toContain('14 days');
   });
 
   it('mentions getDisplayName usage or display_name addressing', () => {

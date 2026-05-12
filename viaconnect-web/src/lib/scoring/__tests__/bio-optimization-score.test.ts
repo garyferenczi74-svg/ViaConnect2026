@@ -283,6 +283,29 @@ describe('computeBOS happy path', () => {
     expect(meta).toHaveProperty('output_token_count');
     expect(meta).toHaveProperty('api_request_id');
   });
+
+  // #161c Item 10: prompt_version bumped from v2.0.0 to v2.0.1 to reflect
+  // the decay-numbers-from-constants change.
+  it('breakdown._compute_meta.prompt_version is hannah.bos.v2.0.1', async () => {
+    const result = await computeBOS('00000000-0000-0000-0000-000000000001', trigger());
+    const meta = (result.breakdown as { _compute_meta: { prompt_version: string } })._compute_meta;
+    expect(meta.prompt_version).toBe('hannah.bos.v2.0.1');
+  });
+
+  // #161c Item 11: BOSBreakdownJSONB widened to its 7-key canonical shape.
+  // Persisted breakdown must include every canonical key the route handler
+  // reads from /api/bos/current.
+  it('persisted breakdown has all 7 canonical keys', async () => {
+    const result = await computeBOS('00000000-0000-0000-0000-000000000001', trigger());
+    const breakdown = result.breakdown as Record<string, unknown>;
+    expect(breakdown).toHaveProperty('diagnostic_foundation');
+    expect(breakdown).toHaveProperty('engagement_state');
+    expect(breakdown).toHaveProperty('hannah_output');
+    expect(breakdown).toHaveProperty('previous');
+    expect(breakdown).toHaveProperty('tier');
+    expect(breakdown).toHaveProperty('trigger');
+    expect(breakdown).toHaveProperty('_compute_meta');
+  });
 });
 
 // ---------------------------------------------------------------------------

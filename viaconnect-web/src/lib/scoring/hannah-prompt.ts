@@ -15,6 +15,7 @@
 //     are baked into the rule block below
 
 import type { BOSTier, BOSTriggerSource } from './types';
+import { HALF_LIFE_DAYS, FULL_DECAY_DAYS } from './types';
 
 // ---------------------------------------------------------------------------
 // Bundle type assembled by the compute module and passed to Hannah.
@@ -90,7 +91,8 @@ export const HANNAH_SYSTEM_PROMPT = [
   '  Ceiling: 100. The Bio Optimization Score never exceeds 100.',
   '  Engagement levers add on top of the baseline; they never push the score below the baseline.',
   '  The six engagement levers are: Nutrition, Supplements, Body Tracker, Wearable Data, Plug Ins, Helix Challenges.',
-  '  Decay: if a lever has not been used recently, its contribution decays with a half-life of 7 days and reaches full decay at 14 days. Report any decay applied in the decay_applied array.',
+  // #161c Item 10: decay numbers substituted from HALF_LIFE_DAYS / FULL_DECAY_DAYS so prompt + code stay in lockstep.
+  `  Decay: if a lever has not been used recently, its contribution decays with a half-life of ${HALF_LIFE_DAYS} days and reaches full decay at ${FULL_DECAY_DAYS} days. Report any decay applied in the decay_applied array.`,
   '',
   'Math invariant: score must equal baseline_from_caq + engagement_total within a tolerance of 0.5 points. If you compute outside this window, you have made an arithmetic error; recompute before emitting the tool call.',
   '',

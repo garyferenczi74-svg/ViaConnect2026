@@ -11,6 +11,21 @@
 // types.
 
 // -----------------------------------------------------------------------------
+// Decay policy constants (#161c Item 10)
+// -----------------------------------------------------------------------------
+
+/**
+ * Hannah decay policy parameters. Half-life is the number of days after which
+ * a lever contribution decays to 50% of its current value if not refreshed.
+ * Full decay is the number of days after which a lever contribution decays to
+ * approximately 0%. These are referenced by Hannah's system prompt (lockstep
+ * via template substitution) and by any future server-side decay validators.
+ * Changing either value requires a Hannah voice review and a prompt_version bump.
+ */
+export const HALF_LIFE_DAYS = 7;
+export const FULL_DECAY_DAYS = 14;
+
+// -----------------------------------------------------------------------------
 // Score band classification
 // -----------------------------------------------------------------------------
 
@@ -135,18 +150,120 @@ export interface EngagementContribution {
 }
 
 // -----------------------------------------------------------------------------
-// Persisted breakdown JSONB shape
+// Persisted breakdown JSONB shape (#161c Item 11)
 // -----------------------------------------------------------------------------
 
 /**
+ * Diagnostic foundation snapshot persisted alongside the BOS row. Mirrors
+ * the bundle shape passed into Hannah (caq + labs + genetics sub-objects),
+ * which is what /api/bos/current reads when assembling accuracy pills.
+ */
+export interface BreakdownDiagnosticFoundation {
+  caq: {
+    completed: boolean;
+    completed_at: string | null;
+    baseline_score: number | null;
+    version_number: number | null;
+  };
+  labs: {
+    present: boolean;
+    uploaded_at: string | null;
+    panel_count: number;
+  };
+  genetics: {
+    present: boolean;
+    processed_at: string | null;
+    panel: string | null;
+  };
+}
+
+/**
+ * Per-lever last-engaged snapshot persisted alongside the BOS row. Mirrors
+ * the bundle shape passed into Hannah for the six engagement levers, which
+ * is what /api/bos/current reads when assembling engagement pills.
+ */
+export interface BreakdownEngagementLever {
+  last_engaged_at: string | null;
+  recent_events_7d: number;
+  recent_events_30d: number;
+}
+
+export interface BreakdownEngagementState {
+  nutrition: BreakdownEngagementLever;
+  supplements: BreakdownEngagementLever;
+  body_tracker: BreakdownEngagementLever;
+  wearable: BreakdownEngagementLever;
+  plug_ins: BreakdownEngagementLever;
+  helix_challenges: BreakdownEngagementLever;
+}
+
+/**
+ * Hannah agent tool-call output as persisted in the breakdown. Mirrors the
+ * runtime-validated HannahOutput shape from hannah-output-schema.ts but
+ * stays in this pure-types module (no zod import). The route handler reads
+ * .explanation and .engagement off this shape.
+ */
+export interface BreakdownHannahOutput {
+  score: number;
+  baseline_from_caq: number;
+  engagement_total: number;
+  engagement: Record<
+    'nutrition' | 'supplements' | 'body_tracker' | 'wearable' | 'plug_ins' | 'helix_challenges',
+    {
+      current_contribution_pct: number;
+      velocity_pct: number;
+      ceiling_pct: number;
+      state: 'unused' | 'in_use' | 'at_ceiling';
+    }
+  >;
+  decay_applied: Array<{
+    lever: string;
+    days_since_engagement: number;
+    decay_factor: number;
+  }>;
+  explanation: string;
+}
+
+/**
+ * Previous-row snapshot embedded in the breakdown. Mirrors the
+ * PreviousBOSRow helper shape in bio-optimization-score.ts.
+ */
+export interface BreakdownPrevious {
+  score: number | null;
+  computed_at: string | null;
+  compute_version: string | null;
+}
+
+/**
+ * Trigger snapshot embedded in the breakdown. Mirrors the trigger sub-object
+ * the bundle carries; bypass_cooldown is snake_case here because that is
+ * what the bundle persists.
+ */
+export interface BreakdownTrigger {
+  source: BOSTriggerSource;
+  event_id?: string;
+  bypass_cooldown: boolean;
+}
+
+/**
  * Canonical shape of the `breakdown` jsonb column on
- * bio_optimization_history. Stored verbatim by the SSOT RPC. The
- * `_compute_meta` sub-object carries the compute pipeline's audit
- * trail and is preserved by every consumer.
+ * bio_optimization_history. Stored verbatim by the SSOT RPC.
+ *
+ * Shape widened by #161c Item 11 (Jeffery phase-review): the prior
+ * narrow shape (diagnostic + engagement + _compute_meta) was a subset
+ * of what buildBreakdown actually persists. The route handler at
+ * /api/bos/current reads diagnostic_foundation, engagement_state,
+ * hannah_output, previous, tier, and trigger directly, so all seven
+ * keys are now part of the canonical type. The buildBreakdown
+ * intersection cast is removed as redundant.
  */
 export interface BOSBreakdownJSONB {
-  diagnostic: DiagnosticFoundation;
-  engagement: EngagementContribution;
+  diagnostic_foundation: BreakdownDiagnosticFoundation;
+  engagement_state: BreakdownEngagementState;
+  hannah_output: BreakdownHannahOutput;
+  previous: BreakdownPrevious;
+  tier: BOSTier;
+  trigger: BreakdownTrigger;
   _compute_meta: {
     compute_version: string;
     triggered_by: BOSTriggerSource;
@@ -155,6 +272,12 @@ export interface BOSBreakdownJSONB {
     started_at: string;
     finished_at: string;
     cooldown_status: 'fresh' | 'bypassed' | 'expired';
+    model: string;
+    prompt_version: string;
+    compute_duration_ms: number;
+    input_token_count: number | null;
+    output_token_count: number | null;
+    api_request_id: string | null;
   };
   // Pre-SSOT rows carry a sentinel marker injected by the migration's
   // backfill step. New rows authored by the SSOT RPC do not include
