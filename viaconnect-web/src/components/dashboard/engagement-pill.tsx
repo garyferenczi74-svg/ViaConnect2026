@@ -2,26 +2,24 @@
 
 // EngagementPill: single engagement pill (one of six levers).
 //
-// State machine per #161e §6.7:
-//   unused       bg-transparent + white/30 border, no velocity number,
-//                sub-label "Start logging"
-//   in_use       bg-transparent + teal-accent border, prominent
-//                "+X.X pts/day" velocity, sub-label "Active"
-//   at_ceiling   bg-[#2DA5A0]/12 (filled teal at low saturation),
-//                Check icon, sub-label "At ceiling"
+// Patch pass (Phase A corrective + Gary directive): pills now carry a
+// per-lever bg-gradient-to-br background, with state-driven
+// modulation layered on top:
+//   unused      gradient dimmed to opacity-60
+//   in_use      full saturation, prominent "+X.X pts/day" velocity
+//   at_ceiling  ring-2 ring-[#2DA5A0]/40 over the gradient + Check
 //
-// Mobile fit (#161e §6.7 + AC11): cells around 110px wide at 380px
-// viewport with grid-cols-3 gap-2. Pill content stacks vertically
-// (icon + label, then state line). The text-[11px] / truncate
-// combination keeps labels like "Body Tracker" inside the cell.
+// Pills are rounded-xl (chunkier than the rounded-full accuracy pills)
+// because the velocity number reads larger and benefits from the
+// extra interior space.
 //
 // preCompute disables the pill (visible but non interactive) for the
 // empty state. When the destination route is not wired, renders
 // disabled with a "Coming Soon" subline.
 //
-// Pure helpers (state classifier, velocity formatter, aria-label
-// builder) live in bos-pill-helpers.ts so they can be imported by
-// JSX-free tests.
+// Pure helpers (state classifier, gradient lookup, state modifier,
+// velocity formatter, aria-label builder) live in bos-pill-helpers.ts
+// so they can be imported by JSX-free tests.
 
 import Link from 'next/link';
 import { Check } from 'lucide-react';
@@ -30,6 +28,8 @@ import { ENGAGEMENT_PILL_ICONS } from '@/lib/scoring/pill-icons';
 import { getPillRoute } from '@/lib/scoring/pill-routes';
 import {
   engagementPillClassesForState,
+  engagementGradientForKey,
+  engagementStateModifier,
   buildEngagementAriaLabel,
   formatVelocity,
 } from './bos-pill-helpers';
@@ -39,10 +39,18 @@ export interface EngagementPillProps {
   preCompute?: boolean;
 }
 
-export { engagementPillClassesForState, buildEngagementAriaLabel, formatVelocity };
+export {
+  engagementPillClassesForState,
+  engagementGradientForKey,
+  engagementStateModifier,
+  buildEngagementAriaLabel,
+  formatVelocity,
+};
 
 export function EngagementPill({ pill, preCompute = false }: EngagementPillProps) {
   const classes = engagementPillClassesForState(pill.state);
+  const gradient = engagementGradientForKey(pill.key);
+  const modifier = engagementStateModifier(pill.state);
   const ariaLabel = buildEngagementAriaLabel(pill, preCompute);
   const route = getPillRoute(pill.destination_key);
   const Icon = ENGAGEMENT_PILL_ICONS[pill.key];
@@ -75,7 +83,7 @@ export function EngagementPill({ pill, preCompute = false }: EngagementPillProps
     </>
   );
 
-  const base = `inline-flex w-full min-h-[56px] flex-col items-center justify-center rounded-full border px-2 py-2 transition-all duration-200 ${classes.base}`;
+  const base = `inline-flex w-full min-h-[56px] flex-col items-center justify-center rounded-xl border px-2 py-2 transition-all duration-200 ${gradient} ${modifier} ${classes.base}`;
 
   if (preCompute) {
     return (

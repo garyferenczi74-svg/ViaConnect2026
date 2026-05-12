@@ -18,6 +18,7 @@ const BOS_FILES = [
   'bos-card-error.tsx',
   'bos-card-skeleton.tsx',
   'bos-score-gauge.tsx',
+  'bos-side-panel.tsx',
   'bos-static-explanation.tsx',
   'bos-explanation.tsx',
   'bos-accuracy-row.tsx',
@@ -63,4 +64,38 @@ describe('BOS card uses Bio Optimization Score not Vitality', () => {
       expect(src).not.toMatch(/Vitality\s+Score/i);
     });
   }
+});
+
+describe('BOS card middle-dot allowance (U+00B7)', () => {
+  // The patch pass introduces " · unlock" / " · pending" suffixes on
+  // accuracy pills and "Tier 1 · 1.5x" composition on the tier chip.
+  // U+00B7 (middle dot) is NOT in the banned set; only en-dash
+  // (U+2013) and em-dash (U+2014) are. This test pins that distinction
+  // so the Marshall pre-delivery scan continues to allow the middle
+  // dot.
+
+  it('accuracy-pill.tsx contains the U+00B7 middle dot', () => {
+    const src = readFileSync(path.join(ROOT, 'accuracy-pill.tsx'), 'utf-8');
+    expect(src).toMatch(/·/);
+  });
+
+  it('bos-side-panel.tsx is free of banned dashes (middle dot used elsewhere via helper)', () => {
+    const src = readFileSync(path.join(ROOT, 'bos-side-panel.tsx'), 'utf-8');
+    expect(src).not.toMatch(/—/);
+    expect(src).not.toMatch(/–/);
+  });
+
+  it('U+00B7 is not a member of the banned em/en-dash set', () => {
+    const middleDot = '·';
+    expect(middleDot).not.toMatch(/—/);
+    expect(middleDot).not.toMatch(/–/);
+  });
+});
+
+describe('BOS card container glow tracks the band color', () => {
+  it('bos-card-client.tsx uses colorForScore to derive the glow background', () => {
+    const src = readFileSync(path.join(ROOT, 'bos-card-client.tsx'), 'utf-8');
+    expect(src).toContain('colorForScore');
+    expect(src).toContain('backgroundColor: bandColor');
+  });
 });

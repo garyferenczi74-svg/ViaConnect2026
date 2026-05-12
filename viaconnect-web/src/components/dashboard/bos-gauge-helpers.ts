@@ -4,6 +4,12 @@
 //
 // The .tsx gauge component imports these and re-exports them through
 // __testables for legacy compatibility.
+//
+// Patch pass (Phase A corrective): canonical legacy geometry is a
+// SINGLE size (240px outer diameter, 14px stroke) used responsively
+// via CSS, matching the recovered BioOptimizationGauge.tsx. The dual
+// 120/160 mobile/desktop branch from the earlier rewrite is removed
+// because it diverged from the legacy's hero-scale visual language.
 
 // 5 tier color band per legacy BioOptimizationGauge.colorForScore.
 export function colorForScore(score: number): string {
@@ -27,8 +33,11 @@ export function sentenceCase(label: string): string {
 }
 
 // SVG geometry. 270 degree sweep open at bottom; rotation 135deg.
+// Canonical legacy dimensions: 240px outer, 14px stroke.
 export const SWEEP_DEGREES = 270;
 export const START_ANGLE_DEGREES = 135;
+export const GAUGE_SIZE = 240;
+export const GAUGE_STROKE = 14;
 
 export function geometryFor(size: number, stroke: number): {
   radius: number;
@@ -41,4 +50,13 @@ export function geometryFor(size: number, stroke: number): {
   const circumference = 2 * Math.PI * radius;
   const arcLength = (SWEEP_DEGREES / 360) * circumference;
   return { radius, center, circumference, arcLength };
+}
+
+// Pure math kernel for the legacy useCountUp animator. Ease-out-cubic
+// over the 0..1 progress range, rounded to an integer. Extracted so
+// Vitest can assert the curve without requestAnimationFrame timing.
+export function countUpValueAtProgress(target: number, progress: number): number {
+  const clamped = Math.max(0, Math.min(1, progress));
+  const eased = 1 - Math.pow(1 - clamped, 3);
+  return Math.round(target * eased);
 }

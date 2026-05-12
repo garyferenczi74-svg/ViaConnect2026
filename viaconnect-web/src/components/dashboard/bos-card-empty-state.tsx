@@ -3,15 +3,16 @@
 // BOSCardEmptyState: pre-compute treatment for the BOS card.
 //
 // Rendered when /api/bos/current returns score = null (user has not
-// completed the CAQ). Mirrors the populated card's six section
-// vertical rhythm so the user sees the shape of what unlocks. The
-// gauge renders in placeholder mode (no fill, "--" centered) and the
-// pill rows render with their state-distinct visual treatments
-// (CAQ incomplete shows the orange unlock chip; engagement pills
-// render as preCompute disabled).
-//
-// The CAQ CTA sits between the gauge and the static explanation so
-// the user can act before reading.
+// completed the CAQ). The empty state preserves the populated card's
+// container styling (gradient + glow) so the user sees the shape of
+// what unlocks, with these differences:
+//   - Headline reads "Start with your CAQ to unlock your score"
+//     (replaces the side panel's "Your score is..." headline)
+//   - Gauge renders in placeholder mode (no fill ring, "--" centered)
+//   - Side panel is omitted (info chips and 5-dot indicator have
+//     nothing to surface pre-CAQ)
+//   - CAQ CTA sits between the gauge and the static explanation
+//   - Engagement row renders preCompute (disabled but visible)
 
 import Link from 'next/link';
 import { ArrowRight, Sparkles } from 'lucide-react';
@@ -39,7 +40,7 @@ export function BOSCardEmptyState({ data }: BOSCardEmptyStateProps) {
 
       <div className="relative flex flex-col gap-5 sm:gap-6">
         {/* Header */}
-        <header>
+        <header className="text-center md:text-left">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-white/40">
             Bio Optimization Score
           </p>
@@ -64,12 +65,10 @@ export function BOSCardEmptyState({ data }: BOSCardEmptyStateProps) {
         {/* Static teaching paragraph */}
         <BOSStaticExplanation />
 
-        {/* Hannah's pre-compute message (carries the "Complete your CAQ"
-            voice line from the route handler) */}
+        {/* Hannah's pre-compute message */}
         <BOSExplanation text={data.hannah_explanation} />
 
-        {/* Accuracy row (CAQ shows incomplete unlock; user can tap to
-            start the assessment) */}
+        {/* Accuracy row (CAQ shows incomplete; tap to start) */}
         <BOSAccuracyRow pills={data.accuracy_pills} />
 
         {/* Engagement row (preCompute disabled until CAQ exists) */}

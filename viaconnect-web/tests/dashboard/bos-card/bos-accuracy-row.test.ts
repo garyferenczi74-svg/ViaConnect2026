@@ -33,26 +33,28 @@ describe('BOSAccuracyRow / verbatim copy', () => {
   });
 });
 
-describe('AccuracyPill / state matrix', () => {
+describe('AccuracyPill / state matrix (canonical legacy)', () => {
   it('complete state uses teal background and Complete label', () => {
     const c = accuracyPillClassesForState('complete');
     expect(c.base).toContain('bg-[#2DA5A0]/15');
-    expect(c.base).toContain('border-[#2DA5A0]');
+    expect(c.base).toContain('border-[#2DA5A0]/30');
     expect(c.base).toContain('text-[#2DA5A0]');
     expect(c.stateLabel).toBe('Complete');
   });
 
-  it('incomplete state uses orange outline and Unlock label', () => {
+  it('incomplete state uses dim neutral background (legacy locked treatment)', () => {
     const c = accuracyPillClassesForState('incomplete');
-    expect(c.base).toContain('bg-transparent');
-    expect(c.base).toContain('border-[#B75E18]/60');
+    expect(c.base).toContain('bg-white/[0.04]');
+    expect(c.base).toContain('border-white/10');
+    expect(c.base).toContain('text-white/40');
     expect(c.stateLabel).toBe('Unlock');
   });
 
   it('awaiting_results state uses neutral outline and Awaiting label', () => {
     const c = accuracyPillClassesForState('awaiting_results');
-    expect(c.base).toContain('bg-transparent');
     expect(c.base).toContain('border-white/30');
+    expect(c.base).toContain('bg-white/[0.05]');
+    expect(c.base).toContain('text-white/70');
     expect(c.stateLabel).toBe('Awaiting results');
   });
 

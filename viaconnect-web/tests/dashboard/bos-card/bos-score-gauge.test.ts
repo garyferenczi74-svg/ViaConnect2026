@@ -1,11 +1,16 @@
-// Prompt #161e: tests for BOSScoreGauge data-seam helpers.
+// Prompt #161e patch pass: tests for BOSScoreGauge data-seam helpers,
+// aligned to the canonical legacy geometry (240px outer diameter,
+// 14px stroke, 270 degree sweep open at the bottom, 135 degree start
+// rotation). The legacy treatment is a single size used responsively
+// via CSS; no dual mobile/desktop branch in the helper layer.
 //
 // Vitest runs under environment: 'node' (see vitest.config.ts). The
 // project does not currently ship jsdom or happy-dom, so JSX rendering
-// tests via @testing-library/react are deferred. Per the corrective
-// rewrite dispatch, this file asserts the pure helpers exported from
-// bos-gauge-helpers.ts. The visual rendering is verified during
-// Vercel preview screenshot sign-off.
+// tests via @testing-library/react are deferred. This file asserts
+// the pure helpers exported from bos-gauge-helpers.ts (band classifier,
+// label classifier, sentence case, geometry helper, and the
+// useCountUp animator's per-frame easing math). The visual rendering
+// is verified during Vercel preview screenshot sign-off.
 
 import { describe, it, expect } from 'vitest';
 import {
@@ -13,8 +18,11 @@ import {
   labelForScore,
   sentenceCase,
   geometryFor,
+  countUpValueAtProgress,
   SWEEP_DEGREES,
   START_ANGLE_DEGREES,
+  GAUGE_SIZE,
+  GAUGE_STROKE,
 } from '@/components/dashboard/bos-gauge-helpers';
 
 describe('BOSScoreGauge / colorForScore', () => {
@@ -62,32 +70,50 @@ describe('BOSScoreGauge / sentenceCase', () => {
   });
 });
 
+describe('BOSScoreGauge / canonical legacy geometry', () => {
+  it('GAUGE_SIZE is 240 (legacy outer diameter)', () => {
+    expect(GAUGE_SIZE).toBe(240);
+  });
+
+  it('GAUGE_STROKE is 14 (legacy stroke width)', () => {
+    expect(GAUGE_STROKE).toBe(14);
+  });
+
+  it('SWEEP_DEGREES is 270 (open at bottom)', () => {
+    expect(SWEEP_DEGREES).toBe(270);
+  });
+
+  it('START_ANGLE_DEGREES is 135 (bottom-left start)', () => {
+    expect(START_ANGLE_DEGREES).toBe(135);
+  });
+});
+
 describe('BOSScoreGauge / geometryFor', () => {
-  it('produces a 270 degree arc proportional to size', () => {
+  it('produces the legacy 240/14 geometry by default', () => {
+    const g = geometryFor(GAUGE_SIZE, GAUGE_STROKE);
+    expect(g.center).toBe(120);
+    expect(g.radius).toBe(113);
+    const expected = 0.75 * 2 * Math.PI * 113;
+    expect(g.arcLength).toBeCloseTo(expected, 6);
+  });
+
+  it('arc length is exactly 75 percent of the full circumference', () => {
+    const g = geometryFor(GAUGE_SIZE, GAUGE_STROKE);
+    expect(g.arcLength / g.circumference).toBeCloseTo(0.75, 10);
+  });
+
+  it('scales correctly for arbitrary smaller sizes (helper is general)', () => {
     const g120 = geometryFor(120, 9);
     expect(g120.center).toBe(60);
     expect(g120.radius).toBe(55.5);
     const expected120 = 0.75 * 2 * Math.PI * 55.5;
     expect(g120.arcLength).toBeCloseTo(expected120, 6);
   });
-
-  it('scales linearly for the desktop size', () => {
-    const g160 = geometryFor(160, 12);
-    expect(g160.center).toBe(80);
-    expect(g160.radius).toBe(74);
-    const expected160 = 0.75 * 2 * Math.PI * 74;
-    expect(g160.arcLength).toBeCloseTo(expected160, 6);
-  });
-
-  it('arc length is exactly 75 percent of the full circumference', () => {
-    const g = geometryFor(120, 9);
-    expect(g.arcLength / g.circumference).toBeCloseTo(0.75, 10);
-  });
 });
 
 describe('BOSScoreGauge / fill length proportionality', () => {
   it('a score of N renders a fill of N/100 of the arc length', () => {
-    const g = geometryFor(160, 12);
+    const g = geometryFor(GAUGE_SIZE, GAUGE_STROKE);
     const fillAt50 = (50 / 100) * g.arcLength;
     const fillAt100 = (100 / 100) * g.arcLength;
     expect(fillAt50).toBeCloseTo(g.arcLength / 2, 10);
@@ -95,12 +121,33 @@ describe('BOSScoreGauge / fill length proportionality', () => {
   });
 });
 
-describe('BOSScoreGauge / geometry constants', () => {
-  it('SWEEP_DEGREES is 270 (open at bottom, matching legacy + DailyScoreGauge)', () => {
-    expect(SWEEP_DEGREES).toBe(270);
+describe('BOSScoreGauge / useCountUp easing math', () => {
+  // countUpValueAtProgress is the pure math kernel extracted from
+  // useCountUp so we can assert the ease-out-cubic curve without
+  // rendering. progress is 0..1, target is the integer score.
+
+  it('returns 0 at progress 0', () => {
+    expect(countUpValueAtProgress(100, 0)).toBe(0);
+    expect(countUpValueAtProgress(50, 0)).toBe(0);
   });
 
-  it('START_ANGLE_DEGREES is 135 (bottom-left start, matching legacy)', () => {
-    expect(START_ANGLE_DEGREES).toBe(135);
+  it('returns the rounded target at progress 1', () => {
+    expect(countUpValueAtProgress(100, 1)).toBe(100);
+    expect(countUpValueAtProgress(75, 1)).toBe(75);
+    expect(countUpValueAtProgress(0, 1)).toBe(0);
+  });
+
+  it('produces ease-out-cubic intermediate values (faster early, slower late)', () => {
+    // ease-out-cubic at progress 0.5 = 1 - (1 - 0.5)^3 = 1 - 0.125 = 0.875
+    expect(countUpValueAtProgress(100, 0.5)).toBe(88); // round(87.5)
+    // ease-out-cubic at progress 0.25 = 1 - (0.75)^3 = 1 - 0.421875 = 0.578125
+    expect(countUpValueAtProgress(100, 0.25)).toBe(58); // round(57.8125)
+    // ease-out-cubic at progress 0.75 = 1 - (0.25)^3 = 1 - 0.015625 = 0.984375
+    expect(countUpValueAtProgress(100, 0.75)).toBe(98); // round(98.4375)
+  });
+
+  it('clamps progress to the 0..1 range', () => {
+    expect(countUpValueAtProgress(100, -1)).toBe(0);
+    expect(countUpValueAtProgress(100, 2)).toBe(100);
   });
 });
