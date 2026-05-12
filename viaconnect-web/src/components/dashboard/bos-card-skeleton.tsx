@@ -1,6 +1,8 @@
 // BOSCardSkeleton: loading shimmer that mirrors the populated card's
-// five section vertical rhythm per #161e §6.9. Includes a circular
-// placeholder for the gauge.
+// four section vertical rhythm per #161e §6.9. Includes a circular
+// placeholder for the gauge. The teaching paragraph now lives inside
+// the side panel column on the populated card, so the standalone
+// explanation placeholder was removed to avoid content shift on load.
 //
 // No animation libraries; pure Tailwind animate-pulse so this can
 // render under any environment without JS bookkeeping. Layout matches
@@ -25,14 +27,7 @@ export function BOSCardSkeleton() {
           <div className="mt-2 h-3 w-40 animate-pulse rounded-full bg-white/10" />
         </div>
 
-        {/* 3. Static explanation */}
-        <div className="space-y-2 rounded-2xl border border-white/10 bg-white/[0.02] px-4 py-3">
-          <div className="h-3 w-24 animate-pulse rounded-full bg-white/10" />
-          <div className="h-3 w-full animate-pulse rounded-full bg-white/10" />
-          <div className="h-3 w-5/6 animate-pulse rounded-full bg-white/10" />
-        </div>
-
-        {/* 4. Accuracy row */}
+        {/* 3. Accuracy row */}
         <div className="space-y-2">
           <div className="h-3 w-28 animate-pulse rounded-full bg-white/10" />
           <div className="h-3 w-3/4 animate-pulse rounded-full bg-white/10" />
@@ -43,7 +38,7 @@ export function BOSCardSkeleton() {
           </div>
         </div>
 
-        {/* 5. Engagement row */}
+        {/* 4. Engagement row */}
         <div className="space-y-2">
           <div className="h-3 w-44 animate-pulse rounded-full bg-white/10" />
           <div className="h-3 w-5/6 animate-pulse rounded-full bg-white/10" />

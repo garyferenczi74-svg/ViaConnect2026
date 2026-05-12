@@ -13,7 +13,7 @@
 
 export function BOSStaticExplanation() {
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.02] px-4 py-3">
+    <div>
       <p className="text-[10px] font-semibold uppercase tracking-wider text-white/40">
         What this measures
       </p>

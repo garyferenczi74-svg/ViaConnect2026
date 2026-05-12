@@ -20,6 +20,7 @@
 import { TrendingDown, TrendingUp, Minus, ShieldCheck } from 'lucide-react';
 import type { BOSCurrentResponse } from '@/lib/scoring/types';
 import { colorForScore } from './bos-gauge-helpers';
+import { BOSStaticExplanation } from './bos-static-explanation';
 import {
   buildSidePanelHeadline,
   buildWeeklyDeltaChip,
@@ -60,6 +61,9 @@ export function BOSSidePanel({
           <span style={{ color: headline.color }}>{headline.status}</span>
         </h2>
       </div>
+
+      {/* Teaching paragraph (pill-less, aligned with the headline above) */}
+      <BOSStaticExplanation />
 
       {/* Three info chips */}
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">

@@ -48,6 +48,9 @@ export function BOSCardEmptyState({ data }: BOSCardEmptyStateProps) {
           </h2>
         </header>
 
+        {/* Teaching paragraph (pill-less, aligned with the header above) */}
+        <BOSStaticExplanation />
+
         {/* Gauge (placeholder) */}
         <BOSScoreGauge data={data} />
 
@@ -60,9 +63,6 @@ export function BOSCardEmptyState({ data }: BOSCardEmptyStateProps) {
           Start your CAQ
           <ArrowRight className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
         </Link>
-
-        {/* Static teaching paragraph */}
-        <BOSStaticExplanation />
 
         {/* Accuracy row (CAQ shows incomplete; tap to start) */}
         <BOSAccuracyRow pills={data.accuracy_pills} />
