@@ -12,5 +12,8 @@
         { "key": "Strict-Transport-Security", "value": "max-age=63072000; includeSubDomains; preload" }
       ]
     }
+  ],
+  "crons": [
+    { "path": "/api/bos/worker", "schedule": "*/5 * * * *" }
   ]
 }

@@ -26,6 +26,7 @@ import BrandProductSearch from "@/components/caq/phase6/BrandProductSearch";
 import { PEPTIDE_REGISTRY, searchPeptides } from "@/config/peptide-database/registry";
 import { InteractionBanner } from "@/components/interactions/InteractionBanner";
 import { emitDataEvent } from "@/lib/ai/emit-event";
+import { enqueueBOSCompute } from "@/lib/scoring/queue";
 import {
   genSupplementId,
   transitionPendingTo,
@@ -724,26 +725,44 @@ export default function OnboardingStepPage() {
         case "3": {
           await savePhase("3", { ...lifestyle, goals: goals.goals, supplementForm: goals.supplementForm, budgetRange: goals.budgetRange });
 
-          // Show Ultrathink processing animation immediately
+          // Show Ultrathink processing animation immediately. The
+          // animation now masks Hannah's compute window; the auto
+          // navigate useEffect below polls /api/bos/current and routes
+          // to the dashboard once the canonical score lands.
           setShowProcessing(true);
 
-          // ═══ Calculate Bio Optimization Score ═══
-          let bioScore = 0;
+          // Path Z (Phase F): the API now returns 202 Accepted and
+          // enqueues the canonical compute. We fire the request to
+          // trigger the worker plus the fire and forget computeBOS,
+          // then rely on the polling useEffect to redirect once the
+          // canonical score lands in bio_optimization_history.
           try {
-            const bioRes = await fetch("/api/ai/calculate-bio-optimization", { method: "POST" });
-            if (bioRes.ok) {
-              const bioData = await bioRes.json();
-              bioScore = bioData.score || 0;
-            }
+            await fetch("/api/ai/calculate-bio-optimization", { method: "POST" });
           } catch {
-            bioScore = calculateBioOptimizationScore(symptoms, lifestyle, goals);
-            const supabase = createClient();
-            const { data: { user } } = await supabase.auth.getUser();
-            if (user) {
-              await supabase.from("profiles").update({ bio_optimization_score: bioScore, assessment_completed: true }).eq("id", user.id);
+            // Network failure here is non fatal: the polling loop will
+            // attempt to read /api/bos/current and either find a row
+            // (worker may have processed an earlier enqueue) or hit
+            // the timeout fallback message. We additionally enqueue
+            // a compute event directly via the browser client below
+            // so the worker is guaranteed a row to drain.
+            try {
+              const supabase = createClient();
+              const { data: { user } } = await supabase.auth.getUser();
+              if (user) {
+                await enqueueBOSCompute({
+                  userId: user.id,
+                  source: "caq_completed",
+                  bypass_cooldown: true,
+                  payload: { fallback: "browser_enqueue_after_api_failure" },
+                  supabase,
+                });
+              }
+            } catch {
+              // Even the direct enqueue can fail offline. The polling
+              // loop's timeout fallback message will surface and the
+              // user can continue manually.
             }
           }
-          toast.success(`Your Bio Optimization Score: ${bioScore}/100`, { duration: 5000 });
 
           // ═══ Fire ALL downstream AI engines ═══
           try {
@@ -796,13 +815,47 @@ export default function OnboardingStepPage() {
     return <WelcomeDashboardScreen />;
   }
 
-  // Auto-navigate after processing animation
+  // Path Z polling: poll /api/bos/current every 5s until score is
+  // non null (worker has drained the queue and the canonical compute
+  // has landed in bio_optimization_history). Max 36 attempts (3 min);
+  // on timeout we toast a "still being prepared" message and route
+  // forward to the next interstitial so the user is never stuck.
   useEffect(() => {
     if (!showProcessing) return;
-    const timer = setTimeout(() => {
-      router.push(`/onboarding/${PHASES[currentIndex + 1].id}`);
-    }, 10000);
-    return () => clearTimeout(timer);
+    const MAX_ATTEMPTS = 36;
+    const INTERVAL_MS = 5000;
+    let attempts = 0;
+    let cancelled = false;
+
+    async function pollOnce(): Promise<void> {
+      if (cancelled) return;
+      attempts += 1;
+      try {
+        const res = await fetch("/api/bos/current", { cache: "no-store" });
+        if (res.ok) {
+          const data = await res.json();
+          const score: number | null = data?.score ?? null;
+          if (typeof score === "number" && score > 0) {
+            if (!cancelled) router.push("/dashboard");
+            return;
+          }
+        }
+      } catch {
+        // Single poll failure is tolerable; the loop will retry until
+        // MAX_ATTEMPTS or the score lands.
+      }
+      if (attempts >= MAX_ATTEMPTS) {
+        if (!cancelled) {
+          toast("Your score is still being prepared. You can continue and check the dashboard in a few minutes.", { duration: 6000 });
+          router.push(`/onboarding/${PHASES[currentIndex + 1].id}`);
+        }
+        return;
+      }
+      setTimeout(pollOnce, INTERVAL_MS);
+    }
+
+    setTimeout(pollOnce, INTERVAL_MS);
+    return () => { cancelled = true; };
   }, [showProcessing, currentIndex, router]);
 
   // Render Ultrathink processing animation (after last CAQ phase)
@@ -1368,7 +1421,7 @@ export default function OnboardingStepPage() {
                         {entry.description.trim().length > 0 && (
                           <div className="flex items-center gap-1.5 mt-2">
                             <BrainCircuit className="w-3.5 h-3.5 text-teal-400/60 animate-pulse" strokeWidth={1.5} />
-                            <span className="text-[10px] text-teal-400/40 font-medium">Ultrathink is absorbing your insight</span>
+                            <span className="text-[10px] text-teal-400/40 font-medium">Hannah is absorbing your insight</span>
                           </div>
                         )}
                       </div>

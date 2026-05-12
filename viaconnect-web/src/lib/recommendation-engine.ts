@@ -1,4 +1,5 @@
 import { SupabaseClient } from '@supabase/supabase-js';
+import { enqueueBOSCompute } from '@/lib/scoring/queue';
 
 export interface CAQResponses {
   age?: number; sex?: string; height_cm?: number; weight_kg?: number;
@@ -301,8 +302,39 @@ export async function saveRecommendations(supabase: SupabaseClient, userId: stri
 }
 
 export async function runPostCAQPipeline(supabase: SupabaseClient, userId: string, caq: CAQResponses, assessmentId?: string): Promise<{bioScore: number; recommendations: ProductMatch[]}> {
+  // Provisional local score for the response payload only. NOT persisted to
+  // profiles.bio_optimization_score; that column is owned by the
+  // project_bio_optimization_score trigger which fires when the canonical
+  // compute lands in bio_optimization_history.
   const bioScore = calculateBioOptimizationScore(caq);
-  await supabase.from('profiles').update({ bio_optimization_score: bioScore, assessment_completed: true, updated_at: new Date().toISOString() }).eq('id', userId);
+
+  // Non BOS profile fields. assessment_completed stays here because the
+  // recommendation pipeline is the second canonical signal that the CAQ
+  // has been processed end to end.
+  await supabase
+    .from('profiles')
+    .update({ assessment_completed: true, updated_at: new Date().toISOString() })
+    .eq('id', userId);
+
+  // Enqueue a canonical compute via the recommendation_pipeline source
+  // (added to bos_queue_source_valid_chk in the Phase F migration patch).
+  // bypass_cooldown=false because the recommendation pipeline is a
+  // downstream recompute path, not an immediate CAQ submit flow.
+  try {
+    await enqueueBOSCompute({
+      userId,
+      source: 'recommendation_pipeline',
+      bypass_cooldown: false,
+      payload: { assessment_id: assessmentId ?? null },
+      supabase,
+    });
+  } catch (enqueueErr) {
+    // Non fatal: the recommendation pipeline still completes; the worker
+    // will pick the user up on the next CAQ or daily cron tick.
+    // eslint-disable-next-line no-console
+    console.error('runPostCAQPipeline: enqueueBOSCompute failed', enqueueErr);
+  }
+
   const { data: geneticData } = await supabase.from('genetic_profiles').select('*').eq('user_id', userId).single();
   const recommendations = await generateRecommendations(supabase, userId, caq, geneticData || undefined);
   await saveRecommendations(supabase, userId, recommendations, assessmentId);

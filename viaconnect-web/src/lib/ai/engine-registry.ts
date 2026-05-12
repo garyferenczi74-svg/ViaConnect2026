@@ -7,7 +7,14 @@ export const AI_ENGINES = {
     endpoint: "/api/ai/calculate-bio-optimization",
     trigger: ["caq_completion", "daily_cron", "data_change"],
     reads: ["demographics", "health_concerns", "family_history", "symptoms_all", "medications", "supplements", "allergies", "lifestyle", "daily_scores", "wearable", "helix_data", "genetic_data"],
-    writes: ["profiles.bio_optimization_score", "bio_optimization_history", "wellness_analytics"],
+    // SSOT write path post bundled #159 + #161. The RPC is the only sanctioned
+    // writer for bio_optimization_history; the projection trigger fans the
+    // score out to profiles.bio_optimization_score and
+    // daily_scores.bio_optimization_score automatically. Engines must call
+    // the RPC (server side) or enqueue via bos_compute_queue (any side);
+    // direct table writes to profiles.bio_optimization_score or
+    // bio_optimization_history are forbidden.
+    writes: ["compute_bio_optimization_score_rpc"],
   },
   B: {
     id: "protocol_generation",
