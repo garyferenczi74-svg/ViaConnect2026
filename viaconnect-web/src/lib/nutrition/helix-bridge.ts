@@ -14,7 +14,7 @@
 // This stub centralizes the call site so the integration can be activated
 // without re-touching the route handlers.
 
-type NutritionSource = 'manual_text' | 'photo_ai' | 'barcode' | 'imported';
+import type { NutritionSource } from './schema';
 
 interface AwardArgs {
   readonly userId: string;

@@ -25,7 +25,7 @@ export type NutritionAnalysis = z.infer<typeof NutritionAnalysisSchema>;
 export const MealTypeSchema = z.enum(['breakfast', 'lunch', 'dinner', 'snack']);
 export type MealType = z.infer<typeof MealTypeSchema>;
 
-export const NutritionSourceSchema = z.enum(['manual_text', 'photo_ai', 'barcode', 'imported']);
+export const NutritionSourceSchema = z.enum(['manual_text', 'photo_ai', 'barcode', 'imported', 'quick_calories']);
 export type NutritionSource = z.infer<typeof NutritionSourceSchema>;
 
 export const NutritionStatusSchema = z.enum(['pending_review', 'confirmed', 'discarded']);

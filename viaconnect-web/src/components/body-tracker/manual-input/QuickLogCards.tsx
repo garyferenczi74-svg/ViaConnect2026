@@ -2,12 +2,13 @@
 
 import { useState } from 'react';
 import type { LucideIcon } from 'lucide-react';
-import { Scale, HeartPulse, Activity } from 'lucide-react';
+import { Scale, HeartPulse, Activity, Flame } from 'lucide-react';
 import { WeightMeasurementsForm } from './forms/WeightMeasurementsForm';
 import { MetabolicCardioForm } from './forms/MetabolicCardioForm';
 import { SegmentalFatForm } from './forms/SegmentalFatForm';
+import { CaloriesQuickForm } from './forms/CaloriesQuickForm';
 
-type ActiveForm = 'weight' | 'metabolic' | 'composition' | null;
+type ActiveForm = 'weight' | 'metabolic' | 'composition' | 'calories' | null;
 
 interface CardDef {
   id: Exclude<ActiveForm, null>;
@@ -20,6 +21,7 @@ const CARDS: CardDef[] = [
   { id: 'weight',      label: 'Weight',       icon: Scale,      accent: '#2DA5A0' },
   { id: 'metabolic',   label: 'Blood pressure', icon: HeartPulse, accent: '#E8803A' },
   { id: 'composition', label: 'Body comp',    icon: Activity,   accent: '#7C3AED' },
+  { id: 'calories',    label: 'Calories',     icon: Flame,      accent: '#B75E18' },
 ];
 
 interface QuickLogCardsProps {
@@ -38,7 +40,7 @@ export function QuickLogCards({ onSaved }: QuickLogCardsProps) {
   return (
     <section className="space-y-3">
       <h3 className="text-xs font-semibold uppercase tracking-wider text-white/50">Quick log</h3>
-      <div className="grid grid-cols-3 gap-2 sm:gap-3">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
         {CARDS.map((c) => {
           const Icon = c.icon;
           return (
@@ -74,6 +76,11 @@ export function QuickLogCards({ onSaved }: QuickLogCardsProps) {
       />
       <SegmentalFatForm
         open={active === 'composition'}
+        onOpenChange={(o) => !o && close()}
+        onSaved={handleSaved}
+      />
+      <CaloriesQuickForm
+        open={active === 'calories'}
         onOpenChange={(o) => !o && close()}
         onSaved={handleSaved}
       />
