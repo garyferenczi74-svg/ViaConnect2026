@@ -463,3 +463,45 @@ describe('current confidence_display mapping', () => {
     expect(body.confidence_display).toBe('96%');
   });
 });
+
+// ---------------------------------------------------------------------------
+// #161a Item 5: sanitization of hannah_explanation at the API boundary
+// ---------------------------------------------------------------------------
+
+describe('current hannah_explanation sanitization', () => {
+  it('strips a script block injected into the persisted explanation', async () => {
+    const injected =
+      '<script>alert(1)</script>Your score went up.';
+    installAuthedClient(
+      makeHistoryRow({ breakdown: makeBreakdown({ hannah_explanation: injected }) }),
+    );
+    const res = await GET(new Request('https://example.com/api/bos/current'));
+    const body = await res.json();
+    expect(body.hannah_explanation.toLowerCase()).not.toContain('<script');
+    expect(body.hannah_explanation).toContain('Your score went up.');
+  });
+
+  it('passes a clean explanation through unchanged after sanitization', async () => {
+    const clean = 'Your Nutrition lever climbed because you logged 4 meals this week.';
+    installAuthedClient(
+      makeHistoryRow({ breakdown: makeBreakdown({ hannah_explanation: clean }) }),
+    );
+    const res = await GET(new Request('https://example.com/api/bos/current'));
+    const body = await res.json();
+    expect(body.hannah_explanation).toBe(clean);
+  });
+
+  it('falls back to the pre compute exemplar when sanitization yields the empty string', async () => {
+    // An attacker who supplies pure markup ends up with the empty
+    // string after sanitization. We then fall back to the pre compute
+    // exemplar rather than show empty text, matching the || operator
+    // semantics in the route handler.
+    const pureMarkup = '<script>alert(1)</script>';
+    installAuthedClient(
+      makeHistoryRow({ breakdown: makeBreakdown({ hannah_explanation: pureMarkup }) }),
+    );
+    const res = await GET(new Request('https://example.com/api/bos/current'));
+    const body = await res.json();
+    expect(body.hannah_explanation).toBe('Complete your CAQ to see your Bio Optimization Score.');
+  });
+});

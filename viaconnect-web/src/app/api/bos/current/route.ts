@@ -20,6 +20,7 @@
 //      exists yet (the user has not completed the CAQ).
 
 import { createClient } from '@/lib/supabase/server';
+import { sanitizeExplanation } from '@/lib/scoring/sanitize-explanation';
 import type {
   AccuracyPill,
   BOSCurrentResponse,
@@ -180,7 +181,12 @@ function buildCurrentResponse(row: HistoryRowLike): BOSCurrentResponse {
     compute_version: row.compute_version ?? COMPUTE_VERSION,
     accuracy_pills: buildAccuracyPills(diag),
     engagement_pills: buildEngagementPills(hannah, engagementState),
-    hannah_explanation: hannah.explanation ?? PRECOMPUTE_EXPLANATION,
+    // Defense in depth XSS strip at the API boundary (#161a Item 5).
+    // Operator is || rather than ??: sanitizeExplanation returns the
+    // empty string for pure markup input, and we want that falsy case
+    // to fall through to the pre compute exemplar rather than render
+    // empty copy.
+    hannah_explanation: sanitizeExplanation(hannah.explanation) || PRECOMPUTE_EXPLANATION,
   };
 }
 

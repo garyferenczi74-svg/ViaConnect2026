@@ -4,6 +4,16 @@
 
 The Hannah compute engine is the canonical pipeline that produces every Bio Optimization Score (BOS) on ViaConnect. The score is a two axis model. The diagnostic foundation axis anchors the user against their CAQ, labs, and genetics; the engagement axis surfaces the daily levers the user can move to raise their score. Both axes converge into a single 0 to 100 number tagged with a tier (1, 2, or 3), a confidence value (0.720, 0.860, or 0.960), and a structured breakdown jsonb that downstream surfaces consume. Hannah is the only writer: every other code path either enqueues a compute event or reads a cached projection.
 
+## Sanitization
+
+The `/api/bos/current` route applies a defense in depth XSS strip to the persisted Hannah explanation before returning it. The sanitizer lives in `src/lib/scoring/sanitize-explanation.ts` and runs only on the read path; the column `bio_optimization_history.breakdown.hannah_output.explanation` is left raw so backfill, audit, and Hannah self check can read the original output.
+
+Behavior summary. Null, undefined, or non string input returns the empty string. Script and style blocks are removed including unterminated blocks that run to end of input. Remaining HTML tags are removed via a bounded iteration capped at 8 passes so nested evasion patterns cannot leave executable substrings behind. A small named entity set (amp, lt, gt, quot, #39, apos) is decoded so escaped human punctuation renders correctly. ASCII C0 control characters are stripped except LF, CR, and TAB. Runs of spaces and tabs collapse to one space; newlines are preserved.
+
+Trade off. Entity decoding happens after tag stripping, so a literal `&lt;script&gt;` in the source survives as text in the output. Under React this is safe because JSX auto escapes string children. Non React downstream consumers must run their own escape pass over this output. The decision was made on 2026-05-12 to strip rather than HTML escape to keep the user facing copy free of stray entity references.
+
+Operator semantics. The route handler uses `sanitizeExplanation(hannah.explanation) || PRECOMPUTE_EXPLANATION` (not `??`) so that pure markup input (which sanitizes to the empty string) falls through to the pre compute exemplar instead of rendering empty copy.
+
 ## Data flow
 
 The pipeline runs in five sequential stages. Every stage is recoverable; a failure at any point leaves the queue row in place so the next worker cycle can retry.

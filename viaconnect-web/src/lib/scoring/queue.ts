@@ -88,20 +88,25 @@ export async function fetchUnprocessedEventsGroupedByUser(
   supabase: SupabaseClient,
   limit: number,
 ): Promise<Map<string, QueuedEvent[]>> {
+  // #161a Item 6: cap is applied on the Supabase chain via .limit so
+  // the database returns at most `limit` rows. The prior implementation
+  // pulled the full unprocessed set then sliced in JS, which was both a
+  // memory hazard for large backlogs and inconsistent with the FIFO
+  // intent on a per drain basis.
   const { data, error } = await supabase
     .from('bos_compute_queue')
     .select('*')
     .is('processed_at', null)
-    .order('enqueued_at', { ascending: true, foreignTable: undefined, nullsFirst: false } as never);
+    .order('enqueued_at', { ascending: true })
+    .limit(limit);
 
   if (error) {
     throw new Error(`Failed to fetch unprocessed BOS events: ${error.message ?? String(error)}`);
   }
 
   const rows = (data ?? []) as QueuedEvent[];
-  const bounded = rows.slice(0, Math.max(0, limit));
   const grouped = new Map<string, QueuedEvent[]>();
-  for (const row of bounded) {
+  for (const row of rows) {
     const existing = grouped.get(row.user_id) ?? [];
     existing.push(row);
     grouped.set(row.user_id, existing);

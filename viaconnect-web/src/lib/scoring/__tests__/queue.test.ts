@@ -20,11 +20,15 @@ function makeInsertClient(returnedId: string, error: unknown = null) {
 }
 
 function makeFetchClient(rows: QueuedEvent[], error: unknown = null) {
-  const order = vi.fn().mockResolvedValue({ data: rows, error });
+  // Phase F-patch follow-up (#161a Item 6): the chain now ends in
+  // .limit(limit) so the cap is applied in Postgres, not in JS. The
+  // mock terminates .limit() with the awaited promise resolution.
+  const limit = vi.fn().mockResolvedValue({ data: rows, error });
+  const order = vi.fn().mockReturnValue({ limit });
   const is = vi.fn().mockReturnValue({ order });
   const select = vi.fn().mockReturnValue({ is });
   const from = vi.fn().mockReturnValue({ select });
-  return { from, select, is, order };
+  return { from, select, is, order, limit };
 }
 
 function makeUpdateClient(error: unknown = null) {
@@ -149,6 +153,48 @@ describe('queue.fetchUnprocessedEventsGroupedByUser', () => {
   it('throws on Supabase error', async () => {
     const client = makeFetchClient([], { message: 'boom' });
     await expect(fetchUnprocessedEventsGroupedByUser(client as never, 100)).rejects.toThrow();
+  });
+
+  // -------------------------------------------------------------------------
+  // #161a Item 6: limit + order on the Supabase chain, not in JS slice
+  // -------------------------------------------------------------------------
+
+  it('passes the limit to the Supabase chain via .limit(limit)', async () => {
+    const client = makeFetchClient([]);
+    await fetchUnprocessedEventsGroupedByUser(client as never, 250);
+    expect(client.limit).toHaveBeenCalledWith(250);
+  });
+
+  it('orders by enqueued_at ascending on the Supabase chain', async () => {
+    const client = makeFetchClient([]);
+    await fetchUnprocessedEventsGroupedByUser(client as never, 100);
+    expect(client.order).toHaveBeenCalledWith('enqueued_at', { ascending: true });
+  });
+
+  it('groups every row the Supabase chain returns (cap enforced server side)', async () => {
+    // The DB now applies LIMIT, so the mock returns at most 500 rows
+    // when limit=500. The helper must group ALL returned rows and not
+    // re-slice in memory.
+    const rows: QueuedEvent[] = [];
+    for (let i = 0; i < 500; i += 1) {
+      rows.push({
+        id: `row-${i}`,
+        user_id: `u-${i % 10}`,
+        source: 'daily_log',
+        event_id: null,
+        payload: {},
+        enqueued_at: `2026-05-11T10:${String(i % 60).padStart(2, '0')}:00Z`,
+        processed_at: null,
+        processing_error: null,
+        bypass_cooldown: false,
+        retry_count: 0,
+      });
+    }
+    const client = makeFetchClient(rows);
+    const result = await fetchUnprocessedEventsGroupedByUser(client as never, 500);
+    const total = Array.from(result.values()).reduce((acc, list) => acc + list.length, 0);
+    expect(total).toBe(500);
+    expect(client.limit).toHaveBeenCalledWith(500);
   });
 });
 
