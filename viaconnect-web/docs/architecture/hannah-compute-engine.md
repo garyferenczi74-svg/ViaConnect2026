@@ -63,6 +63,12 @@ The bump is recorded in `src/lib/scoring/bio-optimization-score.ts` near the top
 
 Rows that existed in `bio_optimization_history` before the SSOT migration ran are tagged with the breakdown sentinel `_sentinel: 'pre_ssot_unknown'`. Consumers may read these rows safely; the `BOSCurrentResponse` pre compute path treats a sentinel row the same as a missing row when computing the accuracy and engagement pill states. The sentinel exists primarily to let the audit pgTAP test confirm migration completeness.
 
+## Telemetry
+
+Every write through the BOS pipeline records one row to `public.bos_write_telemetry` via `logBOSWrite` in `src/lib/scoring/telemetry.ts`. The helper runs `error_message` through `sanitizeErrorMessage` from `src/lib/scoring/sanitize-error.ts` before insert so persisted rows are free of raw UUIDs and bounded to 500 characters. A parallel SQL function `public.bos_sanitize_error_message(text)` lives in the #161b migration so future trigger writes apply the same rule set; both implementations are kept in lockstep.
+
+Retention is automatic. The `public.bos_telemetry_retention_sweep()` function runs daily at 04:00 UTC via the `bos_telemetry_retention_sweep` pg_cron job; it deletes `bos_write_telemetry` rows older than 90 days and processed `bos_compute_queue` rows older than 30 days. Admin read patterns and the sweep verification query live in `docs/runbooks/bos-telemetry-queries.md`.
+
 ## Rollback plan
 
 See `docs/runbooks/bos-worker-troubleshooting.md` section 6 for the rollback migration template. The non destructive rollback drops the new RPC, the projection trigger, and the queue + telemetry tables, then reverts the `bio_optimization_history` policy split. The migration's column additions and CHECK constraints are intentionally not rolled back; they are forward compatible and removing them would invalidate existing rows.

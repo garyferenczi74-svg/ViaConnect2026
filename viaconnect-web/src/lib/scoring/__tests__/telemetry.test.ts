@@ -84,3 +84,64 @@ describe('telemetry.logBOSWrite', () => {
     consoleSpy.mockRestore();
   });
 });
+
+describe('telemetry.logBOSWrite error_message sanitization (#161b)', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('redacts a UUID in error_message before insert', async () => {
+    const client = makeInsertClient();
+    await logBOSWrite({
+      caller_module: 'compute-worker',
+      write_target: 'compute_bio_optimization_score_rpc',
+      is_canonical: true,
+      success: false,
+      error_message: 'failed for 550e8400-e29b-41d4-a716-446655440000',
+      supabase: client as never,
+    });
+    const row = (client.insert as ReturnType<typeof vi.fn>).mock.calls[0][0];
+    expect(row.error_message).toBe('failed for <uuid>');
+  });
+
+  it('truncates a 600 char error_message to 500 chars before insert', async () => {
+    const client = makeInsertClient();
+    const long = 'a'.repeat(600);
+    await logBOSWrite({
+      caller_module: 'compute-worker',
+      write_target: 'compute_bio_optimization_score_rpc',
+      is_canonical: true,
+      success: false,
+      error_message: long,
+      supabase: client as never,
+    });
+    const row = (client.insert as ReturnType<typeof vi.fn>).mock.calls[0][0];
+    expect(row.error_message.length).toBe(500);
+    expect(row.error_message.endsWith(' ...')).toBe(true);
+  });
+
+  it('passes null error_message through as null', async () => {
+    const client = makeInsertClient();
+    await logBOSWrite({
+      caller_module: 'compute-worker',
+      write_target: 'bio_optimization_history',
+      is_canonical: true,
+      success: true,
+      error_message: undefined,
+      supabase: client as never,
+    });
+    const row = (client.insert as ReturnType<typeof vi.fn>).mock.calls[0][0];
+    expect(row.error_message).toBeNull();
+  });
+
+  it('handles missing error_message field with null insert', async () => {
+    const client = makeInsertClient();
+    await logBOSWrite({
+      caller_module: 'compute-worker',
+      write_target: 'bio_optimization_history',
+      is_canonical: true,
+      success: true,
+      supabase: client as never,
+    });
+    const row = (client.insert as ReturnType<typeof vi.fn>).mock.calls[0][0];
+    expect(row.error_message).toBeNull();
+  });
+});

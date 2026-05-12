@@ -6,8 +6,6 @@ import { createClient } from '@/lib/supabase/client';
 import { Apple, Camera, ChevronRight, Dna, PenLine, ArrowRight, Smartphone, Upload } from 'lucide-react';
 import { NutritionScoreCard } from '@/components/nutrition/NutritionScoreCard';
 import { QuickMealLogWidget } from '@/components/dashboard/QuickMealLogWidget';
-import { PhotoMealLog } from '@/components/nutrition/PhotoMealLog';
-import { ManualMealEntry } from '@/components/nutrition/ManualMealEntry';
 import { NutritionInsights } from '@/components/nutrition/NutritionInsights';
 import { MealHistory } from '@/components/nutrition/MealHistory';
 import { MyMeals } from '@/components/nutrition/MyMeals';
@@ -48,10 +46,20 @@ export default function NutritionPage() {
 
   useEffect(() => { loadMealCount(); }, []);
 
-  const TABS = [
-    { id: 'quick' as const, label: 'Quick Log', icon: Apple, gradient: 'linear-gradient(135deg, #27AE60 0%, #1E3054 100%)', glow: 'rgba(39,174,96,0.35)' },
-    { id: 'photo' as const, label: 'Photo AI', icon: Camera, gradient: 'linear-gradient(135deg, #2DA5A0 0%, #1E3054 100%)', glow: 'rgba(45,165,160,0.35)' },
-    { id: 'manual' as const, label: 'Log Full Meal', icon: PenLine, gradient: 'linear-gradient(135deg, #B75E18 0%, #1E3054 100%)', glow: 'rgba(183,94,24,0.35)' },
+  // Prompt #160: 'photo' and 'manual' became dedicated routes
+  // (/nutrition/photo-ai and /nutrition/log-meal) with the new Gordan AI
+  // macro pipeline. 'quick' remains in-page for the legacy meal_logs flow.
+  const TABS: Array<{
+    id: 'quick' | 'photo' | 'manual';
+    label: string;
+    icon: typeof Apple;
+    gradient: string;
+    glow: string;
+    href?: string;
+  }> = [
+    { id: 'quick',  label: 'Quick Log',     icon: Apple,  gradient: 'linear-gradient(135deg, #27AE60 0%, #1E3054 100%)', glow: 'rgba(39,174,96,0.35)' },
+    { id: 'photo',  label: 'Photo AI',      icon: Camera, gradient: 'linear-gradient(135deg, #2DA5A0 0%, #1E3054 100%)', glow: 'rgba(45,165,160,0.35)', href: '/nutrition/photo-ai' },
+    { id: 'manual', label: 'Log Full Meal', icon: PenLine, gradient: 'linear-gradient(135deg, #B75E18 0%, #1E3054 100%)', glow: 'rgba(183,94,24,0.35)', href: '/nutrition/log-meal' },
   ];
 
   return (
@@ -77,14 +85,24 @@ export default function NutritionPage() {
           {TABS.map((t) => {
             const Icon = t.icon;
             const isActive = tab === t.id;
+            const baseClassName = `flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] font-semibold text-white transition-all no-underline ${
+              isActive ? 'opacity-100' : 'opacity-55 hover:opacity-85'
+            }`;
+            const baseStyle = { background: t.gradient, boxShadow: isActive ? `0 0 12px ${t.glow}` : undefined };
+            if (t.href) {
+              return (
+                <Link key={t.id} href={t.href} className={baseClassName} style={baseStyle}>
+                  <Icon className="h-3 w-3" strokeWidth={1.5} />
+                  {t.label}
+                </Link>
+              );
+            }
             return (
               <button
                 key={t.id}
                 onClick={() => setTab(t.id)}
-                className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] font-semibold text-white transition-all ${
-                  isActive ? 'opacity-100' : 'opacity-55 hover:opacity-85'
-                }`}
-                style={{ background: t.gradient, boxShadow: isActive ? `0 0 12px ${t.glow}` : undefined }}
+                className={baseClassName}
+                style={baseStyle}
               >
                 <Icon className="h-3 w-3" strokeWidth={1.5} />
                 {t.label}
@@ -102,8 +120,6 @@ export default function NutritionPage() {
         </div>
 
         {tab === 'quick' && <QuickMealLogWidget hideHeader onSaved={loadMealCount} />}
-        {tab === 'photo' && <PhotoMealLog onSaved={loadMealCount} />}
-        {tab === 'manual' && <ManualMealEntry onSaved={loadMealCount} />}
       </div>
 
       {/* Nutrition by Genetics — full-width tab.
