@@ -176,7 +176,7 @@ export default function ConsumerDashboard() {
               eyebrow="Health Profile"
               eyebrowIcon={FileQuestion}
               title="Update Your Assessment"
-              description="Refresh your CAQ answers so Ultrathink™ can refine your protocol based on your latest symptoms, medications, and goals."
+              description="Refresh your CAQ answers so Hannah can refine your protocol based on your latest symptoms, medications, and goals."
               icon={RefreshCw}
               accent="#B75E18"
               href="/onboarding/i-caq-intro"

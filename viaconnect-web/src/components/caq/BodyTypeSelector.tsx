@@ -22,7 +22,7 @@ const BODY_TYPES: BodyTypeOption[] = [
     icon: User,
     description: "Narrow frame, fast metabolism, naturally lean. Gaining weight and muscle has always been a challenge. You burn through calories quickly.",
     traits: ["Narrow shoulders and hips", "Fast metabolism, burns calories easily", "Difficulty gaining weight or muscle", "Long limbs relative to torso", "Low body fat even without trying"],
-    ultrathinkNote: "Ultrathink will prioritize calorie-dense nutrition, mitochondrial energy optimization, and HPA axis recovery to support your body's ability to build and retain mass.",
+    ultrathinkNote: "Hannah will prioritize calorie-dense nutrition, mitochondrial energy optimization, and HPA axis recovery to support your body's ability to build and retain mass.",
   },
   {
     id: "mesomorph",
@@ -31,7 +31,7 @@ const BODY_TYPES: BodyTypeOption[] = [
     icon: Dumbbell,
     description: "Naturally muscular frame with broader shoulders. You can gain muscle relatively easily, but you may be currently under or overweight, possibly from stress, illness, or lifestyle changes.",
     traits: ["Medium to broad bone structure", "Naturally muscular when active", "Gains muscle easier than ectomorphs", "Currently underweight due to circumstances", "Responds well to training + nutrition"],
-    ultrathinkNote: "Ultrathink will focus on recovery optimization, protein synthesis support, and identifying what caused the weight loss (stress, illness, or lifestyle) to address the root pattern.",
+    ultrathinkNote: "Hannah will focus on recovery optimization, protein synthesis support, and identifying what caused the weight loss (stress, illness, or lifestyle) to address the root pattern.",
   },
   {
     id: "endomorph",
@@ -40,7 +40,7 @@ const BODY_TYPES: BodyTypeOption[] = [
     icon: Circle,
     description: "Wider bone structure with a tendency to store fat more easily. Being underweight despite this frame type often signals metabolic, hormonal, or health related causes worth investigating.",
     traits: ["Wider hips and/or shoulders", "Naturally tends to store fat", "Underweight despite frame = possible health signal", "May indicate metabolic or hormonal pattern", "Recovery approach differs from hardgainers"],
-    ultrathinkNote: "Ultrathink will investigate potential metabolic, hormonal, or stress related causes for being underweight with this frame type. This combination often reveals important master patterns.",
+    ultrathinkNote: "Hannah will investigate potential metabolic, hormonal, or stress related causes for being underweight with this frame type. This combination often reveals important master patterns.",
   },
 ];
 
@@ -91,7 +91,7 @@ export function BodyTypeSelector({ value, onChange }: { value: string | null; on
       <div>
         <h3 className="text-sm font-semibold text-white">What best describes your natural body frame?</h3>
         <p className="text-xs text-white/30 mt-1 leading-relaxed">
-          This helps Ultrathink personalize your nutrition, supplement, and wellness recommendations. There&apos;s no wrong answer, choose what feels closest to your natural build.
+          This helps Hannah personalize your nutrition, supplement, and wellness recommendations. There&apos;s no wrong answer, choose what feels closest to your natural build.
         </p>
       </div>
 
@@ -122,7 +122,7 @@ export function BodyTypeSelector({ value, onChange }: { value: string | null; on
         {selectedType && (
           <motion.div key={selectedType.id} initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} transition={{ duration: 0.25 }}
             className="rounded-xl p-4" style={{ backgroundColor: `${selectedType.hex}0D`, border: `1px solid ${selectedType.hex}1A` }}>
-            <p className="text-[10px] text-white/20 uppercase tracking-wider font-semibold mb-1.5">How Ultrathink uses this</p>
+            <p className="text-[10px] text-white/20 uppercase tracking-wider font-semibold mb-1.5">How Hannah uses this</p>
             <p className="text-xs text-white/40 leading-relaxed">{selectedType.ultrathinkNote}</p>
           </motion.div>
         )}
@@ -130,7 +130,7 @@ export function BodyTypeSelector({ value, onChange }: { value: string | null; on
 
       <div className="flex items-center gap-2 mt-2">
         <Info className="w-3.5 h-3.5 text-white/15" strokeWidth={1.5} />
-        <p className="text-[10px] text-white/15">Not sure? Choose the one that feels closest. Your CAQ answers will help Ultrathink refine the picture regardless of which you pick.</p>
+        <p className="text-[10px] text-white/15">Not sure? Choose the one that feels closest. Your CAQ answers will help Hannah refine the picture regardless of which you pick.</p>
       </div>
     </div>
   );

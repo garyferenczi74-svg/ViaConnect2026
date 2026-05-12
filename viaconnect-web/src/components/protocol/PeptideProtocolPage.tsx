@@ -28,7 +28,7 @@ interface PeptideProtocolPageProps {
 function generatePeptideSummary(recs: PeptideRecommendation[]): string {
   if (recs.length === 0) return "No peptide protocol recommended at this time.";
   const names = recs.flatMap((r) => r.products.map((p) => p.name));
-  return `Your personalized peptide protocol includes ${names.join(", ")}. These are matched to your Ultrathink master patterns for targeted wellness optimization. All products use dual liposomal-micellar delivery for enhanced bioavailability. Please consult your practitioner before starting.`;
+  return `Your personalized peptide protocol includes ${names.join(", ")}. These are matched to your Hannah master patterns for targeted wellness optimization. All products use dual liposomal-micellar delivery for enhanced bioavailability. Please consult your practitioner before starting.`;
 }
 
 function PeptideNotReadyState() {
@@ -39,7 +39,7 @@ function PeptideNotReadyState() {
       </div>
       <h2 className="text-xl font-bold text-white mb-2">Your Peptide Protocol Awaits</h2>
       <p className="text-sm text-white/40 max-w-md mx-auto leading-relaxed mb-6">
-        Complete your Clinical Assessment Questionnaire first. Ultrathink will analyze your symptoms, goals, and patterns to recommend personalized peptides from the ViaConnect portfolio.
+        Complete your Clinical Assessment Questionnaire first. Hannah will analyze your symptoms, goals, and patterns to recommend personalized peptides from the ViaConnect portfolio.
       </p>
       <a href="/onboarding/i-caq-intro" className="inline-flex items-center gap-2 min-h-[48px] px-6 py-3 rounded-xl bg-teal-400/15 border border-teal-400/30 text-teal-400 text-sm font-semibold hover:bg-teal-400/20 transition-all">
         <ClipboardList className="w-4 h-4" strokeWidth={1.5} />

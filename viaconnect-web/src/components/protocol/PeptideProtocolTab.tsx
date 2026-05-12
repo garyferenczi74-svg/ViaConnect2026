@@ -25,7 +25,7 @@ interface PeptideProtocolTabProps {
 function generatePeptideSummary(recs: PeptideRecommendation[]): string {
   if (recs.length === 0) return "No peptide protocol recommended at this time.";
   const names = recs.flatMap((r) => r.products.map((p) => p.name));
-  return `Your personalized peptide protocol includes ${names.join(", ")}. These are matched to your Ultrathink master patterns for targeted wellness optimization. All products use dual liposomal-micellar delivery for enhanced bioavailability. Please consult your practitioner before starting.`;
+  return `Your personalized peptide protocol includes ${names.join(", ")}. These are matched to your Hannah master patterns for targeted wellness optimization. All products use dual liposomal-micellar delivery for enhanced bioavailability. Please consult your practitioner before starting.`;
 }
 
 function NoPeptideRecommendation() {
@@ -69,7 +69,7 @@ export function PeptideProtocolTab({ masterPatterns, helixBalance, caqCompleted 
               </div>
               <div>
                 <h2 className="text-lg md:text-xl font-bold text-white">Your Personalized Peptide Protocol</h2>
-                <p className="text-sm text-white/40 mt-0.5">Powered by Ultrathink\u2122 \, Based on your CAQ answers</p>
+                <p className="text-sm text-white/40 mt-0.5">Powered by Hannah, Based on your CAQ answers</p>
               </div>
             </div>
             {hasPeptideRecs && <ListenToSummary summaryText={generatePeptideSummary(recommendations)} />}

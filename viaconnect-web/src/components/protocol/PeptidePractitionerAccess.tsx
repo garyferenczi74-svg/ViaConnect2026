@@ -20,7 +20,7 @@ export function PeptidePractitionerAccess() {
             All ViaConnect peptides are oral, high-bioavailability formulations
             designed for wellness support. For best results, your peptide protocol
             should be reviewed and prescribed by a licensed practitioner or naturopath
-            who can access your full Ultrathink profile.
+            who can access your full Hannah profile.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-3">
@@ -35,7 +35,7 @@ export function PeptidePractitionerAccess() {
           </div>
 
           <p className="text-[10px] text-white/15 mt-3">
-            Your Ultrathink summary will be pre-filled for your provider to review.
+            Your Hannah summary will be pre-filled for your provider to review.
           </p>
         </div>
       </div>

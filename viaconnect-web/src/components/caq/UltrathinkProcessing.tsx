@@ -24,7 +24,7 @@ interface UltrathinkProcessingProps {
 }
 
 function generateTease(areas: string[]): string {
-  if (areas.length === 0) return "Your complete Ultrathink analysis is ready in moments.";
+  if (areas.length === 0) return "Your complete Hannah analysis is ready in moments.";
 
   const area1 = areas[0]?.toLowerCase() || "stress";
   const area2 = areas[1]?.toLowerCase() || "energy";

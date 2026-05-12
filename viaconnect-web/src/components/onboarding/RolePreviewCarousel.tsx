@@ -16,7 +16,7 @@ const SLIDES: Record<string, Slide[]> = {
   consumer: [
     {
       title: "Your Master Patterns",
-      description: "Ultrathink identifies the 1\u20133 root causes driving your symptoms \, not just a list, a blueprint.",
+      description: "Hannah identifies the 1\u20133 root causes driving your symptoms \, not just a list, a blueprint.",
       preview: 'Sample: "Adrenal Battery Depletion" \, fatigue + brain fog + sleep issues traced to one source',
       icon: BrainCircuit,
     },
@@ -34,7 +34,7 @@ const SLIDES: Record<string, Slide[]> = {
     },
   ],
   practitioner: [
-    { title: "Patient Dashboard", description: "Full Ultrathink profiles for every patient with AI-powered insights.", icon: LayoutDashboard },
+    { title: "Patient Dashboard", description: "Full Hannah profiles for every patient with AI-powered insights.", icon: LayoutDashboard },
     { title: "Protocol Override", description: "Adjust AI recommendations with your clinical expertise and override where needed.", icon: Settings2 },
     { title: "Interaction Engine", description: "Real-time medication-supplement-allergy checking across your patient panel.", icon: ShieldAlert },
   ],

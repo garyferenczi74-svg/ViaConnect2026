@@ -23,7 +23,7 @@ export function DescriptionQualityIndicator({ hasText }: DescriptionQualityIndic
         <BrainCircuit className="w-3.5 h-3.5 text-teal-400/60" strokeWidth={1.5} />
       </motion.div>
       <span className="text-[10px] text-teal-400/40 font-medium">
-        Ultrathink is absorbing your insight
+        Hannah is absorbing your insight
       </span>
     </motion.div>
   );

@@ -12,7 +12,7 @@ export function PeptidePractitionerAccess() {
 
       <p className="text-sm text-[rgba(255,255,255,0.45)] leading-relaxed">
         Tier 2 and Tier 3 peptides require a licensed prescribing practitioner or naturopath.
-        Your Ultrathink™ protocol summary is pre-filled. Share it directly with your provider.
+        Your Hannah protocol summary is pre-filled. Share it directly with your provider.
       </p>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -29,7 +29,7 @@ export function PeptidePractitionerAccess() {
           </div>
           <ul className="space-y-2 mb-5">
             {[
-              'Review and co-sign your Ultrathink™ protocol',
+              'Review and co-sign your Hannah protocol',
               'Verify medication interactions and contraindications',
               'Order baseline and follow-up labs',
               'Monitor progress and adjust dosing',
@@ -80,7 +80,7 @@ export function PeptidePractitionerAccess() {
       <div className="flex items-start gap-2 rounded-xl bg-[#1E3054]/45 backdrop-blur-md border border-[rgba(255,255,255,0.08)] p-3">
         <FlaskConical className="w-4 h-4 text-[rgba(255,255,255,0.25)] mt-0.5 shrink-0" strokeWidth={1.5} />
         <p className="text-xs text-[rgba(255,255,255,0.40)] leading-relaxed">
-          Your Ultrathink™ peptide protocol summary, including detected CAQ patterns, recommended stack, and cycling schedule, is automatically pre-filled when you connect with a provider through ViaConnect™.
+          Your Hannah peptide protocol summary, including detected CAQ patterns, recommended stack, and cycling schedule, is automatically pre-filled when you connect with a provider through ViaConnect™.
         </p>
       </div>
     </div>

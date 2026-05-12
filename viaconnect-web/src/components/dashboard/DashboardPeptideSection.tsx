@@ -32,7 +32,7 @@ export function DashboardPeptideSection({ masterPatterns, helixBalance, caqCompl
           </div>
           <div>
             <h2 className="text-base font-bold text-white">Peptide Protocol</h2>
-            <p className="text-[11px] text-white/30 mt-0.5">Powered by Ultrathink\u2122</p>
+            <p className="text-[11px] text-white/30 mt-0.5">Powered by Hannah</p>
           </div>
         </div>
         {hasPeptideRecs && (
@@ -112,7 +112,7 @@ export function DashboardPeptideSection({ masterPatterns, helixBalance, caqCompl
             </a>
           </div>
           <p className="text-[9px] text-white/12 text-center mt-2.5">
-            Your Ultrathink summary + CAQ highlights will be pre-filled for your provider.
+            Your Hannah summary + CAQ highlights will be pre-filled for your provider.
           </p>
         </div>
       </div>

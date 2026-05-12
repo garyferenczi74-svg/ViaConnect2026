@@ -6,7 +6,7 @@ import { ChevronDown, ShoppingBag, BookOpen } from "lucide-react";
 const FAQS = [
   {
     question: "How do peptides work with your GENEX360\u2122 SNPs?",
-    answer: "Your genetic variants (MTHFR, COMT, CYP450, etc.) determine how your body processes and responds to specific peptides. Ultrathink cross-references your CAQ symptom patterns with known SNP-peptide interactions to recommend the most effective products for YOUR biology.",
+    answer: "Your genetic variants (MTHFR, COMT, CYP450, etc.) determine how your body processes and responds to specific peptides. Hannah cross-references your CAQ symptom patterns with known SNP-peptide interactions to recommend the most effective products for YOUR biology.",
   },
   {
     question: "Why oral delivery instead of injectable?",
