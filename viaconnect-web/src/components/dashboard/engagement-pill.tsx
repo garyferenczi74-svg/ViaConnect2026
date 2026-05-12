@@ -2,101 +2,121 @@
 
 // EngagementPill: single engagement pill (one of six levers).
 //
-// State machine per #162 §6.7:
-//   at_ceiling   Teal active, no upside left, no hover lift
-//   in_use       Teal soft, route to logging surface, hover lift
-//   unused       Inactive, route to logging surface, hover lift
+// State machine per #161e §6.7:
+//   unused       bg-transparent + white/30 border, no velocity number,
+//                sub-label "Start logging"
+//   in_use       bg-transparent + teal-accent border, prominent
+//                "+X.X pts/day" velocity, sub-label "Active"
+//   at_ceiling   bg-[#2DA5A0]/12 (filled teal at low saturation),
+//                Check icon, sub-label "At ceiling"
 //
-// preCompute prop disables the pill (visible but not interactive)
-// during the empty state. When the destination route is not wired,
-// renders disabled with "Coming Soon".
+// Mobile fit (#161e §6.7 + AC11): cells around 110px wide at 380px
+// viewport with grid-cols-3 gap-2. Pill content stacks vertically
+// (icon + label, then state line). The text-[11px] / truncate
+// combination keeps labels like "Body Tracker" inside the cell.
+//
+// preCompute disables the pill (visible but non interactive) for the
+// empty state. When the destination route is not wired, renders
+// disabled with a "Coming Soon" subline.
+//
+// Pure helpers (state classifier, velocity formatter, aria-label
+// builder) live in bos-pill-helpers.ts so they can be imported by
+// JSX-free tests.
 
 import Link from 'next/link';
+import { Check } from 'lucide-react';
 import type { EngagementPill as EngagementPillData } from '@/lib/scoring/types';
 import { ENGAGEMENT_PILL_ICONS } from '@/lib/scoring/pill-icons';
 import { getPillRoute } from '@/lib/scoring/pill-routes';
+import {
+  engagementPillClassesForState,
+  buildEngagementAriaLabel,
+  formatVelocity,
+} from './bos-pill-helpers';
 
 export interface EngagementPillProps {
   pill: EngagementPillData;
   preCompute?: boolean;
 }
 
-export function EngagementPill({ pill, preCompute = false }: EngagementPillProps) {
-  const Icon = ENGAGEMENT_PILL_ICONS[pill.key];
-  const route = getPillRoute(pill.destination_key);
-  const ariaLabel = buildAriaLabel(pill, preCompute);
+export { engagementPillClassesForState, buildEngagementAriaLabel, formatVelocity };
 
-  if (preCompute || !route) {
+export function EngagementPill({ pill, preCompute = false }: EngagementPillProps) {
+  const classes = engagementPillClassesForState(pill.state);
+  const ariaLabel = buildEngagementAriaLabel(pill, preCompute);
+  const route = getPillRoute(pill.destination_key);
+  const Icon = ENGAGEMENT_PILL_ICONS[pill.key];
+
+  const showVelocity = !preCompute && pill.state === 'in_use' && pill.velocity_pct > 0;
+  const showCeilingCheck = !preCompute && pill.state === 'at_ceiling';
+
+  const inner = (
+    <>
+      <span className="flex items-center justify-center gap-1.5">
+        <Icon className="h-3.5 w-3.5 flex-shrink-0" strokeWidth={1.5} aria-hidden="true" />
+        <span className="truncate text-[11px] font-semibold leading-none sm:text-xs">
+          {pill.label}
+        </span>
+      </span>
+      <span className="mt-1 flex items-center justify-center gap-1">
+        {showCeilingCheck ? (
+          <Check className="h-3 w-3 flex-shrink-0" strokeWidth={1.5} aria-hidden="true" />
+        ) : null}
+        {showVelocity ? (
+          <span className="truncate text-[10px] font-semibold leading-none sm:text-[11px]">
+            {formatVelocity(pill.velocity_pct)}
+          </span>
+        ) : (
+          <span className="truncate text-[10px] leading-none opacity-80 sm:text-[11px]">
+            {classes.subLabel}
+          </span>
+        )}
+      </span>
+    </>
+  );
+
+  const base = `inline-flex w-full min-h-[56px] flex-col items-center justify-center rounded-full border px-2 py-2 transition-all duration-200 ${classes.base}`;
+
+  if (preCompute) {
     return (
       <span
         role="status"
         aria-label={ariaLabel}
         aria-disabled="true"
-        className="inline-flex min-h-[44px] cursor-not-allowed items-center justify-center gap-1.5 rounded-full border border-white/10 bg-white/[0.03] px-3 py-2 text-xs font-medium text-white/40 sm:text-sm"
+        className={`${base} opacity-60`}
       >
-        <Icon className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
-        <span className="truncate">{pill.label}</span>
-        {!route && !preCompute ? (
-          <span className="text-[10px] uppercase tracking-wider">Coming Soon</span>
-        ) : null}
+        {inner}
       </span>
     );
   }
 
-  if (pill.state === 'at_ceiling') {
+  if (!route) {
     return (
-      <Link
-        href={route}
-        aria-label={ariaLabel}
-        className="inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-full border border-[#2DA5A0] bg-[#2DA5A0]/15 px-3 py-2 text-xs font-medium text-[#2DA5A0] shadow-[0_0_12px_-2px_rgba(45,165,160,0.35)] transition-all duration-200 hover:translate-y-[-1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744] sm:text-sm"
+      <span
+        role="status"
+        aria-label={`${pill.label}, coming soon`}
+        aria-disabled="true"
+        className={`${base} opacity-60`}
       >
-        <Icon className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
-        <span className="truncate">{pill.label}</span>
-        <span className="text-[10px] uppercase tracking-wider opacity-70">
-          {Math.round(pill.current_contribution_pct)}%
+        <span className="flex items-center justify-center gap-1.5">
+          <span className="truncate text-[11px] font-semibold leading-none sm:text-xs">
+            {pill.label}
+          </span>
         </span>
-      </Link>
+        <span className="mt-1 truncate text-[10px] leading-none opacity-80 sm:text-[11px]">
+          Coming Soon
+        </span>
+      </span>
     );
   }
 
-  if (pill.state === 'in_use') {
-    return (
-      <Link
-        href={route}
-        aria-label={ariaLabel}
-        className="inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-full border border-[#2DA5A0]/40 bg-[#2DA5A0]/8 px-3 py-2 text-xs font-medium text-[#2DA5A0] transition-all duration-200 hover:translate-y-[-1px] hover:bg-[#2DA5A0]/12 hover:shadow-[0_4px_12px_-4px_rgba(45,165,160,0.4)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744] sm:text-sm"
-      >
-        <Icon className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
-        <span className="truncate">{pill.label}</span>
-        <span className="text-[10px] uppercase tracking-wider opacity-70">
-          {Math.round(pill.current_contribution_pct)}%
-        </span>
-      </Link>
-    );
-  }
-
-  // unused
   return (
     <Link
       href={route}
       aria-label={ariaLabel}
-      className="inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-full border border-white/15 bg-transparent px-3 py-2 text-xs font-medium text-white/80 transition-all duration-200 hover:translate-y-[-1px] hover:border-[#2DA5A0]/50 hover:bg-[#2DA5A0]/5 hover:text-[#2DA5A0] hover:shadow-[0_4px_12px_-4px_rgba(45,165,160,0.4)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744] sm:text-sm"
+      className={`${base} hover:translate-y-[-1px] hover:shadow-[0_4px_12px_-4px_rgba(45,165,160,0.35)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744]`}
     >
-      <Icon className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
-      <span className="truncate">{pill.label}</span>
+      {inner}
     </Link>
   );
-}
-
-function buildAriaLabel(pill: EngagementPillData, preCompute: boolean): string {
-  if (preCompute) {
-    return `${pill.label}, unlocks after CAQ completion`;
-  }
-  if (pill.state === 'at_ceiling') {
-    return `${pill.label} at ceiling, contributing ${Math.round(pill.current_contribution_pct)} percent`;
-  }
-  if (pill.state === 'in_use') {
-    return `${pill.label} in use, contributing ${Math.round(pill.current_contribution_pct)} percent`;
-  }
-  return `${pill.label} unused, log to start contributing`;
 }
