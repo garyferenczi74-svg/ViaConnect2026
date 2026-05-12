@@ -340,58 +340,9 @@ GRANT EXECUTE ON FUNCTION public.compute_bio_optimization_score(
   uuid, numeric, smallint, numeric, jsonb, text, text
 ) TO authenticated, service_role;
 
--- -----------------------------------------------------------------------------
--- Section 8b: claim_bos_compute_batch RPC (worker concurrency control)
--- -----------------------------------------------------------------------------
--- Atomically claims a batch of unprocessed bos_compute_queue rows using
--- SELECT FOR UPDATE SKIP LOCKED so concurrent worker invocations cannot
--- double-claim the same row. service_role only.
--- Claimed rows have processed_at set to a sentinel timestamp
--- ('9999-01-01 00:00:00+00') distinguishing claimed-but-incomplete from
--- finished rows. Downstream worker logic must:
---   * On success: UPDATE ... SET processed_at = now()
---   * On failure: UPDATE ... SET processed_at = NULL,
---                 processing_error = '...', retry_count = retry_count + 1
-CREATE OR REPLACE FUNCTION public.claim_bos_compute_batch(p_limit integer)
-RETURNS SETOF public.bos_compute_queue
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public, pg_temp
-AS $$
-DECLARE
-  v_caller_role text := auth.role();
-BEGIN
-  IF v_caller_role <> 'service_role' THEN
-    RAISE EXCEPTION 'claim_bos_compute_batch is service_role only'
-      USING ERRCODE = '42501';
-  END IF;
-  IF p_limit IS NULL OR p_limit < 1 OR p_limit > 1000 THEN
-    RAISE EXCEPTION 'p_limit must be between 1 and 1000'
-      USING ERRCODE = '22023';
-  END IF;
-
-  RETURN QUERY
-  WITH claimed AS (
-    SELECT id
-      FROM public.bos_compute_queue
-     WHERE processed_at IS NULL
-       AND retry_count < 5
-     ORDER BY enqueued_at
-     LIMIT p_limit
-     FOR UPDATE SKIP LOCKED
-  )
-  UPDATE public.bos_compute_queue q
-     SET processed_at = '9999-01-01 00:00:00+00'::timestamptz
-   WHERE q.id IN (SELECT id FROM claimed)
-  RETURNING q.*;
-END;
-$$;
-
-REVOKE ALL ON FUNCTION public.claim_bos_compute_batch(integer) FROM public;
-GRANT EXECUTE ON FUNCTION public.claim_bos_compute_batch(integer) TO service_role;
-
-COMMENT ON FUNCTION public.claim_bos_compute_batch(integer) IS
-  'Atomically claims a batch of unprocessed bos_compute_queue rows for worker drain using FOR UPDATE SKIP LOCKED. service_role only. Claimed rows have processed_at set to a sentinel; the worker overwrites with now() on success or NULL on retry.';
+-- Section 8b moved to Section 11b below because claim_bos_compute_batch
+-- declares RETURNS SETOF public.bos_compute_queue which requires the table
+-- to exist at function-creation time. The table is created in Section 10.
 
 -- -----------------------------------------------------------------------------
 -- Section 9: project_bio_optimization_score trigger function
@@ -522,6 +473,61 @@ CREATE POLICY "bos_telemetry_insert_observability"
   FOR INSERT
   TO authenticated
   WITH CHECK (is_canonical = false AND user_id = auth.uid());
+
+-- -----------------------------------------------------------------------------
+-- Section 11b: claim_bos_compute_batch RPC (worker concurrency control)
+-- -----------------------------------------------------------------------------
+-- Atomically claims a batch of unprocessed bos_compute_queue rows using
+-- SELECT FOR UPDATE SKIP LOCKED so concurrent worker invocations cannot
+-- double-claim the same row. service_role only.
+-- Claimed rows have processed_at set to a sentinel timestamp
+-- ('9999-01-01 00:00:00+00') distinguishing claimed-but-incomplete from
+-- finished rows. Downstream worker logic must:
+--   * On success: UPDATE ... SET processed_at = now()
+--   * On failure: UPDATE ... SET processed_at = NULL,
+--                 processing_error = '...', retry_count = retry_count + 1
+-- Placed AFTER Section 10 (bos_compute_queue table creation) because
+-- the RETURNS SETOF type reference requires the table to exist.
+CREATE OR REPLACE FUNCTION public.claim_bos_compute_batch(p_limit integer)
+RETURNS SETOF public.bos_compute_queue
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+DECLARE
+  v_caller_role text := auth.role();
+BEGIN
+  IF v_caller_role <> 'service_role' THEN
+    RAISE EXCEPTION 'claim_bos_compute_batch is service_role only'
+      USING ERRCODE = '42501';
+  END IF;
+  IF p_limit IS NULL OR p_limit < 1 OR p_limit > 1000 THEN
+    RAISE EXCEPTION 'p_limit must be between 1 and 1000'
+      USING ERRCODE = '22023';
+  END IF;
+
+  RETURN QUERY
+  WITH claimed AS (
+    SELECT id
+      FROM public.bos_compute_queue
+     WHERE processed_at IS NULL
+       AND retry_count < 5
+     ORDER BY enqueued_at
+     LIMIT p_limit
+     FOR UPDATE SKIP LOCKED
+  )
+  UPDATE public.bos_compute_queue q
+     SET processed_at = '9999-01-01 00:00:00+00'::timestamptz
+   WHERE q.id IN (SELECT id FROM claimed)
+  RETURNING q.*;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.claim_bos_compute_batch(integer) FROM public;
+GRANT EXECUTE ON FUNCTION public.claim_bos_compute_batch(integer) TO service_role;
+
+COMMENT ON FUNCTION public.claim_bos_compute_batch(integer) IS
+  'Atomically claims a batch of unprocessed bos_compute_queue rows for worker drain using FOR UPDATE SKIP LOCKED. service_role only. Claimed rows have processed_at set to a sentinel; the worker overwrites with now() on success or NULL on retry.';
 
 -- -----------------------------------------------------------------------------
 -- Section 12: COMMENT ON for new objects
