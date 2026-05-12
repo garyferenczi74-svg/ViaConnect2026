@@ -26,12 +26,32 @@ export function accuracyPillClassesForState(state: AccuracyPill['state']): {
       stateLabel: 'Awaiting results',
     };
   }
-  // incomplete (locked): legacy treatment, dim neutral background with
-  // a U+00B7 middle-dot " · unlock" suffix carried by the component.
+  // incomplete (locked): per-key gradient background applied at the
+  // component level via accuracyGradientForKey. State classifier here
+  // returns border + text only so the gradient is the dominant fill
+  // (mirrors the engagementPillClassesForState contract).
   return {
-    base: 'border-white/10 bg-white/[0.04] text-white/40',
+    base: 'border-white/10 text-white/40',
     stateLabel: 'Unlock',
   };
+}
+
+// Per-key gradient for accuracy pills, applied to the incomplete
+// (unlock) state. CAQ / Labs / Genetics progress along a cool to
+// warm spectrum that does not collide with the engagement row
+// palette (emerald to orange). Each stop sits at /20 to /10 opacity
+// so the gradient reads as a subtle wash over the dark card glass
+// rather than a saturated chip.
+
+export function accuracyGradientForKey(key: AccuracyPill['key']): string {
+  switch (key) {
+    case 'caq':
+      return 'bg-gradient-to-br from-sky-500/20 to-cyan-500/10';
+    case 'labs':
+      return 'bg-gradient-to-br from-violet-500/20 to-fuchsia-500/10';
+    case 'genetics':
+      return 'bg-gradient-to-br from-rose-500/20 to-pink-500/10';
+  }
 }
 
 export function buildAccuracyAriaLabel(pill: AccuracyPill): string {

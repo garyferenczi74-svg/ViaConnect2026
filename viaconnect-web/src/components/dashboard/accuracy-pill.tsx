@@ -23,6 +23,7 @@ import type { AccuracyPill as AccuracyPillData } from '@/lib/scoring/types';
 import { getPillRoute } from '@/lib/scoring/pill-routes';
 import {
   accuracyPillClassesForState,
+  accuracyGradientForKey,
   buildAccuracyAriaLabel,
 } from './bos-pill-helpers';
 
@@ -30,7 +31,7 @@ export interface AccuracyPillProps {
   pill: AccuracyPillData;
 }
 
-export { accuracyPillClassesForState, buildAccuracyAriaLabel };
+export { accuracyPillClassesForState, accuracyGradientForKey, buildAccuracyAriaLabel };
 
 const TOOLTIPS: Record<AccuracyPillData['key'], string> = {
   caq: 'Complete your CAQ to unlock 72% confidence',
@@ -69,15 +70,19 @@ export function AccuracyPill({ pill }: AccuracyPillProps) {
     );
   }
 
-  // incomplete: locked, render a Link to the destination
+  // incomplete: locked, render a Link to the destination. Gradient
+  // background applied per-key so CAQ, Labs, and Genetics each carry
+  // a distinct subtle wash; state-based classes contribute the border
+  // and dim text that still signal "locked".
   const lockedLabel = `${baseLabel} · unlock`;
+  const gradient = accuracyGradientForKey(pill.key);
 
   if (!route) {
     return (
       <span
         role="status"
         aria-label={ariaLabel}
-        className={`inline-flex items-center justify-center rounded-full border px-3 py-1 text-xs font-medium ${classes.base}`}
+        className={`inline-flex items-center justify-center rounded-full border px-3 py-1 text-xs font-medium ${classes.base} ${gradient}`}
       >
         {lockedLabel}
       </span>
@@ -89,7 +94,7 @@ export function AccuracyPill({ pill }: AccuracyPillProps) {
       href={route}
       title={TOOLTIPS[pill.key]}
       aria-label={ariaLabel}
-      className={`inline-flex items-center justify-center rounded-full border px-3 py-1 text-xs font-medium transition-colors hover:border-white/20 hover:text-white/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744] ${classes.base}`}
+      className={`inline-flex items-center justify-center rounded-full border px-3 py-1 text-xs font-medium transition-colors hover:border-white/20 hover:text-white/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744] ${classes.base} ${gradient}`}
     >
       {lockedLabel}
     </Link>
