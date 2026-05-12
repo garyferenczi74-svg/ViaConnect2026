@@ -1,0 +1,127 @@
+Step A3 Live Database Introspection Results
+============================================
+Project: nnhkcufyqjojdbvdrpky (production Supabase)
+Run timestamp: 2026-05-12 (via Supabase MCP execute_sql by orchestrator)
+Connection: read-only via the plugin:supabase:supabase MCP server
+
+----------------------------------------
+Q1: information_schema.columns WHERE column_name = 'compute_seq'
+----------------------------------------
+[{
+  "table_schema": "public",
+  "table_name": "bio_optimization_history",
+  "column_name": "compute_seq",
+  "data_type": "smallint",
+  "is_nullable": "NO",
+  "column_default": "1"
+}]
+
+CLASSIFICATION: Hypothesis 1 confirmed. compute_seq is a column on
+bio_optimization_history. Single match across all schemas.
+
+----------------------------------------
+Q2: pg_indexes WHERE indexdef ILIKE '%compute_seq%'
+----------------------------------------
+[{
+  "indexname": "bos_history_user_date_seq_key",
+  "indexdef": "CREATE UNIQUE INDEX bos_history_user_date_seq_key ON public.bio_optimization_history USING btree (user_id, date, compute_seq)"
+}]
+
+One unique composite index. compute_seq is the third key after user_id and date.
+
+----------------------------------------
+Q3: pg_constraint WHERE pg_get_constraintdef ILIKE '%compute_seq%'
+----------------------------------------
+[{
+  "conname": "bos_history_user_date_seq_key",
+  "table_name": "bio_optimization_history",
+  "definition": "UNIQUE (user_id, date, compute_seq)"
+}]
+
+The unique index above is backed by a UNIQUE constraint of the same name.
+
+----------------------------------------
+Q4: bio_optimization_history full shape (in ordinal_position order)
+----------------------------------------
+1.  id              uuid                       NOT NULL DEFAULT gen_random_uuid()
+2.  user_id         uuid                       NOT NULL
+3.  date            date                       NOT NULL DEFAULT CURRENT_DATE   <-- TZ-sensitive
+4.  score           numeric                    NOT NULL
+5.  source          text                       NULL     DEFAULT 'daily'
+6.  breakdown       jsonb                      NULL
+7.  created_at      timestamp with time zone   NULL     DEFAULT now()
+8.  tier            smallint                   NOT NULL
+9.  confidence      numeric                    NOT NULL
+10. compute_version text                       NOT NULL
+11. computed_at     timestamp with time zone   NOT NULL DEFAULT now()
+12. compute_seq     smallint                   NOT NULL DEFAULT 1            <-- the column in question
+
+date defaults to CURRENT_DATE which is session-timezone-dependent.
+computed_at defaults to now() which returns timestamptz, timezone-correct on its own.
+
+----------------------------------------
+Q5: compute_bio_optimization_score function body (full)
+----------------------------------------
+CREATE OR REPLACE FUNCTION public.compute_bio_optimization_score(
+  p_user_id uuid,
+  p_score numeric,
+  p_tier smallint,
+  p_confidence numeric,
+  p_breakdown jsonb,
+  p_compute_version text,
+  p_source text DEFAULT 'recalculation'::text
+)
+RETURNS uuid
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'public', 'pg_temp'
+AS $function$
+DECLARE
+  v_caller_id uuid := auth.uid();
+  v_id uuid;
+  v_next_seq smallint;
+BEGIN
+  IF v_caller_id IS NULL AND auth.role() <> 'service_role' THEN
+    RAISE EXCEPTION 'Authentication required' USING ERRCODE = '42501';
+  END IF;
+  IF v_caller_id IS NOT NULL AND v_caller_id <> p_user_id AND auth.role() <> 'service_role' THEN
+    RAISE EXCEPTION 'Caller % cannot write BOS for user %', v_caller_id, p_user_id USING ERRCODE = '42501';
+  END IF;
+  IF p_score IS NULL OR p_score < 0 OR p_score > 100 THEN
+    RAISE EXCEPTION 'Score must be between 0 and 100, got %', p_score USING ERRCODE = '22023';
+  END IF;
+  IF p_tier IS NULL OR p_tier NOT IN (1, 2, 3) THEN
+    RAISE EXCEPTION 'Tier must be 1, 2, or 3, got %', p_tier USING ERRCODE = '22023';
+  END IF;
+  IF p_confidence IS NULL OR p_confidence < 0 OR p_confidence > 1 THEN
+    RAISE EXCEPTION 'Confidence must be between 0 and 1, got %', p_confidence USING ERRCODE = '22023';
+  END IF;
+  IF p_compute_version IS NULL OR length(p_compute_version) = 0 THEN
+    RAISE EXCEPTION 'compute_version is required' USING ERRCODE = '22023';
+  END IF;
+  IF p_breakdown IS NULL OR jsonb_typeof(p_breakdown) <> 'object' THEN
+    RAISE EXCEPTION 'breakdown must be a non-null jsonb object' USING ERRCODE = '22023';
+  END IF;
+  IF p_source IS NULL OR p_source NOT IN ('caq_initial', 'daily', 'recalculation') THEN
+    RAISE EXCEPTION 'source must be caq_initial, daily, or recalculation, got %', p_source USING ERRCODE = '22023';
+  END IF;
+  SELECT COALESCE(MAX(compute_seq), 0) + 1
+    INTO v_next_seq
+    FROM public.bio_optimization_history
+   WHERE user_id = p_user_id AND date = CURRENT_DATE;        -- TZ-sensitive
+  INSERT INTO public.bio_optimization_history
+    (user_id, date, score, tier, confidence, breakdown, compute_version, computed_at, compute_seq, source)
+  VALUES
+    (p_user_id, CURRENT_DATE, p_score, p_tier, p_confidence, p_breakdown,        -- TZ-sensitive
+     p_compute_version, now(), v_next_seq, p_source)
+  RETURNING id INTO v_id;
+  RETURN v_id;
+END; $function$
+
+CURRENT_DATE appears TWICE inside the function. Both are session-timezone-dependent.
+
+Note: pg_proc returned only the one function. No other function in public.* references
+compute_seq. Trigger function project_bio_optimization_score and worker RPC
+claim_bos_compute_batch do not touch the column.
+
+End of introspection output.

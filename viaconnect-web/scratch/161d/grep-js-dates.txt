@@ -1,0 +1,55 @@
+src/app/api/bos/worker/route.ts:158:    (a, b) => new Date(b.enqueued_at).getTime() - new Date(a.enqueued_at).getTime(),
+src/hooks/body-tracker/useArnoldRecommendation.ts:171:        .update({ dismissed_at: new Date().toISOString() })
+src/hooks/body-tracker/useUserBiologicalSex.ts:124:        updated_at: new Date().toISOString(),
+src/hooks/body-tracker/useUserJourney.ts:99:    const startedAt = new Date().toISOString();
+src/hooks/useCheckinCard.ts:50:      const now = new Date().toISOString();
+src/hooks/useMarshallStatus.ts:28:      const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+src/hooks/useTodaysAdherence.ts:26:const today = () => new Date().toISOString().slice(0, 10);
+src/hooks/useTodaysAdherence.ts:120:              completed_at: next ? new Date().toISOString() : null,
+src/hooks/useTodaysMealsLogged.ts:19:const today = () => new Date().toISOString().slice(0, 10);
+src/lib/scoring/__tests__/cooldown.test.ts:32:    vi.setSystemTime(new Date('2026-05-11T12:00:00Z'));
+src/lib/scoring/__tests__/sources/body-tracker-source.test.ts:55:    const within7 = new Date(Date.now() - 2 * 86400000);
+src/lib/scoring/__tests__/sources/body-tracker-source.test.ts:56:    const within30 = new Date(Date.now() - 20 * 86400000);
+src/lib/scoring/__tests__/sources/body-tracker-source.test.ts:57:    const within7Date = within7.toISOString().slice(0, 10);
+src/lib/scoring/__tests__/sources/body-tracker-source.test.ts:58:    const within30Date = within30.toISOString().slice(0, 10);
+src/lib/scoring/__tests__/sources/body-tracker-source.test.ts:62:          created_at: within7.toISOString(),
+src/lib/scoring/__tests__/sources/body-tracker-source.test.ts:68:          created_at: within30.toISOString(),
+src/lib/scoring/__tests__/sources/body-tracker-source.test.ts:77:    expect(result.last_engaged_at).toBe(within7.toISOString());
+src/lib/scoring/__tests__/sources/helix-challenges-source.test.ts:44:    const within7 = new Date(Date.now() - 3 * 86400000).toISOString();
+src/lib/scoring/__tests__/sources/helix-challenges-source.test.ts:45:    const within30 = new Date(Date.now() - 20 * 86400000).toISOString();
+src/lib/scoring/__tests__/sources/nutrition-source.test.ts:68:    const today = new Date();
+src/lib/scoring/__tests__/sources/nutrition-source.test.ts:69:    const within7 = new Date(today.getTime() - 3 * 86400000).toISOString().slice(0, 10);
+src/lib/scoring/__tests__/sources/nutrition-source.test.ts:70:    const within30 = new Date(today.getTime() - 20 * 86400000).toISOString().slice(0, 10);
+src/lib/scoring/__tests__/sources/plug-ins-source.test.ts:37:    const within7 = new Date(Date.now() - 3 * 86400000).toISOString();
+src/lib/scoring/__tests__/sources/plug-ins-source.test.ts:38:    const within30 = new Date(Date.now() - 20 * 86400000).toISOString();
+src/lib/scoring/__tests__/sources/supplements-source.test.ts:35:    const within7Start = new Date(Date.now() - 4 * 86400000).toISOString();
+src/lib/scoring/__tests__/sources/supplements-source.test.ts:36:    const within30Start = new Date(Date.now() - 25 * 86400000).toISOString();
+src/lib/scoring/__tests__/sources/wearable-source.test.ts:63:          date: new Date().toISOString().slice(0, 10),
+src/lib/scoring/__tests__/sources/wearable-source.test.ts:77:    const today = new Date();
+src/lib/scoring/__tests__/sources/wearable-source.test.ts:78:    const d2 = new Date(today.getTime() - 2 * 86400000).toISOString().slice(0, 10);
+src/lib/scoring/__tests__/sources/wearable-source.test.ts:79:    const d20 = new Date(today.getTime() - 20 * 86400000).toISOString().slice(0, 10);
+src/lib/scoring/bio-optimization-score.ts:379:  const startedAt = new Date(startTime).toISOString();
+src/lib/scoring/bio-optimization-score.ts:488:  const finishedAt = new Date().toISOString();
+src/lib/scoring/bio-optimization-score.ts:541:    date: new Date().toISOString().slice(0, 10),
+src/lib/scoring/cooldown.ts:54:    const lastMs = new Date(lastIso).getTime();
+src/lib/scoring/queue.ts:124:    .update({ processed_at: new Date().toISOString() })
+src/lib/scoring/sources/body-tracker-source.ts:32:  return d.toISOString().slice(0, 10);
+src/lib/scoring/sources/body-tracker-source.ts:36:  const d = new Date();
+src/lib/scoring/sources/body-tracker-source.ts:96:      .sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+src/lib/scoring/sources/genetics-source.ts:46:  return new Date(a).getTime() >= new Date(b).getTime() ? a : b;
+src/lib/scoring/sources/helix-challenges-source.ts:30:  const t = new Date(iso).getTime();
+src/lib/scoring/sources/helix-challenges-source.ts:69:      .sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+src/lib/scoring/sources/nutrition-source.ts:30:  return d.toISOString().slice(0, 10);
+src/lib/scoring/sources/nutrition-source.ts:34:  const d = new Date();
+src/lib/scoring/sources/plug-ins-source.ts:36:  const t = new Date(iso).getTime();
+src/lib/scoring/sources/plug-ins-source.ts:73:      .sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+src/lib/scoring/sources/supplements-source.ts:32:  const t = new Date(iso).getTime();
+src/lib/scoring/sources/supplements-source.ts:70:      .map((t) => ({ iso: t, ms: new Date(t).getTime() }))
+src/lib/scoring/sources/wearable-source.ts:41:  return d.toISOString().slice(0, 10);
+src/lib/scoring/sources/wearable-source.ts:45:  const d = new Date();
+src/lib/scoring/sources/wearable-source.ts:53:  return new Date(a).getTime() >= new Date(b).getTime() ? a : b;
+src/lib/scoring/sources/wearable-source.ts:98:      .sort((a, b) => new Date(b).getTime() - new Date(a).getTime())[0];
+src/lib/scoring/sources/wearable-source.ts:103:      .sort((a, b) => new Date(b).getTime() - new Date(a).getTime())[0];
+src/lib/scoring/sources/wearable-source.ts:122:      const av = a.updated_at ? new Date(a.updated_at).getTime() : 0;
+src/lib/scoring/sources/wearable-source.ts:123:      const bv = b.updated_at ? new Date(b.updated_at).getTime() : 0;
+src/lib/scoring/unified/unifiedScoringEngine.ts:89:    calculatedAt: new Date().toISOString(),

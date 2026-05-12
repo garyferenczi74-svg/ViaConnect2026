@@ -1,0 +1,11 @@
+supabase/migrations/20260512020236_bos_compute_v2.sql:15:--       where user_id = p_user_id and date = current_date), 0) plus 1.
+supabase/migrations/20260512020236_bos_compute_v2.sql:69:  ADD COLUMN IF NOT EXISTS computed_at timestamptz DEFAULT now();
+supabase/migrations/20260512020236_bos_compute_v2.sql:91:   SET computed_at = COALESCE(created_at, now())
+supabase/migrations/20260512020236_bos_compute_v2.sql:316:  -- Compute next compute_seq for the (user_id, current_date) tuple.
+supabase/migrations/20260512020236_bos_compute_v2.sql:328:     p_compute_version, now(), v_next_seq, p_source)
+supabase/migrations/20260512020236_bos_compute_v2.sql:389:  enqueued_at timestamptz NOT NULL DEFAULT now(),
+supabase/migrations/20260512020236_bos_compute_v2.sql:435:  occurred_at timestamptz NOT NULL DEFAULT now(),
+supabase/migrations/20260512020236_bos_compute_v2.sql:486:--   * On success: UPDATE ... SET processed_at = now()
+supabase/migrations/20260512020236_bos_compute_v2.sql:530:  'Atomically claims a batch of unprocessed bos_compute_queue rows for worker drain using FOR UPDATE SKIP LOCKED. service_role only. Claimed rows have processed_at set to a sentinel; the worker overwrites with now() on success or NULL on retry.';
+supabase/migrations/20260512074126_bos_telemetry_hardening.sql:91:   WHERE occurred_at < now() - interval '90 days';
+supabase/migrations/20260512074126_bos_telemetry_hardening.sql:96:     AND processed_at < now() - interval '30 days';

@@ -1,0 +1,12 @@
+supabase/migrations/20260512020236_bos_compute_v2.sql:10:--   Q1: Add compute_seq smallint NOT NULL DEFAULT 1.
+supabase/migrations/20260512020236_bos_compute_v2.sql:12:--       ADD UNIQUE (user_id, date, compute_seq).
+supabase/migrations/20260512020236_bos_compute_v2.sql:13:--       The RPC auto-increments compute_seq for same-day computes via
+supabase/migrations/20260512020236_bos_compute_v2.sql:14:--       coalesce((select max(compute_seq) from bio_optimization_history
+supabase/migrations/20260512020236_bos_compute_v2.sql:71:  ADD COLUMN IF NOT EXISTS compute_seq smallint NOT NULL DEFAULT 1;
+supabase/migrations/20260512020236_bos_compute_v2.sql:191:-- Create new unique constraint covering (user_id, date, compute_seq).
+supabase/migrations/20260512020236_bos_compute_v2.sql:200:      ON public.bio_optimization_history (user_id, date, compute_seq);
+supabase/migrations/20260512020236_bos_compute_v2.sql:254:-- compute_seq auto-increments per (user_id, date).
+supabase/migrations/20260512020236_bos_compute_v2.sql:316:  -- Compute next compute_seq for the (user_id, current_date) tuple.
+supabase/migrations/20260512020236_bos_compute_v2.sql:317:  SELECT COALESCE(MAX(compute_seq), 0) + 1
+supabase/migrations/20260512020236_bos_compute_v2.sql:325:     compute_version, computed_at, compute_seq, source)
+supabase/migrations/20260512020236_bos_compute_v2.sql:543:COMMENT ON COLUMN public.bio_optimization_history.compute_seq IS
