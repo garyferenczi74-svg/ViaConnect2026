@@ -33,6 +33,15 @@ export default function PhotoAiPage() {
   const inputRef = useRef<HTMLInputElement>(null);
 
   function handleFile(selected: File | null) {
+    // Prompt #163a section 5.1: namespaced client logging at every state
+    // transition so the next photo-route failure is diagnosable from the
+    // browser console without log archaeology.
+    console.log('[photo-ai] file selected', {
+      hasFile: !!selected,
+      name: selected?.name,
+      size: selected?.size,
+      type: selected?.type,
+    });
     setError(null);
     if (!selected) {
       setFile(null);
@@ -43,18 +52,21 @@ export default function PhotoAiPage() {
       return;
     }
     if (selected.size > MAX_FILE_BYTES) {
-      setError('Image too large. Max 10 MB.');
+      console.warn('[photo-ai] file rejected: too large', { size: selected.size });
+      setError(`Image too large (${(selected.size / 1024 / 1024).toFixed(1)} MB). Max 10 MB. Please resize and try again.`);
       return;
     }
     const t = selected.type.toLowerCase();
     if (!ALLOWED_TYPES.includes(t)) {
+      console.warn('[photo-ai] file rejected: unsupported type', { type: t });
       if (t === 'image/heic' || t === 'image/heif') {
-        setError('HEIC not supported yet. Please use JPG or PNG.');
+        setError('HEIC photos from iPhone are not yet supported. In Photos, tap Share, then Save as JPEG and upload that file. Or change iPhone settings: Settings, Camera, Formats, Most Compatible.');
         return;
       }
       setError('Unsupported image type. Use JPG, PNG, or WEBP.');
       return;
     }
+    console.log('[photo-ai] file accepted, set state');
     setFile(selected);
     setPreviewUrl((prev) => {
       if (prev) URL.revokeObjectURL(prev);
@@ -63,7 +75,16 @@ export default function PhotoAiPage() {
   }
 
   async function handleAnalyze() {
-    if (!file) return;
+    console.log('[photo-ai] submit invoked', {
+      hasFile: !!file,
+      mealType,
+      loggedAt,
+      hasNote: !!note.trim(),
+    });
+    if (!file) {
+      console.warn('[photo-ai] submit aborted: no file in state');
+      return;
+    }
     setSubmitting(true);
     setError(null);
     try {
@@ -73,19 +94,24 @@ export default function PhotoAiPage() {
       form.append('loggedAt', new Date(loggedAt).toISOString());
       if (note.trim()) form.append('note', note.trim().slice(0, 500));
 
+      console.log('[photo-ai] fetch starting', { url: '/api/nutrition/analyze-photo' });
       const res = await fetch('/api/nutrition/analyze-photo', {
         method: 'POST',
         body: form,
       });
+      console.log('[photo-ai] fetch returned', { status: res.status, ok: res.ok });
       if (!res.ok) {
         const { error: msg } = await res.json().catch(() => ({ error: 'Analysis failed' }));
+        console.warn('[photo-ai] non-2xx response', { status: res.status, msg });
         setError(msg);
         setSubmitting(false);
         return;
       }
       const { logId } = await res.json();
+      console.log('[photo-ai] success, navigating to review', { logId });
       router.push(`/nutrition/log-meal/review?logId=${logId}`);
-    } catch {
+    } catch (err) {
+      console.error('[photo-ai] fetch threw', err);
       setError('Network error. Try again.');
       setSubmitting(false);
     }
@@ -159,12 +185,15 @@ export default function PhotoAiPage() {
             ) : (
               <button
                 type="button"
-                onClick={() => inputRef.current?.click()}
+                onClick={() => {
+                  console.log('[photo-ai] picker triggered');
+                  inputRef.current?.click();
+                }}
                 className="flex w-full flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-white/[0.12] bg-white/[0.03] py-12 text-white/55 transition-colors hover:bg-white/[0.06]"
               >
                 <Camera className="h-8 w-8" strokeWidth={1.5} />
                 <span className="text-sm font-medium">Tap to capture or upload</span>
-                <span className="text-[11px] text-white/30">JPG, PNG, or WEBP, up to 10 MB</span>
+                <span className="text-[11px] text-white/30">JPG, PNG, or WEBP, up to 10 MB. iPhone HEIC not supported.</span>
               </button>
             )}
           </div>

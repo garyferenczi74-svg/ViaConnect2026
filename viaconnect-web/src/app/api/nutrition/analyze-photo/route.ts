@@ -19,6 +19,18 @@ const ALLOWED_MIME = new Set(['image/jpeg', 'image/jpg', 'image/png', 'image/web
 
 export async function POST(req: NextRequest) {
   const startedAt = Date.now();
+  // Prompt #163a section 5.2: immediate structured landing log so we can
+  // confirm requests actually reach the handler before any validation runs.
+  // If the browser fires a POST and this line never appears in logs, the
+  // bug is upstream (middleware, route registration, body-size cap), not
+  // in the handler.
+  // eslint-disable-next-line no-console
+  console.log(JSON.stringify({
+    event: 'photo_analyze_received',
+    contentType: req.headers.get('content-type'),
+    contentLength: req.headers.get('content-length'),
+    timestamp: new Date().toISOString(),
+  }));
 
   try {
     const supabase = createClient();
