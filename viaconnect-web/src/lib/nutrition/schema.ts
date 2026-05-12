@@ -1,9 +1,13 @@
-// Prompt #160: Zod schema for the Gordan macronutrient analysis returned by
-// Claude. parseNutritionResponse() validates the raw JSON against this shape
-// and throws on any field missing or out-of-range, so the route handler can
-// return 502 to the client without leaking partial data.
+// Prompt #160 (extended by #164): Zod schema for the macronutrient analysis
+// returned by the Layer-1/Layer-2/Layer-3 pipeline. The route handler validates
+// the aggregated result against this shape so consumer clients only see
+// data that conforms. The optional `data_source` field added in #164 keeps the
+// schema backward-compatible with rows persisted by #160/#161.
 
 import { z } from 'zod';
+
+export const DataSourceSchema = z.enum(['usda', 'gemini_fallback', 'mixed', 'manual']);
+export type DataSource = z.infer<typeof DataSourceSchema>;
 
 export const NutritionAnalysisSchema = z.object({
   calories: z.number().int().min(0).max(20000),
@@ -18,6 +22,7 @@ export const NutritionAnalysisSchema = z.object({
   confidence: z.number().min(0).max(1),
   ai_notes: z.string().max(2000),
   serving_description: z.string().max(2000),
+  data_source: DataSourceSchema.optional(),
 });
 
 export type NutritionAnalysis = z.infer<typeof NutritionAnalysisSchema>;
