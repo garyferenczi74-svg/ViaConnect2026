@@ -8,7 +8,6 @@ import { TodaysProtocol } from '@/components/dashboard/TodaysProtocol';
 import { WellnessSnapshot } from '@/components/dashboard/WellnessSnapshot';
 import { DailyScoresPanel } from '@/components/dashboard/DailyScoresPanel';
 import { HelixRewardsSummary } from '@/components/dashboard/HelixRewardsSummary';
-import { QuickActionsGrid } from '@/components/dashboard/QuickActionsGrid';
 import { DailyInsightsCard } from '@/components/dashboard/DailyInsightsCard';
 import { PatternCirclePreview } from '@/components/community/PatternCirclePreview';
 import { ConnectCard } from '@/components/dashboard/ConnectCard';
@@ -165,9 +164,6 @@ export default function ConsumerDashboard() {
             <ConnectCard type="app" href="/plugins/apps" />
           </div>
         </div>
-
-        {/* ── 5. Quick Actions ─────────────────────────────── */}
-        <QuickActionsGrid />
 
         {/* ── Daily Insights (Prompt #61, replaces DailyUltrathinkTip) ── */}
         <DailyInsightsCard profile={profile} supplements={supplements} />
