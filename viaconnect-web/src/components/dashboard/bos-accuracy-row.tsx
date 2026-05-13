@@ -11,10 +11,10 @@
 // Both strings are imported from bos-row-copy.ts so the canonical
 // text can be asserted in pure Vitest tests without rendering JSX.
 //
-// The 3 pill grid uses grid-cols-3 gap-2 at every breakpoint so the
-// row reads identically on mobile (380px) and desktop. Pills size
-// themselves via flex content; truncation handled inside the
-// AccuracyPill component for cells around 110px wide.
+// The 3 pills sit in a left-packed flex row (flex-wrap gap-2) so they
+// hug the left edge at their natural widths rather than each occupying
+// a third of the row. On narrow screens the row wraps; pills never
+// stretch to fill space, so the visual rhythm stays tight.
 
 import type { AccuracyPill as AccuracyPillData } from '@/lib/scoring/types';
 import { AccuracyPill } from './accuracy-pill';
@@ -41,10 +41,10 @@ export function BOSAccuracyRow({ pills }: BOSAccuracyRowProps) {
       <ul
         role="list"
         aria-label="Diagnostic accuracy levers"
-        className="mt-3 grid grid-cols-3 gap-2"
+        className="mt-3 flex flex-wrap items-center gap-2"
       >
         {pills.map((pill) => (
-          <li key={pill.key} className="min-w-0">
+          <li key={pill.key}>
             <AccuracyPill pill={pill} />
           </li>
         ))}
