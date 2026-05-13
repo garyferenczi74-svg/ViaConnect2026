@@ -85,8 +85,20 @@ export default function LogMealPage() {
         }),
       });
       if (!res.ok) {
-        const body = await res.json().catch(() => null) as { error?: string | { message?: string } } | null;
-        const msg = (body?.error && typeof body.error === 'object' ? body.error.message : body?.error) ?? 'Analysis failed';
+        const body = await res.json().catch(() => null) as unknown;
+        const errField = (body && typeof body === 'object' && body !== null && 'error' in body)
+          ? (body as { error: unknown }).error
+          : undefined;
+        let msg: string;
+        if (typeof errField === 'string') {
+          msg = errField;
+        } else if (errField && typeof errField === 'object' && 'message' in errField && typeof (errField as { message: unknown }).message === 'string') {
+          msg = (errField as { message: string }).message;
+        } else {
+          msg = 'Analysis failed';
+        }
+        // eslint-disable-next-line no-console
+        console.log('[#164 analyze-text non-2xx]', { status: res.status, body, msg, msgType: typeof msg });
         setError(msg);
         setSubmitting(false);
         return;
