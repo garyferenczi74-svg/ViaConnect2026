@@ -2,8 +2,9 @@
 
 // EngagementPill: single engagement pill (one of six levers).
 //
-// Patch pass (Phase A corrective + Gary directive): pills now carry a
-// per-lever bg-gradient-to-br background, with state-driven
+// Patch pass (Phase A corrective + Gary directive 2026-05-12 unification):
+// pills now carry the unified BOS_PILL_GRADIENT background shared with
+// the accuracy pills and the side-panel chips, with state-driven
 // modulation layered on top:
 //   unused      gradient dimmed to opacity-60
 //   in_use      full saturation, prominent "+X.X pts/day" velocity
@@ -17,9 +18,9 @@
 // empty state. When the destination route is not wired, renders
 // disabled with a "Coming Soon" subline.
 //
-// Pure helpers (state classifier, gradient lookup, state modifier,
-// velocity formatter, aria-label builder) live in bos-pill-helpers.ts
-// so they can be imported by JSX-free tests.
+// Pure helpers (state classifier, state modifier, velocity formatter,
+// aria-label builder, unified gradient constant) live in
+// bos-pill-helpers.ts so they can be imported by JSX-free tests.
 
 import Link from 'next/link';
 import { Check } from 'lucide-react';
@@ -28,10 +29,10 @@ import { ENGAGEMENT_PILL_ICONS } from '@/lib/scoring/pill-icons';
 import { getPillRoute } from '@/lib/scoring/pill-routes';
 import {
   engagementPillClassesForState,
-  engagementGradientForKey,
   engagementStateModifier,
   buildEngagementAriaLabel,
   formatVelocity,
+  BOS_PILL_GRADIENT,
 } from './bos-pill-helpers';
 
 export interface EngagementPillProps {
@@ -41,7 +42,6 @@ export interface EngagementPillProps {
 
 export {
   engagementPillClassesForState,
-  engagementGradientForKey,
   engagementStateModifier,
   buildEngagementAriaLabel,
   formatVelocity,
@@ -49,7 +49,6 @@ export {
 
 export function EngagementPill({ pill, preCompute = false }: EngagementPillProps) {
   const classes = engagementPillClassesForState(pill.state);
-  const gradient = engagementGradientForKey(pill.key);
   const modifier = engagementStateModifier(pill.state);
   const ariaLabel = buildEngagementAriaLabel(pill, preCompute);
   const route = getPillRoute(pill.destination_key);
@@ -83,7 +82,7 @@ export function EngagementPill({ pill, preCompute = false }: EngagementPillProps
     </>
   );
 
-  const base = `inline-flex w-full min-h-[56px] flex-col items-center justify-center rounded-xl border px-2 py-2 transition-all duration-200 ${gradient} ${modifier} ${classes.base}`;
+  const base = `inline-flex w-full min-h-[56px] flex-col items-center justify-center rounded-xl border px-2 py-2 transition-all duration-200 ${BOS_PILL_GRADIENT} ${modifier} ${classes.base}`;
 
   if (preCompute) {
     return (

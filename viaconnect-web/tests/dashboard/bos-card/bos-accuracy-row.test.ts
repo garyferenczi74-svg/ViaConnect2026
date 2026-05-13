@@ -13,6 +13,7 @@ import {
 import {
   accuracyPillClassesForState,
   buildAccuracyAriaLabel,
+  BOS_PILL_GRADIENT,
 } from '@/components/dashboard/bos-pill-helpers';
 import type { AccuracyPill } from '@/lib/scoring/types';
 
@@ -33,29 +34,33 @@ describe('BOSAccuracyRow / verbatim copy', () => {
   });
 });
 
-describe('AccuracyPill / state matrix (canonical legacy)', () => {
-  it('complete state uses teal background and Complete label', () => {
+describe('AccuracyPill / state matrix (Gary directive 2026-05-12: border + text only, BOS_PILL_GRADIENT supplies the bg)', () => {
+  it('complete state uses teal border + teal text', () => {
     const c = accuracyPillClassesForState('complete');
-    expect(c.base).toContain('bg-[#2DA5A0]/15');
     expect(c.base).toContain('border-[#2DA5A0]/30');
     expect(c.base).toContain('text-[#2DA5A0]');
     expect(c.stateLabel).toBe('Complete');
   });
 
-  it('incomplete state uses dim neutral background (legacy locked treatment)', () => {
+  it('incomplete state uses dim neutral border + dim text', () => {
     const c = accuracyPillClassesForState('incomplete');
-    expect(c.base).toContain('bg-white/[0.04]');
     expect(c.base).toContain('border-white/10');
     expect(c.base).toContain('text-white/40');
     expect(c.stateLabel).toBe('Unlock');
   });
 
-  it('awaiting_results state uses neutral outline and Awaiting label', () => {
+  it('awaiting_results state uses neutral outline + soft text', () => {
     const c = accuracyPillClassesForState('awaiting_results');
     expect(c.base).toContain('border-white/30');
-    expect(c.base).toContain('bg-white/[0.05]');
     expect(c.base).toContain('text-white/70');
     expect(c.stateLabel).toBe('Awaiting results');
+  });
+
+  it('no state declares its own background class (BOS_PILL_GRADIENT supplies it)', () => {
+    for (const s of ['complete', 'incomplete', 'awaiting_results'] as const) {
+      const c = accuracyPillClassesForState(s);
+      expect(c.base).not.toContain('bg-');
+    }
   });
 
   it('all three states yield visually distinct base classes', () => {
@@ -65,6 +70,12 @@ describe('AccuracyPill / state matrix (canonical legacy)', () => {
     expect(a).not.toBe(b);
     expect(b).not.toBe(c);
     expect(a).not.toBe(c);
+  });
+
+  it('BOS_PILL_GRADIENT is the unified background applied at component level', () => {
+    expect(BOS_PILL_GRADIENT).toContain('bg-gradient-to-br');
+    expect(BOS_PILL_GRADIENT).toContain('from-[#1A2744]');
+    expect(BOS_PILL_GRADIENT).toContain('to-[#2DA5A0]');
   });
 });
 

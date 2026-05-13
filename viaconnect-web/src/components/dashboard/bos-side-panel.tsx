@@ -21,6 +21,7 @@ import { TrendingDown, TrendingUp, Minus, ShieldCheck } from 'lucide-react';
 import type { BOSCurrentResponse } from '@/lib/scoring/types';
 import { colorForScore } from './bos-gauge-helpers';
 import { BOSStaticExplanation } from './bos-static-explanation';
+import { BOS_PILL_GRADIENT } from './bos-pill-helpers';
 import {
   buildSidePanelHeadline,
   buildWeeklyDeltaChip,
@@ -68,7 +69,7 @@ export function BOSSidePanel({
       {/* Three info chips */}
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
         {/* Weekly delta */}
-        <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5">
+        <div className={`flex items-center gap-2 rounded-xl border border-white/10 ${BOS_PILL_GRADIENT} px-3 py-2.5`}>
           {delta.polarity === 'up' ? (
             <TrendingUp
               className="h-4 w-4 flex-shrink-0"
@@ -100,7 +101,7 @@ export function BOSSidePanel({
         </div>
 
         {/* Tier */}
-        <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5">
+        <div className={`flex items-center gap-2 rounded-xl border border-white/10 ${BOS_PILL_GRADIENT} px-3 py-2.5`}>
           <div
             className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg"
             style={{
@@ -122,7 +123,7 @@ export function BOSSidePanel({
         </div>
 
         {/* Confidence */}
-        <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5">
+        <div className={`flex items-center gap-2 rounded-xl border border-white/10 ${BOS_PILL_GRADIENT} px-3 py-2.5`}>
           <div className="min-w-0">
             <p className="text-[10px] uppercase tracking-wider text-white/40">
               Confidence
