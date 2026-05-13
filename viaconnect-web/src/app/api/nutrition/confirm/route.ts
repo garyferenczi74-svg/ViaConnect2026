@@ -71,6 +71,7 @@ export async function POST(req: NextRequest) {
     if (userEdited) {
       update.user_edited = true;
       update.confidence = 1.0;
+      update.data_source = 'manual';
     }
 
     const { data: row, error: selErr } = await supabase
