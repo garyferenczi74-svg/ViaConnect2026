@@ -18,7 +18,7 @@ import { RefreshCw, FileQuestion } from 'lucide-react';
 
 // Pre-uploaded hero image (Hero Images bucket — already public, full URL)
 const DASHBOARD_HERO_IMAGE =
-  'https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Images/Hero%20lake%20workout.png';
+  'https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Images/Athlete%2012.png';
 const DASHBOARD_HERO_IMAGE_MOBILE =
   'https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Mobile%20Hero/Athlete%2012%20Mobile.png';
 
