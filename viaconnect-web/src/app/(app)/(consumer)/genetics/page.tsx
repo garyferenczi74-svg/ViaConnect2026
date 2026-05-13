@@ -307,7 +307,7 @@ export default function GeneticsPage() {
         </section>
 
         {/* ═══ LAB RESULTS UPLOAD (ORANGE ACCENT) ═══ */}
-        <section className="rounded-2xl border border-orange-400/15 p-6 md:p-8 relative overflow-hidden backdrop-blur-md" style={{ background: "linear-gradient(135deg, rgba(26,39,68,0.45), rgba(42,31,21,0.50))" }}>
+        <section id="upload-lab-results" className="scroll-mt-24 rounded-2xl border border-orange-400/15 p-6 md:p-8 relative overflow-hidden backdrop-blur-md" style={{ background: "linear-gradient(135deg, rgba(26,39,68,0.45), rgba(42,31,21,0.50))" }}>
           <div className="absolute top-4 right-4 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-orange-400/10 border border-orange-400/20 z-10">
             <Shield className="w-3 h-3 text-orange-400" strokeWidth={1.5} /><span className="text-[10px] text-orange-400 font-medium">HIPAA-aware</span>
           </div>

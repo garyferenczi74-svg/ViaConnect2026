@@ -12,7 +12,9 @@
 //
 // Routes verified against src/app/(app)/(consumer)/ on 2026-05-12:
 //   caq_resume          /onboarding/i-caq-intro          (auth route group)
-//   labs_upload         /plugins/labs                    (consumer)
+//   labs_upload         /genetics#upload-lab-results     (consumer; deep link
+//                                                         to the Upload Lab
+//                                                         Results section)
 //   genex360_purchase   /shop/genex360                   (consumer)
 //   genex360_status     /genetics                        (consumer; status surface)
 //   nutrition_log       /nutrition/log-meal              (consumer; spec /log adapted)
@@ -36,7 +38,7 @@ export type PillDestinationKey =
 
 export const PILL_ROUTES: Record<PillDestinationKey, string> = {
   caq_resume: '/onboarding/i-caq-intro',
-  labs_upload: '/plugins/labs',
+  labs_upload: '/genetics#upload-lab-results',
   genex360_purchase: '/shop/genex360',
   genex360_status: '/genetics',
   nutrition_log: '/nutrition/log-meal',
