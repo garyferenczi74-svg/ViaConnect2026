@@ -85,7 +85,8 @@ export default function LogMealPage() {
         }),
       });
       if (!res.ok) {
-        const { error: msg } = await res.json().catch(() => ({ error: 'Analysis failed' }));
+        const body = await res.json().catch(() => null) as { error?: string | { message?: string } } | null;
+        const msg = (body?.error && typeof body.error === 'object' ? body.error.message : body?.error) ?? 'Analysis failed';
         setError(msg);
         setSubmitting(false);
         return;

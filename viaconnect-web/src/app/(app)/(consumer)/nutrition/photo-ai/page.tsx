@@ -101,7 +101,8 @@ export default function PhotoAiPage() {
       });
       console.log('[photo-ai] fetch returned', { status: res.status, ok: res.ok });
       if (!res.ok) {
-        const { error: msg } = await res.json().catch(() => ({ error: 'Analysis failed' }));
+        const body = await res.json().catch(() => null) as { error?: string | { message?: string } } | null;
+        const msg = (body?.error && typeof body.error === 'object' ? body.error.message : body?.error) ?? 'Analysis failed';
         console.warn('[photo-ai] non-2xx response', { status: res.status, msg });
         setError(msg);
         setSubmitting(false);
