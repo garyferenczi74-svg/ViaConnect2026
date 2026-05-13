@@ -88,14 +88,14 @@ export default function ConsumerDashboard() {
     <MobileHeroBackground
       src={DASHBOARD_HERO_IMAGE}
       mobileSrc={DASHBOARD_HERO_IMAGE_MOBILE}
-      overlayOpacity={0.35}
+      overlayGradient={false}
       priority
       objectPosition="center 45%"
     />
 
     <div className="relative z-10 min-h-screen w-full text-white">
-      {/* Progressive overlay: lightest at top (image breathes), solid navy at bottom (desktop only) */}
-      <div className="min-h-screen md:bg-gradient-to-b md:from-[rgba(10,15,35,0.30)] md:via-[rgba(26,39,68,0.60)] md:to-[rgba(26,39,68,0.95)]">
+      {/* Shadow overlay removed per Gary directive 2026-05-12; hero shows clean */}
+      <div className="min-h-screen">
 
         {/* ── Tagline — image fully visible ── */}
         <div className="w-full px-4 pt-14 pb-6 text-center">
