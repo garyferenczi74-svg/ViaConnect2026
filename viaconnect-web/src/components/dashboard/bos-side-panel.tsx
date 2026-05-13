@@ -17,7 +17,7 @@
 // helper builders; the surrounding wiring is ready for the read API
 // to add those fields without touching this file.
 
-import { TrendingDown, TrendingUp, Minus, ShieldCheck } from 'lucide-react';
+import { TrendingDown, TrendingUp, Minus, ShieldCheck, Target } from 'lucide-react';
 import type { BOSCurrentResponse } from '@/lib/scoring/types';
 import { colorForScore } from './bos-gauge-helpers';
 import { BOSStaticExplanation } from './bos-static-explanation';
@@ -122,11 +122,25 @@ export function BOSSidePanel({
           </div>
         </div>
 
-        {/* Confidence */}
+        {/* Accuracy */}
         <div className={`flex items-center gap-2 rounded-xl border border-white/10 ${BOS_PILL_GRADIENT} px-3 py-2.5`}>
+          <div
+            className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg"
+            style={{
+              background: `${bandColor}22`,
+              border: `1px solid ${bandColor}40`,
+            }}
+            aria-hidden="true"
+          >
+            <Target
+              className="h-3.5 w-3.5"
+              strokeWidth={1.5}
+              style={{ color: bandColor }}
+            />
+          </div>
           <div className="min-w-0">
             <p className="text-[10px] uppercase tracking-wider text-white/40">
-              Confidence
+              Accuracy
             </p>
             <p className="text-sm font-semibold text-white">
               {data.confidence_display}
