@@ -7,10 +7,10 @@ import {
 } from '@/components/dashboard/bos-row-copy';
 import {
   engagementPillClassesForState,
+  engagementGradientForKey,
   engagementStateModifier,
   buildEngagementAriaLabel,
   formatVelocity,
-  BOS_PILL_GRADIENT,
 } from '@/components/dashboard/bos-pill-helpers';
 import type { EngagementPill } from '@/lib/scoring/types';
 
@@ -129,20 +129,61 @@ describe('EngagementPill / velocity formatter', () => {
   });
 });
 
-describe('EngagementPill / unified BOS pill gradient (Gary directive 2026-05-12)', () => {
-  it('exposes a single unified gradient constant for every pill in the BOS card', () => {
-    expect(BOS_PILL_GRADIENT).toContain('bg-gradient-to-br');
-    expect(BOS_PILL_GRADIENT).toContain('from-');
-    expect(BOS_PILL_GRADIENT).toContain('to-');
+describe('EngagementPill / per-key gradient palette (Gary directive 2026-05-12 reversal)', () => {
+  it('returns a unique bg-gradient-to-br class per lever key', () => {
+    const seen = new Set<string>();
+    const keys: EngagementPill['key'][] = [
+      'nutrition',
+      'supplements',
+      'body_tracker',
+      'wearable',
+      'plug_ins',
+      'helix_challenges',
+    ];
+    for (const k of keys) {
+      const cls = engagementGradientForKey(k);
+      expect(cls).toContain('bg-gradient-to-br');
+      expect(cls).toContain('from-');
+      expect(cls).toContain('to-');
+      seen.add(cls);
+    }
+    expect(seen.size).toBe(6);
   });
 
-  it('uses the dashboard brand navy and brand teal tokens', () => {
-    expect(BOS_PILL_GRADIENT).toContain('from-[#1A2744]');
-    expect(BOS_PILL_GRADIENT).toContain('to-[#2DA5A0]');
+  it('nutrition uses emerald to green', () => {
+    expect(engagementGradientForKey('nutrition')).toBe(
+      'bg-gradient-to-br from-emerald-500/20 to-green-500/10',
+    );
   });
 
-  it('contains no em dashes or en dashes (catch-all consistency check)', () => {
-    expect(BOS_PILL_GRADIENT).not.toMatch(/[—–]/);
+  it('supplements uses violet to purple', () => {
+    expect(engagementGradientForKey('supplements')).toBe(
+      'bg-gradient-to-br from-violet-500/20 to-purple-500/10',
+    );
+  });
+
+  it('body_tracker uses orange to red', () => {
+    expect(engagementGradientForKey('body_tracker')).toBe(
+      'bg-gradient-to-br from-orange-500/20 to-red-500/10',
+    );
+  });
+
+  it('wearable uses blue to indigo (only blue pill in the row)', () => {
+    expect(engagementGradientForKey('wearable')).toBe(
+      'bg-gradient-to-br from-blue-500/20 to-indigo-500/10',
+    );
+  });
+
+  it('plug_ins uses pink to fuchsia', () => {
+    expect(engagementGradientForKey('plug_ins')).toBe(
+      'bg-gradient-to-br from-pink-500/20 to-fuchsia-500/10',
+    );
+  });
+
+  it('helix_challenges uses amber to yellow', () => {
+    expect(engagementGradientForKey('helix_challenges')).toBe(
+      'bg-gradient-to-br from-amber-500/20 to-yellow-500/10',
+    );
   });
 });
 

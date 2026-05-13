@@ -10,13 +10,13 @@ import type { AccuracyPill, EngagementPill } from '@/lib/scoring/types';
 
 // -- Unified BOS pill gradient (Gary directive 2026-05-12) ----------------
 //
-// Single brand-aligned gradient applied to every pill and chip inside the
-// Bio Optimization Score container so all pills share one design language
-// with the dashboard's existing navy-to-teal pill accents (DashboardHeader
-// avatar, TodaysProtocol icon). Opacity reduced from the dashboard's
-// full-saturation pattern so twelve pills do not overwhelm the card.
-// Supersedes the prior per-key rainbow palettes for both accuracy and
-// engagement rows.
+// Brand-aligned gradient applied to the accuracy pills (CAQ / Labs /
+// Genetics) and the three side-panel info chips (delta / tier /
+// confidence) so those nine elements share one design language with
+// the dashboard's existing navy-to-teal pill accents (DashboardHeader
+// avatar, TodaysProtocol icon). Engagement pills opted OUT of the
+// unification later in the session (see engagementGradientForKey
+// below) so the six levers retain distinct per-key color identity.
 
 export const BOS_PILL_GRADIENT =
   'bg-gradient-to-br from-[#1A2744]/60 to-[#2DA5A0]/30';
@@ -108,7 +108,7 @@ export function formatVelocity(velocityPct: number): string {
   return `+${v.toFixed(1)} pts/day`;
 }
 
-// State modulation that layers over the unified gradient:
+// State modulation that layers over the per-key gradient:
 //   unused      dim the gradient (opacity-60)
 //   in_use      full saturation, no opacity modifier
 //   at_ceiling  add a teal ring over the gradient
@@ -117,4 +117,34 @@ export function engagementStateModifier(state: EngagementPill['state']): string 
   if (state === 'at_ceiling') return 'ring-2 ring-[#2DA5A0]/40';
   if (state === 'in_use') return '';
   return 'opacity-60';
+}
+
+// -- Engagement per-key gradient (Gary directive 2026-05-12 reversal) -----
+//
+// Restored after the brief unification pass: Gary called out the engagement
+// row reading as "all blue" once every pill shared the navy-to-teal wash,
+// and asked for varied per-key color identity here while leaving the
+// accuracy pills and side-panel chips on BOS_PILL_GRADIENT.
+//
+// Palette spans six distinct color families (green / purple / orange /
+// blue / pink / yellow) so no two adjacent pills repeat a hue. Only one
+// blue pill (wearable, which contextually maps to device data). Each stop
+// sits at /20 to /10 opacity so the gradient reads as a subtle wash over
+// the dark card glass, matching the prior wash weight users approved.
+
+export function engagementGradientForKey(key: EngagementPill['key']): string {
+  switch (key) {
+    case 'nutrition':
+      return 'bg-gradient-to-br from-emerald-500/20 to-green-500/10';
+    case 'supplements':
+      return 'bg-gradient-to-br from-violet-500/20 to-purple-500/10';
+    case 'body_tracker':
+      return 'bg-gradient-to-br from-orange-500/20 to-red-500/10';
+    case 'wearable':
+      return 'bg-gradient-to-br from-blue-500/20 to-indigo-500/10';
+    case 'plug_ins':
+      return 'bg-gradient-to-br from-pink-500/20 to-fuchsia-500/10';
+    case 'helix_challenges':
+      return 'bg-gradient-to-br from-amber-500/20 to-yellow-500/10';
+  }
 }
