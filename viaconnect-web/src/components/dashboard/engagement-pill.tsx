@@ -2,19 +2,17 @@
 
 // EngagementPill: single engagement pill (one of six levers).
 //
-// Patch pass (Phase A corrective + Gary directive 2026-05-12 reversal):
-// after the brief unification pass, the engagement row went back to
-// per-key gradients because the unified navy-to-teal wash read as
-// "all blue" across six adjacent pills. Each lever now carries its
-// own gradient via engagementGradientForKey, with state-driven
-// modulation layered on top:
-//   unused      gradient dimmed to opacity-60
+// Pattern A action-pill styling per Gary directive 2026-05-12: pills
+// now inherit the nutrition page's Quick Log / Photo AI look (rounded-lg
+// with an accent-to-navy linear gradient and white semibold text). Each
+// lever still carries its own per-key gradient via engagementGradientForKey
+// so the six pills stay visually distinct, with state-driven modulation
+// layered on top:
+//   unused      classifier dims base to opacity-55
 //   in_use      full saturation, prominent "+X.X pts/day" velocity
 //   at_ceiling  ring-2 ring-[#2DA5A0]/40 over the gradient + Check
 //
-// Pills are rounded-xl (chunkier than the rounded-full accuracy pills)
-// because the velocity number reads larger and benefits from the
-// extra interior space.
+// Pills are rounded-lg to match the nutrition page action-pill rhythm.
 //
 // preCompute disables the pill (visible but non interactive) for the
 // empty state. When the destination route is not wired, renders
@@ -86,7 +84,7 @@ export function EngagementPill({ pill, preCompute = false }: EngagementPillProps
     </>
   );
 
-  const base = `inline-flex w-full min-h-[56px] flex-col items-center justify-center rounded-xl border px-2 py-2 transition-all duration-200 ${gradient} ${modifier} ${classes.base}`;
+  const base = `inline-flex w-full min-h-[56px] flex-col items-center justify-center rounded-lg px-2 py-2 text-[11px] font-semibold transition-all duration-200 ${gradient} ${modifier} ${classes.base}`;
 
   if (preCompute) {
     return (

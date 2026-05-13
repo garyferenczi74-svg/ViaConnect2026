@@ -8,46 +8,59 @@
 
 import type { AccuracyPill, EngagementPill } from '@/lib/scoring/types';
 
-// -- Unified BOS pill gradient (Gary directive 2026-05-12) ----------------
+// -- BOS info-chip gradient (delta / tier / confidence) --------------------
 //
-// Brand-aligned gradient applied to the accuracy pills (CAQ / Labs /
-// Genetics) and the three side-panel info chips (delta / tier /
-// confidence) so those nine elements share one design language with
-// the dashboard's existing navy-to-teal pill accents (DashboardHeader
-// avatar, TodaysProtocol icon). Engagement pills opted OUT of the
-// unification later in the session (see engagementGradientForKey
-// below) so the six levers retain distinct per-key color identity.
+// Kept as the unified brand wash because the side-panel info chips are
+// data displays (numeric values, labels), not action tabs. The action
+// pills below (accuracy + engagement) use the nutrition-page's vibrant
+// linear-gradient pattern instead.
 
 export const BOS_PILL_GRADIENT =
   'bg-gradient-to-br from-[#1A2744]/60 to-[#2DA5A0]/30';
 
 // -- Accuracy ---------------------------------------------------------------
+//
+// Pattern A action-pill styling per Gary directive 2026-05-12: pills
+// inherit the nutrition page's Quick Log / Photo AI / Log Full Meal look
+// (rounded-lg + accent-to-navy gradient + white semibold text + opacity
+// based state modulation). State classifier returns text-white plus an
+// opacity modifier; per-key gradient supplies the visible bg.
 
 export function accuracyPillClassesForState(state: AccuracyPill['state']): {
   base: string;
   stateLabel: string;
 } {
-  // Border + text only. Background is supplied by BOS_PILL_GRADIENT at the
-  // component level so all three states share the unified pill wash and the
-  // state difference rides on the border + text tokens.
   if (state === 'complete') {
     return {
-      base: 'border-[#2DA5A0]/30 text-[#2DA5A0]',
+      base: 'text-white',
       stateLabel: 'Complete',
     };
   }
   if (state === 'awaiting_results') {
     return {
-      base: 'border-white/30 text-white/70',
+      base: 'text-white opacity-80',
       stateLabel: 'Awaiting results',
     };
   }
-  // incomplete (locked): dim border + dim text signal locked while the
-  // unified gradient supplies the visible fill.
   return {
-    base: 'border-white/10 text-white/40',
+    base: 'text-white opacity-55',
     stateLabel: 'Unlock',
   };
+}
+
+// Per-key Pattern A gradient. Each pill ends at the navy stop #1E3054
+// so the row reads as one design family while the accents differentiate
+// CAQ / Labs / Genetics.
+
+export function accuracyGradientForKey(key: AccuracyPill['key']): string {
+  switch (key) {
+    case 'caq':
+      return 'bg-gradient-to-br from-cyan-500 to-[#1E3054]';
+    case 'labs':
+      return 'bg-gradient-to-br from-[#2DA5A0] to-[#1E3054]';
+    case 'genetics':
+      return 'bg-gradient-to-br from-fuchsia-500 to-[#1E3054]';
+  }
 }
 
 export function buildAccuracyAriaLabel(pill: AccuracyPill): string {
@@ -61,28 +74,30 @@ export function buildAccuracyAriaLabel(pill: AccuracyPill): string {
 }
 
 // -- Engagement -------------------------------------------------------------
+//
+// Pattern A action-pill styling per Gary directive 2026-05-12. Each lever
+// carries its own accent-to-navy gradient; text is always white; opacity
+// state modulation handled by the classifier (unused dims to 55), with
+// ring overlay for at_ceiling supplied by engagementStateModifier.
 
 export function engagementPillClassesForState(state: EngagementPill['state']): {
   base: string;
   subLabel: string;
 } {
-  // Border + text only. Background is supplied by BOS_PILL_GRADIENT at the
-  // component level. State modulation (ring / opacity) is applied by
-  // engagementStateModifier.
   if (state === 'at_ceiling') {
     return {
-      base: 'border-[#2DA5A0] text-[#2DA5A0]',
+      base: 'text-white',
       subLabel: 'At ceiling',
     };
   }
   if (state === 'in_use') {
     return {
-      base: 'border-[#2DA5A0]/40 text-[#2DA5A0]',
+      base: 'text-white',
       subLabel: 'Active',
     };
   }
   return {
-    base: 'border-white/30 text-white/85',
+    base: 'text-white opacity-55',
     subLabel: 'Start logging',
   };
 }
@@ -108,43 +123,32 @@ export function formatVelocity(velocityPct: number): string {
   return `+${v.toFixed(1)} pts/day`;
 }
 
-// State modulation that layers over the per-key gradient:
-//   unused      dim the gradient (opacity-60)
-//   in_use      full saturation, no opacity modifier
-//   at_ceiling  add a teal ring over the gradient
+// State modifier layered over the per-key gradient. Opacity for unused
+// now lives on the classifier base; the modifier only contributes the
+// teal ring for at_ceiling success.
 
 export function engagementStateModifier(state: EngagementPill['state']): string {
   if (state === 'at_ceiling') return 'ring-2 ring-[#2DA5A0]/40';
-  if (state === 'in_use') return '';
-  return 'opacity-60';
+  return '';
 }
 
-// -- Engagement per-key gradient (Gary directive 2026-05-12 reversal) -----
-//
-// Restored after the brief unification pass: Gary called out the engagement
-// row reading as "all blue" once every pill shared the navy-to-teal wash,
-// and asked for varied per-key color identity here while leaving the
-// accuracy pills and side-panel chips on BOS_PILL_GRADIENT.
-//
-// Palette spans six distinct color families (green / purple / orange /
-// blue / pink / yellow) so no two adjacent pills repeat a hue. Only one
-// blue pill (wearable, which contextually maps to device data). Each stop
-// sits at /20 to /10 opacity so the gradient reads as a subtle wash over
-// the dark card glass, matching the prior wash weight users approved.
+// Per-key Pattern A gradient for the six engagement levers. Six distinct
+// accents end at the navy stop #1E3054 so the row reads as one design
+// family while each lever keeps a unique color identity.
 
 export function engagementGradientForKey(key: EngagementPill['key']): string {
   switch (key) {
     case 'nutrition':
-      return 'bg-gradient-to-br from-emerald-500/20 to-green-500/10';
+      return 'bg-gradient-to-br from-emerald-500 to-[#1E3054]';
     case 'supplements':
-      return 'bg-gradient-to-br from-violet-500/20 to-purple-500/10';
+      return 'bg-gradient-to-br from-violet-500 to-[#1E3054]';
     case 'body_tracker':
-      return 'bg-gradient-to-br from-orange-500/20 to-red-500/10';
+      return 'bg-gradient-to-br from-orange-500 to-[#1E3054]';
     case 'wearable':
-      return 'bg-gradient-to-br from-blue-500/20 to-indigo-500/10';
+      return 'bg-gradient-to-br from-blue-500 to-[#1E3054]';
     case 'plug_ins':
-      return 'bg-gradient-to-br from-pink-500/20 to-fuchsia-500/10';
+      return 'bg-gradient-to-br from-pink-500 to-[#1E3054]';
     case 'helix_challenges':
-      return 'bg-gradient-to-br from-amber-500/20 to-yellow-500/10';
+      return 'bg-gradient-to-br from-amber-500 to-[#1E3054]';
   }
 }

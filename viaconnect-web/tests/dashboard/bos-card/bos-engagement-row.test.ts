@@ -1,4 +1,5 @@
-// Prompt #161e: tests for BOSEngagementRow + EngagementPill data seam.
+// Prompt #161e + Gary directive 2026-05-12 (Pattern A action pills):
+// tests for BOSEngagementRow + EngagementPill data seam.
 
 import { describe, it, expect } from 'vitest';
 import {
@@ -31,25 +32,25 @@ describe('BOSEngagementRow / verbatim copy', () => {
   });
 });
 
-describe('EngagementPill / state matrix (Phase A: border + text only, gradient is the bg)', () => {
-  it('at_ceiling state uses solid teal border + teal text', () => {
+describe('EngagementPill / state matrix (Pattern A: opacity-based state, white text)', () => {
+  it('at_ceiling state uses full-saturation white text (ring supplied by modifier)', () => {
     const c = engagementPillClassesForState('at_ceiling');
-    expect(c.base).toContain('border-[#2DA5A0]');
-    expect(c.base).toContain('text-[#2DA5A0]');
+    expect(c.base).toContain('text-white');
+    expect(c.base).not.toContain('opacity-');
     expect(c.subLabel).toBe('At ceiling');
   });
 
-  it('in_use state uses teal accent border + teal text', () => {
+  it('in_use state uses full-saturation white text', () => {
     const c = engagementPillClassesForState('in_use');
-    expect(c.base).toContain('border-[#2DA5A0]/40');
-    expect(c.base).toContain('text-[#2DA5A0]');
+    expect(c.base).toContain('text-white');
+    expect(c.base).not.toContain('opacity-');
     expect(c.subLabel).toBe('Active');
   });
 
-  it('unused state uses neutral outline + soft white text', () => {
+  it('unused state dims to opacity-55 (idle)', () => {
     const c = engagementPillClassesForState('unused');
-    expect(c.base).toContain('border-white/30');
-    expect(c.base).toContain('text-white/85');
+    expect(c.base).toContain('text-white');
+    expect(c.base).toContain('opacity-55');
     expect(c.subLabel).toBe('Start logging');
   });
 
@@ -60,10 +61,10 @@ describe('EngagementPill / state matrix (Phase A: border + text only, gradient i
     }
   });
 
-  it('all three states yield visually distinct base classes', () => {
-    const a = engagementPillClassesForState('at_ceiling').base;
-    const b = engagementPillClassesForState('in_use').base;
-    const c = engagementPillClassesForState('unused').base;
+  it('all three states yield distinct subLabels for the user-facing text', () => {
+    const a = engagementPillClassesForState('at_ceiling').subLabel;
+    const b = engagementPillClassesForState('in_use').subLabel;
+    const c = engagementPillClassesForState('unused').subLabel;
     expect(a).not.toBe(b);
     expect(b).not.toBe(c);
     expect(a).not.toBe(c);
@@ -129,8 +130,8 @@ describe('EngagementPill / velocity formatter', () => {
   });
 });
 
-describe('EngagementPill / per-key gradient palette (Gary directive 2026-05-12 reversal)', () => {
-  it('returns a unique bg-gradient-to-br class per lever key', () => {
+describe('EngagementPill / per-key Pattern A gradient', () => {
+  it('returns a unique bg-gradient-to-br class per lever key, all ending at navy #1E3054', () => {
     const seen = new Set<string>();
     const keys: EngagementPill['key'][] = [
       'nutrition',
@@ -144,57 +145,56 @@ describe('EngagementPill / per-key gradient palette (Gary directive 2026-05-12 r
       const cls = engagementGradientForKey(k);
       expect(cls).toContain('bg-gradient-to-br');
       expect(cls).toContain('from-');
-      expect(cls).toContain('to-');
+      expect(cls).toContain('to-[#1E3054]');
       seen.add(cls);
     }
     expect(seen.size).toBe(6);
   });
 
-  it('nutrition uses emerald to green', () => {
+  it('nutrition uses emerald to navy', () => {
     expect(engagementGradientForKey('nutrition')).toBe(
-      'bg-gradient-to-br from-emerald-500/20 to-green-500/10',
+      'bg-gradient-to-br from-emerald-500 to-[#1E3054]',
     );
   });
 
-  it('supplements uses violet to purple', () => {
+  it('supplements uses violet to navy', () => {
     expect(engagementGradientForKey('supplements')).toBe(
-      'bg-gradient-to-br from-violet-500/20 to-purple-500/10',
+      'bg-gradient-to-br from-violet-500 to-[#1E3054]',
     );
   });
 
-  it('body_tracker uses orange to red', () => {
+  it('body_tracker uses orange to navy', () => {
     expect(engagementGradientForKey('body_tracker')).toBe(
-      'bg-gradient-to-br from-orange-500/20 to-red-500/10',
+      'bg-gradient-to-br from-orange-500 to-[#1E3054]',
     );
   });
 
-  it('wearable uses blue to indigo (only blue pill in the row)', () => {
+  it('wearable uses blue to navy', () => {
     expect(engagementGradientForKey('wearable')).toBe(
-      'bg-gradient-to-br from-blue-500/20 to-indigo-500/10',
+      'bg-gradient-to-br from-blue-500 to-[#1E3054]',
     );
   });
 
-  it('plug_ins uses pink to fuchsia', () => {
+  it('plug_ins uses pink to navy', () => {
     expect(engagementGradientForKey('plug_ins')).toBe(
-      'bg-gradient-to-br from-pink-500/20 to-fuchsia-500/10',
+      'bg-gradient-to-br from-pink-500 to-[#1E3054]',
     );
   });
 
-  it('helix_challenges uses amber to yellow', () => {
+  it('helix_challenges uses amber to navy', () => {
     expect(engagementGradientForKey('helix_challenges')).toBe(
-      'bg-gradient-to-br from-amber-500/20 to-yellow-500/10',
+      'bg-gradient-to-br from-amber-500 to-[#1E3054]',
     );
   });
 });
 
-describe('EngagementPill / gradient state modifier (Gary directive)', () => {
-  it('unused state dims the gradient (opacity-60)', () => {
-    expect(engagementStateModifier('unused')).toContain('opacity-60');
+describe('EngagementPill / gradient state modifier (Pattern A)', () => {
+  it('unused state opacity now lives on the classifier base (modifier returns empty)', () => {
+    expect(engagementStateModifier('unused')).toBe('');
   });
 
-  it('in_use state applies no opacity modifier (full saturation)', () => {
-    const m = engagementStateModifier('in_use');
-    expect(m).not.toContain('opacity-60');
+  it('in_use state applies no modifier (full saturation)', () => {
+    expect(engagementStateModifier('in_use')).toBe('');
   });
 
   it('at_ceiling state adds a teal ring over the gradient', () => {

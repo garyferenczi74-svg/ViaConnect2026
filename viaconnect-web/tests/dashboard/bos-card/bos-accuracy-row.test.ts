@@ -1,9 +1,10 @@
-// Prompt #161e: tests for BOSAccuracyRow + AccuracyPill data-seam.
+// Prompt #161e + Gary directive 2026-05-12 (Pattern A action pills):
+// tests for BOSAccuracyRow + AccuracyPill data-seam.
 //
 // Verbatim header and descriptive sentence live in bos-row-copy.ts
-// (JSX free). Pill state classifier and aria-label builder live in
-// bos-pill-helpers.ts. Both are imported here so the tests run in
-// the node-only Vitest environment without pulling JSX modules.
+// (JSX free). Pill state classifier, gradient lookup, and aria-label
+// builder live in bos-pill-helpers.ts. All imported here so the tests
+// run in the node-only Vitest environment without pulling JSX modules.
 
 import { describe, it, expect } from 'vitest';
 import {
@@ -12,8 +13,8 @@ import {
 } from '@/components/dashboard/bos-row-copy';
 import {
   accuracyPillClassesForState,
+  accuracyGradientForKey,
   buildAccuracyAriaLabel,
-  BOS_PILL_GRADIENT,
 } from '@/components/dashboard/bos-pill-helpers';
 import type { AccuracyPill } from '@/lib/scoring/types';
 
@@ -34,29 +35,29 @@ describe('BOSAccuracyRow / verbatim copy', () => {
   });
 });
 
-describe('AccuracyPill / state matrix (Gary directive 2026-05-12: border + text only, BOS_PILL_GRADIENT supplies the bg)', () => {
-  it('complete state uses teal border + teal text', () => {
+describe('AccuracyPill / state matrix (Pattern A: opacity-based state, white text)', () => {
+  it('complete state uses full-saturation white text', () => {
     const c = accuracyPillClassesForState('complete');
-    expect(c.base).toContain('border-[#2DA5A0]/30');
-    expect(c.base).toContain('text-[#2DA5A0]');
+    expect(c.base).toContain('text-white');
+    expect(c.base).not.toContain('opacity-');
     expect(c.stateLabel).toBe('Complete');
   });
 
-  it('incomplete state uses dim neutral border + dim text', () => {
-    const c = accuracyPillClassesForState('incomplete');
-    expect(c.base).toContain('border-white/10');
-    expect(c.base).toContain('text-white/40');
-    expect(c.stateLabel).toBe('Unlock');
-  });
-
-  it('awaiting_results state uses neutral outline + soft text', () => {
+  it('awaiting_results state dims to opacity-80', () => {
     const c = accuracyPillClassesForState('awaiting_results');
-    expect(c.base).toContain('border-white/30');
-    expect(c.base).toContain('text-white/70');
+    expect(c.base).toContain('text-white');
+    expect(c.base).toContain('opacity-80');
     expect(c.stateLabel).toBe('Awaiting results');
   });
 
-  it('no state declares its own background class (BOS_PILL_GRADIENT supplies it)', () => {
+  it('incomplete state dims to opacity-55 (locked/idle)', () => {
+    const c = accuracyPillClassesForState('incomplete');
+    expect(c.base).toContain('text-white');
+    expect(c.base).toContain('opacity-55');
+    expect(c.stateLabel).toBe('Unlock');
+  });
+
+  it('no state declares its own background class (gradient supplies it)', () => {
     for (const s of ['complete', 'incomplete', 'awaiting_results'] as const) {
       const c = accuracyPillClassesForState(s);
       expect(c.base).not.toContain('bg-');
@@ -71,11 +72,38 @@ describe('AccuracyPill / state matrix (Gary directive 2026-05-12: border + text 
     expect(b).not.toBe(c);
     expect(a).not.toBe(c);
   });
+});
 
-  it('BOS_PILL_GRADIENT is the unified background applied at component level', () => {
-    expect(BOS_PILL_GRADIENT).toContain('bg-gradient-to-br');
-    expect(BOS_PILL_GRADIENT).toContain('from-[#1A2744]');
-    expect(BOS_PILL_GRADIENT).toContain('to-[#2DA5A0]');
+describe('AccuracyPill / per-key Pattern A gradient', () => {
+  it('returns a unique bg-gradient-to-br class per pill key', () => {
+    const seen = new Set<string>();
+    const keys: AccuracyPill['key'][] = ['caq', 'labs', 'genetics'];
+    for (const k of keys) {
+      const cls = accuracyGradientForKey(k);
+      expect(cls).toContain('bg-gradient-to-br');
+      expect(cls).toContain('from-');
+      expect(cls).toContain('to-[#1E3054]');
+      seen.add(cls);
+    }
+    expect(seen.size).toBe(3);
+  });
+
+  it('caq uses cyan to navy', () => {
+    expect(accuracyGradientForKey('caq')).toBe(
+      'bg-gradient-to-br from-cyan-500 to-[#1E3054]',
+    );
+  });
+
+  it('labs uses brand teal to navy', () => {
+    expect(accuracyGradientForKey('labs')).toBe(
+      'bg-gradient-to-br from-[#2DA5A0] to-[#1E3054]',
+    );
+  });
+
+  it('genetics uses fuchsia to navy', () => {
+    expect(accuracyGradientForKey('genetics')).toBe(
+      'bg-gradient-to-br from-fuchsia-500 to-[#1E3054]',
+    );
   });
 });
 
