@@ -12,6 +12,12 @@ interface AnalysisErrorCardProps {
 }
 
 export function AnalysisErrorCard({ message, onRetry, onManual }: AnalysisErrorCardProps) {
+  // #164 defense: types say message is string but runtime callers may pass
+  // an object if a future route shape change slips through. Coerce so the
+  // card can never trigger React error #31 from this surface.
+  const displayMessage = typeof message === 'string' && message.length > 0
+    ? message
+    : 'Try again, or enter the values manually.';
   return (
     <div className="rounded-2xl border border-[#B75E18]/30 bg-[#B75E18]/10 p-5">
       <div className="flex items-start gap-3">
@@ -19,7 +25,7 @@ export function AnalysisErrorCard({ message, onRetry, onManual }: AnalysisErrorC
         <div className="flex-1">
           <h3 className="text-sm font-semibold text-white">We couldn&apos;t analyze that meal</h3>
           <p className="mt-1 text-xs text-white/55">
-            {message || 'Try again, or enter the values manually.'}
+            {displayMessage}
           </p>
           <div className="mt-4 flex flex-wrap gap-2">
             <button
