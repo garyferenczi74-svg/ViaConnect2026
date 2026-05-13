@@ -43,12 +43,12 @@ export function BOSCardSkeleton() {
           <div className="h-3 w-44 animate-pulse rounded-full bg-white/10" />
           <div className="h-3 w-5/6 animate-pulse rounded-full bg-white/10" />
           <div className="mt-1 grid grid-cols-3 gap-2">
-            <div className="h-[76px] animate-pulse rounded-lg bg-white/10" />
-            <div className="h-[76px] animate-pulse rounded-lg bg-white/10" />
-            <div className="h-[76px] animate-pulse rounded-lg bg-white/10" />
-            <div className="h-[76px] animate-pulse rounded-lg bg-white/10" />
-            <div className="h-[76px] animate-pulse rounded-lg bg-white/10" />
-            <div className="h-[76px] animate-pulse rounded-lg bg-white/10" />
+            <div className="h-[88px] animate-pulse rounded-lg bg-white/10" />
+            <div className="h-[88px] animate-pulse rounded-lg bg-white/10" />
+            <div className="h-[88px] animate-pulse rounded-lg bg-white/10" />
+            <div className="h-[88px] animate-pulse rounded-lg bg-white/10" />
+            <div className="h-[88px] animate-pulse rounded-lg bg-white/10" />
+            <div className="h-[88px] animate-pulse rounded-lg bg-white/10" />
           </div>
         </div>
       </div>

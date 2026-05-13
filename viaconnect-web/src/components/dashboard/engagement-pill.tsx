@@ -70,11 +70,11 @@ export function EngagementPill({ pill, preCompute = false }: EngagementPillProps
           <Check className="h-3 w-3 flex-shrink-0" strokeWidth={1.5} aria-hidden="true" />
         ) : null}
         {showVelocity ? (
-          <span className="truncate text-[10px] font-semibold leading-none sm:text-[11px]">
+          <span className="px-0.5 text-center text-[10px] font-semibold leading-tight sm:text-[11px]">
             {formatVelocity(pill.velocity_pct)}
           </span>
         ) : (
-          <span className="truncate text-[10px] leading-none opacity-80 sm:text-[11px]">
+          <span className="px-0.5 text-center text-[10px] leading-tight opacity-80 sm:text-[11px]">
             {classes.subLabel}
           </span>
         )}
@@ -82,7 +82,7 @@ export function EngagementPill({ pill, preCompute = false }: EngagementPillProps
     </>
   );
 
-  const base = `inline-flex w-full min-h-[76px] flex-col items-center justify-center rounded-lg px-2 py-2 text-[11px] font-semibold transition-all duration-200 ${gradient} ${modifier} ${classes.base}`;
+  const base = `inline-flex w-full min-h-[88px] flex-col items-center justify-center rounded-lg px-2 py-2 text-[11px] font-semibold transition-all duration-200 ${gradient} ${modifier} ${classes.base}`;
 
   if (preCompute) {
     return (
@@ -109,7 +109,7 @@ export function EngagementPill({ pill, preCompute = false }: EngagementPillProps
         <span className="mt-1 px-0.5 text-center text-[10px] font-semibold leading-tight sm:text-xs">
           {pill.label}
         </span>
-        <span className="mt-0.5 truncate text-[10px] leading-none opacity-80 sm:text-[11px]">
+        <span className="mt-0.5 px-0.5 text-center text-[10px] leading-tight opacity-80 sm:text-[11px]">
           Coming Soon
         </span>
       </span>
