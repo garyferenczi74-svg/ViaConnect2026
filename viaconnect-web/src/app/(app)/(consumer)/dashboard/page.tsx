@@ -105,7 +105,7 @@ export default function ConsumerDashboard() {
           <h1 className="text-2xl font-semibold tracking-tight text-white md:text-4xl">
             Your Personal Wellness Journey
           </h1>
-          <p className="mt-2 text-sm text-white/65 md:text-base">
+          <p className="mt-2 text-sm text-white/90 md:text-base">
             Powered by your data Guided by your goals
           </p>
         </div>
