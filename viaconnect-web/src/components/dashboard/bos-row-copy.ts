@@ -10,9 +10,6 @@
 
 export const ACCURACY_ROW_HEADER = 'Improved Accuracy';
 
-export const ACCURACY_ROW_DESCRIPTION =
-  'CAQ improves accuracy to 72%, Labs improves accuracy to 86%, unlock Genetics improves accuracy to 96%.';
-
 export const ENGAGEMENT_ROW_HEADER = 'How can I improve my score?';
 
 export const ENGAGEMENT_ROW_DESCRIPTION =

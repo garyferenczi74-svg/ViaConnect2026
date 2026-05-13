@@ -1,15 +1,11 @@
 'use client';
 
-// BOSAccuracyRow: header + descriptive sentence + 3 accuracy pills
-// (CAQ, Labs, Genetics).
+// BOSAccuracyRow: header + 3 accuracy pills (CAQ, Labs, Genetics).
 //
-// Per #161e §6.4 the descriptive sentence is rendered VERBATIM:
-//   "CAQ improves accuracy to 72%, Labs improves accuracy to 86%,
-//    unlock Genetics improves accuracy to 96%."
-// Header: "Improved Accuracy" (#161e §2.5)
-//
-// Both strings are imported from bos-row-copy.ts so the canonical
-// text can be asserted in pure Vitest tests without rendering JSX.
+// Header string lives in bos-row-copy.ts (JSX free) so it can be
+// asserted in pure Vitest tests. The descriptive sentence beneath the
+// header was removed per Gary directive 2026-05-12; the header sits
+// directly above the pill row now.
 //
 // The 3 pills sit in a left-packed flex row (flex-wrap gap-2) so they
 // hug the left edge at their natural widths rather than each occupying
@@ -18,25 +14,19 @@
 
 import type { AccuracyPill as AccuracyPillData } from '@/lib/scoring/types';
 import { AccuracyPill } from './accuracy-pill';
-import {
-  ACCURACY_ROW_HEADER,
-  ACCURACY_ROW_DESCRIPTION,
-} from './bos-row-copy';
+import { ACCURACY_ROW_HEADER } from './bos-row-copy';
 
 export interface BOSAccuracyRowProps {
   pills: AccuracyPillData[];
 }
 
-export { ACCURACY_ROW_HEADER, ACCURACY_ROW_DESCRIPTION };
+export { ACCURACY_ROW_HEADER };
 
 export function BOSAccuracyRow({ pills }: BOSAccuracyRowProps) {
   return (
     <div>
       <p className="text-[11px] font-semibold uppercase tracking-wider text-white/50 sm:text-xs">
         {ACCURACY_ROW_HEADER}
-      </p>
-      <p className="mt-1 text-xs leading-relaxed text-white/65 sm:text-sm">
-        {ACCURACY_ROW_DESCRIPTION}
       </p>
       <ul
         role="list"

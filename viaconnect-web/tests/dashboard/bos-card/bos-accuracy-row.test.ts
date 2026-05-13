@@ -7,10 +7,7 @@
 // run in the node-only Vitest environment without pulling JSX modules.
 
 import { describe, it, expect } from 'vitest';
-import {
-  ACCURACY_ROW_HEADER,
-  ACCURACY_ROW_DESCRIPTION,
-} from '@/components/dashboard/bos-row-copy';
+import { ACCURACY_ROW_HEADER } from '@/components/dashboard/bos-row-copy';
 import {
   accuracyPillClassesForState,
   accuracyGradientForKey,
@@ -21,17 +18,6 @@ import type { AccuracyPill } from '@/lib/scoring/types';
 describe('BOSAccuracyRow / verbatim copy', () => {
   it('exposes the exact header per #161e §2.5', () => {
     expect(ACCURACY_ROW_HEADER).toBe('Improved Accuracy');
-  });
-
-  it('exposes the exact descriptive sentence per #161e §6.4', () => {
-    expect(ACCURACY_ROW_DESCRIPTION).toBe(
-      'CAQ improves accuracy to 72%, Labs improves accuracy to 86%, unlock Genetics improves accuracy to 96%.',
-    );
-  });
-
-  it('descriptive sentence contains no em dashes, en dashes, or emojis', () => {
-    expect(ACCURACY_ROW_DESCRIPTION).not.toMatch(/[—–]/);
-    expect(ACCURACY_ROW_DESCRIPTION).not.toMatch(/[\u{1F300}-\u{1FAFF}]/u);
   });
 });
 
