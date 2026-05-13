@@ -3,6 +3,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { safeLog } from '@/lib/utils/safe-log';
 import { withAbortTimeout } from '@/lib/utils/with-timeout';
 import { GEMINI_MODEL } from '@/lib/nutrition/gemini-prompts';
 
@@ -17,7 +18,7 @@ export async function GET(req: NextRequest) {
 
   const [gemini, usda] = await Promise.all([pingGemini(), pingUSDA()]);
   const admin = createAdminClient();
-  await admin.from('system_health_checks').insert({
+  const geminiInsert = await admin.from('system_health_checks').insert({
     check_name: 'gemini_api',
     status: gemini.status,
     latency_ms: gemini.latencyMs,
@@ -25,7 +26,10 @@ export async function GET(req: NextRequest) {
     error_message: gemini.errorMessage,
     metadata: { model: GEMINI_MODEL },
   });
-  await admin.from('system_health_checks').insert({
+  if (geminiInsert.error) {
+    safeLog.warn('api.admin.health.ai-stack', 'gemini insert failed', { error: geminiInsert.error });
+  }
+  const usdaInsert = await admin.from('system_health_checks').insert({
     check_name: 'usda_api',
     status: usda.status,
     latency_ms: usda.latencyMs,
@@ -33,6 +37,9 @@ export async function GET(req: NextRequest) {
     error_message: usda.errorMessage,
     metadata: null,
   });
+  if (usdaInsert.error) {
+    safeLog.warn('api.admin.health.ai-stack', 'usda insert failed', { error: usdaInsert.error });
+  }
   return NextResponse.json({ gemini, usda });
 }
 
@@ -57,7 +64,9 @@ async function pingGemini(): Promise<PingResult> {
     }), TIMEOUT, 'health.gemini');
     const latencyMs = Date.now() - t0;
     if (!res.ok) {
-      return { status: res.status >= 500 ? 'down' : 'degraded', latencyMs, errorCode: `HTTP_${res.status}`, errorMessage: await res.text().then((t) => t.slice(0, 200)).catch(() => null) };
+      const rawBody = await res.text().then((t) => t.slice(0, 200)).catch(() => null);
+      const errorMessage = rawBody ? rawBody.replace(/key=[^&\s"]+/g, 'key=REDACTED') : null;
+      return { status: res.status >= 500 ? 'down' : 'degraded', latencyMs, errorCode: `HTTP_${res.status}`, errorMessage };
     }
     return { status: 'healthy', latencyMs, errorCode: null, errorMessage: null };
   } catch (err) {

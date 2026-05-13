@@ -56,4 +56,14 @@ describe('GET /api/admin/health/ai-stack', () => {
     const json = await res.json();
     expect(json.gemini.status).toBe('down');
   });
+
+  it('redacts key= query param from Gemini errorMessage on 500', async () => {
+    fetchMock
+      .mockResolvedValueOnce(new Response('Error contacting upstream: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=SECRET123 returned 500', { status: 500 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ foods: [] }), { status: 200 }));
+    const res = await GET(req('secret'));
+    const json = await res.json();
+    expect(json.gemini.errorMessage).not.toContain('SECRET123');
+    expect(json.gemini.errorMessage).toContain('REDACTED');
+  });
 });
