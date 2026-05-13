@@ -37,7 +37,7 @@ export function BOSEngagementRow({ pills, preCompute = false }: BOSEngagementRow
       <p className="text-[11px] font-semibold uppercase tracking-wider text-white/50 sm:text-xs">
         {ENGAGEMENT_ROW_HEADER}
       </p>
-      <p className="mt-1 text-xs leading-relaxed text-white/65 sm:text-sm">
+      <p className="mt-1 text-[10px] leading-relaxed text-white/65 sm:text-[11px]">
         {ENGAGEMENT_ROW_DESCRIPTION}
       </p>
       <ul
