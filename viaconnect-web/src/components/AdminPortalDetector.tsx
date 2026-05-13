@@ -51,31 +51,32 @@ export function AdminPortalDetector({
 
   return (
     <AppShell user={user} role={activePortal === "hounddog" ? "admin" : activePortal}>
-      {/* 1. Portal Switcher Tabs (non-sticky, scrolls with page per #165a) */}
-      <div className="relative z-20 flex items-center gap-1.5 px-4 py-2 bg-[#0D1520] border-b border-copper/20 overflow-x-auto">
-        {portals.map((p) => {
-          const isActive = activePortal === p.key;
-          return (
-            <Link
-              key={p.key}
-              href={p.href}
-              className={`text-[11px] px-3 py-1.5 rounded-full font-medium transition-all whitespace-nowrap flex items-center gap-1 ${
-                isActive
-                  ? p.color
-                  : "text-gray-500 hover:text-white hover:bg-white/[0.06]"
-              }`}
-            >
-              {p.key === "hounddog" && (
-                <Target className="w-3 h-3 shrink-0" strokeWidth={1.5} />
-              )}
-              {p.label}
-            </Link>
-          );
-        })}
-      </div>
+      {/* 1+2. Sticky chrome on mobile: Portal Switcher + Mobile Nav Bar pin together below Header (per #165b) */}
+      <div className="sticky top-16 z-30 bg-[#1A2744] md:relative md:top-auto md:z-auto md:bg-transparent">
+        {/* 1. Portal Switcher Tabs */}
+        <div className="relative z-20 flex items-center gap-1.5 px-4 py-2 bg-[#1A2744] md:border-b md:border-copper/20 overflow-x-auto">
+          {portals.map((p) => {
+            const isActive = activePortal === p.key;
+            return (
+              <Link
+                key={p.key}
+                href={p.href}
+                className={`text-[11px] px-3 py-1.5 rounded-full font-medium transition-all whitespace-nowrap flex items-center gap-1 ${
+                  isActive
+                    ? p.color
+                    : "text-gray-500 hover:text-white hover:bg-white/[0.06]"
+                }`}
+              >
+                {p.key === "hounddog" && (
+                  <Target className="w-3 h-3 shrink-0" strokeWidth={1.5} />
+                )}
+                {p.label}
+              </Link>
+            );
+          })}
+        </div>
 
-      {/* 2. Mobile Nav Bar (sticky at viewport top on mobile per #165a revised) */}
-      <div className="sticky top-0 z-30 bg-[#1A2744] md:relative md:top-auto md:z-auto md:bg-transparent">
+        {/* 2. Mobile Nav Bar */}
         <MobileNavBar role={activePortal} />
       </div>
 
