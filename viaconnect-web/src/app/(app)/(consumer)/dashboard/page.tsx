@@ -14,6 +14,7 @@ import { ConnectCard } from '@/components/dashboard/ConnectCard';
 import { DashboardLinkCard } from '@/components/dashboard/DashboardLinkCard';
 import { DailyCheckIn } from '@/components/dashboard/DailyCheckIn';
 import { QuickMealLogWidget } from '@/components/dashboard/QuickMealLogWidget';
+import { MobileHeroBackground } from '@/components/ui/MobileHeroBackground';
 import { RefreshCw, FileQuestion } from 'lucide-react';
 
 // Pre-uploaded hero image (Hero Images bucket — already public, full URL)
@@ -79,23 +80,20 @@ export default function ConsumerDashboard() {
   const longestStreak = streak?.longest_count ?? 0;
 
   return (
-    // ── Full-page fixed background (Prompt #62L — true Sonar pattern) ──
+    // ── Full-page fixed background (Prompt #62L sonar pattern, migrated to
+    // ── Next.js Image via MobileHeroBackground for reliable object-cover
+    // ── on all viewports — replaces CSS bg-fixed + bg-cover that left a
+    // ── frame on browsers where background-attachment: fixed misbehaves.
     <>
-    {/* Mobile only: fixed hero bg with soft dim so the full image stays
-        visible behind content as it scrolls. Desktop path below is
-        untouched. */}
-    <div aria-hidden="true" className="fixed inset-0 z-0 pointer-events-none md:hidden">
-      <div
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-        style={{ backgroundImage: `url('${DASHBOARD_HERO_IMAGE_MOBILE}')` }}
-      />
-      <div className="absolute inset-0 bg-gradient-to-b from-[rgba(10,15,35,0.18)] via-[rgba(13,21,32,0.32)] to-[rgba(13,21,32,0.55)]" />
-    </div>
+    <MobileHeroBackground
+      src={DASHBOARD_HERO_IMAGE}
+      mobileSrc={DASHBOARD_HERO_IMAGE_MOBILE}
+      overlayOpacity={0.35}
+      priority
+      objectPosition="center 45%"
+    />
 
-    <div
-      className="relative z-10 min-h-screen w-full text-white md:bg-cover md:bg-no-repeat md:bg-fixed md:[background-image:var(--dash-hero)] md:bg-[position:center_45%]"
-      style={{ ['--dash-hero' as string]: `url('${DASHBOARD_HERO_IMAGE}')` } as React.CSSProperties}
-    >
+    <div className="relative z-10 min-h-screen w-full text-white">
       {/* Progressive overlay: lightest at top (image breathes), solid navy at bottom (desktop only) */}
       <div className="min-h-screen md:bg-gradient-to-b md:from-[rgba(10,15,35,0.30)] md:via-[rgba(26,39,68,0.60)] md:to-[rgba(26,39,68,0.95)]">
 
