@@ -120,7 +120,7 @@ export function EngagementPill({ pill, preCompute = false }: EngagementPillProps
     <Link
       href={route}
       aria-label={ariaLabel}
-      className={`${base} hover:translate-y-[-1px] hover:shadow-[0_4px_12px_-4px_rgba(45,165,160,0.35)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744]`}
+      className={`${base} hover:opacity-100 hover:shadow-[0_0_12px_rgba(45,165,160,0.25)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744]`}
     >
       {inner}
     </Link>
