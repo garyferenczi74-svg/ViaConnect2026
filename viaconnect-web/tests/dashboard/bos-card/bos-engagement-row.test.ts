@@ -20,9 +20,9 @@ describe('BOSEngagementRow / verbatim copy', () => {
     expect(ENGAGEMENT_ROW_HEADER).toBe('How can I improve my score?');
   });
 
-  it('exposes the exact descriptive sentence per #161e §6.5', () => {
+  it('exposes the exact descriptive sentence (Gary directive 2026-05-12)', () => {
     expect(ENGAGEMENT_ROW_DESCRIPTION).toBe(
-      'Log nutrition, track supplements, record body measurements, sync wearables, connect plug-ins, and complete Helix Challenges. Each lever adds points to your score over time.',
+      'Every Daily Log In improves your Bio Optimization Score',
     );
   });
 

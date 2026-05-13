@@ -16,4 +16,4 @@ export const ACCURACY_ROW_DESCRIPTION =
 export const ENGAGEMENT_ROW_HEADER = 'How can I improve my score?';
 
 export const ENGAGEMENT_ROW_DESCRIPTION =
-  'Log nutrition, track supplements, record body measurements, sync wearables, connect plug-ins, and complete Helix Challenges. Each lever adds points to your score over time.';
+  'Every Daily Log In improves your Bio Optimization Score';
