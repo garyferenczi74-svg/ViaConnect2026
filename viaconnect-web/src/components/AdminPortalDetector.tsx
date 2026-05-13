@@ -74,8 +74,8 @@ export function AdminPortalDetector({
         })}
       </div>
 
-      {/* 2. Mobile Nav Bar (sticky on mobile only, per #165a) */}
-      <div className="sticky top-16 z-30 bg-[#1A2744] md:relative md:top-auto md:z-auto md:bg-transparent">
+      {/* 2. Mobile Nav Bar (sticky at viewport top on mobile per #165a revised) */}
+      <div className="sticky top-0 z-30 bg-[#1A2744] md:relative md:top-auto md:z-auto md:bg-transparent">
         <MobileNavBar role={activePortal} />
       </div>
 

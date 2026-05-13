@@ -21,7 +21,7 @@ export default function BodyTrackerLayout({
       />
       <div className="relative z-10 min-h-screen text-white">
         {/* Tab navigation, transparent so hero shows through */}
-        <div className="sticky top-[120px] z-30 md:top-[60px]">
+        <div className="sticky top-[60px] z-30">
           <BodyTrackerTabs />
         </div>
         {/* Page content */}
