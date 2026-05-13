@@ -82,7 +82,7 @@ export function DashboardHeader({ initialName }: DashboardHeaderProps) {
         <h1 className="truncate text-xl font-bold text-white sm:text-2xl">
           {getGreeting()}, {name}
         </h1>
-        <p className="mt-0.5 text-xs text-white/40 sm:text-sm">{formatToday()}</p>
+        <p className="mt-0.5 text-xs text-white/90 sm:text-sm">{formatToday()}</p>
       </div>
 
       {/* Quick-access strip */}
