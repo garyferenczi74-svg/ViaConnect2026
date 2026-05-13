@@ -15,6 +15,13 @@ interface MealResultCardProps {
   readonly onChange: (next: NutritionAnalysis) => void;
 }
 
+function dataSourceAttribution(ds: NonNullable<NutritionAnalysis['data_source']>): string {
+  if (ds === 'usda') return 'Nutrition data from USDA FoodData Central.';
+  if (ds === 'mixed') return 'Nutrition data from USDA FoodData Central and AI estimation.';
+  if (ds === 'gemini_fallback') return 'Nutrition values estimated. No USDA match for these foods.';
+  return 'Nutrition values entered manually.';
+}
+
 function ConfidenceChip({ confidence }: { confidence: number }) {
   let color = 'bg-emerald-500/15 text-emerald-300 border-emerald-500/40';
   let label = 'High';
@@ -151,6 +158,12 @@ export function MealResultCard({ analysis, onChange }: MealResultCardProps) {
           <Info className="mt-0.5 h-3.5 w-3.5 flex-none text-[#2DA5A0]" strokeWidth={1.5} />
           <span>{analysis.ai_notes}</span>
         </div>
+      )}
+
+      {analysis.data_source && (
+        <p className="mt-2 text-[11px] text-white/40">
+          {dataSourceAttribution(analysis.data_source)}
+        </p>
       )}
     </motion.div>
   );
