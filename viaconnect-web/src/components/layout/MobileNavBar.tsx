@@ -81,14 +81,15 @@ export function MobileNavBar({ role }: { role: string }) {
   return (
     <div className="relative z-20 lg:hidden"
       style={{
-        background: '#1A2744',
+        background: '#0D1520',
+        borderBottom: '1px solid rgba(255,255,255,0.06)',
       }}
     >
       <div className="relative flex items-center">
         {/* Left fade + scroll button */}
         <button
           onClick={() => scroll('left')}
-          className="absolute left-0 z-10 h-full px-1 bg-gradient-to-r from-[#1A2744] to-transparent"
+          className="absolute left-0 z-10 h-full px-1 bg-gradient-to-r from-[#0d1520] to-transparent"
           aria-label="Scroll left"
         >
           <ChevronLeft size={14} strokeWidth={1.5} className="text-white/40" />
@@ -127,7 +128,7 @@ export function MobileNavBar({ role }: { role: string }) {
         {/* Right fade + scroll button */}
         <button
           onClick={() => scroll('right')}
-          className="absolute right-0 z-10 h-full px-1 bg-gradient-to-l from-[#1A2744] to-transparent"
+          className="absolute right-0 z-10 h-full px-1 bg-gradient-to-l from-[#0d1520] to-transparent"
           aria-label="Scroll right"
         >
           <ChevronRight size={14} strokeWidth={1.5} className="text-white/40" />

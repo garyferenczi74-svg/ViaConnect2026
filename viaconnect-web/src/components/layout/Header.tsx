@@ -45,9 +45,11 @@ export function Header({
 
   return (
     <header
-      className="sticky top-0 z-30 flex items-center h-16 px-4 lg:px-6 md:border-b"
+      className="sticky top-0 z-30 flex items-center h-16 px-4 lg:px-6 border-b"
       style={{
-        background: "#1A2744",
+        background: "rgba(11,17,32,0.8)",
+        backdropFilter: "blur(20px)",
+        WebkitBackdropFilter: "blur(20px)",
         borderBottomColor: "rgba(255,255,255,0.06)",
       }}
     >

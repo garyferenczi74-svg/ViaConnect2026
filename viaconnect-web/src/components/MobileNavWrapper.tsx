@@ -11,9 +11,7 @@ export function MobileNavWrapper({
 }) {
   return (
     <>
-      <div className="sticky top-16 z-30 bg-[#1A2744] md:relative md:top-auto md:z-auto md:bg-transparent">
-        <MobileNavBar role={role} />
-      </div>
+      <MobileNavBar role={role} />
       <div className="p-4 lg:p-6">{children}</div>
     </>
   );
