@@ -8,7 +8,7 @@
 // brief and locked again in #161e §6.4 + §6.5. Any change requires a
 // new prompt with explicit Gary approval.
 
-export const ACCURACY_ROW_HEADER = 'Improved Accuracy';
+export const ACCURACY_ROW_HEADER = 'Improve Your Accuracy';
 
 export const ENGAGEMENT_ROW_HEADER = 'How can I improve my score?';
 

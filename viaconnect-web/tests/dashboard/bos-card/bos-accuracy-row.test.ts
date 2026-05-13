@@ -16,8 +16,8 @@ import {
 import type { AccuracyPill } from '@/lib/scoring/types';
 
 describe('BOSAccuracyRow / verbatim copy', () => {
-  it('exposes the exact header per #161e §2.5', () => {
-    expect(ACCURACY_ROW_HEADER).toBe('Improved Accuracy');
+  it('exposes the exact header (Gary directive 2026-05-12)', () => {
+    expect(ACCURACY_ROW_HEADER).toBe('Improve Your Accuracy');
   });
 });
 
