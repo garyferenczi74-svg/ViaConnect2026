@@ -88,9 +88,9 @@ describe('AccuracyPill / per-key Pattern A gradient', () => {
     expect(seen.size).toBe(3);
   });
 
-  it('caq uses cyan to navy', () => {
+  it('caq uses emerald to navy (matches the Nutrition engagement pill per Gary directive)', () => {
     expect(accuracyGradientForKey('caq')).toBe(
-      'bg-gradient-to-br from-cyan-500 to-[#1E3054]',
+      'bg-gradient-to-br from-emerald-500 to-[#1E3054]',
     );
   });
 

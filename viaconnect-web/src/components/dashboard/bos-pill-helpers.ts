@@ -55,7 +55,7 @@ export function accuracyPillClassesForState(state: AccuracyPill['state']): {
 export function accuracyGradientForKey(key: AccuracyPill['key']): string {
   switch (key) {
     case 'caq':
-      return 'bg-gradient-to-br from-cyan-500 to-[#1E3054]';
+      return 'bg-gradient-to-br from-emerald-500 to-[#1E3054]';
     case 'labs':
       return 'bg-gradient-to-br from-[#2DA5A0] to-[#1E3054]';
     case 'genetics':
