@@ -141,8 +141,13 @@ export default function GeneticsPage() {
     <div className="relative z-10 min-h-screen w-full text-white">
 
         {/* ── Hero tagline — image shows through ── */}
-        <div className="w-full px-4 pt-14 pb-8 text-center">
-          <div className="mx-auto mb-3 h-0.5 w-10 rounded-full bg-[#2DA5A0]" />
+        {/* Prompt 166a forensic deployment: 2026-05-13T20:00Z */}
+        <div
+          data-prompt-166="v2-2026-05-13"
+          data-component="page-hero"
+          className="w-full px-4 pt-3 pb-8 text-left md:pt-14 md:text-center"
+        >
+          <div className="mx-0 md:mx-auto mb-3 h-0.5 w-10 rounded-full bg-[#2DA5A0]" />
           <h1 className="text-2xl font-semibold tracking-tight text-white md:text-4xl">
             GeneX360 Genetics Protocol
           </h1>

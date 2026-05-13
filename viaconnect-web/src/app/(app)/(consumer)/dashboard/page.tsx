@@ -101,7 +101,12 @@ export default function ConsumerDashboard() {
       <div className="min-h-screen">
 
         {/* ── Tagline — image fully visible ── */}
-        <div className="w-full px-4 pt-14 pb-6 text-center">
+        {/* Prompt 166a forensic deployment: 2026-05-13T20:00Z */}
+        <div
+          data-prompt-166="v2-2026-05-13"
+          data-component="page-hero"
+          className="w-full px-4 pt-3 pb-6 text-left md:pt-14 md:text-center"
+        >
           <h1 className="text-2xl font-semibold tracking-tight text-white md:text-4xl">
             Your Personal Wellness Journey
           </h1>
