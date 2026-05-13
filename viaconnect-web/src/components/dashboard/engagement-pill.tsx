@@ -61,13 +61,11 @@ export function EngagementPill({ pill, preCompute = false }: EngagementPillProps
 
   const inner = (
     <>
-      <span className="flex items-center justify-center gap-1.5">
-        <Icon className="h-3.5 w-3.5 flex-shrink-0" strokeWidth={1.5} aria-hidden="true" />
-        <span className="truncate text-[11px] font-semibold leading-none sm:text-xs">
-          {pill.label}
-        </span>
+      <Icon className="h-4 w-4 flex-shrink-0" strokeWidth={1.5} aria-hidden="true" />
+      <span className="mt-1 px-0.5 text-center text-[10px] font-semibold leading-tight sm:text-xs">
+        {pill.label}
       </span>
-      <span className="mt-1 flex items-center justify-center gap-1">
+      <span className="mt-0.5 flex items-center justify-center gap-1">
         {showCeilingCheck ? (
           <Check className="h-3 w-3 flex-shrink-0" strokeWidth={1.5} aria-hidden="true" />
         ) : null}
@@ -84,7 +82,7 @@ export function EngagementPill({ pill, preCompute = false }: EngagementPillProps
     </>
   );
 
-  const base = `inline-flex w-full min-h-[56px] flex-col items-center justify-center rounded-lg px-2 py-2 text-[11px] font-semibold transition-all duration-200 ${gradient} ${modifier} ${classes.base}`;
+  const base = `inline-flex w-full min-h-[76px] flex-col items-center justify-center rounded-lg px-2 py-2 text-[11px] font-semibold transition-all duration-200 ${gradient} ${modifier} ${classes.base}`;
 
   if (preCompute) {
     return (
@@ -107,12 +105,11 @@ export function EngagementPill({ pill, preCompute = false }: EngagementPillProps
         aria-disabled="true"
         className={`${base} opacity-60`}
       >
-        <span className="flex items-center justify-center gap-1.5">
-          <span className="truncate text-[11px] font-semibold leading-none sm:text-xs">
-            {pill.label}
-          </span>
+        <Icon className="h-4 w-4 flex-shrink-0" strokeWidth={1.5} aria-hidden="true" />
+        <span className="mt-1 px-0.5 text-center text-[10px] font-semibold leading-tight sm:text-xs">
+          {pill.label}
         </span>
-        <span className="mt-1 truncate text-[10px] leading-none opacity-80 sm:text-[11px]">
+        <span className="mt-0.5 truncate text-[10px] leading-none opacity-80 sm:text-[11px]">
           Coming Soon
         </span>
       </span>
