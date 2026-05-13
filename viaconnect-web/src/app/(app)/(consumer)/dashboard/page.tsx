@@ -88,13 +88,16 @@ export default function ConsumerDashboard() {
     <MobileHeroBackground
       src={DASHBOARD_HERO_IMAGE}
       mobileSrc={DASHBOARD_HERO_IMAGE_MOBILE}
-      overlayGradient={false}
+      overlayOpacity={0.35}
       priority
       objectPosition="center 45%"
     />
 
     <div className="relative z-10 min-h-screen w-full text-white">
-      {/* Shadow overlay removed per Gary directive 2026-05-12; hero shows clean */}
+      {/* Shadow filter lives on the fixed hero (via MobileHeroBackground's
+          built-in overlay) so it scales with the image and never extends
+          past its bounds; no scrolling page-level gradient to avoid the
+          bordering effect where the inner-div overlay outran the hero. */}
       <div className="min-h-screen">
 
         {/* ── Tagline — image fully visible ── */}
