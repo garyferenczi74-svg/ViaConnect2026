@@ -17,8 +17,8 @@ interface MealResultCardProps {
 
 function dataSourceAttribution(ds: NonNullable<NutritionAnalysis['data_source']>): string {
   if (ds === 'usda') return 'Nutrition data from USDA FoodData Central.';
-  if (ds === 'mixed') return 'Nutrition data from USDA FoodData Central and AI estimation.';
-  if (ds === 'gemini_fallback') return 'Nutrition values estimated. No USDA match for these foods.';
+  if (ds === 'mixed') return 'Nutrition data from USDA FoodData Central and AI estimates.';
+  if (ds === 'gemini_fallback') return 'Nutrition values estimated. These foods are not in the USDA database.';
   return 'Nutrition values entered manually.';
 }
 

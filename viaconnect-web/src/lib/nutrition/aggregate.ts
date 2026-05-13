@@ -62,7 +62,7 @@ export function aggregate(items: AggregatedItem[]): NutritionAnalysis {
       ? `Nutrition data from USDA FoodData Central. ${total} ${total === 1 ? 'item' : 'items'} matched.`
       : data_source === 'mixed'
         ? `Nutrition data from USDA FoodData Central for ${usdaCount} of ${total} items. Others estimated.`
-        : `Nutrition values estimated. No USDA matches found for this meal.`;
+        : `Nutrition values estimated. These foods are not in the USDA database.`;
 
   return {
     calories,
