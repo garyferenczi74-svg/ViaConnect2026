@@ -21,6 +21,9 @@ function toLocalDatetimeInput(d: Date): string {
 export default function LogMealPage() {
   // eslint-disable-next-line no-console
   console.log('[#164 LogMealPage render v3-cbc68808+]');
+  // #154 cache-bust 2026-05-13: force new chunk hash so CDN serves the latest decoder
+  // eslint-disable-next-line no-console
+  console.log('[#154 force-fresh-chunk v1]');
   const router = useRouter();
   const [mealType, setMealType] = useState<MealType>('lunch');
   const [loggedAt, setLoggedAt] = useState<string>(() => toLocalDatetimeInput(new Date()));
