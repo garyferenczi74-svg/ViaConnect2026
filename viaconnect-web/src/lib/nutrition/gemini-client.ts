@@ -72,6 +72,36 @@ async function callGemini(body: unknown): Promise<{ text: string; usage: Usage }
   };
 }
 
+// Recover JSON that Gemini truncated mid-output. Walks the text, tracking
+// the last position where the document was structurally complete (all
+// containers closed). Returns that prefix + balancing close-tokens. Returns
+// null if nothing parseable was found.
+function recoverTruncatedJson(text: string): string | null {
+  const start = text.search(/[{[]/);
+  if (start < 0) return null;
+  const stack: string[] = [];
+  let lastValueEnd = -1;
+  let inString = false;
+  let escape = false;
+  for (let i = start; i < text.length; i++) {
+    const c = text[i];
+    if (escape) { escape = false; continue; }
+    if (c === '\\' && inString) { escape = true; continue; }
+    if (c === '"') { inString = !inString; if (!inString) lastValueEnd = i; continue; }
+    if (inString) continue;
+    if (c === '{') stack.push('}');
+    else if (c === '[') stack.push(']');
+    else if (c === '}' || c === ']') { if (stack.pop() !== c) return null; lastValueEnd = i; }
+    else if (/[\d\w.+\-]/.test(c)) lastValueEnd = i;
+  }
+  if (lastValueEnd < 0) return null;
+  let candidate = text.slice(start, lastValueEnd + 1);
+  // Strip dangling separators (trailing comma or open key) before closing.
+  candidate = candidate.replace(/,\s*$/, '').replace(/"[^"]*"\s*:\s*$/, '');
+  while (stack.length) candidate += stack.pop();
+  try { JSON.parse(candidate); return candidate; } catch { return null; }
+}
+
 function parseJsonOrThrow(text: string): unknown {
   const cleaned = text.replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim();
   try {
@@ -95,6 +125,15 @@ function parseJsonOrThrow(text: string): unknown {
       } catch {
         /* fall through */
       }
+    }
+    // Truncation recovery: Gemini sometimes stops mid-output (observed on
+    // estimateItemWithGemini after USDA fallback returned the JSON with
+    // first 4 of 10 fields and no closing brace). Close it at the last
+    // complete value so partial parse succeeds; consumers already use
+    // `?? 0` for missing nutrient fields.
+    const recovered = recoverTruncatedJson(cleaned);
+    if (recovered !== null) {
+      try { return JSON.parse(recovered); } catch { /* fall through */ }
     }
     // Diagnostic: surface the raw Gemini text on Vercel runtime logs so the
     // next failure leaves a trace we can fix the parse path against. First
@@ -149,11 +188,13 @@ export async function parseImageWithGemini(buf: Buffer, mimeType: string, note: 
   return { parsed, usage };
 }
 
-export async function estimateItemWithGemini(name: string, quantity: number, unit: string): Promise<EstimationResult> {
+async function estimateItemAttempt(name: string, quantity: number, unit: string): Promise<EstimationResult> {
   const { text, usage } = await callGemini({
     systemInstruction: { parts: [{ text: ESTIMATION_FALLBACK_INSTRUCTION }] },
     contents: [{ role: 'user', parts: [{ text: `${quantity} ${unit} ${name}` }] }],
-    generationConfig: { temperature: 0.1, responseMimeType: 'application/json', maxOutputTokens: 512 },
+    // 1024 (was 512): observed truncation at ~4 fields with 512, raised so
+    // Gemini has headroom for all 10 nutrient fields plus formatting.
+    generationConfig: { temperature: 0.1, responseMimeType: 'application/json', maxOutputTokens: 1024 },
   });
   const parsed = parseJsonOrThrow(text) as Record<string, number>;
   return {
@@ -171,4 +212,17 @@ export async function estimateItemWithGemini(name: string, quantity: number, uni
     confidence: typeof parsed.confidence === 'number' ? parsed.confidence : 0.5,
     usage,
   };
+}
+
+export async function estimateItemWithGemini(name: string, quantity: number, unit: string): Promise<EstimationResult> {
+  try {
+    return await estimateItemAttempt(name, quantity, unit);
+  } catch (err) {
+    if (err instanceof AIRouteError && err.code === 'MALFORMED_RESPONSE') {
+      // eslint-disable-next-line no-console
+      console.warn('[gemini-client] estimate MALFORMED_RESPONSE; retrying once');
+      return await estimateItemAttempt(name, quantity, unit);
+    }
+    throw err;
+  }
 }
