@@ -21,9 +21,6 @@ function toLocalDatetimeInput(d: Date): string {
 export default function LogMealPage() {
   // eslint-disable-next-line no-console
   console.log('[#164 LogMealPage render v3-cbc68808+]');
-  // #154 cache-bust 2026-05-13: force new chunk hash so CDN serves the latest decoder
-  // eslint-disable-next-line no-console
-  console.log('[#154 force-fresh-chunk v1]');
   const router = useRouter();
   const [mealType, setMealType] = useState<MealType>('lunch');
   const [loggedAt, setLoggedAt] = useState<string>(() => toLocalDatetimeInput(new Date()));
@@ -120,7 +117,7 @@ export default function LogMealPage() {
     <div className="mx-auto w-full max-w-2xl px-4 py-6 md:py-8">
       <header className="mb-5">
         <h1 className="text-xl font-bold text-white sm:text-2xl">Log a Meal</h1>
-        <p className="mt-1 text-sm text-white/40">Describe what you ate. Gordan will compute the macros.</p>
+        <p className="mt-1 text-sm text-white/40">Describe what you ate. Gordon will compute the macros.</p>
       </header>
 
       {submitting && <AnalyzingState subtitle="Estimating macros from your description" />}

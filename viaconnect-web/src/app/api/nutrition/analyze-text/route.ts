@@ -12,6 +12,8 @@ import { AIRouteError } from '@/lib/errors/classify-ai';
 import { recordAudit, newRequestId } from '@/lib/observability/audit-recorder';
 import { GEMINI_MODEL } from '@/lib/nutrition/gemini-prompts';
 import { estimateCostUsd } from '@/lib/observability/ai-pricing';
+// Prompt 168 Apply C: Path A dual-write to canonical meals table.
+import { SOURCE_CONFIDENCE_DEFAULTS } from '@/lib/gordon/constants';
 
 const ROUTE = '/api/nutrition/analyze-text';
 const MIN_LEN = 5;
@@ -73,6 +75,55 @@ export async function POST(req: NextRequest) {
     const analysis = aggregate(items);
     const latencyMs = Date.now() - startedAt;
 
+    // Prompt 168 Apply C: Path A dual-write.
+    // Step 1: insert into canonical `meals` first (best effort; failure does not
+    // block the legacy nutrition_logs insert that the route's existing contract
+    // depends on). Source = 'photo_ai' per spec Section 4.3 because Gemini text
+    // parse is an AI inference; quick_log is reserved for user-slider entries.
+    // TODO 168a: wire gordon-score-meal trigger via pg_net once edge function deployed and configured.
+    let mealId: string | null = null;
+    try {
+      const mealsInsert = await supabase
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .from('meals' as any)
+        .insert({
+          user_id: user.id,
+          logged_at: loggedAt,
+          meal_type: mealType,
+          source: 'photo_ai',
+          source_confidence: SOURCE_CONFIDENCE_DEFAULTS.photo_ai,
+          protein_g: analysis.protein_g,
+          carbs_g: analysis.carbs_g,
+          fat_total_g: analysis.total_fat_g,
+          fat_healthy_g: analysis.healthy_fat_g,
+          fiber_g: analysis.fiber_g,
+          sugar_g: analysis.sugar_g,
+          sodium_mg: 0,
+          calories_kcal: analysis.calories,
+          calories_auto_calc: false,
+          meal_name: analysis.serving_description ?? null,
+          notes: analysis.ai_notes ?? null,
+          raw_input: { description, ai_model: GEMINI_MODEL, route: ROUTE },
+          quality_score: null,
+          scored_at: null,
+          gordon_version: null,
+        })
+        .select('meal_id')
+        .single();
+      if (mealsInsert.error || !mealsInsert.data) {
+        safeLog.warn('api.nutrition.analyze-text', 'meals insert failed (continuing to legacy)', {
+          error: mealsInsert.error?.message,
+        });
+      } else {
+        const mid = (mealsInsert.data as { meal_id?: string }).meal_id;
+        mealId = typeof mid === 'string' ? mid : null;
+      }
+    } catch (e) {
+      safeLog.warn('api.nutrition.analyze-text', 'meals insert threw (continuing to legacy)', {
+        error: e instanceof Error ? e.message : String(e),
+      });
+    }
+
     const { data: inserted, error: insErr } = await supabase
       .from('nutrition_logs')
       .insert({
@@ -90,7 +141,37 @@ export async function POST(req: NextRequest) {
       .select('id')
       .single();
 
-    if (insErr || !inserted) throw new AIRouteError('UNKNOWN', `insert failed: ${insErr?.message}`, 500, 'Could not save draft. Try again.');
+    if (insErr || !inserted) {
+      // Prompt 168 Apply C: rollback orphan meals row if legacy insert failed
+      // after the meals insert succeeded. Best effort; log + continue if delete
+      // also fails so the user still sees the original AIRouteError.
+      if (mealId) {
+        try {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          await supabase.from('meals' as any).delete().eq('meal_id', mealId);
+        } catch (delErr) {
+          safeLog.warn('api.nutrition.analyze-text', 'orphan meals delete failed', {
+            mealId, error: delErr instanceof Error ? delErr.message : String(delErr),
+          });
+        }
+      }
+      throw new AIRouteError('UNKNOWN', `insert failed: ${insErr?.message}`, 500, 'Could not save draft. Try again.');
+    }
+
+    // Prompt 168 Apply C: link meals row back to legacy id for dashboard UNION dedupe.
+    if (mealId) {
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await supabase.from('meals' as any)
+          .update({ legacy_nutrition_log_id: inserted.id })
+          .eq('meal_id', mealId);
+      } catch (linkErr) {
+        safeLog.warn('api.nutrition.analyze-text', 'legacy link update failed', {
+          mealId, legacyId: inserted.id,
+          error: linkErr instanceof Error ? linkErr.message : String(linkErr),
+        });
+      }
+    }
 
     await recordAudit({
       requestId, userId: user.id, route: ROUTE, provider: 'google', model: GEMINI_MODEL,

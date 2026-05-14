@@ -14,6 +14,12 @@ import { ConnectCard } from '@/components/dashboard/ConnectCard';
 import { DashboardLinkCard } from '@/components/dashboard/DashboardLinkCard';
 import { DailyCheckIn } from '@/components/dashboard/DailyCheckIn';
 import { QuickMealLogWidget } from '@/components/dashboard/QuickMealLogWidget';
+// Prompt 168 dashboard tiles
+import { useUserMeals } from '@/hooks/useUserMeals';
+import { useNutritionTargets } from '@/hooks/useNutritionTargets';
+import { TodaysMealsSummary } from '@/components/dashboard/TodaysMealsSummary';
+import { DailyMacroRings } from '@/components/dashboard/DailyMacroRings';
+import { AverageQualityScoreTile } from '@/components/dashboard/AverageQualityScoreTile';
 import { MobileHeroBackground } from '@/components/ui/MobileHeroBackground';
 import { RefreshCw, FileQuestion } from 'lucide-react';
 
@@ -48,6 +54,7 @@ function DashboardSkeleton() {
 export default function ConsumerDashboard() {
   const {
     loading,
+    userId,
     profile,
     supplements,
     adherence,
@@ -55,6 +62,11 @@ export default function ConsumerDashboard() {
     streak,
     assessmentCompleted,
   } = useUserDashboardData();
+
+  // Prompt 168 dashboard tiles: meals + targets feed for new section.
+  // Both hooks return safe defaults on null userId so initial render is clean.
+  const { meals: prompt168Meals } = useUserMeals(userId, { days: 7, includeLegacy: true });
+  const { targets: prompt168Targets } = useNutritionTargets(userId);
 
   // Saved check-in data (after submit button pressed)
   const [checkinRaw, setCheckinRaw] = useState<Record<string, any> | null>(null);
@@ -127,6 +139,20 @@ export default function ConsumerDashboard() {
 
         {/* ── 3b. Daily Check-In (Prompt #62e — Tier 4 manual input) ── */}
         <DailyCheckIn onScoresUpdate={handleCheckinScores} onSliderChange={handleSliderPreview} />
+
+        {/* Prompt 168 dashboard tiles: Today's Nutrition section. */}
+        {/* Each tile renders a safe empty state when userId or targets unavailable. */}
+        {/* DailyMacroRings only mounts when targets row exists; no flicker pre-CAQ. */}
+        <section className="space-y-4">
+          <h2 className="text-[15px] font-semibold uppercase tracking-[0.10em] text-white/55">
+            Today&apos;s Nutrition
+          </h2>
+          <TodaysMealsSummary meals={prompt168Meals} />
+          {prompt168Targets ? (
+            <DailyMacroRings meals={prompt168Meals} targets={prompt168Targets} />
+          ) : null}
+          <AverageQualityScoreTile meals={prompt168Meals} days={7} />
+        </section>
 
         {/* ── 3c. Quick Meal Log (Prompt #62f — 4 meal slots) ── */}
         <QuickMealLogWidget />

@@ -295,7 +295,7 @@ export function QuickMealLogWidget({ hideHeader = false, onSaved }: QuickMealLog
         <div className="mb-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Apple className="h-5 w-5 text-[#2DA5A0]" strokeWidth={1.5} />
-            <h3 className="text-sm font-semibold text-white">Meal Log</h3>
+            <h3 className="text-sm font-semibold text-white">Log a Meal</h3>
             <span className="text-xs text-white/40">{loggedCount}/4</span>
           </div>
           <Link
