@@ -77,6 +77,19 @@ function parseJsonOrThrow(text: string): unknown {
   try {
     return JSON.parse(cleaned);
   } catch {
+    // Hardening (#168): Gemini sometimes wraps the JSON in narration like
+    // "Here's the breakdown: {...}" or partial markdown fences the simple
+    // strip misses. Extract the substring from the first { to the last }
+    // and try parsing that. Falls through to throw if still invalid.
+    const firstBrace = cleaned.indexOf('{');
+    const lastBrace = cleaned.lastIndexOf('}');
+    if (firstBrace >= 0 && lastBrace > firstBrace) {
+      try {
+        return JSON.parse(cleaned.slice(firstBrace, lastBrace + 1));
+      } catch {
+        /* fall through */
+      }
+    }
     throw new AIRouteError('MALFORMED_RESPONSE', 'gemini json parse', 502, 'AI returned malformed output. Try again or enter manually.');
   }
 }

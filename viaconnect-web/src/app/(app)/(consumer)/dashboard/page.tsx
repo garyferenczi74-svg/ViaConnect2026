@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useUserDashboardData } from '@/hooks/useUserDashboardData';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { BOSCard } from '@/components/dashboard/bos-card';
@@ -13,14 +13,16 @@ import { PatternCirclePreview } from '@/components/community/PatternCirclePrevie
 import { ConnectCard } from '@/components/dashboard/ConnectCard';
 import { DashboardLinkCard } from '@/components/dashboard/DashboardLinkCard';
 import { DailyCheckIn } from '@/components/dashboard/DailyCheckIn';
-import { QuickMealLogWidget } from '@/components/dashboard/QuickMealLogWidget';
-// Prompt 168 dashboard tiles + Quick Log modal mount
+// Prompt 168 dashboard tiles + Quick Log modal mount.
+// QuickMealLogWidget removed: superseded by QuickLogModal (8-slider grams) per
+// Gary's directive 2026-05-14 to make the new modal the single Quick Log surface.
 import { useUserMeals } from '@/hooks/useUserMeals';
 import { useNutritionTargets } from '@/hooks/useNutritionTargets';
 import { TodaysMealsSummary } from '@/components/dashboard/TodaysMealsSummary';
 import { DailyMacroRings } from '@/components/dashboard/DailyMacroRings';
 import { AverageQualityScoreTile } from '@/components/dashboard/AverageQualityScoreTile';
 import { QuickLogModal, type QuickLogDraft } from '@/components/meals/QuickLogModal';
+import { generateTargets } from '@/lib/gordon/generateTargets';
 import { createClient } from '@/lib/supabase/client';
 import { MobileHeroBackground } from '@/components/ui/MobileHeroBackground';
 import { RefreshCw, FileQuestion, Plus } from 'lucide-react';
@@ -69,6 +71,15 @@ export default function ConsumerDashboard() {
   // Both hooks return safe defaults on null userId so initial render is clean.
   const { meals: prompt168Meals } = useUserMeals(userId, { days: 7, includeLegacy: true });
   const { targets: prompt168Targets } = useNutritionTargets(userId);
+
+  // USDA fallback when no nutrition_targets row exists yet (pre-CAQ users).
+  // Lets the QuickLogModal always open and score against generic adult
+  // defaults; useNutritionTargets will swap to personalized targets once
+  // CAQ + Gordon target generation populates a real row.
+  const effectiveTargets = useMemo(() => (
+    prompt168Targets
+    ?? generateTargets({ caqSnapshot: null, bodySnapshot: null, bioOptDay: null, mealPatternHistory: null })
+  ), [prompt168Targets]);
 
   // Prompt 168 Quick Log modal state.
   const [quickLogOpen, setQuickLogOpen] = useState(false);
@@ -195,26 +206,19 @@ export default function ConsumerDashboard() {
             </button>
           </div>
           <TodaysMealsSummary meals={prompt168Meals} />
-          {prompt168Targets ? (
-            <DailyMacroRings meals={prompt168Meals} targets={prompt168Targets} />
-          ) : null}
+          <DailyMacroRings meals={prompt168Meals} targets={effectiveTargets} />
           <AverageQualityScoreTile meals={prompt168Meals} days={7} />
         </section>
 
-        {/* Prompt 168 Quick Log modal mount. Renders only when open; close via */}
-        {/* onClose. onSave inserts into meals table and useUserMeals realtime  */}
-        {/* updates the tiles automatically. Targets default to USDA when null. */}
-        {prompt168Targets ? (
-          <QuickLogModal
-            open={quickLogOpen}
-            onClose={() => setQuickLogOpen(false)}
-            onSave={handleQuickLogSave}
-            targets={prompt168Targets}
-          />
-        ) : null}
-
-        {/* ── 3c. Quick Meal Log (Prompt #62f — 4 meal slots) ── */}
-        <QuickMealLogWidget />
+        {/* Prompt 168 Quick Log modal mount. Always renders; uses USDA fallback */}
+        {/* targets when no personalized nutrition_targets row exists yet. onSave  */}
+        {/* inserts into meals; useUserMeals realtime auto-refreshes the tiles.  */}
+        <QuickLogModal
+          open={quickLogOpen}
+          onClose={() => setQuickLogOpen(false)}
+          onSave={handleQuickLogSave}
+          targets={effectiveTargets}
+        />
 
         {/* ── 4. Today's Protocol + (Wellness Snapshot / Helix Rewards stack) ── */}
         <div className="grid items-stretch gap-5 lg:grid-cols-[1.4fr_1fr]">
