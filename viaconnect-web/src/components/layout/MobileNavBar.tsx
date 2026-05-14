@@ -79,11 +79,10 @@ export function MobileNavBar({ role }: { role: string }) {
   };
 
   return (
-    <div className="relative z-20 lg:hidden"
-      style={{
-        background: '#0D1520',
-        borderBottom: '1px solid rgba(255,255,255,0.06)',
-      }}
+    <nav
+      data-prompt-167="section-sub-nav"
+      aria-label="Section navigation"
+      className="sticky top-0 z-40 lg:hidden bg-[#1E3054]/45 backdrop-blur-md border-b border-white/10 md:relative md:top-auto md:z-20 md:bg-[#0D1520] md:backdrop-blur-none md:border-white/[0.06]"
     >
       <div className="relative flex items-center">
         {/* Left fade + scroll button */}
@@ -134,6 +133,6 @@ export function MobileNavBar({ role }: { role: string }) {
           <ChevronRight size={14} strokeWidth={1.5} className="text-white/40" />
         </button>
       </div>
-    </div>
+    </nav>
   );
 }
