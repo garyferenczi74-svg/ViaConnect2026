@@ -105,7 +105,7 @@ function parseJsonOrThrow(text: string): unknown {
   }
 }
 
-export async function parseDescriptionWithGemini(description: string): Promise<ParseResult> {
+async function parseDescriptionAttempt(description: string): Promise<ParseResult> {
   const { text, usage } = await callGemini({
     systemInstruction: { parts: [{ text: TEXT_PARSE_SYSTEM_INSTRUCTION }] },
     contents: [{ role: 'user', parts: [{ text: description }] }],
@@ -113,6 +113,23 @@ export async function parseDescriptionWithGemini(description: string): Promise<P
   });
   const parsed = ParsedMealSchema.parse(parseJsonOrThrow(text));
   return { parsed, usage };
+}
+
+export async function parseDescriptionWithGemini(description: string): Promise<ParseResult> {
+  try {
+    return await parseDescriptionAttempt(description);
+  } catch (err) {
+    // Auto-retry once on MALFORMED_RESPONSE. Gemini 2.5 Flash is
+    // non-deterministic at temperature 0.2; a single retry catches transient
+    // JSON parse failures without burning quota. The circuit breaker handles
+    // chronic issues at the call layer.
+    if (err instanceof AIRouteError && err.code === 'MALFORMED_RESPONSE') {
+      // eslint-disable-next-line no-console
+      console.warn('[gemini-client] MALFORMED_RESPONSE; retrying once');
+      return await parseDescriptionAttempt(description);
+    }
+    throw err;
+  }
 }
 
 export async function parseImageWithGemini(buf: Buffer, mimeType: string, note: string): Promise<ParseResult> {
