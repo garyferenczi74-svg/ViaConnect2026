@@ -44,12 +44,13 @@ export function Header({
   }, [onCommandPaletteOpen]);
 
   return (
+    // Prompt 166b: opaque on mobile so the page hero image does not bleed
+    // through the translucent chrome and create a visible strip above the
+    // Portal tab row. Desktop translucent + blur preserved via md: prefixes.
     <header
-      className="sticky top-0 z-30 flex items-center h-16 px-4 lg:px-6 border-b"
+      data-prompt-166b="applied-2026-05-13"
+      className="sticky top-0 z-30 flex items-center h-16 px-4 lg:px-6 border-b bg-[#0B1120] md:bg-[rgba(11,17,32,0.8)] md:backdrop-blur-[20px]"
       style={{
-        background: "rgba(11,17,32,0.8)",
-        backdropFilter: "blur(20px)",
-        WebkitBackdropFilter: "blur(20px)",
         borderBottomColor: "rgba(255,255,255,0.06)",
       }}
     >
