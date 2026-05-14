@@ -81,6 +81,13 @@ html, body {
   --foreground: #f9fafb;
   color-scheme: dark;
 
+  /* === LAYOUT CHROME (Prompt 167) === */
+  /* Brand header height, single source of truth for sticky offsets in the
+   * mobile nav stack. Matches Tailwind h-16 (4rem = 64px) on src/components/
+   * layout/Header.tsx. If the brand header height changes later, only this
+   * variable needs to update. */
+  --brand-header-height: 64px;
+
   /* === PRIMARY — NAVY === */
   --navy-900: #0D1520;
   --navy-800: #131D2E;

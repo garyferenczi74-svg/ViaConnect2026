@@ -44,15 +44,13 @@ export function Header({
   }, [onCommandPaletteOpen]);
 
   return (
-    // Prompt 166b: opaque on mobile so the page hero image does not bleed
-    // through the translucent chrome and create a visible strip above the
-    // Portal tab row. Desktop translucent + blur preserved via md: prefixes.
+    // Prompt 167: translucent blue glass header on mobile (matches BOS card
+    // glass treatment). Brand header is sticky at the top with the highest
+    // chrome z-index so the section sub-nav can stick directly under it.
+    // Desktop translucent navy + 20px blur preserved via md: prefixes.
     <header
-      data-prompt-166b="applied-2026-05-13"
-      className="sticky top-0 z-30 flex items-center h-16 px-4 lg:px-6 border-b bg-[#0B1120] md:bg-[rgba(11,17,32,0.8)] md:backdrop-blur-[20px]"
-      style={{
-        borderBottomColor: "rgba(255,255,255,0.06)",
-      }}
+      data-prompt-167="brand-header"
+      className="sticky top-0 z-50 flex items-center h-16 px-4 lg:px-6 bg-[#1E3054]/45 backdrop-blur-md border-b border-white/5 md:bg-[rgba(11,17,32,0.8)] md:backdrop-blur-[20px] md:border-white/[0.06]"
     >
       {/* ViaConnect logo on mobile */}
       <span className="lg:hidden mr-3">

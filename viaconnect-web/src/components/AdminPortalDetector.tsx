@@ -51,8 +51,13 @@ export function AdminPortalDetector({
 
   return (
     <AppShell user={user} role={activePortal === "hounddog" ? "admin" : activePortal}>
-      {/* 1. Portal Switcher Tabs */}
-      <div className="relative z-20 flex items-center gap-1.5 px-4 py-2 bg-[#0D1520] border-b border-copper/20 overflow-x-auto">
+      {/* 1. Portal Switcher Tabs (Prompt 167: glass on mobile, scrolls away
+            with the page. Desktop solid #0D1520 + copper border preserved). */}
+      <nav
+        data-prompt-167="portal-tabs"
+        aria-label="Portal navigation"
+        className="relative z-30 flex items-center gap-1.5 px-4 py-2 bg-[#1E3054]/45 backdrop-blur-md border-b border-white/5 md:bg-[#0D1520] md:backdrop-blur-none md:border-copper/20 overflow-x-auto"
+      >
         {portals.map((p) => {
           const isActive = activePortal === p.key;
           return (
@@ -72,9 +77,10 @@ export function AdminPortalDetector({
             </Link>
           );
         })}
-      </div>
+      </nav>
 
-      {/* 2. Mobile Nav Bar — between portal tabs and page content */}
+      {/* 2. Mobile Nav Bar (Prompt 167: sticky under the brand header on
+            mobile, glass background, decoupled from portal tabs above). */}
       <MobileNavBar role={activePortal} />
 
       {/* 3. Page content with padding */}
