@@ -77,10 +77,7 @@ function parseJsonOrThrow(text: string): unknown {
   try {
     return JSON.parse(cleaned);
   } catch {
-    // Hardening (#168): Gemini sometimes wraps the JSON in narration like
-    // "Here's the breakdown: {...}" or partial markdown fences the simple
-    // strip misses. Extract the substring from the first { to the last }
-    // and try parsing that. Falls through to throw if still invalid.
+    // Hardening (#168): try object extraction first, then array extraction.
     const firstBrace = cleaned.indexOf('{');
     const lastBrace = cleaned.lastIndexOf('}');
     if (firstBrace >= 0 && lastBrace > firstBrace) {
@@ -90,6 +87,20 @@ function parseJsonOrThrow(text: string): unknown {
         /* fall through */
       }
     }
+    const firstBracket = cleaned.indexOf('[');
+    const lastBracket = cleaned.lastIndexOf(']');
+    if (firstBracket >= 0 && lastBracket > firstBracket) {
+      try {
+        return JSON.parse(cleaned.slice(firstBracket, lastBracket + 1));
+      } catch {
+        /* fall through */
+      }
+    }
+    // Diagnostic: surface the raw Gemini text on Vercel runtime logs so the
+    // next failure leaves a trace we can fix the parse path against. First
+    // 500 chars only to keep the log entry small.
+    // eslint-disable-next-line no-console
+    console.warn('[gemini-client] parse failed, raw text preview:', text.slice(0, 500));
     throw new AIRouteError('MALFORMED_RESPONSE', 'gemini json parse', 502, 'AI returned malformed output. Try again or enter manually.');
   }
 }
