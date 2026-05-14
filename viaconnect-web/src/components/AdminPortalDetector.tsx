@@ -51,8 +51,9 @@ export function AdminPortalDetector({
 
   return (
     <AppShell user={user} role={activePortal === "hounddog" ? "admin" : activePortal}>
-      {/* 1. Portal Switcher Tabs */}
-      <div className="relative z-20 flex items-center gap-1.5 px-4 py-2 bg-[#0D1520] border-b border-copper/20 overflow-x-auto">
+      {/* 1. Portal Switcher Tabs (mobile: no border-b so it reads as one block
+            with the Header + sub-nav). Desktop border preserved via md: prefix. */}
+      <div className="relative z-20 flex items-center gap-1.5 px-4 py-2 bg-[#0D1520] md:border-b md:border-copper/20 overflow-x-auto">
         {portals.map((p) => {
           const isActive = activePortal === p.key;
           return (
