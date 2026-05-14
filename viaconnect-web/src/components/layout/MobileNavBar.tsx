@@ -114,7 +114,7 @@ export function MobileNavBar({ role }: { role: string }) {
                 className={`min-h-[44px] flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium whitespace-nowrap flex-shrink-0 transition-all ${
                   isActive
                     ? 'bg-[rgba(45,165,160,0.15)] text-[#2DA5A0] border border-[rgba(45,165,160,0.3)]'
-                    : 'text-[#718096] hover:text-white hover:bg-white/[0.04] border border-transparent'
+                    : 'text-white hover:bg-[#1A2744]/80 border border-transparent'
                 }`}
               >
                 <Icon size={14} strokeWidth={1.5} />

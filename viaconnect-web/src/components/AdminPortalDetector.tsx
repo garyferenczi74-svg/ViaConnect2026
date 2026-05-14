@@ -67,7 +67,7 @@ export function AdminPortalDetector({
               className={`text-[11px] px-3 py-1.5 rounded-full font-medium transition-all whitespace-nowrap flex items-center gap-1 ${
                 isActive
                   ? p.color
-                  : "text-gray-500 hover:text-white hover:bg-white/[0.06]"
+                  : "text-white hover:bg-[#1A2744]/80"
               }`}
             >
               {p.key === "hounddog" && (
