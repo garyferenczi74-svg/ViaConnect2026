@@ -14,14 +14,16 @@ import { ConnectCard } from '@/components/dashboard/ConnectCard';
 import { DashboardLinkCard } from '@/components/dashboard/DashboardLinkCard';
 import { DailyCheckIn } from '@/components/dashboard/DailyCheckIn';
 import { QuickMealLogWidget } from '@/components/dashboard/QuickMealLogWidget';
-// Prompt 168 dashboard tiles
+// Prompt 168 dashboard tiles + Quick Log modal mount
 import { useUserMeals } from '@/hooks/useUserMeals';
 import { useNutritionTargets } from '@/hooks/useNutritionTargets';
 import { TodaysMealsSummary } from '@/components/dashboard/TodaysMealsSummary';
 import { DailyMacroRings } from '@/components/dashboard/DailyMacroRings';
 import { AverageQualityScoreTile } from '@/components/dashboard/AverageQualityScoreTile';
+import { QuickLogModal, type QuickLogDraft } from '@/components/meals/QuickLogModal';
+import { createClient } from '@/lib/supabase/client';
 import { MobileHeroBackground } from '@/components/ui/MobileHeroBackground';
-import { RefreshCw, FileQuestion } from 'lucide-react';
+import { RefreshCw, FileQuestion, Plus } from 'lucide-react';
 
 // Pre-uploaded hero image (Hero Images bucket — already public, full URL)
 const DASHBOARD_HERO_IMAGE =
@@ -67,6 +69,40 @@ export default function ConsumerDashboard() {
   // Both hooks return safe defaults on null userId so initial render is clean.
   const { meals: prompt168Meals } = useUserMeals(userId, { days: 7, includeLegacy: true });
   const { targets: prompt168Targets } = useNutritionTargets(userId);
+
+  // Prompt 168 Quick Log modal state.
+  const [quickLogOpen, setQuickLogOpen] = useState(false);
+  const handleQuickLogSave = useCallback(async (draft: QuickLogDraft) => {
+    if (!userId) return;
+    const supabase = createClient();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any).from('meals').insert({
+      user_id: userId,
+      logged_at: draft.loggedAt,
+      meal_type: draft.mealType,
+      source: draft.source,
+      source_confidence: draft.sourceConfidence,
+      protein_g: draft.proteinG,
+      carbs_g: draft.carbsG,
+      fat_total_g: draft.fatTotalG,
+      fat_healthy_g: draft.fatHealthyG,
+      fiber_g: draft.fiberG,
+      sugar_g: draft.sugarG,
+      sodium_mg: draft.sodiumMg,
+      calories_kcal: draft.caloriesKcal,
+      calories_auto_calc: draft.caloriesAutoCalc,
+      whole_food_flag: draft.wholeFoodFlag,
+      meal_name: draft.mealName,
+      raw_input: draft.rawInput,
+    });
+    if (error) {
+      // eslint-disable-next-line no-console
+      console.error('[QuickLog insert failed]', error.message);
+      return;
+    }
+    setQuickLogOpen(false);
+    // useUserMeals realtime auto-updates the tiles below.
+  }, [userId]);
 
   // Saved check-in data (after submit button pressed)
   const [checkinRaw, setCheckinRaw] = useState<Record<string, any> | null>(null);
@@ -144,15 +180,38 @@ export default function ConsumerDashboard() {
         {/* Each tile renders a safe empty state when userId or targets unavailable. */}
         {/* DailyMacroRings only mounts when targets row exists; no flicker pre-CAQ. */}
         <section className="space-y-4">
-          <h2 className="text-[15px] font-semibold uppercase tracking-[0.10em] text-white/55">
-            Today&apos;s Nutrition
-          </h2>
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-[15px] font-semibold uppercase tracking-[0.10em] text-white/55">
+              Today&apos;s Nutrition
+            </h2>
+            <button
+              type="button"
+              onClick={() => setQuickLogOpen(true)}
+              disabled={!userId}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-[#2DA5A0] px-3 py-1.5 text-[12px] font-semibold text-white transition-colors hover:bg-[#258A85] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <Plus className="h-3.5 w-3.5" strokeWidth={1.5} />
+              Log Meal
+            </button>
+          </div>
           <TodaysMealsSummary meals={prompt168Meals} />
           {prompt168Targets ? (
             <DailyMacroRings meals={prompt168Meals} targets={prompt168Targets} />
           ) : null}
           <AverageQualityScoreTile meals={prompt168Meals} days={7} />
         </section>
+
+        {/* Prompt 168 Quick Log modal mount. Renders only when open; close via */}
+        {/* onClose. onSave inserts into meals table and useUserMeals realtime  */}
+        {/* updates the tiles automatically. Targets default to USDA when null. */}
+        {prompt168Targets ? (
+          <QuickLogModal
+            open={quickLogOpen}
+            onClose={() => setQuickLogOpen(false)}
+            onSave={handleQuickLogSave}
+            targets={prompt168Targets}
+          />
+        ) : null}
 
         {/* ── 3c. Quick Meal Log (Prompt #62f — 4 meal slots) ── */}
         <QuickMealLogWidget />
