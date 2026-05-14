@@ -79,11 +79,17 @@ export function MobileNavBar({ role }: { role: string }) {
   };
 
   return (
+    // 167 followup: split sticky from backdrop-filter onto separate
+    // elements. iOS Safari sometimes fails to engage sticky when
+    // backdrop-filter creates a stacking context on the same node
+    // (the body-tracker sticky pattern at layout.tsx:24 uses a plain
+    // sticky wrapper with styled inner content for this reason).
     <nav
       data-prompt-167="section-sub-nav"
       aria-label="Section navigation"
-      className="sticky top-0 z-40 lg:hidden bg-[#1E3054]/45 backdrop-blur-md border-b border-white/10 md:relative md:top-auto md:z-20 md:bg-[#0D1520] md:backdrop-blur-none md:border-white/[0.06]"
+      className="sticky top-0 z-40 lg:hidden md:relative md:top-auto md:z-20"
     >
+      <div className="bg-[#1E3054]/45 backdrop-blur-md border-b border-white/10 md:bg-[#0D1520] md:backdrop-blur-none md:border-white/[0.06]">
       <div className="relative flex items-center">
         {/* Left fade + scroll button */}
         <button
@@ -132,6 +138,7 @@ export function MobileNavBar({ role }: { role: string }) {
         >
           <ChevronRight size={14} strokeWidth={1.5} className="text-white/40" />
         </button>
+      </div>
       </div>
     </nav>
   );
