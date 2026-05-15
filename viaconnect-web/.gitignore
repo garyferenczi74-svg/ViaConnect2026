@@ -43,3 +43,16 @@ supabase/.temp/
 # generated masks ship to public/body-tracker/masks/ and the
 # reference folder is deleted after generation.
 scripts/body-tracker/157_references/
+
+# Per Gary directive 2026-05-15: the specific working-scratch paths below
+# were swept into git via Phase 7 git add -A and re-untracked. Future audit
+# deliverables in tmp/<promptN>/ remain trackable; only THESE specific noise
+# paths are ignored. Add new entries here per-prompt if a tmp dir contains
+# only working notes that should never enter the repo.
+docs/superpowers/plans/
+scratch/161e/
+tmp/158/
+tmp/159/
+tmp/161/
+tmp/161a/
+tmp/166/
