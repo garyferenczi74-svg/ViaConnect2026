@@ -3,7 +3,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronDown, Smartphone, Loader2 } from 'lucide-react';
-import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { APP_REGISTRY } from '@/lib/integrations/appRegistry';
 
@@ -84,15 +83,10 @@ export function ConnectedAppMealDropdown() {
   }, [expanded, loadMeals]);
 
   if (connections.length === 0) {
-    return (
-      <Link
-        href="/plugins/apps"
-        className="group relative flex w-full items-center gap-2 overflow-hidden rounded-lg border border-[#B75E18]/30 bg-[#B75E18]/10 px-3 py-2 text-xs font-medium text-[#B75E18] transition-all hover:bg-[#B75E18]/20"
-      >
-        <Smartphone className="h-3.5 w-3.5" strokeWidth={1.5} />
-        Connect a nutrition app
-      </Link>
-    );
+    // Prompt #168c section 2.4: orange-outlined reminder banner removed.
+    // Redundant with the Connect Your App gradient button in the channel row
+    // immediately below this slot.
+    return null;
   }
 
   return (

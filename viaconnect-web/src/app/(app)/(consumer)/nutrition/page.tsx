@@ -1,16 +1,15 @@
 'use client';
 
-import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
-import { Apple, Camera, ChevronRight, Dna, PenLine, ArrowRight, Plus, Smartphone, Upload } from 'lucide-react';
+import { ArrowRight, Camera, ChevronRight, Dna, PenLine, Smartphone, Upload } from 'lucide-react';
 import { NutritionScoreCard } from '@/components/nutrition/NutritionScoreCard';
-// Prompt #168: Quick Log tab now opens the 8-slider grams modal (Protein, Carbs,
-// Fat Total, Healthy Fat, Fiber, Sugar, Sodium, Calories) instead of the legacy
-// 5-slider scroll-score widget. Same QuickLogModal mounted on the dashboard.
-import { QuickLogModal, type QuickLogDraft } from '@/components/meals/QuickLogModal';
-import { useNutritionTargets } from '@/hooks/useNutritionTargets';
-import { generateTargets } from '@/lib/gordon/generateTargets';
+// Prompt #168c section 2.4: channel row cleanup. Quick Log is on the Dashboard
+// surface only (#168c section 2.1). The /nutrition Log a Meal tab now lists
+// three gradient pill buttons: Log Full Meal, Photo AI, Connect Your App, each
+// navigating to its dedicated route. The Open Quick Log CTA card and the
+// orange-outlined reminder banner are removed entirely.
 import { NutritionInsights } from '@/components/nutrition/NutritionInsights';
 import { MealHistory } from '@/components/nutrition/MealHistory';
 import { MyMeals } from '@/components/nutrition/MyMeals';
@@ -39,26 +38,16 @@ export default function NutritionPage() {
 function NutritionPageInner() {
   const [mealsToday, setMealsToday] = useState(0);
   const [score, setScore] = useState(0);
-  const [tab, setTab] = useState<'quick' | 'photo' | 'manual'>('quick');
-  const [userId, setUserId] = useState<string | null>(null);
-  const [quickLogOpen, setQuickLogOpen] = useState(false);
   const activeTab = useNutritionActiveTab(NUTRITION_TAB_DEFS, 'log');
   const setActiveTab = useSetNutritionTab();
-
-  const { targets: prompt168Targets } = useNutritionTargets(userId);
-  // USDA fallback targets when no nutrition_targets row exists yet (pre-CAQ).
-  // Same pattern as the dashboard mount so the modal opens cleanly for new users.
-  const effectiveTargets = useMemo(() => (
-    prompt168Targets ?? generateTargets({ caqSnapshot: null, bodySnapshot: null, bioOptDay: null, mealPatternHistory: null })
-  ), [prompt168Targets]);
 
   const loadMealCount = async () => {
     try {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      setUserId(user.id);
       const today = new Date().toISOString().split('T')[0];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data } = await (supabase as any)
         .from('meal_logs')
         .select('id, quality_rating')
@@ -79,52 +68,18 @@ function NutritionPageInner() {
 
   useEffect(() => { loadMealCount(); }, []);
 
-  const handleQuickLogSave = useCallback(async (draft: QuickLogDraft) => {
-    if (!userId) return;
-    const supabase = createClient();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase as any).from('meals').insert({
-      user_id: userId,
-      logged_at: draft.loggedAt,
-      meal_type: draft.mealType,
-      source: draft.source,
-      source_confidence: draft.sourceConfidence,
-      protein_g: draft.proteinG,
-      carbs_g: draft.carbsG,
-      fat_total_g: draft.fatTotalG,
-      fat_healthy_g: draft.fatHealthyG,
-      fiber_g: draft.fiberG,
-      sugar_g: draft.sugarG,
-      sodium_mg: draft.sodiumMg,
-      calories_kcal: draft.caloriesKcal,
-      calories_auto_calc: draft.caloriesAutoCalc,
-      whole_food_flag: draft.wholeFoodFlag,
-      meal_name: draft.mealName,
-      raw_input: draft.rawInput,
-    });
-    if (error) {
-      // eslint-disable-next-line no-console
-      console.error('[QuickLog insert failed]', error.message);
-      return;
-    }
-    setQuickLogOpen(false);
-    loadMealCount();
-  }, [userId]);
-
-  // Prompt #160: 'photo' and 'manual' became dedicated routes
-  // (/nutrition/photo-ai and /nutrition/log-meal) with the new Gordan AI
-  // macro pipeline. 'quick' remains in-page for the legacy meal_logs flow.
-  const TABS: Array<{
-    id: 'quick' | 'photo' | 'manual';
+  // Prompt #168c section 2.4: three gradient pill channel buttons. Log Full
+  // Meal LEFTMOST as primary. All three navigate to dedicated routes; no
+  // in-page tab content remains here.
+  const TABS: ReadonlyArray<{
+    id: string;
     label: string;
-    icon: typeof Apple;
-    gradient: string;
-    glow: string;
-    href?: string;
+    icon: typeof Camera;
+    href: string;
   }> = [
-    { id: 'quick',  label: 'Quick Log',     icon: Apple,  gradient: 'linear-gradient(135deg, #27AE60 0%, #1E3054 100%)', glow: 'rgba(39,174,96,0.35)' },
-    { id: 'photo',  label: 'Photo AI',      icon: Camera, gradient: 'linear-gradient(135deg, #2DA5A0 0%, #1E3054 100%)', glow: 'rgba(45,165,160,0.35)', href: '/nutrition/photo-ai' },
-    { id: 'manual', label: 'Log Full Meal', icon: PenLine, gradient: 'linear-gradient(135deg, #B75E18 0%, #1E3054 100%)', glow: 'rgba(183,94,24,0.35)', href: '/nutrition/log-meal' },
+    { id: 'manual', label: 'Log Full Meal', icon: PenLine, href: '/nutrition/log-meal' },
+    { id: 'photo', label: 'Photo AI', icon: Camera, href: '/nutrition/photo-ai' },
+    { id: 'connect', label: 'Connect Your App', icon: Smartphone, href: '/plugins/apps' },
   ];
 
   return (
@@ -153,72 +108,27 @@ function NutritionPageInner() {
           <ConnectedAppMealDropdown />
         </div>
 
-        <div className="mb-4 flex flex-wrap gap-1.5">
+        {/* Prompt #168c section 2.4: three gradient pill buttons in a single */}
+        {/* row at md and above, stacked vertically below md. Quick Log lives */}
+        {/* on the Dashboard surface only; Open Quick Log CTA card removed. */}
+        <div className="mb-4 grid grid-cols-1 gap-3 md:grid-cols-3">
           {TABS.map((t) => {
             const Icon = t.icon;
-            const isActive = tab === t.id;
-            const baseClassName = `flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] font-semibold text-white transition-all no-underline ${
-              isActive ? 'opacity-100' : 'opacity-55 hover:opacity-85'
-            }`;
-            const baseStyle = { background: t.gradient, boxShadow: isActive ? `0 0 12px ${t.glow}` : undefined };
-            if (t.href) {
-              return (
-                <Link key={t.id} href={t.href} className={baseClassName} style={baseStyle}>
-                  <Icon className="h-3 w-3" strokeWidth={1.5} />
-                  {t.label}
-                </Link>
-              );
-            }
             return (
-              <button
+              <Link
                 key={t.id}
-                onClick={() => setTab(t.id)}
-                className={baseClassName}
-                style={baseStyle}
+                href={t.href}
+                className="flex min-h-[44px] items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-[13px] font-semibold text-white no-underline transition-all hover:scale-[1.02] hover:brightness-110 active:scale-[0.98]"
+                style={{ background: 'linear-gradient(90deg, #2DA5A0 0%, #B75E18 100%)' }}
               >
-                <Icon className="h-3 w-3" strokeWidth={1.5} />
-                {t.label}
-              </button>
+                <Icon className="h-4 w-4" strokeWidth={1.5} />
+                <span>{t.label}</span>
+              </Link>
             );
           })}
-          <Link
-            href="/plugins/apps"
-            className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] font-semibold text-white opacity-85 transition-all hover:opacity-100 hover:shadow-[0_0_12px_rgba(107,114,128,0.35)] no-underline"
-            style={{ background: 'linear-gradient(135deg, #6B7280 0%, #1E3054 100%)' }}
-          >
-            <Smartphone className="h-3 w-3" strokeWidth={1.5} />
-            Connect a Nutrition App
-          </Link>
         </div>
-
-        {tab === 'quick' && (
-          <div className="rounded-xl border border-white/10 bg-[#0D1520]/40 p-5 text-center">
-            <p className="mb-1 text-sm font-semibold text-white">Quick Log a Meal</p>
-            <p className="mb-4 text-xs leading-relaxed text-white/55">
-              Log macros in grams across 8 nutrients. Gordon scores the meal against your personalized targets.
-            </p>
-            <button
-              type="button"
-              onClick={() => setQuickLogOpen(true)}
-              disabled={!userId}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-[#2DA5A0] px-4 py-2 text-[13px] font-semibold text-white transition-colors hover:bg-[#258A85] disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <Plus className="h-4 w-4" strokeWidth={1.5} />
-              Open Quick Log
-            </button>
-          </div>
-        )}
       </div>
       )}
-
-      {/* Prompt #168: 8-slider grams modal mount. Always rendered; userId-gated */}
-      {/* button above opens it. onSave inserts into meals + refreshes count. */}
-      <QuickLogModal
-        open={quickLogOpen}
-        onClose={() => setQuickLogOpen(false)}
-        onSave={handleQuickLogSave}
-        targets={effectiveTargets}
-      />
 
       {/* Nutrition by Genetics — full-width tab.
           Requires a nutritional genetic test (NutrigenDX™ or equivalent)
