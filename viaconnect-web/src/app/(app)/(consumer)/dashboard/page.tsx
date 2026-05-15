@@ -13,19 +13,18 @@ import { PatternCirclePreview } from '@/components/community/PatternCirclePrevie
 import { ConnectCard } from '@/components/dashboard/ConnectCard';
 import { DashboardLinkCard } from '@/components/dashboard/DashboardLinkCard';
 import { DailyCheckIn } from '@/components/dashboard/DailyCheckIn';
-// Prompt 168 dashboard tiles + Quick Log modal mount.
-// QuickMealLogWidget removed: superseded by QuickLogModal (8-slider grams) per
-// Gary's directive 2026-05-14 to make the new modal the single Quick Log surface.
+// Prompt 168c section 2.1 + 2.8: inline Quick Log surface with horizontal
+// meal-type tab strip replaces the Log Meal button + QuickLogModal pattern.
+// The 3 nutrition tiles (TodaysMealsSummary, DailyMacroRings, AverageQualityScoreTile)
+// move to a new Daily Totals tab in the Nutrition section per Phase 5.
 import { useUserMeals } from '@/hooks/useUserMeals';
 import { useNutritionTargets } from '@/hooks/useNutritionTargets';
-import { TodaysMealsSummary } from '@/components/dashboard/TodaysMealsSummary';
-import { DailyMacroRings } from '@/components/dashboard/DailyMacroRings';
-import { AverageQualityScoreTile } from '@/components/dashboard/AverageQualityScoreTile';
-import { QuickLogModal, type QuickLogDraft } from '@/components/meals/QuickLogModal';
+import { QuickLogsSurface } from '@/components/dashboard/QuickLogsSurface';
+import type { QuickLogDraft } from '@/components/meals/QuickLogModal';
 import { generateTargets } from '@/lib/gordon/generateTargets';
 import { createClient } from '@/lib/supabase/client';
 import { MobileHeroBackground } from '@/components/ui/MobileHeroBackground';
-import { RefreshCw, FileQuestion, Plus } from 'lucide-react';
+import { RefreshCw, FileQuestion } from 'lucide-react';
 
 // Pre-uploaded hero image (Hero Images bucket — already public, full URL)
 const DASHBOARD_HERO_IMAGE =
@@ -73,17 +72,18 @@ export default function ConsumerDashboard() {
   const { targets: prompt168Targets } = useNutritionTargets(userId);
 
   // USDA fallback when no nutrition_targets row exists yet (pre-CAQ users).
-  // Lets the QuickLogModal always open and score against generic adult
-  // defaults; useNutritionTargets will swap to personalized targets once
-  // CAQ + Gordon target generation populates a real row.
+  // QuickLogsSurface always renders so non-CAQ users can still log meals
+  // against generic adult defaults; useNutritionTargets swaps to personalized
+  // targets once CAQ + Gordon target generation populates a real row.
   const effectiveTargets = useMemo(() => (
     prompt168Targets
     ?? generateTargets({ caqSnapshot: null, bodySnapshot: null, bioOptDay: null, mealPatternHistory: null })
   ), [prompt168Targets]);
 
-  // Prompt 168 Quick Log modal state.
-  const [quickLogOpen, setQuickLogOpen] = useState(false);
-  const handleQuickLogSave = useCallback(async (draft: QuickLogDraft) => {
+  // Prompt 168c section 2.1 + 2.2: save handler. snackIndex is null for
+  // breakfast/lunch/dinner. For snacks, SnackStackContainer computes the next
+  // index from the saved-count and passes it through here for INSERT.
+  const handleSaveMeal = useCallback(async (draft: QuickLogDraft, snackIndex: number | null) => {
     if (!userId) return;
     const supabase = createClient();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -105,14 +105,15 @@ export default function ConsumerDashboard() {
       whole_food_flag: draft.wholeFoodFlag,
       meal_name: draft.mealName,
       raw_input: draft.rawInput,
+      snack_index: snackIndex,
     });
     if (error) {
       // eslint-disable-next-line no-console
       console.error('[QuickLog insert failed]', error.message);
       return;
     }
-    setQuickLogOpen(false);
-    // useUserMeals realtime auto-updates the tiles below.
+    // useUserMeals realtime auto-updates the surface (saved meals collapse,
+    // tab strip checkmark badges flip on, snack stack repaints).
   }, [userId]);
 
   // Saved check-in data (after submit button pressed)
@@ -187,37 +188,21 @@ export default function ConsumerDashboard() {
         {/* ── 3b. Daily Check-In (Prompt #62e — Tier 4 manual input) ── */}
         <DailyCheckIn onScoresUpdate={handleCheckinScores} onSliderChange={handleSliderPreview} />
 
-        {/* Prompt 168 dashboard tiles: Today's Nutrition section. */}
-        {/* Each tile renders a safe empty state when userId or targets unavailable. */}
-        {/* DailyMacroRings only mounts when targets row exists; no flicker pre-CAQ. */}
-        <section className="space-y-4">
-          <div className="flex items-center justify-between gap-3">
-            <h2 className="text-[15px] font-semibold uppercase tracking-[0.10em] text-white/55">
-              Today&apos;s Nutrition
-            </h2>
-            <button
-              type="button"
-              onClick={() => setQuickLogOpen(true)}
-              disabled={!userId}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-[#2DA5A0] px-3 py-1.5 text-[12px] font-semibold text-white transition-colors hover:bg-[#258A85] disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <Plus className="h-3.5 w-3.5" strokeWidth={1.5} />
-              Log Meal
-            </button>
-          </div>
-          <TodaysMealsSummary meals={prompt168Meals} />
-          <DailyMacroRings meals={prompt168Meals} targets={effectiveTargets} />
-          <AverageQualityScoreTile meals={prompt168Meals} days={7} />
-        </section>
-
-        {/* Prompt 168 Quick Log modal mount. Always renders; uses USDA fallback */}
-        {/* targets when no personalized nutrition_targets row exists yet. onSave  */}
-        {/* inserts into meals; useUserMeals realtime auto-refreshes the tiles.  */}
-        <QuickLogModal
-          open={quickLogOpen}
-          onClose={() => setQuickLogOpen(false)}
-          onSave={handleQuickLogSave}
+        {/* Prompt 168c section 2.1 + 2.8: inline Quick Log surface with horizontal */}
+        {/* meal-type tab strip. Replaces the prior modal-button pattern + the 3 */}
+        {/* tile cards (TodaysMealsSummary, DailyMacroRings, AverageQualityScoreTile). */}
+        {/* Those tiles relocate to the Daily Totals tab in /nutrition per Phase 5. */}
+        <QuickLogsSurface
+          userId={userId}
           targets={effectiveTargets}
+          mealDistribution={prompt168Targets?.mealDistribution}
+          todaysMeals={prompt168Meals.filter((m) => {
+            const today = new Date(); today.setHours(0, 0, 0, 0);
+            const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1);
+            const t = m.loggedAt ? Date.parse(m.loggedAt) : 0;
+            return t >= today.getTime() && t < tomorrow.getTime();
+          })}
+          onSaveMeal={handleSaveMeal}
         />
 
         {/* ── 4. Today's Protocol + (Wellness Snapshot / Helix Rewards stack) ── */}

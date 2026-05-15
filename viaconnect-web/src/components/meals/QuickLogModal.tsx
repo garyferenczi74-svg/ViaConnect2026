@@ -196,6 +196,7 @@ export function QuickLogModal(props: QuickLogModalProps) {
       scoreBreakdown: null,
       scoredAt: null,
       gordonVersion: null,
+      snackIndex: null,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     }),

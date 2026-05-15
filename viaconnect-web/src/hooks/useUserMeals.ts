@@ -112,6 +112,7 @@ function mealRowToMeal(row: Record<string, unknown>): Meal {
     scoreBreakdown: (row.score_breakdown as ScoreBreakdown | null) ?? null,
     scoredAt: nullableString(row.scored_at),
     gordonVersion: nullableString(row.gordon_version),
+    snackIndex: nullableNumeric(row.snack_index),
     createdAt: String(row.created_at ?? row.logged_at ?? ''),
     updatedAt: String(row.updated_at ?? row.logged_at ?? ''),
   };
@@ -190,6 +191,7 @@ function legacyRowToMeal(row: Record<string, unknown>): Meal {
     scoreBreakdown: null,
     scoredAt: null,
     gordonVersion: null,
+    snackIndex: null,
     createdAt: String(row.created_at ?? loggedAt),
     updatedAt: String(row.updated_at ?? loggedAt),
   };

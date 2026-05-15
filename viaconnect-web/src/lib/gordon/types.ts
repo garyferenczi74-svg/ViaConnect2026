@@ -89,6 +89,9 @@ export interface Meal {
   scoreBreakdown: ScoreBreakdown | null;
   scoredAt: string | null;
   gordonVersion: string | null;
+  // Prompt #168c section 2.2: snack stacking. NULL for breakfast/lunch/dinner.
+  // 1, 2, 3, etc. for snacks ordered by logged_at within a single day.
+  snackIndex: number | null;
   createdAt: string;
   updatedAt: string;
 }
