@@ -92,7 +92,7 @@ function NutritionPageInner() {
         <p className="mt-1 text-sm text-white/40">Track your daily nutrition</p>
       </div>
 
-      <NutritionScoreCard score={score} mealsLoggedToday={mealsToday} />
+      <NutritionScoreCard />
 
       <NutritionTabs tabs={NUTRITION_TAB_DEFS} defaultTab="log" />
 
