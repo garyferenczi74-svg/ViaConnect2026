@@ -1,9 +1,10 @@
 'use client';
 
-// useTodaysMealsLogged — counts how many of today's 4 meal slots
+// useTodaysMealsLogged: counts how many of today's 4 meal slots
 // (breakfast, lunch, dinner, snacks) have been logged or explicitly skipped.
-// Mirrors QuickMealLogWidget's read path so the Daily Schedule gauge can
-// include meal progress alongside supplement adherence.
+// Reads the legacy meal_logs table so the Daily Schedule gauge can include
+// meal progress alongside supplement adherence. The canonical meals table
+// from #168 is read separately by QuickLogsSurface for the new UI.
 
 import { useCallback, useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
