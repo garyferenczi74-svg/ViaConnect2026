@@ -1,0 +1,126 @@
+src/app/(app)/(consumer)/analytics/page.tsx(815,29): error TS2322: Type 'string' is not assignable to type 'never'.
+src/app/(app)/(consumer)/analytics/page.tsx(939,25): error TS2322: Type 'string' is not assignable to type 'never'.
+src/app/(app)/(consumer)/plugins/manage/page.tsx(135,15): error TS2322: Type 'string' is not assignable to type 'never'.
+src/app/(app)/(consumer)/plugins/manage/page.tsx(135,49): error TS2322: Type 'number' is not assignable to type 'never'.
+src/app/(app)/admin/international/page.tsx(10,9): error TS2719: Type 'import("C:/Users/garyf/ViaConnect2026/viaconnect-web/node_modules/@supabase/postgrest-js/dist/index").PostgrestQueryBuilder<{ PostgrestVersion: "14.4"; }, { Tables: { advisor_agent_config: { Row: { key: string; updated_at: string | null; value: string; }; Insert: { key: string; updated_at?: string | null | undefined...' is not assignable to type 'import("C:/Users/garyf/ViaConnect2026/viaconnect-web/node_modules/@supabase/postgrest-js/dist/index").PostgrestQueryBuilder<{ PostgrestVersion: "14.4"; }, { Tables: { advisor_agent_config: { Row: { key: string; updated_at: string | null; value: string; }; Insert: { key: string; updated_at?: string | null | undefined...'. Two different types with this name exist, but they are unrelated.
+src/app/(app)/admin/international/page.tsx(10,49): error TS2769: No overload matches this call.
+src/app/(app)/admin/international/settlement/page.tsx(22,19): error TS2352: Conversion of type '{ discrepancy_flag: boolean; generated_at: string; per_currency_json: Json; report_date: string; report_id: string; total_fx_spread_impact_cents: number; total_usd_settled_cents: number; }[]' to type 'Report[]' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+src/app/(app)/admin/marshall/dashboards/page.tsx(79,15): error TS2322: Type 'string' is not assignable to type 'never'.
+src/app/(app)/admin/marshall/dashboards/page.tsx(79,50): error TS2322: Type 'number' is not assignable to type 'never'.
+src/app/(app)/admin/marshall/hounddog/page.tsx(84,15): error TS2322: Type 'string' is not assignable to type 'never'.
+src/app/(app)/admin/marshall/hounddog/page.tsx(84,50): error TS2322: Type 'number' is not assignable to type 'never'.
+src/app/(app)/admin/marshall/page.tsx(100,15): error TS2322: Type 'string' is not assignable to type 'never'.
+src/app/(app)/admin/marshall/page.tsx(100,35): error TS2322: Type 'number' is not assignable to type 'never'.
+src/app/(app)/admin/notifications/page.tsx(9,9): error TS2719: Type 'import("C:/Users/garyf/ViaConnect2026/viaconnect-web/node_modules/@supabase/postgrest-js/dist/index").PostgrestQueryBuilder<{ PostgrestVersion: "14.4"; }, { Tables: { advisor_agent_config: { Row: { key: string; updated_at: string | null; value: string; }; Insert: { key: string; updated_at?: string | null | undefined...' is not assignable to type 'import("C:/Users/garyf/ViaConnect2026/viaconnect-web/node_modules/@supabase/postgrest-js/dist/index").PostgrestQueryBuilder<{ PostgrestVersion: "14.4"; }, { Tables: { advisor_agent_config: { Row: { key: string; updated_at: string | null; value: string; }; Insert: { key: string; updated_at?: string | null | undefined...'. Two different types with this name exist, but they are unrelated.
+src/app/(app)/admin/notifications/page.tsx(9,49): error TS2769: No overload matches this call.
+src/app/(app)/admin/page.tsx(43,15): error TS2322: Type 'string' is not assignable to type 'never'.
+src/app/(app)/naturopath/ai/page.tsx(219,27): error TS2322: Type 'string' is not assignable to type 'never'.
+src/app/(app)/naturopath/interactions/page.tsx(443,29): error TS2322: Type 'string' is not assignable to type 'never'.
+src/app/(app)/naturopath/interactions/page.tsx(484,41): error TS2322: Type 'string' is not assignable to type 'never'.
+src/app/(app)/naturopath/interactions/page.tsx(559,25): error TS2322: Type 'string' is not assignable to type 'never'.
+src/app/(app)/naturopath/interactions/page.tsx(585,27): error TS2322: Type 'string' is not assignable to type 'never'.
+src/app/(app)/practitioner/ai/page.tsx(235,27): error TS2322: Type 'string' is not assignable to type 'never'.
+src/app/(app)/practitioner/interactions/page.tsx(473,29): error TS2322: Type 'string' is not assignable to type 'never'.
+src/app/(app)/practitioner/interactions/page.tsx(530,41): error TS2322: Type 'string' is not assignable to type 'never'.
+src/app/(app)/practitioner/interactions/page.tsx(716,27): error TS2322: Type 'string' is not assignable to type 'never'.
+src/app/(app)/practitioner/notifications/push/enable/page.tsx(38,9): error TS2322: Type 'Uint8Array<ArrayBufferLike>' is not assignable to type 'string | BufferSource | null | undefined'.
+src/app/(auth)/signup/page.tsx(434,31): error TS2322: Type 'string' is not assignable to type 'never'.
+src/components/account/UserMenu.tsx(284,25): error TS2322: Type 'string' is not assignable to type 'never'.
+src/components/account/UserMenu.tsx(287,25): error TS2322: Type 'number' is not assignable to type 'never'.
+src/components/admin/jeffery/agents/AgentActivityFeed.tsx(84,23): error TS2322: Type 'string' is not assignable to type 'never'.
+src/components/admin/jeffery/agents/AgentActivityFeed.tsx(84,75): error TS2322: Type 'number' is not assignable to type 'never'.
+src/components/admin/jeffery/agents/AgentHeader.tsx(44,15): error TS2322: Type 'string' is not assignable to type 'never'.
+src/components/admin/jeffery/agents/AgentHeader.tsx(44,35): error TS2322: Type 'number' is not assignable to type 'never'.
+src/components/admin/jeffery/agents/AgentHeader.tsx(44,53): error TS2322: Type '{ color: string; }' is not assignable to type 'never'.
+src/components/admin/jeffery/agents/AgentMetricsTiles.tsx(58,15): error TS2322: Type 'string' is not assignable to type 'never'.
+src/components/admin/jeffery/agents/AgentMetricsTiles.tsx(58,50): error TS2322: Type 'number' is not assignable to type 'never'.
+src/components/admin/jeffery/agents/AgentTabTrigger.tsx(37,13): error TS2322: Type 'string' is not assignable to type 'never'.
+src/components/admin/jeffery/agents/AgentTabTrigger.tsx(37,33): error TS2322: Type 'number' is not assignable to type 'never'.
+src/components/admin/jeffery/agents/AgentTabTrigger.tsx(37,51): error TS2322: Type '{ color: string; } | undefined' is not assignable to type 'never'.
+src/components/admin/jeffery/agents/panels/ArnoldPanel.tsx(63,15): error TS2322: Type 'string' is not assignable to type 'never'.
+src/components/admin/jeffery/agents/panels/ArnoldPanel.tsx(63,50): error TS2322: Type 'number' is not assignable to type 'never'.
+src/components/admin/jeffery/agents/panels/HannahPanel.tsx(37,15): error TS2322: Type 'string' is not assignable to type 'never'.
+src/components/admin/jeffery/agents/panels/HannahPanel.tsx(37,50): error TS2322: Type 'number' is not assignable to type 'never'.
+src/components/admin/jeffery/agents/panels/JefferyPanel.tsx(39,15): error TS2322: Type 'string' is not assignable to type 'never'.
+src/components/admin/jeffery/agents/panels/JefferyPanel.tsx(39,50): error TS2322: Type 'number' is not assignable to type 'never'.
+src/components/admin/jeffery/agents/panels/MichelangeloPanel.tsx(79,15): error TS2322: Type 'string' is not assignable to type 'never'.
+src/components/admin/jeffery/agents/panels/MichelangeloPanel.tsx(79,50): error TS2322: Type 'number' is not assignable to type 'never'.
+src/components/admin/jeffery/agents/panels/SherlockPanel.tsx(52,15): error TS2322: Type 'string' is not assignable to type 'never'.
+src/components/admin/jeffery/agents/panels/SherlockPanel.tsx(52,50): error TS2322: Type 'number' is not assignable to type 'never'.
+src/components/admin/jeffery/LiveFeed.tsx(96,21): error TS2322: Type 'string' is not assignable to type 'never'.
+src/components/admin/jeffery/LiveFeed.tsx(96,45): error TS2322: Type '{ color: string; }' is not assignable to type 'never'.
+src/components/admin/jeffery/LiveFeed.tsx(96,74): error TS2322: Type 'number' is not assignable to type 'never'.
+src/components/admin/jeffery/MessageCard.tsx(72,17): error TS2322: Type 'string' is not assignable to type 'never'.
+src/components/admin/jeffery/MessageCard.tsx(72,37): error TS2322: Type '{ color: string; }' is not assignable to type 'never'.
+src/components/admin/jeffery/MessageCard.tsx(72,66): error TS2322: Type 'number' is not assignable to type 'never'.
+src/components/body-tracker/ArnoldCrossReferenceCard.tsx(19,7): error TS2739: Type '{ body_tracker: ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>; supplements: ForwardRefExoticComponent<...>; caq: ForwardRefExoticComponent<...>; genetics: ForwardRefExoticComponent<...>; }' is missing the following properties from type 'Record<CrossReferenceSourceId, ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>>': wearable, app
+src/components/body-tracker/BodyTrackerTabs.tsx(39,19): error TS2322: Type 'string' is not assignable to type 'never'.
+src/components/body-tracker/BodyTrackerTabs.tsx(39,43): error TS2322: Type 'number' is not assignable to type 'never'.
+src/components/body-tracker/photos/ProgressReport.tsx(189,15): error TS2322: Type 'string' is not assignable to type 'never'.
+src/components/body-tracker/photos/ProgressReport.tsx(189,39): error TS2322: Type 'number' is not assignable to type 'never'.
+src/components/body-tracker/photos/ProgressReport.tsx(189,57): error TS2322: Type '{ color: string; }' is not assignable to type 'never'.
+src/components/helix/ChallengeCard.tsx(83,19): error TS2322: Type 'number' is not assignable to type 'never'.
+src/components/helix/ChallengeCard.tsx(83,29): error TS2322: Type 'number' is not assignable to type 'never'.
+src/components/helix/ChallengeCard.tsx(83,47): error TS2322: Type 'string' is not assignable to type 'never'.
+src/components/helix/RewardCard.tsx(39,17): error TS2322: Type 'number' is not assignable to type 'never'.
+src/components/helix/RewardCard.tsx(39,27): error TS2322: Type 'number' is not assignable to type 'never'.
+src/components/helix/RewardCard.tsx(39,45): error TS2322: Type 'string' is not assignable to type 'never'.
+src/components/hounddog/HounddogCommandCenter.tsx(283,36): error TS2322: Type 'number' is not assignable to type 'never'.
+src/components/hounddog/HounddogCommandCenter.tsx(283,46): error TS2322: Type 'number' is not assignable to type 'never'.
+src/components/hounddog/HounddogCommandCenter.tsx(283,64): error TS2322: Type 'string' is not assignable to type 'never'.
+src/components/hounddog/HounddogCommandCenter.tsx(352,26): error TS2322: Type 'number' is not assignable to type 'never'.
+src/components/hounddog/HounddogCommandCenter.tsx(352,36): error TS2322: Type 'number' is not assignable to type 'never'.
+src/components/hounddog/shared/Btn.tsx(76,15): error TS2322: Type 'number' is not assignable to type 'never'.
+src/components/hounddog/shared/Btn.tsx(76,25): error TS2322: Type 'number' is not assignable to type 'never'.
+src/components/hounddog/tabs/OverviewTab.tsx(208,31): error TS2322: Type 'number' is not assignable to type 'never'.
+src/components/hounddog/tabs/OverviewTab.tsx(208,41): error TS2322: Type 'number' is not assignable to type 'never'.
+src/components/hounddog/tabs/OverviewTab.tsx(208,59): error TS2322: Type '{ color: string; }' is not assignable to type 'never'.
+src/components/layout/CommandPalette.tsx(281,34): error TS2322: Type 'string' is not assignable to type 'never'.
+src/components/layout/MobileNavBar.tsx(121,23): error TS2322: Type 'number' is not assignable to type 'never'.
+src/components/layout/MobileNavBar.tsx(121,33): error TS2322: Type 'number' is not assignable to type 'never'.
+src/components/layout/Sidebar.tsx(353,26): error TS2322: Type 'string' is not assignable to type 'never'.
+src/components/precheck/SessionStatusPill.tsx(20,13): error TS2322: Type 'string' is not assignable to type 'never'.
+src/components/precheck/SessionStatusPill.tsx(20,33): error TS2322: Type 'number' is not assignable to type 'never'.
+src/components/shared/InteractionEngine/InteractionEngine.tsx(144,21): error TS2322: Type 'string' is not assignable to type 'never'.
+src/components/shared/InteractionEngine/InteractionEngine.tsx(144,41): error TS2322: Type '{ color: string; }' is not assignable to type 'never'.
+src/components/shared/InteractionEngine/InteractionEngine.tsx(144,73): error TS2322: Type 'number' is not assignable to type 'never'.
+src/components/shared/InteractionEngine/InteractionEngine.tsx(182,23): error TS2322: Type 'string' is not assignable to type 'never'.
+src/components/shared/InteractionEngine/InteractionEngine.tsx(182,53): error TS2322: Type '{ color: string; }' is not assignable to type 'never'.
+src/components/shared/InteractionEngine/InteractionEngine.tsx(182,97): error TS2322: Type 'number' is not assignable to type 'never'.
+src/components/shared/InteractionEngine/SeverityBadge.tsx(22,13): error TS2322: Type 'string' is not assignable to type 'never'.
+src/components/shared/InteractionEngine/SeverityBadge.tsx(22,33): error TS2322: Type 'number' is not assignable to type 'never'.
+src/components/shop/CategoryFallbackImage.tsx(53,13): error TS2322: Type 'unknown' is not assignable to type 'ReactNode'.
+src/components/shop/CategorySections.tsx(172,21): error TS2322: Type 'string' is not assignable to type 'never'.
+src/components/shop/CategorySections.tsx(172,55): error TS2322: Type 'number' is not assignable to type 'never'.
+src/components/shop/CategorySections.tsx(172,73): error TS2322: Type '{ color: string; }' is not assignable to type 'never'.
+src/components/shop/CategorySections.tsx(211,19): error TS2322: Type 'string' is not assignable to type 'never'.
+src/components/shop/CategorySections.tsx(211,39): error TS2322: Type 'number' is not assignable to type 'never'.
+src/components/shop/CategorySections.tsx(211,57): error TS2322: Type '{ color: string; }' is not assignable to type 'never'.
+src/components/ui/EmptyState.tsx(21,15): error TS2322: Type 'string' is not assignable to type 'never'.
+src/components/ui/ProactiveInsightCard.tsx(113,17): error TS2322: Type 'string' is not assignable to type 'never'.
+src/components/ui/StatCard.tsx(22,17): error TS2322: Type 'string' is not assignable to type 'never'.
+src/lib/international/refunds.ts(31,28): error TS2322: Type '"2024-09-30.acacia"' is not assignable to type '"2026-02-25.clover"'.
+src/lib/international/stripe-tax.ts(63,28): error TS2322: Type '"2024-09-30.acacia"' is not assignable to type '"2026-02-25.clover"'.
+src/lib/international/vat-invoice.ts(85,56): error TS2345: Argument of type 'Uint8Array<ArrayBufferLike>' is not assignable to parameter of type 'BufferSource'.
+src/lib/marketing/variants/assignment.ts(46,11): error TS2737: BigInt literals are not available when targeting lower than ES2020.
+src/lib/marketing/variants/assignment.ts(48,15): error TS2737: BigInt literals are not available when targeting lower than ES2020.
+src/lib/prescriptions/patient-actions.ts(114,17): error TS2339: Property 'data' does not exist on type 'unknown'.
+src/lib/prescriptions/patient-actions.ts(114,23): error TS2339: Property 'error' does not exist on type 'unknown'.
+src/lib/prescriptions/practitioner-actions.ts(223,17): error TS2339: Property 'data' does not exist on type 'unknown'.
+src/lib/prescriptions/practitioner-actions.ts(223,23): error TS2339: Property 'error' does not exist on type 'unknown'.
+src/lib/shop/cart-actions.ts(136,21): error TS2339: Property 'error' does not exist on type 'unknown'.
+src/lib/shop/checkout-actions.ts(184,17): error TS2339: Property 'data' does not exist on type 'unknown'.
+src/lib/shop/checkout-actions.ts(184,32): error TS2339: Property 'error' does not exist on type 'unknown'.
+src/lib/shop/checkout-helpers.ts(75,17): error TS2339: Property 'data' does not exist on type 'unknown'.
+src/lib/shop/checkout-helpers.ts(113,40): error TS2339: Property 'shipping_details' does not exist on type 'Response<Session>'.
+src/lib/shop/checkout-helpers.ts(114,44): error TS2339: Property 'shipping_details' does not exist on type 'Response<Session>'.
+src/lib/shop/checkout-helpers.ts(153,17): error TS2339: Property 'data' does not exist on type 'unknown'.
+src/lib/shop/checkout-helpers.ts(153,33): error TS2339: Property 'error' does not exist on type 'unknown'.
+src/lib/shop/checkout-helpers.ts(206,25): error TS2339: Property 'data' does not exist on type 'unknown'.
+src/lib/shop/checkout-helpers.ts(241,17): error TS2339: Property 'error' does not exist on type 'unknown'.
+src/lib/shop/helix-reversal.ts(63,17): error TS2339: Property 'data' does not exist on type 'unknown'.
+src/lib/shop/helix-reversal.ts(84,17): error TS2339: Property 'data' does not exist on type 'unknown'.
+tests/pricing-feature-gating.test.ts(6,3): error TS2740: Type '{ id: string; display_name: string; description: null; category: string; minimum_tier_level: number; requires_family_tier: false; requires_genex360: false; gate_behavior: string; is_active: true; created_at: string; }' is missing the following properties from type '{ category: string; created_at: string; description: string | null; display_name: string; evaluation_count_24h: number; feature_owner: string | null; gate_behavior: string; id: string; ... 12 more ...; rollout_strategy: string; }': evaluation_count_24h, feature_owner, kill_switch_engaged, kill_switch_engaged_at, and 7 more.
+tests/pricing-feature-gating.test.ts(7,3): error TS2740: Type '{ id: string; display_name: string; description: null; category: string; minimum_tier_level: number; requires_family_tier: false; requires_genex360: false; gate_behavior: string; is_active: true; created_at: string; }' is missing the following properties from type '{ category: string; created_at: string; description: string | null; display_name: string; evaluation_count_24h: number; feature_owner: string | null; gate_behavior: string; id: string; ... 12 more ...; rollout_strategy: string; }': evaluation_count_24h, feature_owner, kill_switch_engaged, kill_switch_engaged_at, and 7 more.
+tests/pricing-feature-gating.test.ts(8,3): error TS2740: Type '{ id: string; display_name: string; description: null; category: string; minimum_tier_level: number; requires_family_tier: false; requires_genex360: true; gate_behavior: string; is_active: true; created_at: string; }' is missing the following properties from type '{ category: string; created_at: string; description: string | null; display_name: string; evaluation_count_24h: number; feature_owner: string | null; gate_behavior: string; id: string; ... 12 more ...; rollout_strategy: string; }': evaluation_count_24h, feature_owner, kill_switch_engaged, kill_switch_engaged_at, and 7 more.
+tests/pricing-feature-gating.test.ts(9,3): error TS2740: Type '{ id: string; display_name: string; description: null; category: string; minimum_tier_level: number; requires_family_tier: true; requires_genex360: false; gate_behavior: string; is_active: true; created_at: string; }' is missing the following properties from type '{ category: string; created_at: string; description: string | null; display_name: string; evaluation_count_24h: number; feature_owner: string | null; gate_behavior: string; id: string; ... 12 more ...; rollout_strategy: string; }': evaluation_count_24h, feature_owner, kill_switch_engaged, kill_switch_engaged_at, and 7 more.

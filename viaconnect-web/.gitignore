@@ -43,11 +43,3 @@ supabase/.temp/
 # generated masks ship to public/body-tracker/masks/ and the
 # reference folder is deleted after generation.
 scripts/body-tracker/157_references/
-
-# Per Gary directive 2026-05-15: untrack working-scratch directories
-# that previously got swept into git via `git add -A`. These hold
-# preflight reports, audit notes, baselines, and recovered legacy
-# code that should not ship in the repo.
-tmp/
-scratch/
-docs/superpowers/plans/

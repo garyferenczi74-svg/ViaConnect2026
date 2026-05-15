@@ -1,0 +1,37 @@
+#142c Methylation SNP Support Duplicate Audit Summary
+Generated 2026-04-30 from live Supabase project nnhkcufyqjojdbvdrpky.
+Approved by Gary 2026-04-30 with directive: "APOE+ / CYP450+ were not added by me. They were just added. Remove them. Remove all duplicate listings."
+
+GROUP TOTALS
+22 canonical-base groups in methylation-snp; 20 are Twinned (row_count=2), 2 are Singleton.
+
+CROSS-TABLE FK AUDIT
+Zero references in order_items, helix_transactions, map_policies, map_price_observations, map_violations, map_vip_exemptions, map_waiver_skus, or any other product_id FK target. Cleanup is FK-safe.
+
+PER-GROUP DISPOSITIONS
+
+ACAT pair (special case; Gary Option B):
+The canonical-slug row (sku 32, slug acat-plus-mitochondrial-support) is active=false and has empty description. The -2 row (sku FC-ACAT-001, slug acat-plus-mitochondrial-support-2) is active=true and has 91-char description. Strict richness formula picks canonical by +5 tiebreaker (220 vs 215), but that would leave the PLP rendering nothing for ACAT until Gary toggles active. Per Gary directive, override: keep -2 row, delete canonical, then rename -2 slug to canonical post-delete. Net: ACAT renders on PLP with sku FC-ACAT-001 and slug acat-plus-mitochondrial-support.
+
+19 normal Twinned pairs (uniform pattern):
+For each of (achy, ado, bhmt, cbs, comt, dao, gst, maoa, mthfr, mtr, mtrr, nat, nos, rfc1, shmt, sod, suox, tcn2, vdr) plus, the canonical-slug row wins by +5 tiebreaker (richness 220 vs 215). Both rows are essentially identical: ingredients populated by Phase D.5 / D.5.1, image_urls populated by Phase D.1, summary populated by Phase C / C.1, snp_targets populated by Phase E. Description column differs: 13 of 19 pairs have description ONLY on the -2 row, 6 have it ONLY on the canonical row. Forward-fill via COALESCE NULLIF preserves description content into the canonical winner before the -2 loser is deleted.
+
+APOE+ singleton (sku FC-APOE-001, slug apoe-plus, ingredient_count=0, image_count=0):
+Outside #142c §10 scope but per Gary directive 2026-04-30: not authorized, delete entirely.
+
+CYP450+ singleton (sku FC-CYP-001, slug cyp450-plus, ingredient_count=0, image_count=0):
+Outside #142c §10 scope but per Gary directive 2026-04-30: not authorized, delete entirely.
+
+CLEANUP COUNTS
+DELETE 22 rows total: 19 -2 losers (non-ACAT) + 1 ACAT canonical (inactive) + 1 APOE+ + 1 CYP450+.
+RENAME 1 row: ACAT -2 slug acat-plus-mitochondrial-support-2 to acat-plus-mitochondrial-support.
+FORWARD-FILL on 19 canonical winners (description column COALESCE NULLIF from -2 loser).
+
+POST-CLEANUP STATE
+methylation-snp row count: 20 (down from 42).
+All canonical slugs from xlsx present: yes (verified by §5 query 4).
+Active row count: 20 (all 20 retained rows are active=true).
+No -2 suffix slugs remain.
+No remaining canonical-base duplicates.
+
+PROCEED to cleanup migration 20260501090000_prompt_142c_methylation_dedupe.sql followed by unique-index migration 20260501100000_prompt_142c_canonical_slug_index.sql.

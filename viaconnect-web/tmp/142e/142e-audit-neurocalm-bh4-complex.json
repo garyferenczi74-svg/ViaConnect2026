@@ -1,0 +1,26 @@
+{
+  "slug": "neurocalm-bh4-complex",
+  "snapshot_at": "2026-05-02T22:30:00Z",
+  "status": "ALREADY_DELETED_BY_PRIOR_PHASE",
+  "prior_deletion": {
+    "source_table": "144v2_remove_neurocalm_bh4_complex",
+    "applied_at": "2026-05-02T22:29:40Z",
+    "method": "orphan_canonical_delete_per_gary_directive",
+    "rollback_path": "SELECT columns_loaded->'old_value' FROM public.backfill_audit WHERE source_table = '144v2_remove_neurocalm_bh4_complex' AND columns_loaded->'old_value'->>'slug' = 'neurocalm-bh4-complex' LIMIT 1;"
+  },
+  "foreign_key_references": {
+    "order_items": 0,
+    "helix_transactions": 0,
+    "map_policies": 0,
+    "map_price_observations": 0,
+    "map_violations": 0,
+    "map_vip_exemptions": 0,
+    "map_waiver_skus": 0
+  },
+  "image_urls_present_at_deletion": true,
+  "image_storage_files_orphaned": [
+    "supplement-photos/Base Formulations/neurocalm-bh4-complex.png"
+  ],
+  "in_canonical_xlsx": "never present at any revision (phantom row, only existed in production)",
+  "current_action": "no-op for #142e; row already deleted; audit + rollback data preserved in prior backfill_audit row; storage file at Base Formulations/neurocalm-bh4-complex.png remains orphaned per §5 default leave-in-place"
+}
