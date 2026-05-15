@@ -1,0 +1,33 @@
+# Em-dash + en-dash pre-commit gate per #168c section 2.9.
+# Blocks commits when any staged file contains U+2014 or U+2013.
+# Allowlist file at .no-dashes-allowlist may exempt specific paths.
+
+ALLOWLIST=".no-dashes-allowlist"
+files=$(git diff --cached --name-only --diff-filter=ACM)
+[ -z "$files" ] && exit 0
+
+allow=""
+if [ -f "$ALLOWLIST" ]; then
+  allow=$(grep -v '^#' "$ALLOWLIST" 2>/dev/null | grep -v '^$' || true)
+fi
+
+violations=""
+for f in $files; do
+  if [ -n "$allow" ] && echo "$allow" | grep -qFx "$f"; then
+    continue
+  fi
+  [ ! -f "$f" ] && continue
+  if grep -qP '[\x{2013}\x{2014}]' "$f" 2>/dev/null; then
+    violations="$violations
+  $f"
+  fi
+done
+
+if [ -n "$violations" ]; then
+  printf "Commit blocked: em-dash (U+2014) or en-dash (U+2013) found in:%s\n\n" "$violations"
+  echo "Replace with periods, commas, colons, hyphens, parentheses, or 'to' before committing."
+  echo "If unavoidable, document and add the file path to .no-dashes-allowlist with Gary's approval."
+  exit 1
+fi
+
+exit 0

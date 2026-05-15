@@ -1,0 +1,8 @@
+# Em-dash + en-dash allowlist per #168c section 2.9.
+# One file path per line, relative to repo root.
+# Lines starting with # are comments. Blank lines ignored.
+#
+# Adding an entry requires Gary's explicit approval. Each entry should be
+# accompanied by an inline code comment in the file justifying the dash.
+#
+# Currently empty: no exemptions granted.

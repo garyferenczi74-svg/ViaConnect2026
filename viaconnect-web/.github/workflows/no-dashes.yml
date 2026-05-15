@@ -1,0 +1,61 @@
+name: No Dashes
+# Per #168c section 2.9: blocks PRs that ADD U+2014 or U+2013 in changed lines.
+# Existing dashes in untouched files do NOT fail the build (sweep is incremental
+# per Gary 2026-05-15 directive). Hook + this gate together prevent regressions.
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  no-dashes:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for em-dash or en-dash in changed lines
+        shell: bash
+        run: |
+          set -e
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            base="origin/${{ github.base_ref }}"
+          else
+            base="HEAD~1"
+          fi
+
+          changed=$(git diff --name-only --diff-filter=ACM "$base"...HEAD || true)
+          if [ -z "$changed" ]; then
+            echo "PASS: no changed files"
+            exit 0
+          fi
+
+          ALLOWLIST=".no-dashes-allowlist"
+          allow=""
+          if [ -f "$ALLOWLIST" ]; then
+            allow=$(grep -v '^#' "$ALLOWLIST" 2>/dev/null | grep -v '^$' || true)
+          fi
+
+          violations=""
+          for f in $changed; do
+            if [ -n "$allow" ] && echo "$allow" | grep -qFx "$f"; then
+              continue
+            fi
+            [ ! -f "$f" ] && continue
+            added=$(git diff "$base"...HEAD -- "$f" | grep -E '^\+' | grep -v '^+++' || true)
+            if [ -n "$added" ] && echo "$added" | grep -qP '[\x{2013}\x{2014}]'; then
+              violations="$violations
+  $f"
+            fi
+          done
+
+          if [ -n "$violations" ]; then
+            printf "PR blocked: em-dash (U+2014) or en-dash (U+2013) added in:%s\n\n" "$violations"
+            echo "Replace with periods, commas, colons, hyphens, parentheses, or 'to' before merging."
+            exit 1
+          fi
+
+          echo "PASS: no dashes added in this change"
