@@ -178,34 +178,6 @@ function NutritionPageInner() {
         </div>
       </section>
 
-      {/* Connect Your App */}
-      <Link
-        href="/plugins/apps"
-        className="group block rounded-2xl border border-[#B75E18]/30 bg-[#B75E18]/12 backdrop-blur-md p-5 transition-all hover:border-[#B75E18]/50 hover:bg-[#B75E18]/20 hover:shadow-[0_0_30px_rgba(183,94,24,0.15)]"
-      >
-        <div className="flex items-start gap-4">
-          <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl border border-[#B75E18]/30 bg-gradient-to-br from-[#1A2744] to-[#B75E18]">
-            <Smartphone className="h-6 w-6 text-white" strokeWidth={1.5} />
-          </div>
-          <div className="min-w-0 flex-1">
-            <h3 className="text-base font-bold text-white">Connect Your App</h3>
-            <p className="mt-1 text-xs leading-relaxed text-white/50">
-              Link MyFitnessPal, Cronometer, Strava, Apple Health and more so your
-              nutrition log learns from your daily routine.
-            </p>
-            <div
-              className="relative mt-3 inline-flex min-h-[40px] items-center gap-2 overflow-hidden rounded-xl px-4 py-2 text-sm font-semibold text-white transition-all group-hover:shadow-[0_0_16px_rgba(183,94,24,0.35)]"
-              style={{ background: 'linear-gradient(135deg, #B75E18 0%, #1E3054 100%)' }}
-            >
-              <span className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
-              <Smartphone className="relative h-4 w-4" strokeWidth={2} />
-              <span className="relative">Browse Apps</span>
-              <ChevronRight className="relative h-4 w-4" strokeWidth={2} />
-            </div>
-          </div>
-        </div>
-      </Link>
-
       <MyMeals onRelog={loadMealCount} />
 
       <NutritionInsights mealsLoggedToday={mealsToday} score={score} />
