@@ -67,15 +67,21 @@ function NutritionPageInner() {
   // Prompt #168c section 2.4: three gradient pill channel buttons. Log Full
   // Meal LEFTMOST as primary. All three navigate to dedicated routes; no
   // in-page tab content remains here.
+  // Accent + hover-shadow RGB per channel matches the NutrigenDX reference
+  // pattern below (See NutrigenDX Results / Upload Nutrition Test / Review
+  // Nutrition Results): linear-gradient(135deg, <accent>, #1E3054) plus a
+  // colored glow on hover.
   const TABS: ReadonlyArray<{
     id: string;
     label: string;
     icon: typeof Camera;
     href: string;
+    accent: string;
+    hoverRgb: string;
   }> = [
-    { id: 'manual', label: 'Log Full Meal', icon: PenLine, href: '/nutrition/log-meal' },
-    { id: 'photo', label: 'Photo AI', icon: Camera, href: '/nutrition/photo-ai' },
-    { id: 'connect', label: 'Connect Your App', icon: Smartphone, href: '/plugins/apps' },
+    { id: 'manual',  label: 'Log Full Meal',    icon: PenLine,    href: '/nutrition/log-meal', accent: '#2DA5A0', hoverRgb: '45,165,160' },
+    { id: 'photo',   label: 'Photo AI',         icon: Camera,     href: '/nutrition/photo-ai', accent: '#B75E18', hoverRgb: '183,94,24' },
+    { id: 'connect', label: 'Connect Your App', icon: Smartphone, href: '/plugins/apps',       accent: '#27AE60', hoverRgb: '39,174,96' },
   ];
 
   return (
@@ -108,11 +114,15 @@ function NutritionPageInner() {
               <Link
                 key={t.id}
                 href={t.href}
-                className="flex min-h-[44px] items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-[13px] font-semibold text-white no-underline transition-all hover:scale-[1.02] hover:brightness-110 active:scale-[0.98]"
-                style={{ background: 'linear-gradient(90deg, #2DA5A0 0%, #B75E18 100%)' }}
+                className="group/cta relative flex min-h-[44px] items-center justify-center gap-2 overflow-hidden rounded-xl px-4 py-2.5 text-[13px] font-semibold text-white no-underline transition-all hover:shadow-[0_0_16px_rgba(var(--cta-hover-rgb),0.35)] active:scale-[0.97]"
+                style={{
+                  background: `linear-gradient(135deg, ${t.accent} 0%, #1E3054 100%)`,
+                  ['--cta-hover-rgb' as never]: t.hoverRgb,
+                }}
               >
-                <Icon className="h-4 w-4" strokeWidth={1.5} />
-                <span>{t.label}</span>
+                <span className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 transition-opacity group-hover/cta:opacity-100" />
+                <Icon className="relative h-4 w-4" strokeWidth={1.5} />
+                <span className="relative">{t.label}</span>
               </Link>
             );
           })}
