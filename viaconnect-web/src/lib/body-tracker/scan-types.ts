@@ -1,9 +1,9 @@
-// Body Scanner — Shared TypeScript types.
+// Body Scanner: Shared TypeScript types.
 //
 // Pure type declarations; no runtime logic, no imports.
 // Consumed by quality-check, fusion, calibration, and UI modules.
 
-// ── Quality gate output ───────────────────────────────────────────────────────
+// === Quality gate output ===
 
 export interface QualityScores {
   lighting:       number; // 0-100
@@ -16,7 +16,7 @@ export interface QualityScores {
   blockingIssues: string[];
 }
 
-// ── Multi-frame fusion ────────────────────────────────────────────────────────
+// === Multi-frame fusion ===
 
 export interface Keypoint3D {
   x:          number;
@@ -38,7 +38,7 @@ export interface FrameFusionResult {
   averagedKeypoints:  Keypoint3D[];
 }
 
-// ── Calibration ───────────────────────────────────────────────────────────────
+// === Calibration ===
 
 export interface CalibrationResult {
   source:                   'credit_card' | 'user_height' | 'camera_intrinsics';
@@ -46,7 +46,7 @@ export interface CalibrationResult {
   floorPlaneInclinationDeg: number | null;
 }
 
-// ── Personal baseline drift ───────────────────────────────────────────────────
+// === Personal baseline drift ===
 
 export interface PersonalBaseline {
   userId:          string;
@@ -56,7 +56,7 @@ export interface PersonalBaseline {
   computedAt:      string; // ISO-8601
 }
 
-// ── Scan insights ─────────────────────────────────────────────────────────────
+// === Scan insights ===
 
 export interface ScanInsight {
   kind:                  'recommendation' | 'observation' | 'flag';

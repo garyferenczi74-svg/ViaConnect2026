@@ -1,4 +1,4 @@
-// Body Scanner — CAQ cross-reference helpers (§7, §15.2).
+// Body Scanner: CAQ cross-reference helpers (§7, §15.2).
 //
 // Compares scan-reported demographics against CAQ Phase 1 values and
 // flags discrepancies that exceed allowed thresholds. Callers persist

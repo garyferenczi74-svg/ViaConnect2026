@@ -1,15 +1,15 @@
 // Tests for scan-tier.ts and caq-xref.ts (Prompt #169 T1 foundation).
 //
 // Covers:
-//   resolveScanTier — always returns 1 for all 16 boolean input combinations.
-//   flagDemographicDelta — boundary precision at exactly 5.0 (NOT flagged)
+//   resolveScanTier: always returns 1 for all 16 boolean input combinations.
+//   flagDemographicDelta: boundary precision at exactly 5.0 (NOT flagged)
 //                          and at 5.01 (flagged); both fields together.
 
 import { describe, it, expect } from 'vitest';
 import { resolveScanTier } from '../scan-tier';
 import { flagDemographicDelta } from '../caq-xref';
 
-// ── resolveScanTier ───────────────────────────────────────────────────────────
+// === resolveScanTier ===
 
 describe('resolveScanTier', () => {
   // Generate all 16 combinations of the 4 boolean flags.
@@ -57,12 +57,12 @@ describe('resolveScanTier', () => {
   });
 });
 
-// ── flagDemographicDelta ──────────────────────────────────────────────────────
+// === flagDemographicDelta ===
 
 describe('flagDemographicDelta', () => {
   const base = { height_cm: 175, weight_kg: 75 };
 
-  // ── Height boundary ───────────────────────────────────────────────────────
+  // === Height boundary ===
 
   it('does NOT flag when height delta is exactly 5.0 cm (boundary: strictly greater than)', () => {
     const result = flagDemographicDelta(
@@ -92,7 +92,7 @@ describe('flagDemographicDelta', () => {
     expect(result.reasons).toHaveLength(0);
   });
 
-  // ── Weight boundary ───────────────────────────────────────────────────────
+  // === Weight boundary ===
 
   it('does NOT flag when weight delta is exactly 5.0 kg (boundary: strictly greater than)', () => {
     const result = flagDemographicDelta(
@@ -122,7 +122,7 @@ describe('flagDemographicDelta', () => {
     expect(result.reasons).toHaveLength(0);
   });
 
-  // ── Both fields exceed threshold ──────────────────────────────────────────
+  // === Both fields exceed threshold ===
 
   it('flags both height and weight when both exceed threshold', () => {
     const result = flagDemographicDelta(
@@ -135,7 +135,7 @@ describe('flagDemographicDelta', () => {
     expect(result.reasons[1]).toContain('Weight discrepancy');
   });
 
-  // ── Identical inputs ──────────────────────────────────────────────────────
+  // === Identical inputs ===
 
   it('returns no flag when scan and CAQ values are identical', () => {
     const result = flagDemographicDelta(base, base);

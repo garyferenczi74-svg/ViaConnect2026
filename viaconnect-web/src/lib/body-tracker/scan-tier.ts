@@ -1,4 +1,4 @@
-// Body Scanner — Scan Tier resolver.
+// Body Scanner: Scan Tier resolver.
 //
 // Phase 1 ships Tier 1 only. Tier 2 (depth sensor upgrade path) and
 // Tier 3 (GeneX360 panel integration) will be wired in Phase 2 and
