@@ -115,7 +115,7 @@ export function QualityIndicators({
         rafRef.current = null;
       }
     };
-  // onAutoCapture intentionally excluded from deps — it is a stable callback
+  // onAutoCapture intentionally excluded from deps: it is a stable callback
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scores, capturing]);
 

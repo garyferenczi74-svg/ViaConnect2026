@@ -8,10 +8,10 @@
 // via computeUserHeightScale.
 //
 // Props:
-//   videoRef     — live MediaStream video element
-//   caqHeightCm  — height from CAQ demographics for fallback
-//   onCalibrated — called once with the CalibrationResult
-//   onSkip       — called when user bypasses calibration entirely
+//   videoRef: live MediaStream video element
+//   caqHeightCm: height from CAQ demographics for fallback
+//   onCalibrated: called once with the CalibrationResult
+//   onSkip: called when user bypasses calibration entirely
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Award, CreditCard, Loader2, RotateCcw, SkipForward } from 'lucide-react';

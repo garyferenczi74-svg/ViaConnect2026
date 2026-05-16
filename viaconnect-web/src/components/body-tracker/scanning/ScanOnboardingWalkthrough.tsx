@@ -62,7 +62,7 @@ export function ScanOnboardingWalkthrough({
       const seen = localStorage.getItem(SEEN_KEY);
       if (!seen) setOpen(true);
     } catch {
-      // localStorage unavailable (SSR, private browsing) — skip
+      // localStorage unavailable (SSR, private browsing): skip
     }
   }, [forceOpen]);
 

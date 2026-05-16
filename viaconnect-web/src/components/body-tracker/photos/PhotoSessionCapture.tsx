@@ -3,10 +3,10 @@
 // PhotoSessionCapture.tsx  (T7 extended)
 //
 // State machine:
-//   onboarding  — first-visit walkthrough (ScanOnboardingWalkthrough)
-//   calibration — CreditCardCalibrator step (before first pose)
-//   capturing   — PoseGuide loop (4 poses, 0-3)
-//   finishing   — edge-function call + optimistic close
+//   onboarding: first-visit walkthrough (ScanOnboardingWalkthrough)
+//   calibration: CreditCardCalibrator step (before first pose)
+//   capturing: PoseGuide loop (4 poses, 0-3)
+//   finishing: edge-function call + optimistic close
 //
 // Auto-capture overlay uses QualityIndicators + getUserMedia live stream.
 // 3-frame burst fires at 100ms intervals via multi-frame-fusion fuseFrames.
@@ -122,6 +122,11 @@ export function PhotoSessionCapture({ open, onOpenChange, onCompleted }: PhotoSe
   const [heightCm, setHeightCm]   = useState<number>(0);
   const [weightKg, setWeightKg]   = useState<number>(0);
 
+  // ---- Fused keypoints accumulated per pose, sent to body-scan-analyze ----
+  const [fusedKeypointsByPose, setFusedKeypointsByPose] = useState<
+    Array<{ x: number; y: number; z: number; confidence: number }>
+  >([]);
+
   // ---- Refs ----
   const initializedRef    = useRef(false);
   const videoRef          = useRef<HTMLVideoElement | null>(null);
@@ -158,9 +163,9 @@ export function PhotoSessionCapture({ open, onOpenChange, onCompleted }: PhotoSe
     // Fetch height/weight from user profile / CAQ for calibration fallback
     try {
       const { data: profile } = await supabase
-        .from('user_profiles')
+        .from('profiles')
         .select('height_cm, weight_kg')
-        .eq('user_id', user.id)
+        .eq('id', user.id)
         .single();
       if (profile) {
         setHeightCm((profile as { height_cm?: number }).height_cm ?? 0);
@@ -189,6 +194,7 @@ export function PhotoSessionCapture({ open, onOpenChange, onCompleted }: PhotoSe
       setQualityScores(null);
       setBurstCapturing(false);
       burstFiredRef.current = false;
+      setFusedKeypointsByPose([]);
       stopCamera();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -346,10 +352,13 @@ export function PhotoSessionCapture({ open, onOpenChange, onCompleted }: PhotoSe
 
     // Upload the fused frame as the pose capture
     if (fusedBlob && userId && sessionId) {
-      const pose = PHOTO_POSES[stepIdx];
       // Build a thumb from the same blob (resize handled by photoProcessing normally; here minimal thumb)
       try {
         await handleCapturedBlob(fusedBlob, fusedBlob, fusedKeypoints);
+        // Accumulate fused keypoints from all poses into flat array for body-scan-analyze payload
+        if (fusedKeypoints.length > 0) {
+          setFusedKeypointsByPose((prev) => [...prev, ...fusedKeypoints]);
+        }
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Auto-capture upload failed');
       }
@@ -447,6 +456,7 @@ export function PhotoSessionCapture({ open, onOpenChange, onCompleted }: PhotoSe
         tier:            1,
         calibration:     calibration ?? undefined,
         quality_scores:  qualityScores ?? undefined,
+        fused_keypoints: fusedKeypointsByPose.length > 0 ? fusedKeypointsByPose : undefined,
         scan_reported_demographics: {
           height_cm: heightCm > 0 ? heightCm : undefined,
           weight_kg: weightKg > 0 ? weightKg : undefined,
@@ -456,7 +466,7 @@ export function PhotoSessionCapture({ open, onOpenChange, onCompleted }: PhotoSe
         device_os:         navigator.platform,
       };
 
-      // Fire and forget — edge function is long-running; UI polls session status
+      // Fire and forget: edge function is long-running; UI polls session status
       void fetch(`${supabaseUrl}/functions/v1/body-scan-analyze`, {
         method: 'POST',
         headers: {
@@ -674,7 +684,7 @@ export function PhotoSessionCapture({ open, onOpenChange, onCompleted }: PhotoSe
           </div>
         )}
 
-        {/* Capturing step — original PoseGuide flow preserved */}
+        {/* Capturing step: original PoseGuide flow preserved */}
         {sessionId && step === 'capturing' && (
           <div className="space-y-3">
             {/* Header with Tier 1 badge + Help button */}
