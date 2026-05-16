@@ -81,9 +81,14 @@ async function computeBosDelta(
     return { score: null, delta: null, driver: null };
   }
 
-  const latest = data[0] as { score: number | null; breakdown: Record<string, unknown> | null };
-  const prior  = data.length > 1
-    ? (data[1] as { score: number | null; breakdown: Record<string, unknown> | null })
+  interface BosHistoryRow {
+    score: number | null;
+    breakdown: Record<string, unknown> | null;
+  }
+
+  const latest: BosHistoryRow = data[0] as BosHistoryRow;
+  const prior: BosHistoryRow | null  = data.length > 1
+    ? (data[1] as BosHistoryRow)
     : null;
 
   const score = latest.score !== null ? Number(latest.score) : null;

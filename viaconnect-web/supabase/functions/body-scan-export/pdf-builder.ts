@@ -35,6 +35,10 @@ const PAGE_H = 792;
 const MARGIN = 48;
 const COL_W  = PAGE_W - MARGIN * 2;
 
+// Avatar image area dimensions in points.
+const AVATAR_AREA_W = 144; // approx 2.9 inches
+const AVATAR_AREA_H = 200; // approx 4 inches at 50 pt/inch
+
 // Teal brand color (hex #0d9488 -> r:13/255, g:148/255, b:136/255).
 const TEAL: RGB = rgb(0.051, 0.580, 0.533);
 const BLACK: RGB = rgb(0, 0, 0);
@@ -250,9 +254,6 @@ export async function buildScanPdf(data: ScanData): Promise<Uint8Array> {
   // AVATAR
   // =========================================================================
 
-  const avatarAreaH = 200; // approx 4 inches at 50 pt/inch
-  const avatarAreaW = 144; // approx 2.9 inches
-
   if (data.avatarPngBase64) {
     try {
       let b64 = data.avatarPngBase64;
@@ -261,7 +262,7 @@ export async function buildScanPdf(data: ScanData): Promise<Uint8Array> {
       }
       const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
       const img   = await doc.embedPng(bytes);
-      const dims  = img.scaleToFit(avatarAreaW, avatarAreaH);
+      const dims  = img.scaleToFit(AVATAR_AREA_W, AVATAR_AREA_H);
       const imgX  = MARGIN + (COL_W - dims.width) / 2;
       page.drawImage(img, { x: imgX, y: y - dims.height, width: dims.width, height: dims.height });
       y -= dims.height + 10;
@@ -310,14 +311,14 @@ export async function buildScanPdf(data: ScanData): Promise<Uint8Array> {
 
   leftY = drawSectionHeading('Circumference Measurements', leftX, leftY, halfW);
 
-  for (const key of MEASUREMENT_KEYS) {
+  for (let i = 0; i < MEASUREMENT_KEYS.length; i++) {
+    const key   = MEASUREMENT_KEYS[i];
     const label = MEASUREMENT_LABELS[key] ?? key;
     const val   = data.measurements[key];
     const valStr = fmtCmIn(val as number | null | undefined);
 
     // Zebra stripe.
-    const stripe = MEASUREMENT_KEYS.indexOf(key) % 2 === 0;
-    if (stripe) {
+    if (i % 2 === 0) {
       page.drawRectangle({ x: leftX, y: leftY - 2, width: halfW, height: rowH, color: rgb(0.97, 0.97, 0.97) });
     }
     page.drawText(label,  { x: leftX + 4,  y: leftY, size: tableSize, font: regular, color: BLACK });
