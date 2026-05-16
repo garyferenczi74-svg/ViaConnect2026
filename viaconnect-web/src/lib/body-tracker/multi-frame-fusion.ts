@@ -62,6 +62,12 @@ export function validateFusionInput(input: FrameFusionInput): string | null {
  * Run per-pixel median filter across N silhouette masks.
  * For each pixel position, take the median of the N corresponding values
  * (0 or 255 for binary masks; any value for grayscale).
+ *
+ * Note: for even N (e.g., N=2), this returns the upper-median element
+ * (since Math.floor(N/2) is the higher of the two middle indices for even N).
+ * The expected and validated case is N=3, where the true single median is
+ * always returned. Even-N input is callable but should be considered an
+ * undocumented edge: use validateFusionInput or fuseFrames as the entry point.
  */
 export function medianFilterMasks(masks: ImageData[]): ImageData {
   if (masks.length === 0) {
@@ -127,25 +133,23 @@ export function averageKeypointsWeighted(
     let weightedX = 0;
     let weightedY = 0;
     let weightedZ = 0;
-    let totalConfidence = 0;
-    let sumConfidence   = 0;
+    let sumConfidence = 0;
 
     for (let f = 0; f < frameCount; f++) {
       const kp = keypointsPerFrame[f][k];
       weightedX += kp.x * kp.confidence;
       weightedY += kp.y * kp.confidence;
       weightedZ += kp.z * kp.confidence;
-      totalConfidence += kp.confidence;
-      sumConfidence   += kp.confidence;
+      sumConfidence += kp.confidence;
     }
 
-    if (totalConfidence === 0) {
+    if (sumConfidence === 0) {
       result[k] = { x: 0, y: 0, z: 0, confidence: 0 };
     } else {
       result[k] = {
-        x:          weightedX / totalConfidence,
-        y:          weightedY / totalConfidence,
-        z:          weightedZ / totalConfidence,
+        x:          weightedX / sumConfidence,
+        y:          weightedY / sumConfidence,
+        z:          weightedZ / sumConfidence,
         confidence: sumConfidence / frameCount,
       };
     }

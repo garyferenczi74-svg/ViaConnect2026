@@ -134,6 +134,13 @@ export function smoothTrendForDisplay(
 /**
  * Compute 95% CI bounds from a value and the personal baseline std-dev.
  * Returns null if baseline is null.
+ *
+ * Note: 1.96 is the Z-score for a 95% CI under a normal distribution with a
+ * large sample. At the bootstrap N=3 case, the t-distribution critical value
+ * (df=2) is 4.303, so the CI is significantly tighter than statistically
+ * defensible at the very first baseline. Spec mandates 1.96 for consistency
+ * with the trend chart smoothing; if a more honest small-sample interval is
+ * needed later, switch to a t-distribution table lookup keyed by sample_size.
  */
 export function confidenceIntervalFromBaseline(
   value: number,
