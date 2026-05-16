@@ -189,14 +189,14 @@ export async function buildScanPdf(data: ScanData): Promise<Uint8Array> {
   // HEADER
   // =========================================================================
 
-  // Tagline — centered, teal, bold, 18pt.
+  // Tagline: centered, teal, bold, 18pt.
   drawTextCenter(page, TAGLINE, MARGIN, PAGE_W - MARGIN, y, { font: bold, size: 18, color: TEAL });
   y -= 22;
 
-  // Subtitle — centered, dark grey, 10pt.
+  // Subtitle: centered, dark grey, 10pt.
   drawTextCenter(page, REPORT_SUBTITLE, MARGIN, PAGE_W - MARGIN, y, { font: regular, size: 10, color: DARK_GREY });
 
-  // Scan date — right-aligned on same line as subtitle.
+  // Scan date: right-aligned on same line as subtitle.
   const dateStr = fmtDate(data.sessionDate);
   if (dateStr) {
     drawTextRight(page, dateStr, PAGE_W - MARGIN, y, { font: regular, size: 10, color: DARK_GREY });

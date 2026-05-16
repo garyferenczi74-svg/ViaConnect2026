@@ -3,13 +3,13 @@
 // dictionary scan. No diagnostic language, no em/en-dashes, no emojis.
 // Verbatim text from the ViaConnect brand and compliance spec.
 
-/** Tagline — §15.4 and §19 verbatim. */
+/** Tagline: §15.4 and §19 verbatim. */
 export const TAGLINE = 'Built For Your Biology';
 
-/** Report subtitle — wellness language only, no "diagnostic". */
+/** Report subtitle: wellness language only, no "diagnostic". */
 export const REPORT_SUBTITLE = 'Body Composition Tracking Report';
 
-/** Footer company name — exact spelling. */
+/** Footer company name: exact spelling. */
 export const COMPANY_NAME = 'Farmceutica Wellness Ltd';
 
 /** BOS card label. */
@@ -37,7 +37,7 @@ export const DISCLAIMER_AI =
 
 /** Longitudinal chart placeholder note (Phase 1 deliberate limitation). */
 export const CHART_PLACEHOLDER =
-  'Trend chart available in the app; PDF export covers most recent scan only.';
+  'Trend chart available in the app; this Phase 1 PDF export covers the most recent scan only.';
 
 /** Avatar placeholder when base64 not supplied. */
 export const AVATAR_PLACEHOLDER = '3D avatar not available in this export';
