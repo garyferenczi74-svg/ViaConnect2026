@@ -205,7 +205,7 @@ export function scorePose(
   const rawScore =
     Math.max(0, 1 - avgDeviationDeg / POSE_TOLERANCE_DEG.average) * 100;
   const score = clampScore(rawScore);
-  const pass = avgDeviationDeg < POSE_TOLERANCE_DEG.average;
+  const pass = avgDeviationDeg <= POSE_TOLERANCE_DEG.average;
 
   return { score, pass, avgDeviationDeg, maxJointDeviationDeg };
 }

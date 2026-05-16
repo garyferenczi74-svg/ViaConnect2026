@@ -110,11 +110,11 @@ function makePerfectAPoseKeypoints(): Array<{
   kp[11] = { x: 180, y: 120, z: 0, confidence: 1 };
   kp[12] = { x: 300, y: 120, z: 0, confidence: 1 };
 
-  // Elbows (13, 14) — directly below shoulders for near-180-deg elbow.
+  // Elbows (13, 14): directly below shoulders for near-180-deg elbow.
   kp[13] = { x: 160, y: 220, z: 0, confidence: 1 };
   kp[14] = { x: 320, y: 220, z: 0, confidence: 1 };
 
-  // Wrists (15, 16) — further out for A-pose arm abduction (~80 deg).
+  // Wrists (15, 16): further out for A-pose arm abduction (~80 deg).
   kp[15] = { x: 100, y: 300, z: 0, confidence: 1 };
   kp[16] = { x: 380, y: 300, z: 0, confidence: 1 };
 
@@ -122,7 +122,7 @@ function makePerfectAPoseKeypoints(): Array<{
   kp[23] = { x: 210, y: 360, z: 0, confidence: 1 };
   kp[24] = { x: 270, y: 360, z: 0, confidence: 1 };
 
-  // Knees (25, 26) — slightly apart for ~15 deg hip abduction.
+  // Knees (25, 26): slightly apart for ~15 deg hip abduction.
   kp[25] = { x: 200, y: 480, z: 0, confidence: 1 };
   kp[26] = { x: 280, y: 480, z: 0, confidence: 1 };
 
@@ -250,6 +250,31 @@ describe('scorePose', () => {
     expect(result.pass).toBe(true);
     expect(result.score).toBeGreaterThan(0);
     expect(result.avgDeviationDeg).toBeCloseTo(6, 1);
+  });
+
+  it('passes at exactly the average tolerance (12 deg) closed-interval boundary', () => {
+    // 10 joint deviations all at exactly 12 deg -> avg 12, max 12, pass true, score 0
+    const keypoints = makeKeypointsWithDeviations([12, 12, 12, 12, 12, 12, 12, 12, 12, 12]);
+    const result = scorePose(keypoints);
+    expect(result.pass).toBe(true);
+    expect(result.avgDeviationDeg).toBe(12);
+    expect(result.maxJointDeviationDeg).toBe(12);
+    expect(result.score).toBe(0);
+  });
+
+  it('passes at exactly the max-joint tolerance (25 deg) when avg is within bounds', () => {
+    // 9 joints at 0, one at exactly 25 -> avg 2.5, max 25, pass true
+    const keypoints = makeKeypointsWithDeviations([25, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+    const result = scorePose(keypoints);
+    expect(result.pass).toBe(true);
+    expect(result.maxJointDeviationDeg).toBe(25);
+  });
+
+  it('fails when one joint exceeds max tolerance (26 deg) even with low avg', () => {
+    const keypoints = makeKeypointsWithDeviations([26, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+    const result = scorePose(keypoints);
+    expect(result.pass).toBe(false);
+    expect(result.maxJointDeviationDeg).toBe(26);
   });
 });
 
