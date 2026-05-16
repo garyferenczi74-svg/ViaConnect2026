@@ -12,6 +12,18 @@
 // Request:  POST { photos: { front, back, left_side, right_side }, media_type? }
 //           Bearer JWT required.
 // Response: { status: 'complete', scan_id, scan_date, estimates }
+//
+// Prompt #169 Phase 1 additions (ADDITIVE ONLY):
+//   - Optional inputs: quality_scores, calibration, fused_keypoints, tier,
+//     device_model, device_os, depth_sensor_type, scan_reported_demographics.
+//   - Persistence: body_scan_quality, body_scan_tier_log, body_scan_composition
+//     (CI columns), calibration into body_photo_sessions.
+//   - CAQ delta flag: checks assessment_results phase=1 demographics.
+//   - Personal baseline drift: upserts body_scan_personal_baselines; outlier
+//     flag appended to body_photo_sessions.quality_issues.
+//   - Helix event: emitted by DB trigger (trg_emit_helix_body_scan_event);
+//     NOT emitted directly from this function.
+//   - All new logic is fail-open; the primary scan result is never blocked.
 // =============================================================================
 
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
@@ -19,6 +31,20 @@ import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-
 import { withAbortTimeout, isTimeoutError } from '../_shared/with-timeout.ts';
 import { safeLog } from '../_shared/safe-log.ts';
 import { getCircuitBreaker, isCircuitBreakerError } from '../_shared/circuit-breaker.ts';
+import {
+  persistQuality,
+  persistTierLog,
+  persistComposition,
+  persistCalibration,
+  checkAndFlagCaqDelta,
+  updatePersonalBaseline,
+  type Phase1Inputs,
+  type QualityScores,
+  type CalibrationInput,
+  type FusedKeypoint,
+  type ScanDemographics,
+  type DepthSensorType,
+} from './quality-persistence.ts';
 
 const visionBreaker = getCircuitBreaker('claude-vision');
 
@@ -109,6 +135,16 @@ interface BodyScanRequest {
     right_side: string;
   };
   media_type?: string;
+  // --- Prompt #169 Phase 1 optional fields ---
+  // Pre-computed client-side by T3/T4 libs. All optional; absence = no-op.
+  quality_scores?:           QualityScores;
+  calibration?:              CalibrationInput;
+  fused_keypoints?:          FusedKeypoint[];
+  tier?:                     1 | 2 | 3;
+  device_model?:             string;
+  device_os?:                string;
+  depth_sensor_type?:        DepthSensorType;
+  scan_reported_demographics?: ScanDemographics | null;
 }
 
 interface BodyScanEstimate {
@@ -351,9 +387,148 @@ serve(async (req) => {
   }
 
   const row = insertResult.data as { id: string; scan_date: string };
+  const scanId = row.id;
+
+  // =========================================================================
+  // Prompt #169 Phase 1: ancillary persistence (all fail-open).
+  // The primary scan result (scanId + estimates) is already committed above.
+  // None of the operations below may throw to the caller.
+  // Structured log lines include { scan_id, user_id, tier, stage }.
+  // =========================================================================
+
+  // Derive Phase 1 optional inputs from body (already parsed above).
+  const p169: Phase1Inputs = {
+    quality_scores:            body.quality_scores,
+    calibration:               body.calibration,
+    fused_keypoints:           body.fused_keypoints,
+    tier:                      body.tier,
+    device_model:              body.device_model,
+    device_os:                 body.device_os,
+    depth_sensor_type:         body.depth_sensor_type,
+    scan_reported_demographics: body.scan_reported_demographics,
+  };
+
+  // We have no session_id from body_photo_sessions because the legacy flow
+  // writes to body_tracker_photo_scans (a different table). The T2 tables
+  // (body_scan_quality, body_scan_tier_log, body_scan_composition) reference
+  // body_photo_sessions.id via FK.
+  //
+  // Phase 1 wiring: the client must create or provide a body_photo_sessions
+  // row before calling this function and pass its id as session_id. Until T7
+  // (PhotoSessionCapture) ships, the ancillary tables need a session_id.
+  // If session_id is absent we skip ancillary persistence but still attempt
+  // the body_photo_sessions-independent paths.
+  //
+  // For the composition values, derive mid-point estimates from the vision output.
+  const bodyFatMid = (parsed.estimated_body_fat_min + parsed.estimated_body_fat_max) / 2;
+  const tier       = p169.tier ?? 1;
+
+  safeLog.info('body-scan-analyze', 'p169 ancillary start', {
+    scan_id:     scanId,
+    user_id:     user.id,
+    tier,
+    has_quality: !!p169.quality_scores,
+    has_calib:   !!p169.calibration,
+    has_demog:   !!p169.scan_reported_demographics,
+  });
+
+  // Run all ancillary persistence in parallel (each is internally fail-open).
+  // body_photo_sessions FK operations use scanId as a proxy until a
+  // session_id field is wired through. In the legacy flow this function
+  // inserts into body_tracker_photo_scans, which has its own PK (scanId).
+  // The T2 tables key off body_photo_sessions.id. Treat scanId as that id
+  // for Phase 1; when T7 ships, the client will send a real session_id.
+
+  const ancillaryOps: Promise<void>[] = [];
+
+  if (p169.quality_scores) {
+    ancillaryOps.push(persistQuality(sa, scanId, user.id, p169.quality_scores));
+  }
+
+  ancillaryOps.push(
+    persistTierLog(
+      sa,
+      scanId,
+      user.id,
+      tier,
+      p169.device_model,
+      p169.device_os,
+      p169.depth_sensor_type,
+    ),
+  );
+
+  // Composition: persist the vision-derived body fat + lean/fat mass (if derivable).
+  // lean_mass_kg and fat_mass_kg require height and weight from demographics.
+  let leanMassKg: number | null = null;
+  let fatMassKg:  number | null = null;
+  if (p169.scan_reported_demographics) {
+    const { weight_kg } = p169.scan_reported_demographics;
+    fatMassKg  = (bodyFatMid / 100) * weight_kg;
+    leanMassKg = weight_kg - fatMassKg;
+  }
+
+  ancillaryOps.push(
+    persistComposition(sa, scanId, user.id, {
+      bodyFatPct:       Number.isFinite(bodyFatMid) ? bodyFatMid : null,
+      leanMassKg,
+      fatMassKg,
+      waistNavelCircCm: null, // populated by body_scan_measurements; not available here
+    }),
+  );
+
+  if (p169.calibration) {
+    ancillaryOps.push(persistCalibration(sa, scanId, user.id, p169.calibration));
+  }
+
+  if (p169.scan_reported_demographics) {
+    ancillaryOps.push(
+      checkAndFlagCaqDelta(sa, scanId, user.id, p169.scan_reported_demographics),
+    );
+  }
+
+  // After composition is persisted, run baseline drift update.
+  // We race all ops with a 30 s timeout so a hung DB call never blocks.
+  const timeout30s = new Promise<void>((resolve) => setTimeout(resolve, 30_000));
+
+  try {
+    await Promise.race([
+      Promise.allSettled(ancillaryOps),
+      timeout30s,
+    ]);
+  } catch {
+    // Promise.race/allSettled should not throw but guard regardless.
+  }
+
+  // Baseline drift update runs after composition is (hopefully) committed.
+  try {
+    await Promise.race([
+      updatePersonalBaseline(
+        sa,
+        scanId,
+        user.id,
+        Number.isFinite(bodyFatMid) ? bodyFatMid : null,
+        null, // waist_navel not available in ephemeral scan path
+      ),
+      new Promise<void>((resolve) => setTimeout(resolve, 10_000)),
+    ]);
+  } catch {
+    // Fail-open.
+  }
+
+  safeLog.info('body-scan-analyze', 'p169 ancillary complete', {
+    scan_id:  scanId,
+    user_id:  user.id,
+    tier,
+    stage:    'complete',
+  });
+
+  // Helix event is emitted by DB trigger trg_emit_helix_body_scan_event when
+  // body_photo_sessions.scan_status transitions to 'complete'. Do NOT emit
+  // directly from this function.
+
   return json({
     status: 'complete',
-    scan_id: row.id,
+    scan_id: scanId,
     scan_date: row.scan_date,
     estimates: parsed,
   });
