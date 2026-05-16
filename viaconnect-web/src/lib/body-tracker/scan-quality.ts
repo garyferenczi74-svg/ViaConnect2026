@@ -150,6 +150,14 @@ export function scoreLighting(rgbImage: ImageData): {
  * deviations from the A-pose and pass them directly. The keypoint-to-angle
  * pipeline lives in T7.
  *
+ * WARNING: The dual-path API uses keypoints.length >= 33 + JOINT_COUNT (43)
+ * as the signal that indices 33-42 carry pre-computed joint angle deviations.
+ * If a future MediaPipe model ever produces more than 33 real keypoints, this
+ * guard becomes ambiguous and the function would silently misinterpret real
+ * coordinates as angle deviations. Before upgrading the upstream pose
+ * detector, update the length guard or refactor scorePose to take a separate
+ * deviations parameter.
+ *
  * BlazePose landmark indices used here:
  *   11: left shoulder, 12: right shoulder
  *   13: left elbow,    14: right elbow
@@ -355,8 +363,12 @@ export function scoreClothingTightness(
  * Score is 100 at edge density 0, drops linearly to 0 at
  * BACKGROUND_CLUTTER_ADVISORY_MAX (70). Values above 70 score 0.
  *
+ * Closed-interval boundary semantics: at exactly the advisory max the score
+ * is 0 but advisoryPass remains true, matching every other scorer in this
+ * module.
+ *
  * Background clutter is ADVISORY only: a failing score does NOT block capture.
- * aggregateQualityScores treats this as informational.
+ * aggregateQualityScores routes the message to advisoryNotes, not blockingIssues.
  */
 export function scoreBackgroundClutter(edgeDensityOutsidePerson: number): {
   score: number;
@@ -366,10 +378,10 @@ export function scoreBackgroundClutter(edgeDensityOutsidePerson: number): {
   const rawScore =
     Math.max(0, 1 - clamped / BACKGROUND_CLUTTER_ADVISORY_MAX) * 100;
   const score = clampScore(rawScore);
-  // Advisory pass: strictly below the max threshold. At exactly advisory max
-  // the linear ramp reaches 0 (same as failing), so we treat the boundary
-  // as a fail for consistency with all other zero-score-means-fail scorers.
-  const advisoryPass = edgeDensityOutsidePerson < BACKGROUND_CLUTTER_ADVISORY_MAX;
+  // Advisory pass: closed-interval boundary semantics: at exactly the advisory
+  // max the score is 0 but advisoryPass remains true, matching every other
+  // scorer in this module.
+  const advisoryPass = edgeDensityOutsidePerson <= BACKGROUND_CLUTTER_ADVISORY_MAX;
   return { score, advisoryPass };
 }
 
@@ -513,6 +525,7 @@ export function aggregateQualityScores(inputs: {
   );
 
   const blockingIssues: string[] = [];
+  const advisoryNotes: string[]  = [];
 
   if (!lightingResult.pass) {
     blockingIssues.push('Lighting out of acceptable range');
@@ -529,10 +542,10 @@ export function aggregateQualityScores(inputs: {
   if (!frameResult.pass) {
     blockingIssues.push('Body not fully in frame');
   }
-  // Advisory only: bgClutter not added to blockingIssues (does not block capture).
+  // Advisory only: bgClutter goes to advisoryNotes, NOT blockingIssues.
+  // Does not affect overallPass.
   if (!bgClutterResult.advisoryPass) {
-    // Include as advisory note but this does not contribute to overallPass.
-    blockingIssues.push('Advisory: high background clutter detected');
+    advisoryNotes.push('High background clutter detected');
   }
 
   const overallPass =
@@ -552,5 +565,6 @@ export function aggregateQualityScores(inputs: {
     frameCoverage:  frameResult.score,
     overallPass,
     blockingIssues,
+    advisoryNotes,
   };
 }

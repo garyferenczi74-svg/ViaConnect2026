@@ -88,7 +88,8 @@ const CARD_LONG_SIDE_CM = CREDIT_CARD_DIMENSIONS_MM.width / 10;
 // Aspect ratio of ISO 7810 ID-1: 85.60 / 53.98 = ~1.586.
 const CARD_ASPECT_RATIO = CREDIT_CARD_DIMENSIONS_MM.width / CREDIT_CARD_DIMENSIONS_MM.height;
 
-// Acceptable deviation from canonical aspect ratio.
+// Relative (percentage) tolerance, not absolute: actual permitted aspect-ratio
+// deviation is ASPECT_RATIO_TOLERANCE * CARD_ASPECT_RATIO = 0.05 * 1.586 ~ about +/-0.0793.
 const ASPECT_RATIO_TOLERANCE = 0.05;
 
 // Minimum pixel area for a credit card to be considered a valid detection.
@@ -275,23 +276,35 @@ function longestEdgeLength(corners: Array<{ x: number; y: number }>): number {
 }
 
 /**
- * Compute the angle (in degrees) of the long edge of a detected card quad vs
- * the horizontal axis. The result is the floor plane inclination.
+ * Compute floor plane inclination from the card's longest edge.
+ * Returns degrees in [-90, 90]: positive means edge tilts upward left-to-right,
+ * negative means downward. Sign-symmetrized to be independent of polygon
+ * winding order.
+ *
+ * Math.atan2 returns values in [-180, 180] whose sign depends on which vertex
+ * approxPolyDP lists first (i.e. winding order). Normalizing to [-90, 90]
+ * collapses a 175 degree result (same physical edge as -5 degrees) to -5,
+ * ensuring the output is stable regardless of contour traversal direction.
  */
 function cardLongEdgeAngleDeg(corners: Array<{ x: number; y: number }>): number {
   // Find the longest edge.
   let maxLen = 0;
-  let longEdgeAngle = 0;
+  let rawAngle = 0;
   for (let i = 0; i < corners.length; i++) {
     const a = corners[i];
     const b = corners[(i + 1) % corners.length];
     const len = Math.sqrt((b.x - a.x) ** 2 + (b.y - a.y) ** 2);
     if (len > maxLen) {
       maxLen = len;
-      longEdgeAngle = Math.atan2(b.y - a.y, b.x - a.x) * (180 / Math.PI);
+      rawAngle = Math.atan2(b.y - a.y, b.x - a.x) * (180 / Math.PI);
     }
   }
-  return longEdgeAngle;
+  // Normalize to [-90, 90]: a 175 degree result is the same physical
+  // orientation as -5 degrees.
+  let angle = rawAngle;
+  while (angle > 90) angle -= 180;
+  while (angle < -90) angle += 180;
+  return angle;
 }
 
 // ---------------------------------------------------------------------------

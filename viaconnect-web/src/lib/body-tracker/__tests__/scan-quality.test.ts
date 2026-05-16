@@ -344,10 +344,12 @@ describe('scoreBackgroundClutter', () => {
     expect(result.advisoryPass).toBe(true);
   });
 
-  it('edge density = 70 (at advisory max) => score 0 advisory fail', () => {
+  it('edge density = 70 (at advisory max) => score 0 advisory pass (closed-interval boundary)', () => {
+    // Closed-interval design: at exactly the advisory max the score is 0 but
+    // advisoryPass is true, matching every other scorer in this module.
     const result = scoreBackgroundClutter(70);
     expect(result.score).toBe(0);
-    expect(result.advisoryPass).toBe(false);
+    expect(result.advisoryPass).toBe(true);
   });
 
   it('edge density = 80 (above advisory max) => score 0 advisory fail', () => {
@@ -507,14 +509,12 @@ function makeGoodInputs() {
 }
 
 describe('aggregateQualityScores', () => {
-  it('all six checks pass => overallPass true, no blocking issues from blocking checks', () => {
+  it('all six checks pass => overallPass true, blockingIssues empty', () => {
     const result = aggregateQualityScores(makeGoodInputs());
     expect(result.overallPass).toBe(true);
-    // blockingIssues may contain advisory notes but not from blocking checks.
-    const blockingOnly = result.blockingIssues.filter(
-      (s) => !s.startsWith('Advisory:'),
-    );
-    expect(blockingOnly).toHaveLength(0);
+    // blockingIssues must be exclusively for hard-fail checks; no "Advisory:" prefix entries.
+    expect(result.blockingIssues).toHaveLength(0);
+    expect(result.blockingIssues.some((s) => s.startsWith('Advisory:'))).toBe(false);
   });
 
   it('advisory background clutter fail alone does NOT flip overallPass', () => {
@@ -526,11 +526,13 @@ describe('aggregateQualityScores', () => {
     expect(result.overallPass).toBe(true);
     // bgClutter score should be 0.
     expect(result.bgClutter).toBe(0);
-    // The advisory message should appear in blockingIssues as informational.
-    const advisoryItems = result.blockingIssues.filter((s) =>
-      s.startsWith('Advisory:'),
-    );
-    expect(advisoryItems.length).toBeGreaterThan(0);
+    // The advisory message must be in advisoryNotes, NOT in blockingIssues.
+    expect(result.advisoryNotes.length).toBeGreaterThan(0);
+    expect(result.advisoryNotes.some((s) =>
+      s.toLowerCase().includes('clutter'),
+    )).toBe(true);
+    // blockingIssues must NOT contain any "Advisory:" prefixed strings.
+    expect(result.blockingIssues.some((s) => s.startsWith('Advisory:'))).toBe(false);
   });
 
   it('lighting fail => overallPass false with lighting issue listed', () => {
@@ -575,5 +577,8 @@ describe('aggregateQualityScores', () => {
     expect(result).toHaveProperty('overallPass');
     expect(result).toHaveProperty('blockingIssues');
     expect(Array.isArray(result.blockingIssues)).toBe(true);
+    // advisoryNotes is the new field introduced by Fix 2.
+    expect(result).toHaveProperty('advisoryNotes');
+    expect(Array.isArray(result.advisoryNotes)).toBe(true);
   });
 });

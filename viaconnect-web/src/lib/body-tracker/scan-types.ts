@@ -13,7 +13,8 @@ export interface QualityScores {
   cameraLevel:    number; // 0-100
   frameCoverage:  number; // 0-100
   overallPass:    boolean;
-  blockingIssues: string[];
+  blockingIssues: string[]; // hard-fail messages (lighting, pose, clothing, cameraLevel, frameCoverage)
+  advisoryNotes:  string[]; // informational only; does NOT affect overallPass (e.g. background clutter)
 }
 
 // === Multi-frame fusion ===
