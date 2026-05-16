@@ -5,7 +5,7 @@ import { Apple, Camera, PenLine } from 'lucide-react';
 import { QuickMealLog } from './QuickMealLog';
 
 const TABS = [
-  { id: 'quick', label: 'Quick Log', icon: Apple },
+  { id: 'quick', label: 'Quick Meal Logs', icon: Apple },
   { id: 'photo', label: 'Photo AI', icon: Camera, disabled: true },
   { id: 'manual', label: 'Manual', icon: PenLine, disabled: true },
 ] as const;
