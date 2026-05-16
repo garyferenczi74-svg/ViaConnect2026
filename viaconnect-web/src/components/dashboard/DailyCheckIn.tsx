@@ -253,7 +253,7 @@ export function DailyCheckIn({ onScoresUpdate, onSliderChange }: DailyCheckInPro
     const promptText = isComplete ? 'Complete' : pendingCards.join(' · ');
     const promptColor = isComplete ? '#22C55E' : 'rgba(255,255,255,0.70)';
     const borderColor = isComplete ? 'border-[#22C55E]/25' : 'border-white/10';
-    const bgColor = isComplete ? 'bg-[#22C55E]/[0.07]' : 'bg-[#1E3054]/60';
+    const bgColor = isComplete ? 'bg-[#3B82F6]/[0.12]' : 'bg-[#1E3054]/60';
 
     return (
       <div className={`flex w-full items-center gap-3 rounded-xl border ${borderColor} ${bgColor} backdrop-blur-md p-3`}>

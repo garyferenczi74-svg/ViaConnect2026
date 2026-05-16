@@ -39,66 +39,73 @@ export function QualityScoreRing(props: QualityScoreRingProps) {
 
   const pulseStyleId = useId();
   const pulseAnimationName = `scoreRingPulse_${pulseStyleId.replace(/[^a-zA-Z0-9_]/g, '')}`;
-  const scoreFontPx = sizePx <= 160 ? 32 : 48;
+  // Scale text proportionally to ring diameter. Score sits inside the ring;
+  // tier label sits below the ring as a sibling so it never overflows the
+  // small Today's Meals gauge (sizePx=60). Min 10px on the tier label keeps
+  // it readable at small sizes.
+  const scoreFontPx = Math.max(14, Math.round(sizePx * 0.32));
+  const tierFontPx = Math.max(10, Math.round(sizePx * 0.085));
 
   return (
     <div
       role="img"
       aria-label={`Quality score ${clampedScore} out of 100, tier ${tier}`}
-      className="relative inline-flex items-center justify-center font-[Instrument_Sans]"
-      style={{ width: sizePx, height: sizePx }}
+      className="inline-flex flex-col items-center font-[Instrument_Sans]"
     >
-      <style>{`
-        @keyframes ${pulseAnimationName} {
-          0%   { transform: scale(1); }
-          50%  { transform: scale(1.05); }
-          100% { transform: scale(1); }
-        }
-      `}</style>
-      <svg
-        key={pulseKey}
-        width={sizePx}
-        height={sizePx}
-        viewBox={`0 0 ${sizePx} ${sizePx}`}
-        style={{
-          animation: pulseKey > 0 ? `${pulseAnimationName} 200ms ease-out 1` : undefined,
-        }}
+      <div
+        className="relative inline-flex items-center justify-center"
+        style={{ width: sizePx, height: sizePx }}
       >
-        <circle
-          cx={sizePx / 2}
-          cy={sizePx / 2}
-          r={radius}
-          fill="none"
-          stroke="rgba(255,255,255,0.08)"
-          strokeWidth={stroke}
-        />
-        <circle
-          cx={sizePx / 2}
-          cy={sizePx / 2}
-          r={radius}
-          fill="none"
-          stroke={tierColor}
-          strokeWidth={stroke}
-          strokeLinecap="round"
-          strokeDasharray={`${arcLength} ${circumference - arcLength}`}
-          transform={`rotate(-90 ${sizePx / 2} ${sizePx / 2})`}
-          style={{ transition: 'stroke-dasharray 200ms ease-out, stroke 200ms ease-out' }}
-        />
-      </svg>
-      <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+        <style>{`
+          @keyframes ${pulseAnimationName} {
+            0%   { transform: scale(1); }
+            50%  { transform: scale(1.05); }
+            100% { transform: scale(1); }
+          }
+        `}</style>
+        <svg
+          key={pulseKey}
+          width={sizePx}
+          height={sizePx}
+          viewBox={`0 0 ${sizePx} ${sizePx}`}
+          style={{
+            animation: pulseKey > 0 ? `${pulseAnimationName} 200ms ease-out 1` : undefined,
+          }}
+        >
+          <circle
+            cx={sizePx / 2}
+            cy={sizePx / 2}
+            r={radius}
+            fill="none"
+            stroke="rgba(255,255,255,0.08)"
+            strokeWidth={stroke}
+          />
+          <circle
+            cx={sizePx / 2}
+            cy={sizePx / 2}
+            r={radius}
+            fill="none"
+            stroke={tierColor}
+            strokeWidth={stroke}
+            strokeLinecap="round"
+            strokeDasharray={`${arcLength} ${circumference - arcLength}`}
+            transform={`rotate(-90 ${sizePx / 2} ${sizePx / 2})`}
+            style={{ transition: 'stroke-dasharray 200ms ease-out, stroke 200ms ease-out' }}
+          />
+        </svg>
         <span
-          className="font-semibold leading-none tabular-nums text-white"
+          className="pointer-events-none absolute inset-0 flex items-center justify-center font-semibold leading-none tabular-nums text-white"
           style={{ fontSize: `${scoreFontPx}px` }}
         >
           {clampedScore}
         </span>
-        <span
-          className="mt-1 text-[12px] font-medium uppercase tracking-[0.10em]"
-          style={{ color: tierColor }}
-        >
-          {tier}
-        </span>
       </div>
+      <span
+        className="mt-1 font-medium uppercase tracking-[0.10em] whitespace-nowrap"
+        style={{ color: tierColor, fontSize: `${tierFontPx}px` }}
+      >
+        {tier}
+      </span>
     </div>
   );
 }
