@@ -489,7 +489,6 @@ async function _updateBaselineForMeasurement(
     let recentValues: number[] = [];
 
     if (measurementType === 'body_fat_pct') {
-      const selectCol = 'body_fat_pct';
       const { data: rows } = await sa
         .from('body_scan_composition')
         .select('body_fat_pct')
@@ -499,7 +498,7 @@ async function _updateBaselineForMeasurement(
         .limit(PERSONAL_BASELINE_BOOTSTRAP_SCANS);
 
       recentValues = (rows ?? [])
-        .map((r: Record<string, unknown>) => Number(r[selectCol]))
+        .map((r: Record<string, unknown>) => Number(r['body_fat_pct']))
         .filter((v: number) => Number.isFinite(v));
     } else {
       // waist_navel_circ_cm lives in body_scan_measurements.
