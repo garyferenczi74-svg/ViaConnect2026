@@ -68,7 +68,17 @@ export function MealLogEntryCard(props: MealLogEntryCardProps) {
     : MEAL_TYPE_LABEL[meal.mealType];
   const displayName = meal.mealName && meal.mealName.trim() !== '' ? meal.mealName : fallbackName;
 
-  const hasScore = meal.qualityScore !== null && meal.qualityTier !== null;
+  // Per #168d Layer 5 + #168c lock: source-aware score rendering.
+  //   isLegacy   = full_manual source OR row came from nutrition_logs UNION
+  //                (the architectural exception per #168c). Renders "Score
+  //                not available for legacy meal" with N/A ring.
+  //   isPending  = scored source (quick_log/photo_ai/tracker_api/wearable_cgm)
+  //                with null score. Transient state between insert and
+  //                Gordon scoring; renders "Scoring..." caption.
+  //   hasScore   = scored source with persisted score. Renders the gauge.
+  const isLegacy = meal.source === 'full_manual' || meal.legacyNutritionLogId !== null;
+  const hasScore = !isLegacy && meal.qualityScore !== null && meal.qualityTier !== null;
+  const isPending = !isLegacy && !hasScore;
   const scoreValue = hasScore ? Number(meal.qualityScore) : 0;
   const tierLabel = hasScore ? meal.qualityTier : null;
 
@@ -88,15 +98,23 @@ export function MealLogEntryCard(props: MealLogEntryCardProps) {
           ) : (
             <div
               role="img"
-              aria-label="Score not available for legacy meal"
+              aria-label={isLegacy ? 'Score not available for legacy meal' : 'Scoring in progress'}
               className="relative inline-flex items-center justify-center"
               style={{ width: 60, height: 60 }}
             >
               <svg width={60} height={60} viewBox="0 0 60 60">
-                <circle cx={30} cy={30} r={25} fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth={6} />
+                <circle
+                  cx={30}
+                  cy={30}
+                  r={25}
+                  fill="none"
+                  stroke={isPending ? 'rgba(45,165,160,0.30)' : 'rgba(255,255,255,0.15)'}
+                  strokeWidth={6}
+                  className={isPending ? 'animate-pulse' : undefined}
+                />
               </svg>
               <span className="pointer-events-none absolute inset-0 flex items-center justify-center text-[10px] font-semibold uppercase tracking-[0.10em] text-white/55">
-                n/a
+                {isPending ? '...' : 'n/a'}
               </span>
             </div>
           )}
@@ -113,8 +131,10 @@ export function MealLogEntryCard(props: MealLogEntryCardProps) {
           <div className="mt-0.5 truncate text-[15px] font-medium text-white">{displayName}</div>
           <div className="mt-0.5 flex items-center gap-3 text-[12px] text-white/60">
             <span className="tabular-nums">{Math.round(meal.caloriesKcal)} kcal</span>
-            {!hasScore ? (
+            {isLegacy ? (
               <span className="text-white/50">Score not available for legacy meal</span>
+            ) : isPending ? (
+              <span className="text-white/50">Scoring</span>
             ) : null}
           </div>
         </div>

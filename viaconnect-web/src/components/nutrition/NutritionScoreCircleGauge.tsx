@@ -12,6 +12,11 @@ export interface NutritionScoreCircleGaugeProps {
   readonly mealCount: number;
   // Empty state copy when no meals scored yet.
   readonly emptyStateLabel?: string;
+  // Sizing override for compact 3-up layouts. Default 160px mobile / 200px desktop.
+  readonly mobilePx?: number;
+  readonly desktopPx?: number;
+  readonly mobileStroke?: number;
+  readonly desktopStroke?: number;
 }
 
 interface TierBand {
@@ -21,13 +26,17 @@ interface TierBand {
   readonly color: string;
 }
 
-// Spec section 2.4 Path C bands.
+// Tier color bands per Gary 2026-05-15: red / yellow / purple / blue / green
+// stoplight progression. Supersedes the prior spec section 2.4 Path C wash
+// (orange / orange / amber / teal / teal). Hex values are Tailwind 500 shades
+// for vibrancy; tier names (Poor/Fair/Good/Excellent/Perfection) unchanged
+// because Gordon scoring + audit trails reference them.
 const TIER_BANDS: ReadonlyArray<TierBand> = [
-  { min: 0, max: 19, label: 'Poor', color: '#B75E18' },
-  { min: 20, max: 39, label: 'Fair', color: '#D4823B' },
-  { min: 40, max: 59, label: 'Good', color: '#C9A23A' },
-  { min: 60, max: 79, label: 'Excellent', color: '#5BC0BB' },
-  { min: 80, max: 100, label: 'Perfection', color: '#2DA5A0' },
+  { min: 0, max: 19, label: 'Poor', color: '#ef4444' },
+  { min: 20, max: 39, label: 'Fair', color: '#eab308' },
+  { min: 40, max: 59, label: 'Good', color: '#a855f7' },
+  { min: 60, max: 79, label: 'Excellent', color: '#3b82f6' },
+  { min: 80, max: 100, label: 'Perfection', color: '#22c55e' },
 ];
 
 function tierForScore(score: number): TierBand {
@@ -38,7 +47,15 @@ function tierForScore(score: number): TierBand {
 }
 
 export function NutritionScoreCircleGauge(props: NutritionScoreCircleGaugeProps) {
-  const { score, mealCount, emptyStateLabel } = props;
+  const {
+    score,
+    mealCount,
+    emptyStateLabel,
+    mobilePx = 160,
+    desktopPx = 200,
+    mobileStroke = 12,
+    desktopStroke = 16,
+  } = props;
   const clamped = Math.max(0, Math.min(100, Math.round(score)));
   const hasData = mealCount > 0 && score > 0;
   const tier = tierForScore(clamped);
@@ -60,10 +77,10 @@ export function NutritionScoreCircleGauge(props: NutritionScoreCircleGaugeProps)
   return (
     <div className="flex flex-col items-center gap-3">
       <div className="md:hidden">
-        <CircleGauge sizePx={160} stroke={12} score={clamped} hasData={hasData} color={tier.color} pulseKey={pulseKey} />
+        <CircleGauge sizePx={mobilePx} stroke={mobileStroke} score={clamped} hasData={hasData} color={tier.color} pulseKey={pulseKey} />
       </div>
       <div className="hidden md:block">
-        <CircleGauge sizePx={200} stroke={16} score={clamped} hasData={hasData} color={tier.color} pulseKey={pulseKey} />
+        <CircleGauge sizePx={desktopPx} stroke={desktopStroke} score={clamped} hasData={hasData} color={tier.color} pulseKey={pulseKey} />
       </div>
       {hasData ? (
         <span

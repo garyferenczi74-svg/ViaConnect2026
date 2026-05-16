@@ -12,7 +12,12 @@ import { AIRouteError } from '@/lib/errors/classify-ai';
 import { recordAudit, newRequestId } from '@/lib/observability/audit-recorder';
 import { GEMINI_MODEL } from '@/lib/nutrition/gemini-prompts';
 import { estimateCostUsd } from '@/lib/observability/ai-pricing';
-// Prompt 168 Apply C: Path A dual-write to canonical meals table.
+// LEGACY (locked permanent per Prompt 168c, May 14, 2026 + reaffirmed in 168d).
+// Do NOT score this path with Gordon. Do NOT contribute to Daily Macros. Do
+// NOT emit Helix events. Surfaces in Today's Meals as "Score not available
+// for legacy meal" with N/A. The dual-write to the meals table from #168
+// Apply C is preserved so the realtime UNION read can dedupe legacy entries
+// against any future re-upload, but quality_score stays NULL by design.
 import { SOURCE_CONFIDENCE_DEFAULTS } from '@/lib/gordon/constants';
 
 const ROUTE = '/api/nutrition/analyze-text';
@@ -75,12 +80,12 @@ export async function POST(req: NextRequest) {
     const analysis = aggregate(items);
     const latencyMs = Date.now() - startedAt;
 
-    // Prompt 168 Apply C: Path A dual-write.
-    // Step 1: insert into canonical `meals` first (best effort; failure does not
-    // block the legacy nutrition_logs insert that the route's existing contract
-    // depends on). Source = 'photo_ai' per spec Section 4.3 because Gemini text
-    // parse is an AI inference; quick_log is reserved for user-slider entries.
-    // TODO 168a: wire gordon-score-meal trigger via pg_net once edge function deployed and configured.
+    // Prompt 168 Apply C: Path A dual-write (preserved).
+    // Per #168c + #168d: NO Gordon scoring on this legacy text path. The row
+    // is inserted with quality_score = NULL so the Today's Meals card branch
+    // recognizes it as legacy and renders the "Score not available" treatment.
+    // Source = 'full_manual' so card source-aware logic identifies this row
+    // as the legacy text-description channel (not the Quick Log slider path).
     let mealId: string | null = null;
     try {
       const mealsInsert = await supabase
@@ -90,8 +95,8 @@ export async function POST(req: NextRequest) {
           user_id: user.id,
           logged_at: loggedAt,
           meal_type: mealType,
-          source: 'photo_ai',
-          source_confidence: SOURCE_CONFIDENCE_DEFAULTS.photo_ai,
+          source: 'full_manual',
+          source_confidence: SOURCE_CONFIDENCE_DEFAULTS.full_manual,
           protein_g: analysis.protein_g,
           carbs_g: analysis.carbs_g,
           fat_total_g: analysis.total_fat_g,
@@ -105,6 +110,8 @@ export async function POST(req: NextRequest) {
           notes: analysis.ai_notes ?? null,
           raw_input: { description, ai_model: GEMINI_MODEL, route: ROUTE },
           quality_score: null,
+          quality_tier: null,
+          score_breakdown: null,
           scored_at: null,
           gordon_version: null,
         })

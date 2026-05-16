@@ -127,6 +127,10 @@ export function DailyMacroRings(props: DailyMacroRingsProps) {
     if (!todayKey) return { protein, carbs, fat, fiber };
     for (const m of meals) {
       if (localDateKey(m.loggedAt, tz) !== todayKey) continue;
+      // Per #168c lock + #168d Layer 6: legacy text-description meals do NOT
+      // contribute to Daily Macros. Detected via full_manual source or via
+      // legacyNutritionLogId being non-null (nutrition_logs UNION rows).
+      if (m.source === 'full_manual' || m.legacyNutritionLogId !== null) continue;
       protein += Number(m.proteinG) || 0;
       carbs += Number(m.carbsG) || 0;
       fat += Number(m.fatTotalG) || 0;

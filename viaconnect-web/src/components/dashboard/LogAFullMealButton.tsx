@@ -1,8 +1,9 @@
 'use client';
 
-// Prompt #168c section 2.3: gradient pill button (Teal -> Orange) that
-// navigates from Dashboard Quick Logs to the Nutrition section's Log a Meal
-// tab. Mounted top-right of each entry container.
+// Prompt #169 section 4.3: blue gradient pill that deep-links to the
+// /nutrition/log-meal full-page editor (the #168c architectural exception).
+// Replaces the prior Teal-to-Orange gradient; new sky-blue-indigo palette
+// is consistent with the page's primary CTA system.
 
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
@@ -13,9 +14,9 @@ export interface LogAFullMealButtonProps {
 }
 
 export function LogAFullMealButton({ disabled = false, onBeforeNavigate }: LogAFullMealButtonProps) {
-  // Spec section 2.3: navigate to /nutrition; the page defaults to the
-  // Log a Meal tab. State preservation hook (transient store) deferred
-  // to a follow-up; caller can intercept via onBeforeNavigate to block.
+  // Spec section 4.3: route destination is unchanged. Caller can intercept
+  // navigation via onBeforeNavigate (returning false blocks the click) so a
+  // future "save your draft first" confirmation modal can plug in here.
   const handleClick = (event: React.MouseEvent<HTMLAnchorElement>) => {
     if (disabled) {
       event.preventDefault();
@@ -28,17 +29,14 @@ export function LogAFullMealButton({ disabled = false, onBeforeNavigate }: LogAF
 
   return (
     <Link
-      href="/nutrition"
+      href="/nutrition/log-meal"
       onClick={handleClick}
       aria-disabled={disabled}
-      className={`group inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-[14px] font-medium text-white no-underline transition-all md:text-[16px] ${
+      className={`group inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-lg border border-white/10 bg-gradient-to-br from-[#1A2744]/60 to-[#2DA5A0]/30 px-3 py-2 text-[14px] font-medium text-white no-underline backdrop-blur-md transition-all duration-200 ease-out md:text-[16px] ${
         disabled
           ? 'cursor-not-allowed opacity-50'
-          : 'hover:scale-[1.02] hover:brightness-110 active:scale-[0.98]'
+          : 'hover:from-[#1A2744]/75 hover:to-[#2DA5A0]/45 hover:shadow-lg hover:shadow-black/10 active:scale-[0.98]'
       }`}
-      style={{
-        background: 'linear-gradient(90deg, #2DA5A0 0%, #B75E18 100%)',
-      }}
     >
       <span>Log a full meal</span>
       <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" strokeWidth={1.5} />

@@ -50,12 +50,12 @@ export function ScoreBreakdownPanel(props: ScoreBreakdownPanelProps) {
   }, [defaultOpen]);
 
   return (
-    <section className="font-[Instrument_Sans] rounded-2xl border border-white/10 bg-[#1E3054] text-white">
+    <section className="font-[Instrument_Sans] rounded-2xl border border-white/10 bg-gradient-to-br from-[#1E3054]/45 via-[#1A2744]/35 to-[#0D1520]/45 text-white backdrop-blur-md">
       <button
         type="button"
         onClick={() => setOpen((prev) => !prev)}
         aria-expanded={open}
-        className="flex w-full items-center justify-between gap-3 rounded-2xl px-4 py-3 text-left text-[14px] font-medium text-white/95"
+        className="flex w-full items-center justify-between gap-3 rounded-2xl px-4 py-3 text-left text-[14px] font-medium text-white/95 hover:bg-white/[0.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
       >
         <span>Score breakdown</span>
         {open ? (
@@ -68,22 +68,28 @@ export function ScoreBreakdownPanel(props: ScoreBreakdownPanelProps) {
       {open ? (
         <div className="border-t border-white/10 px-4 py-3">
           <ul className="space-y-2">
-            {breakdown.modifiers.map((modifier, idx) => (
-              <li
-                key={`${modifier.name}-${idx}`}
-                className="flex flex-col gap-0.5 border-b border-white/10 pb-2 last:border-b-0 last:pb-0"
-              >
-                <div className="flex items-baseline justify-between gap-3">
-                  <span className="text-[13px] text-white/85">{modifier.name}</span>
-                  <span
-                    className={`text-[13px] font-semibold tabular-nums ${valueColor(modifier.value)}`}
-                  >
-                    {formatValue(modifier.value)}
-                  </span>
-                </div>
-                <span className="text-[12px] text-white/60">{modifier.note}</span>
-              </li>
-            ))}
+            {breakdown.modifiers
+              // Saturated Fat Penalty hidden per Gary 2026-05-15: no saturated
+              // fat input slider exists, so the line always reads "+0 Within
+              // healthy range" and is noise. Algorithm still computes it; only
+              // the display is suppressed.
+              .filter((modifier) => modifier.name !== 'Saturated Fat Penalty')
+              .map((modifier, idx) => (
+                <li
+                  key={`${modifier.name}-${idx}`}
+                  className="flex flex-col gap-0.5 border-b border-white/10 pb-2 last:border-b-0 last:pb-0"
+                >
+                  <div className="flex items-baseline justify-between gap-3">
+                    <span className="text-[13px] text-white/85">{modifier.name}</span>
+                    <span
+                      className={`text-[13px] font-semibold tabular-nums ${valueColor(modifier.value)}`}
+                    >
+                      {formatValue(modifier.value)}
+                    </span>
+                  </div>
+                  <span className="text-[12px] text-white/60">{modifier.note}</span>
+                </li>
+              ))}
           </ul>
           <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-[11px] text-white/40">
             <span>Calculated {formatTimestamp(breakdown.calculated_at)}</span>

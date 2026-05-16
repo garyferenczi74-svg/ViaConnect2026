@@ -16,7 +16,9 @@ export interface SnackStackContainerProps {
   // Today's snacks already saved, sorted by snack_index ascending.
   readonly todaysSnacks: ReadonlyArray<Meal>;
   // Save handler computes snack_index server-side via the parent's insert path.
-  readonly onSaveSnack: (draft: QuickLogDraft, computedSnackIndex: number) => void | Promise<void>;
+  // Returns true on success so the draft auto-collapses, false on failure so
+  // it stays open for retry. void treated as success for older callers.
+  readonly onSaveSnack: (draft: QuickLogDraft, computedSnackIndex: number) => Promise<boolean | void> | boolean | void;
 }
 
 export function SnackStackContainer(props: SnackStackContainerProps) {
@@ -33,10 +35,15 @@ export function SnackStackContainer(props: SnackStackContainerProps) {
 
   const handleSaveDraft = async (draft: QuickLogDraft) => {
     const indexAtSave = nextSnackIndex;
-    await onSaveSnack(draft, indexAtSave);
-    // After save: collapse the draft so user sees a fresh "+ Add another snack"
-    // affordance. Realtime subscription on todaysSnacks repopulates the saved
-    // list and the draft surface returns when the user clicks add.
+    const result = await onSaveSnack(draft, indexAtSave);
+    if (result === false) {
+      // Save failed; keep draft open so user can retry without losing input.
+      return;
+    }
+    // After successful save collapse the draft so user sees a fresh
+    // "+ Add another snack" affordance. Realtime subscription on todaysSnacks
+    // repopulates the saved list and the draft surface returns when the user
+    // clicks add.
     setDraftActive(false);
   };
 

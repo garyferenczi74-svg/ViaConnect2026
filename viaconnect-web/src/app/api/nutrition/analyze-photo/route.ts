@@ -12,7 +12,10 @@ import { recordAudit, newRequestId } from '@/lib/observability/audit-recorder';
 import { GEMINI_MODEL } from '@/lib/nutrition/gemini-prompts';
 import { estimateCostUsd } from '@/lib/observability/ai-pricing';
 // Prompt 168 Apply C: Path A dual-write to canonical meals table.
-import { SOURCE_CONFIDENCE_DEFAULTS } from '@/lib/gordon/constants';
+// Per Gary 2026-05-15: persist Gordon score on the meals row at insert time
+// so this channel matches the Quick Log channel's scoring behavior.
+import { scoreMealForServerInsert } from '@/lib/gordon/scoreMealForServerInsert';
+import { awardNutritionLogPoints } from '@/lib/nutrition/helix-bridge';
 
 const ROUTE = '/api/nutrition/analyze-photo';
 const MAX_FILE_BYTES = 10 * 1024 * 1024;
@@ -91,7 +94,35 @@ export async function POST(req: NextRequest) {
     // not block the legacy nutrition_logs insert). Source = 'photo_ai',
     // confidence default 0.65 (mid of the 0.50 to 0.85 vision-model range per
     // spec Section 4.3).
-    // TODO 168a: wire gordon-score-meal trigger via pg_net once edge function deployed and configured.
+    // Per Gary 2026-05-15: compute Gordon score before insert via the shared
+    // helper so the same algorithm runs across all 4 meal channels.
+    let scoredColumns;
+    try {
+      scoredColumns = await scoreMealForServerInsert(supabase, {
+        userId: user.id,
+        loggedAt,
+        mealType,
+        source: 'photo_ai',
+        sourceConfidence: 0.65,
+        proteinG: analysis.protein_g,
+        carbsG: analysis.carbs_g,
+        fatTotalG: analysis.total_fat_g,
+        fatHealthyG: analysis.healthy_fat_g,
+        fiberG: analysis.fiber_g,
+        sugarG: analysis.sugar_g,
+        sodiumMg: 0,
+        caloriesKcal: analysis.calories,
+        caloriesAutoCalc: false,
+        wholeFoodFlag: null,
+        mealName: analysis.serving_description ?? null,
+      });
+    } catch (e) {
+      safeLog.warn('api.nutrition.analyze-photo', 'gordon score compute failed (continuing with null)', {
+        error: e instanceof Error ? e.message : String(e),
+      });
+      scoredColumns = { quality_score: null, quality_tier: null, score_breakdown: null, scored_at: null, gordon_version: null };
+    }
+
     let mealId: string | null = null;
     try {
       const mealsInsert = await supabase
@@ -118,9 +149,7 @@ export async function POST(req: NextRequest) {
             photo_url: storagePath, context_note: note || null,
             ai_model: GEMINI_MODEL, route: ROUTE,
           },
-          quality_score: null,
-          scored_at: null,
-          gordon_version: null,
+          ...scoredColumns,
         })
         .select('meal_id')
         .single();
@@ -181,6 +210,17 @@ export async function POST(req: NextRequest) {
           error: linkErr instanceof Error ? linkErr.message : String(linkErr),
         });
       }
+    }
+
+    // Prompt #168d Step 8: emit Helix bridge event for the photo_ai channel.
+    // Best-effort; failure logs but does not affect the save response.
+    try {
+      await awardNutritionLogPoints({ userId: user.id, source: 'photo_ai' });
+    } catch (rewardErr) {
+      safeLog.warn('api.nutrition.analyze-photo', 'helix award failed', {
+        userId: user.id,
+        error: rewardErr instanceof Error ? rewardErr.message : String(rewardErr),
+      });
     }
 
     await recordAudit({

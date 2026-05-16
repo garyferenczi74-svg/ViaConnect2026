@@ -18,7 +18,6 @@ import { useNutritionTargets } from '@/hooks/useNutritionTargets';
 import { generateTargets } from '@/lib/gordon/generateTargets';
 import { TodaysMealsSummary } from './TodaysMealsSummary';
 import { DailyMacroRings } from './DailyMacroRings';
-import { AverageQualityScoreTile } from './AverageQualityScoreTile';
 
 interface DailyTotalsTabProps {
   readonly onGoToLog: () => void;
@@ -72,7 +71,6 @@ export function DailyTotalsTab({ onGoToLog }: DailyTotalsTabProps) {
     >
       <TodaysMealsSummary meals={meals} />
       <DailyMacroRings meals={meals} targets={effectiveTargets} />
-      <AverageQualityScoreTile meals={meals} days={7} />
 
       {todaysMealsCount === 0 ? (
         <button

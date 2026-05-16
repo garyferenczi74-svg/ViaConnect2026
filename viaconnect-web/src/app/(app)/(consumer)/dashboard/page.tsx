@@ -22,7 +22,7 @@ import { useNutritionTargets } from '@/hooks/useNutritionTargets';
 import { QuickLogsSurface } from '@/components/dashboard/QuickLogsSurface';
 import type { QuickLogDraft } from '@/components/meals/QuickLogModal';
 import { generateTargets } from '@/lib/gordon/generateTargets';
-import { createClient } from '@/lib/supabase/client';
+import { safeLog } from '@/lib/utils/safe-log';
 import { MobileHeroBackground } from '@/components/ui/MobileHeroBackground';
 import { RefreshCw, FileQuestion } from 'lucide-react';
 
@@ -80,40 +80,54 @@ export default function ConsumerDashboard() {
     ?? generateTargets({ caqSnapshot: null, bodySnapshot: null, bioOptDay: null, mealPatternHistory: null })
   ), [prompt168Targets]);
 
-  // Prompt 168c section 2.1 + 2.2: save handler. snackIndex is null for
-  // breakfast/lunch/dinner. For snacks, SnackStackContainer computes the next
-  // index from the saved-count and passes it through here for INSERT.
-  const handleSaveMeal = useCallback(async (draft: QuickLogDraft, snackIndex: number | null) => {
-    if (!userId) return;
-    const supabase = createClient();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase as any).from('meals').insert({
-      user_id: userId,
-      logged_at: draft.loggedAt,
-      meal_type: draft.mealType,
-      source: draft.source,
-      source_confidence: draft.sourceConfidence,
-      protein_g: draft.proteinG,
-      carbs_g: draft.carbsG,
-      fat_total_g: draft.fatTotalG,
-      fat_healthy_g: draft.fatHealthyG,
-      fiber_g: draft.fiberG,
-      sugar_g: draft.sugarG,
-      sodium_mg: draft.sodiumMg,
-      calories_kcal: draft.caloriesKcal,
-      calories_auto_calc: draft.caloriesAutoCalc,
-      whole_food_flag: draft.wholeFoodFlag,
-      meal_name: draft.mealName,
-      raw_input: draft.rawInput,
-      snack_index: snackIndex,
-    });
-    if (error) {
-      // eslint-disable-next-line no-console
-      console.error('[QuickLog insert failed]', error.message);
-      return;
+  // Prompt 168d Phase 4: route the Quick Logs save through the new server
+  // endpoint at POST /api/nutrition/meals. The server is the single Gordon
+  // scorer and the single point of replace-on-save logic for B/L/D. The
+  // realtime subscription on the meals table propagates the new row into
+  // Today's Meals without any client-side optimistic insert.
+  // Returns true on success, false on failure so SnackStackContainer can
+  // keep the draft panel open for retry.
+  const handleSaveMeal = useCallback(async (draft: QuickLogDraft, snackIndex: number | null): Promise<boolean> => {
+    if (!userId) return false;
+
+    try {
+      const res = await fetch('/api/nutrition/meals', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          logged_at: draft.loggedAt,
+          meal_type: draft.mealType,
+          source: draft.source,
+          source_confidence: draft.sourceConfidence,
+          protein_g: draft.proteinG,
+          carbs_g: draft.carbsG,
+          fat_total_g: draft.fatTotalG,
+          fat_healthy_g: draft.fatHealthyG,
+          fiber_g: draft.fiberG,
+          sugar_g: draft.sugarG,
+          sodium_mg: draft.sodiumMg,
+          calories_kcal: draft.caloriesKcal,
+          calories_auto_calc: draft.caloriesAutoCalc,
+          whole_food_flag: draft.wholeFoodFlag,
+          meal_name: draft.mealName,
+          raw_input: draft.rawInput,
+          snack_index: snackIndex,
+        }),
+      });
+
+      if (!res.ok) {
+        safeLog.warn('dashboard.handleSaveMeal', 'meals POST failed', {
+          status: res.status,
+          mealType: draft.mealType,
+        });
+        return false;
+      }
+
+      return true;
+    } catch (err) {
+      safeLog.warn('dashboard.handleSaveMeal', 'meals POST threw', { error: err });
+      return false;
     }
-    // useUserMeals realtime auto-updates the surface (saved meals collapse,
-    // tab strip checkmark badges flip on, snack stack repaints).
   }, [userId]);
 
   // Saved check-in data (after submit button pressed)

@@ -30,7 +30,6 @@ import type { QuickLogDraft } from '@/components/meals/QuickLogModal';
 import { NutrientSlider } from '@/components/meals/NutrientSlider';
 import { QualityScoreRing } from '@/components/meals/QualityScoreRing';
 import { ScoreBreakdownPanel } from '@/components/meals/ScoreBreakdownPanel';
-import { LogAFullMealButton } from './LogAFullMealButton';
 
 const MEAL_TYPE_LABELS: Record<MealType, string> = {
   breakfast: 'Breakfast',
@@ -50,26 +49,25 @@ export interface QuickLogEntryBlockProps {
   readonly onSave: (draft: QuickLogDraft) => void | Promise<void>;
   readonly onCancel?: () => void;
   readonly hideCancelButton?: boolean;
-  readonly hideLogFullMealButton?: boolean;
 }
 
 interface SliderState {
   protein: number;
   carbs: number;
   fatTotal: number;
-  fatHealthy: number;
   fiber: number;
   sugar: number;
   sodium: number;
   calories: number;
 }
 
+// Healthy Fat slider removed per Gary 2026-05-15. Fat Total is the single
+// fat input; fat_healthy_g column persists at 0 in the meals row.
 function defaultSliders(): SliderState {
   return {
     protein: SLIDER_RANGES.protein.default === 'auto' ? 0 : SLIDER_RANGES.protein.default,
     carbs: SLIDER_RANGES.carbs.default === 'auto' ? 0 : SLIDER_RANGES.carbs.default,
     fatTotal: SLIDER_RANGES.fatTotal.default === 'auto' ? 0 : SLIDER_RANGES.fatTotal.default,
-    fatHealthy: SLIDER_RANGES.fatHealthy.default === 'auto' ? 0 : SLIDER_RANGES.fatHealthy.default,
     fiber: SLIDER_RANGES.fiber.default === 'auto' ? 0 : SLIDER_RANGES.fiber.default,
     sugar: SLIDER_RANGES.sugar.default === 'auto' ? 0 : SLIDER_RANGES.sugar.default,
     sodium: SLIDER_RANGES.sodium.default === 'auto' ? 0 : SLIDER_RANGES.sodium.default,
@@ -112,7 +110,6 @@ export function QuickLogEntryBlock(props: QuickLogEntryBlockProps) {
     onSave,
     onCancel,
     hideCancelButton = false,
-    hideLogFullMealButton = false,
   } = props;
 
   const distribution = mealDistribution ?? DEFAULT_MEAL_DISTRIBUTION;
@@ -148,7 +145,7 @@ export function QuickLogEntryBlock(props: QuickLogEntryBlockProps) {
       proteinG: sliders.protein,
       carbsG: sliders.carbs,
       fatTotalG: sliders.fatTotal,
-      fatHealthyG: sliders.fatHealthy,
+      fatHealthyG: 0,
       fiberG: sliders.fiber,
       sugarG: sliders.sugar,
       sodiumMg: sliders.sodium,
@@ -203,7 +200,6 @@ export function QuickLogEntryBlock(props: QuickLogEntryBlockProps) {
       protein: targets.dailyProteinG * sharePctForCurrentMealType,
       carbs: targets.dailyCarbsG * sharePctForCurrentMealType,
       fatTotal: targets.dailyFatTotalG * sharePctForCurrentMealType,
-      fatHealthy: targets.dailyFatUnsatG * sharePctForCurrentMealType,
       fiber: targets.dailyFiberG * sharePctForCurrentMealType,
       sugar: targets.dailySugarG * sharePctForCurrentMealType,
       sodium: targets.dailySodiumMg * sharePctForCurrentMealType,
@@ -213,16 +209,7 @@ export function QuickLogEntryBlock(props: QuickLogEntryBlockProps) {
   );
 
   const updateSlider = useCallback((key: keyof SliderState, value: number) => {
-    setSliders((prev) => {
-      const next: SliderState = { ...prev, [key]: value };
-      if (key === 'fatHealthy' && value > prev.fatTotal) {
-        next.fatTotal = value;
-      }
-      if (key === 'fatTotal' && value < prev.fatHealthy) {
-        next.fatHealthy = value;
-      }
-      return next;
-    });
+    setSliders((prev) => ({ ...prev, [key]: value }));
   }, []);
 
   const handleCaloriesChange = useCallback((value: number) => {
@@ -239,7 +226,6 @@ export function QuickLogEntryBlock(props: QuickLogEntryBlockProps) {
       sliders.protein === 0 &&
       sliders.carbs === 0 &&
       sliders.fatTotal === 0 &&
-      sliders.fatHealthy === 0 &&
       sliders.fiber === 0 &&
       sliders.sugar === 0 &&
       sliders.sodium === 0 &&
@@ -247,8 +233,21 @@ export function QuickLogEntryBlock(props: QuickLogEntryBlockProps) {
     );
   }, [sliders, displayedCalories]);
 
+  // Prompt #168d follow-up: in-flight guard. Without this, three rapid
+  // taps on Save trigger three concurrent POSTs whose DELETE phases all
+  // run before any INSERT commits, leaving three duplicate rows in
+  // the meals table.
+  const [isSaving, setIsSaving] = useState(false);
+
   const handleSave = useCallback(async () => {
-    if (allSlidersZero) return;
+    if (isSaving) return;
+    // eslint-disable-next-line no-console
+    console.log('[QuickLogEntryBlock] Save clicked', { mealType, allSlidersZero });
+    if (allSlidersZero) {
+      // eslint-disable-next-line no-console
+      console.warn('[QuickLogEntryBlock] aborted: all sliders are zero');
+      return;
+    }
     const draft: QuickLogDraft = {
       mealType,
       loggedAt: new Date(loggedAt).toISOString(),
@@ -257,7 +256,7 @@ export function QuickLogEntryBlock(props: QuickLogEntryBlockProps) {
       proteinG: sliders.protein,
       carbsG: sliders.carbs,
       fatTotalG: sliders.fatTotal,
-      fatHealthyG: sliders.fatHealthy,
+      fatHealthyG: 0,
       fiberG: sliders.fiber,
       sugarG: sliders.sugar,
       sodiumMg: sliders.sodium,
@@ -267,8 +266,14 @@ export function QuickLogEntryBlock(props: QuickLogEntryBlockProps) {
       mealName: mealName.trim() ? mealName.trim() : null,
       rawInput: { sliders: { ...sliders } },
     };
-    await onSave(draft);
+    setIsSaving(true);
+    try {
+      await onSave(draft);
+    } finally {
+      setIsSaving(false);
+    }
   }, [
+    isSaving,
     allSlidersZero,
     mealType,
     loggedAt,
@@ -285,13 +290,10 @@ export function QuickLogEntryBlock(props: QuickLogEntryBlockProps) {
   const headerLabel = labelOverride ?? MEAL_TYPE_LABELS[mealType];
 
   return (
-    <div className="font-[Instrument_Sans] flex flex-col gap-4 rounded-xl border border-white/10 bg-[#1E3054]/50 p-4 md:p-5">
-      <div className="flex items-center justify-between gap-3">
-        <span className="text-[14px] font-semibold uppercase tracking-[0.10em] text-white/80">
-          {headerLabel}
-        </span>
-        {hideLogFullMealButton ? null : <LogAFullMealButton />}
-      </div>
+    <div className="font-[Instrument_Sans] flex flex-col gap-4 rounded-xl border border-white/10 bg-gradient-to-br from-[#1E3054]/55 via-[#1A2744]/40 to-[#0D1520]/55 p-4 backdrop-blur-md md:p-5">
+      <span className="text-[14px] font-semibold uppercase tracking-[0.10em] text-white/80">
+        {headerLabel}
+      </span>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-[260px_1fr] md:gap-5">
         <aside className="flex flex-col items-center gap-3 md:items-stretch">
@@ -299,7 +301,7 @@ export function QuickLogEntryBlock(props: QuickLogEntryBlockProps) {
             <QualityScoreRing score={score} tier={tier} sizePx={140} />
           </div>
           <div className="hidden md:block">
-            {breakdown ? <ScoreBreakdownPanel breakdown={breakdown} defaultOpen={true} /> : null}
+            {breakdown ? <ScoreBreakdownPanel breakdown={breakdown} defaultOpen={false} /> : null}
           </div>
         </aside>
 
@@ -391,22 +393,6 @@ export function QuickLogEntryBlock(props: QuickLogEntryBlockProps) {
               onChange={(v) => updateSlider('fatTotal', v)}
               perMealTarget={perMealTargets.fatTotal}
             />
-            <div>
-              <NutrientSlider
-                id={`ql-${mealType}-fat-healthy`}
-                label="Healthy Fat"
-                unit="g"
-                min={SLIDER_RANGES.fatHealthy.min}
-                max={SLIDER_RANGES.fatHealthy.max}
-                step={SLIDER_RANGES.fatHealthy.step}
-                value={sliders.fatHealthy}
-                onChange={(v) => updateSlider('fatHealthy', v)}
-                perMealTarget={perMealTargets.fatHealthy}
-              />
-              <p className="mt-1 text-[11px] text-white/55">
-                Subset of total fat (mono unsaturated, poly unsaturated, omega 3).
-              </p>
-            </div>
             <NutrientSlider
               id={`ql-${mealType}-fiber`}
               label="Fiber"
@@ -488,7 +474,7 @@ export function QuickLogEntryBlock(props: QuickLogEntryBlockProps) {
         <button
           type="button"
           onClick={handleSave}
-          disabled={allSlidersZero}
+          disabled={allSlidersZero || isSaving}
           className="rounded-full bg-[#2DA5A0] px-5 py-2 text-[13px] font-semibold text-white shadow disabled:cursor-not-allowed disabled:bg-[#2DA5A0]/40"
         >
           Save {headerLabel}

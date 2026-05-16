@@ -15,14 +15,12 @@ import { MealHistory } from '@/components/nutrition/MealHistory';
 import { MyMeals } from '@/components/nutrition/MyMeals';
 import { ConnectedAppMealDropdown } from '@/components/nutrition/ConnectedAppMealDropdown';
 import { MobileHeroBackground } from '@/components/ui/MobileHeroBackground';
-import { NutritionTabs, useNutritionActiveTab, useSetNutritionTab } from '@/components/nutrition/NutritionTabs';
 import { DailyTotalsTab } from '@/components/nutrition/DailyTotalsTab';
 
-const NUTRITION_TAB_DEFS = [
-  { id: 'log', label: 'Log a Meal' },
-  { id: 'daily-totals', label: 'Daily Totals' },
-  { id: 'history', label: 'History', disabled: true },
-] as const;
+// Prompt #169 followup per Gary 2026-05-15: Log a Meal / Daily Totals / History
+// tab strip removed. Both the Log a Meal section and the Daily Totals section
+// render stacked on the page so users see everything in one scroll.
+// History is still disabled and not rendered here.
 
 const NUTRITION_HERO_IMAGE =
   'https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Images/Food%203.png';
@@ -38,8 +36,6 @@ export default function NutritionPage() {
 function NutritionPageInner() {
   const [mealsToday, setMealsToday] = useState(0);
   const [score, setScore] = useState(0);
-  const activeTab = useNutritionActiveTab(NUTRITION_TAB_DEFS, 'log');
-  const setActiveTab = useSetNutritionTab();
 
   const loadMealCount = async () => {
     try {
@@ -94,13 +90,7 @@ function NutritionPageInner() {
 
       <NutritionScoreCard />
 
-      <NutritionTabs tabs={NUTRITION_TAB_DEFS} defaultTab="log" />
-
-      {activeTab === 'daily-totals' && (
-        <DailyTotalsTab onGoToLog={() => setActiveTab('log')} />
-      )}
-
-      {activeTab === 'log' && (
+      {/* Log a Meal section: ConnectedAppMealDropdown + 3 channel buttons. */}
       <div className="rounded-xl border border-white/10 bg-[#1E3054]/35 backdrop-blur-md p-4 sm:p-5">
         <h3 className="mb-4 text-sm font-semibold text-white">Log a Meal</h3>
 
@@ -128,7 +118,11 @@ function NutritionPageInner() {
           })}
         </div>
       </div>
-      )}
+
+      {/* Daily Totals section: stacked under Log a Meal per Gary 2026-05-15. */}
+      {/* No tab strip; both render in document flow. onGoToLog scrolls user */}
+      {/* up to the channel buttons since they live above this section now. */}
+      <DailyTotalsTab onGoToLog={() => window.scrollTo({ top: 0, behavior: 'smooth' })} />
 
       {/* Nutrition by Genetics — full-width tab.
           Requires a nutritional genetic test (NutrigenDX™ or equivalent)

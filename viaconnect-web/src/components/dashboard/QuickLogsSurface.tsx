@@ -1,41 +1,44 @@
 'use client';
 
-// Prompt #168c section 2.1: top-level Dashboard Quick Logs surface.
-// Header + tab strip (Breakfast/Lunch/Dinner/Snacks) + active-tab content.
-// Replaces the QuickLogModal-button pattern from #168 Apply C with the inline
-// tabbed UI per Gary's directive 2026-05-15.
+// Prompt #169: Dashboard Quick Logs surface refactor.
+// Replaces the prior #168c always-rendered selected-tab pattern with the
+// per-meal accordion: row of four triggers, single dropdown panel beneath
+// (only one open at a time), no panel open on initial mount.
+//
+// State: openMeal: MealType | null. Click toggles. Single-open invariant
+// enforced by setOpenMeal(prev === id ? null : id). Escape closes + focuses
+// the active trigger.
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import type { Meal, MealType, NutritionTargets, MealDistribution } from '@/lib/gordon/types';
 import type { QuickLogDraft } from '@/components/meals/QuickLogModal';
 import { QuickLogsMealTypeTab } from './QuickLogsMealTypeTab';
 import { QuickLogEntryBlock } from './QuickLogEntryBlock';
 import { SnackStackContainer } from './SnackStackContainer';
+import { LogAFullMealButton } from './LogAFullMealButton';
 
 export interface QuickLogsSurfaceProps {
   readonly userId: string | null;
   readonly targets: NutritionTargets;
   readonly mealDistribution?: MealDistribution;
-  // Today's meals from useUserMeals. Used to: detect completion per meal type
-  // for the green checkmark badges, default-select the next unlogged meal,
-  // populate the snack stack.
   readonly todaysMeals: ReadonlyArray<Meal>;
-  // Save handler. For B/L/D the snack_index is null. For snacks the parent
-  // (dashboard page) passes snack_index explicitly per spec section 2.2.
-  readonly onSaveMeal: (draft: QuickLogDraft, snackIndex: number | null) => void | Promise<void>;
+  // Returns true on success (panel auto-closes), false on failure (panel
+  // stays open so user can retry). void treated as success for older callers.
+  readonly onSaveMeal: (draft: QuickLogDraft, snackIndex: number | null) => Promise<boolean | void> | boolean | void;
 }
 
-const MEAL_ORDER: ReadonlyArray<MealType> = ['breakfast', 'lunch', 'dinner', 'snack'];
-
-function pickDefaultTab(loggedTypes: ReadonlySet<MealType>): MealType {
-  for (const t of MEAL_ORDER) {
-    if (!loggedTypes.has(t)) return t;
-  }
-  return 'snack';
-}
+const NON_SNACK_LABEL_OVERRIDE: Record<Exclude<MealType, 'snack'>, string> = {
+  breakfast: 'Breakfast 1',
+  lunch: 'Lunch 1',
+  dinner: 'Dinner 1',
+};
 
 export function QuickLogsSurface(props: QuickLogsSurfaceProps) {
   const { userId, targets, mealDistribution, todaysMeals, onSaveMeal } = props;
+  const idPrefix = useId();
+
+  const [openMeal, setOpenMeal] = useState<MealType | null>(null);
 
   const completedSet = useMemo<ReadonlySet<MealType>>(() => {
     const s = new Set<MealType>();
@@ -52,62 +55,111 @@ export function QuickLogsSurface(props: QuickLogsSurfaceProps) {
     [todaysMeals],
   );
 
-  const [selectedTab, setSelectedTab] = useState<MealType>(() => pickDefaultTab(completedSet));
+  const handleToggle = useCallback((mealType: MealType) => {
+    setOpenMeal((prev) => (prev === mealType ? null : mealType));
+  }, []);
 
-  // Re-run default-tab selection only when the surface first mounts with data.
-  // After mount, user keeps control of which tab is open.
-  const initRef = useState({ done: false })[0];
+  // Spec section 4.6: Escape closes open panel + returns focus to its trigger.
+  const surfaceRef = useRef<HTMLElement | null>(null);
   useEffect(() => {
-    if (!initRef.done && todaysMeals.length >= 0) {
-      setSelectedTab(pickDefaultTab(completedSet));
-      initRef.done = true;
-    }
-  }, [todaysMeals.length, completedSet, initRef]);
+    if (!openMeal) return;
+    const handler = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      const triggerId = `${idPrefix}-trigger-${openMeal}`;
+      setOpenMeal(null);
+      // Defer focus so the trigger has time to re-render with tabIndex 0.
+      requestAnimationFrame(() => {
+        document.getElementById(triggerId)?.focus();
+      });
+    };
+    const surface = surfaceRef.current;
+    surface?.addEventListener('keydown', handler);
+    return () => surface?.removeEventListener('keydown', handler);
+  }, [openMeal, idPrefix]);
+
+  const panelId = openMeal ? `${idPrefix}-panel-${openMeal}` : '';
+  const triggerId = openMeal ? `${idPrefix}-trigger-${openMeal}` : '';
 
   return (
     <section
-      aria-labelledby="dashboard-quick-log-heading"
+      ref={surfaceRef}
+      aria-labelledby={`${idPrefix}-heading`}
       className="rounded-2xl border border-white/10 bg-[#1E3054]/35 backdrop-blur-md p-4 md:p-5"
     >
-      <header className="mb-4">
-        <h2
-          id="dashboard-quick-log-heading"
-          className="text-[15px] font-semibold uppercase tracking-[0.10em] text-white/80"
-        >
-          Quick Log
-        </h2>
-        <p className="mt-1 text-[12px] text-white/55">
-          Log macros in grams across 8 nutrients. Gordon scores against your personalized targets.
-        </p>
+      <header className="mb-4 flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h2
+            id={`${idPrefix}-heading`}
+            className="text-[15px] font-semibold uppercase tracking-[0.10em] text-white/80"
+          >
+            Quick Log
+          </h2>
+          <p className="mt-1 text-[12px] text-white/55">
+            Log macros in grams across 8 nutrients. Gordon scores against your personalized targets.
+          </p>
+        </div>
+        <LogAFullMealButton />
       </header>
 
-      <div className="mb-4">
+      <div className="mb-3">
         <QuickLogsMealTypeTab
-          selected={selectedTab}
-          onSelect={setSelectedTab}
+          openMeal={openMeal}
+          onToggle={handleToggle}
           completed={completedSet}
           snackCount={todaysSnacks.length}
+          idPrefix={idPrefix}
         />
       </div>
 
-      <div>
-        {selectedTab === 'snack' ? (
-          <SnackStackContainer
-            targets={targets}
-            mealDistribution={mealDistribution}
-            todaysSnacks={todaysSnacks}
-            onSaveSnack={(draft, computedSnackIndex) => onSaveMeal(draft, computedSnackIndex)}
-          />
-        ) : (
-          <QuickLogEntryBlock
-            mealType={selectedTab}
-            targets={targets}
-            mealDistribution={mealDistribution}
-            snacksLoggedToday={todaysSnacks.length}
-            onSave={(draft) => onSaveMeal(draft, null)}
-          />
-        )}
-      </div>
+      <AnimatePresence initial={false}>
+        {openMeal !== null ? (
+          <motion.div
+            key={openMeal}
+            id={panelId}
+            role="region"
+            aria-labelledby={triggerId}
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.225, ease: 'easeOut' }}
+            className="overflow-hidden"
+          >
+            <div className="pt-2">
+              {openMeal === 'snack' ? (
+                <SnackStackContainer
+                  targets={targets}
+                  mealDistribution={mealDistribution}
+                  todaysSnacks={todaysSnacks}
+                  onSaveSnack={async (draft, computedSnackIndex) => {
+                    // eslint-disable-next-line no-console
+                    console.log('[QuickLogsSurface] snack save bubbling up', { computedSnackIndex });
+                    const result = await onSaveMeal(draft, computedSnackIndex);
+                    // Keep snack panel open after save; SnackStackContainer
+                    // handles its own draft state (collapses + offers Add Another).
+                    return result !== false;
+                  }}
+                />
+              ) : (
+                <QuickLogEntryBlock
+                  mealType={openMeal}
+                  labelOverride={NON_SNACK_LABEL_OVERRIDE[openMeal]}
+                  targets={targets}
+                  mealDistribution={mealDistribution}
+                  snacksLoggedToday={todaysSnacks.length}
+                  onSave={async (draft) => {
+                    // eslint-disable-next-line no-console
+                    console.log('[QuickLogsSurface] save bubbling up for', draft.mealType);
+                    const result = await onSaveMeal(draft, null);
+                    if (result !== false) {
+                      setOpenMeal(null);
+                    }
+                  }}
+                />
+              )}
+            </div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
 
       {!userId ? (
         <p className="mt-3 text-[12px] text-white/55">Sign in to save meals.</p>

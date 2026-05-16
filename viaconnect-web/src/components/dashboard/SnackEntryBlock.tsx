@@ -52,7 +52,7 @@ export function SnackEntryBlock(props: SnackEntryBlockProps) {
       <button
         type="button"
         onClick={() => onRequestEdit?.(savedMeal.mealId)}
-        className="flex w-full items-center justify-between gap-3 rounded-xl border border-white/10 bg-[#1E3054]/40 px-4 py-3 text-left transition-colors hover:bg-[#1E3054]/60"
+        className="flex w-full items-center justify-between gap-3 rounded-xl border border-white/10 bg-gradient-to-br from-[#1E3054]/45 via-[#1A2744]/35 to-[#0D1520]/45 px-4 py-3 text-left backdrop-blur-md transition-all hover:from-[#1E3054]/60 hover:via-[#1A2744]/50 hover:to-[#0D1520]/60"
       >
         <span className="flex min-w-0 items-center gap-3">
           <span className="inline-flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-[#2DA5A0]/20 text-[12px] font-semibold text-[#2DA5A0]">
