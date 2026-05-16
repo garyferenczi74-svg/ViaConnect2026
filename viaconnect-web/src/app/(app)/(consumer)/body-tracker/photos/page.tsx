@@ -10,6 +10,9 @@ import { PhotoSessionHistory } from '@/components/body-tracker/photos/PhotoSessi
 import { ComparisonPanel } from '@/components/body-tracker/photos/ComparisonPanel';
 import { RunScanButton } from '@/components/body-tracker/scanning/RunScanButton';
 import { ScanResultsPanel } from '@/components/body-tracker/scanning/ScanResultsPanel';
+import { ScanOnboardingWalkthrough } from '@/components/body-tracker/scanning/ScanOnboardingWalkthrough';
+import { TierBadge } from '@/components/body-tracker/scanning/TierBadge';
+import { ScanPdfExportButton } from '@/components/body-tracker/scanning/ScanPdfExportButton';
 
 export default function PhotosPage() {
   const [open, setOpen] = useState(false);
@@ -52,19 +55,29 @@ export default function PhotosPage() {
 
   return (
     <div className="space-y-6" key={refreshKey}>
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-lg font-bold text-white">Body progress photos</h2>
-          <p className="text-xs text-white/45">4 pose sessions, analyzed by Arnold</p>
+      {/* First-visit onboarding walkthrough; localStorage gate is inside the component */}
+      <ScanOnboardingWalkthrough />
+
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap">
+          <div>
+            <h2 className="text-lg font-bold text-white">Body progress photos</h2>
+            <p className="text-xs text-white/45">4 pose sessions, analyzed by Arnold</p>
+          </div>
+          {/* Phase 1 always Tier 1; replace with scan_tier_log read in a later phase */}
+          {latestId && <TierBadge tier={1} bosDelta={undefined} />}
         </div>
-        <button
-          type="button"
-          onClick={() => setOpen(true)}
-          className="flex items-center gap-1.5 rounded-xl border border-[#2DA5A0]/30 bg-[#2DA5A0]/15 px-3 py-2 text-xs font-medium text-[#2DA5A0] hover:bg-[#2DA5A0]/25 min-h-[44px]"
-        >
-          <Plus className="h-3.5 w-3.5" strokeWidth={1.5} />
-          New session
-        </button>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {latestId && <ScanPdfExportButton sessionId={latestId} />}
+          <button
+            type="button"
+            onClick={() => setOpen(true)}
+            className="flex items-center gap-1.5 rounded-xl border border-[#2DA5A0]/30 bg-[#2DA5A0]/15 px-3 py-2 text-xs font-medium text-[#2DA5A0] hover:bg-[#2DA5A0]/25 min-h-[44px]"
+          >
+            <Plus className="h-3.5 w-3.5" strokeWidth={1.5} />
+            New session
+          </button>
+        </div>
       </div>
 
       <PhotoSessionCapture
@@ -101,7 +114,7 @@ export default function PhotosPage() {
             <RunScanButton sessionId={latestId} onComplete={() => setRefreshKey((k) => k + 1)} />
           </section>
 
-          <ScanResultsPanel sessionId={latestId} refreshKey={refreshKey} />
+          <ScanResultsPanel sessionId={latestId} refreshKey={refreshKey} portalType="consumer" />
 
           <section className="space-y-3">
             <h3 className="text-xs font-semibold uppercase tracking-wider text-white/50">Previous sessions</h3>
