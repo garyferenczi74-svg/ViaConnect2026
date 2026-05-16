@@ -11,7 +11,6 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Plus } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useUserMeals } from '@/hooks/useUserMeals';
 import { useNutritionTargets } from '@/hooks/useNutritionTargets';
@@ -23,7 +22,7 @@ interface DailyTotalsTabProps {
   readonly onGoToLog: () => void;
 }
 
-export function DailyTotalsTab({ onGoToLog }: DailyTotalsTabProps) {
+export function DailyTotalsTab(_: DailyTotalsTabProps) {
   const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -42,15 +41,6 @@ export function DailyTotalsTab({ onGoToLog }: DailyTotalsTabProps) {
     prompt168Targets
     ?? generateTargets({ caqSnapshot: null, bodySnapshot: null, bioOptDay: null, mealPatternHistory: null })
   ), [prompt168Targets]);
-
-  const todaysMealsCount = useMemo(() => {
-    const today = new Date(); today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1);
-    return meals.filter((m) => {
-      const t = m.loggedAt ? Date.parse(m.loggedAt) : 0;
-      return t >= today.getTime() && t < tomorrow.getTime();
-    }).length;
-  }, [meals]);
 
   if (loading && meals.length === 0) {
     return (
@@ -71,17 +61,6 @@ export function DailyTotalsTab({ onGoToLog }: DailyTotalsTabProps) {
     >
       <TodaysMealsSummary meals={meals} />
       <DailyMacroRings meals={meals} targets={effectiveTargets} />
-
-      {todaysMealsCount === 0 ? (
-        <button
-          type="button"
-          onClick={onGoToLog}
-          className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-white/15 bg-transparent px-4 py-3 text-[13px] font-semibold text-white/75 transition-colors hover:border-white/30 hover:bg-white/5 hover:text-white"
-        >
-          <Plus className="h-4 w-4" strokeWidth={1.5} />
-          <span>Log your first meal of the day</span>
-        </button>
-      ) : null}
     </motion.div>
   );
 }
