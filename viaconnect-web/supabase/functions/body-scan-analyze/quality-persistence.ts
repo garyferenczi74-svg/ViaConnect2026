@@ -121,6 +121,8 @@ export async function persistQuality(
       camera_level_score:          scores.cameraLevel,
       frame_coverage_score:        scores.frameCoverage,
       blocking_issues:             scores.blockingIssues ?? [],
+      overall_pass:                scores.overallPass,
+      advisory_notes:              scores.advisoryNotes ?? [],
     });
     if (error) {
       safeLog.error('body-scan-analyze', 'persistQuality insert failed', {
@@ -481,13 +483,13 @@ async function _updateBaselineForMeasurement(
 
   try {
     // Pull the N most recent composition rows (including the one just inserted).
-    const selectCol = measurementType === 'body_fat_pct' ? 'body_fat_pct' : 'id';
     // body_scan_composition stores body_fat_pct; waist_navel is in body_scan_measurements.
     // For waist_navel_circ_cm we query body_scan_measurements; for body_fat_pct we
     // query body_scan_composition.
     let recentValues: number[] = [];
 
     if (measurementType === 'body_fat_pct') {
+      const selectCol = 'body_fat_pct';
       const { data: rows } = await sa
         .from('body_scan_composition')
         .select('body_fat_pct')
