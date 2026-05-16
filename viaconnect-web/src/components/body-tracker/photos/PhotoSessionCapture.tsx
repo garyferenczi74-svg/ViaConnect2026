@@ -14,7 +14,7 @@
 // kept intact). session_id passed to body-scan-analyze edge function.
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Award, Check, ChevronLeft, ChevronRight, HelpCircle, Loader2 } from 'lucide-react';
+import { Award, Check, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { ManualInputModal } from '@/components/body-tracker/manual-input/ManualInputModal';
 import { PoseGuide } from './PoseGuide';
@@ -307,7 +307,7 @@ export function PhotoSessionCapture({ open, onOpenChange, onCompleted }: PhotoSe
 
     const video  = videoRef.current;
     const canvas = qualityCanvasRef.current ?? document.createElement('canvas');
-    if (!canvas) { qualityCanvasRef.current = canvas; }
+    if (!qualityCanvasRef.current) { qualityCanvasRef.current = canvas; }
 
     const capturedFrames: Array<{
       silhouetteMask: ImageData;
@@ -463,7 +463,13 @@ export function PhotoSessionCapture({ open, onOpenChange, onCompleted }: PhotoSe
         },
         depth_sensor_type: 'none',
         device_model:      navigator.userAgent,
-        device_os:         navigator.platform,
+        // navigator.platform is deprecated; UserAgentData is not yet in lib.dom typings
+        // so we use a local interface to feature-detect the newer API safely.
+        device_os: (() => {
+          interface UserAgentDataLike { platform?: string; }
+          const uaData = (navigator as { userAgentData?: UserAgentDataLike }).userAgentData;
+          return uaData?.platform ?? navigator.userAgent;
+        })(),
       };
 
       // Fire and forget: edge function is long-running; UI polls session status
