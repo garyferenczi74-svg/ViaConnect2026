@@ -38,6 +38,22 @@ interface ScanResultsPanelProps {
   portalType?: PortalType;
 }
 
+/** Shape of one row from the body_scan_composition T2 table. */
+interface ScanCompositionRow {
+  body_fat_pct: number | null;
+  ci_low_body_fat_pct: number | null;
+  ci_high_body_fat_pct: number | null;
+  lean_mass_kg: number | null;
+  fat_mass_kg: number | null;
+  visceral_fat_index: number | null;
+  ag_ratio: number | null;
+  vs_ratio: number | null;
+  fmi: number | null;
+  ffmi: number | null;
+  bmi: number | null;
+  bmr_kcal: number | null;
+}
+
 interface LoadedScan {
   userId: string;
   measurements: ExtractedMeasurements;
@@ -54,9 +70,10 @@ interface LoadedScan {
 
 export function ScanResultsPanel({ sessionId, refreshKey, portalType = 'consumer' }: ScanResultsPanelProps) {
   const { unitSystem } = useCurrentUser();
-  const [loaded, setLoaded]   = useState<LoadedScan | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [missing, setMissing] = useState(false);
+  const [loaded, setLoaded]       = useState<LoadedScan | null>(null);
+  const [compRow, setCompRow]     = useState<ScanCompositionRow | null>(null);
+  const [loading, setLoading]     = useState(true);
+  const [missing, setMissing]     = useState(false);
   const [activeTab, setActiveTab] = useState<TabId>('measurements');
 
   useEffect(() => {
@@ -84,6 +101,28 @@ export function ScanResultsPanel({ sessionId, refreshKey, portalType = 'consumer
         .eq('id', row.user_id as string)
         .maybeSingle();
       const p = profile as unknown as { sex: string | null; height_cm: number | null; weight_kg: number | null } | null;
+
+      // T2 table: body_scan_composition provides precision CI values when the
+      // body-scan-analyze edge function has written them. Fall back to the JSONB
+      // composition_estimate blob when this row is absent (Phase 1 fail-open path).
+      type LooseComp = {
+        from: (t: string) => {
+          select: (cols: string) => {
+            eq: (col: string, val: string) => {
+              maybeSingle: () => Promise<{ data: ScanCompositionRow | null; error: { message: string } | null }>;
+            };
+          };
+        };
+      };
+      const sbComp = supabase as unknown as LooseComp;
+      const { data: compData } = await sbComp
+        .from('body_scan_composition')
+        .select('body_fat_pct, ci_low_body_fat_pct, ci_high_body_fat_pct, lean_mass_kg, fat_mass_kg, visceral_fat_index, ag_ratio, vs_ratio, fmi, ffmi, bmi, bmr_kcal')
+        .eq('session_id', sessionId)
+        .maybeSingle();
+      if (mounted) {
+        setCompRow(compData ?? null);
+      }
 
       setLoaded({
         userId:               row.user_id as string,
@@ -165,7 +204,7 @@ export function ScanResultsPanel({ sessionId, refreshKey, portalType = 'consumer
         })}
       </div>
 
-      {/* PDF export — always visible across all tabs */}
+      {/* PDF export: always visible across all tabs */}
       <div className="flex justify-end">
         <ScanPdfExportButton sessionId={sessionId} />
       </div>
@@ -196,7 +235,22 @@ export function ScanResultsPanel({ sessionId, refreshKey, portalType = 'consumer
         {/* Tab 2: Composition */}
         {activeTab === 'composition' && (
           <div className="space-y-3">
-            <CompositionBreakdownCard composition={loaded.composition} sex={loaded.sex} />
+            <CompositionBreakdownCard
+              composition={
+                compRow?.ci_low_body_fat_pct != null && compRow?.ci_high_body_fat_pct != null
+                  ? {
+                      ...loaded.composition,
+                      // Prefer T2 precision CI values over the JSONB blob's range when present.
+                      bodyFatPct: {
+                        low:  compRow.ci_low_body_fat_pct,
+                        mid:  compRow.body_fat_pct ?? loaded.composition.bodyFatPct.mid,
+                        high: compRow.ci_high_body_fat_pct,
+                      },
+                    }
+                  : loaded.composition
+              }
+              sex={loaded.sex}
+            />
           </div>
         )}
 

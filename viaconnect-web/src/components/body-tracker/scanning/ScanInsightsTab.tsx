@@ -45,7 +45,8 @@ export function ScanInsightsTab({ sessionId, userId, portalType }: ScanInsightsT
   const [generating, setGenerating] = useState(false);
   const [error, setError]         = useState<string | null>(null);
 
-  // Load insights from body_scan_insights table (written by T5 edge fn)
+  // Load insights from body_tracker_recommendations (written by arnold-cross-reference-recommend).
+  // Insights are user-scoped not session-scoped per Phase 1; scan-scoped insights deferred to Phase 2.
   useEffect(() => {
     let mounted = true;
     setLoading(true);
@@ -54,12 +55,19 @@ export function ScanInsightsTab({ sessionId, userId, portalType }: ScanInsightsT
     (async () => {
       try {
         const supabase = createClient();
+        type RecommendationRow = {
+          recommendation_text: string;
+          confidence_tier: number;
+          source_ids: string[];
+        };
         type Loose = {
           from: (t: string) => {
             select: (cols: string) => {
               eq: (col: string, val: string) => {
-                order: (col: string, opts: { ascending: boolean }) => {
-                  limit: (n: number) => Promise<{ data: unknown[] | null; error: { message: string } | null }>;
+                is: (col: string, val: null) => {
+                  order: (col: string, opts: { ascending: boolean }) => {
+                    limit: (n: number) => Promise<{ data: RecommendationRow[] | null; error: { message: string } | null }>;
+                  };
                 };
               };
             };
@@ -67,27 +75,24 @@ export function ScanInsightsTab({ sessionId, userId, portalType }: ScanInsightsT
         };
         const sb = supabase as unknown as Loose;
         const { data, error: dbErr } = await sb
-          .from('body_scan_insights')
-          .select('kind, message, source_protocol_item_id, severity')
-          .eq('session_id', sessionId)
+          .from('body_tracker_recommendations')
+          .select('recommendation_text, confidence_tier, source_ids')
+          .eq('user_id', userId)
+          .is('dismissed_at', null)
           .order('created_at', { ascending: false })
           .limit(3);
 
         if (!mounted) return;
         if (dbErr) throw new Error(dbErr.message);
 
-        const rows = (data ?? []) as Array<{
-          kind: string;
-          message: string;
-          source_protocol_item_id: string | null;
-          severity: string;
-        }>;
+        const rows = (data ?? []) as RecommendationRow[];
 
         const parsed: ScanInsight[] = rows.map((r) => ({
-          kind:                 (r.kind as ScanInsight['kind']) ?? 'observation',
-          message:              r.message,
-          sourceProtocolItemId: r.source_protocol_item_id,
-          severity:             (r.severity as ScanInsight['severity']) ?? 'low',
+          kind:                 'recommendation' as ScanInsight['kind'],
+          message:              r.recommendation_text,
+          sourceProtocolItemId: null,
+          // Map confidence_tier (1=low, 2=medium, 3=high) to severity
+          severity:             r.confidence_tier >= 3 ? 'high' : r.confidence_tier === 2 ? 'medium' : 'low' as ScanInsight['severity'],
         }));
 
         setInsights(parsed);
@@ -100,7 +105,7 @@ export function ScanInsightsTab({ sessionId, userId, portalType }: ScanInsightsT
     })();
 
     return () => { mounted = false; };
-  }, [sessionId]);
+  }, [userId]);
 
   async function generateInsights() {
     setGenerating(true);
@@ -114,20 +119,28 @@ export function ScanInsightsTab({ sessionId, userId, portalType }: ScanInsightsT
       const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ regenerate: true, session_id: sessionId }),
+        // Insights are user-scoped not session-scoped per Phase 1; scan-scoped insights deferred to Phase 2.
+        body: JSON.stringify({ regenerate: true }),
       });
       if (!res.ok) {
         const errBody = await res.json().catch(() => ({}));
         throw new Error((errBody as { error?: string }).error ?? `Generation failed (${res.status})`);
       }
-      // Reload from DB after generation
+      // Reload from body_tracker_recommendations after generation
+      type RecommendationRow2 = {
+        recommendation_text: string;
+        confidence_tier: number;
+        source_ids: string[];
+      };
       const supabase2 = createClient();
       type Loose2 = {
         from: (t: string) => {
           select: (cols: string) => {
             eq: (col: string, val: string) => {
-              order: (col: string, opts: { ascending: boolean }) => {
-                limit: (n: number) => Promise<{ data: unknown[] | null; error: { message: string } | null }>;
+              is: (col: string, val: null) => {
+                order: (col: string, opts: { ascending: boolean }) => {
+                  limit: (n: number) => Promise<{ data: RecommendationRow2[] | null; error: unknown }>;
+                };
               };
             };
           };
@@ -135,24 +148,20 @@ export function ScanInsightsTab({ sessionId, userId, portalType }: ScanInsightsT
       };
       const sb2 = supabase2 as unknown as Loose2;
       const { data } = await sb2
-        .from('body_scan_insights')
-        .select('kind, message, source_protocol_item_id, severity')
-        .eq('session_id', sessionId)
+        .from('body_tracker_recommendations')
+        .select('recommendation_text, confidence_tier, source_ids')
+        .eq('user_id', userId)
+        .is('dismissed_at', null)
         .order('created_at', { ascending: false })
         .limit(3);
 
-      const rows = (data ?? []) as Array<{
-        kind: string;
-        message: string;
-        source_protocol_item_id: string | null;
-        severity: string;
-      }>;
+      const rows = (data ?? []) as RecommendationRow2[];
 
       setInsights(rows.map((r) => ({
-        kind:                 (r.kind as ScanInsight['kind']) ?? 'observation',
-        message:              r.message,
-        sourceProtocolItemId: r.source_protocol_item_id,
-        severity:             (r.severity as ScanInsight['severity']) ?? 'low',
+        kind:                 'recommendation' as ScanInsight['kind'],
+        message:              r.recommendation_text,
+        sourceProtocolItemId: null,
+        severity:             r.confidence_tier >= 3 ? 'high' : r.confidence_tier === 2 ? 'medium' : 'low' as ScanInsight['severity'],
       })));
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Generation failed');
