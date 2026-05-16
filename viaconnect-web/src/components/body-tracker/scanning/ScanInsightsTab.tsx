@@ -39,6 +39,56 @@ const SUPABASE_URL =
   process.env.NEXT_PUBLIC_SUPABASE_PROJECT_URL ??
   '';
 
+// Module-scope types so fetchRecommendations can reference them outside any closure.
+type RecommendationRow = {
+  id: string;
+  recommendation_text: string;
+  confidence_tier: number;
+  created_at: string;
+};
+
+type Loose = {
+  from: (t: string) => {
+    select: (cols: string) => {
+      eq: (col: string, val: string) => {
+        is: (col: string, val: null) => {
+          order: (col: string, opts: { ascending: boolean }) => {
+            limit: (n: number) => Promise<{ data: RecommendationRow[] | null; error: { message: string } | null }>;
+          };
+        };
+      };
+    };
+  };
+};
+
+async function fetchRecommendations(userId: string): Promise<RecommendationRow[]> {
+  const supabase = createClient();
+  const sb = supabase as unknown as Loose;
+  const { data, error } = await sb
+    .from('body_tracker_recommendations')
+    .select('id, recommendation_text, confidence_tier, created_at')
+    .eq('user_id', userId)
+    .is('dismissed_at', null)
+    .order('created_at', { ascending: false })
+    .limit(3);
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((r) => ({
+    id:                  String(r.id ?? ''),
+    recommendation_text: String(r.recommendation_text ?? ''),
+    confidence_tier:     typeof r.confidence_tier === 'number' ? r.confidence_tier : 0,
+    created_at:          String(r.created_at ?? ''),
+  }));
+}
+
+function rowsToInsights(rows: RecommendationRow[]): ScanInsight[] {
+  return rows.map((r) => ({
+    kind:                 'recommendation' as ScanInsight['kind'],
+    message:              r.recommendation_text,
+    sourceProtocolItemId: null,
+    severity:             r.confidence_tier >= 3 ? 'high' : r.confidence_tier === 2 ? 'medium' : 'low' as ScanInsight['severity'],
+  }));
+}
+
 export function ScanInsightsTab({ sessionId, userId, portalType }: ScanInsightsTabProps) {
   const [insights, setInsights]   = useState<ScanInsight[]>([]);
   const [loading, setLoading]     = useState(true);
@@ -54,48 +104,9 @@ export function ScanInsightsTab({ sessionId, userId, portalType }: ScanInsightsT
 
     (async () => {
       try {
-        const supabase = createClient();
-        type RecommendationRow = {
-          recommendation_text: string;
-          confidence_tier: number;
-          source_ids: string[];
-        };
-        type Loose = {
-          from: (t: string) => {
-            select: (cols: string) => {
-              eq: (col: string, val: string) => {
-                is: (col: string, val: null) => {
-                  order: (col: string, opts: { ascending: boolean }) => {
-                    limit: (n: number) => Promise<{ data: RecommendationRow[] | null; error: { message: string } | null }>;
-                  };
-                };
-              };
-            };
-          };
-        };
-        const sb = supabase as unknown as Loose;
-        const { data, error: dbErr } = await sb
-          .from('body_tracker_recommendations')
-          .select('recommendation_text, confidence_tier, source_ids')
-          .eq('user_id', userId)
-          .is('dismissed_at', null)
-          .order('created_at', { ascending: false })
-          .limit(3);
-
+        const rows = await fetchRecommendations(userId);
         if (!mounted) return;
-        if (dbErr) throw new Error(dbErr.message);
-
-        const rows = (data ?? []) as RecommendationRow[];
-
-        const parsed: ScanInsight[] = rows.map((r) => ({
-          kind:                 'recommendation' as ScanInsight['kind'],
-          message:              r.recommendation_text,
-          sourceProtocolItemId: null,
-          // Map confidence_tier (1=low, 2=medium, 3=high) to severity
-          severity:             r.confidence_tier >= 3 ? 'high' : r.confidence_tier === 2 ? 'medium' : 'low' as ScanInsight['severity'],
-        }));
-
-        setInsights(parsed);
+        setInsights(rowsToInsights(rows));
         setLoading(false);
       } catch (e) {
         if (!mounted) return;
@@ -127,42 +138,8 @@ export function ScanInsightsTab({ sessionId, userId, portalType }: ScanInsightsT
         throw new Error((errBody as { error?: string }).error ?? `Generation failed (${res.status})`);
       }
       // Reload from body_tracker_recommendations after generation
-      type RecommendationRow2 = {
-        recommendation_text: string;
-        confidence_tier: number;
-        source_ids: string[];
-      };
-      const supabase2 = createClient();
-      type Loose2 = {
-        from: (t: string) => {
-          select: (cols: string) => {
-            eq: (col: string, val: string) => {
-              is: (col: string, val: null) => {
-                order: (col: string, opts: { ascending: boolean }) => {
-                  limit: (n: number) => Promise<{ data: RecommendationRow2[] | null; error: unknown }>;
-                };
-              };
-            };
-          };
-        };
-      };
-      const sb2 = supabase2 as unknown as Loose2;
-      const { data } = await sb2
-        .from('body_tracker_recommendations')
-        .select('recommendation_text, confidence_tier, source_ids')
-        .eq('user_id', userId)
-        .is('dismissed_at', null)
-        .order('created_at', { ascending: false })
-        .limit(3);
-
-      const rows = (data ?? []) as RecommendationRow2[];
-
-      setInsights(rows.map((r) => ({
-        kind:                 'recommendation' as ScanInsight['kind'],
-        message:              r.recommendation_text,
-        sourceProtocolItemId: null,
-        severity:             r.confidence_tier >= 3 ? 'high' : r.confidence_tier === 2 ? 'medium' : 'low' as ScanInsight['severity'],
-      })));
+      const rows = await fetchRecommendations(userId);
+      setInsights(rowsToInsights(rows));
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Generation failed');
     } finally {

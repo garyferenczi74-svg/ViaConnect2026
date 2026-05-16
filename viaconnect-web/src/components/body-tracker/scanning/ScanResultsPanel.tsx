@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import type { KeyboardEvent } from 'react';
 import { Loader2, Box } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useCurrentUser } from '@/components/body-tracker/manual-input/useCurrentUser';
@@ -75,6 +76,20 @@ export function ScanResultsPanel({ sessionId, refreshKey, portalType = 'consumer
   const [loading, setLoading]     = useState(true);
   const [missing, setMissing]     = useState(false);
   const [activeTab, setActiveTab] = useState<TabId>('measurements');
+  const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
+
+  const handleTabKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
+    const currentIdx = TABS.findIndex((t) => t.id === activeTab);
+    let nextIdx = currentIdx;
+    if (e.key === 'ArrowRight')      nextIdx = (currentIdx + 1) % TABS.length;
+    else if (e.key === 'ArrowLeft')  nextIdx = (currentIdx - 1 + TABS.length) % TABS.length;
+    else if (e.key === 'Home')       nextIdx = 0;
+    else if (e.key === 'End')        nextIdx = TABS.length - 1;
+    else return;
+    e.preventDefault();
+    setActiveTab(TABS[nextIdx].id);
+    tabRefs.current[nextIdx]?.focus();
+  };
 
   useEffect(() => {
     let mounted = true;
@@ -182,15 +197,20 @@ export function ScanResultsPanel({ sessionId, refreshKey, portalType = 'consumer
         role="tablist"
         aria-label="Scan result sections"
         className="flex items-center gap-1.5 overflow-x-auto pb-0.5 scrollbar-none"
+        onKeyDown={handleTabKeyDown}
       >
-        {TABS.map((tab) => {
+        {TABS.map((tab, i) => {
           const isActive = activeTab === tab.id;
           return (
             <button
               key={tab.id}
+              ref={(el) => { tabRefs.current[i] = el; }}
               type="button"
               role="tab"
+              id={`tab-${tab.id}`}
               aria-selected={isActive}
+              aria-controls={`tabpanel-${tab.id}`}
+              tabIndex={isActive ? 0 : -1}
               onClick={() => setActiveTab(tab.id)}
               className={`flex-none rounded-full px-3.5 py-1.5 text-xs font-semibold whitespace-nowrap transition-colors min-h-[36px] ${
                 isActive
@@ -210,10 +230,10 @@ export function ScanResultsPanel({ sessionId, refreshKey, portalType = 'consumer
       </div>
 
       {/* Tab content */}
-      <div role="tabpanel">
+      <div>
         {/* Tab 1: Measurements */}
         {activeTab === 'measurements' && (
-          <div className="space-y-4">
+          <div role="tabpanel" id="tabpanel-measurements" aria-labelledby="tab-measurements" className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-4">
               <div>
                 <p className="text-[10px] font-semibold uppercase tracking-wider text-white/50 mb-2">3D avatar</p>
@@ -234,7 +254,7 @@ export function ScanResultsPanel({ sessionId, refreshKey, portalType = 'consumer
 
         {/* Tab 2: Composition */}
         {activeTab === 'composition' && (
-          <div className="space-y-3">
+          <div role="tabpanel" id="tabpanel-composition" aria-labelledby="tab-composition" className="space-y-3">
             <CompositionBreakdownCard
               composition={
                 compRow?.ci_low_body_fat_pct != null && compRow?.ci_high_body_fat_pct != null
@@ -256,25 +276,31 @@ export function ScanResultsPanel({ sessionId, refreshKey, portalType = 'consumer
 
         {/* Tab 3: Compare */}
         {activeTab === 'compare' && (
-          <ComparisonPanel defaultAfterSessionId={sessionId} />
+          <div role="tabpanel" id="tabpanel-compare" aria-labelledby="tab-compare">
+            <ComparisonPanel defaultAfterSessionId={sessionId} />
+          </div>
         )}
 
         {/* Tab 4: Insights */}
         {activeTab === 'insights' && (
-          <ScanInsightsTab
-            sessionId={sessionId}
-            userId={loaded.userId}
-            portalType={portalType}
-          />
+          <div role="tabpanel" id="tabpanel-insights" aria-labelledby="tab-insights">
+            <ScanInsightsTab
+              sessionId={sessionId}
+              userId={loaded.userId}
+              portalType={portalType}
+            />
+          </div>
         )}
 
         {/* Tab 5: Share */}
         {activeTab === 'share' && (
-          <ScanShareTab
-            sessionId={sessionId}
-            userId={loaded.userId}
-            portalType={portalType}
-          />
+          <div role="tabpanel" id="tabpanel-share" aria-labelledby="tab-share">
+            <ScanShareTab
+              sessionId={sessionId}
+              userId={loaded.userId}
+              portalType={portalType}
+            />
+          </div>
         )}
       </div>
     </section>
