@@ -169,55 +169,52 @@ describe('decideBodyScanEntitlement: practitioner-managed', () => {
 // Server-side practitioner-managed verification (the #169a review fix).
 //
 // SECURITY: practitioner_managed must NOT be a trusted client boolean. The Deno
-// edge helper verifyPractitionerManaged determines it from the database, mirroring
-// the RLS policy "Practitioner manages notes for active patients":
+// edge helper verifyPractitionerManaged determines it from the database, gating
+// on the canonical practitioner_patients table (same pattern as body-scan-export
+// and 20260516000060_prompt_169_practitioner_scan_read_rls.sql):
 //
-//   patient_practitioner_relationships ppr
-//     JOIN practitioners p ON p.id = ppr.practitioner_id
-//   WHERE p.user_id = <caller auth uid>
-//     AND ppr.patient_user_id = <patient id>
-//     AND ppr.status = 'active'
+//   practitioner_patients pp
+//   WHERE pp.practitioner_id = <caller auth uid>
+//     AND pp.patient_id      = <patient id>
+//     AND pp.status          = 'active'
+//
+// In practitioner_patients, practitioner_id IS the caller's auth uid directly,
+// so there is NO join through a practitioners table. The Prompt #92
+// patient_practitioner_relationships table was dropped CASCADE in
+// 20260418000160_practitioners_schema_reconciliation.sql.
 //
 // The live helper is in supabase/functions (excluded from vitest because of its
-// esm.sh + .ts imports), so this in-memory model reproduces the same join +
-// filter + fail-closed rules and asserts the real decision. Anything other than
-// an active matching relationship resolves to false, which routes the request
-// into the consumer premium/teaser path (decideBodyScanEntitlement with
-// practitionerManaged=false).
+// esm.sh + .ts imports), so this in-memory model reproduces the same filter +
+// fail-closed rules and asserts the real decision. Anything other than an active
+// matching row resolves to false, which routes the request into the consumer
+// premium/teaser path (decideBodyScanEntitlement with practitionerManaged=false).
 // ===========================================================================
 
-interface PractitionerRow {
-  id: string;
-  user_id: string; // the practitioner's auth uid (the caller acting on behalf)
-}
-interface RelationshipRow {
-  patient_user_id: string;
-  practitioner_id: string; // FK -> PractitionerRow.id
+interface PractitionerPatientRow {
+  practitioner_id: string; // the practitioner's auth uid (the caller acting on behalf)
+  patient_id: string; // the patient's auth uid (the scan subject)
   status: string;
 }
 
 class PractitionerRelationshipModel {
-  private practitioners: PractitionerRow[] = [];
-  private relationships: RelationshipRow[] = [];
+  private rows: PractitionerPatientRow[] = [];
 
-  addPractitioner(row: PractitionerRow): void {
-    this.practitioners.push(row);
-  }
-  addRelationship(row: RelationshipRow): void {
-    this.relationships.push(row);
+  addRelationship(row: PractitionerPatientRow): void {
+    this.rows.push(row);
   }
 
-  // Mirrors verifyPractitionerManaged: true ONLY when an active relationship
-  // joins the caller (as practitioners.user_id) to the supplied patient.
-  // Fail-closed on a missing patient id and on a self-scan (caller === patient).
+  // Mirrors verifyPractitionerManaged: true ONLY when an active
+  // practitioner_patients row matches practitioner_id = caller and
+  // patient_id = patient. Fail-closed on a missing patient id and on a self-scan
+  // (caller === patient).
   verify(callerUserId: string, patientUserId: string | null | undefined): boolean {
     if (!patientUserId || patientUserId === callerUserId) return false;
-    return this.relationships.some((ppr) => {
-      if (ppr.patient_user_id !== patientUserId) return false;
-      if (ppr.status !== 'active') return false;
-      const practitioner = this.practitioners.find((p) => p.id === ppr.practitioner_id);
-      return practitioner?.user_id === callerUserId;
-    });
+    return this.rows.some(
+      (pp) =>
+        pp.practitioner_id === callerUserId &&
+        pp.patient_id === patientUserId &&
+        pp.status === 'active',
+    );
   }
 }
 
@@ -254,10 +251,9 @@ describe('verifyPractitionerManaged contract (server-side, fail-closed)', () => 
 
   it('returns true only when an active relationship joins the caller to the patient', () => {
     const model = new PractitionerRelationshipModel();
-    model.addPractitioner({ id: 'prac-1', user_id: 'dr-smith' });
     model.addRelationship({
-      patient_user_id: 'patient-1',
-      practitioner_id: 'prac-1',
+      practitioner_id: 'dr-smith',
+      patient_id: 'patient-1',
       status: 'active',
     });
 
@@ -274,11 +270,10 @@ describe('verifyPractitionerManaged contract (server-side, fail-closed)', () => 
 
   it('returns false when the relationship exists but is not active', () => {
     const model = new PractitionerRelationshipModel();
-    model.addPractitioner({ id: 'prac-1', user_id: 'dr-smith' });
     for (const status of ['pending', 'ended', 'declined']) {
       model.addRelationship({
-        patient_user_id: `patient-${status}`,
-        practitioner_id: 'prac-1',
+        practitioner_id: 'dr-smith',
+        patient_id: `patient-${status}`,
         status,
       });
       expect(model.verify('dr-smith', `patient-${status}`)).toBe(false);
@@ -287,12 +282,10 @@ describe('verifyPractitionerManaged contract (server-side, fail-closed)', () => 
 
   it('returns false when an active relationship belongs to a different practitioner', () => {
     const model = new PractitionerRelationshipModel();
-    model.addPractitioner({ id: 'prac-1', user_id: 'dr-smith' });
-    model.addPractitioner({ id: 'prac-2', user_id: 'dr-jones' });
     // Active relationship is between dr-jones and the patient, not dr-smith.
     model.addRelationship({
-      patient_user_id: 'patient-1',
-      practitioner_id: 'prac-2',
+      practitioner_id: 'dr-jones',
+      patient_id: 'patient-1',
       status: 'active',
     });
     expect(model.verify('dr-smith', 'patient-1')).toBe(false);
@@ -303,10 +296,9 @@ describe('verifyPractitionerManaged contract (server-side, fail-closed)', () => 
     // A practitioner scanning their own body is a consumer scan, not a
     // managed-patient scan; the bypass must not apply (caller === patient).
     const model = new PractitionerRelationshipModel();
-    model.addPractitioner({ id: 'prac-1', user_id: 'dr-smith' });
     model.addRelationship({
-      patient_user_id: 'dr-smith',
-      practitioner_id: 'prac-1',
+      practitioner_id: 'dr-smith',
+      patient_id: 'dr-smith',
       status: 'active',
     });
     expect(model.verify('dr-smith', 'dr-smith')).toBe(false);

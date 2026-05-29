@@ -181,15 +181,20 @@ export async function claimFreeBodyScanTeaser(
  *
  * Returns true ONLY when an active practitioner relationship exists between the
  * authenticated caller (callerUserId, the practitioner acting on behalf) and the
- * supplied patient (patientUserId, the scan subject). Mirrors the RLS policy
- * "Practitioner manages notes for active patients" in migration
- * 20260516000010_prompt_169_body_scan_phase1.sql:
+ * supplied patient (patientUserId, the scan subject). Mirrors the canonical
+ * practitioner-access pattern used by body-scan-export and the practitioner scan
+ * read RLS (20260516000060_prompt_169_practitioner_scan_read_rls.sql), gating on
+ * the live practitioner_patients table:
  *
- *   patient_practitioner_relationships ppr
- *     JOIN practitioners p ON p.id = ppr.practitioner_id
- *   WHERE p.user_id = <caller auth uid>
- *     AND ppr.patient_user_id = <patient id>
- *     AND ppr.status = 'active'
+ *   practitioner_patients pp
+ *   WHERE pp.practitioner_id = <caller auth uid>
+ *     AND pp.patient_id      = <patient id>
+ *     AND pp.status          = 'active'
+ *
+ * In practitioner_patients, practitioner_id IS the practitioner's auth user id
+ * directly, so there is NO join through a practitioners table. The Prompt #92
+ * patient_practitioner_relationships table was dropped CASCADE in
+ * 20260418000160_practitioners_schema_reconciliation.sql.
  *
  * Fail-closed: returns false when no patient id is supplied, when the caller is
  * the patient themselves (a consumer cannot self-grant the practitioner bypass),
@@ -206,17 +211,17 @@ export async function verifyPractitionerManaged(
   if (!patientUserId || patientUserId === callerUserId) return false;
 
   try {
-    // Join practitioners (p.user_id = caller) to their active relationships with
-    // the supplied patient. Inner join via the embedded select; a non-empty
-    // result means an active relationship exists for this caller + patient.
+    // Match an active practitioner_patients row directly: practitioner_id is the
+    // caller's auth uid and patient_id is the supplied patient. A non-null result
+    // means an active relationship exists for this caller + patient. Same gate as
+    // body-scan-export's practitioner export path.
     const { data, error } = await withTimeout(
       sa
-        .from('patient_practitioner_relationships')
-        .select('id, practitioners!inner(user_id)')
-        .eq('patient_user_id', patientUserId)
+        .from('practitioner_patients')
+        .select('status')
+        .eq('practitioner_id', callerUserId)
+        .eq('patient_id', patientUserId)
         .eq('status', 'active')
-        .eq('practitioners.user_id', callerUserId)
-        .limit(1)
         .maybeSingle(),
       MEMBERSHIP_QUERY_TIMEOUT_MS,
       'edge-function.body-scan-analyze.practitioner-verify',
