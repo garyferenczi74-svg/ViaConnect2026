@@ -18,6 +18,12 @@
 //                            fn_claim_free_body_scan_teaser; if already used,
 //                            reject the finalize and DO NOT mark complete
 //   practitioner_managed  => bypass the consumer premium check entirely
+//
+// SECURITY (Prompt #169a review fix): practitioner_managed is NEVER read as a
+// trusted client boolean. It is DETERMINED SERVER-SIDE by verifyPractitionerManaged
+// (below), which confirms an active practitioner relationship exists between the
+// authenticated caller and the supplied patient. Absent a verified relationship
+// the request falls through to the normal consumer premium/teaser logic.
 // =============================================================================
 
 import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
@@ -159,6 +165,78 @@ export async function claimFreeBodyScanTeaser(
     safeLog.warn('body-scan-analyze', 'claim free teaser exception', {
       user_id: userId,
       stage: 'claimFreeTeaser',
+      error: String(e),
+    });
+    return false;
+  }
+}
+
+/**
+ * Server-side verification of a practitioner-managed scan context.
+ *
+ * SECURITY: the practitioner-managed bypass MUST be derived from the database,
+ * never from a client-supplied boolean. A free consumer could otherwise send
+ * { practitioner_managed: true } to get unlimited scans without ever burning the
+ * teaser or hitting the 402.
+ *
+ * Returns true ONLY when an active practitioner relationship exists between the
+ * authenticated caller (callerUserId, the practitioner acting on behalf) and the
+ * supplied patient (patientUserId, the scan subject). Mirrors the RLS policy
+ * "Practitioner manages notes for active patients" in migration
+ * 20260516000010_prompt_169_body_scan_phase1.sql:
+ *
+ *   patient_practitioner_relationships ppr
+ *     JOIN practitioners p ON p.id = ppr.practitioner_id
+ *   WHERE p.user_id = <caller auth uid>
+ *     AND ppr.patient_user_id = <patient id>
+ *     AND ppr.status = 'active'
+ *
+ * Fail-closed: returns false when no patient id is supplied, when the caller is
+ * the patient themselves (a consumer cannot self-grant the practitioner bypass),
+ * or when the query errors or times out. A false result routes the request into
+ * the normal consumer premium/teaser logic.
+ */
+export async function verifyPractitionerManaged(
+  sa: SupabaseClient,
+  callerUserId: string,
+  patientUserId: string | null | undefined,
+): Promise<boolean> {
+  // No patient subject supplied (the ordinary consumer self-scan flow), or the
+  // caller is scanning themselves: there is no practitioner-managed context.
+  if (!patientUserId || patientUserId === callerUserId) return false;
+
+  try {
+    // Join practitioners (p.user_id = caller) to their active relationships with
+    // the supplied patient. Inner join via the embedded select; a non-empty
+    // result means an active relationship exists for this caller + patient.
+    const { data, error } = await withTimeout(
+      sa
+        .from('patient_practitioner_relationships')
+        .select('id, practitioners!inner(user_id)')
+        .eq('patient_user_id', patientUserId)
+        .eq('status', 'active')
+        .eq('practitioners.user_id', callerUserId)
+        .limit(1)
+        .maybeSingle(),
+      MEMBERSHIP_QUERY_TIMEOUT_MS,
+      'edge-function.body-scan-analyze.practitioner-verify',
+    );
+    if (error) {
+      safeLog.warn('body-scan-analyze', 'practitioner verify error', {
+        user_id: callerUserId,
+        patient_user_id: patientUserId,
+        stage: 'verifyPractitionerManaged',
+        error: error.message,
+      });
+      return false;
+    }
+    return data !== null;
+  } catch (e) {
+    // Fail-closed: an error or timeout must NOT grant the practitioner bypass.
+    safeLog.warn('body-scan-analyze', 'practitioner verify exception', {
+      user_id: callerUserId,
+      patient_user_id: patientUserId,
+      stage: 'verifyPractitionerManaged',
       error: String(e),
     });
     return false;

@@ -48,6 +48,7 @@ import {
 import {
   resolveBodyScanEntitlement,
   claimFreeBodyScanTeaser,
+  verifyPractitionerManaged,
   type BodyScanPremiumStatus,
 } from './entitlement.ts';
 
@@ -154,10 +155,13 @@ interface BodyScanRequest {
   // session_id: the body_photo_sessions row this scan finalizes. When present,
   //   the premium status is stamped on it and scan_status is set to 'complete'
   //   (which fires the Helix trigger). Absent in the legacy ephemeral flow.
-  // practitioner_managed: true when a practitioner is finalizing a scan on
-  //   behalf of a managed patient; bypasses the consumer premium check.
+  // patient_user_id: the scan subject when a practitioner finalizes a scan on
+  //   behalf of a managed patient. The practitioner-managed bypass is granted
+  //   ONLY after server-side verification (verifyPractitionerManaged) confirms
+  //   an active practitioner relationship between the authenticated caller and
+  //   this patient. Absent / unverified => normal consumer premium/teaser path.
   session_id?:               string;
-  practitioner_managed?:     boolean;
+  patient_user_id?:          string;
 }
 
 interface BodyScanEstimate {
@@ -384,7 +388,8 @@ serve(async (req) => {
   // is persisted/marked complete, so a failed analysis never consumes the
   // one-time free teaser. Three server-side paths (spec sections 3 + 10):
   //   premium               -> stamp 'premium' + subscription id, finalize
-  //   practitioner_managed  -> stamp 'practitioner_managed', finalize (bypass)
+  //   practitioner_managed  -> stamp 'practitioner_managed', finalize (bypass);
+  //                            granted ONLY on server-verified active relationship
   //   non-premium consumer  -> claim the one-time free teaser atomically:
   //                              claimed     -> stamp 'free_teaser', finalize
   //                              already used -> REJECT (402); do NOT persist,
@@ -392,7 +397,20 @@ serve(async (req) => {
   //                                              complete; capture state is
   //                                              preserved for retry/upgrade.
   // =========================================================================
-  const practitionerManaged = body.practitioner_managed === true;
+  // SECURITY (Prompt #169a review fix): practitioner_managed is determined
+  // SERVER-SIDE, never read from a client boolean. A free consumer could
+  // otherwise send { practitioner_managed: true } to defeat the premium gate.
+  // verifyPractitionerManaged returns true ONLY when an active practitioner
+  // relationship exists between the authenticated caller (the practitioner
+  // acting on behalf) and body.patient_user_id (the scan subject). It is
+  // fail-closed: no patient id, a self-scan, or a query error/timeout all
+  // resolve to false, routing the request into the consumer premium/teaser
+  // logic below.
+  const practitionerManaged = await verifyPractitionerManaged(
+    sa,
+    user.id,
+    body.patient_user_id,
+  );
   const entitlement = await resolveBodyScanEntitlement(sa, user.id, practitionerManaged);
 
   let premiumStatusAtScan: BodyScanPremiumStatus;
@@ -426,6 +444,7 @@ serve(async (req) => {
     premium_status_at_scan:  premiumStatusAtScan,
     has_subscription:        entitlement.subscriptionId !== null,
     practitioner_managed:    practitionerManaged,
+    patient_user_id:         body.patient_user_id ?? null,
     session_id:              body.session_id ?? null,
   });
 
@@ -596,6 +615,11 @@ serve(async (req) => {
   // event directly. Runs after the T2 child rows are persisted so the
   // trigger's tier lookup resolves. Best-effort with an 8s timeout; the scan
   // result is already committed above and is returned regardless.
+  //
+  // Idempotent (review fix): the .neq('scan_status','complete') precondition
+  // makes re-finalizing an already-complete session an explicit no-op, so a
+  // replayed request cannot re-stamp premium_status_at_scan. Defense-in-depth;
+  // the DB trigger already prevents a duplicate Helix re-fire.
   // =========================================================================
   if (body.session_id) {
     try {
@@ -608,7 +632,8 @@ serve(async (req) => {
             scan_status:             'complete',
           })
           .eq('id', body.session_id)
-          .eq('user_id', user.id),
+          .eq('user_id', user.id)
+          .neq('scan_status', 'complete'),
         8_000,
         'edge-function.body-scan-analyze.finalize-session',
       );

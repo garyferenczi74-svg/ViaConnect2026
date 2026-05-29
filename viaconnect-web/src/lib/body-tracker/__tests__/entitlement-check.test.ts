@@ -9,6 +9,13 @@
 //   fn_claim_free_body_scan_teaser contract (idempotent):
 //     a faithful in-memory model of the atomic conditional UPDATE proves the
 //     real behavior: first claim returns true, every subsequent claim false.
+//   verifyPractitionerManaged contract (server-side, fail-closed):
+//     a faithful in-memory model of the relationship join proves the real
+//     behavior so the practitioner bypass is granted ONLY on an active
+//     relationship and a normal consumer resolves to non-practitioner-managed.
+//     The live helper lives in the Deno edge function
+//     (supabase/functions/body-scan-analyze/entitlement.ts), which vitest
+//     excludes (esm.sh + .ts imports); this models its decision identically.
 
 import { describe, it, expect } from 'vitest';
 import {
@@ -155,6 +162,154 @@ describe('decideBodyScanEntitlement: practitioner-managed', () => {
     expect(result.statusForScan).toBe('practitioner_managed');
     // premium flag still reflects the underlying membership truth.
     expect(result.premium).toBe(true);
+  });
+});
+
+// ===========================================================================
+// Server-side practitioner-managed verification (the #169a review fix).
+//
+// SECURITY: practitioner_managed must NOT be a trusted client boolean. The Deno
+// edge helper verifyPractitionerManaged determines it from the database, mirroring
+// the RLS policy "Practitioner manages notes for active patients":
+//
+//   patient_practitioner_relationships ppr
+//     JOIN practitioners p ON p.id = ppr.practitioner_id
+//   WHERE p.user_id = <caller auth uid>
+//     AND ppr.patient_user_id = <patient id>
+//     AND ppr.status = 'active'
+//
+// The live helper is in supabase/functions (excluded from vitest because of its
+// esm.sh + .ts imports), so this in-memory model reproduces the same join +
+// filter + fail-closed rules and asserts the real decision. Anything other than
+// an active matching relationship resolves to false, which routes the request
+// into the consumer premium/teaser path (decideBodyScanEntitlement with
+// practitionerManaged=false).
+// ===========================================================================
+
+interface PractitionerRow {
+  id: string;
+  user_id: string; // the practitioner's auth uid (the caller acting on behalf)
+}
+interface RelationshipRow {
+  patient_user_id: string;
+  practitioner_id: string; // FK -> PractitionerRow.id
+  status: string;
+}
+
+class PractitionerRelationshipModel {
+  private practitioners: PractitionerRow[] = [];
+  private relationships: RelationshipRow[] = [];
+
+  addPractitioner(row: PractitionerRow): void {
+    this.practitioners.push(row);
+  }
+  addRelationship(row: RelationshipRow): void {
+    this.relationships.push(row);
+  }
+
+  // Mirrors verifyPractitionerManaged: true ONLY when an active relationship
+  // joins the caller (as practitioners.user_id) to the supplied patient.
+  // Fail-closed on a missing patient id and on a self-scan (caller === patient).
+  verify(callerUserId: string, patientUserId: string | null | undefined): boolean {
+    if (!patientUserId || patientUserId === callerUserId) return false;
+    return this.relationships.some((ppr) => {
+      if (ppr.patient_user_id !== patientUserId) return false;
+      if (ppr.status !== 'active') return false;
+      const practitioner = this.practitioners.find((p) => p.id === ppr.practitioner_id);
+      return practitioner?.user_id === callerUserId;
+    });
+  }
+}
+
+describe('verifyPractitionerManaged contract (server-side, fail-closed)', () => {
+  it('returns false for a normal consumer with no relationship (resolves to non-practitioner-managed)', () => {
+    const model = new PractitionerRelationshipModel();
+    // A normal consumer self-scan: no patient id supplied at all.
+    expect(model.verify('consumer-1', null)).toBe(false);
+    expect(model.verify('consumer-1', undefined)).toBe(false);
+
+    // And the decision it feeds: practitionerManaged=false => teaser path.
+    const decision = decideBodyScanEntitlement({
+      membership: null,
+      practitionerManaged: model.verify('consumer-1', null),
+    });
+    expect(decision.statusForScan).toBeNull();
+    expect(decision.practitionerManaged).toBe(false);
+  });
+
+  it('returns false when a free consumer forges a patient_user_id with no real relationship', () => {
+    // The exploit the review fix closes: the client cannot self-assert the
+    // bypass. Supplying an arbitrary patient id with no matching active
+    // relationship row must NOT grant practitioner-managed.
+    const model = new PractitionerRelationshipModel();
+    expect(model.verify('attacker', 'some-other-user')).toBe(false);
+
+    const decision = decideBodyScanEntitlement({
+      membership: null,
+      practitionerManaged: model.verify('attacker', 'some-other-user'),
+    });
+    // Falls through to the consumer teaser path; it does NOT bypass the gate.
+    expect(decision.statusForScan).toBeNull();
+  });
+
+  it('returns true only when an active relationship joins the caller to the patient', () => {
+    const model = new PractitionerRelationshipModel();
+    model.addPractitioner({ id: 'prac-1', user_id: 'dr-smith' });
+    model.addRelationship({
+      patient_user_id: 'patient-1',
+      practitioner_id: 'prac-1',
+      status: 'active',
+    });
+
+    expect(model.verify('dr-smith', 'patient-1')).toBe(true);
+
+    // The verified-true value drives the practitioner_managed stamp.
+    const decision = decideBodyScanEntitlement({
+      membership: null,
+      practitionerManaged: model.verify('dr-smith', 'patient-1'),
+    });
+    expect(decision.statusForScan).toBe('practitioner_managed');
+    expect(decision.practitionerManaged).toBe(true);
+  });
+
+  it('returns false when the relationship exists but is not active', () => {
+    const model = new PractitionerRelationshipModel();
+    model.addPractitioner({ id: 'prac-1', user_id: 'dr-smith' });
+    for (const status of ['pending', 'ended', 'declined']) {
+      model.addRelationship({
+        patient_user_id: `patient-${status}`,
+        practitioner_id: 'prac-1',
+        status,
+      });
+      expect(model.verify('dr-smith', `patient-${status}`)).toBe(false);
+    }
+  });
+
+  it('returns false when an active relationship belongs to a different practitioner', () => {
+    const model = new PractitionerRelationshipModel();
+    model.addPractitioner({ id: 'prac-1', user_id: 'dr-smith' });
+    model.addPractitioner({ id: 'prac-2', user_id: 'dr-jones' });
+    // Active relationship is between dr-jones and the patient, not dr-smith.
+    model.addRelationship({
+      patient_user_id: 'patient-1',
+      practitioner_id: 'prac-2',
+      status: 'active',
+    });
+    expect(model.verify('dr-smith', 'patient-1')).toBe(false);
+    expect(model.verify('dr-jones', 'patient-1')).toBe(true);
+  });
+
+  it('returns false for a self-scan even if the caller is themselves a practitioner', () => {
+    // A practitioner scanning their own body is a consumer scan, not a
+    // managed-patient scan; the bypass must not apply (caller === patient).
+    const model = new PractitionerRelationshipModel();
+    model.addPractitioner({ id: 'prac-1', user_id: 'dr-smith' });
+    model.addRelationship({
+      patient_user_id: 'dr-smith',
+      practitioner_id: 'prac-1',
+      status: 'active',
+    });
+    expect(model.verify('dr-smith', 'dr-smith')).toBe(false);
   });
 });
 
