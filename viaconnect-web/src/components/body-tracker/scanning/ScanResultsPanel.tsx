@@ -2,9 +2,12 @@
 
 import { useEffect, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
-import { Loader2, Box } from 'lucide-react';
+import { Loader2, Box, Lock } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useCurrentUser } from '@/components/body-tracker/manual-input/useCurrentUser';
+import { usePremiumEntitlement } from '@/hooks/body-tracker/usePremiumEntitlement';
+import { selectScanResultsGate } from '@/lib/body-tracker/scan-gate';
+import { BodyScanPremiumPaywall } from './BodyScanPremiumPaywall';
 import { AvatarViewer } from './AvatarViewer';
 import { CompositionBreakdownCard } from './CompositionBreakdownCard';
 import { AsymmetryReportCard } from './AsymmetryReportCard';
@@ -32,6 +35,11 @@ const TABS: Array<{ id: TabId; label: string }> = [
   { id: 'insights',     label: 'Insights' },
   { id: 'share',        label: 'Share' },
 ];
+
+// Premium-only result tabs (Prompt #169a, spec section 3.1.c). For a non-premium
+// consumer these render visibly locked and route to the paywall; premium
+// consumers see them unlocked.
+const PREMIUM_TAB_IDS: ReadonlySet<TabId> = new Set<TabId>(['compare', 'insights']);
 
 interface ScanResultsPanelProps {
   sessionId: string;
@@ -71,6 +79,17 @@ interface LoadedScan {
 
 export function ScanResultsPanel({ sessionId, refreshKey, portalType = 'consumer' }: ScanResultsPanelProps) {
   const { unitSystem } = useCurrentUser();
+  // Results upgrade guard point (Prompt #169a, spec section 3.1.c). Practitioner
+  // and naturopath portals view managed-patient scans (a practitioner-managed
+  // context) and are never gated here; only the consumer self-view is gated by
+  // the consumer's own premium entitlement.
+  const { premium, freeTeaserUsed } = usePremiumEntitlement();
+  const resultsGate = selectScanResultsGate({
+    premium: premium || portalType !== 'consumer',
+    freeTeaserUsed,
+  });
+  const premiumTabsUnlocked = resultsGate.premiumTabsUnlocked;
+  const isTabLocked = (id: TabId): boolean => PREMIUM_TAB_IDS.has(id) && !premiumTabsUnlocked;
   const [loaded, setLoaded]       = useState<LoadedScan | null>(null);
   const [compRow, setCompRow]     = useState<ScanCompositionRow | null>(null);
   const [loading, setLoading]     = useState(true);
@@ -78,13 +97,23 @@ export function ScanResultsPanel({ sessionId, refreshKey, portalType = 'consumer
   const [activeTab, setActiveTab] = useState<TabId>('measurements');
   const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
+  // Keyboard nav skips locked premium tabs so a non-premium consumer cannot
+  // arrow into the gated Compare / Insights panels.
   const handleTabKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
     const currentIdx = TABS.findIndex((t) => t.id === activeTab);
+    const step = (start: number, dir: 1 | -1): number => {
+      let idx = start;
+      for (let i = 0; i < TABS.length; i += 1) {
+        idx = (idx + dir + TABS.length) % TABS.length;
+        if (!isTabLocked(TABS[idx].id)) return idx;
+      }
+      return start;
+    };
     let nextIdx = currentIdx;
-    if (e.key === 'ArrowRight')      nextIdx = (currentIdx + 1) % TABS.length;
-    else if (e.key === 'ArrowLeft')  nextIdx = (currentIdx - 1 + TABS.length) % TABS.length;
-    else if (e.key === 'Home')       nextIdx = 0;
-    else if (e.key === 'End')        nextIdx = TABS.length - 1;
+    if (e.key === 'ArrowRight')      nextIdx = step(currentIdx, 1);
+    else if (e.key === 'ArrowLeft')  nextIdx = step(currentIdx, -1);
+    else if (e.key === 'Home')       nextIdx = isTabLocked(TABS[0].id) ? step(0, 1) : 0;
+    else if (e.key === 'End')        nextIdx = isTabLocked(TABS[TABS.length - 1].id) ? step(TABS.length - 1, -1) : TABS.length - 1;
     else return;
     e.preventDefault();
     setActiveTab(TABS[nextIdx].id);
@@ -201,6 +230,7 @@ export function ScanResultsPanel({ sessionId, refreshKey, portalType = 'consumer
       >
         {TABS.map((tab, i) => {
           const isActive = activeTab === tab.id;
+          const locked = isTabLocked(tab.id);
           return (
             <button
               key={tab.id}
@@ -210,19 +240,31 @@ export function ScanResultsPanel({ sessionId, refreshKey, portalType = 'consumer
               id={`tab-${tab.id}`}
               aria-selected={isActive}
               aria-controls={`tabpanel-${tab.id}`}
+              aria-disabled={locked || undefined}
+              data-locked={locked || undefined}
               tabIndex={isActive ? 0 : -1}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex-none rounded-full px-3.5 py-1.5 text-xs font-semibold whitespace-nowrap transition-colors min-h-[36px] ${
-                isActive
-                  ? 'bg-[#2DA5A0]/20 text-[#2DA5A0] border border-[#2DA5A0]/35'
-                  : 'bg-white/[0.04] text-white/55 border border-white/[0.07] hover:bg-white/[0.07] hover:text-white/75'
+              // Locked premium tabs are inert: a non-premium consumer cannot open
+              // Compare / Insights; the paywall below the tabs is the upgrade path.
+              onClick={() => { if (!locked) setActiveTab(tab.id); }}
+              className={`flex-none inline-flex items-center gap-1 rounded-full px-3.5 py-1.5 text-xs font-semibold whitespace-nowrap transition-colors min-h-[36px] ${
+                locked
+                  ? 'bg-white/[0.02] text-white/35 border border-white/[0.05] cursor-not-allowed'
+                  : isActive
+                    ? 'bg-[#2DA5A0]/20 text-[#2DA5A0] border border-[#2DA5A0]/35'
+                    : 'bg-white/[0.04] text-white/55 border border-white/[0.07] hover:bg-white/[0.07] hover:text-white/75'
               }`}
             >
               {tab.label}
+              {locked && <Lock className="h-3 w-3" strokeWidth={1.5} />}
             </button>
           );
         })}
       </div>
+
+      {/* Results upgrade card (Prompt #169a, spec section 3.1.c). After a
+          free-teaser scan the non-premium consumer sees the paywall with the
+          Compare + Insights tabs locked above as the evidence. */}
+      {resultsGate.showPaywall && <BodyScanPremiumPaywall showLockedEvidence />}
 
       {/* PDF export: always visible across all tabs */}
       <div className="flex justify-end">
@@ -274,15 +316,17 @@ export function ScanResultsPanel({ sessionId, refreshKey, portalType = 'consumer
           </div>
         )}
 
-        {/* Tab 3: Compare */}
-        {activeTab === 'compare' && (
+        {/* Tab 3: Compare (premium-gated). The locked tab is inert, so this only
+            renders for premium / practitioner-managed views; the guard is kept
+            as defense in depth. */}
+        {activeTab === 'compare' && premiumTabsUnlocked && (
           <div role="tabpanel" id="tabpanel-compare" aria-labelledby="tab-compare">
             <ComparisonPanel defaultAfterSessionId={sessionId} />
           </div>
         )}
 
-        {/* Tab 4: Insights */}
-        {activeTab === 'insights' && (
+        {/* Tab 4: Insights (premium-gated, defense in depth as above). */}
+        {activeTab === 'insights' && premiumTabsUnlocked && (
           <div role="tabpanel" id="tabpanel-insights" aria-labelledby="tab-insights">
             <ScanInsightsTab
               sessionId={sessionId}

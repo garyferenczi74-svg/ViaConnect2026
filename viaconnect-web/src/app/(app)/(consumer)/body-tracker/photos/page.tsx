@@ -11,6 +11,7 @@ import { ComparisonPanel } from '@/components/body-tracker/photos/ComparisonPane
 import { RunScanButton } from '@/components/body-tracker/scanning/RunScanButton';
 import { ScanResultsPanel } from '@/components/body-tracker/scanning/ScanResultsPanel';
 import { ScanOnboardingWalkthrough } from '@/components/body-tracker/scanning/ScanOnboardingWalkthrough';
+import { BodyScanTier3ComingSoon } from '@/components/body-tracker/scanning/BodyScanTier3ComingSoon';
 import { TierBadge } from '@/components/body-tracker/scanning/TierBadge';
 import { ScanPdfExportButton } from '@/components/body-tracker/scanning/ScanPdfExportButton';
 
@@ -115,6 +116,10 @@ export default function PhotosPage() {
           </section>
 
           <ScanResultsPanel sessionId={latestId} refreshKey={refreshKey} portalType="consumer" />
+
+          {/* Honest Tier 3 roadmap surface (Prompt #169a, spec section 3.2):
+              present but explicit about its GENEX360 + Bayesian-engine dependencies. */}
+          <BodyScanTier3ComingSoon />
 
           <section className="space-y-3">
             <h3 className="text-xs font-semibold uppercase tracking-wider text-white/50">Previous sessions</h3>
