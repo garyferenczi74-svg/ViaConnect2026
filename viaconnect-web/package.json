@@ -14,13 +14,16 @@
     "cap:sync": "npx cap sync",
     "cap:open:ios": "npx cap open ios",
     "cap:open:android": "npx cap open android",
-    "cap:assets": "npx @capacitor/assets generate --iconBackgroundColor '#0B1120' --splashBackgroundColor '#0B1120' --ios --android"
+    "cap:assets": "npx @capacitor/assets generate --iconBackgroundColor '#0B1120' --splashBackgroundColor '#0B1120' --ios --android",
+    "smoke:nutrivision": "npx tsx scripts/smoke/nutrivision/run.ts",
+    "audit:nutrivision": "npx tsx scripts/audit/nutrivision-grep-gates.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.30.1",
     "@capacitor/android": "^6.2.0",
     "@google-cloud/vision": "^4.3.2",
     "@capacitor/app": "^6.0.2",
+    "@capacitor/camera": "^6.1.2",
     "@capacitor/core": "^6.2.0",
     "@capacitor/ios": "^6.2.0",
     "@capacitor/splash-screen": "^6.0.3",

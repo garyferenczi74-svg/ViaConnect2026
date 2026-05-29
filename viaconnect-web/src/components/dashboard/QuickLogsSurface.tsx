@@ -55,6 +55,19 @@ export function QuickLogsSurface(props: QuickLogsSurfaceProps) {
     [todaysMeals],
   );
 
+  // #170 Phase 1q hotfix 8: cross-reference today's meals by type so the
+  // entry panel can show a read-only summary instead of zeroed sliders.
+  // Snacks are handled by SnackStackContainer's existing saved-meal rows;
+  // per-snack-index existingMeal plumbing deferred (see TODO below).
+  const existingByType = useMemo(() => {
+    const map = new Map<Exclude<MealType, 'snack'>, Meal | null>();
+    const types: ReadonlyArray<Exclude<MealType, 'snack'>> = ['breakfast', 'lunch', 'dinner'];
+    for (const t of types) {
+      map.set(t, todaysMeals.find((m) => m.mealType === t) ?? null);
+    }
+    return map;
+  }, [todaysMeals]);
+
   const handleToggle = useCallback((mealType: MealType) => {
     setOpenMeal((prev) => (prev === mealType ? null : mealType));
   }, []);
@@ -146,6 +159,7 @@ export function QuickLogsSurface(props: QuickLogsSurfaceProps) {
                   targets={targets}
                   mealDistribution={mealDistribution}
                   snacksLoggedToday={todaysSnacks.length}
+                  existingMeal={existingByType.get(openMeal) ?? null}
                   onSave={async (draft) => {
                     // eslint-disable-next-line no-console
                     console.log('[QuickLogsSurface] save bubbling up for', draft.mealType);

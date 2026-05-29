@@ -9,10 +9,12 @@
 // (poor, fair, good, excellent, perfection) per the migration. Conversion is
 // done in the row-to-app mapper, not at the type level.
 
+// Updated 2026-05-28 for Prompt 170 NutriVision pill rebuild.
 export type MealSource =
   | 'quick_log'
   | 'full_manual'
   | 'photo_ai'
+  | 'nutrivision'
   | 'tracker_api'
   | 'wearable_cgm';
 

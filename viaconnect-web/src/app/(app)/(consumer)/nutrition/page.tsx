@@ -80,7 +80,7 @@ function NutritionPageInner() {
     hoverRgb: string;
   }> = [
     { id: 'manual',  label: 'Log Full Meal',    icon: PenLine,    href: '/nutrition/log-meal', accent: '#2DA5A0', hoverRgb: '45,165,160' },
-    { id: 'photo',   label: 'Photo AI',         icon: Camera,     href: '/nutrition/photo-ai', accent: '#B75E18', hoverRgb: '183,94,24' },
+    { id: 'photo',   label: 'NutriVision',      icon: Camera,     href: '/nutrition/photo-ai', accent: '#2DA5A0', hoverRgb: '45,165,160' },
     { id: 'connect', label: 'Connect Your App', icon: Smartphone, href: '/plugins/apps',       accent: '#27AE60', hoverRgb: '39,174,96' },
   ];
 

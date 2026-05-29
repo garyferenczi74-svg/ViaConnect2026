@@ -1,0 +1,68 @@
+'use client';
+
+// Prompt #170 Phase 1l: capture intent UI.
+//
+// Two stacked buttons: Take photo (camera source) and Upload photo (gallery
+// source). Both delegate to the parent's onCapture handler with a source. A
+// framing-guide overlay is shown when the capture is in flight; this is a
+// pure CSS rectangle to suggest the food fill the frame. The actual native
+// camera shows its own preview, so this overlay is only useful on web while
+// getUserMedia is being negotiated.
+//
+// Hard rules honored: no em or en dashes, no emojis, no any.
+
+import { Camera, Image as ImageIcon, Loader2 } from 'lucide-react';
+import type { CaptureSource } from '@/lib/capacitor/camera-capture';
+import { ReferenceObjectOverlay } from './ReferenceObjectOverlay';
+
+interface CameraCaptureProps {
+  onCapture: (source: CaptureSource) => void;
+  isCapturing: boolean;
+  error: string | null;
+}
+
+export function CameraCapture({ onCapture, isCapturing, error }: CameraCaptureProps) {
+  return (
+    <div className="relative overflow-hidden rounded-2xl border border-white/[0.08] bg-[#1E3054]/45 p-5 backdrop-blur-md">
+      <ReferenceObjectOverlay />
+      <div className="flex flex-col items-center gap-3">
+        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#2DA5A0]/15 text-[#2DA5A0]">
+          {isCapturing
+            ? <Loader2 className="h-6 w-6 animate-spin" strokeWidth={1.5} />
+            : <Camera className="h-6 w-6" strokeWidth={1.5} />}
+        </div>
+        <div className="text-center">
+          <p className="text-sm font-semibold text-white">
+            {isCapturing ? 'Opening camera...' : 'Capture your meal'}
+          </p>
+          <p className="mt-1 text-[11px] text-white/55">
+            Fill the frame with the plate. Keep medications, ID, and personal documents out of view.
+          </p>
+        </div>
+        <div className="flex w-full flex-col gap-2 sm:flex-row">
+          <button
+            type="button"
+            onClick={() => onCapture('camera')}
+            disabled={isCapturing}
+            className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#2DA5A0] px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#2DA5A0]/90 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <Camera className="h-4 w-4" strokeWidth={1.5} />
+            Take photo
+          </button>
+          <button
+            type="button"
+            onClick={() => onCapture('gallery')}
+            disabled={isCapturing}
+            className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-white/[0.08] bg-white/5 px-4 py-3 text-sm font-medium text-white/80 transition-colors hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <ImageIcon className="h-4 w-4" strokeWidth={1.5} />
+            Upload photo
+          </button>
+        </div>
+        {error && (
+          <p className="text-[11px] text-[#FCA5A5]" role="alert">{error}</p>
+        )}
+      </div>
+    </div>
+  );
+}

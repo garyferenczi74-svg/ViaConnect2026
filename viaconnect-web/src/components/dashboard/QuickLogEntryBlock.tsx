@@ -12,6 +12,7 @@ import {
   useRef,
   useState,
 } from 'react';
+import { Sparkles } from 'lucide-react';
 import {
   ATWATER_FACTORS,
   DEFAULT_MEAL_DISTRIBUTION,
@@ -49,6 +50,11 @@ export interface QuickLogEntryBlockProps {
   readonly onSave: (draft: QuickLogDraft) => void | Promise<void>;
   readonly onCancel?: () => void;
   readonly hideCancelButton?: boolean;
+  // #170 Phase 1q hotfix 9: when a meal of this type already exists for today,
+  // the sliders pre-fill from its macros so the user adjusts the existing
+  // values instead of starting from zero. Re-save still hits the parent's
+  // replace-on-save semantics, keeping cross-channel state consistent.
+  readonly existingMeal?: Meal | null;
 }
 
 interface SliderState {
@@ -59,20 +65,6 @@ interface SliderState {
   sugar: number;
   sodium: number;
   calories: number;
-}
-
-// Healthy Fat slider removed per Gary 2026-05-15. Fat Total is the single
-// fat input; fat_healthy_g column persists at 0 in the meals row.
-function defaultSliders(): SliderState {
-  return {
-    protein: SLIDER_RANGES.protein.default === 'auto' ? 0 : SLIDER_RANGES.protein.default,
-    carbs: SLIDER_RANGES.carbs.default === 'auto' ? 0 : SLIDER_RANGES.carbs.default,
-    fatTotal: SLIDER_RANGES.fatTotal.default === 'auto' ? 0 : SLIDER_RANGES.fatTotal.default,
-    fiber: SLIDER_RANGES.fiber.default === 'auto' ? 0 : SLIDER_RANGES.fiber.default,
-    sugar: SLIDER_RANGES.sugar.default === 'auto' ? 0 : SLIDER_RANGES.sugar.default,
-    sodium: SLIDER_RANGES.sodium.default === 'auto' ? 0 : SLIDER_RANGES.sodium.default,
-    calories: 0,
-  };
 }
 
 function nowLocalDateTimeInput(): string {
@@ -110,18 +102,53 @@ export function QuickLogEntryBlock(props: QuickLogEntryBlockProps) {
     onSave,
     onCancel,
     hideCancelButton = false,
+    existingMeal = null,
   } = props;
 
   const distribution = mealDistribution ?? DEFAULT_MEAL_DISTRIBUTION;
   const snacksToday = snacksLoggedToday ?? 0;
+  const headerLabel = labelOverride ?? MEAL_TYPE_LABELS[mealType];
+
+  // #170 Phase 1q hotfix 9: pre-fill sliders from the existing meal's macros
+  // when provided so the form opens with the saved values rather than zeros.
+  // Healthy Fat slider removed per Gary 2026-05-15. Fat Total is the single
+  // fat input; fat_healthy_g column persists at 0 in the meals row.
+  const initialSliders = useMemo<SliderState>(() => {
+    if (existingMeal) {
+      return {
+        protein: existingMeal.proteinG ?? 0,
+        carbs: existingMeal.carbsG ?? 0,
+        fatTotal: existingMeal.fatTotalG ?? 0,
+        fiber: existingMeal.fiberG ?? 0,
+        sugar: existingMeal.sugarG ?? 0,
+        sodium: existingMeal.sodiumMg ?? 0,
+        calories: existingMeal.caloriesKcal ?? 0,
+      };
+    }
+    return {
+      protein: SLIDER_RANGES.protein.default === 'auto' ? 0 : SLIDER_RANGES.protein.default,
+      carbs: SLIDER_RANGES.carbs.default === 'auto' ? 0 : SLIDER_RANGES.carbs.default,
+      fatTotal: SLIDER_RANGES.fatTotal.default === 'auto' ? 0 : SLIDER_RANGES.fatTotal.default,
+      fiber: SLIDER_RANGES.fiber.default === 'auto' ? 0 : SLIDER_RANGES.fiber.default,
+      sugar: SLIDER_RANGES.sugar.default === 'auto' ? 0 : SLIDER_RANGES.sugar.default,
+      sodium: SLIDER_RANGES.sodium.default === 'auto' ? 0 : SLIDER_RANGES.sodium.default,
+      calories: 0,
+    };
+  }, [existingMeal]);
 
   const [loggedAt, setLoggedAt] = useState<string>(
     defaultDateTimeLocal ?? nowLocalDateTimeInput(),
   );
-  const [sliders, setSliders] = useState<SliderState>(defaultSliders);
-  const [caloriesAutoCalc, setCaloriesAutoCalc] = useState<boolean>(true);
-  const [wholeFoodFlag, setWholeFoodFlag] = useState<boolean>(false);
-  const [mealName, setMealName] = useState<string>('');
+  const [sliders, setSliders] = useState<SliderState>(initialSliders);
+  // When pre-filled from an existing meal, honor the saved calories value
+  // verbatim rather than recomputing it from Atwater.
+  const [caloriesAutoCalc, setCaloriesAutoCalc] = useState<boolean>(!existingMeal);
+  const [wholeFoodFlag, setWholeFoodFlag] = useState<boolean>(
+    existingMeal?.wholeFoodFlag ?? false,
+  );
+  const [mealName, setMealName] = useState<string>(
+    existingMeal?.mealName ?? existingMeal?.notes ?? '',
+  );
   const [breakdown, setBreakdown] = useState<ScoreBreakdown | null>(null);
 
   const autoCalories = useMemo(() => {
@@ -287,13 +314,30 @@ export function QuickLogEntryBlock(props: QuickLogEntryBlockProps) {
 
   const tier = breakdown ? breakdown.tier : assignTier(50);
   const score = breakdown ? breakdown.final_score : 50;
-  const headerLabel = labelOverride ?? MEAL_TYPE_LABELS[mealType];
+
+  // #170 Phase 1q hotfix 9: prefill banner. "nutrivision" gets the branded
+  // label; all other sources fall back to "recent" so the copy stays accurate
+  // without leaking internal source slugs.
+  const sourceLabel =
+    existingMeal && existingMeal.source === 'nutrivision' ? 'NutriVision' : 'recent';
+  const mealTypeLabelLower = existingMeal
+    ? MEAL_TYPE_LABELS[existingMeal.mealType].toLowerCase()
+    : '';
 
   return (
     <div className="font-[Instrument_Sans] flex flex-col gap-4 rounded-xl border border-white/10 bg-gradient-to-br from-[#1E3054]/55 via-[#1A2744]/40 to-[#0D1520]/55 p-4 backdrop-blur-md md:p-5">
       <span className="text-[14px] font-semibold uppercase tracking-[0.10em] text-white/80">
         {headerLabel}
       </span>
+
+      {existingMeal ? (
+        <div className="flex items-start gap-2 rounded-lg border border-[#2DA5A0]/30 bg-[#2DA5A0]/10 px-3 py-2 text-[12px] text-white/85">
+          <Sparkles className="h-4 w-4 flex-shrink-0 text-[#2DA5A0]" strokeWidth={1.5} />
+          <span>
+            Loaded from your {sourceLabel} {mealTypeLabelLower} log. Adjust the sliders to refine, then save to update.
+          </span>
+        </div>
+      ) : null}
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-[260px_1fr] md:gap-5">
         <aside className="flex flex-col items-center gap-3 md:items-stretch">

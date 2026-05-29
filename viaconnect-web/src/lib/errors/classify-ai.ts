@@ -11,6 +11,9 @@ export type AIErrorCode =
   | 'INVALID_INPUT'
   | 'MALFORMED_RESPONSE'
   | 'UNAUTHENTICATED'
+  | 'CONFIG_MISSING'
+  | 'BUDGET_HIT'
+  | 'NO_RECOGNITION'
   | 'UNKNOWN';
 
 export class AIRouteError extends Error {
