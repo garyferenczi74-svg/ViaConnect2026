@@ -19,10 +19,13 @@ import { createClient } from '@/lib/supabase/client';
 import {
   User as UserIcon,
   Wind, Leaf, Pill, Heart, Activity, ClipboardList, FileText,
-  Loader2, ArrowRight,
+  Loader2, ArrowRight, Boxes,
 } from 'lucide-react';
+import { PractitionerBodyScanTab } from './PractitionerBodyScanTab';
 
 const supabase = createClient();
+
+type NaturopathicTab = 'overview' | 'body_scan';
 
 interface Relationship {
   id: string;
@@ -77,6 +80,7 @@ export function NaturopathicPatientView({ patientId, relationship }: Props) {
   const [constitutional, setConstitutional] = useState<ConstitutionalRow | null>(null);
   const [supplements, setSupplements] = useState<SupplementRow[]>([]);
   const [naturalProtocol, setNaturalProtocol] = useState<ProtocolRow | null>(null);
+  const [tab, setTab] = useState<NaturopathicTab>('overview');
 
   useEffect(() => {
     let cancelled = false;
@@ -139,6 +143,20 @@ export function NaturopathicPatientView({ patientId, relationship }: Props) {
     <div className="space-y-6">
       <PatientHeader profile={profile} constitutional={constitutional} />
 
+      <nav role="tablist" aria-label="Patient sections" className="flex flex-wrap gap-2">
+        <NaturoTabButton active={tab === 'overview'} onClick={() => setTab('overview')} icon={UserIcon} label="Overview" />
+        <NaturoTabButton active={tab === 'body_scan'} onClick={() => setTab('body_scan')} icon={Boxes} label="Body Scan" />
+      </nav>
+
+      {tab === 'body_scan' ? (
+        <PractitionerBodyScanTab
+          patientId={patientId}
+          patientName={profile?.full_name ?? 'Patient'}
+          engagementConsented={relationship.consent_share_engagement_score}
+          accent="emerald"
+        />
+      ) : (
+      <>
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Column 1: constitutional + vitality */}
         <div className="space-y-6">
@@ -291,7 +309,30 @@ export function NaturopathicPatientView({ patientId, relationship }: Props) {
           Send Message
         </ActionLink>
       </div>
+      </>
+      )}
     </div>
+  );
+}
+
+function NaturoTabButton({
+  active, onClick, icon: Icon, label,
+}: { active: boolean; onClick: () => void; icon: typeof UserIcon; label: string }) {
+  return (
+    <button
+      type="button"
+      role="tab"
+      aria-selected={active}
+      onClick={onClick}
+      className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold transition-colors min-h-[40px] ${
+        active
+          ? 'border border-emerald-500/40 bg-emerald-500/15 text-emerald-300'
+          : 'border border-white/10 bg-white/[0.03] text-white/60 hover:text-white/85'
+      }`}
+    >
+      <Icon className="h-4 w-4" strokeWidth={1.5} />
+      {label}
+    </button>
   );
 }
 

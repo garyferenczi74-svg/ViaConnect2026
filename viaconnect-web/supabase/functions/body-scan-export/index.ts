@@ -61,6 +61,12 @@ function userClient(jwt: string): SupabaseClient {
 interface ExportRequest {
   session_id: string;
   avatar_png_base64?: string;
+  /**
+   * When true, the requester is a practitioner exporting a managed patient's
+   * scan. The handler verifies an active practitioner_patients relationship
+   * before allowing the export and stamps practitioner branding on the PDF.
+   */
+  as_practitioner?: boolean;
 }
 
 // Compute the Bio Optimization Score delta for a given user by comparing the
@@ -137,19 +143,25 @@ async function handle(req: Request): Promise<Response> {
     return json({ error: 'invalid JSON body' }, 400);
   }
 
-  const { session_id, avatar_png_base64 } = body;
+  const { session_id, avatar_png_base64, as_practitioner } = body;
   if (!session_id || typeof session_id !== 'string') {
     return json({ error: 'session_id is required' }, 400);
   }
 
   const sa = admin();
 
-  safeLog.info('body-scan-export', 'start', { session_id, user_id: user.id, stage: 'auth_ok' });
+  safeLog.info('body-scan-export', 'start', { session_id, user_id: user.id, as_practitioner: !!as_practitioner, stage: 'auth_ok' });
 
-  // --- Ownership check (RLS-equivalent in code) ---
-  // Use service-role client but gate on user_id match, preventing data leakage
-  // to any authenticated user who guesses a session UUID.
+  // --- Authorization check (RLS-equivalent in code) ---
+  // Two allowed callers:
+  //   1. The session OWNER exports their own scan.
+  //   2. A PRACTITIONER with an active practitioner_patients relationship to the
+  //      session owner exports the patient's scan (branded report).
+  // The service-role client is used only AFTER one of these is confirmed,
+  // preventing data leakage to any authenticated user who guesses a session UUID.
   let sessionDate: string | null = null;
+  let ownerUserId: string | null = null;
+  let branding: { preparedBy: string | null; patientName: string | null } | null = null;
   try {
     const { data: sessionRow, error: sessionErr } = await sa
       .from('body_photo_sessions')
@@ -160,16 +172,54 @@ async function handle(req: Request): Promise<Response> {
     if (sessionErr || !sessionRow) {
       return json({ error: 'session not found' }, 404);
     }
-    if (sessionRow.user_id !== user.id) {
-      safeLog.warn('body-scan-export', 'ownership mismatch', {
-        session_id,
-        requesting_user: user.id,
-        owner_user: sessionRow.user_id,
-        stage: 'ownership_check',
-      });
-      return json({ error: 'forbidden' }, 403);
-    }
+    ownerUserId = sessionRow.user_id as string;
     sessionDate = sessionRow.session_date ?? null;
+
+    const isOwner = ownerUserId === user.id;
+
+    if (!isOwner) {
+      // Practitioner export path: require an explicit flag AND an active
+      // relationship. practitioner_patients references auth.users for both
+      // sides, so we match practitioner_id = caller, patient_id = owner.
+      if (!as_practitioner) {
+        safeLog.warn('body-scan-export', 'ownership mismatch', {
+          session_id, requesting_user: user.id, owner_user: ownerUserId, stage: 'ownership_check',
+        });
+        return json({ error: 'forbidden' }, 403);
+      }
+      const { data: relRow } = await sa
+        .from('practitioner_patients')
+        .select('status')
+        .eq('practitioner_id', user.id)
+        .eq('patient_id', ownerUserId)
+        .eq('status', 'active')
+        .maybeSingle();
+      if (!relRow) {
+        safeLog.warn('body-scan-export', 'no active practitioner relationship', {
+          session_id, requesting_user: user.id, owner_user: ownerUserId, stage: 'relationship_check',
+        });
+        return json({ error: 'forbidden' }, 403);
+      }
+
+      // Resolve branding names. Footer entity stays Farmceutica Wellness Ltd.
+      const { data: pracProfile } = await sa
+        .from('practitioners')
+        .select('patient_facing_display_name, practice_name')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      const { data: patientProfile } = await sa
+        .from('profiles')
+        .select('full_name')
+        .eq('id', ownerUserId)
+        .maybeSingle();
+      branding = {
+        preparedBy:
+          (pracProfile?.patient_facing_display_name as string | null) ??
+          (pracProfile?.practice_name as string | null) ??
+          null,
+        patientName: (patientProfile?.full_name as string | null) ?? null,
+      };
+    }
   } catch (e) {
     safeLog.error('body-scan-export', 'session fetch failed', { session_id, user_id: user.id, error: String(e), stage: 'session_fetch' });
     return json({ error: 'failed to load session' }, 500);
@@ -234,9 +284,11 @@ async function handle(req: Request): Promise<Response> {
   }
 
   // --- Fetch BOS delta ---
+  // BOS history belongs to the scan OWNER, not the requesting practitioner.
+  const bosUserId = ownerUserId ?? user.id;
   let bos: { score: number | null; delta: number | null; driver: string | null } = { score: null, delta: null, driver: null };
   try {
-    bos = await computeBosDelta(sa, user.id);
+    bos = await computeBosDelta(sa, bosUserId);
   } catch (e) {
     safeLog.warn('body-scan-export', 'bos fetch failed', { session_id, user_id: user.id, error: String(e), stage: 'bos_fetch' });
   }
@@ -258,6 +310,7 @@ async function handle(req: Request): Promise<Response> {
     composition,
     bos,
     avatarPngBase64: avatar_png_base64 ?? null,
+    branding,
   };
 
   let pdfBytes: Uint8Array;
@@ -270,8 +323,11 @@ async function handle(req: Request): Promise<Response> {
   }
 
   // --- Upload to storage ---
+  // Store under the scan OWNER's prefix so the existing owner-prefix storage RLS
+  // holds and the patient retains access to the generated artifact. The signed
+  // URL is returned directly to the caller (practitioner or owner) regardless.
   const timestamp  = Date.now();
-  const storagePath = `${user.id}/${session_id}/${timestamp}.pdf`;
+  const storagePath = `${ownerUserId ?? user.id}/${session_id}/${timestamp}.pdf`;
 
   try {
     const { error: uploadErr } = await sa.storage

@@ -173,6 +173,16 @@ export interface ScanData {
     driver: string | null;
   };
   avatarPngBase64: string | null;
+  /**
+   * Optional practitioner branding. When present (a practitioner exporting a
+   * managed patient's scan) the report adds a "Prepared by" line and a patient
+   * identifier line under the subtitle. The footer entity name stays
+   * "Farmceutica Wellness Ltd" (COMPANY_NAME) regardless.
+   */
+  branding?: {
+    preparedBy: string | null;
+    patientName: string | null;
+  } | null;
 }
 
 /**
@@ -206,6 +216,23 @@ export async function buildScanPdf(data: ScanData): Promise<Uint8Array> {
     drawTextRight(page, dateStr, PAGE_W - MARGIN, y, { font: regular, size: 10, color: DARK_GREY });
   }
   y -= 6;
+
+  // Practitioner branding lines (only when a practitioner exports a patient
+  // scan). "Prepared by" on the left, patient identifier on the right.
+  if (data.branding && (data.branding.preparedBy || data.branding.patientName)) {
+    y -= 12;
+    if (data.branding.preparedBy) {
+      page.drawText(`Prepared by: ${data.branding.preparedBy}`, {
+        x: MARGIN, y, size: 9, font: regular, color: DARK_GREY,
+      });
+    }
+    if (data.branding.patientName) {
+      drawTextRight(page, `Patient: ${data.branding.patientName}`, PAGE_W - MARGIN, y, {
+        font: regular, size: 9, color: DARK_GREY,
+      });
+    }
+    y -= 4;
+  }
 
   // Thin horizontal rule under header.
   page.drawLine({

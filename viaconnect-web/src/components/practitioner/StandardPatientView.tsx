@@ -16,9 +16,13 @@ import {
   HeartPulse,
   FileText,
   Loader2,
+  Boxes,
 } from 'lucide-react';
+import { PractitionerBodyScanTab } from './PractitionerBodyScanTab';
 
 const supabase = createClient();
+
+type PatientTab = 'overview' | 'body_scan';
 
 interface Relationship {
   id: string;
@@ -52,6 +56,7 @@ export function StandardPatientView({ patientId, relationship }: Props) {
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<PatientProfile | null>(null);
   const [supplements, setSupplements] = useState<SupplementRow[]>([]);
+  const [tab, setTab] = useState<PatientTab>('overview');
 
   useEffect(() => {
     let cancelled = false;
@@ -103,6 +108,19 @@ export function StandardPatientView({ patientId, relationship }: Props) {
         </div>
       </header>
 
+      <nav role="tablist" aria-label="Patient sections" className="flex flex-wrap gap-2">
+        <TabButton active={tab === 'overview'} onClick={() => setTab('overview')} icon={User} label="Overview" />
+        <TabButton active={tab === 'body_scan'} onClick={() => setTab('body_scan')} icon={Boxes} label="Body Scan" />
+      </nav>
+
+      {tab === 'body_scan' ? (
+        <PractitionerBodyScanTab
+          patientId={patientId}
+          patientName={profile?.full_name ?? 'Patient'}
+          engagementConsented={relationship.consent_share_engagement_score}
+          accent="teal"
+        />
+      ) : (
       <div className="grid gap-6 lg:grid-cols-2">
         <Section icon={ClipboardList} title="Current Protocol">
           {relationship.consent_share_protocols ? (
@@ -156,7 +174,29 @@ export function StandardPatientView({ patientId, relationship }: Props) {
           )}
         </Section>
       </div>
+      )}
     </div>
+  );
+}
+
+function TabButton({
+  active, onClick, icon: Icon, label,
+}: { active: boolean; onClick: () => void; icon: typeof User; label: string }) {
+  return (
+    <button
+      type="button"
+      role="tab"
+      aria-selected={active}
+      onClick={onClick}
+      className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold transition-colors min-h-[40px] ${
+        active
+          ? 'border border-portal-green/40 bg-portal-green/15 text-portal-green'
+          : 'border border-white/10 bg-white/[0.03] text-white/60 hover:text-white/85'
+      }`}
+    >
+      <Icon className="h-4 w-4" strokeWidth={1.5} />
+      {label}
+    </button>
   );
 }
 
