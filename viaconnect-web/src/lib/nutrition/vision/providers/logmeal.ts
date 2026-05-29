@@ -22,6 +22,7 @@
 import { AIRouteError } from '@/lib/errors/classify-ai';
 import { safeLog } from '@/lib/utils/safe-log';
 import { withTimeout, isTimeoutError } from '@/lib/nutrition/resilience/timeout';
+import { sanitizeVisionRequest, type DeviceClass } from '@/lib/nutrition/privacy/redact';
 import { computeMeanConfidence } from '../reconcile';
 import type {
   BoundingBox,
@@ -39,6 +40,8 @@ export interface LogMealOpts {
   apiKey: string;
   baseUrl?: string;
   requestId: string;
+  capturedAt: string;
+  deviceClass: DeviceClass;
   timeoutMs?: number;
   fetch?: typeof globalThis.fetch;
 }
@@ -85,6 +88,16 @@ function toBoundingBox(raw: unknown): BoundingBox | null {
     return null;
   }
   return { x, y, w, h };
+}
+
+// Phase 1q hotfix 10: extract the raw UUID from the requestId for the privacy
+// envelope gate. newRequestId() returns "req-<uuid>" for log correlation; the
+// envelope contract per Prompt 170 §2.5 requires an opaque v4 UUID, so we
+// strip the optional "req-" prefix before handing the value to sanitize.
+const UUID_V4_TAIL = /([0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/i;
+function envelopeRequestId(requestId: string): string {
+  const m = UUID_V4_TAIL.exec(requestId);
+  return m ? m[1] : requestId;
 }
 
 function clampConfidence(v: unknown): number {
@@ -186,6 +199,30 @@ export async function recognizeWithLogMeal(
       'logmeal: no api key',
       503,
       'Photo recognition unavailable. Try again later.',
+    );
+  }
+
+  // Phase 1q hotfix 10: enforce the explicit 4-key allowlist envelope before
+  // any outbound network call. Throwing here means no PHI-shaped key ever
+  // reaches LogMeal. Image bytes are base64-encoded purely for the gate check;
+  // the actual outbound POST stays multipart per the LogMeal endpoint contract.
+  try {
+    sanitizeVisionRequest({
+      imageBase64: imageBytes.toString('base64'),
+      requestId: envelopeRequestId(opts.requestId),
+      capturedAt: opts.capturedAt,
+      deviceClass: opts.deviceClass,
+    });
+  } catch (envelopeErr) {
+    safeLog.warn('nutrivision.logmeal.envelope_invalid', 'logmeal envelope rejected', {
+      request_id: opts.requestId,
+      error: envelopeErr instanceof Error ? envelopeErr.message : String(envelopeErr),
+    });
+    throw new AIRouteError(
+      'INVALID_INPUT',
+      `logmeal: envelope sanitization failed: ${envelopeErr instanceof Error ? envelopeErr.message : 'unknown'}`,
+      400,
+      'Internal error while preparing vision request.',
     );
   }
 

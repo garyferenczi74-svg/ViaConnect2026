@@ -108,10 +108,13 @@ function makeSupabaseStub(): SupabaseClient {
   return {} as unknown as SupabaseClient;
 }
 
+// Phase 1q hotfix 10: requestId must be a v4 UUID once the privacy envelope
+// gate is enforced inside runGeminiAsProvider. Use a fixed valid UUID for all
+// detect tests so the gate is satisfied while keeping assertions deterministic.
 const baseOpts = {
   imageBytes: Buffer.from('img'),
   mime: 'image/jpeg',
-  requestId: 'req-1',
+  requestId: 'a1b2c3d4-e5f6-4789-9abc-def012345678',
   deviceClass: 'web' as const,
   capturedAt: new Date().toISOString(),
   monthSpendUsdSoFar: 0,

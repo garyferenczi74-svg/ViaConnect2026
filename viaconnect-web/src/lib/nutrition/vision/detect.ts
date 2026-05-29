@@ -25,6 +25,7 @@ import {
   lookupCache,
   writeCache,
 } from '@/lib/nutrition/cache/recognition-cache';
+import { sanitizeVisionRequest, type DeviceClass } from '@/lib/nutrition/privacy/redact';
 import { parseImageWithGemini } from '@/lib/nutrition/gemini-client';
 
 import { recognizeWithLogMeal } from './providers/logmeal';
@@ -52,6 +53,16 @@ const VERIFICATION_CONFIDENCE_THRESHOLD = 0.70;
 const TERTIARY_CONFIDENCE_THRESHOLD = 0.55;
 const PHASH_LABEL_OVERLAP_THRESHOLD = 0.80;
 const DEFAULT_CLAUDE_MONTHLY_CAP_USD = 100;
+
+// Phase 1q hotfix 10: extract the raw UUID from the requestId for the privacy
+// envelope gate. newRequestId() returns "req-<uuid>" for log correlation; the
+// envelope contract per Prompt 170 §2.5 requires an opaque v4 UUID, so we
+// strip the optional "req-" prefix before handing the value to sanitize.
+const UUID_V4_TAIL = /([0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/i;
+function envelopeRequestId(requestId: string): string {
+  const m = UUID_V4_TAIL.exec(requestId);
+  return m ? m[1] : requestId;
+}
 
 // Mixed-dish heuristic substrings per spec §2.2 step 4.
 const MIXED_DISH_TOKENS: ReadonlyArray<string> = [
@@ -138,6 +149,8 @@ export async function detectMeal(opts: DetectOpts): Promise<DetectResult> {
             imageBytes: opts.imageBytes,
             mime: opts.mime,
             requestId: opts.requestId,
+            capturedAt: opts.capturedAt,
+            deviceClass: opts.deviceClass,
             timeoutMs: secondaryTimeoutMs,
           });
           providersCalled.push('gemini');
@@ -205,6 +218,8 @@ export async function detectMeal(opts: DetectOpts): Promise<DetectResult> {
       primary = await recognizeWithLogMeal(opts.imageBytes, opts.mime, {
         apiKey: logMealKey,
         requestId: opts.requestId,
+        capturedAt: opts.capturedAt,
+        deviceClass: opts.deviceClass,
         timeoutMs: primaryTimeoutMs,
         fetch: opts.fetch,
       });
@@ -253,6 +268,8 @@ export async function detectMeal(opts: DetectOpts): Promise<DetectResult> {
       imageBytes: opts.imageBytes,
       mime: opts.mime,
       requestId: opts.requestId,
+      capturedAt: opts.capturedAt,
+      deviceClass: opts.deviceClass,
       timeoutMs: primaryTimeoutMs,
     });
     providersCalled.push('gemini');
@@ -270,6 +287,8 @@ export async function detectMeal(opts: DetectOpts): Promise<DetectResult> {
         imageBytes: opts.imageBytes,
         mime: opts.mime,
         requestId: opts.requestId,
+        capturedAt: opts.capturedAt,
+        deviceClass: opts.deviceClass,
         timeoutMs: secondaryTimeoutMs,
       });
       providersCalled.push('gemini');
@@ -309,6 +328,8 @@ export async function detectMeal(opts: DetectOpts): Promise<DetectResult> {
             tertiary = await recognizeWithClaude(opts.imageBytes, opts.mime, {
               apiKey: anthropicKey,
               requestId: opts.requestId,
+              capturedAt: opts.capturedAt,
+              deviceClass: opts.deviceClass,
               timeoutMs: tertiaryTimeoutMs,
               monthlyCapUsd,
               monthSpendUsdSoFar: opts.monthSpendUsdSoFar,
@@ -457,8 +478,35 @@ async function runGeminiAsProvider(args: {
   imageBytes: Buffer;
   mime: string;
   requestId: string;
+  capturedAt: string;
+  deviceClass: DeviceClass;
   timeoutMs: number;
 }): Promise<ProviderRecognition> {
+  // Phase 1q hotfix 10: gemini-client.ts is the legacy parser from Prompt #164
+  // and predates the explicit allowlist envelope. We enforce the gate here at
+  // the call site so the same 4-key shape lands at every vision provider, not
+  // just LogMeal + Claude. Throwing here means no PHI-shaped key ever reaches
+  // Gemini.
+  try {
+    sanitizeVisionRequest({
+      imageBase64: args.imageBytes.toString('base64'),
+      requestId: envelopeRequestId(args.requestId),
+      capturedAt: args.capturedAt,
+      deviceClass: args.deviceClass,
+    });
+  } catch (envelopeErr) {
+    safeLog.warn('nutrivision.detect.envelope_invalid', 'gemini envelope rejected', {
+      request_id: args.requestId,
+      error: envelopeErr instanceof Error ? envelopeErr.message : String(envelopeErr),
+    });
+    throw new AIRouteError(
+      'INVALID_INPUT',
+      `gemini provider: envelope sanitization failed: ${envelopeErr instanceof Error ? envelopeErr.message : 'unknown'}`,
+      400,
+      'Internal error while preparing vision request.',
+    );
+  }
+
   const start = performance.now();
   try {
     const result = await withTimeout(

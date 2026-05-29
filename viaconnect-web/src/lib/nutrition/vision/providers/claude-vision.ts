@@ -26,6 +26,7 @@ import sharp from 'sharp';
 import { AIRouteError } from '@/lib/errors/classify-ai';
 import { safeLog } from '@/lib/utils/safe-log';
 import { withTimeout, isTimeoutError } from '@/lib/nutrition/resilience/timeout';
+import { sanitizeVisionRequest, type DeviceClass } from '@/lib/nutrition/privacy/redact';
 import { computeMeanConfidence } from '../reconcile';
 import type {
   BoundingBox,
@@ -59,6 +60,8 @@ const USER_PROMPT = 'Identify each distinct food item in this meal photo and ret
 export interface ClaudeVisionOpts {
   apiKey: string;
   requestId: string;
+  capturedAt: string;
+  deviceClass: DeviceClass;
   timeoutMs?: number;
   monthlyCapUsd: number;
   monthSpendUsdSoFar: number;
@@ -89,6 +92,16 @@ function isCookingMethod(v: unknown): v is CookingMethod {
 
 function isCuisineTag(v: unknown): v is CuisineTag {
   return typeof v === 'string' && (ALLOWED_CUISINES as ReadonlyArray<string>).includes(v);
+}
+
+// Phase 1q hotfix 10: extract the raw UUID from the requestId for the privacy
+// envelope gate. newRequestId() returns "req-<uuid>" for log correlation; the
+// envelope contract per Prompt 170 §2.5 requires an opaque v4 UUID, so we
+// strip the optional "req-" prefix before handing the value to sanitize.
+const UUID_V4_TAIL = /([0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/i;
+function envelopeRequestId(requestId: string): string {
+  const m = UUID_V4_TAIL.exec(requestId);
+  return m ? m[1] : requestId;
 }
 
 function clampConfidence(v: unknown): number {
@@ -248,6 +261,30 @@ export async function recognizeWithClaude(
       'claude vision: no api key',
       503,
       'Photo recognition unavailable. Try again later.',
+    );
+  }
+
+  // Phase 1q hotfix 10: enforce the explicit 4-key allowlist envelope before
+  // any outbound SDK call. Throwing here means no PHI-shaped key ever reaches
+  // Anthropic. The base64 encoding the SDK requires anyway is computed below
+  // and reused; the envelope gate runs first against a constructed object.
+  try {
+    sanitizeVisionRequest({
+      imageBase64: imageBytes.toString('base64'),
+      requestId: envelopeRequestId(opts.requestId),
+      capturedAt: opts.capturedAt,
+      deviceClass: opts.deviceClass,
+    });
+  } catch (envelopeErr) {
+    safeLog.warn('nutrivision.claude.envelope_invalid', 'claude envelope rejected', {
+      request_id: opts.requestId,
+      error: envelopeErr instanceof Error ? envelopeErr.message : String(envelopeErr),
+    });
+    throw new AIRouteError(
+      'INVALID_INPUT',
+      `claude vision: envelope sanitization failed: ${envelopeErr instanceof Error ? envelopeErr.message : 'unknown'}`,
+      400,
+      'Internal error while preparing vision request.',
     );
   }
 

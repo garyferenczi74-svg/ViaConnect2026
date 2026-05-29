@@ -31,6 +31,11 @@ vi.mock('@anthropic-ai/sdk', () => {
 
 const imageBytes = Buffer.from('fake-image-bytes');
 const mime = 'image/jpeg';
+// Phase 1q hotfix 10: a valid v4 UUID + ISO timestamp + allowlisted device
+// class are required at the privacy envelope gate inside the provider.
+const validRequestId = 'a1b2c3d4-e5f6-4789-9abc-def012345678';
+const validCapturedAt = '2026-05-29T12:00:00.000Z';
+const validDeviceClass = 'web' as const;
 
 beforeEach(() => {
   messagesCreateMock.mockReset();
@@ -54,7 +59,9 @@ describe('recognizeWithClaude', () => {
     await expect(
       recognizeWithClaude(imageBytes, mime, {
         apiKey: 'TESTKEY',
-        requestId: 'req-cap',
+        requestId: validRequestId,
+        capturedAt: validCapturedAt,
+        deviceClass: validDeviceClass,
         monthlyCapUsd: 5,
         monthSpendUsdSoFar: 5.01,
       }),
@@ -66,7 +73,9 @@ describe('recognizeWithClaude', () => {
     await expect(
       recognizeWithClaude(imageBytes, mime, {
         apiKey: '',
-        requestId: 'req-no-key',
+        requestId: validRequestId,
+        capturedAt: validCapturedAt,
+        deviceClass: validDeviceClass,
         monthlyCapUsd: 5,
         monthSpendUsdSoFar: 0,
       }),
@@ -95,7 +104,9 @@ describe('recognizeWithClaude', () => {
     );
     const result = await recognizeWithClaude(imageBytes, mime, {
       apiKey: 'TESTKEY',
-      requestId: 'req-ok',
+      requestId: validRequestId,
+      capturedAt: validCapturedAt,
+      deviceClass: validDeviceClass,
       monthlyCapUsd: 5,
       monthSpendUsdSoFar: 0,
     });
@@ -121,7 +132,9 @@ describe('recognizeWithClaude', () => {
     await expect(
       recognizeWithClaude(imageBytes, mime, {
         apiKey: 'TESTKEY',
-        requestId: 'req-slow',
+        requestId: validRequestId,
+        capturedAt: validCapturedAt,
+        deviceClass: validDeviceClass,
         timeoutMs: 30,
         monthlyCapUsd: 5,
         monthSpendUsdSoFar: 0,
@@ -136,7 +149,9 @@ describe('recognizeWithClaude', () => {
     await expect(
       recognizeWithClaude(imageBytes, mime, {
         apiKey: 'TESTKEY',
-        requestId: 'req-bad-json',
+        requestId: validRequestId,
+        capturedAt: validCapturedAt,
+        deviceClass: validDeviceClass,
         monthlyCapUsd: 5,
         monthSpendUsdSoFar: 0,
       }),
@@ -149,7 +164,9 @@ describe('recognizeWithClaude', () => {
     );
     const result = await recognizeWithClaude(imageBytes, mime, {
       apiKey: 'TESTKEY',
-      requestId: 'req-empty',
+      requestId: validRequestId,
+      capturedAt: validCapturedAt,
+      deviceClass: validDeviceClass,
       monthlyCapUsd: 5,
       monthSpendUsdSoFar: 0,
     });

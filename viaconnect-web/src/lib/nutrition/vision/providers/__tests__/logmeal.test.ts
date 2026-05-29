@@ -11,6 +11,11 @@ import { readFileSync } from 'node:fs';
 describe('recognizeWithLogMeal', () => {
   const imageBytes = Buffer.from('fake-image-bytes');
   const mime = 'image/jpeg';
+  // Phase 1q hotfix 10: a valid v4 UUID + ISO timestamp + allowlisted device
+  // class are required at the privacy envelope gate inside the provider.
+  const validRequestId = 'a1b2c3d4-e5f6-4789-9abc-def012345678';
+  const validCapturedAt = '2026-05-29T12:00:00.000Z';
+  const validDeviceClass = 'web' as const;
 
   beforeEach(() => {
     // Reset any global fetch leaks between tests.
@@ -41,7 +46,9 @@ describe('recognizeWithLogMeal', () => {
     );
     const result = await recognizeWithLogMeal(imageBytes, mime, {
       apiKey: 'TESTKEY',
-      requestId: 'req-1',
+      requestId: validRequestId,
+      capturedAt: validCapturedAt,
+      deviceClass: validDeviceClass,
       fetch: fetchStub as unknown as typeof globalThis.fetch,
     });
     expect(result.provider).toBe('logmeal');
@@ -59,7 +66,9 @@ describe('recognizeWithLogMeal', () => {
     );
     const result = await recognizeWithLogMeal(imageBytes, mime, {
       apiKey: 'TESTKEY',
-      requestId: 'req-empty',
+      requestId: validRequestId,
+      capturedAt: validCapturedAt,
+      deviceClass: validDeviceClass,
       fetch: fetchStub as unknown as typeof globalThis.fetch,
     });
     expect(result.items.length).toBe(0);
@@ -71,7 +80,9 @@ describe('recognizeWithLogMeal', () => {
     await expect(
       recognizeWithLogMeal(imageBytes, mime, {
         apiKey: '',
-        requestId: 'req-no-key',
+        requestId: validRequestId,
+        capturedAt: validCapturedAt,
+        deviceClass: validDeviceClass,
         fetch: fetchStub as unknown as typeof globalThis.fetch,
       }),
     ).rejects.toMatchObject({ code: 'CONFIG_MISSING' });
@@ -85,7 +96,9 @@ describe('recognizeWithLogMeal', () => {
     await expect(
       recognizeWithLogMeal(imageBytes, mime, {
         apiKey: 'TESTKEY',
-        requestId: 'req-500',
+        requestId: validRequestId,
+        capturedAt: validCapturedAt,
+        deviceClass: validDeviceClass,
         fetch: fetchStub as unknown as typeof globalThis.fetch,
       }),
     ).rejects.toMatchObject({ code: 'API_DOWN' });
@@ -98,7 +111,9 @@ describe('recognizeWithLogMeal', () => {
     await expect(
       recognizeWithLogMeal(imageBytes, mime, {
         apiKey: 'TESTKEY',
-        requestId: 'req-bad-json',
+        requestId: validRequestId,
+        capturedAt: validCapturedAt,
+        deviceClass: validDeviceClass,
         fetch: fetchStub as unknown as typeof globalThis.fetch,
       }),
     ).rejects.toMatchObject({ code: 'MALFORMED_RESPONSE' });
@@ -111,7 +126,9 @@ describe('recognizeWithLogMeal', () => {
     await expect(
       recognizeWithLogMeal(imageBytes, mime, {
         apiKey: 'TESTKEY',
-        requestId: 'req-slow',
+        requestId: validRequestId,
+        capturedAt: validCapturedAt,
+        deviceClass: validDeviceClass,
         timeoutMs: 30,
         fetch: fetchStub as unknown as typeof globalThis.fetch,
       }),

@@ -67,12 +67,12 @@ describe('awardNutriVisionHelixEvents', () => {
     expect(result.errors).toEqual([]);
     expect(inserts.length).toBe(4);
     expect(inserts[0].amount).toBe(5);
-    expect(inserts[0].type).toBe('earn_meal');
+    expect(inserts[0].type).toBe('earn');
     expect(inserts[0].source).toBe('nutrivision_meal_logged');
     expect(inserts[0].event_type_id).toBe('nutrivision_meal_logged');
     expect(inserts[0].metadata.event_key).toBe('nutrivision_meal_logged');
     expect(inserts[0].metadata.related_meal_id).toBe('meal-1');
-    expect(inserts[3].type).toBe('earn_research');
+    expect(inserts[3].type).toBe('earn');
     expect(inserts[3].source).toBe('corpus_contribution');
   });
 
