@@ -28,7 +28,7 @@
 
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
-import { withAbortTimeout, isTimeoutError } from '../_shared/with-timeout.ts';
+import { withAbortTimeout, withTimeout, isTimeoutError } from '../_shared/with-timeout.ts';
 import { safeLog } from '../_shared/safe-log.ts';
 import { getCircuitBreaker, isCircuitBreakerError } from '../_shared/circuit-breaker.ts';
 import {
@@ -45,6 +45,11 @@ import {
   type ScanDemographics,
   type DepthSensorType,
 } from './quality-persistence.ts';
+import {
+  resolveBodyScanEntitlement,
+  claimFreeBodyScanTeaser,
+  type BodyScanPremiumStatus,
+} from './entitlement.ts';
 
 const visionBreaker = getCircuitBreaker('claude-vision');
 
@@ -145,6 +150,14 @@ interface BodyScanRequest {
   device_os?:                string;
   depth_sensor_type?:        DepthSensorType;
   scan_reported_demographics?: ScanDemographics | null;
+  // --- Prompt #169a premium gating fields ---
+  // session_id: the body_photo_sessions row this scan finalizes. When present,
+  //   the premium status is stamped on it and scan_status is set to 'complete'
+  //   (which fires the Helix trigger). Absent in the legacy ephemeral flow.
+  // practitioner_managed: true when a practitioner is finalizing a scan on
+  //   behalf of a managed patient; bypasses the consumer premium check.
+  session_id?:               string;
+  practitioner_managed?:     boolean;
 }
 
 interface BodyScanEstimate {
@@ -362,8 +375,61 @@ serve(async (req) => {
     return json({ error: 'analysis failed' }, 502);
   }
 
-  // Persist estimates ONLY. Photos are not stored anywhere.
   const sa = admin();
+
+  // =========================================================================
+  // Prompt #169a: premium gating at the finalize/persist point.
+  //
+  // The entitlement gate runs AFTER a successful analysis and BEFORE the scan
+  // is persisted/marked complete, so a failed analysis never consumes the
+  // one-time free teaser. Three server-side paths (spec sections 3 + 10):
+  //   premium               -> stamp 'premium' + subscription id, finalize
+  //   practitioner_managed  -> stamp 'practitioner_managed', finalize (bypass)
+  //   non-premium consumer  -> claim the one-time free teaser atomically:
+  //                              claimed     -> stamp 'free_teaser', finalize
+  //                              already used -> REJECT (402); do NOT persist,
+  //                                              do NOT mark the session
+  //                                              complete; capture state is
+  //                                              preserved for retry/upgrade.
+  // =========================================================================
+  const practitionerManaged = body.practitioner_managed === true;
+  const entitlement = await resolveBodyScanEntitlement(sa, user.id, practitionerManaged);
+
+  let premiumStatusAtScan: BodyScanPremiumStatus;
+  if (entitlement.statusForScan !== null) {
+    // premium or practitioner_managed: no teaser claim required.
+    premiumStatusAtScan = entitlement.statusForScan;
+  } else {
+    // Non-premium consumer: attempt the one-time free teaser claim.
+    const claimed = await claimFreeBodyScanTeaser(sa, user.id);
+    if (!claimed) {
+      safeLog.info('body-scan-analyze', 'premium required; free teaser already used', {
+        user_id: user.id,
+        stage:   'entitlement',
+        session_id: body.session_id ?? null,
+      });
+      // Reject the finalize WITHOUT persisting or marking the session complete.
+      return json(
+        {
+          error: 'premium_required',
+          message: 'Your free body scan has already been used. A premium membership is required for additional scans.',
+        },
+        402,
+      );
+    }
+    premiumStatusAtScan = 'free_teaser';
+  }
+
+  safeLog.info('body-scan-analyze', 'entitlement resolved', {
+    user_id:                 user.id,
+    stage:                   'entitlement',
+    premium_status_at_scan:  premiumStatusAtScan,
+    has_subscription:        entitlement.subscriptionId !== null,
+    practitioner_managed:    practitionerManaged,
+    session_id:              body.session_id ?? null,
+  });
+
+  // Persist estimates ONLY. Photos are not stored anywhere.
   const insertResult = await sa.from('body_tracker_photo_scans').insert({
     user_id: user.id,
     estimated_body_fat_min: parsed.estimated_body_fat_min,
@@ -521,6 +587,55 @@ serve(async (req) => {
     tier,
     stage:    'complete',
   });
+
+  // =========================================================================
+  // Prompt #169a: finalize the body_photo_sessions row (when provided).
+  // Stamp the resolved premium status + subscription id and transition
+  // scan_status to 'complete'. The transition to 'complete' is what fires the
+  // Helix trigger (trg_emit_helix_body_scan_event); we do NOT emit the Helix
+  // event directly. Runs after the T2 child rows are persisted so the
+  // trigger's tier lookup resolves. Best-effort with an 8s timeout; the scan
+  // result is already committed above and is returned regardless.
+  // =========================================================================
+  if (body.session_id) {
+    try {
+      const { error: finalizeError } = await withTimeout(
+        sa
+          .from('body_photo_sessions')
+          .update({
+            premium_status_at_scan:  premiumStatusAtScan,
+            premium_subscription_id: entitlement.subscriptionId,
+            scan_status:             'complete',
+          })
+          .eq('id', body.session_id)
+          .eq('user_id', user.id),
+        8_000,
+        'edge-function.body-scan-analyze.finalize-session',
+      );
+      if (finalizeError) {
+        safeLog.error('body-scan-analyze', 'session finalize failed', {
+          user_id:    user.id,
+          session_id: body.session_id,
+          stage:      'finalizeSession',
+          error:      finalizeError.message,
+        });
+      } else {
+        safeLog.info('body-scan-analyze', 'session finalized', {
+          user_id:                user.id,
+          session_id:             body.session_id,
+          stage:                  'finalizeSession',
+          premium_status_at_scan: premiumStatusAtScan,
+        });
+      }
+    } catch (e) {
+      safeLog.error('body-scan-analyze', 'session finalize exception', {
+        user_id:    user.id,
+        session_id: body.session_id,
+        stage:      'finalizeSession',
+        error:      String(e),
+      });
+    }
+  }
 
   // Helix event is emitted by DB trigger trg_emit_helix_body_scan_event when
   // body_photo_sessions.scan_status transitions to 'complete'. Do NOT emit

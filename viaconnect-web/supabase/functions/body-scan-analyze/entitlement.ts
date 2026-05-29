@@ -1,0 +1,166 @@
+// =============================================================================
+// body-scan-analyze/entitlement.ts
+//
+// Prompt #169a: Server-side body scan premium gating (spec sections 3 + 10).
+//
+// Deno-side mirror of the entitlement decision in
+// src/lib/body-tracker/entitlement-check.ts. Deno edge functions cannot import
+// from the Next.js side, so the pure decision is duplicated here. Keep the two
+// in sync.
+//
+// The premium signal reuses the web membership system: an active row in the
+// `memberships` table whose effective tier is above 'free'. This module does
+// NOT introduce a new billing source.
+//
+// The three-point model consumed by the finalize path:
+//   premium               => stamp 'premium' + subscription id
+//   not premium           => claim the one-time free teaser via
+//                            fn_claim_free_body_scan_teaser; if already used,
+//                            reject the finalize and DO NOT mark complete
+//   practitioner_managed  => bypass the consumer premium check entirely
+// =============================================================================
+
+import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
+import { withTimeout } from '../_shared/with-timeout.ts';
+import { safeLog } from '../_shared/safe-log.ts';
+
+export type BodyScanPremiumStatus = 'free_teaser' | 'premium' | 'practitioner_managed';
+
+// Minimal membership shape the decision needs. Structurally compatible with the
+// memberships row.
+export interface MembershipSignal {
+  status: string | null;
+  tier: string | null;
+  tier_id: string | null;
+  stripe_subscription_id: string | null;
+}
+
+export interface BodyScanEntitlement {
+  premium: boolean;
+  subscriptionId: string | null;
+  practitionerManaged: boolean;
+  // 'premium' | 'practitioner_managed' when the scan may finalize without a
+  // teaser claim; null when the caller must attempt a free-teaser claim first.
+  statusForScan: Exclude<BodyScanPremiumStatus, 'free_teaser'> | null;
+}
+
+// Active statuses that count as an entitlement. Matches getActiveMembership /
+// buildUserPricingContext on the web side.
+const ACTIVE_MEMBERSHIP_STATUSES = new Set(['active', 'trialing', 'gift_active']);
+const FREE_TIER = 'free';
+
+// Membership query timeout. Spec section 10 calls for an 8s query timeout.
+const MEMBERSHIP_QUERY_TIMEOUT_MS = 8_000;
+
+function effectiveTier(m: MembershipSignal): string {
+  return m.tier_id ?? m.tier ?? FREE_TIER;
+}
+
+function isPremiumMembership(m: MembershipSignal | null): boolean {
+  if (!m) return false;
+  if (!m.status || !ACTIVE_MEMBERSHIP_STATUSES.has(m.status)) return false;
+  return effectiveTier(m) !== FREE_TIER;
+}
+
+/**
+ * Pure entitlement decision. Mirrors decideBodyScanEntitlement in
+ * src/lib/body-tracker/entitlement-check.ts. Practitioner-managed bypasses the
+ * consumer premium check.
+ */
+export function decideBodyScanEntitlement(
+  membership: MembershipSignal | null,
+  practitionerManaged: boolean,
+): BodyScanEntitlement {
+  const premium = isPremiumMembership(membership);
+  const subscriptionId = premium ? membership?.stripe_subscription_id ?? null : null;
+
+  if (practitionerManaged) {
+    return { premium, subscriptionId, practitionerManaged: true, statusForScan: 'practitioner_managed' };
+  }
+  if (premium) {
+    return { premium: true, subscriptionId, practitionerManaged: false, statusForScan: 'premium' };
+  }
+  return { premium: false, subscriptionId: null, practitionerManaged: false, statusForScan: null };
+}
+
+/**
+ * Reads the active membership row for a user (reusing the web membership
+ * statuses) and resolves the entitlement. On a query timeout or error the
+ * membership is treated as absent (non-premium), which routes a consumer into
+ * the free-teaser claim path rather than silently granting premium. The
+ * practitioner-managed flag is decided by the caller.
+ */
+export async function resolveBodyScanEntitlement(
+  sa: SupabaseClient,
+  userId: string,
+  practitionerManaged: boolean,
+): Promise<BodyScanEntitlement> {
+  let membership: MembershipSignal | null = null;
+  try {
+    const { data, error } = await withTimeout(
+      sa
+        .from('memberships')
+        .select('status, tier, tier_id, stripe_subscription_id')
+        .eq('user_id', userId)
+        .in('status', ['active', 'trialing', 'gift_active'])
+        .order('current_period_end', { ascending: false, nullsFirst: false })
+        .limit(1)
+        .maybeSingle(),
+      MEMBERSHIP_QUERY_TIMEOUT_MS,
+      'edge-function.body-scan-analyze.membership-lookup',
+    );
+    if (error) {
+      safeLog.warn('body-scan-analyze', 'entitlement membership lookup error', {
+        user_id: userId,
+        stage: 'resolveEntitlement',
+        error: error.message,
+      });
+    } else {
+      membership = (data as MembershipSignal | null) ?? null;
+    }
+  } catch (e) {
+    // Fail closed on the premium grant: treat as non-premium so the user falls
+    // back to the free-teaser claim path rather than getting premium for free.
+    safeLog.warn('body-scan-analyze', 'entitlement membership lookup exception', {
+      user_id: userId,
+      stage: 'resolveEntitlement',
+      error: String(e),
+    });
+  }
+  return decideBodyScanEntitlement(membership, practitionerManaged);
+}
+
+/**
+ * Atomically claims the one-time free body scan teaser via
+ * fn_claim_free_body_scan_teaser. Returns true if this call won the claim,
+ * false if the teaser was already used (or on error/timeout, which is treated
+ * as "not claimed" so the finalize is rejected rather than granted for free).
+ */
+export async function claimFreeBodyScanTeaser(
+  sa: SupabaseClient,
+  userId: string,
+): Promise<boolean> {
+  try {
+    const { data, error } = await withTimeout(
+      sa.rpc('fn_claim_free_body_scan_teaser', { p_user_id: userId }),
+      MEMBERSHIP_QUERY_TIMEOUT_MS,
+      'edge-function.body-scan-analyze.claim-free-teaser',
+    );
+    if (error) {
+      safeLog.warn('body-scan-analyze', 'claim free teaser error', {
+        user_id: userId,
+        stage: 'claimFreeTeaser',
+        error: error.message,
+      });
+      return false;
+    }
+    return data === true;
+  } catch (e) {
+    safeLog.warn('body-scan-analyze', 'claim free teaser exception', {
+      user_id: userId,
+      stage: 'claimFreeTeaser',
+      error: String(e),
+    });
+    return false;
+  }
+}
