@@ -29,6 +29,11 @@ interface RevealableMetricProps {
   sparkline?: ReactNode;
   // Whether this metric can be tapped to reveal (mode is on and not revealed).
   revealable: boolean;
+  // Whether the "Hide specific numbers" flag is ON for this user. Distinguishes a
+  // value shown because the flag is off (bare, not tappable) from a value shown
+  // because it was temporarily revealed by tap (still tappable, so a second tap
+  // re-hides it). When omitted/false the value renders plainly, as before.
+  numbersOptionalOn?: boolean;
   // Reveal callbacks (from useNumbersOptional).
   onToggle: () => void;
   onHoldStart: () => void;
@@ -65,25 +70,47 @@ export function RevealableMetric({
   range,
   sparkline,
   revealable,
+  numbersOptionalOn = false,
   onToggle,
   onHoldStart,
   onHoldEnd,
   label,
 }: RevealableMetricProps) {
-  // When the value is visible there is nothing to reveal; render it plainly.
-  if (mode === 'value') return <>{value}</>;
-
-  const content =
-    mode === 'range' ? (range ?? <RedactedDot />) :
-    mode === 'sparkline' ? (sparkline ?? <RedactedDot />) :
-    <RedactedDot />;
-
   const onKeyDown = (e: KeyboardEvent<HTMLButtonElement>) => {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
       onToggle();
     }
   };
+
+  // When the value is visible because the flag is OFF, there is nothing to
+  // reveal or re-hide; render it plainly.
+  if (mode === 'value' && !numbersOptionalOn) return <>{value}</>;
+
+  // When the value is visible because it was temporarily revealed by tap (flag
+  // ON, mode 'value'), keep the interactive control wrapped around it so a second
+  // tap (or Enter/Space) re-hides it. Without this the only way back to hidden
+  // would be a reload or toggling the global setting.
+  if (mode === 'value') {
+    return (
+      <button
+        type="button"
+        aria-label={`Hide ${label}`}
+        aria-pressed
+        title="Tap to hide again"
+        onClick={onToggle}
+        onKeyDown={onKeyDown}
+        className="inline-flex items-center rounded-md px-1 -mx-1 hover:bg-white/[0.06] focus:outline-none focus-visible:ring-1 focus-visible:ring-[#2DA5A0]/60 cursor-pointer"
+      >
+        {value}
+      </button>
+    );
+  }
+
+  const content =
+    mode === 'range' ? (range ?? <RedactedDot />) :
+    mode === 'sparkline' ? (sparkline ?? <RedactedDot />) :
+    <RedactedDot />;
 
   if (!revealable) {
     // Defensive: should not happen (mode is non-value only when the flag is on),

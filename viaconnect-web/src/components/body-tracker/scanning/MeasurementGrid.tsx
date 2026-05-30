@@ -91,6 +91,7 @@ function metricProps(numbers: NumbersOptionalController | undefined, id: string)
   return {
     mode,
     revealable,
+    numbersOptionalOn: !!numbers && numbers.numbersOptional,
     onToggle: () => numbers?.toggleReveal(id),
     onHoldStart: () => numbers?.revealHold(id),
     onHoldEnd: () => numbers?.hideHold(id),
@@ -109,6 +110,7 @@ function RatioCell({ label, value, numbers }: { label: string; value: number; nu
             mode={mp.mode}
             label={label}
             revealable={mp.revealable}
+            numbersOptionalOn={mp.numbersOptionalOn}
             onToggle={mp.onToggle}
             onHoldStart={mp.onHoldStart}
             onHoldEnd={mp.onHoldEnd}
@@ -147,6 +149,7 @@ function LengthCell({
             mode={mp.mode}
             label={label}
             revealable={mp.revealable}
+            numbersOptionalOn={mp.numbersOptionalOn}
             onToggle={mp.onToggle}
             onHoldStart={mp.onHoldStart}
             onHoldEnd={mp.onHoldEnd}

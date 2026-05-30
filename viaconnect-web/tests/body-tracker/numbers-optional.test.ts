@@ -207,6 +207,46 @@ describe('reveal-set helpers (immutable transitions)', () => {
     set = clearRevealed(set, 'Neck');
     expect(decideMetricDisplay({ numbersOptional: true, revealed: set.has('Neck'), surface: 'measurement', metricId: 'Neck' })).toBe('sparkline');
   });
+
+  it('tap to peek then tap again re-hides: toggle drives a full value -> redacted round trip', () => {
+    // Reproduces the UX gap the #169b review found: once a metric is revealed by
+    // tap it must be re-hideable by a SECOND tap (toggle), not stranded as a bare
+    // value until reload. The component keeps the value tappable while the flag is
+    // on; this asserts the underlying toggle + decision contract for both kinds of
+    // redacted surface.
+    for (const [surface, hiddenMode] of [
+      ['composition', 'range'],
+      ['measurement', 'sparkline'],
+    ] as const) {
+      const metricId = surface === 'composition' ? 'leanMassKg' : 'Neck';
+      let set = new Set<string>();
+
+      // Start hidden -> the surface's redacted variant.
+      expect(decideMetricDisplay({ numbersOptional: true, revealed: set.has(metricId), surface, metricId })).toBe(hiddenMode);
+
+      // First tap (toggle) reveals -> value.
+      set = toggleRevealed(set, metricId);
+      expect(set.has(metricId)).toBe(true);
+      expect(decideMetricDisplay({ numbersOptional: true, revealed: set.has(metricId), surface, metricId })).toBe('value');
+
+      // Second tap (toggle) re-hides -> back to the redacted variant.
+      set = toggleRevealed(set, metricId);
+      expect(set.has(metricId)).toBe(false);
+      expect(decideMetricDisplay({ numbersOptional: true, revealed: set.has(metricId), surface, metricId })).toBe(hiddenMode);
+    }
+  });
+
+  it('tap re-hide round trip also restores the fully-hidden rule for body fat % and visceral fat index', () => {
+    // The two sensitive metrics reveal to their value on tap (reveal overrides the
+    // fully-hidden rule) and must return to fully hidden on the re-hide tap.
+    for (const metricId of ['bodyFatPct', 'visceralFatIndex']) {
+      let set = new Set<string>();
+      set = toggleRevealed(set, metricId); // peek
+      expect(decideMetricDisplay({ numbersOptional: true, revealed: set.has(metricId), surface: 'composition', metricId })).toBe('value');
+      set = toggleRevealed(set, metricId); // re-hide
+      expect(decideMetricDisplay({ numbersOptional: true, revealed: set.has(metricId), surface: 'composition', metricId })).toBe('hidden');
+    }
+  });
 });
 
 // ===========================================================================

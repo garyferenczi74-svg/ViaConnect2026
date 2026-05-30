@@ -118,17 +118,19 @@ export function CompositionBreakdownCard({ composition, sex, numbers }: Composit
 interface ResolvedMetric {
   mode: 'value' | 'range' | 'sparkline' | 'hidden';
   revealable: boolean;
+  numbersOptionalOn: boolean;
   onToggle: () => void;
   onHoldStart: () => void;
   onHoldEnd: () => void;
 }
 function resolveMetric(numbers: NumbersOptionalController | undefined, metricId: string): ResolvedMetric {
   if (!numbers) {
-    return { mode: 'value', revealable: false, onToggle: () => {}, onHoldStart: () => {}, onHoldEnd: () => {} };
+    return { mode: 'value', revealable: false, numbersOptionalOn: false, onToggle: () => {}, onHoldStart: () => {}, onHoldEnd: () => {} };
   }
   return {
     mode: numbers.displayMode(metricId, 'composition'),
     revealable: numbers.numbersOptional && !numbers.isRevealed(metricId),
+    numbersOptionalOn: numbers.numbersOptional,
     onToggle: () => numbers.toggleReveal(metricId),
     onHoldStart: () => numbers.revealHold(metricId),
     onHoldEnd: () => numbers.hideHold(metricId),
@@ -159,6 +161,7 @@ function Stat({
           mode={metric.mode}
           label={label}
           revealable={metric.revealable}
+          numbersOptionalOn={metric.numbersOptionalOn}
           onToggle={metric.onToggle}
           onHoldStart={metric.onHoldStart}
           onHoldEnd={metric.onHoldEnd}

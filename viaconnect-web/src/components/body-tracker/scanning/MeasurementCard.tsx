@@ -53,6 +53,7 @@ export function MeasurementCard({ label, measured, unitSystem, numbers, metricId
             mode={mode}
             label={label}
             revealable={revealable}
+            numbersOptionalOn={!!numbers && numbers.numbersOptional}
             onToggle={() => numbers?.toggleReveal(id)}
             onHoldStart={() => numbers?.revealHold(id)}
             onHoldEnd={() => numbers?.hideHold(id)}
