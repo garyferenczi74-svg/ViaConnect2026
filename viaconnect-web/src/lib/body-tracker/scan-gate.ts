@@ -7,10 +7,15 @@
 // behavior (the project's vitest config runs node-environment .test.ts only, so
 // the testable contract lives here, not in JSX).
 //
-// This is a CLIENT convenience gate for UX only. The authoritative gate is the
-// server: src/lib/body-tracker/entitlement-check.ts (web) plus the three-point
-// enforcement in the body-scan-analyze edge function at finalize. A consumer who
-// manipulates client state still cannot finalize a scan they are not entitled to.
+// This is a CLIENT convenience gate for UX / defense-in-depth only. The
+// AUTHORITATIVE gate is the body_photo_sessions finalize trigger (migration
+// 20260516000080), which enforces entitlement in-database whenever scan_status
+// transitions to 'complete'. The primary scan path (runScanAnalysis) finalizes
+// via a direct client UPDATE and never calls the body-scan-analyze edge
+// function, so the DB trigger (not the edge function) is what actually stops a
+// consumer who manipulates client state from finalizing a scan they are not
+// entitled to. The edge function and entitlement-check.ts remain a secondary,
+// defense-in-depth layer for the edge path.
 //
 // The entitlement shape mirrors what GET /api/body-tracker/entitlement returns
 // and what usePremiumEntitlement exposes.

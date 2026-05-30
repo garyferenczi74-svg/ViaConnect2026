@@ -11,8 +11,13 @@
 //
 // The decisions themselves are the pure functions in
 // src/lib/body-tracker/age-frequency-gate.ts (unit-tested there). This hook is
-// just the I/O + a thin mapping. The AUTHORITATIVE age + frequency gate is the
-// server finalize in body-scan-analyze; this hook only powers UX.
+// just the I/O + a thin mapping, defense-in-depth / UX only. The AUTHORITATIVE
+// age + frequency gate is the body_photo_sessions finalize trigger (migration
+// 20260516000080), which re-derives age from profiles.date_of_birth and
+// re-checks the 24h window in-database when scan_status transitions to
+// 'complete'. The primary path (runScanAnalysis) finalizes via a direct DB write
+// and never calls the body-scan-analyze edge function, so that trigger, not the
+// edge function, is the real enforcement.
 
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';

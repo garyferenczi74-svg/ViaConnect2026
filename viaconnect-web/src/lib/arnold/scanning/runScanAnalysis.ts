@@ -247,19 +247,31 @@ export async function runScanAnalysis({ sessionId, onProgress }: ScanAnalysisInp
   };
 
   report('saving', 95, 'Saving results');
-  await persistScan({
-    supabase,
-    session: session as unknown as SessionRow,
-    measurements,
-    composition,
-    asymmetry,
-    avatarParameters,
-    silhouettes,
-    quality,
-    calibratedWithManual,
-    calibrationSource,
-    calibrationDate,
-  });
+  try {
+    await persistScan({
+      supabase,
+      session: session as unknown as SessionRow,
+      measurements,
+      composition,
+      asymmetry,
+      avatarParameters,
+      silhouettes,
+      quality,
+      calibratedWithManual,
+      calibrationSource,
+      calibrationDate,
+    });
+  } catch (e) {
+    // The finalize UPDATE that sets scan_status = 'complete' is gated by the
+    // body_photo_sessions finalize trigger (migration 20260516000080), the
+    // AUTHORITATIVE age / 24h-frequency / entitlement enforcement for this
+    // client path. On a blocked finalize the trigger RAISEs with a stable
+    // message prefix; surface a clear message and fail the scan rather than
+    // silently swallowing the rejection.
+    const msg = mapFinalizeError(e);
+    report('failed', 95, msg);
+    throw new Error(msg);
+  }
 
   report('complete', 100, 'Scan complete');
 
@@ -297,7 +309,14 @@ async function persistScan(args: {
     scaleCmPerPx: s.scaleCmPerPx,
   }));
 
-  await supabase
+  // This UPDATE transitions scan_status to 'complete', which fires the
+  // body_photo_sessions finalize trigger (migration 20260516000080). That
+  // trigger is the AUTHORITATIVE age / 24h-frequency / entitlement gate for the
+  // direct runScanAnalysis path (which never calls the body-scan-analyze edge
+  // function). A blocked finalize RAISEs and the error surfaces here; capture it
+  // and throw so the caller can map it and fail the scan (it was previously
+  // ignored, which silently swallowed a rejected finalize).
+  const { error: finalizeError } = await supabase
     .from('body_photo_sessions')
     .update({
       silhouette_data: silhouetteSummary,
@@ -313,6 +332,7 @@ async function persistScan(args: {
       calibration_date: args.calibrationDate,
     } as never)
     .eq('id', session.id);
+  if (finalizeError) throw finalizeError;
 
   const cm = (v: { cm: number }): number => round1(v.cm);
   await supabase.from('body_scan_measurements').insert({
@@ -395,6 +415,32 @@ async function loadManualSnapshot(supabase: ReturnType<typeof createClient>, use
     source,
     confidence,
   };
+}
+
+// Maps a body_photo_sessions finalize-trigger rejection (migration
+// 20260516000080) to a clear, user-facing message. The trigger RAISEs with a
+// stable prefix ('age_restricted:', 'scan_rate_limited:', 'premium_required:')
+// which arrives in the Supabase/Postgres error message; we key on that prefix.
+// Any other error (network, unexpected DB error) falls back to a generic save
+// failure. Copy uses commas/colons only, no dashes.
+function mapFinalizeError(e: unknown): string {
+  const raw =
+    typeof e === 'object' && e !== null && 'message' in e
+      ? String((e as { message?: unknown }).message ?? '')
+      : e instanceof Error
+        ? e.message
+        : String(e ?? '');
+
+  if (raw.includes('age_restricted')) {
+    return 'Body Scan is available to members who are 18 or older. Please talk to your healthcare provider about any body composition questions.';
+  }
+  if (raw.includes('scan_rate_limited')) {
+    return 'You have already completed a Body Scan today. Your body changes gradually, so the next scan will be available in about 24 hours.';
+  }
+  if (raw.includes('premium_required')) {
+    return 'Your free Body Scan has already been used. A premium membership is required for additional scans.';
+  }
+  return 'We could not save your scan. Please try again in a moment.';
 }
 
 function avgOrZero(a: number, b: number): number {

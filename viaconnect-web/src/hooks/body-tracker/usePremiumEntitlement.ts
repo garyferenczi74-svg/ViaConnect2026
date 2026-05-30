@@ -9,9 +9,13 @@
 // reads, no client-side membership compute, and no localStorage cache.
 //
 // The route reuses the server entitlement resolver (web membership system) for
-// `premium` and reads profiles.free_body_scan_used for `freeTeaserUsed`. The
-// AUTHORITATIVE gate remains the server finalize in body-scan-analyze; this hook
-// only powers the UX (teaser banner vs. paywall vs. normal entry).
+// `premium` and reads profiles.free_body_scan_used for `freeTeaserUsed`. This
+// hook is defense-in-depth / UX only (teaser banner vs. paywall vs. normal
+// entry). The AUTHORITATIVE gate is the body_photo_sessions finalize trigger
+// (migration 20260516000080), which enforces entitlement when scan_status
+// transitions to 'complete' regardless of code path; the primary path
+// (runScanAnalysis) finalizes via a direct DB write and never calls the
+// body-scan-analyze edge function.
 
 import { useQuery } from '@tanstack/react-query';
 import type { BodyScanEntitlementResponse } from '@/app/api/body-tracker/entitlement/route';

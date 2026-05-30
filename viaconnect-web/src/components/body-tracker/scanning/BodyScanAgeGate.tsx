@@ -16,9 +16,13 @@
 // card is shown instead. When the user is 18+ (or while the DOB is still
 // loading) the children render normally and the premium gate inside them applies.
 //
-// The AUTHORITATIVE age + frequency gate is the server finalize in
-// body-scan-analyze, which re-derives the age from profiles.date_of_birth and
-// re-checks the 24h window before it will persist a scan. This component is UX.
+// The AUTHORITATIVE age + frequency gate is the body_photo_sessions finalize
+// trigger (migration 20260516000080), which re-derives the age from
+// profiles.date_of_birth (via SQL age()) and re-checks the 24h window
+// in-database whenever scan_status transitions to 'complete', covering the
+// primary runScanAnalysis path that finalizes via a direct client UPDATE and
+// never calls the body-scan-analyze edge function. This component is
+// defense-in-depth / UX only.
 //
 // Lucide icons at strokeWidth 1.5; copy uses commas/colons only (no dashes).
 // Cards are responsive (stack on mobile, comfortable on desktop).

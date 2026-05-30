@@ -13,12 +13,16 @@
 // node-environment .test.ts only (see vitest.config.ts), so the testable contract
 // lives here, not in JSX or Deno.
 //
-// AUTHORITY: like scan-gate.ts, the CLIENT consumes these for UX only. The
-// authoritative enforcement is server-side in the body-scan-analyze edge
-// function (supabase/functions/body-scan-analyze/index.ts), which re-derives the
-// age from profiles.date_of_birth and re-queries body_photo_sessions before it
-// will persist or finalize a scan. The Deno side re-implements the same pure
-// decisions (Deno cannot import from the Next.js tree); keep the two in sync.
+// AUTHORITY: like scan-gate.ts, the CLIENT consumes these for UX /
+// defense-in-depth only. The AUTHORITATIVE enforcement is the
+// body_photo_sessions finalize trigger (migration 20260516000080), which
+// re-derives the age from profiles.date_of_birth (via SQL age()) and re-checks
+// the 24h window in-database whenever scan_status transitions to 'complete', so
+// it covers EVERY writer, including the primary runScanAnalysis path that
+// finalizes via a direct client UPDATE and never calls the body-scan-analyze
+// edge function. The edge function re-implements the same pure decisions as a
+// secondary layer for the edge path (Deno cannot import from the Next.js tree);
+// keep all three in sync.
 //
 // DOB SOURCE: profiles.date_of_birth (ISO date string 'YYYY-MM-DD' or null),
 // confirmed canonical in src/lib/ai/context-loader.ts and the profile page.

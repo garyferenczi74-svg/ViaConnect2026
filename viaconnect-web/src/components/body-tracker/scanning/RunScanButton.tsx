@@ -20,8 +20,13 @@ export function RunScanButton({ sessionId, onComplete, alreadyScanned }: RunScan
 
   // Body-scan entitlement powers both the entry guard point (which surface to
   // show: normal button, free-teaser banner, or paywall) and the pre-capture
-  // re-check below (Prompt #169a, spec section 3.1.a + 3.1.b). The AUTHORITATIVE
-  // gate stays server-side: body-scan-analyze enforces it at finalize.
+  // re-check below (Prompt #169a, spec section 3.1.a + 3.1.b). These are
+  // defense-in-depth / UX only. The AUTHORITATIVE gate is the
+  // body_photo_sessions finalize trigger (migration 20260516000080): this button
+  // runs runScanAnalysis, which writes scan_status = 'complete' DIRECTLY and
+  // never calls the body-scan-analyze edge function, so the DB trigger (not the
+  // edge function) is what actually enforces age + 24h frequency + entitlement
+  // for this path.
   const { premium, freeTeaserUsed, isLoading: entitlementLoading } = usePremiumEntitlement();
 
   async function start() {
