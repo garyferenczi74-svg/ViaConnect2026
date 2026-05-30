@@ -11,7 +11,9 @@ import {
   formatTimeOfDay,
 } from '@/lib/body-tracker/time-of-day-trend';
 import { CyclePhaseTrendNote } from '@/components/body-tracker/scanning/CyclePhaseTrendNote';
+import { BodyScanModelVersionBadge } from '@/components/body-tracker/scanning/BodyScanModelVersionBadge';
 import { useCyclePhaseSource } from '@/hooks/body-tracker/useCyclePhaseSource';
+import type { ModelVersionStamp } from '@/lib/body-tracker/body-scan-model-versions';
 
 interface SessionRow {
   id: string;
@@ -21,6 +23,9 @@ interface SessionRow {
   poses_completed: string[];
   arnold_status: 'pending' | 'queued' | 'analyzing' | 'complete' | 'failed';
   arnold_confidence: number | null;
+  // Model-version stamp (Prompt #169b section 16.5): drives the per row "scanned
+  // with an earlier version" badge for older scans.
+  model_versions: ModelVersionStamp | null;
 }
 
 interface PhotoSessionHistoryProps {
@@ -40,12 +45,15 @@ export function PhotoSessionHistory({ excludeSessionId, limit = 10, onSelect }: 
       if (!user) { if (mounted) setSessions([]); return; }
       const { data } = await supabase
         .from('body_photo_sessions')
-        .select('id, session_date, created_at, is_complete, poses_completed, arnold_status, arnold_confidence')
+        .select('id, session_date, created_at, is_complete, poses_completed, arnold_status, arnold_confidence, model_versions')
         .eq('user_id', user.id)
         .order('session_date', { ascending: false })
         .limit(limit);
       if (!mounted) return;
-      const rows = ((data ?? []) as SessionRow[]).filter((s) => s.id !== excludeSessionId);
+      // model_versions (Prompt #169b section 16.5) is not yet in the generated
+      // supabase types, so the select is typed as a SelectQueryError; cast through
+      // unknown to the local row shape, matching the body-tracker reads convention.
+      const rows = (((data ?? []) as unknown) as SessionRow[]).filter((s) => s.id !== excludeSessionId);
       setSessions(rows);
     })();
     return () => { mounted = false; };
@@ -106,6 +114,9 @@ export function PhotoSessionHistory({ excludeSessionId, limit = 10, onSelect }: 
                   <p className="text-sm font-medium text-white">{label}</p>
                   {/* Atypical scan-time marker (section 11.2): subtle, never alarming. */}
                   {atypical && <AtypicalTimeMarker timeLabel={timeLabel} />}
+                  {/* Model-version badge (section 16.5): renders only for an older
+                      scan whose engine version differs from the current one. */}
+                  <BodyScanModelVersionBadge modelVersions={s.model_versions} />
                 </div>
                 <p className="text-[11px] text-white/50">
                   {s.poses_completed.length} of 4 poses

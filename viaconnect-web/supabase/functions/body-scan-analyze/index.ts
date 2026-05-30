@@ -56,6 +56,22 @@ import {
 
 const visionBreaker = getCircuitBreaker('claude-vision');
 
+// Model-version stamp (Prompt #169b, Task 19, spec section 16.5). The CANONICAL
+// source of these identifiers is src/lib/body-tracker/body-scan-model-versions.ts
+// (CURRENT_MODEL_VERSIONS); this Deno edge function cannot import from the app
+// src/ tree, so the values are MIRRORED here. Keep the two in sync: when an
+// engine version is bumped in the canonical module, bump it here too. Stamped on
+// the body_photo_sessions finalize so an older scan can surface a model-version
+// badge once any engine changes. (composition_engine omits the visual blend
+// detail of the in-app pipeline because this ephemeral path is Claude-vision-only,
+// but the headline identifier is kept identical so the badge token matches.)
+const CURRENT_MODEL_VERSIONS: Record<string, string> = {
+  landmark: 'mediapipe-pose-lite-v1',
+  composition_engine: 'navy+cunbae+visual-v1',
+  calibration: 'credit-card-iso7810+tape-v1',
+  measurement: 'silhouette-contour-v1',
+};
+
 const SUPABASE_URL  = Deno.env.get('SUPABASE_URL')!;
 const ANON_KEY      = Deno.env.get('SUPABASE_ANON_KEY')!;
 const SERVICE_KEY   = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -720,6 +736,10 @@ serve(async (req) => {
         premium_status_at_scan:  premiumStatusAtScan,
         premium_subscription_id: entitlement.subscriptionId,
         scan_status:             'complete',
+        // Model-version stamp (Prompt #169b, section 16.5): record the engine
+        // versions on the session at finalize, mirroring runScanAnalysis. Lets an
+        // older scan surface a model-version badge once an engine is bumped.
+        model_versions:          { ...CURRENT_MODEL_VERSIONS },
       };
       if (ageDecision.overrodeMinor && ageDecision.overrideReason) {
         finalizePatch.clinical_override_reason = ageDecision.overrideReason;

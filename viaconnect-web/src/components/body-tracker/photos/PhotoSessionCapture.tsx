@@ -22,6 +22,7 @@ import { PHOTO_POSES } from './poseConstants';
 import { CreditCardCalibrator } from '@/components/body-tracker/scanning/CreditCardCalibrator';
 import { QualityIndicators } from '@/components/body-tracker/scanning/QualityIndicators';
 import { ScanOnboardingWalkthrough, ScanHelpButton } from '@/components/body-tracker/scanning/ScanOnboardingWalkthrough';
+import { BodyScanInclusivityFallback } from '@/components/body-tracker/scanning/BodyScanInclusivityFallback';
 import { aggregateQualityScores } from '@/lib/body-tracker/scan-quality';
 import { fuseFrames } from '@/lib/body-tracker/multi-frame-fusion';
 import { MULTI_FRAME_FUSION } from '@/lib/body-tracker/scan-constants';
@@ -659,6 +660,13 @@ export function PhotoSessionCapture({ open, onOpenChange, onCompleted }: PhotoSe
               <ScanHelpButton onClick={() => setWalkthroughOpen(true)} />
             </div>
 
+            {/* Inclusivity fallback (Prompt #169b section 7.3 / 7.4): a kind "I
+                can't do this pose" affordance present on EVERY capture step,
+                including calibration, with an honest message + waitlist opt-in. */}
+            <div className="flex justify-center">
+              <BodyScanInclusivityFallback requestedCapability="other" />
+            </div>
+
             {/* Camera preview for calibration */}
             <div className="relative aspect-video w-full rounded-2xl border border-white/[0.08] bg-[#0B1520] overflow-hidden">
               {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
@@ -710,6 +718,13 @@ export function PhotoSessionCapture({ open, onOpenChange, onCompleted }: PhotoSe
               onSkip={handleSkip}
               onRetake={handleRetake}
             />
+
+            {/* Inclusivity fallback (Prompt #169b section 7.3 / 7.4): the same
+                kind "I can't do this pose" affordance on every per pose capture
+                step, with the honest message + waitlist opt-in. */}
+            <div className="flex justify-center">
+              <BodyScanInclusivityFallback requestedCapability="other" />
+            </div>
           </div>
         )}
 

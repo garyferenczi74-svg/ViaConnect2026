@@ -14,6 +14,7 @@ import { navyBodyFat } from './navyBodyFat';
 import { cunbaeBodyFat } from './cunbaeBodyFat';
 import { blendComposition } from './compositionBlender';
 import { applyCalibration } from './calibrationManager';
+import { buildModelVersionStamp } from '@/lib/body-tracker/body-scan-model-versions';
 import type {
   BiologicalSex,
   CompositionEstimate,
@@ -347,6 +348,13 @@ async function persistScan(args: {
       calibrated_with_manual: args.calibratedWithManual,
       calibration_source: args.calibrationSource,
       calibration_date: args.calibrationDate,
+      // Model-version stamp (Prompt #169b, Task 19, spec section 16.5): record
+      // the REAL engine versions that produced this scan (landmark detector,
+      // composition blender, calibration, measurement). The current versions are
+      // centralized in body-scan-model-versions.ts (the engines themselves carry
+      // no version string). Stamping here lets an older scan surface a "scanned
+      // with an earlier version" badge once any engine is bumped.
+      model_versions: buildModelVersionStamp(),
     } as never)
     .eq('id', session.id);
   if (finalizeError) throw finalizeError;

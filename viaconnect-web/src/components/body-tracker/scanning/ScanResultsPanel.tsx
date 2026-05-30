@@ -17,6 +17,8 @@ import { CalibrationDisclaimerBanner } from './CalibrationDisclaimerBanner';
 import { CalibrationNudgeCard } from './CalibrationNudgeCard';
 import { ScanQualityIndicator } from './ScanQualityIndicator';
 import { TierBadge } from './TierBadge';
+import { BodyScanModelVersionBadge } from './BodyScanModelVersionBadge';
+import type { ModelVersionStamp } from '@/lib/body-tracker/body-scan-model-versions';
 import { ScanInsightsTab } from './ScanInsightsTab';
 import { ScanShareTab } from './ScanShareTab';
 import { ScanPdfExportButton } from './ScanPdfExportButton';
@@ -76,6 +78,9 @@ interface LoadedScan {
   heightCm: number;
   weightKg: number;
   sex: 'male' | 'female';
+  // Model-version stamp off the session row (Prompt #169b section 16.5). Drives
+  // the "scanned with an earlier version" badge for older scans.
+  modelVersions: ModelVersionStamp | null;
 }
 
 export function ScanResultsPanel({ sessionId, refreshKey, portalType = 'consumer' }: ScanResultsPanelProps) {
@@ -133,7 +138,7 @@ export function ScanResultsPanel({ sessionId, refreshKey, portalType = 'consumer
       const supabase = createClient();
       const { data } = await supabase
         .from('body_photo_sessions')
-        .select('user_id, extracted_measurements, composition_estimate, asymmetry_report, avatar_parameters, scan_quality_score, quality_issues, calibrated_with_manual, scan_status')
+        .select('user_id, extracted_measurements, composition_estimate, asymmetry_report, avatar_parameters, scan_quality_score, quality_issues, calibrated_with_manual, scan_status, model_versions')
         .eq('id', sessionId)
         .maybeSingle();
       if (!mounted) return;
@@ -185,6 +190,7 @@ export function ScanResultsPanel({ sessionId, refreshKey, portalType = 'consumer
         heightCm:             p?.height_cm ?? 170,
         weightKg:             p?.weight_kg ?? 70,
         sex:                  p?.sex === 'female' ? 'female' : 'male',
+        modelVersions:        (row.model_versions as ModelVersionStamp | null) ?? null,
       });
       setLoading(false);
     })();
@@ -218,7 +224,12 @@ export function ScanResultsPanel({ sessionId, refreshKey, portalType = 'consumer
           </div>
           <h3 className="text-sm font-bold text-white">AI body scan results</h3>
         </div>
-        <TierBadge tier={tier} />
+        <div className="flex items-center gap-2">
+          {/* Model-version badge (Prompt #169b section 16.5): only renders for an
+              older scan whose engine version differs from the current one. */}
+          <BodyScanModelVersionBadge modelVersions={loaded.modelVersions} />
+          <TierBadge tier={tier} />
+        </div>
       </div>
 
       {/* Banners above tabs */}
