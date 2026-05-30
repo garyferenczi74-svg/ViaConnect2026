@@ -57,6 +57,23 @@ export interface ScanAnalysisInputs {
   onProgress?: (p: ScanProgress) => void;
 }
 
+// Error thrown when the finalize UPDATE (scan_status -> 'complete') is rejected.
+// It carries the USER-FACING mapped message (so existing callers that read
+// `.message` keep showing the right copy) AND the ORIGINAL error as `cause`, so
+// the network-resilience layer (Prompt #169b, Task 20, spec section 16.3) can
+// classify it as TRANSIENT (network / 5xx -> retry) vs PERMANENT (the DB finalize
+// trigger's age_restricted / scan_rate_limited / premium_required rejection ->
+// surface + drop, never retried). The pure classifier in pending-scan-sync.ts
+// unwraps `.cause`, so the original signal is what drives the decision.
+export class ScanFinalizeError extends Error {
+  override readonly cause?: unknown;
+  constructor(message: string, cause?: unknown) {
+    super(message);
+    this.name = 'ScanFinalizeError';
+    this.cause = cause;
+  }
+}
+
 interface SessionRow {
   id: string;
   user_id: string;
@@ -288,7 +305,13 @@ export async function runScanAnalysis({ sessionId, onProgress }: ScanAnalysisInp
     // silently swallowing the rejection.
     const msg = mapFinalizeError(e);
     report('failed', 95, msg);
-    throw new Error(msg);
+    // Throw a ScanFinalizeError that carries BOTH the user-facing copy (.message)
+    // and the original error (.cause). The network-resilience layer (Task 20)
+    // classifies via the original: a TRANSIENT network / 5xx failure keeps the
+    // captured scan queued for retry; a PERMANENT trigger rejection
+    // (age_restricted / scan_rate_limited / premium_required) is surfaced and the
+    // pending item is dropped (never retried).
+    throw new ScanFinalizeError(msg, e);
   }
 
   report('complete', 100, 'Scan complete');

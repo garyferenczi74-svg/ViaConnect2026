@@ -21,6 +21,7 @@ import { ScanPdfExportButton } from '@/components/body-tracker/scanning/ScanPdfE
 import { NumbersOptionalToggle } from '@/components/body-tracker/scanning/NumbersOptionalToggle';
 import { ScanTimeOfDayRecommendation } from '@/components/body-tracker/scanning/ScanTimeOfDayRecommendation';
 import { CyclePhaseOptInToggle } from '@/components/body-tracker/scanning/CyclePhaseOptInToggle';
+import { PendingScansSurface } from '@/components/body-tracker/scanning/PendingScansSurface';
 
 export default function PhotosPage() {
   const [open, setOpen] = useState(false);
@@ -111,6 +112,13 @@ export default function PhotosPage() {
         onOpenChange={setOpen}
         onCompleted={() => setRefreshKey((k) => k + 1)}
       />
+
+      {/* Network resilience pending scans (Prompt #169b, Task 20, spec section
+          16.3): captures taken offline or interrupted by a network drop are kept
+          and resumed here, so a scan is never lost and never duplicated. Mounted
+          above the session views so a returning user sees the "Finish processing"
+          action on app reopen. Renders nothing when nothing is pending. */}
+      <PendingScansSurface onResolved={() => setRefreshKey((k) => k + 1)} />
 
       {!loading && !latestId && (
         <div className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/50 p-8 text-center">

@@ -5,6 +5,14 @@ import { Loader2, ScanLine } from 'lucide-react';
 import { runScanAnalysis, type ScanProgress } from '@/lib/arnold/scanning/runScanAnalysis';
 import { usePremiumEntitlement } from '@/hooks/body-tracker/usePremiumEntitlement';
 import { selectScanEntryGate, selectScanCaptureGate } from '@/lib/body-tracker/scan-gate';
+import { createClient } from '@/lib/supabase/client';
+import { isPermanent, type CapturePayload } from '@/lib/body-tracker/pending-scan-sync';
+import {
+  acquireSessionLock,
+  persistPendingCapture,
+  releaseSessionLock,
+  resolvePendingScanStore,
+} from '@/lib/body-tracker/pending-scan-store';
 import { BodyScanPremiumPaywall } from './BodyScanPremiumPaywall';
 import { BodyScanFreeTeaserBanner } from './BodyScanFreeTeaserBanner';
 
@@ -29,6 +37,38 @@ export function RunScanButton({ sessionId, onComplete, alreadyScanned }: RunScan
   // for this path.
   const { premium, freeTeaserUsed, isLoading: entitlementLoading } = usePremiumEntitlement();
 
+  // Build the deterministic-key capture payload (Prompt #169b, Task 20, spec
+  // section 16.3) from the session row: the pose object paths + the per scan
+  // pinned stats + the tier. Persisting THIS before processing makes the capture
+  // durable, and re-running it hashes to the same processing key, so a resume
+  // reconciles to the same scan row and never duplicates.
+  async function buildCapturePayload(): Promise<CapturePayload> {
+    try {
+      const supabase = createClient();
+      const { data } = await supabase
+        .from('body_photo_sessions')
+        .select('front_full_path, back_full_path, left_full_path, right_full_path, weight_kg_at_scan, height_cm_at_scan')
+        .eq('id', sessionId)
+        .maybeSingle();
+      const s = (data ?? {}) as Record<string, unknown>;
+      return {
+        sessionId,
+        posePaths: {
+          front: (s.front_full_path as string | null) ?? null,
+          back: (s.back_full_path as string | null) ?? null,
+          left: (s.left_full_path as string | null) ?? null,
+          right: (s.right_full_path as string | null) ?? null,
+        },
+        weightKgAtScan: (s.weight_kg_at_scan as number | null) ?? null,
+        heightCmAtScan: (s.height_cm_at_scan as number | null) ?? null,
+        tier: 1,
+      };
+    } catch {
+      // Fall back to a session-only payload (still deterministic + idempotent).
+      return { sessionId, tier: 1 };
+    }
+  }
+
   async function start() {
     setError(null);
 
@@ -42,16 +82,47 @@ export function RunScanButton({ sessionId, onComplete, alreadyScanned }: RunScan
       return;
     }
 
+    // PERSIST-BEFORE-PROCESS (spec section 16.3): make the capture durable in the
+    // pending store BEFORE running analysis / finalize. If the device is offline
+    // or the connection drops mid finalize, the captured scan is not lost: the
+    // PendingScansSurface retry loop will resume it (re-running the idempotent
+    // finalize) on reconnect. Persistence is best effort and never blocks the scan.
+    const store = resolvePendingScanStore();
+    const payload = await buildCapturePayload();
+    const pending = await persistPendingCapture(payload, Date.now(), store);
+
+    // Acquire the per session in-flight lock so the background PendingScansSurface
+    // retry loop does not resume THIS session in parallel (which could duplicate
+    // the non-unique body_scan_measurements INSERT). If another resume is already
+    // running this session, let it own the finalize and do not double-run here.
+    if (!acquireSessionLock(sessionId)) return;
     try {
       await runScanAnalysis({
         sessionId,
         onProgress: (p) => setProgress(p),
       });
+      // Success: the scan finalized; clear the durable pending record.
+      if (pending) {
+        try { await store.delete(pending.processingKey); } catch { /* best effort */ }
+      }
       onComplete?.();
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Scan failed';
       setError(msg);
       setProgress({ phase: 'failed', percent: 0, message: msg });
+
+      // Classify the failure (Task 20). The ScanFinalizeError carries the original
+      // error as `cause`, so isPermanent sees the real trigger / network signal.
+      //   * PERMANENT (age_restricted / scan_rate_limited / premium_required, or a
+      //     4xx): the scan can never finalize; remove the durable record so it is
+      //     not retried. The reason is already shown above.
+      //   * TRANSIENT (offline / 5xx / timeout): LEAVE the record in the store so
+      //     the PendingScansSurface resumes it automatically on reconnect.
+      if (pending && isPermanent(e)) {
+        try { await store.delete(pending.processingKey); } catch { /* best effort */ }
+      }
+    } finally {
+      releaseSessionLock(sessionId);
     }
   }
 

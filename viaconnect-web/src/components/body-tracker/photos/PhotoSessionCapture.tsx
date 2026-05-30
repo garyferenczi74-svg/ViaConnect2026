@@ -26,6 +26,13 @@ import { BodyScanInclusivityFallback } from '@/components/body-tracker/scanning/
 import { aggregateQualityScores } from '@/lib/body-tracker/scan-quality';
 import { fuseFrames } from '@/lib/body-tracker/multi-frame-fusion';
 import { MULTI_FRAME_FUSION } from '@/lib/body-tracker/scan-constants';
+import {
+  computeProcessingKey,
+  isTransient,
+  CAPTURE_SAVED_OFFLINE_MESSAGE,
+  type CapturePayload,
+} from '@/lib/body-tracker/pending-scan-sync';
+import { persistPendingCapture, resolvePendingScanStore } from '@/lib/body-tracker/pending-scan-store';
 import type { PoseId } from '@/lib/arnold/types';
 import type { CalibrationResult, QualityScores } from '@/lib/body-tracker/scan-types';
 
@@ -437,12 +444,44 @@ export function PhotoSessionCapture({ open, onOpenChange, onCompleted }: PhotoSe
     burstFiredRef.current = false;
   }
 
+  // Build the deterministic-key capture payload (Prompt #169b, Task 20, spec
+  // section 16.3) from the captured pose object paths + the pinned stats. The
+  // SAME capture hashes to the SAME processing key, so a resume reconciles to the
+  // same body_photo_sessions row (the finalize UPDATE in runScanAnalysis is
+  // already idempotent) and never creates a duplicate scan.
+  function buildCapturePayload(sid: string): CapturePayload {
+    return {
+      sessionId: sid,
+      posePaths: {
+        front: uploads.front.fullPath,
+        back: uploads.back.fullPath,
+        left: uploads.left.fullPath,
+        right: uploads.right.fullPath,
+      },
+      weightKgAtScan: weightKg > 0 ? weightKg : null,
+      heightCmAtScan: heightCm > 0 ? heightCm : null,
+      tier: 1,
+    };
+  }
+
   // ---- Finish + edge function call ----
   async function finish() {
     if (!sessionId) return;
     setFinishing(true);
     setStep('finishing');
     setError(null);
+
+    // PERSIST-BEFORE-PROCESS (spec section 16.3): make the capture durable in the
+    // pending store BEFORE firing analysis. If the device is offline / the
+    // connection drops here, the captured scan is not lost: the PendingScansSurface
+    // on the scan area will resume it (re-running the idempotent client finalize,
+    // which reads the SAME stored photos for this session id) on reconnect. The
+    // resume reconciles to the same scan row via the deterministic key.
+    const capturePayload = buildCapturePayload(sessionId);
+    const processingKey = computeProcessingKey(capturePayload);
+    const pendingStore = resolvePendingScanStore();
+    await persistPendingCapture(capturePayload, Date.now(), pendingStore);
+
     try {
       const supabase = createClient();
       const { data: { session: authSession } } = await supabase.auth.getSession();
@@ -451,9 +490,12 @@ export function PhotoSessionCapture({ open, onOpenChange, onCompleted }: PhotoSe
       const supabaseUrl =
         process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://nnhkcufyqjojdbvdrpky.supabase.co';
 
-      // Call the new body-scan-analyze edge function (T5) with enriched payload
+      // Call the new body-scan-analyze edge function (T5) with enriched payload.
+      // processing_key (Task 20) is the SAME deterministic key persisted above, so
+      // the server can dedupe a retried finalize idempotently.
       const payload = {
         session_id:      sessionId,
+        processing_key:  processingKey,
         tier:            1,
         calibration:     calibration ?? undefined,
         quality_scores:  qualityScores ?? undefined,
@@ -473,6 +515,20 @@ export function PhotoSessionCapture({ open, onOpenChange, onCompleted }: PhotoSe
         })(),
       };
 
+      // If we are OFFLINE at finish time, do not fire into the void: keep the
+      // captured scan queued and tell the user it will finish on reconnect (spec
+      // copy). The PendingScansSurface resumes it automatically.
+      const isOffline = typeof navigator !== 'undefined' && navigator.onLine === false;
+      if (isOffline) {
+        setError(CAPTURE_SAVED_OFFLINE_MESSAGE);
+        setStep('capturing');
+        // Surface the captured-but-unprocessed scan to the page (which mounts the
+        // pending surface) and close the capture modal.
+        onCompleted?.(sessionId);
+        onOpenChange(false);
+        return;
+      }
+
       // Fire and forget: edge function is long-running; UI polls session status
       void fetch(`${supabaseUrl}/functions/v1/body-scan-analyze`, {
         method: 'POST',
@@ -481,7 +537,7 @@ export function PhotoSessionCapture({ open, onOpenChange, onCompleted }: PhotoSe
           Authorization: `Bearer ${accessToken ?? ''}`,
         },
         body: JSON.stringify(payload),
-      }).catch(() => { /* swallow; status polling surfaces failure */ });
+      }).catch(() => { /* swallow; status polling + pending surface surface failure */ });
 
       // Also fire the existing arnold-vision-analyze for legacy compatibility
       void fetch(`${supabaseUrl}/functions/v1/arnold-vision-analyze`, {
@@ -490,20 +546,38 @@ export function PhotoSessionCapture({ open, onOpenChange, onCompleted }: PhotoSe
           'Content-Type': 'application/json',
           Authorization: `Bearer ${accessToken ?? ''}`,
         },
-        body: JSON.stringify({ session_id: sessionId }),
+        body: JSON.stringify({ session_id: sessionId, processing_key: processingKey }),
       }).catch(() => { /* swallow */ });
 
-      // Mark status queued so the UI polls
+      // Mark status queued so the UI polls. This DB write is the first thing that
+      // actually fails if the connection drops here; on a TRANSIENT failure we keep
+      // the pending item so the scan is resumed later.
       await supabase
         .from('body_photo_sessions')
         .update({ arnold_status: 'queued' } as never)
         .eq('id', sessionId);
 
+      // Reached the server: the capture is queued for processing, so it is no
+      // longer "stuck". Clear the durable pending record so the PendingScansSurface
+      // only ever shows captures that genuinely could not reach processing (offline
+      // / network drop). A failure before this point leaves the record in place.
+      try { await pendingStore.delete(processingKey); } catch { /* best effort */ }
+
       onCompleted?.(sessionId);
       onOpenChange(false);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Finish failed');
-      setStep('capturing');
+      // A TRANSIENT failure here (offline / network drop) must NOT lose the scan:
+      // the durable pending item is already saved, so leave it for the resume loop
+      // and show the reassuring offline copy. Any other (non transient) error keeps
+      // its own message but the capture is still recoverable from the queue.
+      if (isTransient(e)) {
+        setError(CAPTURE_SAVED_OFFLINE_MESSAGE);
+        onCompleted?.(sessionId);
+        onOpenChange(false);
+      } else {
+        setError(e instanceof Error ? e.message : 'Finish failed');
+        setStep('capturing');
+      }
     } finally {
       setFinishing(false);
     }

@@ -188,6 +188,16 @@ interface BodyScanRequest {
   //   consumer cannot self-supply it to defeat the age gate (a self-scan is never
   //   practitioner-managed). A blank/whitespace reason does not override.
   clinical_override_reason?: string;
+  // --- Prompt #169b network resilience (Task 20, spec section 16.3) ---
+  // processing_key: a DETERMINISTIC key derived client-side from the capture
+  //   payload (session id + captured inputs) by computeProcessingKey in
+  //   src/lib/body-tracker/pending-scan-sync.ts. The SAME capture always yields
+  //   the SAME key, so a retried finalize (after an offline / network drop) can be
+  //   deduped to the same scan idempotently. Optional + additive: the finalize is
+  //   ALSO idempotent at the DB layer (the body_photo_sessions UPDATE is gated on
+  //   scan_status not already 'complete'), so absence is safe; this key is the
+  //   client-correlatable idempotency token for logging / future server dedup.
+  processing_key?: string;
 }
 
 interface BodyScanEstimate {
