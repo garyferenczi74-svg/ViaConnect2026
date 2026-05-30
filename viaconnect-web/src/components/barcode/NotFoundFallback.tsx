@@ -28,6 +28,11 @@ export interface NotFoundFallbackProps {
   onBack: () => void;
   onPhotograph: () => void;
   onEnterMacros: () => void;
+  /**
+   * Parent handles the side-effect chain. The internal handleContribute
+   * helper also posts to /api/nutrition/barcode/contribution to fire the
+   * Helix barcode_off_contribution_clicked event.
+   */
   onContribute: () => void;
   onRetry?: () => void;
 }

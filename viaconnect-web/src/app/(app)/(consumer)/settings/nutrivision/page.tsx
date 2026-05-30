@@ -13,7 +13,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Camera } from 'lucide-react';
+import { ArrowLeft, Camera, ChevronRight, ScanBarcode } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { VoiceSettingsSection } from './components/VoiceSettingsSection';
 
@@ -155,6 +155,25 @@ export default function NutriVisionSettingsPage() {
         </section>
 
         <VoiceSettingsSection />
+
+        {/* Prompt 170l Phase 1c-3 + Gate 2: barcode scanning settings live on
+            a sub-page per Gary's explicit choice (departs from 170j voice
+            inline-section precedent). */}
+        <Link
+          href="/settings/nutrivision/barcode-scan"
+          className="mt-4 flex items-center gap-3 rounded-2xl border border-white/[0.08] bg-[#1E3054]/45 p-4 transition-colors hover:border-[#2DA5A0]/40 hover:bg-[#1E3054]/65"
+        >
+          <span className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-[#2DA5A0]/15">
+            <ScanBarcode className="h-5 w-5 text-[#2DA5A0]" strokeWidth={1.5} />
+          </span>
+          <span className="flex-1 min-w-0">
+            <span className="block text-sm font-semibold text-white">Barcode scanning</span>
+            <span className="mt-0.5 block text-[12px] text-white/65">
+              Quality indicators, audio chime, and haptic feedback preferences.
+            </span>
+          </span>
+          <ChevronRight className="h-4 w-4 flex-none text-white/55" strokeWidth={1.5} />
+        </Link>
       </div>
     </div>
   );

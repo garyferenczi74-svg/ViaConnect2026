@@ -23,10 +23,11 @@
 'use client';
 
 import { useCallback, useMemo, useState } from 'react';
-import { ChevronDown, ChevronLeft, ChevronUp, Package, X } from 'lucide-react';
+import { AlertTriangle, ChevronDown, ChevronLeft, ChevronUp, Package, X } from 'lucide-react';
 import type { OFFProduct } from '@/lib/nutrition/barcode/types';
 import { QualityChip } from './QualityChip';
 import { AttributionFooter } from './AttributionFooter';
+import { useUserAllergens, isAllergenMatch } from '@/hooks/useUserAllergens';
 
 const TEAL = '#2DA5A0';
 const ORANGE = '#B75E18';
@@ -51,8 +52,9 @@ export interface ProductConfirmationProps {
   onClose: () => void;
   onSave: (portionMultiplier: number) => void;
   onEditMacros: () => void;
-  onScanAnother?: () => void;
-  /** Defer Phase 1c-3 multi-product affordance. When undefined the button is hidden. */
+  /** Multi-product flow (Hannah §11.7). Passes current portion so the
+   *  parent can append a fully-built MealItemDraft to its pending list. */
+  onScanAnother?: (portionMultiplier: number) => void;
 }
 
 function formatBarcodeDigits(barcode: string): string {
@@ -122,8 +124,15 @@ export function ProductConfirmation({
 }: ProductConfirmationProps): JSX.Element {
   const [multiplier, setMultiplier] = useState(initialPortionMultiplier);
   const [ingredientsOpen, setIngredientsOpen] = useState(false);
+  const userAllergens = useUserAllergens();
+  const matchedAllergens = useMemo(() => {
+    const tags = product.allergens_tags ?? [];
+    return tags.filter((tag) => isAllergenMatch(tag, userAllergens));
+  }, [product.allergens_tags, userAllergens]);
+  const hasAllergenMatch = matchedAllergens.length > 0;
+  // Auto-expand when product has allergens OR when a user-flagged match exists.
   const [allergensOpen, setAllergensOpen] = useState(
-    (product.allergens_tags?.length ?? 0) > 0,
+    (product.allergens_tags?.length ?? 0) > 0 || hasAllergenMatch,
   );
 
   const macros = useMemo(
@@ -370,7 +379,18 @@ export function ProductConfirmation({
       </section>
 
       {/* Allergens */}
-      <section className="mb-3">
+      <section
+        className="mb-3 rounded-xl"
+        style={
+          hasAllergenMatch
+            ? {
+                border: `2px solid ${ORANGE}`,
+                padding: '12px',
+                margin: '-12px 0 16px',
+              }
+            : undefined
+        }
+      >
         <button
           type="button"
           onClick={() => setAllergensOpen((s) => !s)}
@@ -378,38 +398,56 @@ export function ProductConfirmation({
           className="flex w-full items-center justify-between"
         >
           <span
-            className="uppercase tracking-wide font-medium"
-            style={{ fontSize: 12, color: TEAL }}
+            className="uppercase tracking-wide font-medium flex items-center gap-1.5"
+            style={{ fontSize: 12, color: hasAllergenMatch ? ORANGE : TEAL }}
           >
+            {hasAllergenMatch
+              ? <AlertTriangle size={14} strokeWidth={2} aria-hidden="true" style={{ color: ORANGE }} />
+              : null}
             Allergens
           </span>
           {allergensOpen
-            ? <ChevronUp size={16} strokeWidth={1.5} aria-hidden="true" style={{ color: TEAL }} />
-            : <ChevronDown size={16} strokeWidth={1.5} aria-hidden="true" style={{ color: TEAL }} />}
+            ? <ChevronUp size={16} strokeWidth={1.5} aria-hidden="true" style={{ color: hasAllergenMatch ? ORANGE : TEAL }} />
+            : <ChevronDown size={16} strokeWidth={1.5} aria-hidden="true" style={{ color: hasAllergenMatch ? ORANGE : TEAL }} />}
         </button>
         {allergensOpen ? (
-          <div className="mt-2 flex flex-wrap gap-2">
-            {(product.allergens_tags ?? []).length === 0 ? (
-              <span style={{ fontSize: 13, color: 'rgba(255, 255, 255, 0.7)' }}>
-                No allergens listed for this product.
-              </span>
-            ) : (
-              (product.allergens_tags ?? []).map((tag) => (
-                <span
-                  key={tag}
-                  className="rounded-full px-3"
-                  style={{
-                    backgroundColor: `${CARD}E6`,
-                    color: '#FFFFFF',
-                    fontSize: 12,
-                    height: 32,
-                    lineHeight: '32px',
-                  }}
-                >
-                  {tag.replace(/^en:/, '').replace(/-/g, ' ')}
+          <div className="mt-2">
+            {hasAllergenMatch ? (
+              <p
+                aria-live="polite"
+                className="mb-2"
+                style={{ fontSize: 13, color: 'rgba(255, 255, 255, 0.9)' }}
+              >
+                You flagged {matchedAllergens.length === 1 ? 'this allergen' : 'these allergens'} in your profile.
+              </p>
+            ) : null}
+            <div className="flex flex-wrap gap-2">
+              {(product.allergens_tags ?? []).length === 0 ? (
+                <span style={{ fontSize: 13, color: 'rgba(255, 255, 255, 0.7)' }}>
+                  No allergens listed for this product.
                 </span>
-              ))
-            )}
+              ) : (
+                (product.allergens_tags ?? []).map((tag) => {
+                  const matched = matchedAllergens.includes(tag);
+                  return (
+                    <span
+                      key={tag}
+                      className="rounded-full px-3"
+                      style={{
+                        backgroundColor: matched ? 'rgba(183, 94, 24, 0.16)' : `${CARD}E6`,
+                        color: matched ? ORANGE : '#FFFFFF',
+                        fontSize: 12,
+                        fontWeight: matched ? 600 : 400,
+                        height: 32,
+                        lineHeight: '32px',
+                      }}
+                    >
+                      {tag.replace(/^en:/, '').replace(/-/g, ' ')}
+                    </span>
+                  );
+                })
+              )}
+            </div>
           </div>
         ) : null}
       </section>
@@ -456,7 +494,7 @@ export function ProductConfirmation({
             <>
               <button
                 type="button"
-                onClick={onScanAnother}
+                onClick={() => onScanAnother(multiplier)}
                 className="underline"
                 style={{ color: 'rgba(255, 255, 255, 0.85)', fontSize: 13 }}
               >

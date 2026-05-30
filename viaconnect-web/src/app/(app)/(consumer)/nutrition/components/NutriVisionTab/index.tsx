@@ -122,6 +122,11 @@ export default function NutriVisionTab() {
   const [macroEditOpen, setMacroEditOpen] = useState<boolean>(false);
   const [macroEditMode, setMacroEditMode] = useState<'prefilled' | 'blank_slate'>('prefilled');
   const [blankSlateBarcode, setBlankSlateBarcode] = useState<string | null>(null);
+  // Prompt 170l Phase 1c-3: multi-product flow accumulator (§11.7).
+  // When user taps "Scan another product" on §11.4, the current item is
+  // pushed here and the next scan returns to product confirmation; the final
+  // "Save to meal" tap builds the draft from [...pendingBarcodeItems, current].
+  const [pendingBarcodeItems, setPendingBarcodeItems] = useState<import('./types').MealItemDraft[]>([]);
 
   const capture = useCameraCapture();
   const analysis = useNutriVisionAnalysis();
@@ -360,19 +365,25 @@ export default function NutriVisionTab() {
         toast.error("That product didn't have enough nutrition data to save.");
         return;
       }
-      const totals = {
-        calories_kcal: itemDraft.calories_kcal,
-        protein_g: itemDraft.protein_g,
-        carbs_g: itemDraft.carbs_g,
-        fat_g: itemDraft.fat_g,
-        fiber_g: itemDraft.fiber_g ?? 0,
-        sugar_g: itemDraft.sugar_g ?? 0,
-        sodium_mg: itemDraft.sodium_mg ?? 0,
-        cholesterol_mg: 0,
-      };
+      // Multi-product flow: combine with any items accumulated from prior
+      // "Scan another product" steps. Single-product flow has pending=[].
+      const allItems = [...pendingBarcodeItems, itemDraft];
+      const totals = allItems.reduce(
+        (acc, it) => ({
+          calories_kcal: acc.calories_kcal + it.calories_kcal,
+          protein_g: acc.protein_g + it.protein_g,
+          carbs_g: acc.carbs_g + it.carbs_g,
+          fat_g: acc.fat_g + it.fat_g,
+          fiber_g: acc.fiber_g + (it.fiber_g ?? 0),
+          sugar_g: acc.sugar_g + (it.sugar_g ?? 0),
+          sodium_mg: acc.sodium_mg + (it.sodium_mg ?? 0),
+          cholesterol_mg: acc.cholesterol_mg + (it.cholesterol_mg ?? 0),
+        }),
+        { calories_kcal: 0, protein_g: 0, carbs_g: 0, fat_g: 0, fiber_g: 0, sugar_g: 0, sodium_mg: 0, cholesterol_mg: 0 },
+      );
       const newDraft = {
         id: `barcode-meal-${Date.now().toString(36)}`,
-        items: [itemDraft],
+        items: allItems,
         totals,
         meal_confidence: 0.95,
         warnings: [],
@@ -382,7 +393,29 @@ export default function NutriVisionTab() {
       };
       setDraft(newDraft);
       setBarcodeProduct(null);
+      setPendingBarcodeItems([]);
       setPhase('reviewing');
+    },
+    [barcodeProduct, pendingBarcodeItems],
+  );
+
+  // Prompt 170l Phase 1c-3 §11.7: append current item to pending list and
+  // return to scanner so the user can scan another product into the same
+  // meal-in-progress.
+  const handleScanAnother = useCallback(
+    (portionMultiplier: number) => {
+      if (!barcodeProduct) return;
+      const itemDraft = convertOFFProductToMealItemDraft(barcodeProduct, {
+        portionMultiplier,
+      });
+      if (itemDraft === null) {
+        toast.error("That product didn't have enough nutrition data to add.");
+        return;
+      }
+      setPendingBarcodeItems((prev) => [...prev, itemDraft]);
+      setBarcodeProduct(null);
+      setBarcodeFormat(null);
+      setPhase('scanning');
     },
     [barcodeProduct],
   );
@@ -390,6 +423,8 @@ export default function NutriVisionTab() {
   const handleProductCancel = useCallback(() => {
     setBarcodeProduct(null);
     setBarcodeFormat(null);
+    // Cancel = abandon entire flow including any accumulated multi-product items.
+    setPendingBarcodeItems([]);
     setPhase('idle');
   }, []);
 
@@ -422,6 +457,12 @@ export default function NutriVisionTab() {
     // Open OFF deep-link to the contribution page for this barcode.
     const url = `https://world.openfoodfacts.org/cgi/product.pl?type=edit&code=${encodeURIComponent(barcodeNotFoundValue)}`;
     window.open(url, '_blank', 'noopener,noreferrer');
+    // Fire-and-forget Helix barcode_off_contribution_clicked event (3pt).
+    void fetch('/api/nutrition/barcode/contribution', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ barcode: barcodeNotFoundValue }),
+    }).catch(() => undefined);
     toast.success("Thanks for contributing. We'll find this product next time.");
     setBarcodeNotFoundValue(null);
     setPhase('idle');
@@ -648,6 +689,7 @@ export default function NutriVisionTab() {
               onClose={handleProductCancel}
               onSave={handleProductSave}
               onEditMacros={handleEditMacros}
+              onScanAnother={handleScanAnother}
             />
           )}
 

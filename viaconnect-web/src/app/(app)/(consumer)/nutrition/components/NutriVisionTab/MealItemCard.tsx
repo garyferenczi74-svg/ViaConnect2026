@@ -24,6 +24,7 @@ import { CookingOilSelector } from './CookingOilSelector';
 import { MicronutrientPanel } from './MicronutrientPanel';
 import { FoodSearchDropdown } from './FoodSearchDropdown';
 import type { MealItemDraft, FoodSwapReplacement, ModifierChip } from './types';
+import { ScannedChip } from '@/components/barcode/ScannedChip';
 
 export interface MealItemCardProps {
   item: MealItemDraft;
@@ -99,6 +100,8 @@ export function MealItemCard({
           <h3 className="truncate text-sm font-semibold text-white">{item.food_name}</h3>
           <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[10px] uppercase tracking-wide text-white/55">
             <span className="rounded-full border border-white/[0.08] bg-white/5 px-1.5 py-0.5">{sourceLabel}</span>
+            {/* Prompt 170l Phase 1c-3: barcode-sourced item provenance chip. */}
+            {item.from_barcode_scan && <ScannedChip />}
             {typeof item.cuisine_tag === 'string' && (
               <span>{item.cuisine_tag.replace(/_/g, ' ')}</span>
             )}
