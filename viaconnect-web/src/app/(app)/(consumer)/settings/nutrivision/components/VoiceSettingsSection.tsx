@@ -1,11 +1,14 @@
 /**
- * Voice editing settings section per Prompt 170j §11.7 (Gate 2 answered
- * inline section).
+ * Voice editing settings section per Prompt 170j §11.7 (Gate 2 inline).
  *
  * Four toggles: enable voice, Quick Apply Mode (with confirmation dialog
  * defaulting focus to "Keep it off" per Hannah's accessibility-as-safety
- * pattern), audio chimes, push-to-talk default. Persists to localStorage
- * for now; Supabase wire-up lands in Phase 1c-3.
+ * pattern), audio chimes, push-to-talk default.
+ *
+ * Phase 1c-3: persists via /api/nutrition/voice/preferences (replaces the
+ * Phase 1c-2 localStorage stub). Optimistic UI: toggle updates immediately,
+ * server upsert happens in the background. On error the prior state is
+ * restored.
  */
 
 'use client';
@@ -15,36 +18,44 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface VoicePreferences {
   voice_editing_enabled: boolean;
-  quick_apply_mode: boolean;
+  voice_quick_apply_mode: boolean;
   voice_feedback_chimes: boolean;
-  push_to_talk_default: boolean;
+  voice_push_to_talk_default: boolean;
 }
 
 const DEFAULT_PREFS: VoicePreferences = {
   voice_editing_enabled: true,
-  quick_apply_mode: false,
+  voice_quick_apply_mode: false,
   voice_feedback_chimes: false,
-  push_to_talk_default: false,
+  voice_push_to_talk_default: false,
 };
-
-const STORAGE_KEY = 'viaconnect_voice_prefs';
 
 export function VoiceSettingsSection() {
   const [prefs, setPrefs] = useState<VoicePreferences>(DEFAULT_PREFS);
+  const [loading, setLoading] = useState(true);
   const [quickApplyDialogOpen, setQuickApplyDialogOpen] = useState(false);
   const keepOffRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored) as Partial<VoicePreferences>;
-        setPrefs((p) => ({ ...p, ...parsed }));
+    let cancelled = false;
+    void (async () => {
+      try {
+        const resp = await fetch('/api/nutrition/voice/preferences');
+        if (resp.ok) {
+          const data = (await resp.json()) as Partial<VoicePreferences>;
+          if (!cancelled) {
+            setPrefs((p) => ({ ...p, ...data }));
+          }
+        }
+      } catch {
+        // network or auth failure; defaults stay
+      } finally {
+        if (!cancelled) setLoading(false);
       }
-    } catch {
-      // ignore corrupted storage
-    }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -54,27 +65,30 @@ export function VoiceSettingsSection() {
   }, [quickApplyDialogOpen]);
 
   const persistPref = useCallback(
-    (key: keyof VoicePreferences, value: boolean) => {
-      setPrefs((prev) => {
-        const next = { ...prev, [key]: value };
-        try {
-          if (typeof window !== 'undefined') {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-          }
-        } catch {
-          // ignore quota errors
+    async (key: keyof VoicePreferences, value: boolean): Promise<void> => {
+      const previous = prefs;
+      setPrefs((p) => ({ ...p, [key]: value }));
+      try {
+        const resp = await fetch('/api/nutrition/voice/preferences', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ [key]: value }),
+        });
+        if (!resp.ok) {
+          setPrefs(previous);
         }
-        return next;
-      });
+      } catch {
+        setPrefs(previous);
+      }
     },
-    []
+    [prefs]
   );
 
   const handleQuickApplyToggle = (value: boolean): void => {
     if (value) {
       setQuickApplyDialogOpen(true);
     } else {
-      persistPref('quick_apply_mode', false);
+      void persistPref('voice_quick_apply_mode', false);
     }
   };
 
@@ -85,29 +99,33 @@ export function VoiceSettingsSection() {
         <h2 className="text-base font-semibold text-white">Voice editing</h2>
       </header>
 
-      <div className="space-y-4">
+      <div className="space-y-4" aria-busy={loading}>
         <VoiceToggle
           label="Voice editing on result review"
           on={prefs.voice_editing_enabled}
-          onChange={(v) => persistPref('voice_editing_enabled', v)}
+          disabled={loading}
+          onChange={(v) => void persistPref('voice_editing_enabled', v)}
         />
         <VoiceToggle
           label="Quick Apply Mode for high-confidence edits"
           helper="Skip the preview when I am very confident. You can always undo."
-          on={prefs.quick_apply_mode}
+          on={prefs.voice_quick_apply_mode}
+          disabled={loading}
           onChange={handleQuickApplyToggle}
         />
         <VoiceToggle
           label="Audio feedback (chimes)"
           helper="Play a soft chime when voice capture starts and ends."
           on={prefs.voice_feedback_chimes}
-          onChange={(v) => persistPref('voice_feedback_chimes', v)}
+          disabled={loading}
+          onChange={(v) => void persistPref('voice_feedback_chimes', v)}
         />
         <VoiceToggle
           label="Push-to-talk by default"
           helper="Hold the voice button instead of tapping to start."
-          on={prefs.push_to_talk_default}
-          onChange={(v) => persistPref('push_to_talk_default', v)}
+          on={prefs.voice_push_to_talk_default}
+          disabled={loading}
+          onChange={(v) => void persistPref('voice_push_to_talk_default', v)}
         />
       </div>
 
@@ -119,7 +137,7 @@ export function VoiceSettingsSection() {
         <QuickApplyConfirmDialog
           keepOffRef={keepOffRef}
           onTurnOn={() => {
-            persistPref('quick_apply_mode', true);
+            void persistPref('voice_quick_apply_mode', true);
             setQuickApplyDialogOpen(false);
           }}
           onKeepOff={() => setQuickApplyDialogOpen(false)}
@@ -133,10 +151,11 @@ interface VoiceToggleProps {
   label: string;
   helper?: string;
   on: boolean;
+  disabled?: boolean;
   onChange: (v: boolean) => void;
 }
 
-function VoiceToggle({ label, helper, on, onChange }: VoiceToggleProps) {
+function VoiceToggle({ label, helper, on, disabled, onChange }: VoiceToggleProps) {
   return (
     <div className="flex items-start justify-between gap-3">
       <div className="min-w-0 flex-1">
@@ -148,8 +167,9 @@ function VoiceToggle({ label, helper, on, onChange }: VoiceToggleProps) {
         role="switch"
         aria-checked={on}
         aria-label={label}
+        disabled={disabled}
         onClick={() => onChange(!on)}
-        className={`relative h-7 w-12 shrink-0 rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/40 ${
+        className={`relative h-7 w-12 shrink-0 rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/40 disabled:opacity-50 ${
           on ? 'bg-[#2DA5A0]' : 'bg-white/15'
         }`}
       >

@@ -21,6 +21,8 @@ import { QuickApplyToast } from '@/lib/nutrition/voice/components/QuickApplyToas
 import { VoiceCaptureOverlay } from '@/lib/nutrition/voice/components/VoiceCaptureOverlay';
 import { VoiceEditedChip } from '@/lib/nutrition/voice/components/VoiceEditedChip';
 import { VoiceFAB } from '@/lib/nutrition/voice/components/VoiceFAB';
+import { VoiceHelpSheet } from '@/lib/nutrition/voice/components/VoiceHelpSheet';
+import { VoiceTutorial } from '@/lib/nutrition/voice/components/VoiceTutorial';
 import { useVoiceSession } from '@/lib/nutrition/voice/hooks/useVoiceSession';
 import { ConfidenceBadge } from './ConfidenceBadge';
 import { MealItemCard } from './MealItemCard';
@@ -62,6 +64,7 @@ interface AnalysisResultProps {
   // Either omitted gracefully disables voice rendering.
   onRemoveChip?: (itemId: string | 'meal', chip: ModifierChip) => void;
   onRestoreSnapshot?: (items: ReadonlyArray<MealItemDraft>) => void;
+  onAppendItem?: (item: MealItemDraft) => void;
   onSave: () => void;
   onCancel: () => void;
 }
@@ -71,9 +74,12 @@ export function AnalysisResult(props: AnalysisResultProps) {
   const band = classifyConfidence(draft.meal_confidence);
   const showPlateSelector = draft.credit_card_detected !== true;
 
-  const voiceAvailable = Boolean(props.onRemoveChip && props.onRestoreSnapshot);
+  const voiceAvailable = Boolean(
+    props.onRemoveChip && props.onRestoreSnapshot && props.onAppendItem
+  );
   const noopRemoveChip: NonNullable<typeof props.onRemoveChip> = () => {};
   const noopRestoreSnapshot: NonNullable<typeof props.onRestoreSnapshot> = () => {};
+  const noopAppendItem: NonNullable<typeof props.onAppendItem> = () => {};
 
   const voiceSession = useVoiceSession({
     draft,
@@ -85,6 +91,7 @@ export function AnalysisResult(props: AnalysisResultProps) {
       removeItem: props.onRemoveItem,
     },
     restoreSnapshot: props.onRestoreSnapshot ?? noopRestoreSnapshot,
+    appendItem: props.onAppendItem ?? noopAppendItem,
   });
 
   const voiceSessionCount = Math.ceil(voiceSession.apply.state.voice_operation_count / 3);
@@ -246,6 +253,18 @@ export function AnalysisResult(props: AnalysisResultProps) {
           appliedCount={voiceSession.apply.state.operations_applied}
           onUndo={voiceSession.undoLast}
           onExpire={voiceSession.dismissToast}
+        />
+      )}
+      {voiceAvailable && voiceSession.phase === 'tutorial' && (
+        <VoiceTutorial
+          onComplete={voiceSession.onTutorialComplete}
+          onSkip={voiceSession.close}
+        />
+      )}
+      {voiceAvailable && (
+        <VoiceHelpSheet
+          open={voiceSession.helpSheetOpen}
+          onClose={voiceSession.hideHelp}
         />
       )}
     </>

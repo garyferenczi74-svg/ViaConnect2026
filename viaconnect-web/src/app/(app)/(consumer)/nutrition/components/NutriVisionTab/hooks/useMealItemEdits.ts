@@ -39,6 +39,7 @@ export interface UseMealItemEditsReturn {
   removeChip: (itemId: string | 'meal', chip: ModifierChip) => void;
   restoreSnapshot: (items: ReadonlyArray<MealItemDraft>) => void;
   addItem: () => void;
+  appendItem: (item: MealItemDraft) => void;
   removeItem: (itemId: string) => void;
   markVerified: (itemId: string) => void;
   setPlateSize: (kind: PlateSelectorKind) => void;
@@ -337,6 +338,15 @@ export function useMealItemEdits(args: UseMealItemEditsArgs): UseMealItemEditsRe
     setEditDiff((d) => ({ ...d, itemsAdded: d.itemsAdded + 1 }));
   }, []);
 
+  // Prompt 170j Phase 1c-3: voice AddItem pushes a fully-constructed item
+  // (built from /api/nutrition/foods/search). Bypasses the placeholder +
+  // swapFood pattern so the meal totals don't briefly read zero between
+  // append and search-resolve.
+  const appendItem = useCallback((item: MealItemDraft) => {
+    setItems((curr) => [...curr, item]);
+    setEditDiff((d) => ({ ...d, itemsAdded: d.itemsAdded + 1 }));
+  }, []);
+
   const removeItem = useCallback((itemId: string) => {
     setItems((curr) => curr.filter((it) => it.id !== itemId));
     setEditDiff((d) => ({ ...d, itemsRemoved: d.itemsRemoved + 1 }));
@@ -427,6 +437,7 @@ export function useMealItemEdits(args: UseMealItemEditsArgs): UseMealItemEditsRe
     removeChip,
     restoreSnapshot,
     addItem,
+    appendItem,
     removeItem,
     markVerified,
     setPlateSize,

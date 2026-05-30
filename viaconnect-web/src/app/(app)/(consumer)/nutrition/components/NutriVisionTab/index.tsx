@@ -487,6 +487,7 @@ function ReviewingSurface(props: ReviewingSurfaceProps) {
       onPlateSizeChange={edits.setPlateSize}
       onRemoveChip={edits.removeChip}
       onRestoreSnapshot={edits.restoreSnapshot}
+      onAppendItem={edits.appendItem}
       onSave={handleSave}
       onCancel={props.onCancel}
     />

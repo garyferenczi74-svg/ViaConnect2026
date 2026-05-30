@@ -3,26 +3,33 @@
  *
  * Composes useVoiceCapture + useVoiceNLU + useVoiceApply into a single
  * session lifecycle the AnalysisResult component consumes. Owns the phase
- * state machine: closed -> capturing -> processing -> preview -> applied
- * (or clarifying / error along the way).
+ * state machine: closed -> tutorial -> capturing -> processing -> preview
+ * -> applied (or clarifying / error along the way).
+ *
+ * Phase 1c-3 additions:
+ *   - 'tutorial' phase shown before first capture (hasSeenTutorial check)
+ *   - applyAll handles add_item async via /api/nutrition/foods/search
+ *   - helpSheetOpen state for VoiceHelpSheet integration
  */
 
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type {
   MealDraft,
   MealItemDraft,
 } from '@/app/(app)/(consumer)/nutrition/components/NutriVisionTab/types';
-import type { VoiceOperation } from '../types';
+import type { AddItemOperation, VoiceOperation, VoiceErrorClass } from '../types';
 import type { VoiceMutatorHandles } from '../apply/operation-applicator';
+import { searchAndBuildAddItem } from '../apply/add-item-handler';
+import { hasSeenTutorial, markTutorialSeen } from '../components/VoiceTutorial';
 import { useVoiceCapture, type VoiceCaptureState } from './useVoiceCapture';
 import { useVoiceNLU, type VoiceNLUState } from './useVoiceNLU';
 import { useVoiceApply, type VoiceApplyState } from './useVoiceApply';
-import type { VoiceErrorClass } from '../types';
 
 export type VoiceSessionPhase =
   | 'closed'
+  | 'tutorial'
   | 'capturing'
   | 'processing'
   | 'preview'
@@ -34,50 +41,68 @@ export interface UseVoiceSessionArgs {
   draft: MealDraft;
   mutators: VoiceMutatorHandles;
   restoreSnapshot: (items: ReadonlyArray<MealItemDraft>) => void;
+  appendItem: (item: MealItemDraft) => void;
 }
 
 export interface UseVoiceSessionReturn {
   phase: VoiceSessionPhase;
-  capture: {
-    state: VoiceCaptureState;
-  };
-  nlu: {
-    state: VoiceNLUState;
-  };
-  apply: {
-    state: VoiceApplyState;
-  };
+  capture: { state: VoiceCaptureState };
+  nlu: { state: VoiceNLUState };
+  apply: { state: VoiceApplyState };
   errorKind: VoiceErrorClass | null;
   errorMessage: string | null;
+  helpSheetOpen: boolean;
   open: () => Promise<void>;
   close: () => void;
   stopCapture: () => void;
-  applyAll: (operations: VoiceOperation[]) => void;
+  applyAll: (operations: VoiceOperation[]) => Promise<void>;
   answerClarification: (selectedTarget: string) => void;
   tryAgain: () => Promise<void>;
   undoLast: () => boolean;
   dismissToast: () => void;
+  onTutorialComplete: () => Promise<void>;
+  showHelp: () => void;
+  hideHelp: () => void;
 }
 
 export function useVoiceSession({
   draft,
   mutators,
   restoreSnapshot,
+  appendItem,
 }: UseVoiceSessionArgs): UseVoiceSessionReturn {
   const [phase, setPhase] = useState<VoiceSessionPhase>('closed');
+  const [helpSheetOpen, setHelpSheetOpen] = useState(false);
   const capture = useVoiceCapture();
   const nlu = useVoiceNLU();
   const apply = useVoiceApply({ mutators, restoreSnapshot });
+  const addItemAbortRef = useRef<AbortController | null>(null);
 
-  const open = useCallback(async (): Promise<void> => {
+  const startCaptureRaw = useCallback(async (): Promise<void> => {
     setPhase('capturing');
     await capture.startCapture();
   }, [capture]);
 
+  const open = useCallback(async (): Promise<void> => {
+    if (!hasSeenTutorial()) {
+      setPhase('tutorial');
+      return;
+    }
+    await startCaptureRaw();
+  }, [startCaptureRaw]);
+
+  const onTutorialComplete = useCallback(async (): Promise<void> => {
+    markTutorialSeen();
+    await startCaptureRaw();
+  }, [startCaptureRaw]);
+
   const close = useCallback((): void => {
+    addItemAbortRef.current?.abort();
+    addItemAbortRef.current = null;
     capture.reset();
     nlu.reset();
     apply.reset();
+    setHelpSheetOpen(false);
     setPhase('closed');
   }, [capture, nlu, apply]);
 
@@ -85,7 +110,6 @@ export function useVoiceSession({
     capture.stopCapture();
   }, [capture]);
 
-  // Capture completed -> kick off NLU parse.
   useEffect(() => {
     if (capture.state.status === 'completed' && phase === 'capturing') {
       setPhase('processing');
@@ -104,14 +128,12 @@ export function useVoiceSession({
     phase,
   ]);
 
-  // Capture errored -> error phase.
   useEffect(() => {
     if (capture.state.status === 'error') {
       setPhase('error');
     }
   }, [capture.state.status]);
 
-  // NLU transitions.
   useEffect(() => {
     if (nlu.state.status === 'completed' && phase === 'processing') {
       setPhase('preview');
@@ -123,19 +145,39 @@ export function useVoiceSession({
   }, [nlu.state.status, phase]);
 
   const applyAll = useCallback(
-    (operations: VoiceOperation[]): void => {
-      apply.applyOperations(operations, draft);
+    async (operations: VoiceOperation[]): Promise<void> => {
+      // Phase 1c-3: split add_item (async food search) from sync ops.
+      const syncOps = operations.filter((op) => op.op_kind !== 'add_item');
+      const addItemOps = operations.filter(
+        (op): op is AddItemOperation => op.op_kind === 'add_item'
+      );
+
+      apply.applyOperations(syncOps, draft);
+
+      if (addItemOps.length > 0) {
+        addItemAbortRef.current?.abort();
+        const ac = new AbortController();
+        addItemAbortRef.current = ac;
+        for (const addOp of addItemOps) {
+          if (ac.signal.aborted) break;
+          const result = await searchAndBuildAddItem(addOp, ac.signal);
+          if (result.success && result.item) {
+            appendItem(result.item);
+          }
+        }
+        addItemAbortRef.current = null;
+      }
+
       setPhase('applied');
     },
-    [apply, draft]
+    [apply, appendItem, draft]
   );
 
   const tryAgain = useCallback(async (): Promise<void> => {
     capture.reset();
     nlu.reset();
-    setPhase('capturing');
-    await capture.startCapture();
-  }, [capture, nlu]);
+    await startCaptureRaw();
+  }, [capture, nlu, startCaptureRaw]);
 
   const undoLast = useCallback((): boolean => {
     const undone = apply.undoLast();
@@ -162,6 +204,14 @@ export function useVoiceSession({
     setPhase('closed');
   }, []);
 
+  const showHelp = useCallback((): void => {
+    setHelpSheetOpen(true);
+  }, []);
+
+  const hideHelp = useCallback((): void => {
+    setHelpSheetOpen(false);
+  }, []);
+
   const errorKind = useMemo<VoiceErrorClass | null>(() => {
     if (capture.state.error) {
       const k = capture.state.error.kind;
@@ -183,6 +233,7 @@ export function useVoiceSession({
     apply: { state: apply.state },
     errorKind,
     errorMessage,
+    helpSheetOpen,
     open,
     close,
     stopCapture,
@@ -191,5 +242,8 @@ export function useVoiceSession({
     tryAgain,
     undoLast,
     dismissToast,
+    onTutorialComplete,
+    showHelp,
+    hideHelp,
   };
 }
