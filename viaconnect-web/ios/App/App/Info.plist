@@ -45,5 +45,9 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>ViaConnect uses your microphone to let you edit meals hands-free. Your voice is processed on your device when possible and never retained.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>ViaConnect uses speech recognition to turn your spoken meal edits into text. Speech is transcribed on your device when possible; transcripts are used only to apply edits you confirm.</string>
 </dict>
 </plist>

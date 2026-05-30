@@ -29,22 +29,36 @@ export type CookingMethod =
   | 'boiled'
   | 'roasted';
 
+/**
+ * Aligned with the existing CookingOilType enum in
+ * src/lib/nutrition/cooking-oil/suggester.ts so voice ops can produce
+ * valid CookingOilSelection rows without translation.
+ */
 export type OilType =
   | 'olive_oil'
-  | 'butter'
-  | 'coconut_oil'
+  | 'evoo'
   | 'avocado_oil'
-  | 'vegetable_oil'
-  | 'ghee';
+  | 'coconut_oil'
+  | 'butter'
+  | 'ghee'
+  | 'vegetable_canola_oil'
+  | 'sesame_oil';
 
+/**
+ * Aligned with the existing useMealItemEdits chip system.
+ * Voice AddModifier and RemoveModifier target these 7 chips.
+ * Dietary modifiers (spicy, dairy_free, gluten_free, vegan, vegetarian,
+ * paleo, keto) are filed for 170j-supplement; voice users saying those
+ * terms trigger the clarification flow per §4.5.
+ */
 export type ModifierChip =
-  | 'spicy'
-  | 'dairy_free'
-  | 'gluten_free'
-  | 'vegan'
-  | 'vegetarian'
-  | 'paleo'
-  | 'keto';
+  | 'butter'
+  | 'cream'
+  | 'cheese'
+  | 'sauce'
+  | 'grilled'
+  | 'baked'
+  | 'raw';
 
 export interface MacroImpactEstimate {
   calories_kcal?: number;

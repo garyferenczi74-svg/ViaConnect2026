@@ -18,23 +18,29 @@ const cookingMethodSchema = z.enum([
   'roasted',
 ]);
 
+// Aligned with CookingOilType in src/lib/nutrition/cooking-oil/suggester.ts.
 const oilTypeSchema = z.enum([
   'olive_oil',
-  'butter',
-  'coconut_oil',
+  'evoo',
   'avocado_oil',
-  'vegetable_oil',
+  'coconut_oil',
+  'butter',
   'ghee',
+  'vegetable_canola_oil',
+  'sesame_oil',
 ]);
 
+// Aligned with existing useMealItemEdits chip system. Voice users saying
+// dietary modifier terms (spicy, gluten_free, etc.) trigger clarification
+// per §4.5; dietary modifiers filed for 170j-supplement.
 const modifierChipSchema = z.enum([
-  'spicy',
-  'dairy_free',
-  'gluten_free',
-  'vegan',
-  'vegetarian',
-  'paleo',
-  'keto',
+  'butter',
+  'cream',
+  'cheese',
+  'sauce',
+  'grilled',
+  'baked',
+  'raw',
 ]);
 
 const macroImpactSchema = z

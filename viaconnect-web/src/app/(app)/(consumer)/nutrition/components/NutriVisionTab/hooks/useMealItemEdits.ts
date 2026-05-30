@@ -36,6 +36,7 @@ export interface UseMealItemEditsReturn {
   swapFood: (itemId: string, replacement: FoodSwapReplacement) => void;
   setCookingOil: (itemId: string, selection: CookingOilSelection) => void;
   applyChip: (itemId: string | 'meal', chip: ModifierChip) => void;
+  removeChip: (itemId: string | 'meal', chip: ModifierChip) => void;
   addItem: () => void;
   removeItem: (itemId: string) => void;
   markVerified: (itemId: string) => void;
@@ -275,6 +276,54 @@ export function useMealItemEdits(args: UseMealItemEditsArgs): UseMealItemEditsRe
     setEditDiff((d) => ({ ...d, itemsModified: d.itemsModified + 1 }));
   }, []);
 
+  // Prompt 170j Phase 1b: voice RemoveModifier inverse of applyChip.
+  // Whole-meal chips: remove the most recent matching spawned item.
+  // Per-item additive chips: subtract the chip's per_100g bump (floored at 0).
+  // Cooking-method chips (grilled / baked / raw) are state, not additive;
+  // removal is a noop at this layer since the next chip overwrites cooking_method.
+  const removeChip = useCallback((itemId: string | 'meal', chip: ModifierChip) => {
+    if (itemId === 'meal') {
+      const wholeMealSeed = WHOLE_MEAL_CHIP_FOODS[chip];
+      if (!wholeMealSeed) return;
+      setItems((curr) => {
+        let lastIdx = -1;
+        for (let i = curr.length - 1; i >= 0; i--) {
+          if (curr[i].food_name === wholeMealSeed.name) {
+            lastIdx = i;
+            break;
+          }
+        }
+        if (lastIdx === -1) return curr;
+        return curr.filter((_, i) => i !== lastIdx);
+      });
+      setEditDiff((d) => ({ ...d, itemsRemoved: d.itemsRemoved + 1 }));
+      return;
+    }
+
+    if (chip === 'grilled' || chip === 'baked' || chip === 'raw') {
+      return;
+    }
+
+    const additive = PER_ITEM_CHIPS[chip];
+    if (!additive) return;
+    setItems((curr) => curr.map((it) => {
+      if (it.id !== itemId) return it;
+      const reduced: MealItemDraft = {
+        ...it,
+        per_100g: {
+          ...it.per_100g,
+          calories_kcal: Math.max(0, it.per_100g.calories_kcal - additive.calories_kcal),
+          protein_g: Math.max(0, it.per_100g.protein_g - additive.protein_g),
+          carbs_g: Math.max(0, it.per_100g.carbs_g - additive.carbs_g),
+          fat_g: Math.max(0, it.per_100g.fat_g - additive.fat_g),
+        },
+        user_modified: true,
+      };
+      return recalcItem(reduced);
+    }));
+    setEditDiff((d) => ({ ...d, itemsModified: d.itemsModified + 1 }));
+  }, []);
+
   const addItem = useCallback(() => {
     setItems((curr) => [...curr, makeNewItem(ADD_ITEM_PLACEHOLDER, 100)]);
     setEditDiff((d) => ({ ...d, itemsAdded: d.itemsAdded + 1 }));
@@ -367,6 +416,7 @@ export function useMealItemEdits(args: UseMealItemEditsArgs): UseMealItemEditsRe
     swapFood,
     setCookingOil,
     applyChip,
+    removeChip,
     addItem,
     removeItem,
     markVerified,
