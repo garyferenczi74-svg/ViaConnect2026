@@ -221,8 +221,16 @@ export interface VoiceOperationTelemetry {
   was_undone: boolean;
 }
 
+import type { MealItemDraft } from '@/app/(app)/(consumer)/nutrition/components/NutriVisionTab/types';
+
 export interface UndoEntry {
   applied_at: number;
   operations: VoiceOperation[];
   applied_count: number;
+  /**
+   * Snapshot of MealItemDraft[] captured BEFORE the operations applied.
+   * useVoiceApply restores this via the restoreSnapshot mutator when the
+   * user undoes within UNDO_WINDOW_MS.
+   */
+  snapshot?: ReadonlyArray<MealItemDraft>;
 }

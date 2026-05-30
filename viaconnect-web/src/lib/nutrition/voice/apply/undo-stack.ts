@@ -10,17 +10,24 @@
  * timer-driven UI hiding lives in the toast component.
  */
 
+import type { MealItemDraft } from '@/app/(app)/(consumer)/nutrition/components/NutriVisionTab/types';
 import type { UndoEntry, VoiceOperation } from '../types';
 import { UNDO_WINDOW_MS } from '../feature-flags';
 
 export class VoiceUndoStack {
   private entries: UndoEntry[] = [];
 
-  push(operations: VoiceOperation[], appliedCount: number, now: number = Date.now()): void {
+  push(
+    operations: VoiceOperation[],
+    appliedCount: number,
+    now: number = Date.now(),
+    snapshot?: ReadonlyArray<MealItemDraft>
+  ): void {
     this.entries.push({
       applied_at: now,
       operations,
       applied_count: appliedCount,
+      snapshot,
     });
   }
 

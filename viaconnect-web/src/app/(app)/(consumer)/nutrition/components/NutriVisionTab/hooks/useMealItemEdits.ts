@@ -37,6 +37,7 @@ export interface UseMealItemEditsReturn {
   setCookingOil: (itemId: string, selection: CookingOilSelection) => void;
   applyChip: (itemId: string | 'meal', chip: ModifierChip) => void;
   removeChip: (itemId: string | 'meal', chip: ModifierChip) => void;
+  restoreSnapshot: (items: ReadonlyArray<MealItemDraft>) => void;
   addItem: () => void;
   removeItem: (itemId: string) => void;
   markVerified: (itemId: string) => void;
@@ -324,6 +325,13 @@ export function useMealItemEdits(args: UseMealItemEditsArgs): UseMealItemEditsRe
     setEditDiff((d) => ({ ...d, itemsModified: d.itemsModified + 1 }));
   }, []);
 
+  // Prompt 170j Phase 1c: voice Undo restores a pre-apply items snapshot.
+  // editDiff is intentionally NOT decremented; it is a session-cumulative
+  // counter, not a state mirror. Use this only via useVoiceApply.undoLast.
+  const restoreSnapshot = useCallback((snapshot: ReadonlyArray<MealItemDraft>) => {
+    setItems([...snapshot]);
+  }, []);
+
   const addItem = useCallback(() => {
     setItems((curr) => [...curr, makeNewItem(ADD_ITEM_PLACEHOLDER, 100)]);
     setEditDiff((d) => ({ ...d, itemsAdded: d.itemsAdded + 1 }));
@@ -417,6 +425,7 @@ export function useMealItemEdits(args: UseMealItemEditsArgs): UseMealItemEditsRe
     setCookingOil,
     applyChip,
     removeChip,
+    restoreSnapshot,
     addItem,
     removeItem,
     markVerified,
