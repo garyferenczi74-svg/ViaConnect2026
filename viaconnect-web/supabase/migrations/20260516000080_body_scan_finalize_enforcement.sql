@@ -246,3 +246,17 @@ BEGIN
       EXECUTE FUNCTION fn_enforce_body_scan_finalize();
   END IF;
 END $$;
+
+
+-- =============================================================================
+-- 3. Covering index for the frequency EXISTS check (Section 3 of the function).
+--    The status->complete enforcement path runs an EXISTS over OTHER completed
+--    rows for NEW.user_id within the last 24h. The only pre-existing index,
+--    idx_photo_sessions_user_date on (user_id, session_date DESC), does NOT
+--    cover scan_status, so that EXISTS would otherwise scan all of a user's
+--    rows. This partial index covers exactly the completed rows and orders by
+--    updated_at DESC so the within-window probe is index-only.
+-- =============================================================================
+CREATE INDEX IF NOT EXISTS idx_photo_sessions_user_complete_recent
+  ON public.body_photo_sessions (user_id, updated_at DESC)
+  WHERE scan_status = 'complete';
