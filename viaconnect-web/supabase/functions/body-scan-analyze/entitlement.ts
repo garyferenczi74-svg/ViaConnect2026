@@ -247,3 +247,219 @@ export async function verifyPractitionerManaged(
     return false;
   }
 }
+
+// =============================================================================
+// Prompt #169b: Age gate (spec section 4) + 24h frequency limiter (section
+// 3.2.3), server-side enforcement.
+//
+// These are the AUTHORITATIVE gates. They run in the finalize path BEFORE the
+// scan is persisted / the session is marked complete, alongside the #169a
+// entitlement gate. Both reject WITHOUT persisting when they fail.
+//
+// Deno-side mirror of src/lib/body-tracker/age-frequency-gate.ts (Deno cannot
+// import from the Next.js tree). The pure decisions below MUST stay in sync with
+// that module; the web unit tests cover the same logic.
+// =============================================================================
+
+export const BODY_SCAN_MIN_AGE = 18;
+export const SCAN_FREQUENCY_WINDOW_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Whole-years age from an ISO date-of-birth string as of `asOf`. Returns null
+ * when the DOB is missing or unparseable. Calendar-correct birthday math (NOT a
+ * 365.25-day division) so a user on their 18th birthday reads as exactly 18.
+ * Mirrors computeAgeYears in the web module.
+ *
+ * TIMEZONE: a date-only DOB ('YYYY-MM-DD') is parsed by its literal Y/M/D
+ * components and compared against asOf's local calendar date, avoiding the
+ * UTC-midnight off-by-one that `new Date('YYYY-MM-DD')` causes in a non-UTC
+ * timezone. Full timestamps fall back to Date parsing. Kept identical to the web
+ * module so the gate decisions match.
+ */
+export function computeAgeYears(
+  dateOfBirth: string | null | undefined,
+  asOf: Date = new Date(),
+): number | null {
+  if (!dateOfBirth) return null;
+
+  let by: number, bm: number, bd: number;
+  const dateOnly = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateOfBirth.trim());
+  if (dateOnly) {
+    by = Number(dateOnly[1]);
+    bm = Number(dateOnly[2]);
+    bd = Number(dateOnly[3]);
+  } else {
+    const birth = new Date(dateOfBirth);
+    if (Number.isNaN(birth.getTime())) return null;
+    by = birth.getFullYear();
+    bm = birth.getMonth() + 1;
+    bd = birth.getDate();
+  }
+
+  const ay = asOf.getFullYear();
+  const am = asOf.getMonth() + 1;
+  const ad = asOf.getDate();
+
+  let age = ay - by;
+  if (am < bm || (am === bm && ad < bd)) age -= 1;
+  return age < 0 ? 0 : age;
+}
+
+export interface ServerAgeDecision {
+  allowed: boolean;
+  // The trimmed override reason to record on body_photo_sessions when a minor is
+  // allowed via the practitioner override path; null otherwise.
+  overrideReason: string | null;
+  overrodeMinor: boolean;
+  ageYears: number | null;
+}
+
+/**
+ * Pure server age-gate decision (spec section 4 + 4.3). Mirrors
+ * decideAgeGateWithOverride in the web module.
+ *
+ *   18+ (or DOB unknown)                         -> allowed, no override
+ *   proven minor + verified practitioner + reason-> allowed via override
+ *   proven minor otherwise                        -> blocked
+ *
+ * A DOB that is missing server-side is treated as NOT-a-proven-minor: the server
+ * cannot prove the user is under 18, the consumer card already steers a no-DOB
+ * user to complete their CAQ, and we never hard-block an adult whose DOB row has
+ * not been backfilled. The gate blocks only a PROVEN minor.
+ */
+export function decideAgeGate(
+  dateOfBirth: string | null | undefined,
+  practitionerManaged: boolean,
+  clinicalOverrideReason: string | null | undefined,
+  asOf: Date = new Date(),
+): ServerAgeDecision {
+  const ageYears = computeAgeYears(dateOfBirth, asOf);
+  if (ageYears === null || ageYears >= BODY_SCAN_MIN_AGE) {
+    return { allowed: true, overrideReason: null, overrodeMinor: false, ageYears };
+  }
+  const reason = (clinicalOverrideReason ?? '').trim();
+  if (practitionerManaged && reason.length > 0) {
+    return { allowed: true, overrideReason: reason, overrodeMinor: true, ageYears };
+  }
+  return { allowed: false, overrideReason: null, overrodeMinor: false, ageYears };
+}
+
+/**
+ * Reads the scan subject's date_of_birth from profiles and resolves the age
+ * gate. The scan subject is the patient in a practitioner-managed scan, else the
+ * caller. Fail-CLOSED for a proven minor is impossible to bypass via a DOB read
+ * error: on error/timeout the DOB is treated as unknown, which (per decideAgeGate)
+ * does NOT block. This is deliberate: we cannot prove a minor without the DOB,
+ * and blocking every adult on a transient DB hiccup is the wrong failure mode.
+ * The frequency limiter and the entitlement gate still apply independently.
+ */
+export async function resolveAgeGate(
+  sa: SupabaseClient,
+  subjectUserId: string,
+  practitionerManaged: boolean,
+  clinicalOverrideReason: string | null | undefined,
+): Promise<ServerAgeDecision> {
+  let dob: string | null = null;
+  try {
+    const { data, error } = await withTimeout(
+      sa
+        .from('profiles')
+        .select('date_of_birth')
+        .eq('id', subjectUserId)
+        .maybeSingle(),
+      MEMBERSHIP_QUERY_TIMEOUT_MS,
+      'edge-function.body-scan-analyze.age-dob-lookup',
+    );
+    if (error) {
+      safeLog.warn('body-scan-analyze', 'age gate dob lookup error', {
+        user_id: subjectUserId,
+        stage: 'resolveAgeGate',
+        error: error.message,
+      });
+    } else {
+      dob = (data as { date_of_birth: string | null } | null)?.date_of_birth ?? null;
+    }
+  } catch (e) {
+    safeLog.warn('body-scan-analyze', 'age gate dob lookup exception', {
+      user_id: subjectUserId,
+      stage: 'resolveAgeGate',
+      error: String(e),
+    });
+  }
+  return decideAgeGate(dob, practitionerManaged, clinicalOverrideReason);
+}
+
+export interface FrequencyDecision {
+  allowed: boolean;
+  msUntilAllowed: number;
+}
+
+/**
+ * Pure 24h frequency decision (spec section 3.2.3). Mirrors decideScanFrequency
+ * in the web module. `lastCompletedAt` is the timestamp of the user's most
+ * recent completed scan, or null when none exists.
+ */
+export function decideScanFrequency(
+  lastCompletedAt: string | null | undefined,
+  asOf: Date = new Date(),
+): FrequencyDecision {
+  if (!lastCompletedAt) return { allowed: true, msUntilAllowed: 0 };
+  const last = new Date(lastCompletedAt);
+  if (Number.isNaN(last.getTime())) return { allowed: true, msUntilAllowed: 0 };
+  const elapsed = asOf.getTime() - last.getTime();
+  if (elapsed >= SCAN_FREQUENCY_WINDOW_MS) return { allowed: true, msUntilAllowed: 0 };
+  return { allowed: false, msUntilAllowed: Math.max(0, SCAN_FREQUENCY_WINDOW_MS - elapsed) };
+}
+
+/**
+ * Resolves the 24h frequency limiter (spec section 3.2.3) for a user: at most
+ * one COMPLETED scan per 24h. Reads the most recent completed body_photo_sessions
+ * row for the user and applies decideScanFrequency.
+ *
+ * "completed" is body_photo_sessions.scan_status = 'complete' (the same status
+ * the finalize path sets). Completion time is taken from updated_at when present
+ * (the row is stamped 'complete' on finalize), falling back to session_date.
+ *
+ * Fail-OPEN on a read error/timeout: a transient DB issue must not permanently
+ * block a user from scanning. The window is small (24h) and the entitlement +
+ * age gates still apply, so the blast radius of a fail-open here is one extra
+ * scan, not an entitlement bypass.
+ */
+export async function resolveScanFrequency(
+  sa: SupabaseClient,
+  userId: string,
+  asOf: Date = new Date(),
+): Promise<FrequencyDecision> {
+  try {
+    const { data, error } = await withTimeout(
+      sa
+        .from('body_photo_sessions')
+        .select('updated_at, session_date')
+        .eq('user_id', userId)
+        .eq('scan_status', 'complete')
+        .order('updated_at', { ascending: false, nullsFirst: false })
+        .limit(1)
+        .maybeSingle(),
+      MEMBERSHIP_QUERY_TIMEOUT_MS,
+      'edge-function.body-scan-analyze.frequency-lookup',
+    );
+    if (error) {
+      safeLog.warn('body-scan-analyze', 'frequency lookup error', {
+        user_id: userId,
+        stage: 'resolveScanFrequency',
+        error: error.message,
+      });
+      return { allowed: true, msUntilAllowed: 0 };
+    }
+    const row = data as { updated_at: string | null; session_date: string | null } | null;
+    const lastCompletedAt = row?.updated_at ?? row?.session_date ?? null;
+    return decideScanFrequency(lastCompletedAt, asOf);
+  } catch (e) {
+    safeLog.warn('body-scan-analyze', 'frequency lookup exception', {
+      user_id: userId,
+      stage: 'resolveScanFrequency',
+      error: String(e),
+    });
+    return { allowed: true, msUntilAllowed: 0 };
+  }
+}

@@ -49,6 +49,8 @@ import {
   resolveBodyScanEntitlement,
   claimFreeBodyScanTeaser,
   verifyPractitionerManaged,
+  resolveAgeGate,
+  resolveScanFrequency,
   type BodyScanPremiumStatus,
 } from './entitlement.ts';
 
@@ -162,6 +164,14 @@ interface BodyScanRequest {
   //   this patient. Absent / unverified => normal consumer premium/teaser path.
   session_id?:               string;
   patient_user_id?:          string;
+  // --- Prompt #169b age gate (spec section 4.3) ---
+  // clinical_override_reason: when a VERIFIED practitioner finalizes a scan for a
+  //   managed patient who is a minor, this mandatory reason bypasses the age gate
+  //   and is recorded on body_photo_sessions.clinical_override_reason. It is
+  //   honored ONLY when verifyPractitionerManaged confirms the relationship; a
+  //   consumer cannot self-supply it to defeat the age gate (a self-scan is never
+  //   practitioner-managed). A blank/whitespace reason does not override.
+  clinical_override_reason?: string;
 }
 
 interface BodyScanEstimate {
@@ -411,6 +421,85 @@ serve(async (req) => {
     user.id,
     body.patient_user_id,
   );
+
+  // The scan SUBJECT: in a verified practitioner-managed scan this is the managed
+  // patient; otherwise it is the caller (the ordinary consumer self-scan). The
+  // age gate and the frequency limiter are evaluated against the subject's data.
+  const subjectUserId = practitionerManaged && body.patient_user_id
+    ? body.patient_user_id
+    : user.id;
+
+  // =========================================================================
+  // Prompt #169b: AGE GATE (spec section 4) + 24h FREQUENCY LIMITER (3.2.3).
+  // Both run AFTER a successful analysis and BEFORE persist/finalize, alongside
+  // the #169a entitlement gate, so a rejected scan never consumes the teaser and
+  // is never persisted/marked complete. Both reject WITHOUT persisting.
+  //
+  // Age gate (section 4 + 4.3): reject a PROVEN minor at capture time unless a
+  // VERIFIED practitioner (practitionerManaged, server-derived) supplied a
+  // mandatory clinical_override_reason, in which case the gate is bypassed and
+  // the reason is recorded on body_photo_sessions.clinical_override_reason. A
+  // consumer can never self-grant the override: a self-scan is not
+  // practitioner-managed, so clinical_override_reason is ignored for them.
+  // =========================================================================
+  const ageDecision = await resolveAgeGate(
+    sa,
+    subjectUserId,
+    practitionerManaged,
+    body.clinical_override_reason,
+  );
+  if (!ageDecision.allowed) {
+    safeLog.info('body-scan-analyze', 'age gate blocked', {
+      user_id:    user.id,
+      subject_user_id: subjectUserId,
+      stage:      'ageGate',
+      age_years:  ageDecision.ageYears,
+      practitioner_managed: practitionerManaged,
+      session_id: body.session_id ?? null,
+    });
+    // Reject WITHOUT persisting or marking the session complete.
+    return json(
+      {
+        error: 'age_restricted',
+        message: 'Body Scan is available to members who are 18 or older. Please talk to your healthcare provider about any body composition questions.',
+      },
+      403,
+    );
+  }
+  if (ageDecision.overrodeMinor) {
+    safeLog.info('body-scan-analyze', 'age gate practitioner override', {
+      user_id:    user.id,
+      subject_user_id: subjectUserId,
+      stage:      'ageGate',
+      age_years:  ageDecision.ageYears,
+      session_id: body.session_id ?? null,
+    });
+  }
+
+  // 24h frequency limiter (section 3.2.3): at most one completed scan per 24h per
+  // user. Keyed on user.id (the caller), which is the owner of the
+  // body_photo_sessions rows this function creates/finalizes, so the limiter
+  // matches the rows it queries. Reject WITHOUT persisting when the most recent
+  // completed scan is within the window.
+  const frequency = await resolveScanFrequency(sa, user.id);
+  if (!frequency.allowed) {
+    const hoursLeft = Math.ceil(frequency.msUntilAllowed / (60 * 60 * 1000));
+    safeLog.info('body-scan-analyze', 'frequency limited', {
+      user_id:    user.id,
+      stage:      'frequencyLimit',
+      ms_until_allowed: frequency.msUntilAllowed,
+      session_id: body.session_id ?? null,
+    });
+    return json(
+      {
+        error: 'scan_rate_limited',
+        message: `You have already completed a Body Scan today. Your body changes gradually, so the next scan will be available in about ${hoursLeft} hour${hoursLeft === 1 ? '' : 's'}.`,
+        retry_after_ms: frequency.msUntilAllowed,
+      },
+      429,
+    );
+  }
+
   const entitlement = await resolveBodyScanEntitlement(sa, user.id, practitionerManaged);
 
   let premiumStatusAtScan: BodyScanPremiumStatus;
@@ -623,14 +712,23 @@ serve(async (req) => {
   // =========================================================================
   if (body.session_id) {
     try {
+      // Prompt #169b: when a verified practitioner overrode the age gate for a
+      // minor, record the mandatory clinical_override_reason and the acting
+      // practitioner on the session (spec section 4.3). These fields are set only
+      // on the override path; ordinary adult scans leave them untouched.
+      const finalizePatch: Record<string, unknown> = {
+        premium_status_at_scan:  premiumStatusAtScan,
+        premium_subscription_id: entitlement.subscriptionId,
+        scan_status:             'complete',
+      };
+      if (ageDecision.overrodeMinor && ageDecision.overrideReason) {
+        finalizePatch.clinical_override_reason = ageDecision.overrideReason;
+        finalizePatch.practitioner_id          = user.id;
+      }
       const { error: finalizeError } = await withTimeout(
         sa
           .from('body_photo_sessions')
-          .update({
-            premium_status_at_scan:  premiumStatusAtScan,
-            premium_subscription_id: entitlement.subscriptionId,
-            scan_status:             'complete',
-          })
+          .update(finalizePatch as never)
           .eq('id', body.session_id)
           .eq('user_id', user.id)
           .neq('scan_status', 'complete'),

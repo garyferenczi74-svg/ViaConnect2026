@@ -9,6 +9,7 @@ import { LatestSessionGrid } from '@/components/body-tracker/photos/LatestSessio
 import { PhotoSessionHistory } from '@/components/body-tracker/photos/PhotoSessionHistory';
 import { ComparisonPanel } from '@/components/body-tracker/photos/ComparisonPanel';
 import { RunScanButton } from '@/components/body-tracker/scanning/RunScanButton';
+import { BodyScanAgeGate } from '@/components/body-tracker/scanning/BodyScanAgeGate';
 import { ScanResultsPanel } from '@/components/body-tracker/scanning/ScanResultsPanel';
 import { ScanOnboardingWalkthrough } from '@/components/body-tracker/scanning/ScanOnboardingWalkthrough';
 import { BodyScanTier3ComingSoon } from '@/components/body-tracker/scanning/BodyScanTier3ComingSoon';
@@ -112,7 +113,13 @@ export default function PhotosPage() {
             <h3 className="text-xs font-semibold uppercase tracking-wider text-white/50">Latest session</h3>
             <LatestSessionGrid sessionId={latestId} />
             <ArnoldAnalysisCard sessionId={latestId} onRetry={() => retryAnalysis(latestId)} />
-            <RunScanButton sessionId={latestId} onComplete={() => setRefreshKey((k) => k + 1)} />
+            {/* Age gate (Prompt #169b, spec section 4) wraps the scan entry: under
+                18 / no DOB hides the entry (and its premium gate) and shows a
+                replacement card; it also surfaces the 3-in-7 slow-down advisory.
+                Age gate takes precedence over the premium gate inside RunScanButton. */}
+            <BodyScanAgeGate>
+              <RunScanButton sessionId={latestId} onComplete={() => setRefreshKey((k) => k + 1)} />
+            </BodyScanAgeGate>
           </section>
 
           <ScanResultsPanel sessionId={latestId} refreshKey={refreshKey} portalType="consumer" />
