@@ -20,6 +20,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.30.1",
+    "@capacitor-community/speech-recognition": "^6.0.0",
     "@capacitor/android": "^6.2.0",
     "@google-cloud/vision": "^4.3.2",
     "@capacitor/app": "^6.0.2",

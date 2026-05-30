@@ -1,7 +1,8 @@
 # Prompt 170j Filed: Voice-to-Edit on the NutriVision Result Review Screen
 
 Date: 2026-05-29
-Status: **Filed at spec level; ratified.** NO code work. Hannah dispatched for §11 wireframes (11 surfaces, accessibility-first per §23 long-pole).
+Status: **Filed at spec level; ratified.** Hannah dispatched for §11 wireframes (11 surfaces, accessibility-first per §23 long-pole).
+**Build kickoff approved 2026-05-29 by Gary directive "fast-track 170j, approve the plugin".** Capacitor plugin `@capacitor-community/speech-recognition ^6.x` added to package.json same turn. Observe phase initiated.
 Memorialized by: Jeffery (orchestrator).
 
 ## Mission (one line)
