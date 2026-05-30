@@ -25,6 +25,12 @@ interface AvatarViewerProps {
   initialView?: AvatarViewPreset;
   initialVisualization?: AvatarVisualization;
   className?: string;
+  // "Hide specific numbers" mode (Prompt #169b section 3.2.4): when true the
+  // avatar must render NO numeric labels. The current avatar draws none (the
+  // 3D mesh + heatmap colors carry no on-canvas numbers), so this is a forward
+  // guard: any numeric overlay added later must respect this flag. The mesh /
+  // heatmap themselves stay (they are non-numeric and body-image-neutral).
+  hideNumericLabels?: boolean;
 }
 
 export function AvatarViewer({
@@ -33,7 +39,11 @@ export function AvatarViewer({
   initialView = 'free',
   initialVisualization = 'solid',
   className = '',
+  hideNumericLabels = false,
 }: AvatarViewerProps) {
+  // Referenced so the guard is part of the component contract; no numeric labels
+  // exist to suppress today (see prop doc above).
+  void hideNumericLabels;
   const [view, setView] = useState<AvatarViewPreset>(initialView);
   const [viz, setViz] = useState<AvatarVisualization>(initialVisualization);
 

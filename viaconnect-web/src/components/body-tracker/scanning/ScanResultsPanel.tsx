@@ -6,6 +6,7 @@ import { Loader2, Box, Lock } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useCurrentUser } from '@/components/body-tracker/manual-input/useCurrentUser';
 import { usePremiumEntitlement } from '@/hooks/body-tracker/usePremiumEntitlement';
+import { useNumbersOptional } from '@/hooks/body-tracker/useNumbersOptional';
 import { selectScanResultsGate } from '@/lib/body-tracker/scan-gate';
 import { BodyScanPremiumPaywall } from './BodyScanPremiumPaywall';
 import { AvatarViewer } from './AvatarViewer';
@@ -79,6 +80,10 @@ interface LoadedScan {
 
 export function ScanResultsPanel({ sessionId, refreshKey, portalType = 'consumer' }: ScanResultsPanelProps) {
   const { unitSystem } = useCurrentUser();
+  // Single "Hide specific numbers" controller (Prompt #169b section 3.2.4) shared
+  // by every results surface, so the flag and the temporary-reveal state are
+  // consistent across the composition tab, the measurement grid, and the avatar.
+  const numbers = useNumbersOptional();
   // Results upgrade guard point (Prompt #169a, spec section 3.1.c). Practitioner
   // and naturopath portals view managed-patient scans (a practitioner-managed
   // context) and are never gated here; only the consumer self-view is gated by
@@ -279,7 +284,12 @@ export function ScanResultsPanel({ sessionId, refreshKey, portalType = 'consumer
             <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-4">
               <div>
                 <p className="text-[10px] font-semibold uppercase tracking-wider text-white/50 mb-2">3D avatar</p>
-                <AvatarViewer params={loaded.avatarParameters} initialView="free" initialVisualization="solid" />
+                <AvatarViewer
+                  params={loaded.avatarParameters}
+                  initialView="free"
+                  initialVisualization="solid"
+                  hideNumericLabels={numbers.numbersOptional}
+                />
               </div>
               <AsymmetryReportCard report={loaded.asymmetry} />
             </div>
@@ -289,6 +299,7 @@ export function ScanResultsPanel({ sessionId, refreshKey, portalType = 'consumer
                 measurements={loaded.measurements}
                 unitSystem={unitSystem}
                 heightCm={loaded.heightCm}
+                numbers={numbers}
               />
             </div>
           </div>
@@ -312,6 +323,7 @@ export function ScanResultsPanel({ sessionId, refreshKey, portalType = 'consumer
                   : loaded.composition
               }
               sex={loaded.sex}
+              numbers={numbers}
             />
           </div>
         )}

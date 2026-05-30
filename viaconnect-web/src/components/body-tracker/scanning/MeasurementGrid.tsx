@@ -3,15 +3,20 @@
 import { useState } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { MeasurementCard } from './MeasurementCard';
+import { RevealableMetric, Sparkline } from './RevealableMetric';
+import { privacySparklineShape } from '@/lib/body-tracker/numbers-optional';
+import type { NumbersOptionalController } from './numbersOptionalController';
 import type { ExtractedMeasurements } from '@/lib/arnold/scanning/types';
 
 interface MeasurementGridProps {
   measurements: ExtractedMeasurements;
   unitSystem: 'imperial' | 'metric';
   heightCm: number;
+  // Optional "Hide specific numbers" controller (Prompt #169b section 3.2.4).
+  numbers?: NumbersOptionalController;
 }
 
-export function MeasurementGrid({ measurements, unitSystem, heightCm }: MeasurementGridProps) {
+export function MeasurementGrid({ measurements, unitSystem, heightCm, numbers }: MeasurementGridProps) {
   const [expanded, setExpanded] = useState(false);
   const isImperial = unitSystem === 'imperial';
   const lengthUnit = isImperial ? 'in' : 'cm';
@@ -42,14 +47,14 @@ export function MeasurementGrid({ measurements, unitSystem, heightCm }: Measurem
     <div className="space-y-3">
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
         {primary.map((row) => (
-          <MeasurementCard key={row.label} label={row.label} measured={row.m} unitSystem={unitSystem} />
+          <MeasurementCard key={row.label} label={row.label} measured={row.m} unitSystem={unitSystem} numbers={numbers} />
         ))}
       </div>
 
       <div className="grid grid-cols-3 gap-2">
-        <RatioCell label="Waist to hip"    value={measurements.waistToHipRatio} />
-        <RatioCell label="Waist to height" value={measurements.waistToHeightRatio} />
-        <RatioCell label="Shoulder to waist" value={measurements.shoulderToWaistRatio} />
+        <RatioCell label="Waist to hip"    value={measurements.waistToHipRatio} numbers={numbers} />
+        <RatioCell label="Waist to height" value={measurements.waistToHeightRatio} numbers={numbers} />
+        <RatioCell label="Shoulder to waist" value={measurements.shoulderToWaistRatio} numbers={numbers} />
       </div>
 
       <button
@@ -65,13 +70,13 @@ export function MeasurementGrid({ measurements, unitSystem, heightCm }: Measurem
         <>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             {extended.map((row) => (
-              <MeasurementCard key={row.label} label={row.label} measured={row.m} unitSystem={unitSystem} />
+              <MeasurementCard key={row.label} label={row.label} measured={row.m} unitSystem={unitSystem} numbers={numbers} />
             ))}
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-            <LengthCell label="Inseam"       cm={measurements.inseamCm}      unit={lengthUnit} conv={conv} />
-            <LengthCell label="Torso length" cm={measurements.torsoLengthCm} unit={lengthUnit} conv={conv} />
-            <LengthCell label="Height"       cm={heightCm}                   unit={lengthUnit} conv={conv} />
+            <LengthCell label="Inseam"       cm={measurements.inseamCm}      unit={lengthUnit} conv={conv} numbers={numbers} />
+            <LengthCell label="Torso length" cm={measurements.torsoLengthCm} unit={lengthUnit} conv={conv} numbers={numbers} />
+            <LengthCell label="Height"       cm={heightCm}                   unit={lengthUnit} conv={conv} numbers={numbers} />
           </div>
         </>
       )}
@@ -79,24 +84,79 @@ export function MeasurementGrid({ measurements, unitSystem, heightCm }: Measurem
   );
 }
 
-function RatioCell({ label, value }: { label: string; value: number }) {
+// Resolves the per-metric reveal/display props from the optional controller.
+function metricProps(numbers: NumbersOptionalController | undefined, id: string) {
+  const mode = numbers ? numbers.displayMode(id, 'measurement') : 'value';
+  const revealable = !!numbers && numbers.numbersOptional && !numbers.isRevealed(id);
+  return {
+    mode,
+    revealable,
+    onToggle: () => numbers?.toggleReveal(id),
+    onHoldStart: () => numbers?.revealHold(id),
+    onHoldEnd: () => numbers?.hideHold(id),
+  };
+}
+
+function RatioCell({ label, value, numbers }: { label: string; value: number; numbers?: NumbersOptionalController }) {
+  const id = `ratio:${label}`;
+  const mp = metricProps(numbers, id);
   return (
     <div className="rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-2.5 text-center">
       <p className="text-[10px] text-white/50 uppercase tracking-wider">{label}</p>
-      <p className="text-sm font-semibold text-white mt-0.5">
-        {value > 0 ? value.toFixed(2) : '—'}
-      </p>
+      <div className="text-sm font-semibold text-white mt-0.5 flex items-center justify-center min-h-[20px]">
+        {value > 0 ? (
+          <RevealableMetric
+            mode={mp.mode}
+            label={label}
+            revealable={mp.revealable}
+            onToggle={mp.onToggle}
+            onHoldStart={mp.onHoldStart}
+            onHoldEnd={mp.onHoldEnd}
+            value={<span>{value.toFixed(2)}</span>}
+            sparkline={<Sparkline points={privacySparklineShape(id)} />}
+          />
+        ) : (
+          <span className="text-white/40">not measured</span>
+        )}
+      </div>
     </div>
   );
 }
 
-function LengthCell({ label, cm, unit, conv }: { label: string; cm: number; unit: string; conv: (cm: number) => number }) {
+function LengthCell({
+  label,
+  cm,
+  unit,
+  conv,
+  numbers,
+}: {
+  label: string;
+  cm: number;
+  unit: string;
+  conv: (cm: number) => number;
+  numbers?: NumbersOptionalController;
+}) {
+  const id = `length:${label}`;
+  const mp = metricProps(numbers, id);
   return (
     <div className="rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-2.5">
       <p className="text-[10px] text-white/50 uppercase tracking-wider">{label}</p>
-      <p className="text-sm font-semibold text-white mt-0.5">
-        {cm > 0 ? `${conv(cm).toFixed(1)} ${unit}` : '—'}
-      </p>
+      <div className="text-sm font-semibold text-white mt-0.5 flex items-center min-h-[20px]">
+        {cm > 0 ? (
+          <RevealableMetric
+            mode={mp.mode}
+            label={label}
+            revealable={mp.revealable}
+            onToggle={mp.onToggle}
+            onHoldStart={mp.onHoldStart}
+            onHoldEnd={mp.onHoldEnd}
+            value={<span>{`${conv(cm).toFixed(1)} ${unit}`}</span>}
+            sparkline={<Sparkline points={privacySparklineShape(id)} />}
+          />
+        ) : (
+          <span className="text-white/40">not measured</span>
+        )}
+      </div>
     </div>
   );
 }

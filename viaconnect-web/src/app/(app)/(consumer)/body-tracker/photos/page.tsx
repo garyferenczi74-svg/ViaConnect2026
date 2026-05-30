@@ -15,6 +15,7 @@ import { ScanOnboardingWalkthrough } from '@/components/body-tracker/scanning/Sc
 import { BodyScanTier3ComingSoon } from '@/components/body-tracker/scanning/BodyScanTier3ComingSoon';
 import { TierBadge } from '@/components/body-tracker/scanning/TierBadge';
 import { ScanPdfExportButton } from '@/components/body-tracker/scanning/ScanPdfExportButton';
+import { NumbersOptionalToggle } from '@/components/body-tracker/scanning/NumbersOptionalToggle';
 
 export default function PhotosPage() {
   const [open, setOpen] = useState(false);
@@ -121,6 +122,11 @@ export default function PhotosPage() {
               <RunScanButton sessionId={latestId} onComplete={() => setRefreshKey((k) => k + 1)} />
             </BodyScanAgeGate>
           </section>
+
+          {/* Body-image safeguard (Prompt #169b section 3.2.4), available to all
+              users: hide precise numbers across the results below and reveal any
+              metric on tap. Persisted per user via profiles.numbers_optional. */}
+          <NumbersOptionalToggle />
 
           <ScanResultsPanel sessionId={latestId} refreshKey={refreshKey} portalType="consumer" />
 
