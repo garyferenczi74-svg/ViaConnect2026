@@ -9,7 +9,7 @@
  * toward the 200 cap (OFF-citizenship reasoning: cache hits are not OFF load).
  */
 
-import { createServiceRoleClient } from '@/lib/supabase/service-role';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { safeLog } from '@/lib/utils/safe-log';
 import { BARCODE_OFF_LOOKUPS_PER_DAY_LIMIT } from './feature-flags';
 
@@ -29,7 +29,7 @@ export async function checkRateLimit(
   userId: string,
   requestId: string,
 ): Promise<RateLimitStatus> {
-  const supabase = createServiceRoleClient();
+  const supabase = createAdminClient();
   const date = todayDateString();
 
   const { data, error } = await supabase
@@ -65,7 +65,7 @@ export async function incrementRateLimit(
   userId: string,
   requestId: string,
 ): Promise<void> {
-  const supabase = createServiceRoleClient();
+  const supabase = createAdminClient();
   const date = todayDateString();
   const now = new Date().toISOString();
 

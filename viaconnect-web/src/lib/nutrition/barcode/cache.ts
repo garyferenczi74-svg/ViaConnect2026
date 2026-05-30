@@ -12,7 +12,7 @@
  *   - Row absent: miss, caller fetches OFF.
  */
 
-import { createServiceRoleClient } from '@/lib/supabase/service-role';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { safeLog } from '@/lib/utils/safe-log';
 import type { OFFProduct } from '@/lib/nutrition/databases/open-food-facts';
 import type { CachedOFFProduct } from './types';
@@ -29,7 +29,7 @@ export async function getCachedProduct(
   barcode: string,
   requestId: string,
 ): Promise<CacheReadResult> {
-  const supabase = createServiceRoleClient();
+  const supabase = createAdminClient();
   const { data, error } = await supabase
     .from(CACHE_TABLE)
     .select('*')
@@ -69,7 +69,7 @@ export async function setCachedProduct(
   product: OFFProduct,
   requestId: string,
 ): Promise<void> {
-  const supabase = createServiceRoleClient();
+  const supabase = createAdminClient();
   const now = new Date();
   const expiresAt = new Date(now);
   expiresAt.setDate(expiresAt.getDate() + BARCODE_OFF_CACHE_TTL_DAYS);
