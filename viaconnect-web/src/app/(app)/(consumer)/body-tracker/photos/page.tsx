@@ -19,6 +19,8 @@ import { BodyScanTier3ComingSoon } from '@/components/body-tracker/scanning/Body
 import { TierBadge } from '@/components/body-tracker/scanning/TierBadge';
 import { ScanPdfExportButton } from '@/components/body-tracker/scanning/ScanPdfExportButton';
 import { NumbersOptionalToggle } from '@/components/body-tracker/scanning/NumbersOptionalToggle';
+import { ScanTimeOfDayRecommendation } from '@/components/body-tracker/scanning/ScanTimeOfDayRecommendation';
+import { CyclePhaseOptInToggle } from '@/components/body-tracker/scanning/CyclePhaseOptInToggle';
 
 export default function PhotosPage() {
   const [open, setOpen] = useState(false);
@@ -135,6 +137,11 @@ export default function PhotosPage() {
             <h3 className="text-xs font-semibold uppercase tracking-wider text-white/50">Latest session</h3>
             <LatestSessionGrid sessionId={latestId} />
             <ArnoldAnalysisCard sessionId={latestId} onRetry={() => retryAnalysis(latestId)} />
+            {/* Time-of-day recommendation (Prompt #169b section 11.1): once the
+                user has a prior scan, gently suggest scanning around the same time
+                of day, naming the last scan's time. Recommendation only, never a
+                restriction; surfaced before / around capture. */}
+            <ScanTimeOfDayRecommendation refreshKey={refreshKey} />
             {/* Age gate (Prompt #169b, spec section 4) wraps the scan entry: under
                 18 / no DOB hides the entry (and its premium gate) and shows a
                 replacement card; it also surfaces the 3-in-7 slow-down advisory.
@@ -165,6 +172,12 @@ export default function PhotosPage() {
               users: hide precise numbers across the results below and reveal any
               metric on tap. Persisted per user via profiles.numbers_optional. */}
           <NumbersOptionalToggle />
+
+          {/* Cycle-phase trend annotation opt-in (Prompt #169b section 11.2.3):
+              consumer-only, granular, default OFF. When on, the longitudinal trend
+              below can note the cycle phase a scan fell in. Sensitive: private to
+              the consumer, never surfaced to a practitioner or naturopath. */}
+          <CyclePhaseOptInToggle />
 
           <ScanResultsPanel sessionId={latestId} refreshKey={refreshKey} portalType="consumer" />
 

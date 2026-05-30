@@ -176,6 +176,36 @@ describe('buildPractitionerScanPayload', () => {
       ['engagement', 'latestScanDate', 'patientDisplayName', 'scanCount', 'trend'],
     );
   });
+
+  // Prompt #169b section 11.2.3 PRIVACY: cycle data is sensitive and consumer-only.
+  // Even if a raw row carries cycle_phase_at_scan, the allow-listed practitioner
+  // payload must never surface it (the practitioner Body Scan tab must not read
+  // cycle data unless the patient explicitly shared).
+  it('excludes cycle-phase data from the practitioner payload (consumer-only)', () => {
+    const rowsWithCycle = rows.map((r) => ({
+      ...r,
+      cycle_phase_at_scan: 'luteal',
+      cycle_start_date: '2026-05-01',
+    })) as unknown as ScanMeasurementRow[];
+
+    const payload = buildPractitionerScanPayload({
+      patientDisplayName: 'Patient',
+      measurementRows: rowsWithCycle,
+      engagement: ENGAGEMENT,
+    });
+
+    // No cycle/menstrual-shaped key anywhere in the serialized payload.
+    const serialized = JSON.stringify(payload).toLowerCase();
+    expect(serialized).not.toContain('cycle');
+    expect(serialized).not.toContain('menstrual');
+    expect(serialized).not.toContain('luteal');
+    // Trend points carry only their allow-listed measurement fields.
+    for (const p of payload.trend) {
+      expect(Object.keys(p).sort()).toEqual(
+        ['bodyFatPct', 'date', 'fatMassKg', 'leanMassKg', 'sessionId', 'waistCm', 'waistToHipRatio'],
+      );
+    }
+  });
 });
 
 // ===========================================================================

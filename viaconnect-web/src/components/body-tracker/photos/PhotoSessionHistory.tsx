@@ -1,13 +1,22 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import Link from 'next/link';
+import { useEffect, useMemo, useState } from 'react';
 import { Camera, CheckCircle2, Clock, AlertTriangle, Loader2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import {
+  minutesOfDayFromInstant,
+  computeTypicalScanMinute,
+  isAtypicalScanTime,
+  buildTimeOfDayAnnotation,
+  formatTimeOfDay,
+} from '@/lib/body-tracker/time-of-day-trend';
+import { CyclePhaseTrendNote } from '@/components/body-tracker/scanning/CyclePhaseTrendNote';
+import { useCyclePhaseSource } from '@/hooks/body-tracker/useCyclePhaseSource';
 
 interface SessionRow {
   id: string;
   session_date: string;
+  created_at: string;
   is_complete: boolean;
   poses_completed: string[];
   arnold_status: 'pending' | 'queued' | 'analyzing' | 'complete' | 'failed';
@@ -31,7 +40,7 @@ export function PhotoSessionHistory({ excludeSessionId, limit = 10, onSelect }: 
       if (!user) { if (mounted) setSessions([]); return; }
       const { data } = await supabase
         .from('body_photo_sessions')
-        .select('id, session_date, is_complete, poses_completed, arnold_status, arnold_confidence')
+        .select('id, session_date, created_at, is_complete, poses_completed, arnold_status, arnold_confidence')
         .eq('user_id', user.id)
         .order('session_date', { ascending: false })
         .limit(limit);
@@ -41,6 +50,23 @@ export function PhotoSessionHistory({ excludeSessionId, limit = 10, onSelect }: 
     })();
     return () => { mounted = false; };
   }, [excludeSessionId, limit]);
+
+  // Time-of-day trend annotation (Prompt #169b section 11.2): compute the user's
+  // TYPICAL scan time across the loaded history (local time-of-day from each
+  // scan's created_at), then flag any scan captured MORE THAN 4 hours from it.
+  // The flag is rendered as a subtle marker on each atypical row below.
+  const typicalMinute = useMemo(() => {
+    if (!sessions) return null;
+    return computeTypicalScanMinute(
+      sessions.map((s) => minutesOfDayFromInstant(s.created_at)),
+    );
+  }, [sessions]);
+
+  // Opt-in, consumer-only cycle-phase trend annotation (Prompt #169b section
+  // 11.2.3). Resolved ONCE here (the opt-in + the cycle source) and applied per
+  // scan via annotationFor; default OFF means annotationFor returns null for the
+  // vast majority and no cycle data is even read.
+  const { annotationFor } = useCyclePhaseSource();
 
   if (sessions === null) {
     return (
@@ -64,6 +90,9 @@ export function PhotoSessionHistory({ excludeSessionId, limit = 10, onSelect }: 
       {sessions.map((s) => {
         const d = new Date(s.session_date);
         const label = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+        const scanMinute = minutesOfDayFromInstant(s.created_at);
+        const atypical = isAtypicalScanTime(scanMinute, typicalMinute);
+        const timeLabel = formatTimeOfDay(scanMinute);
         return (
           <li key={s.id}>
             <button
@@ -73,10 +102,18 @@ export function PhotoSessionHistory({ excludeSessionId, limit = 10, onSelect }: 
             >
               <Camera className="h-4 w-4 text-white/55 flex-none" strokeWidth={1.5} />
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-white">{label}</p>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <p className="text-sm font-medium text-white">{label}</p>
+                  {/* Atypical scan-time marker (section 11.2): subtle, never alarming. */}
+                  {atypical && <AtypicalTimeMarker timeLabel={timeLabel} />}
+                </div>
                 <p className="text-[11px] text-white/50">
                   {s.poses_completed.length} of 4 poses
                 </p>
+                {/* Opt-in, consumer-only cycle-phase trend note (section 11.2.3).
+                    Renders nothing unless the user has opted in AND a phase can be
+                    computed from cycle data. */}
+                <CyclePhaseTrendNote note={annotationFor(s.session_date)} />
               </div>
               <ArnoldStatusBadge status={s.arnold_status} />
             </button>
@@ -84,6 +121,22 @@ export function PhotoSessionHistory({ excludeSessionId, limit = 10, onSelect }: 
         );
       })}
     </ul>
+  );
+}
+
+// A subtle "different time than usual" marker for a scan flagged atypical
+// (section 11.2). It carries the explanation as a tooltip (title) so the row
+// stays compact; "Some daily variation is normal."
+function AtypicalTimeMarker({ timeLabel }: { timeLabel: string | null }) {
+  return (
+    <span
+      data-testid="atypical-time-marker"
+      title={buildTimeOfDayAnnotation()}
+      className="inline-flex items-center gap-1 rounded-full border border-[#E8A33A]/30 bg-[#E8A33A]/10 px-1.5 py-0.5 text-[9px] text-[#E8A33A]"
+    >
+      <Clock className="h-2.5 w-2.5" strokeWidth={1.5} />
+      {timeLabel ? `${timeLabel}, off your usual time` : 'Off your usual time'}
+    </span>
   );
 }
 
