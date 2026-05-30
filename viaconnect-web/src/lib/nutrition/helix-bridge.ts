@@ -355,3 +355,223 @@ export async function awardQuickLogHelixEvents(
 
   return { awarded, totalPoints, errors };
 }
+
+// ---------------------------------------------------------------------------
+// Prompt 170l Phase 1b: Barcode Scan Helix awards.
+//
+// Mirror of awardNutriVisionHelixEvents for the barcode entry path. Five
+// event keys live in helix_earning_event_types (category='tracking'); only
+// four are emitted via this helper at meal-save time:
+//
+//   barcode_scan_started               1 point  (always, every saved meal)
+//   barcode_meal_logged                4 points (always; lower than the
+//                                                photo path's 5pt because
+//                                                barcode effort is lower)
+//   barcode_off_not_found_fallback     0 points (lookupOutcome ==='fallback_to_photo';
+//                                                logged for catalog improvement)
+//   barcode_macros_overridden          1 point  (userOverrodeMacros === true)
+//
+// The fifth event, barcode_off_contribution_clicked (3pt), fires through
+// the separate awardOffContributionClicked one-shot helper triggered by the
+// user clicking the OFF contribution link in the not-found fallback card.
+// Decoupled because its lifecycle is independent of meal-save.
+//
+// Standing Rule 8: consumer-side only. Practitioner views never see these.
+// Schema follows the 170j hotfix pattern: type='earn', source=event key,
+// event_type_id=event key, metadata.event_key + metadata.source.
+// ---------------------------------------------------------------------------
+
+export type BarcodeEventKey =
+  | 'barcode_scan_started'
+  | 'barcode_meal_logged'
+  | 'barcode_off_not_found_fallback'
+  | 'barcode_macros_overridden'
+  | 'barcode_off_contribution_clicked';
+
+export type BarcodeLookupOutcomeForHelix =
+  | 'cache_hit'
+  | 'off_hit'
+  | 'off_miss'
+  | 'error'
+  | 'manual_entry'
+  | 'fallback_to_photo';
+
+export interface BarcodeHelixContext {
+  supabaseAdmin: SupabaseClient;
+  userId: string;
+  mealId: string;
+  lookupOutcome: BarcodeLookupOutcomeForHelix;
+  userOverrodeMacros: boolean;
+  requestId: string;
+}
+
+export interface BarcodeHelixAwards {
+  awarded: ReadonlyArray<BarcodeEventKey>;
+  totalPoints: number;
+  errors: ReadonlyArray<{ event: string; error_class: string }>;
+}
+
+interface PendingBarcodeAward {
+  eventKey: BarcodeEventKey;
+  amount: number;
+  txType: 'earn';
+  description: string;
+}
+
+function buildPendingBarcode(ctx: BarcodeHelixContext): PendingBarcodeAward[] {
+  const out: PendingBarcodeAward[] = [
+    {
+      eventKey: 'barcode_scan_started',
+      amount: 1,
+      txType: 'earn',
+      description: 'Barcode scan started',
+    },
+    {
+      eventKey: 'barcode_meal_logged',
+      amount: 4,
+      txType: 'earn',
+      description: 'Barcode meal logged',
+    },
+  ];
+
+  if (ctx.lookupOutcome === 'fallback_to_photo') {
+    out.push({
+      eventKey: 'barcode_off_not_found_fallback',
+      amount: 0,
+      txType: 'earn',
+      description: 'Barcode product not found, photo fallback',
+    });
+  }
+
+  if (ctx.userOverrodeMacros === true) {
+    out.push({
+      eventKey: 'barcode_macros_overridden',
+      amount: 1,
+      txType: 'earn',
+      description: 'Barcode macros overridden',
+    });
+  }
+
+  return out;
+}
+
+/**
+ * Awards the barcode scan Helix events on a meal save. Best effort: each
+ * event is inserted independently and a failure on one does not block the
+ * others. Returns the awarded set, total points, and per-event errors.
+ */
+export async function awardBarcodeHelixEvents(
+  ctx: BarcodeHelixContext,
+): Promise<BarcodeHelixAwards> {
+  const pending = buildPendingBarcode(ctx);
+  const awarded: BarcodeEventKey[] = [];
+  const errors: Array<{ event: string; error_class: string }> = [];
+  let totalPoints = 0;
+
+  for (const p of pending) {
+    try {
+      const builder = ctx.supabaseAdmin.from('helix_transactions').insert({
+        user_id: ctx.userId,
+        amount: p.amount,
+        type: p.txType,
+        source: p.eventKey,
+        description: p.description,
+        event_type_id: p.eventKey,
+        metadata: {
+          event_key: p.eventKey,
+          related_meal_id: ctx.mealId,
+          source: 'barcode',
+          lookup_outcome: ctx.lookupOutcome,
+        },
+      });
+      const result = await withTimeout(
+        Promise.resolve(builder) as Promise<{ error: { message: string } | null }>,
+        {
+          timeoutMs: HELIX_INSERT_TIMEOUT_MS,
+          op: `helix.award.${p.eventKey}`,
+          requestId: ctx.requestId,
+        },
+      );
+
+      if (result.error) {
+        errors.push({ event: p.eventKey, error_class: 'SupabaseError' });
+        safeLog.warn('nutrition.helix.award_failed', 'insert returned error', {
+          request_id: ctx.requestId,
+          event_key: p.eventKey,
+          error: result.error.message,
+        });
+        continue;
+      }
+
+      awarded.push(p.eventKey);
+      totalPoints += p.amount;
+    } catch (err) {
+      errors.push({ event: p.eventKey, error_class: classifyError(err) });
+      safeLog.warn('nutrition.helix.award_failed', 'insert threw', {
+        request_id: ctx.requestId,
+        event_key: p.eventKey,
+        error: err,
+      });
+    }
+  }
+
+  safeLog.info('nutrition.helix.barcode_awarded', 'awards processed', {
+    request_id: ctx.requestId,
+    meal_id: ctx.mealId,
+    events: awarded,
+    total_points: totalPoints,
+    error_count: errors.length,
+  });
+
+  return { awarded, totalPoints, errors };
+}
+
+/**
+ * One-shot award for clicking the OFF contribution link in the not-found
+ * fallback card. Decoupled from awardBarcodeHelixEvents because its
+ * lifecycle is independent of meal-save. Returns awarded boolean.
+ */
+export async function awardOffContributionClicked(args: {
+  supabaseAdmin: SupabaseClient;
+  userId: string;
+  barcode: string;
+  requestId: string;
+}): Promise<{ awarded: boolean; error?: string }> {
+  try {
+    const builder = args.supabaseAdmin.from('helix_transactions').insert({
+      user_id: args.userId,
+      amount: 3,
+      type: 'earn',
+      source: 'barcode_off_contribution_clicked',
+      description: 'OFF contribution link clicked',
+      event_type_id: 'barcode_off_contribution_clicked',
+      metadata: {
+        event_key: 'barcode_off_contribution_clicked',
+        related_barcode: args.barcode,
+        source: 'barcode',
+      },
+    });
+    const result = await withTimeout(
+      Promise.resolve(builder) as Promise<{ error: { message: string } | null }>,
+      {
+        timeoutMs: HELIX_INSERT_TIMEOUT_MS,
+        op: 'helix.award.barcode_off_contribution_clicked',
+        requestId: args.requestId,
+      },
+    );
+    if (result.error) {
+      safeLog.warn('nutrition.helix.award_failed', 'contribution insert error', {
+        request_id: args.requestId,
+        error: result.error.message,
+      });
+      return { awarded: false, error: result.error.message };
+    }
+    return { awarded: true };
+  } catch (err) {
+    safeLog.warn('nutrition.helix.award_failed', 'contribution insert threw', {
+      request_id: args.requestId,
+      error: err,
+    });
+    return { awarded: false, error: classifyError(err) };
+  }
+}
