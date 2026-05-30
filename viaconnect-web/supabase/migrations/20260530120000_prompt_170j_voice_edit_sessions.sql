@@ -4,7 +4,7 @@
 CREATE TABLE IF NOT EXISTS public.voice_edit_sessions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_hash TEXT NOT NULL,
-  meal_id UUID REFERENCES public.meals(id) ON DELETE SET NULL,
+  meal_id UUID REFERENCES public.meals(meal_id) ON DELETE SET NULL,
   stt_provider TEXT NOT NULL
     CHECK (stt_provider IN ('web_speech_api', 'capacitor_native', 'gemini_audio', 'claude_audio')),
   stt_latency_ms INT,
