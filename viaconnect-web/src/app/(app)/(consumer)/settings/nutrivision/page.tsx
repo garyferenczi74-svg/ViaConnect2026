@@ -15,6 +15,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Camera } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { VoiceSettingsSection } from './components/VoiceSettingsSection';
 
 interface SettingsRow {
   corpus_opt_in?: boolean | null;
@@ -152,6 +153,8 @@ export default function NutriVisionSettingsPage() {
             </div>
           )}
         </section>
+
+        <VoiceSettingsSection />
       </div>
     </div>
   );
