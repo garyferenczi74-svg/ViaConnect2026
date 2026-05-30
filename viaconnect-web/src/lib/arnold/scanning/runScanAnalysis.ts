@@ -65,6 +65,13 @@ interface SessionRow {
   left_full_path: string | null;
   right_full_path: string | null;
   arnold_analysis: Record<string, unknown> | null;
+  // Per scan weight/height pinned at the pre capture CAQ freshness confirm step
+  // (Prompt #169b, Task 17, spec section 10). When present these are the
+  // CONFIRMED stats and are preferred over the (possibly stale) profiles read for
+  // the composition inputs, so a stale self reported stat cannot silently corrupt
+  // the estimate. Columns: migration 20260516000070.
+  weight_kg_at_scan: number | null;
+  height_cm_at_scan: number | null;
 }
 
 interface ProfileRow {
@@ -83,7 +90,7 @@ export async function runScanAnalysis({ sessionId, onProgress }: ScanAnalysisInp
 
   const { data: session, error: sErr } = await supabase
     .from('body_photo_sessions')
-    .select('id, user_id, session_date, front_full_path, back_full_path, left_full_path, right_full_path, arnold_analysis')
+    .select('id, user_id, session_date, front_full_path, back_full_path, left_full_path, right_full_path, arnold_analysis, weight_kg_at_scan, height_cm_at_scan')
     .eq('id', sessionId)
     .maybeSingle();
   if (sErr || !session) throw new Error('Scan session not found');
@@ -98,11 +105,21 @@ export async function runScanAnalysis({ sessionId, onProgress }: ScanAnalysisInp
 
   const p = profile as unknown as ProfileRow | null;
   const sex: BiologicalSex = p?.sex === 'female' ? 'female' : 'male';
-  const heightCm = p?.height_cm ?? null;
-  const weightKg = p?.weight_kg ?? null;
   const age = p?.date_of_birth
     ? Math.floor((Date.now() - new Date(p.date_of_birth).getTime()) / (365.25 * 86400000))
     : 30;
+
+  // CAQ data freshness (Prompt #169b, Task 17, spec section 10): PREFER the per
+  // scan weight/height pinned at the pre capture confirm step over the (possibly
+  // stale) profiles read. The confirm step writes weight_kg_at_scan /
+  // height_cm_at_scan onto this session BEFORE capture (with provenance
+  // caq_phase_1 when unchanged, pre_scan_update when the user updated it), so a
+  // stale self reported stat cannot silently feed the composition estimate. When
+  // a session has no pinned value (e.g. the stat was fresh and the confirm step
+  // was skipped) we fall back to the profile value.
+  const s = session as unknown as SessionRow;
+  const heightCm = s.height_cm_at_scan ?? p?.height_cm ?? null;
+  const weightKg = s.weight_kg_at_scan ?? p?.weight_kg ?? null;
 
   if (!heightCm || !weightKg) {
     throw new Error('Height and weight in your profile are required for scan analysis. Set them in your profile and try again.');

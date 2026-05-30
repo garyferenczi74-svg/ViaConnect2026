@@ -11,6 +11,7 @@ import { ComparisonPanel } from '@/components/body-tracker/photos/ComparisonPane
 import { RunScanButton } from '@/components/body-tracker/scanning/RunScanButton';
 import { BodyScanAgeGate } from '@/components/body-tracker/scanning/BodyScanAgeGate';
 import { BodyScanConsentGate } from '@/components/body-tracker/scanning/BodyScanConsentGate';
+import { BodyScanCaqFreshnessCheck } from '@/components/body-tracker/scanning/BodyScanCaqFreshnessCheck';
 import { ScanResultsPanel } from '@/components/body-tracker/scanning/ScanResultsPanel';
 import { ScanOnboardingWalkthrough } from '@/components/body-tracker/scanning/ScanOnboardingWalkthrough';
 import { BodyScanDisorderedEatingQuestion } from '@/components/body-tracker/scanning/BodyScanDisorderedEatingQuestion';
@@ -144,9 +145,18 @@ export default function PhotosPage() {
                 reaches consent; a consenting adult reaches the normal entry. The
                 SERVER consent enforcement is the deferred apply-at-launch
                 migration 20260516000100; this is the client gate. */}
+            {/* CAQ data freshness check (Prompt #169b, spec section 10): composed
+                AFTER the consent + age gates and BEFORE capture. When the user's
+                self reported weight/height is stale (or its age is unknown), a
+                brief "Confirm your stats" step runs first and pins the confirmed
+                per scan value onto the session, so a stale stat cannot silently
+                corrupt the composition estimate. Fresh stats pass straight
+                through to RunScanButton. */}
             <BodyScanAgeGate>
               <BodyScanConsentGate>
-                <RunScanButton sessionId={latestId} onComplete={() => setRefreshKey((k) => k + 1)} />
+                <BodyScanCaqFreshnessCheck sessionId={latestId}>
+                  <RunScanButton sessionId={latestId} onComplete={() => setRefreshKey((k) => k + 1)} />
+                </BodyScanCaqFreshnessCheck>
               </BodyScanConsentGate>
             </BodyScanAgeGate>
           </section>
