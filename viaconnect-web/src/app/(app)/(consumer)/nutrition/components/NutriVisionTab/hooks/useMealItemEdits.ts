@@ -384,6 +384,15 @@ export function useMealItemEdits(args: UseMealItemEditsArgs): UseMealItemEditsRe
       if (it.nutrient_source !== undefined) row.nutrient_source = it.nutrient_source;
       if (typeof it.usda_fdc_id === 'number') row.usda_fdc_id = it.usda_fdc_id;
       if (typeof it.off_barcode === 'string') row.off_barcode = it.off_barcode;
+      // Prompt 170l Phase 1c-2: propagate OFF-derived metadata when the item
+      // came from a barcode scan. Legacy items keep these fields undefined.
+      if (typeof it.off_product_name === 'string') row.off_product_name = it.off_product_name;
+      if (typeof it.off_brand === 'string') row.off_brand = it.off_brand;
+      if (typeof it.off_serving_size_g === 'number') row.off_serving_size_g = it.off_serving_size_g;
+      if (typeof it.off_completeness_score === 'number') row.off_completeness_score = it.off_completeness_score;
+      if (typeof it.off_nova_group === 'number') row.off_nova_group = it.off_nova_group;
+      if (typeof it.off_nutrition_grade_fr === 'string') row.off_nutrition_grade_fr = it.off_nutrition_grade_fr;
+      if (typeof it.user_overrode_macros === 'boolean') row.user_overrode_macros = it.user_overrode_macros;
       if (typeof it.curated_food_id === 'string') row.curated_food_id = it.curated_food_id;
       if (typeof it.fiber_g === 'number') row.fiber_g = it.fiber_g;
       if (typeof it.sugar_g === 'number') row.sugar_g = it.sugar_g;

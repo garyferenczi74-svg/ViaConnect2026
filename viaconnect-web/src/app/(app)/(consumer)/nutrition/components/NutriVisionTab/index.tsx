@@ -12,7 +12,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
-import { Camera, ChevronLeft, HelpCircle, Settings, X } from 'lucide-react';
+import { Camera, ChevronLeft, HelpCircle, ScanBarcode, Settings, X } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import type { CaptureResult, CaptureSource } from '@/lib/capacitor/camera-capture';
@@ -28,6 +28,18 @@ import { useCameraCapture } from './hooks/useCameraCapture';
 import { useNutriVisionAnalysis } from './hooks/useNutriVisionAnalysis';
 import { useMealItemEdits } from './hooks/useMealItemEdits';
 import { detectMealTypeForNow } from './types';
+// Prompt 170l Phase 1c-2: barcode entry path surfaces.
+import { BarcodeScannerOverlay } from '@/components/barcode/BarcodeScannerOverlay';
+import { ProductConfirmation } from '@/components/barcode/ProductConfirmation';
+import { NotFoundFallback } from '@/components/barcode/NotFoundFallback';
+import { ManualBarcodeEntry } from '@/components/barcode/ManualBarcodeEntry';
+import { MacroEditPanel } from '@/components/barcode/MacroEditPanel';
+import {
+  convertOFFProductToMealItemDraft,
+  buildBlankSlateDraft,
+} from '@/components/barcode/lib/off-product-to-draft';
+import type { LookupResult } from '@/components/barcode/hooks/useOffLookup';
+import type { OFFProduct } from '@/lib/nutrition/barcode/types';
 import type {
   Phase,
   MealDraft,
@@ -100,6 +112,16 @@ export default function NutriVisionTab() {
   // #170a supplement §20.A: cache the latest capture so Try Again can reuse it
   // without forcing the user back to the capture screen.
   const [lastCaptureForRetry, setLastCaptureForRetry] = useState<CaptureResult | null>(null);
+
+  // Prompt 170l Phase 1c-2: barcode entry path state.
+  const [barcodeProduct, setBarcodeProduct] = useState<OFFProduct | null>(null);
+  const [barcodeFormat, setBarcodeFormat] = useState<string | null>(null);
+  const [barcodeNotFoundValue, setBarcodeNotFoundValue] = useState<string | null>(null);
+  const [barcodeNotFoundIsNetwork, setBarcodeNotFoundIsNetwork] = useState<boolean>(false);
+  const [manualEntryOpen, setManualEntryOpen] = useState<boolean>(false);
+  const [macroEditOpen, setMacroEditOpen] = useState<boolean>(false);
+  const [macroEditMode, setMacroEditMode] = useState<'prefilled' | 'blank_slate'>('prefilled');
+  const [blankSlateBarcode, setBlankSlateBarcode] = useState<string | null>(null);
 
   const capture = useCameraCapture();
   const analysis = useNutriVisionAnalysis();
@@ -274,6 +296,222 @@ export default function NutriVisionTab() {
     setPhase('idle');
   }, [analysis, capture]);
 
+  // Prompt 170l Phase 1c-2: barcode flow handlers.
+  const handleOpenScanner = useCallback(() => {
+    setBarcodeProduct(null);
+    setBarcodeFormat(null);
+    setBarcodeNotFoundValue(null);
+    setBarcodeNotFoundIsNetwork(false);
+    setPhase('scanning');
+  }, []);
+
+  const handleLookupResult = useCallback(
+    (barcode: string, lookup: LookupResult) => {
+      if (lookup.outcome === 'cache_hit' || lookup.outcome === 'off_hit' || lookup.outcome === 'sessionstorage_hit') {
+        if (lookup.product) {
+          setBarcodeProduct(lookup.product);
+          setBarcodeFormat(null);
+          setPhase('product_confirm');
+        }
+        return;
+      }
+      if (lookup.outcome === 'off_miss') {
+        setBarcodeNotFoundValue(barcode);
+        setBarcodeNotFoundIsNetwork(false);
+        setPhase('product_not_found');
+        return;
+      }
+      if (lookup.outcome === 'network_error') {
+        setBarcodeNotFoundValue(barcode);
+        setBarcodeNotFoundIsNetwork(true);
+        setPhase('product_not_found');
+        return;
+      }
+      if (lookup.outcome === 'rate_limit') {
+        toast.error("You've reached today's scan limit. Try again tomorrow.");
+        setPhase('idle');
+        return;
+      }
+      if (lookup.outcome === 'feature_disabled') {
+        toast.error('Barcode scanning is currently unavailable.');
+        setPhase('idle');
+        return;
+      }
+      toast.error('Something went wrong with that scan. Try again.');
+      setPhase('idle');
+    },
+    [],
+  );
+
+  const handleScannerLookupResult = useCallback(
+    (barcode: string, _decoded: unknown, lookup: LookupResult) => {
+      handleLookupResult(barcode, lookup);
+    },
+    [handleLookupResult],
+  );
+
+  const handleProductSave = useCallback(
+    (portionMultiplier: number) => {
+      if (!barcodeProduct) return;
+      const itemDraft = convertOFFProductToMealItemDraft(barcodeProduct, {
+        portionMultiplier,
+      });
+      if (itemDraft === null) {
+        toast.error("That product didn't have enough nutrition data to save.");
+        return;
+      }
+      const totals = {
+        calories_kcal: itemDraft.calories_kcal,
+        protein_g: itemDraft.protein_g,
+        carbs_g: itemDraft.carbs_g,
+        fat_g: itemDraft.fat_g,
+        fiber_g: itemDraft.fiber_g ?? 0,
+        sugar_g: itemDraft.sugar_g ?? 0,
+        sodium_mg: itemDraft.sodium_mg ?? 0,
+        cholesterol_mg: 0,
+      };
+      const newDraft = {
+        id: `barcode-meal-${Date.now().toString(36)}`,
+        items: [itemDraft],
+        totals,
+        meal_confidence: 0.95,
+        warnings: [],
+        // Barcode meals have an exact serving size from OFF; plate selector
+        // (170a Supplement 17) is not applicable.
+        credit_card_detected: true,
+      };
+      setDraft(newDraft);
+      setBarcodeProduct(null);
+      setPhase('reviewing');
+    },
+    [barcodeProduct],
+  );
+
+  const handleProductCancel = useCallback(() => {
+    setBarcodeProduct(null);
+    setBarcodeFormat(null);
+    setPhase('idle');
+  }, []);
+
+  const handleProductBack = useCallback(() => {
+    setBarcodeProduct(null);
+    setPhase('scanning');
+  }, []);
+
+  const handleEditMacros = useCallback(() => {
+    setMacroEditMode('prefilled');
+    setMacroEditOpen(true);
+  }, []);
+
+  const handleFallbackPhotograph = useCallback(() => {
+    setBarcodeNotFoundValue(null);
+    setBarcodeNotFoundIsNetwork(false);
+    setPhase('idle');
+    void onCapture('camera');
+  }, [onCapture]);
+
+  const handleFallbackEnterMacros = useCallback(() => {
+    if (!barcodeNotFoundValue) return;
+    setBlankSlateBarcode(barcodeNotFoundValue);
+    setMacroEditMode('blank_slate');
+    setMacroEditOpen(true);
+  }, [barcodeNotFoundValue]);
+
+  const handleFallbackContribute = useCallback(() => {
+    if (!barcodeNotFoundValue) return;
+    // Open OFF deep-link to the contribution page for this barcode.
+    const url = `https://world.openfoodfacts.org/cgi/product.pl?type=edit&code=${encodeURIComponent(barcodeNotFoundValue)}`;
+    window.open(url, '_blank', 'noopener,noreferrer');
+    toast.success("Thanks for contributing. We'll find this product next time.");
+    setBarcodeNotFoundValue(null);
+    setPhase('idle');
+  }, [barcodeNotFoundValue]);
+
+  const handleFallbackRetry = useCallback(() => {
+    setBarcodeNotFoundValue(null);
+    setBarcodeNotFoundIsNetwork(false);
+    setPhase('scanning');
+  }, []);
+
+  const handleFallbackBack = useCallback(() => {
+    setBarcodeNotFoundValue(null);
+    setBarcodeNotFoundIsNetwork(false);
+    setPhase('scanning');
+  }, []);
+
+  const handleFallbackClose = useCallback(() => {
+    setBarcodeNotFoundValue(null);
+    setBarcodeNotFoundIsNetwork(false);
+    setPhase('idle');
+  }, []);
+
+  const handleMacroEditSave = useCallback(
+    (values: { calories_kcal: number; protein_g: number; carbs_g: number; fat_g: number; fiber_g: number; sodium_mg: number; sugar_g: number }, didOverride: boolean) => {
+      if (macroEditMode === 'blank_slate' && blankSlateBarcode !== null) {
+        const itemDraft = buildBlankSlateDraft(blankSlateBarcode);
+        itemDraft.calories_kcal = Math.round(values.calories_kcal);
+        itemDraft.protein_g = Number(values.protein_g.toFixed(1));
+        itemDraft.carbs_g = Number(values.carbs_g.toFixed(1));
+        itemDraft.fat_g = Number(values.fat_g.toFixed(1));
+        itemDraft.fiber_g = Number(values.fiber_g.toFixed(1));
+        itemDraft.sugar_g = Number(values.sugar_g.toFixed(1));
+        itemDraft.sodium_mg = Math.round(values.sodium_mg);
+        const totals = {
+          calories_kcal: itemDraft.calories_kcal,
+          protein_g: itemDraft.protein_g,
+          carbs_g: itemDraft.carbs_g,
+          fat_g: itemDraft.fat_g,
+          fiber_g: itemDraft.fiber_g ?? 0,
+          sugar_g: itemDraft.sugar_g ?? 0,
+          sodium_mg: itemDraft.sodium_mg ?? 0,
+          cholesterol_mg: 0,
+        };
+        setDraft({
+          id: `barcode-blank-meal-${Date.now().toString(36)}`,
+          items: [itemDraft],
+          totals,
+          meal_confidence: 0.5,
+          warnings: ['User-entered macros'],
+          credit_card_detected: true,
+        });
+        setBlankSlateBarcode(null);
+        setBarcodeNotFoundValue(null);
+        setMacroEditOpen(false);
+        setPhase('reviewing');
+        return;
+      }
+      // prefilled mode: update the in-flight barcodeProduct then re-render confirmation
+      if (barcodeProduct !== null && didOverride) {
+        const editedProduct: OFFProduct = {
+          ...barcodeProduct,
+          nutriments: {
+            ...(barcodeProduct.nutriments ?? {}),
+            'energy-kcal_100g': values.calories_kcal,
+            proteins_100g: values.protein_g,
+            carbohydrates_100g: values.carbs_g,
+            fat_100g: values.fat_g,
+            fiber_100g: values.fiber_g,
+            sugars_100g: values.sugar_g,
+            sodium_100g: values.sodium_mg / 1000,
+          },
+        };
+        setBarcodeProduct(editedProduct);
+      }
+      setMacroEditOpen(false);
+    },
+    [macroEditMode, blankSlateBarcode, barcodeProduct],
+  );
+
+  const handleOpenManualEntry = useCallback(() => setManualEntryOpen(true), []);
+  const handleCloseManualEntry = useCallback(() => setManualEntryOpen(false), []);
+  const handleManualEntryLookup = useCallback(
+    (barcode: string, lookup: LookupResult) => {
+      setManualEntryOpen(false);
+      handleLookupResult(barcode, lookup);
+    },
+    [handleLookupResult],
+  );
+
   return (
     <>
       <MobileHeroBackground
@@ -320,6 +558,7 @@ export default function NutriVisionTab() {
           {phase === 'idle' && (
             <IdleSurface
               onCapture={onCapture}
+              onOpenScanner={handleOpenScanner}
               isCapturing={capture.isCapturing}
               error={analysisError ?? capture.error}
               recentMeals={recentMeals}
@@ -396,6 +635,36 @@ export default function NutriVisionTab() {
             />
           )}
 
+          {phase === 'product_confirm' && barcodeProduct && (
+            <ProductConfirmation
+              product={barcodeProduct}
+              format={barcodeFormat}
+              servingSizeG={barcodeProduct.serving_size
+                ? (parseFloat(barcodeProduct.serving_size) || 100)
+                : 100}
+              initialPortionMultiplier={1}
+              onCancel={handleProductCancel}
+              onBack={handleProductBack}
+              onClose={handleProductCancel}
+              onSave={handleProductSave}
+              onEditMacros={handleEditMacros}
+            />
+          )}
+
+          {phase === 'product_not_found' && barcodeNotFoundValue && (
+            <NotFoundFallback
+              barcode={barcodeNotFoundValue}
+              fallbackToPhotoEnabled={true}
+              isNetworkError={barcodeNotFoundIsNetwork}
+              onClose={handleFallbackClose}
+              onBack={handleFallbackBack}
+              onPhotograph={handleFallbackPhotograph}
+              onEnterMacros={handleFallbackEnterMacros}
+              onContribute={handleFallbackContribute}
+              onRetry={handleFallbackRetry}
+            />
+          )}
+
           {showTips && (
             <TipsModal onClose={() => setShowTips(false)} />
           )}
@@ -408,6 +677,46 @@ export default function NutriVisionTab() {
           )}
         </div>
       </div>
+
+      {/* Prompt 170l Phase 1c-2: barcode scanner overlay + modals at the
+          document root so they layer above the page content. */}
+      <BarcodeScannerOverlay
+        open={phase === 'scanning'}
+        onClose={handleProductCancel}
+        onLookupResult={handleScannerLookupResult}
+        onManualEntry={handleOpenManualEntry}
+        hapticEnabled={true}
+        audioChimeEnabled={false}
+      />
+
+      <ManualBarcodeEntry
+        open={manualEntryOpen}
+        onClose={handleCloseManualEntry}
+        onLookupResult={handleManualEntryLookup}
+      />
+
+      <MacroEditPanel
+        open={macroEditOpen}
+        mode={macroEditMode}
+        initialValues={
+          macroEditMode === 'prefilled' && barcodeProduct
+            ? {
+                calories_kcal: (barcodeProduct.nutriments?.['energy-kcal_100g'] ?? 0),
+                protein_g: (barcodeProduct.nutriments?.['proteins_100g'] ?? 0),
+                carbs_g: (barcodeProduct.nutriments?.['carbohydrates_100g'] ?? 0),
+                fat_g: (barcodeProduct.nutriments?.['fat_100g'] ?? 0),
+                fiber_g: (barcodeProduct.nutriments?.['fiber_100g'] ?? 0),
+                sugar_g: (barcodeProduct.nutriments?.['sugars_100g'] ?? 0),
+                sodium_mg: ((barcodeProduct.nutriments?.['sodium_100g'] ?? 0) * 1000),
+              }
+            : undefined
+        }
+        productNameHint={
+          macroEditMode === 'prefilled' ? (barcodeProduct?.product_name ?? undefined) : undefined
+        }
+        onClose={() => setMacroEditOpen(false)}
+        onSave={handleMacroEditSave}
+      />
     </>
   );
 }
@@ -418,20 +727,57 @@ export default function NutriVisionTab() {
 
 interface IdleSurfaceProps {
   onCapture: (source: CaptureSource) => void;
+  onOpenScanner: () => void;
   isCapturing: boolean;
   error: string | null;
   recentMeals: RecentMealSummary[];
   onPickRecent: (m: RecentMealSummary) => void;
 }
 
+// Prompt 170l Phase 1c-2 + Hannah 11.1: three-entry-path row. Photo card and
+// Scan Barcode card are equal-weight peers; the conceptual shift from "photo
+// recognition app" to "any-entry-point food logger" is shown not told.
+// Anti-condescension posture per Hannah's push-back: NO "Most common" chip on
+// Photo. Both cards visually identical typography + icon sizing + height.
+// Photo retains left position for existing muscle memory. "Upload from gallery"
+// kept as a smaller text link below the cards to preserve the existing power-
+// user affordance without competing with the peer pairing.
 function IdleSurface(props: IdleSurfaceProps) {
   return (
     <div className="flex flex-col gap-4">
-      <CameraCapture
-        onCapture={props.onCapture}
-        isCapturing={props.isCapturing}
-        error={props.error}
-      />
+      <div className="grid grid-cols-2 gap-3">
+        <EntryPathCard
+          icon={<Camera className="h-9 w-9" strokeWidth={1.5} />}
+          title="Take photo"
+          subtitle="Photograph fresh, cooked, or plated meals."
+          onTap={() => props.onCapture('camera')}
+          disabled={props.isCapturing}
+          ariaLabel="Take photo. Photograph fresh, cooked, or plated meals."
+        />
+        <EntryPathCard
+          icon={<ScanBarcode className="h-9 w-9" strokeWidth={1.5} />}
+          title="Scan barcode"
+          subtitle="Read packaged food labels in under a second."
+          onTap={props.onOpenScanner}
+          disabled={false}
+          ariaLabel="Scan barcode. Photograph the barcode on packaged foods and drinks."
+        />
+      </div>
+
+      <button
+        type="button"
+        onClick={() => props.onCapture('gallery')}
+        disabled={props.isCapturing}
+        className="self-center text-[12px] text-white/65 underline disabled:opacity-50"
+      >
+        Upload photo from gallery
+      </button>
+
+      {props.error ? (
+        <p className="rounded-xl border border-[#FCA5A5]/40 bg-[#1A2744]/30 p-3 text-[12px] text-[#FCA5A5]" role="alert">
+          {props.error}
+        </p>
+      ) : null}
 
       <p className="rounded-xl border border-white/[0.08] bg-[#1A2744]/30 p-3 text-[11px] text-white/55">
         Photos may capture background details. Keep medications, ID, and personal documents out of frame for best privacy.
@@ -465,6 +811,34 @@ function IdleSurface(props: IdleSurfaceProps) {
         </div>
       )}
     </div>
+  );
+}
+
+interface EntryPathCardProps {
+  icon: React.ReactNode;
+  title: string;
+  subtitle: string;
+  onTap: () => void;
+  disabled: boolean;
+  ariaLabel: string;
+}
+
+function EntryPathCard({ icon, title, subtitle, onTap, disabled, ariaLabel }: EntryPathCardProps) {
+  return (
+    <button
+      type="button"
+      onClick={onTap}
+      disabled={disabled}
+      aria-label={ariaLabel}
+      className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-white/[0.08] bg-[#1E3054]/45 p-4 text-center transition-colors hover:border-[#2DA5A0]/40 hover:bg-[#1E3054]/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2DA5A0] focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+      style={{ minHeight: 144 }}
+    >
+      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#2DA5A0]/15 text-[#2DA5A0]">
+        {icon}
+      </div>
+      <div className="text-sm font-medium text-white">{title}</div>
+      <div className="text-[11px] text-white/70 leading-tight">{subtitle}</div>
+    </button>
   );
 }
 

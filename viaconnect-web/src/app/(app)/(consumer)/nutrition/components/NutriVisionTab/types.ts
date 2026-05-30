@@ -32,7 +32,14 @@ export type Phase =
   // #170a supplement §20.1: analysis failures land on a structured error card
   // instead of a toast. The error phase preserves the captured photo + lets
   // the user retry, log manually, or discard.
-  | 'error';
+  | 'error'
+  // Prompt 170l Phase 1c-2: barcode entry path phases.
+  //   scanning            barcode scanner overlay active (Hannah 11.2)
+  //   product_confirm     OFF product confirmation screen (Hannah 11.4)
+  //   product_not_found   OFF lookup miss fallback (Hannah 11.5)
+  | 'scanning'
+  | 'product_confirm'
+  | 'product_not_found';
 
 export type ProgressStage = 'reading' | 'portions' | 'nutrients' | 'idle';
 
@@ -89,6 +96,17 @@ export interface MealItemDraft {
   nutrient_source: NutrientSource;
   usda_fdc_id?: number;
   off_barcode?: string;
+  // Prompt 170l Phase 1c-2: OFF-derived metadata when this item came from a
+  // barcode scan. from_barcode_scan drives the "Scanned" chip on the result
+  // review card (Hannah 11.7).
+  from_barcode_scan?: boolean;
+  off_product_name?: string;
+  off_brand?: string;
+  off_serving_size_g?: number;
+  off_completeness_score?: number;
+  off_nova_group?: number;
+  off_nutrition_grade_fr?: 'a' | 'b' | 'c' | 'd' | 'e';
+  user_overrode_macros?: boolean;
   curated_food_id?: string;
   // Per-100g composition kept on the draft so the client can recalculate
   // macros on portion change without another API round trip. Hydrated from
