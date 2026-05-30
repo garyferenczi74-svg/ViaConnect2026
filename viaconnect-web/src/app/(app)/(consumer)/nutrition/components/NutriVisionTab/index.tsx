@@ -53,6 +53,38 @@ function asMealType(v: unknown): MealType {
   return 'snack';
 }
 
+// Local midnight boundary so "Recent NutriVision meals" only surfaces today's
+// captures. Yesterday's rows roll off automatically; they remain in the
+// database for the Dashboard meal log and corpus retention, but the at-a-glance
+// list resets per local day. The midnight-refresh effect re-fetches at the
+// next 00:00:01 local boundary so users keeping the tab open past midnight
+// see the new day without a manual reload.
+function getTodayStartISO(): string {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return d.toISOString();
+}
+
+function getMsUntilNextMidnight(): number {
+  const now = new Date();
+  const next = new Date(now);
+  next.setHours(24, 0, 1, 0);
+  return Math.max(1000, next.getTime() - now.getTime());
+}
+
+function mapRecentMealRows(rows: RecentRow[]): RecentMealSummary[] {
+  return rows.flatMap((r) => {
+    if (typeof r.meal_id !== 'string' || typeof r.logged_at !== 'string') return [];
+    return [{
+      meal_id: r.meal_id,
+      logged_at: r.logged_at,
+      meal_type: asMealType(r.meal_type),
+      calories_kcal: typeof r.calories_kcal === 'number' ? r.calories_kcal : 0,
+      item_count: 0,
+    }];
+  });
+}
+
 export default function NutriVisionTab() {
   const router = useRouter();
   const [phase, setPhase] = useState<Phase>('idle');
@@ -89,21 +121,11 @@ export default function NutriVisionTab() {
           .select('meal_id, logged_at, meal_type, calories_kcal')
           .eq('user_id', user.id)
           .eq('source', 'nutrivision')
+          .gte('logged_at', getTodayStartISO())
           .order('logged_at', { ascending: false })
           .limit(RECENT_MEAL_LIMIT);
         if (!cancelled && Array.isArray(rowsRaw)) {
-          const rows = rowsRaw as RecentRow[];
-          const summaries: RecentMealSummary[] = rows.flatMap((r) => {
-            if (typeof r.meal_id !== 'string' || typeof r.logged_at !== 'string') return [];
-            return [{
-              meal_id: r.meal_id,
-              logged_at: r.logged_at,
-              meal_type: asMealType(r.meal_type),
-              calories_kcal: typeof r.calories_kcal === 'number' ? r.calories_kcal : 0,
-              item_count: 0,
-            }];
-          });
-          setRecentMeals(summaries);
+          setRecentMeals(mapRecentMealRows(rowsRaw as RecentRow[]));
         }
       } catch { /* silent */ }
 
@@ -123,6 +145,41 @@ export default function NutriVisionTab() {
     void load();
     return () => { cancelled = true; };
   }, []);
+
+  // Auto-reset "Recent NutriVision meals" at the local-day boundary so
+  // yesterday's captures roll off without requiring a page refresh. Re-query
+  // fires at 00:00:01 local time and reschedules itself for the next day.
+  useEffect(() => {
+    if (!userId) return;
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const supabase = createClient();
+    const scheduleNext = (): void => {
+      timer = setTimeout(async () => {
+        if (cancelled) return;
+        try {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const { data: rowsRaw } = await (supabase as any)
+            .from('meals')
+            .select('meal_id, logged_at, meal_type, calories_kcal')
+            .eq('user_id', userId)
+            .eq('source', 'nutrivision')
+            .gte('logged_at', getTodayStartISO())
+            .order('logged_at', { ascending: false })
+            .limit(RECENT_MEAL_LIMIT);
+          if (!cancelled && Array.isArray(rowsRaw)) {
+            setRecentMeals(mapRecentMealRows(rowsRaw as RecentRow[]));
+          }
+        } catch { /* silent */ }
+        scheduleNext();
+      }, getMsUntilNextMidnight());
+    };
+    scheduleNext();
+    return () => {
+      cancelled = true;
+      if (timer) clearTimeout(timer);
+    };
+  }, [userId]);
 
   // When analysis returns a draft, advance to the reviewing phase.
   useEffect(() => {
