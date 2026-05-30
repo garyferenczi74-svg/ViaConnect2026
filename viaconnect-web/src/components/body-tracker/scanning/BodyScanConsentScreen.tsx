@@ -20,7 +20,10 @@
 
 import { useState } from 'react';
 import { ShieldCheck, Check, Loader2 } from 'lucide-react';
-import { useBiometricConsent } from '@/hooks/body-tracker/useBiometricConsent';
+import {
+  useBiometricConsent,
+  type RecordConsentArgs,
+} from '@/hooks/body-tracker/useBiometricConsent';
 import {
   RETENTION_OPTIONS,
   DEFAULT_RETENTION_DAYS,
@@ -36,6 +39,11 @@ import {
 } from '@/lib/body-tracker/body-scan-copy-slots';
 
 interface BodyScanConsentScreenProps {
+  // The consent-write function. When the screen is gated by BodyScanConsentGate,
+  // the gate passes its OWN hook's recordConsent so the write refreshes the
+  // gate's hasCurrentConsent (no duplicate hook, no remount needed to flip the
+  // gate). When omitted (standalone use), the screen falls back to its own hook.
+  recordConsent?: (args: RecordConsentArgs) => Promise<boolean>;
   // Called after a consent row is successfully written (so the parent can
   // proceed to the capture flow it was gating).
   onConsented?: () => void;
@@ -51,8 +59,16 @@ function retentionLabel(days: number | null): string {
   return `Keep for ${days} days`;
 }
 
-export function BodyScanConsentScreen({ onConsented, className = '' }: BodyScanConsentScreenProps) {
-  const { recordConsent } = useBiometricConsent();
+export function BodyScanConsentScreen({
+  recordConsent: recordConsentProp,
+  onConsented,
+  className = '',
+}: BodyScanConsentScreenProps) {
+  // Prefer the gate's hoisted recordConsent (so the write refreshes the gate's
+  // single consent state); fall back to a local hook for standalone use. The
+  // fallback hook is only the I/O writer here, not a second gate decision.
+  const { recordConsent: recordConsentFallback } = useBiometricConsent();
+  const recordConsent = recordConsentProp ?? recordConsentFallback;
   const [retentionDays, setRetentionDays] = useState<number | null>(DEFAULT_RETENTION_DAYS);
   // SEPARATE, default-OFF model-improvement opt-in (section 2.2.1). It is never
   // bundled into the accept; the user must actively turn it on.

@@ -27,7 +27,9 @@
 // finalize.
 
 import type { ReactNode } from 'react';
+import { Loader2 } from 'lucide-react';
 import { useBiometricConsent } from '@/hooks/body-tracker/useBiometricConsent';
+import { selectConsentGateRender } from '@/lib/body-tracker/biometric-consent';
 import { BodyScanConsentScreen } from './BodyScanConsentScreen';
 
 interface BodyScanConsentGateProps {
@@ -36,21 +38,38 @@ interface BodyScanConsentGateProps {
 }
 
 export function BodyScanConsentGate({ children, className = '' }: BodyScanConsentGateProps) {
-  const { hasCurrentConsent, isLoading } = useBiometricConsent();
+  // SINGLE source of consent truth for this subtree: the hook is hoisted HERE so
+  // that when the consent screen records consent through the gate's own
+  // recordConsent, the gate's hasCurrentConsent re-derives and the gate flips to
+  // its children with no remount. The screen does NOT instantiate its own hook.
+  const { hasCurrentConsent, isLoading, recordConsent } = useBiometricConsent();
 
-  // While loading, render the children (their premium gate applies). Do not
-  // flash the consent screen before the consent state resolves; the server gate
-  // (deferred) is the real guarantee, so a brief optimistic render is safe.
-  if (isLoading || hasCurrentConsent) {
+  const render = selectConsentGateRender(isLoading, hasCurrentConsent);
+
+  // While the consent state is still resolving, render a small inline loader,
+  // NOT the children: a non-consented user must not be able to reach the capture
+  // entry during the load window (the server consent enforcement is the deferred
+  // apply-at-launch migration, so this client window matters at launch).
+  if (render === 'loading') {
+    return (
+      <div className={`flex items-center justify-center py-6 ${className}`}>
+        <Loader2 className="h-5 w-5 animate-spin text-white/50" strokeWidth={1.5} />
+      </div>
+    );
+  }
+
+  // Current consent on file: render the gated entry (its premium gate applies).
+  if (render === 'children') {
     return <div className={className}>{children}</div>;
   }
 
   // No current consent: show the consent screen instead of the capture entry.
-  // After a successful accept, useBiometricConsent re-derives hasCurrentConsent,
-  // which re-renders this gate with the children.
+  // The screen writes through the gate's recordConsent, so a successful accept
+  // refreshes hasCurrentConsent and immediately re-renders this gate with the
+  // children. onConsented is the screen's post-write signal.
   return (
     <div className={className}>
-      <BodyScanConsentScreen />
+      <BodyScanConsentScreen recordConsent={recordConsent} />
     </div>
   );
 }

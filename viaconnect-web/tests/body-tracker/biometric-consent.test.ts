@@ -15,6 +15,7 @@ import {
   isValidRetentionDays,
   buildConsentInsertPayload,
   hashIpAddress,
+  selectConsentGateRender,
   CURRENT_CONSENT_VERSION,
   RETENTION_OPTIONS,
   DEFAULT_RETENTION_DAYS,
@@ -91,6 +92,44 @@ describe('decideCurrentConsent (section 2)', () => {
       { consent_version: CURRENT_CONSENT_VERSION, consented_at: 'not-a-date' },
     ];
     expect(decideCurrentConsent(rows).hasCurrentConsent).toBe(false);
+  });
+});
+
+// ===========================================================================
+// Consent gate render decision (loading-window guard + post-accept transition)
+// ===========================================================================
+
+describe('selectConsentGateRender (section 2 gate)', () => {
+  it('while loading -> loader, NOT the children (guards the load window)', () => {
+    // The capture entry must not be reachable during the consent-load moment,
+    // because the server enforcement is deferred to launch.
+    expect(selectConsentGateRender(true, false)).toBe('loading');
+    expect(selectConsentGateRender(true, true)).toBe('loading');
+  });
+
+  it('resolved + no current consent -> consent screen', () => {
+    expect(selectConsentGateRender(false, false)).toBe('consent');
+  });
+
+  it('resolved + current consent -> children (gate open)', () => {
+    expect(selectConsentGateRender(false, true)).toBe('children');
+  });
+
+  it('post-accept transition flips consent -> children with no remount', () => {
+    // Before accept: resolved, no consent -> the screen is shown.
+    expect(selectConsentGateRender(false, false)).toBe('consent');
+    // A successful accept refreshes the hoisted hook so hasCurrentConsent
+    // becomes true; the SAME gate instance now renders its children. Modeled
+    // here by feeding the post-write hook state into the same pure decision.
+    expect(selectConsentGateRender(false, true)).toBe('children');
+  });
+
+  it('never renders children before the consent state resolves', () => {
+    // The pre-fix bug was rendering children while loading. Assert the guard:
+    // for every consent value, the loading state yields the loader.
+    for (const has of [true, false]) {
+      expect(selectConsentGateRender(true, has)).toBe('loading');
+    }
   });
 });
 

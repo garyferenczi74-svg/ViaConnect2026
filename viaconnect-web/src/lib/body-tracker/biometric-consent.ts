@@ -144,6 +144,41 @@ export function decideCurrentConsent(
 }
 
 // ---------------------------------------------------------------------------
+// Gate render decision (loading window + post-accept transition)
+// ---------------------------------------------------------------------------
+
+// What the BodyScanConsentGate should render, given the consent hook's state.
+// 'loading'  -> the consent state is still resolving; render a small inline
+//               loader, NOT the children (so a non-consented user cannot reach
+//               the capture entry during the load window before the deferred
+//               server enforcement is in force).
+// 'consent'  -> resolved, no current consent: render the consent screen.
+// 'children' -> resolved, current consent on file: render the gated entry.
+export type ConsentGateRender = 'loading' | 'consent' | 'children';
+
+/**
+ * Decide what the consent gate renders (spec section 2). Pure so the
+ * loading-window guard and the post-accept transition are unit-testable.
+ *
+ * Precedence:
+ *   isLoading            -> 'loading'   (guard the entry while resolving)
+ *   hasCurrentConsent    -> 'children'  (gate open)
+ *   otherwise            -> 'consent'   (show the consent screen)
+ *
+ * The post-accept transition is exactly: a successful accept refreshes the
+ * hook so hasCurrentConsent becomes true, which flips this from 'consent' to
+ * 'children' on the next render, with no remount.
+ */
+export function selectConsentGateRender(
+  isLoading: boolean,
+  hasCurrentConsent: boolean,
+): ConsentGateRender {
+  if (isLoading) return 'loading';
+  if (hasCurrentConsent) return 'children';
+  return 'consent';
+}
+
+// ---------------------------------------------------------------------------
 // IP hashing boundary
 // ---------------------------------------------------------------------------
 
