@@ -327,3 +327,159 @@ function toFiniteNumber(v: unknown): number | null {
   }
   return null;
 }
+
+// ----------------------------------------------------------------------------
+// Prompt 170l Phase 1a: richer OFFProduct return type + direct-to-OFF lookup.
+//
+// The existing lookupByBarcode + OFFNutrients shape stays untouched so the
+// resolver cascade (Curated > USDA > OFF > vision) keeps its contract. The
+// 170l flow needs Nova group, NutriScore, Eco-Score, allergens, completeness,
+// ingredients text, image URL and serving size, none of which OFFNutrients
+// surfaces. lookupProductByBarcode adds a `fields=` query param to minimize
+// payload per OFF citizenship + spec §3.5.
+// ----------------------------------------------------------------------------
+
+export interface OFFProduct {
+  code: string;
+  product_name: string | null;
+  brands: string | null;
+  nutriments: Record<string, number> | null;
+  image_url: string | null;
+  nutriscore_grade: string | null;
+  nova_group: number | null;
+  ecoscore_grade: string | null;
+  ingredients_text: string | null;
+  allergens_tags: string[] | null;
+  serving_size: string | null;
+  completeness: number | null;
+}
+
+const PRODUCT_FIELDS = [
+  'product_name',
+  'brands',
+  'code',
+  'nutriments',
+  'image_url',
+  'nutriscore_grade',
+  'nova_group',
+  'ecoscore_grade',
+  'ingredients_text',
+  'allergens_tags',
+  'serving_size',
+  'completeness',
+].join(',');
+
+const PRODUCT_BARCODE_PATH = (code: string) =>
+  `/api/v2/product/${encodeURIComponent(code)}.json?fields=${PRODUCT_FIELDS}`;
+
+export async function lookupProductByBarcode(
+  barcode: string,
+  opts: OFFLookupOpts,
+): Promise<OFFProduct | null> {
+  const url = `${DEFAULT_BASE_URL}${PRODUCT_BARCODE_PATH(barcode)}`;
+  const start = performance.now();
+  const res = await fetchOff(url, opts, 'off.product.barcode');
+
+  if (res.status === 404) {
+    return null;
+  }
+
+  if (!res.ok) {
+    safeLog.warn('nutrition.off.api_down', 'off product barcode non-200', {
+      request_id: opts.requestId,
+      status: res.status,
+      barcode,
+    });
+    throw new AIRouteError(
+      'API_DOWN',
+      `off: ${res.status}`,
+      503,
+      'Food database unreachable, please retry.',
+    );
+  }
+
+  const raw = await parseJsonOrThrow(res, opts.requestId);
+  const product = extractProduct(raw);
+  if (product === null) {
+    return null;
+  }
+
+  const mapped = mapFullProduct(product, barcode);
+  const latencyMs = Math.max(0, Math.round(performance.now() - start));
+  safeLog.info('nutrition.off.product_hit', 'off product hit', {
+    request_id: opts.requestId,
+    barcode,
+    product_name: mapped.product_name,
+    latency_ms: latencyMs,
+  });
+  return mapped;
+}
+
+interface RawFullProduct extends RawProduct {
+  image_url?: unknown;
+  nutriscore_grade?: unknown;
+  nova_group?: unknown;
+  ecoscore_grade?: unknown;
+  ingredients_text?: unknown;
+  allergens_tags?: unknown;
+  serving_size?: unknown;
+  completeness?: unknown;
+}
+
+function mapFullProduct(
+  product: RawProduct,
+  fallbackBarcode: string,
+): OFFProduct {
+  const p = product as RawFullProduct;
+  const nutriments = p.nutriments;
+  const nutrimentsRecord: Record<string, number> | null =
+    nutriments !== null && typeof nutriments === 'object'
+      ? Object.fromEntries(
+          Object.entries(nutriments as Record<string, unknown>).flatMap(
+            ([k, v]) => {
+              const n = toFiniteNumber(v);
+              return n === null ? [] : [[k, n]];
+            },
+          ),
+        )
+      : null;
+
+  const code = typeof p.code === 'string' && p.code.length > 0
+    ? p.code
+    : fallbackBarcode;
+
+  return {
+    code,
+    product_name: typeof p.product_name === 'string' && p.product_name.length > 0
+      ? p.product_name
+      : null,
+    brands: typeof p.brands === 'string' && p.brands.length > 0
+      ? p.brands
+      : null,
+    nutriments: nutrimentsRecord,
+    image_url: typeof p.image_url === 'string' && p.image_url.length > 0
+      ? p.image_url
+      : null,
+    nutriscore_grade:
+      typeof p.nutriscore_grade === 'string' && p.nutriscore_grade.length > 0
+        ? p.nutriscore_grade
+        : null,
+    nova_group: toFiniteNumber(p.nova_group),
+    ecoscore_grade:
+      typeof p.ecoscore_grade === 'string' && p.ecoscore_grade.length > 0
+        ? p.ecoscore_grade
+        : null,
+    ingredients_text:
+      typeof p.ingredients_text === 'string' && p.ingredients_text.length > 0
+        ? p.ingredients_text
+        : null,
+    allergens_tags: Array.isArray(p.allergens_tags)
+      ? p.allergens_tags.filter((tag): tag is string => typeof tag === 'string')
+      : null,
+    serving_size:
+      typeof p.serving_size === 'string' && p.serving_size.length > 0
+        ? p.serving_size
+        : null,
+    completeness: toFiniteNumber(p.completeness),
+  };
+}

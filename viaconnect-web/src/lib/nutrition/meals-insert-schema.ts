@@ -87,6 +87,15 @@ export const NutriVisionItemSchema = z.object({
     .optional(),
   usda_fdc_id: z.number().int().nonnegative().optional(),
   off_barcode: z.string().max(50).optional(),
+  // Prompt 170l Phase 1a: OFF-derived metadata at the item level. All
+  // optional; populated when source = 'barcode' (legacy items keep null).
+  off_product_name: z.string().max(200).optional(),
+  off_brand: z.string().max(100).optional(),
+  off_serving_size_g: z.number().nonnegative().max(2000).optional(),
+  off_completeness_score: z.number().min(0).max(1).optional(),
+  off_nova_group: z.number().int().min(1).max(4).optional(),
+  off_nutrition_grade_fr: z.enum(['a', 'b', 'c', 'd', 'e']).optional(),
+  user_overrode_macros: z.boolean().default(false),
   curated_food_id: z.string().uuid().optional(),
   calories_kcal: z.number().nonnegative(),
   protein_g: z.number().nonnegative(),
