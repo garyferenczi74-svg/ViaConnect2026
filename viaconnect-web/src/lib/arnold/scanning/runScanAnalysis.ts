@@ -83,6 +83,17 @@ interface SessionRow {
   left_full_path: string | null;
   right_full_path: string | null;
   arnold_analysis: Record<string, unknown> | null;
+  // Finalize state + the persisted result JSONB columns. Read up front so an
+  // ALREADY-FINALIZED session (the network-resilient resume case, Task 20) can be
+  // detected and its prior result returned WITHOUT recomputing or re-inserting a
+  // second body_scan_measurements row (the duplicate-on-resume defect this guards).
+  scan_status: string | null;
+  extracted_measurements: ExtractedMeasurements | null;
+  composition_estimate: CompositionEstimate | null;
+  asymmetry_report: AsymmetryReport | null;
+  avatar_parameters: BodyModelParameters | null;
+  scan_quality_score: number | null;
+  quality_issues: string[] | null;
   // Per scan weight/height pinned at the pre capture CAQ freshness confirm step
   // (Prompt #169b, Task 17, spec section 10). When present these are the
   // CONFIRMED stats and are preferred over the (possibly stale) profiles read for
@@ -108,10 +119,32 @@ export async function runScanAnalysis({ sessionId, onProgress }: ScanAnalysisInp
 
   const { data: session, error: sErr } = await supabase
     .from('body_photo_sessions')
-    .select('id, user_id, session_date, front_full_path, back_full_path, left_full_path, right_full_path, arnold_analysis, weight_kg_at_scan, height_cm_at_scan')
+    .select('id, user_id, session_date, front_full_path, back_full_path, left_full_path, right_full_path, arnold_analysis, weight_kg_at_scan, height_cm_at_scan, scan_status, extracted_measurements, composition_estimate, asymmetry_report, avatar_parameters, scan_quality_score, quality_issues')
     .eq('id', sessionId)
     .maybeSingle();
   if (sErr || !session) throw new Error('Scan session not found');
+
+  // IDEMPOTENT RESUME GUARD (Prompt #169b, Task 20, spec section 16.3). The
+  // network-resilient resume re-runs THIS function on the SAME session id when a
+  // prior run's success response was lost (offline / dropped mid finalize). If
+  // that prior run actually persisted (scan_status is already 'complete' AND a
+  // body_scan_measurements row already exists for this session), re-running must
+  // NOT recompute, must NOT re-stamp completion, and must NOT insert a SECOND
+  // measurement row. The finalize trigger (migration 20260516000080) only fires on
+  // the TRANSITION to 'complete', so it does NOT catch a re-complete; this app
+  // layer guard is the correctness backstop. Return the ALREADY-PERSISTED result.
+  const finalized = session as unknown as SessionRow;
+  if (shouldReturnPersisted(finalized.scan_status, await measurementExists(supabase, sessionId))) {
+    const persisted = reconstructPersistedOutput(finalized);
+    if (persisted) {
+      report('complete', 100, 'Scan complete');
+      return persisted;
+    }
+    // scan_status === 'complete' + a measurement row exists, but the JSONB result
+    // columns are unexpectedly missing (e.g. an older partial write). Fall through
+    // to recompute below; persistScan's guards still prevent a duplicate INSERT and
+    // the no-op finalize prevents re-stamping completion.
+  }
 
   await supabase.from('body_photo_sessions').update({ scan_status: 'extracting' } as never).eq('id', sessionId);
 
@@ -357,6 +390,15 @@ async function persistScan(args: {
   // function). A blocked finalize RAISEs and the error surfaces here; capture it
   // and throw so the caller can map it and fail the scan (it was previously
   // ignored, which silently swallowed a rejected finalize).
+  //
+  // IDEMPOTENT FINALIZE (Prompt #169b, Task 20): the `.neq('scan_status',
+  // 'complete')` makes re-finalizing an ALREADY-complete session a no-op UPDATE
+  // (zero rows matched) instead of a second transition. The DB finalize trigger
+  // only fires on the TRANSITION to 'complete', so without this guard a resume of
+  // an already-complete session would silently re-run the UPDATE (the trigger
+  // would NOT re-raise) and then fall through to a duplicate measurement INSERT.
+  // With the guard the row is not re-stamped and the trigger's side effects (the
+  // one-time free-teaser claim) cannot fire twice.
   const { error: finalizeError } = await supabase
     .from('body_photo_sessions')
     .update({
@@ -379,8 +421,20 @@ async function persistScan(args: {
       // with an earlier version" badge once any engine is bumped.
       model_versions: buildModelVersionStamp(),
     } as never)
-    .eq('id', session.id);
+    .eq('id', session.id)
+    .neq('scan_status', 'complete');
   if (finalizeError) throw finalizeError;
+
+  // NO-DUPLICATE MEASUREMENT GUARD (Prompt #169b, Task 20). body_scan_measurements
+  // has only a NON-unique session_id index (migration 20260416000100), so a second
+  // INSERT for the same session would create a DUPLICATE measurement row. Before
+  // inserting, check whether a row already exists for this session and SKIP the
+  // INSERT if so. Combined with the idempotent finalize above, re-running
+  // runScanAnalysis on an already-finalized session neither re-stamps completion
+  // nor inserts a second measurement row. (The early-return in runScanAnalysis
+  // handles the common resume case; this is the in-persist backstop for the race
+  // where the status flipped to complete between that check and here.)
+  if (await measurementExists(supabase, session.id)) return;
 
   const cm = (v: { cm: number }): number => round1(v.cm);
   await supabase.from('body_scan_measurements').insert({
@@ -489,6 +543,80 @@ function mapFinalizeError(e: unknown): string {
     return 'Your free Body Scan has already been used. A premium membership is required for additional scans.';
   }
   return 'We could not save your scan. Please try again in a moment.';
+}
+
+// -----------------------------------------------------------------------------
+// Idempotent-resume helpers (Prompt #169b, Task 20, spec section 16.3).
+//
+// These three encode the "re-running an already finalized session is a no-op"
+// guarantee. The first two are PURE (unit tested in tests/body-tracker) so the
+// decision is verifiable without a Supabase client; the third is the thin I/O
+// probe (does a measurement row exist for this session) they pair with.
+// -----------------------------------------------------------------------------
+
+/**
+ * Decide whether runScanAnalysis should SHORT-CIRCUIT and return the already
+ * persisted result instead of recomputing + re-inserting. True only when the
+ * session is already finalized (scan_status === 'complete') AND a
+ * body_scan_measurements row already exists for it (the prior run genuinely
+ * persisted; only its success response was lost). If either is false the scan
+ * has not actually finished, so we proceed with a normal (first) run.
+ *
+ * Pure: the caller supplies the measurement-existence boolean.
+ */
+export function shouldReturnPersisted(
+  scanStatus: string | null | undefined,
+  hasMeasurementRow: boolean,
+): boolean {
+  return scanStatus === 'complete' && hasMeasurementRow;
+}
+
+/**
+ * Rebuild the ScanAnalysisOutput from the JSONB columns persisted on a finalized
+ * session, so an idempotent resume returns the SAME result the original run did
+ * without recomputing. Returns null when any required result column is missing
+ * (an unexpected partial write), so the caller can fall back to a recompute (whose
+ * persist is still duplicate-guarded). Pure: no I/O.
+ */
+export function reconstructPersistedOutput(session: {
+  extracted_measurements: ExtractedMeasurements | null;
+  composition_estimate: CompositionEstimate | null;
+  asymmetry_report: AsymmetryReport | null;
+  avatar_parameters: BodyModelParameters | null;
+  scan_quality_score: number | null;
+  quality_issues: string[] | null;
+}): ScanAnalysisOutput | null {
+  const { extracted_measurements, composition_estimate, asymmetry_report, avatar_parameters } = session;
+  if (!extracted_measurements || !composition_estimate || !asymmetry_report || !avatar_parameters) {
+    return null;
+  }
+  return {
+    measurements: extracted_measurements,
+    composition: composition_estimate,
+    asymmetry: asymmetry_report,
+    avatarParameters: avatar_parameters,
+    qualityScore: session.scan_quality_score ?? 0,
+    qualityIssues: session.quality_issues ?? [],
+  };
+}
+
+/**
+ * Does a body_scan_measurements row already exist for this session? The thin I/O
+ * probe behind the no-duplicate guarantee. A read error is treated as "unknown"
+ * (false) so a transient probe failure does not block a legitimate first insert;
+ * the idempotent finalize + the early-return remain the primary protections.
+ */
+async function measurementExists(
+  supabase: ReturnType<typeof createClient>,
+  sessionId: string,
+): Promise<boolean> {
+  const { data } = await supabase
+    .from('body_scan_measurements')
+    .select('id')
+    .eq('session_id', sessionId)
+    .limit(1)
+    .maybeSingle();
+  return data != null;
 }
 
 function avgOrZero(a: number, b: number): number {

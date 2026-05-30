@@ -6,7 +6,11 @@ import { runScanAnalysis, type ScanProgress } from '@/lib/arnold/scanning/runSca
 import { usePremiumEntitlement } from '@/hooks/body-tracker/usePremiumEntitlement';
 import { selectScanEntryGate, selectScanCaptureGate } from '@/lib/body-tracker/scan-gate';
 import { createClient } from '@/lib/supabase/client';
-import { isPermanent, type CapturePayload } from '@/lib/body-tracker/pending-scan-sync';
+import {
+  isPermanent,
+  recordTransientFailure,
+  type CapturePayload,
+} from '@/lib/body-tracker/pending-scan-sync';
 import {
   acquireSessionLock,
   persistPendingCapture,
@@ -117,9 +121,20 @@ export function RunScanButton({ sessionId, onComplete, alreadyScanned }: RunScan
       //     4xx): the scan can never finalize; remove the durable record so it is
       //     not retried. The reason is already shown above.
       //   * TRANSIENT (offline / 5xx / timeout): LEAVE the record in the store so
-      //     the PendingScansSurface resumes it automatically on reconnect.
+      //     the PendingScansSurface resumes it automatically on reconnect. RECORD
+      //     this capture-time attempt on the record (lastAttemptAtMs + attemptCount)
+      //     so the backoff schedule starts from NOW. Without it, lastAttemptAtMs
+      //     stays null, which nextRetryDelayMs reads as "due immediately" so the
+      //     very first background tick would resume right away, skipping the 30s
+      //     tier-1 wait (and hammering a still-down connection). Reuse the pure
+      //     recordTransientFailure reducer that the resume loop uses, then persist.
       if (pending && isPermanent(e)) {
         try { await store.delete(pending.processingKey); } catch { /* best effort */ }
+      } else if (pending) {
+        const [updated] = recordTransientFailure([pending], pending.processingKey, Date.now(), msg);
+        if (updated) {
+          try { await store.put(updated); } catch { /* best effort */ }
+        }
       }
     } finally {
       releaseSessionLock(sessionId);

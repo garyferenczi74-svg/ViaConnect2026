@@ -199,16 +199,23 @@ export function resolvePendingScanStore(): PendingScanStore {
 //
 // Two independent surfaces can drive a scan for the SAME session id: the live
 // RunScanButton.start() and the background PendingScansSurface retry loop
-// (usePendingScans). The finalize UPDATE is idempotent, but the
-// body_scan_measurements INSERT in runScanAnalysis is NOT (the table has only a
-// non-unique session_id index, migration 20260416000100). Two CONCURRENT analyses
-// of one session could therefore both insert a measurement row -> a duplicate.
+// (usePendingScans). As of Prompt #169b Task 20, runScanAnalysis is idempotent at
+// the APP layer: the finalize UPDATE carries `.neq('scan_status','complete')` (a
+// re-complete is a no-op) AND the body_scan_measurements INSERT is guarded by a
+// pre-INSERT existence check (it is skipped when a row already exists for the
+// session), with an early-return for the already-finalized-with-measurement case.
+// That makes a SEQUENTIAL resume safe on its own. This lock additionally closes
+// the CONCURRENT same-tab window: body_scan_measurements has only a non-unique
+// session_id index (migration 20260416000100), so two analyses interleaving
+// between the existence check and the INSERT could still race a duplicate.
 //
 // This module-level lock (keyed by session id, per tab) ensures at most ONE
 // analysis runs for a given session at a time across BOTH callers. It is a
 // best-effort, single-tab coordinator (not a cross-tab/distributed lock): the
-// durable no-duplicate backstop remains the idempotent finalize + the resume
-// reusing the same session id, but this closes the same-tab concurrency window.
+// durable no-duplicate backstop is the app-layer idempotency in runScanAnalysis
+// (and, as a Gary-gated follow-up, a partial UNIQUE index on
+// body_scan_measurements(session_id) once live duplicates are verified absent);
+// this lock just closes the same-tab concurrency window.
 // -----------------------------------------------------------------------------
 
 const inFlightSessions = new Set<string>();
