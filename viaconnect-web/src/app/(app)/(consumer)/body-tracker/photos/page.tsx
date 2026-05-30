@@ -10,8 +10,10 @@ import { PhotoSessionHistory } from '@/components/body-tracker/photos/PhotoSessi
 import { ComparisonPanel } from '@/components/body-tracker/photos/ComparisonPanel';
 import { RunScanButton } from '@/components/body-tracker/scanning/RunScanButton';
 import { BodyScanAgeGate } from '@/components/body-tracker/scanning/BodyScanAgeGate';
+import { BodyScanConsentGate } from '@/components/body-tracker/scanning/BodyScanConsentGate';
 import { ScanResultsPanel } from '@/components/body-tracker/scanning/ScanResultsPanel';
 import { ScanOnboardingWalkthrough } from '@/components/body-tracker/scanning/ScanOnboardingWalkthrough';
+import { BodyScanDisorderedEatingQuestion } from '@/components/body-tracker/scanning/BodyScanDisorderedEatingQuestion';
 import { BodyScanTier3ComingSoon } from '@/components/body-tracker/scanning/BodyScanTier3ComingSoon';
 import { TierBadge } from '@/components/body-tracker/scanning/TierBadge';
 import { ScanPdfExportButton } from '@/components/body-tracker/scanning/ScanPdfExportButton';
@@ -22,6 +24,11 @@ export default function PhotosPage() {
   const [latestId, setLatestId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
+  // The disordered-eating history question (Prompt #169b section 3.2.1) is shown
+  // once, BEFORE the educational walkthrough, on first Body Scan open. The
+  // walkthrough is gated behind it: until the question is answered (or it
+  // self-resolves because it was already answered) the walkthrough is held back.
+  const [deQuestionResolved, setDeQuestionResolved] = useState(false);
 
   const reload = useCallback(async () => {
     const supabase = createClient();
@@ -58,8 +65,21 @@ export default function PhotosPage() {
 
   return (
     <div className="space-y-6" key={refreshKey}>
-      {/* First-visit onboarding walkthrough; localStorage gate is inside the component */}
-      <ScanOnboardingWalkthrough />
+      {/* Disordered-eating history question (Prompt #169b section 3.2.1) shown
+          once, BEFORE the educational walkthrough, on first Body Scan open. In
+          'auto' mode it renders only when not yet answered; it advances the
+          walkthrough via deQuestionResolved (also firing for returning users who
+          already answered, so the walkthrough is never permanently blocked). */}
+      {!deQuestionResolved && (
+        <BodyScanDisorderedEatingQuestion
+          mode="auto"
+          onAnswered={() => setDeQuestionResolved(true)}
+        />
+      )}
+
+      {/* First-visit onboarding walkthrough; localStorage gate is inside the
+          component. Held back until the disordered-eating question resolves. */}
+      {deQuestionResolved && <ScanOnboardingWalkthrough />}
 
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2 flex-wrap">
@@ -118,8 +138,16 @@ export default function PhotosPage() {
                 18 / no DOB hides the entry (and its premium gate) and shows a
                 replacement card; it also surfaces the 3-in-7 slow-down advisory.
                 Age gate takes precedence over the premium gate inside RunScanButton. */}
+            {/* Gate composition (Prompt #169b): the age gate (section 4) is
+                outermost, then the biometric-consent gate (section 2), then the
+                premium gate inside RunScanButton. A minor / no-DOB user never
+                reaches consent; a consenting adult reaches the normal entry. The
+                SERVER consent enforcement is the deferred apply-at-launch
+                migration 20260516000100; this is the client gate. */}
             <BodyScanAgeGate>
-              <RunScanButton sessionId={latestId} onComplete={() => setRefreshKey((k) => k + 1)} />
+              <BodyScanConsentGate>
+                <RunScanButton sessionId={latestId} onComplete={() => setRefreshKey((k) => k + 1)} />
+              </BodyScanConsentGate>
             </BodyScanAgeGate>
           </section>
 

@@ -5,6 +5,8 @@ import { Loader2, Sparkles, RefreshCw, Info, ShieldAlert } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import type { ScanInsight } from '@/lib/body-tracker/scan-types';
 import type { PortalType } from './ScanResultsPanel';
+import { BodyScanResourceCard } from './BodyScanResourceCard';
+import { useResourceCardTrigger } from '@/hooks/body-tracker/useResourceCardTrigger';
 
 // AI disclosure §13.4 verbatim
 const AI_DISCLOSURE =
@@ -94,6 +96,14 @@ export function ScanInsightsTab({ sessionId, userId, portalType }: ScanInsightsT
   const [loading, setLoading]     = useState(true);
   const [generating, setGenerating] = useState(false);
   const [error, setError]         = useState<string | null>(null);
+
+  // Support resource-card trigger (Prompt #169b section 3.2.5). Consumer-only:
+  // the card is a personal body-image safeguard and is never shown to a
+  // practitioner viewing a managed patient. The trigger DECISION is the pure
+  // module; this only feeds it the user's signals.
+  const isConsumerSurface = portalType === 'consumer';
+  const { trigger: resourceTrigger, persistence: resourcePersistence } =
+    useResourceCardTrigger(isConsumerSurface ? userId : null);
 
   // Load insights from body_tracker_recommendations (written by arnold-cross-reference-recommend).
   // Insights are user-scoped not session-scoped per Phase 1; scan-scoped insights deferred to Phase 2.
@@ -244,6 +254,13 @@ export function ScanInsightsTab({ sessionId, userId, portalType }: ScanInsightsT
         <Info className="h-3.5 w-3.5 text-white/40 shrink-0 mt-0.5" strokeWidth={1.5} />
         <p className="text-[11px] text-white/45 leading-relaxed">{AI_DISCLOSURE}</p>
       </div>
+
+      {/* Non-intrusive support resource card (Prompt #169b section 3.2.5).
+          Bottom of the Insights surface, consumer-only, shown only when one of
+          the four trigger conditions is met. Never a popup; copy is slotted. */}
+      {isConsumerSurface && (
+        <BodyScanResourceCard trigger={resourceTrigger} persistence={resourcePersistence} />
+      )}
     </div>
   );
 }
