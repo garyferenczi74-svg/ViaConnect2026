@@ -20,7 +20,6 @@
 
 import { Camera, CreditCard, Image as ImageIcon, Loader2 } from 'lucide-react';
 import type { CaptureSource } from '@/lib/capacitor/camera-capture';
-import { ReferenceObjectOverlay } from './ReferenceObjectOverlay';
 
 interface CameraCaptureProps {
   onCapture: (source: CaptureSource) => void;
@@ -31,7 +30,6 @@ interface CameraCaptureProps {
 export function CameraCapture({ onCapture, isCapturing, error }: CameraCaptureProps) {
   return (
     <div className="relative overflow-hidden rounded-2xl border border-white/[0.08] bg-[#1E3054]/45 p-5 backdrop-blur-md">
-      <ReferenceObjectOverlay />
       <div className="flex flex-col items-center gap-3">
         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#2DA5A0]/15 text-[#2DA5A0]">
           {isCapturing
