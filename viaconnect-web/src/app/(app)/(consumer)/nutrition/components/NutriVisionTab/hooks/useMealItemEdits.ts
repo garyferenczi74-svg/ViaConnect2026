@@ -21,6 +21,7 @@ import type {
   FoodSwapReplacement,
   ModifierChip,
   MealType,
+  PlateSelectorKind,
 } from '../types';
 
 export interface UseMealItemEditsArgs {
@@ -30,6 +31,7 @@ export interface UseMealItemEditsArgs {
 export interface UseMealItemEditsReturn {
   draft: MealDraft;
   editDiff: EditDiff;
+  plateSize: PlateSelectorKind | undefined;
   setPortion: (itemId: string, grams: number) => void;
   swapFood: (itemId: string, replacement: FoodSwapReplacement) => void;
   setCookingOil: (itemId: string, selection: CookingOilSelection) => void;
@@ -37,6 +39,7 @@ export interface UseMealItemEditsReturn {
   addItem: () => void;
   removeItem: (itemId: string) => void;
   markVerified: (itemId: string) => void;
+  setPlateSize: (kind: PlateSelectorKind) => void;
   buildSavePayload: (mealType: MealType) => NutriVisionMealInsertPayload;
 }
 
@@ -177,12 +180,19 @@ function makeNewItem(seed: AddedItemFromSearch, grams: number): MealItemDraft {
 export function useMealItemEdits(args: UseMealItemEditsArgs): UseMealItemEditsReturn {
   const [items, setItems] = useState<MealItemDraft[]>(args.initialDraft.items);
   const [editDiff, setEditDiff] = useState<EditDiff>(EMPTY_DIFF);
+  // #170a supplement §17.2: per-meal plate-size selection. Stays undefined
+  // until the user picks a chip; the save payload only stamps plate_size
+  // when this is set so older meals (without a chip choice) are unaffected.
+  const [plateSize, setPlateSizeState] = useState<PlateSelectorKind | undefined>(
+    args.initialDraft.plate_size,
+  );
 
   const draft = useMemo<MealDraft>(() => ({
     ...args.initialDraft,
     items,
     totals: aggregate(items),
-  }), [args.initialDraft, items]);
+    ...(plateSize ? { plate_size: plateSize } : {}),
+  }), [args.initialDraft, items, plateSize]);
 
   const setPortion = useCallback((itemId: string, grams: number) => {
     if (!Number.isFinite(grams) || grams < 0) return;
@@ -283,6 +293,10 @@ export function useMealItemEdits(args: UseMealItemEditsArgs): UseMealItemEditsRe
     setEditDiff((d) => ({ ...d, itemsModified: d.itemsModified + 1 }));
   }, []);
 
+  const setPlateSize = useCallback((kind: PlateSelectorKind) => {
+    setPlateSizeState(kind);
+  }, []);
+
   const buildSavePayload = useCallback((mealType: MealType): NutriVisionMealInsertPayload => {
     const payloadItems: NutriVisionMealInsertPayload['items'] = items.map((it) => {
       const row: NutriVisionMealInsertPayload['items'][number] = {
@@ -339,12 +353,16 @@ export function useMealItemEdits(args: UseMealItemEditsArgs): UseMealItemEditsRe
     if (typeof draft.source_photo_blob_id === 'string') {
       payload.source_photo_blob_id = draft.source_photo_blob_id;
     }
+    if (plateSize) {
+      payload.plate_size = plateSize;
+    }
     return payload;
-  }, [items, editDiff, draft]);
+  }, [items, editDiff, draft, plateSize]);
 
   return {
     draft,
     editDiff,
+    plateSize,
     setPortion,
     swapFood,
     setCookingOil,
@@ -352,6 +370,7 @@ export function useMealItemEdits(args: UseMealItemEditsArgs): UseMealItemEditsRe
     addItem,
     removeItem,
     markVerified,
+    setPlateSize,
     buildSavePayload,
   };
 }

@@ -1,6 +1,13 @@
 'use client';
 
 // Prompt #170 Phase 1l: capture intent UI.
+// Prompt #170a supplement §17.1: persistent "Add a card for scale" pill anchored
+// below the capture controls. STATIC (no fade-on-detect) per Deviation A of
+// 170a build dispatch: client-side card-shape detection is deferred to Phase 2
+// (a future 170b prompt introducing native rectangle detection). The server-
+// side portion-estimation pass still reports credit_card_detected on the
+// analyze response so the result-screen plate selector renders correctly when
+// no card was present.
 //
 // Two stacked buttons: Take photo (camera source) and Upload photo (gallery
 // source). Both delegate to the parent's onCapture handler with a source. A
@@ -11,7 +18,7 @@
 //
 // Hard rules honored: no em or en dashes, no emojis, no any.
 
-import { Camera, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { Camera, CreditCard, Image as ImageIcon, Loader2 } from 'lucide-react';
 import type { CaptureSource } from '@/lib/capacitor/camera-capture';
 import { ReferenceObjectOverlay } from './ReferenceObjectOverlay';
 
@@ -58,6 +65,19 @@ export function CameraCapture({ onCapture, isCapturing, error }: CameraCapturePr
             <ImageIcon className="h-4 w-4" strokeWidth={1.5} />
             Upload photo
           </button>
+        </div>
+        {/* §17.1 static reference-object pill. Informational, not a button. */}
+        <div
+          role="status"
+          aria-live="polite"
+          className="inline-flex items-center gap-2 rounded-full border border-[#2DA5A0]/30 bg-[#1E3054]/90 px-3.5 py-2.5 text-sm font-medium text-[#2DA5A0]"
+        >
+          <CreditCard className="h-3.5 w-3.5" strokeWidth={1.5} />
+          <span>Add a card for scale</span>
+          <span className="sr-only">
+            Tip. For best portion accuracy, place a credit card or ID card next to
+            your plate before taking the photo.
+          </span>
         </div>
         {error && (
           <p className="text-[11px] text-[#FCA5A5]" role="alert">{error}</p>

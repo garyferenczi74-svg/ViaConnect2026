@@ -23,6 +23,10 @@ import { QuickLogsSurface } from '@/components/dashboard/QuickLogsSurface';
 import type { QuickLogDraft } from '@/components/meals/QuickLogModal';
 import { generateTargets } from '@/lib/gordon/generateTargets';
 import { safeLog } from '@/lib/utils/safe-log';
+import {
+  clearNutrivisionManualLogHandoff,
+  readNutrivisionManualLogHandoff,
+} from '@/hooks/useNutrivisionManualLogHandoff';
 import { MobileHeroBackground } from '@/components/ui/MobileHeroBackground';
 import { RefreshCw, FileQuestion } from 'lucide-react';
 
@@ -90,6 +94,12 @@ export default function ConsumerDashboard() {
   const handleSaveMeal = useCallback(async (draft: QuickLogDraft, snackIndex: number | null): Promise<boolean> => {
     if (!userId) return false;
 
+    // #170a supplement §20.D + Deviation B: when the user bounced here from
+    // a NutriVision error card via Log-Manually, the stashed photo blob id
+    // rides on this save so the meals row carries the attachment. Cleared
+    // on a successful 2xx response.
+    const handoff = readNutrivisionManualLogHandoff();
+
     try {
       const res = await fetch('/api/nutrition/meals', {
         method: 'POST',
@@ -112,6 +122,7 @@ export default function ConsumerDashboard() {
           meal_name: draft.mealName,
           raw_input: draft.rawInput,
           snack_index: snackIndex,
+          ...(handoff ? { source_photo_blob_id: handoff.source_photo_blob_id } : {}),
         }),
       });
 
@@ -123,6 +134,11 @@ export default function ConsumerDashboard() {
         return false;
       }
 
+      // §20.D: clear the handoff only on a successful save. Failures keep
+      // the handoff so the user can try again from the same stash.
+      if (handoff) {
+        clearNutrivisionManualLogHandoff();
+      }
       return true;
     } catch (err) {
       safeLog.warn('dashboard.handleSaveMeal', 'meals POST threw', { error: err });

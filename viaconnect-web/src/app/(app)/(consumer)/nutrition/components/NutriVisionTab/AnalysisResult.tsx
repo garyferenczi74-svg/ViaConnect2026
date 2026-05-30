@@ -16,12 +16,14 @@ import { MealItemCard } from './MealItemCard';
 import { ModificationChips } from './ModificationChips';
 import { CorpusOptInBanner } from './CorpusOptInBanner';
 import { MealTypePicker } from './MealTypePicker';
+import { PlateSelector } from './PlateSelector';
 import { classifyConfidence } from './types';
 import type {
   MealDraft,
   FoodSwapReplacement,
   ModifierChip,
   MealType,
+  PlateSelectorKind,
 } from './types';
 
 interface AnalysisResultProps {
@@ -41,6 +43,9 @@ interface AnalysisResultProps {
   onAddItem: () => void;
   onRemoveItem: (itemId: string) => void;
   onMarkVerified: (itemId: string) => void;
+  // #170a supplement §17.2: parent plumbs the selection up to useMealItemEdits
+  // so the save payload carries plate_size on the meal row.
+  onPlateSizeChange: (kind: PlateSelectorKind) => void;
   onSave: () => void;
   onCancel: () => void;
 }
@@ -48,6 +53,12 @@ interface AnalysisResultProps {
 export function AnalysisResult(props: AnalysisResultProps) {
   const { draft } = props;
   const band = classifyConfidence(draft.meal_confidence);
+  // #170a supplement §17.2: show the plate selector when the server did NOT
+  // confirm a credit-card reference in the photo. We default to showing it
+  // (legacy responses without the flag are treated as "no card detected") so
+  // the user always has the recovery affordance unless the server proves a
+  // card was found.
+  const showPlateSelector = draft.credit_card_detected !== true;
 
   return (
     <div className="flex flex-col gap-3 pb-24 md:pb-0">
@@ -58,6 +69,16 @@ export function AnalysisResult(props: AnalysisResultProps) {
         </div>
         <MealTypePicker value={props.mealType} onChange={props.onMealTypeChange} />
       </div>
+
+      {/* Plate selector: §17.2. Rendered above the totals card when no card
+          reference was detected. Medium pre-selected; choice rides plate_size
+          on the meal_logs row. */}
+      {showPlateSelector && (
+        <PlateSelector
+          value={draft.plate_size}
+          onSelect={props.onPlateSizeChange}
+        />
+      )}
 
       {/* Totals header */}
       <div className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/55 p-4 backdrop-blur-md">

@@ -3,8 +3,9 @@
 import { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
-import { ArrowRight, Camera, ChevronRight, Dna, PenLine, Smartphone, Upload } from 'lucide-react';
+import { ArrowRight, Camera, ChevronRight, Dna, PenLine, Smartphone, Upload, X } from 'lucide-react';
 import { NutritionScoreCard } from '@/components/nutrition/NutritionScoreCard';
+import { useNutrivisionManualLogHandoff } from '@/hooks/useNutrivisionManualLogHandoff';
 // Prompt #168c section 2.4: channel row cleanup. Quick Log is on the Dashboard
 // surface only (#168c section 2.1). The /nutrition Log a Meal tab now lists
 // three gradient pill buttons: Log Full Meal, Photo AI, Connect Your App, each
@@ -36,6 +37,11 @@ export default function NutritionPage() {
 function NutritionPageInner() {
   const [mealsToday, setMealsToday] = useState(0);
   const [score, setScore] = useState(0);
+  // #170a supplement §20.D + Deviation B: if the user bounced here from a
+  // NutriVision Log-Manually click, surface a banner inviting them to open a
+  // Quick Log pill below. The handoff carries the source_photo_blob_id so the
+  // dashboard Quick Log save POST can attach it once the user saves.
+  const { handoff, clearHandoff } = useNutrivisionManualLogHandoff();
 
   const loadMealCount = async () => {
     try {
@@ -95,6 +101,37 @@ function NutritionPageInner() {
       </div>
 
       <NutritionScoreCard />
+
+      {/* #170a supplement §20.D banner: surfaces only when the user arrived
+          here via NutriVision's Log-Manually CTA. Quick Logs live on the
+          dashboard; this banner sets expectation that the user's photo is
+          attached and tapping a meal-type pill (on the Dashboard, surfaced
+          via Quick Logs) will carry the attachment along. */}
+      {handoff && (
+        <div className="rounded-xl border border-[#2DA5A0]/40 bg-[#1E3054]/55 p-4 backdrop-blur-md">
+          <div className="flex items-start justify-between gap-3">
+            <p className="text-sm leading-relaxed text-white/85">
+              Your photo is ready. Tap Breakfast, Lunch, Dinner, or Snack below
+              to log this meal manually.
+            </p>
+            <button
+              type="button"
+              onClick={clearHandoff}
+              aria-label="Discard the attached photo"
+              className="inline-flex h-7 w-7 flex-none items-center justify-center rounded-full bg-white/5 text-white/60 transition-colors hover:bg-white/10 hover:text-white/90"
+            >
+              <X className="h-3.5 w-3.5" strokeWidth={1.5} />
+            </button>
+          </div>
+          <button
+            type="button"
+            onClick={clearHandoff}
+            className="mt-3 inline-flex items-center text-xs font-medium text-[#2DA5A0] transition-colors hover:underline"
+          >
+            Discard photo
+          </button>
+        </div>
+      )}
 
       {/* Log a Meal section: ConnectedAppMealDropdown + 3 channel buttons. */}
       <div className="rounded-xl border border-white/10 bg-[#1E3054]/35 backdrop-blur-md p-4 sm:p-5">

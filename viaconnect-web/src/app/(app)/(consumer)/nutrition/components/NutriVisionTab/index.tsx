@@ -10,15 +10,19 @@
 // Hard rules honored: no em or en dashes, no emojis, no any.
 
 import { useCallback, useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
-import { Camera, ChevronLeft, HelpCircle, X } from 'lucide-react';
+import { Camera, ChevronLeft, HelpCircle, Settings, X } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
-import type { CaptureSource } from '@/lib/capacitor/camera-capture';
+import type { CaptureResult, CaptureSource } from '@/lib/capacitor/camera-capture';
+import { mapAIErrorToClass } from '@/lib/nutrition/vision/error-class-mapper';
+import { writeNutrivisionManualLogHandoff } from '@/hooks/useNutrivisionManualLogHandoff';
 import { MobileHeroBackground } from '@/components/ui/MobileHeroBackground';
 import { CameraCapture } from './CameraCapture';
 import { AnalysisProgress } from './AnalysisProgress';
 import { AnalysisResult } from './AnalysisResult';
+import { ErrorStateCard } from './ErrorStateCard';
 import { SaveConfirmation } from './SaveConfirmation';
 import { useCameraCapture } from './hooks/useCameraCapture';
 import { useNutriVisionAnalysis } from './hooks/useNutriVisionAnalysis';
@@ -50,6 +54,7 @@ function asMealType(v: unknown): MealType {
 }
 
 export default function NutriVisionTab() {
+  const router = useRouter();
   const [phase, setPhase] = useState<Phase>('idle');
   const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [draft, setDraft] = useState<MealDraft | null>(null);
@@ -60,6 +65,9 @@ export default function NutriVisionTab() {
   const [corpusDismissed, setCorpusDismissed] = useState<boolean>(false);
   const [showTips, setShowTips] = useState<boolean>(false);
   const [recentMealView, setRecentMealView] = useState<RecentMealSummary | null>(null);
+  // #170a supplement §20.A: cache the latest capture so Try Again can reuse it
+  // without forcing the user back to the capture screen.
+  const [lastCaptureForRetry, setLastCaptureForRetry] = useState<CaptureResult | null>(null);
 
   const capture = useCameraCapture();
   const analysis = useNutriVisionAnalysis();
@@ -124,12 +132,14 @@ export default function NutriVisionTab() {
     }
   }, [analysis.mealDraft, phase]);
 
-  // If the analysis hook reports an error while we were analyzing, surface
-  // it and reset back to idle so the user can retry.
+  // #170a supplement §20.1: analysis failures land on the structured error
+  // card (phase 'error') instead of being toasted from idle. The error card
+  // preserves the captured photo + lets the user retry, log manually, or
+  // discard. The errorCode + lastCapture on the hook drive the card.
   useEffect(() => {
     if (analysis.error && phase === 'analyzing') {
       setAnalysisError(analysis.error);
-      setPhase('idle');
+      setPhase('error');
     }
   }, [analysis.error, phase]);
 
@@ -141,14 +151,51 @@ export default function NutriVisionTab() {
       setPhase('idle');
       return;
     }
+    setLastCaptureForRetry(result);
     setPhase('analyzing');
     const next = await analysis.analyze(result);
     if (!next) {
       // useNutriVisionAnalysis sets error state; the effect above moves us
-      // back to idle. No further action needed here.
+      // to the 'error' phase so ErrorStateCard takes over.
       return;
     }
   }, [capture, analysis]);
+
+  // #170a supplement §20.4: Try Again reuses the cached CaptureResult so the
+  // user does not re-frame. If the capture is no longer available we fall
+  // back to a fresh capture flow.
+  const handleTryAgain = useCallback(async () => {
+    setAnalysisError(null);
+    const cachedCapture = analysis.lastCapture ?? lastCaptureForRetry;
+    if (!cachedCapture) {
+      // No cached capture (state lost on remount, etc.). Start a fresh capture.
+      setPhase('idle');
+      return;
+    }
+    setPhase('analyzing');
+    await analysis.analyze(cachedCapture);
+  }, [analysis, lastCaptureForRetry]);
+
+  // #170a supplement §20.5 + Deviation B: stash source_photo_blob_id (when
+  // available) in sessionStorage and bounce to /nutrition. /nutrition mounts
+  // a banner via useNutrivisionManualLogHandoff inviting the user to open
+  // any Quick Log pill below to log this meal manually.
+  const handleLogManually = useCallback(() => {
+    const blobId = analysis.mealDraft?.source_photo_blob_id ?? null;
+    if (typeof blobId === 'string' && blobId.length > 0) {
+      writeNutrivisionManualLogHandoff(blobId);
+    }
+    router.push('/nutrition');
+  }, [analysis.mealDraft, router]);
+
+  const handleDiscardError = useCallback(() => {
+    setAnalysisError(null);
+    setDraft(null);
+    analysis.reset();
+    capture.reset();
+    setLastCaptureForRetry(null);
+    setPhase('idle');
+  }, [analysis, capture]);
 
   const cancelAnalysis = useCallback(() => {
     analysis.cancel();
@@ -202,6 +249,15 @@ export default function NutriVisionTab() {
             >
               <HelpCircle className="h-4 w-4" strokeWidth={1.5} />
             </button>
+            {/* #170a supplement §20.E: Settings gear opens NutriVision privacy
+                page where Hannah's locked photo-data paragraph lives. */}
+            <Link
+              href="/settings/nutrivision"
+              aria-label="NutriVision settings and photo privacy"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.08] bg-white/5 text-white/80 transition-colors hover:bg-white/10"
+            >
+              <Settings className="h-4 w-4" strokeWidth={1.5} />
+            </Link>
           </header>
 
           {phase === 'idle' && (
@@ -226,6 +282,19 @@ export default function NutriVisionTab() {
             <AnalysisProgress
               stage={analysis.progressStage}
               onCancel={cancelAnalysis}
+            />
+          )}
+
+          {phase === 'error' && (
+            <ErrorStateCard
+              errorClass={mapAIErrorToClass(
+                analysis.errorCode ?? 'UNKNOWN',
+                analysisError ?? undefined,
+              )}
+              photoBlobId={analysis.mealDraft?.source_photo_blob_id}
+              onTryAgain={handleTryAgain}
+              onLogManually={handleLogManually}
+              onDiscard={handleDiscardError}
             />
           )}
 
@@ -415,6 +484,7 @@ function ReviewingSurface(props: ReviewingSurfaceProps) {
       onAddItem={edits.addItem}
       onRemoveItem={edits.removeItem}
       onMarkVerified={edits.markVerified}
+      onPlateSizeChange={edits.setPlateSize}
       onSave={handleSave}
       onCancel={props.onCancel}
     />
@@ -442,7 +512,7 @@ function TipsModal({ onClose }: { onClose: () => void }) {
       <h2 className="text-base font-semibold text-white">Tips for accurate analysis</h2>
       <ul className="mt-3 flex flex-col gap-2 text-[12px] text-white/75">
         <li>Fill the frame with the plate so we can see edges and depth.</li>
-        <li>Include a reference object like a credit card or fork for portion accuracy.</li>
+        <li>Include a credit card or ID card next to your plate for portion accuracy.</li>
         <li>Adjust portions with the slider on each item if our estimate looks off.</li>
       </ul>
       <button

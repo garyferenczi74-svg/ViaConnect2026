@@ -11,6 +11,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { detectPlatform, type CaptureResult } from '@/lib/capacitor/camera-capture';
+import type { AIErrorCode } from '@/lib/errors/classify-ai';
 import type {
   MealDraft,
   MealItemDraft,
@@ -28,8 +29,33 @@ export interface UseNutriVisionAnalysisReturn {
   progressStage: ProgressStage;
   mealDraft: MealDraft | null;
   error: string | null;
+  // #170a supplement §20.B: the underlying AIErrorCode (when known) so the
+  // error card can map to the right error_class bucket without sniffing the
+  // user-facing message. Stays null when no error is in flight.
+  errorCode: AIErrorCode | null;
+  lastCapture: CaptureResult | null;
   cancel: () => void;
   reset: () => void;
+}
+
+const KNOWN_AI_ERROR_CODES = new Set<AIErrorCode>([
+  'AUTH_MISSING',
+  'AUTH_INVALID',
+  'RATE_LIMITED',
+  'TIMEOUT',
+  'API_DOWN',
+  'INVALID_INPUT',
+  'MALFORMED_RESPONSE',
+  'UNAUTHENTICATED',
+  'CONFIG_MISSING',
+  'BUDGET_HIT',
+  'NO_RECOGNITION',
+  'UNKNOWN',
+]);
+
+function asAIErrorCode(v: unknown): AIErrorCode | null {
+  if (typeof v !== 'string') return null;
+  return KNOWN_AI_ERROR_CODES.has(v as AIErrorCode) ? (v as AIErrorCode) : null;
 }
 
 interface AnalyzeRespItemRaw {
@@ -68,6 +94,11 @@ interface AnalyzeRespRaw {
     totals?: Partial<MealTotals>;
     meal_confidence?: number;
     warnings?: ReadonlyArray<string>;
+    // #170a supplement §17.2: optional flag from the portion-estimation pass.
+    // Server sets to true when a credit-card-shaped object was detected in the
+    // photo so the UI can skip the plate selector. Older responses omit it
+    // and the client defaults to surfacing the selector.
+    credit_card_detected?: boolean;
   };
   error?: { code?: string; message?: string };
 }
@@ -208,6 +239,9 @@ function normalizeDraft(payload: AnalyzeRespRaw): MealDraft | null {
   if (typeof payload.source_photo_blob_id === 'string') {
     result.source_photo_blob_id = payload.source_photo_blob_id;
   }
+  if (typeof draft.credit_card_detected === 'boolean') {
+    result.credit_card_detected = draft.credit_card_detected;
+  }
   return result;
 }
 
@@ -230,6 +264,8 @@ export function useNutriVisionAnalysis(): UseNutriVisionAnalysisReturn {
   const [progressStage, setProgressStage] = useState<ProgressStage>('idle');
   const [mealDraft, setMealDraft] = useState<MealDraft | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [errorCode, setErrorCode] = useState<AIErrorCode | null>(null);
+  const [lastCapture, setLastCapture] = useState<CaptureResult | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
@@ -259,11 +295,15 @@ export function useNutriVisionAnalysis(): UseNutriVisionAnalysisReturn {
     cancel();
     setMealDraft(null);
     setError(null);
+    setErrorCode(null);
+    setLastCapture(null);
   }, [cancel]);
 
   const analyze = useCallback(async (capture: CaptureResult): Promise<MealDraft | null> => {
     cancel();
     setError(null);
+    setErrorCode(null);
+    setLastCapture(capture);
     setIsAnalyzing(true);
     setProgressStage('reading');
     const portionsTimer = setTimeout(() => setProgressStage('portions'), STAGE_TIMINGS_MS.portions);
@@ -295,6 +335,7 @@ export function useNutriVisionAnalysis(): UseNutriVisionAnalysisReturn {
       if (!res.ok) {
         const msg = body?.error?.message ?? 'Analysis failed. Try again.';
         setError(msg);
+        setErrorCode(asAIErrorCode(body?.error?.code) ?? 'UNKNOWN');
         setIsAnalyzing(false);
         clearTimers();
         setProgressStage('idle');
@@ -302,6 +343,7 @@ export function useNutriVisionAnalysis(): UseNutriVisionAnalysisReturn {
       }
       if (!body) {
         setError('Could not read the analyze response.');
+        setErrorCode('MALFORMED_RESPONSE');
         setIsAnalyzing(false);
         clearTimers();
         setProgressStage('idle');
@@ -311,6 +353,7 @@ export function useNutriVisionAnalysis(): UseNutriVisionAnalysisReturn {
       const normalized = normalizeDraft(body);
       if (!normalized || normalized.items.length === 0) {
         setError('We could not identify foods in this photo. Try a clearer shot.');
+        setErrorCode('NO_RECOGNITION');
         setIsAnalyzing(false);
         clearTimers();
         setProgressStage('idle');
@@ -328,6 +371,9 @@ export function useNutriVisionAnalysis(): UseNutriVisionAnalysisReturn {
         return null;
       }
       setError(err instanceof Error ? err.message : 'Network error. Try again.');
+      // Treat any unhandled exception path (network failure, etc.) as API_DOWN
+      // so the error card maps to provider_outage by default.
+      setErrorCode('API_DOWN');
       setIsAnalyzing(false);
       clearTimers();
       setProgressStage('idle');
@@ -337,5 +383,15 @@ export function useNutriVisionAnalysis(): UseNutriVisionAnalysisReturn {
     }
   }, [cancel, clearTimers]);
 
-  return { analyze, isAnalyzing, progressStage, mealDraft, error, cancel, reset };
+  return {
+    analyze,
+    isAnalyzing,
+    progressStage,
+    mealDraft,
+    error,
+    errorCode,
+    lastCapture,
+    cancel,
+    reset,
+  };
 }

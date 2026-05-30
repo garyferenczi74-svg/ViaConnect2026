@@ -33,7 +33,8 @@ const PortionEstimateRequestSchema = z.object({
   portion_volume_ml_hint: z.number().nonnegative().max(5000).nullable().optional(),
   reference: z
     .object({
-      kind: z.enum(['credit_card', 'standard_fork', 'plate_10in', 'plate_12in']),
+      // #170a supplement §17: standard_fork dropped, plate_8in added.
+      kind: z.enum(['credit_card', 'plate_8in', 'plate_10in', 'plate_12in']),
       bounding_box: BoundingBoxSchema,
     })
     .nullable()
@@ -42,10 +43,10 @@ const PortionEstimateRequestSchema = z.object({
 });
 
 // Real-world longest dimension by reference kind. Sourced from spec §1.4d
-// (Phase 1f reference-objects table).
+// (Phase 1f reference-objects table), updated per #170a supplement §17.
 const REF_LONGEST_MM: Record<ReferenceObjectKind, number> = {
   credit_card: 85.60,
-  standard_fork: 200,
+  plate_8in: 203,
   plate_10in: 254,
   plate_12in: 305,
 };

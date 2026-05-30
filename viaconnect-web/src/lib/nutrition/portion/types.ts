@@ -25,9 +25,12 @@ export interface PortionEstimate {
   humanLabel?: string;
 }
 
+// Prompt #170a supplement §17: forks are dropped from the catalog because
+// their real-world length varies too much (child fork through serving fork).
+// plate_8in is added so the result-screen plate selector covers small plates.
 export type ReferenceObjectKind =
   | 'credit_card'    // ISO/IEC 7810 ID-1: 85.60 by 53.98 mm
-  | 'standard_fork'  // typical dinner fork roughly 200 mm long
+  | 'plate_8in'      // 8 inch salad plate roughly 203 mm diameter
   | 'plate_10in'     // 10 inch dinner plate roughly 254 mm diameter
   | 'plate_12in';    // 12 inch dinner plate roughly 305 mm diameter
 

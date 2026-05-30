@@ -45,11 +45,22 @@ describe('pixelsPerMmFromReference', () => {
   it('uses the longest edge, not width specifically', () => {
     // Tall bbox: h > w. Should still resolve to max / realWorld.
     const ref: ReferenceObject = {
-      kind: 'standard_fork',
-      boundingBox: { x: 0, y: 0, w: 25, h: 400 },
-      realWorldLongestMm: 200,
+      kind: 'plate_10in',
+      boundingBox: { x: 0, y: 0, w: 25, h: 254 },
+      realWorldLongestMm: 254,
     };
-    expect(pixelsPerMmFromReference(ref)).toBeCloseTo(2.0, 5);
+    expect(pixelsPerMmFromReference(ref)).toBeCloseTo(1.0, 5);
+  });
+
+  it('returns roughly 1.26 px/mm for a 256x256 plate_8in bbox', () => {
+    const ref: ReferenceObject = {
+      kind: 'plate_8in',
+      boundingBox: { x: 0, y: 0, w: 256, h: 256 },
+      realWorldLongestMm: REFERENCE_CATALOG.plate_8in.realWorldLongestMm,
+    };
+    const pxPerMm = pixelsPerMmFromReference(ref);
+    expect(pxPerMm).toBeCloseTo(256 / 203, 3);
+    expect(pxPerMm).toBeCloseTo(1.26, 2);
   });
 });
 
@@ -72,12 +83,16 @@ describe('bboxAreaCm2', () => {
 describe('REFERENCE_CATALOG', () => {
   it('lists all four reference kinds with positive real-world dimensions', () => {
     expect(REFERENCE_CATALOG.credit_card.realWorldLongestMm).toBeCloseTo(85.60, 2);
-    expect(REFERENCE_CATALOG.standard_fork.realWorldLongestMm).toBe(200);
+    expect(REFERENCE_CATALOG.plate_8in.realWorldLongestMm).toBe(203);
     expect(REFERENCE_CATALOG.plate_10in.realWorldLongestMm).toBe(254);
     expect(REFERENCE_CATALOG.plate_12in.realWorldLongestMm).toBe(305);
   });
 
   it('matches ISO/IEC 7810 ID-1 aspect ratio for credit_card', () => {
     expect(REFERENCE_CATALOG.credit_card.aspectRatio).toBeCloseTo(85.60 / 53.98, 3);
+  });
+
+  it('does not include standard_fork (dropped per #170a §17)', () => {
+    expect((REFERENCE_CATALOG as Record<string, unknown>).standard_fork).toBeUndefined();
   });
 });

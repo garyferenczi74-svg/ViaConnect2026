@@ -38,6 +38,11 @@ export const MealsInsertPayloadSchema = z.object({
   // will send the partner's raw payload. z.unknown() accepts all three.
   raw_input: z.unknown().nullable(),
   snack_index: z.number().int().min(0).nullable(),
+  // #170a supplement §20.D + Deviation B: optional NutriVision photo blob
+  // attachment when the user arrived at Quick Logs via the Log-Manually
+  // CTA on the NutriVision error card. The column already exists on the
+  // meals table (added in 20260516120030 for the NutriVision branch).
+  source_photo_blob_id: z.string().uuid().optional(),
 });
 
 export type MealsInsertPayload = z.infer<typeof MealsInsertPayloadSchema>;
@@ -113,6 +118,10 @@ export const NutriVisionMealInsertSchema = z.object({
   recognition_provider_primary: z.enum(['logmeal', 'gemini', 'claude_vision']).optional(),
   recognition_provider_secondary: z.enum(['logmeal', 'gemini', 'claude_vision']).optional(),
   source_photo_blob_id: z.string().uuid().optional(),
+  // #170a supplement §17.2: per-meal plate selector value when no credit card
+  // reference was detected. Optional; older clients omit it. Server records on
+  // the meal_logs row for downstream portion calibration analysis.
+  plate_size: z.enum(['plate_8in', 'plate_10in', 'plate_12in']).optional(),
   items: z.array(NutriVisionItemSchema).min(1).max(50),
   edit_diff: z
     .object({

@@ -191,6 +191,10 @@ export async function POST(req: NextRequest) {
       meal_name: payload.meal_name,
       raw_input: payload.raw_input,
       snack_index: payload.snack_index,
+      // #170a supplement §20.D + Deviation B: optional NutriVision photo
+      // blob handoff. Null when the user logged a meal without bouncing
+      // from the NutriVision error card.
+      source_photo_blob_id: payload.source_photo_blob_id ?? null,
       quality_score: scored.quality_score,
       quality_tier: scored.quality_tier,
       score_breakdown: scored.score_breakdown,

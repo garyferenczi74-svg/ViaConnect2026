@@ -20,9 +20,9 @@ export const REFERENCE_CATALOG: Record<
     // ISO/IEC 7810 ID-1: 85.60 / 53.98.
     aspectRatio: 85.60 / 53.98,
   },
-  standard_fork: {
-    realWorldLongestMm: 200,
-    aspectRatio: 8.0,
+  plate_8in: {
+    realWorldLongestMm: 203,
+    aspectRatio: 1.0,
   },
   plate_10in: {
     realWorldLongestMm: 254,

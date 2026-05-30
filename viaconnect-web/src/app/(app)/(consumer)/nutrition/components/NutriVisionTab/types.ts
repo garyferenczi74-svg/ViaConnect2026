@@ -28,7 +28,11 @@ export type Phase =
   | 'analyzing'
   | 'reviewing'
   | 'saving'
-  | 'confirmed';
+  | 'confirmed'
+  // #170a supplement §20.1: analysis failures land on a structured error card
+  // instead of a toast. The error phase preserves the captured photo + lets
+  // the user retry, log manually, or discard.
+  | 'error';
 
 export type ProgressStage = 'reading' | 'portions' | 'nutrients' | 'idle';
 
@@ -117,6 +121,11 @@ export interface MealTotals {
   cholesterol_mg: number;
 }
 
+// Prompt #170a supplement §17.2: PlateSelectorKind mirrors the lib enum
+// subset that the UI lets the user pick. Kept inline so the component file
+// does not need to re-import from lib/portion/types just to type the draft.
+export type PlateSelectorKind = 'plate_8in' | 'plate_10in' | 'plate_12in';
+
 export interface MealDraft {
   id: string;
   source_photo_blob_id?: string;
@@ -127,6 +136,13 @@ export interface MealDraft {
   recognition_provider_primary?: RecognitionProvider;
   recognition_provider_secondary?: RecognitionProvider;
   warnings: string[];
+  // #170a supplement §17.2: server-side flag from analyze response. When the
+  // vision pass detected a credit card we skip the plate selector entirely.
+  // Optional so older response shapes still type-check.
+  credit_card_detected?: boolean;
+  // #170a supplement §17.2: per-meal plate-size choice. Stamped on the meal
+  // payload when the user picks a chip and rides the meal_logs row.
+  plate_size?: PlateSelectorKind;
 }
 
 export interface EditDiff {

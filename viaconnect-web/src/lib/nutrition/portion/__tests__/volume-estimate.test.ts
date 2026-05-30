@@ -34,6 +34,14 @@ function creditCard(w: number, h: number): ReferenceObject {
   };
 }
 
+function plate8in(w: number, h: number): ReferenceObject {
+  return {
+    kind: 'plate_8in',
+    boundingBox: { x: 0, y: 0, w, h },
+    realWorldLongestMm: 203,
+  };
+}
+
 describe('estimatePortion', () => {
   it('uses portionGramsHint directly when provided', () => {
     const result = estimatePortion({
@@ -96,6 +104,17 @@ describe('estimatePortion', () => {
     });
     expect(result.method).toBe('reference_object');
     expect(result.grams).toBeGreaterThanOrEqual(5);
+  });
+
+  it('uses reference-object scaling for an 8 inch plate reference', () => {
+    const result = estimatePortion({
+      item: item('chicken breast', { x: 0, y: 0, w: 200, h: 200 }),
+      reference: plate8in(256, 256),
+    });
+    expect(result.method).toBe('reference_object');
+    expect(result.confidence).toBeCloseTo(0.65, 5);
+    expect(result.grams).toBeGreaterThan(0);
+    expect(result.grams).toBeLessThanOrEqual(1500);
   });
 
   it('ignores a zero portionGramsHint and falls through to the next signal', () => {
