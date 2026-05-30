@@ -10,7 +10,7 @@
 
 'use client';
 
-import { Mic, X } from 'lucide-react';
+import { HelpCircle, Mic, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { VoiceCaptureState } from '../hooks/useVoiceCapture';
 
@@ -18,6 +18,7 @@ interface VoiceCaptureOverlayProps {
   state: VoiceCaptureState;
   onStop: () => void;
   onCancel: () => void;
+  onShowHelp?: () => void;
 }
 
 const HINTS = [
@@ -32,6 +33,7 @@ export function VoiceCaptureOverlay({
   state,
   onStop,
   onCancel,
+  onShowHelp,
 }: VoiceCaptureOverlayProps) {
   const [hintIndex, setHintIndex] = useState(0);
   const [reducedMotion, setReducedMotion] = useState(false);
@@ -72,6 +74,18 @@ export function VoiceCaptureOverlay({
       >
         <X size={20} strokeWidth={1.5} aria-hidden="true" />
       </button>
+
+      {onShowHelp && (
+        <button
+          type="button"
+          onClick={onShowHelp}
+          aria-label="Voice editing help"
+          className="absolute left-4 top-6 flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+          style={{ top: 'calc(env(safe-area-inset-top, 0px) + 16px)' }}
+        >
+          <HelpCircle size={20} strokeWidth={1.5} aria-hidden="true" />
+        </button>
+      )}
 
       <div className="flex w-full max-w-md flex-col items-center gap-6 text-white">
         <MicRing pulsing={isCapturing && !reducedMotion} />

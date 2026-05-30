@@ -220,6 +220,7 @@ export function AnalysisResult(props: AnalysisResultProps) {
           state={voiceSession.capture.state}
           onStop={voiceSession.stopCapture}
           onCancel={voiceSession.close}
+          onShowHelp={voiceSession.showHelp}
         />
       )}
       {voiceAvailable && voiceSession.phase === 'preview' && voiceSession.nlu.state.result && (
