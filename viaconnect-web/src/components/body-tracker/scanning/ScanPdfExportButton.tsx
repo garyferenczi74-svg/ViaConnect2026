@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Download, Loader2, AlertCircle } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { trackPdfExport } from '@/lib/body-tracker/scan-analytics';
 
 interface ScanPdfExportButtonProps {
   sessionId: string;
@@ -23,6 +24,8 @@ export function ScanPdfExportButton({ sessionId, avatarPngBase64 }: ScanPdfExpor
   async function handleExport() {
     setState('loading');
     setErrorMsg(null);
+    // Analytics (§14): the PDF report export was triggered. Metadata only.
+    trackPdfExport({ trigger_point: 'results_panel' });
     try {
       const supabase = createClient();
       const { data: sessionData } = await supabase.auth.getSession();

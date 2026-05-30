@@ -24,6 +24,7 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Accessibility, Bell, Check, Loader2, X } from 'lucide-react';
 import { useBodyScanInclusivityWaitlist } from '@/hooks/body-tracker/useBodyScanInclusivityWaitlist';
+import { trackInclusivityWaitlistJoined } from '@/lib/body-tracker/scan-analytics';
 
 interface BodyScanInclusivityFallbackProps {
   // The capture step this link sits on, recorded as the requested_capability so
@@ -61,6 +62,9 @@ export function BodyScanInclusivityFallback({
     const ok = await joinWaitlist({ requestedCapability });
     setSubmitting(false);
     if (ok) {
+      // Analytics (§14 / §7.4): joined the expanded-scanning waitlist. The
+      // requested capability is coarse metadata only.
+      trackInclusivityWaitlistJoined({ requested_capability: requestedCapability ?? null });
       setJustJoined(true);
     } else {
       setError('We could not add you to the list just now. Please try again in a moment.');

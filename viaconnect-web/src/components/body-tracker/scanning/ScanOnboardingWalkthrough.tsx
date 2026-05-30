@@ -17,6 +17,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { X, ChevronRight, ChevronLeft, HelpCircle } from 'lucide-react';
 import HannahWalkthrough from '@/components/admin/hannah/HannahWalkthrough';
+import { trackOnboardingStarted, trackOnboardingCompleted } from '@/lib/body-tracker/scan-analytics';
 
 interface ScanOnboardingWalkthroughProps {
   /** When true, modal opens even if already seen (triggered by HelpCircle). */
@@ -56,11 +57,17 @@ export function ScanOnboardingWalkthrough({
     if (forceOpen) {
       setOpen(true);
       setStep(0);
+      // Analytics (§14): the walkthrough opened (re-opened via HelpCircle here).
+      trackOnboardingStarted({ trigger_point: 'help_button' });
       return;
     }
     try {
       const seen = localStorage.getItem(SEEN_KEY);
-      if (!seen) setOpen(true);
+      if (!seen) {
+        setOpen(true);
+        // Analytics (§14): the first-open educational walkthrough opened.
+        trackOnboardingStarted({ trigger_point: 'first_open' });
+      }
     } catch {
       // localStorage unavailable (SSR, private browsing): skip
     }
@@ -68,11 +75,14 @@ export function ScanOnboardingWalkthrough({
 
   const handleClose = useCallback(() => {
     setOpen(false);
+    // Analytics (§14): the walkthrough was finished / dismissed. step_name is the
+    // step the user was on when it closed (metadata only, no biometric value).
+    trackOnboardingCompleted({ step_name: `step_${stepIdx + 1}` });
     try {
       localStorage.setItem(SEEN_KEY, '1');
     } catch { /* ignore */ }
     onClose?.();
-  }, [onClose]);
+  }, [onClose, stepIdx]);
 
   if (!open) return null;
 

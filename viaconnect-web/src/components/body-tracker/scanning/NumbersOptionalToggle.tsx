@@ -15,6 +15,7 @@
 
 import { EyeOff } from 'lucide-react';
 import { useNumbersOptional } from '@/hooks/body-tracker/useNumbersOptional';
+import { trackSettingsChanged } from '@/lib/body-tracker/scan-analytics';
 
 interface NumbersOptionalToggleProps {
   className?: string;
@@ -50,7 +51,13 @@ export function NumbersOptionalToggle({ className = '' }: NumbersOptionalToggleP
         aria-checked={numbersOptional}
         aria-label="Hide specific numbers"
         disabled={isLoading}
-        onClick={() => void setNumbersOptional(!numbersOptional)}
+        onClick={() => {
+          const next = !numbersOptional;
+          // Analytics (§14): a NON-sensitive display setting. Emit the name and
+          // the new boolean value. This is a UX preference, not a biometric value.
+          trackSettingsChanged({ setting_name: 'numbers_optional', new_value: next });
+          void setNumbersOptional(next);
+        }}
         className="relative flex-none mt-0.5 inline-flex h-6 w-11 items-center justify-center rounded-full min-h-[44px] min-w-[44px] disabled:opacity-50"
       >
         <span

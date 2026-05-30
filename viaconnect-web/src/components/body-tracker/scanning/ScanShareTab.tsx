@@ -3,6 +3,10 @@
 import { useEffect, useState } from 'react';
 import { Loader2, Share2, Coins } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import {
+  trackPractitionerShareEnabled,
+  trackHelixEventEmitted,
+} from '@/lib/body-tracker/scan-analytics';
 import type { PortalType } from './ScanResultsPanel';
 
 interface ScanShareTabProps {
@@ -68,6 +72,13 @@ export function ScanShareTab({ sessionId, userId, portalType }: ScanShareTabProp
         const rows = (data ?? []) as HelixRow[];
         const total = rows.reduce((sum, r) => sum + (r.amount ?? 0), 0);
         setHelixAmount(total > 0 ? total : null);
+        // Analytics (§14): a Helix engagement event fired for this scan. Emit
+        // only the Helix source category (event_type, metadata). The amount and
+        // any composition value are NEVER logged (§3.2.6 keeps composition off
+        // every Helix surface).
+        if (rows.length > 0) {
+          trackHelixEventEmitted({ event_type: rows[0]?.source ?? 'body_scan' });
+        }
       } catch {
         // Helix is best-effort; silently swallow
       } finally {
@@ -89,6 +100,8 @@ export function ScanShareTab({ sessionId, userId, portalType }: ScanShareTabProp
         .eq('user_id', userId);
       if (updateErr) throw new Error(updateErr.message);
       setSharedWithPractitioner(next);
+      // Analytics (§14): record only when sharing is turned ON. Metadata only.
+      if (next) trackPractitionerShareEnabled({ trigger_point: 'share_tab' });
     } catch (e) {
       setToggleError(e instanceof Error ? e.message : 'Update failed');
     } finally {

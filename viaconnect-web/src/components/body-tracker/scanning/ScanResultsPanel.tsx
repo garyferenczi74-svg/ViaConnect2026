@@ -24,6 +24,11 @@ import { ScanShareTab } from './ScanShareTab';
 import { ScanPdfExportButton } from './ScanPdfExportButton';
 import { ComparisonPanel } from '../photos/ComparisonPanel';
 import { resolveScanTier } from '@/lib/body-tracker/scan-tier';
+import {
+  trackResultsViewed,
+  trackResultsTabViewed,
+  trackCompareUsed,
+} from '@/lib/body-tracker/scan-analytics';
 import type { BodyModelParameters, CompositionEstimate, ExtractedMeasurements, AsymmetryReport } from '@/lib/arnold/scanning/types';
 
 // Exported so tab sub-components can share the type
@@ -107,6 +112,15 @@ export function ScanResultsPanel({ sessionId, refreshKey, portalType = 'consumer
   const [activeTab, setActiveTab] = useState<TabId>('measurements');
   const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
+  // Single tab-selection path so analytics fire from BOTH the click handler and
+  // keyboard nav. Emits results_tab_viewed (§14) with the tab id (metadata), and
+  // compare_used (§14) when the Compare tool is opened. Never carries a value.
+  const selectTab = (id: TabId): void => {
+    setActiveTab(id);
+    trackResultsTabViewed({ tab_name: id });
+    if (id === 'compare') trackCompareUsed({ trigger_point: 'results_tab' });
+  };
+
   // Keyboard nav skips locked premium tabs so a non-premium consumer cannot
   // arrow into the gated Compare / Insights panels.
   const handleTabKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
@@ -126,7 +140,7 @@ export function ScanResultsPanel({ sessionId, refreshKey, portalType = 'consumer
     else if (e.key === 'End')        nextIdx = isTabLocked(TABS[TABS.length - 1].id) ? step(TABS.length - 1, -1) : TABS.length - 1;
     else return;
     e.preventDefault();
-    setActiveTab(TABS[nextIdx].id);
+    selectTab(TABS[nextIdx].id);
     tabRefs.current[nextIdx]?.focus();
   };
 
@@ -197,6 +211,28 @@ export function ScanResultsPanel({ sessionId, refreshKey, portalType = 'consumer
     return () => { mounted = false; };
   }, [sessionId, refreshKey]);
 
+  // Tier is always 1 in Phase 1 per scan-tier.ts. Computed before the early
+  // returns so the analytics effect below can reference it without a TDZ.
+  const tier = resolveScanTier({
+    hasLidar: false,
+    hasArCoreDepth: false,
+    hasTrueDepth: false,
+    hasCompletedGenex360Panel: false,
+  });
+
+  // Analytics (§14): the scan results panel was opened. Fires once per loaded
+  // session (keyed on sessionId), carrying only tier + premium flag (metadata),
+  // never any result value. The default 'measurements' tab view is also recorded.
+  const viewedSessionRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!loaded) return;
+    if (viewedSessionRef.current === sessionId) return;
+    viewedSessionRef.current = sessionId;
+    trackResultsViewed({ tier, is_premium: premiumTabsUnlocked });
+    trackResultsTabViewed({ tab_name: 'measurements' });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loaded, sessionId]);
+
   if (loading) {
     return (
       <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02] py-10 flex items-center justify-center">
@@ -205,14 +241,6 @@ export function ScanResultsPanel({ sessionId, refreshKey, portalType = 'consumer
     );
   }
   if (missing || !loaded) return null;
-
-  // Tier is always 1 in Phase 1 per scan-tier.ts
-  const tier = resolveScanTier({
-    hasLidar: false,
-    hasArCoreDepth: false,
-    hasTrueDepth: false,
-    hasCompletedGenex360Panel: false,
-  });
 
   return (
     <section className="space-y-4">
@@ -261,7 +289,7 @@ export function ScanResultsPanel({ sessionId, refreshKey, portalType = 'consumer
               tabIndex={isActive ? 0 : -1}
               // Locked premium tabs are inert: a non-premium consumer cannot open
               // Compare / Insights; the paywall below the tabs is the upgrade path.
-              onClick={() => { if (!locked) setActiveTab(tab.id); }}
+              onClick={() => { if (!locked) selectTab(tab.id); }}
               className={`flex-none inline-flex items-center gap-1 rounded-full px-3.5 py-1.5 text-xs font-semibold whitespace-nowrap transition-colors min-h-[36px] ${
                 locked
                   ? 'bg-white/[0.02] text-white/35 border border-white/[0.05] cursor-not-allowed'

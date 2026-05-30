@@ -8,6 +8,7 @@ import { selectScanEntryGate, selectScanCaptureGate } from '@/lib/body-tracker/s
 import { createClient } from '@/lib/supabase/client';
 import {
   isPermanent,
+  classifyFailure,
   recordTransientFailure,
   type CapturePayload,
 } from '@/lib/body-tracker/pending-scan-sync';
@@ -17,6 +18,12 @@ import {
   releaseSessionLock,
   resolvePendingScanStore,
 } from '@/lib/body-tracker/pending-scan-store';
+import {
+  trackCaptureStarted,
+  trackProcessingStarted,
+  trackProcessingCompleted,
+  trackProcessingFailed,
+} from '@/lib/body-tracker/scan-analytics';
 import { BodyScanPremiumPaywall } from './BodyScanPremiumPaywall';
 import { BodyScanFreeTeaserBanner } from './BodyScanFreeTeaserBanner';
 
@@ -24,6 +31,28 @@ interface RunScanButtonProps {
   sessionId: string;
   onComplete?: () => void;
   alreadyScanned?: boolean;
+}
+
+// Map a scan-finalize / processing error to a COARSE, non-sensitive analytics
+// error_code (§14). Keys on the stable DB-trigger rejection prefixes (the same
+// ones the network-resilience classifier uses) so we can distinguish the common
+// business reasons, then falls back to the transient / permanent / unknown
+// class. Never returns the raw error text or any value. The wrapped
+// ScanFinalizeError carries the original error as `cause`, which isPermanent /
+// classifyFailure unwrap, so the original signal drives this.
+function coarseProcessingErrorCode(error: unknown): string {
+  const msg = (error instanceof Error ? error.message : String(error ?? '')).toLowerCase();
+  const cause = (error as { cause?: unknown })?.cause;
+  const causeMsg = (cause instanceof Error ? cause.message : String(cause ?? '')).toLowerCase();
+  const all = `${msg} ${causeMsg}`;
+  if (all.includes('age_restricted')) return 'age_restricted';
+  if (all.includes('scan_rate_limited')) return 'rate_limited';
+  if (all.includes('premium_required')) return 'premium_required';
+  if (all.includes('consent')) return 'consent_required';
+  if (all.includes('no photos') || all.includes('no_photos')) return 'no_photos';
+  if (all.includes('height and weight') || all.includes('required for scan')) return 'missing_stats';
+  // Fall back to the transient / permanent / unknown classification.
+  return classifyFailure(error);
 }
 
 export function RunScanButton({ sessionId, onComplete, alreadyScanned }: RunScanButtonProps) {
@@ -86,6 +115,13 @@ export function RunScanButton({ sessionId, onComplete, alreadyScanned }: RunScan
       return;
     }
 
+    // Analytics (§14): the capture/scan was started, then processing began.
+    // Metadata only (tier + premium flag); no biometric value. processedStartMs
+    // anchors the processing latency emitted on completion.
+    trackCaptureStarted({ tier: 1, is_premium: premium, capture_mode: 'run_scan' });
+    trackProcessingStarted({ tier: 1, is_premium: premium });
+    const processStartMs = Date.now();
+
     // PERSIST-BEFORE-PROCESS (spec section 16.3): make the capture durable in the
     // pending store BEFORE running analysis / finalize. If the device is offline
     // or the connection drops mid finalize, the captured scan is not lost: the
@@ -105,6 +141,13 @@ export function RunScanButton({ sessionId, onComplete, alreadyScanned }: RunScan
         sessionId,
         onProgress: (p) => setProgress(p),
       });
+      // Analytics (§14): processing completed. latency_seconds is a duration
+      // only; NO result value (no body fat %, measurements) is carried.
+      trackProcessingCompleted({
+        tier: 1,
+        is_premium: premium,
+        latency_seconds: Math.round((Date.now() - processStartMs) / 1000),
+      });
       // Success: the scan finalized; clear the durable pending record.
       if (pending) {
         try { await store.delete(pending.processingKey); } catch { /* best effort */ }
@@ -114,6 +157,13 @@ export function RunScanButton({ sessionId, onComplete, alreadyScanned }: RunScan
       const msg = e instanceof Error ? e.message : 'Scan failed';
       setError(msg);
       setProgress({ phase: 'failed', percent: 0, message: msg });
+
+      // Analytics (§14): processing failed. error_code is a COARSE category
+      // derived from the failure class, never the raw error text or any value.
+      trackProcessingFailed({
+        error_code: coarseProcessingErrorCode(e),
+        latency_seconds: Math.round((Date.now() - processStartMs) / 1000),
+      });
 
       // Classify the failure (Task 20). The ScanFinalizeError carries the original
       // error as `cause`, so isPermanent sees the real trigger / network signal.

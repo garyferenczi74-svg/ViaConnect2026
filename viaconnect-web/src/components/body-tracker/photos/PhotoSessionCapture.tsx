@@ -33,6 +33,13 @@ import {
   type CapturePayload,
 } from '@/lib/body-tracker/pending-scan-sync';
 import { persistPendingCapture, resolvePendingScanStore } from '@/lib/body-tracker/pending-scan-store';
+import {
+  trackCaptureStarted,
+  trackCalibrationCompleted,
+  trackCaptureStepCompleted,
+  trackCaptureRetake,
+  trackCaptureAbandoned,
+} from '@/lib/body-tracker/scan-analytics';
 import type { PoseId } from '@/lib/arnold/types';
 import type { CalibrationResult, QualityScores } from '@/lib/body-tracker/scan-types';
 
@@ -137,6 +144,13 @@ export function PhotoSessionCapture({ open, onOpenChange, onCompleted }: PhotoSe
 
   // ---- Refs ----
   const initializedRef    = useRef(false);
+  // Distinguishes a normal finish (the user submitted for analysis) from an
+  // abandon (closed mid-capture) so the capture_abandoned analytics event (§14)
+  // only fires for a genuine abandon. Set true at the start of finish().
+  const finishedRef       = useRef(false);
+  // The step + captured count at close time, read by the reset effect to shape
+  // the capture_abandoned event without depending on stale closure state.
+  const captureProgressRef = useRef<{ step: SessionStep; captured: number }>({ step: 'onboarding', captured: 0 });
   const videoRef          = useRef<HTMLVideoElement | null>(null);
   const streamRef         = useRef<MediaStream | null>(null);
   const qualityCanvasRef  = useRef<HTMLCanvasElement | null>(null);
@@ -168,6 +182,14 @@ export function PhotoSessionCapture({ open, onOpenChange, onCompleted }: PhotoSe
     if (insErr || !data) { setError(insErr?.message ?? 'Failed to start session'); return; }
     setSessionId((data as { id: string }).id);
 
+    // Analytics (§14): the capture flow began. tier + capture_mode + device_model
+    // are metadata only (the device string is a UA, not a biometric value).
+    trackCaptureStarted({
+      tier: 1,
+      capture_mode: 'photo_session',
+      device_model: typeof navigator !== 'undefined' ? navigator.userAgent : null,
+    });
+
     // Fetch height/weight from user profile / CAQ for calibration fallback
     try {
       const { data: profile } = await supabase
@@ -182,9 +204,28 @@ export function PhotoSessionCapture({ open, onOpenChange, onCompleted }: PhotoSe
     } catch { /* profile missing; height fallback will use default */ }
   }
 
+  // Keep the capture-progress ref current so the reset effect can shape the
+  // capture_abandoned event (§14) from the latest step + captured count without a
+  // stale closure. capturedCount is recomputed from uploads here.
+  useEffect(() => {
+    captureProgressRef.current = {
+      step,
+      captured: Object.values(uploads).filter((u) => u.fullPath !== null).length,
+    };
+  }, [step, uploads]);
+
   // ---- Reset on close ----
   useEffect(() => {
     if (!open) {
+      // Analytics (§14): if the modal closed mid-capture (calibration / capturing)
+      // WITHOUT a finish, record an abandon with the step it was left on. A normal
+      // finish sets finishedRef, so it is not counted as an abandon. step_name is
+      // metadata only.
+      const { step: lastStep, captured } = captureProgressRef.current;
+      if (!finishedRef.current && (lastStep === 'calibration' || lastStep === 'capturing')) {
+        trackCaptureAbandoned({ step_name: `${lastStep}_${captured}_captured` });
+      }
+      finishedRef.current = false;
       initializedRef.current = false;
       setStep('onboarding');
       setStepIdx(0);
@@ -419,6 +460,10 @@ export function PhotoSessionCapture({ open, onOpenChange, onCompleted }: PhotoSe
       ...prev,
       [pose.id]: { fullPath, thumbPath, previewUrl: signed?.signedUrl ?? null },
     }));
+
+    // Analytics (§14): a pose capture step completed. step_name is the pose id;
+    // scan_count is how many poses are captured so far. Metadata only.
+    trackCaptureStepCompleted({ step_name: pose.id, scan_count: newCompleted.length });
   }
 
   async function handleCaptured(full: Blob, thumb: Blob) {
@@ -426,6 +471,8 @@ export function PhotoSessionCapture({ open, onOpenChange, onCompleted }: PhotoSe
   }
 
   function handleRetake() {
+    // Analytics (§14): a pose was retaken. step_name is the pose id (metadata).
+    trackCaptureRetake({ step_name: pose.id });
     setUploads((prev) => ({ ...prev, [pose.id]: { fullPath: null, thumbPath: null, previewUrl: null } }));
     burstFiredRef.current = false;
   }
@@ -467,6 +514,8 @@ export function PhotoSessionCapture({ open, onOpenChange, onCompleted }: PhotoSe
   // ---- Finish + edge function call ----
   async function finish() {
     if (!sessionId) return;
+    // Mark a genuine finish so the close handler does not log capture_abandoned.
+    finishedRef.current = true;
     setFinishing(true);
     setStep('finishing');
     setError(null);
@@ -762,9 +811,14 @@ export function PhotoSessionCapture({ open, onOpenChange, onCompleted }: PhotoSe
               videoRef={videoRef}
               caqHeightCm={heightCm}
               onCalibrated={(result) => {
+                // Analytics (§14): calibration completed via the credit-card
+                // reference. capture_mode is the calibration source (metadata).
+                trackCalibrationCompleted({ capture_mode: 'credit_card', step_name: 'calibration' });
                 setCalibration(result);
               }}
               onSkip={() => {
+                // Analytics (§14): calibration skipped, falling back to user height.
+                trackCalibrationCompleted({ capture_mode: 'user_height', step_name: 'calibration' });
                 setCalibration({ source: 'user_height', scaleFactorPxPerCm: 1, floorPlaneInclinationDeg: null });
                 setStep('capturing');
               }}

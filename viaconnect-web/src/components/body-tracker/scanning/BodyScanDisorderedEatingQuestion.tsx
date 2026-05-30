@@ -24,6 +24,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { HeartHandshake, Loader2 } from 'lucide-react';
 import { useDisorderedEatingSafeguard } from '@/hooks/body-tracker/useDisorderedEatingSafeguard';
+import { trackDisorderedEatingAnswered } from '@/lib/body-tracker/scan-analytics';
 import {
   DISORDERED_EATING_QUESTION_PROMPT_SLOT,
   DISORDERED_EATING_OPTION_SLOTS,
@@ -69,6 +70,9 @@ export function BodyScanDisorderedEatingQuestion({
     setSubmitting(value);
     await recordResponse(value);
     setSubmitting(null);
+    // Analytics (§14 + §3 privacy): record ONLY that the question was answered.
+    // The RESPONSE value is never logged; the emitter cannot carry it.
+    trackDisorderedEatingAnswered();
     onAnswered?.(value);
   }
 

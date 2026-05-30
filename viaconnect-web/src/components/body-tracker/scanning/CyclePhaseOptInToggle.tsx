@@ -15,6 +15,7 @@
 
 import { Moon } from 'lucide-react';
 import { useCyclePhaseOptIn } from '@/hooks/body-tracker/useCyclePhaseOptIn';
+import { trackSettingsChanged } from '@/lib/body-tracker/scan-analytics';
 
 interface CyclePhaseOptInToggleProps {
   className?: string;
@@ -50,7 +51,14 @@ export function CyclePhaseOptInToggle({ className = '' }: CyclePhaseOptInToggleP
         aria-checked={optedIn}
         aria-label="Annotate my trend with cycle phase"
         disabled={isLoading}
-        onClick={() => void setOptedIn(!optedIn)}
+        onClick={() => {
+          const next = !optedIn;
+          // Analytics (§14): cycle-phase annotation is a SENSITIVE setting. Emit
+          // the setting NAME and only a COARSE boolean (enabled). The cycle phase
+          // value itself is never logged anywhere.
+          trackSettingsChanged({ setting_name: 'cycle_phase_annotation_opt_in', enabled: next });
+          void setOptedIn(next);
+        }}
         className="relative flex-none mt-0.5 inline-flex h-6 w-11 items-center justify-center rounded-full min-h-[44px] min-w-[44px] disabled:opacity-50"
       >
         <span

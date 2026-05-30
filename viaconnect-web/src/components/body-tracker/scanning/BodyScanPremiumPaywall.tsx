@@ -14,9 +14,11 @@
 // (see src/lib/flags/upgrade-prompt-copy.ts). NO price is rendered here;
 // pricing is owned by Gary and surfaced on /pricing.
 
+import { useEffect } from 'react';
 import Link from 'next/link';
 import { ArrowUpRight, Lock, ScanLine, GitCompareArrows, Sparkles, Layers } from 'lucide-react';
 import { getDisplayName } from '@/lib/getDisplayName';
+import { trackPremiumPaywallShown, trackPremiumUpgradeClicked } from '@/lib/body-tracker/scan-analytics';
 
 interface BodyScanPremiumPaywallProps {
   // When true, also render the locked Compare + Insights tab evidence beneath
@@ -56,6 +58,16 @@ export function BodyScanPremiumPaywall({
   upgradeHref = '/pricing',
   className = '',
 }: BodyScanPremiumPaywallProps) {
+  // Distinguish where the paywall surfaced: the results surface (locked-tab
+  // evidence) vs the dashboard / pre-capture entry. Metadata only.
+  const triggerPoint = showLockedEvidence ? 'results_locked_tabs' : 'scan_entry';
+
+  // Analytics (§14): the body-scan paywall was shown. The non-premium consumer
+  // reaching this card has used their teaser, so has_used_teaser is true.
+  useEffect(() => {
+    trackPremiumPaywallShown({ trigger_point: triggerPoint, has_used_teaser: true });
+  }, [triggerPoint]);
+
   return (
     <div
       data-testid="body-scan-premium-paywall"
@@ -122,6 +134,7 @@ export function BodyScanPremiumPaywall({
       {/* Single primary CTA -> canonical upgrade route */}
       <Link
         href={upgradeHref}
+        onClick={() => trackPremiumUpgradeClicked({ trigger_point: triggerPoint })}
         className="mt-5 inline-flex w-full sm:w-auto items-center justify-center gap-1.5 rounded-xl bg-[#2DA5A0] px-5 py-2.5 text-sm font-semibold text-[#0B1520] hover:bg-[#2DA5A0]/90 min-h-[44px]"
       >
         Upgrade membership

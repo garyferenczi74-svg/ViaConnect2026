@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Camera, Plus } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { PhotoSessionCapture } from '@/components/body-tracker/photos/PhotoSessionCapture';
@@ -22,6 +22,7 @@ import { NumbersOptionalToggle } from '@/components/body-tracker/scanning/Number
 import { ScanTimeOfDayRecommendation } from '@/components/body-tracker/scanning/ScanTimeOfDayRecommendation';
 import { CyclePhaseOptInToggle } from '@/components/body-tracker/scanning/CyclePhaseOptInToggle';
 import { PendingScansSurface } from '@/components/body-tracker/scanning/PendingScansSurface';
+import { trackDashboardCardViewed } from '@/lib/body-tracker/scan-analytics';
 
 export default function PhotosPage() {
   const [open, setOpen] = useState(false);
@@ -50,6 +51,17 @@ export default function PhotosPage() {
   }, []);
 
   useEffect(() => { void reload(); }, [reload, refreshKey]);
+
+  // Analytics (§14): the Body Scan dashboard card was seen. Fires once per
+  // distinct latest-session id once loading resolves with a session present
+  // (the scan card + run-scan entry render below). Metadata only.
+  const cardViewedRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (loading || !latestId) return;
+    if (cardViewedRef.current === latestId) return;
+    cardViewedRef.current = latestId;
+    trackDashboardCardViewed({ trigger_point: 'photos_page' });
+  }, [loading, latestId]);
 
   async function retryAnalysis(sessionId: string) {
     const supabase = createClient();

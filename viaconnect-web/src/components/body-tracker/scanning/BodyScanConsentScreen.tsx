@@ -18,7 +18,7 @@
 // Styling mirrors the body-tracker callout cards; Lucide icons at strokeWidth
 // 1.5; copy punctuation is commas/colons only (no dashes); responsive.
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ShieldCheck, Check, Loader2 } from 'lucide-react';
 import {
   useBiometricConsent,
@@ -28,7 +28,9 @@ import {
   RETENTION_OPTIONS,
   DEFAULT_RETENTION_DAYS,
   DEFAULT_MODEL_IMPROVEMENT_OPT_IN,
+  CURRENT_CONSENT_VERSION,
 } from '@/lib/body-tracker/biometric-consent';
+import { trackConsentViewed, trackConsentAccepted } from '@/lib/body-tracker/scan-analytics';
 import {
   CONSENT_SECTION_SLOTS,
   CONSENT_SCREEN_TITLE_SLOT,
@@ -78,12 +80,25 @@ export function BodyScanConsentScreen({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Analytics (§14): the biometric-consent screen was shown. Fires once on mount.
+  // consent_version is metadata (an identifier), never a biometric value.
+  useEffect(() => {
+    trackConsentViewed({ consent_version: CURRENT_CONSENT_VERSION });
+  }, []);
+
   async function handleAccept() {
     setSubmitting(true);
     setError(null);
     const ok = await recordConsent({ retentionDays, modelImprovementOptIn });
     setSubmitting(false);
     if (ok) {
+      // Analytics (§14): consent accepted. Emits the version + the SEPARATE
+      // model-improvement opt-in boolean only (both metadata, §2.2.1). The
+      // retention DAYS value is intentionally not logged.
+      trackConsentAccepted({
+        consent_version: CURRENT_CONSENT_VERSION,
+        model_improvement_opt_in: modelImprovementOptIn,
+      });
       onConsented?.();
     } else {
       setError('We could not record your consent. Please try again.');

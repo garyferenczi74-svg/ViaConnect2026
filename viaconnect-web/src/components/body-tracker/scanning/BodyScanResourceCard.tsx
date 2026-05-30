@@ -21,13 +21,14 @@
 //
 // Lucide strokeWidth 1.5; commas/colons only (no dashes); responsive.
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { LifeBuoy, X, ExternalLink } from 'lucide-react';
 import {
   decideResourceCard,
   type ResourceCardTriggerInput,
   type ResourceCardPersistence,
 } from '@/lib/body-tracker/disordered-eating-safeguard';
+import { trackResourceCardViewed } from '@/lib/body-tracker/scan-analytics';
 import {
   RESOURCE_CARD_TITLE_SLOT,
   RESOURCE_CARD_BODY_SLOT,
@@ -53,6 +54,27 @@ export function BodyScanResourceCard({
   const [dismissed, setDismissed] = useState(false);
 
   const decision = decideResourceCard(trigger);
+
+  // Analytics (§14): the support resource card was shown. resource_type is a
+  // COARSE trigger family only ('clinical' / 'behavioral'), NEVER the disordered-
+  // eating response, a body-fat value, or any sensitive signal. Fires once when
+  // the card first becomes visible. Computed before the early returns so the
+  // hook order is stable.
+  const reportedRef = useRef(false);
+  useEffect(() => {
+    if (!decision.show || reportedRef.current) return;
+    reportedRef.current = true;
+    // Map the (internal) reasons to a coarse, non-sensitive category. We do NOT
+    // emit which exact condition fired in a way that reveals the response: a
+    // clinical-threshold or rapid-loss trigger is 'clinical'; the rest 'support'.
+    const resourceType =
+      decision.reasons.bodyFatBelowThreshold || decision.reasons.rapidBodyFatLoss
+        ? 'clinical'
+        : 'support';
+    trackResourceCardViewed({ resource_type: resourceType });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [decision.show]);
+
   if (!decision.show) return null;
   if (dismissed) return null;
 
