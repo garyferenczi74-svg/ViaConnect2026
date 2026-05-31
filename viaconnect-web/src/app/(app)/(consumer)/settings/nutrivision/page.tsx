@@ -16,6 +16,7 @@ import Link from 'next/link';
 import { ArrowLeft, Camera, ChevronRight, ScanBarcode } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { VoiceSettingsSection } from './components/VoiceSettingsSection';
+import { QuickLogSettingsSection } from './components/QuickLogSettingsSection';
 
 interface SettingsRow {
   corpus_opt_in?: boolean | null;
@@ -155,6 +156,11 @@ export default function NutriVisionSettingsPage() {
         </section>
 
         <VoiceSettingsSection />
+
+        {/* Prompt 170m Phase D: Quick Log text-native entry path informational
+            section. Consolidated under "Entry path preferences" per Hannah
+            Gate 3 Option C. */}
+        <QuickLogSettingsSection />
 
         {/* Prompt 170l Phase 1c-3 + Gate 2: barcode scanning settings live on
             a sub-page per Gary's explicit choice (departs from 170j voice
