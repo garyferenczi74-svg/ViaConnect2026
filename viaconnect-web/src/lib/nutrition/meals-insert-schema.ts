@@ -96,6 +96,10 @@ export const NutriVisionItemSchema = z.object({
   off_nova_group: z.number().int().min(1).max(4).optional(),
   off_nutrition_grade_fr: z.enum(['a', 'b', 'c', 'd', 'e']).optional(),
   user_overrode_macros: z.boolean().default(false),
+  // Prompt 171b Phase 2: caffeine + display fields on meal_items.
+  caffeine_mg: z.number().nonnegative().max(1000).optional(),
+  portion_display_unit: z.string().max(10).optional(),
+  portion_display_value: z.number().nonnegative().max(99999.99).optional(),
   curated_food_id: z.string().uuid().optional(),
   calories_kcal: z.number().nonnegative(),
   protein_g: z.number().nonnegative(),

@@ -107,6 +107,12 @@ export interface MealItemDraft {
   off_nova_group?: number;
   off_nutrition_grade_fr?: 'a' | 'b' | 'c' | 'd' | 'e';
   user_overrode_macros?: boolean;
+  // Prompt 171b Phase 2: per-item caffeine + display fields. Populated by
+  // (a) Quick Log caffeine entry, (b) 170l barcode path when OFF surfaces
+  // caffeine_100g/100ml, (c) future 170m Haiku Rule 3.9 inference.
+  caffeine_mg?: number;
+  portion_display_unit?: string;
+  portion_display_value?: number;
   curated_food_id?: string;
   // Per-100g composition kept on the draft so the client can recalculate
   // macros on portion change without another API round trip. Hydrated from

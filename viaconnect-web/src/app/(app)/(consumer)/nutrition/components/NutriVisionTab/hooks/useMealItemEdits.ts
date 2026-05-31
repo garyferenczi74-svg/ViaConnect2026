@@ -393,6 +393,10 @@ export function useMealItemEdits(args: UseMealItemEditsArgs): UseMealItemEditsRe
       if (typeof it.off_nova_group === 'number') row.off_nova_group = it.off_nova_group;
       if (typeof it.off_nutrition_grade_fr === 'string') row.off_nutrition_grade_fr = it.off_nutrition_grade_fr;
       if (typeof it.user_overrode_macros === 'boolean') row.user_overrode_macros = it.user_overrode_macros;
+      // Prompt 171b Phase 2: propagate caffeine + display fields on save.
+      if (typeof it.caffeine_mg === 'number') row.caffeine_mg = it.caffeine_mg;
+      if (typeof it.portion_display_unit === 'string') row.portion_display_unit = it.portion_display_unit;
+      if (typeof it.portion_display_value === 'number') row.portion_display_value = it.portion_display_value;
       if (typeof it.curated_food_id === 'string') row.curated_food_id = it.curated_food_id;
       if (typeof it.fiber_g === 'number') row.fiber_g = it.fiber_g;
       if (typeof it.sugar_g === 'number') row.sugar_g = it.sugar_g;

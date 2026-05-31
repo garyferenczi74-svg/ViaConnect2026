@@ -128,6 +128,28 @@ export function convertOFFProductToMealItemDraft(
     draft.off_nutrition_grade_fr = product.nutriscore_grade;
   }
 
+  // Prompt 171b Phase 2: caffeine extraction from OFF data when present.
+  // Scale caffeine_per_100g_mg against the actual portion in grams to get
+  // per-serving caffeine_mg. Clamp to [0, 1000] mg to match the database
+  // NUMERIC(6,2) column constraint.
+  if (product.caffeine_per_100g_mg !== null && product.caffeine_per_100g_mg > 0) {
+    const caffeineMg = Math.min(
+      1000,
+      Math.round(product.caffeine_per_100g_mg * ratio * 100) / 100,
+    );
+    if (caffeineMg > 0) {
+      draft.caffeine_mg = caffeineMg;
+      // When this is a caffeine-only item (e.g. a black coffee), the display
+      // hint helps the UI render "75 mg" alongside or instead of macros. We
+      // do not override portion_display_unit when the item has substantive
+      // macros (calories > 5 per portion implies food, not pure beverage).
+      if (draft.calories_kcal <= 5) {
+        draft.portion_display_unit = 'mg';
+        draft.portion_display_value = caffeineMg;
+      }
+    }
+  }
+
   return draft;
 }
 

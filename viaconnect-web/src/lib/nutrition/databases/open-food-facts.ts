@@ -352,6 +352,11 @@ export interface OFFProduct {
   allergens_tags: string[] | null;
   serving_size: string | null;
   completeness: number | null;
+  // Prompt 171b Phase 2: caffeine per 100g/100ml when OFF has it (energy
+  // drinks like Red Bull / Monster / Celsius commonly carry this). Derived
+  // from nutriments['caffeine_100g'] or nutriments['caffeine_100ml']. The
+  // per-serving caffeine_mg is computed downstream via serving_size_g.
+  caffeine_per_100g_mg: number | null;
 }
 
 const PRODUCT_FIELDS = [
@@ -367,6 +372,11 @@ const PRODUCT_FIELDS = [
   'allergens_tags',
   'serving_size',
   'completeness',
+  // Prompt 171b Phase 2: request caffeine fields from OFF v2.
+  'caffeine_value',
+  'caffeine_unit',
+  'caffeine_100g',
+  'caffeine_100ml',
 ].join(',');
 
 const PRODUCT_BARCODE_PATH = (code: string) =>
@@ -481,5 +491,27 @@ function mapFullProduct(
         ? p.serving_size
         : null,
     completeness: toFiniteNumber(p.completeness),
+    caffeine_per_100g_mg: extractCaffeinePer100g(nutrimentsRecord),
   };
+}
+
+// Prompt 171b Phase 2: extract per-100g caffeine in mg from OFF nutriments.
+// OFF stores caffeine in several possible fields depending on the product type:
+//   caffeine_100g   - per 100 g (solids: coffee beans, chocolate)
+//   caffeine_100ml  - per 100 ml (beverages: coffee drinks, energy drinks)
+//   caffeine_value  + caffeine_unit - per serving when the above are absent
+// For ready-to-drink products we prefer caffeine_100ml since serving_size
+// for those is typically expressed in ml; for solids we prefer caffeine_100g.
+// In either case we return a single number that represents caffeine per 100g
+// (or per 100ml, which downstream code treats as equivalent for simple
+// scaling against parsed serving_size_g).
+function extractCaffeinePer100g(
+  nutriments: Record<string, number> | null,
+): number | null {
+  if (nutriments === null) return null;
+  const per100ml = toFiniteNumber(nutriments['caffeine_100ml']);
+  if (per100ml !== null && per100ml > 0) return per100ml;
+  const per100g = toFiniteNumber(nutriments['caffeine_100g']);
+  if (per100g !== null && per100g > 0) return per100g;
+  return null;
 }
