@@ -12,7 +12,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
-import { Camera, ChevronLeft, HelpCircle, ScanBarcode, Settings, X } from 'lucide-react';
+import { Camera, ChevronLeft, HelpCircle, MessageSquareText, ScanBarcode, Settings, X } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import type { CaptureResult, CaptureSource } from '@/lib/capacitor/camera-capture';
@@ -42,6 +42,10 @@ import {
 } from '@/components/barcode/lib/off-product-to-draft';
 import type { LookupResult } from '@/components/barcode/hooks/useOffLookup';
 import type { OFFProduct } from '@/lib/nutrition/barcode/types';
+// Prompt 170m Phase C: Quick Log text-native entry path components.
+import { QuickLogModal } from './QuickLog/QuickLogModal';
+import { quickLogToMealDraft } from './QuickLog/quick-log-to-meal-draft';
+import type { QuickLogParseResult } from '@/lib/nutrition/quick-log/types';
 import type {
   Phase,
   MealDraft,
@@ -133,6 +137,17 @@ export default function NutriVisionTab() {
   // pushed here and the next scan returns to product confirmation; the final
   // "Save to meal" tap builds the draft from [...pendingBarcodeItems, current].
   const [pendingBarcodeItems, setPendingBarcodeItems] = useState<import('./types').MealItemDraft[]>([]);
+
+  // Prompt 170m Phase C: Quick Log modal state. The modal is overlay-style
+  // and manages its own internal typing/loading/clarifying states. On parse
+  // completion (no more clarifications) the handler below builds the
+  // MealDraft and transitions to phase='reviewing' so the shared review
+  // surface renders. quickLogParseResult is the verbatim parser response,
+  // retained on the draft so the save handler can route to the Quick Log
+  // save endpoint with the original text + clarification round count.
+  const [quickLogModalOpen, setQuickLogModalOpen] = useState(false);
+  const [quickLogText, setQuickLogText] = useState<string | null>(null);
+  const [quickLogParseResult, setQuickLogParseResult] = useState<QuickLogParseResult | null>(null);
 
   const capture = useCameraCapture();
   const analysis = useNutriVisionAnalysis();
@@ -319,6 +334,8 @@ export default function NutriVisionTab() {
     setDraft(null);
     analysis.reset();
     capture.reset();
+    setQuickLogText(null);
+    setQuickLogParseResult(null);
     setPhase('idle');
   }, [analysis, capture]);
 
@@ -327,6 +344,8 @@ export default function NutriVisionTab() {
     setDraft(null);
     analysis.reset();
     capture.reset();
+    setQuickLogText(null);
+    setQuickLogParseResult(null);
     setPhase('idle');
   }, [analysis, capture]);
 
@@ -572,6 +591,27 @@ export default function NutriVisionTab() {
     [macroEditMode, blankSlateBarcode, barcodeProduct],
   );
 
+  // Prompt 170m Phase C: Quick Log flow handlers.
+  const handleOpenQuickLog = useCallback(() => {
+    setQuickLogModalOpen(true);
+  }, []);
+
+  const handleQuickLogClose = useCallback(() => {
+    setQuickLogModalOpen(false);
+  }, []);
+
+  const handleQuickLogParseComplete = useCallback(
+    (result: QuickLogParseResult, originalText: string) => {
+      const newDraft = quickLogToMealDraft(result);
+      setQuickLogText(originalText);
+      setQuickLogParseResult(result);
+      setDraft(newDraft);
+      setQuickLogModalOpen(false);
+      setPhase('reviewing');
+    },
+    [],
+  );
+
   const handleOpenManualEntry = useCallback(() => setManualEntryOpen(true), []);
   const handleCloseManualEntry = useCallback(() => setManualEntryOpen(false), []);
   const handleManualEntryLookup = useCallback(
@@ -629,6 +669,7 @@ export default function NutriVisionTab() {
             <IdleSurface
               onCapture={onCapture}
               onOpenScanner={handleOpenScanner}
+              onOpenQuickLog={handleOpenQuickLog}
               isCapturing={capture.isCapturing}
               error={analysisError ?? capture.error}
               recentMeals={recentMeals}
@@ -675,6 +716,8 @@ export default function NutriVisionTab() {
               onCancel={handleCancelReview}
               onSaved={(resp) => { setSaveResponse(resp); setPhase('confirmed'); }}
               onSavingChange={(saving) => setPhase(saving ? 'saving' : 'reviewing')}
+              quickLogText={quickLogText}
+              quickLogParseResult={quickLogParseResult}
             />
           )}
 
@@ -691,6 +734,8 @@ export default function NutriVisionTab() {
                   onCancel={handleCancelReview}
                   onSaved={() => undefined}
                   onSavingChange={() => undefined}
+                  quickLogText={quickLogText}
+                  quickLogParseResult={quickLogParseResult}
                   forceSavingState
                 />
               </div>
@@ -775,6 +820,14 @@ export default function NutriVisionTab() {
         onLookupResult={handleManualEntryLookup}
       />
 
+      {/* Prompt 170m Phase C: Quick Log text-native entry path modal. Overlay
+          style; sits above the document root so all phases can launch it. */}
+      <QuickLogModal
+        open={quickLogModalOpen}
+        onClose={handleQuickLogClose}
+        onParseComplete={handleQuickLogParseComplete}
+      />
+
       <MacroEditPanel
         open={macroEditOpen}
         mode={macroEditMode}
@@ -808,39 +861,48 @@ export default function NutriVisionTab() {
 interface IdleSurfaceProps {
   onCapture: (source: CaptureSource) => void;
   onOpenScanner: () => void;
+  onOpenQuickLog: () => void;
   isCapturing: boolean;
   error: string | null;
   recentMeals: RecentMealSummary[];
   onPickRecent: (m: RecentMealSummary) => void;
 }
 
-// Prompt 170l Phase 1c-2 + Hannah 11.1: three-entry-path row. Photo card and
-// Scan Barcode card are equal-weight peers; the conceptual shift from "photo
-// recognition app" to "any-entry-point food logger" is shown not told.
-// Anti-condescension posture per Hannah's push-back: NO "Most common" chip on
-// Photo. Both cards visually identical typography + icon sizing + height.
-// Photo retains left position for existing muscle memory. "Upload from gallery"
-// kept as a smaller text link below the cards to preserve the existing power-
-// user affordance without competing with the peer pairing.
+// Prompt 170l Phase 1c-2 + Hannah 11.1: equal-weight peer entry path row.
+// Prompt 170m Phase C + Hannah 9.1 Gate 1: extended from two to three peers
+// (Photo + Scan Barcode + Quick Log). Anti-condescension principle from 170l
+// propagates: NO "Most common" chip on Photo, NO "NEW" chip on Quick Log.
+// Photo retains left position for existing muscle memory; Quick Log right
+// because it is the newest. Three peers in one row across all viewports;
+// cards switch to compact icon-over-label format on narrow mobile to keep
+// the iPhone SE viewport readable.
 function IdleSurface(props: IdleSurfaceProps) {
   return (
     <div className="flex flex-col gap-4">
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-3 gap-2 sm:gap-3">
         <EntryPathCard
-          icon={<Camera className="h-9 w-9" strokeWidth={1.5} />}
-          title="Take photo"
-          subtitle="Photograph fresh, cooked, or plated meals."
+          icon={<Camera className="h-7 w-7 sm:h-9 sm:w-9" strokeWidth={1.5} />}
+          title="Photo"
+          subtitle="Snap your plate."
           onTap={() => props.onCapture('camera')}
           disabled={props.isCapturing}
-          ariaLabel="Take photo. Photograph fresh, cooked, or plated meals."
+          ariaLabel="Photo. Snap your plate."
         />
         <EntryPathCard
-          icon={<ScanBarcode className="h-9 w-9" strokeWidth={1.5} />}
-          title="Scan barcode"
-          subtitle="Read packaged food labels in under a second."
+          icon={<ScanBarcode className="h-7 w-7 sm:h-9 sm:w-9" strokeWidth={1.5} />}
+          title="Scan Barcode"
+          subtitle="Packaged foods."
           onTap={props.onOpenScanner}
           disabled={false}
-          ariaLabel="Scan barcode. Photograph the barcode on packaged foods and drinks."
+          ariaLabel="Scan Barcode. Read packaged food labels in under a second."
+        />
+        <EntryPathCard
+          icon={<MessageSquareText className="h-7 w-7 sm:h-9 sm:w-9" strokeWidth={1.5} />}
+          title="Quick Log"
+          subtitle="Type what you ate."
+          onTap={props.onOpenQuickLog}
+          disabled={false}
+          ariaLabel="Quick Log. Type what you ate."
         />
       </div>
 
@@ -910,14 +972,13 @@ function EntryPathCard({ icon, title, subtitle, onTap, disabled, ariaLabel }: En
       onClick={onTap}
       disabled={disabled}
       aria-label={ariaLabel}
-      className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-white/[0.08] bg-[#1E3054]/45 p-4 text-center transition-colors hover:border-[#2DA5A0]/40 hover:bg-[#1E3054]/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2DA5A0] focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-      style={{ minHeight: 144 }}
+      className="flex min-h-[120px] flex-col items-center justify-center gap-1.5 rounded-2xl border border-white/[0.08] bg-[#1E3054]/45 p-2 text-center transition-colors hover:border-[#2DA5A0]/40 hover:bg-[#1E3054]/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2DA5A0] focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-[144px] sm:gap-2 sm:p-4"
     >
-      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#2DA5A0]/15 text-[#2DA5A0]">
+      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#2DA5A0]/15 text-[#2DA5A0] sm:h-12 sm:w-12">
         {icon}
       </div>
-      <div className="text-sm font-medium text-white">{title}</div>
-      <div className="text-[11px] text-white/70 leading-tight">{subtitle}</div>
+      <div className="text-[13px] font-medium text-white sm:text-sm">{title}</div>
+      <div className="text-[10px] leading-tight text-white/70 sm:text-[11px]">{subtitle}</div>
     </button>
   );
 }
@@ -937,6 +998,12 @@ interface ReviewingSurfaceProps {
   onSaved: (resp: SaveResponse) => void;
   onSavingChange: (saving: boolean) => void;
   forceSavingState?: boolean;
+  // Prompt 170m Phase C: when set, routes the save through the Quick Log
+  // endpoint so meals.text_input + parser_version + clarification metadata
+  // ride the persistence. Photo + barcode flows leave these undefined and
+  // route through /api/nutrition/meals as before.
+  quickLogText?: string | null;
+  quickLogParseResult?: QuickLogParseResult | null;
 }
 
 function ReviewingSurface(props: ReviewingSurfaceProps) {
@@ -952,8 +1019,31 @@ function ReviewingSurface(props: ReviewingSurfaceProps) {
     }
     props.onSavingChange(true);
     try {
-      const payload = edits.buildSavePayload(mealType);
-      const res = await fetch('/api/nutrition/meals', {
+      // Prompt 170m Phase C: route Quick Log saves to the dedicated endpoint
+      // so meals.text_input, parser_version, clarification metadata persist.
+      // Photo + barcode flows continue to use /api/nutrition/meals.
+      const isQuickLog = typeof props.quickLogText === 'string' && props.quickLogText.length > 0;
+      const url = isQuickLog
+        ? '/api/nutrition/quick-log/save'
+        : '/api/nutrition/meals';
+      const payload = isQuickLog && props.quickLogText
+        ? {
+            text_input: props.quickLogText,
+            text_input_locale: 'en-US',
+            meal_type: mealType,
+            meal_items: edits.draft.items.map((it) => ({
+              food_name: it.food_name,
+              portion_grams: it.portion_grams,
+              cooking_method: it.cooking_method ?? null,
+              caffeine_mg: typeof it.caffeine_mg === 'number' ? it.caffeine_mg : null,
+              confidence: it.recognition_confidence,
+            })),
+            parser_confidence_avg: edits.draft.meal_confidence,
+            clarification_rounds: 0,
+            triggered_split: false,
+          }
+        : edits.buildSavePayload(mealType);
+      const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -970,7 +1060,24 @@ function ReviewingSurface(props: ReviewingSurfaceProps) {
         props.onSavingChange(false);
         return;
       }
-      props.onSaved(body as unknown as SaveResponse);
+      // Quick Log save endpoint returns a slimmer shape than the photo save
+      // endpoint, so synthesize a SaveResponse-compatible object when needed.
+      const saveResp: SaveResponse = isQuickLog
+        ? {
+            meal_id: body.meal_id,
+            gordon: {
+              bio_optimization_delta: null,
+              copy: null,
+              quality_score: 0,
+              quality_tier: 'unknown',
+            },
+            dashboard_crossover: { nutrition_dimension_recompute_queued: true },
+            helix_events_emitted: [],
+            corpus_row_written: false,
+            requestId: '',
+          }
+        : (body as unknown as SaveResponse);
+      props.onSaved(saveResp);
     } catch {
       toast.error('Network error. Try again.');
       props.onSavingChange(false);
