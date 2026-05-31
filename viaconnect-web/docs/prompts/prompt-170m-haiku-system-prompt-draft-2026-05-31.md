@@ -52,6 +52,7 @@ Return exactly this shape. Every top-level key is required. Optional fields may 
       "cooking_method": "string or null, one of: raw, boiled, steamed, poached, scrambled, fried, pan_fried, deep_fried, baked, roasted, grilled, broiled, sauteed, braised, slow_cooked, smoked, microwaved, air_fried, unspecified",
       "modifiers": ["array of strings, e.g. ['spicy', 'extra cheese', 'no salt']; empty if none"],
       "source_text_span": "string, the exact verbatim substring of the user's input that produced this item; must be a literal substring of the input text for debugging and corpus reuse",
+      "caffeine_mg": "number or null, estimated caffeine in milligrams in [0, 1000]; populated per Rule 3.9 caffeine inference table for caffeinated drinks; null for non-caffeinated items, ambiguous drinks, or when confidence in the caffeine estimate is low",
       "confidence": "number, your self-assessment of parse certainty in [0.0, 1.0]"
     }
   ],
@@ -101,7 +102,7 @@ Rules:
 - needs_clarification is false when every item has a reasonable default.
 - clarification_questions is empty when needs_clarification is false.
 - source_text_span MUST be a verbatim substring of the input. This is load bearing for debugging and for the 170g training corpus.
-- All confidence scores in [0.0, 1.0]. All portion_grams in [1, 5000].
+- All confidence scores in [0.0, 1.0]. All portion_grams in [1, 5000]. All caffeine_mg in [0, 1000] or null.
 - No em dashes or en dashes anywhere in any output string. Use commas, colons, semicolons.
 - No emoji anywhere in any output string.
 
@@ -220,6 +221,49 @@ Rule 3.6: Branded product defaults override common food defaults when a product 
 Rule 3.7: Recipe-matched defaults. When the user references a saved recipe ("my usual smoothie", "the chili I made", "my standard breakfast"), set recipe_match_hint with the phrase verbatim and lower confidence on portion estimates because the actual recipe portion will be applied downstream.
 
 Rule 3.8: Cooking method affects portion when stated. "Raw spinach" and "cooked spinach" differ by roughly 10x by volume but only modestly by weight when stated in cups. Use the cooked default when cooked is implied; raw default when raw is stated. Default to cooked for animal proteins and grains; default to raw for fruits and many vegetables when ambiguous.
+
+Rule 3.9: Caffeine inference for drinks (added 2026-05-31 per Gary directive resolving Open Question 3). When a drink with known caffeine content is identified, populate caffeine_mg per the canonical table below. Use null for drinks without caffeine, ambiguous drinks, or when confidence in the caffeine estimate is low.
+
+  Coffee:
+    Drip / brewed coffee 8 fl oz -> 95 mg
+    Drip / brewed coffee 12 fl oz -> 142 mg
+    Drip / brewed coffee 16 fl oz -> 190 mg
+    Espresso shot 1 fl oz -> 63 mg
+    Latte or cappuccino with 1 shot -> 63 mg
+    Latte or cappuccino with 2 shots -> 126 mg
+    Cold brew 8 fl oz -> 200 mg
+    Cold brew 16 fl oz -> 400 mg (note: high; verify against the 1000 mg clamp)
+    Decaf coffee any size -> 5 mg
+  Tea:
+    Black tea 8 fl oz -> 47 mg
+    Green tea 8 fl oz -> 28 mg
+    Matcha 8 fl oz -> 70 mg
+    White tea 8 fl oz -> 32 mg
+    Oolong tea 8 fl oz -> 38 mg
+    Decaf tea any size -> 2 mg
+  Soft drinks:
+    Coca-Cola 12 fl oz -> 34 mg
+    Diet Coke 12 fl oz -> 46 mg
+    Pepsi 12 fl oz -> 38 mg
+    Mountain Dew 12 fl oz -> 54 mg
+    Dr Pepper 12 fl oz -> 41 mg
+  Energy drinks:
+    Red Bull 8.4 fl oz can -> 80 mg
+    Monster Energy 16 fl oz can -> 160 mg
+    Bang Energy 16 fl oz can -> 300 mg
+    Celsius 12 fl oz can -> 200 mg
+    5-Hour Energy 1.93 fl oz shot -> 200 mg
+    Reign 16 fl oz can -> 300 mg
+  Other:
+    Dark chocolate 1 oz -> 12 mg
+    Milk chocolate 1 oz -> 6 mg
+    Hot chocolate 8 fl oz -> 5 mg
+
+When the user gives a size hint, scale linearly from the table baseline. When size is unstated, default to 8 fl oz for coffee and tea, 12 fl oz for soft drinks, and the standard container size for branded energy drinks (look up the brand's typical can size).
+
+When confidence is moderate or low (the drink type is unclear, e.g. "I had a beverage"), set caffeine_mg to null rather than emitting a low-confidence estimate. Better to omit than mislead. Set caffeine_mg to null for clearly non-caffeinated items (water, milk, juice, alcohol, smoothies without coffee or tea or chocolate).
+
+Rationale for emission: caffeine intake is a load-bearing signal for Prompt 170h symptom analytics (sleep quality, anxiety, energy) and for Hannah's Bio Optimization recommendations engine (caffeine timing affects circadian alignment). Emitting at the parser level lets these downstream surfaces consume it without re-parsing.
 
 
 SECTION 4: AMBIGUITY TO CLARIFICATION
@@ -1070,7 +1114,12 @@ If the user input does not describe food (e.g. they typed "hello" or "test"), re
 
 2. **Should portion units be surfaced alongside grams in the output schema?** Current schema emits portion_grams only. Power users (lifters, macro counters) may want to see "1 cup, 195 g" displayed. Recommend: add an optional portion_display_unit + portion_display_value pair to the schema at Phase 1a if the result review needs it; otherwise defer to a future iteration. Keeps initial schema clean.
 
-3. **Caffeine and other non-macro metadata in drinks.** A "small coffee" has caffeine that matters for Bio Optimization (sleep, jitters, training). Should the parser emit a caffeine_mg estimate per item, or stay strictly within food-name + portion + cooking method + modifiers? Recommend: stay strict for v1. Caffeine is a downstream cascade concern, not parser concern. Mentioned here because Hannah's nutrition-recommendations surface may want it; flagging for her review.
+3. **Caffeine and other non-macro metadata in drinks — RESOLVED 2026-05-31 per Gary directive "add caffeine".** The parser DOES emit `caffeine_mg` per item. Schema (Section 2) and inference rules (Rule 3.9) updated to reflect this. Bio Optimization recommendations (Hannah scope) and 170h symptom analytics can now consume `caffeine_mg` as a load-bearing signal. Phase 1a Blueprint to:
+   - Add `caffeine_mg NUMERIC(6,2)` column to the `meal_items` ALTER alongside `source_text_span` + `parsed_portion_grams` + `entry_modality_hint`
+   - Add `total_caffeine_mg NUMERIC(7,2)` roll-up column to `meals` (sum of caffeine_mg across items in the meal)
+   - Surface caffeine on the result review screen as a secondary metric chip alongside fiber / sugar / sodium (Hannah call on chip placement)
+   - 170h composes: `total_caffeine_mg` becomes a load-bearing input to symptom pattern detection (sleep quality, anxiety, energy timing correlations)
+   - Bio Optimization composes: caffeine timing (morning vs afternoon vs evening) affects circadian alignment score
 
 4. **"Veggie" vs "vegetable" normalization.** User casual phrasing ("veggie burger", "veggie wrap") versus canonical food names ("vegetable burger" or "plant-based burger"). Recommend: preserve user phrasing in source_text_span but emit canonical food_name. "veggie burger" -> food_name "plant-based burger", source_text_span "veggie burger". Same pattern for "PB&J" -> food_name "peanut butter and jelly sandwich", source_text_span "PB&J".
 

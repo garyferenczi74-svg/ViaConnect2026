@@ -22,7 +22,16 @@ All five flags resolved in a single decision turn. Resolutions:
 
 These five resolutions are locked. Build plan can proceed once Gordon's two long-poles clear (Haiku system prompt + 200-description curated test set, ~1-2 weeks each).
 
-**Gordon Long-Pole 1 complete (2026-05-31):** The Haiku 4.5 system prompt draft has been authored. See `docs/prompts/prompt-170m-haiku-system-prompt-draft-2026-05-31.md` (1163 lines covering Sections 1-12 + 5 open questions for Phase 1a + 15 test seed archetypes + confidence calibration scoring rubric). Highest-leverage open questions: (a) should `portion_display_unit` + `portion_display_value` be added to the schema now or deferred; (b) should `recipe_match_hint` emit unconditionally before 170f ships or stay behind `QUICK_LOG_RECIPE_SHORT_CIRCUIT_ENABLED`; (c) caffeine_mg emission for drinks (crosses into Bio Optimization recommendation territory — Hannah call needed).
+**Gordon Long-Pole 1 complete (2026-05-31):** The Haiku 4.5 system prompt draft has been authored. See `docs/prompts/prompt-170m-haiku-system-prompt-draft-2026-05-31.md` (1163 lines covering Sections 1-12 + 5 open questions for Phase 1a + 15 test seed archetypes + confidence calibration scoring rubric).
+
+**Caffeine emission decision (Gary, 2026-05-31):** Per Gary directive "add caffeine", Gordon's Open Question 3 resolved in favor of explicit `caffeine_mg` emission per meal_item. Schema (Section 2 of the draft) + Rule 3.9 caffeine inference table (Section 3 of the draft) + Section 12 constraints updated to reflect this. Phase 1a Blueprint adds:
+- `meal_items.caffeine_mg NUMERIC(6,2)` column to the §7.3 ALTER
+- `meals.total_caffeine_mg NUMERIC(7,2)` roll-up column to the §7.2 ALTER
+- Result review screen secondary chip for caffeine alongside fiber / sugar / sodium (Hannah call on chip placement)
+- 170h composition: `total_caffeine_mg` becomes a load-bearing input to symptom pattern detection (sleep quality, anxiety, energy timing correlations)
+- Bio Optimization composition: caffeine timing (morning vs afternoon vs evening) affects circadian alignment score
+
+Remaining Phase 1a open questions: (a) `portion_display_unit` + `portion_display_value` schema add vs defer; (b) `recipe_match_hint` unconditional emit vs `QUICK_LOG_RECIPE_SHORT_CIRCUIT_ENABLED`-gated.
 
 ## Why this filing posture matches the 170-series pattern (with 6 structural distinctions)
 
@@ -125,8 +134,8 @@ Storage growth: ~2 MB/month for text_input + ~2 MB/month for sampled session tel
 All append-only:
 
 1. **`nutrition_photo_jobs.analyze_kind` extension** to add `'quick_log_text'` value (resolution path matches the 170l Observe finding for analyze_kind; current state may be phantom table, in which case this collapses to using `meals` columns as the differentiator)
-2. **`meals` augmentation**: `text_input TEXT` + `text_input_locale TEXT` + `quick_log_parser_version TEXT` + `repeated_from_meal_id UUID REFERENCES public.meals(meal_id) ON DELETE SET NULL` (per §7.2; the 4th column folded in per Gate 5 resolution)
-3. **`meal_items` augmentation**: `source_text_span TEXT` + `parsed_portion_grams NUMERIC(10,2)` + `entry_modality_hint TEXT CHECK` (per §7.3)
+2. **`meals` augmentation**: `text_input TEXT` + `text_input_locale TEXT` + `quick_log_parser_version TEXT` + `repeated_from_meal_id UUID REFERENCES public.meals(meal_id) ON DELETE SET NULL` + `total_caffeine_mg NUMERIC(7,2)` (per §7.2; 4th column folded in per Gate 5; 5th column added per the caffeine emission decision)
+3. **`meal_items` augmentation**: `source_text_span TEXT` + `parsed_portion_grams NUMERIC(10,2)` + `entry_modality_hint TEXT CHECK` + `caffeine_mg NUMERIC(6,2)` (per §7.3; 4th column added per the caffeine emission decision)
 4. **`quick_log_sessions` table** (20% sampled telemetry, full 100% sampling for first 60 days post-launch, text input NOT stored in this table — only metadata) (per §7.4)
 5. **Helix events block** (5 event types) (per §7.5)
 
