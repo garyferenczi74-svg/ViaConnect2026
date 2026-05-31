@@ -126,7 +126,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       return NextResponse.json(
         {
           error: 'NLU output failed schema validation',
-          issues: validated.error.errors.map((e) => `${e.path.join('.')}: ${e.message}`),
+          issues: validated.error.issues.map((e) => `${e.path.join('.')}: ${e.message}`),
         },
         { status: 502 },
       );

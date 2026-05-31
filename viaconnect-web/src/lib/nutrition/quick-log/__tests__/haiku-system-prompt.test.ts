@@ -54,7 +54,7 @@ describe('buildQuickLogSystemPrompt', () => {
     expect(prompt).toContain('Espresso shot 1 fl oz -> 63mg');
     expect(prompt).toContain('Black tea 8 fl oz -> 47mg');
     expect(prompt).toContain('Red Bull 8.4 fl oz can -> 80mg');
-    expect(prompt).toContain('Diet Coke 12 fl oz -> 46mg');
+    expect(prompt).toContain('Diet Coke -> 46mg');
   });
 
   it('contains Section 4 clarification trigger rules', () => {

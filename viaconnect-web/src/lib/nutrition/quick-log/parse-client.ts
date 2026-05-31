@@ -60,7 +60,7 @@ export async function parseQuickLog(
     if (!parsed.success) {
       return {
         kind: 'malformed_response',
-        message: parsed.error.errors.map((e) => `${e.path.join('.')}: ${e.message}`).join('; '),
+        message: parsed.error.issues.map((e) => `${e.path.join('.')}: ${e.message}`).join('; '),
       };
     }
     return parsed.data;
@@ -116,7 +116,7 @@ export async function clarifyQuickLog(
     if (!parsed.success) {
       return {
         kind: 'malformed_response',
-        message: parsed.error.errors.map((e) => `${e.path.join('.')}: ${e.message}`).join('; '),
+        message: parsed.error.issues.map((e) => `${e.path.join('.')}: ${e.message}`).join('; '),
       };
     }
     return parsed.data;

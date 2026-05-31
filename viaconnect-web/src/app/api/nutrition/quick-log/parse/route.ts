@@ -134,12 +134,12 @@ export async function POST(request: Request): Promise<NextResponse> {
     if (!validated.success) {
       safeLog.warn('api.quick_log.parse', 'schema validation failed', {
         userId: user.id,
-        issues: validated.error.errors.map((e) => `${e.path.join('.')}: ${e.message}`).slice(0, 5),
+        issues: validated.error.issues.map((e) => `${e.path.join('.')}: ${e.message}`).slice(0, 5),
       });
       return NextResponse.json(
         {
           error: 'NLU output failed schema validation',
-          issues: validated.error.errors.map((e) => `${e.path.join('.')}: ${e.message}`),
+          issues: validated.error.issues.map((e) => `${e.path.join('.')}: ${e.message}`),
         },
         { status: 502 },
       );
