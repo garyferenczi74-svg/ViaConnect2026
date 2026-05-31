@@ -16,6 +16,7 @@
 
 import type { BOSTier, BOSTriggerSource } from './types';
 import { HALF_LIFE_DAYS, FULL_DECAY_DAYS } from './types';
+import type { CaffeineTimingSource } from './sources/caffeine-timing-source';
 
 // ---------------------------------------------------------------------------
 // Bundle type assembled by the compute module and passed to Hannah.
@@ -61,6 +62,11 @@ export interface HannahInputBundle {
     computed_at: string | null;
     compute_version: string | null;
   };
+  // Prompt 171b Phase 1: caffeine timing signal sibling to engagement_state.
+  // Not framed as a 7th engagement lever (the prompt still names 6 levers).
+  // Hannah uses this signal to consider circadian sleep onset impact when
+  // computing the Bio Optimization Score.
+  caffeine_timing: CaffeineTimingSource;
 }
 
 // ---------------------------------------------------------------------------
@@ -103,6 +109,20 @@ export const HANNAH_SYSTEM_PROMPT = [
   '  Never give medical advice, never offer a clinical assessment, never promise an outcome, never mention specific dosing.',
   '',
   'If the input shows no recent engagement on any lever, encourage the user gently and suggest one concrete next step from the six levers. If the user is making strong progress, celebrate it briefly and propose one lever to focus on next.',
+  '',
+  'Caffeine timing signal (Prompt 171b Phase 1):',
+  '  The input bundle includes a caffeine_timing object that summarizes the user caffeine intake across the last 24 hours and the user stated sleep window. This signal is a sibling to the six engagement levers; it does not replace them, and it is not itself a lever.',
+  '  Use it to consider sleep onset disruption when reasoning about the Bio Optimization Score.',
+  '  Pharmacokinetics: caffeine half life is approximately 5 hours. A 95 mg coffee at 3 pm has roughly 33 percent remaining at 11 pm; a 200 mg cold brew at 9 pm has roughly 76 percent remaining at 11 pm.',
+  '  Per meal impact categories (estimated_pct_remaining_at_sleep_onset):',
+  '    none: under 10 percent. No circadian disruption.',
+  '    mild: 10 to 25 percent. Minor sleep onset impact.',
+  '    moderate: 25 to 50 percent. Material sleep onset impact.',
+  '    severe: 50 percent and above. Likely substantial sleep onset disruption.',
+  '  When considering the score, weight per meal impacts cumulatively but not heavily; one severe caffeine meal should reduce the engagement contribution by no more than a few points, and a streak of severe caffeine meals over many days only modestly reduces the score. Sleep is one factor among many; caffeine timing is one factor in sleep. Do not dominate the score with this signal.',
+  '  Empty data handling: when caffeine_timing.has_data is false, treat as neutral. Do NOT penalize the user for the absence of caffeine data. Many users do not consume caffeine, and the data collection itself is opt in via Quick Log pill entry plus future text parser entries. Absence is not a signal.',
+  '  Default sleep window: when caffeine_timing.sleep_window.source is default, the system used 23:00 to 07:00 because the user has not completed CAQ Phase 7 sleep window collection. Note this in your explanation only if relevant; do not lecture about it.',
+  '  In your explanation field: if you considered caffeine timing in the score, mention it briefly in plain language ("your evening coffee may be affecting sleep onset", "your morning espresso looks well timed"). Keep it warm and educational; never clinical, never prescriptive about how much caffeine someone should consume.',
 ].join('\n');
 
 // ---------------------------------------------------------------------------
@@ -127,6 +147,8 @@ export function buildHannahUserMessage(input: HannahInputBundle): string {
     diagnostic_foundation: input.diagnostic_foundation,
     engagement_state: input.engagement_state,
     previous: input.previous,
+    // Prompt 171b Phase 1: caffeine timing payload passed through to Hannah.
+    caffeine_timing: input.caffeine_timing,
   };
   return JSON.stringify(payload);
 }

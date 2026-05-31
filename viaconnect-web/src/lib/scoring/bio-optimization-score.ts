@@ -36,6 +36,8 @@ import { getBodyTrackerSource } from './sources/body-tracker-source';
 import { getWearableSource } from './sources/wearable-source';
 import { getPlugInsSource } from './sources/plug-ins-source';
 import { getHelixChallengesSource } from './sources/helix-challenges-source';
+// Prompt 171b Phase 1: 10th source slice (caffeine timing).
+import { getCaffeineTimingSource } from './sources/caffeine-timing-source';
 import {
   HANNAH_SYSTEM_PROMPT,
   buildHannahUserMessage,
@@ -64,7 +66,9 @@ import type {
 const COMPUTE_VERSION = '2.0.0';
 // #161c Item 10: v2.0.0 -> v2.0.1 to reflect the prompt-content change (decay
 // numbers now template-substituted from HALF_LIFE_DAYS / FULL_DECAY_DAYS).
-const PROMPT_VERSION = 'hannah.bos.v2.0.1';
+// 171b Phase 1: v2.0.1 -> v2.1.0 to reflect the caffeine_timing signal added
+// to the bundle + the Hannah system prompt extension.
+const PROMPT_VERSION = 'hannah.bos.v2.1.0';
 const DEFAULT_MODEL = 'claude-sonnet-4-5';
 const MAX_TOKENS = 1024;
 
@@ -392,8 +396,10 @@ export async function computeBOS(
     cooldownStatus = 'bypassed';
   }
 
-  // 2. Gather all 9 sources in parallel + previous BOS row.
-  const [caq, labs, genetics, nutrition, supplements, body_tracker, wearable, plug_ins, helix_challenges, previous] =
+  // 2. Gather all 10 sources in parallel + previous BOS row.
+  //    Prompt 171b Phase 1: caffeine_timing is the 10th source slice; sibling
+  //    to the six engagement levers (not itself a lever).
+  const [caq, labs, genetics, nutrition, supplements, body_tracker, wearable, plug_ins, helix_challenges, caffeine_timing, previous] =
     await Promise.all([
       getCAQSource(userId, supabase),
       getLabsSource(userId, supabase),
@@ -404,6 +410,7 @@ export async function computeBOS(
       getWearableSource(userId, supabase),
       getPlugInsSource(userId, supabase),
       getHelixChallengesSource(userId, supabase),
+      getCaffeineTimingSource(userId, supabase),
       getPreviousBOS(userId, supabase),
     ]);
 
@@ -473,6 +480,8 @@ export async function computeBOS(
       computed_at: previous.computed_at,
       compute_version: previous.compute_version,
     },
+    // Prompt 171b Phase 1: caffeine timing signal passed through.
+    caffeine_timing,
   };
 
   // 6. Call Hannah with one retry on validation failure.
