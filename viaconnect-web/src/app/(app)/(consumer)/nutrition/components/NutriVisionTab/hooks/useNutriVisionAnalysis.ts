@@ -88,6 +88,8 @@ interface AnalyzeRespItemRaw {
 interface AnalyzeRespRaw {
   job_id?: string;
   source_photo_blob_id?: string;
+  // Prompt 171a: server-issued 60-minute signed URL for thumbnail rendering.
+  thumbnail_url?: string | null;
   meal_draft?: {
     id?: string;
     items?: ReadonlyArray<AnalyzeRespItemRaw>;
@@ -238,6 +240,11 @@ function normalizeDraft(payload: AnalyzeRespRaw): MealDraft | null {
   };
   if (typeof payload.source_photo_blob_id === 'string') {
     result.source_photo_blob_id = payload.source_photo_blob_id;
+  }
+  // Prompt 171a: propagate the signed thumbnail URL onto MealDraft so the
+  // review surface + save confirmation can render it.
+  if (typeof payload.thumbnail_url === 'string' && payload.thumbnail_url.length > 0) {
+    result.thumbnail_url = payload.thumbnail_url;
   }
   if (typeof draft.credit_card_detected === 'boolean') {
     result.credit_card_detected = draft.credit_card_detected;

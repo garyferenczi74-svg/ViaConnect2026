@@ -16,6 +16,8 @@ import { Camera, ChevronLeft, HelpCircle, ScanBarcode, Settings, X } from 'lucid
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import type { CaptureResult, CaptureSource } from '@/lib/capacitor/camera-capture';
+import { detectPlatform } from '@/lib/capacitor/camera-capture';
+import { WebCameraPreview } from './WebCameraPreview';
 import { mapAIErrorToClass } from '@/lib/nutrition/vision/error-class-mapper';
 import { writeNutrivisionManualLogHandoff } from '@/hooks/useNutrivisionManualLogHandoff';
 import { MobileHeroBackground } from '@/components/ui/MobileHeroBackground';
@@ -122,6 +124,10 @@ export default function NutriVisionTab() {
   const [macroEditOpen, setMacroEditOpen] = useState<boolean>(false);
   const [macroEditMode, setMacroEditMode] = useState<'prefilled' | 'blank_slate'>('prefilled');
   const [blankSlateBarcode, setBlankSlateBarcode] = useState<string | null>(null);
+  // Prompt 171a: web-only camera preview overlay state. Mobile native opens
+  // the Capacitor camera plugin's system UI which already has its own preview;
+  // this overlay is web-only.
+  const [showWebCameraPreview, setShowWebCameraPreview] = useState(false);
   // Prompt 170l Phase 1c-3: multi-product flow accumulator (§11.7).
   // When user taps "Scan another product" on §11.4, the current item is
   // pushed here and the next scan returns to product confirmation; the final
@@ -229,6 +235,12 @@ export default function NutriVisionTab() {
 
   const onCapture = useCallback(async (source: CaptureSource) => {
     setAnalysisError(null);
+    // Prompt 171a: on web, the camera path opens a preview overlay so the
+    // user can frame before capture. Gallery and native paths are unchanged.
+    if (source === 'camera' && detectPlatform() === 'web') {
+      setShowWebCameraPreview(true);
+      return;
+    }
     setPhase('capturing');
     const result = await capture.capture(source);
     if (!result) {
@@ -244,6 +256,23 @@ export default function NutriVisionTab() {
       return;
     }
   }, [capture, analysis]);
+
+  // Prompt 171a: WebCameraPreview Confirm path. Skips the capture step
+  // (CaptureResult already in hand) and goes straight to analyzing.
+  const handleWebCameraConfirm = useCallback(
+    async (result: CaptureResult) => {
+      setShowWebCameraPreview(false);
+      setAnalysisError(null);
+      setLastCaptureForRetry(result);
+      setPhase('analyzing');
+      await analysis.analyze(result);
+    },
+    [analysis],
+  );
+
+  const handleWebCameraCancel = useCallback(() => {
+    setShowWebCameraPreview(false);
+  }, []);
 
   // #170a supplement §20.4: Try Again reuses the cached CaptureResult so the
   // user does not re-frame. If the capture is no longer available we fall
@@ -673,6 +702,7 @@ export default function NutriVisionTab() {
               totals={draft.totals}
               response={saveResponse}
               onLogAnother={handleLogAnother}
+              thumbnailUrl={draft.thumbnail_url ?? null}
             />
           )}
 
@@ -719,6 +749,14 @@ export default function NutriVisionTab() {
           )}
         </div>
       </div>
+
+      {/* Prompt 171a: web camera preview overlay. Mobile native skips this
+          and uses the @capacitor/camera plugin's system UI. */}
+      <WebCameraPreview
+        open={showWebCameraPreview}
+        onCancel={handleWebCameraCancel}
+        onConfirm={handleWebCameraConfirm}
+      />
 
       {/* Prompt 170l Phase 1c-2: barcode scanner overlay + modals at the
           document root so they layer above the page content. */}

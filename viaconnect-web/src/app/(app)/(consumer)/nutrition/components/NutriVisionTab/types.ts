@@ -147,6 +147,10 @@ export type PlateSelectorKind = 'plate_8in' | 'plate_10in' | 'plate_12in';
 export interface MealDraft {
   id: string;
   source_photo_blob_id?: string;
+  // Prompt 171a: server-issued 60-minute signed URL for the source photo.
+  // Populated by /api/nutrition/photo/analyze; undefined for barcode-sourced
+  // meals (no photo) and as a graceful fallback if signed URL generation
+  // failed on the server (logged + continues).
   thumbnail_url?: string;
   items: MealItemDraft[];
   totals: MealTotals;

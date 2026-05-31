@@ -18,6 +18,9 @@ interface SaveConfirmationProps {
   totals: MealTotals;
   response: SaveResponse;
   onLogAnother: () => void;
+  // Prompt 171a: signed thumbnail URL from analyze response, propagated
+  // through MealDraft.thumbnail_url. Undefined for barcode meals (no photo).
+  thumbnailUrl?: string | null;
 }
 
 // Placeholder daily targets for Phase 1. Real targets are sourced from the
@@ -92,7 +95,7 @@ function Ring({ label, value, target, unit, color }: RingProps) {
   );
 }
 
-export function SaveConfirmation({ totals, response, onLogAnother }: SaveConfirmationProps) {
+export function SaveConfirmation({ totals, response, onLogAnother, thumbnailUrl }: SaveConfirmationProps) {
   const delta = response.gordon.bio_optimization_delta;
   const helixCount = response.helix_events_emitted.length;
 
@@ -116,6 +119,19 @@ export function SaveConfirmation({ totals, response, onLogAnother }: SaveConfirm
           </p>
         </div>
       </div>
+
+      {/* Prompt 171a: small thumbnail above the rings for the celebratory beat. */}
+      {typeof thumbnailUrl === 'string' && thumbnailUrl.length > 0 ? (
+        <div className="overflow-hidden rounded-xl border border-white/[0.08]" style={{ aspectRatio: '16 / 9' }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={thumbnailUrl}
+            alt="Saved meal"
+            className="h-full w-full object-cover"
+            loading="lazy"
+          />
+        </div>
+      ) : null}
 
       <div className="grid grid-cols-4 gap-2">
         <Ring label="Calories" value={totals.calories_kcal} target={TARGETS.calories_kcal} unit="kcal" color="#2DA5A0" />

@@ -12,7 +12,8 @@
 //
 // Hard rules honored: no em or en dashes, no emojis, no any.
 
-import { Plus, Save, X } from 'lucide-react';
+import { useState } from 'react';
+import { Maximize2, Plus, Save, X } from 'lucide-react';
 import type { CookingOilSelection } from '@/lib/nutrition/cooking-oil/types';
 import { ClarificationCard } from '@/lib/nutrition/voice/components/ClarificationCard';
 import { ErrorCard } from '@/lib/nutrition/voice/components/ErrorCard';
@@ -100,6 +101,11 @@ export function AnalysisResult(props: AnalysisResultProps) {
   return (
     <>
       <div className="flex flex-col gap-3 pb-24 md:pb-0">
+        {/* Prompt 171a: photo thumbnail rendered above the meal type picker
+            when the meal was sourced from a photo. Barcode-sourced meals
+            never carry thumbnail_url, so the block is hidden for those. */}
+        <MealPhotoThumbnail thumbnailUrl={draft.thumbnail_url ?? null} />
+
         <div className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 p-3">
           <div className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-white/55">
             Meal type
@@ -285,5 +291,77 @@ function Totals({ label, value, unit }: TotalsProps) {
       <div className="mt-0.5 font-mono text-base text-white">{value}</div>
       <div className="text-[10px] text-white/45">{unit}</div>
     </div>
+  );
+}
+
+// Prompt 171a: photo thumbnail + click-to-fullscreen modal.
+interface MealPhotoThumbnailProps {
+  thumbnailUrl: string | null;
+}
+
+function MealPhotoThumbnail({ thumbnailUrl }: MealPhotoThumbnailProps) {
+  const [fullscreen, setFullscreen] = useState(false);
+
+  if (typeof thumbnailUrl !== 'string' || thumbnailUrl.length === 0) {
+    return null;
+  }
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setFullscreen(true)}
+        aria-label="View meal photo full screen"
+        className="group relative w-full overflow-hidden rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2DA5A0]"
+        style={{ aspectRatio: '16 / 9' }}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={thumbnailUrl}
+          alt="Captured meal"
+          className="h-full w-full object-cover transition-transform group-hover:scale-[1.02]"
+          loading="lazy"
+        />
+        <span
+          className="absolute right-2 top-2 inline-flex h-7 w-7 items-center justify-center rounded-full"
+          style={{ backgroundColor: 'rgba(26, 39, 68, 0.7)', color: '#FFFFFF' }}
+          aria-hidden="true"
+        >
+          <Maximize2 className="h-3.5 w-3.5" strokeWidth={1.5} />
+        </span>
+      </button>
+
+      {fullscreen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Meal photo, full screen"
+          className="fixed inset-0 z-[150] flex items-center justify-center"
+          style={{ backgroundColor: 'rgba(0, 0, 0, 0.92)' }}
+          onClick={() => setFullscreen(false)}
+        >
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); setFullscreen(false); }}
+            aria-label="Close full screen photo"
+            className="absolute right-4 top-4 inline-flex h-11 w-11 items-center justify-center rounded-full"
+            style={{
+              top: 'calc(env(safe-area-inset-top, 0) + 16px)',
+              backgroundColor: 'rgba(30, 48, 84, 0.85)',
+              color: '#FFFFFF',
+            }}
+          >
+            <X className="h-5 w-5" strokeWidth={1.5} aria-hidden="true" />
+          </button>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={thumbnailUrl}
+            alt="Captured meal"
+            className="max-h-full max-w-full object-contain"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
+    </>
   );
 }

@@ -263,6 +263,82 @@ async function captureWebGallery(opts: NormalizedOpts): Promise<CaptureResult> {
   };
 }
 
+// ----------------------------------------------------------------------------
+// Prompt 171a: split web camera helpers for the WebCameraPreview UI overlay.
+//
+// The original captureWebCamera() does headless first-frame capture which gives
+// users no chance to frame the photograph. The new flow is:
+//
+//   1. acquireWebCameraStream(): get the MediaStream so the UI can show a live
+//      <video> preview with rear-camera constraints.
+//   2. webCameraStreamToJpeg(stream): on user "Capture" tap, drain the current
+//      video frame to a JPEG and run it through the same compression pipeline.
+//
+// captureWebCamera() stays untouched so the legacy single-call path keeps
+// working for callers that do not mount the WebCameraPreview overlay.
+// ----------------------------------------------------------------------------
+
+export interface AcquireWebCameraOpts {
+  facingMode?: 'environment' | 'user';
+}
+
+export async function acquireWebCameraStream(
+  opts: AcquireWebCameraOpts = {},
+): Promise<MediaStreamLike> {
+  if (typeof navigator === 'undefined') {
+    throw new CaptureUnsupportedError('navigator is not available');
+  }
+  const nav = navigator as unknown as NavigatorWithMedia;
+  const md = nav.mediaDevices;
+  if (!md || typeof md.getUserMedia !== 'function') {
+    throw new CaptureUnsupportedError('getUserMedia is not available');
+  }
+  try {
+    return await md.getUserMedia({
+      video: { facingMode: opts.facingMode ?? 'environment' },
+    });
+  } catch (err) {
+    if (err instanceof Error && /denied|permission/i.test(err.message)) {
+      throw new CaptureCancelledError('Camera permission denied');
+    }
+    throw new CaptureUnsupportedError(
+      err instanceof Error ? err.message : 'getUserMedia rejected',
+    );
+  }
+}
+
+export async function webCameraStreamToJpeg(
+  stream: MediaStreamLike,
+  opts: CaptureOpts = { source: 'camera' },
+): Promise<CaptureResult> {
+  const normalized = normalizeOpts(opts);
+  const { base64, width, height } = await drawStreamToJpeg(
+    stream,
+    normalized.jpegQuality,
+  );
+  const compressed = await compressIfNeeded(base64, 'image/jpeg', normalized, {
+    width,
+    height,
+  });
+  return {
+    imageBase64: compressed.base64,
+    mime: 'image/jpeg',
+    capturedAt: new Date().toISOString(),
+    deviceClass: 'web',
+    width: compressed.width,
+    height: compressed.height,
+    bytesAfterCompression: compressed.bytes,
+  };
+}
+
+export function stopWebCameraStream(stream: MediaStreamLike): void {
+  try {
+    stream.getTracks().forEach((t) => t.stop());
+  } catch {
+    // benign: tracks may already be stopped
+  }
+}
+
 async function captureWebCamera(opts: NormalizedOpts): Promise<CaptureResult> {
   if (typeof navigator === 'undefined') {
     throw new CaptureUnsupportedError('navigator is not available');

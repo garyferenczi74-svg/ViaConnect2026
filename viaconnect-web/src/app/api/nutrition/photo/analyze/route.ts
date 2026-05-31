@@ -264,6 +264,33 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       );
     }
 
+    // Prompt 171a: generate a 60-minute signed URL for the just-uploaded
+    // photo so the client can render a thumbnail in AnalysisResult +
+    // SaveConfirmation without a second round-trip. Failure here is logged
+    // but does not abort the analyze; barcode-sourced meals never have a
+    // thumbnail anyway, and a missing thumbnail just hides the UI block.
+    let thumbnailUrl: string | null = null;
+    try {
+      const signed = await storageClient.storage
+        .from('nutrivision-meals')
+        .createSignedUrl(storagePath, 3600);
+      if (signed.data && typeof signed.data.signedUrl === 'string') {
+        thumbnailUrl = signed.data.signedUrl;
+      } else if (signed.error) {
+        safeLog.warn('api.nutrivision.photo.analyze', 'signed url failed (continuing)', {
+          request_id: requestId,
+          user_id: user.id,
+          error: signed.error.message,
+        });
+      }
+    } catch (signedErr) {
+      safeLog.warn('api.nutrivision.photo.analyze', 'signed url threw (continuing)', {
+        request_id: requestId,
+        user_id: user.id,
+        error: signedErr,
+      });
+    }
+
     let blobId: string | null = null;
     try {
       // photo_meal_blobs RLS policy is auth.uid() = user_id, so the
@@ -511,6 +538,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json({
       job_id: jobId,
       source_photo_blob_id: blobId,
+      thumbnail_url: thumbnailUrl,
       meal_draft: mealDraft,
       requestId,
     });
