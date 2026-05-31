@@ -1,7 +1,7 @@
 # Gate C: Native Depth Plugins Engineering Runbook
 
 Entity: Farmceutica Wellness Ltd. Platform: ViaConnect (Via Cura consumer brand). Owner agent: Arnold, orchestration Jeffery.
-Status: ENGINEERING RUNBOOK, drafted 2026-05-31. This is the design and the executable steps to close Gate C from the FormaVision Phase 2 plan. The native plugin code itself is NOT built in this document: native iOS Swift and Android Kotlin require Xcode and Android Studio, real LiDAR and ARCore hardware to test, and App Store and Play Store review, none of which exist in the web environment Phase 1 was built in. This runbook makes the native build turnkey for whoever holds the native toolchain, and it surfaces the one architectural decision that must be made first.
+Status: ENGINEERING RUNBOOK, drafted 2026-05-31. This is the design and the executable steps to close Gate C from the FormaVision Phase 2 plan. The native plugin code itself is NOT built in this document: native iOS Swift and Android Kotlin require Xcode and Android Studio, real LiDAR and ARCore hardware to test, and App Store and Play Store review, none of which exist in the web environment Phase 1 was built in. This runbook makes the native build turnkey for whoever holds the native toolchain, and it records the architectural decision (Design 2, resolved by Gary 2026-05-31) the plugin is built against.
 
 Gate C closure criteria (from Prompt 169e Section 4.3): the iOS BodyScanDepth and Android BodyScanDepth Capacitor plugins built, tested, App Store and Play Store approved, live in production, and functioning on the target device matrix without critical bugs.
 
@@ -20,7 +20,7 @@ Two viable designs. Pick one before writing the plugin:
 - Design 1, bridge-to-web. The native plugin streams or batches depth frames over the Capacitor bridge to the remote-loaded web page, which then uploads them to the body-scan-analyze edge function for server-side fitting. Pro: keeps the existing hosted-web shell. Con: the Capacitor bridge is not built for high-bandwidth binary streaming; large per-frame payloads crossing the JS bridge to a remote page is the weak point. Mitigation: do NOT stream raw per-frame point clouds across the bridge; have the plugin accumulate and downsample natively and hand back a compact result, or write frames to a native temp file and pass only file references.
 - Design 2, native-capture-then-upload. The native plugin captures the depth session, persists the frames natively (device storage), and uploads them directly from native to Supabase Storage or the edge function, signaling the web layer only with a session id and progress. The web page never receives the raw depth. Pro: avoids the bridge bandwidth problem entirely and fits the server-side fitting model from Prompt 169 Section 5.2. Con: more native code; the upload auth token must be passed from the web session into the plugin.
 
-Recommendation: Design 2 for the continuous-rotation depth path, with Design 1 acceptable only for the small fixed-frame Tier 2 discrete capture. This decision is Gary plus the native lead. It determines the plugin method surface below.
+DECISION (Gary, 2026-05-31): Design 2, native-capture-then-upload, is the chosen path for the continuous-rotation depth capture. Design 1 remains acceptable only for the small fixed-frame Tier 2 discrete capture. The plugin method surface below follows Design 2: startDepthSession carries the upload target and the auth token, captureDepthSequence drives native accumulation and direct upload to the body-scan-analyze edge function or Supabase Storage, and raw depth frames never cross the Capacitor bridge. No further architecture decision is required before implementation begins.
 
 ## 2. Plugin API surface (per Prompt 169 Section 5.1 and 169a Section 4.1)
 
@@ -96,6 +96,6 @@ The bridge is injected by Capacitor into the WebView even when the page is the r
 
 ## 9. The decision and the handoff
 
-Decision for Gary and the native lead: choose Design 1 or Design 2 from Section 1 before plugin implementation begins. That choice determines the method surface and the upload path.
+Decision: RESOLVED 2026-05-31. Design 2 (native-capture-then-upload) is chosen. The native engineer implements the Design 2 method surface and upload path from Section 1; no further architecture decision is required before implementation begins.
 
 Handoff: this runbook plus the chosen design is everything a native engineer needs to build, test, and submit the plugins. The web environment cannot compile, device-test, or submit native code, so the native build is owned by native engineering. When the plugins are live and isDepthSupported returns true in production on the device matrix, Gate C is closed and the depth path can be wired into the Phase 2 web work.
