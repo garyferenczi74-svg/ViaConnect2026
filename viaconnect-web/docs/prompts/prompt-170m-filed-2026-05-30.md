@@ -8,6 +8,20 @@ Memorialized by: Jeffery (orchestrator).
 
 Add a text-native entry path to the NutriVision tab as a third peer alongside Photo (170 base) and Scan Barcode (170l, shipped 2026-05-30), routing typed natural-language meal descriptions through a Claude Haiku 4.5 NLU pipeline (inverse of the 170j voice editing pattern: creates a draft from scratch rather than editing an existing one) that produces the same `meal_items` shape as photo and barcode paths, with a Recent Quick Logs one-tap repeat row, a frequency-weighted recency ranking, and a "From Quick log" chip on the result review for description re-edits.
 
+## Gate decisions resolved (Gary, 2026-05-30)
+
+All five flags resolved in a single decision turn. Resolutions:
+
+| # | Flag | Decision |
+|---|---|---|
+| 1 | Three-button architectural shift | **Confirm Hannah's design** — three equal-weight 120px mobile / 144px desktop peer cards with sublabels preserved; NO "Most common" or "NEW" chip on any card; Photo retains left position for existing muscle memory. Anti-condescension principle from 170l propagates fully. |
+| 2 | Recent rows reconciliation | **Hannah Option B: unified Recent row.** Single row with 16px Navy 60pct corner modality indicators + text-preview substitution for Quick Logs ("Chipotle bowl with chicken" not "Cilantro lime rice"). Rejected sibling rows (compounds density when 170e + 170f ship) + chip-per-card (chips compete with food names for visual anchoring). |
+| 3 | Settings architecture | **Hannah Option C: consolidated Entry path preferences card.** One card on `/settings/nutrivision/page.tsx` titled "Entry path preferences" with Voice / Scan Barcode / Quick Log subheadings. Preserves 170l `/settings/nutrivision/barcode-scan` sub-page via "Open detailed settings" link. Reduces three independent preference systems to one entry-path preference system. Matches the "any-entry-point food logger" conceptual framing. |
+| 4 | 170c dependency posture | **Ship 170m v1 with 170c-dependent features feature-flagged OFF.** Kill switches `QUICK_LOG_ALLERGEN_FLAG_ENABLED` + `QUICK_LOG_SAFETY_MODE_ENABLED` both default false at v1. Flip both env vars to true when 170c ratifies. NLU still parses ingredients; just the alert + safety surfaces stay inactive. Lowest-friction path; preserves July 1 launch P0 timing. |
+| 5 | Spec inconsistency on `repeated_from_meal_id` | **Fold into existing §7.2 meals ALTER as 4th column.** Single migration, additive, no semantic change. The §7.2 meals ALTER now adds: `text_input` + `text_input_locale` + `quick_log_parser_version` + `repeated_from_meal_id`. |
+
+These five resolutions are locked. Build plan can proceed once Gordon's two long-poles clear (Haiku system prompt + 200-description curated test set, ~1-2 weeks each).
+
 ## Why this filing posture matches the 170-series pattern (with 6 structural distinctions)
 
 170m memorializes-only with Hannah dispatched for §9 wireframes, same posture as prior 170-series filings. Six structural distinctions:
@@ -104,17 +118,15 @@ Projected monthly cost at scale: $20-$80 at 20-40% Quick Log adoption of 100k Nu
 
 Storage growth: ~2 MB/month for text_input + ~2 MB/month for sampled session telemetry at 30k Quick Log meals/month. Trivial.
 
-## Migrations filed (5 total, plus one spec inconsistency to resolve at Blueprint)
+## Migrations filed (5 total; spec inconsistency resolved per Gate 5)
 
 All append-only:
 
 1. **`nutrition_photo_jobs.analyze_kind` extension** to add `'quick_log_text'` value (resolution path matches the 170l Observe finding for analyze_kind; current state may be phantom table, in which case this collapses to using `meals` columns as the differentiator)
-2. **`meals` augmentation**: `text_input TEXT` + `text_input_locale TEXT` + `quick_log_parser_version TEXT` (per §7.2)
+2. **`meals` augmentation**: `text_input TEXT` + `text_input_locale TEXT` + `quick_log_parser_version TEXT` + `repeated_from_meal_id UUID REFERENCES public.meals(meal_id) ON DELETE SET NULL` (per §7.2; the 4th column folded in per Gate 5 resolution)
 3. **`meal_items` augmentation**: `source_text_span TEXT` + `parsed_portion_grams NUMERIC(10,2)` + `entry_modality_hint TEXT CHECK` (per §7.3)
 4. **`quick_log_sessions` table** (20% sampled telemetry, full 100% sampling for first 60 days post-launch, text input NOT stored in this table — only metadata) (per §7.4)
 5. **Helix events block** (5 event types) (per §7.5)
-
-**Spec inconsistency to resolve at Blueprint:** §8.5 references `repeated_from_meal_id` on meals but §7.2 doesn't include this column. Either fold into the §7.2 meals ALTER (preferred — small additive) or add a 6th migration. Flagged for Gary in §5 below.
 
 ## Helix events filed (5, consumer-side only per Standing Rule #8)
 
@@ -128,12 +140,14 @@ All append-only:
 
 Pattern matches 170l (5 events including the generous-by-design contribution award) and 170j (4 events). Schema requirements per the 170l hotfix: `category='tracking'` (matches nutrivision_* / quick_log_* family) + `base_points` (not base_amount) + `requires_consumer_tier INTEGER 1` + `display_name NOT NULL`.
 
-## Four kill switches (§11.5)
+## Six kill switches (§11.5 + Gate 4 expansion)
 
 - `QUICK_LOG_TEXT_ENABLED` (master, default false until ratification)
 - `QUICK_LOG_RECIPE_SHORT_CIRCUIT_ENABLED` (default true; gates 170f composition when 170f ships)
 - `QUICK_LOG_RESTAURANT_DETECTION_ENABLED` (default true; gates 170e composition when 170e ships)
 - `QUICK_LOG_BARCODE_PRODUCT_DETECTION_ENABLED` (default true; gates 170l shipped composition)
+- `QUICK_LOG_ALLERGEN_FLAG_ENABLED` (default **false at v1 per Gate 4**; flip to true when 170c ratifies and the dietary restriction crossover surface is live)
+- `QUICK_LOG_SAFETY_MODE_ENABLED` (default **false at v1 per Gate 4**; flip to true when 170c ratifies and the eating disorder safety mode behavior is defined for the result review screen)
 
 ## Privacy posture (text-input consumer-only)
 
@@ -925,9 +939,9 @@ Estimated runway from Gary green-light to ship: **2-3 weeks**, shorter than 170l
 - Reuses 170l Helix events + telemetry patterns
 - Reuses 170c privacy redaction matrix pattern (when 170c ratified) OR flag off
 
-## Five flags for Gary
+## Five flags (RESOLVED 2026-05-30; preserved here for historical context)
 
-### Flag 1: Three-button architectural shift (most user-visible change since 170l shipped tonight)
+### Flag 1: Three-button architectural shift — **RESOLVED: Confirm Hannah's design**
 
 §9.1 evolves the 170l shipped two-button layout (Photo + Scan Barcode, ~5 hours ago) to three (Photo + Scan Barcode + Quick Log). Hannah's anti-condescension principle from 170l (no "Most common" chip on Photo; equal-weight peers, identical typography + icon + card sizing) must propagate to the three-peer layout.
 
@@ -940,7 +954,7 @@ Options:
 
 **Recommended action**: Green-light Hannah's wireframe for both the three-button row AND the Recent rows reconciliation alongside this filing; review when she returns and confirm before Phase 1a build kickoff.
 
-### Flag 2: Settings architecture (inline vs sub-page)
+### Flag 2: Settings architecture (inline vs sub-page) — **RESOLVED: Hannah Option C consolidated card**
 
 170j (voice): inline section per Gate 2 inline. 170l (barcode): sub-page per Gate 2 (Gary's explicit choice departing from 170j precedent). 170m has 4 toggles + 1 language setting per §9.8 — fits naturally inline OR can go to a sub-page.
 
@@ -951,7 +965,7 @@ Options:
 
 **Recommended action**: Inline section unless Gary wants consistency with 170l sub-page. The 4-toggle volume fits inline without crowding.
 
-### Flag 3: 170c dependency posture (allergen-flag + safety-mode features)
+### Flag 3: 170c dependency posture — **RESOLVED: Ship v1 with features feature-flagged OFF**
 
 170c hasn't been pasted (only referenced as placeholder). The dietary restriction crossover and eating disorder safety mode features in 170m compose with 170c. Two options:
 
@@ -961,7 +975,7 @@ Options:
 
 **Recommended action**: (A). 170m's core value is the entry path; allergen-flag is additive. Ship without it, flip on later.
 
-### Flag 4: Spec inconsistency on `repeated_from_meal_id`
+### Flag 4: Spec inconsistency on `repeated_from_meal_id` — **RESOLVED: Fold into existing meals ALTER**
 
 §8.5 (POST /repeat endpoint) references `meals.repeated_from_meal_id` column for tracking one-tap repeat lineage, but §7.2 (meals migration) doesn't include this column. Two options:
 
@@ -970,7 +984,7 @@ Options:
 
 **Recommended action**: (A). Single migration, additive, no semantic change.
 
-### Flag 5: Pre-launch must-have positioning
+### Flag 5: Pre-launch must-have positioning — **CONFIRMED: P0 status locks resource allocation**
 
 Per spec status: "Pre-launch must-have for US July 1, 2026 launch." Confirm P0 status. This locks in resource allocation:
 
