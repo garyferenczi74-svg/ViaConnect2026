@@ -126,12 +126,19 @@ adjacent to the avatar, with a "Learn more" expander):
 > patterns, not a direct measurement. Direct per-segment composition comes with
 > FormaVision Pro in a future release.
 
-NOTE on the "Learn more" expanded text: the full 169e(a) Section 4.3 expanded copy
-was not present in this repository, so the expander copy in `RegionalDisclaimer`
-(`REGIONAL_DISCLAIMER_EXPANDED`) is faithful expanded wording that elaborates the
-same honest point (a model not a measurement, the three references, that a future
-release supersedes it). If a canonical Section 4.3 verbatim block exists, swap it
-into that one constant; the primary locked sentence is already exact.
+The "Learn more" expander renders the LOCKED Section 4.3 expanded copy verbatim
+in `RegionalDisclaimer` (`REGIONAL_DISCLAIMER_EXPANDED`):
+
+> FormaVision uses your whole-body composition along with sex-typical regional
+> fat distribution patterns published in peer-reviewed research (Karastergiou et
+> al. 2012, Borga et al. 2018, Schorr et al. 2018) to visualize how your body fat
+> is likely distributed across regions. This is an estimate based on patterns
+> observed in research populations, not a direct measurement of your body. Direct
+> per-segment measurement requires depth-enhanced scanning combined with clinical
+> validation, which is the focus of FormaVision Pro in a future release.
+
+Both the primary locked sentence and this expanded block are now byte-for-byte
+the canonical Section 4.3 text.
 
 ## 6. Persistence decision (Section 7): localStorage, no migration
 

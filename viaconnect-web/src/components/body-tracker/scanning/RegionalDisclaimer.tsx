@@ -13,11 +13,12 @@ import { Info, ChevronDown } from 'lucide-react';
 export const REGIONAL_DISCLAIMER_PRIMARY =
   'Regional distribution shown is an estimate from peer-reviewed sex-banded patterns, not a direct measurement. Direct per-segment composition comes with FormaVision Pro in a future release.';
 
-// The "Learn more" expanded explanation. This elaborates the same point (a
-// model, not a measurement; the sources; that a future release supersedes it)
-// and is shown only when the user expands. Comma-separated, ASCII only.
+// The "Learn more" expanded explanation: the LOCKED verbatim Section 4.3
+// expanded copy. Verbatim; do not edit. ASCII hyphens inside compound words
+// (whole-body, sex-typical, peer-reviewed, per-segment, depth-enhanced) are
+// allowed; no em-dash / en-dash.
 export const REGIONAL_DISCLAIMER_EXPANDED =
-  'This view distributes your single whole-body fat estimate across regions using sex-typical distribution patterns from peer-reviewed research (Karastergiou 2012, Borga 2018, Schorr 2018). It shows where fat tends to sit for a sex-typical pattern, then shades each region by its relative density against your own range, so it is a model, not a measurement of your tissue. Individuals vary, so a region may read higher or lower for you than the pattern suggests. Direct per-segment composition, measured rather than modeled, arrives with FormaVision Pro in a future release.';
+  'FormaVision uses your whole-body composition along with sex-typical regional fat distribution patterns published in peer-reviewed research (Karastergiou et al. 2012, Borga et al. 2018, Schorr et al. 2018) to visualize how your body fat is likely distributed across regions. This is an estimate based on patterns observed in research populations, not a direct measurement of your body. Direct per-segment measurement requires depth-enhanced scanning combined with clinical validation, which is the focus of FormaVision Pro in a future release.';
 
 interface RegionalDisclaimerProps {
   className?: string;
