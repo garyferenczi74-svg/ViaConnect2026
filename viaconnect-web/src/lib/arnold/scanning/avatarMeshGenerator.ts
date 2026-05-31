@@ -160,11 +160,64 @@ export function generateAvatarMesh(p: BodyModelParameters): AvatarMeshSpec {
   return { segments, heightUnits: heightU, bodyFatPct: p.bodyFatPct };
 }
 
+// The four regional buckets the Phase 1 regional composition overlay
+// (Prompt #169e(a)) colors by. A region color map is keyed by these. Kept here
+// (rather than imported) so this Three-adjacent module stays free of the pure
+// service's imports; the region keys are a tiny stable contract.
+export type AvatarRegion = 'trunk' | 'arms' | 'legs' | 'head_neck';
+
+/** Per-region CSS color map supplied by the regional overlay (optional). */
+export type AvatarRegionColorMap = Partial<Record<AvatarRegion, string>>;
+
+/**
+ * Map a segment kind to its regional bucket. Mirrors regionForKind in
+ * regional-fat-distribution.ts (hands fold into arms, feet into legs, the
+ * connective joint into trunk). Duplicated intentionally to avoid a cross-module
+ * import into the Three render path; the two must stay in sync (both are trivial
+ * switches over the same kinds).
+ */
+export function regionForSegment(segment: AvatarSegmentSpec): AvatarRegion {
+  switch (segment.kind) {
+    case 'torso':
+    case 'joint':
+      return 'trunk';
+    case 'head':
+    case 'neck':
+      return 'head_neck';
+    case 'upper_arm':
+    case 'forearm':
+    case 'hand':
+      return 'arms';
+    case 'thigh':
+    case 'calf':
+    case 'foot':
+      return 'legs';
+    default:
+      return 'trunk';
+  }
+}
+
 /** Color code a segment based on composition and per region heatmap.
- *  Returns an HSL string. Higher body fat shifts toward orange/red overlay. */
-export function segmentColor(segment: AvatarSegmentSpec, bodyFatPct: number, heatmap: boolean): string {
+ *  Returns an HSL/hex string. Higher body fat shifts toward orange/red overlay.
+ *
+ *  Phase 1 regional overlay (Prompt #169e(a)): when `regionColorMap` is provided
+ *  AND heatmap is on, the segment is colored by its REGION (per-region adiposity
+ *  density) instead of the single whole-body bodyFat tint. This is purely
+ *  ADDITIVE: with no map (the default), the legacy uniform-tint behavior is
+ *  unchanged, and solid/wireframe modes are never affected. Phase 2's SMPL-X
+ *  avatar can later supply true per-region values through this same seam. */
+export function segmentColor(
+  segment: AvatarSegmentSpec,
+  bodyFatPct: number,
+  heatmap: boolean,
+  regionColorMap?: AvatarRegionColorMap | null,
+): string {
   if (!heatmap) return '#2DA5A0';
-  // Map bodyFat 5 to 35 onto hue 170 (teal) to 15 (warm orange)
+  if (regionColorMap) {
+    const regionHex = regionColorMap[regionForSegment(segment)];
+    if (regionHex) return regionHex;
+  }
+  // Legacy whole-body tint: map bodyFat 5 to 35 onto hue 170 (teal) to 15 (warm orange).
   const clamped = Math.max(5, Math.min(35, bodyFatPct));
   const t = (clamped - 5) / 30;
   const hue = 170 - t * 155;

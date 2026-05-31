@@ -9,7 +9,7 @@ import { usePremiumEntitlement } from '@/hooks/body-tracker/usePremiumEntitlemen
 import { useNumbersOptional } from '@/hooks/body-tracker/useNumbersOptional';
 import { selectScanResultsGate } from '@/lib/body-tracker/scan-gate';
 import { BodyScanPremiumPaywall } from './BodyScanPremiumPaywall';
-import { AvatarViewer } from './AvatarViewer';
+import { RegionalAvatarSection } from './RegionalAvatarSection';
 import { CompositionBreakdownCard } from './CompositionBreakdownCard';
 import { AsymmetryReportCard } from './AsymmetryReportCard';
 import { AsymmetryAnalysisPanel } from './AsymmetryAnalysisPanel';
@@ -324,11 +324,19 @@ export function ScanResultsPanel({ sessionId, refreshKey, portalType = 'consumer
             <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-4">
               <div>
                 <p className="text-[10px] font-semibold uppercase tracking-wider text-white/50 mb-2">3D avatar</p>
-                <AvatarViewer
+                {/* 3D avatar + Phase 1 regional composition overlay (Prompt
+                    #169e(a)). The overlay is additive: off by default, toggled in
+                    the viewer chrome. Region volume comes from the avatar's own
+                    primitive segments; whole-body fat mass is the composition
+                    fat_mass_kg; suppression composes the Section 5 edge cases. */}
+                <RegionalAvatarSection
+                  userId={loaded.userId}
                   params={loaded.avatarParameters}
-                  initialView="free"
-                  initialVisualization="solid"
-                  hideNumericLabels={numbers.numbersOptional}
+                  sex={loaded.sex}
+                  fatMassKg={compRow?.fat_mass_kg ?? null}
+                  qualityScore={loaded.qualityScore}
+                  hideNumbers={numbers.numbersOptional}
+                  isPregnancyWindow={false}
                 />
               </div>
               <AsymmetryReportCard report={loaded.asymmetry} />

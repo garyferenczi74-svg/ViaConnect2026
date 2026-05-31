@@ -4,7 +4,7 @@ import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import { useMemo } from 'react';
 import * as THREE from 'three';
-import type { AvatarSegmentSpec } from '@/lib/arnold/scanning/avatarMeshGenerator';
+import type { AvatarSegmentSpec, AvatarRegionColorMap } from '@/lib/arnold/scanning/avatarMeshGenerator';
 import { segmentColor } from '@/lib/arnold/scanning/avatarMeshGenerator';
 
 interface AvatarThreeSceneProps {
@@ -12,11 +12,16 @@ interface AvatarThreeSceneProps {
   bodyFatPct: number;
   viewPreset: 'free' | 'front' | 'back' | 'left' | 'right';
   visualization: 'solid' | 'wireframe' | 'heatmap';
+  // Phase 1 regional composition overlay (Prompt #169e(a)). When supplied (and
+  // visualization is 'heatmap'), each segment is colored by its region's
+  // adiposity density from this map instead of the uniform whole-body tint.
+  // Omitted / undefined => the avatar renders exactly as before (additive).
+  regionColorMap?: AvatarRegionColorMap | null;
 }
 
 const BASE_COLOR = '#2DA5A0';
 
-export function AvatarThreeScene({ segments, bodyFatPct, viewPreset, visualization }: AvatarThreeSceneProps) {
+export function AvatarThreeScene({ segments, bodyFatPct, viewPreset, visualization, regionColorMap }: AvatarThreeSceneProps) {
   const cameraPosition = useMemo<[number, number, number]>(() => {
     switch (viewPreset) {
       case 'front': return [0, 0, 30];
@@ -46,7 +51,7 @@ export function AvatarThreeScene({ segments, bodyFatPct, viewPreset, visualizati
           <AvatarSegment
             key={i}
             segment={seg}
-            color={segmentColor(seg, bodyFatPct, visualization === 'heatmap')}
+            color={segmentColor(seg, bodyFatPct, visualization === 'heatmap', regionColorMap)}
             baseColor={BASE_COLOR}
             wireframe={visualization === 'wireframe'}
           />
