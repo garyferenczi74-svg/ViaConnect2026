@@ -398,7 +398,7 @@ export function PractitionerBodyScanTab({
             {asymmetryTrends.length > 0 && (
               <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
                 <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-white/50">
-                  Sustained over {ASYMMETRY_TREND_THRESHOLD_PCT}% across {'≥'}2 scans
+                  Sustained over {ASYMMETRY_TREND_THRESHOLD_PCT}% across 2 or more scans
                 </p>
                 <ul className="space-y-1.5">
                   {asymmetryTrends.map((t) => (

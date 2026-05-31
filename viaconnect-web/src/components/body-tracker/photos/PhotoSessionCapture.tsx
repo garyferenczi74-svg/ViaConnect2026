@@ -23,9 +23,11 @@ import { CreditCardCalibrator } from '@/components/body-tracker/scanning/CreditC
 import { QualityIndicators } from '@/components/body-tracker/scanning/QualityIndicators';
 import { ScanOnboardingWalkthrough, ScanHelpButton } from '@/components/body-tracker/scanning/ScanOnboardingWalkthrough';
 import { BodyScanInclusivityFallback } from '@/components/body-tracker/scanning/BodyScanInclusivityFallback';
-import { aggregateQualityScores } from '@/lib/body-tracker/scan-quality';
+import { aggregateQualityScores, scoreClothingTightness } from '@/lib/body-tracker/scan-quality';
 import { fuseFrames } from '@/lib/body-tracker/multi-frame-fusion';
 import { MULTI_FRAME_FUSION } from '@/lib/body-tracker/scan-constants';
+import { evaluateCrossViewClothing, type CaptureViewId } from '@/lib/body-tracker/cross-view-clothing';
+import { FOUR_VIEW_POSE_COUNT } from '@/lib/body-tracker/capture-pose-count';
 import {
   computeProcessingKey,
   isTransient,
@@ -132,6 +134,17 @@ export function PhotoSessionCapture({ open, onOpenChange, onCompleted }: PhotoSe
   // ---- Quality / auto-capture overlay ----
   const [qualityScores, setQualityScores] = useState<QualityScores | null>(null);
   const [burstCapturing, setBurstCapturing] = useState(false);
+
+  // Per-pose clothing-tightness ratio captured at fusion time, used by the
+  // cross-view clothing check (#169d section 2.5) at finish. A pose only lands
+  // here once it has passed its own quality gates, so a present entry is a
+  // captured, accepted view.
+  const [clothingRatioByPose, setClothingRatioByPose] = useState<Partial<Record<PoseId, number>>>({});
+
+  // Per-pose retake prompt (#169e section 3.1): when a single pose fails its
+  // quality gates, only THAT pose is reissued. This holds the blocking-issue copy
+  // for the current pose so the user retakes just it, not the whole set.
+  const [poseBlockingIssues, setPoseBlockingIssues] = useState<string[]>([]);
 
   // ---- Demographics from user profile (for height fallback) ----
   const [heightCm, setHeightCm]   = useState<number>(0);
@@ -244,6 +257,8 @@ export function PhotoSessionCapture({ open, onOpenChange, onCompleted }: PhotoSe
       setBurstCapturing(false);
       burstFiredRef.current = false;
       setFusedKeypointsByPose([]);
+      setClothingRatioByPose({});
+      setPoseBlockingIssues([]);
       stopCamera();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -345,6 +360,13 @@ export function PhotoSessionCapture({ open, onOpenChange, onCompleted }: PhotoSe
     burstFiredRef.current = true;
     setBurstCapturing(true);
 
+    // Snapshot the quality scores that AUTHORIZED this capture. QualityIndicators
+    // only fires onAutoCapture after overallPass held for the hold window, so this
+    // snapshot is the pass that triggered the burst. The per-pose gate below reads
+    // THIS snapshot (not the live, still-ticking scores) so a frame that flips
+    // after the trigger cannot cause a spurious rejection (#169e section 3.1).
+    const authorizingScores = qualityScores;
+
     // Haptic + audio
     try { navigator.vibrate?.(50); } catch { /* unsupported */ }
     try {
@@ -399,6 +421,20 @@ export function PhotoSessionCapture({ open, onOpenChange, onCompleted }: PhotoSe
       }
     }
 
+    // PER-POSE QUALITY GATE (#169e section 3.1): if the authorizing quality scores
+    // for THIS pose did not pass the blocking gates, reissue ONLY this pose: do not
+    // upload, surface its blocking issues, and leave the other captured poses
+    // untouched so the user retakes just this one.
+    if (authorizingScores && !authorizingScores.overallPass) {
+      setPoseBlockingIssues(authorizingScores.blockingIssues);
+      setBurstCapturing(false);
+      burstFiredRef.current = false;
+      return;
+    }
+
+    // This pose passed its gates; clear any stale per-pose blocking copy.
+    setPoseBlockingIssues([]);
+
     // Upload the fused frame as the pose capture
     if (fusedBlob && userId && sessionId) {
       // Build a thumb from the same blob (resize handled by photoProcessing normally; here minimal thumb)
@@ -408,6 +444,15 @@ export function PhotoSessionCapture({ open, onOpenChange, onCompleted }: PhotoSe
         if (fusedKeypoints.length > 0) {
           setFusedKeypointsByPose((prev) => [...prev, ...fusedKeypoints]);
         }
+        // Record this view's clothing-tightness ratio for the cross-view check at
+        // finish (#169d section 2.5). The mask area is estimated the same way the
+        // live quality loop estimates it (proportional to frame area), so the
+        // per-view ratio here is consistent with the score the user saw while
+        // capturing this pose.
+        const frameAreaPx =
+          (qualityCanvasRef.current?.width ?? 0) * (qualityCanvasRef.current?.height ?? 0);
+        const clothing = scoreClothingTightness(frameAreaPx * 0.25, frameAreaPx * 0.23);
+        setClothingRatioByPose((prev) => ({ ...prev, [pose.id]: clothing.ratio }));
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Auto-capture upload failed');
       }
@@ -416,7 +461,7 @@ export function PhotoSessionCapture({ open, onOpenChange, onCompleted }: PhotoSe
     setBurstCapturing(false);
     burstFiredRef.current = false;
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [burstCapturing, userId, sessionId, stepIdx]);
+  }, [burstCapturing, userId, sessionId, stepIdx, qualityScores]);
 
   // ---- Upload helpers ----
   const pose = PHOTO_POSES[stepIdx];
@@ -474,6 +519,14 @@ export function PhotoSessionCapture({ open, onOpenChange, onCompleted }: PhotoSe
     // Analytics (§14): a pose was retaken. step_name is the pose id (metadata).
     trackCaptureRetake({ step_name: pose.id });
     setUploads((prev) => ({ ...prev, [pose.id]: { fullPath: null, thumbPath: null, previewUrl: null } }));
+    // Per-pose retake (#169e section 3.1): drop only THIS pose's recorded clothing
+    // ratio and clear its blocking copy; the other captured poses are untouched.
+    setClothingRatioByPose((prev) => {
+      const next = { ...prev };
+      delete next[pose.id];
+      return next;
+    });
+    setPoseBlockingIssues([]);
     burstFiredRef.current = false;
   }
 
@@ -483,11 +536,13 @@ export function PhotoSessionCapture({ open, onOpenChange, onCompleted }: PhotoSe
 
   function next() {
     if (stepIdx < PHOTO_POSES.length - 1) setStepIdx(stepIdx + 1);
+    setPoseBlockingIssues([]);
     burstFiredRef.current = false;
   }
 
   function prev() {
     if (stepIdx > 0) setStepIdx(stepIdx - 1);
+    setPoseBlockingIssues([]);
     burstFiredRef.current = false;
   }
 
@@ -514,6 +569,24 @@ export function PhotoSessionCapture({ open, onOpenChange, onCompleted }: PhotoSe
   // ---- Finish + edge function call ----
   async function finish() {
     if (!sessionId) return;
+
+    // CROSS-VIEW CLOTHING CHECK (#169d section 2.5): before submitting, evaluate
+    // the clothing-tightness ratio across ALL captured views at once. If ANY single
+    // view is too baggy (ratio above 1.18) the WHOLE scan is rejected with a retake
+    // prompt explaining that every view needs consistent form fitting clothing. The
+    // decision lives in the pure, tested evaluateCrossViewClothing helper. Only
+    // views that were captured (and thus passed their own per-pose gate) are
+    // considered.
+    const crossViewInputs = (Object.entries(clothingRatioByPose) as Array<[PoseId, number]>)
+      .filter(([poseId]) => uploads[poseId].fullPath !== null)
+      .map(([poseId, ratio]) => ({ view: poseId as CaptureViewId, ratio }));
+    const crossView = evaluateCrossViewClothing(crossViewInputs);
+    if (!crossView.pass) {
+      setError(crossView.retakeMessage ?? 'Please retake all four photos in consistent form fitting clothing.');
+      setStep('capturing');
+      return;
+    }
+
     // Mark a genuine finish so the close handler does not log capture_abandoned.
     finishedRef.current = true;
     setFinishing(true);
@@ -600,10 +673,12 @@ export function PhotoSessionCapture({ open, onOpenChange, onCompleted }: PhotoSe
 
       // Mark status queued so the UI polls. This DB write is the first thing that
       // actually fails if the connection drops here; on a TRANSIENT failure we keep
-      // the pending item so the scan is resumed later.
+      // the pending item so the scan is resumed later. capture_pose_count records
+      // the four-view flow (#169e section 3.1) on the persist path; the value comes
+      // from the single FOUR_VIEW_POSE_COUNT source of truth (always a valid 2/4).
       await supabase
         .from('body_photo_sessions')
-        .update({ arnold_status: 'queued' } as never)
+        .update({ arnold_status: 'queued', capture_pose_count: FOUR_VIEW_POSE_COUNT } as never)
         .eq('id', sessionId);
 
       // Reached the server: the capture is queued for processing, so it is no
@@ -846,6 +921,25 @@ export function PhotoSessionCapture({ open, onOpenChange, onCompleted }: PhotoSe
               onSkip={handleSkip}
               onRetake={handleRetake}
             />
+
+            {/* Per-pose retake prompt (#169e section 3.1): when only THIS pose
+                failed its quality gates, reissue just it. The other captured poses
+                are kept; the user retakes this single view. */}
+            {poseBlockingIssues.length > 0 && !currentUpload.fullPath && (
+              <div className="rounded-xl border border-[#FCA5A5]/30 bg-[#FCA5A5]/10 px-3 py-2.5">
+                <p className="text-xs font-semibold text-[#FCA5A5]">
+                  This {pose.label.toLowerCase()} needs another try
+                </p>
+                <ul className="mt-1.5 space-y-1 text-[11px] text-[#FCA5A5]/90 list-disc list-inside">
+                  {poseBlockingIssues.map((issue) => (
+                    <li key={issue}>{issue}</li>
+                  ))}
+                </ul>
+                <p className="mt-1.5 text-[11px] text-white/55">
+                  Only this photo needs retaking. Your other views are saved.
+                </p>
+              </div>
+            )}
 
             {/* Inclusivity fallback (Prompt #169b section 7.3 / 7.4): the same
                 kind "I can't do this pose" affordance on every per pose capture
