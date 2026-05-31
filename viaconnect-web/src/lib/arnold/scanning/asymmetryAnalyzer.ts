@@ -35,6 +35,9 @@ function check(name: string, left: number, right: number, unit: string): Asymmet
     return {
       name, leftValue: left, rightValue: right, unit,
       balanceRatioPct: 0,
+      // Not-measured / zero guard: no signed delta either (Prompt #169e Phase 1).
+      deltaCm: 0,
+      deltaPct: 0,
       status: 'balanced',
       recommendation: 'Not measured',
     };
@@ -42,6 +45,15 @@ function check(name: string, left: number, right: number, unit: string): Asymmet
   const smaller = Math.min(left, right);
   const larger = Math.max(left, right);
   const ratio = Math.round((smaller / larger) * 1000) / 10;
+
+  // Signed left/right deltas (Prompt #169e Phase 1, section 3.2). SIGN
+  // CONVENTION: positive = the RIGHT side is larger (right - left); negative =
+  // the LEFT side is larger. deltaPct is that signed cm gap as a percent of the
+  // LARGER side, so its magnitude is the complement of balanceRatioPct
+  // (|deltaPct| = 100 - balanceRatioPct) and the Insights >10% trend rule reads
+  // a directly comparable number. Both rounded to one decimal.
+  const deltaCm = round1(right - left);
+  const deltaPct = Math.round(((right - left) / larger) * 1000) / 10;
 
   let status: AsymmetryCheck['status'];
   let recommendation: string;
@@ -64,6 +76,8 @@ function check(name: string, left: number, right: number, unit: string): Asymmet
     rightValue: round1(right),
     unit,
     balanceRatioPct: ratio,
+    deltaCm,
+    deltaPct,
     status,
     recommendation,
   };

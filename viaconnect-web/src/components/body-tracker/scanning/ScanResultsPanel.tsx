@@ -12,6 +12,7 @@ import { BodyScanPremiumPaywall } from './BodyScanPremiumPaywall';
 import { AvatarViewer } from './AvatarViewer';
 import { CompositionBreakdownCard } from './CompositionBreakdownCard';
 import { AsymmetryReportCard } from './AsymmetryReportCard';
+import { AsymmetryAnalysisPanel } from './AsymmetryAnalysisPanel';
 import { MeasurementGrid } from './MeasurementGrid';
 import { CalibrationDisclaimerBanner } from './CalibrationDisclaimerBanner';
 import { CalibrationNudgeCard } from './CalibrationNudgeCard';
@@ -332,6 +333,10 @@ export function ScanResultsPanel({ sessionId, refreshKey, portalType = 'consumer
               </div>
               <AsymmetryReportCard report={loaded.asymmetry} />
             </div>
+            {/* L vs R side-by-side comparison with signed cm/percent deltas
+                (Prompt #169e Phase 1, section 3.2). Enhances the symmetry card
+                above; sits alongside it on the same results surface. */}
+            <AsymmetryAnalysisPanel report={loaded.asymmetry} />
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-wider text-white/50 mb-2">Extracted measurements</p>
               <MeasurementGrid

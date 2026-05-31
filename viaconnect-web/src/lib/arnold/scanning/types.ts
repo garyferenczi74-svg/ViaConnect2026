@@ -140,6 +140,20 @@ export interface AsymmetryCheck {
   rightValue: number;
   unit: string;
   balanceRatioPct: number;
+  /**
+   * Signed left/right delta in cm (Prompt #169e Phase 1, section 3.2). SIGN
+   * CONVENTION: positive = the RIGHT side is larger than the left, negative =
+   * the LEFT side is larger (deltaCm = right - left). 0 when the pair is not
+   * measured (the same zero guard that yields balanceRatioPct = 0). This is the
+   * absolute imbalance in centimeters; balanceRatioPct stays the unsigned ratio.
+   */
+  deltaCm: number;
+  /**
+   * Signed left/right delta as a percent of the LARGER side, same sign
+   * convention as deltaCm (positive = right larger). 0 when not measured. This
+   * is the magnitude the Insights cross-scan trend rule thresholds on (>10%).
+   */
+  deltaPct: number;
   status: 'balanced' | 'minor_imbalance' | 'moderate_imbalance' | 'significant_imbalance';
   recommendation: string;
 }

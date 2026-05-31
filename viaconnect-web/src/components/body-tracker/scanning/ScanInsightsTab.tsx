@@ -1,9 +1,15 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Loader2, Sparkles, RefreshCw, Info, ShieldAlert } from 'lucide-react';
+import { Loader2, Sparkles, RefreshCw, Info, ShieldAlert, Scale } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import type { ScanInsight } from '@/lib/body-tracker/scan-types';
+import type { AsymmetryReport } from '@/lib/arnold/scanning/types';
+import {
+  detectSustainedAsymmetryTrends,
+  ASYMMETRY_TREND_THRESHOLD_PCT,
+  type AsymmetryTrend,
+} from '@/lib/body-tracker/asymmetry-trend';
 import type { PortalType } from './ScanResultsPanel';
 import { BodyScanResourceCard } from './BodyScanResourceCard';
 import { useResourceCardTrigger } from '@/hooks/body-tracker/useResourceCardTrigger';
@@ -82,6 +88,25 @@ async function fetchRecommendations(userId: string): Promise<RecommendationRow[]
   }));
 }
 
+// Cross-scan asymmetry trend (Prompt #169e Phase 1, section 3.2, item 3). Reads
+// the asymmetry_report blobs from the user's COMPLETED scans (newest first) and
+// feeds them to the pure detector. Scoped to completed sessions so a half-written
+// in-progress scan never skews the sustained-across-2+-scans decision.
+type AsymmetrySessionRow = { asymmetry_report: AsymmetryReport | null };
+
+async function fetchAsymmetryReports(userId: string): Promise<Array<AsymmetryReport | null>> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from('body_photo_sessions')
+    .select('asymmetry_report')
+    .eq('user_id', userId)
+    .eq('scan_status', 'complete')
+    .order('session_date', { ascending: false })
+    .limit(12);
+  if (error) throw new Error(error.message);
+  return ((data as unknown as AsymmetrySessionRow[] | null) ?? []).map((r) => r.asymmetry_report ?? null);
+}
+
 function rowsToInsights(rows: RecommendationRow[]): ScanInsight[] {
   return rows.map((r) => ({
     kind:                 'recommendation' as ScanInsight['kind'],
@@ -93,6 +118,7 @@ function rowsToInsights(rows: RecommendationRow[]): ScanInsight[] {
 
 export function ScanInsightsTab({ sessionId, userId, portalType }: ScanInsightsTabProps) {
   const [insights, setInsights]   = useState<ScanInsight[]>([]);
+  const [asymmetryTrends, setAsymmetryTrends] = useState<AsymmetryTrend[]>([]);
   const [loading, setLoading]     = useState(true);
   const [generating, setGenerating] = useState(false);
   const [error, setError]         = useState<string | null>(null);
@@ -122,6 +148,19 @@ export function ScanInsightsTab({ sessionId, userId, portalType }: ScanInsightsT
         if (!mounted) return;
         setError(e instanceof Error ? e.message : 'Failed to load insights');
         setLoading(false);
+      }
+    })();
+
+    // Cross-scan asymmetry trends load independently: a failure here must NOT
+    // surface as the insights error or block the recommendations above. An empty
+    // result simply hides the trend section.
+    (async () => {
+      try {
+        const reports = await fetchAsymmetryReports(userId);
+        if (!mounted) return;
+        setAsymmetryTrends(detectSustainedAsymmetryTrends(reports));
+      } catch {
+        if (mounted) setAsymmetryTrends([]);
       }
     })();
 
@@ -234,6 +273,39 @@ export function ScanInsightsTab({ sessionId, userId, portalType }: ScanInsightsT
           </div>
         ))}
       </div>
+
+      {/* Cross-scan asymmetry trends (Prompt #169e Phase 1, section 3.2, item 3).
+          A paired measurement whose left/right gap exceeds 10 percent AND has
+          held across 2 or more scans. Informational, non-alarming, no diagnosis. */}
+      {asymmetryTrends.length > 0 && (
+        <div className="rounded-xl border border-[#2DA5A0]/25 bg-[#2DA5A0]/[0.06] px-4 py-3 space-y-2">
+          <div className="flex items-center gap-2">
+            <Scale className="h-4 w-4 text-[#2DA5A0]" strokeWidth={1.5} />
+            <span className="text-xs font-semibold text-white">Side to side trends</span>
+          </div>
+          <p className="text-[11px] text-white/55 leading-relaxed">
+            These paired measurements have shown a difference above {ASYMMETRY_TREND_THRESHOLD_PCT}% between
+            your left and right sides across {' '}
+            {asymmetryTrends.length === 1 ? 'your recent scans' : 'multiple recent scans'}. This is informational;
+            mild side to side differences are common. If you want to even things out, balanced training on the
+            smaller side over time can help.
+          </p>
+          <ul className="space-y-1.5">
+            {asymmetryTrends.map((t) => (
+              <li
+                key={t.name}
+                className="flex items-center justify-between rounded-lg border border-white/[0.06] bg-white/[0.02] px-3 py-2"
+              >
+                <span className="text-xs text-white/85">{t.name}</span>
+                <span className="text-[11px] text-white/60 tabular-nums">
+                  {t.dominantSide === 'right' ? 'Right' : 'Left'} larger,{' '}
+                  {Math.abs(t.latestDeltaPct).toFixed(1)}% ({t.sustainedCount} scans)
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {/* Practitioner-only peptide guidance placeholder */}
       {portalType === 'practitioner' && (

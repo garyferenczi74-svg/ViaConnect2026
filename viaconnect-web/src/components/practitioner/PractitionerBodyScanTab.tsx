@@ -26,7 +26,7 @@ import {
 } from 'recharts';
 import {
   Activity, Loader2, GitCompareArrows, NotebookPen, FlaskConical,
-  TrendingUp, Boxes, Save, Check,
+  TrendingUp, Boxes, Save, Check, Scale,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import {
@@ -43,10 +43,16 @@ import {
 } from '@/lib/body-tracker/practitioner-peptide-guidance';
 import { MeasurementGrid } from '@/components/body-tracker/scanning/MeasurementGrid';
 import { CompositionBreakdownCard } from '@/components/body-tracker/scanning/CompositionBreakdownCard';
+import { AsymmetryAnalysisPanel } from '@/components/body-tracker/scanning/AsymmetryAnalysisPanel';
 import { AvatarComparison } from '@/components/body-tracker/scanning/AvatarComparison';
 import { PractitionerScanPdfButton } from './PractitionerScanPdfButton';
+import {
+  detectSustainedAsymmetryTrends,
+  ASYMMETRY_TREND_THRESHOLD_PCT,
+  type AsymmetryTrend,
+} from '@/lib/body-tracker/asymmetry-trend';
 import type {
-  ExtractedMeasurements, CompositionEstimate, BodyModelParameters,
+  ExtractedMeasurements, CompositionEstimate, BodyModelParameters, AsymmetryReport,
 } from '@/lib/arnold/scanning/types';
 
 type Accent = 'teal' | 'emerald';
@@ -67,6 +73,11 @@ interface SessionRow {
   extracted_measurements: ExtractedMeasurements | null;
   composition_estimate: CompositionEstimate | null;
   avatar_parameters: BodyModelParameters | null;
+  // Asymmetry as CLINICAL CONTEXT (Prompt #169e Phase 1, section 3.2, item 4).
+  // Per the standing rule, asymmetry flows to practitioners (unlike Helix); this
+  // is read straight off the session, separate from the Helix-guarded engagement
+  // payload, so the firewall/allow-list discipline is untouched.
+  asymmetry_report: AsymmetryReport | null;
 }
 
 interface NoteRow {
@@ -123,7 +134,7 @@ export function PractitionerBodyScanTab({
       // Session rows (avatar params + JSONB blobs for the read-only displays).
       const sessRes = await sb
         .from('body_photo_sessions')
-        .select('id, session_date, extracted_measurements, composition_estimate, avatar_parameters')
+        .select('id, session_date, extracted_measurements, composition_estimate, avatar_parameters, asymmetry_report')
         .eq('user_id', patientId)
         .eq('scan_status', 'complete')
         .order('session_date', { ascending: false })
@@ -201,6 +212,13 @@ export function PractitionerBodyScanTab({
   const before = sessions.find((s) => s.id === beforeId) ?? null;
   const after = sessions.find((s) => s.id === afterId) ?? null;
   const latestSession = sessions[0] ?? null;
+
+  // Sustained cross-scan asymmetry (clinical context). sessions are newest-first,
+  // which is exactly the order detectSustainedAsymmetryTrends expects.
+  const asymmetryTrends = useMemo<AsymmetryTrend[]>(
+    () => detectSustainedAsymmetryTrends(sessions.map((s) => s.asymmetry_report)),
+    [sessions],
+  );
 
   async function saveNote() {
     if (!noteSessionId) return;
@@ -365,6 +383,40 @@ export function PractitionerBodyScanTab({
             {latestSession.composition_estimate && (
               <CompositionBreakdownCard composition={latestSession.composition_estimate} sex={sex} />
             )}
+          </div>
+        </Section>
+      )}
+
+      {/* Bilateral asymmetry as CLINICAL CONTEXT (Prompt #169e Phase 1, section
+          3.2, item 4). Asymmetry is clinical and is allowed to flow to
+          practitioners (unlike Helix gamification). Read straight off the
+          session's asymmetry_report, so the Helix firewall/allow-list on the
+          engagement payload is untouched. */}
+      {latestSession?.asymmetry_report && (
+        <Section icon={Scale} title="Bilateral symmetry (clinical context)" accentHex={accentHex}>
+          <div className="space-y-3">
+            {asymmetryTrends.length > 0 && (
+              <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
+                <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-white/50">
+                  Sustained over {ASYMMETRY_TREND_THRESHOLD_PCT}% across {'≥'}2 scans
+                </p>
+                <ul className="space-y-1.5">
+                  {asymmetryTrends.map((t) => (
+                    <li key={t.name} className="flex items-center justify-between text-xs">
+                      <span className="text-white/80">{t.name}</span>
+                      <span className="tabular-nums text-white/55">
+                        {t.dominantSide === 'right' ? 'R' : 'L'} larger,{' '}
+                        {Math.abs(t.latestDeltaPct).toFixed(1)}% (max {t.maxDeltaPct.toFixed(1)}%, {t.sustainedCount}/{t.observedCount} scans)
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+                <p className="mt-2 text-[11px] leading-relaxed text-white/40">
+                  Informational clinical context from the patient's scans; not a diagnosis.
+                </p>
+              </div>
+            )}
+            <AsymmetryAnalysisPanel report={latestSession.asymmetry_report} />
           </div>
         </Section>
       )}
