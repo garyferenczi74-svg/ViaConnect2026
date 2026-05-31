@@ -5,7 +5,7 @@ Status: **Wireframe spec, pre-build.** Hannah-authored UX deliverable for Phase 
 Wireframe author: Hannah (UX + AI + genomics specialist)
 Dispatched by: Jeffery (orchestrator)
 Surface: `/settings/sleep-window` (Settings sub-page; NOT in CAQ onboarding per Phase 1 design override)
-DB columns: `user_profiles.sleep_start TIME`, `user_profiles.sleep_wake TIME` (migrated Phase 1)
+DB columns: `profiles.sleep_start TIME`, `profiles.sleep_wake TIME` (migrated Phase 1; live target is `public.profiles` despite the migration filename carrying `user_profiles` — the SQL DO block correctly fell through)
 API: `POST /api/profile/sleep-window` (Phase 3 build)
 Defaults: `23:00` start, `07:00` wake (kept in place for users who never save)
 
@@ -252,7 +252,7 @@ Tone notes:
 
 ## Push-back and UX decisions adjusted from the dispatch
 
-1. **Column name correction.** Dispatch references `profiles.sleep_start` + `profiles.sleep_wake`. The migrated columns live on `user_profiles` (per `supabase/migrations/20260601000010_prompt_171b_user_profiles_sleep_window.sql` and `src/lib/scoring/sources/caffeine-timing-source.ts`). Wireframe and API target `user_profiles`. Flagging so the Phase 3 builder uses the canonical table.
+1. **Column name confirmation (post-shipment correction by Jeffery).** Dispatch correctly referenced `profiles.sleep_start` + `profiles.sleep_wake`. Hannah inferred `user_profiles` from the migration filename + a quick scan of the source slice, but the live target is `public.profiles` (the only table that existed at Phase 1 apply time; the migration's DO block fell through to the `profiles` branch). Phase 3 API route + page + tests + the Phase 1 source slice all target `profiles`. The migration filename `..._user_profiles_sleep_window.sql` is a historical naming artifact; no code change needed.
 
 2. **Reset link copy.** Dispatch specified `Use the default times (23:00 to 07:00)` which uses the word `to` rather than a dash; kept verbatim (matches no-dash standing rule). Confirmed acceptable.
 
@@ -272,7 +272,7 @@ Tone notes:
 
 ## Handoff notes
 
-- **Builder reads:** This file + `src/lib/scoring/sources/caffeine-timing-source.ts` (for sleep window read semantics) + `supabase/migrations/20260601000010_prompt_171b_user_profiles_sleep_window.sql` (for canonical column names).
+- **Builder reads:** This file + `src/lib/scoring/sources/caffeine-timing-source.ts` (for sleep window read semantics; reads `profiles.sleep_start` + `profiles.sleep_wake`). The migration filename `..._user_profiles_sleep_window.sql` carries `user_profiles` but the live SQL targeted `public.profiles`; canonical table is `profiles`.
 - **API contract** (Phase 3 build, not Hannah's scope): `POST /api/profile/sleep-window` accepts `{ sleep_start: "HH:MM", sleep_wake: "HH:MM" }`, RLS-scoped to `auth.uid()`, returns `{ ok: true }` or `{ ok: false, error: string }`. Hannah does not specify route handler implementation.
 - **Gordon handoff:** None for this surface. Gordon does not consume sleep window directly; BOS source slice reads it server-side.
 - **Arnold handoff:** None for this surface.
