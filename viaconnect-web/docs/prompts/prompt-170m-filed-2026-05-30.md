@@ -22,6 +22,8 @@ All five flags resolved in a single decision turn. Resolutions:
 
 These five resolutions are locked. Build plan can proceed once Gordon's two long-poles clear (Haiku system prompt + 200-description curated test set, ~1-2 weeks each).
 
+**Gordon Long-Pole 1 complete (2026-05-31):** The Haiku 4.5 system prompt draft has been authored. See `docs/prompts/prompt-170m-haiku-system-prompt-draft-2026-05-31.md` (1163 lines covering Sections 1-12 + 5 open questions for Phase 1a + 15 test seed archetypes + confidence calibration scoring rubric). Highest-leverage open questions: (a) should `portion_display_unit` + `portion_display_value` be added to the schema now or deferred; (b) should `recipe_match_hint` emit unconditionally before 170f ships or stay behind `QUICK_LOG_RECIPE_SHORT_CIRCUIT_ENABLED`; (c) caffeine_mg emission for drinks (crosses into Bio Optimization recommendation territory — Hannah call needed).
+
 ## Why this filing posture matches the 170-series pattern (with 6 structural distinctions)
 
 170m memorializes-only with Hannah dispatched for §9 wireframes, same posture as prior 170-series filings. Six structural distinctions:
