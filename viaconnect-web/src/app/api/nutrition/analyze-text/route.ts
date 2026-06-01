@@ -12,13 +12,19 @@ import { AIRouteError } from '@/lib/errors/classify-ai';
 import { recordAudit, newRequestId } from '@/lib/observability/audit-recorder';
 import { GEMINI_MODEL } from '@/lib/nutrition/gemini-prompts';
 import { estimateCostUsd } from '@/lib/observability/ai-pricing';
-// LEGACY (locked permanent per Prompt 168c, May 14, 2026 + reaffirmed in 168d).
-// Do NOT score this path with Gordon. Do NOT contribute to Daily Macros. Do
-// NOT emit Helix events. Surfaces in Today's Meals as "Score not available
-// for legacy meal" with N/A. The dual-write to the meals table from #168
-// Apply C is preserved so the realtime UNION read can dedupe legacy entries
-// against any future re-upload, but quality_score stays NULL by design.
+// Prompt 173b (Gary 2026-06-01) lifted the 168c/168d unscored lock on this
+// path. Meals saved here now run through Gordon scoring + BOS recompute, so
+// Today's Meals + Daily Macros + Dashboard Nutrition gauge all surface the
+// score. The Today's Meals "Score not available for legacy meal" treatment
+// now keys off quality_score IS NULL (the actual legacy marker, applied to
+// pre-173b rows) rather than source='full_manual', so pre-existing legacy
+// rows are unchanged while new full_manual saves contribute their score.
+// The dual-write to nutrition_logs from #168 Apply C is preserved for
+// realtime UNION read dedupe; the legacy_nutrition_log_id link still
+// persists.
 import { SOURCE_CONFIDENCE_DEFAULTS } from '@/lib/gordon/constants';
+import { scoreMealForServerInsert } from '@/lib/gordon/scoreMealForServerInsert';
+import { recomputeNutritionDimension } from '@/lib/nutrition/bos-bridge';
 
 const ROUTE = '/api/nutrition/analyze-text';
 const MIN_LEN = 5;
@@ -80,13 +86,38 @@ export async function POST(req: NextRequest) {
     const analysis = aggregate(items);
     const latencyMs = Date.now() - startedAt;
 
-    // Prompt 168 Apply C: Path A dual-write (preserved).
-    // Per #168c + #168d: NO Gordon scoring on this legacy text path. The row
-    // is inserted with quality_score = NULL so the Today's Meals card branch
-    // recognizes it as legacy and renders the "Score not available" treatment.
-    // Source = 'full_manual' so card source-aware logic identifies this row
-    // as the legacy text-description channel (not the Quick Log slider path).
+    // Prompt 168 Apply C dual-write (preserved) + Prompt 173b (2026-06-01)
+    // Gordon scoring. The 168c/168d unscored lock is lifted; quality_score
+    // now carries the Gordon-computed value so Today's Meals + Daily Macros
+    // + Dashboard gauge all surface the score for new full_manual rows.
+    // Pre-173b NULL-score rows remain the legacy marker.
     let mealId: string | null = null;
+    let scored: Awaited<ReturnType<typeof scoreMealForServerInsert>> | null = null;
+    try {
+      scored = await scoreMealForServerInsert(supabase, {
+        userId: user.id,
+        loggedAt,
+        mealType,
+        source: 'full_manual',
+        sourceConfidence: SOURCE_CONFIDENCE_DEFAULTS.full_manual,
+        proteinG: analysis.protein_g,
+        carbsG: analysis.carbs_g,
+        fatTotalG: analysis.total_fat_g,
+        fatHealthyG: analysis.healthy_fat_g,
+        fiberG: analysis.fiber_g,
+        sugarG: analysis.sugar_g,
+        sodiumMg: 0,
+        caloriesKcal: analysis.calories,
+        caloriesAutoCalc: false,
+        wholeFoodFlag: false,
+        mealName: analysis.serving_description ?? null,
+      });
+    } catch (scoreErr) {
+      safeLog.warn('api.nutrition.analyze-text', 'gordon score failed (continuing with null score)', {
+        error: scoreErr instanceof Error ? scoreErr.message : String(scoreErr),
+      });
+    }
+
     try {
       const mealsInsert = await supabase
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -109,11 +140,11 @@ export async function POST(req: NextRequest) {
           meal_name: analysis.serving_description ?? null,
           notes: analysis.ai_notes ?? null,
           raw_input: { description, ai_model: GEMINI_MODEL, route: ROUTE },
-          quality_score: null,
-          quality_tier: null,
-          score_breakdown: null,
-          scored_at: null,
-          gordon_version: null,
+          quality_score: scored?.quality_score ?? null,
+          quality_tier: scored?.quality_tier ?? null,
+          score_breakdown: scored?.score_breakdown ?? null,
+          scored_at: scored?.scored_at ?? null,
+          gordon_version: scored?.gordon_version ?? null,
         })
         .select('meal_id')
         .single();
@@ -178,6 +209,17 @@ export async function POST(req: NextRequest) {
           error: linkErr instanceof Error ? linkErr.message : String(linkErr),
         });
       }
+    }
+
+    // Prompt 173b: BOS recompute so the Dashboard Nutrition gauge picks up
+    // the new scored full_manual meal. Best-effort; never fails the response.
+    try {
+      await recomputeNutritionDimension({ userId: user.id, date: loggedAt });
+    } catch (bosErr) {
+      safeLog.warn('api.nutrition.analyze-text', 'bos recompute failed', {
+        userId: user.id,
+        error: bosErr instanceof Error ? bosErr.message : String(bosErr),
+      });
     }
 
     await recordAudit({

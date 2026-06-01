@@ -68,16 +68,18 @@ export function MealLogEntryCard(props: MealLogEntryCardProps) {
     : MEAL_TYPE_LABEL[meal.mealType];
   const displayName = meal.mealName && meal.mealName.trim() !== '' ? meal.mealName : fallbackName;
 
-  // Per #168d Layer 5 + #168c lock: source-aware score rendering.
-  //   isLegacy   = full_manual source OR row came from nutrition_logs UNION
-  //                (the architectural exception per #168c). Renders "Score
-  //                not available for legacy meal" with N/A ring.
-  //   isPending  = scored source (quick_log/photo_ai/tracker_api/wearable_cgm)
-  //                with null score. Transient state between insert and
-  //                Gordon scoring; renders "Scoring..." caption.
-  //   hasScore   = scored source with persisted score. Renders the gauge.
-  const isLegacy = meal.source === 'full_manual' || meal.legacyNutritionLogId !== null;
-  const hasScore = !isLegacy && meal.qualityScore !== null && meal.qualityTier !== null;
+  // Per #168d Layer 5 + #168c lock, narrowed by Prompt 173b (2026-06-01):
+  // the legacy marker is the qualityScore NULL value itself, not the source.
+  // Prompt 173b lifted the 168c/168d unscored lock so new full_manual saves
+  // run through Gordon and surface their score; only pre-173b NULL-score
+  // rows render as legacy N/A.
+  //   isLegacy   = qualityScore is null. Renders "Score not available for
+  //                legacy meal" with N/A ring.
+  //   isPending  = scored source with null tier (transient between insert
+  //                and async scoring). Renders "Scoring..." caption.
+  //   hasScore   = persisted score + tier. Renders the gauge.
+  const hasScore = meal.qualityScore !== null && meal.qualityTier !== null;
+  const isLegacy = !hasScore && meal.qualityScore === null && meal.qualityTier === null;
   const isPending = !isLegacy && !hasScore;
   const scoreValue = hasScore ? Number(meal.qualityScore) : 0;
   const tierLabel = hasScore ? meal.qualityTier : null;

@@ -38,30 +38,34 @@ describe('/nutrition page TABS array', () => {
     expect(row).not.toContain("'183,94,24'");
   });
 
-  // Prompt 173a: the legacy "Log Full Meal" pill that routed to the frozen
-  // /nutrition/log-meal editor was removed; the channel row now renders two
-  // pills (NutriVision primary, Connect Your App) with no link to the
-  // legacy unscored path.
-  it('removes the legacy Log Full Meal pill', () => {
-    expect(source).not.toContain("label: 'Log Full Meal'");
-    expect(source).not.toContain("id: 'manual'");
-  });
-
-  it('no longer references /nutrition/log-meal in the channel row', () => {
-    expect(source).not.toContain('/nutrition/log-meal');
-  });
-
-  it('keeps NutriVision and Connect Your App pills', () => {
+  // Prompt 173b (2026-06-01): the Log Full Meal pill was reinstated and now
+  // routes through the Gordon-scored analyze-text path so meals saved there
+  // surface their score on Today's Meals + Daily Macros + Dashboard gauge.
+  it('renders all three channel pills (Log Full Meal + NutriVision + Connect Your App)', () => {
+    expect(source).toContain("label: 'Log Full Meal'");
     expect(source).toContain("label: 'NutriVision'");
     expect(source).toContain("label: 'Connect Your App'");
+    expect(source).toContain("id: 'manual'");
+    expect(source).toContain("id: 'photo'");
+    expect(source).toContain("id: 'connect'");
   });
 
-  it('NutriVision is the leftmost (primary) channel pill', () => {
-    // TABS array order: 'photo' (NutriVision) appears before 'connect'.
+  it('Log Full Meal is the leftmost (primary) channel pill', () => {
+    // TABS array order: 'manual' (Log Full Meal) appears before 'photo' + 'connect'.
+    const manualIdx = source.indexOf("id: 'manual'");
     const photoIdx = source.indexOf("id: 'photo'");
     const connectIdx = source.indexOf("id: 'connect'");
+    expect(manualIdx).toBeGreaterThan(-1);
     expect(photoIdx).toBeGreaterThan(-1);
     expect(connectIdx).toBeGreaterThan(-1);
+    expect(manualIdx).toBeLessThan(photoIdx);
     expect(photoIdx).toBeLessThan(connectIdx);
+  });
+
+  it('Log Full Meal pill routes to /nutrition/log-meal (Prompt 173b scored path)', () => {
+    const manualRowMatch = source.match(/id:\s*'manual'[^}]+/);
+    expect(manualRowMatch).not.toBeNull();
+    const row = manualRowMatch?.[0] ?? '';
+    expect(row).toContain("href: '/nutrition/log-meal'");
   });
 });
