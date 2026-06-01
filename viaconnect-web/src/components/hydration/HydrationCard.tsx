@@ -31,7 +31,7 @@ export function HydrationCard(): JSX.Element | null {
   return (
     <section
       aria-labelledby="hydration-card-heading"
-      className="flex items-center gap-3 rounded-2xl border border-white/[0.08] bg-[#1E3054]/45 p-3 text-white"
+      className="flex items-center gap-3 rounded-2xl border border-white/[0.08] bg-[#1A2744]/65 p-3 text-white backdrop-blur-md"
     >
       <h3 id="hydration-card-heading" className="sr-only">Hydration</h3>
       <Link

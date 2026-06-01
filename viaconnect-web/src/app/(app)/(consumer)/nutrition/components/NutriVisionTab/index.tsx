@@ -1056,7 +1056,7 @@ function EntryPathCard({ icon, title, subtitle, onTap, disabled, ariaLabel }: En
       onClick={onTap}
       disabled={disabled}
       aria-label={ariaLabel}
-      className="flex min-h-[120px] flex-col items-center justify-center gap-1.5 rounded-2xl border border-white/[0.08] bg-[#1E3054]/45 p-2 text-center transition-colors hover:border-[#2DA5A0]/40 hover:bg-[#1E3054]/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2DA5A0] focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-[144px] sm:gap-2 sm:p-4"
+      className="flex min-h-[120px] flex-col items-center justify-center gap-1.5 rounded-2xl border border-white/[0.08] bg-[#1A2744]/65 p-2 text-center backdrop-blur-md transition-colors hover:border-[#2DA5A0]/40 hover:bg-[#1A2744]/80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2DA5A0] focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-[144px] sm:gap-2 sm:p-4"
     >
       <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#2DA5A0]/15 text-[#2DA5A0] sm:h-12 sm:w-12">
         {icon}
