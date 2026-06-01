@@ -144,6 +144,9 @@ export async function POST(req: NextRequest) {
 
     // Prompt 173c: score the meal AFTER the row exists, then UPDATE in place.
     // Wrapped tightly so scoring failures never affect the meal save path.
+    // scoredForLegacyLog is captured at this scope so the Prompt 173e legacy
+    // meal_logs dual-write below can stamp meal_score with the same value.
+    let scoredForLegacyLog: Awaited<ReturnType<typeof scoreMealForServerInsert>> | null = null;
     if (mealId !== null) {
       try {
         const scored = await scoreMealForServerInsert(supabase, {
@@ -181,6 +184,8 @@ export async function POST(req: NextRequest) {
             hint: updateRes.error.hint,
             code: updateRes.error.code,
           });
+        } else {
+          scoredForLegacyLog = scored;
         }
       } catch (scoreErr) {
         // eslint-disable-next-line no-console
@@ -250,6 +255,43 @@ export async function POST(req: NextRequest) {
       safeLog.warn('api.nutrition.analyze-text', 'bos recompute failed', {
         userId: user.id,
         error: bosErr instanceof Error ? bosErr.message : String(bosErr),
+      });
+    }
+
+    // Prompt 173e (Gary 2026-06-01): legacy meal_logs dual-write so the
+    // Dashboard Daily Scores Panel Nutrition gauge picks up the analyze-text
+    // save alongside NutriVision (Hotfix 7 #170 Phase 1q established the
+    // pattern). meal_logs.meal_score is the per-meal value the panel
+    // averages for the today gauge. Wrapped best-effort; never fails the
+    // response.
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error: legacyLogErr } = await (supabase as any)
+        .from('meal_logs')
+        .insert({
+          user_id: user.id,
+          meal_type: mealType,
+          log_method: 'manual',
+          description: description.slice(0, 500),
+          calories: Math.round(analysis.calories),
+          protein_g: analysis.protein_g,
+          carbs_g: analysis.carbs_g,
+          fat_g: analysis.total_fat_g,
+          source_app: 'log_a_full_meal',
+          logged_at: loggedAt,
+          meal_date: loggedAt.slice(0, 10),
+          meal_score: scoredForLegacyLog?.quality_score ?? null,
+        });
+      if (legacyLogErr) {
+        safeLog.warn('api.nutrition.analyze-text', 'legacy meal_logs insert failed (continuing)', {
+          mealId,
+          error: legacyLogErr.message ?? String(legacyLogErr),
+        });
+      }
+    } catch (legacyLogThrew) {
+      safeLog.warn('api.nutrition.analyze-text', 'legacy meal_logs insert threw (continuing)', {
+        mealId,
+        error: legacyLogThrew instanceof Error ? legacyLogThrew.message : String(legacyLogThrew),
       });
     }
 
