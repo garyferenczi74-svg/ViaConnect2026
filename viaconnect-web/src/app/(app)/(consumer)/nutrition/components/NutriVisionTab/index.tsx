@@ -884,11 +884,18 @@ export default function NutriVisionTab() {
         onParseComplete={handleQuickLogParseComplete}
       />
 
-      {/* Prompt 170n Phase C: Voice-Native entry path capture overlay. */}
+      {/* Prompt 170n Phase C: Voice-Native entry path capture overlay.
+          Phase 1.1 Hannah Gate 2 polish: onSwitchToText wires the deaf/HoH
+          fallback. Closes the voice overlay and opens the 170m Quick Log
+          modal. */}
       <VoiceNativeCaptureOverlay
         open={voiceNativeOpen}
         onClose={handleVoiceNativeClose}
         onParseComplete={handleVoiceNativeParseComplete}
+        onSwitchToText={() => {
+          setVoiceNativeOpen(false);
+          setQuickLogModalOpen(true);
+        }}
       />
 
       <MacroEditPanel
@@ -972,10 +979,10 @@ function IdleSurface(props: IdleSurfaceProps) {
         <EntryPathCard
           icon={<Mic className="h-6 w-6 sm:h-9 sm:w-9" strokeWidth={1.5} />}
           title="Voice"
-          subtitle="Speak your meal."
+          subtitle="Say what you ate."
           onTap={props.onOpenVoiceNative}
           disabled={false}
-          ariaLabel="Voice. Speak your meal hands-free."
+          ariaLabel="Voice. Say what you ate hands-free."
         />
       </div>
 

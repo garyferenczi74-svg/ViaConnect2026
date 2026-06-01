@@ -48,6 +48,12 @@ export interface VoiceNativeCaptureOverlayProps {
     transcript: string,
     audioDurationMs: number,
   ) => void;
+  /**
+   * Phase 1.1 Hannah Gate 2 polish: switch-to-text fallback for deaf/HoH
+   * users (also useful for users in noisy environments). Closes the voice
+   * overlay and opens the 170m Quick Log modal pre-focused on the textarea.
+   */
+  onSwitchToText?: () => void;
 }
 
 export function VoiceNativeCaptureOverlay({
@@ -56,9 +62,17 @@ export function VoiceNativeCaptureOverlay({
   safetyMode,
   onClose,
   onParseComplete,
+  onSwitchToText,
 }: VoiceNativeCaptureOverlayProps): JSX.Element | null {
   const [hintIndex, setHintIndex] = useState(0);
   const [reducedMotion, setReducedMotion] = useState(false);
+  // Phase 1.1 Hannah Gate 2 polish: discard-during-flight confirmation when
+  // Cancel/Escape fires AND transcript or parser progress would be lost.
+  const [discardConfirmOpen, setDiscardConfirmOpen] = useState(false);
+  // Phase 1.1 Hannah Gate 2 polish: status copy progression while parsing.
+  // Got it, parsing your meal... -> after 3s Taking a moment... -> after 10s
+  // Almost there...
+  const [parseElapsedMs, setParseElapsedMs] = useState(0);
   const capture = useVoiceCapture();
   const parser = useVoiceNativeParser();
 
@@ -116,23 +130,64 @@ export function VoiceNativeCaptureOverlay({
     capture.stopCapture();
   }, [capture]);
 
+  const performDiscard = useCallback(() => {
+    capture.cancelCapture();
+    parser.reset();
+    setDiscardConfirmOpen(false);
+    onClose();
+  }, [capture, parser, onClose]);
+
   const handleCancel = useCallback(() => {
+    // Hannah Gate 2 polish: confirm before discarding when transcript or
+    // parser progress is in flight (motor-impaired users hit Escape by
+    // accident; this prevents data loss).
+    const inFlight = capture.state.transcript.length > 0
+      || capture.state.status === 'capturing'
+      || capture.state.status === 'processing'
+      || parser.state.stage === 'loading'
+      || parser.state.stage === 'clarifying';
+    if (inFlight) {
+      setDiscardConfirmOpen(true);
+      return;
+    }
+    performDiscard();
+  }, [capture.state, parser.state.stage, performDiscard]);
+
+  const handleSwitchToText = useCallback(() => {
     capture.cancelCapture();
     parser.reset();
     onClose();
-  }, [capture, parser, onClose]);
+    onSwitchToText?.();
+  }, [capture, parser, onClose, onSwitchToText]);
 
   useEffect(() => {
     if (!open) return;
     const handler = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         e.preventDefault();
+        if (discardConfirmOpen) {
+          setDiscardConfirmOpen(false);
+          return;
+        }
         handleCancel();
       }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [open, handleCancel]);
+  }, [open, handleCancel, discardConfirmOpen]);
+
+  // Hannah Gate 2 polish: status copy progression timer.
+  useEffect(() => {
+    if (parser.state.stage !== 'loading') {
+      setParseElapsedMs(0);
+      return;
+    }
+    const startedAt = Date.now();
+    const id = window.setInterval(() => {
+      setParseElapsedMs(Date.now() - startedAt);
+    }, 500);
+    return () => window.clearInterval(id);
+  }, [parser.state.stage]);
 
   if (!open) return null;
 
@@ -171,7 +226,13 @@ export function VoiceNativeCaptureOverlay({
           <HelpCircle className="h-5 w-5" strokeWidth={1.5} />
         </button>
 
-        <h2 id="voice-native-title" className="sr-only">Voice meal log</h2>
+        {/* Hannah Gate 2 polish: visible centered title replaces sr-only. */}
+        <h2
+          id="voice-native-title"
+          className="text-lg font-medium text-white"
+        >
+          Voice meal log
+        </h2>
 
         <MicRing pulsing={isCapturing && !reducedMotion} />
 
@@ -194,7 +255,11 @@ export function VoiceNativeCaptureOverlay({
           {isParsing && (
             <div className="inline-flex items-center gap-2 text-base text-white/85" aria-live="polite">
               <Loader2 className="h-5 w-5 animate-spin text-[#2DA5A0]" strokeWidth={1.5} aria-hidden="true" />
-              Understanding your meal...
+              {parseElapsedMs >= 10_000
+                ? 'Almost there...'
+                : parseElapsedMs >= 3_000
+                  ? 'Taking a moment...'
+                  : 'Got it, parsing your meal...'}
             </div>
           )}
           {parser.state.stage === 'clarifying' && parser.state.result && parser.state.result.clarification_questions.length > 0 && (
@@ -215,15 +280,29 @@ export function VoiceNativeCaptureOverlay({
         </div>
 
         {isCapturing && (
-          <button
-            type="button"
-            onClick={handleStop}
-            disabled={!isCapturing}
-            aria-label="Stop voice capture"
-            className="flex h-14 min-w-[10rem] items-center justify-center rounded-full bg-[#2DA5A0] px-8 text-base font-semibold text-white shadow-lg transition-transform hover:bg-[#2DA5A0]/90 active:scale-95 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/40"
-          >
-            Stop
-          </button>
+          <div className="flex flex-col items-center gap-3">
+            <button
+              type="button"
+              onClick={handleStop}
+              disabled={!isCapturing}
+              aria-label="Stop voice capture"
+              className="flex h-14 min-w-[10rem] items-center justify-center rounded-full bg-[#2DA5A0] px-8 text-base font-semibold text-white shadow-lg transition-transform hover:bg-[#2DA5A0]/90 active:scale-95 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/40"
+            >
+              Stop
+            </button>
+            {/* Hannah Gate 2 polish: deaf/HoH fallback for users who cannot
+                use voice capture (also useful in noisy environments). Closes
+                the overlay and opens the 170m Quick Log modal. */}
+            {onSwitchToText ? (
+              <button
+                type="button"
+                onClick={handleSwitchToText}
+                className="text-sm text-white/65 underline transition-colors hover:text-white"
+              >
+                Use text instead
+              </button>
+            ) : null}
+          </div>
         )}
 
         {hasError && (
@@ -258,6 +337,40 @@ export function VoiceNativeCaptureOverlay({
           </p>
         )}
       </div>
+
+      {discardConfirmOpen ? (
+        <div
+          role="alertdialog"
+          aria-modal="true"
+          aria-labelledby="voice-native-discard-title"
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-4"
+        >
+          <div className="w-full max-w-sm rounded-2xl border border-white/[0.08] bg-[#1E3054] p-5 text-white">
+            <h3 id="voice-native-discard-title" className="text-base font-semibold">
+              Discard what you said?
+            </h3>
+            <p className="mt-2 text-sm text-white/70">
+              We will not save the recording or transcript.
+            </p>
+            <div className="mt-5 flex flex-col gap-2">
+              <button
+                type="button"
+                onClick={() => setDiscardConfirmOpen(false)}
+                className="inline-flex h-11 items-center justify-center rounded-xl bg-[#2DA5A0] text-sm font-semibold text-white"
+              >
+                Keep recording
+              </button>
+              <button
+                type="button"
+                onClick={performDiscard}
+                className="inline-flex h-11 items-center justify-center rounded-xl bg-transparent text-sm font-medium text-[#B75E18] hover:bg-white/5"
+              >
+                Discard
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
