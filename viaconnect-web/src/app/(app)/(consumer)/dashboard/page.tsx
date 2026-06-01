@@ -9,6 +9,9 @@ import { WellnessSnapshot } from '@/components/dashboard/WellnessSnapshot';
 import { DailyScoresPanel } from '@/components/dashboard/DailyScoresPanel';
 import { HelixRewardsSummary } from '@/components/dashboard/HelixRewardsSummary';
 import { DailyInsightsCard } from '@/components/dashboard/DailyInsightsCard';
+// Prompt 170o Phase 1 Phase C: hydration tracking surfaces on Consumer Dashboard.
+import { HydrationWidget } from '@/components/hydration/HydrationWidget';
+import { HydrationFloatingActionButton } from '@/components/hydration/HydrationFloatingActionButton';
 import { PatternCirclePreview } from '@/components/community/PatternCirclePreview';
 import { ConnectCard } from '@/components/dashboard/ConnectCard';
 import { DashboardLinkCard } from '@/components/dashboard/DashboardLinkCard';
@@ -270,6 +273,11 @@ export default function ConsumerDashboard() {
           </div>
         </div>
 
+        {/* Prompt 170o Phase 1 Phase C: Hydration widget mounts between
+            Today's Protocol + Wellness stack and Daily Insights per Hannah
+            wireframe Surface 1 (post-BOS dashboard grid). */}
+        <HydrationWidget />
+
         {/* ── Daily Insights (Prompt #61, replaces DailyUltrathinkTip) ── */}
         <DailyInsightsCard profile={profile} supplements={supplements} />
 
@@ -279,6 +287,9 @@ export default function ConsumerDashboard() {
         </div>
       </div>
     </div>
+    {/* Prompt 170o Phase 1 Phase C: Hydration FAB scrolls in after 320px;
+        bottom sheet for quick-log + custom amount. */}
+    <HydrationFloatingActionButton />
     </>
   );
 }

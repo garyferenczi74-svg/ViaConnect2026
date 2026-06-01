@@ -50,6 +50,8 @@ import type { QuickLogParseResult } from '@/lib/nutrition/quick-log/types';
 import { VoiceNativeCaptureOverlay } from './VoiceNative/VoiceNativeCaptureOverlay';
 import { voiceNativeToMealDraft } from './VoiceNative/voice-native-to-meal-draft';
 import type { VoiceNativeParseResult, SttProvider } from '@/lib/nutrition/voice-native/types';
+// Prompt 170o Phase 1 Phase C: hydration card mounts below 4-button row.
+import { HydrationCard } from '@/components/hydration/HydrationCard';
 import type {
   Phase,
   MealDraft,
@@ -985,6 +987,10 @@ function IdleSurface(props: IdleSurfaceProps) {
       >
         Upload photo from gallery
       </button>
+
+      {/* Prompt 170o Phase 1 Phase C: hydration card per Hannah Surface 2.
+          Mounts below the 4-button entry path row. 88px compact. */}
+      <HydrationCard />
 
       {props.error ? (
         <p className="rounded-xl border border-[#FCA5A5]/40 bg-[#1A2744]/30 p-3 text-[12px] text-[#FCA5A5]" role="alert">
