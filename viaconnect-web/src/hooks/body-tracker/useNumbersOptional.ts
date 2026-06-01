@@ -15,9 +15,8 @@
 // client and written with profiles.update(...).eq('id', userId) (the same write
 // the account page uses for full_name). No new persistence system. The DB column
 // is added in migration 20260516000090. profiles.numbers_optional is not yet in
-// the generated supabase types (types.ts drifts from the live schema, same as
-// free_body_scan_used), so the read/write use a narrow cast, matching
-// useBodyScanAgeGate's profiles reads.
+// the generated supabase types (types.ts drifts from the live schema), so the
+// read/write use a narrow cast, matching useBodyScanAgeGate's profiles reads.
 //
 // CROSS-COMPONENT SYNC: the FLAG (not the persistence) is mirrored in a tiny
 // module-level cache via useSyncExternalStore so the settings toggle and the

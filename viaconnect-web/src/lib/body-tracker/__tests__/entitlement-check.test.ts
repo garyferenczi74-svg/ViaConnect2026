@@ -1,14 +1,20 @@
-// Tests for entitlement-check.ts (Prompt #169a, spec sections 3 + 10).
+// Tests for entitlement-check.ts (Prompt #169a, realigned to the #169f TIER
+// MODEL).
+//
+// These exercise the pure decision decideBodyScanEntitlement, which is the TS
+// mirror of the SQL resolver fn_resolve_body_scan_tier_status (migration
+// 20260516000150). Under #169f, Body Scan is Platinum-and-above only and the
+// free teaser is RETIRED: a non-entitled user is REJECTED (no teaser, no claim).
 //
 // Covers:
-//   decideBodyScanEntitlement: the pure three-point decision
-//     - premium consumer            => 'premium' + subscription id passthrough
-//     - non-premium consumer        => statusForScan null (must claim teaser)
-//     - practitioner-managed         => 'practitioner_managed', bypasses premium
-//     - tier / status edge cases (free tier, inactive status, legacy tier col)
-//   fn_claim_free_body_scan_teaser contract (idempotent):
-//     a faithful in-memory model of the atomic conditional UPDATE proves the
-//     real behavior: first claim returns true, every subsequent claim false.
+//   decideBodyScanEntitlement: the pure tier decision
+//     - own platinum            => entitled, statusForScan 'platinum'
+//     - own platinum_family      => 'platinum_plus_family_holder'
+//     - family-holder link       => 'platinum_plus_family_member'
+//     - gold / free / none       => NOT entitled (statusForScan null; no teaser)
+//     - lapsed period-end        => NOT entitled
+//     - practitioner-managed      => 'practitioner_managed', bypass
+//     - precedence holder > member > own-platinum
 //   verifyPractitionerManaged contract (server-side, fail-closed):
 //     a faithful in-memory model of the relationship join proves the real
 //     behavior so the practitioner bypass is granted ONLY on an active
@@ -27,114 +33,211 @@ import {
 // Helpers
 // ---------------------------------------------------------------------------
 
+// A future ISO timestamp so an active membership is never treated as lapsed by
+// the period-end gate, and a past one for the lapsed cases.
+const FUTURE = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+const PAST = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+
 function membership(overrides: Partial<MembershipSignal>): MembershipSignal {
   return {
     status: 'active',
-    tier: 'gold',
-    tier_id: 'gold',
+    tier: 'platinum',
+    tier_id: 'platinum',
+    tier_level: 2,
+    current_period_end: FUTURE,
     stripe_subscription_id: 'sub_123',
     ...overrides,
   };
 }
 
 // ===========================================================================
-// decideBodyScanEntitlement: premium consumer
+// decideBodyScanEntitlement: entitled via own membership
 // ===========================================================================
 
-describe('decideBodyScanEntitlement: premium consumer', () => {
-  it('marks an active gold member premium and stamps premium', () => {
+describe('decideBodyScanEntitlement: entitled via own membership', () => {
+  it('stamps platinum for an active own platinum membership', () => {
     const result = decideBodyScanEntitlement({
-      membership: membership({ status: 'active', tier_id: 'gold' }),
+      membership: membership({ tier_id: 'platinum', tier_level: 2 }),
+      familyHolderLink: false,
       practitionerManaged: false,
     });
-    expect(result.premium).toBe(true);
-    expect(result.statusForScan).toBe('premium');
+    expect(result.entitled).toBe(true);
+    expect(result.statusForScan).toBe('platinum');
     expect(result.subscriptionId).toBe('sub_123');
     expect(result.practitionerManaged).toBe(false);
   });
 
-  it('treats platinum and platinum_family as premium', () => {
-    for (const tier of ['platinum', 'platinum_family']) {
-      const result = decideBodyScanEntitlement({
-        membership: membership({ tier_id: tier }),
-        practitionerManaged: false,
-      });
-      expect(result.premium).toBe(true);
-      expect(result.statusForScan).toBe('premium');
-    }
+  it('stamps platinum_plus_family_holder for an own platinum_family membership', () => {
+    const result = decideBodyScanEntitlement({
+      membership: membership({ tier_id: 'platinum_family', tier_level: 3 }),
+      familyHolderLink: false,
+      practitionerManaged: false,
+    });
+    expect(result.entitled).toBe(true);
+    expect(result.statusForScan).toBe('platinum_plus_family_holder');
+    expect(result.subscriptionId).toBe('sub_123');
   });
 
-  it('treats trialing and gift_active statuses as active premium', () => {
+  it('treats trialing and gift_active platinum as entitled (maps to platinum; trial split deferred)', () => {
     for (const status of ['trialing', 'gift_active']) {
       const result = decideBodyScanEntitlement({
-        membership: membership({ status }),
+        membership: membership({ status, tier_id: 'platinum', tier_level: 2 }),
+        familyHolderLink: false,
         practitionerManaged: false,
       });
-      expect(result.premium).toBe(true);
-      expect(result.statusForScan).toBe('premium');
+      expect(result.entitled).toBe(true);
+      expect(result.statusForScan).toBe('platinum');
     }
   });
 
-  it('falls back to the legacy tier column when tier_id is null', () => {
+  it('derives the tier level from tier_id when tier_level is null', () => {
     const result = decideBodyScanEntitlement({
-      membership: membership({ tier_id: null, tier: 'platinum' }),
+      membership: membership({ tier_id: 'platinum', tier_level: null }),
+      familyHolderLink: false,
       practitionerManaged: false,
     });
-    expect(result.premium).toBe(true);
-    expect(result.statusForScan).toBe('premium');
+    expect(result.entitled).toBe(true);
+    expect(result.statusForScan).toBe('platinum');
   });
 
-  it('passes through a null subscription id for a premium gift membership', () => {
+  it('passes through a null subscription id for a gift platinum membership', () => {
     const result = decideBodyScanEntitlement({
       membership: membership({ status: 'gift_active', stripe_subscription_id: null }),
+      familyHolderLink: false,
       practitionerManaged: false,
     });
-    expect(result.premium).toBe(true);
+    expect(result.entitled).toBe(true);
     expect(result.subscriptionId).toBeNull();
   });
 });
 
 // ===========================================================================
-// decideBodyScanEntitlement: non-premium consumer
+// decideBodyScanEntitlement: entitled via family-holder link
 // ===========================================================================
 
-describe('decideBodyScanEntitlement: non-premium consumer', () => {
-  it('returns null statusForScan when there is no membership (must claim teaser)', () => {
+describe('decideBodyScanEntitlement: entitled via family link', () => {
+  it('stamps platinum_plus_family_member for a member with the link and no own membership', () => {
     const result = decideBodyScanEntitlement({
       membership: null,
+      familyHolderLink: true,
       practitionerManaged: false,
     });
-    expect(result.premium).toBe(false);
+    expect(result.entitled).toBe(true);
+    expect(result.statusForScan).toBe('platinum_plus_family_member');
+    // The member does not own the subscription; the holder does.
+    expect(result.subscriptionId).toBeNull();
+  });
+
+  it('stamps the family member even when the member has a non-entitled own membership (gold)', () => {
+    const result = decideBodyScanEntitlement({
+      membership: membership({ tier_id: 'gold', tier_level: 1 }),
+      familyHolderLink: true,
+      practitionerManaged: false,
+    });
+    expect(result.entitled).toBe(true);
+    expect(result.statusForScan).toBe('platinum_plus_family_member');
+  });
+});
+
+// ===========================================================================
+// decideBodyScanEntitlement: NOT entitled (no free teaser under #169f)
+// ===========================================================================
+
+describe('decideBodyScanEntitlement: not entitled (rejected, no teaser)', () => {
+  it('returns null statusForScan when there is no membership and no link', () => {
+    const result = decideBodyScanEntitlement({
+      membership: null,
+      familyHolderLink: false,
+      practitionerManaged: false,
+    });
+    expect(result.entitled).toBe(false);
     expect(result.statusForScan).toBeNull();
     expect(result.subscriptionId).toBeNull();
   });
 
-  it('treats a free-tier active membership as non-premium', () => {
+  it('treats a free-tier active membership as not entitled', () => {
     const result = decideBodyScanEntitlement({
-      membership: membership({ tier_id: 'free', tier: 'free' }),
+      membership: membership({ tier_id: 'free', tier: 'free', tier_level: 0 }),
+      familyHolderLink: false,
       practitionerManaged: false,
     });
-    expect(result.premium).toBe(false);
+    expect(result.entitled).toBe(false);
     expect(result.statusForScan).toBeNull();
   });
 
-  it('treats a canceled or past_due paid membership as non-premium', () => {
+  it('treats a Gold membership as not entitled (Body Scan is Platinum-and-above)', () => {
+    const result = decideBodyScanEntitlement({
+      membership: membership({ tier_id: 'gold', tier_level: 1 }),
+      familyHolderLink: false,
+      practitionerManaged: false,
+    });
+    expect(result.entitled).toBe(false);
+    expect(result.statusForScan).toBeNull();
+  });
+
+  it('treats a canceled or past_due platinum membership as not entitled', () => {
     for (const status of ['canceled', 'past_due', 'paused', 'gift_expired']) {
       const result = decideBodyScanEntitlement({
-        membership: membership({ status, tier_id: 'gold' }),
+        membership: membership({ status, tier_id: 'platinum', tier_level: 2 }),
+        familyHolderLink: false,
         practitionerManaged: false,
       });
-      expect(result.premium).toBe(false);
+      expect(result.entitled).toBe(false);
       expect(result.statusForScan).toBeNull();
     }
   });
 
-  it('does not leak a subscription id for a non-premium consumer', () => {
+  it('treats a lapsed (current_period_end in the past) platinum membership as not entitled', () => {
+    const result = decideBodyScanEntitlement({
+      membership: membership({ tier_id: 'platinum', tier_level: 2, current_period_end: PAST }),
+      familyHolderLink: false,
+      practitionerManaged: false,
+    });
+    expect(result.entitled).toBe(false);
+    expect(result.statusForScan).toBeNull();
+  });
+
+  it('treats a non-expiring (null current_period_end) platinum membership as entitled', () => {
+    const result = decideBodyScanEntitlement({
+      membership: membership({ tier_id: 'platinum', tier_level: 2, current_period_end: null }),
+      familyHolderLink: false,
+      practitionerManaged: false,
+    });
+    expect(result.entitled).toBe(true);
+    expect(result.statusForScan).toBe('platinum');
+  });
+
+  it('does not leak a subscription id for a not-entitled consumer', () => {
     const result = decideBodyScanEntitlement({
       membership: membership({ status: 'canceled', stripe_subscription_id: 'sub_999' }),
+      familyHolderLink: false,
       practitionerManaged: false,
     });
     expect(result.subscriptionId).toBeNull();
+  });
+});
+
+// ===========================================================================
+// decideBodyScanEntitlement: precedence (holder > member > own-platinum)
+// ===========================================================================
+
+describe('decideBodyScanEntitlement: precedence mirrors the SQL resolver', () => {
+  it('own platinum_family holder beats a family-member link', () => {
+    const result = decideBodyScanEntitlement({
+      membership: membership({ tier_id: 'platinum_family', tier_level: 3 }),
+      familyHolderLink: true,
+      practitionerManaged: false,
+    });
+    expect(result.statusForScan).toBe('platinum_plus_family_holder');
+  });
+
+  it('a family-member link beats an own plain platinum membership', () => {
+    const result = decideBodyScanEntitlement({
+      membership: membership({ tier_id: 'platinum', tier_level: 2 }),
+      familyHolderLink: true,
+      practitionerManaged: false,
+    });
+    expect(result.statusForScan).toBe('platinum_plus_family_member');
   });
 });
 
@@ -143,25 +246,27 @@ describe('decideBodyScanEntitlement: non-premium consumer', () => {
 // ===========================================================================
 
 describe('decideBodyScanEntitlement: practitioner-managed', () => {
-  it('stamps practitioner_managed and bypasses the premium check for a non-premium consumer', () => {
+  it('stamps practitioner_managed and bypasses the entitlement check for a non-entitled consumer', () => {
     const result = decideBodyScanEntitlement({
       membership: null,
+      familyHolderLink: false,
       practitionerManaged: true,
     });
     expect(result.statusForScan).toBe('practitioner_managed');
     expect(result.practitionerManaged).toBe(true);
-    // No teaser claim is required in the practitioner-managed path.
+    // The managed path always stamps; it never falls through to a rejection.
     expect(result.statusForScan).not.toBeNull();
   });
 
-  it('stamps practitioner_managed even when the consumer is also premium', () => {
+  it('stamps practitioner_managed even when the consumer is also entitled', () => {
     const result = decideBodyScanEntitlement({
-      membership: membership({ tier_id: 'platinum' }),
+      membership: membership({ tier_id: 'platinum', tier_level: 2 }),
+      familyHolderLink: false,
       practitionerManaged: true,
     });
     expect(result.statusForScan).toBe('practitioner_managed');
-    // premium flag still reflects the underlying membership truth.
-    expect(result.premium).toBe(true);
+    // entitled still reflects the underlying membership truth.
+    expect(result.entitled).toBe(true);
   });
 });
 
@@ -187,7 +292,7 @@ describe('decideBodyScanEntitlement: practitioner-managed', () => {
 // esm.sh + .ts imports), so this in-memory model reproduces the same filter +
 // fail-closed rules and asserts the real decision. Anything other than an active
 // matching row resolves to false, which routes the request into the consumer
-// premium/teaser path (decideBodyScanEntitlement with practitionerManaged=false).
+// entitlement path (decideBodyScanEntitlement with practitionerManaged=false).
 // ===========================================================================
 
 interface PractitionerPatientRow {
@@ -225,16 +330,18 @@ describe('verifyPractitionerManaged contract (server-side, fail-closed)', () => 
     expect(model.verify('consumer-1', null)).toBe(false);
     expect(model.verify('consumer-1', undefined)).toBe(false);
 
-    // And the decision it feeds: practitionerManaged=false => teaser path.
+    // And the decision it feeds: practitionerManaged=false => not entitled (no
+    // membership, no link) => rejected (no teaser).
     const decision = decideBodyScanEntitlement({
       membership: null,
+      familyHolderLink: false,
       practitionerManaged: model.verify('consumer-1', null),
     });
     expect(decision.statusForScan).toBeNull();
     expect(decision.practitionerManaged).toBe(false);
   });
 
-  it('returns false when a free consumer forges a patient_user_id with no real relationship', () => {
+  it('returns false when a consumer forges a patient_user_id with no real relationship', () => {
     // The exploit the review fix closes: the client cannot self-assert the
     // bypass. Supplying an arbitrary patient id with no matching active
     // relationship row must NOT grant practitioner-managed.
@@ -243,9 +350,10 @@ describe('verifyPractitionerManaged contract (server-side, fail-closed)', () => 
 
     const decision = decideBodyScanEntitlement({
       membership: null,
+      familyHolderLink: false,
       practitionerManaged: model.verify('attacker', 'some-other-user'),
     });
-    // Falls through to the consumer teaser path; it does NOT bypass the gate.
+    // Falls through to the consumer path; not entitled, so it does NOT bypass.
     expect(decision.statusForScan).toBeNull();
   });
 
@@ -262,6 +370,7 @@ describe('verifyPractitionerManaged contract (server-side, fail-closed)', () => 
     // The verified-true value drives the practitioner_managed stamp.
     const decision = decideBodyScanEntitlement({
       membership: null,
+      familyHolderLink: false,
       practitionerManaged: model.verify('dr-smith', 'patient-1'),
     });
     expect(decision.statusForScan).toBe('practitioner_managed');
@@ -302,82 +411,5 @@ describe('verifyPractitionerManaged contract (server-side, fail-closed)', () => 
       status: 'active',
     });
     expect(model.verify('dr-smith', 'dr-smith')).toBe(false);
-  });
-});
-
-// ===========================================================================
-// fn_claim_free_body_scan_teaser contract (idempotent atomic claim)
-// ===========================================================================
-//
-// The SQL function performs:
-//   UPDATE profiles SET free_body_scan_used = true, free_body_scan_used_at = now()
-//   WHERE id = p_user_id AND free_body_scan_used = false RETURNING true;
-//   return coalesce(<returned>, false);
-//
-// The defining behavior is: exactly one claim per user ever returns true. This
-// in-memory model mirrors the atomic conditional UPDATE so the test exercises
-// the real contract (not a stub that always returns a canned value).
-
-class TeaserClaimModel {
-  // user id -> free_body_scan_used flag
-  private used = new Map<string, boolean>();
-  // user id -> free_body_scan_used_at
-  private usedAt = new Map<string, string>();
-
-  // Mirrors fn_claim_free_body_scan_teaser: returns true only on the
-  // transition false -> true; otherwise false.
-  claim(userId: string): boolean {
-    const alreadyUsed = this.used.get(userId) === true;
-    if (alreadyUsed) return false;
-    this.used.set(userId, true);
-    this.usedAt.set(userId, new Date().toISOString());
-    return true;
-  }
-
-  wasUsed(userId: string): boolean {
-    return this.used.get(userId) === true;
-  }
-
-  usedAtValue(userId: string): string | undefined {
-    return this.usedAt.get(userId);
-  }
-}
-
-describe('fn_claim_free_body_scan_teaser contract (idempotent)', () => {
-  it('returns true on the first claim and false on the second', () => {
-    const model = new TeaserClaimModel();
-    expect(model.claim('user-a')).toBe(true);
-    expect(model.claim('user-a')).toBe(false);
-  });
-
-  it('returns false for every subsequent claim after the first', () => {
-    const model = new TeaserClaimModel();
-    expect(model.claim('user-b')).toBe(true);
-    for (let i = 0; i < 5; i += 1) {
-      expect(model.claim('user-b')).toBe(false);
-    }
-  });
-
-  it('records the used flag and a timestamp on the successful claim only', () => {
-    const model = new TeaserClaimModel();
-    expect(model.wasUsed('user-c')).toBe(false);
-    expect(model.usedAtValue('user-c')).toBeUndefined();
-
-    model.claim('user-c');
-    expect(model.wasUsed('user-c')).toBe(true);
-    const firstTimestamp = model.usedAtValue('user-c');
-    expect(firstTimestamp).toBeDefined();
-
-    // A second claim must not change the recorded timestamp.
-    model.claim('user-c');
-    expect(model.usedAtValue('user-c')).toBe(firstTimestamp);
-  });
-
-  it('tracks claims independently per user', () => {
-    const model = new TeaserClaimModel();
-    expect(model.claim('user-d')).toBe(true);
-    expect(model.claim('user-e')).toBe(true);
-    expect(model.claim('user-d')).toBe(false);
-    expect(model.claim('user-e')).toBe(false);
   });
 });

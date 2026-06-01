@@ -1,5 +1,6 @@
 // =============================================================================
-// Body Scan client gate selection (Prompt #169a, spec section 3.1).
+// Body Scan client gate selection (Prompt #169a, realigned to the #169f TIER
+// MODEL).
 //
 // Pure, I/O-free selection of WHICH client-facing surface a consumer sees at
 // the body-scan guard points, given their entitlement. Extracted from the React
@@ -7,51 +8,52 @@
 // behavior (the project's vitest config runs node-environment .test.ts only, so
 // the testable contract lives here, not in JSX).
 //
+// Under the #169f four-tier Via Cura model, Body Scan (FormaVision) is
+// Platinum-and-above only. The Free tier has NO scan and the old free teaser is
+// RETIRED: a non-entitled user is shown a Platinum upgrade prompt, never a free
+// teaser. The gate is therefore binary: ENTITLED (full scan) vs an upgrade
+// prompt. The marketing copy for that prompt is owned by a separate gated task;
+// this module only decides which surface, using minimal functional state names.
+//
 // This is a CLIENT convenience gate for UX / defense-in-depth only. The
 // AUTHORITATIVE gate is the body_photo_sessions finalize trigger (migration
-// 20260516000080), which enforces entitlement in-database whenever scan_status
-// transitions to 'complete'. The primary scan path (runScanAnalysis) finalizes
-// via a direct client UPDATE and never calls the body-scan-analyze edge
-// function, so the DB trigger (not the edge function) is what actually stops a
-// consumer who manipulates client state from finalizing a scan they are not
-// entitled to. The edge function and entitlement-check.ts remain a secondary,
-// defense-in-depth layer for the edge path.
+// 20260516000150), which enforces entitlement in-database whenever scan_status
+// transitions to 'complete' and REJECTS a non-entitled user. The primary scan
+// path (runScanAnalysis) finalizes via a direct client UPDATE and never calls
+// the body-scan-analyze edge function, so the DB trigger (not the edge function)
+// is what actually stops a consumer who manipulates client state from finalizing
+// a scan they are not entitled to. The edge function and entitlement-check.ts
+// remain a secondary, defense-in-depth layer for the edge path.
 //
 // The entitlement shape mirrors what GET /api/body-tracker/entitlement returns
 // and what usePremiumEntitlement exposes.
 // =============================================================================
 
 export interface ScanGateEntitlement {
-  // True when the consumer holds an active premium (paid) membership, OR the
-  // surface is being viewed in a verified practitioner-managed context. Either
-  // way the consumer gets the full, unlocked scan experience.
-  premium: boolean;
-  // True once the one-time free body scan teaser has been claimed by this user
-  // (profiles.free_body_scan_used).
-  freeTeaserUsed: boolean;
+  // True when the consumer is entitled to the full Body Scan: an own Platinum or
+  // above membership, an accepted family link to a platinum_family holder, OR a
+  // verified practitioner-managed context. Either way they get the full, unlocked
+  // scan experience. Anyone else (Free / Gold / no membership) is NOT entitled
+  // and is routed to the Platinum upgrade prompt.
+  entitled: boolean;
 }
 
 // The dashboard / entry guard point (spec section 3.1.a) resolves to exactly one
 // of these surfaces:
-//   'normal'        premium consumer: render the normal scan entry untouched.
-//   'free_teaser'   non-premium consumer who has NOT used the teaser: invite
-//                   them to try their first Body Scan free.
-//   'paywall'       non-premium consumer who HAS used the teaser: show the
-//                   premium upgrade paywall.
-export type ScanEntryGate = 'normal' | 'free_teaser' | 'paywall';
+//   'normal'            entitled consumer: render the normal scan entry untouched.
+//   'upgrade_platinum'  non-entitled consumer: show the Platinum upgrade prompt.
+export type ScanEntryGate = 'normal' | 'upgrade_platinum';
 
 /**
  * Dashboard / entry guard point selection (spec section 3.1.a).
  *
  * Precedence:
- *   premium                       -> 'normal'
- *   non-premium + teaser unused   -> 'free_teaser'
- *   non-premium + teaser used     -> 'paywall'
+ *   entitled       -> 'normal'
+ *   not entitled   -> 'upgrade_platinum'
  */
 export function selectScanEntryGate(entitlement: ScanGateEntitlement): ScanEntryGate {
-  if (entitlement.premium) return 'normal';
-  if (!entitlement.freeTeaserUsed) return 'free_teaser';
-  return 'paywall';
+  if (entitlement.entitled) return 'normal';
+  return 'upgrade_platinum';
 }
 
 /**
@@ -59,51 +61,44 @@ export function selectScanEntryGate(entitlement: ScanGateEntitlement): ScanEntry
  *
  * Re-checks entitlement before allowing capture to begin (defense against client
  * state manipulation; the server still enforces at finalize). Returns whether
- * capture may proceed, and when it may NOT, whether the reason is a spent free
- * teaser (so the caller can decide which message to surface).
+ * capture may proceed.
  *
- *   premium                       -> allowed (full capture, including any
- *                                     Tier 2 depth-enhanced path)
- *   non-premium + teaser unused   -> allowed (the one free teaser scan)
- *   non-premium + teaser used     -> blocked, route to the paywall
+ *   entitled       -> allowed (full capture, including any Tier 2 depth path)
+ *   not entitled   -> blocked, route to the Platinum upgrade prompt
  *
- * NOTE: a Tier 2 capable but non-premium device is NEVER silently downgraded.
- * The non-premium consumer either spends their free teaser (Tier 1 result) or,
- * if it is already spent, is sent to the paywall with an upgrade prompt. The
+ * NOTE: a Tier 2 capable but non-entitled device is NEVER silently downgraded.
+ * A non-entitled consumer is sent to the Platinum upgrade prompt. The
  * "upgrade for depth-enhanced scanning" copy is owned by the capture surface;
- * this function only decides allow vs. block and why.
+ * this function only decides allow vs. block.
  */
 export interface ScanCaptureGate {
   allowed: boolean;
-  // When blocked, true means the free teaser is already spent (=> paywall).
-  teaserExhausted: boolean;
 }
 
 export function selectScanCaptureGate(entitlement: ScanGateEntitlement): ScanCaptureGate {
-  if (entitlement.premium) return { allowed: true, teaserExhausted: false };
-  if (!entitlement.freeTeaserUsed) return { allowed: true, teaserExhausted: false };
-  return { allowed: false, teaserExhausted: true };
+  if (entitlement.entitled) return { allowed: true };
+  return { allowed: false };
 }
 
 /**
  * Results upgrade guard point selection (spec section 3.1.c).
  *
  * After a scan, decides whether the premium-only result surfaces (the Compare
- * and Insights tabs) render unlocked or locked-with-paywall-evidence.
+ * and Insights tabs) render unlocked or locked-with-upgrade-evidence.
  *
- *   premium      -> unlocked (Compare + Insights available)
- *   non-premium  -> locked   (render the paywall with those tabs visibly locked
- *                             as the upgrade evidence)
+ *   entitled       -> unlocked (Compare + Insights available)
+ *   not entitled   -> locked   (render the Platinum upgrade prompt with those
+ *                               tabs visibly locked as the upgrade evidence)
  */
 export interface ScanResultsGate {
   // True when the premium-only tabs (Compare, Insights) are unlocked.
   premiumTabsUnlocked: boolean;
-  // True when the results-level paywall upgrade card should be shown.
+  // True when the results-level Platinum upgrade prompt should be shown.
   showPaywall: boolean;
 }
 
 export function selectScanResultsGate(entitlement: ScanGateEntitlement): ScanResultsGate {
-  if (entitlement.premium) {
+  if (entitlement.entitled) {
     return { premiumTabsUnlocked: true, showPaywall: false };
   }
   return { premiumTabsUnlocked: false, showPaywall: true };

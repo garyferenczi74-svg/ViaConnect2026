@@ -25,7 +25,6 @@ import {
   trackProcessingFailed,
 } from '@/lib/body-tracker/scan-analytics';
 import { BodyScanPremiumPaywall } from './BodyScanPremiumPaywall';
-import { BodyScanFreeTeaserBanner } from './BodyScanFreeTeaserBanner';
 
 interface RunScanButtonProps {
   sessionId: string;
@@ -60,15 +59,16 @@ export function RunScanButton({ sessionId, onComplete, alreadyScanned }: RunScan
   const [error, setError] = useState<string | null>(null);
 
   // Body-scan entitlement powers both the entry guard point (which surface to
-  // show: normal button, free-teaser banner, or paywall) and the pre-capture
-  // re-check below (Prompt #169a, spec section 3.1.a + 3.1.b). These are
-  // defense-in-depth / UX only. The AUTHORITATIVE gate is the
-  // body_photo_sessions finalize trigger (migration 20260516000080): this button
-  // runs runScanAnalysis, which writes scan_status = 'complete' DIRECTLY and
-  // never calls the body-scan-analyze edge function, so the DB trigger (not the
-  // edge function) is what actually enforces age + 24h frequency + entitlement
-  // for this path.
-  const { premium, freeTeaserUsed, isLoading: entitlementLoading } = usePremiumEntitlement();
+  // show: normal button or the Platinum upgrade prompt) and the pre-capture
+  // re-check below (Prompt #169a, spec section 3.1.a + 3.1.b). Under #169f the
+  // Free tier has NO scan and the free teaser is RETIRED: a non-entitled user
+  // gets the upgrade prompt. These are defense-in-depth / UX only. The
+  // AUTHORITATIVE gate is the body_photo_sessions finalize trigger (migration
+  // 20260516000150): this button runs runScanAnalysis, which writes scan_status
+  // = 'complete' DIRECTLY and never calls the body-scan-analyze edge function,
+  // so the DB trigger (not the edge function) is what actually enforces age +
+  // 24h frequency + entitlement for this path.
+  const { entitled, isLoading: entitlementLoading } = usePremiumEntitlement();
 
   // Build the deterministic-key capture payload (Prompt #169b, Task 20, spec
   // section 16.3) from the session row: the pose object paths + the per scan
@@ -106,20 +106,21 @@ export function RunScanButton({ sessionId, onComplete, alreadyScanned }: RunScan
     setError(null);
 
     // Pre-capture guard point (spec section 3.1.b): re-check entitlement at the
-    // moment of capture (defense against stale client state). A teaser-exhausted
-    // non-premium consumer is routed to the paywall, never silently downgraded.
-    const captureGate = selectScanCaptureGate({ premium, freeTeaserUsed });
+    // moment of capture (defense against stale client state). A non-entitled
+    // consumer is routed to the Platinum upgrade prompt, never silently
+    // downgraded.
+    const captureGate = selectScanCaptureGate({ entitled });
     if (!captureGate.allowed) {
-      // The entry gate below will already be rendering the paywall for this
-      // state; bail out of starting the scan.
+      // The entry gate below will already be rendering the upgrade prompt for
+      // this state; bail out of starting the scan.
       return;
     }
 
     // Analytics (§14): the capture/scan was started, then processing began.
-    // Metadata only (tier + premium flag); no biometric value. processedStartMs
-    // anchors the processing latency emitted on completion.
-    trackCaptureStarted({ tier: 1, is_premium: premium, capture_mode: 'run_scan' });
-    trackProcessingStarted({ tier: 1, is_premium: premium });
+    // Metadata only (tier + entitlement flag); no biometric value.
+    // processedStartMs anchors the processing latency emitted on completion.
+    trackCaptureStarted({ tier: 1, is_premium: entitled, capture_mode: 'run_scan' });
+    trackProcessingStarted({ tier: 1, is_premium: entitled });
     const processStartMs = Date.now();
 
     // PERSIST-BEFORE-PROCESS (spec section 16.3): make the capture durable in the
@@ -145,7 +146,7 @@ export function RunScanButton({ sessionId, onComplete, alreadyScanned }: RunScan
       // only; NO result value (no body fat %, measurements) is carried.
       trackProcessingCompleted({
         tier: 1,
-        is_premium: premium,
+        is_premium: entitled,
         latency_seconds: Math.round((Date.now() - processStartMs) / 1000),
       });
       // Success: the scan finalized; clear the durable pending record.
@@ -195,19 +196,14 @@ export function RunScanButton({ sessionId, onComplete, alreadyScanned }: RunScan
   const label = alreadyScanned ? 'Re run AI scan' : 'Run AI scan';
 
   // Entry guard point (spec section 3.1.a). While entitlement is loading, do not
-  // flash a paywall: fall through to the normal button (disabled), which matches
-  // the fail-open-to-teaser default in usePremiumEntitlement.
-  const entryGate = entitlementLoading ? 'normal' : selectScanEntryGate({ premium, freeTeaserUsed });
+  // flash the upgrade prompt: fall through to the normal button (disabled),
+  // which avoids a paywall flash on a slow entitlement read.
+  const entryGate = entitlementLoading ? 'normal' : selectScanEntryGate({ entitled });
 
-  // Non-premium, teaser already used: the dashboard entry is the paywall.
-  if (entryGate === 'paywall') {
+  // Non-entitled (Free / Gold / no membership): the dashboard entry is the
+  // Platinum upgrade prompt. Under #169f there is no free teaser.
+  if (entryGate === 'upgrade_platinum') {
     return <BodyScanPremiumPaywall />;
-  }
-
-  // Non-premium, teaser unused: invite the free first scan. The banner triggers
-  // the same scan kickoff; the capture re-check in start() still applies.
-  if (entryGate === 'free_teaser' && !busy) {
-    return <BodyScanFreeTeaserBanner onStart={() => { void start(); }} />;
   }
 
   return (

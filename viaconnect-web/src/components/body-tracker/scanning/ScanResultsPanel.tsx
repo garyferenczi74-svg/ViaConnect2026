@@ -99,10 +99,9 @@ export function ScanResultsPanel({ sessionId, refreshKey, portalType = 'consumer
   // and naturopath portals view managed-patient scans (a practitioner-managed
   // context) and are never gated here; only the consumer self-view is gated by
   // the consumer's own premium entitlement.
-  const { premium, freeTeaserUsed } = usePremiumEntitlement();
+  const { entitled } = usePremiumEntitlement();
   const resultsGate = selectScanResultsGate({
-    premium: premium || portalType !== 'consumer',
-    freeTeaserUsed,
+    entitled: entitled || portalType !== 'consumer',
   });
   const premiumTabsUnlocked = resultsGate.premiumTabsUnlocked;
   const isTabLocked = (id: TabId): boolean => PREMIUM_TAB_IDS.has(id) && !premiumTabsUnlocked;

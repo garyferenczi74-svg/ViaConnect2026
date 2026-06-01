@@ -47,7 +47,6 @@ import {
 } from './quality-persistence.ts';
 import {
   resolveBodyScanEntitlement,
-  claimFreeBodyScanTeaser,
   verifyPractitionerManaged,
   resolveAgeGate,
   resolveScanFrequency,
@@ -418,30 +417,36 @@ serve(async (req) => {
   const sa = admin();
 
   // =========================================================================
-  // Prompt #169a: premium gating at the finalize/persist point.
+  // Prompt #169a, realigned to the #169f TIER MODEL: entitlement gating at the
+  // finalize/persist point.
   //
   // The entitlement gate runs AFTER a successful analysis and BEFORE the scan
-  // is persisted/marked complete, so a failed analysis never consumes the
-  // one-time free teaser. Three server-side paths (spec sections 3 + 10):
-  //   premium               -> stamp 'premium' + subscription id, finalize
+  // is persisted/marked complete, so a failed analysis never finalizes. Under
+  // #169f, Body Scan is Platinum-and-above only and the free teaser is RETIRED.
+  // Server-side paths (mirroring the SQL resolver fn_resolve_body_scan_tier_status):
+  //   entitled (Platinum or above, own or via accepted family link)
+  //                         -> stamp the resolved tier status (holder > member >
+  //                            own-platinum) + subscription id, finalize
   //   practitioner_managed  -> stamp 'practitioner_managed', finalize (bypass);
   //                            granted ONLY on server-verified active relationship
-  //   non-premium consumer  -> claim the one-time free teaser atomically:
-  //                              claimed     -> stamp 'free_teaser', finalize
-  //                              already used -> REJECT (402); do NOT persist,
-  //                                              do NOT mark the session
-  //                                              complete; capture state is
-  //                                              preserved for retry/upgrade.
+  //   not entitled          -> REJECT (402); do NOT persist, do NOT mark the
+  //                            session complete; capture state is preserved for
+  //                            retry/upgrade. There is NO teaser claim.
+  //
+  // This function runs as service_role, and the finalize trigger TRUSTS a
+  // service_role pre-stamp of premium_status_at_scan without re-resolving it, so
+  // the value resolved here MUST be a valid new-enum value (the resolver
+  // guarantees that).
   // =========================================================================
   // SECURITY (Prompt #169a review fix): practitioner_managed is determined
-  // SERVER-SIDE, never read from a client boolean. A free consumer could
-  // otherwise send { practitioner_managed: true } to defeat the premium gate.
+  // SERVER-SIDE, never read from a client boolean. A non-entitled consumer could
+  // otherwise send { practitioner_managed: true } to defeat the entitlement gate.
   // verifyPractitionerManaged returns true ONLY when an active practitioner
   // relationship exists between the authenticated caller (the practitioner
   // acting on behalf) and body.patient_user_id (the scan subject). It is
   // fail-closed: no patient id, a self-scan, or a query error/timeout all
-  // resolve to false, routing the request into the consumer premium/teaser
-  // logic below.
+  // resolve to false, routing the request into the consumer entitlement logic
+  // below.
   const practitionerManaged = await verifyPractitionerManaged(
     sa,
     user.id,
@@ -528,30 +533,25 @@ serve(async (req) => {
 
   const entitlement = await resolveBodyScanEntitlement(sa, user.id, practitionerManaged);
 
-  let premiumStatusAtScan: BodyScanPremiumStatus;
-  if (entitlement.statusForScan !== null) {
-    // premium or practitioner_managed: no teaser claim required.
-    premiumStatusAtScan = entitlement.statusForScan;
-  } else {
-    // Non-premium consumer: attempt the one-time free teaser claim.
-    const claimed = await claimFreeBodyScanTeaser(sa, user.id);
-    if (!claimed) {
-      safeLog.info('body-scan-analyze', 'premium required; free teaser already used', {
-        user_id: user.id,
-        stage:   'entitlement',
-        session_id: body.session_id ?? null,
-      });
-      // Reject the finalize WITHOUT persisting or marking the session complete.
-      return json(
-        {
-          error: 'premium_required',
-          message: 'Your free body scan has already been used. A premium membership is required for additional scans.',
-        },
-        402,
-      );
-    }
-    premiumStatusAtScan = 'free_teaser';
+  // Under #169f there is no free teaser: a non-entitled user is REJECTED. The
+  // resolver returns a valid new-enum stamp for an entitled user (or a managed
+  // scan) and null otherwise.
+  if (entitlement.statusForScan === null) {
+    safeLog.info('body-scan-analyze', 'premium required; not entitled (Platinum required)', {
+      user_id: user.id,
+      stage:   'entitlement',
+      session_id: body.session_id ?? null,
+    });
+    // Reject the finalize WITHOUT persisting or marking the session complete.
+    return json(
+      {
+        error: 'premium_required',
+        message: 'Body Scan requires a Platinum membership.',
+      },
+      402,
+    );
   }
+  const premiumStatusAtScan: BodyScanPremiumStatus = entitlement.statusForScan;
 
   safeLog.info('body-scan-analyze', 'entitlement resolved', {
     user_id:                 user.id,

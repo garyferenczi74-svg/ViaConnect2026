@@ -1,16 +1,20 @@
 // =============================================================================
-// GET /api/body-tracker/entitlement  (Prompt #169a, spec section 3.1)
+// GET /api/body-tracker/entitlement  (Prompt #169a, realigned to the #169f TIER
+// MODEL)
 //
 // Read-only body-scan entitlement for the authenticated consumer. The client
-// data path for the three UI guard points (dashboard entry, pre-capture,
+// data path for the body-scan UI guard points (dashboard entry, pre-capture,
 // results upgrade card). The AUTHORITATIVE gate stays server-side at finalize
-// (supabase/functions/body-scan-analyze); this route only feeds the UX so the
-// page can show a teaser banner vs. a paywall vs. the normal entry.
+// (the body_photo_sessions finalize trigger, migration 20260516000150); this
+// route only feeds the UX so the page can show the normal entry vs a Platinum
+// upgrade prompt.
 //
-// Premium is resolved by REUSING resolveBodyScanEntitlement from
-// src/lib/body-tracker/entitlement-check.ts (which reuses the web membership
-// system). The free-teaser flag is read straight off profiles.free_body_scan_used.
-// No membership logic is duplicated here.
+// Entitlement is resolved by REUSING resolveBodyScanEntitlement from
+// src/lib/body-tracker/entitlement-check.ts (the TS mirror of the SQL resolver
+// fn_resolve_body_scan_tier_status). Under #169f the Free tier has NO body scan
+// and the free teaser is RETIRED, so there is no profiles.free_body_scan_used
+// read and no teaser flag in the response. No membership logic is duplicated
+// here.
 //
 // Mirrors the auth + timeout + logging conventions of /api/pricing/tier.
 // =============================================================================
@@ -22,9 +26,8 @@ import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 
 export interface BodyScanEntitlementResponse {
-  premium: boolean;
+  entitled: boolean;
   subscriptionId: string | null;
-  freeTeaserUsed: boolean;
   authenticated: boolean;
 }
 
@@ -53,64 +56,33 @@ export async function GET(request: Request) {
       throw err;
     }
 
-    // Unauthenticated: report a non-premium, teaser-unused baseline. The UI
-    // treats this as "show the free teaser invitation"; any real scan still
-    // requires sign-in and passes through the server gate.
+    // Unauthenticated: report a non-entitled baseline. The UI treats this as
+    // "show the Platinum upgrade prompt"; any real scan still requires sign-in
+    // and passes through the server gate.
     if (!user) {
       const anon: BodyScanEntitlementResponse = {
-        premium: false,
+        entitled: false,
         subscriptionId: null,
-        freeTeaserUsed: false,
         authenticated: false,
       };
       return NextResponse.json(anon);
     }
 
     try {
-      // Premium signal: reuse the shared body-scan entitlement resolver (web
-      // membership system). practitionerManaged is intentionally NOT inferred
-      // here; the consumer self-view is never a practitioner-managed context,
-      // and the server finalize verifies practitioner relationships itself.
-      // The free-teaser read is a separate call: profiles.free_body_scan_used is
-      // a #169a-migration column not yet in the generated Supabase types, so it
-      // uses the same loose-cast pattern as the body-tracker hooks.
-      type TeaserReader = {
-        from: (t: string) => {
-          select: (cols: string) => {
-            eq: (col: string, val: string) => {
-              maybeSingle: () => Promise<{
-                data: { free_body_scan_used?: boolean | null } | null;
-                error: { message: string } | null;
-              }>;
-            };
-          };
-        };
-      };
-      const teaserReader = supabase as unknown as TeaserReader;
-
-      const [entitlement, profileResult] = await Promise.all([
-        withTimeout(
-          resolveBodyScanEntitlement(supabase, user.id),
-          8000,
-          'api.body-tracker.entitlement.resolve',
-        ),
-        withTimeout(
-          teaserReader
-            .from('profiles')
-            .select('free_body_scan_used')
-            .eq('id', user.id)
-            .maybeSingle(),
-          8000,
-          'api.body-tracker.entitlement.teaser',
-        ),
-      ]);
-
-      const freeTeaserUsed = profileResult.data?.free_body_scan_used === true;
+      // Entitlement signal: reuse the shared body-scan entitlement resolver (the
+      // TS mirror of the SQL resolver, over the web membership system).
+      // practitionerManaged is intentionally NOT inferred here; the consumer
+      // self-view is never a practitioner-managed context, and the server
+      // finalize verifies practitioner relationships itself.
+      const entitlement = await withTimeout(
+        resolveBodyScanEntitlement(supabase, user.id),
+        8000,
+        'api.body-tracker.entitlement.resolve',
+      );
 
       const payload: BodyScanEntitlementResponse = {
-        premium: entitlement.premium,
+        entitled: entitlement.entitled,
         subscriptionId: entitlement.subscriptionId,
-        freeTeaserUsed,
         authenticated: true,
       };
       return NextResponse.json(payload);

@@ -1,174 +1,309 @@
 // =============================================================================
 // body-scan-analyze/entitlement.ts
 //
-// Prompt #169a: Server-side body scan premium gating (spec sections 3 + 10).
+// Prompt #169a, realigned to the #169f TIER MODEL.
 //
 // Deno-side mirror of the entitlement decision in
-// src/lib/body-tracker/entitlement-check.ts. Deno edge functions cannot import
-// from the Next.js side, so the pure decision is duplicated here. Keep the two
-// in sync.
+// src/lib/body-tracker/entitlement-check.ts AND of the SQL resolver
+// fn_resolve_body_scan_tier_status (migration 20260516000150). Deno edge
+// functions cannot import from the Next.js side, so the pure decision is
+// duplicated here. Keep all three in sync.
 //
-// The premium signal reuses the web membership system: an active row in the
-// `memberships` table whose effective tier is above 'free'. This module does
-// NOT introduce a new billing source.
+// This edge function runs as the Postgres role service_role. The finalize
+// trigger (fn_enforce_body_scan_finalize) TRUSTS a service_role pre-stamp of
+// body_photo_sessions.premium_status_at_scan and does NOT re-resolve it, so the
+// value this module writes MUST be a valid NEW-enum value resolved by the same
+// rules as the SQL resolver. The membership/family signal reuses the web
+// membership system (memberships + membership_tiers + family_members); this
+// module does NOT introduce a new billing source.
 //
-// The three-point model consumed by the finalize path:
-//   premium               => stamp 'premium' + subscription id
-//   not premium           => claim the one-time free teaser via
-//                            fn_claim_free_body_scan_teaser; if already used,
-//                            reject the finalize and DO NOT mark complete
-//   practitioner_managed  => bypass the consumer premium check entirely
+// Under #169f, Body Scan is Platinum-and-above only and the free teaser is
+// RETIRED. The model consumed by the finalize path:
+//   entitled (Platinum or above, own or via family link) => stamp the resolved
+//                            tier status (holder > member > own-platinum)
+//   practitioner_managed  => bypass the consumer check, stamp
+//                            'practitioner_managed'
+//   not entitled          => REJECT the finalize (402); NO teaser claim, NO
+//                            fallback scan, do NOT mark complete
 //
 // SECURITY (Prompt #169a review fix): practitioner_managed is NEVER read as a
 // trusted client boolean. It is DETERMINED SERVER-SIDE by verifyPractitionerManaged
 // (below), which confirms an active practitioner relationship exists between the
 // authenticated caller and the supplied patient. Absent a verified relationship
-// the request falls through to the normal consumer premium/teaser logic.
+// the request falls through to the normal consumer entitlement logic.
 // =============================================================================
 
 import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
 import { withTimeout } from '../_shared/with-timeout.ts';
 import { safeLog } from '../_shared/safe-log.ts';
 
-export type BodyScanPremiumStatus = 'free_teaser' | 'premium' | 'practitioner_managed';
+// The premium tier slug stamped at scan time. Mirrors the #169f DB CHECK
+// constraint body_photo_sessions_premium_status_at_scan_chk_169f. The trial_*
+// values are valid enum members reserved for a later trials task; this module
+// never emits them (a trial currently resolves to 'platinum').
+export type BodyScanPremiumStatus =
+  | 'platinum'
+  | 'platinum_plus_family_holder'
+  | 'platinum_plus_family_member'
+  | 'trial_self_initiated'
+  | 'trial_practitioner_granted'
+  | 'practitioner_managed';
 
 // Minimal membership shape the decision needs. Structurally compatible with the
-// memberships row.
+// memberships row joined to membership_tiers.
 export interface MembershipSignal {
   status: string | null;
   tier: string | null;
   tier_id: string | null;
+  // membership_tiers.tier_level; null when the join is absent (derived from
+  // tier_id/tier as a fallback).
+  tier_level: number | null;
+  // ISO timestamp; null means non-expiring. A past value means lapsed.
+  current_period_end: string | null;
   stripe_subscription_id: string | null;
 }
 
 export interface BodyScanEntitlement {
-  premium: boolean;
+  // True when the user is entitled (Platinum or above, own or via family link).
+  entitled: boolean;
   subscriptionId: string | null;
   practitionerManaged: boolean;
-  // 'premium' | 'practitioner_managed' when the scan may finalize without a
-  // teaser claim; null when the caller must attempt a free-teaser claim first.
-  statusForScan: Exclude<BodyScanPremiumStatus, 'free_teaser'> | null;
+  // The resolved tier status to stamp when the scan may finalize (mirrors the
+  // SQL resolver precedence: holder > member > own-platinum), or
+  // 'practitioner_managed'. null when NOT entitled (the caller REJECTS; no teaser).
+  statusForScan: BodyScanPremiumStatus | null;
 }
 
 // Active statuses that count as an entitlement. Matches getActiveMembership /
-// buildUserPricingContext on the web side.
+// buildUserPricingContext on the web side and the SQL resolver.
 const ACTIVE_MEMBERSHIP_STATUSES = new Set(['active', 'trialing', 'gift_active']);
-const FREE_TIER = 'free';
+
+// Tier levels (mirrors src/types/pricing.ts and membership_tiers.tier_level):
+//   free = 0, gold = 1, platinum = 2, platinum_family = 3.
+const TIER_LEVEL_BY_ID: Record<string, number> = {
+  free: 0,
+  gold: 1,
+  platinum: 2,
+  platinum_family: 3,
+};
+const PLATINUM_TIER_LEVEL = 2;
+const FAMILY_TIER_LEVEL = 3;
 
 // Membership query timeout. Spec section 10 calls for an 8s query timeout.
 const MEMBERSHIP_QUERY_TIMEOUT_MS = 8_000;
 
-function effectiveTier(m: MembershipSignal): string {
-  return m.tier_id ?? m.tier ?? FREE_TIER;
+function effectiveTierLevel(m: MembershipSignal): number {
+  if (typeof m.tier_level === 'number') return m.tier_level;
+  const id = m.tier_id ?? m.tier ?? 'free';
+  return TIER_LEVEL_BY_ID[id] ?? 0;
 }
 
-function isPremiumMembership(m: MembershipSignal | null): boolean {
+function isActiveNonLapsed(m: MembershipSignal | null, asOf: number): boolean {
   if (!m) return false;
   if (!m.status || !ACTIVE_MEMBERSHIP_STATUSES.has(m.status)) return false;
-  return effectiveTier(m) !== FREE_TIER;
+  if (m.current_period_end != null) {
+    const end = new Date(m.current_period_end).getTime();
+    if (!Number.isNaN(end) && end <= asOf) return false;
+  }
+  return true;
 }
 
 /**
  * Pure entitlement decision. Mirrors decideBodyScanEntitlement in
- * src/lib/body-tracker/entitlement-check.ts. Practitioner-managed bypasses the
- * consumer premium check.
+ * src/lib/body-tracker/entitlement-check.ts and the SQL resolver
+ * fn_resolve_body_scan_tier_status. Precedence:
+ *   practitioner-managed         -> 'practitioner_managed' (bypass)
+ *   own tier_level >= 3 (family) -> 'platinum_plus_family_holder'
+ *   accepted family-holder link  -> 'platinum_plus_family_member'
+ *   own tier_level >= 2 (plat)   -> 'platinum'
+ *   otherwise                     -> NOT entitled (statusForScan null; no teaser)
  */
 export function decideBodyScanEntitlement(
   membership: MembershipSignal | null,
+  familyHolderLink: boolean,
   practitionerManaged: boolean,
+  asOf: number = Date.now(),
 ): BodyScanEntitlement {
-  const premium = isPremiumMembership(membership);
-  const subscriptionId = premium ? membership?.stripe_subscription_id ?? null : null;
+  const ownActive = isActiveNonLapsed(membership, asOf);
+  const ownLevel = ownActive && membership ? effectiveTierLevel(membership) : 0;
+  const ownSubscriptionId = membership?.stripe_subscription_id ?? null;
 
   if (practitionerManaged) {
-    return { premium, subscriptionId, practitionerManaged: true, statusForScan: 'practitioner_managed' };
+    return {
+      entitled: ownLevel >= PLATINUM_TIER_LEVEL || familyHolderLink,
+      subscriptionId: ownLevel >= PLATINUM_TIER_LEVEL ? ownSubscriptionId : null,
+      practitionerManaged: true,
+      statusForScan: 'practitioner_managed',
+    };
   }
-  if (premium) {
-    return { premium: true, subscriptionId, practitionerManaged: false, statusForScan: 'premium' };
+  if (ownLevel >= FAMILY_TIER_LEVEL) {
+    return {
+      entitled: true,
+      subscriptionId: ownSubscriptionId,
+      practitionerManaged: false,
+      statusForScan: 'platinum_plus_family_holder',
+    };
   }
-  return { premium: false, subscriptionId: null, practitionerManaged: false, statusForScan: null };
+  if (familyHolderLink) {
+    return {
+      entitled: true,
+      subscriptionId: null,
+      practitionerManaged: false,
+      statusForScan: 'platinum_plus_family_member',
+    };
+  }
+  if (ownLevel >= PLATINUM_TIER_LEVEL) {
+    return {
+      entitled: true,
+      subscriptionId: ownSubscriptionId,
+      practitionerManaged: false,
+      statusForScan: 'platinum',
+    };
+  }
+  return { entitled: false, subscriptionId: null, practitionerManaged: false, statusForScan: null };
 }
 
-/**
- * Reads the active membership row for a user (reusing the web membership
- * statuses) and resolves the entitlement. On a query timeout or error the
- * membership is treated as absent (non-premium), which routes a consumer into
- * the free-teaser claim path rather than silently granting premium. The
- * practitioner-managed flag is decided by the caller.
- */
-export async function resolveBodyScanEntitlement(
+// Reads a user's active, non-lapsed membership as a MembershipSignal (joined to
+// membership_tiers for tier_level), or null. Fail-closed: on error/timeout the
+// membership is treated as absent.
+async function readMembershipSignal(
   sa: SupabaseClient,
   userId: string,
-  practitionerManaged: boolean,
-): Promise<BodyScanEntitlement> {
-  let membership: MembershipSignal | null = null;
+  stage: string,
+): Promise<MembershipSignal | null> {
   try {
     const { data, error } = await withTimeout(
       sa
         .from('memberships')
-        .select('status, tier, tier_id, stripe_subscription_id')
+        .select('status, tier, tier_id, current_period_end, stripe_subscription_id, membership_tiers(tier_level)')
         .eq('user_id', userId)
         .in('status', ['active', 'trialing', 'gift_active'])
         .order('current_period_end', { ascending: false, nullsFirst: false })
         .limit(1)
         .maybeSingle(),
       MEMBERSHIP_QUERY_TIMEOUT_MS,
-      'edge-function.body-scan-analyze.membership-lookup',
+      `edge-function.body-scan-analyze.${stage}`,
     );
     if (error) {
-      safeLog.warn('body-scan-analyze', 'entitlement membership lookup error', {
+      safeLog.warn('body-scan-analyze', 'membership lookup error', {
         user_id: userId,
-        stage: 'resolveEntitlement',
+        stage,
         error: error.message,
       });
-    } else {
-      membership = (data as MembershipSignal | null) ?? null;
+      return null;
     }
+    if (!data) return null;
+    const row = data as {
+      status: string | null;
+      tier: string | null;
+      tier_id: string | null;
+      current_period_end: string | null;
+      stripe_subscription_id: string | null;
+      membership_tiers: { tier_level: number | null } | { tier_level: number | null }[] | null;
+    };
+    // The embedded relationship may come back as an object or a single-element
+    // array depending on the cardinality inference; normalize to a level.
+    const mt = Array.isArray(row.membership_tiers) ? row.membership_tiers[0] : row.membership_tiers;
+    return {
+      status: row.status,
+      tier: row.tier,
+      tier_id: row.tier_id,
+      tier_level: mt?.tier_level ?? null,
+      current_period_end: row.current_period_end,
+      stripe_subscription_id: row.stripe_subscription_id,
+    };
   } catch (e) {
-    // Fail closed on the premium grant: treat as non-premium so the user falls
-    // back to the free-teaser claim path rather than getting premium for free.
-    safeLog.warn('body-scan-analyze', 'entitlement membership lookup exception', {
+    safeLog.warn('body-scan-analyze', 'membership lookup exception', {
       user_id: userId,
-      stage: 'resolveEntitlement',
+      stage,
       error: String(e),
     });
+    return null;
   }
-  return decideBodyScanEntitlement(membership, practitionerManaged);
 }
 
 /**
- * Atomically claims the one-time free body scan teaser via
- * fn_claim_free_body_scan_teaser. Returns true if this call won the claim,
- * false if the teaser was already used (or on error/timeout, which is treated
- * as "not claimed" so the finalize is rejected rather than granted for free).
+ * Resolves whether the user has an ACTIVE, ACCEPTED family_members link to a
+ * holder whose own active, non-lapsed membership is platinum_family
+ * (tier_level 3). Mirrors path (b) of the SQL resolver. Two reads (enumerate the
+ * accepted active links, then check each holder's membership) because the
+ * member-side query cannot join the holder's membership without a relationship.
+ * Fail-closed: on error the link is treated as absent.
  */
-export async function claimFreeBodyScanTeaser(
+async function resolveFamilyHolderLink(
   sa: SupabaseClient,
   userId: string,
+  asOf: number,
 ): Promise<boolean> {
+  let holderIds: string[] = [];
   try {
     const { data, error } = await withTimeout(
-      sa.rpc('fn_claim_free_body_scan_teaser', { p_user_id: userId }),
+      sa
+        .from('family_members')
+        .select('primary_user_id')
+        .eq('member_user_id', userId)
+        .eq('is_active', true)
+        .not('accepted_at', 'is', null)
+        .limit(50),
       MEMBERSHIP_QUERY_TIMEOUT_MS,
-      'edge-function.body-scan-analyze.claim-free-teaser',
+      'edge-function.body-scan-analyze.family-link-lookup',
     );
-    if (error) {
-      safeLog.warn('body-scan-analyze', 'claim free teaser error', {
-        user_id: userId,
-        stage: 'claimFreeTeaser',
-        error: error.message,
-      });
+    if (error || !data) {
+      if (error) {
+        safeLog.warn('body-scan-analyze', 'family link lookup error', {
+          user_id: userId,
+          stage: 'resolveFamilyHolderLink',
+          error: error.message,
+        });
+      }
       return false;
     }
-    return data === true;
+    holderIds = (data as Array<{ primary_user_id: string | null }>)
+      .map((r) => r.primary_user_id)
+      .filter((id): id is string => typeof id === 'string' && id.length > 0);
   } catch (e) {
-    safeLog.warn('body-scan-analyze', 'claim free teaser exception', {
+    safeLog.warn('body-scan-analyze', 'family link lookup exception', {
       user_id: userId,
-      stage: 'claimFreeTeaser',
+      stage: 'resolveFamilyHolderLink',
       error: String(e),
     });
     return false;
   }
+  if (holderIds.length === 0) return false;
+
+  for (const holderId of holderIds) {
+    const holder = await readMembershipSignal(sa, holderId, 'family-holder-membership-lookup');
+    if (holder && isActiveNonLapsed(holder, asOf) && effectiveTierLevel(holder) >= FAMILY_TIER_LEVEL) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Reads the user's own active membership (joined to membership_tiers), resolves
+ * the family-holder link (path b), then applies the pure decision. Mirrors the
+ * SQL resolver fn_resolve_body_scan_tier_status exactly. On a query timeout or
+ * error the signal is treated as absent (not entitled), which REJECTS the
+ * finalize rather than silently granting access. The practitioner-managed flag
+ * is decided by the caller.
+ */
+export async function resolveBodyScanEntitlement(
+  sa: SupabaseClient,
+  userId: string,
+  practitionerManaged: boolean,
+): Promise<BodyScanEntitlement> {
+  const asOf = Date.now();
+  const membership = await readMembershipSignal(sa, userId, 'membership-lookup');
+
+  const ownLevel = isActiveNonLapsed(membership, asOf) && membership
+    ? effectiveTierLevel(membership)
+    : 0;
+  const familyHolderLink = ownLevel >= FAMILY_TIER_LEVEL
+    ? false
+    : await resolveFamilyHolderLink(sa, userId, asOf);
+
+  return decideBodyScanEntitlement(membership, familyHolderLink, practitionerManaged, asOf);
 }
 
 /**

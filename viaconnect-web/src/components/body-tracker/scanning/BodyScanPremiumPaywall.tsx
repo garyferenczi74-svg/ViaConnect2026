@@ -1,12 +1,13 @@
 'use client';
 
-// BodyScanPremiumPaywall.tsx  (Prompt #169a, spec section 3.2)
+// BodyScanPremiumPaywall.tsx  (Prompt #169a, realigned to the #169f TIER MODEL)
 //
-// Premium upgrade card for the body-scan flow. Shown to a non-premium consumer
-// who has already spent their one free teaser scan (dashboard / pre-capture
-// guard points) and, with `showLockedEvidence`, on the results surface after a
-// free-teaser scan (the Compare + Insights tabs are rendered visibly locked as
-// the evidence of what upgrading unlocks).
+// Platinum upgrade card for the body-scan flow. Under #169f, Body Scan is
+// Platinum-and-above only and the free teaser is RETIRED, so this card is the
+// upgrade prompt shown to a non-entitled consumer (dashboard / pre-capture guard
+// points) and, with `showLockedEvidence`, on the results surface (the Compare +
+// Insights tabs are rendered visibly locked as the evidence of what upgrading
+// unlocks).
 //
 // Styling reuses the established paywall pattern (UpgradePromptCard /
 // UpgradePromptModal): dark card, orange icon chip, single teal primary CTA.
@@ -62,10 +63,11 @@ export function BodyScanPremiumPaywall({
   // evidence) vs the dashboard / pre-capture entry. Metadata only.
   const triggerPoint = showLockedEvidence ? 'results_locked_tabs' : 'scan_entry';
 
-  // Analytics (§14): the body-scan paywall was shown. The non-premium consumer
-  // reaching this card has used their teaser, so has_used_teaser is true.
+  // Analytics (§14): the body-scan paywall was shown. Under the #169f tier model
+  // there is no free teaser; this card is the Platinum upgrade prompt shown to a
+  // non-entitled consumer, so has_used_teaser is false.
   useEffect(() => {
-    trackPremiumPaywallShown({ trigger_point: triggerPoint, has_used_teaser: true });
+    trackPremiumPaywallShown({ trigger_point: triggerPoint, has_used_teaser: false });
   }, [triggerPoint]);
 
   return (
@@ -78,10 +80,10 @@ export function BodyScanPremiumPaywall({
           <Lock className="h-5 w-5 text-[#E8803A]" strokeWidth={1.5} />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-base font-semibold text-white">Upgrade to keep scanning</p>
+          <p className="text-base font-semibold text-white">Upgrade to start scanning</p>
           <p className="text-sm text-white/70 mt-1 leading-relaxed">
-            You have used your free Body Scan. Upgrade your membership for unlimited scans plus the
-            full composition, comparison, and insight tools.
+            Body Scan requires a Platinum membership. Upgrade for unlimited scans plus the full
+            composition, comparison, and insight tools.
           </p>
         </div>
       </div>
