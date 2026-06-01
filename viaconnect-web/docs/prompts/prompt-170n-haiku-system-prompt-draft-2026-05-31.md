@@ -2,7 +2,9 @@
 
 Date: 2026-05-31
 Authored by: Gordon (Nutrition Agent)
-Status: **Blueprint Draft.** Ready for Phase 1a review and TypeScript conversion to `src/lib/nutrition/voice-native/haiku-system-prompt.ts` after Gary or Jeffery sign-off on the 5 open questions in the addendum.
+Status: **Blueprint CLEARED for Phase 1a TypeScript conversion 2026-05-31.** All 5 OQs resolved (OQ1 0.92 combined_confidence kept; OQ2 STT imputation 0.85 default; OQ3 resolved with Hannah-revised §4.5 + new §4.5.1 voice-specific quantifiers + new §4.5.2 safety-mode downshift table per `docs/prompts/prompt-170n-oq3-hannah-quantifier-validation-2026-05-31.md`; OQ4 nested restart deferred to Phase 1b with paraphrase clarification fallback; OQ5 edit-distance-2 STT homophone tolerance across the board).
+
+**Gary §0 blessing 2026-05-31:** Voice-native is intentionally more permissive on collective quantifiers ("a few" / "several" default at Medium chip with no clarification interrupt) than 170m text-native (which clarifies). The asymmetry is by design: voice users hate clarification interrupts and the Medium chip is the correct softer surface for spoken input. Text and voice are different surfaces and may legitimately diverge on UX posture.
 Filing reference: `C:\Users\garyf\.claude\projects\C--WINDOWS-system32\memory\project_prompt_170n_filed.md`
 Inherits from: `src/lib/nutrition/quick-log/haiku-system-prompt.ts` (170m canonical Sections 3, 5, 6, 7, 8, 10 verbatim)
 Adjacent peer: `src/lib/nutrition/voice/nlu/system-prompt.ts` (170j spoken-language patterns)
@@ -165,13 +167,55 @@ Hedge markers on identity: "some kind of", "some sort of", "I think it was", "ma
 
   Example: raw "I had some kind of chicken thing" -> food_name "chicken (unspecified)", confidence 0.55, needs_clarification true with question "What kind of chicken dish was it?"
 
-4.5 Approximation handling for collective quantifiers. Spoken collective quantifiers map to default counts at reduced confidence:
+4.5 Approximation handling for collective quantifiers. Spoken collective quantifiers map to default counts at reduced confidence (Hannah-revised 2026-05-31; Gary blessed voice/text divergence on this section):
+
   "a couple of" -> 2 at confidence 0.90 (high)
-  "a few" -> 3 at confidence 0.75 (medium)
-  "several" -> 4 at confidence 0.65 (low-medium)
-  "a bunch of" -> 5 at confidence 0.55 (low; consider clarification)
-  "a handful of" -> applies inherited 170m default; nuts 28g, berries 40g, popcorn 8g; otherwise clarify
+  "a few" -> 3 at confidence 0.78 (medium-high)
+  "several" -> 5 at confidence 0.60 (low-medium; modal user-mental-model anchor is 5, range 4-7)
+  "a bunch of" -> clarify; no default (food-dependent variance too wide: bunch of grapes 80g vs bunch of fries 300g)
+  "a handful of" -> food-dependent default per the canonical handful map:
+      nuts 28g, trail mix 30g, grapes 80g, berries 70g, popcorn 14g,
+      chips 14g, pretzels 14g, crackers 14g, dried fruit 20g,
+      small candy 20g, dry cereal 18g, raw greens 15g (Goldfish + Cheez-Its + Pirate's Booty map to crackers 14g);
+      otherwise clarify with portion chips.
   "lots of", "a ton of", "loads of" -> clarify; no default
+
+  All collective-quantifier defaults DROP per-item NLU confidence by an additional 0.05 when the source food does not appear in the handful map even if the quantifier itself has a default count.
+
+4.5.1 Additional voice-specific quantifiers (extending §4.5):
+
+  "a smidge of", "a smidgen", "a tad", "a tad bit" -> very small portions per food class: spices 0.5g; spreads 5g; sauces 8g; dressings 5g; confidence 0.65
+  "a touch of", "a hint of", "a splash of" -> very small portions: spreads 3g; dressings 8g; sauces 6g; liquids 15g; confidence 0.65 (splash routes specifically to liquids: milk in coffee, vinegar, sauce)
+  "a tiny bit of", "a little bit of", "a little" -> reduced portions: spreads 8g; sauces 10g; otherwise 0.5x of Rule 3.4 default; confidence 0.70 (e.g. "a little chicken" -> half the 3oz portion ~42g, not full 85g)
+  "a big plate of", "a big bowl of", "a big serving of" -> oversized portions: 1.5x of Rule 3.4 default; cap absolute at 4000g under the 5000g hard ceiling; confidence 0.70
+  "the whole thing", "the entire X" -> package context: full OFF serving x portion count if branded_product_hints detects a package; otherwise clarify; confidence 0.55
+  "a portion of", "a serving of" -> FDA standard: Rule 3.4 default, no scaling; treat as explicit not approximate; confidence 0.85 (OFF wins for branded products; Rule 3.4 wins for generic foods)
+  "half of a", "half a" -> 0.5x of Rule 3.4 default; confidence 0.90 (cross-validates against §4.6 numeral map)
+  "a slice of" (non-bread) -> Rule 3.4 default for that food's slice: pizza 107g, pie 125g, cake 80g, melon 152g; confidence 0.85
+
+  NOT added: "a piece of" -> too ambiguous; defer to 170m §3.4 piece logic.
+
+4.5.2 Safety mode quantifier downshift (gated by QUICK_LOG_SAFETY_MODE_ENABLED).
+
+When the runtime flag QUICK_LOG_SAFETY_MODE_ENABLED is true, override §4.5 and §4.5.1 with the safety-mode quantifier table below. The TypeScript build conditionally swaps these defaults via `buildVoiceNativeSystemPrompt({ safetyMode: boolean })`, same pattern as `buildQuickLogSystemPrompt` uses for `appliedClarifications`.
+
+Clinical rationale: in eating-disorder recovery, the parser erring small lets the user upward-correct, which is a smaller distress event than under-correcting a parser that erred large. Over-portion estimates also feed false-alarm flags downstream and risk reinforcing restrictive behavior.
+
+Safety-mode shifts (apply only when flag is on):
+
+  "a couple of" -> 2 (no change; already floor)
+  "a few" -> 2 (shift to low end of mental-model band)
+  "several" -> 3 (substantive downshift)
+  "a bunch of" -> clarify (no change; already clarifying)
+  "a handful of" nuts -> 20g (nut safety floor)
+  "a handful of" chips, crackers, pretzels -> 10g (snack-food safety floor)
+  "a big plate of", "big bowl of" -> 1.0x of Rule 3.4 default (disable upscale entirely; treat as standard portion)
+  "the whole thing", "the entire X" -> clarify (disable package-eaten default; force chip interaction)
+  "lots of", "a ton of" -> clarify (no change)
+
+Confidence scores DO NOT change in safety mode; only counts. Lower confidence on smaller defaults would over-clarify, defeating the purpose. Do NOT surface to the user that safety mode is changing the math; the downshift is invisible and the clarification UI is unchanged.
+
+Note: 170c (eating disorder safety mode for CAQ Phase 5 flagged users) is not yet ratified. The flag defaults to false at v1 per spec §11.5 + Gate 4 inherited from 170m Quick Log. When 170c ratifies, flip QUICK_LOG_SAFETY_MODE_ENABLED=true and the override activates without further build work.
 
 4.6 Spoken numeral normalization. Map spoken numerals to digits before applying Section 3 portion rules:
   "one" -> 1; "two" -> 2; "three" -> 3; "four" -> 4; "five" -> 5; "six" -> 6; "seven" -> 7; "eight" -> 8; "nine" -> 9; "ten" -> 10; "eleven" -> 11; "twelve" -> 12; "twenty" -> 20; "thirty" -> 30; "fifty" -> 50; "a hundred" -> 100.
@@ -418,17 +462,17 @@ SECTION 12: HARD CONSTRAINTS
 
 # Addendum
 
-## Open questions for Phase 1a (Gary or Jeffery sign-off required before TypeScript conversion)
+## Open questions for Phase 1a - ALL RESOLVED 2026-05-31
 
-**OQ1: Quick Apply Mode threshold reconciliation.** Spec §6.5 says Quick Apply for voice-native should be "more conservative than voice-edit" but uses the same 0.92 numerical threshold. This draft applies the 0.92 to combined_confidence (geometric mean of NLU and STT), so a 0.92 voice-native item requires NLU ≥ 0.92 AND STT ≥ 0.92, which is materially stricter than 170j voice-edit's NLU-only 0.92. Confirm: is 0.92 the right combined threshold, or should voice-native Quick Apply require combined ≥ 0.94 (matching what a 170j-style 0.92 NLU plus 0.95 STT would yield)?
+**OQ1 RESOLVED**: Quick Apply Mode threshold stays at 0.92 combined_confidence (stricter than 170j's 0.92 NLU-only). Gary signed off 2026-05-31.
 
-**OQ2: STT confidence imputation default.** Section 12.11 imputes stt_confidence_for_span = 0.85 when the server does not pass one through. Alternatives: 0.80 (more conservative, will surface more clarifications), 0.90 (more lenient). Recommend 0.85 because the 170j shipped voice-edit test set showed STT median around 0.87 for clean speech. Confirm before locking.
+**OQ2 RESOLVED**: STT confidence imputation default 0.85 when server does not pass one through. Gary signed off 2026-05-31.
 
-**OQ3: Approximation handling on collective quantifiers ("a few", "several", "a bunch of").** Section 4.5 maps "a few" -> 3 at confidence 0.75 and "several" -> 4 at confidence 0.65 and "a bunch of" -> 5 at confidence 0.55. The "a bunch of" mapping triggers clarification at the Medium floor. Hannah should validate the count defaults against her user research; the numbers I have are conservative from prior 170j test data.
+**OQ3 RESOLVED**: Hannah validation memo at `docs/prompts/prompt-170n-oq3-hannah-quantifier-validation-2026-05-31.md`. §4.5 revisions integrated above ("several" -> 5 @ 0.60, "a bunch of" -> CLARIFY no default, handful map revised + extended to 12 foods). §4.5.1 added 8 new voice-specific quantifiers (smidge/touch/splash/tiny bit/big plate of/whole thing/portion of/slice of). §4.5.2 added 170c safety-mode downshift table gated by QUICK_LOG_SAFETY_MODE_ENABLED. Gary blessed §0 voice/text divergence 2026-05-31.
 
-**OQ4: Restart resolution edge cases not covered.** This draft handles "scratch that", "wait make it", "actually", and simple corrections. Open questions for ambiguous patterns: nested restarts ("I had eggs, wait no, I had pancakes, actually no eggs again") — does latest mention always win? Anaphoric corrections ("I had eggs, oh wait, scratch the eggs but keep the toast") — how to scope the correction to one item out of a list? Recommend deferring nested-restart logic to Phase 1b and flagging these as needs_clarification true with a paraphrase question in Phase 1a.
+**OQ4 RESOLVED**: Nested restarts + anaphoric corrections deferred to Phase 1b; Phase 1a falls through to needs_clarification=true with paraphrase question. Gary signed off 2026-05-31.
 
-**OQ5: STT homophone tolerance threshold.** Sections 6, 7, 10 apply edit-distance-2 tolerance on chain names, brand names, and cuisine words. This is generous; STT engines on browser tend to produce edit-distance-1 homophones, but Capacitor native ML Kit sometimes produces edit-distance-3 substitutions on uncommon cuisine words. Recommend Phase 1a ships with edit-distance-2 across the board and Phase 1b widens for cuisine after the 1,000-recording test set quantifies the substitution rate.
+**OQ5 RESOLVED**: Edit-distance-2 STT homophone tolerance across chains + brands + cuisine words in Phase 1a; Phase 1b widens for cuisine after empirical 1,000-recording test set data. Gary signed off 2026-05-31.
 
 ## Recommended test seed archetypes for the 1,000-recording curated test set
 
@@ -497,4 +541,4 @@ Target post-TypeScript-conversion location during 170n build:
 
 # Phase 1a readiness statement
 
-Phase 1a ready: the 170n voice-native Haiku system prompt is fully drafted with Sections 1 through 12 plus addendum (5 open questions, speaker-and-utterance test seed archetypes for the 1,000-recording set, calibration notes); pending Gary or Jeffery sign-off on OQ1 through OQ5 before TypeScript conversion to `src/lib/nutrition/voice-native/haiku-system-prompt.ts`.
+**Phase 1a CLEARED 2026-05-31.** The 170n voice-native Haiku system prompt is fully drafted with Sections 1 through 12 plus addendum (all 5 OQs resolved, speaker-and-utterance test seed archetypes for the 1,000-recording set, calibration notes). §4.5 + §4.5.1 + §4.5.2 integrated per Hannah's OQ3 validation memo with Gary's §0 blessing of voice/text divergence on collective quantifiers. Ready for TypeScript conversion to `src/lib/nutrition/voice-native/haiku-system-prompt.ts` when 170n Phase 1a build kicks off (Q3 2026 per Option B sequencing in `project_prompt_170n_filed.md`).
