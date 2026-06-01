@@ -267,13 +267,40 @@ BEGIN
   END IF;
 
   -- ===========================================================================
-  -- 1. PRACTITIONER OVERRIDE (supervised clinical context). Identical to 080.
+  -- 1. PRACTITIONER OVERRIDE (supervised clinical context). Hardened vs 080.
   --    Valid only when a non-blank clinical_override_reason AND a practitioner_id
-  --    are present on NEW and an ACTIVE practitioner_patients relationship exists
-  --    between that practitioner and the scan subject (NEW.user_id). When valid,
-  --    stamp 'practitioner_managed' and SKIP age, frequency, and entitlement.
-  --    A consumer cannot self-grant it: a self-scan has no active
-  --    practitioner_patients row, and RLS prevents writing another user's row.
+  --    are present on NEW, an ACTIVE practitioner_patients relationship exists
+  --    between that practitioner and the scan subject (NEW.user_id), AND
+  --    NEW.practitioner_id is a GENUINELY CREDENTIALED practitioner (an active
+  --    public.practitioners row). When valid, stamp 'practitioner_managed' and
+  --    SKIP age, frequency, and entitlement.
+  --
+  --    169f forge-surface closure: practitioner_patients RLS
+  --    ("Practitioners insert practitioner_patients" in
+  --    20260326_three_portal_architecture.sql: FOR INSERT WITH CHECK
+  --    (auth.uid() = practitioner_id)) currently lets ANY authenticated user
+  --    self-insert an active row with practitioner_id = patient_id = self, and
+  --    body_photo_sessions owner RLS lets that same user set
+  --    clinical_override_reason + practitioner_id = self on their own scan. That
+  --    forged pair would previously fire this override and bypass the age,
+  --    frequency, and entitlement gates. The added real-practitioner EXISTS check
+  --    closes that body-scan exposure: a non-practitioner consumer's self id is
+  --    NOT in public.practitioners, so the override no longer fires and they fall
+  --    through to the gates below (rejected if a minor or non-entitled). The
+  --    broader practitioner_patients RLS tightening (so a non-practitioner cannot
+  --    forge the relationship row at all) is tracked separately, not in this file.
+  --
+  --    practitioners identity signal (verified in the codebase): public.practitioners
+  --    has UNIQUE user_id -> auth.users(id) (the same id space as
+  --    body_photo_sessions.practitioner_id, which references auth.users directly),
+  --    and after 20260418000160 reconciliation its live status column is
+  --    account_status (the _050 stub's status column was dropped there), CHECK in
+  --    (pending_onboarding, onboarding, active, suspended, terminated). RLS only
+  --    lets a practitioner self-READ / self-UPDATE an existing row; INSERT is
+  --    admin-only (practitioners_admin_all), so a consumer cannot self-mint one.
+  --    account_status = 'active' is the authoritative "real, live practitioner"
+  --    flag; a real practitioner finalizing a managed scan via the service_role
+  --    edge path is active and still passes.
   -- ===========================================================================
   v_override := (
     NEW.clinical_override_reason IS NOT NULL
@@ -285,6 +312,12 @@ BEGIN
        WHERE pp.practitioner_id = NEW.practitioner_id
          AND pp.patient_id      = NEW.user_id
          AND pp.status          = 'active'
+    )
+    AND EXISTS (
+      SELECT 1
+        FROM public.practitioners pr
+       WHERE pr.user_id        = NEW.practitioner_id
+         AND pr.account_status = 'active'
     )
   );
 
