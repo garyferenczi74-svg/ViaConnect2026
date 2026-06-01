@@ -88,36 +88,16 @@ export async function POST(req: NextRequest) {
 
     // Prompt 168 Apply C dual-write (preserved) + Prompt 173b (2026-06-01)
     // Gordon scoring. The 168c/168d unscored lock is lifted; quality_score
-    // now carries the Gordon-computed value so Today's Meals + Daily Macros
-    // + Dashboard gauge all surface the score for new full_manual rows.
+    // carries the Gordon-computed value so Today's Meals + Daily Macros +
+    // Dashboard gauge all surface the score for new full_manual rows.
     // Pre-173b NULL-score rows remain the legacy marker.
+    //
+    // Prompt 173c: meals INSERT runs first (status quo); scoring runs after
+    // and UPDATEs the row with the score. Decouples a scoring failure from
+    // the meal save so the user never loses a meal because Gordon timed out.
+    // console.error on scoring failure surfaces the actual stack in Vercel
+    // runtime logs (safeLog.warn was getting swallowed in production).
     let mealId: string | null = null;
-    let scored: Awaited<ReturnType<typeof scoreMealForServerInsert>> | null = null;
-    try {
-      scored = await scoreMealForServerInsert(supabase, {
-        userId: user.id,
-        loggedAt,
-        mealType,
-        source: 'full_manual',
-        sourceConfidence: SOURCE_CONFIDENCE_DEFAULTS.full_manual,
-        proteinG: analysis.protein_g,
-        carbsG: analysis.carbs_g,
-        fatTotalG: analysis.total_fat_g,
-        fatHealthyG: analysis.healthy_fat_g,
-        fiberG: analysis.fiber_g,
-        sugarG: analysis.sugar_g,
-        sodiumMg: 0,
-        caloriesKcal: analysis.calories,
-        caloriesAutoCalc: false,
-        wholeFoodFlag: false,
-        mealName: analysis.serving_description ?? null,
-      });
-    } catch (scoreErr) {
-      safeLog.warn('api.nutrition.analyze-text', 'gordon score failed (continuing with null score)', {
-        error: scoreErr instanceof Error ? scoreErr.message : String(scoreErr),
-      });
-    }
-
     try {
       const mealsInsert = await supabase
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -140,11 +120,11 @@ export async function POST(req: NextRequest) {
           meal_name: analysis.serving_description ?? null,
           notes: analysis.ai_notes ?? null,
           raw_input: { description, ai_model: GEMINI_MODEL, route: ROUTE },
-          quality_score: scored?.quality_score ?? null,
-          quality_tier: scored?.quality_tier ?? null,
-          score_breakdown: scored?.score_breakdown ?? null,
-          scored_at: scored?.scored_at ?? null,
-          gordon_version: scored?.gordon_version ?? null,
+          quality_score: null,
+          quality_tier: null,
+          score_breakdown: null,
+          scored_at: null,
+          gordon_version: null,
         })
         .select('meal_id')
         .single();
@@ -160,6 +140,57 @@ export async function POST(req: NextRequest) {
       safeLog.warn('api.nutrition.analyze-text', 'meals insert threw (continuing to legacy)', {
         error: e instanceof Error ? e.message : String(e),
       });
+    }
+
+    // Prompt 173c: score the meal AFTER the row exists, then UPDATE in place.
+    // Wrapped tightly so scoring failures never affect the meal save path.
+    if (mealId !== null) {
+      try {
+        const scored = await scoreMealForServerInsert(supabase, {
+          userId: user.id,
+          loggedAt,
+          mealType,
+          source: 'full_manual',
+          sourceConfidence: SOURCE_CONFIDENCE_DEFAULTS.full_manual,
+          proteinG: analysis.protein_g,
+          carbsG: analysis.carbs_g,
+          fatTotalG: analysis.total_fat_g,
+          fatHealthyG: analysis.healthy_fat_g,
+          fiberG: analysis.fiber_g,
+          sugarG: analysis.sugar_g,
+          sodiumMg: 0,
+          caloriesKcal: analysis.calories,
+          caloriesAutoCalc: false,
+          wholeFoodFlag: false,
+          mealName: analysis.serving_description ?? null,
+        });
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const updateRes = await (supabase as any).from('meals').update({
+          quality_score: scored.quality_score,
+          quality_tier: scored.quality_tier,
+          score_breakdown: scored.score_breakdown,
+          scored_at: scored.scored_at,
+          gordon_version: scored.gordon_version,
+        }).eq('meal_id', mealId);
+        if (updateRes.error) {
+          // eslint-disable-next-line no-console
+          console.error('[analyze-text] meals score UPDATE failed', {
+            mealId,
+            error: updateRes.error.message,
+            details: updateRes.error.details,
+            hint: updateRes.error.hint,
+            code: updateRes.error.code,
+          });
+        }
+      } catch (scoreErr) {
+        // eslint-disable-next-line no-console
+        console.error('[analyze-text] gordon score threw', {
+          mealId,
+          message: scoreErr instanceof Error ? scoreErr.message : String(scoreErr),
+          stack: scoreErr instanceof Error ? scoreErr.stack : null,
+          raw: JSON.stringify(scoreErr, Object.getOwnPropertyNames(scoreErr instanceof Error ? scoreErr : {})),
+        });
+      }
     }
 
     const { data: inserted, error: insErr } = await supabase
