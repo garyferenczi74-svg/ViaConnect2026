@@ -263,7 +263,7 @@ export default function ProfilePage() {
             <div className="grid grid-cols-2 gap-3">
               <div className="p-3 rounded-xl border border-copper/20 bg-copper/5">
                 <p className="text-sm font-semibold text-white">Gold</p>
-                <p className="text-copper font-bold">$8.88/mo</p>
+                <p className="text-copper font-bold">$11.88/mo</p>
                 <p className="text-[10px] text-gray-400 mt-1">Insights + ViaTokens</p>
               </div>
               <div className="p-3 rounded-xl border border-plum/20 bg-plum/5">

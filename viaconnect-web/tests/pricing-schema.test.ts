@@ -38,12 +38,15 @@ describeIfService('Phase 1 schema: reference tables (service role)', () => {
       const { data } = await supabase.from('membership_tiers').select('id, monthly_price_cents, annual_price_cents');
       const m = Object.fromEntries((data ?? []).map((t: { id: string; monthly_price_cents: number; annual_price_cents: number }) => [t.id, t]));
       expect(m.free.monthly_price_cents).toBe(0);
-      expect(m.gold.monthly_price_cents).toBe(888);
-      expect(m.gold.annual_price_cents).toBe(8800);
+      // 169f pricing supersede (Gary 2026-05-31): gold raised, all annuals
+      // recomputed at the 15 percent annual discount. See migration
+      // 20260516000140_prompt_169f_pricing_supersede.sql.
+      expect(m.gold.monthly_price_cents).toBe(1188);
+      expect(m.gold.annual_price_cents).toBe(12118);
       expect(m.platinum.monthly_price_cents).toBe(2888);
-      expect(m.platinum.annual_price_cents).toBe(28800);
+      expect(m.platinum.annual_price_cents).toBe(29458);
       expect(m.platinum_family.monthly_price_cents).toBe(4888);
-      expect(m.platinum_family.annual_price_cents).toBe(48888);
+      expect(m.platinum_family.annual_price_cents).toBe(49858);
     });
 
     it('auto-computes annual_savings_cents via generated column', async () => {
@@ -60,9 +63,11 @@ describeIfService('Phase 1 schema: reference tables (service role)', () => {
       expect(t?.base_adults_included).toBe(2);
       expect(t?.base_children_included).toBe(2);
       expect(t?.max_adults_allowed).toBe(4);
+      // 169f leaves the additional-adult price unchanged; the additional
+      // child add-on is now $11.88 per child (chunk size 1) per 169f 5.1.
       expect(t?.additional_adult_price_cents).toBe(888);
-      expect(t?.additional_children_chunk_price_cents).toBe(888);
-      expect(t?.children_chunk_size).toBe(2);
+      expect(t?.additional_children_chunk_price_cents).toBe(1188);
+      expect(t?.children_chunk_size).toBe(1);
     });
   });
 

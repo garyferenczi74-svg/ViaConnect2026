@@ -2462,7 +2462,7 @@ const MEMBERSHIP_TIERS = [
   },
   {
     name: "Gold",
-    price: "8.88",
+    price: "11.88",
     billingCycle: "month",
     features: [
       "Everything in Free",
