@@ -17,7 +17,11 @@
 //                                                         Results section)
 //   genex360_purchase   /shop/genex360                   (consumer)
 //   genex360_status     /genetics                        (consumer; status surface)
-//   nutrition_log       /nutrition/log-meal              (consumer; spec /log adapted)
+//   nutrition_log       /nutrition/photo-ai              (consumer; Prompt 173a
+//                                                         re-pointed from the
+//                                                         frozen 168c legacy
+//                                                         editor to the scored
+//                                                         NutriVision hub)
 //   supplements_protocol /supplements                    (consumer)
 //   body_tracker        /body-tracker                    (consumer)
 //   wearable_dashboard  /wearables                       (consumer; plural)
@@ -41,7 +45,7 @@ export const PILL_ROUTES: Record<PillDestinationKey, string> = {
   labs_upload: '/genetics#upload-lab-results',
   genex360_purchase: '/shop/genex360',
   genex360_status: '/genetics',
-  nutrition_log: '/nutrition/log-meal',
+  nutrition_log: '/nutrition/photo-ai',
   supplements_protocol: '/supplements',
   body_tracker: '/body-tracker',
   wearable_dashboard: '/wearables',

@@ -41,7 +41,7 @@ describe('PILL_ROUTES table', () => {
     expect(PILL_ROUTES.labs_upload).toBe('/plugins/labs');
     expect(PILL_ROUTES.genex360_purchase).toBe('/shop/genex360');
     expect(PILL_ROUTES.genex360_status).toBe('/genetics');
-    expect(PILL_ROUTES.nutrition_log).toBe('/nutrition/log-meal');
+    expect(PILL_ROUTES.nutrition_log).toBe('/nutrition/photo-ai');
     expect(PILL_ROUTES.supplements_protocol).toBe('/supplements');
     expect(PILL_ROUTES.body_tracker).toBe('/body-tracker');
     expect(PILL_ROUTES.wearable_dashboard).toBe('/wearables');

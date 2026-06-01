@@ -1,9 +1,12 @@
 'use client';
 
-// Prompt #169 section 4.3: blue gradient pill that deep-links to the
-// /nutrition/log-meal full-page editor (the #168c architectural exception).
-// Replaces the prior Teal-to-Orange gradient; new sky-blue-indigo palette
-// is consistent with the page's primary CTA system.
+// Prompt #169 section 4.3: blue gradient pill for the "Log a full meal"
+// CTA. Re-pointed by Prompt 173a to /nutrition/photo-ai (the NutriVision
+// scored hub) so meals captured here write a Gordon-scored row and feed
+// Today's Meals, Daily Macros, and the Dashboard Nutrition gauge. The
+// legacy /nutrition/log-meal editor and analyze-text endpoint remain
+// frozen per the permanent 168c/168d exception and are still reachable
+// by direct URL.
 
 import Link from 'next/link';
 import { ArrowRight, Camera } from 'lucide-react';
@@ -54,7 +57,7 @@ export function LogAFullMealButton({ disabled = false, onBeforeNavigate }: LogAF
         <Camera className="h-4 w-4" strokeWidth={1.5} />
       </Link>
       <Link
-        href="/nutrition/log-meal"
+        href="/nutrition/photo-ai"
         onClick={handleClick}
         aria-disabled={disabled}
         className={`inline-flex items-center gap-1.5 text-white no-underline ${

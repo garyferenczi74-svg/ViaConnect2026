@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
-import { ArrowRight, Camera, ChevronRight, Dna, PenLine, Smartphone, Upload, X } from 'lucide-react';
+import { ArrowRight, Camera, ChevronRight, Dna, Smartphone, Upload, X } from 'lucide-react';
 import { NutritionScoreCard } from '@/components/nutrition/NutritionScoreCard';
 import { useNutrivisionManualLogHandoff } from '@/hooks/useNutrivisionManualLogHandoff';
 // Prompt #168c section 2.4: channel row cleanup. Quick Log is on the Dashboard
@@ -71,9 +71,13 @@ function NutritionPageInner() {
 
   useEffect(() => { loadMealCount(); }, []);
 
-  // Prompt #168c section 2.4: three gradient pill channel buttons. Log Full
-  // Meal LEFTMOST as primary. All three navigate to dedicated routes; no
-  // in-page tab content remains here.
+  // Prompt #168c section 2.4 + Prompt 173a: two gradient pill channel
+  // buttons. NutriVision LEFTMOST as the primary scored channel (Photo +
+  // Scan Barcode + Voice all write Gordon-scored meals via the unified
+  // pipeline). The 168c "Log Full Meal" pill that routed to the legacy
+  // /nutrition/log-meal unscored editor was removed by 173a because it
+  // duplicated the NutriVision destination once re-pointed; the legacy
+  // editor stays reachable by direct URL but is no longer a primary CTA.
   // Accent + hover-shadow RGB per channel matches the NutrigenDX reference
   // pattern below (See NutrigenDX Results / Upload Nutrition Test / Review
   // Nutrition Results): linear-gradient(135deg, <accent>, #1E3054) plus a
@@ -86,7 +90,6 @@ function NutritionPageInner() {
     accent: string;
     hoverRgb: string;
   }> = [
-    { id: 'manual',  label: 'Log Full Meal',    icon: PenLine,    href: '/nutrition/log-meal', accent: '#2DA5A0', hoverRgb: '45,165,160' },
     { id: 'photo',   label: 'NutriVision',      icon: Camera,     href: '/nutrition/photo-ai', accent: '#2DA5A0', hoverRgb: '45,165,160' },
     { id: 'connect', label: 'Connect Your App', icon: Smartphone, href: '/plugins/apps',       accent: '#27AE60', hoverRgb: '39,174,96' },
   ];
@@ -142,10 +145,11 @@ function NutritionPageInner() {
           <ConnectedAppMealDropdown />
         </div>
 
-        {/* Prompt #168c section 2.4: three gradient pill buttons in a single */}
-        {/* row at md and above, stacked vertically below md. Quick Log lives */}
-        {/* on the Dashboard surface only; Open Quick Log CTA card removed. */}
-        <div className="mb-4 grid grid-cols-1 gap-3 md:grid-cols-3">
+        {/* Prompt #168c section 2.4 + Prompt 173a: two gradient pill buttons */}
+        {/* in a single row at md and above, stacked vertically below md. */}
+        {/* The Log Full Meal pill that pointed at the legacy unscored editor */}
+        {/* was removed by 173a; NutriVision is the leftmost primary channel. */}
+        <div className="mb-4 grid grid-cols-1 gap-3 md:grid-cols-2">
           {TABS.map((t) => {
             const Icon = t.icon;
             return (

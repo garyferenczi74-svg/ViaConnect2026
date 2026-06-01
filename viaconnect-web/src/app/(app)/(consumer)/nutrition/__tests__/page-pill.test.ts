@@ -37,4 +37,31 @@ describe('/nutrition page TABS array', () => {
     expect(row).toContain("hoverRgb: '45,165,160'");
     expect(row).not.toContain("'183,94,24'");
   });
+
+  // Prompt 173a: the legacy "Log Full Meal" pill that routed to the frozen
+  // /nutrition/log-meal editor was removed; the channel row now renders two
+  // pills (NutriVision primary, Connect Your App) with no link to the
+  // legacy unscored path.
+  it('removes the legacy Log Full Meal pill', () => {
+    expect(source).not.toContain("label: 'Log Full Meal'");
+    expect(source).not.toContain("id: 'manual'");
+  });
+
+  it('no longer references /nutrition/log-meal in the channel row', () => {
+    expect(source).not.toContain('/nutrition/log-meal');
+  });
+
+  it('keeps NutriVision and Connect Your App pills', () => {
+    expect(source).toContain("label: 'NutriVision'");
+    expect(source).toContain("label: 'Connect Your App'");
+  });
+
+  it('NutriVision is the leftmost (primary) channel pill', () => {
+    // TABS array order: 'photo' (NutriVision) appears before 'connect'.
+    const photoIdx = source.indexOf("id: 'photo'");
+    const connectIdx = source.indexOf("id: 'connect'");
+    expect(photoIdx).toBeGreaterThan(-1);
+    expect(connectIdx).toBeGreaterThan(-1);
+    expect(photoIdx).toBeLessThan(connectIdx);
+  });
 });
