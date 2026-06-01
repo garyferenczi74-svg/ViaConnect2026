@@ -17,6 +17,7 @@ import { MyMeals } from '@/components/nutrition/MyMeals';
 import { ConnectedAppMealDropdown } from '@/components/nutrition/ConnectedAppMealDropdown';
 import { MobileHeroBackground } from '@/components/ui/MobileHeroBackground';
 import { DailyTotalsTab } from '@/components/nutrition/DailyTotalsTab';
+import { RecipesLibrarySection } from '@/components/recipes/RecipesLibrarySection';
 
 // Prompt #169 followup per Gary 2026-05-15: Log a Meal / Daily Totals / History
 // tab strip removed. Both the Log a Meal section and the Daily Totals section
@@ -165,6 +166,12 @@ function NutritionPageInner() {
           })}
         </div>
       </div>
+
+      {/* #170f Phase D: My Recipes library lives between Log a Meal and */}
+      {/* Daily Totals so users see it during the natural log-then-review */}
+      {/* scroll flow. Hidden entirely when NEXT_PUBLIC_RECIPES_LIBRARY_ */}
+      {/* ENABLED flag is off. */}
+      <RecipesLibrarySection />
 
       {/* Daily Totals section: stacked under Log a Meal per Gary 2026-05-15. */}
       {/* No tab strip; both render in document flow. onGoToLog scrolls user */}
