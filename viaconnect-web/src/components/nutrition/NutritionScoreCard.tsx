@@ -90,9 +90,12 @@ export function NutritionScoreCard({ userId: propUserId }: NutritionScoreCardPro
 
     for (const m of meals) {
       if (localDateKey(m.loggedAt, tz) !== todayKey) continue;
-      // Per #168c + #168d: legacy text-description meals are excluded from
-      // both the Nutrition Score average AND the Total Daily Macros aggregate.
-      if (m.source === 'full_manual' || m.legacyNutritionLogId !== null) continue;
+      // Per #168c + #168d, narrowed by Prompt 173b (2026-06-01): the legacy
+      // marker is qualityScore IS NULL. New full_manual saves run through
+      // Gordon scoring and contribute to both the Nutrition Score average
+      // AND the Total Daily Macros aggregate; only pre-173b NULL-score rows
+      // are excluded.
+      if (m.qualityScore === null || m.qualityScore === undefined) continue;
       todayMealCount += 1;
       proteinSum += Number(m.proteinG) || 0;
       carbsSum += Number(m.carbsG) || 0;
