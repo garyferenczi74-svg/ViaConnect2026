@@ -61,10 +61,19 @@
 --
 --    ENTITLEMENT = Platinum-level access (membership_tiers.tier_level >= 2)
 --    through EITHER of two paths:
---      (a) the user's OWN active membership (status in active/trialing/gift_active)
---          whose membership_tiers.tier_level >= 2, OR
---      (b) an ACTIVE family_members link (is_active) to a HOLDER whose own active
---          membership is platinum_family (tier_level 3).
+--      (a) the user's OWN active membership (status in active/trialing/gift_active,
+--          and NOT past its current_period_end) whose membership_tiers.tier_level
+--          >= 2, OR
+--      (b) an ACTIVE, ACCEPTED family_members link (is_active AND accepted_at set)
+--          to a HOLDER whose own active, non-lapsed membership is platinum_family
+--          (tier_level 3).
+--
+--    Two hardenings applied here (169f review): the family-member branch requires
+--    fm.accepted_at IS NOT NULL (family_members is holder-writable, so an
+--    unaccepted holder-written row must NOT confer entitlement), and every
+--    membership branch requires (current_period_end IS NULL OR current_period_end
+--    > now()) so a lapsed-but-unreaped subscription is not counted (NULL period
+--    end means non-expiring, e.g. complimentary/gift, and stays allowed).
 --
 --    FAMILY-MEMBER ENTITLEMENT REPRESENTATION (confirmed in the codebase):
 --      public.family_members (migration 20260418000020_memberships_extension_and_family.sql)
@@ -121,6 +130,10 @@ BEGIN
       JOIN public.membership_tiers mt ON mt.id = m.tier_id
      WHERE m.user_id = p_user_id
        AND m.status IN ('active', 'trialing', 'gift_active')
+       -- FIX 3: reject a lapsed membership whose status was not yet reaped. A
+       -- NULL current_period_end means non-expiring (complimentary/gift) and
+       -- stays allowed.
+       AND (m.current_period_end IS NULL OR m.current_period_end > now())
        AND mt.tier_level >= 3
   ) INTO v_is_family_holder;
 
@@ -128,9 +141,10 @@ BEGIN
     RETURN 'platinum_plus_family_holder';
   END IF;
 
-  -- Path (b): the user is an entitled family MEMBER. There is an active
-  -- family_members link to a holder whose OWN active membership is platinum_family
-  -- (tier_level 3). The member need not have any membership of their own.
+  -- Path (b): the user is an entitled family MEMBER. There is an active, ACCEPTED
+  -- family_members link to a holder whose OWN active, non-lapsed membership is
+  -- platinum_family (tier_level 3). The member need not have any membership of
+  -- their own.
   SELECT EXISTS (
     SELECT 1
       FROM public.family_members fm
@@ -138,7 +152,16 @@ BEGIN
       JOIN public.membership_tiers mt ON mt.id     = m.tier_id
      WHERE fm.member_user_id = p_user_id
        AND fm.is_active = true
+       -- FIX 2: require an ACCEPTED link. family_members is holder-writable
+       -- (RLS family_members_primary_full_access: primary_user_id = auth.uid()),
+       -- so a holder can insert arbitrary member_user_id rows. Without this an
+       -- account that never accepted the invite would inherit entitlement. Only
+       -- an accepted member (accepted_at set) is entitled.
+       AND fm.accepted_at IS NOT NULL
        AND m.status IN ('active', 'trialing', 'gift_active')
+       -- FIX 3: the holder's membership must not be lapsed (period-end check is
+       -- on the HOLDER's membership for the member-via-holder branch).
+       AND (m.current_period_end IS NULL OR m.current_period_end > now())
        AND mt.tier_level >= 3
   ) INTO v_is_family_member;
 
@@ -155,6 +178,10 @@ BEGIN
       JOIN public.membership_tiers mt ON mt.id = m.tier_id
      WHERE m.user_id = p_user_id
        AND m.status IN ('active', 'trialing', 'gift_active')
+       -- FIX 3: reject a lapsed membership whose status was not yet reaped. A
+       -- NULL current_period_end means non-expiring (complimentary/gift) and
+       -- stays allowed.
+       AND (m.current_period_end IS NULL OR m.current_period_end > now())
        AND mt.tier_level >= 2
   ) INTO v_has_platinum;
 
@@ -206,6 +233,39 @@ DECLARE
   v_age_years integer;
   v_status    text;
 BEGIN
+  -- ===========================================================================
+  -- 0. TRUSTED-WRITER GATE for the pre-stamp (FIX 1, closes the client-supplied
+  --    premium_status_at_scan bypass). The only RLS policy on body_photo_sessions
+  --    is FOR ALL WITH CHECK (auth.uid() = user_id), so a direct authenticated
+  --    client could finalize while setting premium_status_at_scan to a valid enum
+  --    value (e.g. 'platinum') in the SAME write. That would make the column
+  --    non-NULL, the IS NULL entitlement gate (step 4) would never call the
+  --    resolver, and a NON-ENTITLED user would finalize a scan. Only the trusted
+  --    backend (the body-scan-analyze edge function, which runs as the Postgres
+  --    role service_role) may legitimately pre-stamp this column. So: if the
+  --    caller is NOT service_role, DISCARD any caller-supplied value (force NULL)
+  --    so the resolver in step 4 ALWAYS runs on the direct client path.
+  --
+  --    Role detection uses auth.role(), the same predicate this codebase already
+  --    uses to gate service_role inside SECURITY DEFINER functions (see
+  --    public.compute_bio_optimization_score in 20260512020236_bos_compute_v2.sql:
+  --    "auth.role() <> 'service_role'"). auth.role() reads the request.jwt.claims
+  --    session GUC, which persists into SECURITY DEFINER, so it is readable here.
+  --
+  --    No-op for the honest runScanAnalysis path (it already leaves the column
+  --    NULL, so forcing NULL changes nothing). Does NOT disturb the practitioner
+  --    override below (which re-checks practitioner_patients and stamps
+  --    'practitioner_managed' itself AFTER this point) nor the trusted edge path
+  --    (service_role keeps its pre-stamp).
+  --
+  --    IS DISTINCT FROM is used (not <>) so a NULL auth.role() also fails closed
+  --    to NULLing the column (a bare <> would yield NULL, treated as false, and
+  --    would LEAVE a caller value in place: the wrong direction).
+  -- ===========================================================================
+  IF auth.role() IS DISTINCT FROM 'service_role' THEN
+    NEW.premium_status_at_scan := NULL;
+  END IF;
+
   -- ===========================================================================
   -- 1. PRACTITIONER OVERRIDE (supervised clinical context). Identical to 080.
   --    Valid only when a non-blank clinical_override_reason AND a practitioner_id
@@ -272,11 +332,14 @@ BEGIN
 
   -- ===========================================================================
   -- 4. ENTITLEMENT (169f TIER MODEL; replaces the 080 premium-or-free-teaser step).
-  --    Only the DIRECT runScanAnalysis path leaves premium_status_at_scan NULL.
-  --    The edge path already resolved + stamped it, so when it is non-NULL an
-  --    upstream gate set it and we TRUST it (no re-resolution). When NULL we
-  --    resolve the tier stamp; a NULL resolution means NOT entitled -> REJECT.
-  --    There is NO free teaser and NO fallback scan for a non-entitled user.
+  --    After step 0, premium_status_at_scan is non-NULL ONLY when the writer is
+  --    service_role (the trusted edge path, which already resolved + stamped it);
+  --    a direct authenticated client always arrives here with it forced to NULL.
+  --    So when it is non-NULL we TRUST the service_role pre-stamp (no
+  --    re-resolution); when NULL we resolve the tier stamp and a NULL resolution
+  --    means NOT entitled -> REJECT. There is NO free teaser and NO fallback scan
+  --    for a non-entitled user, and a client can no longer short-circuit the
+  --    resolver by pre-setting this column.
   -- ===========================================================================
   IF NEW.premium_status_at_scan IS NULL THEN
     v_status := fn_resolve_body_scan_tier_status(NEW.user_id);
