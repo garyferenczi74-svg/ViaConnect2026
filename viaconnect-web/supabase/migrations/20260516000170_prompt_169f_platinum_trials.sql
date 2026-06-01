@@ -108,6 +108,21 @@ CREATE INDEX IF NOT EXISTS idx_platinum_trials_user_active
   ON public.platinum_trials (user_id)
   WHERE converted_at IS NULL AND cancelled_at IS NULL;
 
+-- Race-proof backstops for the one-time guarantees. The claim functions check
+-- EXISTS then INSERT, which is NOT atomic under READ COMMITTED: two concurrent
+-- calls could both pass the EXISTS check and both INSERT. These partial UNIQUE
+-- indexes make the second concurrent INSERT fail with unique_violation, so the
+-- lifetime self rule and the per practitioner patient rule hold even under a
+-- burst. Both predicates are immutable (no now()), so they are legal index
+-- predicates.
+CREATE UNIQUE INDEX IF NOT EXISTS uniq_platinum_trials_self_per_user
+  ON public.platinum_trials (user_id)
+  WHERE trial_source = 'self_initiated';
+
+CREATE UNIQUE INDEX IF NOT EXISTS uniq_platinum_trials_granted_per_pair
+  ON public.platinum_trials (user_id, practitioner_id)
+  WHERE trial_source = 'practitioner_granted';
+
 
 -- =============================================================================
 -- 2a. fn_claim_self_initiated_platinum_trial() RETURNS uuid
