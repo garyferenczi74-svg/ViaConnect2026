@@ -1,9 +1,10 @@
 /**
  * Prompt 170n Phase D: Voice-Native settings section.
  *
- * Sits adjacent to VoiceSettingsSection (170j) and QuickLogSettingsSection
- * (170m) under the consolidated "Entry path preferences" structure per
- * Hannah Gate 3 Option C. Read-only informational in v1; per-user toggles
+ * Sits adjacent to VoiceSettingsSection (170j) under the consolidated
+ * "Entry path preferences" structure per Hannah Gate 3 Option C. (Prompt
+ * 173 removed the 170m Quick Log settings section.) Read-only
+ * informational in v1; per-user toggles
  * (transcript retention opt-in, hide Voice card from idle, push-to-talk
  * default) deferred to a Phase D follow-up endpoint once the surface has
  * bake time.

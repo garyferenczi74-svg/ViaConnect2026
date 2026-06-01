@@ -44,7 +44,6 @@ import {
 import { scoreMealForServerInsert } from '@/lib/gordon/scoreMealForServerInsert';
 import { awardNutritionLogPoints } from '@/lib/nutrition/helix-bridge';
 import { awardNutriVisionHelixEvents } from '@/lib/nutrition/helix-bridge';
-import { awardQuickLogHelixEvents } from '@/lib/nutrition/helix-bridge';
 import { recomputeNutritionDimension } from '@/lib/nutrition/bos-bridge';
 import { writeCorpusRow } from '@/lib/nutrition/corpus/writer';
 import type {
@@ -225,60 +224,11 @@ export async function POST(req: NextRequest) {
       safeLog.warn('api.nutrition.meals', 'helix award failed', { userId: user.id, error: rewardErr });
     }
 
-    // Prompt #170a supplement §16: Quick Log Helix parity. Emit the three
-    // quick_log_* events alongside the existing awardNutritionLogPoints stub.
-    // Gated to source='quick_log' so full_manual + tracker_api stay on the
-    // legacy stub path. Best-effort: errors never fail the response. When
-    // SUPABASE_SERVICE_ROLE_KEY is missing tryCreateAdminClient returns null
-    // and we skip with a structured warn (Phase 1q hotfix 1 posture).
-    if (payload.source === 'quick_log') {
-      try {
-        const supabaseAdmin = tryCreateAdminClient();
-        if (supabaseAdmin === null) {
-          safeLog.warn(
-            'api.nutrition.meals.quick_log',
-            'admin client unavailable, skipping quick_log helix',
-            { user_id: user.id, meal_id: inserted.meal_id },
-          );
-        } else {
-          // hasAllFourMacros: every macro present and the calorie value strictly
-          // positive. The legacy schema requires non-negative numbers so we
-          // also gate on calories > 0 to exclude empty-meal saves.
-          const hasAllFourMacros =
-            Number.isFinite(payload.calories_kcal) && payload.calories_kcal > 0 &&
-            Number.isFinite(payload.protein_g) &&
-            Number.isFinite(payload.carbs_g) &&
-            Number.isFinite(payload.fat_total_g);
-
-          // hasCookingAnnotation: the spec's three signals are cooking_method,
-          // cooking_oil_json, and sauce-chip applied. None of those fields are
-          // on MealsInsertPayloadSchema for the Quick Log Phase 1 payload, so
-          // this reduces to false today. Reserved for a future Quick Log
-          // schema extension; the 2-point completeness award stays gated.
-          const hasCookingAnnotation = false;
-
-          // Quick Log inputs are user-entered by definition; the spec accepts
-          // userModified=true as the constant for this channel.
-          const userModified = true;
-
-          await awardQuickLogHelixEvents({
-            supabaseAdmin,
-            userId: user.id,
-            mealId: inserted.meal_id,
-            hasAllFourMacros,
-            hasCookingAnnotation,
-            userModified,
-            requestId: globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`,
-          });
-        }
-      } catch (quickLogErr) {
-        safeLog.warn('api.nutrition.meals.quick_log', 'quick_log helix award failed', {
-          user_id: user.id,
-          meal_id: inserted.meal_id,
-          error: quickLogErr,
-        });
-      }
-    }
+    // Prompt 173: removed the source='quick_log' helix-award branch (170m
+    // Quick Log text-native entry path retired). The quick_log enum member
+    // and mealSourceToNutritionSource mapping are preserved for historical
+    // rows and type exhaustiveness per Prompt 173 spec; nothing creates new
+    // quick_log meals once the UI is gone.
 
     try {
       await recomputeNutritionDimension({ userId: user.id, date: payload.logged_at });

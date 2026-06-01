@@ -16,7 +16,6 @@ import Link from 'next/link';
 import { ArrowLeft, Camera, ChevronRight, ScanBarcode } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { VoiceSettingsSection } from './components/VoiceSettingsSection';
-import { QuickLogSettingsSection } from './components/QuickLogSettingsSection';
 import { VoiceNativeSettingsSection } from './components/VoiceNativeSettingsSection';
 import { HydrationSettingsSection } from './components/HydrationSettingsSection';
 
@@ -159,14 +158,10 @@ export default function NutriVisionSettingsPage() {
 
         <VoiceSettingsSection />
 
-        {/* Prompt 170m Phase D: Quick Log text-native entry path informational
-            section. Consolidated under "Entry path preferences" per Hannah
-            Gate 3 Option C. */}
-        <QuickLogSettingsSection />
-
         {/* Prompt 170n Phase D: Voice-native entry path informational section.
-            Sits adjacent to Voice editing (170j) and Quick Log (170m) under
-            the consolidated Entry path preferences card. */}
+            Sits adjacent to Voice editing (170j) under the consolidated
+            Entry path preferences card. (Prompt 173 removed the 170m Quick
+            Log section.) */}
         <VoiceNativeSettingsSection />
 
         {/* Prompt 170o Phase 1 Phase D: hydration settings section per Hannah

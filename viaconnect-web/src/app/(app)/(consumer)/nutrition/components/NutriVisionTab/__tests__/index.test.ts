@@ -41,4 +41,23 @@ describe('NutriVisionTab index source', () => {
     expect(page).toContain('NutriVisionTab');
     expect(page).not.toContain('NutriVision is coming online');
   });
+
+  // Prompt 173: after removing the 170m text-native Quick Log entry path,
+  // the IdleSurface row renders exactly three cards (Photo, Scan Barcode,
+  // Voice) in a grid-cols-3 layout. The 170m MessageSquareText icon import
+  // is also gone.
+  it('entry-path row renders exactly three cards (Photo + Scan Barcode + Voice) in grid-cols-3', () => {
+    // Three EntryPathCard mounts inside IdleSurface (Photo + Scan Barcode + Voice).
+    // The interior count is exact because no other site mounts EntryPathCard.
+    const cardMatches = source.match(/<EntryPathCard\b/g) ?? [];
+    expect(cardMatches).toHaveLength(3);
+    expect(source).toContain('grid grid-cols-3 gap-2 sm:gap-3');
+    // Title strings present.
+    expect(source).toContain('title="Photo"');
+    expect(source).toContain('title="Scan Barcode"');
+    expect(source).toContain('title="Voice"');
+    // The removed Quick Log card is not present.
+    expect(source).not.toContain('title="Quick Log"');
+    expect(source).not.toContain('MessageSquareText');
+  });
 });

@@ -7,8 +7,9 @@
  * docs/prompts/prompt-170n-oq3-hannah-quantifier-validation-2026-05-31.md).
  * Gary blessed voice/text divergence on collective quantifiers (Section 0).
  *
- * Inherits Sections 3.1-3.9 + 5 + 6 + 7 + 8 + 10 verbatim from 170m
- * (src/lib/nutrition/quick-log/haiku-system-prompt.ts). Sections 1, 2, 4
+ * Inherits Sections 3.1-3.9 + 5 + 6 + 7 + 8 + 10 verbatim from the original
+ * 170m system prompt (Prompt 173 removed the 170m source module; the
+ * inherited sections are now embedded directly below). Sections 1, 2, 4
  * (spoken-language normalization), 9 (combined_confidence framework), 11
  * (voice-native few-shot examples), 12 (hard constraints with new fields)
  * are voice-native authored.

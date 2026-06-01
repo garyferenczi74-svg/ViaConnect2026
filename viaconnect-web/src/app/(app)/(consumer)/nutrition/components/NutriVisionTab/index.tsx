@@ -12,7 +12,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
-import { Camera, ChevronLeft, HelpCircle, MessageSquareText, Mic, ScanBarcode, Settings, X } from 'lucide-react';
+import { Camera, ChevronLeft, HelpCircle, Mic, ScanBarcode, Settings, X } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import type { CaptureResult, CaptureSource } from '@/lib/capacitor/camera-capture';
@@ -42,10 +42,6 @@ import {
 } from '@/components/barcode/lib/off-product-to-draft';
 import type { LookupResult } from '@/components/barcode/hooks/useOffLookup';
 import type { OFFProduct } from '@/lib/nutrition/barcode/types';
-// Prompt 170m Phase C: Quick Log text-native entry path components.
-import { QuickLogModal } from './QuickLog/QuickLogModal';
-import { quickLogToMealDraft } from './QuickLog/quick-log-to-meal-draft';
-import type { QuickLogParseResult } from '@/lib/nutrition/quick-log/types';
 // Prompt 170n Phase C: Voice-Native entry path components.
 import { VoiceNativeCaptureOverlay } from './VoiceNative/VoiceNativeCaptureOverlay';
 import { voiceNativeToMealDraft } from './VoiceNative/voice-native-to-meal-draft';
@@ -147,14 +143,6 @@ export default function NutriVisionTab() {
   // Prompt 170m Phase C: Quick Log modal state. The modal is overlay-style
   // and manages its own internal typing/loading/clarifying states. On parse
   // completion (no more clarifications) the handler below builds the
-  // MealDraft and transitions to phase='reviewing' so the shared review
-  // surface renders. quickLogParseResult is the verbatim parser response,
-  // retained on the draft so the save handler can route to the Quick Log
-  // save endpoint with the original text + clarification round count.
-  const [quickLogModalOpen, setQuickLogModalOpen] = useState(false);
-  const [quickLogText, setQuickLogText] = useState<string | null>(null);
-  const [quickLogParseResult, setQuickLogParseResult] = useState<QuickLogParseResult | null>(null);
-
   // Prompt 170n Phase C: voice-native modal state. Overlay reuses 170j STT
   // pipeline (useVoiceCapture) wrapped with the voice-native parser hook.
   // voiceNativeContext rides through ReviewingSurface so handleSave routes
@@ -353,8 +341,6 @@ export default function NutriVisionTab() {
     setDraft(null);
     analysis.reset();
     capture.reset();
-    setQuickLogText(null);
-    setQuickLogParseResult(null);
     setVoiceNativeContext(null);
     setPhase('idle');
   }, [analysis, capture]);
@@ -364,8 +350,6 @@ export default function NutriVisionTab() {
     setDraft(null);
     analysis.reset();
     capture.reset();
-    setQuickLogText(null);
-    setQuickLogParseResult(null);
     setVoiceNativeContext(null);
     setPhase('idle');
   }, [analysis, capture]);
@@ -644,27 +628,6 @@ export default function NutriVisionTab() {
     [],
   );
 
-  // Prompt 170m Phase C: Quick Log flow handlers.
-  const handleOpenQuickLog = useCallback(() => {
-    setQuickLogModalOpen(true);
-  }, []);
-
-  const handleQuickLogClose = useCallback(() => {
-    setQuickLogModalOpen(false);
-  }, []);
-
-  const handleQuickLogParseComplete = useCallback(
-    (result: QuickLogParseResult, originalText: string) => {
-      const newDraft = quickLogToMealDraft(result);
-      setQuickLogText(originalText);
-      setQuickLogParseResult(result);
-      setDraft(newDraft);
-      setQuickLogModalOpen(false);
-      setPhase('reviewing');
-    },
-    [],
-  );
-
   const handleOpenManualEntry = useCallback(() => setManualEntryOpen(true), []);
   const handleCloseManualEntry = useCallback(() => setManualEntryOpen(false), []);
   const handleManualEntryLookup = useCallback(
@@ -722,7 +685,6 @@ export default function NutriVisionTab() {
             <IdleSurface
               onCapture={onCapture}
               onOpenScanner={handleOpenScanner}
-              onOpenQuickLog={handleOpenQuickLog}
               onOpenVoiceNative={handleOpenVoiceNative}
               isCapturing={capture.isCapturing}
               error={analysisError ?? capture.error}
@@ -770,8 +732,6 @@ export default function NutriVisionTab() {
               onCancel={handleCancelReview}
               onSaved={(resp) => { setSaveResponse(resp); setPhase('confirmed'); }}
               onSavingChange={(saving) => setPhase(saving ? 'saving' : 'reviewing')}
-              quickLogText={quickLogText}
-              quickLogParseResult={quickLogParseResult}
               voiceNativeContext={voiceNativeContext}
             />
           )}
@@ -789,8 +749,6 @@ export default function NutriVisionTab() {
                   onCancel={handleCancelReview}
                   onSaved={() => undefined}
                   onSavingChange={() => undefined}
-                  quickLogText={quickLogText}
-                  quickLogParseResult={quickLogParseResult}
                   voiceNativeContext={voiceNativeContext}
                   forceSavingState
                 />
@@ -876,26 +834,14 @@ export default function NutriVisionTab() {
         onLookupResult={handleManualEntryLookup}
       />
 
-      {/* Prompt 170m Phase C: Quick Log text-native entry path modal. Overlay
-          style; sits above the document root so all phases can launch it. */}
-      <QuickLogModal
-        open={quickLogModalOpen}
-        onClose={handleQuickLogClose}
-        onParseComplete={handleQuickLogParseComplete}
-      />
-
       {/* Prompt 170n Phase C: Voice-Native entry path capture overlay.
-          Phase 1.1 Hannah Gate 2 polish: onSwitchToText wires the deaf/HoH
-          fallback. Closes the voice overlay and opens the 170m Quick Log
-          modal. */}
+          Prompt 173 removed the deaf/HoH onSwitchToText fallback when the
+          170m Quick Log modal was deleted; Photo is the implicit text-free
+          fallback via the entry row. */}
       <VoiceNativeCaptureOverlay
         open={voiceNativeOpen}
         onClose={handleVoiceNativeClose}
         onParseComplete={handleVoiceNativeParseComplete}
-        onSwitchToText={() => {
-          setVoiceNativeOpen(false);
-          setQuickLogModalOpen(true);
-        }}
       />
 
       <MacroEditPanel
@@ -931,7 +877,6 @@ export default function NutriVisionTab() {
 interface IdleSurfaceProps {
   onCapture: (source: CaptureSource) => void;
   onOpenScanner: () => void;
-  onOpenQuickLog: () => void;
   onOpenVoiceNative: () => void;
   isCapturing: boolean;
   error: string | null;
@@ -940,18 +885,17 @@ interface IdleSurfaceProps {
 }
 
 // Prompt 170l Phase 1c-2 + Hannah 11.1: equal-weight peer entry path row.
-// Prompt 170m Phase C + Hannah 9.1 Gate 1: extended from two to three peers.
-// Prompt 170n Phase C + Hannah Gate 1 (responsive): extended from three to
-// four peers (Photo + Scan Barcode + Quick Log + Voice) with 2x2 collapse at
-// viewports <=359px per Hannah's hard push-back on iPhone SE tap-target
-// ergonomics. >=360px renders all four peers in one row; <=359px collapses
-// to a 2x2 grid so each card retains comfortable touch area. Anti-condescension
-// principle from 170l + 170m propagates: NO "Most common" chip on Photo, NO
-// "NEW" chip on Voice. Photo retains left position for existing muscle memory.
+// Prompt 173: reduced from four peers to three (Photo + Scan Barcode + Voice)
+// after the 170m text-native Quick Log removal. Three icon cards sit evenly
+// across all breakpoints in a grid-cols-3 layout; iPhone SE tap-target
+// ergonomics are preserved by the three-card width math at 320px. Anti-
+// condescension principle from 170l + 170m propagates: NO "Most common" chip
+// on Photo, NO "NEW" chip on Voice. Photo retains left position for existing
+// muscle memory.
 function IdleSurface(props: IdleSurfaceProps) {
   return (
     <div className="flex flex-col gap-4">
-      <div className="grid grid-cols-2 gap-2 min-[360px]:grid-cols-4 sm:gap-3">
+      <div className="grid grid-cols-3 gap-2 sm:gap-3">
         <EntryPathCard
           icon={<Camera className="h-6 w-6 sm:h-9 sm:w-9" strokeWidth={1.5} />}
           title="Photo"
@@ -967,14 +911,6 @@ function IdleSurface(props: IdleSurfaceProps) {
           onTap={props.onOpenScanner}
           disabled={false}
           ariaLabel="Scan Barcode. Read packaged food labels in under a second."
-        />
-        <EntryPathCard
-          icon={<MessageSquareText className="h-6 w-6 sm:h-9 sm:w-9" strokeWidth={1.5} />}
-          title="Quick Log"
-          subtitle="Type what you ate."
-          onTap={props.onOpenQuickLog}
-          disabled={false}
-          ariaLabel="Quick Log. Type what you ate."
         />
         <EntryPathCard
           icon={<Mic className="h-6 w-6 sm:h-9 sm:w-9" strokeWidth={1.5} />}
@@ -1082,12 +1018,6 @@ interface ReviewingSurfaceProps {
   onSaved: (resp: SaveResponse) => void;
   onSavingChange: (saving: boolean) => void;
   forceSavingState?: boolean;
-  // Prompt 170m Phase C: when set, routes the save through the Quick Log
-  // endpoint so meals.text_input + parser_version + clarification metadata
-  // ride the persistence. Photo + barcode flows leave these undefined and
-  // route through /api/nutrition/meals as before.
-  quickLogText?: string | null;
-  quickLogParseResult?: QuickLogParseResult | null;
   // Prompt 170n Phase C: when set, routes the save through the Voice-Native
   // endpoint so transcript + STT context + parser_version persist.
   voiceNativeContext?: {
@@ -1112,17 +1042,13 @@ function ReviewingSurface(props: ReviewingSurfaceProps) {
     }
     props.onSavingChange(true);
     try {
-      // Prompt 170m Phase C: route Quick Log saves to the dedicated endpoint.
       // Prompt 170n Phase C: route Voice-Native saves to its dedicated endpoint
       // so transcript + STT context + parser_version persist.
       // Photo + barcode flows continue to use /api/nutrition/meals.
-      const isQuickLog = typeof props.quickLogText === 'string' && props.quickLogText.length > 0;
       const isVoiceNative = props.voiceNativeContext !== null && props.voiceNativeContext !== undefined;
       const url = isVoiceNative
         ? '/api/nutrition/voice-native/save'
-        : isQuickLog
-          ? '/api/nutrition/quick-log/save'
-          : '/api/nutrition/meals';
+        : '/api/nutrition/meals';
       const payload = isVoiceNative && props.voiceNativeContext
         ? {
             transcript: props.voiceNativeContext.transcript,
@@ -1147,22 +1073,6 @@ function ReviewingSurface(props: ReviewingSurfaceProps) {
             triggered_split: props.voiceNativeContext.parse.split_into_multiple_meals_suggestion !== null,
             used_quick_apply: false,
           }
-        : isQuickLog && props.quickLogText
-        ? {
-            text_input: props.quickLogText,
-            text_input_locale: 'en-US',
-            meal_type: mealType,
-            meal_items: edits.draft.items.map((it) => ({
-              food_name: it.food_name,
-              portion_grams: it.portion_grams,
-              cooking_method: it.cooking_method ?? null,
-              caffeine_mg: typeof it.caffeine_mg === 'number' ? it.caffeine_mg : null,
-              confidence: it.recognition_confidence,
-            })),
-            parser_confidence_avg: edits.draft.meal_confidence,
-            clarification_rounds: 0,
-            triggered_split: false,
-          }
         : edits.buildSavePayload(mealType);
       const res = await fetch(url, {
         method: 'POST',
@@ -1181,9 +1091,9 @@ function ReviewingSurface(props: ReviewingSurfaceProps) {
         props.onSavingChange(false);
         return;
       }
-      // Quick Log + Voice-Native save endpoints return slimmer shapes than
-      // the photo save endpoint; synthesize a SaveResponse-compatible object.
-      const saveResp: SaveResponse = (isQuickLog || isVoiceNative)
+      // Voice-Native save endpoint returns a slimmer shape than the photo
+      // save endpoint; synthesize a SaveResponse-compatible object.
+      const saveResp: SaveResponse = isVoiceNative
         ? {
             meal_id: body.meal_id,
             gordon: {
