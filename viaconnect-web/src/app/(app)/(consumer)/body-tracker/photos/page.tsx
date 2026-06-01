@@ -17,6 +17,7 @@ import { ScanOnboardingWalkthrough } from '@/components/body-tracker/scanning/Sc
 import { BodyScanDisorderedEatingQuestion } from '@/components/body-tracker/scanning/BodyScanDisorderedEatingQuestion';
 import { BodyScanTier3ComingSoon } from '@/components/body-tracker/scanning/BodyScanTier3ComingSoon';
 import { TierBadge } from '@/components/body-tracker/scanning/TierBadge';
+import { ActiveTrialBadge } from '@/components/body-tracker/scanning/ActiveTrialBadge';
 import { ScanPdfExportButton } from '@/components/body-tracker/scanning/ScanPdfExportButton';
 import { NumbersOptionalToggle } from '@/components/body-tracker/scanning/NumbersOptionalToggle';
 import { ScanTimeOfDayRecommendation } from '@/components/body-tracker/scanning/ScanTimeOfDayRecommendation';
@@ -105,6 +106,9 @@ export default function PhotosPage() {
           </div>
           {/* Phase 1 always Tier 1; replace with scan_tier_log read in a later phase */}
           {latestId && <TierBadge tier={1} bosDelta={undefined} />}
+          {/* Active Platinum trial status (Prompt #169f): renders nothing when
+              the user has no active trial. Minimal "N days left" line only. */}
+          <ActiveTrialBadge />
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
           {latestId && <ScanPdfExportButton sessionId={latestId} />}

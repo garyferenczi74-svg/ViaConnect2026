@@ -17,6 +17,7 @@ import { createClient } from '@/lib/supabase/server';
 import { PatientViewModeSelector } from '@/components/practitioner/PatientViewModeSelector';
 import { StandardPatientView } from '@/components/practitioner/StandardPatientView';
 import { NaturopathicPatientView } from '@/components/practitioner/NaturopathicPatientView';
+import { PractitionerGrantTrialControl } from '@/components/practitioner/PractitionerGrantTrialControl';
 import LegacyPatientDetailView from './LegacyPatientView';
 
 export const dynamic = 'force-dynamic';
@@ -85,6 +86,16 @@ export default async function PractitionerPatientDetailPage({
     return <LegacyPatientDetailView />;
   }
 
+  // Patient display name for the Platinum trial grant control (Prompt #169f).
+  // Read through the same active relationship the page already established (no
+  // new access logic). The grant control routes this through getDisplayName.
+  const { data: patientProfileRow } = await (supabase as any)
+    .from('profiles')
+    .select('full_name')
+    .eq('id', params.id)
+    .maybeSingle();
+  const patientName = (patientProfileRow?.full_name ?? null) as string | null;
+
   const canShowNaturopathic = NATUROPATH_LIKE.has(practitioner.credential_type);
 
   const urlView =
@@ -120,6 +131,13 @@ export default async function PractitionerPatientDetailPage({
         // / mock-data routes still work.
         <StandardPatientView patientId={params.id} relationship={relationship} />
       )}
+
+      {/* Platinum trial grant control (Prompt #169f, Option D). Rendered only in
+          this active-relationship branch; the SECURITY DEFINER grant function is
+          the authority on the relationship + one-time + duration rules. */}
+      <div className="mt-6">
+        <PractitionerGrantTrialControl patientUserId={params.id} patientName={patientName} />
+      </div>
     </div>
   );
 }

@@ -15,11 +15,13 @@
 // (see src/lib/flags/upgrade-prompt-copy.ts). NO price is rendered here;
 // pricing is owned by Gary and surfaced on /pricing.
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { ArrowUpRight, Lock, ScanLine, GitCompareArrows, Sparkles, Layers } from 'lucide-react';
+import { ArrowUpRight, Lock, ScanLine, GitCompareArrows, Sparkles, Layers, Loader2 } from 'lucide-react';
 import { getDisplayName } from '@/lib/getDisplayName';
 import { trackPremiumPaywallShown, trackPremiumUpgradeClicked } from '@/lib/body-tracker/scan-analytics';
+import { useTrialState } from '@/hooks/body-tracker/useTrialState';
+import { useClaimPlatinumTrial } from '@/hooks/body-tracker/useClaimPlatinumTrial';
 
 interface BodyScanPremiumPaywallProps {
   // When true, also render the locked Compare + Insights tab evidence beneath
@@ -62,6 +64,30 @@ export function BodyScanPremiumPaywall({
   // Distinguish where the paywall surfaced: the results surface (locked-tab
   // evidence) vs the dashboard / pre-capture entry. Metadata only.
   const triggerPoint = showLockedEvidence ? 'results_locked_tabs' : 'scan_entry';
+
+  // Secondary CTA (Prompt #169f Option C): the one-time self-initiated Platinum
+  // trial. The CTA is shown ONLY when the read-only signal says the user is
+  // eligible (active Gold, no prior self-trial, no active trial); it is hidden
+  // otherwise (spec 11.2 / 12.2 "Hidden if user has already used their trial").
+  // The claim function remains the authority; on success we refresh so the
+  // entitlement re-resolves the user to trial-Platinum. The primary "Upgrade
+  // membership" path above stays intact.
+  const { eligibleForSelfTrial, isLoading: trialLoading, refresh: refreshTrial } = useTrialState();
+  const { claim, isClaiming } = useClaimPlatinumTrial();
+  const [claimError, setClaimError] = useState<string | null>(null);
+
+  const onStartSelfTrial = async () => {
+    setClaimError(null);
+    const result = await claim();
+    if (result.ok) {
+      // Re-read so the surface (and the entitlement resolver) reflect the new
+      // active trial without a hard reload.
+      await refreshTrial();
+      return;
+    }
+    // Surface the function's returned reason verbatim.
+    setClaimError(result.error ?? 'Could not start the Platinum trial.');
+  };
 
   // Analytics (§14): the body-scan paywall was shown. Under the #169f tier model
   // there is no free teaser; this card is the Platinum upgrade prompt shown to a
@@ -133,7 +159,7 @@ export function BodyScanPremiumPaywall({
         </div>
       )}
 
-      {/* Single primary CTA -> canonical upgrade route */}
+      {/* Primary CTA -> canonical upgrade route */}
       <Link
         href={upgradeHref}
         onClick={() => trackPremiumUpgradeClicked({ trigger_point: triggerPoint })}
@@ -142,6 +168,30 @@ export function BodyScanPremiumPaywall({
         Upgrade membership
         <ArrowUpRight className="h-4 w-4" strokeWidth={1.5} />
       </Link>
+
+      {/* Secondary CTA: one-time self-initiated Platinum trial (Prompt #169f
+          Option C). Rendered ONLY when eligible (active Gold, no prior self-trial,
+          no active trial); hidden in every other state. Minimal functional label;
+          the marketing copy pass (169f 9.5 / 12.2) is gated separately. */}
+      {!trialLoading && eligibleForSelfTrial && (
+        <div className="mt-3">
+          <button
+            type="button"
+            data-testid="body-scan-self-trial-cta"
+            onClick={onStartSelfTrial}
+            disabled={isClaiming}
+            className="inline-flex w-full sm:w-auto items-center justify-center gap-1.5 rounded-xl border border-[#2DA5A0]/40 bg-transparent px-5 py-2.5 text-sm font-semibold text-[#2DA5A0] hover:bg-[#2DA5A0]/10 min-h-[44px] disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isClaiming && <Loader2 className="h-4 w-4 animate-spin" strokeWidth={1.5} />}
+            Start 7 day Platinum trial
+          </button>
+          {claimError && (
+            <p className="mt-2 text-xs text-[#FCA5A5]" role="alert">
+              {claimError}
+            </p>
+          )}
+        </div>
+      )}
     </div>
   );
 }
