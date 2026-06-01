@@ -12,7 +12,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
-import { Camera, ChevronLeft, HelpCircle, MessageSquareText, ScanBarcode, Settings, X } from 'lucide-react';
+import { Camera, ChevronLeft, HelpCircle, MessageSquareText, Mic, ScanBarcode, Settings, X } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import type { CaptureResult, CaptureSource } from '@/lib/capacitor/camera-capture';
@@ -46,6 +46,10 @@ import type { OFFProduct } from '@/lib/nutrition/barcode/types';
 import { QuickLogModal } from './QuickLog/QuickLogModal';
 import { quickLogToMealDraft } from './QuickLog/quick-log-to-meal-draft';
 import type { QuickLogParseResult } from '@/lib/nutrition/quick-log/types';
+// Prompt 170n Phase C: Voice-Native entry path components.
+import { VoiceNativeCaptureOverlay } from './VoiceNative/VoiceNativeCaptureOverlay';
+import { voiceNativeToMealDraft } from './VoiceNative/voice-native-to-meal-draft';
+import type { VoiceNativeParseResult, SttProvider } from '@/lib/nutrition/voice-native/types';
 import type {
   Phase,
   MealDraft,
@@ -148,6 +152,19 @@ export default function NutriVisionTab() {
   const [quickLogModalOpen, setQuickLogModalOpen] = useState(false);
   const [quickLogText, setQuickLogText] = useState<string | null>(null);
   const [quickLogParseResult, setQuickLogParseResult] = useState<QuickLogParseResult | null>(null);
+
+  // Prompt 170n Phase C: voice-native modal state. Overlay reuses 170j STT
+  // pipeline (useVoiceCapture) wrapped with the voice-native parser hook.
+  // voiceNativeContext rides through ReviewingSurface so handleSave routes
+  // to /api/nutrition/voice-native/save with transcript + STT context.
+  const [voiceNativeOpen, setVoiceNativeOpen] = useState(false);
+  const [voiceNativeContext, setVoiceNativeContext] = useState<{
+    transcript: string;
+    stt_provider: SttProvider;
+    stt_confidence_avg: number;
+    audio_duration_ms: number;
+    parse: VoiceNativeParseResult;
+  } | null>(null);
 
   const capture = useCameraCapture();
   const analysis = useNutriVisionAnalysis();
@@ -336,6 +353,7 @@ export default function NutriVisionTab() {
     capture.reset();
     setQuickLogText(null);
     setQuickLogParseResult(null);
+    setVoiceNativeContext(null);
     setPhase('idle');
   }, [analysis, capture]);
 
@@ -346,6 +364,7 @@ export default function NutriVisionTab() {
     capture.reset();
     setQuickLogText(null);
     setQuickLogParseResult(null);
+    setVoiceNativeContext(null);
     setPhase('idle');
   }, [analysis, capture]);
 
@@ -591,6 +610,38 @@ export default function NutriVisionTab() {
     [macroEditMode, blankSlateBarcode, barcodeProduct],
   );
 
+  // Prompt 170n Phase C: Voice-Native flow handlers.
+  const handleOpenVoiceNative = useCallback(() => {
+    setVoiceNativeOpen(true);
+  }, []);
+
+  const handleVoiceNativeClose = useCallback(() => {
+    setVoiceNativeOpen(false);
+  }, []);
+
+  const handleVoiceNativeParseComplete = useCallback(
+    (
+      result: VoiceNativeParseResult,
+      sttProvider: SttProvider,
+      sttConfidenceAvg: number,
+      transcript: string,
+      audioDurationMs: number,
+    ) => {
+      const newDraft = voiceNativeToMealDraft(result);
+      setVoiceNativeContext({
+        transcript,
+        stt_provider: sttProvider,
+        stt_confidence_avg: sttConfidenceAvg,
+        audio_duration_ms: audioDurationMs,
+        parse: result,
+      });
+      setDraft(newDraft);
+      setVoiceNativeOpen(false);
+      setPhase('reviewing');
+    },
+    [],
+  );
+
   // Prompt 170m Phase C: Quick Log flow handlers.
   const handleOpenQuickLog = useCallback(() => {
     setQuickLogModalOpen(true);
@@ -670,6 +721,7 @@ export default function NutriVisionTab() {
               onCapture={onCapture}
               onOpenScanner={handleOpenScanner}
               onOpenQuickLog={handleOpenQuickLog}
+              onOpenVoiceNative={handleOpenVoiceNative}
               isCapturing={capture.isCapturing}
               error={analysisError ?? capture.error}
               recentMeals={recentMeals}
@@ -718,6 +770,7 @@ export default function NutriVisionTab() {
               onSavingChange={(saving) => setPhase(saving ? 'saving' : 'reviewing')}
               quickLogText={quickLogText}
               quickLogParseResult={quickLogParseResult}
+              voiceNativeContext={voiceNativeContext}
             />
           )}
 
@@ -736,6 +789,7 @@ export default function NutriVisionTab() {
                   onSavingChange={() => undefined}
                   quickLogText={quickLogText}
                   quickLogParseResult={quickLogParseResult}
+                  voiceNativeContext={voiceNativeContext}
                   forceSavingState
                 />
               </div>
@@ -828,6 +882,13 @@ export default function NutriVisionTab() {
         onParseComplete={handleQuickLogParseComplete}
       />
 
+      {/* Prompt 170n Phase C: Voice-Native entry path capture overlay. */}
+      <VoiceNativeCaptureOverlay
+        open={voiceNativeOpen}
+        onClose={handleVoiceNativeClose}
+        onParseComplete={handleVoiceNativeParseComplete}
+      />
+
       <MacroEditPanel
         open={macroEditOpen}
         mode={macroEditMode}
@@ -862,6 +923,7 @@ interface IdleSurfaceProps {
   onCapture: (source: CaptureSource) => void;
   onOpenScanner: () => void;
   onOpenQuickLog: () => void;
+  onOpenVoiceNative: () => void;
   isCapturing: boolean;
   error: string | null;
   recentMeals: RecentMealSummary[];
@@ -869,19 +931,20 @@ interface IdleSurfaceProps {
 }
 
 // Prompt 170l Phase 1c-2 + Hannah 11.1: equal-weight peer entry path row.
-// Prompt 170m Phase C + Hannah 9.1 Gate 1: extended from two to three peers
-// (Photo + Scan Barcode + Quick Log). Anti-condescension principle from 170l
-// propagates: NO "Most common" chip on Photo, NO "NEW" chip on Quick Log.
-// Photo retains left position for existing muscle memory; Quick Log right
-// because it is the newest. Three peers in one row across all viewports;
-// cards switch to compact icon-over-label format on narrow mobile to keep
-// the iPhone SE viewport readable.
+// Prompt 170m Phase C + Hannah 9.1 Gate 1: extended from two to three peers.
+// Prompt 170n Phase C + Hannah Gate 1 (responsive): extended from three to
+// four peers (Photo + Scan Barcode + Quick Log + Voice) with 2x2 collapse at
+// viewports <=359px per Hannah's hard push-back on iPhone SE tap-target
+// ergonomics. >=360px renders all four peers in one row; <=359px collapses
+// to a 2x2 grid so each card retains comfortable touch area. Anti-condescension
+// principle from 170l + 170m propagates: NO "Most common" chip on Photo, NO
+// "NEW" chip on Voice. Photo retains left position for existing muscle memory.
 function IdleSurface(props: IdleSurfaceProps) {
   return (
     <div className="flex flex-col gap-4">
-      <div className="grid grid-cols-3 gap-2 sm:gap-3">
+      <div className="grid grid-cols-2 gap-2 min-[360px]:grid-cols-4 sm:gap-3">
         <EntryPathCard
-          icon={<Camera className="h-7 w-7 sm:h-9 sm:w-9" strokeWidth={1.5} />}
+          icon={<Camera className="h-6 w-6 sm:h-9 sm:w-9" strokeWidth={1.5} />}
           title="Photo"
           subtitle="Snap your plate."
           onTap={() => props.onCapture('camera')}
@@ -889,7 +952,7 @@ function IdleSurface(props: IdleSurfaceProps) {
           ariaLabel="Photo. Snap your plate."
         />
         <EntryPathCard
-          icon={<ScanBarcode className="h-7 w-7 sm:h-9 sm:w-9" strokeWidth={1.5} />}
+          icon={<ScanBarcode className="h-6 w-6 sm:h-9 sm:w-9" strokeWidth={1.5} />}
           title="Scan Barcode"
           subtitle="Packaged foods."
           onTap={props.onOpenScanner}
@@ -897,12 +960,20 @@ function IdleSurface(props: IdleSurfaceProps) {
           ariaLabel="Scan Barcode. Read packaged food labels in under a second."
         />
         <EntryPathCard
-          icon={<MessageSquareText className="h-7 w-7 sm:h-9 sm:w-9" strokeWidth={1.5} />}
+          icon={<MessageSquareText className="h-6 w-6 sm:h-9 sm:w-9" strokeWidth={1.5} />}
           title="Quick Log"
           subtitle="Type what you ate."
           onTap={props.onOpenQuickLog}
           disabled={false}
           ariaLabel="Quick Log. Type what you ate."
+        />
+        <EntryPathCard
+          icon={<Mic className="h-6 w-6 sm:h-9 sm:w-9" strokeWidth={1.5} />}
+          title="Voice"
+          subtitle="Speak your meal."
+          onTap={props.onOpenVoiceNative}
+          disabled={false}
+          ariaLabel="Voice. Speak your meal hands-free."
         />
       </div>
 
@@ -1004,6 +1075,15 @@ interface ReviewingSurfaceProps {
   // route through /api/nutrition/meals as before.
   quickLogText?: string | null;
   quickLogParseResult?: QuickLogParseResult | null;
+  // Prompt 170n Phase C: when set, routes the save through the Voice-Native
+  // endpoint so transcript + STT context + parser_version persist.
+  voiceNativeContext?: {
+    transcript: string;
+    stt_provider: SttProvider;
+    stt_confidence_avg: number;
+    audio_duration_ms: number;
+    parse: VoiceNativeParseResult;
+  } | null;
 }
 
 function ReviewingSurface(props: ReviewingSurfaceProps) {
@@ -1019,14 +1099,42 @@ function ReviewingSurface(props: ReviewingSurfaceProps) {
     }
     props.onSavingChange(true);
     try {
-      // Prompt 170m Phase C: route Quick Log saves to the dedicated endpoint
-      // so meals.text_input, parser_version, clarification metadata persist.
+      // Prompt 170m Phase C: route Quick Log saves to the dedicated endpoint.
+      // Prompt 170n Phase C: route Voice-Native saves to its dedicated endpoint
+      // so transcript + STT context + parser_version persist.
       // Photo + barcode flows continue to use /api/nutrition/meals.
       const isQuickLog = typeof props.quickLogText === 'string' && props.quickLogText.length > 0;
-      const url = isQuickLog
-        ? '/api/nutrition/quick-log/save'
-        : '/api/nutrition/meals';
-      const payload = isQuickLog && props.quickLogText
+      const isVoiceNative = props.voiceNativeContext !== null && props.voiceNativeContext !== undefined;
+      const url = isVoiceNative
+        ? '/api/nutrition/voice-native/save'
+        : isQuickLog
+          ? '/api/nutrition/quick-log/save'
+          : '/api/nutrition/meals';
+      const payload = isVoiceNative && props.voiceNativeContext
+        ? {
+            transcript: props.voiceNativeContext.transcript,
+            transcript_locale: 'en-US',
+            transcript_retention_opted_in: false,
+            stt_provider: props.voiceNativeContext.stt_provider,
+            stt_confidence_avg: props.voiceNativeContext.stt_confidence_avg,
+            audio_duration_ms: props.voiceNativeContext.audio_duration_ms,
+            meal_type: mealType,
+            meal_items: edits.draft.items.map((it) => ({
+              food_name: it.food_name,
+              portion_grams: it.portion_grams,
+              cooking_method: it.cooking_method ?? null,
+              caffeine_mg: typeof it.caffeine_mg === 'number' ? it.caffeine_mg : null,
+              confidence: it.recognition_confidence,
+            })),
+            parser_confidence_avg: edits.draft.meal_confidence,
+            combined_confidence_avg: edits.draft.meal_confidence,
+            clarification_rounds: 0,
+            fillers_removed_count: props.voiceNativeContext.parse.fillers_removed.length,
+            restarts_resolved_count: props.voiceNativeContext.parse.restarts_resolved.length,
+            triggered_split: props.voiceNativeContext.parse.split_into_multiple_meals_suggestion !== null,
+            used_quick_apply: false,
+          }
+        : isQuickLog && props.quickLogText
         ? {
             text_input: props.quickLogText,
             text_input_locale: 'en-US',
@@ -1060,9 +1168,9 @@ function ReviewingSurface(props: ReviewingSurfaceProps) {
         props.onSavingChange(false);
         return;
       }
-      // Quick Log save endpoint returns a slimmer shape than the photo save
-      // endpoint, so synthesize a SaveResponse-compatible object when needed.
-      const saveResp: SaveResponse = isQuickLog
+      // Quick Log + Voice-Native save endpoints return slimmer shapes than
+      // the photo save endpoint; synthesize a SaveResponse-compatible object.
+      const saveResp: SaveResponse = (isQuickLog || isVoiceNative)
         ? {
             meal_id: body.meal_id,
             gordon: {
