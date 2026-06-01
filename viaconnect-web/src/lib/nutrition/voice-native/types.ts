@@ -13,7 +13,7 @@
 
 import { z } from 'zod';
 
-export const VOICE_NATIVE_PARSER_VERSION = 'voice-native.haiku.v1.0.0';
+export const VOICE_NATIVE_PARSER_VERSION = 'voice-native.haiku.v1.1.0';
 export const VOICE_NATIVE_HAIKU_MODEL = 'claude-haiku-4-5-20251001';
 
 export const STT_PROVIDERS = [
@@ -24,6 +24,21 @@ export const STT_PROVIDERS = [
 ] as const;
 
 export type SttProvider = typeof STT_PROVIDERS[number];
+
+// Prompt 170o Phase 1 Phase B-2: hydration recognition. Parser emits both
+// fields on beverage meal_items; null on non-beverages. Server computes
+// hydration_ml from portion_volume_ml * ratio(kind, counting_mode).
+export const HYDRATION_SOURCE_KINDS_PARSER = [
+  'pure_water',
+  'coffee_tea',
+  'juice_smoothie',
+  'dairy',
+  'soda',
+  'alcohol_low',
+  'alcohol_high',
+  'sports_drink',
+  'high_water_food',
+] as const;
 
 const voiceNativeMealItemSchema = z.object({
   food_name: z.string().min(1).max(160),
@@ -36,6 +51,9 @@ const voiceNativeMealItemSchema = z.object({
   confidence: z.number().min(0).max(1),
   stt_confidence_for_span: z.number().min(0).max(1),
   combined_voice_confidence: z.number().min(0).max(1),
+  // Prompt 170o Phase 1 hydration fields (v1.1.0 parser):
+  hydration_source_kind: z.enum(HYDRATION_SOURCE_KINDS_PARSER).nullable().optional(),
+  portion_volume_ml: z.number().min(0).max(5000).nullable().optional(),
 });
 
 const restaurantContextSchema = z.object({

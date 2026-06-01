@@ -12,7 +12,7 @@
 
 import { z } from 'zod';
 
-export const QUICK_LOG_PARSER_VERSION = 'quick-log.haiku.v1.0.0';
+export const QUICK_LOG_PARSER_VERSION = 'quick-log.haiku.v1.1.0';
 export const QUICK_LOG_HAIKU_MODEL = 'claude-haiku-4-5-20251001';
 
 export const COOKING_METHODS = [
@@ -52,12 +52,30 @@ export const ALLERGEN_VOCAB = [
   'gluten',
 ] as const;
 
+// Prompt 170o Phase 1 Phase B-2: hydration recognition. Parser emits both
+// fields on beverage meal_items; null on non-beverages. Server computes
+// hydration_ml from portion_volume_ml * ratio(kind, counting_mode).
+export const HYDRATION_SOURCE_KINDS_PARSER = [
+  'pure_water',
+  'coffee_tea',
+  'juice_smoothie',
+  'dairy',
+  'soda',
+  'alcohol_low',
+  'alcohol_high',
+  'sports_drink',
+  'high_water_food',
+] as const;
+
 const quickLogMealItemSchema = z.object({
   food_name: z.string().min(1).max(160),
   portion_grams: z.number().min(1).max(5000),
   portion_label_user: z.string().max(80).nullable(),
   cooking_method: z.string().max(40).nullable(),
   modifiers: z.array(z.string().max(40)).max(20),
+  // Prompt 170o Phase 1 hydration fields (v1.1.0 parser):
+  hydration_source_kind: z.enum(HYDRATION_SOURCE_KINDS_PARSER).nullable().optional(),
+  portion_volume_ml: z.number().min(0).max(5000).nullable().optional(),
   source_text_span: z.string().max(500),
   caffeine_mg: z.number().min(0).max(1000).nullable().optional(),
   confidence: z.number().min(0).max(1),

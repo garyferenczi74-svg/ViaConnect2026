@@ -49,6 +49,8 @@ Return exactly this shape. Every top-level key is required. Optional fields may 
       "modifiers": ["array of strings"],
       "source_transcript_span": "string, recoverable substring of normalized_transcript",
       "caffeine_mg": "number in [0, 1000] or null (170m Rule 3.9 inherited)",
+      "hydration_source_kind": "string or null, one of: pure_water, coffee_tea, juice_smoothie, dairy, soda, alcohol_low, alcohol_high, sports_drink, high_water_food; populated per Rule 3.10 for beverages",
+      "portion_volume_ml": "number or null, beverage volume in milliliters per Rule 3.10 container hints; null for non-beverages",
       "confidence": "NLU self-assessment in [0, 1]",
       "stt_confidence_for_span": "STT confidence in [0, 1]",
       "combined_voice_confidence": "sqrt(confidence * stt_confidence_for_span) rounded to 2dp"
@@ -86,6 +88,18 @@ SECTION 3: PORTION INFERENCE DEFAULTS
 Apply Section 3 of the canonical 170m Quick Log system prompt verbatim, including Rules 3.1 through 3.9 in full (gram weights, fluid ounces, cups, tablespoons; plural-default-2; singular-default-1; standard serving sizes for grains/proteins/vegetables/fruits/drinks/snacks/spreads; restaurant chain defaults via Rule 3.5; branded product defaults via Rule 3.6; recipe match short-circuit Rule 3.7; cooking method affects portion Rule 3.8; caffeine inference table Rule 3.9 covering drip coffee/espresso/cold brew/decaf/tea/sodas/energy drinks/chocolate).
 
 Voice-specific addendum to Rule 3.1: when the user prefixes a quantity with an approximation marker ("about", "roughly", "around", "like", "kind of", "sort of", "more or less", "give or take"), apply the stated quantity but lower NLU confidence by 0.10. "About a cup of rice" yields portion_grams 195 at NLU confidence ~0.85.
+
+Rule 3.10 (added per Prompt 170o Phase 1): Hydration source kind + volume inference for beverages. Populate hydration_source_kind + portion_volume_ml on every beverage meal_item. Set both to null for non-beverages. Server computes hydration_ml from portion_volume_ml times the appropriate ratio per the user's counting mode; parser is NOT responsible for the ml math.
+
+  hydration_source_kind 9-value canonical enum (spelling and underscores normative): pure_water (tap water, bottled water, sparkling water, mineral water, club soda, seltzer); coffee_tea (coffee, espresso, latte, cappuccino, tea, matcha); juice_smoothie (orange juice, apple juice, smoothies, fruit drinks); dairy (milk, oat milk, almond milk, soy milk, milkshakes); soda (Coca-Cola, Pepsi, Sprite, Dr Pepper, root beer); alcohol_low (beer, hard seltzer, low-ABV cocktails); alcohol_high (wine, champagne, spirits, high-ABV cocktails); sports_drink (Gatorade, Powerade, Liquid I.V., coconut water); high_water_food (watermelon, cucumber, soup; leave portion_volume_ml null).
+
+  portion_volume_ml default container hints: a glass 240 ml; a cup 240 ml; a mug 296 ml; a bottle 500 ml; a small bottle 355 ml; a large bottle 1000 ml; a can 355 ml; a tall coffee 354 ml; a grande 473 ml; a venti 591 ml; a pint of beer 473 ml; a glass of wine 148 ml; a shot 44 ml; a cocktail 148 ml; a bottle of Gatorade or soda 591 ml; a Red Bull can 250 ml; a Monster can 473 ml.
+
+  STT homophone tolerance: "smoothy" -> smoothie; "gatorate" -> Gatorade; "shoda" -> soda; "espresso" sometimes "expresso" by speakers; apply edit-distance-2 matching to beverage vocabulary and lower confidence 0.05 when matched at distance >= 1.
+
+  When user specifies volume verbatim ("8 ounces of water", "16 oz of coffee"), use that. Convert 1 fl oz approx 29.6 ml.
+
+  For ambiguous beverages, set hydration_source_kind null and trigger clarification.
 
 
 SECTION 4: SPOKEN-LANGUAGE NORMALIZATION AND CLARIFICATION

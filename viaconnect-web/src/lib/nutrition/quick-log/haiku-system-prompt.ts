@@ -53,6 +53,8 @@ Return exactly this shape. Every top-level key is required. Optional fields may 
       "modifiers": ["array of strings, e.g. ['spicy', 'extra cheese', 'no salt']; empty if none"],
       "source_text_span": "string, the exact verbatim substring of the user's input that produced this item; must be a literal substring of the input text for debugging and corpus reuse",
       "caffeine_mg": "number or null, estimated caffeine in milligrams in [0, 1000]; populated per Rule 3.9 caffeine inference table for caffeinated drinks; null for non-caffeinated items, ambiguous drinks, or when confidence in the caffeine estimate is low",
+      "hydration_source_kind": "string or null, one of: pure_water, coffee_tea, juice_smoothie, dairy, soda, alcohol_low, alcohol_high, sports_drink, high_water_food; populated per Rule 3.10 for beverages and high-water foods; null for non-hydration items",
+      "portion_volume_ml": "number or null, the beverage volume in milliliters; populated per Rule 3.10 container hint defaults; null for non-beverages and high_water_food entries (server computes from gram weight in that case)",
       "confidence": "number, your self-assessment of parse certainty in [0.0, 1.0]"
     }
   ],
@@ -168,6 +170,45 @@ Rule 3.9: Caffeine inference for drinks (added 2026-05-31). Populate caffeine_mg
   Red Bull 8.4 fl oz can -> 80mg; Monster 16 fl oz -> 160mg; Bang 16 fl oz -> 300mg; Celsius 12 fl oz -> 200mg; 5-Hour Energy 1.93 fl oz -> 200mg; Reign 16 fl oz -> 300mg.
   Dark chocolate 1 oz -> 12mg; milk chocolate 1 oz -> 6mg; hot chocolate 8 fl oz -> 5mg.
 Scale linearly when size hints differ. Default 8 fl oz for coffee or tea, 12 fl oz for soft drinks, standard can size for branded energy drinks. Set caffeine_mg null for water, milk, juice, alcohol, smoothies without coffee or tea or chocolate, or when drink type is unclear.
+
+Rule 3.10: Hydration source kind + volume inference for beverages (added 2026-05-31 per Prompt 170o Phase 1). Populate hydration_source_kind + portion_volume_ml on every beverage meal_item. Set both to null for non-beverages. The server computes hydration_ml from portion_volume_ml times the appropriate ratio per the user's counting mode; you are NOT responsible for the ml math.
+
+  hydration_source_kind 9-value canonical enum (spelling and underscores normative):
+    pure_water: tap water, bottled water, sparkling water, mineral water, club soda, seltzer, ice water
+    coffee_tea: coffee, espresso, latte, cappuccino, drip coffee, tea (black, green, herbal, matcha, oolong, white), decaf
+    juice_smoothie: orange juice, apple juice, cranberry juice, vegetable juice, smoothies, fruit drinks
+    dairy: milk (whole, 2pct, skim), oat milk, almond milk, soy milk, coconut beverage, milkshakes, milk-based hot drinks
+    soda: Coca-Cola, Pepsi, Sprite, Mountain Dew, Dr Pepper, root beer, ginger ale, tonic water, flavored sodas
+    alcohol_low: beer, hard seltzer, low-ABV cocktails under 7 percent
+    alcohol_high: wine, champagne, prosecco, spirits (vodka, whiskey, gin, rum, tequila), cocktails over 7 percent
+    sports_drink: Gatorade, Powerade, Liquid I.V., electrolyte mixes, coconut water (sports applications)
+    high_water_food: solid foods with high water content (watermelon, cucumber, soup, broth); leave portion_volume_ml null for these and let the server compute from gram weight
+
+  portion_volume_ml default container hints when user does not specify volume:
+    a glass of water, juice -> 240 ml (8 fl oz)
+    a cup of coffee, tea -> 240 ml
+    a mug of coffee, tea -> 296 ml (10 fl oz)
+    a bottle of water -> 500 ml (typical)
+    a small bottle of water -> 355 ml (12 fl oz)
+    a large bottle of water -> 1000 ml (1 L typical)
+    a can of soda, beer, energy drink -> 355 ml (12 fl oz)
+    a tall coffee (Starbucks size) -> 354 ml
+    a grande coffee -> 473 ml
+    a venti coffee -> 591 ml
+    a pint of beer -> 473 ml (16 fl oz US)
+    a glass of wine -> 148 ml (5 fl oz)
+    a shot of spirits -> 44 ml (1.5 fl oz)
+    a cocktail -> 148 ml typical (5 fl oz)
+    a bottle of Gatorade -> 591 ml (20 fl oz)
+    a bottle of soda -> 591 ml (20 fl oz)
+    a can of Red Bull -> 250 ml (8.4 fl oz)
+    a can of Monster -> 473 ml (16 fl oz)
+
+  When the user specifies a volume (8 oz of water, 16 oz of coffee, 500 ml of juice), use that verbatim. Convert: 1 fl oz approx 29.6 ml, but round to common container sizes when the user uses 8 / 12 / 16 / 20 fl oz (these are standard US container conventions).
+
+  For ambiguous beverages (a clear liquid, just a drink), set hydration_source_kind null and trigger clarification per Section 4.
+
+  For branded products (a Chobani yogurt drink, a Smartwater bottle), set hydration_source_kind to the appropriate kind based on the brand + product category from Section 7.
 
 
 SECTION 4: AMBIGUITY TO CLARIFICATION
