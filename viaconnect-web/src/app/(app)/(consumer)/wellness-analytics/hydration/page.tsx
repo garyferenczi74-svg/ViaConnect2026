@@ -10,14 +10,17 @@
 
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Droplet, Coffee, Wine, Beer, Milk } from 'lucide-react';
 import { HydrationRing, formatVolumeLabel } from '@/components/hydration/HydrationRing';
 import { HydrationQuickLogButtons } from '@/components/hydration/HydrationQuickLogButtons';
+import { HydrationEditPanel } from '@/components/hydration/HydrationEditPanel';
 import { useHydrationToday } from '@/components/hydration/useHydrationToday';
 import { useHydrationHistory } from '@/components/hydration/useHydrationHistory';
 import type { HydrationTodayEvent } from '@/components/hydration/useHydrationToday';
 import type { HydrationHistoryDay } from '@/components/hydration/useHydrationHistory';
+import type { HydrationBeverageKind } from '@/components/hydration/useHydrationQuickLog';
 
 const BEVERAGE_KIND_LABELS: Record<string, { label: string; Icon: typeof Droplet }> = {
   pure_water: { label: 'Water', Icon: Droplet },
@@ -45,6 +48,8 @@ export default function HydrationDetailPage(): JSX.Element {
   const today = useHydrationToday();
   const week = useHydrationHistory('week');
   const month = useHydrationHistory('month');
+
+  const [editTarget, setEditTarget] = useState<{ mealId: string; volume: number; kind: HydrationBeverageKind } | null>(null);
 
   const total = today.data?.total_ml ?? 0;
   const target = today.data?.target_ml ?? 1890;
@@ -114,14 +119,22 @@ export default function HydrationDetailPage(): JSX.Element {
                   const kindInfo = BEVERAGE_KIND_LABELS[event.beverage_kind] ?? BEVERAGE_KIND_LABELS.pure_water;
                   const KindIcon = kindInfo.Icon;
                   return (
-                    <li
-                      key={event.meal_id}
-                      className="flex items-center gap-3 rounded-lg border border-white/[0.04] bg-white/[0.02] px-3 py-2 text-sm"
-                    >
-                      <KindIcon className="h-4 w-4 text-[#2DA5A0]/80" strokeWidth={1.5} aria-hidden="true" />
-                      <span className="flex-1 text-white/85">{event.food_name}</span>
-                      <span className="text-[12px] text-white/60">{event.volume_ml} ml</span>
-                      <span className="text-[11px] text-white/45">{formatTimeOfDay(event.logged_at)}</span>
+                    <li key={event.meal_id}>
+                      <button
+                        type="button"
+                        onClick={() => setEditTarget({
+                          mealId: event.meal_id,
+                          volume: event.volume_ml,
+                          kind: event.beverage_kind as HydrationBeverageKind,
+                        })}
+                        aria-label={`Edit ${event.food_name} ${event.volume_ml} ml at ${formatTimeOfDay(event.logged_at)}`}
+                        className="flex w-full items-center gap-3 rounded-lg border border-white/[0.04] bg-white/[0.02] px-3 py-2 text-left text-sm transition-colors hover:border-white/[0.08] hover:bg-white/[0.04] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2DA5A0] focus-visible:outline-offset-2"
+                      >
+                        <KindIcon className="h-4 w-4 text-[#2DA5A0]/80" strokeWidth={1.5} aria-hidden="true" />
+                        <span className="flex-1 text-white/85">{event.food_name}</span>
+                        <span className="text-[12px] text-white/60">{event.volume_ml} ml</span>
+                        <span className="text-[11px] text-white/45">{formatTimeOfDay(event.logged_at)}</span>
+                      </button>
                     </li>
                   );
                 })}
@@ -220,6 +233,26 @@ export default function HydrationDetailPage(): JSX.Element {
           Hydration targets here are general estimates based on common formulas. Your needs may differ based on your health, medications, and lifestyle. For personalized guidance, talk with your healthcare provider. This feature supports your general wellness and is not intended to diagnose, treat, cure, or prevent any disease.
         </p>
       </div>
+
+      <HydrationEditPanel
+        mealId={editTarget?.mealId ?? null}
+        initialVolumeMl={editTarget?.volume ?? 250}
+        initialBeverageKind={editTarget?.kind ?? 'pure_water'}
+        open={editTarget !== null}
+        onClose={() => setEditTarget(null)}
+        onSaved={() => {
+          setEditTarget(null);
+          void today.refresh();
+          void week.refresh();
+          void month.refresh();
+        }}
+        onDeleted={() => {
+          setEditTarget(null);
+          void today.refresh();
+          void week.refresh();
+          void month.refresh();
+        }}
+      />
     </div>
   );
 }

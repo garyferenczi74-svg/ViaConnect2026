@@ -8,14 +8,23 @@
 
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Droplet, ChevronRight } from 'lucide-react';
 import { HydrationRing, formatVolumeLabel } from './HydrationRing';
 import { HydrationQuickLogButtons } from './HydrationQuickLogButtons';
 import { useHydrationToday } from './useHydrationToday';
+import { HydrationFirstTimeTutorial, getHideWidget } from './HydrationFirstTimeTutorial';
 
-export function HydrationWidget(): JSX.Element {
+export function HydrationWidget(): JSX.Element | null {
   const { data, refresh } = useHydrationToday();
+  const [hidden, setHidden] = useState(false);
+
+  useEffect(() => {
+    setHidden(getHideWidget());
+  }, []);
+
+  if (hidden) return null;
   const total = data?.total_ml ?? 0;
   const target = data?.target_ml ?? 1890;
   const percentageText = data

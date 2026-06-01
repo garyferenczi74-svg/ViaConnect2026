@@ -13,6 +13,14 @@
 import { Droplet } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
+import {
+  HydrationFirstTimeTutorial,
+  clearHydrationTutorialSeen,
+  getHideCard,
+  getHideWidget,
+  setHideCard,
+  setHideWidget,
+} from '@/components/hydration/HydrationFirstTimeTutorial';
 
 interface HydrationPreferences {
   counting_mode: 'conservative' | 'adjusted';
@@ -49,6 +57,14 @@ export function HydrationSettingsSection() {
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [hideWidget, setHideWidgetState] = useState(false);
+  const [hideCard, setHideCardState] = useState(false);
+  const [tutorialReplayOpen, setTutorialReplayOpen] = useState(false);
+
+  useEffect(() => {
+    setHideWidgetState(getHideWidget());
+    setHideCardState(getHideCard());
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -283,9 +299,61 @@ export function HydrationSettingsSection() {
         </div>
       )}
 
+      {!loading ? (
+        <div className="mt-5 flex flex-col gap-3 border-t border-white/[0.05] pt-5">
+          <label className="flex items-center justify-between gap-4">
+            <span className="text-sm text-white/85">Hide hydration widget on Dashboard</span>
+            <input
+              type="checkbox"
+              role="switch"
+              checked={hideWidget}
+              onChange={(e) => {
+                const next = e.target.checked;
+                setHideWidgetState(next);
+                setHideWidget(next);
+                toast.success(next ? 'Widget hidden from Dashboard' : 'Widget restored on Dashboard');
+              }}
+              aria-label="Hide hydration widget on Dashboard"
+              className="h-5 w-5 cursor-pointer accent-[#2DA5A0]"
+            />
+          </label>
+          <label className="flex items-center justify-between gap-4">
+            <span className="text-sm text-white/85">Hide hydration card on NutriVision tab</span>
+            <input
+              type="checkbox"
+              role="switch"
+              checked={hideCard}
+              onChange={(e) => {
+                const next = e.target.checked;
+                setHideCardState(next);
+                setHideCard(next);
+                toast.success(next ? 'Card hidden from NutriVision' : 'Card restored on NutriVision');
+              }}
+              aria-label="Hide hydration card on NutriVision tab"
+              className="h-5 w-5 cursor-pointer accent-[#2DA5A0]"
+            />
+          </label>
+          <button
+            type="button"
+            onClick={() => {
+              clearHydrationTutorialSeen();
+              setTutorialReplayOpen(true);
+            }}
+            className="self-start text-[12px] text-[#2DA5A0] underline hover:text-[#2DA5A0]/80"
+          >
+            Replay the hydration tutorial
+          </button>
+        </div>
+      ) : null}
+
       <p className="mt-5 text-[11px] leading-relaxed text-white/45">
         Hydration targets here are general estimates based on common formulas. Your needs may differ based on your health, medications, and lifestyle. For personalized guidance, talk with your healthcare provider. This feature supports your general wellness and is not intended to diagnose, treat, cure, or prevent any disease.
       </p>
+
+      <HydrationFirstTimeTutorial
+        forceOpen={tutorialReplayOpen}
+        onClose={() => setTutorialReplayOpen(false)}
+      />
     </section>
   );
 }
