@@ -33,7 +33,6 @@ export function HydrationCard(): JSX.Element | null {
       aria-labelledby="hydration-card-heading"
       className="flex items-center gap-3 rounded-2xl border border-white/[0.08] bg-[#1A2744]/65 p-3 text-white backdrop-blur-md"
     >
-      <h3 id="hydration-card-heading" className="sr-only">Hydration</h3>
       <Link
         href="/wellness-analytics/hydration"
         aria-label="Open hydration detail view"
@@ -41,6 +40,9 @@ export function HydrationCard(): JSX.Element | null {
       >
         <HydrationRing total_ml={total} target_ml={target} size="small" />
         <div className="flex flex-col">
+          <h3 id="hydration-card-heading" className="text-[10px] font-semibold uppercase tracking-wide text-white/55">
+            Hydration
+          </h3>
           <span className="text-sm font-medium text-white">
             {formatVolumeLabel(total)}
           </span>
