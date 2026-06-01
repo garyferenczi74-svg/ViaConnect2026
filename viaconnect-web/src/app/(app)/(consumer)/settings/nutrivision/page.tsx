@@ -18,6 +18,7 @@ import { createClient } from '@/lib/supabase/client';
 import { VoiceSettingsSection } from './components/VoiceSettingsSection';
 import { QuickLogSettingsSection } from './components/QuickLogSettingsSection';
 import { VoiceNativeSettingsSection } from './components/VoiceNativeSettingsSection';
+import { HydrationSettingsSection } from './components/HydrationSettingsSection';
 
 interface SettingsRow {
   corpus_opt_in?: boolean | null;
@@ -167,6 +168,12 @@ export default function NutriVisionSettingsPage() {
             Sits adjacent to Voice editing (170j) and Quick Log (170m) under
             the consolidated Entry path preferences card. */}
         <VoiceNativeSettingsSection />
+
+        {/* Prompt 170o Phase 1 Phase D: hydration settings section per Hannah
+            Surface 6 wireframe. Default vs Custom target slider + Conservative
+            vs Adjusted counting + 5-option reminder cadence + FDA-verified
+            disclaimer. */}
+        <HydrationSettingsSection />
 
         {/* Prompt 170l Phase 1c-3 + Gate 2: barcode scanning settings live on
             a sub-page per Gary's explicit choice (departs from 170j voice
