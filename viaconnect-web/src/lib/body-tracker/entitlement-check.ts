@@ -22,21 +22,26 @@
 // A practitioner-managed context bypasses the consumer check entirely. Anyone
 // else (Free / Gold / no membership / lapsed) is NOT entitled.
 //
-// STAMP MAPPING (NEW 169f enum values only; the SQL precedence is holder >
-// member > own-platinum):
+// STAMP MAPPING (mirrors the SQL precedence holder > member > own-platinum, then
+// an ACTIVE trial; a PAID entitlement always outranks a trial):
+//   * practitioner-managed                                        -> 'practitioner_managed'
 //   * user's OWN membership is tier_level >= 3 (platinum_family) -> 'platinum_plus_family_holder'
 //   * user is an entitled platinum_family member (link path)      -> 'platinum_plus_family_member'
 //   * user's OWN membership is tier_level >= 2 (platinum)         -> 'platinum'
-//   * practitioner-managed                                        -> 'practitioner_managed'
-// A trialing platinum membership grants Platinum and maps to 'platinum'; the
-// finer trial_self_initiated / trial_practitioner_granted split is DELIBERATELY
-// DEFERRED to a later trials task (the enum carries those values for that task,
-// but no trial logic is built here).
+//   * ACTIVE self_initiated trial (no paid entitlement above)     -> 'trial_self_initiated'
+//   * ACTIVE practitioner_granted trial (no paid entitlement)     -> 'trial_practitioner_granted'
+// A trialing platinum MEMBERSHIP still grants Platinum and maps to 'platinum'
+// (that is a paid-tier membership in 'trialing' status, distinct from a
+// platinum_trials row). The platinum_trials TRIAL branch (169f Option C / D) is
+// consulted ONLY when no paid Platinum-or-above entitlement above granted access,
+// exactly like the SQL resolver fn_resolve_body_scan_tier_status's trial branch.
 //
 // The decision logic is split into a pure function (decideBodyScanEntitlement)
-// so it can be unit-tested with real behavior, and a thin server wrapper
+// for the membership/practitioner tiers plus a pure trial-fallback (applyTrialFallback)
+// so both can be unit-tested with real behavior, and a thin server wrapper
 // (resolveBodyScanEntitlement) that gathers the membership + family + practitioner
-// signals from Supabase.
+// signals AND the platinum_trials active-trial signal from Supabase. The trial
+// lookup lives in the server wrapper because it needs the Supabase client.
 // =============================================================================
 
 import { getActiveMembership } from '@/lib/pricing/membership-manager';
@@ -46,8 +51,8 @@ import type { PricingSupabaseClient } from '@/lib/pricing/supabase-types';
 
 // The premium tier slug stamped at scan time. Mirrors the #169f DB CHECK
 // constraint body_photo_sessions_premium_status_at_scan_chk_169f. The trial_*
-// values exist for a later trials task and are valid enum members; this module
-// never emits them (a trial currently resolves to 'platinum').
+// values are emitted by the trial branch (169f Option C / D) when an ACTIVE
+// platinum_trials row grants access and no paid entitlement outranks it.
 export type BodyScanPremiumStatus =
   | 'platinum'
   | 'platinum_plus_family_holder'
@@ -55,6 +60,11 @@ export type BodyScanPremiumStatus =
   | 'trial_self_initiated'
   | 'trial_practitioner_granted'
   | 'practitioner_managed';
+
+// The platinum_trials.trial_source value of an ACTIVE trial (169f Option C / D),
+// or null when the user has no active trial. Mirrors the SQL resolver's
+// v_trial_source. Maps 1:1 to the trial_* stamps.
+export type ActiveTrialSource = 'self_initiated' | 'practitioner_granted' | null;
 
 // The minimal membership shape the decision needs. Kept structurally compatible
 // with the row returned by getActiveMembership (memberships joined to
@@ -213,6 +223,53 @@ export function decideBodyScanEntitlement(
   };
 }
 
+/**
+ * Pure trial-fallback layer. Given the membership/practitioner decision from
+ * decideBodyScanEntitlement and the user's ACTIVE platinum_trials source (or
+ * null), returns the FINAL entitlement, mirroring the SQL resolver's precedence:
+ * a PAID entitlement (or the practitioner-managed bypass) outranks a trial, so an
+ * already-entitled or practitioner-managed decision is returned UNCHANGED. Only
+ * when the membership decision is NOT entitled (and not practitioner-managed) does
+ * an active trial grant access, stamping 'trial_self_initiated' /
+ * 'trial_practitioner_granted'. A trial never carries a subscription id (it is not
+ * a paid sub).
+ *
+ * This is the TS mirror of the 169f resolver branch added in migration
+ * 20260516000170 (after the holder / member / own-platinum checks fail, consult
+ * platinum_trials for an ACTIVE trial). expires_at > now() is applied at the
+ * QUERY in the server wrapper, so a non-null activeTrialSource here already means
+ * the trial is active (converted_at IS NULL AND cancelled_at IS NULL AND
+ * expires_at > now()).
+ */
+export function applyTrialFallback(
+  membershipDecision: BodyScanEntitlement,
+  activeTrialSource: ActiveTrialSource,
+): BodyScanEntitlement {
+  // Paid entitlement or practitioner-managed outranks any trial: return as-is.
+  if (membershipDecision.entitled || membershipDecision.practitionerManaged) {
+    return membershipDecision;
+  }
+  if (activeTrialSource === 'self_initiated') {
+    return {
+      entitled: true,
+      subscriptionId: null,
+      practitionerManaged: false,
+      statusForScan: 'trial_self_initiated',
+    };
+  }
+  if (activeTrialSource === 'practitioner_granted') {
+    return {
+      entitled: true,
+      subscriptionId: null,
+      practitionerManaged: false,
+      statusForScan: 'trial_practitioner_granted',
+    };
+  }
+  // No active trial: not entitled (Free / Gold / no membership / lapsed / expired
+  // or converted/cancelled trial). The caller REJECTS.
+  return membershipDecision;
+}
+
 // The shape getActiveMembership returns: the memberships row plus a nested
 // membership_tiers join (membership_tiers(*)). Used to read tier_level and the
 // period-end without re-querying.
@@ -314,12 +371,82 @@ async function resolveFamilyHolderLink(
   return false;
 }
 
+// Narrow client surface for the active-trial read. The generated Supabase types
+// do not yet include platinum_trials, so (matching the body-tracker loose-cast
+// pattern) the read uses an explicit minimal shape. The post-eq builder is
+// self-referential so the two chained .is(...) null filters (converted_at,
+// cancelled_at) type-check before the .gt(...) expires filter.
+interface ActiveTrialQuery {
+  is: (col: string, val: null) => ActiveTrialQuery;
+  gt: (col: string, val: string) => {
+    order: (col: string, opts: { ascending: boolean }) => {
+      limit: (n: number) => Promise<{
+        data: Array<{ trial_source: string | null }> | null;
+        error: { message: string } | null;
+      }>;
+    };
+  };
+}
+
+interface ActiveTrialReader {
+  from: (table: string) => {
+    select: (cols: string) => {
+      eq: (col: string, val: string) => ActiveTrialQuery;
+    };
+  };
+}
+
+/**
+ * Resolves the user's ACTIVE platinum_trials source (169f Option C / D), or null.
+ * Mirrors the SQL resolver's trial branch:
+ *
+ *   SELECT t.trial_source FROM platinum_trials t
+ *    WHERE t.user_id = <user>
+ *      AND t.converted_at IS NULL
+ *      AND t.cancelled_at IS NULL
+ *      AND t.expires_at > now()
+ *    ORDER BY t.expires_at DESC
+ *    LIMIT 1
+ *
+ * The active-trial predicate (converted_at IS NULL AND cancelled_at IS NULL AND
+ * expires_at > now()) is applied here at QUERY time, exactly as the SQL resolver
+ * and the claim functions do (expires_at > now() is NOT in the partial index).
+ * Fail-closed: on a read error or an unrecognized source the trial is treated as
+ * absent (not entitled), matching the SQL "reject when no qualifying row".
+ */
+async function resolveActiveTrialSource(
+  client: PricingSupabaseClient,
+  userId: string,
+  asOf: Date = new Date(),
+): Promise<ActiveTrialSource> {
+  try {
+    const reader = client as unknown as ActiveTrialReader;
+    const { data, error } = await reader
+      .from('platinum_trials')
+      .select('trial_source')
+      .eq('user_id', userId)
+      .is('converted_at', null)
+      .is('cancelled_at', null)
+      .gt('expires_at', asOf.toISOString())
+      .order('expires_at', { ascending: false })
+      .limit(1);
+    if (error || !data || data.length === 0) return null;
+    const source = data[0]?.trial_source;
+    if (source === 'self_initiated' || source === 'practitioner_granted') return source;
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Server-side entitlement resolver. Reuses the web membership system
  * (getActiveMembership against the `memberships` table, joined to
  * membership_tiers) for the own-membership signal, resolves the family-holder
- * link (path b), then applies the pure decision. Mirrors the SQL resolver
- * fn_resolve_body_scan_tier_status exactly.
+ * link (path b), applies the pure membership decision, THEN (only when no paid
+ * Platinum-or-above entitlement granted access) consults platinum_trials for an
+ * ACTIVE trial. Mirrors the SQL resolver fn_resolve_body_scan_tier_status exactly,
+ * including its precedence: a PAID entitlement always outranks a trial.
  *
  * practitionerManaged is supplied by the caller, which knows the scan context
  * (a practitioner finalizing a scan on behalf of a managed patient). This
@@ -355,7 +482,7 @@ export async function resolveBodyScanEntitlement(
     ? false
     : await resolveFamilyHolderLink(client, userId, asOf);
 
-  return decideBodyScanEntitlement(
+  const membershipDecision = decideBodyScanEntitlement(
     {
       membership,
       familyHolderLink,
@@ -363,4 +490,14 @@ export async function resolveBodyScanEntitlement(
     },
     asOf,
   );
+
+  // 169f trial branch: a PAID entitlement (or the practitioner-managed bypass)
+  // outranks a trial, so consult platinum_trials ONLY when the membership decision
+  // did not already grant access. Mirrors the SQL resolver, which reaches its
+  // trial branch only after the holder / member / own-platinum checks fail.
+  if (membershipDecision.entitled || membershipDecision.practitionerManaged) {
+    return membershipDecision;
+  }
+  const activeTrialSource = await resolveActiveTrialSource(client, userId, asOf);
+  return applyTrialFallback(membershipDecision, activeTrialSource);
 }

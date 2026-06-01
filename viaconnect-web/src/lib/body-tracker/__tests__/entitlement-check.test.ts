@@ -1,10 +1,13 @@
 // Tests for entitlement-check.ts (Prompt #169a, realigned to the #169f TIER
 // MODEL).
 //
-// These exercise the pure decision decideBodyScanEntitlement, which is the TS
-// mirror of the SQL resolver fn_resolve_body_scan_tier_status (migration
-// 20260516000150). Under #169f, Body Scan is Platinum-and-above only and the
-// free teaser is RETIRED: a non-entitled user is REJECTED (no teaser, no claim).
+// These exercise the pure decision decideBodyScanEntitlement and the pure
+// trial-fallback applyTrialFallback, which are the TS mirror of the SQL resolver
+// fn_resolve_body_scan_tier_status (membership branches in migration
+// 20260516000150; the platinum_trials trial branch in migration 20260516000170).
+// Under #169f, Body Scan is Platinum-and-above only and the free teaser is
+// RETIRED: a non-entitled user with no active trial is REJECTED. An ACTIVE trial
+// (169f Option C / D) grants access, but a PAID entitlement always outranks it.
 //
 // Covers:
 //   decideBodyScanEntitlement: the pure tier decision
@@ -26,6 +29,8 @@
 import { describe, it, expect } from 'vitest';
 import {
   decideBodyScanEntitlement,
+  applyTrialFallback,
+  type BodyScanEntitlement,
   type MembershipSignal,
 } from '../entitlement-check';
 
@@ -411,5 +416,127 @@ describe('verifyPractitionerManaged contract (server-side, fail-closed)', () => 
       status: 'active',
     });
     expect(model.verify('dr-smith', 'dr-smith')).toBe(false);
+  });
+});
+
+// ===========================================================================
+// applyTrialFallback: the 169f platinum_trials trial branch (migration
+// 20260516000170). The active predicate (converted_at IS NULL AND cancelled_at
+// IS NULL AND expires_at > now()) is applied at the QUERY in the server wrapper,
+// so applyTrialFallback receives an already-resolved active source (or null). It
+// must mirror the SQL precedence: a PAID entitlement (or the practitioner-managed
+// bypass) OUTRANKS a trial; only a not-entitled membership decision is upgraded.
+// The server wrapper only calls this when the membership decision is NOT entitled,
+// but these tests also assert the outrank-guard directly.
+// ===========================================================================
+
+// The not-entitled membership decision the server wrapper passes when no paid
+// Platinum-or-above entitlement granted access (Free / Gold / none / lapsed).
+const NOT_ENTITLED: BodyScanEntitlement = {
+  entitled: false,
+  subscriptionId: null,
+  practitionerManaged: false,
+  statusForScan: null,
+};
+
+describe('applyTrialFallback: active trial grants access when no paid entitlement', () => {
+  it('stamps trial_self_initiated for an active self-initiated trial', () => {
+    const result = applyTrialFallback(NOT_ENTITLED, 'self_initiated');
+    expect(result.entitled).toBe(true);
+    expect(result.statusForScan).toBe('trial_self_initiated');
+    // A trial is not a paid subscription.
+    expect(result.subscriptionId).toBeNull();
+    expect(result.practitionerManaged).toBe(false);
+  });
+
+  it('stamps trial_practitioner_granted for an active practitioner-granted trial', () => {
+    const result = applyTrialFallback(NOT_ENTITLED, 'practitioner_granted');
+    expect(result.entitled).toBe(true);
+    expect(result.statusForScan).toBe('trial_practitioner_granted');
+    expect(result.subscriptionId).toBeNull();
+  });
+
+  it('leaves a not-entitled decision unchanged when there is no active trial (null source)', () => {
+    // Expired / converted / cancelled trials are filtered out at the query, so the
+    // server wrapper passes null here; the user stays not entitled (rejected).
+    const result = applyTrialFallback(NOT_ENTITLED, null);
+    expect(result.entitled).toBe(false);
+    expect(result.statusForScan).toBeNull();
+    expect(result).toEqual(NOT_ENTITLED);
+  });
+});
+
+describe('applyTrialFallback: a PAID entitlement outranks a trial', () => {
+  it('keeps platinum (own membership) even when an active self-trial also exists', () => {
+    const paidPlatinum: BodyScanEntitlement = {
+      entitled: true,
+      subscriptionId: 'sub_123',
+      practitionerManaged: false,
+      statusForScan: 'platinum',
+    };
+    const result = applyTrialFallback(paidPlatinum, 'self_initiated');
+    expect(result.statusForScan).toBe('platinum');
+    expect(result.subscriptionId).toBe('sub_123');
+  });
+
+  it('keeps platinum_plus_family_holder over an active practitioner-granted trial', () => {
+    const holder: BodyScanEntitlement = {
+      entitled: true,
+      subscriptionId: 'sub_fam',
+      practitionerManaged: false,
+      statusForScan: 'platinum_plus_family_holder',
+    };
+    const result = applyTrialFallback(holder, 'practitioner_granted');
+    expect(result.statusForScan).toBe('platinum_plus_family_holder');
+  });
+
+  it('keeps the practitioner-managed bypass over an active trial', () => {
+    const managed: BodyScanEntitlement = {
+      entitled: false,
+      subscriptionId: null,
+      practitionerManaged: true,
+      statusForScan: 'practitioner_managed',
+    };
+    const result = applyTrialFallback(managed, 'self_initiated');
+    expect(result.statusForScan).toBe('practitioner_managed');
+    expect(result.practitionerManaged).toBe(true);
+  });
+});
+
+describe('applyTrialFallback: end-to-end membership-then-trial precedence', () => {
+  it('a Gold member with an active self-trial is entitled via the trial', () => {
+    // The membership decision for an active Gold member is NOT entitled (Body Scan
+    // is Platinum-and-above), which is exactly what the server wrapper passes into
+    // the trial fallback; the active trial then grants access.
+    const goldDecision = decideBodyScanEntitlement({
+      membership: {
+        status: 'active',
+        tier: 'gold',
+        tier_id: 'gold',
+        tier_level: 1,
+        current_period_end: FUTURE,
+        stripe_subscription_id: 'sub_gold',
+      },
+      familyHolderLink: false,
+      practitionerManaged: false,
+    });
+    expect(goldDecision.entitled).toBe(false);
+
+    const final = applyTrialFallback(goldDecision, 'self_initiated');
+    expect(final.entitled).toBe(true);
+    expect(final.statusForScan).toBe('trial_self_initiated');
+    // The trial does not inherit the Gold membership's (non-entitled) sub id.
+    expect(final.subscriptionId).toBeNull();
+  });
+
+  it('a free user with no trial stays rejected', () => {
+    const freeDecision = decideBodyScanEntitlement({
+      membership: null,
+      familyHolderLink: false,
+      practitionerManaged: false,
+    });
+    const final = applyTrialFallback(freeDecision, null);
+    expect(final.entitled).toBe(false);
+    expect(final.statusForScan).toBeNull();
   });
 });

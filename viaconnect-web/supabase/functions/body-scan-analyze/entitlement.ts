@@ -23,6 +23,9 @@
 //                            tier status (holder > member > own-platinum)
 //   practitioner_managed  => bypass the consumer check, stamp
 //                            'practitioner_managed'
+//   ACTIVE platinum_trials row (169f Option C / D), only when no paid entitlement
+//                            outranks it => stamp 'trial_self_initiated' /
+//                            'trial_practitioner_granted'
 //   not entitled          => REJECT the finalize (402); NO teaser claim, NO
 //                            fallback scan, do NOT mark complete
 //
@@ -39,8 +42,8 @@ import { safeLog } from '../_shared/safe-log.ts';
 
 // The premium tier slug stamped at scan time. Mirrors the #169f DB CHECK
 // constraint body_photo_sessions_premium_status_at_scan_chk_169f. The trial_*
-// values are valid enum members reserved for a later trials task; this module
-// never emits them (a trial currently resolves to 'platinum').
+// values are emitted by the trial branch (169f Option C / D) when an ACTIVE
+// platinum_trials row grants access and no paid entitlement outranks it.
 export type BodyScanPremiumStatus =
   | 'platinum'
   | 'platinum_plus_family_holder'
@@ -48,6 +51,10 @@ export type BodyScanPremiumStatus =
   | 'trial_self_initiated'
   | 'trial_practitioner_granted'
   | 'practitioner_managed';
+
+// The platinum_trials.trial_source of an ACTIVE trial, or null when there is no
+// active trial. Mirrors the SQL resolver's v_trial_source; maps 1:1 to trial_*.
+export type ActiveTrialSource = 'self_initiated' | 'practitioner_granted' | null;
 
 // Minimal membership shape the decision needs. Structurally compatible with the
 // memberships row joined to membership_tiers.
@@ -161,6 +168,32 @@ export function decideBodyScanEntitlement(
     };
   }
   return { entitled: false, subscriptionId: null, practitionerManaged: false, statusForScan: null };
+}
+
+/**
+ * Pure trial-fallback. Mirrors applyTrialFallback in
+ * src/lib/body-tracker/entitlement-check.ts and the SQL resolver's trial branch:
+ * a PAID entitlement (or the practitioner-managed bypass) OUTRANKS a trial, so an
+ * already-entitled or practitioner-managed decision is returned unchanged; only a
+ * NOT-entitled membership decision is upgraded by an ACTIVE platinum_trials row to
+ * 'trial_self_initiated' / 'trial_practitioner_granted'. A trial never carries a
+ * subscription id. expires_at > now() is applied at the query in the caller, so a
+ * non-null activeTrialSource already means the trial is active.
+ */
+export function applyTrialFallback(
+  membershipDecision: BodyScanEntitlement,
+  activeTrialSource: ActiveTrialSource,
+): BodyScanEntitlement {
+  if (membershipDecision.entitled || membershipDecision.practitionerManaged) {
+    return membershipDecision;
+  }
+  if (activeTrialSource === 'self_initiated') {
+    return { entitled: true, subscriptionId: null, practitionerManaged: false, statusForScan: 'trial_self_initiated' };
+  }
+  if (activeTrialSource === 'practitioner_granted') {
+    return { entitled: true, subscriptionId: null, practitionerManaged: false, statusForScan: 'trial_practitioner_granted' };
+  }
+  return membershipDecision;
 }
 
 // Reads a user's active, non-lapsed membership as a MembershipSignal (joined to
@@ -281,12 +314,74 @@ async function resolveFamilyHolderLink(
 }
 
 /**
+ * Resolves the user's ACTIVE platinum_trials source (169f Option C / D), or null.
+ * Mirrors the SQL resolver's trial branch (and resolveActiveTrialSource on the web
+ * side):
+ *
+ *   SELECT trial_source FROM platinum_trials
+ *    WHERE user_id = <user>
+ *      AND converted_at IS NULL
+ *      AND cancelled_at IS NULL
+ *      AND expires_at > now()
+ *    ORDER BY expires_at DESC
+ *    LIMIT 1
+ *
+ * The edge runs as service_role and can read platinum_trials directly. The active
+ * predicate (incl. expires_at > now()) is applied here at QUERY time, exactly as
+ * the SQL resolver does. Fail-closed: on a read error/timeout or an unrecognized
+ * source the trial is treated as absent (not entitled), so a transient DB issue
+ * REJECTS rather than silently granting a trial.
+ */
+async function resolveActiveTrialSource(
+  sa: SupabaseClient,
+  userId: string,
+  asOf: number,
+): Promise<ActiveTrialSource> {
+  try {
+    const { data, error } = await withTimeout(
+      sa
+        .from('platinum_trials')
+        .select('trial_source')
+        .eq('user_id', userId)
+        .is('converted_at', null)
+        .is('cancelled_at', null)
+        .gt('expires_at', new Date(asOf).toISOString())
+        .order('expires_at', { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+      MEMBERSHIP_QUERY_TIMEOUT_MS,
+      'edge-function.body-scan-analyze.trial-lookup',
+    );
+    if (error) {
+      safeLog.warn('body-scan-analyze', 'trial lookup error', {
+        user_id: userId,
+        stage: 'resolveActiveTrialSource',
+        error: error.message,
+      });
+      return null;
+    }
+    const source = (data as { trial_source: string | null } | null)?.trial_source ?? null;
+    if (source === 'self_initiated' || source === 'practitioner_granted') return source;
+    return null;
+  } catch (e) {
+    safeLog.warn('body-scan-analyze', 'trial lookup exception', {
+      user_id: userId,
+      stage: 'resolveActiveTrialSource',
+      error: String(e),
+    });
+    return null;
+  }
+}
+
+/**
  * Reads the user's own active membership (joined to membership_tiers), resolves
- * the family-holder link (path b), then applies the pure decision. Mirrors the
- * SQL resolver fn_resolve_body_scan_tier_status exactly. On a query timeout or
- * error the signal is treated as absent (not entitled), which REJECTS the
- * finalize rather than silently granting access. The practitioner-managed flag
- * is decided by the caller.
+ * the family-holder link (path b), applies the pure membership decision, THEN
+ * (only when no paid Platinum-or-above entitlement granted access) consults
+ * platinum_trials for an ACTIVE trial. Mirrors the SQL resolver
+ * fn_resolve_body_scan_tier_status exactly, including its precedence: a PAID
+ * entitlement always outranks a trial. On a query timeout or error a signal is
+ * treated as absent (not entitled), which REJECTS the finalize rather than
+ * silently granting access. The practitioner-managed flag is decided by the caller.
  */
 export async function resolveBodyScanEntitlement(
   sa: SupabaseClient,
@@ -303,7 +398,16 @@ export async function resolveBodyScanEntitlement(
     ? false
     : await resolveFamilyHolderLink(sa, userId, asOf);
 
-  return decideBodyScanEntitlement(membership, familyHolderLink, practitionerManaged, asOf);
+  const membershipDecision = decideBodyScanEntitlement(membership, familyHolderLink, practitionerManaged, asOf);
+
+  // 169f trial branch: only consult platinum_trials when no paid entitlement (or
+  // the practitioner-managed bypass) already granted access. Mirrors the SQL
+  // resolver reaching its trial branch only after holder / member / own-platinum.
+  if (membershipDecision.entitled || membershipDecision.practitionerManaged) {
+    return membershipDecision;
+  }
+  const activeTrialSource = await resolveActiveTrialSource(sa, userId, asOf);
+  return applyTrialFallback(membershipDecision, activeTrialSource);
 }
 
 /**
