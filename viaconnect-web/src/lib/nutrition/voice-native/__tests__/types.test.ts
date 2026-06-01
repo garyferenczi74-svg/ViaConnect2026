@@ -188,7 +188,7 @@ describe('combinedConfidence', () => {
     expect(combinedConfidence(0.90, 0.85)).toBe(0.87);
     expect(combinedConfidence(0.85, 0.70)).toBe(0.77);
     expect(combinedConfidence(0.80, 0.50)).toBe(0.63);
-    expect(combinedConfidence(0.70, 0.35)).toBe(0.50);
+    expect(combinedConfidence(0.70, 0.35)).toBe(0.49);
     expect(combinedConfidence(0.65, 0.30)).toBe(0.44);
   });
 

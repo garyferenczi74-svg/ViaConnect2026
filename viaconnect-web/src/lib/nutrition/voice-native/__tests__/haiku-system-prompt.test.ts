@@ -72,7 +72,7 @@ describe('buildVoiceNativeSystemPrompt (base)', () => {
 
   it('contains Section 5 multi-meal split reference', () => {
     expect(prompt).toContain('MULTI-MEAL SPLIT DETECTION');
-    expect(prompt).toContain('inherited from canonical 170m');
+    expect(prompt).toContain('Apply Section 5 of the canonical 170m');
   });
 
   it('contains Section 6 restaurant chain detection with edit-distance-2 tolerance', () => {
