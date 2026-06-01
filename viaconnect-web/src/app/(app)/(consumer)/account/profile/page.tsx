@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { createClient } from "@/lib/supabase/client";
+import { FamilySharingSection } from "@/components/family/FamilySharingSection";
 
 interface ProfileForm {
   first_name: string;
@@ -230,6 +231,10 @@ export default function ProfilePage() {
           </button>
         </div>
       </form>
+
+      {/* Family sharing (169f section 5.4): member-controlled, shown only to an
+          active family member. Self-hides for everyone else. */}
+      <FamilySharingSection />
 
       {/* Password */}
       <form
