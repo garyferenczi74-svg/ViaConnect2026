@@ -84,11 +84,14 @@ describe('AnalysisResult wires PlateSelector', () => {
     expect(source).toContain('credit_card_detected !== true');
   });
 
-  it('renders PlateSelector above the totals card', () => {
+  it('renders PlateSelector above the totals card (MealCard mount post-#172 Phase 1A)', () => {
+    // Post-#172 Phase 1A the totals card subtree extracts into MealCard.
+    // AnalysisResult mounts <MealCard ... /> in place of the inline totals
+    // box. PlateSelector still renders above the MealCard mount.
     const plateIdx = source.indexOf('<PlateSelector');
-    const totalsIdx = source.indexOf('Meal totals');
+    const mealCardMountIdx = source.indexOf('<MealCard');
     expect(plateIdx).toBeGreaterThan(-1);
-    expect(totalsIdx).toBeGreaterThan(-1);
-    expect(plateIdx).toBeLessThan(totalsIdx);
+    expect(mealCardMountIdx).toBeGreaterThan(-1);
+    expect(plateIdx).toBeLessThan(mealCardMountIdx);
   });
 });

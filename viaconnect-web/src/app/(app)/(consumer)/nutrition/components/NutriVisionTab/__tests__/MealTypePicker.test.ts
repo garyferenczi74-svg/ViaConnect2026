@@ -66,9 +66,17 @@ describe('AnalysisResult wires the picker', () => {
     expect(source).toContain('onMealTypeChange');
   });
 
-  it('renders a Meal type label above the totals card', () => {
+  it('renders a Meal type label above the totals card (MealCard mount post-#172 Phase 1A)', () => {
     expect(source).toContain('Meal type');
-    expect(source.indexOf('Meal type')).toBeLessThan(source.indexOf('Meal totals'));
+    // Post-#172 Phase 1A the totals card subtree extracts into MealCard.
+    // AnalysisResult mounts <MealCard ... /> in place of the inline totals
+    // box. The picker label still renders above the MealCard mount, which
+    // is the source of 'Meal totals' in the rendered DOM.
+    const mealTypeIdx = source.indexOf('Meal type');
+    const mealCardMountIdx = source.indexOf('<MealCard');
+    expect(mealTypeIdx).toBeGreaterThan(-1);
+    expect(mealCardMountIdx).toBeGreaterThan(-1);
+    expect(mealTypeIdx).toBeLessThan(mealCardMountIdx);
   });
 });
 
