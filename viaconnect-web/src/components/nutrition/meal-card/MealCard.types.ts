@@ -1,14 +1,16 @@
-// Prompt 172 Phase 1A: MealCard view model types.
+// Prompt 172 Phase 1B: MealCard view model types (extended for 1B).
 //
 // These types normalize the production MealDraft (pre save) and
 // SaveResponse.gordon (post save) into the thin view model the MealCard
 // presentational component consumes. Source of truth for the upstream shapes
 // is src/app/(app)/(consumer)/nutrition/components/NutriVisionTab/types.ts.
 //
-// Spec inheritance: 172 section 5.2 v3. Pre save renders a MealDraft with
-// mealId null + mealQualityScore null; post save the orchestrator hands a
-// SaveResponse to the mapper and the view model carries meal_id +
-// gordon.quality_score.
+// Spec inheritance: 172 section 5.2 v3 + 170c section 10.3 degraded service.
+// Pre save renders a MealDraft with mealId null + mealQualityScore null;
+// post save the orchestrator hands a SaveResponse to the mapper and the
+// view model carries meal_id + gordon.quality_score. 1B adds degraded
+// service kind discrimination so the meal card renders the right 170c
+// degraded service notice per kind.
 //
 // The BosLine type lives at @/lib/nutrition/bos-line/types and is owned by
 // 172b; we re-export it here as BosLine | null so the model surface stays
@@ -17,6 +19,19 @@
 // Hard rules honored: no em or en dashes, no emojis, no any.
 
 import type { BosLine } from '@/lib/nutrition/bos-line/types';
+
+/**
+ * 170c section 10.3 degraded service kinds. The CHECK constraint on
+ * nutrition_photo_jobs.degraded_service_kind names these four values.
+ * `none` is the no degraded signal case; the other three map onto the
+ * canonical microcopy keys degraded.logmeal_hard_stop,
+ * degraded.gemini_low_confidence, degraded.claude_tertiary_used.
+ */
+export type DegradedServiceKind =
+  | 'none'
+  | 'logmeal_hard_stop'
+  | 'gemini_low_confidence'
+  | 'claude_tertiary_used';
 
 export type MealCardSource =
   | 'photo'
@@ -87,6 +102,13 @@ export interface MealCardModel {
   recognitionConfidence: 'high' | 'medium' | 'low';
   /** True when the 170c degraded service signal is present. */
   degradedService: boolean;
+  /**
+   * 170c section 10.3 degraded service kind discriminator. Drives which of
+   * the three canonical degraded service microcopy keys the meal card
+   * renders. Defaults to 'none' at the mapper when the upstream pipeline
+   * does not yet expose the signal (Phase 0 phantom column).
+   */
+  degradedServiceKind: DegradedServiceKind;
   /** Read from useSafetyMode at the orchestrator boundary. */
   safetyMode: boolean;
   /**

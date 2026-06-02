@@ -34,6 +34,15 @@ export interface MealItemCardProps {
   onApplyChip: (chip: ModifierChip) => void;
   onRemove: () => void;
   onMarkVerified: () => void;
+  /**
+   * Prompt 172 Phase 1B: 170c section 8.4 silent ratio mode contract. When
+   * true the per item kcal column is suppressed; the protein, carbs, fat
+   * gram columns continue to render (per spec 5.7 the absolute totals are
+   * the kcal absolute; per item macro grams stay because the gram label
+   * itself is on the chip and the brief only suppresses kcal at item
+   * level). Defaults to false so unrelated callers continue unchanged.
+   */
+  safetyMode?: boolean;
 }
 
 const SOURCE_LABEL: Record<string, string> = {
@@ -67,6 +76,7 @@ export function MealItemCard({
   onApplyChip,
   onRemove,
   onMarkVerified,
+  safetyMode = false,
 }: MealItemCardProps) {
   const [showSwap, setShowSwap] = useState(false);
 
@@ -117,24 +127,45 @@ export function MealItemCard({
       </div>
 
       {/* Macros row */}
-      <div className="mt-3 grid grid-cols-4 gap-2 text-center text-[11px]">
-        <div className="rounded-lg bg-white/[0.04] px-2 py-1.5">
-          <div className="text-white/45">Cal</div>
-          <div className="font-mono text-white">{Math.round(item.calories_kcal)}</div>
+      {safetyMode ? (
+        // Prompt 172 Phase 1B: 170c section 8.4 silent ratio mode contract.
+        // Per item kcal is suppressed; protein, carbs, fat gram columns
+        // continue to render in a three column grid. No visible mode
+        // indicator per the silent UX requirement.
+        <div className="mt-3 grid grid-cols-3 gap-2 text-center text-[11px]">
+          <div className="rounded-lg bg-white/[0.04] px-2 py-1.5">
+            <div className="text-white/45">Protein</div>
+            <div className="font-mono text-white">{item.protein_g.toFixed(1)} g</div>
+          </div>
+          <div className="rounded-lg bg-white/[0.04] px-2 py-1.5">
+            <div className="text-white/45">Carbs</div>
+            <div className="font-mono text-white">{item.carbs_g.toFixed(1)} g</div>
+          </div>
+          <div className="rounded-lg bg-white/[0.04] px-2 py-1.5">
+            <div className="text-white/45">Fat</div>
+            <div className="font-mono text-white">{item.fat_g.toFixed(1)} g</div>
+          </div>
         </div>
-        <div className="rounded-lg bg-white/[0.04] px-2 py-1.5">
-          <div className="text-white/45">Protein</div>
-          <div className="font-mono text-white">{item.protein_g.toFixed(1)} g</div>
+      ) : (
+        <div className="mt-3 grid grid-cols-4 gap-2 text-center text-[11px]">
+          <div className="rounded-lg bg-white/[0.04] px-2 py-1.5">
+            <div className="text-white/45">Cal</div>
+            <div className="font-mono text-white">{Math.round(item.calories_kcal)}</div>
+          </div>
+          <div className="rounded-lg bg-white/[0.04] px-2 py-1.5">
+            <div className="text-white/45">Protein</div>
+            <div className="font-mono text-white">{item.protein_g.toFixed(1)} g</div>
+          </div>
+          <div className="rounded-lg bg-white/[0.04] px-2 py-1.5">
+            <div className="text-white/45">Carbs</div>
+            <div className="font-mono text-white">{item.carbs_g.toFixed(1)} g</div>
+          </div>
+          <div className="rounded-lg bg-white/[0.04] px-2 py-1.5">
+            <div className="text-white/45">Fat</div>
+            <div className="font-mono text-white">{item.fat_g.toFixed(1)} g</div>
+          </div>
         </div>
-        <div className="rounded-lg bg-white/[0.04] px-2 py-1.5">
-          <div className="text-white/45">Carbs</div>
-          <div className="font-mono text-white">{item.carbs_g.toFixed(1)} g</div>
-        </div>
-        <div className="rounded-lg bg-white/[0.04] px-2 py-1.5">
-          <div className="text-white/45">Fat</div>
-          <div className="font-mono text-white">{item.fat_g.toFixed(1)} g</div>
-        </div>
-      </div>
+      )}
 
       {/* Portion */}
       <div className="mt-3">

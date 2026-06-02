@@ -1,27 +1,34 @@
-// Prompt 172 Phase 1A: byte equivalent dom parity test.
+// Prompt 172 Phase 1A + 1B: dom parity test, divergence noted below.
+//
+// PHASE 1B DIVERGENCE: the byte equivalent DOM contract from 1A intentionally
+// diverges in 1B per the spec section 7 acceptance criterion that the
+// component is purely presentational with all strings sourced from the 172a
+// microcopy layer. Specifically, the following 1A assertions no longer hold
+// at the source level because the strings now live in
+// @/lib/nutrition/microcopy/strings and are looked up via getMicrocopy at
+// render time:
+//   - TITLE_HEADING_PRE ("Meal totals")
+//   - TITLE_HINT_PRE ("Tap an item ...")
+//   - TOTALS_CALORIES_LABEL ("Calories") and the three sibling labels
+//   - SAVE_LABEL_PRE ("Saving... | Save to log" inline ternary)
+//   - ADD_ITEM_BUTTON_PRE text suffix ("Add another item")
+// Those byte equivalent literals are now read from microcopy, not embedded
+// in JSX. The rendered DOM text is identical so any Playwright DOM diff
+// still passes; only the source level fixture lookup changes.
+//
+// What 1B continues to enforce:
+//   - className tokens for every card surface, chip grid, warnings list,
+//     mod chips block, item list, add item button, save bar, cancel button,
+//     save button (the visual contract is unchanged).
+//   - DOM child order across MealCard, MacroChips, AnalysisResult.
+//   - FdaDisclaimer slot="card-footer" mount.
+//   - Brand tokens (#1A2744, #1E3054, #2DA5A0, #B75E18).
+//   - Lucide strokeWidth 1.5.
+//   - AnalysisResult retention of voice, plate, confidence, corpus, photo
+//     orchestration.
 //
 // vitest runs node only without jsdom, so this test asserts source string
-// parity rather than rendering both versions and diffing DOM nodes. The
-// fixture in analysis-result-pre-refactor.snapshot.ts captured the verbatim
-// pre-refactor JSX strings; this test reads the post-refactor MealCard.tsx
-// plus AnalysisResult.tsx pair and asserts every fixture string is preserved
-// in the new code locations.
-//
-// The contract: the rendered DOM tree is identical before and after the
-// refactor. ClassName tokens, ARIA labels, text content, event handler
-// expressions, conditional gates (voiceAvailable + voice_operation_count,
-// userId !== null), and child ordering must all match. Whitespace inside
-// JSX source is collapsed by React at render time, so we normalize all
-// whitespace to a single space before comparison; that keeps the test
-// honest about the DOM contract without coupling to the cosmetic indent
-// depth that changes when a JSX block moves between components.
-//
-// One acceptance addition is documented at the bottom: the FdaDisclaimer
-// card footer slot is net new per Prompt 172 spec section 5.3 and section
-// 7. It mounts inside MealCard at the bottom and renders null when the
-// FDA_DISCLAIMER_RENDERING_ENABLED kill switch is off. Phase 0 ships with
-// the kill switch defaulting on, so the disclaimer adds DOM that did not
-// exist pre-refactor. This is the deliberate spec mandated addition.
+// parity rather than rendering both versions and diffing DOM nodes.
 
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
@@ -29,10 +36,6 @@ import path from 'node:path';
 import {
   MEAL_TOTALS_BLOCK_PRE,
   MEAL_TOTALS_GRID_PRE,
-  TOTALS_CALORIES_LABEL,
-  TOTALS_PROTEIN_LABEL,
-  TOTALS_CARBS_LABEL,
-  TOTALS_FAT_LABEL,
   TOTALS_KCAL_UNIT,
   TOTALS_GRAM_UNIT,
   TOTALS_KCAL_FORMATTER,
@@ -45,9 +48,6 @@ import {
   SAVE_BAR_BLOCK_PRE,
   CANCEL_BUTTON_PRE,
   SAVE_BUTTON_PRE,
-  SAVE_LABEL_PRE,
-  TITLE_HEADING_PRE,
-  TITLE_HINT_PRE,
 } from './fixtures/analysis-result-pre-refactor.snapshot';
 
 const REPO_ROOT = path.resolve(__dirname, '..', '..', '..', '..', '..');
@@ -82,6 +82,15 @@ const ANALYSIS_RESULT_PATH = path.resolve(
   'AnalysisResult.tsx',
 );
 
+const MICROCOPY_STRINGS_PATH = path.resolve(
+  REPO_ROOT,
+  'src',
+  'lib',
+  'nutrition',
+  'microcopy',
+  'strings.ts',
+);
+
 /**
  * Collapse whitespace to a single space. The rendered HTML is whitespace
  * insensitive between JSX tokens; the source format is not. Normalizing
@@ -96,49 +105,60 @@ describe('MealCard dom parity vs pre-refactor AnalysisResult', () => {
   const mealCardSource = readFileSync(MEAL_CARD_PATH, 'utf-8');
   const macroChipsSource = readFileSync(MACRO_CHIPS_PATH, 'utf-8');
   const analysisResultSource = readFileSync(ANALYSIS_RESULT_PATH, 'utf-8');
+  const microcopySource = readFileSync(MICROCOPY_STRINGS_PATH, 'utf-8');
   const unionSource = n(
     mealCardSource + '\n\n' + macroChipsSource + '\n\n' + analysisResultSource,
   );
   const mealCardN = n(mealCardSource);
   const macroChipsN = n(macroChipsSource);
   const analysisResultN = n(analysisResultSource);
+  const microcopyN = n(microcopySource);
 
   describe('meal totals surface', () => {
     it('preserves the meal totals card container className', () => {
       expect(unionSource).toContain(n(MEAL_TOTALS_BLOCK_PRE));
     });
 
-    it('preserves the title heading and hint copy verbatim', () => {
-      expect(unionSource).toContain(n(TITLE_HEADING_PRE));
-      expect(unionSource).toContain(n(TITLE_HINT_PRE));
+    // Phase 1B divergence: title heading and hint no longer literal in JSX;
+    // they read via getMicrocopy('title.totals', ...) and 'title.totals_hint'.
+    // We assert the microcopy keys are wired AND the canonical literal lives
+    // in the strings map so rendered DOM text is identical.
+    it('renders title.totals from microcopy and preserves the canonical literal in strings', () => {
+      expect(mealCardN).toContain("getMicrocopy('title.totals'");
+      expect(microcopyN).toContain("'Meal totals'");
     });
 
-    it('preserves the four chip grid container className', () => {
-      expect(unionSource).toContain(n(MEAL_TOTALS_GRID_PRE));
+    it('renders title.totals_hint from microcopy and preserves the canonical hint literal', () => {
+      expect(mealCardN).toContain("getMicrocopy('title.totals_hint'");
+      expect(microcopyN).toContain('Tap an item to adjust the portion or swap the food.');
     });
 
-    it('preserves the four totals chips in the fixed order Calories Protein Carbs Fat', () => {
-      // The chip labels render in fixed order. We assert label ordering within
-      // the union source as proxy for DOM order; MacroChips groups them into a
-      // single grid container that emits them in source order.
-      const indexCal = unionSource.indexOf(`"${TOTALS_CALORIES_LABEL}"`);
-      const indexPro = unionSource.indexOf(`"${TOTALS_PROTEIN_LABEL}"`);
-      const indexCar = unionSource.indexOf(`"${TOTALS_CARBS_LABEL}"`);
-      const indexFat = unionSource.indexOf(`"${TOTALS_FAT_LABEL}"`);
-      expect(indexCal).toBeGreaterThanOrEqual(0);
-      expect(indexPro).toBeGreaterThan(indexCal);
-      expect(indexCar).toBeGreaterThan(indexPro);
-      expect(indexFat).toBeGreaterThan(indexCar);
+    it('preserves the four chip grid container className (normal mode)', () => {
+      expect(macroChipsN).toContain(n(MEAL_TOTALS_GRID_PRE));
+    });
+
+    // Phase 1B divergence: the four totals chip labels are read via
+    // getMicrocopy('chips.calories.label', ...) etc. The strings map holds
+    // the canonical labels Calories, Protein, Carbs, Fat in normal variant.
+    it('renders the four canonical chip labels via microcopy chip keys', () => {
+      expect(macroChipsN).toContain("getMicrocopy('chips.calories.label'");
+      expect(macroChipsN).toContain("getMicrocopy('chips.protein.label'");
+      expect(macroChipsN).toContain("getMicrocopy('chips.carbs.label'");
+      expect(macroChipsN).toContain("getMicrocopy('chips.fats.label'");
+      expect(microcopyN).toContain("'Calories'");
+      expect(microcopyN).toContain("'Protein'");
+      expect(microcopyN).toContain("'Carbs'");
+      expect(microcopyN).toContain("'Fat'");
     });
 
     it('preserves the kcal unit on the Calories chip and the g unit on macro chips', () => {
-      expect(unionSource).toContain(n(TOTALS_KCAL_UNIT));
-      expect(unionSource).toContain(n(TOTALS_GRAM_UNIT));
+      expect(macroChipsN).toContain(n(TOTALS_KCAL_UNIT));
+      expect(macroChipsN).toContain(n(TOTALS_GRAM_UNIT));
     });
 
     it('preserves the Math.round formatter for kcal and toFixed(1) for grams', () => {
-      expect(unionSource).toContain(n(TOTALS_KCAL_FORMATTER));
-      expect(unionSource).toContain(n(TOTALS_GRAM_FORMATTER));
+      expect(macroChipsN).toContain(n(TOTALS_KCAL_FORMATTER));
+      expect(macroChipsN).toContain(n(TOTALS_GRAM_FORMATTER));
     });
 
     it('preserves the warnings list role="list" and Orange #B75E18 token', () => {
@@ -152,10 +172,6 @@ describe('MealCard dom parity vs pre-refactor AnalysisResult', () => {
     });
 
     it('preserves the ModificationChips invocation with scope="meal" and onApply forwarding', () => {
-      // Either the wired onApply uses the literal pre-refactor expression, or
-      // it uses the equivalent prop forwarded one (the latter is acceptable
-      // when MealCard receives onApplyChip as a prop). Both shapes must end
-      // in onApplyChip('meal', c) bubbling through. We check for both.
       const wiredExpression =
         unionSource.includes(n(MOD_CHIPS_INVOCATION_PRE)) ||
         (unionSource.includes('scope="meal"') &&
@@ -178,9 +194,19 @@ describe('MealCard dom parity vs pre-refactor AnalysisResult', () => {
   });
 
   describe('add another item button', () => {
-    it('preserves the add item button verbatim including dashed border + Plus icon', () => {
-      expect(unionSource).toContain(n(ADD_ITEM_BUTTON_PRE));
-      expect(unionSource).toContain('Add another item');
+    it('preserves the add item button className with dashed border + teal hover', () => {
+      // The button className shell is unchanged; the label text was moved
+      // into microcopy. The className substring still matches.
+      const startToken = '<button type="button" onClick={props.onAddItem} className=';
+      const idx = mealCardN.indexOf(startToken);
+      expect(idx).toBeGreaterThan(-1);
+      expect(mealCardN).toContain('border-dashed border-white/[0.12]');
+      expect(mealCardN).toContain('hover:border-[#2DA5A0]/40');
+    });
+
+    it('renders the add item label via microcopy and preserves the canonical literal', () => {
+      expect(mealCardN).toContain("getMicrocopy('action.add_item'");
+      expect(microcopyN).toContain("'Add another item'");
     });
   });
 
@@ -204,101 +230,73 @@ describe('MealCard dom parity vs pre-refactor AnalysisResult', () => {
       expect(unionSource).toContain(n(SAVE_BUTTON_PRE));
     });
 
-    it('preserves the Saving... and Save to log label conditional', () => {
-      expect(unionSource).toContain(n(SAVE_LABEL_PRE));
+    // Phase 1B divergence: the save label is no longer the inline ternary
+    // {props.isSaving ? 'Saving...' : 'Save to log'}; it now reads through
+    // microcopy with both literals preserved in strings.ts.
+    it('renders Saving... and Save to log labels via microcopy with canonical literals preserved', () => {
+      expect(mealCardN).toContain("getMicrocopy('action.saving'");
+      expect(mealCardN).toContain("getMicrocopy('action.save'");
+      expect(microcopyN).toContain("'Saving...'");
+      expect(microcopyN).toContain("'Save to log'");
+    });
+
+    it('renders Cancel label via microcopy with canonical literal preserved', () => {
+      expect(mealCardN).toContain("getMicrocopy('action.cancel'");
+      expect(microcopyN).toContain("'Cancel'");
     });
   });
 
   describe('child render order is identical post refactor', () => {
-    // For each pair of consecutive nodes the index of the first must be
-    // earlier than the index of the second within its owning component.
-    const FIXTURE_BY_KEY: Record<string, string | null> = {
-      MEAL_TOTALS_BLOCK: n(MEAL_TOTALS_BLOCK_PRE),
-      TITLE_HEADING: n(TITLE_HEADING_PRE),
-      TITLE_HINT: n(TITLE_HINT_PRE),
-      VOICE_EDITED_CHIP_SLOT: null,
-      CONFIDENCE_BADGE_SLOT: null,
-      TOTALS_GRID: n(MEAL_TOTALS_GRID_PRE),
-      TOTALS_CALORIES: `"${TOTALS_CALORIES_LABEL}"`,
-      TOTALS_PROTEIN: `"${TOTALS_PROTEIN_LABEL}"`,
-      TOTALS_CARBS: `"${TOTALS_CARBS_LABEL}"`,
-      TOTALS_FAT: `"${TOTALS_FAT_LABEL}"`,
-      WARNINGS_LIST: n(WARNINGS_LIST_PRE),
-      MOD_CHIPS_BLOCK: n(MOD_CHIPS_BLOCK_PRE),
-      ITEM_LIST_BLOCK: n(ITEM_LIST_BLOCK_PRE),
-      ADD_ITEM_BUTTON: n(ADD_ITEM_BUTTON_PRE),
-      CORPUS_BANNER_SLOT: null,
-      SAVE_BAR_BLOCK: n(SAVE_BAR_BLOCK_PRE),
-      CANCEL_BUTTON: n(CANCEL_BUTTON_PRE),
-      SAVE_BUTTON: n(SAVE_BUTTON_PRE),
-    };
-
     it('emits MealCard scope blocks in the recorded order (MealCard.tsx alone)', () => {
       // Within MealCard.tsx the source order mirrors the rendered DOM order
       // for the blocks MealCard renders directly:
-      //   meal-totals-block -> title heading -> title hint
+      //   meal-totals-block -> title h2 -> title hint p
       //     -> mod-chips block -> item list -> add-item button
       //     -> save bar -> cancel button -> save button
-      // The chip grid sits inside <MacroChips macros={...} /> which is a
-      // child component; its internal ordering is asserted separately.
-      const KEYS_TO_ORDER_IN_MEAL_CARD: ReadonlyArray<string> = [
-        'MEAL_TOTALS_BLOCK',
-        'TITLE_HEADING',
-        'TITLE_HINT',
-        'MOD_CHIPS_BLOCK',
-        'ITEM_LIST_BLOCK',
-        'ADD_ITEM_BUTTON',
-        'SAVE_BAR_BLOCK',
-        'CANCEL_BUTTON',
-        'SAVE_BUTTON',
+      const TITLE_H2 = '<h2 className="text-base font-semibold text-white">';
+      const TITLE_HINT_P = '<p className="text-[11px] text-white/55">';
+      const KEYS: ReadonlyArray<[string, string]> = [
+        ['MEAL_TOTALS_BLOCK', n(MEAL_TOTALS_BLOCK_PRE)],
+        ['TITLE_H2', TITLE_H2],
+        ['TITLE_HINT_P', TITLE_HINT_P],
+        ['MOD_CHIPS_BLOCK', n(MOD_CHIPS_BLOCK_PRE)],
+        ['ITEM_LIST_BLOCK', n(ITEM_LIST_BLOCK_PRE)],
+        ['SAVE_BAR_BLOCK', n(SAVE_BAR_BLOCK_PRE)],
+        ['CANCEL_BUTTON', n(CANCEL_BUTTON_PRE)],
+        ['SAVE_BUTTON', n(SAVE_BUTTON_PRE)],
       ];
       let lastIndex = -1;
       let lastKey: string | null = null;
-      for (const key of KEYS_TO_ORDER_IN_MEAL_CARD) {
-        const fixture = FIXTURE_BY_KEY[key];
-        if (fixture === null) continue; // slots without fixtures
+      for (const [key, fixture] of KEYS) {
         const idx = mealCardN.indexOf(fixture);
         expect(
           idx,
-          `Fixture ${key} missing from MealCard.tsx (previous fixture: ${lastKey ?? 'start'})`,
+          `Fixture ${key} missing from MealCard.tsx (previous: ${lastKey ?? 'start'})`,
         ).toBeGreaterThan(-1);
         expect(
           idx,
-          `Fixture ${key} appears before ${lastKey ?? 'start'} in MealCard.tsx (out of pre-refactor order)`,
+          `Fixture ${key} appears before ${lastKey ?? 'start'} in MealCard.tsx`,
         ).toBeGreaterThan(lastIndex);
         lastIndex = idx;
         lastKey = key;
       }
     });
 
-    it('emits MacroChips scope blocks in the recorded order (MacroChips.tsx alone)', () => {
-      // Within MacroChips.tsx the source order mirrors the rendered chip
-      // order: grid container -> Calories label -> Protein label
-      //   -> Carbs label -> Fat label.
-      const KEYS_TO_ORDER_IN_MACRO_CHIPS: ReadonlyArray<string> = [
-        'TOTALS_GRID',
-        'TOTALS_CALORIES',
-        'TOTALS_PROTEIN',
-        'TOTALS_CARBS',
-        'TOTALS_FAT',
-      ];
-      let lastIndex = -1;
-      let lastKey: string | null = null;
-      for (const key of KEYS_TO_ORDER_IN_MACRO_CHIPS) {
-        const fixture = FIXTURE_BY_KEY[key];
-        if (fixture === null) continue;
-        const idx = macroChipsN.indexOf(fixture);
-        expect(
-          idx,
-          `Fixture ${key} missing from MacroChips.tsx (previous fixture: ${lastKey ?? 'start'})`,
-        ).toBeGreaterThan(-1);
-        expect(
-          idx,
-          `Fixture ${key} appears before ${lastKey ?? 'start'} in MacroChips.tsx (out of pre-refactor order)`,
-        ).toBeGreaterThan(lastIndex);
-        lastIndex = idx;
-        lastKey = key;
-      }
+    it('emits MacroChips chip labels in the fixed order Calories Protein Carbs Fat (normal mode source order)', () => {
+      // Phase 1B: the safety mode branch comes first in source order;
+      // anchor on the normal branch declaration to scope the search.
+      const normalAnchor = "const variant = 'normal' as const;";
+      const normalStart = macroChipsN.indexOf(normalAnchor);
+      expect(normalStart).toBeGreaterThan(-1);
+      const normalBlock = macroChipsN.substring(normalStart);
+      const idxCal = normalBlock.indexOf("getMicrocopy('chips.calories.label'");
+      const idxPro = normalBlock.indexOf("getMicrocopy('chips.protein.label'");
+      const idxCar = normalBlock.indexOf("getMicrocopy('chips.carbs.label'");
+      const idxFat = normalBlock.indexOf("getMicrocopy('chips.fats.label'");
+      expect(idxCal).toBeGreaterThan(-1);
+      expect(idxPro).toBeGreaterThan(idxCal);
+      expect(idxCar).toBeGreaterThan(idxPro);
+      expect(idxFat).toBeGreaterThan(idxCar);
     });
   });
 
@@ -329,7 +327,6 @@ describe('MealCard dom parity vs pre-refactor AnalysisResult', () => {
     });
 
     it('MealCard uses brand tokens not off token hex', () => {
-      // Either Navy or Card surface; Teal CTA; Orange warning tint.
       expect(mealCardN).toContain('#1E3054');
       expect(mealCardN).toContain('#2DA5A0');
       expect(mealCardN).toContain('#B75E18');
@@ -361,6 +358,10 @@ describe('MealCard dom parity vs pre-refactor AnalysisResult', () => {
     it('mounts MealCard exactly once from the meal-card module', () => {
       expect(analysisResultN).toContain('MealCard');
       expect(analysisResultN).toContain('@/components/nutrition/meal-card');
+    });
+
+    it('consumes useSafetyMode at the orchestrator boundary (1B addition)', () => {
+      expect(analysisResultN).toContain('useSafetyMode');
     });
   });
 });

@@ -1,4 +1,4 @@
-// Prompt 172 Phase 1A: MealDraft + SaveResponse -> MealCardModel mapper.
+// Prompt 172 Phase 1B: MealDraft + SaveResponse -> MealCardModel mapper.
 //
 // Pure function. No React, no DOM, no fetch, no Supabase. The orchestrator
 // (AnalysisResult.tsx) calls toMealCardModel at the boundary and passes the
@@ -9,9 +9,17 @@
 // Pre save  -> mealId null,  mealQualityScore null
 // Post save -> mealId = SaveResponse.meal_id,
 //              mealQualityScore = SaveResponse.gordon.quality_score
-// bosLine   -> null in 1A; 172b wires the resolver.
-// portion   -> built from 171b portion_display_unit + portion_display_value
+// safety   -> when safetyMode is true, per item kcal is suppressed to null
+//              and macro chip rendering flips to ratios (170c section 8.4).
+//              The model also clears mealQualityScore so the post save score
+//              chip never renders for safety mode users even if the
+//              orchestrator forgets to gate.
+// bosLine  -> null in 1B; 172b wires the resolver.
+// portion  -> built from 171b portion_display_unit + portion_display_value
 //              when both are present; grams fallback when missing.
+// degraded -> degradedServiceKind defaults to 'none'; when the upstream
+//              pipeline (nutrition_photo_jobs phantom column) lands the
+//              real kind, the orchestrator passes it through.
 //
 // Hard rules honored: no em or en dashes, no emojis, no any.
 
@@ -21,6 +29,7 @@ import type {
   SaveResponse,
 } from '@/app/(app)/(consumer)/nutrition/components/NutriVisionTab/types';
 import type {
+  DegradedServiceKind,
   MealCardItem,
   MealCardModel,
   MealCardSource,
@@ -38,8 +47,14 @@ export interface ToMealCardModelInput {
   source?: MealCardSource;
   /** Optional override for the analyze kind; defaults to the legacy 'meal_analysis'. */
   analyzeKind?: string;
-  /** Optional override for the title; defaults to the pre refactor 'Meal totals' copy. */
+  /** Optional override for the title; defaults to the canonical microcopy. */
   title?: string;
+  /**
+   * Optional override for the degraded service kind. Defaults to 'none' so
+   * downstream callers that have not adopted the 170c phantom column yet
+   * still type check.
+   */
+  degradedServiceKind?: DegradedServiceKind;
 }
 
 function buildPortionLabel(item: MealItemDraft): string {
@@ -53,13 +68,17 @@ function buildPortionLabel(item: MealItemDraft): string {
   return `${item.portion_grams} g`;
 }
 
-function toItem(item: MealItemDraft): MealCardItem {
+function toItem(item: MealItemDraft, safetyMode: boolean): MealCardItem {
   return {
     id: item.id,
     name: item.food_name,
     portionLabel: buildPortionLabel(item),
-    kcal:
-      typeof item.calories_kcal === 'number'
+    // 170c section 8.4: safety mode suppresses per item kcal. The model
+    // honors this at the mapping layer so the component double check is
+    // belt + suspenders rather than the source of truth.
+    kcal: safetyMode
+      ? null
+      : typeof item.calories_kcal === 'number'
         ? Math.round(item.calories_kcal)
         : null,
     confidence:
@@ -91,16 +110,21 @@ export function toMealCardModel(input: ToMealCardModelInput): MealCardModel {
   return {
     mealId: saveResponse ? saveResponse.meal_id : null,
     title: input.title ?? 'Meal totals',
-    items: draft.items.map(toItem),
+    items: draft.items.map((item) => toItem(item, safetyMode)),
     macros: deriveMacros(draft),
-    mealQualityScore: saveResponse ? saveResponse.gordon.quality_score : null,
+    // Safety mode hides the quality score per 170c section 8.4 regardless of
+    // whether the orchestrator threads it through. The component layer also
+    // gates rendering on safetyMode; this is the second line of defense.
+    mealQualityScore:
+      saveResponse && !safetyMode ? saveResponse.gordon.quality_score : null,
     source: input.source ?? 'photo',
     analyzeKind: input.analyzeKind ?? 'meal_analysis',
     photoUrl,
     recognitionConfidence,
     degradedService,
+    degradedServiceKind: input.degradedServiceKind ?? 'none',
     safetyMode,
-    // 172b wires the BOS line resolver. Always null in 1A.
+    // 172b wires the BOS line resolver. Always null in 1B.
     bosLine: null,
   };
 }

@@ -10,10 +10,17 @@
 // to own the photo thumbnail, meal type picker, plate selector, confidence
 // badge, corpus opt in banner, and voice session orchestration; those land
 // in MealCard as slots so the rendered DOM tree stays byte equivalent.
+// Prompt 172 Phase 1B: AnalysisResult now consumes useSafetyMode at the
+// orchestrator boundary, holds the latest SaveResponse in local state, and
+// re-builds the MealCardModel reactively so MealCard lifts the post save
+// state machine without remount. The orchestrator also forwards the
+// degraded service kind (defaulting to 'none' until the analyze pipeline
+// exposes nutrition_photo_jobs.degraded_service_kind through MealDraft).
 //
 // Hard rules honored: no em or en dashes, no emojis, no any.
 
 import { useState } from 'react';
+import { useSafetyMode } from '@/lib/safety-mode/useSafetyMode';
 import { Maximize2, X } from 'lucide-react';
 import type { CookingOilSelection } from '@/lib/nutrition/cooking-oil/types';
 import { ClarificationCard } from '@/lib/nutrition/voice/components/ClarificationCard';
@@ -40,6 +47,7 @@ import type {
   ModifierChip,
   MealType,
   PlateSelectorKind,
+  SaveResponse,
 } from './types';
 
 interface AnalysisResultProps {
@@ -69,12 +77,31 @@ interface AnalysisResultProps {
   onAppendItem?: (item: MealItemDraft) => void;
   onSave: () => void;
   onCancel: () => void;
+  /**
+   * Prompt 172 Phase 1B: optional externally driven SaveResponse. When the
+   * parent (ReviewingSurface) threads this in, AnalysisResult prefers it
+   * over its internal state; useful when the parent owns the save flow
+   * end to end. When omitted AnalysisResult falls back to internal state
+   * lifted via MealCard.onSaveResponse.
+   */
+  saveResponse?: SaveResponse | null;
 }
 
 export function AnalysisResult(props: AnalysisResultProps) {
   const { draft } = props;
   const band = classifyConfidence(draft.meal_confidence);
   const showPlateSelector = draft.credit_card_detected !== true;
+  // Prompt 172 Phase 1B: 170c safety mode hook consumed at the orchestrator
+  // boundary. Fails closed (enabled false) on any fetch or kill switch
+  // failure per Phase 0 contract.
+  const safety = useSafetyMode();
+  // Prompt 172 Phase 1B: internal SaveResponse state. The orchestrator
+  // accepts a SaveResponse from MealCard via onSaveResponse and re-renders
+  // the post save model reactively. props.saveResponse, when supplied,
+  // takes precedence so a parent that owns the save flow end to end can
+  // drive the post save state directly.
+  const [internalSaveResp, setInternalSaveResp] = useState<SaveResponse | null>(null);
+  const effectiveSaveResp = props.saveResponse ?? internalSaveResp;
 
   const voiceAvailable = Boolean(
     props.onRemoveChip && props.onRestoreSnapshot && props.onAppendItem
@@ -99,16 +126,21 @@ export function AnalysisResult(props: AnalysisResultProps) {
   const voiceSessionCount = Math.ceil(voiceSession.apply.state.voice_operation_count / 3);
   const recentPreviews: string[] = [];
 
-  // Prompt 172 Phase 1A: build the MealCard view model at the orchestrator
+  // Prompt 172 Phase 1B: build the MealCard view model at the orchestrator
   // boundary. Pre save the SaveResponse is undefined so mealId and
-  // mealQualityScore land null. AnalysisResult itself is pre save in 1A;
-  // post save lifting is wired in 172c when the orchestrator hands a
-  // SaveResponse through onSaveResponse.
+  // mealQualityScore land null. Post save the orchestrator hands the
+  // effective SaveResponse to the mapper and the next render carries the
+  // post save shape (mealId + quality_score). 170c safety mode flips the
+  // ratio mode in MacroChips + the per item kcal column in MealItemCard.
+  // degradedServiceKind defaults to 'none' until the analyze pipeline
+  // exposes the kind on MealDraft (Phase 0 phantom column).
   const mealCardModel = toMealCardModel({
     draft,
+    saveResponse: effectiveSaveResp ?? undefined,
     photoUrl: draft.thumbnail_url ?? null,
-    safetyMode: false,
+    safetyMode: safety.enabled,
     degradedService: false,
+    degradedServiceKind: 'none',
     recognitionConfidence: band,
   });
 
@@ -136,10 +168,15 @@ export function AnalysisResult(props: AnalysisResultProps) {
       />
     ) : null;
 
-  // onSaveResponse is forward looking; 172c wires the post save state lift
-  // from log-meal. 1A passes a no-op so the type contract holds without
-  // changing behavior.
-  const onSaveResponseNoop: (resp: import('./types').SaveResponse) => void = () => {};
+  // Prompt 172 Phase 1B: onSaveResponse lifts the post save state into
+  // AnalysisResult's local state, which flows back into the next
+  // mealCardModel via effectiveSaveResp. The MealCard does not call this
+  // itself in practice (the parent ReviewingSurface owns the save flow);
+  // the contract exists so a future caller can trigger the post save
+  // transition without remount.
+  const handleSaveResponse = (resp: SaveResponse) => {
+    setInternalSaveResp(resp);
+  };
 
   return (
     <>
@@ -172,7 +209,7 @@ export function AnalysisResult(props: AnalysisResultProps) {
           onConfirm={props.onSave}
           onEdit={() => {}}
           onSplit={() => {}}
-          onSaveResponse={onSaveResponseNoop}
+          onSaveResponse={handleSaveResponse}
           onCancel={props.onCancel}
           onAddItem={props.onAddItem}
           onPortionChange={props.onPortionChange}

@@ -1,14 +1,20 @@
-// Prompt 172 Phase 1A: mealCardModel mapper unit tests.
+// Prompt 172 Phase 1A + 1B: mealCardModel mapper unit tests.
 //
 // Pure function tests; no React, no DOM, no fetch.
 //
-// Contract per spec 5.2 v3:
-//   pre-save  -> mealId null,  mealQualityScore null
+// Phase 1A contract per spec 5.2 v3:
+//   pre-save  -> mealId null, mealQualityScore null
 //   post-save -> mealId from SaveResponse.meal_id,
 //                mealQualityScore from SaveResponse.gordon.quality_score
-//   bosLine   -> always null in 1A; 172b wires the resolver
+//   bosLine   -> always null in 1A and 1B; 172b wires the resolver
 //   portion   -> built from MealItemDraft.portion_display_unit +
 //                portion_display_value (171b fields) with grams fallback
+//
+// Phase 1B additions per spec 5.7 + 170c 8.4:
+//   safety   -> when safetyMode is true, per item kcal nulls and the post
+//                save quality score nulls regardless of SaveResponse
+//   degraded -> degradedServiceKind defaults to 'none'; mapper passes
+//                through any explicit kind from the orchestrator
 
 import { describe, it, expect } from 'vitest';
 import { toMealCardModel } from '../mealCardModel';
@@ -134,7 +140,68 @@ describe('toMealCardModel post save', () => {
   });
 });
 
-describe('toMealCardModel bosLine in 1A', () => {
+describe('toMealCardModel post save in safety mode (170c 8.4)', () => {
+  it('nulls mealQualityScore even when SaveResponse carries a non null score', () => {
+    const model = toMealCardModel({
+      draft: makeDraft(),
+      saveResponse: makeSaveResponse({
+        gordon: {
+          bio_optimization_delta: null,
+          copy: null,
+          quality_score: 88,
+          quality_tier: 'good',
+        },
+      }),
+      photoUrl: null,
+      safetyMode: true,
+      degradedService: false,
+      recognitionConfidence: 'high',
+    });
+    expect(model.mealQualityScore).toBeNull();
+  });
+
+  it('still lifts meal_id post save (only score is suppressed, not the id)', () => {
+    const model = toMealCardModel({
+      draft: makeDraft(),
+      saveResponse: makeSaveResponse({ meal_id: 'meal-sm-1' }),
+      photoUrl: null,
+      safetyMode: true,
+      degradedService: false,
+      recognitionConfidence: 'high',
+    });
+    expect(model.mealId).toBe('meal-sm-1');
+  });
+});
+
+describe('toMealCardModel per item kcal in safety mode (170c 8.4)', () => {
+  it('nulls per item kcal when safetyMode is true', () => {
+    const model = toMealCardModel({
+      draft: makeDraft({
+        items: [makeItem({ calories_kcal: 300 })],
+      }),
+      photoUrl: null,
+      safetyMode: true,
+      degradedService: false,
+      recognitionConfidence: 'high',
+    });
+    expect(model.items[0].kcal).toBeNull();
+  });
+
+  it('preserves per item kcal when safetyMode is false', () => {
+    const model = toMealCardModel({
+      draft: makeDraft({
+        items: [makeItem({ calories_kcal: 300 })],
+      }),
+      photoUrl: null,
+      safetyMode: false,
+      degradedService: false,
+      recognitionConfidence: 'high',
+    });
+    expect(model.items[0].kcal).toBe(300);
+  });
+});
+
+describe('toMealCardModel bosLine in 1B', () => {
   it('is always null pre save', () => {
     const model = toMealCardModel({
       draft: makeDraft(),
@@ -146,7 +213,7 @@ describe('toMealCardModel bosLine in 1A', () => {
     expect(model.bosLine).toBeNull();
   });
 
-  it('is always null post save (172b wires the resolver, not 1A)', () => {
+  it('is always null post save (172b wires the resolver, not 1B)', () => {
     const model = toMealCardModel({
       draft: makeDraft(),
       saveResponse: makeSaveResponse(),
@@ -224,9 +291,9 @@ describe('toMealCardModel macros', () => {
       draft: makeDraft({
         totals: {
           calories_kcal: 500,
-          protein_g: 25, // 25 of 100 grams = 25 percent
-          carbs_g: 50, // 50 of 100 grams = 50 percent
-          fat_g: 25, // 25 of 100 grams = 25 percent
+          protein_g: 25,
+          carbs_g: 50,
+          fat_g: 25,
           fiber_g: 0,
           sugar_g: 0,
           sodium_mg: 0,
@@ -311,5 +378,93 @@ describe('toMealCardModel pass through flags', () => {
       recognitionConfidence: 'high',
     });
     expect(model.photoUrl).toBe('https://signed.example/photo.jpg');
+  });
+});
+
+describe('toMealCardModel degradedServiceKind (1B addition for 170c 10.3)', () => {
+  it('defaults degradedServiceKind to none when not supplied', () => {
+    const model = toMealCardModel({
+      draft: makeDraft(),
+      photoUrl: null,
+      safetyMode: false,
+      degradedService: false,
+      recognitionConfidence: 'high',
+    });
+    expect(model.degradedServiceKind).toBe('none');
+  });
+
+  it('passes through logmeal_hard_stop kind', () => {
+    const model = toMealCardModel({
+      draft: makeDraft(),
+      photoUrl: null,
+      safetyMode: false,
+      degradedService: true,
+      degradedServiceKind: 'logmeal_hard_stop',
+      recognitionConfidence: 'low',
+    });
+    expect(model.degradedServiceKind).toBe('logmeal_hard_stop');
+  });
+
+  it('passes through gemini_low_confidence kind', () => {
+    const model = toMealCardModel({
+      draft: makeDraft(),
+      photoUrl: null,
+      safetyMode: false,
+      degradedService: true,
+      degradedServiceKind: 'gemini_low_confidence',
+      recognitionConfidence: 'low',
+    });
+    expect(model.degradedServiceKind).toBe('gemini_low_confidence');
+  });
+
+  it('passes through claude_tertiary_used kind', () => {
+    const model = toMealCardModel({
+      draft: makeDraft(),
+      photoUrl: null,
+      safetyMode: false,
+      degradedService: true,
+      degradedServiceKind: 'claude_tertiary_used',
+      recognitionConfidence: 'low',
+    });
+    expect(model.degradedServiceKind).toBe('claude_tertiary_used');
+  });
+});
+
+describe('toMealCardModel state transitions (1B: pre save -> post save)', () => {
+  it('flips mealId and mealQualityScore in lockstep when saveResponse changes', () => {
+    const draft = makeDraft();
+    const preSaveModel = toMealCardModel({
+      draft,
+      photoUrl: null,
+      safetyMode: false,
+      degradedService: false,
+      recognitionConfidence: 'high',
+    });
+    const postSaveModel = toMealCardModel({
+      draft,
+      saveResponse: makeSaveResponse({ meal_id: 'meal-flip' }),
+      photoUrl: null,
+      safetyMode: false,
+      degradedService: false,
+      recognitionConfidence: 'high',
+    });
+    expect(preSaveModel.mealId).toBeNull();
+    expect(preSaveModel.mealQualityScore).toBeNull();
+    expect(postSaveModel.mealId).toBe('meal-flip');
+    expect(postSaveModel.mealQualityScore).toBe(78);
+  });
+
+  it('is a pure function (same inputs return equivalent shape)', () => {
+    const draft = makeDraft();
+    const inputs = {
+      draft,
+      photoUrl: null,
+      safetyMode: false,
+      degradedService: false,
+      recognitionConfidence: 'high' as const,
+    };
+    const m1 = toMealCardModel(inputs);
+    const m2 = toMealCardModel(inputs);
+    expect(m1).toEqual(m2);
   });
 });

@@ -1,42 +1,50 @@
 'use client';
 
-// Prompt 172 Phase 1A: presentational MealCard.
+// Prompt 172 Phase 1B: presentational MealCard with state machine, safety
+// mode, degraded service, and the microcopy layer.
 //
-// One presentational React component that consumes a MealCardModel and
-// renders the itemized confirmation card body. It fetches nothing, scores
-// nothing, accesses Supabase nowhere. Pre save the orchestrator
-// (AnalysisResult.tsx) passes a model with mealId null + mealQualityScore
-// null; post save the orchestrator hands a SaveResponse to the mapper and
-// renders the next state.
+// Spec 5.1 + 5.2 + 5.4 + 5.7 v3. The card body subtree was extracted from
+// AnalysisResult.tsx in Phase 1A; 1B layers four contracts on top:
 //
-// The card body subtree extracted from AnalysisResult.tsx pre refactor at
-// lines 123 through 217. The byte equivalent DOM contract is enforced by
-// MealCard.dom-parity.test.ts. The one net new addition is FdaDisclaimer at
-// the card footer; spec 5.3 mandates it and 170c kill switch gates it.
+//   1. Pre / post save state machine:
+//        pre save  -> mealId null, mealQualityScore null. Render items, macro
+//                     chips, action row with the save button. No score, no
+//                     acknowledgement line.
+//        post save -> mealId !== null, mealQualityScore !== null. Render the
+//                     quality score chip + acknowledgement line keyed by
+//                     recognitionConfidence. Replace the save button with an
+//                     edit affordance plus a small confirm tick.
 //
-// Two slots are owned by the orchestrator and passed in as ReactNode:
-//   confidenceBadge  - the ConfidenceBadge with classifyConfidence wiring
-//   voiceEditedChip  - the VoiceEditedChip from the voice session
-// The CorpusOptInBanner is not a slot here; AnalysisResult continues to
-// render it as a sibling between MealCard and the screen orchestration.
-// Same for the photo thumbnail and the meal type picker.
+//   2. Microcopy layer (172a): zero hardcoded user facing strings. Every
+//      label, body line, and acknowledgement reads from
+//      @/lib/nutrition/microcopy with the safety mode variant chosen by
+//      the model.
 //
-// Wait. Per spec section 6 v3 the card body subtree includes the corpus
-// banner. Per the Phase 1A brief the corpus banner stays in
-// AnalysisResult. We honor the brief; AnalysisResult renders the corpus
-// banner OUTSIDE the MealCard subtree (after the items list, before the
-// save bar). To keep the DOM byte equivalent, the corpus banner sits as a
-// MealCard slot that AnalysisResult builds; MealCard renders that slot in
-// the same position the pre refactor banner occupied.
+//   3. Safety mode (170c section 8.4 silent ratio mode contract):
+//        - kcal column on each MealItemCard row is hidden (the prop threads
+//          safetyMode into MealItemCard).
+//        - meal quality score chip never renders, even post save.
+//        - acknowledgement line uses the safety_mode variant.
+//        - FdaDisclaimer remains.
+//        - Zero visible mode indicator on the surface (no banner, no badge,
+//          no color shift). The card looks like the normal card with the
+//          math layer flipped.
+//
+//   4. 170c section 10.3 degraded service messaging: when state is
+//      low_confidence or error and degradedService is true, the body copy
+//      reads from one of three canonical microcopy keys discriminated by
+//      degradedServiceKind. The phrasing is service side, never user fault.
 //
 // Hard rules honored: no em or en dashes, no emojis, no any, Lucide
 // strokeWidth 1.5, brand tokens only.
 
 import type { ReactNode } from 'react';
-import { Plus, Save, X } from 'lucide-react';
+import { CheckCircle2, Edit3, Plus, Save, X } from 'lucide-react';
 import { FdaDisclaimer } from '@/components/compliance/FdaDisclaimer';
 import { ModificationChips } from '@/app/(app)/(consumer)/nutrition/components/NutriVisionTab/ModificationChips';
 import { MealItemCard } from '@/app/(app)/(consumer)/nutrition/components/NutriVisionTab/MealItemCard';
+import { getMicrocopy } from '@/lib/nutrition/microcopy';
+import type { MicrocopyKey, MicrocopyVariant } from '@/lib/nutrition/microcopy';
 import type {
   CookingOilSelection,
 } from '@/lib/nutrition/cooking-oil/types';
@@ -45,8 +53,9 @@ import type {
   FoodSwapReplacement,
   ModifierChip,
   MealDraft,
+  SaveResponse,
 } from '@/app/(app)/(consumer)/nutrition/components/NutriVisionTab/types';
-import type { MealCardModel } from './MealCard.types';
+import type { DegradedServiceKind, MealCardModel } from './MealCard.types';
 import { MacroChips } from './MacroChips';
 
 export interface MealCardProps {
@@ -81,10 +90,9 @@ export interface MealCardProps {
   onSplit: () => void;
   /**
    * Spec 5.5: orchestrator threads SaveResponse here when log-meal returns;
-   * MealCard does not call this itself in 1A, but the type is part of the
-   * 1A contract so 172b + 172c can wire later without breaking callers.
+   * MealCard does not call this itself, the orchestrator does.
    */
-  onSaveResponse: (resp: import('@/app/(app)/(consumer)/nutrition/components/NutriVisionTab/types').SaveResponse) => void;
+  onSaveResponse: (resp: SaveResponse) => void;
   /** Cancel handler the pre refactor save bar wired to props.onCancel. */
   onCancel: () => void;
   /** Add another item handler the pre refactor button wired to props.onAddItem. */
@@ -100,26 +108,126 @@ export interface MealCardProps {
   isSaving: boolean;
 }
 
+function variantFor(safetyMode: boolean): MicrocopyVariant {
+  return safetyMode ? 'safety_mode' : 'normal';
+}
+
+/**
+ * 170c section 10.3 degraded service body copy lookup. Returns the canonical
+ * microcopy key for a given degraded service kind. When kind is 'none' the
+ * standard low_confidence_body or error_body falls through at the call
+ * site.
+ */
+function degradedKeyFor(kind: DegradedServiceKind): MicrocopyKey | null {
+  switch (kind) {
+    case 'logmeal_hard_stop':
+      return 'degraded.logmeal_hard_stop';
+    case 'gemini_low_confidence':
+      return 'degraded.gemini_low_confidence';
+    case 'claude_tertiary_used':
+      return 'degraded.claude_tertiary_used';
+    case 'none':
+      return null;
+  }
+}
+
+function acknowledgementKeyFor(
+  confidence: MealCardModel['recognitionConfidence'],
+): MicrocopyKey {
+  switch (confidence) {
+    case 'high':
+      return 'acknowledgement.high';
+    case 'medium':
+      return 'acknowledgement.medium';
+    case 'low':
+      return 'acknowledgement.low';
+  }
+}
+
 export function MealCard(props: MealCardProps) {
   const { model, draft } = props;
-  // TODO 1B: when model.safetyMode is true, swap MacroChips into its ratio
-  // variant per 170c section 8.4. 1A renders the absolute kcal + grams in
-  // every state to preserve the byte equivalent DOM contract.
-  // bosLine is null in 1A; the slot is reserved and 172b wires the resolver.
+  const variant = variantFor(model.safetyMode);
+
+  // Pre save vs post save state machine per spec 5.1 + 5.2.
+  const isPostSave = model.mealId !== null && model.mealQualityScore !== null;
+
+  // 170c section 10.3 degraded service body copy gating. When the upstream
+  // pipeline flags a degraded provider we render the canonical kind copy;
+  // when not, we fall back to the standard low_confidence_body / error_body
+  // microcopy. Phase 1B only renders this body block in the meal totals
+  // surface when the recognitionConfidence is low (a proxy for the
+  // low_confidence state until the analyzer exposes the state directly).
+  const degradedKey = model.degradedService ? degradedKeyFor(model.degradedServiceKind) : null;
+  const showDegradedBlock = model.recognitionConfidence === 'low';
+  const degradedBodyCopy = degradedKey
+    ? getMicrocopy(degradedKey, variant)
+    : getMicrocopy('state.low_confidence_body', variant);
+
   return (
     <>
       <div className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/55 p-4 backdrop-blur-md">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-2">
             <div>
-              <h2 className="text-base font-semibold text-white">Meal totals</h2>
-              <p className="text-[11px] text-white/55">Tap an item to adjust the portion or swap the food.</p>
+              <h2 className="text-base font-semibold text-white">{getMicrocopy('title.totals', variant)}</h2>
+              <p className="text-[11px] text-white/55">{getMicrocopy('title.totals_hint', variant)}</p>
             </div>
             {props.voiceEditedChip}
           </div>
-          {props.confidenceBadge}
+          <div className="flex items-center gap-2">
+            {/*
+              Post save quality score chip. Per 170c section 8.4 the chip is
+              suppressed in safety mode even if mealQualityScore is somehow
+              non null. The mapper already nulls it; this is the second
+              line of defense.
+            */}
+            {isPostSave && !model.safetyMode && (
+              <div
+                className="inline-flex items-center gap-1 rounded-full border border-white/[0.08] bg-[#2DA5A0]/15 px-2 py-1 text-[11px] font-semibold text-white"
+                data-meal-quality-score
+              >
+                <CheckCircle2 className="h-3 w-3" strokeWidth={1.5} />
+                {model.mealQualityScore}
+              </div>
+            )}
+            {props.confidenceBadge}
+          </div>
         </div>
         <MacroChips macros={model.macros} safetyMode={model.safetyMode} />
+
+        {/*
+          Post save acknowledgement line per spec 5.2 + brief. Keyed by
+          recognitionConfidence so high reads as solid, medium as detail,
+          low as we will keep learning. Safety mode variants are food
+          positive non optimization phrasing.
+        */}
+        {isPostSave && (
+          <p
+            className="mt-3 text-[12px] text-white/80"
+            role="status"
+            aria-live="polite"
+            data-acknowledgement-line
+          >
+            {getMicrocopy(acknowledgementKeyFor(model.recognitionConfidence), variant)}
+          </p>
+        )}
+
+        {/*
+          170c section 10.3 degraded service notice. When confidence is low
+          and the pipeline has flagged degraded service, the canonical kind
+          copy renders below the totals. When no degraded signal is present
+          but confidence is still low, the standard non degraded fallback
+          microcopy renders so the user knows to review carefully.
+        */}
+        {showDegradedBlock && (
+          <p
+            className="mt-3 rounded-lg border border-white/[0.08] bg-white/[0.04] p-2 text-[11px] text-white/80"
+            role="status"
+            data-degraded-service-notice
+          >
+            {degradedBodyCopy}
+          </p>
+        )}
 
         {draft.warnings.length > 0 && (
           <ul className="mt-3 flex flex-col gap-1 rounded-lg border border-[#B75E18]/30 bg-[#B75E18]/10 p-2 text-[11px] text-white/80" role="list">
@@ -146,6 +254,7 @@ export function MealCard(props: MealCardProps) {
           <MealItemCard
             key={item.id}
             item={item}
+            safetyMode={model.safetyMode}
             onPortionChange={(g) => props.onPortionChange(item.id, g)}
             onFoodSwap={(r) => props.onFoodSwap(item.id, r)}
             onCookingOilChange={(s) => props.onCookingOilChange(item.id, s)}
@@ -162,7 +271,7 @@ export function MealCard(props: MealCardProps) {
         className="inline-flex items-center justify-center gap-2 rounded-xl border border-dashed border-white/[0.12] bg-transparent px-4 py-3 text-sm font-medium text-white/70 transition-colors hover:border-[#2DA5A0]/40 hover:text-white"
       >
         <Plus className="h-4 w-4" strokeWidth={1.5} />
-        Add another item
+        {getMicrocopy('action.add_item', variant)}
       </button>
 
       {props.corpusBanner}
@@ -176,17 +285,34 @@ export function MealCard(props: MealCardProps) {
             className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/[0.08] bg-white/5 px-4 py-3 text-sm font-medium text-white/75 transition-colors hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <X className="h-4 w-4" strokeWidth={1.5} />
-            Cancel
+            {getMicrocopy('action.cancel', variant)}
           </button>
-          <button
-            type="button"
-            onClick={props.onConfirm}
-            disabled={props.isSaving}
-            className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#2DA5A0] px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#2DA5A0]/90 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <Save className="h-4 w-4" strokeWidth={1.5} />
-            {props.isSaving ? 'Saving...' : 'Save to log'}
-          </button>
+          {isPostSave ? (
+            // Post save: replace save button with edit affordance + a small
+            // confirm tick. The tick communicates "we got it" without
+            // hype; the edit affordance lets the user fix anything wrong.
+            <button
+              type="button"
+              onClick={props.onEdit}
+              disabled={props.isSaving}
+              className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#2DA5A0] px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#2DA5A0]/90 disabled:cursor-not-allowed disabled:opacity-50"
+              data-post-save-edit
+            >
+              <Edit3 className="h-4 w-4" strokeWidth={1.5} />
+              {getMicrocopy('action.edit', variant)}
+              <CheckCircle2 className="h-3 w-3" strokeWidth={1.5} aria-hidden="true" />
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={props.onConfirm}
+              disabled={props.isSaving}
+              className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#2DA5A0] px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#2DA5A0]/90 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <Save className="h-4 w-4" strokeWidth={1.5} />
+              {props.isSaving ? getMicrocopy('action.saving', variant) : getMicrocopy('action.save', variant)}
+            </button>
+          )}
         </div>
       </div>
 

@@ -1,4 +1,4 @@
-// Prompt 172 Phase 1A: MealCard source presence sanity.
+// Prompt 172 Phase 1A + 1B: MealCard source presence sanity.
 //
 // vitest runs node only without jsdom. Real interactive coverage rides
 // Playwright once 172d ships. Here we assert MealCard source contract:
@@ -7,8 +7,13 @@
 //   - mounts FdaDisclaimer slot="card-footer" at the bottom (spec 5.3, 7)
 //   - reserves a null BOS line slot for 172b to wire
 //   - is purely presentational (no fetch, no Supabase, no useState for data)
-//   - safety mode flag is read from props but does not change behavior in 1A
-//     (defer 170c ratio mode rendering to 1B)
+//   - safety mode flag is read from the model AND drives the ratio variant,
+//     per item kcal suppression, score chip suppression, and the food
+//     positive acknowledgement variant per spec 5.7 + 170c 8.4
+//   - degraded service messaging branches on degradedServiceKind per 170c
+//     section 10.3 (1B addition)
+//   - zero hardcoded user facing strings; every label, body, acknowledgement,
+//     button reads via getMicrocopy from the 172a microcopy layer
 //   - hard rules: no em or en dashes, no emojis, Lucide strokeWidth 1.5, brand
 //     tokens only
 
@@ -31,15 +36,14 @@ describe('MealCard source', () => {
     });
 
     it('is purely presentational (no Supabase client, no fetch, no data useState)', () => {
-      // Supabase clients are not allowed in presentational components.
       expect(source).not.toContain('createClient');
       expect(source).not.toContain('createBrowserClient');
-      // No fetch calls (1A is read only from props).
       expect(source).not.toContain('fetch(');
-      // No state hooks for data; UI affordance state (a fullscreen toggle for
-      // example) is allowed but we expect 1A to introduce none.
       expect(source).not.toContain('useEffect');
       expect(source).not.toContain('useReducer');
+      // useState is allowed for UI affordance only; we expect zero in 1B
+      // because the orchestrator owns the SaveResponse state.
+      expect(source).not.toContain('useState(');
     });
   });
 
@@ -51,6 +55,32 @@ describe('MealCard source', () => {
     it('reads mealQualityScore from the model and treats null as pre save', () => {
       expect(source).toContain('mealQualityScore');
     });
+
+    it('discriminates pre save vs post save via a isPostSave guard', () => {
+      // The component flips rendering based on a derived boolean built from
+      // mealId !== null && mealQualityScore !== null. The exact identifier
+      // can vary; we accept either an inline test or a named local.
+      const hasGuard =
+        source.includes('isPostSave') ||
+        source.includes('mealId !== null && model.mealQualityScore !== null');
+      expect(hasGuard).toBe(true);
+    });
+
+    it('renders the post save acknowledgement line keyed by recognitionConfidence', () => {
+      // Acknowledgement microcopy is keyed by the recognitionConfidence band.
+      // We assert all three keys are referenced.
+      expect(source).toContain('acknowledgement.high');
+      expect(source).toContain('acknowledgement.medium');
+      expect(source).toContain('acknowledgement.low');
+    });
+
+    it('renders an edit affordance post save instead of the save button', () => {
+      // Post save the save button is replaced with an Edit affordance + a
+      // confirm tick per the brief. We assert the Edit3 lucide icon import
+      // and the data-post-save-edit attribute the component tags.
+      expect(source).toContain('Edit3');
+      expect(source).toContain('data-post-save-edit');
+    });
   });
 
   describe('event handler props out (spec 5.5)', () => {
@@ -58,7 +88,7 @@ describe('MealCard source', () => {
       expect(source).toContain('onConfirm');
     });
 
-    it('declares onEdit (forward looking; 172c wires it)', () => {
+    it('declares onEdit (post save replaces save button with edit)', () => {
       expect(source).toContain('onEdit');
     });
 
@@ -66,14 +96,8 @@ describe('MealCard source', () => {
       expect(source).toContain('onSplit');
     });
 
-    it('declares onSaveResponse (forward looking; lifts post save state)', () => {
+    it('declares onSaveResponse (lifts post save state to the orchestrator)', () => {
       expect(source).toContain('onSaveResponse');
-    });
-
-    it('wires onConfirm through the save action button (Save to log copy preserved)', () => {
-      // The pre refactor Save button called props.onSave; the post refactor
-      // wires the same button to onConfirm. Cancel stays its own handler.
-      expect(source).toContain('Save to log');
     });
   });
 
@@ -82,9 +106,7 @@ describe('MealCard source', () => {
       expect(source).toContain('bosLine');
     });
 
-    it('renders nothing when bosLine is null (1A always null per spec)', () => {
-      // The MealCard source either short circuits on null or guards with a
-      // truthy check before rendering. We assert the guard exists.
+    it('renders nothing when bosLine is null', () => {
       const hasGuard =
         source.includes('bosLine && ') ||
         source.includes('bosLine !== null') ||
@@ -104,13 +126,99 @@ describe('MealCard source', () => {
     });
   });
 
-  describe('safety mode read but unimplemented in 1A', () => {
-    it('reads safetyMode from the model props', () => {
-      expect(source).toContain('safetyMode');
+  describe('safety mode behavior (spec 5.7 + 170c 8.4)', () => {
+    it('reads safetyMode from the model', () => {
+      expect(source).toContain('model.safetyMode');
     });
 
-    it('marks the safety mode ratio rendering as deferred to 1B', () => {
-      expect(source).toContain('1B');
+    it('threads safetyMode into MealItemCard so per item kcal suppresses', () => {
+      // The brief says: when safetyMode === true, suppress per-item kcal in
+      // the item list (the kcal column on each MealItemCard row is hidden).
+      // MealCard passes safetyMode prop to MealItemCard.
+      expect(source).toContain('safetyMode={model.safetyMode}');
+    });
+
+    it('passes safetyMode through to MacroChips so the ratio variant renders', () => {
+      // MacroChips already takes a safetyMode prop in 1A; 1B wires the
+      // model.safetyMode value through and renders the ratio variant.
+      expect(source).toContain('safetyMode={model.safetyMode}');
+    });
+
+    it('suppresses the meal quality score chip when safetyMode is true', () => {
+      // Post save the score chip renders only when !model.safetyMode.
+      const hasGuard =
+        source.includes('!model.safetyMode') ||
+        source.includes('model.safetyMode === false');
+      expect(hasGuard).toBe(true);
+    });
+
+    it('chooses the variant via a helper or inline ternary keyed on safetyMode', () => {
+      // The microcopy variant for safety_mode is named 'safety_mode'.
+      expect(source).toContain('safety_mode');
+    });
+
+    it('contains no visible mode indicator (no banner/badge/safety mode text)', () => {
+      // 170c 8.4 silent UX hard requirement. The literal phrase "safety mode"
+      // can appear in code comments (it does in the file header) but the
+      // word combo should not appear in any rendered string. We assert no
+      // JSX renders the literal "Safety Mode" or "safety mode active" or
+      // "ratio mode" or "silent mode" via a JSX expression.
+      expect(source).not.toMatch(/>\s*safety mode\s*</i);
+      expect(source).not.toMatch(/>\s*safety mode active\s*</i);
+      expect(source).not.toMatch(/>\s*ratio mode\s*</i);
+      expect(source).not.toMatch(/>\s*silent mode\s*</i);
+      // No className with safety-mode token either.
+      expect(source).not.toContain('safety-mode');
+      expect(source).not.toContain('ratio-mode');
+    });
+  });
+
+  describe('170c section 10.3 degraded service messaging (1B addition)', () => {
+    it('reads degradedService + degradedServiceKind from the model', () => {
+      expect(source).toContain('model.degradedService');
+      expect(source).toContain('model.degradedServiceKind');
+    });
+
+    it('references all three canonical degraded service microcopy keys', () => {
+      expect(source).toContain('degraded.logmeal_hard_stop');
+      expect(source).toContain('degraded.gemini_low_confidence');
+      expect(source).toContain('degraded.claude_tertiary_used');
+    });
+
+    it('falls back to standard low_confidence_body when degradedService is false', () => {
+      expect(source).toContain('state.low_confidence_body');
+    });
+  });
+
+  describe('microcopy layer integration (172a + 1B no hardcoded strings)', () => {
+    it('imports getMicrocopy from the 172a microcopy layer', () => {
+      expect(source).toContain("from '@/lib/nutrition/microcopy'");
+      expect(source).toContain('getMicrocopy');
+    });
+
+    it('contains no hardcoded user facing literals (Meal totals, Cancel, etc)', () => {
+      // The literals must not appear inside JSX text expressions. JSX text
+      // content is matched by simple substring; the canonical literals
+      // moved to strings.ts. We assert each absent from the component
+      // source after stripping the file header block.
+      const SOURCE_AFTER_HEADER = source.substring(source.indexOf("'use client';"));
+      const SHIPPED_LITERALS = [
+        'Meal totals', // moved to microcopy
+        'Tap an item to adjust the portion or swap the food.', // moved
+        'Add another item', // moved
+        'Save to log', // moved
+        'Saving...', // moved
+        'Cancel', // moved
+      ];
+      for (const lit of SHIPPED_LITERALS) {
+        // The literal must not appear as a bare JSX text literal. We check
+        // it does not appear inside the component body. Microcopy keys
+        // like getMicrocopy('action.cancel'...) are fine.
+        expect(SOURCE_AFTER_HEADER).not.toContain(`>${lit}<`);
+        expect(SOURCE_AFTER_HEADER).not.toContain(` ${lit}\n`);
+        expect(SOURCE_AFTER_HEADER).not.toContain(`'${lit}'`);
+        expect(SOURCE_AFTER_HEADER).not.toContain(`"${lit}"`);
+      }
     });
   });
 
@@ -121,8 +229,6 @@ describe('MealCard source', () => {
     });
 
     it('uses Lucide strokeWidth 1.5 on any iconography', () => {
-      // Lucide imports always come with strokeWidth 1.5 per the standing
-      // brand contract. If MealCard imports any icon, it must use the token.
       const importsLucide = source.includes("from 'lucide-react'");
       if (importsLucide) {
         expect(source).toContain('strokeWidth={1.5}');
@@ -152,7 +258,24 @@ describe('MealCard source', () => {
 
     it('threads onAddItem to the add another item button', () => {
       expect(source).toContain('onAddItem');
-      expect(source).toContain('Add another item');
+      // The button label is now microcopy keyed, asserted separately.
+      expect(source).toContain("getMicrocopy('action.add_item'");
     });
+  });
+});
+
+describe('MealCard idempotence on onSaveResponse contract', () => {
+  // Source level check: the MealCard does not own SaveResponse state
+  // internally. The orchestrator (AnalysisResult) holds the state and the
+  // component re-renders via prop changes. Calling onSaveResponse twice
+  // with the same value is a no-op at the orchestrator level because
+  // useState set with identical reference bails out; that contract is
+  // covered indirectly by this source level test, plus the mealCardModel
+  // test asserting the mapper is a pure function of its inputs.
+  const source = readFileSync(FILE, 'utf-8');
+
+  it('does not own a SaveResponse useState; orchestrator owns it', () => {
+    expect(source).not.toContain('useState<SaveResponse');
+    expect(source).not.toContain('useState(null)');
   });
 });
