@@ -1,8 +1,35 @@
-# Em-dash + en-dash allowlist per #168c section 2.9.
+# Em dash + en dash allowlist per #168c section 2.9.
 # One file path per line, relative to repo root.
 # Lines starting with # are comments. Blank lines ignored.
+# Lines starting with "prefix:" exempt a path prefix; use this for
+# directories where U+2014 or U+2013 appear as detection or assertion
+# oracles rather than UI copy.
 #
 # Adding an entry requires Gary's explicit approval. Each entry should be
-# accompanied by an inline code comment in the file justifying the dash.
-#
-# Currently empty: no exemptions granted.
+# accompanied by an inline code comment in the file justifying the dash,
+# or, for prefix entries, a justification line above the prefix.
+
+# Note on path format: the working tree root is one level above the
+# viaconnect-web/ directory, so git reports staged paths with the
+# viaconnect-web/ prefix. Every entry below carries that prefix.
+
+# Compliance engine source: U+2014 and U+2013 appear in regex character
+# classes and dictionary literals because the engine must detect dashes
+# in user submitted content. Removing them would break detection.
+prefix:viaconnect-web/src/lib/compliance/
+
+# Top level tests directory: U+2014 and U+2013 appear in assertion
+# oracles (toMatch / includes calls) that verify production code is
+# dash free. Removing them would break the enforcement tests.
+prefix:viaconnect-web/tests/
+
+# Colocated test files for nutrition, scoring, and meal card: same
+# assertion oracle pattern as the tests/ tree, but they live next to
+# their source under src/.
+prefix:viaconnect-web/src/components/nutrition/meal-card/__tests__/
+prefix:viaconnect-web/src/lib/nutrition/microcopy/__tests__/
+prefix:viaconnect-web/src/lib/nutrition/portion/__tests__/
+prefix:viaconnect-web/src/lib/nutrition/cooking-oil/__tests__/
+prefix:viaconnect-web/src/lib/nutrition/__tests__/
+prefix:viaconnect-web/src/lib/scoring/__tests__/
+prefix:viaconnect-web/src/app/(app)/(consumer)/nutrition/components/NutriVisionTab/__tests__/

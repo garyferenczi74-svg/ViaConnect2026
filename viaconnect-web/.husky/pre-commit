@@ -1,20 +1,48 @@
-# Em-dash + en-dash pre-commit gate per #168c section 2.9.
+#!/bin/sh
+# Em dash + en dash pre commit gate per #168c section 2.9.
 # Blocks commits when any staged file contains U+2014 or U+2013.
 # Allowlist file at .no-dashes-allowlist may exempt specific paths.
+# Two allowlist formats are supported:
+#   exact file path: one per line, relative to repo root
+#   directory prefix: lines starting with "prefix:" exempt every file
+#   whose path starts with that prefix (use for compliance dictionaries
+#   and test files where dashes are detection or assertion oracles)
 
-ALLOWLIST=".no-dashes-allowlist"
+# grep -P needs an explicit UTF-8 locale on Git Bash for Windows. Without
+# this the unicode escape character class fails with "supports only
+# unibyte and UTF-8 locales" and the hook silently skips detection.
+export LC_ALL=C.UTF-8
+
+# The allowlist lives next to package.json one level above .husky/. Resolve
+# it from the script location so the hook works whether git invokes us from
+# the repo root or the viaconnect-web subdirectory.
+SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
+WORKTREE_DIR=$(cd "$SCRIPT_DIR/.." && pwd)
+ALLOWLIST="$WORKTREE_DIR/.no-dashes-allowlist"
+
 files=$(git diff --cached --name-only --diff-filter=ACM)
 [ -z "$files" ] && exit 0
 
 allow=""
+allow_prefixes=""
 if [ -f "$ALLOWLIST" ]; then
-  allow=$(grep -v '^#' "$ALLOWLIST" 2>/dev/null | grep -v '^$' || true)
+  allow=$(grep -v '^#' "$ALLOWLIST" 2>/dev/null | grep -v '^$' | grep -v '^prefix:' || true)
+  allow_prefixes=$(grep -v '^#' "$ALLOWLIST" 2>/dev/null | grep -v '^$' | grep '^prefix:' | sed 's/^prefix://' || true)
 fi
 
 violations=""
 for f in $files; do
   if [ -n "$allow" ] && echo "$allow" | grep -qFx "$f"; then
     continue
+  fi
+  if [ -n "$allow_prefixes" ]; then
+    skip=0
+    for p in $allow_prefixes; do
+      case "$f" in
+        "$p"*) skip=1; break ;;
+      esac
+    done
+    [ "$skip" = "1" ] && continue
   fi
   [ ! -f "$f" ] && continue
   if grep -qP '[\x{2013}\x{2014}]' "$f" 2>/dev/null; then
