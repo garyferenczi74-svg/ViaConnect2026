@@ -24,6 +24,7 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Accessibility, Bell, Check, Loader2, X } from 'lucide-react';
 import { useBodyScanInclusivityWaitlist } from '@/hooks/body-tracker/useBodyScanInclusivityWaitlist';
+import { FORMAVISION_BRAND } from '@/lib/body-tracker/brand-config';
 import { trackInclusivityWaitlistJoined } from '@/lib/body-tracker/scan-analytics';
 
 interface BodyScanInclusivityFallbackProps {
@@ -37,7 +38,7 @@ interface BodyScanInclusivityFallbackProps {
 // Product copy (§7.3), authored here: honest, kind, non-clinical. No dashes.
 const FALLBACK_TITLE = 'Trouble with this pose?';
 const FALLBACK_BODY_PRIMARY =
-  'Right now, Via Cura Body Scan requires a standing A-pose with both arms outstretched. We are working to expand support for more body types and capture positions in a future release.';
+  `Right now, ${FORMAVISION_BRAND.name} requires a standing A-pose with both arms outstretched. We are working to expand support for more body types and capture positions in a future release.`;
 const FALLBACK_BODY_SECONDARY =
   'In the meantime, your practitioner can run a manual body composition assessment that we will include in your tracking. We will let you know when expanded scanning is available.';
 const NOTIFY_CTA = 'Notify me when expanded scanning is available';

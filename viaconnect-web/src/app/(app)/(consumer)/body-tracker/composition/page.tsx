@@ -44,6 +44,7 @@ import { useFatChangeData } from '@/hooks/body-tracker/useFatChangeData';
 import { useMuscleChangeData } from '@/hooks/body-tracker/useMuscleChangeData';
 import type { MeasurementUnit } from '@/lib/body-tracker/circumference';
 import { getSegmentStatus, type SegmentStatus } from '@/lib/body-tracker/calculations';
+import { FORMAVISION_BRAND } from '@/lib/body-tracker/brand-config';
 
 const SAMPLE_FAT = {
   right_arm_pct: 18.2, left_arm_pct: 17.9, trunk_pct: 26.6,
@@ -376,8 +377,8 @@ function CompositionPageInner() {
       <InlineEntryPanel
         open={scanOpen}
         onOpenChange={(o) => { setScanOpen(o); if (!o) setScanResult(null); }}
-        title="Body Scan"
-        description="AI body composition estimate from 4 photos"
+        title={FORMAVISION_BRAND.name}
+        description={`${FORMAVISION_BRAND.descriptor}: AI body composition estimate from 4 photos`}
       >
         {scanResult ? (
           <BodyScanResults

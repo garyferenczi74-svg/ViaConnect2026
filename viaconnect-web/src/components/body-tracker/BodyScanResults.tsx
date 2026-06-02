@@ -2,6 +2,7 @@
 
 import { Info } from 'lucide-react';
 import type { BodyScanResult } from './BodyScanUploader';
+import { FORMAVISION_BRAND } from '@/lib/body-tracker/brand-config';
 
 interface BodyScanResultsProps {
   result: BodyScanResult;
@@ -56,7 +57,7 @@ export function BodyScanResults({ result, onRetake, onClose, onUseAsBaseline }: 
     <div className="space-y-5">
       <div className="flex items-baseline justify-between">
         <div>
-          <h3 className="text-base font-semibold text-white">Body Scan Results</h3>
+          <h3 className="text-base font-semibold text-white">{FORMAVISION_BRAND.name} Results</h3>
           <p className="text-xs text-white/50">AI estimated from your 4 photos, {formattedDate}</p>
         </div>
         <span

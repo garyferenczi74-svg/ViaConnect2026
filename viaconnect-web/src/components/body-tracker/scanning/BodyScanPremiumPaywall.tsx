@@ -19,6 +19,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ArrowUpRight, Lock, ScanLine, GitCompareArrows, Sparkles, Layers, Loader2 } from 'lucide-react';
 import { getDisplayName } from '@/lib/getDisplayName';
+import { FORMAVISION_BRAND } from '@/lib/body-tracker/brand-config';
 import { trackPremiumPaywallShown, trackPremiumUpgradeClicked } from '@/lib/body-tracker/scan-analytics';
 import { useTrialState } from '@/hooks/body-tracker/useTrialState';
 import { useClaimPlatinumTrial } from '@/hooks/body-tracker/useClaimPlatinumTrial';
@@ -32,10 +33,10 @@ interface BodyScanPremiumPaywallProps {
   className?: string;
 }
 
-// Spec section 3.2 included-features list. "Unlimited Body Scan" is the headline
-// entitlement. Copy uses commas/colons only (no dashes per standing rules).
+// Spec section 3.2 included-features list. Unlimited FormaVision scanning is the
+// headline entitlement. Copy uses commas/colons only (no dashes per standing rules).
 const INCLUDED_FEATURES: Array<{ icon: typeof ScanLine; label: string }> = [
-  { icon: ScanLine,         label: 'Unlimited Body Scan analysis, scan as often as you progress' },
+  { icon: ScanLine,         label: `Unlimited ${FORMAVISION_BRAND.name} analysis, scan as often as you progress` },
   { icon: GitCompareArrows, label: 'Compare every scan to your baseline and track change over time' },
   { icon: Sparkles,         label: `Personalized protocol insights from ${getDisplayName('arnold')}` },
   { icon: Layers,           label: 'Full segmental composition, asymmetry, and measurement detail' },
@@ -108,8 +109,8 @@ export function BodyScanPremiumPaywall({
         <div className="flex-1 min-w-0">
           <p className="text-base font-semibold text-white">Upgrade to start scanning</p>
           <p className="text-sm text-white/70 mt-1 leading-relaxed">
-            Body Scan requires a Platinum membership. Upgrade for unlimited scans plus the full
-            composition, comparison, and insight tools.
+            {FORMAVISION_BRAND.name} requires a Platinum membership. Upgrade for unlimited scans plus
+            the full composition, comparison, and insight tools.
           </p>
         </div>
       </div>

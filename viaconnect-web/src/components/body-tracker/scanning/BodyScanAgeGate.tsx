@@ -31,6 +31,7 @@ import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { CalendarClock, ClipboardList, ArrowRight } from 'lucide-react';
 import { useBodyScanAgeGate } from '@/hooks/body-tracker/useBodyScanAgeGate';
+import { FORMAVISION_BRAND } from '@/lib/body-tracker/brand-config';
 import { BodyScanSlowDownBanner } from './BodyScanSlowDownBanner';
 
 interface BodyScanAgeGateProps {
@@ -66,10 +67,10 @@ export function BodyScanAgeGate({ children, className = '' }: BodyScanAgeGatePro
             <CalendarClock className="h-5 w-5 text-[#2DA5A0]" strokeWidth={1.5} />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-base font-semibold text-white">Body Scan unlocks at 18</p>
+            <p className="text-base font-semibold text-white">{FORMAVISION_BRAND.name} unlocks at 18</p>
             <p className="mt-1 text-sm leading-relaxed text-white/70">
-              Body Scan will be available when you turn 18. In the meantime, talk to your healthcare
-              provider about any body composition questions.
+              {FORMAVISION_BRAND.name} will be available when you turn 18. In the meantime, talk to your
+              healthcare provider about any body composition questions.
             </p>
           </div>
         </div>
@@ -91,8 +92,8 @@ export function BodyScanAgeGate({ children, className = '' }: BodyScanAgeGatePro
         <div className="flex-1 min-w-0">
           <p className="text-base font-semibold text-white">Complete your CAQ first</p>
           <p className="mt-1 text-sm leading-relaxed text-white/70">
-            Add your date of birth in your Clinical Assessment so we can confirm Body Scan is right
-            for you. Once your CAQ Phase 1 is complete, your first scan unlocks here.
+            Add your date of birth in your Clinical Assessment so we can confirm {FORMAVISION_BRAND.name} is
+            right for you. Once your CAQ Phase 1 is complete, your first scan unlocks here.
           </p>
         </div>
         <Link

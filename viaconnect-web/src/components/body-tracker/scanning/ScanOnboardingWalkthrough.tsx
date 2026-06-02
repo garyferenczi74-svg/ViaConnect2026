@@ -17,6 +17,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { X, ChevronRight, ChevronLeft, HelpCircle } from 'lucide-react';
 import HannahWalkthrough from '@/components/admin/hannah/HannahWalkthrough';
+import { FORMAVISION_BRAND } from '@/lib/body-tracker/brand-config';
 import { trackOnboardingStarted, trackOnboardingCompleted } from '@/lib/body-tracker/scan-analytics';
 
 interface ScanOnboardingWalkthroughProps {
@@ -29,7 +30,7 @@ const SEEN_KEY = 'vc_scan_onboarding_seen';
 
 const STEPS = [
   {
-    heading: 'How body scanning works',
+    heading: `How ${FORMAVISION_BRAND.name} works`,
     body: 'ViaConnect uses your camera and AI to estimate body measurements. Four poses are captured and analyzed automatically.',
   },
   {

@@ -25,6 +25,7 @@ import { ScanShareTab } from './ScanShareTab';
 import { ScanPdfExportButton } from './ScanPdfExportButton';
 import { ComparisonPanel } from '../photos/ComparisonPanel';
 import { resolveScanTier } from '@/lib/body-tracker/scan-tier';
+import { FORMAVISION_BRAND } from '@/lib/body-tracker/brand-config';
 import {
   trackResultsViewed,
   trackResultsTabViewed,
@@ -250,7 +251,11 @@ export function ScanResultsPanel({ sessionId, refreshKey, portalType = 'consumer
           <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#2DA5A0]/20">
             <Box className="h-4 w-4 text-[#2DA5A0]" strokeWidth={1.5} />
           </div>
-          <h3 className="text-sm font-bold text-white">AI body scan results</h3>
+          {/* Consumer surface carries the FormaVision brand; practitioner /
+              naturopath surfaces keep the neutral, unbranded scan label. */}
+          <h3 className="text-sm font-bold text-white">
+            {portalType === 'consumer' ? `${FORMAVISION_BRAND.name} results` : 'AI body scan results'}
+          </h3>
         </div>
         <div className="flex items-center gap-2">
           {/* Model-version badge (Prompt #169b section 16.5): only renders for an
