@@ -219,6 +219,16 @@ const WELLNESS_GOALS = [
 
 const SUPPLEMENT_FORMS = ["Capsule", "Liquid", "Powder", "Gummy", "No Preference"];
 
+// Household size options for the Section 11.3 tier recommendation. A count
+// greater than 1 lets the recommendation reach Platinum+ Family. Stored as a
+// plain number alongside the other Phase 3 (Lifestyle and Goals) answers.
+const HOUSEHOLD_SIZE_OPTIONS: { label: string; value: number }[] = [
+  { label: "Just me", value: 1 },
+  { label: "2", value: 2 },
+  { label: "3", value: 3 },
+  { label: "4 or more", value: 4 },
+];
+
 // ─── Common Medications (for autocomplete) ──────────────────────────────────
 
 const COMMON_MEDICATIONS = [
@@ -331,6 +341,7 @@ type GoalsData = {
   supplementForm: string;
   budgetRange: number;
   communicationPref: string;
+  householdMemberCount: number;
 };
 
 // ─── Bio Optimization Score Calculator ──────────────────────────────────────────────
@@ -505,6 +516,7 @@ export default function OnboardingStepPage() {
   // Phase 5 state
   const [goals, setGoals] = useState<GoalsData>({
     goals: [], supplementForm: "", budgetRange: 50, communicationPref: "email",
+    householdMemberCount: 1,
   });
 
   // Medication autocomplete
@@ -587,6 +599,9 @@ export default function OnboardingStepPage() {
             // Pre-populate goals
             const goals_arr = (ls as Record<string, unknown>).goals as string[] | undefined;
             if (goals_arr?.length) setGoals((p) => ({ ...p, goals: goals_arr }));
+            // Pre-populate household size (Section 11.3 tier recommendation input)
+            const hh = Number((ls as Record<string, unknown>).householdMemberCount);
+            if (Number.isFinite(hh) && hh >= 1) setGoals((p) => ({ ...p, householdMemberCount: hh }));
           }
         } catch (err) { }
       }
@@ -729,7 +744,7 @@ export default function OnboardingStepPage() {
         case "2c": await savePhase("9", symptomsEmotional); break;
         case "4": await savePhase("4", { ...medications, userSupplements }); break;
         case "3": {
-          await savePhase("3", { ...lifestyle, goals: goals.goals, supplementForm: goals.supplementForm, budgetRange: goals.budgetRange });
+          await savePhase("3", { ...lifestyle, goals: goals.goals, supplementForm: goals.supplementForm, budgetRange: goals.budgetRange, householdMemberCount: goals.householdMemberCount });
 
           // Show Ultrathink processing animation immediately. The
           // animation now masks Hannah's compute window; the auto
@@ -1549,6 +1564,20 @@ export default function OnboardingStepPage() {
                 className="w-full accent-copper h-1.5" />
               <div className="flex justify-between text-[10px] text-gray-600 mt-1">
                 <span>$10</span><span>$150</span><span>$300</span>
+              </div>
+            </div>
+
+            {/* Household size */}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">How many people in your household would use Via Cura?</label>
+              <div className="flex flex-wrap gap-2">
+                {HOUSEHOLD_SIZE_OPTIONS.map((opt) => (
+                  <button key={opt.value} type="button"
+                    onClick={() => setGoals({ ...goals, householdMemberCount: opt.value })}
+                    className={`text-xs px-4 py-2 rounded-lg border transition-colors ${
+                      goals.householdMemberCount === opt.value ? "bg-teal/15 text-teal-light border-teal/30" : "bg-dark-surface text-gray-400 border-dark-border hover:border-white/20"
+                    }`}>{opt.label}</button>
+                ))}
               </div>
             </div>
           </div>
@@ -2557,12 +2586,15 @@ function OnboardingComplete() {
         } as SymptomsData);
 
         // 169f S11.3: compute the informational recommendation from the
-        // user's stated goals (the CAQ does not capture household size, so
-        // householdMemberCount stays undefined and the family branch is
-        // never triggered from onboarding).
+        // user's stated goals plus the household-size answer captured in CAQ
+        // Phase 3. A household count greater than 1 lets the recommendation
+        // reach Platinum+ Family; absent or 1 falls back to the goals-based
+        // tier. Default to 1 (just me) when the field is missing.
         const lifestyle = phaseMap[3] ?? {};
         const userGoals = Array.isArray(lifestyle.goals) ? (lifestyle.goals as string[]) : [];
-        setRecommendation(recommendTier({ goals: userGoals }));
+        const rawHousehold = Number(lifestyle.householdMemberCount);
+        const householdMemberCount = Number.isFinite(rawHousehold) && rawHousehold >= 1 ? rawHousehold : 1;
+        setRecommendation(recommendTier({ goals: userGoals, householdMemberCount }));
       }
 
       setLoading(false);

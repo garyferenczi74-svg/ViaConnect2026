@@ -63,6 +63,52 @@ describe('recommendTier (169f Section 11.3)', () => {
   });
 });
 
+// Mirrors the normalization the onboarding completion handler applies to the
+// household-size answer it reads back from the assessment_results phase-3 JSON
+// (the value may arrive as a number, a numeric string, undefined, or be missing
+// entirely) before handing it to recommendTier. Keeps this in lockstep with the
+// OnboardingComplete wiring without a brittle DOM test on the giant page.
+function recommendFromStoredPhase3(phase3: Record<string, unknown> | undefined) {
+  const lifestyle = phase3 ?? {};
+  const goals = Array.isArray(lifestyle.goals) ? (lifestyle.goals as string[]) : [];
+  const rawHousehold = Number(lifestyle.householdMemberCount);
+  const householdMemberCount =
+    Number.isFinite(rawHousehold) && rawHousehold >= 1 ? rawHousehold : 1;
+  return recommendTier({ goals, householdMemberCount });
+}
+
+describe('169f Section 11.3 completion mapping (stored phase-3 -> recommendation)', () => {
+  it('maps a stored household count of 2+ to platinum_family even over goals', () => {
+    expect(
+      recommendFromStoredPhase3({ goals: ['Lose Weight'], householdMemberCount: 2 }).tierId,
+    ).toBe('platinum_family');
+    expect(
+      recommendFromStoredPhase3({ goals: ['Improve Sleep'], householdMemberCount: 4 }).tierId,
+    ).toBe('platinum_family');
+  });
+
+  it('coerces a numeric-string household count of 2+ to platinum_family', () => {
+    expect(
+      recommendFromStoredPhase3({ goals: [], householdMemberCount: '3' as unknown as number }).tierId,
+    ).toBe('platinum_family');
+  });
+
+  it('falls back to the goals-based tier when household is 1, missing, or invalid', () => {
+    // Explicit 1 (just me)
+    expect(
+      recommendFromStoredPhase3({ goals: ['Lose Weight'], householdMemberCount: 1 }).tierId,
+    ).toBe('platinum');
+    // Field absent entirely -> defaults to 1
+    expect(recommendFromStoredPhase3({ goals: ['Improve Sleep'] }).tierId).toBe('gold');
+    // No phase-3 data at all
+    expect(recommendFromStoredPhase3(undefined).tierId).toBe('free');
+    // Non-numeric / garbage value -> defaults to 1, not family
+    expect(
+      recommendFromStoredPhase3({ goals: ['Lose Weight'], householdMemberCount: 'lots' as unknown as number }).tierId,
+    ).toBe('platinum');
+  });
+});
+
 describe('recommendationSentence + display names (169f Section 11.3 locked copy)', () => {
   it('uses the locked string with the tier display name substituted', () => {
     expect(recommendationSentence('gold')).toBe(
