@@ -57,7 +57,16 @@ export type MicrocopyKey =
   // copy is used when no degraded signal is present.
   | 'degraded.logmeal_hard_stop'
   | 'degraded.gemini_low_confidence'
-  | 'degraded.claude_tertiary_used';
+  | 'degraded.claude_tertiary_used'
+  // Prompt 172 Phase 2 (172b): Bio Optimization Score line variants. One key
+  // per BosLineKind. Strictly within existing Bio Optimization analytics per
+  // spec section 3; no clinical, prescriptive, or genetics framing. Safety
+  // mode variants are food positive, non quantitative, non evaluative per
+  // 170c section 8.4.
+  | 'bos.positive_delta'
+  | 'bos.neutral'
+  | 'bos.gentle_caution'
+  | 'bos.learning';
 
 export interface MicrocopyEntry {
   normal: string;

@@ -1,12 +1,13 @@
-// Prompt 172 Phase 1A + 1B: MealCard source presence sanity.
+// Prompt 172 Phase 1A + 1B + Phase 2 (172b + 172c): MealCard source presence sanity.
 //
 // vitest runs node only without jsdom. Real interactive coverage rides
 // Playwright once 172d ships. Here we assert MealCard source contract:
 //   - presents the pre and post save state machine (mealId, mealQualityScore)
 //   - exposes the four event handler props from the spec section 5.5
 //   - mounts FdaDisclaimer slot="card-footer" at the bottom (spec 5.3, 7)
-//   - reserves a null BOS line slot for 172b to wire
-//   - is purely presentational (no fetch, no Supabase, no useState for data)
+//   - reserves a BOS line slot wired via the 172b /api/nutrition/bos-line/
+//     [mealId] fetch (Phase 2 addition; the pre Phase 2 strict "no fetch"
+//     invariant is relaxed for the post save BOS slot only)
 //   - safety mode flag is read from the model AND drives the ratio variant,
 //     per item kcal suppression, score chip suppression, and the food
 //     positive acknowledgement variant per spec 5.7 + 170c 8.4
@@ -35,15 +36,19 @@ describe('MealCard source', () => {
       expect(source).toContain("'use client'");
     });
 
-    it('is purely presentational (no Supabase client, no fetch, no data useState)', () => {
+    it('does not import the Supabase client (server only side effects via fetch)', () => {
+      // Phase 2 (172b) relaxes the "no fetch" invariant: the card now
+      // fetches /api/nutrition/bos-line/[mealId] post save. Supabase
+      // access still lives server side only.
       expect(source).not.toContain('createClient');
       expect(source).not.toContain('createBrowserClient');
-      expect(source).not.toContain('fetch(');
-      expect(source).not.toContain('useEffect');
       expect(source).not.toContain('useReducer');
-      // useState is allowed for UI affordance only; we expect zero in 1B
-      // because the orchestrator owns the SaveResponse state.
-      expect(source).not.toContain('useState(');
+    });
+
+    it('limits fetch to the 172b BOS line endpoint only', () => {
+      // The BOS slot is the only data dependency on the card. We assert
+      // the fetch points at the canonical endpoint shape.
+      expect(source).toContain('/api/nutrition/bos-line/');
     });
   });
 
@@ -106,12 +111,76 @@ describe('MealCard source', () => {
       expect(source).toContain('bosLine');
     });
 
-    it('renders nothing when bosLine is null', () => {
+    it('renders nothing when the resolved BOS line is null', () => {
+      // Phase 1A reserved the slot with a literal `bosLine` guard. Phase 2
+      // introduced a fetch state machine; the render path now guards on
+      // `resolvedBosLine` (the union of the freshly fetched line and the
+      // initial `model.bosLine` seed). Accept either pattern.
       const hasGuard =
         source.includes('bosLine && ') ||
         source.includes('bosLine !== null') ||
-        source.includes('bosLine != null');
+        source.includes('bosLine != null') ||
+        source.includes('resolvedBosLine && ') ||
+        source.includes('resolvedBosLine !== null') ||
+        source.includes('resolvedBosLine != null');
       expect(hasGuard).toBe(true);
+    });
+  });
+
+  describe('Phase 2 (172b) BOS line fetch', () => {
+    it('imports BosLine type from the canonical 172b location', () => {
+      expect(source).toContain("from '@/lib/nutrition/bos-line/types'");
+    });
+
+    it('reads BOS_LINE_RENDERING_ENABLED kill switch before fetching', () => {
+      expect(source).toContain('BOS_LINE_RENDERING_ENABLED');
+      expect(source).toContain('isKillSwitchEnabled');
+    });
+
+    it('uses the post save mealId in the fetch URL', () => {
+      // Template literal with the resolved mealId from the model.
+      expect(source).toContain('/api/nutrition/bos-line/');
+      expect(source).toContain('${bosLineMealId}');
+    });
+
+    it('does not fetch pre save (mealId null)', () => {
+      // The effect guards on bosLineMealId === null.
+      const hasGuard =
+        source.includes('bosLineMealId === null') ||
+        source.includes('bosLineMealId == null');
+      expect(hasGuard).toBe(true);
+    });
+
+    it('tags the rendered BOS line with data-bos-line for downstream querying', () => {
+      expect(source).toContain('data-bos-line');
+    });
+
+    it('places the BOS line slot above the acknowledgement line per spec 5.3', () => {
+      // Ordering check: data-bos-line appears before data-acknowledgement-line
+      // in source order so the rendered DOM lays BOS first then ack second.
+      const idxBos = source.indexOf('data-bos-line');
+      const idxAck = source.indexOf('data-acknowledgement-line');
+      expect(idxBos).toBeGreaterThan(-1);
+      expect(idxAck).toBeGreaterThan(-1);
+      expect(idxBos).toBeLessThan(idxAck);
+    });
+  });
+
+  describe('Phase 2 (172c) post save action row real handlers', () => {
+    it('renders a Confirm affordance tagged data-post-save-confirm', () => {
+      expect(source).toContain('data-post-save-confirm');
+    });
+
+    it('renders a Split affordance tagged data-post-save-split', () => {
+      expect(source).toContain('data-post-save-split');
+    });
+
+    it('reads BOS_LINE_SPLIT_PLATE_ENABLED to gate the Split affordance', () => {
+      expect(source).toContain('BOS_LINE_SPLIT_PLATE_ENABLED');
+    });
+
+    it('uses Scissors lucide icon for the Split affordance', () => {
+      expect(source).toContain('Scissors');
     });
   });
 

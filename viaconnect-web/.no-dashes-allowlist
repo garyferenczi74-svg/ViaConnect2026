@@ -27,7 +27,9 @@ prefix:viaconnect-web/tests/
 # assertion oracle pattern as the tests/ tree, but they live next to
 # their source under src/.
 prefix:viaconnect-web/src/components/nutrition/meal-card/__tests__/
+prefix:viaconnect-web/src/components/nutrition/thread/__tests__/
 prefix:viaconnect-web/src/lib/nutrition/microcopy/__tests__/
+prefix:viaconnect-web/src/lib/nutrition/bos-line/__tests__/
 prefix:viaconnect-web/src/lib/nutrition/portion/__tests__/
 prefix:viaconnect-web/src/lib/nutrition/cooking-oil/__tests__/
 prefix:viaconnect-web/src/lib/nutrition/__tests__/

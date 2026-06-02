@@ -22,7 +22,9 @@ export type KillSwitch =
   | 'FDA_DISCLAIMER_RENDERING_ENABLED'
   | 'PROVIDER_DEGRADED_SERVICE_MESSAGING_ENABLED'
   | 'PHI_REDACTION_ENABLED'
-  | 'DSAR_SELF_SERVE_ENABLED';
+  | 'DSAR_SELF_SERVE_ENABLED'
+  | 'BOS_LINE_RENDERING_ENABLED'
+  | 'BOS_LINE_SPLIT_PLATE_ENABLED';
 
 export const KILL_SWITCH_DEFAULTS: Record<KillSwitch, boolean> = {
   /** 170c §8.13. Master gate for ED safety mode rendering and opt in. */
@@ -35,6 +37,19 @@ export const KILL_SWITCH_DEFAULTS: Record<KillSwitch, boolean> = {
   PHI_REDACTION_ENABLED: false,
   /** 170c §4.8. Off until §4 ships (self serve DSAR access + erasure). */
   DSAR_SELF_SERVE_ENABLED: false,
+  /**
+   * 172 §2 preview gate. Default true in development so localhost still
+   * renders the line; preview build flips it via env override for the
+   * Vercel review pass. Off in production until Gary green lights via the
+   * preview deployment URL. When false the MealCard skips the fetch and
+   * the GET endpoint returns 200 with a null body.
+   */
+  BOS_LINE_RENDERING_ENABLED: process.env.NODE_ENV !== 'production',
+  /**
+   * 172c stub gate for the Split plate workflow. Off until the workflow
+   * lands; the post save action row hides the affordance until then.
+   */
+  BOS_LINE_SPLIT_PLATE_ENABLED: false,
 };
 
 function parseEnv(raw: string | undefined): boolean | null {

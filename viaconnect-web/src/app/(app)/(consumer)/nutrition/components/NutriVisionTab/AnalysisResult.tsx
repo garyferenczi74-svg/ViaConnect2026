@@ -16,10 +16,16 @@
 // state machine without remount. The orchestrator also forwards the
 // degraded service kind (defaulting to 'none' until the analyze pipeline
 // exposes nutrition_photo_jobs.degraded_service_kind through MealDraft).
+// Prompt 172 Phase 2 (172c): AnalysisResult wires real onEdit + onSplit
+// handlers and mounts the light thread (MealThread) wrapping the MealCard
+// per spec section 5.5 + section 0. The parent ReviewingSurface threads
+// the SaveResponse via the saveResponse prop so the card stays mounted
+// post save (Option A) and the surface becomes the post save destination
+// itself rather than swapping to SaveConfirmation.
 //
 // Hard rules honored: no em or en dashes, no emojis, no any.
 
-import { useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { useSafetyMode } from '@/lib/safety-mode/useSafetyMode';
 import { Maximize2, X } from 'lucide-react';
 import type { CookingOilSelection } from '@/lib/nutrition/cooking-oil/types';
@@ -35,6 +41,8 @@ import { VoiceTutorial } from '@/lib/nutrition/voice/components/VoiceTutorial';
 import { useVoiceSession } from '@/lib/nutrition/voice/hooks/useVoiceSession';
 import { MealCard } from '@/components/nutrition/meal-card';
 import { toMealCardModel } from '@/components/nutrition/meal-card/mealCardModel';
+import { MealThread } from '@/components/nutrition/thread';
+import type { MealThreadEntry } from '@/components/nutrition/thread';
 import { ConfidenceBadge } from './ConfidenceBadge';
 import { CorpusOptInBanner } from './CorpusOptInBanner';
 import { MealTypePicker } from './MealTypePicker';
@@ -85,6 +93,14 @@ interface AnalysisResultProps {
    * lifted via MealCard.onSaveResponse.
    */
   saveResponse?: SaveResponse | null;
+  /**
+   * Prompt 172 Phase 2 (172c): up to two recent prior meals rendered as
+   * stacked siblings beneath the post save card via the MealThread
+   * component. The parent forwards from the existing user meals query;
+   * undefined or empty hides the stack with no placeholder. Only used
+   * post save; pre save the card stands alone.
+   */
+  priorMeals?: ReadonlyArray<MealThreadEntry>;
 }
 
 export function AnalysisResult(props: AnalysisResultProps) {
@@ -178,6 +194,62 @@ export function AnalysisResult(props: AnalysisResultProps) {
     setInternalSaveResp(resp);
   };
 
+  // Prompt 172 Phase 2 (172c): real handlers for the post save action row.
+  // The handlers are intentionally minimal:
+  //   onConfirm: a no op tick acknowledgement. The save already happened
+  //     by the time the post save row renders; Confirm just dismisses any
+  //     residual review affordance. We do not invent a new write path.
+  //   onEdit: scrolls the items list into view so the user can edit the
+  //     items already mounted above. The items are inline editable via
+  //     MealItemCard so a smooth scroll is the entire affordance; we do
+  //     not build a new editor.
+  //   onSplit: gated behind BOS_LINE_SPLIT_PLATE_ENABLED inside MealCard
+  //     itself; here we keep the prop as a noop until the workflow lands.
+  const itemsAnchorRef = useRef<HTMLDivElement | null>(null);
+  const handlePostSaveConfirm = useCallback(() => {
+    // Quiet acknowledgement; nothing to write.
+  }, []);
+  const handlePostSaveEdit = useCallback(() => {
+    const node = itemsAnchorRef.current;
+    if (node && typeof node.scrollIntoView === 'function') {
+      node.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, []);
+  const handlePostSaveSplit = useCallback(() => {
+    // Stub. The button is disabled when BOS_LINE_SPLIT_PLATE_ENABLED is off,
+    // so this only fires when compliance flips the switch to true.
+  }, []);
+
+  // Phase 2 (172c): post save state drives whether the thread visualizes.
+  // Pre save the thread is hidden (the card stands alone). Post save the
+  // current card is wrapped in MealThread so the prior meals stack appears
+  // beneath. Priors come from the parent's existing user meals query.
+  const isPostSave = effectiveSaveResp !== null;
+  const priorMeals = props.priorMeals ?? [];
+
+  const mealCardSubtree = (
+    <MealCard
+      model={mealCardModel}
+      draft={draft}
+      confidenceBadge={confidenceBadgeSlot}
+      voiceEditedChip={voiceEditedChipSlot}
+      corpusBanner={corpusBannerSlot}
+      onConfirm={isPostSave ? handlePostSaveConfirm : props.onSave}
+      onEdit={handlePostSaveEdit}
+      onSplit={handlePostSaveSplit}
+      onSaveResponse={handleSaveResponse}
+      onCancel={props.onCancel}
+      onAddItem={props.onAddItem}
+      onPortionChange={props.onPortionChange}
+      onFoodSwap={props.onFoodSwap}
+      onCookingOilChange={props.onCookingOilChange}
+      onApplyChip={props.onApplyChip}
+      onRemoveItem={props.onRemoveItem}
+      onMarkVerified={props.onMarkVerified}
+      isSaving={props.isSaving}
+    />
+  );
+
   return (
     <>
       <div className="flex flex-col gap-3 pb-24 md:pb-0">
@@ -200,26 +272,13 @@ export function AnalysisResult(props: AnalysisResultProps) {
           />
         )}
 
-        <MealCard
-          model={mealCardModel}
-          draft={draft}
-          confidenceBadge={confidenceBadgeSlot}
-          voiceEditedChip={voiceEditedChipSlot}
-          corpusBanner={corpusBannerSlot}
-          onConfirm={props.onSave}
-          onEdit={() => {}}
-          onSplit={() => {}}
-          onSaveResponse={handleSaveResponse}
-          onCancel={props.onCancel}
-          onAddItem={props.onAddItem}
-          onPortionChange={props.onPortionChange}
-          onFoodSwap={props.onFoodSwap}
-          onCookingOilChange={props.onCookingOilChange}
-          onApplyChip={props.onApplyChip}
-          onRemoveItem={props.onRemoveItem}
-          onMarkVerified={props.onMarkVerified}
-          isSaving={props.isSaving}
-        />
+        <div ref={itemsAnchorRef} data-meal-card-anchor>
+          {isPostSave ? (
+            <MealThread priors={priorMeals}>{mealCardSubtree}</MealThread>
+          ) : (
+            mealCardSubtree
+          )}
+        </div>
       </div>
 
       {/* Prompt 170j Phase 1c-2: voice surfaces. FAB sits above the Save bar. */}

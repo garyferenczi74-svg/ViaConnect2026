@@ -1,51 +1,40 @@
 'use client';
 
-// Prompt 172 Phase 1B: presentational MealCard with state machine, safety
-// mode, degraded service, and the microcopy layer.
+// Prompt 172 Phase 2 (172b + 172c): presentational MealCard with state
+// machine, safety mode, degraded service, microcopy layer, and the post
+// save BOS line slot.
 //
-// Spec 5.1 + 5.2 + 5.4 + 5.7 v3. The card body subtree was extracted from
-// AnalysisResult.tsx in Phase 1A; 1B layers four contracts on top:
+// Phase 1B contracts preserved:
+//   1. Pre / post save state machine (mealId + mealQualityScore).
+//   2. Microcopy layer (172a); zero hardcoded user facing strings.
+//   3. Safety mode (170c section 8.4 silent ratio mode contract).
+//   4. 170c section 10.3 degraded service messaging.
 //
-//   1. Pre / post save state machine:
-//        pre save  -> mealId null, mealQualityScore null. Render items, macro
-//                     chips, action row with the save button. No score, no
-//                     acknowledgement line.
-//        post save -> mealId !== null, mealQualityScore !== null. Render the
-//                     quality score chip + acknowledgement line keyed by
-//                     recognitionConfidence. Replace the save button with an
-//                     edit affordance plus a small confirm tick.
-//
-//   2. Microcopy layer (172a): zero hardcoded user facing strings. Every
-//      label, body line, and acknowledgement reads from
-//      @/lib/nutrition/microcopy with the safety mode variant chosen by
-//      the model.
-//
-//   3. Safety mode (170c section 8.4 silent ratio mode contract):
-//        - kcal column on each MealItemCard row is hidden (the prop threads
-//          safetyMode into MealItemCard).
-//        - meal quality score chip never renders, even post save.
-//        - acknowledgement line uses the safety_mode variant.
-//        - FdaDisclaimer remains.
-//        - Zero visible mode indicator on the surface (no banner, no badge,
-//          no color shift). The card looks like the normal card with the
-//          math layer flipped.
-//
-//   4. 170c section 10.3 degraded service messaging: when state is
-//      low_confidence or error and degradedService is true, the body copy
-//      reads from one of three canonical microcopy keys discriminated by
-//      degradedServiceKind. The phrasing is service side, never user fault.
+// Phase 2 additions:
+//   5. Post save BOS line fetch via /api/nutrition/bos-line/[mealId].
+//      Pre save -> slot renders nothing (no skeleton, no placeholder).
+//      Post save and BOS_LINE_RENDERING_ENABLED -> fetch the line.
+//      Loading / error / null body -> slot stays empty (quiet enhancement,
+//      not a blocker per spec 5.3).
+//      Render order is items -> chips -> BOS line -> acknowledgement ->
+//      action row -> FDA disclaimer per spec 5.3.
+//   6. Post save action row real handlers. onConfirm closes the review
+//      affordance, onEdit routes through the existing MealItemEditor flow
+//      (the parent provides the handler), onSplit is gated behind the
+//      BOS_LINE_SPLIT_PLATE_ENABLED kill switch until the workflow lands.
 //
 // Hard rules honored: no em or en dashes, no emojis, no any, Lucide
 // strokeWidth 1.5, brand tokens only.
 
-import type { ReactNode } from 'react';
-import { CheckCircle2, Edit3, Plus, Save, X } from 'lucide-react';
+import { useEffect, useState, type ReactNode } from 'react';
+import { CheckCircle2, Edit3, Plus, Save, Scissors, X } from 'lucide-react';
 import { FdaDisclaimer } from '@/components/compliance/FdaDisclaimer';
 import { ModificationChips } from '@/app/(app)/(consumer)/nutrition/components/NutriVisionTab/ModificationChips';
 import { MealItemCard } from '@/app/(app)/(consumer)/nutrition/components/NutriVisionTab/MealItemCard';
 import { getMicrocopy } from '@/lib/nutrition/microcopy';
 import type { MicrocopyKey, MicrocopyVariant } from '@/lib/nutrition/microcopy';
 import { isKillSwitchEnabled } from '@/lib/compliance/kill-switches';
+import type { BosLine } from '@/lib/nutrition/bos-line/types';
 import type {
   CookingOilSelection,
 } from '@/lib/nutrition/cooking-oil/types';
@@ -58,6 +47,21 @@ import type {
 } from '@/app/(app)/(consumer)/nutrition/components/NutriVisionTab/types';
 import type { DegradedServiceKind, MealCardModel } from './MealCard.types';
 import { MacroChips } from './MacroChips';
+
+/**
+ * Phase 2 (172b): bosLine fetch state machine.
+ *   idle      pre save or kill switch off; no fetch attempted, no render.
+ *   loading   fetch in flight; slot stays empty (quiet enhancement).
+ *   resolved  fetch returned a BosLine; render copy in the slot.
+ *   hidden    fetch returned 200 + null body; slot stays empty.
+ *   error     fetch failed; slot silently empty (no error UI per spec 5.3).
+ */
+type BosLineState =
+  | { status: 'idle' }
+  | { status: 'loading' }
+  | { status: 'resolved'; line: BosLine }
+  | { status: 'hidden' }
+  | { status: 'error' };
 
 export interface MealCardProps {
   /** Mapped view model from mealCardModel.toMealCardModel. */
@@ -152,6 +156,62 @@ export function MealCard(props: MealCardProps) {
   // Pre save vs post save state machine per spec 5.1 + 5.2.
   const isPostSave = model.mealId !== null && model.mealQualityScore !== null;
 
+  // Phase 2 (172b): post save BOS line fetch. Kill switch off keeps the
+  // slot empty and skips the round trip. The kill switch is read at
+  // render time so a runtime flip propagates the next time the parent
+  // re renders the card. The 5 minute server cache header keeps a remount
+  // during a single review session from re fetching.
+  const bosLineEnabled = isKillSwitchEnabled('BOS_LINE_RENDERING_ENABLED');
+  const bosLineMealId = isPostSave ? model.mealId : null;
+  const [bosLineState, setBosLineState] = useState<BosLineState>({ status: 'idle' });
+
+  useEffect(() => {
+    if (bosLineMealId === null || !bosLineEnabled) {
+      setBosLineState({ status: 'idle' });
+      return;
+    }
+
+    let cancelled = false;
+    setBosLineState({ status: 'loading' });
+
+    async function run() {
+      try {
+        const res = await fetch(`/api/nutrition/bos-line/${bosLineMealId}`, {
+          method: 'GET',
+          headers: { 'content-type': 'application/json' },
+        });
+        if (!res.ok) {
+          if (!cancelled) setBosLineState({ status: 'error' });
+          return;
+        }
+        const body = (await res.json()) as BosLine | null;
+        if (cancelled) return;
+        if (body === null) {
+          setBosLineState({ status: 'hidden' });
+          return;
+        }
+        setBosLineState({ status: 'resolved', line: body });
+      } catch {
+        if (!cancelled) setBosLineState({ status: 'error' });
+      }
+    }
+
+    void run();
+    return () => {
+      cancelled = true;
+    };
+  }, [bosLineMealId, bosLineEnabled]);
+
+  // The model.bosLine slot stays the source of truth for the initial
+  // server hydration path; the fetched line takes precedence once it lands.
+  const resolvedBosLine: BosLine | null =
+    bosLineState.status === 'resolved' ? bosLineState.line : model.bosLine;
+
+  // Phase 2 (172c): Split plate is stubbed until the workflow ships.
+  // BOS_LINE_SPLIT_PLATE_ENABLED gates the affordance; when off the button
+  // renders disabled with the stub tooltip copy.
+  const splitEnabled = isKillSwitchEnabled('BOS_LINE_SPLIT_PLATE_ENABLED');
+
   // 170c section 10.3 degraded service body copy gating. When the upstream
   // pipeline flags a degraded provider AND the
   // PROVIDER_DEGRADED_SERVICE_MESSAGING_ENABLED kill switch is true we render
@@ -203,10 +263,30 @@ export function MealCard(props: MealCardProps) {
         <MacroChips macros={model.macros} safetyMode={model.safetyMode} />
 
         {/*
+          Phase 2 (172b): BOS line slot. Renders above the acknowledgement
+          per spec section 5.3 visual order. Pre save the slot is empty
+          (resolvedBosLine null). Loading is also empty (quiet enhancement
+          per spec 5.3). Error is empty (no error UI). Safety mode pulls
+          the safety_mode variant from the server resolver so the copy is
+          already non quantitative by the time it arrives client side.
+        */}
+        {resolvedBosLine !== null && (
+          <p
+            className="mt-3 text-[12px] text-white/80"
+            role="status"
+            aria-live="polite"
+            data-bos-line
+          >
+            {resolvedBosLine.copy}
+          </p>
+        )}
+
+        {/*
           Post save acknowledgement line per spec 5.2 + brief. Keyed by
           recognitionConfidence so high reads as solid, medium as detail,
           low as we will sharpen the read next time. Safety mode variants
-          are food positive non optimization phrasing.
+          are food positive non optimization phrasing. Renders below the
+          BOS line so the score signal lands first, then the human reply.
         */}
         {isPostSave && (
           <p
@@ -242,10 +322,6 @@ export function MealCard(props: MealCardProps) {
               <li key={i} className="text-[#FCA5A5]">{w}</li>
             ))}
           </ul>
-        )}
-
-        {model.bosLine && (
-          <p className="mt-3 text-[11px] text-white/70">{model.bosLine.copy}</p>
         )}
       </div>
 
@@ -295,20 +371,46 @@ export function MealCard(props: MealCardProps) {
             {getMicrocopy('action.cancel', variant)}
           </button>
           {isPostSave ? (
-            // Post save: replace save button with edit affordance + a small
-            // confirm tick. The tick communicates "we got it" without
-            // hype; the edit affordance lets the user fix anything wrong.
-            <button
-              type="button"
-              onClick={props.onEdit}
-              disabled={props.isSaving}
-              className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#2DA5A0] px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#2DA5A0]/90 disabled:cursor-not-allowed disabled:opacity-50"
-              data-post-save-edit
-            >
-              <Edit3 className="h-4 w-4" strokeWidth={1.5} />
-              {getMicrocopy('action.edit', variant)}
-              <CheckCircle2 className="h-3 w-3" strokeWidth={1.5} aria-hidden="true" />
-            </button>
+            // Post save: action row carries Confirm (the inline ack), Edit
+            // (routes to the existing MealItemEditor), and Split (gated on
+            // BOS_LINE_SPLIT_PLATE_ENABLED until the workflow ships).
+            // The previously dominant "Save" cta is replaced by Edit as the
+            // primary; Confirm sits as a quiet acknowledgement to the right
+            // of Edit so the post save surface still has a low key "got it"
+            // button if the user just wants to close out review.
+            <>
+              <button
+                type="button"
+                onClick={props.onEdit}
+                disabled={props.isSaving}
+                className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#2DA5A0] px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#2DA5A0]/90 disabled:cursor-not-allowed disabled:opacity-50"
+                data-post-save-edit
+              >
+                <Edit3 className="h-4 w-4" strokeWidth={1.5} />
+                {getMicrocopy('action.edit', variant)}
+              </button>
+              <button
+                type="button"
+                onClick={splitEnabled ? props.onSplit : undefined}
+                disabled={props.isSaving || !splitEnabled}
+                title={splitEnabled ? undefined : getMicrocopy('action.split', variant)}
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/[0.08] bg-white/5 px-4 py-3 text-sm font-medium text-white/75 transition-colors hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
+                data-post-save-split
+              >
+                <Scissors className="h-4 w-4" strokeWidth={1.5} />
+                {getMicrocopy('action.split', variant)}
+              </button>
+              <button
+                type="button"
+                onClick={props.onConfirm}
+                disabled={props.isSaving}
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/[0.08] bg-white/5 px-4 py-3 text-sm font-medium text-white/75 transition-colors hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
+                data-post-save-confirm
+              >
+                <CheckCircle2 className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
+                {getMicrocopy('action.confirm', variant)}
+              </button>
+            </>
           ) : (
             <button
               type="button"

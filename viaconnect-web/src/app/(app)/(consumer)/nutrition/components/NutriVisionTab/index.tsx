@@ -25,7 +25,10 @@ import { CameraCapture } from './CameraCapture';
 import { AnalysisProgress } from './AnalysisProgress';
 import { AnalysisResult } from './AnalysisResult';
 import { ErrorStateCard } from './ErrorStateCard';
-import { SaveConfirmation } from './SaveConfirmation';
+// Prompt 172 Phase 2 (172c): SaveConfirmation is no longer the post save
+// destination. AnalysisResult stays mounted and renders the post save state
+// in place. The component file is preserved for its own tests; nothing in
+// the result surface mounts it anymore.
 import { useCameraCapture } from './hooks/useCameraCapture';
 import { useNutriVisionAnalysis } from './hooks/useNutriVisionAnalysis';
 import { useMealItemEdits } from './hooks/useMealItemEdits';
@@ -757,11 +760,34 @@ export default function NutriVisionTab() {
           )}
 
           {phase === 'confirmed' && saveResponse && draft && (
-            <SaveConfirmation
-              totals={draft.totals}
-              response={saveResponse}
-              onLogAnother={handleLogAnother}
-              thumbnailUrl={draft.thumbnail_url ?? null}
+            // Prompt 172 Phase 2 (172c) Option A: AnalysisResult stays
+            // mounted post save. The card transitions to its post save
+            // state in place via the saveResponse prop; the parent does
+            // not swap to SaveConfirmation anymore. SaveConfirmation
+            // remains a usable component (its tests still pass) but the
+            // post save destination on the NutriVision result surface is
+            // now ReviewingSurface itself, wrapping AnalysisResult and
+            // the MealThread.
+            <ReviewingSurface
+              draft={draft}
+              userId={userId}
+              corpusOptedIn={corpusOptedIn}
+              corpusDismissed={corpusDismissed}
+              onCorpusDismiss={() => setCorpusDismissed(true)}
+              onCorpusOptIn={() => setCorpusOptedIn(true)}
+              onCancel={handleLogAnother}
+              onSaved={() => undefined}
+              onSavingChange={() => undefined}
+              voiceNativeContext={voiceNativeContext}
+              saveResponse={saveResponse}
+              priorMeals={recentMeals
+                .filter((m) => m.meal_id !== saveResponse.meal_id)
+                .slice(0, 2)
+                .map((m) => ({
+                  mealId: m.meal_id,
+                  title: m.item_count > 0 ? `${m.item_count} item meal` : m.meal_type,
+                  loggedAt: m.logged_at,
+                }))}
             />
           )}
 
@@ -1027,6 +1053,15 @@ interface ReviewingSurfaceProps {
     audio_duration_ms: number;
     parse: VoiceNativeParseResult;
   } | null;
+  // Prompt 172 Phase 2 (172c): when the parent already has the SaveResponse
+  // (post save phase) it threads it here so AnalysisResult stays mounted
+  // and renders the post save MealCard subtree in place, with the BOS line
+  // slot and acknowledgement live, wrapped in the light thread.
+  saveResponse?: SaveResponse | null;
+  // Prompt 172 Phase 2 (172c): optional priors for the MealThread stack
+  // beneath the post save card. Up to two are rendered; the rest are
+  // ignored to keep the stack visually shallow.
+  priorMeals?: ReadonlyArray<{ mealId: string; title: string; loggedAt?: string }>;
 }
 
 function ReviewingSurface(props: ReviewingSurfaceProps) {
@@ -1139,6 +1174,8 @@ function ReviewingSurface(props: ReviewingSurfaceProps) {
       onAppendItem={edits.appendItem}
       onSave={handleSave}
       onCancel={props.onCancel}
+      saveResponse={props.saveResponse ?? null}
+      priorMeals={props.priorMeals}
     />
   );
 }

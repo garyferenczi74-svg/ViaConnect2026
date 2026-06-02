@@ -122,4 +122,27 @@ export const MICROCOPY_STRINGS: MicrocopyMap = {
     normal: 'Multiple recognition systems were unavailable. We used our final fallback for this meal. Please review carefully.',
     safety_mode: 'Multiple recognition systems were unavailable. We used our final fallback for this meal. Please review carefully.',
   },
+
+  // Prompt 172 Phase 2 (172b): Bio Optimization Score line variants.
+  // Voice: knowledgeable coach who is glad you logged. No hype, no
+  // streak pressure, no medical claims, no diagnostic phrasing. Safety
+  // mode variants drop all numeric framing and stay food positive per
+  // 170c section 8.4. Score name is exactly Bio Optimization Score per
+  // spec section 2 hard rule.
+  'bos.positive_delta': {
+    normal: 'This meal nudged your Bio Optimization Score in the right direction.',
+    safety_mode: 'This meal sits well with how you have been eating.',
+  },
+  'bos.neutral': {
+    normal: 'Steady. Your Bio Optimization Score held its line.',
+    safety_mode: 'Logged. Steady choice.',
+  },
+  'bos.gentle_caution': {
+    normal: 'Worth checking the macro mix on your next meal.',
+    safety_mode: 'Logged. Thanks for logging.',
+  },
+  'bos.learning': {
+    normal: 'We need a few more meals to read your Bio Optimization signal.',
+    safety_mode: 'Logged. We are still learning your patterns.',
+  },
 };
