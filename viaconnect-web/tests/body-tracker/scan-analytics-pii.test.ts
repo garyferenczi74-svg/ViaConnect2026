@@ -9,7 +9,7 @@
 //   package.json / Gary-approval blocker). The same sanitizeProperties guard
 //   sits in front of WHATEVER transport is installed, so this acceptance holds
 //   for today's default analytics_events transport and carries over unchanged
-//   when PostHog is later added. Event names are body_scan_ (not formavision_).
+//   when PostHog is later added. Event names carry the formavision_ brand prefix.
 //
 // We import the REAL exported functions and do NOT reimplement the guard.
 
@@ -20,7 +20,7 @@ import {
   findBiometricKeys,
   isForbiddenBiometricKey,
   ALLOWED_PROPERTY_KEYS,
-  BODY_SCAN_EVENTS,
+  FORMAVISION_EVENTS,
   type ScanEventProperties,
 } from '@/lib/body-tracker/scan-analytics';
 
@@ -195,9 +195,9 @@ describe('scan-analytics PII / biometric exclusion (171 §2.3, §13 acceptance)'
   // -------------------------------------------------------------------------
   describe('representative real-event payloads are safe to transport after sanitize', () => {
     it('quality_check_failed: coarse error_code survives, biometrics stripped', () => {
-      // Event name is the REAL body_scan_ catalog name (not formavision_).
-      const eventName = BODY_SCAN_EVENTS.quality_check_failed;
-      expect(eventName).toBe('quality_check_failed');
+      // Event name is the REAL formavision_-prefixed catalog name.
+      const eventName = FORMAVISION_EVENTS.quality_check_failed;
+      expect(eventName).toBe('formavision_quality_check_failed');
 
       const raw = {
         tier: 'gold',
@@ -218,8 +218,8 @@ describe('scan-analytics PII / biometric exclusion (171 §2.3, §13 acceptance)'
     });
 
     it('processing_completed: latency_seconds survives, no result value leaks', () => {
-      const eventName = BODY_SCAN_EVENTS.processing_completed;
-      expect(eventName).toBe('processing_completed');
+      const eventName = FORMAVISION_EVENTS.processing_completed;
+      expect(eventName).toBe('formavision_processing_completed');
 
       const raw = {
         tier: 'platinum_family', // real tier slug

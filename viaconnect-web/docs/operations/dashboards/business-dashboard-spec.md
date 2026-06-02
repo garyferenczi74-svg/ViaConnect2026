@@ -12,7 +12,7 @@ Status: RECONCILED SPEC, drafted 2026-06-01. This transcribes the Prompt 171 Sec
 ## Real foundation this dashboard reads
 
 - Tiers: free, gold, platinum, platinum_family (display "Platinum+ Family"). No "Platinum Plus".
-- Body Scan monetization events: premium_paywall_shown, premium_upgrade_clicked, premium_upgrade_completed (body_scan_ catalog), plus the platinum_trials model.
+- Body Scan monetization events: formavision_premium_paywall_shown, formavision_premium_upgrade_clicked, formavision_premium_upgrade_completed (formavision_ catalog), plus the platinum_trials model.
 - Revenue / unit-economics math already exists: LTV, CAC, payback period, acquisition attribution, cohort and retention engines, variable costs. The business dashboard is a presentation layer over these.
 
 ## Section 3.3 panels (reconciled)
@@ -22,7 +22,7 @@ Status: RECONCILED SPEC, drafted 2026-06-01. This transcribes the Prompt 171 Sec
 | Revenue (total, recurring) | subscription and order revenue | unit-economics snapshots; /admin/analytics/snapshots | RECONCILED |
 | Revenue by tier | revenue split across free / gold / platinum / platinum_family | subscription tables; /admin/analytics | RECONCILED (real slugs) |
 | Revenue by region / geo | revenue broken down by region | n/a here | DEFERRED to the 174 series: revenue-by-region reporting is owned by the 174 international reporting work, not this dashboard. Do not source it here |
-| Body Scan upgrade conversion | premium_paywall_shown to premium_upgrade_completed; revenue attributable to scan upgrades | analytics_events + subscription tables | RECONCILED |
+| Body Scan upgrade conversion | formavision_premium_paywall_shown to formavision_premium_upgrade_completed; revenue attributable to scan upgrades | analytics_events + subscription tables | RECONCILED |
 | Platinum trial economics | trial starts (self_initiated, practitioner_granted) and trial-to-paid conversion value | platinum_trials (deriveTrialState) + subscriptions | RECONCILED, but see gated note |
 | Trial reminder / auto-revert effect | revenue impact of reminder emails and the auto-revert cron | n/a | [gated: not built] reminders and the auto-revert cron are not built; the conversion-lift step that depends on them is gated until they ship |
 | LTV | customer lifetime value, by cohort and tier | src/lib/analytics/ltv-engine; /admin/analytics/ltv | RECONCILED |

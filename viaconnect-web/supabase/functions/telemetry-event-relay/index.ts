@@ -6,7 +6,7 @@
 //
 // WHY THIS EXISTS
 //   Section 12 calls for one trusted-backend relay so other edge functions
-//   (e.g. body-scan-analyze) can record a body_scan_ analytics event server-side
+//   (e.g. body-scan-analyze) can record a formavision_ analytics event server-side
 //   WITHOUT each function re-implementing the privacy guard. This function is
 //   that choke point: it validates the event name against the section 14 catalog,
 //   sanitizes the properties to metadata-only (the same 3-layer guard the client
@@ -54,42 +54,42 @@ const DB_TIMEOUT_MS = 4_000;
 const SCOPE = 'edge-function.telemetry-event-relay';
 
 // -----------------------------------------------------------------------------
-// 1. The body_scan_ event-name catalog (spec section 14)
+// 1. The formavision_ event-name catalog (spec section 14)
 // -----------------------------------------------------------------------------
-// MUST STAY IN SYNC WITH src/lib/body-tracker/scan-analytics.ts BODY_SCAN_EVENTS.
+// MUST STAY IN SYNC WITH src/lib/body-tracker/scan-analytics.ts FORMAVISION_EVENTS.
 // Deno cannot import the Next.js client module, so these names are MIRRORED here.
 // When an event is added/renamed/removed in scan-analytics.ts, mirror the change
 // here (and vice versa). An event not in this set is rejected (skipped), so a
 // typo'd or off-catalog server event is never written.
-const BODY_SCAN_EVENT_NAMES: ReadonlySet<string> = new Set([
-  'body_scan_dashboard_card_viewed',
-  'onboarding_started',
-  'onboarding_completed',
-  'biometric_consent_viewed',
-  'biometric_consent_accepted',
-  'biometric_consent_declined',
-  'disordered_eating_question_answered',
-  'capture_started',
-  'calibration_completed',
-  'capture_step_completed',
-  'capture_abandoned',
-  'capture_retake',
-  'quality_check_failed',
-  'processing_started',
-  'processing_completed',
-  'processing_failed',
-  'results_viewed',
-  'results_tab_viewed',
-  'compare_used',
-  'pdf_export',
-  'practitioner_share_enabled',
-  'premium_paywall_shown',
-  'premium_upgrade_clicked',
-  'premium_upgrade_completed',
-  'helix_event_emitted',
-  'resource_card_viewed',
-  'settings_changed',
-  'inclusivity_waitlist_joined',
+const FORMAVISION_EVENT_NAMES: ReadonlySet<string> = new Set([
+  'formavision_dashboard_card_viewed',
+  'formavision_onboarding_started',
+  'formavision_onboarding_completed',
+  'formavision_biometric_consent_viewed',
+  'formavision_biometric_consent_accepted',
+  'formavision_biometric_consent_declined',
+  'formavision_disordered_eating_question_answered',
+  'formavision_capture_started',
+  'formavision_calibration_completed',
+  'formavision_capture_step_completed',
+  'formavision_capture_abandoned',
+  'formavision_capture_retake',
+  'formavision_quality_check_failed',
+  'formavision_processing_started',
+  'formavision_processing_completed',
+  'formavision_processing_failed',
+  'formavision_results_viewed',
+  'formavision_results_tab_viewed',
+  'formavision_compare_used',
+  'formavision_pdf_export',
+  'formavision_practitioner_share_enabled',
+  'formavision_premium_paywall_shown',
+  'formavision_premium_upgrade_clicked',
+  'formavision_premium_upgrade_completed',
+  'formavision_helix_event_emitted',
+  'formavision_resource_card_viewed',
+  'formavision_settings_changed',
+  'formavision_inclusivity_waitlist_joined',
 ]);
 
 // -----------------------------------------------------------------------------
@@ -309,8 +309,8 @@ serve(async (req) => {
 
   const event = typeof body?.event === 'string' ? body.event : '';
 
-  // VALIDATE: only a known body_scan_ catalog event is written. Unknown -> skip.
-  if (!event || !BODY_SCAN_EVENT_NAMES.has(event)) {
+  // VALIDATE: only a known formavision_ catalog event is written. Unknown -> skip.
+  if (!event || !FORMAVISION_EVENT_NAMES.has(event)) {
     safeLog.info(SCOPE, 'skipped: unknown event name', {
       stage: 'validate',
       event: event || null,

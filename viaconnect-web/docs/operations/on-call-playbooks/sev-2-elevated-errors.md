@@ -16,7 +16,7 @@ NOTE ON ALERTING: the alerting layer (PagerDuty or Opsgenie plus Sentry plus Bet
 
 - Structured logging: src/lib/utils/safe-log.ts (debug, info, warn, error as one JSON line per event to Vercel), used by the API routes and the two scan edge functions (body-scan-analyze, body-scan-export) via supabase/functions/_shared/safe-log.ts.
 - Error taxonomy: src/lib/errors/classify-ai.ts classifies AI-route errors; AI route auditing lives in src/lib/observability/ (audit-recorder to ai_route_audit).
-- Scan error signal: processing_failed.error_code (coarse: no_photos, rate_limited, transient, and so on) in analytics_events (body_scan_ catalog).
+- Scan error signal: formavision_processing_failed.error_code (coarse: no_photos, rate_limited, transient, and so on) in analytics_events (formavision_ catalog).
 - Edge-function error signals: body-scan-analyze logs breaker open, timeout, failed, guardrail blocked, insert failed, session finalize failed; the HTTP status mix (402, 403, 429, 500, 502, 503, 504) is itself a signal.
 
 ## Typical causes

@@ -21,7 +21,7 @@ Sourcing reality (read before filling in):
   use. A dedicated support tool (Help Scout) is not adopted yet; if you are using
   email or another channel, say so.
 - Product usage context (to interpret the feedback) comes from the real
-  body_scan_ analytics events in the Supabase analytics_events table and
+  formavision_ analytics events in the Supabase analytics_events table and
   /admin/analytics. Tier slugs are free, gold, platinum, platinum_family.
 
 Week of: (fill in start date) to (fill in end date)
@@ -63,8 +63,8 @@ Source: (fill in the support channel; no dedicated support tool adopted yet.)
 ## 4. Top feedback themes
 
 The recurring qualitative themes this week, ranked. Tie each to a real surface or
-event where possible (for example capture_abandoned spikes, quality_check_failed
-reasons, paywall reaction at premium_paywall_shown).
+event where possible (for example formavision_capture_abandoned spikes, formavision_quality_check_failed
+reasons, paywall reaction at formavision_premium_paywall_shown).
 
 1. (fill in)
 2. (fill in)

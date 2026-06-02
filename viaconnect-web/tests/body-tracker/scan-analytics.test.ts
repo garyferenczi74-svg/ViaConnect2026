@@ -20,8 +20,8 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   // catalog
-  BODY_SCAN_EVENTS,
-  BODY_SCAN_EVENT_NAMES,
+  FORMAVISION_EVENTS,
+  FORMAVISION_EVENT_NAMES,
   // sanitizer + guard
   ALLOWED_PROPERTY_KEYS,
   FORBIDDEN_BIOMETRIC_KEY_FRAGMENTS,
@@ -46,53 +46,54 @@ import {
 // 1. The event-name catalog matches section 14 EXACTLY
 // ===========================================================================
 
-// The authoritative list from spec section 14. If section 14 changes, THIS list
-// changes and the catalog must follow; the test fails loudly on any drift.
+// The authoritative list from spec section 14, with the formavision_ brand
+// prefix on every event name. If section 14 changes, THIS list changes and the
+// catalog must follow; the test fails loudly on any drift.
 const SECTION_14_EVENTS = [
-  'body_scan_dashboard_card_viewed',
-  'onboarding_started',
-  'onboarding_completed',
-  'biometric_consent_viewed',
-  'biometric_consent_accepted',
-  'biometric_consent_declined',
-  'disordered_eating_question_answered',
-  'capture_started',
-  'calibration_completed',
-  'capture_step_completed',
-  'capture_abandoned',
-  'capture_retake',
-  'quality_check_failed',
-  'processing_started',
-  'processing_completed',
-  'processing_failed',
-  'results_viewed',
-  'results_tab_viewed',
-  'compare_used',
-  'pdf_export',
-  'practitioner_share_enabled',
-  'premium_paywall_shown',
-  'premium_upgrade_clicked',
-  'premium_upgrade_completed',
-  'helix_event_emitted',
-  'resource_card_viewed',
-  'settings_changed',
-  'inclusivity_waitlist_joined',
+  'formavision_dashboard_card_viewed',
+  'formavision_onboarding_started',
+  'formavision_onboarding_completed',
+  'formavision_biometric_consent_viewed',
+  'formavision_biometric_consent_accepted',
+  'formavision_biometric_consent_declined',
+  'formavision_disordered_eating_question_answered',
+  'formavision_capture_started',
+  'formavision_calibration_completed',
+  'formavision_capture_step_completed',
+  'formavision_capture_abandoned',
+  'formavision_capture_retake',
+  'formavision_quality_check_failed',
+  'formavision_processing_started',
+  'formavision_processing_completed',
+  'formavision_processing_failed',
+  'formavision_results_viewed',
+  'formavision_results_tab_viewed',
+  'formavision_compare_used',
+  'formavision_pdf_export',
+  'formavision_practitioner_share_enabled',
+  'formavision_premium_paywall_shown',
+  'formavision_premium_upgrade_clicked',
+  'formavision_premium_upgrade_completed',
+  'formavision_helix_event_emitted',
+  'formavision_resource_card_viewed',
+  'formavision_settings_changed',
+  'formavision_inclusivity_waitlist_joined',
 ] as const;
 
 describe('event-name catalog (section 14)', () => {
   it('exposes exactly the section 14 event set (no missing, no extra)', () => {
-    expect(new Set(BODY_SCAN_EVENT_NAMES)).toEqual(new Set(SECTION_14_EVENTS));
-    expect(BODY_SCAN_EVENT_NAMES).toHaveLength(SECTION_14_EVENTS.length);
+    expect(new Set(FORMAVISION_EVENT_NAMES)).toEqual(new Set(SECTION_14_EVENTS));
+    expect(FORMAVISION_EVENT_NAMES).toHaveLength(SECTION_14_EVENTS.length);
   });
 
-  it('every BODY_SCAN_EVENTS value equals its key (no typo in the constant)', () => {
-    for (const [key, value] of Object.entries(BODY_SCAN_EVENTS)) {
-      expect(value).toBe(key);
+  it('every FORMAVISION_EVENTS value is the formavision_-prefixed form of its key', () => {
+    for (const [key, value] of Object.entries(FORMAVISION_EVENTS)) {
+      expect(value).toBe(`formavision_${key}`);
     }
   });
 
   it('has no duplicate event names', () => {
-    expect(new Set(BODY_SCAN_EVENT_NAMES).size).toBe(BODY_SCAN_EVENT_NAMES.length);
+    expect(new Set(FORMAVISION_EVENT_NAMES).size).toBe(FORMAVISION_EVENT_NAMES.length);
   });
 });
 
@@ -270,7 +271,7 @@ describe('emitters (route through the existing framework, metadata only)', () =>
   it('disordered_eating_question_answered emits ONLY answered:true (never the response)', () => {
     trackDisorderedEatingAnswered();
     expect(calls).toHaveLength(1);
-    expect(calls[0].event).toBe('disordered_eating_question_answered');
+    expect(calls[0].event).toBe('formavision_disordered_eating_question_answered');
     expect(calls[0].props).toEqual({ answered: true });
     // The response value is not even a parameter; assert nothing response-like leaked.
     expect(findBiometricKeys(calls[0].props)).toEqual([]);
@@ -278,27 +279,27 @@ describe('emitters (route through the existing framework, metadata only)', () =>
 
   it('consent_accepted carries consent_version + model_improvement_opt_in only', () => {
     trackConsentAccepted({ consent_version: 'v1', model_improvement_opt_in: true });
-    expect(calls[0].event).toBe('biometric_consent_accepted');
+    expect(calls[0].event).toBe('formavision_biometric_consent_accepted');
     expect(calls[0].props).toEqual({ consent_version: 'v1', model_improvement_opt_in: true });
   });
 
   it('results_tab_viewed carries only tab_name', () => {
     trackResultsTabViewed({ tab_name: 'composition' });
-    expect(calls[0].event).toBe('results_tab_viewed');
+    expect(calls[0].event).toBe('formavision_results_tab_viewed');
     expect(calls[0].props).toEqual({ tab_name: 'composition' });
   });
 
   it('processing_completed carries a latency duration but NO result value', () => {
     // Even if a caller tried to pass a body-fat value, it is stripped.
     trackProcessingCompleted({ tier: 1, latency_seconds: 4, body_fat_pct: 18 } as never);
-    expect(calls[0].event).toBe('processing_completed');
+    expect(calls[0].event).toBe('formavision_processing_completed');
     expect(calls[0].props).toEqual({ tier: 1, latency_seconds: 4 });
     expect('body_fat_pct' in (calls[0].props ?? {})).toBe(false);
   });
 
   it('settings_changed for a sensitive toggle carries name + coarse enabled only', () => {
     trackSettingsChanged({ setting_name: 'cycle_phase_annotation_opt_in', enabled: true });
-    expect(calls[0].event).toBe('settings_changed');
+    expect(calls[0].event).toBe('formavision_settings_changed');
     expect(calls[0].props).toEqual({ setting_name: 'cycle_phase_annotation_opt_in', enabled: true });
   });
 
@@ -316,10 +317,10 @@ describe('emitters (route through the existing framework, metadata only)', () =>
     scanAnalytics.pdfExport({ trigger_point: 'results_panel' });
     scanAnalytics.inclusivityWaitlistJoined({ requested_capability: 'seated' });
     expect(calls.map((c) => c.event)).toEqual([
-      'body_scan_dashboard_card_viewed',
-      'capture_started',
-      'pdf_export',
-      'inclusivity_waitlist_joined',
+      'formavision_dashboard_card_viewed',
+      'formavision_capture_started',
+      'formavision_pdf_export',
+      'formavision_inclusivity_waitlist_joined',
     ]);
     // No biometric key in any emitted payload.
     for (const c of calls) expect(findBiometricKeys(c.props)).toEqual([]);

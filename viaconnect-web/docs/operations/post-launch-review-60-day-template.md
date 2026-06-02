@@ -5,7 +5,7 @@ Tagline: Built For Your Biology.
 
 This is a FILL-IN TEMPLATE (Prompt #171 Section 10). Copy it, date it, and fill it
 in at the 60 day mark. Reconciled to the real codebase: event names use the
-body_scan_ prefix (formavision_ does NOT exist), tier slugs are free, gold,
+formavision_ prefix (the FormaVision brand for the body-scan surface), tier slugs are free, gold,
 platinum, platinum_family (no "Platinum Plus"), and missing surfaces are marked
 inline.
 
@@ -54,14 +54,14 @@ the 30 day actual (from the prior review) and the 60 day actual side by side.
 | --- | --- | --- | --- | --- |
 | New signups (cumulative) | /admin/analytics overview | (estimate, confirm with Gary) | | |
 | New signups (this 30 day window) | /admin/analytics overview | (estimate, confirm with Gary) | | |
-| Onboarding completion rate | onboarding_started to onboarding_completed | (estimate, confirm with Gary) | | |
-| First scan rate | capture_started | (estimate, confirm with Gary) | | |
-| Capture to results conversion | capture_started to results_viewed | (estimate, confirm with Gary) | | |
-| Repeat scan rate (2 or more scans) | scan_count via results_viewed | (estimate, confirm with Gary) | | |
-| Quality check failure rate | quality_check_failed over capture_started | (estimate, confirm with Gary) | | |
-| Processing success rate | processing_completed over processing_started | (estimate, confirm with Gary) | | |
-| Median processing latency (seconds) | processing_completed latency_seconds | (estimate, confirm with Gary) | | |
-| Paywall view to upgrade rate | premium_paywall_shown to premium_upgrade_completed | (estimate, confirm with Gary) | | |
+| Onboarding completion rate | formavision_onboarding_started to formavision_onboarding_completed | (estimate, confirm with Gary) | | |
+| First scan rate | formavision_capture_started | (estimate, confirm with Gary) | | |
+| Capture to results conversion | formavision_capture_started to formavision_results_viewed | (estimate, confirm with Gary) | | |
+| Repeat scan rate (2 or more scans) | scan_count via formavision_results_viewed | (estimate, confirm with Gary) | | |
+| Quality check failure rate | formavision_quality_check_failed over formavision_capture_started | (estimate, confirm with Gary) | | |
+| Processing success rate | formavision_processing_completed over formavision_processing_started | (estimate, confirm with Gary) | | |
+| Median processing latency (seconds) | formavision_processing_completed latency_seconds | (estimate, confirm with Gary) | | |
+| Paywall view to upgrade rate | formavision_premium_paywall_shown to formavision_premium_upgrade_completed | (estimate, confirm with Gary) | | |
 | Platinum trial conversion (trial to paid) | trial state + Stripe (169f) | (estimate, confirm with Gary) | | |
 | Tier mix (free / gold / platinum / platinum_family) | /admin/analytics | (estimate, confirm with Gary) | | |
 | 7 day retention | /admin/analytics cohorts | (estimate, confirm with Gary) | | |
@@ -70,7 +70,7 @@ the 30 day actual (from the prior review) and the 60 day actual side by side.
 | Crash and error rate | safe-log (Vercel) + classify-ai | (estimate, confirm with Gary) | | |
 | Uptime | uptime tool not adopted yet (Gary decision) | (estimate, confirm with Gary) | | |
 | NPS | manual; in app NPS surface not built yet | (estimate, confirm with Gary) | | |
-| Biometric consent acceptance rate | biometric_consent_accepted over biometric_consent_viewed | (estimate, confirm with Gary) | | |
+| Biometric consent acceptance rate | formavision_biometric_consent_accepted over formavision_biometric_consent_viewed | (estimate, confirm with Gary) | | |
 | Deletion requests | /admin/compliance | (estimate, confirm with Gary) | | |
 
 ## 10.3 Review sections (fill in)

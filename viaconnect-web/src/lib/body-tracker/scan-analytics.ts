@@ -1,5 +1,6 @@
 // =============================================================================
-// Body Scan analytics events catalog (Prompt #169b, Task 21, spec section 14).
+// FormaVision (Body Scan) analytics events catalog (Prompt #169b, Task 21, spec
+// section 14). Every emitted event name carries the formavision_ brand prefix.
 //
 // WHY THIS FILE EXISTS
 //   Section 14 defines a catalog of Body Scan product-analytics events. This
@@ -10,7 +11,7 @@
 //
 // THE ONE HARD RULE (the thing the review checks hardest)
 //   Events carry METADATA ONLY, never biometric / health values. A Body Scan
-//   analytics event may say "results_tab_viewed { tab_name: 'composition' }" but
+//   analytics event may say "formavision_results_tab_viewed { tab_name: 'composition' }" but
 //   must NEVER carry a body fat percentage, a measurement, an avatar parameter,
 //   a raw photo, the disordered-eating RESPONSE value, a cycle phase, or a
 //   weight / height value.
@@ -50,46 +51,49 @@ import { trackEvent as defaultTrackEvent } from '@/lib/analytics/track-events';
 // 1. The event-name catalog (section 14)
 // -----------------------------------------------------------------------------
 
-// The exact set of Body Scan analytics event names from section 14. Frozen +
-// exported so the test can assert the catalog matches the spec and so call sites
-// reference the constant, never a string literal (a typo'd event name is a
-// compile error, not a silent mis-logged event).
-export const BODY_SCAN_EVENTS = {
-  body_scan_dashboard_card_viewed: 'body_scan_dashboard_card_viewed',
-  onboarding_started: 'onboarding_started',
-  onboarding_completed: 'onboarding_completed',
-  biometric_consent_viewed: 'biometric_consent_viewed',
-  biometric_consent_accepted: 'biometric_consent_accepted',
-  biometric_consent_declined: 'biometric_consent_declined',
-  disordered_eating_question_answered: 'disordered_eating_question_answered',
-  capture_started: 'capture_started',
-  calibration_completed: 'calibration_completed',
-  capture_step_completed: 'capture_step_completed',
-  capture_abandoned: 'capture_abandoned',
-  capture_retake: 'capture_retake',
-  quality_check_failed: 'quality_check_failed',
-  processing_started: 'processing_started',
-  processing_completed: 'processing_completed',
-  processing_failed: 'processing_failed',
-  results_viewed: 'results_viewed',
-  results_tab_viewed: 'results_tab_viewed',
-  compare_used: 'compare_used',
-  pdf_export: 'pdf_export',
-  practitioner_share_enabled: 'practitioner_share_enabled',
-  premium_paywall_shown: 'premium_paywall_shown',
-  premium_upgrade_clicked: 'premium_upgrade_clicked',
-  premium_upgrade_completed: 'premium_upgrade_completed',
-  helix_event_emitted: 'helix_event_emitted',
-  resource_card_viewed: 'resource_card_viewed',
-  settings_changed: 'settings_changed',
-  inclusivity_waitlist_joined: 'inclusivity_waitlist_joined',
+// The exact set of Body Scan analytics event names from section 14, each
+// carrying the formavision_ brand prefix (FormaVision is the product brand for
+// the body-scan surface). Frozen + exported so the test can assert the catalog
+// matches the spec and so call sites reference the constant, never a string
+// literal (a typo'd event name is a compile error, not a silent mis-logged
+// event). The KEYS stay short/internal; only the VALUES (the wire event names)
+// carry the formavision_ prefix.
+export const FORMAVISION_EVENTS = {
+  dashboard_card_viewed: 'formavision_dashboard_card_viewed',
+  onboarding_started: 'formavision_onboarding_started',
+  onboarding_completed: 'formavision_onboarding_completed',
+  biometric_consent_viewed: 'formavision_biometric_consent_viewed',
+  biometric_consent_accepted: 'formavision_biometric_consent_accepted',
+  biometric_consent_declined: 'formavision_biometric_consent_declined',
+  disordered_eating_question_answered: 'formavision_disordered_eating_question_answered',
+  capture_started: 'formavision_capture_started',
+  calibration_completed: 'formavision_calibration_completed',
+  capture_step_completed: 'formavision_capture_step_completed',
+  capture_abandoned: 'formavision_capture_abandoned',
+  capture_retake: 'formavision_capture_retake',
+  quality_check_failed: 'formavision_quality_check_failed',
+  processing_started: 'formavision_processing_started',
+  processing_completed: 'formavision_processing_completed',
+  processing_failed: 'formavision_processing_failed',
+  results_viewed: 'formavision_results_viewed',
+  results_tab_viewed: 'formavision_results_tab_viewed',
+  compare_used: 'formavision_compare_used',
+  pdf_export: 'formavision_pdf_export',
+  practitioner_share_enabled: 'formavision_practitioner_share_enabled',
+  premium_paywall_shown: 'formavision_premium_paywall_shown',
+  premium_upgrade_clicked: 'formavision_premium_upgrade_clicked',
+  premium_upgrade_completed: 'formavision_premium_upgrade_completed',
+  helix_event_emitted: 'formavision_helix_event_emitted',
+  resource_card_viewed: 'formavision_resource_card_viewed',
+  settings_changed: 'formavision_settings_changed',
+  inclusivity_waitlist_joined: 'formavision_inclusivity_waitlist_joined',
 } as const;
 
-export type BodyScanEventName = (typeof BODY_SCAN_EVENTS)[keyof typeof BODY_SCAN_EVENTS];
+export type FormaVisionEventName = (typeof FORMAVISION_EVENTS)[keyof typeof FORMAVISION_EVENTS];
 
 // The catalog as a plain array (for the test's exact-set assertion).
-export const BODY_SCAN_EVENT_NAMES: readonly BodyScanEventName[] = Object.freeze(
-  Object.values(BODY_SCAN_EVENTS) as BodyScanEventName[],
+export const FORMAVISION_EVENT_NAMES: readonly FormaVisionEventName[] = Object.freeze(
+  Object.values(FORMAVISION_EVENTS) as FormaVisionEventName[],
 );
 
 // -----------------------------------------------------------------------------
@@ -348,7 +352,7 @@ export function resetScanAnalyticsTransport(): void {
  * to an emitter is caught because the test asserts via the same path. The
  * sanitizer is what guarantees production safety; the assert is the dev tripwire.
  */
-function emit(event: BodyScanEventName, raw?: Record<string, unknown>): void {
+function emit(event: FormaVisionEventName, raw?: Record<string, unknown>): void {
   let safe: ScanEventProperties;
   try {
     safe = sanitizeProperties(raw);
@@ -379,28 +383,28 @@ export interface TriggerContext {
   trigger_point?: string | null;
 }
 
-/** body_scan_dashboard_card_viewed: the scan card on the dashboard/photos page was seen. */
+/** formavision_dashboard_card_viewed: the scan card on the dashboard/photos page was seen. */
 export function trackDashboardCardViewed(props: TierContext & TriggerContext = {}): void {
-  emit(BODY_SCAN_EVENTS.body_scan_dashboard_card_viewed, { ...props });
+  emit(FORMAVISION_EVENTS.dashboard_card_viewed, { ...props });
 }
 
-/** onboarding_started: the first-open educational walkthrough opened. */
+/** formavision_onboarding_started: the first-open educational walkthrough opened. */
 export function trackOnboardingStarted(props: { trigger_point?: string | null } = {}): void {
-  emit(BODY_SCAN_EVENTS.onboarding_started, { ...props });
+  emit(FORMAVISION_EVENTS.onboarding_started, { ...props });
 }
 
-/** onboarding_completed: the walkthrough was finished (or dismissed at the end). */
+/** formavision_onboarding_completed: the walkthrough was finished (or dismissed at the end). */
 export function trackOnboardingCompleted(props: { step_name?: string | null } = {}): void {
-  emit(BODY_SCAN_EVENTS.onboarding_completed, { ...props });
+  emit(FORMAVISION_EVENTS.onboarding_completed, { ...props });
 }
 
-/** biometric_consent_viewed: the biometric-consent screen was shown. */
+/** formavision_biometric_consent_viewed: the biometric-consent screen was shown. */
 export function trackConsentViewed(props: { consent_version?: string | null } = {}): void {
-  emit(BODY_SCAN_EVENTS.biometric_consent_viewed, { ...props });
+  emit(FORMAVISION_EVENTS.biometric_consent_viewed, { ...props });
 }
 
 /**
- * biometric_consent_accepted: the user accepted biometric consent. Emits the
+ * formavision_biometric_consent_accepted: the user accepted biometric consent. Emits the
  * consent_version + the SEPARATE model-improvement opt-in boolean (both metadata
  * per section 2.2.1). NEVER the retention value beyond a coarse setting.
  */
@@ -408,138 +412,138 @@ export function trackConsentAccepted(props: {
   consent_version?: string | null;
   model_improvement_opt_in?: boolean;
 } = {}): void {
-  emit(BODY_SCAN_EVENTS.biometric_consent_accepted, { ...props });
+  emit(FORMAVISION_EVENTS.biometric_consent_accepted, { ...props });
 }
 
-/** biometric_consent_declined: the user declined / left the consent screen. */
+/** formavision_biometric_consent_declined: the user declined / left the consent screen. */
 export function trackConsentDeclined(props: { consent_version?: string | null } = {}): void {
-  emit(BODY_SCAN_EVENTS.biometric_consent_declined, { ...props });
+  emit(FORMAVISION_EVENTS.biometric_consent_declined, { ...props });
 }
 
 /**
- * disordered_eating_question_answered (section 3.2.1 + section 3 privacy).
+ * formavision_disordered_eating_question_answered (section 3.2.1 + section 3 privacy).
  * Emits ONLY that the question was answered. The RESPONSE value is intentionally
  * NOT a parameter: it must never leave the user's own profile, so it cannot be
  * logged here even by accident. answered is hard-coded true.
  */
 export function trackDisorderedEatingAnswered(): void {
-  emit(BODY_SCAN_EVENTS.disordered_eating_question_answered, { answered: true });
+  emit(FORMAVISION_EVENTS.disordered_eating_question_answered, { answered: true });
 }
 
-/** capture_started: the capture flow began (calibration / first pose). */
+/** formavision_capture_started: the capture flow began (calibration / first pose). */
 export function trackCaptureStarted(props: TierContext & { capture_mode?: string | null; device_model?: string | null } = {}): void {
-  emit(BODY_SCAN_EVENTS.capture_started, { ...props });
+  emit(FORMAVISION_EVENTS.capture_started, { ...props });
 }
 
-/** calibration_completed: the credit-card calibration step finished (or was skipped). */
+/** formavision_calibration_completed: the credit-card calibration step finished (or was skipped). */
 export function trackCalibrationCompleted(props: { capture_mode?: string | null; step_name?: string | null } = {}): void {
-  emit(BODY_SCAN_EVENTS.calibration_completed, { ...props });
+  emit(FORMAVISION_EVENTS.calibration_completed, { ...props });
 }
 
-/** capture_step_completed: one pose capture step was completed. step_name is the pose id. */
+/** formavision_capture_step_completed: one pose capture step was completed. step_name is the pose id. */
 export function trackCaptureStepCompleted(props: { step_name?: string | null; scan_count?: number | null } = {}): void {
-  emit(BODY_SCAN_EVENTS.capture_step_completed, { ...props });
+  emit(FORMAVISION_EVENTS.capture_step_completed, { ...props });
 }
 
-/** capture_abandoned: the capture flow was closed before finishing. */
+/** formavision_capture_abandoned: the capture flow was closed before finishing. */
 export function trackCaptureAbandoned(props: { step_name?: string | null } = {}): void {
-  emit(BODY_SCAN_EVENTS.capture_abandoned, { ...props });
+  emit(FORMAVISION_EVENTS.capture_abandoned, { ...props });
 }
 
-/** capture_retake: a pose was retaken. step_name is the pose id. */
+/** formavision_capture_retake: a pose was retaken. step_name is the pose id. */
 export function trackCaptureRetake(props: { step_name?: string | null } = {}): void {
-  emit(BODY_SCAN_EVENTS.capture_retake, { ...props });
+  emit(FORMAVISION_EVENTS.capture_retake, { ...props });
 }
 
 /**
- * quality_check_failed: a quality gate did not pass. error_code is the COARSE
+ * formavision_quality_check_failed: a quality gate did not pass. error_code is the COARSE
  * reason category (e.g. 'lighting', 'framing'), never a measured value.
  */
 export function trackQualityCheckFailed(props: { error_code?: string | null; step_name?: string | null } = {}): void {
-  emit(BODY_SCAN_EVENTS.quality_check_failed, { ...props });
+  emit(FORMAVISION_EVENTS.quality_check_failed, { ...props });
 }
 
-/** processing_started: scan analysis / finalize began. */
+/** formavision_processing_started: scan analysis / finalize began. */
 export function trackProcessingStarted(props: TierContext & { capture_mode?: string | null } = {}): void {
-  emit(BODY_SCAN_EVENTS.processing_started, { ...props });
+  emit(FORMAVISION_EVENTS.processing_started, { ...props });
 }
 
 /**
- * processing_completed: scan analysis finished successfully. latency_seconds is
+ * formavision_processing_completed: scan analysis finished successfully. latency_seconds is
  * a duration only; NO result value (no body fat %, no measurements) is carried.
  */
 export function trackProcessingCompleted(props: TierContext & { latency_seconds?: number | null } = {}): void {
-  emit(BODY_SCAN_EVENTS.processing_completed, { ...props });
+  emit(FORMAVISION_EVENTS.processing_completed, { ...props });
 }
 
 /**
- * processing_failed: scan analysis failed. error_code is the COARSE failure
+ * formavision_processing_failed: scan analysis failed. error_code is the COARSE failure
  * category (e.g. 'no_photos', 'rate_limited', 'transient'), never a raw value.
  */
 export function trackProcessingFailed(props: { error_code?: string | null; latency_seconds?: number | null } = {}): void {
-  emit(BODY_SCAN_EVENTS.processing_failed, { ...props });
+  emit(FORMAVISION_EVENTS.processing_failed, { ...props });
 }
 
-/** results_viewed: the scan results panel was opened. */
+/** formavision_results_viewed: the scan results panel was opened. */
 export function trackResultsViewed(props: TierContext = {}): void {
-  emit(BODY_SCAN_EVENTS.results_viewed, { ...props });
+  emit(FORMAVISION_EVENTS.results_viewed, { ...props });
 }
 
-/** results_tab_viewed: a results tab was selected. tab_name is the tab id. */
+/** formavision_results_tab_viewed: a results tab was selected. tab_name is the tab id. */
 export function trackResultsTabViewed(props: { tab_name?: string | null } = {}): void {
-  emit(BODY_SCAN_EVENTS.results_tab_viewed, { ...props });
+  emit(FORMAVISION_EVENTS.results_tab_viewed, { ...props });
 }
 
-/** compare_used: the Compare tool was used. */
+/** formavision_compare_used: the Compare tool was used. */
 export function trackCompareUsed(props: { trigger_point?: string | null } = {}): void {
-  emit(BODY_SCAN_EVENTS.compare_used, { ...props });
+  emit(FORMAVISION_EVENTS.compare_used, { ...props });
 }
 
-/** pdf_export: the PDF report export was triggered. */
+/** formavision_pdf_export: the PDF report export was triggered. */
 export function trackPdfExport(props: { trigger_point?: string | null } = {}): void {
-  emit(BODY_SCAN_EVENTS.pdf_export, { ...props });
+  emit(FORMAVISION_EVENTS.pdf_export, { ...props });
 }
 
-/** practitioner_share_enabled: the user turned ON sharing a scan with their practitioner. */
+/** formavision_practitioner_share_enabled: the user turned ON sharing a scan with their practitioner. */
 export function trackPractitionerShareEnabled(props: { trigger_point?: string | null } = {}): void {
-  emit(BODY_SCAN_EVENTS.practitioner_share_enabled, { ...props });
+  emit(FORMAVISION_EVENTS.practitioner_share_enabled, { ...props });
 }
 
-/** premium_paywall_shown: the body-scan paywall was shown. */
+/** formavision_premium_paywall_shown: the body-scan paywall was shown. */
 export function trackPremiumPaywallShown(props: TriggerContext & { has_used_teaser?: boolean } = {}): void {
-  emit(BODY_SCAN_EVENTS.premium_paywall_shown, { ...props });
+  emit(FORMAVISION_EVENTS.premium_paywall_shown, { ...props });
 }
 
-/** premium_upgrade_clicked: the upgrade CTA on the paywall was clicked. */
+/** formavision_premium_upgrade_clicked: the upgrade CTA on the paywall was clicked. */
 export function trackPremiumUpgradeClicked(props: TriggerContext & { sku?: string | null } = {}): void {
-  emit(BODY_SCAN_EVENTS.premium_upgrade_clicked, { ...props });
+  emit(FORMAVISION_EVENTS.premium_upgrade_clicked, { ...props });
 }
 
-/** premium_upgrade_completed: the upgrade purchase completed. */
+/** formavision_premium_upgrade_completed: the upgrade purchase completed. */
 export function trackPremiumUpgradeCompleted(props: { sku?: string | null } = {}): void {
-  emit(BODY_SCAN_EVENTS.premium_upgrade_completed, { ...props });
+  emit(FORMAVISION_EVENTS.premium_upgrade_completed, { ...props });
 }
 
 /**
- * helix_event_emitted: a Helix engagement event fired for a scan. event_type is
+ * formavision_helix_event_emitted: a Helix engagement event fired for a scan. event_type is
  * the Helix event category; NO body-composition value is carried (section 3.2.6
  * keeps composition off any Helix surface).
  */
 export function trackHelixEventEmitted(props: { event_type?: string | null } = {}): void {
-  emit(BODY_SCAN_EVENTS.helix_event_emitted, { ...props });
+  emit(FORMAVISION_EVENTS.helix_event_emitted, { ...props });
 }
 
 /**
- * resource_card_viewed: the support resource card was shown. resource_type is a
+ * formavision_resource_card_viewed: the support resource card was shown. resource_type is a
  * COARSE category (e.g. the trigger family), never a body-fat value or the
  * disordered-eating response.
  */
 export function trackResourceCardViewed(props: { resource_type?: string | null } = {}): void {
-  emit(BODY_SCAN_EVENTS.resource_card_viewed, { ...props });
+  emit(FORMAVISION_EVENTS.resource_card_viewed, { ...props });
 }
 
 /**
- * settings_changed: a body-scan setting toggled. Emits the setting NAME and a
+ * formavision_settings_changed: a body-scan setting toggled. Emits the setting NAME and a
  * NON-sensitive new value. For a SENSITIVE setting (cycle opt-in, or anything
  * tied to a biometric default) pass only `enabled` (a coarse boolean) or nothing
  * for new_value; NEVER the disordered-eating response or a biometric value.
@@ -553,15 +557,15 @@ export function trackSettingsChanged(props: {
   new_value?: AllowedPropertyValue;
   enabled?: boolean;
 } = {}): void {
-  emit(BODY_SCAN_EVENTS.settings_changed, { ...props });
+  emit(FORMAVISION_EVENTS.settings_changed, { ...props });
 }
 
 /**
- * inclusivity_waitlist_joined: the user joined the expanded-scanning waitlist
+ * formavision_inclusivity_waitlist_joined: the user joined the expanded-scanning waitlist
  * (section 7.4). requested_capability is the coarse capability they asked for.
  */
 export function trackInclusivityWaitlistJoined(props: { requested_capability?: string | null } = {}): void {
-  emit(BODY_SCAN_EVENTS.inclusivity_waitlist_joined, { ...props });
+  emit(FORMAVISION_EVENTS.inclusivity_waitlist_joined, { ...props });
 }
 
 // A namespaced object so call sites can `import { scanAnalytics }` and call

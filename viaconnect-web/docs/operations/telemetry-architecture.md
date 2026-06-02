@@ -7,9 +7,9 @@ Status: RECONCILED FOUNDATION DOC, drafted 2026-06-01. Prompt 171 is a POST-LAUN
 
 ## 1. The real telemetry foundation (already shipped, do not rebuild)
 
-The data source 171 builds on already exists. 171 Section 1 says the events catalog was "locked in 169b Section 14 and renamed in 169c with the formavision_ prefix." The 169c rebrand does NOT exist in code; the catalog is real and uses the body_scan_ prefix.
+The data source 171 builds on already exists. 171 Section 1 says the events catalog was "locked in 169b Section 14 and renamed with the formavision_ prefix." The catalog is real and every event name carries the formavision_ prefix (the FormaVision brand for the body-scan surface).
 
-- Events catalog: src/lib/body-tracker/scan-analytics.ts. A frozen TypeScript const BODY_SCAN_EVENTS with 24 event names (body_scan_dashboard_card_viewed, capture_started, capture_step_completed, quality_check_failed, processing_started, processing_completed, processing_failed, results_viewed, compare_used, pdf_export, premium_paywall_shown, premium_upgrade_completed, helix_event_emitted, and so on). The canonical type is BodyScanEventName.
+- Events catalog: src/lib/body-tracker/scan-analytics.ts. A frozen TypeScript const FORMAVISION_EVENTS with 24 event names (formavision_dashboard_card_viewed, formavision_capture_started, formavision_capture_step_completed, formavision_quality_check_failed, formavision_processing_started, formavision_processing_completed, formavision_processing_failed, formavision_results_viewed, formavision_compare_used, formavision_pdf_export, formavision_premium_paywall_shown, formavision_premium_upgrade_completed, formavision_helix_event_emitted, and so on). The canonical type is FormaVisionEventName.
 - PII and biometric guard: same file. THREE layers at a single emit() choke point:
   1. Allow-list: only 17 metadata keys may appear on any event payload (tier, is_premium, capture_mode, device_model, step_name, duration_seconds, latency_seconds, error_code, tab_name, scan_count, consent_version, model_improvement_opt_in, event_type, sku, trigger_point, requested_capability, for_audience, and a few flags).
   2. Block-list: a case-insensitive substring deny-list of biometric and health fragments (body_fat, lean_mass, fat_mass, ffmi, bmi, measurement, circumference, silhouette, avatar, landmark, photo, image_data, weight_kg, height_cm, waist, hip, chest, thigh, bicep, calf, disordered_eating, cycle_phase, biological_age, health_score, and more).
@@ -38,12 +38,12 @@ BLOCKER: PostHog and Sentry SDKs are NOT installed (zero references in package.j
 
 | 171 reference | Reality |
 |---|---|
-| formavision_ event prefix | body_scan_ prefix (24 events in scan-analytics.ts) |
-| formavision-process, formavision-finalize, formavision-compare, formavision-export edge functions | Do not exist. Real: body-scan-analyze (ephemeral Vision flow) and body-scan-export (PDF). The PRIMARY scan path is client-side runScanAnalysis and calls NO edge function, so per-edge-function latency panels (171 Section 3.1) mostly do not apply; the client emits processing_completed with latency_seconds instead |
+| formavision_ event prefix | formavision_ prefix (24 events in scan-analytics.ts) |
+| formavision-process, formavision-finalize, formavision-compare, formavision-export edge functions | Do not exist. Real: body-scan-analyze (ephemeral Vision flow) and body-scan-export (PDF). The PRIMARY scan path is client-side runScanAnalysis and calls NO edge function, so per-edge-function latency panels (171 Section 3.1) mostly do not apply; the client emits formavision_processing_completed with latency_seconds instead |
 | Composition CNN inference telemetry | No CNN. Phase 1 is MediaPipe Pose Lite landmarks plus Navy and CUN-BAE math; the avatar is a parametric mesh. CNN is Phase 2 (gate B, unmet) |
 | iOS and Android BodyScanDepth plugin telemetry, depth frame capture, Tier 2 | No depth plugins. depth_sensor_type is logged as none in body_scan_tier_log; Tier resolves to 1 only. Depth is Phase 2 (gate C, unmet) |
 | body_scan_quality as the quality source of truth | Canonical quality is on body_photo_sessions (scan_quality_score, quality_issues). body_scan_quality is a supplementary 1:1 child table with the six sub-scores (lighting, pose, clothing, bgClutter, cameraLevel, frameCoverage) |
-| formavision_quality_check_failed event (171 Section 4.1) | Real event is quality_check_failed (body_scan_ catalog). The Section 4.1 failure taxonomy maps onto that event plus the body_scan_quality sub-scores |
+| formavision_quality_check_failed event (171 Section 4.1) | Real event is formavision_quality_check_failed (formavision_ catalog). The Section 4.1 failure taxonomy maps onto that event plus the body_scan_quality sub-scores |
 | Platinum Plus | The real tier slug is platinum_family (169f). Tiers: free, gold, platinum, platinum_family |
 | Helix event emitted server-side from an edge function (171 Section 2.2) | Helix events fire from a DB trigger on body_photo_sessions.scan_status to complete, not from code |
 | src/services/telemetry/ and src/modules/operations/ | Neither src/services nor src/modules exists. Real homes: src/lib/ (shared logic, e.g. src/lib/telemetry/ if a wrapper is added), src/hooks/, src/components/, src/app/(app)/admin/ for dashboard surfaces, supabase/functions/ for edge functions |
@@ -65,7 +65,7 @@ These are SaaS deployments and organizational process, not codebase work, and se
 171 Section 3 specifies five dashboards. Most map onto existing admin surfaces; the gaps are the parts that need the external tools.
 - Product and Business: largely covered by /admin/analytics and /admin/exec-reporting plus the analytics engines; the tier-mix, funnel, retention, and LTV math already exists. Metabase would add the BI presentation layer.
 - Compliance: /admin/compliance exists; the consent, deletion, retention, geo, and age-gate panels map to real tables (biometric_consents, the age gate in the finalize trigger, the inclusivity waitlist).
-- Engineering: the system-health, latency, and error panels need Sentry plus an uptime tool; the capture-flow funnel and capture-failure panels map to the real body_scan_ events and the body_scan_quality scores. The edge-function latency panels need instrumentation only on body-scan-analyze and body-scan-export (the client path emits its own latency).
+- Engineering: the system-health, latency, and error panels need Sentry plus an uptime tool; the capture-flow funnel and capture-failure panels map to the real formavision_ events and the body_scan_quality scores. The edge-function latency panels need instrumentation only on body-scan-analyze and body-scan-export (the client path emits its own latency).
 - Safety and Clinical: the safeguard, frequency-limiter, numbers-optional, and inclusivity panels map to the real 169b mechanisms; the audience naming is a Gary decision (Section 5).
 
 ## 7. Deferred (tracks features that do not exist yet)
@@ -77,6 +77,6 @@ Hold until the underlying feature ships, so telemetry never reports on a phantom
 Reconciled, unblocked, no SDK and no SaaS:
 - tests/body-tracker/scan-analytics-pii.test.ts: the §13 biometric-exclusion acceptance test against the real guard.
 - This telemetry-architecture doc.
-- The review-cadence scaffolding: docs/operations/post-launch-review-30-day-template.md, -60-day, -90-day; docs/operations/customer-voice-template.md; docs/operations/funnel-optimization-log.md. All reconciled to body_scan_ event names and the real tiers, with the §9.2 metric targets flagged as Gary-to-confirm estimates.
+- The review-cadence scaffolding: docs/operations/post-launch-review-30-day-template.md, -60-day, -90-day; docs/operations/customer-voice-template.md; docs/operations/funnel-optimization-log.md. All reconciled to formavision_ event names and the real tiers, with the §9.2 metric targets flagged as Gary-to-confirm estimates.
 
 Everything else in 171 (the SDK wrappers, the dashboard embeds, the telemetry relay edge function, the on-call playbooks tied to live alert thresholds, the SaaS deployments, and the running of the reviews) is launch-time work that depends on the Section 5 decisions, the package.json approval, and real traffic.

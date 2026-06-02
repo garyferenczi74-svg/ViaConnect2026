@@ -9,7 +9,7 @@ NOTE ON ALERTING: the alerting layer (PagerDuty or Opsgenie plus Sentry plus Bet
 ## Alert and threshold (Section 8.2)
 
 - Trigger: Stripe webhooks are failing or payments / upgrades are not being recorded, so paid access (Platinum, and Body Scan which is Platinum-and-above) does not provision.
-- Threshold (spec to configure): Stripe webhook failure rate or checkout success rate breaches the Section 8.2 payment threshold; or premium_upgrade_completed (body_scan_ catalog) drops to zero while premium_upgrade_clicked continues. Configure the exact values when the pager and Stripe alerting are wired.
+- Threshold (spec to configure): Stripe webhook failure rate or checkout success rate breaches the Section 8.2 payment threshold; or formavision_premium_upgrade_completed (formavision_ catalog) drops to zero while formavision_premium_upgrade_clicked continues. Configure the exact values when the pager and Stripe alerting are wired.
 - Severity: Sev 1 (revenue and entitlement impacting).
 
 ## Real payment surfaces
@@ -17,7 +17,7 @@ NOTE ON ALERTING: the alerting layer (PagerDuty or Opsgenie plus Sentry plus Bet
 - Stripe webhook routes: src/app/api/webhooks/stripe/route.ts and src/app/api/stripe/webhook/route.ts.
 - Webhook handlers: src/lib/pricing/stripe-webhook-handlers.ts; Stripe client and checkout in src/lib/pricing/stripe.ts and src/lib/pricing/stripe-checkout.ts.
 - Memberships / entitlement: Body Scan is Platinum-and-above only. The entitlement is resolved server-side at scan finalize (resolveBodyScanEntitlement in supabase/functions/body-scan-analyze/entitlement.ts and the SQL resolver fn_resolve_body_scan_tier_status). Real tier slugs: free, gold, platinum, platinum_family. Trials: platinum_trials (self_initiated, practitioner_granted).
-- Scan upgrade events: premium_paywall_shown, premium_upgrade_clicked, premium_upgrade_completed.
+- Scan upgrade events: formavision_premium_paywall_shown, formavision_premium_upgrade_clicked, formavision_premium_upgrade_completed.
 
 ## Typical causes
 
