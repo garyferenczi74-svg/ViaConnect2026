@@ -45,6 +45,7 @@ import { ModificationChips } from '@/app/(app)/(consumer)/nutrition/components/N
 import { MealItemCard } from '@/app/(app)/(consumer)/nutrition/components/NutriVisionTab/MealItemCard';
 import { getMicrocopy } from '@/lib/nutrition/microcopy';
 import type { MicrocopyKey, MicrocopyVariant } from '@/lib/nutrition/microcopy';
+import { isKillSwitchEnabled } from '@/lib/compliance/kill-switches';
 import type {
   CookingOilSelection,
 } from '@/lib/nutrition/cooking-oil/types';
@@ -152,12 +153,18 @@ export function MealCard(props: MealCardProps) {
   const isPostSave = model.mealId !== null && model.mealQualityScore !== null;
 
   // 170c section 10.3 degraded service body copy gating. When the upstream
-  // pipeline flags a degraded provider we render the canonical kind copy;
-  // when not, we fall back to the standard low_confidence_body / error_body
-  // microcopy. Phase 1B only renders this body block in the meal totals
+  // pipeline flags a degraded provider AND the
+  // PROVIDER_DEGRADED_SERVICE_MESSAGING_ENABLED kill switch is true we render
+  // the canonical kind copy; when the kill switch is off the card silently
+  // falls back to the standard low_confidence_body microcopy so a degraded
+  // signal never leaks user facing if compliance disables the surface
+  // (170c §10.7). Phase 1B only renders this body block in the meal totals
   // surface when the recognitionConfidence is low (a proxy for the
   // low_confidence state until the analyzer exposes the state directly).
-  const degradedKey = model.degradedService ? degradedKeyFor(model.degradedServiceKind) : null;
+  const degradedMessagingEnabled = isKillSwitchEnabled('PROVIDER_DEGRADED_SERVICE_MESSAGING_ENABLED');
+  const degradedKey = model.degradedService && degradedMessagingEnabled
+    ? degradedKeyFor(model.degradedServiceKind)
+    : null;
   const showDegradedBlock = model.recognitionConfidence === 'low';
   const degradedBodyCopy = degradedKey
     ? getMicrocopy(degradedKey, variant)
@@ -198,8 +205,8 @@ export function MealCard(props: MealCardProps) {
         {/*
           Post save acknowledgement line per spec 5.2 + brief. Keyed by
           recognitionConfidence so high reads as solid, medium as detail,
-          low as we will keep learning. Safety mode variants are food
-          positive non optimization phrasing.
+          low as we will sharpen the read next time. Safety mode variants
+          are food positive non optimization phrasing.
         */}
         {isPostSave && (
           <p

@@ -37,8 +37,8 @@ export const MICROCOPY_STRINGS: MicrocopyMap = {
     safety_mode: 'We got a partial read on this one. Tap to refine.',
   },
   'state.error': {
-    normal: 'Something glitched on our side. Try again or log it by hand.',
-    safety_mode: 'Something glitched on our side. Try again or log it by hand.',
+    normal: 'Something glitched on our side. Try again, or log it manually.',
+    safety_mode: 'Something glitched on our side. Try again, or log it manually.',
   },
   'state.low_confidence_body': {
     normal: 'Please review the items before saving.',
@@ -80,14 +80,14 @@ export const MICROCOPY_STRINGS: MicrocopyMap = {
 
   'acknowledgement.high': {
     normal: 'Logged. Solid meal.',
-    safety_mode: 'Logged. Nourishing choice.',
+    safety_mode: 'Logged. Thanks for fueling up.',
   },
   'acknowledgement.medium': {
     normal: 'Logged. Thanks for the detail.',
     safety_mode: 'Logged. Thanks for the detail.',
   },
   'acknowledgement.low': {
-    normal: 'Logged. We will keep learning.',
+    normal: 'Logged. We will sharpen the read next time.',
     safety_mode: 'Logged. Thanks for trusting the log.',
   },
 
@@ -119,7 +119,7 @@ export const MICROCOPY_STRINGS: MicrocopyMap = {
     safety_mode: 'Recognition confidence is lower than usual for this meal. Please review carefully.',
   },
   'degraded.claude_tertiary_used': {
-    normal: 'Multiple recognition systems were unavailable. We used our backup of backup. Please review carefully.',
-    safety_mode: 'Multiple recognition systems were unavailable. We used our backup of backup. Please review carefully.',
+    normal: 'Multiple recognition systems were unavailable. We used our final fallback for this meal. Please review carefully.',
+    safety_mode: 'Multiple recognition systems were unavailable. We used our final fallback for this meal. Please review carefully.',
   },
 };

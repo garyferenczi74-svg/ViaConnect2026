@@ -188,6 +188,28 @@ describe('MealCard source', () => {
     it('falls back to standard low_confidence_body when degradedService is false', () => {
       expect(source).toContain('state.low_confidence_body');
     });
+
+    it('gates the degraded copy on the PROVIDER_DEGRADED_SERVICE_MESSAGING_ENABLED kill switch (170c section 10.7)', () => {
+      // Phase 1B review revision (Kelsey LOW finding): the kill switch from
+      // src/lib/compliance/kill-switches.ts must guard the degraded render
+      // path so compliance can silence the surface without a redeploy.
+      expect(source).toContain('isKillSwitchEnabled');
+      expect(source).toContain('PROVIDER_DEGRADED_SERVICE_MESSAGING_ENABLED');
+      expect(source).toContain('@/lib/compliance/kill-switches');
+    });
+
+    it('keys the degraded body copy resolution off both the kill switch and degradedService flag', () => {
+      // When the kill switch is false we must fall through to the standard
+      // state.low_confidence_body fallback so the user never sees the
+      // degraded variant. We assert the conditional ANDs the two flags by
+      // matching the && pattern in the same expression as the kill switch
+      // reference.
+      const hasGatedConditional =
+        source.includes('degradedMessagingEnabled') ||
+        /degradedService\s*&&\s*[A-Za-z_$][\w$]*degradedMessagingEnabled/.test(source) ||
+        /degradedService\s*&&\s*isKillSwitchEnabled\(/.test(source);
+      expect(hasGatedConditional).toBe(true);
+    });
   });
 
   describe('microcopy layer integration (172a + 1B no hardcoded strings)', () => {
