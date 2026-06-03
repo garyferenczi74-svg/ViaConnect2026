@@ -69,6 +69,7 @@ interface RecentRow {
   logged_at?: string;
   meal_type?: string;
   calories_kcal?: number;
+  source_photo_blob_id?: string | null;
 }
 
 function asMealType(v: unknown): MealType {
@@ -106,6 +107,62 @@ function mapRecentMealRows(rows: RecentRow[]): RecentMealSummary[] {
       item_count: 0,
     }];
   });
+}
+
+// Resolve signed thumbnail URLs for the recent meal summaries. Meals reference
+// photos through meals.source_photo_blob_id, which links to photo_meal_blobs
+// (storage_bucket, storage_path). We batch fetch the matching blob rows once
+// and create one short lived signed URL per meal so the recent grid can render
+// the actual capture instead of the Camera placeholder. The 1 hour TTL matches
+// the 171a analyze response convention. Failures fall back silently to the
+// placeholder so the recent grid still loads.
+async function enrichRecentMealsWithThumbnails(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabase: any,
+  rows: RecentRow[],
+  summaries: RecentMealSummary[],
+): Promise<RecentMealSummary[]> {
+  if (summaries.length === 0) return summaries;
+
+  const blobIdByMealId = new Map<string, string>();
+  for (const r of rows) {
+    if (typeof r.meal_id === 'string' && typeof r.source_photo_blob_id === 'string') {
+      blobIdByMealId.set(r.meal_id, r.source_photo_blob_id);
+    }
+  }
+  const blobIds = Array.from(new Set(blobIdByMealId.values()));
+  if (blobIds.length === 0) return summaries;
+
+  try {
+    const { data: blobsRaw } = await supabase
+      .from('photo_meal_blobs')
+      .select('id, storage_bucket, storage_path')
+      .in('id', blobIds);
+    if (!Array.isArray(blobsRaw)) return summaries;
+
+    const blobById = new Map<string, { bucket: string; path: string }>();
+    for (const b of blobsRaw as Array<{ id: string; storage_bucket: string; storage_path: string }>) {
+      if (typeof b.id === 'string' && typeof b.storage_bucket === 'string' && typeof b.storage_path === 'string') {
+        blobById.set(b.id, { bucket: b.storage_bucket, path: b.storage_path });
+      }
+    }
+
+    return Promise.all(summaries.map(async (s) => {
+      const blobId = blobIdByMealId.get(s.meal_id);
+      if (!blobId) return s;
+      const blob = blobById.get(blobId);
+      if (!blob) return s;
+      try {
+        const { data: signed } = await supabase.storage.from(blob.bucket).createSignedUrl(blob.path, 3600);
+        if (signed && typeof signed.signedUrl === 'string') {
+          return { ...s, thumbnail_url: signed.signedUrl };
+        }
+      } catch { /* silent */ }
+      return s;
+    }));
+  } catch {
+    return summaries;
+  }
 }
 
 export default function NutriVisionTab() {
@@ -176,14 +233,17 @@ export default function NutriVisionTab() {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data: rowsRaw } = await (supabase as any)
           .from('meals')
-          .select('meal_id, logged_at, meal_type, calories_kcal')
+          .select('meal_id, logged_at, meal_type, calories_kcal, source_photo_blob_id')
           .eq('user_id', user.id)
           .eq('source', 'nutrivision')
           .gte('logged_at', getTodayStartISO())
           .order('logged_at', { ascending: false })
           .limit(RECENT_MEAL_LIMIT);
         if (!cancelled && Array.isArray(rowsRaw)) {
-          setRecentMeals(mapRecentMealRows(rowsRaw as RecentRow[]));
+          const rows = rowsRaw as RecentRow[];
+          const base = mapRecentMealRows(rows);
+          const enriched = await enrichRecentMealsWithThumbnails(supabase, rows, base);
+          if (!cancelled) setRecentMeals(enriched);
         }
       } catch { /* silent */ }
 
@@ -219,14 +279,17 @@ export default function NutriVisionTab() {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const { data: rowsRaw } = await (supabase as any)
             .from('meals')
-            .select('meal_id, logged_at, meal_type, calories_kcal')
+            .select('meal_id, logged_at, meal_type, calories_kcal, source_photo_blob_id')
             .eq('user_id', userId)
             .eq('source', 'nutrivision')
             .gte('logged_at', getTodayStartISO())
             .order('logged_at', { ascending: false })
             .limit(RECENT_MEAL_LIMIT);
           if (!cancelled && Array.isArray(rowsRaw)) {
-            setRecentMeals(mapRecentMealRows(rowsRaw as RecentRow[]));
+            const rows = rowsRaw as RecentRow[];
+            const base = mapRecentMealRows(rows);
+            const enriched = await enrichRecentMealsWithThumbnails(supabase, rows, base);
+            if (!cancelled) setRecentMeals(enriched);
           }
         } catch { /* silent */ }
         scheduleNext();
@@ -984,8 +1047,18 @@ function IdleSurface(props: IdleSurfaceProps) {
                 onClick={() => props.onPickRecent(m)}
                 className="flex flex-col gap-1 rounded-lg border border-white/[0.08] bg-white/[0.03] p-2 text-left transition-colors hover:border-[#2DA5A0]/40 hover:bg-white/[0.06]"
               >
-                <div className="flex h-16 items-center justify-center rounded-md bg-[#1A2744]/50 text-white/40">
-                  <Camera className="h-5 w-5" strokeWidth={1.5} />
+                <div className="flex h-16 items-center justify-center overflow-hidden rounded-md bg-[#1A2744]/50 text-white/40">
+                  {m.thumbnail_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={m.thumbnail_url}
+                      alt=""
+                      className="h-full w-full object-cover"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <Camera className="h-5 w-5" strokeWidth={1.5} />
+                  )}
                 </div>
                 <div className="text-[10px] uppercase tracking-wide text-white/45">
                   {m.meal_type}
