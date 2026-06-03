@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { ArrowRight, Camera, ChevronRight, Dna, PenLine, Smartphone, Upload, X } from 'lucide-react';
 import { NutritionScoreCard } from '@/components/nutrition/NutritionScoreCard';
+import { DailyMacrosCard } from '@/components/nutrition/DailyMacrosCard';
 import { useNutrivisionManualLogHandoff } from '@/hooks/useNutrivisionManualLogHandoff';
 // Prompt #168c section 2.4: channel row cleanup. Quick Log is on the Dashboard
 // surface only (#168c section 2.1). The /nutrition Log a Meal tab now lists
@@ -107,6 +108,11 @@ function NutritionPageInner() {
 
       <NutritionScoreCard />
 
+      {/* Gary 2026-06-03: Daily Macros lifted out of the lower DailyTotalsTab */}
+      {/* so the rings sit directly under Nutrition Score; Today's Meals (with */}
+      {/* the Hydration accordion) stays in DailyTotalsTab further down. */}
+      <DailyMacrosCard />
+
       {/* #170a supplement §20.D banner: surfaces only when the user arrived
           here via NutriVision's Log-Manually CTA. Quick Logs live on the
           dashboard; this banner sets expectation that the user's photo is
@@ -184,7 +190,7 @@ function NutritionPageInner() {
       {/* up to the channel buttons since they live above this section now. */}
       <DailyTotalsTab onGoToLog={() => window.scrollTo({ top: 0, behavior: 'smooth' })} />
 
-      {/* Nutrition by Genetics — full-width tab.
+      {/* Nutrition by Genetics: full-width tab.
           Requires a nutritional genetic test (NutrigenDX™ or equivalent)
           to unlock the personalized protocol. */}
       <section className="rounded-2xl border border-[#2DA5A0]/30 bg-[#1E3054]/25 backdrop-blur-md p-5">
