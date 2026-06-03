@@ -1,11 +1,15 @@
 /**
- * Prompt 170o Phase 1 Phase B: Hydration types + Zod schemas.
+ * Prompt 170o Phase 1 Phase B + Prompt 172e Phase A: Hydration types +
+ * Zod schemas.
  *
  * 9-value canonical enum per Gordon LP1 §1.0 (spelling/casing/underscore
  * conventions normative; no drift permitted between this file, the
  * migration, and the parser system prompts).
  *
- * Ratio table per Gordon LP1 §1.0 (Gary signed off en bloc 2026-05-31).
+ * Coefficient table patched 2026-06-02 to Maughan 2016 conservative values
+ * per Gordon Deliverable 1 (172e Phase A). See
+ * supabase/migrations/20260602000020_prompt_172e_phase_a_coefficient_patch.sql
+ * for the snapshot + audit row paired with this code edit.
  */
 
 import { z } from 'zod';
@@ -45,27 +49,38 @@ export const HYDRATION_LOG_SURFACES = [
 export type HydrationLogSurface = typeof HYDRATION_LOG_SURFACES[number];
 
 /**
- * Gordon LP1 §1.0 adjusted-mode ratio table. Each kind's contribution to
- * hydration_ml as a fraction of portion_volume_ml. Conservative mode counts
- * only pure_water at full ratio; all other kinds are zero in conservative.
+ * Adjusted mode ratio table, Maughan 2016 BHI grounded per Prompt 172e
+ * Phase A (Gordon Deliverable 1 ratified 2026-06-02).
  *
- * alcohol_high default 0.65 is the mean of wine 0.75 + spirits 0.50; the
- * server prefers per-food disambiguation when food_name allows (e.g. food
- * containing "wine" -> 0.75; containing "vodka"/"whiskey"/"gin"/"rum"/
- * "tequila"/"shot" -> 0.50). high_water_food is deferred to Phase 1.1; v1
- * treats it as 0 (the parser sets portion_volume_ml=null for solid foods
- * with high water content; the resolver handles per Gordon LP1 §1.0).
+ * | kind            | old    | new    | provenance                               |
+ * | --------------- | ------ | ------ | ---------------------------------------- |
+ * | pure_water      | 1.00   | 1.00   | Maughan Table 2 water reference          |
+ * | coffee_tea      | 1.00   | 1.00   | Maughan Table 2 coffee BHI 1.01          |
+ * | juice_smoothie  | 0.90   | 1.20   | Orange juice BHI 1.39 conservative 0.19  |
+ * | dairy           | 0.85   | 1.30   | Whole milk BHI 1.50 conservative 0.20    |
+ * | soda            | 0.80   | 1.00   | Cola BHI 1.01 matches measured           |
+ * | alcohol_low     | 0.95   | 1.00   | Lager BHI 1.01 matches measured          |
+ * | alcohol_high    | 0.65   | 1.00   | Lager anchor extrapolated, flattened     |
+ * | sports_drink    | 0.95   | 1.00   | BHI 1.04 conservative 0.04               |
+ * | high_water_food | 0      | 0.90   | Gordon derived, no Maughan anchor        |
+ *
+ * Conservative mode counts only pure_water at full ratio; all other kinds
+ * are zero in conservative.
+ *
+ * alcohol_high no longer disambiguates wine vs spirits. Cumulative dose
+ * alcohol diuretic handling moves to Phase C via
+ * ALCOHOL_DIURETIC_THRESHOLD_DRINKS per spec 5.3.
  */
 export const HYDRATION_RATIO_ADJUSTED: Record<HydrationSourceKind, number> = {
   pure_water: 1.0,
   coffee_tea: 1.0,
-  juice_smoothie: 0.9,
-  dairy: 0.85,
-  soda: 0.8,
-  alcohol_low: 0.95,
-  alcohol_high: 0.65,
-  sports_drink: 0.95,
-  high_water_food: 0,
+  juice_smoothie: 1.2,
+  dairy: 1.3,
+  soda: 1.0,
+  alcohol_low: 1.0,
+  alcohol_high: 1.0,
+  sports_drink: 1.0,
+  high_water_food: 0.9,
 };
 
 export const HYDRATION_RATIO_CONSERVATIVE: Record<HydrationSourceKind, number> = {
@@ -83,16 +98,12 @@ export const HYDRATION_RATIO_CONSERVATIVE: Record<HydrationSourceKind, number> =
 export function hydrationRatio(
   kind: HydrationSourceKind,
   mode: HydrationCountingMode,
-  foodNameHint?: string,
+  // foodNameHint preserved for API compatibility with callers; the wine vs
+  // spirits split no longer applies since 172e flattened alcohol_high to 1.00.
+  _foodNameHint?: string,
 ): number {
   if (mode === 'conservative') return HYDRATION_RATIO_CONSERVATIVE[kind];
-  if (kind !== 'alcohol_high') return HYDRATION_RATIO_ADJUSTED[kind];
-  // Wine vs spirits disambiguation per Gordon LP1 §1.0.
-  if (!foodNameHint) return 0.65;
-  const lower = foodNameHint.toLowerCase();
-  if (/\bwine\b|\bchampagne\b|\bprosecco\b|\bsangria\b|\bsherry\b|\bport\b/.test(lower)) return 0.75;
-  if (/\bvodka\b|\bwhiskey\b|\bwhisky\b|\bgin\b|\brum\b|\btequila\b|\bbourbon\b|\bscotch\b|\bshot\b|\bspirits?\b|\bbrandy\b|\bcognac\b/.test(lower)) return 0.5;
-  return 0.65;
+  return HYDRATION_RATIO_ADJUSTED[kind];
 }
 
 const QuickLogRequestSchema = z.object({
