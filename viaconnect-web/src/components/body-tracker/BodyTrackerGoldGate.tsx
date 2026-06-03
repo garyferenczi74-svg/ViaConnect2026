@@ -28,6 +28,7 @@
 
 import Link from 'next/link';
 import { Lock, ArrowUpRight } from 'lucide-react';
+import { FORMAVISION_BRAND } from '@/lib/body-tracker/brand-config';
 import { useEffectiveTier } from '@/hooks/useEffectiveTier';
 
 // Gold is membership_tiers.tier_level 1 (free 0, gold 1, platinum 2,
@@ -60,9 +61,9 @@ export function BodyTrackerGoldGate({ children }: { children: React.ReactNode })
           <Lock className="h-5 w-5 text-[#E8803A]" strokeWidth={1.5} />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-base font-semibold text-white">Upgrade to Gold to use Body Tracker</p>
+          <p className="text-base font-semibold text-white">Upgrade to Gold to use {FORMAVISION_BRAND.name}</p>
           <p className="text-sm text-white/70 mt-1 leading-relaxed">
-            Body Tracker is part of Gold membership: manual entry, weight logging, wearable sync, and
+            {FORMAVISION_BRAND.name} is part of Gold membership: manual entry, weight logging, wearable sync, and
             your history and trend charts. Upgrade to Gold to start tracking.
           </p>
         </div>

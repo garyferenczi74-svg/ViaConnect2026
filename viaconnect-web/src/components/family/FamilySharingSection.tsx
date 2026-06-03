@@ -17,6 +17,7 @@
 // at strokeWidth 1.5; copy uses commas/colons only (no dashes per standing rules).
 
 import { Users, Activity, ScanLine, Lock } from 'lucide-react';
+import { FORMAVISION_BRAND } from '@/lib/body-tracker/brand-config';
 import { useFamilySharingPrefs } from '@/hooks/family/useFamilySharingPrefs';
 
 interface SharingToggleProps {
@@ -92,7 +93,7 @@ export function FamilySharingSection() {
         <SharingToggle
           id="share-body-tracker-summary"
           icon={Activity}
-          label="Share my Body Tracker trend summary with my family plan holder"
+          label={`Share my ${FORMAVISION_BRAND.name} trend summary with my family plan holder`}
           checked={shareBodyTrackerSummary}
           disabled={isLoading}
           onToggle={(next) => void setShareBodyTrackerSummary(next)}

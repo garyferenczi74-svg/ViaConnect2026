@@ -25,12 +25,22 @@
 import { Activity, ScanLine, UsersRound } from 'lucide-react';
 import { DashboardLinkCard } from '@/components/dashboard/DashboardLinkCard';
 import { BodyScanPremiumPaywall } from '@/components/body-tracker/scanning/BodyScanPremiumPaywall';
+import { FORMAVISION_BRAND } from '@/lib/body-tracker/brand-config';
 import { useEffectiveTier } from '@/hooks/useEffectiveTier';
 
 // membership_tiers.tier_level: free 0, gold 1, platinum 2, platinum_family 3.
 const GOLD_LEVEL = 1;
 const PLATINUM_LEVEL = 2;
 const FAMILY_LEVEL = 3;
+
+// FormaVision is the body-tracking product (brand-config is the single source of
+// truth for the name). Within it, manual tracking is the Gold-tier feature and
+// the AI scan is the Platinum-tier feature. Where the two appear side by side on
+// the dashboard they MUST stay distinguishable, so each gets its own sub-label
+// composed from the one brand name: the manual card reads "FormaVision Tracking"
+// and the scan card reads "FormaVision Scan".
+const FORMAVISION_TRACKING = `${FORMAVISION_BRAND.name} Tracking`;
+const FORMAVISION_SCAN = `${FORMAVISION_BRAND.name} Scan`;
 
 // Brand accent colors already in use across the dashboard cards.
 const TEAL = '#2DA5A0';
@@ -57,8 +67,8 @@ export function DashboardTierCards() {
           <DashboardLinkCard
             eyebrow="Gold"
             eyebrowIcon={Activity}
-            title="Body Tracker"
-            description="Upgrade to Gold for Body Tracker: manual entry, weight logging, wearable sync, and your history and trend charts."
+            title={FORMAVISION_TRACKING}
+            description={`Upgrade to Gold for ${FORMAVISION_TRACKING}: manual entry, weight logging, wearable sync, and your history and trend charts.`}
             icon={Activity}
             accent={ORANGE}
             href="/pricing"
@@ -67,8 +77,8 @@ export function DashboardTierCards() {
           <DashboardLinkCard
             eyebrow="Platinum"
             eyebrowIcon={ScanLine}
-            title="FormaVision Body Scan"
-            description="Upgrade to Platinum for FormaVision: full body scan composition, comparison over time, and asymmetry analysis."
+            title={FORMAVISION_SCAN}
+            description={`Upgrade to Platinum for ${FORMAVISION_SCAN}: full body scan composition, comparison over time, and asymmetry analysis.`}
             icon={ScanLine}
             accent={TEAL}
             href="/pricing"
@@ -87,12 +97,12 @@ export function DashboardTierCards() {
         <DashboardLinkCard
           eyebrow="Gold"
           eyebrowIcon={Activity}
-          title="Body Tracker"
+          title={FORMAVISION_TRACKING}
           description="Log weight and measurements, sync your wearable, and follow your history and trend charts."
           icon={Activity}
           accent={ORANGE}
           href="/body-tracker"
-          cta="Open Body Tracker"
+          cta="Open FormaVision"
         />
         {/* FormaVision card: reuse the authoritative Platinum upsell component so
             the Gold-to-Platinum prompt cannot diverge from the real gate. */}
@@ -113,22 +123,22 @@ export function DashboardTierCards() {
         <DashboardLinkCard
           eyebrow="Platinum"
           eyebrowIcon={ScanLine}
-          title="FormaVision Body Scan"
+          title={FORMAVISION_SCAN}
           description="Run a body scan, compare it to your baseline, and review your full composition and asymmetry detail."
           icon={ScanLine}
           accent={TEAL}
           href="/body-tracker/photos"
-          cta="Open FormaVision"
+          cta="Open FormaVision Scan"
         />
         <DashboardLinkCard
           eyebrow="Gold"
           eyebrowIcon={Activity}
-          title="Body Tracker"
+          title={FORMAVISION_TRACKING}
           description="Log weight and measurements, sync your wearable, and follow your history and trend charts."
           icon={Activity}
           accent={ORANGE}
           href="/body-tracker"
-          cta="Open Body Tracker"
+          cta="Open FormaVision Tracking"
         />
       </div>
       {/* Platinum+ Family only: a family management entry point. Points at the
