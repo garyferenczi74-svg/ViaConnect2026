@@ -40,10 +40,10 @@ describe('Prompt 172e Phase D electrolyte summary microcopy', () => {
 });
 
 describe('Prompt 172e Phase D breakdown microcopy variants', () => {
-  it('gross_label normal uses ml-oriented phrasing; safety mode strips it', () => {
+  it('gross_label normal uses total fluid phrasing; safety mode swaps to Composition', () => {
     const normal = HYDRATION_MICROCOPY_STRINGS['hydration.breakdown.gross_label'].normal;
     const safety = HYDRATION_MICROCOPY_STRINGS['hydration.breakdown.gross_label'].safety_mode;
-    expect(normal).toBe('Gross fluid');
+    expect(normal).toBe('Total fluid');
     expect(safety).toBe('Composition');
   });
 

@@ -171,7 +171,7 @@ export const HYDRATION_MICROCOPY_STRINGS: HydrationMicrocopyMap = {
     safety_mode: 'Beverage breakdown',
   },
   'hydration.breakdown.gross_label': {
-    normal: 'Gross fluid',
+    normal: 'Total fluid',
     safety_mode: 'Composition',
   },
   'hydration.breakdown.effective_label': {
@@ -190,7 +190,7 @@ export const HYDRATION_MICROCOPY_STRINGS: HydrationMicrocopyMap = {
   // per 170c section 8; the line still appears (silent UX, no visible
   // mode indicator) but without numeric medical framing.
   'hydration.electrolytes.summary': {
-    normal: 'Today: {sodium} mg sodium, {potassium} mg potassium, {magnesium} mg magnesium from beverages.',
+    normal: 'Today from beverages: {sodium} mg sodium, {potassium} mg potassium, {magnesium} mg magnesium.',
     safety_mode: 'Beverages today included electrolytes.',
   },
   'hydration.electrolytes.label': {
@@ -208,7 +208,7 @@ export const HYDRATION_MICROCOPY_STRINGS: HydrationMicrocopyMap = {
     safety_mode: 'Caffeine through the day',
   },
   'hydration.caffeine_overlay.sleep_indicator_label': {
-    normal: 'Estimated at sleep onset',
-    safety_mode: 'Estimated at sleep onset',
+    normal: 'Estimated at bedtime',
+    safety_mode: 'Estimated at bedtime',
   },
 };
