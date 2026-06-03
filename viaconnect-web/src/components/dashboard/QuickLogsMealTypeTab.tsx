@@ -9,7 +9,8 @@
 // This component is presentational + keyboard handler only.
 
 import { useCallback, useRef } from 'react';
-import { Check, ChevronDown, Coffee, Cookie, Soup, UtensilsCrossed } from 'lucide-react';
+import Link from 'next/link';
+import { Check, ChevronDown, Coffee, Cookie, Droplet, Soup, UtensilsCrossed } from 'lucide-react';
 import type { MealType } from '@/lib/gordon/types';
 
 export interface QuickLogsMealTypeTabProps {
@@ -90,7 +91,7 @@ export function QuickLogsMealTypeTab({
   );
 
   return (
-    <div role="group" aria-label="Quick log meal type" className="grid grid-cols-2 gap-2 md:grid-cols-4">
+    <div role="group" aria-label="Quick log meal type" className="grid grid-cols-2 gap-2 md:grid-cols-5">
       {TRIGGERS.map((tab, index) => {
         const isOpen = tab.id === openMeal;
         const isCompleted = completed.has(tab.id);
@@ -147,6 +148,20 @@ export function QuickLogsMealTypeTab({
           </button>
         );
       })}
+      {/* Gary 2026-06-03: hydration 5th button beside Snacks. Light blue glass
+          gradient continues the meal pill family; Droplet icon matches the
+          existing HydrationCard. Tap navigates to /wellness-analytics/hydration
+          (the existing hydration detail view) rather than opening an inline
+          panel, so the QuickLogsSurface accordion state stays MealType-scoped.
+          Replaces the prior desktop HydrationWidget bubble. */}
+      <Link
+        href="/wellness-analytics/hydration"
+        aria-label="Hydration, open hydration detail"
+        className="group relative flex min-h-[48px] items-center justify-center gap-2 rounded-xl border border-white/15 bg-gradient-to-br from-sky-600/40 via-blue-500/20 to-sky-700/30 px-3 py-2.5 text-[13px] font-semibold text-white backdrop-blur-xl transition-all duration-200 ease-out hover:shadow-lg hover:shadow-black/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744] md:text-[14px]"
+      >
+        <Droplet className="h-4 w-4 flex-shrink-0" strokeWidth={1.5} />
+        <span className="truncate">Hydration</span>
+      </Link>
     </div>
   );
 }

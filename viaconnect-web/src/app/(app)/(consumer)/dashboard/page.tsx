@@ -10,7 +10,9 @@ import { DailyScoresPanel } from '@/components/dashboard/DailyScoresPanel';
 import { HelixRewardsSummary } from '@/components/dashboard/HelixRewardsSummary';
 import { DailyInsightsCard } from '@/components/dashboard/DailyInsightsCard';
 // Prompt 170o Phase 1 Phase C: hydration tracking surfaces on Consumer Dashboard.
-import { HydrationWidget } from '@/components/hydration/HydrationWidget';
+// Gary 2026-06-03: standalone HydrationWidget desktop bubble retired in favor
+// of the 5th Hydration pill in the QuickLogsSurface meal-type row. The
+// HydrationFloatingActionButton stays as the bottom-right fab.
 import { HydrationFloatingActionButton } from '@/components/hydration/HydrationFloatingActionButton';
 import { PatternCirclePreview } from '@/components/community/PatternCirclePreview';
 import { ConnectCard } from '@/components/dashboard/ConnectCard';
@@ -33,7 +35,7 @@ import {
 import { MobileHeroBackground } from '@/components/ui/MobileHeroBackground';
 import { RefreshCw, FileQuestion } from 'lucide-react';
 
-// Pre-uploaded hero image (Hero Images bucket — already public, full URL)
+// Pre-uploaded hero image (Hero Images bucket, already public, full URL)
 const DASHBOARD_HERO_IMAGE =
   'https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Images/Athlete%2012.png';
 const DASHBOARD_HERO_IMAGE_MOBILE =
@@ -173,10 +175,10 @@ export default function ConsumerDashboard() {
   const longestStreak = streak?.longest_count ?? 0;
 
   return (
-    // ── Full-page fixed background (Prompt #62L sonar pattern, migrated to
-    // ── Next.js Image via MobileHeroBackground for reliable object-cover
-    // ── on all viewports — replaces CSS bg-fixed + bg-cover that left a
-    // ── frame on browsers where background-attachment: fixed misbehaves.
+    // Full-page fixed background (Prompt #62L sonar pattern, migrated to
+    // Next.js Image via MobileHeroBackground for reliable object-cover
+    // on all viewports; replaces CSS bg-fixed + bg-cover that left a
+    // frame on browsers where background-attachment: fixed misbehaves.
     <>
     <MobileHeroBackground
       src={DASHBOARD_HERO_IMAGE}
@@ -193,7 +195,7 @@ export default function ConsumerDashboard() {
           bordering effect where the inner-div overlay outran the hero. */}
       <div className="min-h-screen">
 
-        {/* ── Tagline — image fully visible ── */}
+        {/* Tagline, image fully visible */}
         <div className="w-full px-4 pt-14 pb-6 text-center">
           <h1 className="text-2xl font-semibold tracking-tight text-white md:text-4xl">
             Your Personal Wellness Journey
@@ -203,7 +205,7 @@ export default function ConsumerDashboard() {
           </p>
         </div>
 
-        {/* ── Greeting — image visible ── */}
+        {/* Greeting, image visible */}
         <div className="mx-auto w-full max-w-7xl px-4 mb-4 md:px-6">
           <DashboardHeader />
         </div>
@@ -213,12 +215,12 @@ export default function ConsumerDashboard() {
           <BOSCard />
         </div>
 
-        {/* ── All remaining content — image fades as overlay darkens ── */}
+        {/* All remaining content, image fades as overlay darkens */}
         <div className="mx-auto max-w-7xl space-y-6 px-4 pb-24 md:px-6">
         {/* ── 3. Daily Scores Grid (Personal Wellness Dashboard) ── */}
         <DailyScoresPanel checkinRaw={checkinRaw} previewRaw={previewRaw} />
 
-        {/* ── 3b. Daily Check-In (Prompt #62e — Tier 4 manual input) ── */}
+        {/* 3b. Daily Check-In (Prompt #62e, Tier 4 manual input) */}
         <DailyCheckIn onScoresUpdate={handleCheckinScores} onSliderChange={handleSliderPreview} />
 
         {/* Prompt 168c section 2.1 + 2.8: inline Quick Log surface with horizontal */}
@@ -267,18 +269,19 @@ export default function ConsumerDashboard() {
               currentStreak={currentStreak}
               longestStreak={longestStreak}
             />
-            {/* Connect device / app cards — full-width, matching tab design */}
+            {/* Connect device / app cards, full-width matching tab design */}
             <ConnectCard type="wearable" href="/plugins/wearables" />
             <ConnectCard type="app" href="/plugins/apps" />
           </div>
         </div>
 
-        {/* Prompt 170o Phase 1 Phase C: Hydration widget mounts between
-            Today's Protocol + Wellness stack and Daily Insights per Hannah
-            wireframe Surface 1 (post-BOS dashboard grid). */}
-        <HydrationWidget />
+        {/* Gary 2026-06-03: prior 170o Phase 1 Phase C HydrationWidget bubble
+            removed from this slot. Hydration is now the 5th pill in the
+            QuickLogsSurface meal-type row above, tapping it routes to the
+            same /wellness-analytics/hydration detail view this widget linked
+            to. The HydrationFloatingActionButton stays as the always-on fab. */}
 
-        {/* ── Daily Insights (Prompt #61, replaces DailyUltrathinkTip) ── */}
+        {/* Daily Insights (Prompt #61, replaces DailyUltrathinkTip) */}
         <DailyInsightsCard profile={profile} supplements={supplements} />
 
         <PatternCirclePreview

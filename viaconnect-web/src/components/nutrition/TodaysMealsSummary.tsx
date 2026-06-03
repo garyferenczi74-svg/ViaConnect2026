@@ -9,9 +9,11 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { ChevronDown, Coffee, Cookie, Plus, Soup, UtensilsCrossed } from 'lucide-react';
+import { ChevronDown, ChevronRight, Coffee, Cookie, Droplet, Plus, Soup, UtensilsCrossed } from 'lucide-react';
 import type { Meal, MealType } from '@/lib/gordon/types';
 import { MealLogEntryCard } from '@/components/dashboard/MealLogEntryCard';
+import { useHydrationToday } from '@/components/hydration/useHydrationToday';
+import { formatVolumeLabel } from '@/components/hydration/HydrationRing';
 
 export interface TodaysMealsSummaryProps {
   readonly meals: Meal[];
@@ -56,6 +58,14 @@ export function TodaysMealsSummary(props: TodaysMealsSummaryProps) {
     () => userTimezone || Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
     [userTimezone],
   );
+
+  // Gary 2026-06-03: hydration 5th row under Snacks. Pulls today's intake
+  // from the same 170o useHydrationToday hook the dashboard widget used,
+  // shows it in the count chip + "of target" line; the row itself is a
+  // Link to /wellness-analytics/hydration matching the desktop pill.
+  const { data: hydrationToday } = useHydrationToday();
+  const hydrationTotalMl = hydrationToday?.total_ml ?? 0;
+  const hydrationTargetMl = hydrationToday?.target_ml ?? 1890;
 
   const todaysMeals = useMemo(() => {
     const todayKey = localDateKey(new Date().toISOString(), tz);
@@ -192,6 +202,25 @@ export function TodaysMealsSummary(props: TodaysMealsSummaryProps) {
             </div>
           );
         })}
+
+        {/* Gary 2026-06-03: hydration 5th row under Snacks. Light blue glass
+            gradient mirrors the QuickLogsMealTypeTab desktop pill so the two
+            surfaces feel unified. Tap navigates to the hydration detail view
+            (the existing 170o /wellness-analytics/hydration surface). */}
+        <Link
+          href="/wellness-analytics/hydration"
+          aria-label={`Hydration, ${formatVolumeLabel(hydrationTotalMl)} of ${formatVolumeLabel(hydrationTargetMl)}, open hydration detail`}
+          className="group relative flex w-full min-h-[44px] items-center justify-between gap-2 rounded-xl border border-white/15 bg-gradient-to-br from-sky-600/40 via-blue-500/20 to-sky-700/30 px-3 py-2.5 text-[13px] font-semibold text-white no-underline backdrop-blur-xl transition-all duration-200 ease-out hover:shadow-lg hover:shadow-black/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744] md:text-[14px]"
+        >
+          <span className="flex items-center gap-2">
+            <Droplet className="h-4 w-4 flex-shrink-0" strokeWidth={1.5} />
+            <span>Hydration</span>
+            <span className="rounded-full bg-white/15 px-2 py-0.5 text-[11px] tabular-nums text-white/85">
+              {formatVolumeLabel(hydrationTotalMl)}
+            </span>
+          </span>
+          <ChevronRight className="h-4 w-4 flex-shrink-0 text-white/70" strokeWidth={1.5} />
+        </Link>
       </div>
     </section>
   );

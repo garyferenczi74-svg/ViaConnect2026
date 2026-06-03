@@ -20,6 +20,7 @@ const TAILWIND_HEX: Record<string, string> = {
   'emerald-600': '#059669',
   'green-600': '#16a34a',
   'sky-600': '#0284c7',
+  'sky-700': '#0369a1',
   'blue-500': '#3b82f6',
   'indigo-600': '#4f46e5',
   white: '#ffffff',
@@ -62,6 +63,10 @@ const SPEC_IDLE_GRADIENTS: ReadonlyArray<{ meal: string; from: string; to: strin
   { meal: 'lunch', from: 'purple-500', to: 'purple-700' },
   { meal: 'dinner', from: 'indigo-500', to: 'violet-600' },
   { meal: 'snack', from: 'rose-500', to: 'pink-500' },
+  // Gary 2026-06-03: hydration 5th pill, light blue glass; stops chosen so
+  // both pass AA Large vs white at full opacity (sky-600 ratio ~3.7, sky-700
+  // ratio ~5.4). Replaces the prior desktop HydrationWidget bubble.
+  { meal: 'hydration', from: 'sky-600', to: 'sky-700' },
 ];
 
 const SPEC_ACTIVE = { from: 'emerald-600', to: 'green-600' };
