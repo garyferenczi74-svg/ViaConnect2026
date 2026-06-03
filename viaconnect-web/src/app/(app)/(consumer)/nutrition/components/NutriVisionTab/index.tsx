@@ -12,7 +12,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
-import { Camera, ChevronLeft, HelpCircle, Mic, ScanBarcode, Settings, X } from 'lucide-react';
+import { Camera, ChevronLeft, HelpCircle, ImageUp, Mic, ScanBarcode, Settings, X } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import type { CaptureResult, CaptureSource } from '@/lib/capacitor/camera-capture';
@@ -974,17 +974,18 @@ interface IdleSurfaceProps {
 }
 
 // Prompt 170l Phase 1c-2 + Hannah 11.1: equal-weight peer entry path row.
-// Prompt 173: reduced from four peers to three (Photo + Scan Barcode + Voice)
-// after the 170m text-native Quick Log removal. Three icon cards sit evenly
-// across all breakpoints in a grid-cols-3 layout; iPhone SE tap-target
-// ergonomics are preserved by the three-card width math at 320px. Anti-
-// condescension principle from 170l + 170m propagates: NO "Most common" chip
-// on Photo, NO "NEW" chip on Voice. Photo retains left position for existing
-// muscle memory.
+// Prompt 173 reduced from four peers to three after the 170m text-native
+// Quick Log removal. Gary 2026-06-02: promote the gallery upload from the
+// underlined link below the row to an equal-weight 4th peer between Photo
+// and Scan Barcode (the original four-peer layout returns with Upload
+// taking the slot Quick Log used to hold). Photo retains left position
+// for muscle memory; Upload sits next to Photo per Gary's "next to photo"
+// direction; Scan Barcode and Voice keep their order. iPhone SE tap-target
+// ergonomics return to the grid-cols-2 min-[360px]:grid-cols-4 split.
 function IdleSurface(props: IdleSurfaceProps) {
   return (
     <div className="flex flex-col gap-4">
-      <div className="grid grid-cols-3 gap-2 sm:gap-3">
+      <div className="grid grid-cols-2 gap-2 min-[360px]:grid-cols-4 sm:gap-3">
         <EntryPathCard
           icon={<Camera className="h-6 w-6 sm:h-9 sm:w-9" strokeWidth={1.5} />}
           title="Photo"
@@ -992,6 +993,14 @@ function IdleSurface(props: IdleSurfaceProps) {
           onTap={() => props.onCapture('camera')}
           disabled={props.isCapturing}
           ariaLabel="Photo. Snap your plate."
+        />
+        <EntryPathCard
+          icon={<ImageUp className="h-6 w-6 sm:h-9 sm:w-9" strokeWidth={1.5} />}
+          title="Upload"
+          subtitle="From your library."
+          onTap={() => props.onCapture('gallery')}
+          disabled={props.isCapturing}
+          ariaLabel="Upload. Pick a photo from your library."
         />
         <EntryPathCard
           icon={<ScanBarcode className="h-6 w-6 sm:h-9 sm:w-9" strokeWidth={1.5} />}
@@ -1010,15 +1019,6 @@ function IdleSurface(props: IdleSurfaceProps) {
           ariaLabel="Voice. Say what you ate hands-free."
         />
       </div>
-
-      <button
-        type="button"
-        onClick={() => props.onCapture('gallery')}
-        disabled={props.isCapturing}
-        className="self-center text-[12px] text-white/65 underline disabled:opacity-50"
-      >
-        Upload photo from gallery
-      </button>
 
       {/* Prompt 170o Phase 1 Phase C: hydration card per Hannah Surface 2.
           Mounts below the 4-button entry path row. 88px compact. */}
