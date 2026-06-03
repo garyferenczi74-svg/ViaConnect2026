@@ -18,6 +18,8 @@ import { QuickLogEntryBlock } from './QuickLogEntryBlock';
 import { SnackStackContainer } from './SnackStackContainer';
 import { LogAFullMealButton } from './LogAFullMealButton';
 import { HydrationFullSection } from '@/components/hydration/HydrationFullSection';
+import { useHydrationToday } from '@/components/hydration/useHydrationToday';
+import { formatVolumeLabel } from '@/components/hydration/HydrationRing';
 
 export interface QuickLogsSurfaceProps {
   readonly userId: string | null;
@@ -43,6 +45,12 @@ export function QuickLogsSurface(props: QuickLogsSurfaceProps) {
   // joins the accordion. 'hydration' routes to the full hydration section
   // (HydrationFullSection mounts the same body as the detail page).
   const [openMeal, setOpenMeal] = useState<QuickLogPanelKey | null>(null);
+
+  // Live intake for the pill chip; the hydration-events bus syncs every
+  // mount in the tab so this label is always the same number the Nutrition
+  // Log + NutriVision accordions show.
+  const { data: hydrationToday } = useHydrationToday();
+  const hydrationTotalLabel = formatVolumeLabel(hydrationToday?.total_ml ?? 0);
 
   const completedSet = useMemo<ReadonlySet<MealType>>(() => {
     const s = new Set<MealType>();
@@ -124,6 +132,7 @@ export function QuickLogsSurface(props: QuickLogsSurfaceProps) {
           onToggle={handleToggle}
           completed={completedSet}
           snackCount={todaysSnacks.length}
+          hydrationTotalLabel={hydrationTotalLabel}
           idPrefix={idPrefix}
         />
       </div>

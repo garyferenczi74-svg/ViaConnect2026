@@ -9,6 +9,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { subscribeToHydrationUpdates } from './hydration-events';
 
 export interface HydrationTodayEvent {
   meal_id: string;
@@ -70,6 +71,14 @@ export function useHydrationToday(): UseHydrationTodayState {
 
   useEffect(() => {
     void refresh();
+  }, [refresh]);
+
+  // Gary 2026-06-03: cross-mount sync. Any successful write anywhere in the
+  // tab fires notifyHydrationUpdated() which calls back into this refresh.
+  useEffect(() => {
+    return subscribeToHydrationUpdates(() => {
+      void refresh();
+    });
   }, [refresh]);
 
   return { data, loading, error, refresh };

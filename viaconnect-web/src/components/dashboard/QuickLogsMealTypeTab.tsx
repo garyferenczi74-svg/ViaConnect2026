@@ -24,6 +24,10 @@ export interface QuickLogsMealTypeTabProps {
   readonly onToggle: (key: QuickLogPanelKey) => void;
   readonly completed: ReadonlySet<MealType>;
   readonly snackCount?: number;
+  // Gary 2026-06-03: live hydration intake for the pill chip; matches the
+  // chip the Nutrition Log + NutriVision accordions already show so the
+  // user reads the same number on every surface.
+  readonly hydrationTotalLabel?: string;
   // ARIA wiring: caller supplies a stable id prefix so the panel below can
   // aria-labelledby the active trigger and trigger can aria-controls the panel.
   readonly idPrefix: string;
@@ -75,6 +79,7 @@ export function QuickLogsMealTypeTab({
   onToggle,
   completed,
   snackCount = 0,
+  hydrationTotalLabel,
   idPrefix,
 }: QuickLogsMealTypeTabProps) {
   const buttonRefs = useRef<Array<HTMLButtonElement | null>>([]);
@@ -145,6 +150,11 @@ export function QuickLogsMealTypeTab({
           >
             <Icon className="h-4 w-4 flex-shrink-0" strokeWidth={1.5} />
             <span className="truncate">{labelText}</span>
+            {!isMealType && hydrationTotalLabel ? (
+              <span className="rounded-full bg-white/15 px-2 py-0.5 text-[11px] tabular-nums text-white/85">
+                {hydrationTotalLabel}
+              </span>
+            ) : null}
             {isCompleted ? (
               <span
                 aria-hidden="true"

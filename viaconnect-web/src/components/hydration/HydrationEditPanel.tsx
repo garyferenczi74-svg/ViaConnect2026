@@ -14,6 +14,7 @@ import { useEffect, useState } from 'react';
 import { X, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import type { HydrationBeverageKind } from './useHydrationQuickLog';
+import { notifyHydrationUpdated } from './hydration-events';
 
 const BEVERAGE_OPTIONS: Array<{ value: HydrationBeverageKind; label: string }> = [
   { value: 'pure_water', label: 'Water' },
@@ -86,6 +87,7 @@ export function HydrationEditPanel({
         return;
       }
       toast.success('Log updated');
+      notifyHydrationUpdated();
       onSaved();
     } catch {
       toast.error('Network error');
@@ -106,6 +108,7 @@ export function HydrationEditPanel({
         return;
       }
       toast.success('Log deleted');
+      notifyHydrationUpdated();
       onDeleted();
     } catch {
       toast.error('Network error');

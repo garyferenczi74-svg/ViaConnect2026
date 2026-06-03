@@ -8,6 +8,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { subscribeToHydrationUpdates } from './hydration-events';
 
 export interface HydrationHistoryDay {
   day_utc: string;
@@ -62,6 +63,14 @@ export function useHydrationHistory(range: 'week' | 'month' = 'week'): {
 
   useEffect(() => {
     void refresh();
+  }, [refresh]);
+
+  // Gary 2026-06-03: cross-mount sync. Bus broadcast on any hydration write
+  // refetches week/month so the chart + heatmap update across every surface.
+  useEffect(() => {
+    return subscribeToHydrationUpdates(() => {
+      void refresh();
+    });
   }, [refresh]);
 
   return { data, loading, error, refresh };

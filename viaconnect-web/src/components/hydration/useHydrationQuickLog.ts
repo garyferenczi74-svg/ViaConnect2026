@@ -9,6 +9,7 @@
 'use client';
 
 import { useCallback, useState } from 'react';
+import { notifyHydrationUpdated } from './hydration-events';
 
 export type HydrationLogSurface =
   | 'dashboard_widget'
@@ -83,6 +84,8 @@ export function useHydrationQuickLog(): UseHydrationQuickLogReturn {
         return null;
       }
       const json = (await resp.json()) as HydrationQuickLogResult;
+      // Gary 2026-06-03: broadcast so every other mount in the tab refetches.
+      notifyHydrationUpdated();
       return json;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Network error');
