@@ -7,16 +7,16 @@ const FAMILY_TIER: MembershipTier = {
   display_name: 'Platinum+ Family',
   tier_level: 3,
   monthly_price_cents: 4888,
-  annual_price_cents: 48888,
-  annual_savings_cents: 4888 * 12 - 48888,
+  annual_price_cents: 49858,
+  annual_savings_cents: 4888 * 12 - 49858,
   description: 'Family tier',
   is_family_tier: true,
   base_adults_included: 2,
   base_children_included: 2,
   max_adults_allowed: 4,
   additional_adult_price_cents: 888,
-  additional_children_chunk_price_cents: 888,
-  children_chunk_size: 2,
+  additional_children_chunk_price_cents: 1188,
+  children_chunk_size: 1,
   stripe_product_id: null,
   stripe_monthly_price_id: null,
   stripe_annual_price_id: null,
@@ -47,29 +47,29 @@ describe('computeFamilyPricing (monthly)', () => {
     expect(r.totalMonthlyCents).toBe(6664); // 4888 + 2*888
   });
 
-  it('3 children counts as 1 additional chunk', () => {
+  it('3 children counts as 1 additional child (chunk size 1)', () => {
     const r = computeFamilyPricing({ totalAdults: 2, totalChildren: 3, billingCycle: 'monthly' }, FAMILY_TIER);
     expect(r.additionalChildrenChunks).toBe(1);
-    expect(r.totalMonthlyCents).toBe(5776); // 4888 + 888
+    expect(r.totalMonthlyCents).toBe(6076); // 4888 + 1188
   });
 
-  it('4 children = still 1 additional chunk (same chunk covers 2)', () => {
+  it('4 children = 2 additional children (each billed individually)', () => {
     const r = computeFamilyPricing({ totalAdults: 2, totalChildren: 4, billingCycle: 'monthly' }, FAMILY_TIER);
-    expect(r.additionalChildrenChunks).toBe(1);
-    expect(r.totalMonthlyCents).toBe(5776);
-  });
-
-  it('5 children = 2 additional chunks (first chunk covers 2, second covers 1-2)', () => {
-    const r = computeFamilyPricing({ totalAdults: 2, totalChildren: 5, billingCycle: 'monthly' }, FAMILY_TIER);
     expect(r.additionalChildrenChunks).toBe(2);
-    expect(r.totalMonthlyCents).toBe(6664); // 4888 + 2*888
+    expect(r.totalMonthlyCents).toBe(7264); // 4888 + 2*1188
   });
 
-  it('max config (4 adults + 6 children) = $84.40', () => {
+  it('5 children = 3 additional children (each billed individually)', () => {
+    const r = computeFamilyPricing({ totalAdults: 2, totalChildren: 5, billingCycle: 'monthly' }, FAMILY_TIER);
+    expect(r.additionalChildrenChunks).toBe(3);
+    expect(r.totalMonthlyCents).toBe(8452); // 4888 + 3*1188
+  });
+
+  it('max config (4 adults + 6 children) = $114.16', () => {
     const r = computeFamilyPricing({ totalAdults: 4, totalChildren: 6, billingCycle: 'monthly' }, FAMILY_TIER);
     expect(r.additionalAdultCount).toBe(2);
-    expect(r.additionalChildrenChunks).toBe(2);
-    expect(r.totalMonthlyCents).toBe(8440); // 4888 + 2*888 + 2*888
+    expect(r.additionalChildrenChunks).toBe(4);
+    expect(r.totalMonthlyCents).toBe(11416); // 4888 + 2*888 + 4*1188
   });
 
   it('primary only (1 adult) stays at base', () => {
@@ -98,17 +98,17 @@ describe('computeFamilyPricing (monthly)', () => {
 });
 
 describe('computeFamilyPricing (annual)', () => {
-  it('base annual = $488.88, savings vs 12x monthly', () => {
+  it('base annual = $498.58, savings vs 12x monthly', () => {
     const r = computeFamilyPricing({ totalAdults: 2, totalChildren: 2, billingCycle: 'annual' }, FAMILY_TIER);
-    expect(r.basePriceCents).toBe(48888);
-    expect(r.totalAnnualCents).toBe(48888);
-    expect(r.annualSavingsCents).toBe(4888 * 12 - 48888);
+    expect(r.basePriceCents).toBe(49858);
+    expect(r.totalAnnualCents).toBe(49858);
+    expect(r.annualSavingsCents).toBe(4888 * 12 - 49858);
   });
 
   it('annual with 1 additional adult: base + 12 * $8.88 add-on', () => {
     const r = computeFamilyPricing({ totalAdults: 3, totalChildren: 2, billingCycle: 'annual' }, FAMILY_TIER);
     // Annual base + 12 months of the $8.88 add-on
     expect(r.additionalAdultCostCents).toBe(888 * 12);
-    expect(r.totalAnnualCents).toBe(48888 + 888 * 12);
+    expect(r.totalAnnualCents).toBe(49858 + 888 * 12);
   });
 });

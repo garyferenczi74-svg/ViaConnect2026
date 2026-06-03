@@ -12,6 +12,7 @@ import { DailyInsightsCard } from '@/components/dashboard/DailyInsightsCard';
 import { PatternCirclePreview } from '@/components/community/PatternCirclePreview';
 import { ConnectCard } from '@/components/dashboard/ConnectCard';
 import { DashboardLinkCard } from '@/components/dashboard/DashboardLinkCard';
+import { DashboardTierCards } from '@/components/dashboard/DashboardTierCards';
 import { DailyCheckIn } from '@/components/dashboard/DailyCheckIn';
 // Prompt 168c section 2.1 + 2.8: inline Quick Log surface with horizontal
 // meal-type tab strip replaces the Log Meal button + QuickLogModal pattern.
@@ -239,6 +240,13 @@ export default function ConsumerDashboard() {
             <ConnectCard type="app" href="/plugins/apps" />
           </div>
         </div>
+
+        {/* ── Tier-branched entry cards (Prompt #169f section 11.2): Free sees
+            ── upgrade cards (Gold + Platinum); Gold sees the Body Tracker card
+            ── plus the FormaVision card with its existing Platinum paywall;
+            ── Platinum sees FormaVision active; Platinum+ Family additionally
+            ── sees a family management entry. ── */}
+        <DashboardTierCards />
 
         {/* ── Daily Insights (Prompt #61, replaces DailyUltrathinkTip) ── */}
         <DailyInsightsCard profile={profile} supplements={supplements} />

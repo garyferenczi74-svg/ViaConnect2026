@@ -33,6 +33,12 @@ import {
   markRowPending,
   type SupplementSaveState,
 } from "@/lib/caq/supplement-save-state";
+import {
+  recommendTier,
+  recommendationSentence,
+  TIER_DISPLAY_NAME,
+  type TierRecommendation,
+} from "@/lib/membership/recommend-tier";
 
 // ─── Phase Definitions ──────────────────────────────────────────────────────
 // Interstitial steps use "i-<id>" as their step ID
@@ -213,6 +219,16 @@ const WELLNESS_GOALS = [
 
 const SUPPLEMENT_FORMS = ["Capsule", "Liquid", "Powder", "Gummy", "No Preference"];
 
+// Household size options for the Section 11.3 tier recommendation. A count
+// greater than 1 lets the recommendation reach Platinum+ Family. Stored as a
+// plain number alongside the other Phase 3 (Lifestyle and Goals) answers.
+const HOUSEHOLD_SIZE_OPTIONS: { label: string; value: number }[] = [
+  { label: "Just me", value: 1 },
+  { label: "2", value: 2 },
+  { label: "3", value: 3 },
+  { label: "4 or more", value: 4 },
+];
+
 // ─── Common Medications (for autocomplete) ──────────────────────────────────
 
 const COMMON_MEDICATIONS = [
@@ -325,6 +341,7 @@ type GoalsData = {
   supplementForm: string;
   budgetRange: number;
   communicationPref: string;
+  householdMemberCount: number;
 };
 
 // ─── Bio Optimization Score Calculator ──────────────────────────────────────────────
@@ -499,6 +516,7 @@ export default function OnboardingStepPage() {
   // Phase 5 state
   const [goals, setGoals] = useState<GoalsData>({
     goals: [], supplementForm: "", budgetRange: 50, communicationPref: "email",
+    householdMemberCount: 1,
   });
 
   // Medication autocomplete
@@ -581,6 +599,9 @@ export default function OnboardingStepPage() {
             // Pre-populate goals
             const goals_arr = (ls as Record<string, unknown>).goals as string[] | undefined;
             if (goals_arr?.length) setGoals((p) => ({ ...p, goals: goals_arr }));
+            // Pre-populate household size (Section 11.3 tier recommendation input)
+            const hh = Number((ls as Record<string, unknown>).householdMemberCount);
+            if (Number.isFinite(hh) && hh >= 1) setGoals((p) => ({ ...p, householdMemberCount: hh }));
           }
         } catch (err) { }
       }
@@ -723,7 +744,7 @@ export default function OnboardingStepPage() {
         case "2c": await savePhase("9", symptomsEmotional); break;
         case "4": await savePhase("4", { ...medications, userSupplements }); break;
         case "3": {
-          await savePhase("3", { ...lifestyle, goals: goals.goals, supplementForm: goals.supplementForm, budgetRange: goals.budgetRange });
+          await savePhase("3", { ...lifestyle, goals: goals.goals, supplementForm: goals.supplementForm, budgetRange: goals.budgetRange, householdMemberCount: goals.householdMemberCount });
 
           // Show Ultrathink processing animation immediately. The
           // animation now masks Hannah's compute window; the auto
@@ -1543,6 +1564,20 @@ export default function OnboardingStepPage() {
                 className="w-full accent-copper h-1.5" />
               <div className="flex justify-between text-[10px] text-gray-600 mt-1">
                 <span>$10</span><span>$150</span><span>$300</span>
+              </div>
+            </div>
+
+            {/* Household size */}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">How many people in your household would use Via Cura?</label>
+              <div className="flex flex-wrap gap-2">
+                {HOUSEHOLD_SIZE_OPTIONS.map((opt) => (
+                  <button key={opt.value} type="button"
+                    onClick={() => setGoals({ ...goals, householdMemberCount: opt.value })}
+                    className={`text-xs px-4 py-2 rounded-lg border transition-colors ${
+                      goals.householdMemberCount === opt.value ? "bg-teal/15 text-teal-light border-teal/30" : "bg-dark-surface text-gray-400 border-dark-border hover:border-white/20"
+                    }`}>{opt.label}</button>
+                ))}
               </div>
             </div>
           </div>
@@ -2503,6 +2538,7 @@ function OnboardingComplete() {
   const [animatedScore, setAnimatedScore] = useState(0);
   const [selectedTier, setSelectedTier] = useState<string | null>(null);
   const [savedSymptoms, setSavedSymptoms] = useState<SymptomsData>({});
+  const [recommendation, setRecommendation] = useState<TierRecommendation | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -2522,12 +2558,14 @@ function OnboardingComplete() {
         .single();
       if (profile?.bio_optimization_score) setBioScore(profile.bio_optimization_score);
 
-      // Load saved symptom data from assessment_results phases 7/8/9
+      // Load saved symptom data (phases 7/8/9) plus the Lifestyle & Goals
+      // phase (3), which holds the goals[] array we use for the 169f
+      // Section 11.3 informational tier recommendation.
       const { data: phases } = await supabase
         .from("assessment_results")
         .select("phase, data")
         .eq("user_id", user.id)
-        .in("phase", [7, 8, 9]);
+        .in("phase", [3, 7, 8, 9]);
 
       if (phases && phases.length > 0) {
         const phaseMap: Record<number, any> = {};
@@ -2546,6 +2584,17 @@ function OnboardingComplete() {
           Cognition: 10 - (neuro.brain_fog_severity?.score ?? 5),
           Metabolic: 10 - (physical.metabolic_severity?.score ?? physical.weight_severity?.score ?? 5),
         } as SymptomsData);
+
+        // 169f S11.3: compute the informational recommendation from the
+        // user's stated goals plus the household-size answer captured in CAQ
+        // Phase 3. A household count greater than 1 lets the recommendation
+        // reach Platinum+ Family; absent or 1 falls back to the goals-based
+        // tier. Default to 1 (just me) when the field is missing.
+        const lifestyle = phaseMap[3] ?? {};
+        const userGoals = Array.isArray(lifestyle.goals) ? (lifestyle.goals as string[]) : [];
+        const rawHousehold = Number(lifestyle.householdMemberCount);
+        const householdMemberCount = Number.isFinite(rawHousehold) && rawHousehold >= 1 ? rawHousehold : 1;
+        setRecommendation(recommendTier({ goals: userGoals, householdMemberCount }));
       }
 
       setLoading(false);
@@ -2646,6 +2695,26 @@ function OnboardingComplete() {
         })}
       </div>
 
+      {/* 169f S11.3: informational tier recommendation (non-blocking) */}
+      {recommendation && (
+        <div className="flex items-start gap-3 rounded-xl border border-copper/30 bg-copper/[0.08] px-4 py-3 mt-2">
+          <Sparkles className="w-5 h-5 text-copper flex-shrink-0 mt-0.5" strokeWidth={1.5} />
+          <div className="min-w-0">
+            <p className="text-sm text-white/90 leading-snug">
+              {recommendationSentence(recommendation.tierId)}
+            </p>
+            {recommendation.tierId === "platinum_family" && (
+              <Link
+                href="/pricing"
+                className="inline-block mt-1.5 text-xs font-medium text-copper hover:text-copper-light transition-colors"
+              >
+                View the {TIER_DISPLAY_NAME.platinum_family} plan
+              </Link>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Divider */}
       <div className="flex items-center gap-4 mt-4">
         <div className="flex-1 h-px bg-white/[0.06]" />
@@ -2655,11 +2724,15 @@ function OnboardingComplete() {
 
       {/* Membership Tiers */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch mt-4">
-        {MEMBERSHIP_TIERS.map((tier) => (
+        {MEMBERSHIP_TIERS.map((tier) => {
+          const isRecommended = recommendation?.tierId === tier.tier;
+          return (
           <div
             key={tier.name}
             className={`relative flex flex-col rounded-2xl p-6 md:p-8 transition-all duration-300
-              ${tier.tier === "gold"
+              ${isRecommended
+                ? "border-2 border-copper shadow-[0_0_28px_rgba(183,94,24,0.28)]"
+                : tier.tier === "gold"
                 ? "border-2 border-copper/60 shadow-[0_0_24px_rgba(183,94,24,0.15)]"
                 : tier.tier === "platinum"
                 ? "border-2 border-teal/60 shadow-[0_0_32px_rgba(45,165,160,0.2)]"
@@ -2672,6 +2745,17 @@ function OnboardingComplete() {
               WebkitBackdropFilter: "blur(16px)",
             }}
           >
+            {/* 169f S11.3: Recommended for you marker */}
+            {isRecommended && (
+              <div className="absolute -top-3.5 left-4 z-10">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full
+                  bg-gradient-to-r from-[#B75E18] to-[#D4741F] text-white
+                  text-[10px] font-bold uppercase tracking-wider shadow-lg whitespace-nowrap">
+                  <Sparkles className="w-3 h-3" strokeWidth={1.5} /> Recommended for you
+                </span>
+              </div>
+            )}
+
             {/* Most Popular Badge */}
             {tier.popular && (
               <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 z-10">
@@ -2735,7 +2819,8 @@ function OnboardingComplete() {
               )}
             </button>
           </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Skip */}

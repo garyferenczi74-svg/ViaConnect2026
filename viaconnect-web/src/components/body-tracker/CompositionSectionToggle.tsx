@@ -39,7 +39,7 @@ export function CompositionSectionToggle({ active, onChange }: CompositionSectio
             {isActive && (
               <motion.div
                 layoutId="composition-pill"
-                className="absolute inset-0 rounded-full border border-[#5B8DEF]/40 bg-[#5B8DEF]/25 backdrop-blur-sm"
+                className="absolute inset-0 rounded-full border border-[#5B8DEF]/40 bg-[#2A4C9E]/25 backdrop-blur-sm"
                 transition={{ type: 'spring', stiffness: 400, damping: 30 }}
               />
             )}
