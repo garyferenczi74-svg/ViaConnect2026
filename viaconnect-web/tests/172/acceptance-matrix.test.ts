@@ -175,7 +175,12 @@ const APPROVED_TOKENS: ReadonlyArray<string> = [
   '#1A2744', // Deep Navy page background
   '#1E3054', // Card surface
   '#2DA5A0', // Teal
-  '#B75E18', // Orange
+  '#B75E18', // Orange (brand identity token, spec section 2 hard rule)
+  '#DA8538', // Protein-Orange-step-1: derived brightened step of #B75E18 per spec
+             // section 5.3, applied to the Protein chip label per 172d WCAG fix
+             // on 2026-06-02 to clear the WCAG 2.2 AA 4.5:1 small-text floor
+             // (measured 4.60:1 against Card #1E3054). Documented inline in
+             // MacroChips.tsx toneLabelColor.
   '#FFFFFF', // White slate; documented inline in MacroChips as the neutral fats label color
   '#FCA5A5', // Warning text (Tailwind red-300 step); documented inline
 ];
@@ -642,29 +647,37 @@ describe('Prompt 172 acceptance matrix: WCAG 2.2 AA contrast on macro chip palet
     expect(ratio).toBeGreaterThanOrEqual(3.0);
   });
 
-  it('Protein chip label (Orange #B75E18) against card surface is below AA 3:1 minimum; surfaced as a known finding deferred to Hannah for review', () => {
-    // 172d acceptance audit finding: Orange #B75E18 (the brand Orange
-    // token from spec section 2) on Card #1E3054 produces a contrast
-    // ratio of approximately 2.88:1, which is below the WCAG 2.2 AA
-    // 3:1 minimum for large text and well below the 4.5:1 minimum for
-    // small text. The chip label renders at text-[11px] (small text)
-    // so the 4.5:1 floor applies in strict WCAG terms.
+  it('Protein chip label (Protein-Orange-step-1 #DA8538, derived from brand Orange #B75E18) against card surface clears AA 3:1 large-text minimum with measurable headroom', () => {
+    // 172d follow-up resolution (Gary ratified 2026-06-02):
+    // The original Protein chip label rendered the raw brand Orange token
+    // #B75E18, producing a contrast ratio of approximately 2.88:1 against
+    // the Card surface #1E3054. Below the WCAG 2.2 AA 3:1 large-text floor
+    // and below the 4.5:1 small-text floor. Surfaced in Phase 3 as a
+    // deferred finding routing to Hannah.
     //
-    // The Orange token is a spec section 2 hard rule brand identity
-    // choice. Per the Phase 3 audit posture, we surface the ratio
-    // explicitly here and assert against the actual measured value so
-    // a regression in either direction is caught immediately. A copy
-    // change that raises the chip font size to large text (>= 18pt
-    // regular or >= 14pt bold) or a token revision that lightens the
-    // background would lift this above 3:1 without changing the
-    // identity.
+    // Gary ratified the "font bump to >= 14pt bold + Orange brightening
+    // to clear 3:1" path. The two halves of the fix:
     //
-    // This finding is filed in the 172d acceptance report under
-    // "Deferred items: WCAG AA contrast on Protein chip label" and
-    // routes to Hannah for the launch decision.
-    const ratio = contrastRatio('#B75E18', CARD_SURFACE);
-    expect(ratio).toBeGreaterThanOrEqual(2.5);
-    expect(ratio).toBeLessThan(3.0);
+    //   1. Typography: the Protein chip label is bumped to
+    //      `text-base font-bold` (16px bold) in MacroChips.tsx via the
+    //      tone-keyed toneLabelClass helper.
+    //   2. Color: the rendered chip label color is the derived step
+    //      `#DA8538`, computed from #B75E18 by brightening per spec
+    //      section 5.3 ("Macro chip palette, derived only from tokens").
+    //      The Orange brand token #B75E18 remains the spec section 2
+    //      hard-rule identity token; the chip-label rendering is a
+    //      derivation, documented inline at MacroChips.tsx
+    //      toneLabelColor('protein').
+    //
+    // Measured against Card #1E3054 the derived step #DA8538 lifts the
+    // contrast ratio to approximately 4.60:1, which clears both the
+    // 3:1 large-text floor (with 1.6 ratio headroom over the 3.1:1
+    // measurable-headroom target the audit specified) and the strict
+    // 4.5:1 small-text floor. This test asserts both thresholds so any
+    // future change to either color in the pair is caught immediately.
+    const ratio = contrastRatio('#DA8538', CARD_SURFACE);
+    expect(ratio).toBeGreaterThanOrEqual(3.1);
+    expect(ratio).toBeGreaterThanOrEqual(4.5);
   });
 
   it('Carbs chip label (Teal #2DA5A0 reuse) against card surface clears AA 3:1', () => {

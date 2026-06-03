@@ -46,7 +46,19 @@ function toneLabelColor(tone: MacroChipProps['tone']): string {
     case 'calories':
       return '#2DA5A0';
     case 'protein':
-      return '#B75E18';
+      // Protein-Orange-step-1: derived brightened step of the brand Orange
+      // token #B75E18 per spec section 5.3 ("Macro chip palette, derived
+      // only from tokens"). The raw Orange token #B75E18 produces a
+      // contrast ratio of 2.88:1 against the Card surface #1E3054, below
+      // the WCAG 2.2 AA 3:1 large-text floor and the 4.5:1 small-text
+      // floor. The 172d acceptance audit surfaced this finding; Gary
+      // ratified the derived-step path on 2026-06-02. #DA8538 lifts the
+      // contrast ratio to 4.60:1 against #1E3054, clearing both the 3:1
+      // large-text floor (with ample 1.6 ratio headroom over the 3.1:1
+      // measurable-headroom target) and the strict 4.5:1 small-text
+      // floor. The brand identity Orange #B75E18 remains the spec section
+      // 2 token; this is a chip-label rendering derivation only.
+      return '#DA8538';
     case 'carbs':
       // Lighter desaturated Teal step kept within the brand family.
       return '#2DA5A0';
@@ -67,10 +79,23 @@ function unitLabel(unit: MacroChipProps['unit']): string {
   }
 }
 
+function toneLabelClass(tone: MacroChipProps['tone']): string {
+  // The Protein chip label is bumped to text-base font-bold (16px bold) as
+  // the typography half of the 172d WCAG fix. Combined with the derived
+  // Protein-Orange-step-1 color #DA8538 hitting 4.60:1 against the Card
+  // surface #1E3054, the chip clears the WCAG 2.2 AA 4.5:1 small-text
+  // floor; the font bump is the visible hierarchy half of the same fix.
+  // The other three chip labels retain their original sizing because the
+  // 172d audit only surfaced the Orange contrast finding.
+  if (tone === 'protein') return 'text-base font-bold';
+  return '';
+}
+
 function MacroChip({ label, value, unit, tone }: MacroChipProps) {
+  const labelClass = toneLabelClass(tone);
   return (
     <div className="rounded-lg bg-white/[0.04] px-2 py-2">
-      <div className="text-white/45" style={{ color: toneLabelColor(tone) }}>{label}</div>
+      <div className={labelClass} style={{ color: toneLabelColor(tone) }}>{label}</div>
       <div className="mt-0.5 font-mono text-base text-white">{value}</div>
       <div className="text-[10px] text-white/45">{unitLabel(unit)}</div>
     </div>

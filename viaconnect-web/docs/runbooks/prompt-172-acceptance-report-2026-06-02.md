@@ -87,11 +87,16 @@ This report maps every spec section 7 acceptance criterion to the test name that
 | Clinical claim linter zero violations | PASS: `lintClinicalClaims` returns `ok: true` on every microcopy string in both variants (pre-existing `src/lib/nutrition/microcopy/__tests__/clinical-claim-lint.test.ts`) |
 | Husky hook runs clean without bypass | PASS: hook fix landed in `77bfd010`; Phase 3 commit will use the same path |
 
+## Resolved findings
+
+| Finding | Surfacing test | Resolution |
+|---------|----------------|------------|
+| Orange `#B75E18` chip label vs Card `#1E3054` surface contrast ratio was 2.88:1, below WCAG 2.2 AA 3:1 large text minimum and 4.5:1 small text minimum. | acceptance-matrix: `Protein chip label (Protein-Orange-step-1 #DA8538, derived from brand Orange #B75E18) against card surface clears AA 3:1 large-text minimum with measurable headroom` | RESOLVED 2026-06-02 (Gary ratified path): two-part fix in `MacroChips.tsx`. (1) Typography: the Protein chip label is bumped to `text-base font-bold` (16px bold) via the tone-keyed `toneLabelClass` helper. (2) Color: rendered chip label color is the derived step `#DA8538` (Protein-Orange-step-1), computed by brightening the brand Orange `#B75E18` per spec section 5.3 ("Macro chip palette, derived only from tokens"). Measured contrast against Card `#1E3054` is 4.60:1, clearing both the 3:1 large-text floor (with 1.6 ratio headroom over the 3.1:1 measurable-headroom target the audit specified) and the strict 4.5:1 small-text floor. Brand identity Orange `#B75E18` remains the spec section 2 token; this is a chip-label rendering derivation only, documented inline in `MacroChips.tsx` and in the acceptance-matrix APPROVED_TOKENS list. |
+
 ## Deferred items
 
 | Finding | Surfacing test | Disposition |
 |---------|----------------|-------------|
-| Orange `#B75E18` chip label vs Card `#1E3054` surface contrast ratio is 2.88:1, below WCAG 2.2 AA 3:1 large text minimum and 4.5:1 small text minimum. | acceptance-matrix: `Protein chip label (Orange #B75E18) against card surface is below AA 3:1 minimum; surfaced as a known finding deferred to Hannah for review` | Surfaced as a launch-time finding. Orange is a spec section 2 brand token. Routes to Hannah for the launch decision; a chip font size bump to >= 14pt bold would lift the label to large-text territory and clear the 3:1 floor without changing identity. If launch holds with current tokens, this becomes a known WCAG observation Kelsey notes for the 170c section 1.3 ninety-day re-review. |
 | 28 pre-existing test failures unrelated to Prompt 172 | Full test suite (not 172d) | Confirmed unchanged baseline. Will be addressed by their respective owners; not a 172 blocker. |
 
 ## Sign-off
@@ -105,5 +110,6 @@ This report maps every spec section 7 acceptance criterion to the test name that
 | Phase 1B review revisions (Hannah + Kelsey) | `d72c2c17` | Hannah, Kelsey | 2026-06-01 |
 | Husky hook fix | `77bfd010` | Michelangelo | 2026-06-02 |
 | Phase 2 (BOS line resolver + thread + in-place post-save) | `ab1f388a` | Jeffery, Hannah, Kelsey | 2026-06-02 |
-| Phase 3 (172d acceptance + Marshall scan + rollout runbook) | (this commit) | Michelangelo | 2026-06-02 |
+| Phase 3 (172d acceptance + Marshall scan + rollout runbook) | `c9011aed` | Michelangelo | 2026-06-02 |
+| Phase 3 follow-up (Protein chip WCAG 2.2 AA via derived Orange step + font bump) | (this commit) | Michelangelo | 2026-06-02 |
 | Production rollout (Step 1 BOS line flip) | Pending Gary's go | Gary | TBD |
