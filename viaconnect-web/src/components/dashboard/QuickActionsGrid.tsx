@@ -1,6 +1,6 @@
 'use client';
 
-// QuickActionsGrid — 6 navigation cards on the dashboard.
+// QuickActionsGrid: 6 navigation cards on the dashboard.
 // Routes corrected to match the actual codebase: peptide-protocol,
 // wellness-analytics, onboarding/i-caq-intro.
 

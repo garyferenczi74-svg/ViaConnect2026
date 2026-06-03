@@ -342,7 +342,7 @@ export function Sidebar({
                 ${collapsed ? "justify-center px-0 py-2.5 mx-1" : "px-3 py-2"}
                 ${isActive ? portal.accentBg : "text-gray-400 hover:text-white hover:bg-white/[0.04]"}`}
             >
-              {/* Active accent bar — animated slide */}
+              {/* Active accent bar, animated slide */}
               {isActive && (
                 <motion.span
                   layoutId="sidebar-active-indicator"
