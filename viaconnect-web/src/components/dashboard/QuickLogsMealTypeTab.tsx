@@ -1,22 +1,27 @@
 'use client';
 
 // Prompt #169: per-meal dropdown trigger row. Replaces the prior #168c single-
-// select tab strip with four independent triggers that toggle their own panel.
-// Idle gradient is meal-specific (sunrise / midday / evening / treat); active
-// (open) gradient is unified emerald to green per spec section 4.2.
+// select tab strip with independent triggers that toggle their own panel.
+// Idle gradient is meal-specific (sunrise / midday / evening / treat / glass);
+// active (open) gradient for meals is unified emerald to green per spec
+// section 4.2. Hydration (Gary 2026-06-03) keeps its blue identity when open.
 //
-// State lives in the parent QuickLogsSurface (single openMeal: MealType | null).
-// This component is presentational + keyboard handler only.
+// State lives in the parent QuickLogsSurface (single openMeal: QuickLogPanelKey
+// | null). This component is presentational + keyboard handler only.
 
 import { useCallback, useRef } from 'react';
-import Link from 'next/link';
 import { Check, ChevronDown, Coffee, Cookie, Droplet, Soup, UtensilsCrossed } from 'lucide-react';
 import type { MealType } from '@/lib/gordon/types';
 
+// Gary 2026-06-03: hydration joins the accordion. openMeal widens to include
+// 'hydration' so the parent can route the open state to either a MealType or
+// the hydration panel without a parallel state variable.
+export type QuickLogPanelKey = MealType | 'hydration';
+
 export interface QuickLogsMealTypeTabProps {
   // null when no panel open. Otherwise the meal whose dropdown is expanded.
-  readonly openMeal: MealType | null;
-  readonly onToggle: (mealType: MealType) => void;
+  readonly openMeal: QuickLogPanelKey | null;
+  readonly onToggle: (key: QuickLogPanelKey) => void;
   readonly completed: ReadonlySet<MealType>;
   readonly snackCount?: number;
   // ARIA wiring: caller supplies a stable id prefix so the panel below can
@@ -25,7 +30,7 @@ export interface QuickLogsMealTypeTabProps {
 }
 
 interface TriggerDef {
-  readonly id: MealType;
+  readonly id: QuickLogPanelKey;
   readonly label: string;
   readonly icon: typeof Coffee;
   // Spec section 4.1 idle gradients.
@@ -56,6 +61,11 @@ const TRIGGERS: ReadonlyArray<TriggerDef> = [
   { id: 'lunch', label: 'Lunch', icon: Soup, idleGradient: 'from-purple-500/40 via-purple-600/20 to-purple-700/30' },
   { id: 'dinner', label: 'Dinner', icon: UtensilsCrossed, idleGradient: 'from-indigo-500/40 via-indigo-600/20 to-violet-600/30' },
   { id: 'snack', label: 'Snacks', icon: Cookie, idleGradient: 'from-rose-500/40 via-pink-500/20 to-pink-600/30' },
+  // Gary 2026-06-03: hydration accordion trigger. Light blue glass gradient
+  // continues the meal pill family; keeps blue identity when open instead of
+  // swapping to the meal green (hydration is a continuous metric, not a
+  // discrete "logged" event, so the green completion signal does not apply).
+  { id: 'hydration', label: 'Hydration', icon: Droplet, idleGradient: 'from-sky-600/40 via-blue-500/20 to-sky-700/30' },
 ];
 
 const ACTIVE_GRADIENT = 'from-emerald-600/55 via-emerald-500/40 to-green-600/50';
@@ -94,13 +104,17 @@ export function QuickLogsMealTypeTab({
     <div role="group" aria-label="Quick log meal type" className="grid grid-cols-2 gap-2 md:grid-cols-5">
       {TRIGGERS.map((tab, index) => {
         const isOpen = tab.id === openMeal;
-        const isCompleted = completed.has(tab.id);
+        // Hydration is a continuous metric, not a "logged today yes/no" event,
+        // so the green completion gradient + check badge are MealType-only.
+        const isMealType = tab.id !== 'hydration';
+        const isCompleted = isMealType ? completed.has(tab.id as MealType) : false;
         // Completed meals stay green (same gradient as active) but without the
         // ring; the ring is reserved for the actively-open trigger so users can
         // still tell open from logged-and-closed at a glance. Per Gary 2026-05-15:
         // green gradient itself signals completion, so the prior checkmark badge
-        // is removed.
-        const useGreen = isOpen || isCompleted;
+        // is removed. Hydration uses its own blue identity for both states; the
+        // ring + chevron rotation still signal open.
+        const useGreen = isMealType && (isOpen || isCompleted);
         const Icon = tab.icon;
         const labelText =
           tab.id === 'snack' && snackCount > 0
@@ -148,20 +162,6 @@ export function QuickLogsMealTypeTab({
           </button>
         );
       })}
-      {/* Gary 2026-06-03: hydration 5th button beside Snacks. Light blue glass
-          gradient continues the meal pill family; Droplet icon matches the
-          existing HydrationCard. Tap navigates to /wellness-analytics/hydration
-          (the existing hydration detail view) rather than opening an inline
-          panel, so the QuickLogsSurface accordion state stays MealType-scoped.
-          Replaces the prior desktop HydrationWidget bubble. */}
-      <Link
-        href="/wellness-analytics/hydration"
-        aria-label="Hydration, open hydration detail"
-        className="group relative flex min-h-[48px] items-center justify-center gap-2 rounded-xl border border-white/15 bg-gradient-to-br from-sky-600/40 via-blue-500/20 to-sky-700/30 px-3 py-2.5 text-[13px] font-semibold text-white backdrop-blur-xl transition-all duration-200 ease-out hover:shadow-lg hover:shadow-black/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744] md:text-[14px]"
-      >
-        <Droplet className="h-4 w-4 flex-shrink-0" strokeWidth={1.5} />
-        <span className="truncate">Hydration</span>
-      </Link>
     </div>
   );
 }

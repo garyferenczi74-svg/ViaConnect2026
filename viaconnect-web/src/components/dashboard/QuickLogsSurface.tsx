@@ -10,13 +10,18 @@
 // the active trigger.
 
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
+import Link from 'next/link';
 import { AnimatePresence, motion } from 'framer-motion';
+import { ChevronRight } from 'lucide-react';
 import type { Meal, MealType, NutritionTargets, MealDistribution } from '@/lib/gordon/types';
 import type { QuickLogDraft } from '@/components/meals/QuickLogModal';
-import { QuickLogsMealTypeTab } from './QuickLogsMealTypeTab';
+import { QuickLogsMealTypeTab, type QuickLogPanelKey } from './QuickLogsMealTypeTab';
 import { QuickLogEntryBlock } from './QuickLogEntryBlock';
 import { SnackStackContainer } from './SnackStackContainer';
 import { LogAFullMealButton } from './LogAFullMealButton';
+import { HydrationQuickLogButtons } from '@/components/hydration/HydrationQuickLogButtons';
+import { useHydrationToday } from '@/components/hydration/useHydrationToday';
+import { formatVolumeLabel } from '@/components/hydration/HydrationRing';
 
 export interface QuickLogsSurfaceProps {
   readonly userId: string | null;
@@ -38,7 +43,16 @@ export function QuickLogsSurface(props: QuickLogsSurfaceProps) {
   const { userId, targets, mealDistribution, todaysMeals, onSaveMeal } = props;
   const idPrefix = useId();
 
-  const [openMeal, setOpenMeal] = useState<MealType | null>(null);
+  // Gary 2026-06-03: openMeal widens to QuickLogPanelKey so the hydration pill
+  // joins the accordion. 'hydration' routes to the inline hydration panel
+  // below; MealType values keep the existing entry/snack routing.
+  const [openMeal, setOpenMeal] = useState<QuickLogPanelKey | null>(null);
+
+  // Pull today's hydration totals for the inline panel chip; the same hook
+  // backs the nutrition log row + the (retired) desktop widget.
+  const { data: hydrationToday, refresh: refreshHydration } = useHydrationToday();
+  const hydrationTotalMl = hydrationToday?.total_ml ?? 0;
+  const hydrationTargetMl = hydrationToday?.target_ml ?? 1890;
 
   const completedSet = useMemo<ReadonlySet<MealType>>(() => {
     const s = new Set<MealType>();
@@ -68,8 +82,8 @@ export function QuickLogsSurface(props: QuickLogsSurfaceProps) {
     return map;
   }, [todaysMeals]);
 
-  const handleToggle = useCallback((mealType: MealType) => {
-    setOpenMeal((prev) => (prev === mealType ? null : mealType));
+  const handleToggle = useCallback((key: QuickLogPanelKey) => {
+    setOpenMeal((prev) => (prev === key ? null : key));
   }, []);
 
   // Spec section 4.6: Escape closes open panel + returns focus to its trigger.
@@ -138,7 +152,32 @@ export function QuickLogsSurface(props: QuickLogsSurfaceProps) {
             className="overflow-hidden"
           >
             <div className="pt-2">
-              {openMeal === 'snack' ? (
+              {openMeal === 'hydration' ? (
+                <div className="flex flex-col gap-3 rounded-xl border border-white/10 bg-[#1A2744]/40 p-4">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-[13px] font-medium text-white">
+                      {formatVolumeLabel(hydrationTotalMl)} of {formatVolumeLabel(hydrationTargetMl)}
+                    </p>
+                    <Link
+                      href="/wellness-analytics/hydration"
+                      aria-label="Open hydration detail"
+                      className="inline-flex items-center gap-1 text-[12px] font-medium text-white/75 transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 rounded"
+                    >
+                      <span>Detail</span>
+                      <ChevronRight className="h-3.5 w-3.5" strokeWidth={1.5} />
+                    </Link>
+                  </div>
+                  <HydrationQuickLogButtons
+                    surface="dashboard_widget"
+                    variant="four"
+                    layout="grid"
+                    size="medium"
+                    onLogged={() => {
+                      refreshHydration();
+                    }}
+                  />
+                </div>
+              ) : openMeal === 'snack' ? (
                 <SnackStackContainer
                   targets={targets}
                   mealDistribution={mealDistribution}

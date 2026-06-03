@@ -12,8 +12,14 @@ import Link from 'next/link';
 import { ChevronDown, ChevronRight, Coffee, Cookie, Droplet, Plus, Soup, UtensilsCrossed } from 'lucide-react';
 import type { Meal, MealType } from '@/lib/gordon/types';
 import { MealLogEntryCard } from '@/components/dashboard/MealLogEntryCard';
+import { HydrationQuickLogButtons } from '@/components/hydration/HydrationQuickLogButtons';
 import { useHydrationToday } from '@/components/hydration/useHydrationToday';
 import { formatVolumeLabel } from '@/components/hydration/HydrationRing';
+
+// Gary 2026-06-03: hydration shares the same accordion as the four meal
+// sections. Local key union widens MealType to include 'hydration' for the
+// open-set without polluting the Meal types upstream.
+type SectionKey = MealType | 'hydration';
 
 export interface TodaysMealsSummaryProps {
   readonly meals: Meal[];
@@ -59,11 +65,11 @@ export function TodaysMealsSummary(props: TodaysMealsSummaryProps) {
     [userTimezone],
   );
 
-  // Gary 2026-06-03: hydration 5th row under Snacks. Pulls today's intake
-  // from the same 170o useHydrationToday hook the dashboard widget used,
-  // shows it in the count chip + "of target" line; the row itself is a
-  // Link to /wellness-analytics/hydration matching the desktop pill.
-  const { data: hydrationToday } = useHydrationToday();
+  // Gary 2026-06-03: hydration 5th row matches the meal accordion pattern.
+  // Pulls today's intake from the same 170o useHydrationToday hook the
+  // dashboard widget used; refresh() is wired to the quick-log buttons so
+  // the chip + body update immediately on tap.
+  const { data: hydrationToday, refresh: refreshHydration } = useHydrationToday();
   const hydrationTotalMl = hydrationToday?.total_ml ?? 0;
   const hydrationTargetMl = hydrationToday?.target_ml ?? 1890;
 
@@ -93,9 +99,10 @@ export function TodaysMealsSummary(props: TodaysMealsSummaryProps) {
   // mealsByType counts so any type with at least one meal opens by default.
   // The effect below auto-opens a section when its count transitions from
   // zero to one (e.g., user logs breakfast on the dashboard, this section
-  // pops open here without manual click).
-  const [openSet, setOpenSet] = useState<Set<MealType>>(() => {
-    const s = new Set<MealType>();
+  // pops open here without manual click). Hydration shares the same set
+  // but never auto-opens; it stays closed until tapped.
+  const [openSet, setOpenSet] = useState<Set<SectionKey>>(() => {
+    const s = new Set<SectionKey>();
     for (const def of MEAL_TYPE_DEFS) {
       if (mealsByType[def.id].length > 0) s.add(def.id);
     }
@@ -121,7 +128,7 @@ export function TodaysMealsSummary(props: TodaysMealsSummaryProps) {
     });
   }, [breakfastCount, lunchCount, dinnerCount, snackCount, mealsByType]);
 
-  const handleToggle = (id: MealType) => {
+  const handleToggle = (id: SectionKey) => {
     setOpenSet((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
@@ -203,24 +210,65 @@ export function TodaysMealsSummary(props: TodaysMealsSummaryProps) {
           );
         })}
 
-        {/* Gary 2026-06-03: hydration 5th row under Snacks. Light blue glass
-            gradient mirrors the QuickLogsMealTypeTab desktop pill so the two
-            surfaces feel unified. Tap navigates to the hydration detail view
-            (the existing 170o /wellness-analytics/hydration surface). */}
-        <Link
-          href="/wellness-analytics/hydration"
-          aria-label={`Hydration, ${formatVolumeLabel(hydrationTotalMl)} of ${formatVolumeLabel(hydrationTargetMl)}, open hydration detail`}
-          className="group relative flex w-full min-h-[44px] items-center justify-between gap-2 rounded-xl border border-white/15 bg-gradient-to-br from-sky-600/40 via-blue-500/20 to-sky-700/30 px-3 py-2.5 text-[13px] font-semibold text-white no-underline backdrop-blur-xl transition-all duration-200 ease-out hover:shadow-lg hover:shadow-black/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744] md:text-[14px]"
-        >
-          <span className="flex items-center gap-2">
-            <Droplet className="h-4 w-4 flex-shrink-0" strokeWidth={1.5} />
-            <span>Hydration</span>
-            <span className="rounded-full bg-white/15 px-2 py-0.5 text-[11px] tabular-nums text-white/85">
-              {formatVolumeLabel(hydrationTotalMl)}
-            </span>
-          </span>
-          <ChevronRight className="h-4 w-4 flex-shrink-0 text-white/70" strokeWidth={1.5} />
-        </Link>
+        {/* Gary 2026-06-03: hydration 5th row dropdown matching Breakfast/
+            Lunch/Dinner/Snacks. Same chevron rotation + expand-in-place body
+            pattern; expanded body shows progress chip + quick-log buttons +
+            a detail link. Light blue glass gradient continues the meal pill
+            family on the header. */}
+        {(() => {
+          const isOpen = openSet.has('hydration');
+          return (
+            <div>
+              <button
+                type="button"
+                onClick={() => handleToggle('hydration')}
+                aria-expanded={isOpen}
+                className="group relative flex w-full min-h-[44px] items-center justify-between gap-2 rounded-xl border border-white/15 bg-gradient-to-br from-sky-600/40 via-blue-500/20 to-sky-700/30 px-3 py-2.5 text-[13px] font-semibold text-white backdrop-blur-xl transition-all duration-200 ease-out hover:shadow-lg hover:shadow-black/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744] md:text-[14px]"
+              >
+                <span className="flex items-center gap-2">
+                  <Droplet className="h-4 w-4 flex-shrink-0" strokeWidth={1.5} />
+                  <span>Hydration</span>
+                  <span className="rounded-full bg-white/15 px-2 py-0.5 text-[11px] tabular-nums text-white/85">
+                    {formatVolumeLabel(hydrationTotalMl)}
+                  </span>
+                </span>
+                <ChevronDown
+                  className={`h-4 w-4 flex-shrink-0 transition-transform duration-200 ${
+                    isOpen ? 'rotate-180' : 'rotate-0'
+                  }`}
+                  strokeWidth={1.5}
+                />
+              </button>
+
+              {isOpen ? (
+                <div className="mt-2 flex flex-col gap-3 rounded-xl border border-white/10 bg-[#1A2744]/40 p-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-[12px] text-white/75">
+                      {formatVolumeLabel(hydrationTotalMl)} of {formatVolumeLabel(hydrationTargetMl)}
+                    </p>
+                    <Link
+                      href="/wellness-analytics/hydration"
+                      aria-label="Open hydration detail"
+                      className="inline-flex items-center gap-1 rounded text-[12px] font-medium text-white/75 transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+                    >
+                      <span>Detail</span>
+                      <ChevronRight className="h-3.5 w-3.5" strokeWidth={1.5} />
+                    </Link>
+                  </div>
+                  <HydrationQuickLogButtons
+                    surface="nutrivision_card"
+                    variant="four"
+                    layout="grid"
+                    size="medium"
+                    onLogged={() => {
+                      refreshHydration();
+                    }}
+                  />
+                </div>
+              ) : null}
+            </div>
+          );
+        })()}
       </div>
     </section>
   );
