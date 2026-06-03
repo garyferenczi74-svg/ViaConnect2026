@@ -9,10 +9,10 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { ChevronDown, ChevronRight, Coffee, Cookie, Droplet, Plus, Soup, UtensilsCrossed } from 'lucide-react';
+import { ChevronDown, Coffee, Cookie, Droplet, Plus, Soup, UtensilsCrossed } from 'lucide-react';
 import type { Meal, MealType } from '@/lib/gordon/types';
 import { MealLogEntryCard } from '@/components/dashboard/MealLogEntryCard';
-import { HydrationQuickLogButtons } from '@/components/hydration/HydrationQuickLogButtons';
+import { HydrationFullSection } from '@/components/hydration/HydrationFullSection';
 import { useHydrationToday } from '@/components/hydration/useHydrationToday';
 import { formatVolumeLabel } from '@/components/hydration/HydrationRing';
 
@@ -65,13 +65,11 @@ export function TodaysMealsSummary(props: TodaysMealsSummaryProps) {
     [userTimezone],
   );
 
-  // Gary 2026-06-03: hydration 5th row matches the meal accordion pattern.
-  // Pulls today's intake from the same 170o useHydrationToday hook the
-  // dashboard widget used; refresh() is wired to the quick-log buttons so
-  // the chip + body update immediately on tap.
-  const { data: hydrationToday, refresh: refreshHydration } = useHydrationToday();
+  // Gary 2026-06-03: hydration row pulls only the today total for the header
+  // chip; the expanded body renders HydrationFullSection which owns its own
+  // hooks for the ring + buttons + picker + history.
+  const { data: hydrationToday } = useHydrationToday();
   const hydrationTotalMl = hydrationToday?.total_ml ?? 0;
-  const hydrationTargetMl = hydrationToday?.target_ml ?? 1890;
 
   const todaysMeals = useMemo(() => {
     const todayKey = localDateKey(new Date().toISOString(), tz);
@@ -210,11 +208,11 @@ export function TodaysMealsSummary(props: TodaysMealsSummaryProps) {
           );
         })}
 
-        {/* Gary 2026-06-03: hydration 5th row dropdown matching Breakfast/
-            Lunch/Dinner/Snacks. Same chevron rotation + expand-in-place body
-            pattern; expanded body shows progress chip + quick-log buttons +
-            a detail link. Light blue glass gradient continues the meal pill
-            family on the header. */}
+        {/* Gary 2026-06-03: hydration 5th section. Header pill matches
+            Breakfast/Lunch/Dinner/Snacks gradient family; expanded body is
+            the full HydrationFullSection (ring + quick log + intake timeline
+            + caffeine overlay + breakdown + electrolyte + picker + history +
+            disclaimer), the same body the detail route renders. */}
         {(() => {
           const isOpen = openSet.has('hydration');
           return (
@@ -241,29 +239,8 @@ export function TodaysMealsSummary(props: TodaysMealsSummaryProps) {
               </button>
 
               {isOpen ? (
-                <div className="mt-2 flex flex-col gap-3 rounded-xl border border-white/10 bg-[#1A2744]/40 p-3">
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="text-[12px] text-white/75">
-                      {formatVolumeLabel(hydrationTotalMl)} of {formatVolumeLabel(hydrationTargetMl)}
-                    </p>
-                    <Link
-                      href="/wellness-analytics/hydration"
-                      aria-label="Open hydration detail"
-                      className="inline-flex items-center gap-1 rounded text-[12px] font-medium text-white/75 transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
-                    >
-                      <span>Detail</span>
-                      <ChevronRight className="h-3.5 w-3.5" strokeWidth={1.5} />
-                    </Link>
-                  </div>
-                  <HydrationQuickLogButtons
-                    surface="nutrivision_card"
-                    variant="four"
-                    layout="grid"
-                    size="medium"
-                    onLogged={() => {
-                      refreshHydration();
-                    }}
-                  />
+                <div className="mt-2">
+                  <HydrationFullSection logSurface="nutrivision_card" />
                 </div>
               ) : null}
             </div>
