@@ -157,7 +157,7 @@ export const HYDRATION_MICROCOPY_STRINGS: HydrationMicrocopyMap = {
   // drink counts. The string still has content so the lint sweep
   // entry not empty check stays green.
   'hydration.alcohol.diuretic.threshold_note': {
-    normal: 'Alcohol can affect hydration above a daily threshold. Logged drinks today: {count}.',
+    normal: 'Alcohol can affect hydration with sustained intake. Logged drinks today: {count}.',
     safety_mode: 'Alcohol can affect hydration.',
   },
 };
