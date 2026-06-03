@@ -18,6 +18,7 @@ import {
   type ConnectionSource,
   type ConnectionStatus,
 } from '@/components/body-tracker/ConnectionCard';
+import { FORMAVISION_BRAND } from '@/lib/body-tracker/brand-config';
 
 /* ── Source registries ───────────────────────────────── */
 const WEARABLE_SOURCES: ConnectionSource[] = [
@@ -112,7 +113,7 @@ export default function ConnectionsPage() {
       <div>
         <div className="flex items-center gap-2">
           <Link2 className="h-5 w-5 text-[#2DA5A0]" strokeWidth={1.5} />
-          <h1 className="text-lg font-bold text-white">Body Tracker: Connections</h1>
+          <h1 className="text-lg font-bold text-white">{FORMAVISION_BRAND.name}: Connections</h1>
         </div>
         <p className="mt-1 text-sm text-white/50">
           Connect apps and devices to enrich your data

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { TrendingDown, Dumbbell, Check, Loader2 } from 'lucide-react';
 import { useCurrentUser } from './manual-input';
 import { useUserJourney, type JourneyType } from '@/hooks/body-tracker/useUserJourney';
+import { FORMAVISION_BRAND } from '@/lib/body-tracker/brand-config';
 
 interface JourneyDef {
   id: JourneyType;
@@ -66,7 +67,7 @@ export function JourneySelectionScreen({
       <div>
         <h1 className="text-2xl font-bold text-white">Choose Your Journey</h1>
         <p className="mt-1 text-sm text-white/60">
-          Arnold will tailor your entire Body Tracker experience to your goal.
+          Arnold will tailor your entire {FORMAVISION_BRAND.name} experience to your goal.
         </p>
       </div>
 
@@ -140,7 +141,7 @@ export function JourneySelectionScreen({
       {error && <p className="text-sm text-[#FCA5A5]">{error}</p>}
 
       <p className="text-xs text-white/40">
-        You can switch journeys anytime in Body Tracker Settings.
+        You can switch journeys anytime in {FORMAVISION_BRAND.name} Settings.
       </p>
     </div>
   );

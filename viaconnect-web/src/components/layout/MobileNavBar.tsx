@@ -10,6 +10,7 @@ import {
   MessageCircleHeart,
 } from 'lucide-react';
 import { useRef } from 'react';
+import { FORMAVISION_BRAND } from '@/lib/body-tracker/brand-config';
 
 type NavItem = { href: string; label: string; icon: React.ElementType };
 
@@ -20,7 +21,7 @@ const PORTAL_NAV: Record<string, NavItem[]> = {
     { href: '/wellness/advisor', label: 'Hannah AI', icon: MessageCircleHeart },
     { href: '/nutrition', label: 'Nutrition Log', icon: Apple },
     { href: '/supplements', label: 'Supplement Protocol', icon: Pill },
-    { href: '/body-tracker', label: 'Body Tracker', icon: Activity },
+    { href: '/body-tracker', label: FORMAVISION_BRAND.name, icon: Activity },
     { href: '/wearables', label: 'Wearables Data', icon: Activity },
     { href: '/helix', label: 'Helix Rewards', icon: Dna },
     { href: '/genetics', label: 'Genetics Protocol', icon: Dna },

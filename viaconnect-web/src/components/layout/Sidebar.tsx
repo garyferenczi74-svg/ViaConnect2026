@@ -8,6 +8,7 @@ import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import { ViaConnectLogo, DNAHelixIcon } from "@/components/ui/ViaConnectLogo";
 import { isNaturopathLikeCredential } from "@/lib/practitioner/taxonomy";
+import { FORMAVISION_BRAND } from "@/lib/body-tracker/brand-config";
 import type { LucideIcon } from "lucide-react";
 import {
   LayoutDashboard,
@@ -85,7 +86,7 @@ const CONSUMER: PortalConfig = {
     { href: "/wellness/advisor", label: "Hannah AI Wellness Assistant", icon: MessageCircleHeart },
     { href: "/nutrition", label: "Nutrition Log", icon: Apple },
     { href: "/supplements", label: "Supplement Protocol", icon: Pill },
-    { href: "/body-tracker", label: "Body Tracker", icon: Activity },
+    { href: "/body-tracker", label: FORMAVISION_BRAND.name, icon: Activity },
     { href: "/wearables", label: "Wearables Data", icon: Activity },
     { href: "/helix", label: "Helix Rewards", icon: Dna },
     { href: "/genetics", label: "Genetics Protocol", icon: Dna },

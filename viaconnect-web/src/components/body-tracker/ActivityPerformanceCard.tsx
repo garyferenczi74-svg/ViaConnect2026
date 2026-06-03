@@ -2,6 +2,7 @@
 
 import { Flame, Target, Zap, Info } from 'lucide-react';
 import type { ActivitySnapshot } from '@/hooks/body-tracker/useUserActivityData';
+import { FORMAVISION_BRAND } from '@/lib/body-tracker/brand-config';
 
 interface ActivityPerformanceCardProps {
   data: ActivitySnapshot | null;
@@ -32,7 +33,7 @@ export function ActivityPerformanceCard({ data, loading = false }: ActivityPerfo
         </div>
       ) : !data ? (
         <div className="rounded-xl border border-white/[0.06] bg-white/[0.03] p-4 text-xs text-white/55">
-          No activity logged yet. Connect a wearable or log calories from the Body Tracker entry form
+          No activity logged yet. Connect a wearable or log calories from the {FORMAVISION_BRAND.name} entry form
           to see your daily Active Calories, target, and BMR here.
         </div>
       ) : (
