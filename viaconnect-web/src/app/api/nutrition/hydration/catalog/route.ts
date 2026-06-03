@@ -8,22 +8,32 @@
  * Authenticated only; mirrors the auth posture of the sibling hydration
  * endpoints (today, log, quick-log). Unauthenticated callers get 401.
  *
- * Phase B will mount this endpoint to the catalog driven picker UI on
- * /wellness-analytics/hydration; for Phase A there is no consumer
- * facing render, so no kill switch gate is added yet. A
- * BEVERAGE_CATALOG_RENDERING_ENABLED kill switch can be introduced in
- * Phase B without changing this endpoint's shape.
+ * Phase B review revisions 2026-06-03: gated behind the
+ * BEVERAGE_CATALOG_RENDERING_ENABLED kill switch (default true). Flip
+ * to false for emergency rollback during a 170c section 9 incident; the
+ * picker mount on /wellness-analytics/hydration silently unmounts and
+ * this endpoint returns 503. Separate from HYDRATION_TRACKING_ENABLED
+ * which gates the 170o write paths.
  */
 
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { safeLog } from '@/lib/utils/safe-log';
+import { isKillSwitchEnabled } from '@/lib/compliance/kill-switches';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export async function GET(): Promise<NextResponse> {
+  // Kill switch gate: emergency rollback path for the catalog read surface.
+  // Mirrors the 503 posture the sibling 170o endpoints use when
+  // HYDRATION_TRACKING_ENABLED is false; the picker treats this as a silent
+  // unmount on the client per Phase 2 BOS line precedent.
+  if (!isKillSwitchEnabled('BEVERAGE_CATALOG_RENDERING_ENABLED')) {
+    return NextResponse.json({ error: 'beverage catalog disabled' }, { status: 503 });
+  }
+
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {

@@ -45,8 +45,8 @@ export const HYDRATION_MICROCOPY_STRINGS: HydrationMicrocopyMap = {
     safety_mode: 'Nothing logged yet today.',
   },
   'picker.no_favorites_yet': {
-    normal: 'Your favorites will appear here as you log.',
-    safety_mode: 'Your favorites will appear here as you log.',
+    normal: 'What you reach for most will show up here.',
+    safety_mode: 'What you reach for most will show up here.',
   },
   'picker.empty_search': {
     normal: 'No beverages match that search.',
@@ -137,8 +137,8 @@ export const HYDRATION_MICROCOPY_STRINGS: HydrationMicrocopyMap = {
 
   // Error and loading.
   'error.fetch_failed': {
-    normal: 'Could not load the catalog. Please try again.',
-    safety_mode: 'Could not load the catalog. Please try again.',
+    normal: 'Could not load beverages. Please try again.',
+    safety_mode: 'Could not load beverages. Please try again.',
   },
   'state.loading_catalog': {
     normal: 'Loading beverages...',

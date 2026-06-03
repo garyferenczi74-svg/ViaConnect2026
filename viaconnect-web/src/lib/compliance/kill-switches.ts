@@ -24,7 +24,8 @@ export type KillSwitch =
   | 'PHI_REDACTION_ENABLED'
   | 'DSAR_SELF_SERVE_ENABLED'
   | 'BOS_LINE_RENDERING_ENABLED'
-  | 'BOS_LINE_SPLIT_PLATE_ENABLED';
+  | 'BOS_LINE_SPLIT_PLATE_ENABLED'
+  | 'BEVERAGE_CATALOG_RENDERING_ENABLED';
 
 export const KILL_SWITCH_DEFAULTS: Record<KillSwitch, boolean> = {
   /** 170c §8.13. Master gate for ED safety mode rendering and opt in. */
@@ -50,6 +51,14 @@ export const KILL_SWITCH_DEFAULTS: Record<KillSwitch, boolean> = {
    * lands; the post save action row hides the affordance until then.
    */
   BOS_LINE_SPLIT_PLATE_ENABLED: false,
+  /**
+   * Prompt 172e Phase B. Gates the GET /api/nutrition/hydration/catalog
+   * endpoint and the BeveragePicker mount on /wellness-analytics/hydration.
+   * Default true; flip to false for emergency rollback during a 170c
+   * section 9 incident or other compliance event. Separate from
+   * HYDRATION_TRACKING_ENABLED which gates the 170o write paths.
+   */
+  BEVERAGE_CATALOG_RENDERING_ENABLED: true,
 };
 
 function parseEnv(raw: string | undefined): boolean | null {

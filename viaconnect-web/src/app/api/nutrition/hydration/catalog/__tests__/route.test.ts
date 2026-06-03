@@ -8,9 +8,13 @@
  *   - Cache-Control public max age 3600 (catalog is global, not per user).
  *   - Each row carries hydration_source_kind mapping to one of the 9 live enum values.
  *   - Database error returns 500 with a generic error body.
+ *
+ * Phase B review revisions 2026-06-03:
+ *   - BEVERAGE_CATALOG_RENDERING_ENABLED kill switch off returns 503.
+ *   - Kill switch on serves the catalog (default behavior).
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 const mocks = vi.hoisted(() => {
   return {
@@ -121,5 +125,35 @@ describe('GET /api/nutrition/hydration/catalog: failure', () => {
     expect(res.status).toBe(500);
     const body = await res.json();
     expect(body).toEqual({ error: 'Could not load beverage catalog' });
+  });
+});
+
+describe('GET /api/nutrition/hydration/catalog: BEVERAGE_CATALOG_RENDERING_ENABLED kill switch', () => {
+  afterEach(() => {
+    delete process.env.BEVERAGE_CATALOG_RENDERING_ENABLED;
+    delete process.env.NEXT_PUBLIC_BEVERAGE_CATALOG_RENDERING_ENABLED;
+  });
+
+  it('returns 503 with a disabled error body when the kill switch is off', async () => {
+    process.env.BEVERAGE_CATALOG_RENDERING_ENABLED = 'false';
+    const res = await GET();
+    expect(res.status).toBe(503);
+    const body = await res.json();
+    expect(body).toEqual({ error: 'beverage catalog disabled' });
+    // Kill switch short circuits before auth; supabaseAuth must not be called.
+    expect(mocks.supabaseAuth).not.toHaveBeenCalled();
+    expect(mocks.adminFrom).not.toHaveBeenCalled();
+  });
+
+  it('serves the catalog when the kill switch is on (default behavior)', async () => {
+    // Default is true; no env override needed. Asserting explicit on-value
+    // works too in case a CI run pre populates env from another suite.
+    process.env.BEVERAGE_CATALOG_RENDERING_ENABLED = 'true';
+    mocks.supabaseAuth.mockResolvedValueOnce({ data: { user: { id: 'u-4' } } });
+    mockCatalogQuery([]);
+    const res = await GET();
+    expect(res.status).toBe(200);
+    expect(mocks.supabaseAuth).toHaveBeenCalled();
+    expect(mocks.adminFrom).toHaveBeenCalled();
   });
 });

@@ -20,6 +20,7 @@ const SAFE_FLAGS: KillSwitch[] = [
   'PROVIDER_DEGRADED_SERVICE_MESSAGING_ENABLED',
   'PHI_REDACTION_ENABLED',
   'DSAR_SELF_SERVE_ENABLED',
+  'BEVERAGE_CATALOG_RENDERING_ENABLED',
 ];
 
 function clearFlagEnv(flag: KillSwitch) {
@@ -55,6 +56,11 @@ describe('kill switches: compile time defaults', () => {
   it('defaults DSAR_SELF_SERVE_ENABLED to false until 170c section 4 lands', () => {
     expect(KILL_SWITCH_DEFAULTS.DSAR_SELF_SERVE_ENABLED).toBe(false);
     expect(isKillSwitchEnabled('DSAR_SELF_SERVE_ENABLED')).toBe(false);
+  });
+
+  it('defaults BEVERAGE_CATALOG_RENDERING_ENABLED to true per Prompt 172e Phase B', () => {
+    expect(KILL_SWITCH_DEFAULTS.BEVERAGE_CATALOG_RENDERING_ENABLED).toBe(true);
+    expect(isKillSwitchEnabled('BEVERAGE_CATALOG_RENDERING_ENABLED')).toBe(true);
   });
 });
 
@@ -99,5 +105,15 @@ describe('kill switches: env overrides', () => {
   it('falls back to the compile time default when the env value is garbage', () => {
     process.env.EATING_DISORDER_SAFETY_MODE_ENABLED = 'maybe';
     expect(isKillSwitchEnabled('EATING_DISORDER_SAFETY_MODE_ENABLED')).toBe(true);
+  });
+
+  it('honors disabling BEVERAGE_CATALOG_RENDERING_ENABLED via plain env for emergency rollback', () => {
+    process.env.BEVERAGE_CATALOG_RENDERING_ENABLED = 'false';
+    expect(isKillSwitchEnabled('BEVERAGE_CATALOG_RENDERING_ENABLED')).toBe(false);
+  });
+
+  it('honors disabling BEVERAGE_CATALOG_RENDERING_ENABLED via NEXT_PUBLIC prefix for client consumers', () => {
+    process.env.NEXT_PUBLIC_BEVERAGE_CATALOG_RENDERING_ENABLED = 'off';
+    expect(isKillSwitchEnabled('BEVERAGE_CATALOG_RENDERING_ENABLED')).toBe(false);
   });
 });

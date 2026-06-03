@@ -17,6 +17,7 @@
 import { useMemo, useState } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { useSafetyMode } from '@/lib/safety-mode/useSafetyMode';
+import { isKillSwitchEnabled } from '@/lib/compliance/kill-switches';
 import {
   getHydrationMicrocopy,
   type HydrationMicrocopyVariant,
@@ -54,7 +55,14 @@ import { FavoritesRow } from './FavoritesRow';
 import { RecentsRow } from './RecentsRow';
 import { LogButton } from './LogButton';
 
-export function BeveragePicker({ volumeUnit, onLogged }: BeveragePickerProps): JSX.Element {
+export function BeveragePicker({ volumeUnit, onLogged }: BeveragePickerProps): JSX.Element | null {
+  // Kill switch gate: silent unmount when BEVERAGE_CATALOG_RENDERING_ENABLED
+  // is false. No error UI, no "feature disabled" copy; matches the Phase 2
+  // BOS line silent-on-kill pattern so a 170c section 9 emergency rollback
+  // disappears the picker cleanly without a UX disclosure. Read at render
+  // time so a runtime flip propagates the next time the parent re renders.
+  const catalogRenderingEnabled = isKillSwitchEnabled('BEVERAGE_CATALOG_RENDERING_ENABLED');
+
   const safety = useSafetyMode();
   const variant: HydrationMicrocopyVariant = safety.enabled ? 'safety_mode' : 'normal';
   const unit: 'ml' | 'oz' = volumeUnit ?? 'ml';
@@ -140,6 +148,13 @@ export function BeveragePicker({ volumeUnit, onLogged }: BeveragePickerProps): J
   const loadingCopy = getHydrationMicrocopy('state.loading_catalog', variant);
   const errorCopy = getHydrationMicrocopy('error.fetch_failed', variant);
   const emptySearchCopy = getHydrationMicrocopy('picker.empty_search', variant);
+
+  // Kill switch silent unmount: all hooks above ran in the normal order so
+  // the Rules of Hooks invariant is preserved on the next render whether
+  // the switch flipped or not.
+  if (!catalogRenderingEnabled) {
+    return null;
+  }
 
   return (
     <section
