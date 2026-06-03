@@ -53,7 +53,14 @@ export type HydrationMicrocopyKey =
   | 'action.clear_search'
   // Error and loading.
   | 'error.fetch_failed'
-  | 'state.loading_catalog';
+  | 'state.loading_catalog'
+  // Phase C: alcohol diuretic threshold note (spec 5.3 + 8.4).
+  // Surfaces a short factual note when the user has logged alcohol above
+  // the daily threshold. Normal carries a {count} placeholder for the
+  // current day drink count; safety_mode strips both the count and the
+  // threshold framing per 170c silent UX. The string never names the
+  // threshold value itself to avoid implying medical advice.
+  | 'hydration.alcohol.diuretic.threshold_note';
 
 export interface HydrationMicrocopyEntry {
   normal: string;

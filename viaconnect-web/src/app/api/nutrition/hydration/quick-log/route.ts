@@ -6,6 +6,15 @@
  * save flow captures a beverage). 5-minute deduplication per spec §3.4.
  * Triggers BOS recompute (hydration as 11th source slice; v1 returns null
  * for the score component pending Phase 2 calibration after 170h ratifies).
+ *
+ * Prompt 172e Phase C: when the request body carries a beverage_slug from
+ * the BeveragePicker, the route looks up the catalog row, computes the
+ * effective caffeine mg, applies the alcohol diuretic reduction when the
+ * row is alcoholic and the user is above the daily threshold, and persists
+ * beverage_catalog_slug + caffeine_mg on the inserted meal_items row.
+ * The 171b caffeine engine reads meal_items.caffeine_mg directly so no
+ * engine touch is required. The legacy quick log buttons that pass only
+ * beverage_kind continue to work unchanged.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -21,6 +30,15 @@ import { computeHydrationMl } from '@/lib/nutrition/hydration/hydration-ml-compu
 import {
   checkHydrationDeduplication,
 } from '@/lib/nutrition/hydration/deduplication-checker';
+import {
+  computeEffectiveCaffeineMg,
+  shouldAttributeCaffeineForBeverageSlug,
+} from '@/lib/nutrition/hydration/caffeine-attribution';
+import {
+  applyAlcoholDiureticReduction,
+  getAlcoholDiureticThresholdDrinks,
+  ALCOHOL_DIURETIC_FLOOR,
+} from '@/lib/nutrition/hydration/alcohol-config';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -36,6 +54,14 @@ const FOOD_NAME_BY_KIND: Record<HydrationSourceKind, string> = {
   sports_drink: 'Sports drink',
   high_water_food: 'High-water-content food',
 };
+
+interface CatalogRowForLog {
+  slug: string;
+  display_name: string;
+  default_volume_ml: number;
+  caffeine_mg_per_serving: number;
+  is_alcoholic: boolean;
+}
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
   if (process.env.HYDRATION_TRACKING_ENABLED !== 'true') {
@@ -66,7 +92,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     );
   }
 
-  const { volume_ml, beverage_kind, captured_at, log_surface } = parsed.data;
+  const { volume_ml, beverage_kind, captured_at, log_surface, beverage_slug } = parsed.data;
   const loggedAtIso = captured_at ?? new Date().toISOString();
   const admin = createAdminClient();
 
@@ -99,12 +125,74 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     ? 'adjusted'
     : 'conservative') as 'conservative' | 'adjusted';
 
-  const foodName = FOOD_NAME_BY_KIND[beverage_kind];
-  const hydrationMl = computeHydrationMl({
+  // Phase C: hydrate the catalog row when a slug is present so we can
+  // attribute caffeine + apply the alcohol diuretic reduction. The slug
+  // is optional so the legacy quick log buttons that pass only
+  // beverage_kind continue to work unchanged.
+  let catalogRow: CatalogRowForLog | null = null;
+  if (beverage_slug) {
+    const { data: catalogData, error: catalogErr } = await admin
+      .from('beverage_catalog')
+      .select('slug, display_name, default_volume_ml, caffeine_mg_per_serving, is_alcoholic')
+      .eq('slug', beverage_slug)
+      .eq('is_active', true)
+      .maybeSingle();
+    if (catalogErr) {
+      safeLog.warn('api.hydration.quick_log', 'catalog lookup failed (continuing without caffeine attribution)', {
+        error: catalogErr,
+        userId: user.id,
+        beverage_slug,
+      });
+    } else if (catalogData) {
+      catalogRow = catalogData as CatalogRowForLog;
+    }
+  }
+
+  // Phase C: catalog display_name wins over the legacy kind based name so
+  // the timeline and edit panel show "Cold Brew Coffee" instead of the
+  // generic "Coffee or tea" when the user picks via the catalog.
+  const foodName = catalogRow?.display_name ?? FOOD_NAME_BY_KIND[beverage_kind];
+
+  let hydrationMl = computeHydrationMl({
     source_kind: beverage_kind,
     portion_volume_ml: volume_ml,
     counting_mode: countingMode,
     food_name: foodName,
+  });
+
+  // Phase C Workstream 2: apply the dose dependent diuretic reduction
+  // when the row is alcoholic. The math runs in every mode; the COPY
+  // (alcohol diuretic threshold note) is suppressed in safety mode by
+  // the picker layer per shouldShowDiureticCopy.
+  if (catalogRow?.is_alcoholic && hydrationMl > 0) {
+    const drinksToday = await countDailyAlcoholicDrinks({
+      admin,
+      user_id: user.id,
+      day_anchor_iso: loggedAtIso,
+    });
+    const threshold = getAlcoholDiureticThresholdDrinks();
+    const reduced = applyAlcoholDiureticReduction(
+      hydrationMl,
+      drinksToday,
+      threshold,
+      ALCOHOL_DIURETIC_FLOOR,
+    );
+    hydrationMl = Math.round(reduced * 100) / 100;
+  }
+
+  // Phase C Workstream 1: compute the effective caffeine for the logged
+  // serving. The 171b engine reads meal_items.caffeine_mg directly on
+  // its next scoring pass; no engine touch required.
+  const effectiveCaffeineMg = catalogRow
+    ? computeEffectiveCaffeineMg({
+        caffeine_mg_per_serving: catalogRow.caffeine_mg_per_serving,
+        default_volume_ml: catalogRow.default_volume_ml,
+        volume_ml,
+      })
+    : 0;
+  const attributeCaffeine = shouldAttributeCaffeineForBeverageSlug({
+    deduplicated: false, // the dedup short circuit returned above; this branch is the non dedup path
+    beverage_kind,
   });
 
   const { data: mealRow, error: mealErr } = await admin
@@ -140,25 +228,33 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   const mealId = mealRow.meal_id;
 
+  const mealItemInsert: Record<string, unknown> = {
+    meal_id: mealId,
+    user_id: user.id,
+    position: 0,
+    food_name: foodName,
+    source: 'quick_log',
+    nutrient_source: 'user_entered',
+    portion_grams: volume_ml,
+    portion_volume_ml: volume_ml,
+    hydration_source_kind: beverage_kind,
+    hydration_ml: hydrationMl,
+    user_modified: false,
+    calories_kcal: 0,
+    protein_g: 0,
+    carbs_g: 0,
+    fat_g: 0,
+  };
+  if (beverage_slug && catalogRow) {
+    mealItemInsert.beverage_catalog_slug = beverage_slug;
+  }
+  if (attributeCaffeine && effectiveCaffeineMg > 0) {
+    mealItemInsert.caffeine_mg = effectiveCaffeineMg;
+  }
+
   const { error: itemErr } = await admin
     .from('meal_items')
-    .insert({
-      meal_id: mealId,
-      user_id: user.id,
-      position: 0,
-      food_name: foodName,
-      source: 'quick_log',
-      nutrient_source: 'user_entered',
-      portion_grams: volume_ml,
-      portion_volume_ml: volume_ml,
-      hydration_source_kind: beverage_kind,
-      hydration_ml: hydrationMl,
-      user_modified: false,
-      calories_kcal: 0,
-      protein_g: 0,
-      carbs_g: 0,
-      fat_g: 0,
-    });
+    .insert(mealItemInsert);
 
   if (itemErr) {
     safeLog.warn('api.hydration.quick_log', 'meal_item insert failed (meal already saved)', {
@@ -205,6 +301,50 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     hydration_ml_logged: hydrationMl,
     deduplicated: false,
   });
+}
+
+/**
+ * Phase C Workstream 2: count alcoholic drinks the user has already
+ * logged in the local UTC day for the captured_at anchor. Queries
+ * meal_items joined to meals via meal_id, filtered to rows whose
+ * beverage_catalog_slug joins to a beverage_catalog row with
+ * is_alcoholic = true OR whose hydration_source_kind is alcohol_low /
+ * alcohol_high (covers legacy 170o quick log path that has no slug).
+ * Defensive: any DB error returns 0 so the reduction never fires
+ * pessimistically on an admin auth fail.
+ */
+async function countDailyAlcoholicDrinks(args: {
+  admin: ReturnType<typeof createAdminClient>;
+  user_id: string;
+  day_anchor_iso: string;
+}): Promise<number> {
+  const dayStart = new Date(args.day_anchor_iso);
+  dayStart.setUTCHours(0, 0, 0, 0);
+  const dayStartIso = dayStart.toISOString();
+
+  try {
+    const { count, error } = await args.admin
+      .from('meal_items')
+      .select('id, meals!inner(user_id, logged_at)', { count: 'exact', head: true })
+      .eq('meals.user_id', args.user_id)
+      .gte('meals.logged_at', dayStartIso)
+      .lte('meals.logged_at', args.day_anchor_iso)
+      .in('hydration_source_kind', ['alcohol_low', 'alcohol_high']);
+    if (error) {
+      safeLog.warn('api.hydration.quick_log', 'daily alcohol count query failed (defaulting to 0)', {
+        error,
+        userId: args.user_id,
+      });
+      return 0;
+    }
+    return count ?? 0;
+  } catch (err) {
+    safeLog.warn('api.hydration.quick_log', 'daily alcohol count threw (defaulting to 0)', {
+      error: err,
+      userId: args.user_id,
+    });
+    return 0;
+  }
 }
 
 function hashUserId(userId: string): string {

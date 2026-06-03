@@ -111,6 +111,12 @@ const QuickLogRequestSchema = z.object({
   beverage_kind: z.enum(HYDRATION_SOURCE_KINDS).default('pure_water'),
   captured_at: z.string().datetime().optional(),
   log_surface: z.enum(HYDRATION_LOG_SURFACES).default('dashboard_widget'),
+  // Prompt 172e Phase C: when the user picks via the BeveragePicker the
+  // catalog row slug is passed through so the route can hydrate caffeine
+  // + alcohol attribution from the catalog row at write time. Optional
+  // for backward compatibility with the existing 170o quick log buttons
+  // that pass only the 9 value source kind.
+  beverage_slug: z.string().min(1).max(100).optional(),
 });
 
 export type QuickLogRequest = z.infer<typeof QuickLogRequestSchema>;

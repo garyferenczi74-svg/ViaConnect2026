@@ -70,6 +70,7 @@ export default function HydrationDetailPage(): JSX.Element {
       volume_ml: intent.volume_ml,
       beverage_kind: intent.beverage_kind as HydrationBeverageKind,
       log_surface: 'hydration_detail_view',
+      beverage_slug: intent.slug,
     });
     if (result === null) return;
     if (result.deduplicated) {

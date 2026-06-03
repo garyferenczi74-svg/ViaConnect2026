@@ -82,10 +82,16 @@ describe('170c section 8.4 silent UX, chrome stays identical', () => {
 
   it('picker chrome microcopy is identical in normal and safety mode', () => {
     // The picker chrome is every key that is not strictly informational about
-    // a suppressed numeric. None of the Phase B keys carry mode specific copy
-    // because the carve outs are about hiding numbers, not flipping copy.
+    // a suppressed numeric. Phase B keys carry no mode specific copy. Phase C
+    // added the alcohol diuretic threshold note which is the first key with
+    // a mode specific variant (normal carries a {count} placeholder, safety
+    // mode strips the count and the threshold framing per 170c section 8).
+    // Allowlist that key here so the chrome invariant stays pinned for every
+    // other Phase B + Phase C key.
+    const PHASE_C_VARIANT_KEYS = new Set<string>(['hydration.alcohol.diuretic.threshold_note']);
     const drifted: Array<{ key: string; normal: string; safety_mode: string }> = [];
     for (const key of HYDRATION_MICROCOPY_KEYS) {
+      if (PHASE_C_VARIANT_KEYS.has(key)) continue;
       const entry = HYDRATION_MICROCOPY_STRINGS[key];
       if (entry.normal !== entry.safety_mode) {
         drifted.push({ key, normal: entry.normal, safety_mode: entry.safety_mode });

@@ -32,6 +32,12 @@ export interface HydrationQuickLogArgs {
   volume_ml: number;
   beverage_kind?: HydrationBeverageKind;
   log_surface: HydrationLogSurface;
+  /**
+   * Prompt 172e Phase C: catalog row slug when the user picks via the
+   * BeveragePicker. Optional for backward compatibility with the legacy
+   * 170o quick log buttons that pass only beverage_kind.
+   */
+  beverage_slug?: string;
 }
 
 export interface HydrationQuickLogResult {
@@ -54,14 +60,18 @@ export function useHydrationQuickLog(): UseHydrationQuickLogReturn {
     setLoading(true);
     setError(null);
     try {
+      const payload: Record<string, unknown> = {
+        volume_ml: args.volume_ml,
+        beverage_kind: args.beverage_kind ?? 'pure_water',
+        log_surface: args.log_surface,
+      };
+      if (args.beverage_slug) {
+        payload.beverage_slug = args.beverage_slug;
+      }
       const resp = await fetch('/api/nutrition/hydration/quick-log', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          volume_ml: args.volume_ml,
-          beverage_kind: args.beverage_kind ?? 'pure_water',
-          log_surface: args.log_surface,
-        }),
+        body: JSON.stringify(payload),
       });
       if (resp.status === 503) {
         setError('Hydration tracking is temporarily unavailable.');

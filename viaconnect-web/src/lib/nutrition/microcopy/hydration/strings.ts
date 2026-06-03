@@ -144,4 +144,20 @@ export const HYDRATION_MICROCOPY_STRINGS: HydrationMicrocopyMap = {
     normal: 'Loading beverages...',
     safety_mode: 'Loading beverages...',
   },
+
+  // Phase C: alcohol diuretic threshold note (spec 5.3 + 8.4).
+  // Normal carries a {count} placeholder the caller interpolates with
+  // the user's logged alcoholic drink count for the local day. The
+  // wording stays factual ("can affect hydration"), never names the
+  // numeric threshold, and never prescribes behavior.
+  //
+  // Safety mode strips the count and the threshold framing entirely;
+  // it is a quiet single sentence that names alcohol and hydration
+  // without numbers, matching Phase B's silent UX precedent for
+  // drink counts. The string still has content so the lint sweep
+  // entry not empty check stays green.
+  'hydration.alcohol.diuretic.threshold_note': {
+    normal: 'Alcohol can affect hydration above a daily threshold. Logged drinks today: {count}.',
+    safety_mode: 'Alcohol can affect hydration.',
+  },
 };
