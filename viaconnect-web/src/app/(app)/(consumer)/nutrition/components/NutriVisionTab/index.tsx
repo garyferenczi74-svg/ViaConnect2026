@@ -49,8 +49,11 @@ import type { OFFProduct } from '@/lib/nutrition/barcode/types';
 import { VoiceNativeCaptureOverlay } from './VoiceNative/VoiceNativeCaptureOverlay';
 import { voiceNativeToMealDraft } from './VoiceNative/voice-native-to-meal-draft';
 import type { VoiceNativeParseResult, SttProvider } from '@/lib/nutrition/voice-native/types';
-// Prompt 170o Phase 1 Phase C: hydration card mounts below 4-button row.
-import { HydrationCard } from '@/components/hydration/HydrationCard';
+// Prompt 170o Phase 1 Phase C: hydration mounts below 4-button row. Gary
+// 2026-06-03: switched from the 88px summary HydrationCard to the accordion
+// that opens the full HydrationFullSection inline (same body as the detail
+// route and the dashboard Quick Log pill).
+import { HydrationAccordion } from '@/components/hydration/HydrationAccordion';
 import type {
   Phase,
   MealDraft,
@@ -1020,9 +1023,12 @@ function IdleSurface(props: IdleSurfaceProps) {
         />
       </div>
 
-      {/* Prompt 170o Phase 1 Phase C: hydration card per Hannah Surface 2.
-          Mounts below the 4-button entry path row. 88px compact. */}
-      <HydrationCard />
+      {/* Prompt 170o Phase 1 Phase C + Gary 2026-06-03: hydration accordion
+          below the 4-button entry path row. Header pill matches the meal
+          family; body is the full HydrationFullSection (ring + quick log +
+          intake timeline + caffeine overlay + breakdown + electrolyte +
+          picker + week + month + disclaimer + edit panel). */}
+      <HydrationAccordion logSurface="nutrivision_card" />
 
       {props.error ? (
         <p className="rounded-xl border border-[#FCA5A5]/40 bg-[#1A2744]/30 p-3 text-[12px] text-[#FCA5A5]" role="alert">
