@@ -179,16 +179,16 @@ function NutritionPageInner() {
         </div>
       </div>
 
-      {/* #170f Phase D: My Recipes library lives between Log a Meal and */}
-      {/* Daily Totals so users see it during the natural log-then-review */}
-      {/* scroll flow. Hidden entirely when NEXT_PUBLIC_RECIPES_LIBRARY_ */}
-      {/* ENABLED flag is off. */}
-      <RecipesLibrarySection />
-
       {/* Daily Totals section: stacked under Log a Meal per Gary 2026-05-15. */}
       {/* No tab strip; both render in document flow. onGoToLog scrolls user */}
       {/* up to the channel buttons since they live above this section now. */}
       <DailyTotalsTab onGoToLog={() => window.scrollTo({ top: 0, behavior: 'smooth' })} />
+
+      {/* Gary 2026-06-03: My Recipes library now sits under Today's Meals */}
+      {/* so users see their logged meals first, then pull from the recipe */}
+      {/* library. Hidden entirely when NEXT_PUBLIC_RECIPES_LIBRARY_ENABLED */}
+      {/* flag is off. */}
+      <RecipesLibrarySection />
 
       {/* Nutrition by Genetics: full-width tab.
           Requires a nutritional genetic test (NutrigenDX™ or equivalent)
