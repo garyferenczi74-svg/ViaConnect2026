@@ -15,6 +15,18 @@
  * The 171b caffeine engine reads meal_items.caffeine_mg directly so no
  * engine touch is required. The legacy quick log buttons that pass only
  * beverage_kind continue to work unchanged.
+ *
+ * Prompt 172e Phase F: when a catalog driven log lands (beverage_slug
+ * present, not deduplicated), the route attaches three coarse signal
+ * columns to the existing 20pct sampled telemetry insert
+ * (beverage_catalog_slug, effective_volume_bucket,
+ * caffeine_contributed_flag) and emits the
+ * nutrivision_hydration_catalog_log Helix event. If the post log distinct
+ * catalog category count for the day just hit 3, the route also emits
+ * nutrivision_hydration_catalog_diversity_3 (once_per_day frequency
+ * limit handled by the earning engine). Telemetry never carries the
+ * safety mode boolean and never carries raw mg values per spec section
+ * 12. Helix events stay consumer portal only by inheritance.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -39,6 +51,15 @@ import {
   getAlcoholDiureticThresholdDrinks,
   ALCOHOL_DIURETIC_FLOOR,
 } from '@/lib/nutrition/hydration/alcohol-config';
+import {
+  buildPhaseFTelemetryFields,
+} from '@/lib/nutrition/hydration/phase-f-telemetry';
+import {
+  countDistinctCatalogCategoriesToday,
+  shouldFireDiversity3,
+} from '@/lib/nutrition/hydration/phase-f-helix';
+import { creditEarning } from '@/lib/helix/earning-engine';
+import type { PricingSupabaseClient } from '@/lib/pricing/supabase-types';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -264,6 +285,18 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     });
   }
 
+  // Phase F: compute the three coarse signal columns. These ride on the
+  // existing 20pct sampled telemetry insert below and inform the Helix
+  // diversity_3 check. Spec section 12 forbidden fields
+  // (safety_mode_enabled, raw mg values, user_id beyond user_hash) are
+  // never present in the helper output.
+  const phaseFFields = buildPhaseFTelemetryFields({
+    beverage_slug: beverage_slug ?? null,
+    volume_ml,
+    effective_caffeine_mg: effectiveCaffeineMg,
+    attribute_caffeine: attributeCaffeine,
+  });
+
   if (Math.random() < 0.2) {
     try {
       const userHash = hashUserId(user.id);
@@ -276,10 +309,68 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         was_quick_log: true,
         was_voice_input: false,
         was_deduplicated: false,
+        beverage_catalog_slug: phaseFFields.beverage_catalog_slug,
+        effective_volume_bucket: phaseFFields.effective_volume_bucket,
+        caffeine_contributed_flag: phaseFFields.caffeine_contributed_flag,
       });
     } catch (telemetryErr) {
       safeLog.warn('api.hydration.quick_log', 'telemetry insert failed (non-fatal)', {
         error: telemetryErr,
+      });
+    }
+  }
+
+  // Phase F: emit Helix events on catalog driven logs only. Legacy 170o
+  // quick log button paths (no beverage_slug) fall through unchanged. A
+  // dedup hit short circuited above so this branch is the genuine new
+  // log path. Each event is fire and forget: a failure logs a warning
+  // and does not block the response. The diversity_3 event fires only
+  // when the post log distinct category count is exactly 3
+  // (shouldFireDiversity3); counts of 1, 2 are not at threshold yet and
+  // counts of 4+ already crossed earlier in the day (the once_per_day
+  // frequency limit handled by the earning engine catches re emissions
+  // either way; the route gate keeps the call volume tight).
+  if (beverage_slug && catalogRow) {
+    const pricingClient = admin as unknown as PricingSupabaseClient;
+    try {
+      await creditEarning(pricingClient, {
+        userId: user.id,
+        eventTypeId: 'nutrivision_hydration_catalog_log',
+        referenceId: mealId,
+        metadata: {
+          source: 'hydration_quick_log',
+          beverage_catalog_slug: beverage_slug,
+        },
+      });
+    } catch (helixErr) {
+      safeLog.warn('api.hydration.quick_log', 'catalog_log helix award failed (non-fatal)', {
+        error: helixErr,
+        userId: user.id,
+      });
+    }
+
+    try {
+      const distinctCount = await countDistinctCatalogCategoriesToday({
+        admin,
+        user_id: user.id,
+        day_anchor_iso: loggedAtIso,
+      });
+      if (shouldFireDiversity3(distinctCount)) {
+        await creditEarning(pricingClient, {
+          userId: user.id,
+          eventTypeId: 'nutrivision_hydration_catalog_diversity_3',
+          referenceId: mealId,
+          metadata: {
+            source: 'hydration_quick_log',
+            beverage_catalog_slug: beverage_slug,
+            post_log_distinct_categories: distinctCount,
+          },
+        });
+      }
+    } catch (helixErr) {
+      safeLog.warn('api.hydration.quick_log', 'diversity_3 helix award failed (non-fatal)', {
+        error: helixErr,
+        userId: user.id,
       });
     }
   }
