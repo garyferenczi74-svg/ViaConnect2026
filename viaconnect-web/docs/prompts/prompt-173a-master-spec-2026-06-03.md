@@ -1,7 +1,8 @@
 # Prompt 173a: Daily Macros Target Recomputation on the Nutrition Log
 
 **Filed:** 2026-06-03
-**Status:** Master spec filed; pending 6 decision-point confirmations + Jeffery ultrathink review
+**Status:** Master spec filed; Prompt 173 master now also filed (2026-06-03). Pre-ratifications: DP1 (goal multiplier on top of 0.8 g/lb LBM, Loss 0.9 / Maint 0.8 / Gain + Recomp 1.0) + DP4 (full CAQ selector + onboarding + Nutrition settings, Hannah-owned). Outstanding: DP2 lean-mass basis + Boer fallback, DP3 display rings vs rows, DP5 per-diet split + keto 30 g, DP6 fiber basis (calorie target vs consumed).
+**Dependency:** Prompt 173 master at `prompt-173-master-spec-2026-06-01.md` (filed 2026-06-03). HELD state cleared.
 **Relationship to Prompt 173:** Amendment to the Gordon Daily Macros engine defined in Prompt 173. Supersedes the protein basis in 173 Section 5.3, replaces the relevant constants in 173 Section 5.4, activates the diet-philosophy hook that 173 Section 11 left stubbed, and adds Fiber as a fourth tracked macro. Everything in 173 not explicitly changed here still holds, including the safety guardrails in 173 Section 5.5 and the "computed in exactly one place" rule.
 
 **Agents:** Gordon (Nutrition, slug gordon, owns the calculation), Arnold (Body Tracker and FormaVision, supplies body composition), Kelsey (FDA / Health Canada compliance, reviews coefficients and disclaimer), Michelangelo (TDD / OBRA)
