@@ -83,15 +83,22 @@ describe('170c section 8.4 silent UX, chrome stays identical', () => {
   it('picker chrome microcopy is identical in normal and safety mode', () => {
     // The picker chrome is every key that is not strictly informational about
     // a suppressed numeric. Phase B keys carry no mode specific copy. Phase C
-    // added the alcohol diuretic threshold note which is the first key with
-    // a mode specific variant (normal carries a {count} placeholder, safety
-    // mode strips the count and the threshold framing per 170c section 8).
-    // Allowlist that key here so the chrome invariant stays pinned for every
-    // other Phase B + Phase C key.
-    const PHASE_C_VARIANT_KEYS = new Set<string>(['hydration.alcohol.diuretic.threshold_note']);
+    // added the alcohol diuretic threshold note (normal carries a {count}
+    // placeholder, safety mode strips count + threshold framing). Phase D
+    // added the breakdown gross + effective labels and the electrolyte
+    // summary, all of which are numeric facing and thus get a qualitative
+    // safety mode variant per 170c section 8. Allowlist these here so the
+    // chrome invariant stays pinned for every other Phase B + Phase C +
+    // Phase D key.
+    const VARIANT_KEYS = new Set<string>([
+      'hydration.alcohol.diuretic.threshold_note',
+      'hydration.breakdown.gross_label',
+      'hydration.breakdown.effective_label',
+      'hydration.electrolytes.summary',
+    ]);
     const drifted: Array<{ key: string; normal: string; safety_mode: string }> = [];
     for (const key of HYDRATION_MICROCOPY_KEYS) {
-      if (PHASE_C_VARIANT_KEYS.has(key)) continue;
+      if (VARIANT_KEYS.has(key)) continue;
       const entry = HYDRATION_MICROCOPY_STRINGS[key];
       if (entry.normal !== entry.safety_mode) {
         drifted.push({ key, normal: entry.normal, safety_mode: entry.safety_mode });
@@ -99,7 +106,7 @@ describe('170c section 8.4 silent UX, chrome stays identical', () => {
     }
     expect(
       drifted,
-      `Phase B picker microcopy must read identical in both modes per 170c section 8.4. Drift: ${JSON.stringify(drifted, null, 2)}`,
+      `Picker microcopy must read identical in both modes per 170c section 8.4. Drift: ${JSON.stringify(drifted, null, 2)}`,
     ).toEqual([]);
   });
 

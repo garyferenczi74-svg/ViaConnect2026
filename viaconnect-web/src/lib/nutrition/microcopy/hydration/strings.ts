@@ -160,4 +160,55 @@ export const HYDRATION_MICROCOPY_STRINGS: HydrationMicrocopyMap = {
     normal: 'Alcohol can affect hydration with sustained intake. Logged drinks today: {count}.',
     safety_mode: 'Alcohol can affect hydration.',
   },
+
+  // Phase D: breakdown section (spec 10).
+  // Title reads identically in both modes per 170c section 8.4 silent UX.
+  // The gross and effective labels carry the ml unit in normal; in safety
+  // mode the breakdown surface is composition only (percentages only) so
+  // these labels render the qualitative phrasing per spec section 8.
+  'hydration.breakdown.title': {
+    normal: 'Beverage breakdown',
+    safety_mode: 'Beverage breakdown',
+  },
+  'hydration.breakdown.gross_label': {
+    normal: 'Gross fluid',
+    safety_mode: 'Composition',
+  },
+  'hydration.breakdown.effective_label': {
+    normal: 'Effective',
+    safety_mode: 'Share',
+  },
+  'hydration.breakdown.empty_today': {
+    normal: "Log a beverage to see today's breakdown.",
+    safety_mode: "Log a beverage to see today's breakdown.",
+  },
+
+  // Phase D: electrolyte summary (spec 10).
+  // Normal interpolates the three minerals; the caller fills {sodium},
+  // {potassium}, {magnesium} with whole mg values from the aggregator.
+  // Safety mode strips the numbers and renders a qualitative one liner
+  // per 170c section 8; the line still appears (silent UX, no visible
+  // mode indicator) but without numeric medical framing.
+  'hydration.electrolytes.summary': {
+    normal: 'Today: {sodium} mg sodium, {potassium} mg potassium, {magnesium} mg magnesium from beverages.',
+    safety_mode: 'Beverages today included electrolytes.',
+  },
+  'hydration.electrolytes.label': {
+    normal: 'Electrolytes from beverages',
+    safety_mode: 'Electrolytes from beverages',
+  },
+
+  // Phase D: caffeine overlay (spec 10).
+  // The overlay surface itself is hidden in safety mode per spec section
+  // 8; both variants carry the same label text so the lint sweep passes
+  // and so the safety mode path keeps the silent UX invariant when the
+  // overlay is hidden (no visible "you would be seeing X here" cue).
+  'hydration.caffeine_overlay.label': {
+    normal: 'Caffeine through the day',
+    safety_mode: 'Caffeine through the day',
+  },
+  'hydration.caffeine_overlay.sleep_indicator_label': {
+    normal: 'Estimated at sleep onset',
+    safety_mode: 'Estimated at sleep onset',
+  },
 };

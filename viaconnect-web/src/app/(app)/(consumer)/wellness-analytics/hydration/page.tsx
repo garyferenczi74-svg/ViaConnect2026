@@ -2,11 +2,22 @@
  * Prompt 170o Phase 1 Phase C: Hydration Detail view per Hannah §4.
  *
  * Route /wellness-analytics/hydration. Sections top to bottom: Today (ring
- * + full-size quick-log buttons + intake timeline) -> Log a Beverage
- * (172e Phase B catalog driven picker) -> This week (bar chart + average +
- * days-at-target count) -> This month (calendar heatmap + monthly average +
- * best day) -> Settings link -> FDA-verified disclaimer footer (Hannah-
- * revised copy supersedes spec §4.7 DSHEA boilerplate).
+ * + full-size quick-log buttons + intake timeline + Phase D caffeine
+ * overlay) -> Beverage breakdown (172e Phase D) -> Electrolyte summary
+ * (172e Phase D) -> Log a Beverage (172e Phase B catalog driven picker) ->
+ * This week (bar chart + average + days-at-target count) -> This month
+ * (calendar heatmap + monthly average + best day) -> Settings link ->
+ * FDA-verified disclaimer footer.
+ *
+ * Phase D mount order rationale (top to bottom):
+ *   Today (ring + timeline + caffeine overlay): primary daily focus
+ *   Breakdown: composition view sits closest to ring for visual link
+ *   Electrolyte summary: quiet contextual line under composition
+ *   Picker: the action surface comes after the read surfaces
+ *   This week / This month: historical context further down
+ * Per spec section 10 the breakdown lives between today and the picker
+ * so the user sees the composition of what they have logged before
+ * being prompted to log more.
  *
  * Prompt 172e Phase B: BeveragePicker mounted between Today and This week.
  * The picker emits BeverageLogIntent on confirm; this page wires that
@@ -16,7 +27,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
 import { ArrowLeft, Droplet, Coffee, Wine, Beer, Milk } from 'lucide-react';
@@ -31,6 +42,11 @@ import type { HydrationHistoryDay } from '@/components/hydration/useHydrationHis
 import type { HydrationBeverageKind } from '@/components/hydration/useHydrationQuickLog';
 import { BeveragePicker } from '@/components/nutrition/hydration/BeveragePicker';
 import type { BeverageLogIntent } from '@/components/nutrition/hydration/BeveragePicker';
+import { BeverageBreakdown } from '@/components/nutrition/hydration/BeverageBreakdown';
+import { ElectrolyteSummary } from '@/components/nutrition/hydration/ElectrolyteSummary';
+import type { ElectrolyteCatalogRow } from '@/components/nutrition/hydration/ElectrolyteSummary';
+import { CaffeineOverlay } from '@/components/nutrition/hydration/CaffeineOverlay';
+import { useBeverageCatalog } from '@/components/nutrition/hydration/BeveragePicker/useBeverageCatalog';
 
 const BEVERAGE_KIND_LABELS: Record<string, { label: string; Icon: typeof Droplet }> = {
   pure_water: { label: 'Water', Icon: Droplet },
@@ -58,9 +74,65 @@ export default function HydrationDetailPage(): JSX.Element {
   const today = useHydrationToday();
   const week = useHydrationHistory('week');
   const month = useHydrationHistory('month');
+  const catalogState = useBeverageCatalog();
 
   const [editTarget, setEditTarget] = useState<{ mealId: string; volume: number; kind: HydrationBeverageKind } | null>(null);
   const { log: logBeverage } = useHydrationQuickLog();
+
+  // Prompt 172e Phase D: fetch sleep_start for the caffeine overlay sleep
+  // onset indicator. Falls back to the 171b default 23:00 when the user
+  // has not set their window yet via /settings/sleep-window. The 171b
+  // BOS scoring uses the same default so the overlay reads the same
+  // anchor as the engine.
+  const [sleepStartHHMM, setSleepStartHHMM] = useState<string>('23:00');
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      try {
+        const res = await fetch('/api/profile/sleep-window');
+        if (!res.ok) return;
+        const json = (await res.json()) as { sleep_start: string | null; default_sleep_start: string };
+        if (cancelled) return;
+        setSleepStartHHMM(json.sleep_start ?? json.default_sleep_start ?? '23:00');
+      } catch {
+        // Defensive: fall back to the 23:00 default. The overlay still
+        // renders sensibly; the sleep onset indicator just anchors to
+        // the same default the BOS engine uses.
+      }
+    }
+    void load();
+    return () => { cancelled = true; };
+  }, []);
+
+  // Phase D: caffeine overlay events derive from today.events filtered to
+  // rows with caffeine_mg > 0. ElectrolyteSummary events feed the full
+  // today.events with the catalog joined client side via the picker
+  // catalog hook so we do not double fetch.
+  const caffeineEvents = (today.data?.events_today ?? [])
+    .filter((ev) => typeof ev.caffeine_mg === 'number' && ev.caffeine_mg > 0)
+    .map((ev) => ({
+      meal_id: ev.meal_id,
+      caffeine_mg: Number(ev.caffeine_mg ?? 0),
+      logged_at: ev.logged_at,
+    }));
+
+  const electrolyteEvents = (today.data?.events_today ?? []).map((ev) => ({
+    meal_id: ev.meal_id,
+    beverage_catalog_slug: ev.beverage_catalog_slug ?? null,
+    volume_ml: ev.volume_ml,
+  }));
+
+  // The ElectrolyteSummary catalog rows mirror BreakdownCatalogRow with
+  // the mineral columns added; cast from the picker catalog (which
+  // already exposes those columns per Phase B).
+  const electrolyteCatalog: ReadonlyArray<ElectrolyteCatalogRow> = catalogState.catalog.map((row) => ({
+    slug: row.slug,
+    category: row.category,
+    default_volume_ml: row.default_volume_ml,
+    sodium_mg: row.sodium_mg,
+    potassium_mg: row.potassium_mg,
+    magnesium_mg: row.magnesium_mg,
+  }));
 
   const total = today.data?.total_ml ?? 0;
   const target = today.data?.target_ml ?? 1890;
@@ -170,7 +242,31 @@ export default function HydrationDetailPage(): JSX.Element {
               </ul>
             </div>
           ) : null}
+
+          {/* Prompt 172e Phase D Workstream 2: caffeine overlay sits inside
+              the Today card so the timeline + overlay read as one section.
+              The component returns null in safety mode (silent UX per spec
+              section 8) and null when no caffeine events exist today. */}
+          {caffeineEvents.length > 0 ? (
+            <div className="mt-6">
+              <CaffeineOverlay events={caffeineEvents} sleepStartHHMM={sleepStartHHMM} />
+            </div>
+          ) : null}
         </section>
+
+        {/* Prompt 172e Phase D Workstream 1: beverage breakdown sits
+            directly below Today so the user sees the composition of what
+            they have logged before being prompted to log more. */}
+        <div className="mt-4">
+          <BeverageBreakdown />
+        </div>
+
+        {/* Prompt 172e Phase D Workstream 3: electrolyte summary sits
+            below breakdown and above picker per spec section 10. Quiet
+            single line; safety mode swaps to qualitative phrasing. */}
+        <div className="mt-4">
+          <ElectrolyteSummary events={electrolyteEvents} catalog={electrolyteCatalog} />
+        </div>
 
         <div className="mt-4">
           <BeveragePicker onLogged={handleBeveragePickerLogged} />

@@ -48,9 +48,14 @@ export async function GET(): Promise<NextResponse> {
   });
   const countingMode = (profileRow?.hydration_counting_mode === 'adjusted' ? 'adjusted' : 'conservative') as 'conservative' | 'adjusted';
 
+  // Prompt 172e Phase D: select also beverage_catalog_slug + caffeine_mg
+  // so the BeverageBreakdown / CaffeineOverlay / ElectrolyteSummary can
+  // consume the same events list without a second fetch. Append only;
+  // existing fields stay identical so the 170o quick log buttons and the
+  // edit panel continue reading exactly what they read before.
   const { data: events, error: eventsErr } = await admin
     .from('meal_items')
-    .select('meal_id, hydration_source_kind, hydration_ml, portion_volume_ml, food_name, meals!inner(user_id, logged_at, meal_kind)')
+    .select('meal_id, hydration_source_kind, hydration_ml, portion_volume_ml, food_name, beverage_catalog_slug, caffeine_mg, meals!inner(user_id, logged_at, meal_kind)')
     .eq('meals.user_id', user.id)
     .gte('meals.logged_at', todayStartIso)
     .not('hydration_source_kind', 'is', null)
@@ -67,6 +72,8 @@ export async function GET(): Promise<NextResponse> {
     hydration_ml: number | null;
     portion_volume_ml: number | null;
     food_name: string;
+    beverage_catalog_slug: string | null;
+    caffeine_mg: number | null;
     meals: { logged_at: string; meal_kind: string } | { logged_at: string; meal_kind: string }[];
   };
 
@@ -80,6 +87,8 @@ export async function GET(): Promise<NextResponse> {
     volume_ml: number;
     beverage_kind: string;
     food_name: string;
+    beverage_catalog_slug: string | null;
+    caffeine_mg: number | null;
   }> = [];
 
   for (const row of rows) {
@@ -94,6 +103,8 @@ export async function GET(): Promise<NextResponse> {
       volume_ml: Number(row.portion_volume_ml ?? 0),
       beverage_kind: row.hydration_source_kind,
       food_name: row.food_name,
+      beverage_catalog_slug: row.beverage_catalog_slug,
+      caffeine_mg: row.caffeine_mg !== null ? Number(row.caffeine_mg) : null,
     });
   }
 

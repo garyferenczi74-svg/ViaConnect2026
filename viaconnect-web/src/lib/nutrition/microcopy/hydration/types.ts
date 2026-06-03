@@ -60,7 +60,26 @@ export type HydrationMicrocopyKey =
   // current day drink count; safety_mode strips both the count and the
   // threshold framing per 170c silent UX. The string never names the
   // threshold value itself to avoid implying medical advice.
-  | 'hydration.alcohol.diuretic.threshold_note';
+  | 'hydration.alcohol.diuretic.threshold_note'
+  // Phase D: breakdown section (spec 10).
+  // Header line + per category label phrasing. Normal renders the
+  // absolute ml + effective ml; safety_mode strips ml and renders
+  // composition only per 170c section 8.
+  | 'hydration.breakdown.title'
+  | 'hydration.breakdown.gross_label'
+  | 'hydration.breakdown.effective_label'
+  | 'hydration.breakdown.empty_today'
+  // Phase D: electrolyte summary (spec 10).
+  // Normal interpolates {sodium}, {potassium}, {magnesium}; safety_mode
+  // strips the numbers and renders a qualitative one liner per 170c
+  // section 8.
+  | 'hydration.electrolytes.summary'
+  | 'hydration.electrolytes.label'
+  // Phase D: caffeine overlay (spec 10).
+  // Header label for the overlay. Overlay itself is hidden in safety
+  // mode; keys still need a safety_mode variant for lint completeness.
+  | 'hydration.caffeine_overlay.label'
+  | 'hydration.caffeine_overlay.sleep_indicator_label';
 
 export interface HydrationMicrocopyEntry {
   normal: string;

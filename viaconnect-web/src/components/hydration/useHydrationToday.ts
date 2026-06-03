@@ -16,6 +16,10 @@ export interface HydrationTodayEvent {
   volume_ml: number;
   beverage_kind: string;
   food_name: string;
+  /** Prompt 172e Phase D append: catalog row slug when logged via picker. */
+  beverage_catalog_slug?: string | null;
+  /** Prompt 172e Phase D append: per row caffeine for the overlay. */
+  caffeine_mg?: number | null;
 }
 
 export interface HydrationTodayData {
