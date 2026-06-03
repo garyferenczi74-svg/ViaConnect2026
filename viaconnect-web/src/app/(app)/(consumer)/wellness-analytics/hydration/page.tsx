@@ -2,25 +2,35 @@
  * Prompt 170o Phase 1 Phase C: Hydration Detail view per Hannah §4.
  *
  * Route /wellness-analytics/hydration. Sections top to bottom: Today (ring
- * + full-size quick-log buttons + intake timeline) -> This week (bar chart
- * + average + days-at-target count) -> This month (calendar heatmap +
- * monthly average + best day) -> Settings link -> FDA-verified disclaimer
- * footer (Hannah-revised copy supersedes spec §4.7 DSHEA boilerplate).
+ * + full-size quick-log buttons + intake timeline) -> Log a Beverage
+ * (172e Phase B catalog driven picker) -> This week (bar chart + average +
+ * days-at-target count) -> This month (calendar heatmap + monthly average +
+ * best day) -> Settings link -> FDA-verified disclaimer footer (Hannah-
+ * revised copy supersedes spec §4.7 DSHEA boilerplate).
+ *
+ * Prompt 172e Phase B: BeveragePicker mounted between Today and This week.
+ * The picker emits BeverageLogIntent on confirm; this page wires that
+ * intent to the existing 170o useHydrationQuickLog write path so no new
+ * write surface is introduced.
  */
 
 'use client';
 
 import { useState } from 'react';
 import Link from 'next/link';
+import toast from 'react-hot-toast';
 import { ArrowLeft, Droplet, Coffee, Wine, Beer, Milk } from 'lucide-react';
 import { HydrationRing, formatVolumeLabel } from '@/components/hydration/HydrationRing';
 import { HydrationQuickLogButtons } from '@/components/hydration/HydrationQuickLogButtons';
 import { HydrationEditPanel } from '@/components/hydration/HydrationEditPanel';
 import { useHydrationToday } from '@/components/hydration/useHydrationToday';
 import { useHydrationHistory } from '@/components/hydration/useHydrationHistory';
+import { useHydrationQuickLog } from '@/components/hydration/useHydrationQuickLog';
 import type { HydrationTodayEvent } from '@/components/hydration/useHydrationToday';
 import type { HydrationHistoryDay } from '@/components/hydration/useHydrationHistory';
 import type { HydrationBeverageKind } from '@/components/hydration/useHydrationQuickLog';
+import { BeveragePicker } from '@/components/nutrition/hydration/BeveragePicker';
+import type { BeverageLogIntent } from '@/components/nutrition/hydration/BeveragePicker';
 
 const BEVERAGE_KIND_LABELS: Record<string, { label: string; Icon: typeof Droplet }> = {
   pure_water: { label: 'Water', Icon: Droplet },
@@ -50,9 +60,27 @@ export default function HydrationDetailPage(): JSX.Element {
   const month = useHydrationHistory('month');
 
   const [editTarget, setEditTarget] = useState<{ mealId: string; volume: number; kind: HydrationBeverageKind } | null>(null);
+  const { log: logBeverage } = useHydrationQuickLog();
 
   const total = today.data?.total_ml ?? 0;
   const target = today.data?.target_ml ?? 1890;
+
+  async function handleBeveragePickerLogged(intent: BeverageLogIntent): Promise<void> {
+    const result = await logBeverage({
+      volume_ml: intent.volume_ml,
+      beverage_kind: intent.beverage_kind as HydrationBeverageKind,
+      log_surface: 'hydration_detail_view',
+    });
+    if (result === null) return;
+    if (result.deduplicated) {
+      toast.success('Already logged within the last few minutes.');
+    } else {
+      toast.success(`Logged ${intent.volume_ml} ml`);
+    }
+    void today.refresh();
+    void week.refresh();
+    void month.refresh();
+  }
 
   return (
     <div className="min-h-screen w-full bg-[#1A2744] text-white">
@@ -142,6 +170,10 @@ export default function HydrationDetailPage(): JSX.Element {
             </div>
           ) : null}
         </section>
+
+        <div className="mt-4">
+          <BeveragePicker onLogged={handleBeveragePickerLogged} />
+        </div>
 
         <section
           aria-labelledby="hydration-week-heading"
