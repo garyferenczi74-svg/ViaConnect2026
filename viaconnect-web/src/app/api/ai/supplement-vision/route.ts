@@ -1,225 +1,274 @@
 import { NextResponse } from 'next/server';
-import sharp from 'sharp';
-import { withAbortTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
-import { getCircuitBreaker, isCircuitBreakerError } from '@/lib/utils/circuit-breaker';
+import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
+import { createClaudeTierAdapter } from '@/lib/caq/supplement-extraction/claude-tier';
+import { runExtraction } from '@/lib/caq/supplement-extraction/router';
+import { matchAllExtracted } from '@/lib/caq/supplement-extraction/canonical-match';
+import { logExtractionAttempt } from '@/lib/caq/supplement-extraction/observability';
+import {
+  validateAndNormalize,
+  isValidationError,
+} from '@/lib/caq/supplement-extraction/validate';
+import type {
+  ExtractedSupplement,
+  ExtractionOutcomeCode,
+  ExtractionResult,
+  TierAttempt,
+} from '@/lib/caq/supplement-extraction/types';
 
-// Prompt 175 Part A (2026-06-04): every user-facing error string in this
-// route has been replaced with neutral copy + a typed outcome code so the
-// CAQ photo block can degrade gracefully to its existing manual search.
-// The string "ANTHROPIC_API_KEY not set in .env.local" must NEVER reach
-// the browser; server-side safeLog retains the actual condition.
+// Prompt 175 Parts A + H + I (2026-06-04): tiered Claude extraction route.
+//
+// Pipeline per request:
+//   1. validateAndNormalize (sharp strips EXIF, caps dimensions, HEIC convert)
+//   2. createClaudeTierAdapter -> runExtraction (Haiku -> Sonnet -> opt Opus)
+//   3. matchAllExtracted against the canonical supplement database
+//   4. logExtractionAttempt to caq_supplement_extraction_log via admin client
+//   5. Translate ExtractionResult -> legacy IdentifiedProduct so the
+//      existing CAQ Phase 3 UI keeps working without a UI rewrite.
+//
+// Every user-facing error string is neutral and routes through one of the
+// USER_MESSAGE_FOR_* constants. The string "ANTHROPIC_API_KEY not set in
+// .env.local" must NEVER reach the browser; server-side safeLog retains
+// the actual condition.
 
-const visionBreaker = getCircuitBreaker('claude-vision');
-
-export const maxDuration = 60;
+export const maxDuration = 90;
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-const ANTHROPIC_ALLOWED_MIME = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'] as const;
-type AnthropicMime = typeof ANTHROPIC_ALLOWED_MIME[number];
-const HEIC_MIME = ['image/heic', 'image/heif'];
-const MAX_BYTES_AFTER_NORMALIZE = 5 * 1024 * 1024;
-
-// Neutral user-facing copy mapped from internal outcome codes. Never names
-// the internal config or the upstream provider.
 const USER_MESSAGE_FOR_MANUAL_FALLBACK =
   'We could not read your label automatically. Please add it using the search below.';
 const USER_MESSAGE_FOR_RETRY =
   'Photo analysis hit a snag. Please try again, or add it using the search below.';
 const USER_MESSAGE_FOR_UNSUPPORTED =
   'Unsupported image format. Please use a JPEG, PNG, WebP, or HEIC photo.';
-const USER_MESSAGE_FOR_HEIC_CONVERT =
-  'Could not read that HEIC photo. Try retaking in JPG mode, or upload a different photo.';
 
-type SupplementVisionOutcome =
-  | 'success'
-  | 'config_missing'
-  | 'circuit_open'
-  | 'timeout'
-  | 'upstream_error'
-  | 'unsupported_image'
-  | 'heic_convert_failed'
-  | 'parse_failed'
-  | 'unknown';
+interface LegacyIdentifiedProduct {
+  brand: string | null;
+  productName: string | null;
+  servingSize: string | null;
+  totalCount: number | null;
+  ingredients: Array<{
+    name: string;
+    form: string | null;
+    amount: number | null;
+    unit: string | null;
+    isPartOfBlend: boolean;
+  }>;
+  overallConfidence: 'high' | 'medium' | 'low';
+}
 
 export async function POST(request: Request) {
   try {
-    const { imageBase64, mimeType } = await request.json();
-    if (!imageBase64) {
-      return NextResponse.json(
-        { success: false, outcomeCode: 'unsupported_image', error: 'No image was sent.' satisfies string },
-        { status: 400 },
-      );
+    const body = await safeJson(request);
+    const imageBase64 = body?.imageBase64;
+    const mimeType = body?.mimeType;
+
+    if (typeof imageBase64 !== 'string' || imageBase64.length === 0) {
+      return jsonError('unsupported_image', USER_MESSAGE_FOR_UNSUPPORTED, 400);
     }
 
     const apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) {
-      // Server log retains the actionable detail; client gets neutral copy
-      // mapped to the manual-fallback branch by outcomeCode.
-      safeLog.warn('api.ai.supplement-vision', 'extraction unavailable: ANTHROPIC_API_KEY missing on server', {});
-      return NextResponse.json(
-        {
-          success: false,
-          outcomeCode: 'config_missing' satisfies SupplementVisionOutcome,
-          error: USER_MESSAGE_FOR_MANUAL_FALLBACK,
-        },
-        { status: 503 },
+      safeLog.warn(
+        'api.ai.supplement-vision',
+        'extraction unavailable: ANTHROPIC_API_KEY missing on server',
+        {},
       );
+      return jsonError('config_missing', USER_MESSAGE_FOR_MANUAL_FALLBACK, 503);
     }
 
-    let normalizedBase64: string = imageBase64;
-    let normalizedMime: string = (typeof mimeType === 'string' ? mimeType : 'image/jpeg').toLowerCase();
+    // Session client for canonical-match RLS + user id; admin client for
+    // the observability insert (service-role bypass).
+    const supabase = createClient();
+    const { data: userData } = await supabase.auth.getUser();
+    const userId: string | null = userData?.user?.id ?? null;
 
-    if (HEIC_MIME.includes(normalizedMime)) {
-      try {
-        const inputBuffer = Buffer.from(imageBase64, 'base64');
-        let outputBuffer = await sharp(inputBuffer).jpeg({ quality: 85 }).toBuffer();
-        if (outputBuffer.byteLength > MAX_BYTES_AFTER_NORMALIZE) {
-          outputBuffer = await sharp(inputBuffer)
-            .resize({ width: 1800, withoutEnlargement: true })
-            .jpeg({ quality: 80 })
-            .toBuffer();
-        }
-        normalizedBase64 = outputBuffer.toString('base64');
-        normalizedMime = 'image/jpeg';
-      } catch {
-        return NextResponse.json(
-          {
-            success: false,
-            outcomeCode: 'heic_convert_failed' satisfies SupplementVisionOutcome,
-            error: USER_MESSAGE_FOR_HEIC_CONVERT,
-          },
-          { status: 400 },
-        );
-      }
-    }
-
-    if (!ANTHROPIC_ALLOWED_MIME.includes(normalizedMime as AnthropicMime)) {
-      return NextResponse.json(
-        {
-          success: false,
-          outcomeCode: 'unsupported_image' satisfies SupplementVisionOutcome,
-          error: USER_MESSAGE_FOR_UNSUPPORTED,
-        },
-        { status: 400 },
-      );
-    }
-
-    let res: Response;
+    const mimeTypeString = typeof mimeType === 'string' ? mimeType : null;
+    let normalized;
     try {
-      res = await visionBreaker.execute(() =>
-        withAbortTimeout(
-          (signal) => fetch('https://api.anthropic.com/v1/messages', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
-            body: JSON.stringify({
-              model: 'claude-sonnet-4-20250514',
-              max_tokens: 4096,
-              messages: [{ role: 'user', content: [
-                { type: 'image', source: { type: 'base64', media_type: normalizedMime, data: normalizedBase64 } },
-                { type: 'text', text: 'You are a supplement product identification engine. Look at this supplement product photo and extract ALL information. Return ONLY valid JSON (no markdown, no backticks): {"brand":"string","productName":"string","servingSize":"string","totalCount":0,"ingredients":[{"name":"string","form":"string or null","amount":0,"unit":"mg","isPartOfBlend":false}],"overallConfidence":"high or medium or low"}' }
-              ]}]
-            }),
-            signal,
-          }),
-          30000,
-          'api.ai.supplement-vision.claude-vision',
-        )
-      );
-    } catch (apiErr) {
-      if (isCircuitBreakerError(apiErr)) {
-        safeLog.warn('api.ai.supplement-vision', 'vision circuit open', { error: apiErr });
-        return NextResponse.json(
-          {
-            success: false,
-            outcomeCode: 'circuit_open' satisfies SupplementVisionOutcome,
-            error: USER_MESSAGE_FOR_RETRY,
-          },
-          { status: 503 },
-        );
+      normalized = await validateAndNormalize(imageBase64, mimeTypeString);
+    } catch (err) {
+      if (isValidationError(err)) {
+        const status = err.code === 'unsupported_image' ? 400 : 422;
+        return jsonError(err.code, USER_MESSAGE_FOR_UNSUPPORTED, status);
       }
-      if (isTimeoutError(apiErr)) {
-        safeLog.warn('api.ai.supplement-vision', 'vision timeout', { error: apiErr });
-        return NextResponse.json(
-          {
-            success: false,
-            outcomeCode: 'timeout' satisfies SupplementVisionOutcome,
-            error: USER_MESSAGE_FOR_RETRY,
-          },
-          { status: 504 },
-        );
-      }
-      safeLog.error('api.ai.supplement-vision', 'vision fetch failed', { error: apiErr });
-      return NextResponse.json(
-        {
-          success: false,
-          outcomeCode: 'upstream_error' satisfies SupplementVisionOutcome,
-          error: USER_MESSAGE_FOR_RETRY,
-        },
-        { status: 502 },
+      safeLog.error('api.ai.supplement-vision', 'normalize failed', { error: err });
+      return jsonError('image_normalize_failed', USER_MESSAGE_FOR_RETRY, 500);
+    }
+
+    const adapter = createClaudeTierAdapter({
+      apiKey,
+      imageBase64: normalized.base64,
+      mimeType: normalized.mimeType,
+    });
+
+    const { result, attempts } = await runExtraction(adapter);
+    const finalAttempt = attempts[attempts.length - 1];
+    const escalated = attempts.length > 1;
+
+    // Failure path: every tier struck out, or the model returned zero items.
+    if (result.outcomeCode !== 'success' || result.items.length === 0) {
+      await fireAndForgetLog(userId, finalAttempt, escalated, 0);
+      const code = result.items.length === 0 && result.outcomeCode === 'success'
+        ? 'no_items'
+        : result.outcomeCode;
+      return jsonError(
+        code,
+        mapOutcomeToUserMessage(code),
+        mapOutcomeToStatus(code),
       );
     }
 
-    if (!res.ok) {
-      // Read the upstream body for server logs ONLY; never echo it back to
-      // the client. Stripping HTTP status from the client response too so
-      // the surface stays neutral.
-      const upstreamBody = await res.text();
-      safeLog.error('api.ai.supplement-vision', 'vision non-2xx', { status: res.status, errBody: upstreamBody.slice(0, 200) });
-      return NextResponse.json(
-        {
-          success: false,
-          outcomeCode: 'upstream_error' satisfies SupplementVisionOutcome,
-          error: USER_MESSAGE_FOR_RETRY,
-        },
-        { status: 502 },
-      );
-    }
-
-    const data = await res.json();
-    const text = data.content?.find((b: { type: string; text?: string }) => b.type === 'text')?.text || '';
-    const clean = text.replace(/```json?\s*/gi, '').replace(/```/g, '').trim();
-    const m = clean.match(/\{[\s\S]*\}/);
-    if (!m) {
-      safeLog.warn('api.ai.supplement-vision', 'no JSON in response', { previewLen: clean.length });
-      return NextResponse.json(
-        {
-          success: false,
-          outcomeCode: 'parse_failed' satisfies SupplementVisionOutcome,
-          error: USER_MESSAGE_FOR_MANUAL_FALLBACK,
-        },
-        { status: 502 },
-      );
-    }
-
+    // Canonical-match runs against the existing search_supplements_v2 RPC.
+    // Defensive: a match failure must not drop the extraction response.
+    let matchedCount = 0;
     try {
-      const parsed = JSON.parse(m[0]);
-      return NextResponse.json({
-        success: true,
-        outcomeCode: 'success' satisfies SupplementVisionOutcome,
-        data: parsed,
-      });
-    } catch (parseErr) {
-      safeLog.warn('api.ai.supplement-vision', 'JSON parse failed', { error: parseErr });
-      return NextResponse.json(
-        {
-          success: false,
-          outcomeCode: 'parse_failed' satisfies SupplementVisionOutcome,
-          error: USER_MESSAGE_FOR_MANUAL_FALLBACK,
-        },
-        { status: 502 },
-      );
+      const matched = await matchAllExtracted(result.items, supabase);
+      for (const m of matched) {
+        if (m.match.status === 'matched') matchedCount += 1;
+      }
+    } catch (matchErr) {
+      safeLog.warn('api.ai.supplement-vision', 'canonical match failed', { error: matchErr });
     }
+
+    await fireAndForgetLog(userId, finalAttempt, escalated, matchedCount);
+
+    const legacy = toLegacyShape(result);
+    return NextResponse.json({
+      success: true,
+      outcomeCode: 'success' satisfies ExtractionOutcomeCode,
+      data: legacy,
+      modelTier: result.modelTier,
+      escalated,
+    });
   } catch (err: unknown) {
     safeLog.error('api.ai.supplement-vision', 'unexpected error', { error: err });
-    return NextResponse.json(
-      {
-        success: false,
-        outcomeCode: 'unknown' satisfies SupplementVisionOutcome,
-        error: USER_MESSAGE_FOR_RETRY,
-      },
-      { status: 500 },
-    );
+    return jsonError('unknown', USER_MESSAGE_FOR_RETRY, 500);
   }
 }
+
+function jsonError(code: ExtractionOutcomeCode, message: string, status: number) {
+  return NextResponse.json(
+    { success: false, outcomeCode: code, error: message },
+    { status },
+  );
+}
+
+function mapOutcomeToUserMessage(code: ExtractionOutcomeCode): string {
+  switch (code) {
+    case 'config_missing':
+    case 'parse_failed':
+    case 'no_items':
+      return USER_MESSAGE_FOR_MANUAL_FALLBACK;
+    case 'circuit_open':
+    case 'timeout':
+    case 'upstream_error':
+      return USER_MESSAGE_FOR_RETRY;
+    case 'unsupported_image':
+    case 'image_normalize_failed':
+      return USER_MESSAGE_FOR_UNSUPPORTED;
+    default:
+      return USER_MESSAGE_FOR_RETRY;
+  }
+}
+
+function mapOutcomeToStatus(code: ExtractionOutcomeCode): number {
+  switch (code) {
+    case 'config_missing':
+    case 'circuit_open':
+      return 503;
+    case 'timeout':
+      return 504;
+    case 'upstream_error':
+    case 'parse_failed':
+      return 502;
+    case 'unsupported_image':
+    case 'image_normalize_failed':
+      return 400;
+    case 'no_items':
+      return 200; // graceful fallback, UI surfaces neutral copy
+    default:
+      return 500;
+  }
+}
+
+/**
+ * Translate the ExtractionResult into the legacy IdentifiedProduct shape
+ * the existing CAQ Phase 3 UI already consumes. Picks the most common
+ * brand among items and uses the first item's name as the displayed
+ * product name; ingredients are the full item list.
+ *
+ * overallConfidence is derived from the average per-item confidence:
+ *   >= 0.7 -> 'high', >= 0.5 -> 'medium', else 'low'.
+ * The 'low' value triggers the UI's existing manual-entry CTA via the
+ * onLowConfidence prop.
+ */
+function toLegacyShape(result: ExtractionResult): LegacyIdentifiedProduct {
+  const items = result.items;
+  const brand = pickMostCommon(items.map((it) => it.brand).filter((b): b is string => !!b));
+  const productName = items[0]?.name?.trim() || null;
+  const avg = items.length === 0
+    ? 0
+    : items.reduce((acc, it) => acc + (Number.isFinite(it.confidence) ? it.confidence : 0), 0) / items.length;
+  const overallConfidence: 'high' | 'medium' | 'low' =
+    avg >= 0.7 ? 'high' : avg >= 0.5 ? 'medium' : 'low';
+
+  return {
+    brand,
+    productName,
+    servingSize: null,
+    totalCount: null,
+    ingredients: items.map((it) => ({
+      name: it.name || it.rawText || 'Ingredient',
+      form: it.form,
+      amount: it.dose,
+      unit: it.unit,
+      isPartOfBlend: false,
+    })),
+    overallConfidence,
+  };
+}
+
+function pickMostCommon(values: ReadonlyArray<string>): string | null {
+  if (values.length === 0) return null;
+  const counts = new Map<string, number>();
+  for (const v of values) counts.set(v, (counts.get(v) ?? 0) + 1);
+  let best: string | null = null;
+  let bestCount = 0;
+  for (const [v, c] of counts) {
+    if (c > bestCount) { best = v; bestCount = c; }
+  }
+  return best;
+}
+
+async function fireAndForgetLog(
+  userId: string | null,
+  finalAttempt: TierAttempt | undefined,
+  escalated: boolean,
+  matchedCount: number,
+): Promise<void> {
+  if (!userId || !finalAttempt) return;
+  try {
+    await logExtractionAttempt(
+      { userId, finalAttempt, escalated, matchedCount },
+      createAdminClient(),
+    );
+  } catch (err) {
+    safeLog.warn('api.ai.supplement-vision', 'observability log failed', { error: err });
+  }
+}
+
+async function safeJson(request: Request): Promise<{ imageBase64?: unknown; mimeType?: unknown } | null> {
+  try {
+    const parsed = await request.json();
+    if (parsed && typeof parsed === 'object') return parsed as { imageBase64?: unknown; mimeType?: unknown };
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+// Re-export the unused contract types for any future TS importer; kept here
+// rather than at the top so the route stays focused on POST.
+export type { ExtractedSupplement };
