@@ -5,6 +5,12 @@ const INTERSTITIAL_VIDEO_URL =
 
 export interface InterstitialConfig {
   id: string;
+  // Prompt 173b §1 binding rule: optional semantic phase id (e.g.,
+  // "phase_lifestyle", "phase_family_history", "phase_meds_supps"). Phase
+  // interstitials carry the id of the form phase that follows them so the
+  // sequencer can reorder by reading the canonical phase order array.
+  // Post-CAQ interstitials (completion, packages, welcome) omit this field.
+  phaseId?: string;
   quote: string;
   subtext?: string;
   background: {

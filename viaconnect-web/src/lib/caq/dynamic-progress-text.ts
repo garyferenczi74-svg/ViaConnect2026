@@ -1,5 +1,10 @@
 // Dynamic Pattern-Aware Progress Text for CAQ Phases
-// Generates context-sensitive progress messages based on partial assessment data
+// Generates context-sensitive progress messages based on partial assessment data.
+//
+// Prompt 173 reorder (2026-06-03): keyed by stable step id (`stepId`) instead
+// of numeric position so the right copy travels with each phase wherever it
+// sits in the canonical order. Position-derived "Final phase!" framing fires
+// on Medications, Supplements, and Allergies (step id "4") after the remap.
 
 interface PartialSymptomData {
   [key: string]: { score: number; description: string };
@@ -31,47 +36,56 @@ function getTopSymptom(data: PartialSymptomData | undefined): string | null {
 }
 
 export function getDynamicProgressText(
-  currentPhase: number,
+  stepId: string,
   partialData: PartialPatientContext
 ): string {
-  if (currentPhase <= 2) {
-    return [
-      "Let's get to know you \, this helps Ultrathink personalize everything.",
-      "Great start. Ultrathink is already building your health map.",
-    ][currentPhase - 1];
+  // Demographics (step id "1")
+  if (stepId === "1") {
+    return "Let's get to know you, this helps Ultrathink personalize everything.";
   }
 
+  // Lifestyle & Goals (step id "3", now position 2 of 7)
+  if (stepId === "3") {
+    return "Great start. Ultrathink is already building your health map.";
+  }
+
+  // Health Concerns & Family History (step id "1b", now position 3 of 7)
+  if (stepId === "1b") {
+    return "Your history shapes the protocol, every detail compounds.";
+  }
+
+  // Physical & Energy Symptoms (step id "2a", now position 4 of 7)
   const topPhysical = getTopSymptom(partialData.symptomsPhysical);
   const topNeuro = getTopSymptom(partialData.symptomsNeurological);
 
-  if (currentPhase === 3 && topPhysical) {
-    return `Ultrathink has already connected your ${topPhysical} patterns to possible support pathways.`;
-  }
-  if (currentPhase === 3) {
+  if (stepId === "2a") {
+    if (topPhysical) {
+      return `Ultrathink has already connected your ${topPhysical} patterns to possible support pathways.`;
+    }
     return "Ultrathink is already spotting patterns from your answers.";
   }
 
-  if (currentPhase === 4 && topPhysical && topNeuro) {
-    return `Your ${topPhysical} + ${topNeuro} are forming a clear cluster \, Ultrathink is narrowing the root cause.`;
-  }
-  if (currentPhase === 4) {
+  // Neurological & Cognitive Symptoms (step id "2b", now position 5 of 7)
+  if (stepId === "2b") {
+    if (topPhysical && topNeuro) {
+      return `Your ${topPhysical} + ${topNeuro} are forming a clear cluster, Ultrathink is narrowing the root cause.`;
+    }
     return "Your neurological picture is taking shape.";
   }
 
-  if (currentPhase === 5) {
-    return "The emotional dimension adds the final layer \, patterns are crystallizing.";
+  // Emotional & Systemic Symptoms (step id "2c", now position 6 of 7)
+  if (stepId === "2c") {
+    return "The emotional dimension adds the final layer, patterns are crystallizing.";
   }
 
-  if (currentPhase === 6) {
+  // Medications, Supplements & Allergies (step id "4", now position 7 of 7,
+  // the last form phase and the protocol-engine completion trigger).
+  if (stepId === "4") {
     const hasMeds = (partialData.medications?.length || 0) > 0;
     return hasMeds
-      ? "Ultrathink is cross-referencing your medications with emerging patterns."
-      : "Your supplement data shapes the protocol \, almost there.";
+      ? "Final phase! Ultrathink is cross-referencing your medications with the emerging patterns."
+      : "Final phase! Your supplement data completes the picture, Ultrathink launches after this.";
   }
 
-  if (currentPhase === 7) {
-    return "Final phase! Your lifestyle data completes the picture \, Ultrathink launches after this.";
-  }
-
-  return `Building your personalized blueprint.`;
+  return "Building your personalized blueprint.";
 }

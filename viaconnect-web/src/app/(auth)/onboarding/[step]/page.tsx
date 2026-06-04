@@ -20,6 +20,7 @@ import toast from "react-hot-toast";
 import { InterstitialScreen } from "@/components/onboarding/InterstitialScreen";
 import { WelcomeDashboardScreen } from "@/components/onboarding/WelcomeDashboardScreen";
 import { CAQ_INTERSTITIALS } from "@/config/caq-interstitials";
+import { CAQ_FORM_PHASE_IDS, isLastFormPhase } from "@/config/caq-phase-order";
 import { SEED_INGREDIENTS, FARMCEUTICA_CATEGORIES, normalizeIngredientName } from "@/config/farmceutica-ingredients";
 import { searchBrandsAndProducts } from "@/config/brand-search-index";
 import BrandProductSearch from "@/components/caq/phase6/BrandProductSearch";
@@ -35,24 +36,29 @@ import {
 } from "@/lib/caq/supplement-save-state";
 
 // ─── Phase Definitions ──────────────────────────────────────────────────────
-// Interstitial steps use "i-<id>" as their step ID
-// caqIndex references CAQ_INTERSTITIALS array positions
+// Interstitial steps use "i-<id>" as their step ID. caqIndex references the
+// CAQ_INTERSTITIALS array position. Prompt 173 reorder (2026-06-03): the form
+// phase order now follows CAQ_FORM_PHASE_IDS in caq-phase-order.ts. Lifestyle
+// (id "3") sits immediately after Demographics (id "1") at experienced
+// position 2; Medications, Supplements, and Allergies (id "4") is the last
+// form phase and fires completion via isLastFormPhase(). Stable phase ids
+// preserved so in-flight sessions on /onboarding/<id> resume correctly.
 
 const PHASES = [
   { id: "i-caq-intro", title: "", description: "", caqIndex: 0 },
   { id: "1", title: "Your Body Profile", description: "Basic measurements and biological information" },
-  { id: "i-caq-concerns", title: "", description: "", caqIndex: 1 },
-  { id: "1b", title: "Health Concerns & Family History", description: "What you're experiencing and what runs in your family" },
-  { id: "i-caq-physical", title: "", description: "", caqIndex: 2 },
-  { id: "2a", title: "How Your Body Feels", description: "Rate the severity of each physical symptom you're currently experiencing" },
-  { id: "i-caq-neuro", title: "", description: "", caqIndex: 3 },
-  { id: "2b", title: "Your Mind & Nervous System", description: "Rate how these cognitive and neurological symptoms affect your daily life" },
-  { id: "i-caq-emotional", title: "", description: "", caqIndex: 4 },
-  { id: "2c", title: "Mood, Immunity & Hormones", description: "Rate how these emotional and systemic symptoms are affecting you" },
-  { id: "i-caq-medications", title: "", description: "", caqIndex: 5 },
-  { id: "4", title: "Medications, Supplements & Allergies", description: "Current medications, supplements, and known allergies" },
-  { id: "i-caq-lifestyle", title: "", description: "", caqIndex: 6 },
+  { id: "i-caq-lifestyle", title: "", description: "", caqIndex: 1 },
   { id: "3", title: "Lifestyle & Goals", description: "Daily habits, routines, and wellness goals" },
+  { id: "i-caq-concerns", title: "", description: "", caqIndex: 2 },
+  { id: "1b", title: "Health Concerns & Family History", description: "What you're experiencing and what runs in your family" },
+  { id: "i-caq-physical", title: "", description: "", caqIndex: 3 },
+  { id: "2a", title: "How Your Body Feels", description: "Rate the severity of each physical symptom you're currently experiencing" },
+  { id: "i-caq-neuro", title: "", description: "", caqIndex: 4 },
+  { id: "2b", title: "Your Mind & Nervous System", description: "Rate how these cognitive and neurological symptoms affect your daily life" },
+  { id: "i-caq-emotional", title: "", description: "", caqIndex: 5 },
+  { id: "2c", title: "Mood, Immunity & Hormones", description: "Rate how these emotional and systemic symptoms are affecting you" },
+  { id: "i-caq-medications", title: "", description: "", caqIndex: 6 },
+  { id: "4", title: "Medications, Supplements & Allergies", description: "Current medications, supplements, and known allergies" },
   { id: "i-caq-complete", title: "", description: "", caqIndex: 7 },
   { id: "i-packages", title: "", description: "", caqIndex: 8 },
   { id: "complete", title: "Welcome", description: "Your personalized results" },
@@ -397,7 +403,7 @@ export default function OnboardingStepPage() {
   const [heightIn, setHeightIn] = useState("");
   const [bodyType, setBodyType] = useState<string | null>(null);
 
-  // Phase 1b state — Health Concerns & Family History
+  // Phase 1b state, Health Concerns & Family History
   const [healthConcerns, setHealthConcerns] = useState<string[]>([]);
   const [familyHistory, setFamilyHistory] = useState<{ condition: string; relationships: string[] }[]>([]);
 
@@ -428,7 +434,7 @@ export default function OnboardingStepPage() {
     screenTime: "", sunExposure: "",
   });
 
-  // Phase 4b state — Current Supplements (ViaConnect search + AI product lookup)
+  // Phase 4b state, Current Supplements (ViaConnect search + AI product lookup)
   type UserSupplementBreakdown = { name: string; amount: number; unit: string; category?: string; dailyValuePercent?: number | null };
   type UserSupplement = {
     _id?: string;
@@ -461,7 +467,7 @@ export default function OnboardingStepPage() {
   const [productPhotos, setProductPhotos] = useState<File[]>([]);
   const [photoAnalyzing, setPhotoAnalyzing] = useState(false);
 
-  // Live database search — debounced query to Supabase (2,189 products)
+  // Live database search, debounced query to Supabase (2,189 products)
   useEffect(() => {
     if (suppSearchQuery.trim().length < 2) { setLiveDbResults([]); return; }
     const timer = setTimeout(async () => {
@@ -620,7 +626,11 @@ export default function OnboardingStepPage() {
     return () => document.removeEventListener("mousedown", handleClick);
   }, [ethnicityOpen]);
 
-  const isLast = stepId === "3"; // Lifestyle & Goals is last questionnaire phase
+  // Prompt 173 §3.2: completion trigger keys off the canonical phase order,
+  // not a hardcoded id. After the 173b reorder this is "4"
+  // (Medications, Supplements, and Allergies); reordering CAQ_FORM_PHASE_IDS
+  // moves the trigger automatically.
+  const isLast = isLastFormPhase(stepId, CAQ_FORM_PHASE_IDS);
   // For "Back" navigation, skip interstitials
   const prevFormIndex = (() => {
     for (let i = currentIndex - 1; i >= 0; i--) {
@@ -714,16 +724,18 @@ export default function OnboardingStepPage() {
   const handleNext = useCallback(async () => {
     setIsLoading(true);
     try {
-      // Save current phase
+      // Save current phase. Prompt 173 reorder: Lifestyle ("3") now sits at
+      // position 2 and saves + navigates forward normally; Medications ("4")
+      // is the last form phase and fires the completion + compute chain.
       switch (stepId) {
         case "1": await savePhase("1", { ...demographics, bodyType }); break;
+        case "3": await savePhase("3", { ...lifestyle, goals: goals.goals, supplementForm: goals.supplementForm, budgetRange: goals.budgetRange }); break;
         case "1b": await savePhase("6", { healthConcerns, familyHistory }); break;
         case "2a": await savePhase("7", symptomsPhysical); break;
         case "2b": await savePhase("8", symptomsNeuro); break;
         case "2c": await savePhase("9", symptomsEmotional); break;
-        case "4": await savePhase("4", { ...medications, userSupplements }); break;
-        case "3": {
-          await savePhase("3", { ...lifestyle, goals: goals.goals, supplementForm: goals.supplementForm, budgetRange: goals.budgetRange });
+        case "4": {
+          await savePhase("4", { ...medications, userSupplements });
 
           // Show Ultrathink processing animation immediately. The
           // animation now masks Hannah's compute window; the auto
@@ -918,6 +930,7 @@ export default function OnboardingStepPage() {
         <ProgressMotivator
           currentPhase={currentFormIndex + 1}
           totalPhases={formPhases.length}
+          stepId={stepId}
           partialData={{
             symptomsPhysical: symptomsPhysical,
             symptomsNeurological: symptomsNeuro,
@@ -936,7 +949,7 @@ export default function OnboardingStepPage() {
           </div>
         )}
 
-        {/* Phase header (hidden on complete page — it has its own) */}
+        {/* Phase header (hidden on complete page, it has its own) */}
         {stepId !== "complete" && (
           <div className="mb-6">
             <p className="text-xs text-copper font-semibold uppercase tracking-wider">
@@ -950,7 +963,7 @@ export default function OnboardingStepPage() {
         {/* ── Phase 1: Demographics (Health Profile) ── */}
         {stepId === "1" && (
           <div className="space-y-5">
-            {/* Full Name — read-only, pre-populated from signup */}
+            {/* Full Name, read-only, pre-populated from signup */}
             <div className="space-y-2">
               <label className="text-sm font-medium text-white/70">Full Name</label>
               <div className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/5 text-white/60 cursor-not-allowed flex items-center justify-between" aria-readonly="true">
@@ -963,7 +976,7 @@ export default function OnboardingStepPage() {
               </div>
             </div>
 
-            {/* Date of Birth — Month / Day / Year dropdowns */}
+            {/* Date of Birth, Month / Day / Year dropdowns */}
             <div className="space-y-2">
               <label className="text-sm font-medium text-white/70">Date of Birth *</label>
               <div className="grid grid-cols-3 gap-3">
@@ -1048,7 +1061,7 @@ export default function OnboardingStepPage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Biological Sex — pill selector */}
+              {/* Biological Sex, pill selector */}
               <div className="md:col-span-2 space-y-2">
                 <label className="text-sm font-medium text-white/70">Biological Sex *</label>
                 <div className="flex flex-wrap gap-2">
@@ -1069,7 +1082,7 @@ export default function OnboardingStepPage() {
                 </div>
               </div>
 
-              {/* Ethnicity — multi-select dropdown */}
+              {/* Ethnicity, multi-select dropdown */}
               <div className="md:col-span-2 space-y-2 relative" data-ethnicity-dropdown>
                 <label className="text-sm font-medium text-white/70 flex items-center gap-2">
                   Ethnicity <span className="text-white/30">(optional)</span>
@@ -1197,7 +1210,7 @@ export default function OnboardingStepPage() {
               );
             })()}
 
-            {/* Body Type Selector — always visible on Phase 1 */}
+            {/* Body Type Selector, always visible on Phase 1 */}
             <div className="mt-4 pt-4 border-t border-white/5">
               <BodyTypeSelector value={bodyType} onChange={setBodyType} />
             </div>
@@ -1497,7 +1510,7 @@ export default function OnboardingStepPage() {
               </div>
             </div>
 
-            {/* Divider — Goals */}
+            {/* Divider, Goals */}
             <div className="flex items-center gap-4">
               <div className="flex-grow h-px bg-white/10" />
               <span className="text-xs uppercase tracking-[0.2em] text-white/30 font-medium">Wellness Goals</span>
@@ -1625,7 +1638,7 @@ export default function OnboardingStepPage() {
               </button>
             </div>
 
-            {/* Supplements — FarmCeutica Search */}
+            {/* Supplements, FarmCeutica Search */}
             <div>
               <label className="text-base font-semibold text-white mb-1 flex items-center gap-2">
                 What You Are Currently Taking
@@ -1644,7 +1657,7 @@ export default function OnboardingStepPage() {
               </label>
               <p className="text-sm text-white/40 mb-3">Add every supplement, vitamin, and mineral you take regularly</p>
 
-              {/* Brand + Product Search — powered by 2,472 products from 113 brands in Supabase */}
+              {/* Brand + Product Search, powered by 2,472 products from 113 brands in Supabase */}
               {!showDosageModal && !userSupplements.some(s => s.name === "None") && (
                 <div className="mb-3">
                   <BrandProductSearch
@@ -1668,7 +1681,7 @@ export default function OnboardingStepPage() {
                 </div>
               )}
 
-              {/* Old inline search results removed — BrandProductSearch component handles all search UI */}
+              {/* Old inline search results removed, BrandProductSearch component handles all search UI */}
 
               {/* "or" Divider + NEW Photo Upload Component */}
               {!showDosageModal && !aiLookupResult && !aiLookupLoading && !userSupplements.some(s => s.name === "None") && (
@@ -1719,7 +1732,7 @@ export default function OnboardingStepPage() {
                 </div>
               )}
 
-              {/* AI Lookup Error — fallback to manual */}
+              {/* AI Lookup Error, fallback to manual */}
               {aiLookupError && !aiLookupLoading && (
                 <div className="rounded-xl border border-white/10 bg-white/[0.02] p-5 mb-3">
                   <p className="text-sm text-white/60 mb-3">{aiLookupError}</p>
@@ -1795,7 +1808,7 @@ export default function OnboardingStepPage() {
               {/* AI Edit Mode */}
               {aiLookupResult && aiEditMode && (
                 <div className="rounded-xl border border-white/10 bg-white/[0.03] p-5 space-y-3 mb-3">
-                  <h4 className="text-sm font-medium text-white/70">Edit Ingredients — {aiLookupResult.fullName}</h4>
+                  <h4 className="text-sm font-medium text-white/70">Edit Ingredients, {aiLookupResult.fullName}</h4>
                   {aiLookupResult.ingredients?.map((ing: { name: string; amount: number; unit: string }, idx: number) => (
                     <div key={idx} className="grid grid-cols-12 gap-2 items-center">
                       <input value={ing.name} onChange={(e) => {
@@ -2087,7 +2100,7 @@ export default function OnboardingStepPage() {
           </div>
         )}
 
-        {/* ── Phase 4b removed — supplements now in Phase 4 ── */}
+        {/* ── Phase 4b removed, supplements now in Phase 4 ── */}
         {false && (
           <div className="space-y-6">
             {/* AI quality badge */}

@@ -8,8 +8,13 @@ interface PartialSymptomData {
 }
 
 interface ProgressMotivatorProps {
+  // 1-based experienced position used for the progress bar percentage and the
+  // "Phase X of Y" label.
   currentPhase: number;
   totalPhases: number;
+  // Stable form-phase id used to key the motivational copy so messages
+  // travel with their phase across reorders (Prompt 173).
+  stepId?: string;
   partialData?: {
     symptomsPhysical?: PartialSymptomData;
     symptomsNeurological?: PartialSymptomData;
@@ -19,9 +24,9 @@ interface ProgressMotivatorProps {
   };
 }
 
-export function ProgressMotivator({ currentPhase, totalPhases, partialData }: ProgressMotivatorProps) {
+export function ProgressMotivator({ currentPhase, totalPhases, stepId, partialData }: ProgressMotivatorProps) {
   const percent = Math.round((currentPhase / totalPhases) * 100);
-  const message = getDynamicProgressText(currentPhase, partialData || {});
+  const message = getDynamicProgressText(stepId ?? "", partialData || {});
 
   return (
     <div className="mb-6">
