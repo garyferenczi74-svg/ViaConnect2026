@@ -24,6 +24,7 @@ import type { ModelTier } from './types';
 // changes when Anthropic ships a new build of a tier; keep these literal
 // so a future tuning pass updates the constants without touching call sites.
 export const CLAUDE_MODEL_IDS: Record<ModelTier, string> = {
+  gemini: 'n/a', // adapter ignores; included so the record is exhaustive
   haiku: 'claude-haiku-4-5-20251001',
   sonnet: 'claude-sonnet-4-20250514',
   opus: 'claude-opus-4-7-20250520',
@@ -31,12 +32,50 @@ export const CLAUDE_MODEL_IDS: Record<ModelTier, string> = {
 
 // Per-tier request deadline. Haiku stays tight; Sonnet a bit longer for the
 // retry path; Opus a touch longer still because it is invoked only on
-// genuinely ambiguous labels.
+// genuinely ambiguous labels. Gemini matches the NutriVision Phase 1q
+// hotfix budget (30s outer wrap with a 10s inner abort).
 export const TIER_TIMEOUT_MS: Record<ModelTier, number> = {
+  gemini: 30000,
   haiku: 20000,
   sonnet: 30000,
   opus: 40000,
 };
+
+// Prompt 175b (2026-06-04): Gemini primary provider config per master
+// spec 5.3. Model id can be overridden via env at request time so a
+// future Gemini build (gemini-2.5-pro-002 etc.) does not require a
+// redeploy. Confidence threshold is the primary trigger for the Claude
+// Sonnet fallback.
+export const GEMINI_MODEL_ID_DEFAULT = 'gemini-2.5-pro';
+export function getGeminiModelId(): string {
+  const override = process.env.CAQ_SUPPLEMENT_GEMINI_MODEL;
+  return typeof override === 'string' && override.length > 0 ? override : GEMINI_MODEL_ID_DEFAULT;
+}
+export const GEMINI_MIN_CONFIDENCE = 0.7;
+
+// Claude Sonnet fallback gate. Master spec 5.3 caps the cross-check at
+// 3 percent of total label scans per month, env config. This batch ships
+// the on/off flag; the strict 3 percent counter lands in a follow-up
+// batch alongside the observability counter table. Default ON: when
+// Gemini is below threshold or fails, the route tries Sonnet once.
+export function isClaudeFallbackEnabled(): boolean {
+  const v = process.env.CAQ_SUPPLEMENT_CLAUDE_FALLBACK_ENABLED;
+  if (typeof v !== 'string') return true;
+  const lower = v.toLowerCase();
+  return lower !== 'false' && lower !== '0' && lower !== 'off' && lower !== 'no';
+}
+
+// API key resolution. Gary set the Photo AI Anthropic backup key in
+// Vercel as PHOTO_AI_ANTHROPIC_API_KEY (2026-06-04); we read that first
+// and fall back to the legacy ANTHROPIC_API_KEY name so the route still
+// works in environments that only define one or the other. Same pattern
+// for Gemini in case Gary later splits the env vars by surface.
+export function getPhotoAiAnthropicApiKey(): string | null {
+  return process.env.PHOTO_AI_ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY || null;
+}
+export function getPhotoAiGeminiApiKey(): string | null {
+  return process.env.PHOTO_AI_GEMINI_API_KEY || process.env.GEMINI_API_KEY || null;
+}
 
 // Confidence thresholds. Item confidence below the threshold escalates the
 // request to the next tier. 0.7 / 0.6 are the locked defaults from 175 Part C.

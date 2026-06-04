@@ -2,10 +2,13 @@ import { NextResponse } from 'next/server';
 import { safeLog } from '@/lib/utils/safe-log';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { createClaudeTierAdapter } from '@/lib/caq/supplement-extraction/claude-tier';
-import { runExtraction } from '@/lib/caq/supplement-extraction/router';
+import { runProviderRouter } from '@/lib/caq/supplement-extraction/provider-router';
 import { matchAllExtracted } from '@/lib/caq/supplement-extraction/canonical-match';
 import { logExtractionAttempt } from '@/lib/caq/supplement-extraction/observability';
+import {
+  getPhotoAiAnthropicApiKey,
+  getPhotoAiGeminiApiKey,
+} from '@/lib/caq/supplement-extraction/config';
 import {
   validateAndNormalize,
   isValidationError,
@@ -17,15 +20,23 @@ import type {
   TierAttempt,
 } from '@/lib/caq/supplement-extraction/types';
 
-// Prompt 175 Parts A + H + I (2026-06-04): tiered Claude extraction route.
+// Prompt 175b (2026-06-04): supplement label OCR route, provider-routed.
 //
 // Pipeline per request:
 //   1. validateAndNormalize (sharp strips EXIF, caps dimensions, HEIC convert)
-//   2. createClaudeTierAdapter -> runExtraction (Haiku -> Sonnet -> opt Opus)
+//   2. runProviderRouter: Gemini 2.5 Pro primary; Claude Sonnet fallback
+//      when Gemini fails or returns below the confidence threshold
+//      (gated by CAQ_SUPPLEMENT_CLAUDE_FALLBACK_ENABLED, default on).
 //   3. matchAllExtracted against the canonical supplement database
 //   4. logExtractionAttempt to caq_supplement_extraction_log via admin client
 //   5. Translate ExtractionResult -> legacy IdentifiedProduct so the
 //      existing CAQ Phase 3 UI keeps working without a UI rewrite.
+//
+// Env keys (Gary set these on Vercel 2026-06-04):
+//   PHOTO_AI_GEMINI_API_KEY    - Gemini primary OCR
+//   PHOTO_AI_ANTHROPIC_API_KEY - Claude Sonnet fallback
+// Legacy GEMINI_API_KEY + ANTHROPIC_API_KEY are read as a fallback so
+// nothing breaks if both names coexist. Resolution lives in config.ts.
 //
 // Every user-facing error string is neutral and routes through one of the
 // USER_MESSAGE_FOR_* constants. The string "ANTHROPIC_API_KEY not set in
@@ -68,12 +79,16 @@ export async function POST(request: Request) {
       return jsonError('unsupported_image', USER_MESSAGE_FOR_UNSUPPORTED, 400);
     }
 
-    const apiKey = process.env.ANTHROPIC_API_KEY;
-    if (!apiKey) {
+    const geminiApiKey = getPhotoAiGeminiApiKey();
+    const anthropicApiKey = getPhotoAiAnthropicApiKey();
+    if (!geminiApiKey && !anthropicApiKey) {
+      // Both providers absent. Server log retains the actionable detail;
+      // client gets neutral copy mapped to the manual-fallback branch by
+      // outcomeCode.
       safeLog.warn(
         'api.ai.supplement-vision',
-        'extraction unavailable: ANTHROPIC_API_KEY missing on server',
-        {},
+        'extraction unavailable: no provider keys configured',
+        { hasGemini: false, hasAnthropic: false },
       );
       return jsonError('config_missing', USER_MESSAGE_FOR_MANUAL_FALLBACK, 503);
     }
@@ -97,13 +112,12 @@ export async function POST(request: Request) {
       return jsonError('image_normalize_failed', USER_MESSAGE_FOR_RETRY, 500);
     }
 
-    const adapter = createClaudeTierAdapter({
-      apiKey,
+    const { result, attempts } = await runProviderRouter({
+      geminiApiKey,
+      anthropicApiKey,
       imageBase64: normalized.base64,
       mimeType: normalized.mimeType,
     });
-
-    const { result, attempts } = await runExtraction(adapter);
     const finalAttempt = attempts[attempts.length - 1];
     const escalated = attempts.length > 1;
 

@@ -6,7 +6,14 @@
 // upstream model is a config choice rather than a downstream rewrite.
 // =============================================================================
 
-export type ModelTier = 'haiku' | 'sonnet' | 'opus';
+// Provider tiers across the supplement extraction surface. 175a Part B
+// adds 'gemini' as the new primary OCR tier per master spec 5.3 (Gemini
+// 2.5 Pro Vision primary, Claude Sonnet tertiary capped at 3 percent).
+// Haiku and Opus tiers remain in the type union so the existing
+// claude-tier adapter compiles without edit; the provider-router used by
+// the supplement-vision route from 175b onward only consults gemini +
+// sonnet.
+export type ModelTier = 'gemini' | 'haiku' | 'sonnet' | 'opus';
 
 export type ExtractionOutcomeCode =
   | 'success'
