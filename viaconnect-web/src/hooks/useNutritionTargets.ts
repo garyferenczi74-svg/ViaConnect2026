@@ -1,17 +1,19 @@
 'use client';
 
-// Prompt #168 Apply B: useNutritionTargets.
+// Prompt #168 Apply B + Prompt 173 Phase 5 (2026-06-03): useNutritionTargets.
 // Single active row per user (superseded_at IS NULL) is canonical. If no row
-// exists, the hook returns null + loading false; it does NOT auto-call
-// gordon-generate-targets. Page-level UX for "no targets yet" is wired at
-// Apply C.
+// exists, the hook returns null + loading false; it does NOT auto-trigger a
+// regeneration. Page-level UX for "no targets yet" is wired at Apply C.
 //
-// regenerate(): POST to the gordon-generate-targets edge function with
-// { user_id }. On success, refetch the active row and surface it. The edge
-// function holds service role; the client never does.
+// regenerate(): POST to the Next.js API route /api/nutrition/generate-targets.
+// The route is session-authed and writes via service role (the prior owner
+// INSERT and UPDATE policies on nutrition_targets were dropped in Phase 5
+// migration 20260603110000 so the route is the only writer). The retired
+// gordon-generate-targets edge function never existed on live and is not
+// resurrected.
 //
 // Realtime: skipped intentionally per spec. Targets change rarely (CAQ updates,
-// profile changes). Refetch-on-regenerate is sufficient.
+// profile changes, Body Tracker weight logs). Refetch-on-regenerate is enough.
 
 import { useCallback, useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
@@ -23,9 +25,6 @@ export interface UseNutritionTargetsResult {
   readonly error: Error | null;
   readonly regenerate: () => Promise<void>;
 }
-
-const SUPABASE_URL =
-  process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://nnhkcufyqjojdbvdrpky.supabase.co';
 
 const DEFAULT_DISTRIBUTION: MealDistribution = {
   breakfast: 0.25,
@@ -149,24 +148,25 @@ export function useNutritionTargets(
     if (!userId) return;
     setError(null);
     try {
-      const url = `${SUPABASE_URL}/functions/v1/gordon-generate-targets`;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const supabase = createClient() as any;
-      const { data: sessionData } = await supabase.auth.getSession();
-      const accessToken: string | undefined = sessionData?.session?.access_token;
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-      };
-      if (accessToken) {
-        headers.Authorization = `Bearer ${accessToken}`;
-      }
-      const response = await fetch(url, {
+      // Prompt 173 Phase 5: the canonical writer is the Next.js API route.
+      // Session cookies authenticate the route; no Authorization header is
+      // required because Next.js receives the same cookies the supabase
+      // browser client uses.
+      const response = await fetch('/api/nutrition/generate-targets', {
         method: 'POST',
-        headers,
-        body: JSON.stringify({ user_id: userId }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
       });
       if (!response.ok) {
-        throw new Error(`gordon-generate-targets failed with status ${response.status}`);
+        // 422 estimate_unavailable from the engine: the user's profile is
+        // incomplete (missing weight goal, demographics, or activity level).
+        // The page surfaces this as "complete your profile" rather than a
+        // hard error.
+        if (response.status === 422) {
+          await fetchActive();
+          return;
+        }
+        throw new Error(`/api/nutrition/generate-targets failed with status ${response.status}`);
       }
       await fetchActive();
     } catch (caught) {
