@@ -1,34 +1,33 @@
 "use client";
 
 // =============================================================================
-// Prompt 173d Sections 2 + 3 (2026-06-04): shared Continue button surface.
-// Patched 2026-06-04 per Gary: the button surface + label now match the
-// FeaturePreviewCard on the same interstitial (bg-white/10 + white text +
-// border-white/15 + shadow-lg shadow-black/10) so the two surfaces read as
-// one design family. This overrides 173d Section 3's earlier navy-on-light
-// glass treatment.
+// Shared Continue button surface for every interstitial.
 //
-// Compact, hugs its label per 173d Section 2: inline-flex, content-width
-// rounded pill, ~ 44 by 44 CSS pixel tappable area on mobile guaranteed by
-// the min-h + min-w utilities below.
+// Patched 2026-06-04 per Gary (round 2): the button class string is now an
+// EXACT mirror of the FeaturePreviewCard surface on the same interstitial,
+// so the two read as one piece of design glass:
 //
-// White-on-translucent contrast posture:
-//   * supports-[backdrop-filter] is the happy path: bg-white/10 over a
-//     blurred hero video reads as a soft frosted lens. White text holds
-//     contrast against the dark navy that dominates the underlying frame.
-//   * supports-[not(backdrop-filter)] fallback drops to a solid Card token
-//     (#1E3054) so the white label never sits over a near-clear surface.
-//   * prefers-reduced-transparency + iOS Reduce Transparency: same solid
-//     Card surface, no blur.
-//   * prefers-contrast:more: same solid Card surface, no blur.
+//   FeaturePreviewCard: bg-white/10 backdrop-blur-md border border-white/15
+//                       shadow-lg shadow-black/10
+//   InterstitialContinueButton: same surface, white text, compact pill.
 //
-// INTERSTITIAL_BUTTON_TINT_OPACITY is the single named source of truth for
-// the bg-white/<N> opacity; a compile-time guard ties it to the Tailwind
-// class string so a future tuning pass cannot drift one without the other.
+// The earlier rounds added supports-[not(backdrop-filter)] +
+// prefers-reduced-transparency + prefers-contrast:more overrides that
+// flipped the button to solid #1E3054 while the card stayed translucent.
+// On macOS or iOS with Reduce Transparency on (or a browser that reports
+// no backdrop-filter support) the button ended up a different color than
+// the card. The overrides are REMOVED so the button degrades the same way
+// the card does. If we ever need to recover the WCAG safety net for the
+// white-on-translucent label, the right move is to apply it to the
+// FeaturePreviewCard at the same time so the two surfaces stay matched.
+//
+// Compact pill, 44 by 44 CSS pixel mobile tappable area guaranteed by the
+// min-h + min-w utilities. INTERSTITIAL_BUTTON_TINT_OPACITY is the single
+// named source of truth for the bg-white/<N> opacity; a compile-time guard
+// ties it to the literal Tailwind class string so they cannot drift.
 //
 // Tap-anywhere advance lives on the InterstitialScreen wrapper; we
-// stopPropagation here so the wrapper's onClick does not double-fire with
-// this button's own onClick.
+// stopPropagation here so the wrapper's onClick does not double-fire.
 // =============================================================================
 
 import type { ButtonHTMLAttributes, ReactNode } from "react";
@@ -38,7 +37,8 @@ import { INTERSTITIAL_BUTTON_TINT_OPACITY } from "@/config/caq-interstitial-adva
 // Compile-time mirror guard: the Tailwind class string below hardcodes
 // "bg-white/10" because JIT cannot pick up template literals. If a future
 // tuning pass changes INTERSTITIAL_BUTTON_TINT_OPACITY, update the
-// "supports-[backdrop-filter]:bg-white/<NEW>" class to match.
+// "bg-white/<NEW>" class string to match (and update the
+// FeaturePreviewCard surface too so they stay aligned).
 const LOCKED_TINT_FOR_CLASS_STRING = 10 as const;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const _tintMirrorGuard: typeof LOCKED_TINT_FOR_CLASS_STRING extends typeof INTERSTITIAL_BUTTON_TINT_OPACITY ? true : never = true;
@@ -77,14 +77,13 @@ export function InterstitialContinueButton({
         "text-sm font-medium text-white",
         // Matched-card surface: bg-white/10 + backdrop-blur-md + the same
         // hairline border and soft drop shadow the FeaturePreviewCard uses.
+        // The override branches that used to flip this to solid #1E3054
+        // (supports-[not(backdrop-filter)], prefers-reduced-transparency,
+        // prefers-contrast:more) were removed in round 2 so the button
+        // degrades the same way the card does and the two surfaces always
+        // match. If a WCAG safety net is needed for the white label on
+        // low-tint backgrounds, apply it to the card at the same time.
         "bg-white/10 backdrop-blur-md border border-white/15 shadow-lg shadow-black/10",
-        // Engines without backdrop-filter: drop to a solid Card token so
-        // white text never sits over a near-transparent surface.
-        "supports-[not(backdrop-filter)]:bg-[#1E3054]",
-        // Reduce-transparency / iOS Reduce Transparency: solid Card surface,
-        // no blur. The ! prefix wins over the bg-white/10 base above.
-        "[@media(prefers-reduced-transparency:reduce)]:!bg-[#1E3054] [@media(prefers-reduced-transparency:reduce)]:!backdrop-blur-none",
-        "contrast-more:!bg-[#1E3054] contrast-more:!backdrop-blur-none",
         // Focus + press feedback. Teal ring visible against bright or dark
         // hero frames.
         "transition-all duration-150 ease-out",
