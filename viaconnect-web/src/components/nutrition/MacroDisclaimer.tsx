@@ -15,9 +15,11 @@
 'use client';
 
 import { Info } from 'lucide-react';
+import { MACRO_DISCLAIMER_TEXT } from './macro-disclaimer-text';
 
-export const MACRO_DISCLAIMER_TEXT =
-  'These daily targets are general wellness estimates for healthy adults, not medical, dietetic, or clinical advice, and are not a substitute for care from a qualified professional. They have not been evaluated to diagnose, treat, cure, or prevent any health condition, and they may not fit every situation, including pregnancy, breastfeeding, or a diagnosed medical condition. Please talk with a qualified healthcare or nutrition professional before making significant changes to your diet.';
+// Re-export so existing callers (compliance memo references the const from
+// this file) continue to compile.
+export { MACRO_DISCLAIMER_TEXT };
 
 export function MacroDisclaimer() {
   return (

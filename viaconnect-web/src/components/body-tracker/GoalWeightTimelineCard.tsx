@@ -17,6 +17,7 @@
 import { Goal, ShieldAlert } from 'lucide-react';
 import { projectWeeksToGoal } from '@/lib/weight-goals/timeline';
 import { LBS_PER_KG } from '@/lib/weight-goals/guardrails';
+import { MacroDisclaimer } from '@/components/nutrition/MacroDisclaimer';
 
 export interface GoalWeightTimelineCardProps {
   readonly currentWeightKg: number | null;
@@ -55,6 +56,9 @@ export function GoalWeightTimelineCard({
           Your current weight is within the maintain band of your goal. The
           macros are tuned to maintenance from here.
         </p>
+        {/* Phase 9: compliance memo Section 7 + spec Section 7 require
+            every macro-engine-driven surface to carry the disclaimer. */}
+        <MacroDisclaimer />
       </section>
     );
   }
@@ -93,6 +97,10 @@ export function GoalWeightTimelineCard({
           </p>
         </div>
       ) : null}
+
+      {/* Phase 9: compliance memo Section 7 + spec Section 7 require every
+          macro-engine-driven surface to carry the disclaimer. */}
+      <MacroDisclaimer />
     </section>
   );
 }
