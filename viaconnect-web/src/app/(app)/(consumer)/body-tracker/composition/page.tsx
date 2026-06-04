@@ -335,8 +335,8 @@ function CompositionPageInner() {
             }}
             className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-medium min-h-[44px] backdrop-blur-sm transition-all ${
               scanOpen
-                ? 'border-[#5B8DEF]/50 bg-[#5B8DEF]/25 text-white'
-                : 'border-[#5B8DEF]/25 bg-[#5B8DEF]/10 text-[#5B8DEF] hover:bg-[#5B8DEF]/20'
+                ? 'border-[#5B8DEF]/50 bg-[#2A4C9E]/25 text-white'
+                : 'border-[#5B8DEF]/25 bg-[#2A4C9E]/10 text-white hover:bg-[#2A4C9E]/20'
             }`}
           >
             <Camera className="h-3.5 w-3.5" strokeWidth={1.5} />
@@ -347,8 +347,8 @@ function CompositionPageInner() {
             onClick={() => { setScanOpen(false); setOpen((o) => !o); }}
             className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-medium min-h-[44px] backdrop-blur-sm transition-all ${
               open
-                ? 'border-[#5B8DEF]/60 bg-[#5B8DEF]/35 text-white'
-                : 'border-[#5B8DEF]/30 bg-[#5B8DEF]/15 text-[#5B8DEF] hover:bg-[#5B8DEF]/25'
+                ? 'border-[#5B8DEF]/60 bg-[#2A4C9E]/35 text-white'
+                : 'border-[#5B8DEF]/30 bg-[#2A4C9E]/15 text-white hover:bg-[#2A4C9E]/25'
             }`}
           >
             <Plus className="h-3.5 w-3.5" strokeWidth={1.5} />
