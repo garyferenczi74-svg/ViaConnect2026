@@ -160,6 +160,18 @@ Centralized in `src/lib/gordon/macro-config.ts` (`MACRO_CONFIG`) +
   `/nutrition/log-meal`) is unchanged; macro adherence excludes legacy
   text meals by construction.
 
+## 8b. Preliminary-protocol disclaimer (Prompt 173c, Quick path)
+
+Source: `src/lib/caq/confidence.ts` exporting `getPersonalizationCopy('preliminary')`. Surfaces alongside the macros + protocol output whenever the Quick path produced the active row (phases 1, 2, 7 only).
+
+> Your starting protocol is ready. Add the symptom phases to deepen the personalization.
+
+**Why this satisfies the spec.** 173c §2.4 requires a calm disclaimer on Quick-derived protocols that the result is a starting point that becomes more precise as more phases are completed. The copy frames Quick as a positive starting point (NOT a failed score per 173c §0.5) and routes the user toward upgrading without any urgency, countdown, or dark pattern.
+
+**Kelsey scope.** The disclaimer is generic wellness framing; it names no compound, drug, peptide, ingredient, or SNP. It carries the same posture as Section 1: not medical / dietetic / clinical advice, professional referral implied through the broader MacroDisclaimer (which renders on the same surface).
+
+**Tests** at `tests/caq/confidence.test.ts` lock the preliminary, standard, and full strings against any future revision that would frame the partial result as failed / incomplete / missing / deficient / inadequate (case-insensitive substring guard).
+
 ## 9. Marshall dictionary scan posture
 
 Per `feedback_marshall_dictionary_predelivery_scan`, every public-copy

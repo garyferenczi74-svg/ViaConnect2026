@@ -1,9 +1,28 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { Brain } from "lucide-react";
 import type { InterstitialConfig } from "@/config/onboarding";
+import {
+  INTERSTITIAL_ADVANCE,
+  computeAdvanceDelayMs,
+  countInterstitialWords,
+} from "@/config/caq-interstitial-advance";
+
+// 173c 1.2: settings toggle so users can disable the reading-time-aware
+// auto-advance globally. Stored in localStorage so it persists across
+// reloads; the future /settings/caq surface can mirror this.
+const AUTO_ADVANCE_DISABLED_KEY = "caq.interstitial.autoAdvanceDisabled";
+
+function readAutoAdvanceDisabled(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return window.localStorage.getItem(AUTO_ADVANCE_DISABLED_KEY) === "true";
+  } catch {
+    return false;
+  }
+}
 
 // ─── ProgressDots ───────────────────────────────────────────────────────────
 
@@ -100,7 +119,7 @@ function BackgroundLayer({ background }: { background: InterstitialConfig["backg
 
   return (
     <div className="absolute inset-0 z-0">
-      {/* Animated gradient fallback — always rendered */}
+      {/* Animated gradient fallback , always rendered */}
       <div
         className="absolute inset-0 animate-gradient-shift"
         style={{
@@ -142,8 +161,96 @@ interface InterstitialScreenProps {
 export function InterstitialScreen({ config, onContinue, celebrationMode }: InterstitialScreenProps) {
   const buttonDelay = celebrationMode ? 2.0 : 0.5;
 
+  // 173c 1.2 hybrid advance: tap anywhere advances, otherwise auto-advance
+  // after a reading-time-aware delay with a visible progress fill. Pause on
+  // any interaction (hover, touch, keyboard focus). Disabled entirely when
+  // prefers-reduced-motion is set, in celebration mode, or when the user
+  // disabled auto-advance in settings.
+  const [paused, setPaused] = useState(false);
+  const [progressPct, setProgressPct] = useState(0);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  const [autoAdvanceDisabled, setAutoAdvanceDisabled] = useState(false);
+  const startedAtRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    setPrefersReducedMotion(window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+    setAutoAdvanceDisabled(readAutoAdvanceDisabled());
+  }, []);
+
+  // Reset on config change so a navigated-back interstitial starts fresh.
+  useEffect(() => {
+    setPaused(false);
+    setProgressPct(0);
+    startedAtRef.current = null;
+  }, [config.id]);
+
+  const wordCount = countInterstitialWords(
+    config.quote,
+    config.subtext,
+    config.featureCard?.title,
+    config.featureCard?.description,
+    config.featureCard?.category,
+  );
+  const delayMs = computeAdvanceDelayMs(wordCount);
+
+  // Auto-advance + progress fill. Skips entirely under the disabled cases.
+  const autoAdvanceActive =
+    !celebrationMode && !prefersReducedMotion && !autoAdvanceDisabled && !paused;
+
+  useEffect(() => {
+    if (!autoAdvanceActive) {
+      // Pause on entering a disabled state by freezing progress where it is
+      // (do NOT reset to 0 so the user sees how much time was already used).
+      return;
+    }
+    let cancelled = false;
+    const startedAt = startedAtRef.current ?? Date.now();
+    startedAtRef.current = startedAt;
+    const tick = () => {
+      if (cancelled) return;
+      const elapsed = Date.now() - startedAt;
+      const pct = Math.min(100, (elapsed / delayMs) * 100);
+      setProgressPct(pct);
+      if (pct >= 100) {
+        onContinue();
+        return;
+      }
+      window.setTimeout(tick, INTERSTITIAL_ADVANCE.progress_tick_ms);
+    };
+    window.setTimeout(tick, INTERSTITIAL_ADVANCE.progress_tick_ms);
+    return () => { cancelled = true; };
+  }, [autoAdvanceActive, delayMs, onContinue]);
+
+  // 173c 1.2: tap anywhere advances. The outer div catches the click so
+  // the user can tap the background, the quote, the featureCard, anywhere.
+  // The dedicated Continue button at the bottom still works (the click
+  // bubbles up). Celebration mode does NOT advance on tap because it has
+  // its own scripted timing.
+  const handleTapAdvance = () => {
+    if (celebrationMode) return;
+    onContinue();
+  };
+
+  // Any hover, touch, or keyboard focus pauses the auto-advance so the
+  // reader is never cut off mid-thought. Once paused, stays paused until
+  // the user explicitly taps. Mirrors the "Pause Stop Hide" intent of
+  // WCAG 2.2.2 plus the spirit of 2.3.3.
+  const handlePauseTrigger = () => {
+    if (autoAdvanceActive) setPaused(true);
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center overflow-hidden">
+    <div
+      className="fixed inset-0 z-50 flex flex-col items-center justify-center overflow-hidden cursor-pointer"
+      onClick={handleTapAdvance}
+      onMouseMove={handlePauseTrigger}
+      onTouchStart={handlePauseTrigger}
+      onFocus={handlePauseTrigger}
+      role="button"
+      tabIndex={-1}
+      aria-label="Tap to advance"
+    >
       {/* Layer 1: Background */}
       <BackgroundLayer background={config.background} />
 
@@ -235,12 +342,34 @@ export function InterstitialScreen({ config, onContinue, celebrationMode }: Inte
         className="relative z-10 w-full max-w-lg mx-auto px-6 pb-12"
       >
         <button
-          onClick={onContinue}
+          // Stop propagation so the tap-anywhere handler does not also fire
+          // and call onContinue a second time.
+          onClick={(e) => { e.stopPropagation(); onContinue(); }}
           className="w-full py-4 rounded-full bg-white text-black font-semibold text-base shadow-lg shadow-black/20 hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
         >
           Continue
         </button>
       </motion.div>
+
+      {/* Layer 5 (173c 1.2): subtle progress fill at the bottom that
+          fills over the reading-time-aware delay. Hidden under
+          prefers-reduced-motion + celebration mode + the user setting
+          off. The label is announced to screen readers but the bar
+          itself is decorative. */}
+      {!celebrationMode && !prefersReducedMotion && !autoAdvanceDisabled ? (
+        <div
+          className="absolute bottom-0 left-0 right-0 z-[2] h-0.5 bg-white/[0.04]"
+          aria-hidden="true"
+        >
+          <div
+            className="h-full bg-white/35"
+            style={{
+              width: `${progressPct}%`,
+              transition: paused ? "none" : `width ${INTERSTITIAL_ADVANCE.progress_tick_ms}ms linear`,
+            }}
+          />
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -20,10 +20,17 @@ import toast from "react-hot-toast";
 import { InterstitialScreen } from "@/components/onboarding/InterstitialScreen";
 import { WelcomeDashboardScreen } from "@/components/onboarding/WelcomeDashboardScreen";
 import { CAQ_INTERSTITIALS } from "@/config/caq-interstitials";
-import { CAQ_FORM_PHASE_IDS, isLastFormPhase } from "@/config/caq-phase-order";
+import {
+  CAQ_FORM_PHASE_IDS,
+  CAQ_QUICK_FORM_PHASE_IDS,
+  isLastFormPhase,
+  type CaqPath,
+} from "@/config/caq-phase-order";
 import { WeightGoalsSection } from "@/components/caq/WeightGoalsSection";
 import { DietaryChoiceSelector } from "@/components/caq/DietaryChoiceSelector";
+import { CaqPathChoiceScreen } from "@/components/caq/CaqPathChoiceScreen";
 import { writeWeightGoal } from "@/lib/weight-goals/accessor";
+import { readCaqPath, writeCaqPath } from "@/lib/caq/path";
 import type { DietaryChoice } from "@/lib/gordon/macro-config";
 import { SEED_INGREDIENTS, FARMCEUTICA_CATEGORIES, normalizeIngredientName } from "@/config/farmceutica-ingredients";
 import { searchBrandsAndProducts } from "@/config/brand-search-index";
@@ -50,7 +57,12 @@ import {
 
 const PHASES = [
   { id: "i-caq-intro", title: "", description: "", caqIndex: 0 },
-  { id: "1", title: "Your Body Profile", description: "Basic measurements and biological information" },
+  // Prompt 173c 2.1: Quick vs Complete path choice. Sits between the Phase 1
+  // interstitial (i-caq-intro) and the Demographics form so the user picks
+  // before investing in the full flow. Not a form phase + no caqIndex; the
+  // page renders CaqPathChoiceScreen for this step id.
+  { id: "caq-path-choice", title: "", description: "" },
+  { id: "1", title: "Demographics & Biodata", description: "Basic measurements and biological information" },
   { id: "i-caq-lifestyle", title: "", description: "", caqIndex: 1 },
   { id: "3", title: "Lifestyle & Goals", description: "Daily habits, routines, and wellness goals" },
   { id: "i-caq-concerns", title: "", description: "", caqIndex: 2 },
@@ -395,6 +407,39 @@ const selectClass = "w-full h-10 bg-dark-surface border border-dark-border round
 
 // ─── Main Component ─────────────────────────────────────────────────────────
 
+// Prompt 173c 2.3: step ids hidden in the Quick path (the symptom phases
+// 1b/2a/2b/2c and their preceding interstitials). Derived from
+// CAQ_FORM_PHASE_IDS minus CAQ_QUICK_FORM_PHASE_IDS plus the i-caq-* ids
+// that bind to those phases per the 173b semantic-binding rule.
+const QUICK_HIDDEN_STEP_IDS = new Set<string>([
+  "i-caq-concerns", "1b",
+  "i-caq-physical", "2a",
+  "i-caq-neuro", "2b",
+  "i-caq-emotional", "2c",
+]);
+
+// 173c-aware navigation helpers. The path filter applies only when the
+// user picked Quick; Complete experiences the full PHASES array.
+function getNextStepIdx(startIdx: number, path: CaqPath | null): number {
+  let i = startIdx + 1;
+  if (path !== 'quick') return i;
+  while (i < PHASES.length && QUICK_HIDDEN_STEP_IDS.has(PHASES[i].id)) {
+    i += 1;
+  }
+  return i;
+}
+
+function getPrevFormPhaseIdx(currentIdx: number, path: CaqPath | null): number {
+  for (let i = currentIdx - 1; i >= 0; i--) {
+    const id = PHASES[i].id;
+    if (id.startsWith("i-")) continue;
+    if (id === "caq-path-choice") continue;
+    if (path === 'quick' && QUICK_HIDDEN_STEP_IDS.has(id)) continue;
+    return i;
+  }
+  return -1;
+}
+
 export default function OnboardingStepPage() {
   const params = useParams();
   const router = useRouter();
@@ -404,6 +449,45 @@ export default function OnboardingStepPage() {
 
   const [isLoading, setIsLoading] = useState(false);
   const [showProcessing, setShowProcessing] = useState(false);
+
+  // Prompt 173c 2.5: selected CAQ path. Loaded from caq_paths on mount,
+  // with a localStorage mirror so unauthenticated mid-flow reloads keep
+  // the choice. Null until the user picks; navigation treats null as
+  // 'complete' so the existing full-flow defaults stay intact.
+  const [caqPath, setCaqPath] = useState<CaqPath | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        if (typeof window !== "undefined") {
+          const cached = window.localStorage.getItem("caq.path");
+          if (cached === 'quick' || cached === 'complete') {
+            if (!cancelled) setCaqPath(cached);
+          }
+        }
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user || cancelled) return;
+        const record = await readCaqPath(user.id, supabase);
+        if (!cancelled && record) setCaqPath(record.path);
+      } catch { /* missing column or signed out: leave caqPath null */ }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  async function handlePickPath(picked: CaqPath) {
+    setCaqPath(picked);
+    if (typeof window !== "undefined") {
+      try { window.localStorage.setItem("caq.path", picked); } catch { /* fine */ }
+    }
+    try {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) await writeCaqPath({ userId: user.id, path: picked }, supabase);
+    } catch { /* persistence is best-effort; localStorage is the floor */ }
+    router.push("/onboarding/1");
+  }
 
   // Phase 1 state
   const [demographics, setDemographics] = useState<DemographicsData>({
@@ -665,13 +749,9 @@ export default function OnboardingStepPage() {
   // (Medications, Supplements, and Allergies); reordering CAQ_FORM_PHASE_IDS
   // moves the trigger automatically.
   const isLast = isLastFormPhase(stepId, CAQ_FORM_PHASE_IDS);
-  // For "Back" navigation, skip interstitials
-  const prevFormIndex = (() => {
-    for (let i = currentIndex - 1; i >= 0; i--) {
-      if (!PHASES[i].id.startsWith("i-")) return i;
-    }
-    return -1;
-  })();
+  // For "Back" navigation, skip interstitials. 173c also skips the path
+  // choice and any phase hidden by the Quick path filter.
+  const prevFormIndex = getPrevFormPhaseIdx(currentIndex, caqPath);
   const prevHref = prevFormIndex >= 0 ? `/onboarding/${PHASES[prevFormIndex].id}` : null;
 
   // Toggle chip
@@ -857,7 +937,7 @@ export default function OnboardingStepPage() {
         }
       }
       // Navigate to next phase (form or interstitial)
-      router.push(`/onboarding/${PHASES[currentIndex + 1].id}`);
+      router.push(`/onboarding/${PHASES[getNextStepIdx(currentIndex, caqPath)].id}`);
     } catch {
       toast.error("Failed to save. Please try again.");
     } finally {
@@ -915,7 +995,7 @@ export default function OnboardingStepPage() {
       if (attempts >= MAX_ATTEMPTS) {
         if (!cancelled) {
           toast("Your score is still being prepared. You can continue and check the dashboard in a few minutes.", { duration: 6000 });
-          router.push(`/onboarding/${PHASES[currentIndex + 1].id}`);
+          router.push(`/onboarding/${PHASES[getNextStepIdx(currentIndex, caqPath)].id}`);
         }
         return;
       }
@@ -957,14 +1037,30 @@ export default function OnboardingStepPage() {
     return (
       <InterstitialScreen
         config={interstitialConfig}
-        onContinue={() => router.push(`/onboarding/${PHASES[currentIndex + 1].id}`)}
+        onContinue={() => router.push(`/onboarding/${PHASES[getNextStepIdx(currentIndex, caqPath)].id}`)}
         celebrationMode={stepId === "i-caq-complete"}
       />
     );
   }
 
-  // Form phases only (exclude interstitials and "complete" from progress bar)
-  const formPhases = PHASES.filter((s) => !s.id.startsWith("i-") && s.id !== "complete");
+  // Prompt 173c 2.1: Quick vs Complete choice screen. Sits between the
+  // Phase 1 interstitial and the Demographics form so the user picks the
+  // path before investing in the full flow.
+  if (stepId === "caq-path-choice") {
+    return <CaqPathChoiceScreen onPick={handlePickPath} />;
+  }
+
+  // Form phases only (exclude interstitials, the path-choice step, the
+  // "complete" celebration, and any phase hidden by the Quick path filter).
+  // 173c 2.3: the progress bar denominator derives from the SELECTED path
+  // so Quick reads as Step X of 3 + Complete reads as Phase X of 7.
+  const formPhases = PHASES.filter((s) => {
+    if (s.id.startsWith("i-")) return false;
+    if (s.id === "complete") return false;
+    if (s.id === "caq-path-choice") return false;
+    if (caqPath === "quick" && QUICK_HIDDEN_STEP_IDS.has(s.id)) return false;
+    return true;
+  });
   const currentFormIndex = formPhases.findIndex((s) => s.id === stepId);
 
   return (
@@ -1005,14 +1101,22 @@ export default function OnboardingStepPage() {
           </div>
         )}
 
-        {/* Phase header (hidden on complete page, it has its own) */}
+        {/* Phase header (hidden on complete page, it has its own).
+            173c 2.3: Quick path reads as "Step X of 3" with a follow-on
+            line noting more phases are available; Complete keeps the
+            "Phase X of 7" label from 173b. */}
         {stepId !== "complete" && (
           <div className="mb-6">
             <p className="text-xs text-copper font-semibold uppercase tracking-wider">
-              Phase {currentFormIndex + 1} of {formPhases.length}
+              {caqPath === "quick" ? "Step" : "Phase"} {currentFormIndex + 1} of {formPhases.length}
             </p>
             <h2 className="text-xl font-bold text-white mt-1">{phase.title}</h2>
             <p className="text-sm text-gray-400 mt-0.5">{phase.description}</p>
+            {caqPath === "quick" ? (
+              <p className="mt-1 text-[11px] text-white/45">
+                {CAQ_FORM_PHASE_IDS.length - CAQ_QUICK_FORM_PHASE_IDS.length} more phases available for a complete protocol.
+              </p>
+            ) : null}
           </div>
         )}
 

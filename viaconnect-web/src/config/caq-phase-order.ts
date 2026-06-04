@@ -69,6 +69,57 @@ export function getPhasePositionLabel(phaseId: CaqFormPhaseId | string): string 
 }
 
 // ---------------------------------------------------------------------------
+// Prompt 173c Phase C: Quick vs Complete path filtering (2.3 + 2.5).
+// ---------------------------------------------------------------------------
+
+export type CaqPath = 'quick' | 'complete';
+
+// Quick Start phase ids per 173c 2.2: Demographics, Lifestyle & Goals,
+// Medications/Supplements/Allergies. The semantic identifiers (per 173b 1)
+// would be phase_demographics, phase_lifestyle, phase_meds_supps; these
+// short ids are the existing form-phase identifiers Quick filters by.
+//
+// Order is preserved across the filter so Quick experiences the same
+// natural sequence Complete does, just with the symptom phases (3-6 in
+// experienced order) skipped.
+export const CAQ_QUICK_FORM_PHASE_IDS: ReadonlyArray<CaqFormPhaseId> = ['1', '3', '4'];
+
+/**
+ * Return the canonical form-phase ids for the user's selected path. Quick
+ * filters to Demographics + Lifestyle & Goals + Medications/Supplements/
+ * Allergies; Complete returns the full 173 + 173b order.
+ */
+export function getPathFormPhaseIds(path: CaqPath): ReadonlyArray<CaqFormPhaseId> {
+  if (path === 'quick') return CAQ_QUICK_FORM_PHASE_IDS;
+  return CAQ_FORM_PHASE_IDS;
+}
+
+/**
+ * Path-relative step label. Complete keeps the Phase X of 7 wording from
+ * 173b; Quick reads as Step X of 3 with a follow-on line noting more
+ * phases are available (rendered by the caller as a separate string).
+ */
+export function getPathPhaseStepLabel(phaseId: string, path: CaqPath): string {
+  const order = getPathFormPhaseIds(path);
+  const idx = order.indexOf(phaseId as CaqFormPhaseId);
+  if (idx < 0) return '';
+  if (path === 'quick') return `Step ${idx + 1} of ${order.length}`;
+  return `Phase ${idx + 1} of ${order.length}`;
+}
+
+/**
+ * The static line that follows the Quick step label, surfacing the
+ * available remaining phases. Empty string on Complete so the same
+ * helper can be called from both branches without conditional logic at
+ * the caller.
+ */
+export function getPathRemainingLine(path: CaqPath): string {
+  if (path !== 'quick') return '';
+  const remaining = CAQ_FORM_PHASE_IDS.length - CAQ_QUICK_FORM_PHASE_IDS.length;
+  return `${remaining} more phases available for a complete protocol.`;
+}
+
+// ---------------------------------------------------------------------------
 // 4. Last-phase + completion trigger (173 §3.2: bind to event, not index)
 // ---------------------------------------------------------------------------
 
