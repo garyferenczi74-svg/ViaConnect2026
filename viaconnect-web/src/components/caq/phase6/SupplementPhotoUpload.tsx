@@ -3,6 +3,31 @@
 import { useState, useRef, useEffect } from 'react';
 import { detectWebView, type WebViewDetection } from '@/lib/device/detect-webview';
 
+// Prompt 175 Part E (2026-06-04): never surface raw server error strings.
+// The route already replaces config detail with neutral copy (175 Part A),
+// but a second guard here keeps the UI safe if any future endpoint
+// regression leaks an internal token like 'ANTHROPIC_API_KEY not set in
+// .env.local'. If the server message is missing, empty, or matches one of
+// the known-internal patterns, swap in neutral fallback copy.
+const NEUTRAL_FALLBACK_MESSAGE =
+  'We could not read this label. Try a sharper photo, or enter the supplement by name.';
+const INTERNAL_SIGNAL_PATTERNS = [
+  /api[_-]?key/i,
+  /\.env/i,
+  /ANTHROPIC/i,
+  /undefined is not/i,
+  /stack trace/i,
+];
+function sanitizeServerErrorMessage(raw: unknown): string {
+  if (typeof raw !== 'string') return NEUTRAL_FALLBACK_MESSAGE;
+  const trimmed = raw.trim();
+  if (!trimmed) return NEUTRAL_FALLBACK_MESSAGE;
+  for (const pattern of INTERNAL_SIGNAL_PATTERNS) {
+    if (pattern.test(trimmed)) return NEUTRAL_FALLBACK_MESSAGE;
+  }
+  return trimmed;
+}
+
 interface IdentifiedProduct {
   brand: string | null;
   productName: string | null;
@@ -99,7 +124,7 @@ export default function SupplementPhotoUpload({ onProductIdentified, onProductAd
 
       if (!data.success) {
         setState('error');
-        setErrorMsg(data.error || 'Could not read label. Try the Supplement Facts panel.');
+        setErrorMsg(sanitizeServerErrorMessage(data.error));
         return;
       }
 

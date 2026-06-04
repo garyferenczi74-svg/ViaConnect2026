@@ -4,6 +4,12 @@ import { withAbortTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 import { getCircuitBreaker, isCircuitBreakerError } from '@/lib/utils/circuit-breaker';
 
+// Prompt 175 Part A (2026-06-04): every user-facing error string in this
+// route has been replaced with neutral copy + a typed outcome code so the
+// CAQ photo block can degrade gracefully to its existing manual search.
+// The string "ANTHROPIC_API_KEY not set in .env.local" must NEVER reach
+// the browser; server-side safeLog retains the actual condition.
+
 const visionBreaker = getCircuitBreaker('claude-vision');
 
 export const maxDuration = 60;
@@ -15,13 +21,52 @@ type AnthropicMime = typeof ANTHROPIC_ALLOWED_MIME[number];
 const HEIC_MIME = ['image/heic', 'image/heif'];
 const MAX_BYTES_AFTER_NORMALIZE = 5 * 1024 * 1024;
 
+// Neutral user-facing copy mapped from internal outcome codes. Never names
+// the internal config or the upstream provider.
+const USER_MESSAGE_FOR_MANUAL_FALLBACK =
+  'We could not read your label automatically. Please add it using the search below.';
+const USER_MESSAGE_FOR_RETRY =
+  'Photo analysis hit a snag. Please try again, or add it using the search below.';
+const USER_MESSAGE_FOR_UNSUPPORTED =
+  'Unsupported image format. Please use a JPEG, PNG, WebP, or HEIC photo.';
+const USER_MESSAGE_FOR_HEIC_CONVERT =
+  'Could not read that HEIC photo. Try retaking in JPG mode, or upload a different photo.';
+
+type SupplementVisionOutcome =
+  | 'success'
+  | 'config_missing'
+  | 'circuit_open'
+  | 'timeout'
+  | 'upstream_error'
+  | 'unsupported_image'
+  | 'heic_convert_failed'
+  | 'parse_failed'
+  | 'unknown';
+
 export async function POST(request: Request) {
   try {
     const { imageBase64, mimeType } = await request.json();
-    if (!imageBase64) return NextResponse.json({ success: false, error: 'No image' }, { status: 400 });
+    if (!imageBase64) {
+      return NextResponse.json(
+        { success: false, outcomeCode: 'unsupported_image', error: 'No image was sent.' satisfies string },
+        { status: 400 },
+      );
+    }
 
     const apiKey = process.env.ANTHROPIC_API_KEY;
-    if (!apiKey) return NextResponse.json({ success: false, error: 'ANTHROPIC_API_KEY not set in .env.local' }, { status: 500 });
+    if (!apiKey) {
+      // Server log retains the actionable detail; client gets neutral copy
+      // mapped to the manual-fallback branch by outcomeCode.
+      safeLog.warn('api.ai.supplement-vision', 'extraction unavailable: ANTHROPIC_API_KEY missing on server', {});
+      return NextResponse.json(
+        {
+          success: false,
+          outcomeCode: 'config_missing' satisfies SupplementVisionOutcome,
+          error: USER_MESSAGE_FOR_MANUAL_FALLBACK,
+        },
+        { status: 503 },
+      );
+    }
 
     let normalizedBase64: string = imageBase64;
     let normalizedMime: string = (typeof mimeType === 'string' ? mimeType : 'image/jpeg').toLowerCase();
@@ -40,7 +85,11 @@ export async function POST(request: Request) {
         normalizedMime = 'image/jpeg';
       } catch {
         return NextResponse.json(
-          { success: false, error: 'Could not convert HEIC photo. Try retaking in JPG mode via iPhone Settings, or upload a different photo.' },
+          {
+            success: false,
+            outcomeCode: 'heic_convert_failed' satisfies SupplementVisionOutcome,
+            error: USER_MESSAGE_FOR_HEIC_CONVERT,
+          },
           { status: 400 },
         );
       }
@@ -48,7 +97,11 @@ export async function POST(request: Request) {
 
     if (!ANTHROPIC_ALLOWED_MIME.includes(normalizedMime as AnthropicMime)) {
       return NextResponse.json(
-        { success: false, error: 'Unsupported image format. Use JPEG, PNG, WebP, or HEIC.' },
+        {
+          success: false,
+          outcomeCode: 'unsupported_image' satisfies SupplementVisionOutcome,
+          error: USER_MESSAGE_FOR_UNSUPPORTED,
+        },
         { status: 400 },
       );
     }
@@ -77,31 +130,96 @@ export async function POST(request: Request) {
     } catch (apiErr) {
       if (isCircuitBreakerError(apiErr)) {
         safeLog.warn('api.ai.supplement-vision', 'vision circuit open', { error: apiErr });
-        return NextResponse.json({ success: false, error: 'Vision service temporarily unavailable.' }, { status: 503 });
+        return NextResponse.json(
+          {
+            success: false,
+            outcomeCode: 'circuit_open' satisfies SupplementVisionOutcome,
+            error: USER_MESSAGE_FOR_RETRY,
+          },
+          { status: 503 },
+        );
       }
       if (isTimeoutError(apiErr)) {
         safeLog.warn('api.ai.supplement-vision', 'vision timeout', { error: apiErr });
-        return NextResponse.json({ success: false, error: 'Vision analysis took too long.' }, { status: 504 });
+        return NextResponse.json(
+          {
+            success: false,
+            outcomeCode: 'timeout' satisfies SupplementVisionOutcome,
+            error: USER_MESSAGE_FOR_RETRY,
+          },
+          { status: 504 },
+        );
       }
       safeLog.error('api.ai.supplement-vision', 'vision fetch failed', { error: apiErr });
-      return NextResponse.json({ success: false, error: 'Vision API call failed.' }, { status: 502 });
+      return NextResponse.json(
+        {
+          success: false,
+          outcomeCode: 'upstream_error' satisfies SupplementVisionOutcome,
+          error: USER_MESSAGE_FOR_RETRY,
+        },
+        { status: 502 },
+      );
     }
 
     if (!res.ok) {
-      const e = await res.text();
-      safeLog.error('api.ai.supplement-vision', 'vision non-2xx', { status: res.status, errBody: e.slice(0, 200) });
-      return NextResponse.json({ success: false, error: 'API ' + res.status + ': ' + e.substring(0,200) }, { status: 500 });
+      // Read the upstream body for server logs ONLY; never echo it back to
+      // the client. Stripping HTTP status from the client response too so
+      // the surface stays neutral.
+      const upstreamBody = await res.text();
+      safeLog.error('api.ai.supplement-vision', 'vision non-2xx', { status: res.status, errBody: upstreamBody.slice(0, 200) });
+      return NextResponse.json(
+        {
+          success: false,
+          outcomeCode: 'upstream_error' satisfies SupplementVisionOutcome,
+          error: USER_MESSAGE_FOR_RETRY,
+        },
+        { status: 502 },
+      );
     }
 
     const data = await res.json();
     const text = data.content?.find((b: { type: string; text?: string }) => b.type === 'text')?.text || '';
-    const clean = text.replace(/```json?\s*/gi,'').replace(/```/g,'').trim();
+    const clean = text.replace(/```json?\s*/gi, '').replace(/```/g, '').trim();
     const m = clean.match(/\{[\s\S]*\}/);
-    if (!m) return NextResponse.json({ success: false, error: 'No JSON in response' }, { status: 500 });
+    if (!m) {
+      safeLog.warn('api.ai.supplement-vision', 'no JSON in response', { previewLen: clean.length });
+      return NextResponse.json(
+        {
+          success: false,
+          outcomeCode: 'parse_failed' satisfies SupplementVisionOutcome,
+          error: USER_MESSAGE_FOR_MANUAL_FALLBACK,
+        },
+        { status: 502 },
+      );
+    }
 
-    return NextResponse.json({ success: true, data: JSON.parse(m[0]) });
+    try {
+      const parsed = JSON.parse(m[0]);
+      return NextResponse.json({
+        success: true,
+        outcomeCode: 'success' satisfies SupplementVisionOutcome,
+        data: parsed,
+      });
+    } catch (parseErr) {
+      safeLog.warn('api.ai.supplement-vision', 'JSON parse failed', { error: parseErr });
+      return NextResponse.json(
+        {
+          success: false,
+          outcomeCode: 'parse_failed' satisfies SupplementVisionOutcome,
+          error: USER_MESSAGE_FOR_MANUAL_FALLBACK,
+        },
+        { status: 502 },
+      );
+    }
   } catch (err: unknown) {
     safeLog.error('api.ai.supplement-vision', 'unexpected error', { error: err });
-    return NextResponse.json({ success: false, error: err instanceof Error ? err.message : 'Unknown error' }, { status: 500 });
+    return NextResponse.json(
+      {
+        success: false,
+        outcomeCode: 'unknown' satisfies SupplementVisionOutcome,
+        error: USER_MESSAGE_FOR_RETRY,
+      },
+      { status: 500 },
+    );
   }
 }
