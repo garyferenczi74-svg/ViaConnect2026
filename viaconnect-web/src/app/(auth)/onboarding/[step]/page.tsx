@@ -637,6 +637,49 @@ export default function OnboardingStepPage() {
       if (user.user_metadata?.full_name && !demographics.name) {
         setDemographics((prev) => ({ ...prev, name: user.user_metadata.full_name }));
       }
+      // Prompt 173 fix (2026-06-04): hydrate Phase 1 demographics from the
+      // in-progress assessment_results row REGARDLESS of whether the user
+      // has completed a prior CAQ. First-time users who save Phase 1 then
+      // advance to Phase 2 need the Weight Goals subsection to see their
+      // current weight; without this hydration the section reads "Add
+      // your current weight on the Demographics step" because React state
+      // may not survive a navigation or reload between phases.
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: p1Row } = await (supabase as any)
+          .from("assessment_results")
+          .select("data")
+          .eq("user_id", user.id)
+          .eq("phase", 1)
+          .maybeSingle();
+        const d1 = (p1Row?.data ?? {}) as Record<string, unknown>;
+        if (Object.keys(d1).length > 0) {
+          setDemographics((p) => ({
+            ...p,
+            ...(d1.name ? { name: String(d1.name) } : {}),
+            ...(d1.dob ? { dob: String(d1.dob) } : {}),
+            ...(d1.age ? { age: String(d1.age) } : {}),
+            ...(d1.sex ? { sex: String(d1.sex) } : {}),
+            ...(d1.height ? { height: String(d1.height) } : {}),
+            ...(d1.weight ? { weight: String(d1.weight) } : {}),
+            ...(d1.ethnicity ? { ethnicity: d1.ethnicity as string[] } : {}),
+            ...(d1.bloodType ? { bloodType: String(d1.bloodType) } : {}),
+          }));
+          // Mirror the height ft/in derivation from the retake path so the
+          // imperial input renders correctly when the user returns to
+          // Phase 1.
+          if (d1.height) {
+            const cm = parseFloat(String(d1.height));
+            if (cm > 0) {
+              const totalIn = cm / 2.54;
+              setHeightFt(String(Math.floor(totalIn / 12)));
+              setHeightIn(String(Math.round(totalIn % 12)));
+            }
+          }
+          if (d1.bodyType) setBodyType(String(d1.bodyType));
+        }
+      } catch { /* silent: assessment_results may be empty for brand-new users */ }
+
       // Check if user has completed CAQ before
       const { data: profile } = await supabase.from("profiles").select("assessment_completed").eq("id", user.id).single();
       if (profile?.assessment_completed) {
