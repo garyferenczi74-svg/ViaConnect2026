@@ -5,10 +5,10 @@ import { motion } from "framer-motion";
 import { Brain } from "lucide-react";
 import type { InterstitialConfig } from "@/config/onboarding";
 import {
-  INTERSTITIAL_ADVANCE,
-  computeAdvanceDelayMs,
-  countInterstitialWords,
+  INTERSTITIAL_AUTO_ADVANCE_MS,
+  INTERSTITIAL_PROGRESS_TICK_MS,
 } from "@/config/caq-interstitial-advance";
+import { InterstitialContinueButton } from "./InterstitialContinueButton";
 
 // 173c 1.2: settings toggle so users can disable the reading-time-aware
 // auto-advance globally. Stored in localStorage so it persists across
@@ -185,14 +185,11 @@ export function InterstitialScreen({ config, onContinue, celebrationMode }: Inte
     startedAtRef.current = null;
   }, [config.id]);
 
-  const wordCount = countInterstitialWords(
-    config.quote,
-    config.subtext,
-    config.featureCard?.title,
-    config.featureCard?.description,
-    config.featureCard?.category,
-  );
-  const delayMs = computeAdvanceDelayMs(wordCount);
+  // 173d Section 1: fixed 8 second auto-advance. The reading-time-aware
+  // delay formula from 173c is retired in favor of one constant so users
+  // get a predictable cadence and the long interstitials are no longer at
+  // risk of feeling rushed.
+  const delayMs = INTERSTITIAL_AUTO_ADVANCE_MS;
 
   // Auto-advance + progress fill. Skips entirely under the disabled cases.
   const autoAdvanceActive =
@@ -216,9 +213,9 @@ export function InterstitialScreen({ config, onContinue, celebrationMode }: Inte
         onContinue();
         return;
       }
-      window.setTimeout(tick, INTERSTITIAL_ADVANCE.progress_tick_ms);
+      window.setTimeout(tick, INTERSTITIAL_PROGRESS_TICK_MS);
     };
-    window.setTimeout(tick, INTERSTITIAL_ADVANCE.progress_tick_ms);
+    window.setTimeout(tick, INTERSTITIAL_PROGRESS_TICK_MS);
     return () => { cancelled = true; };
   }, [autoAdvanceActive, delayMs, onContinue]);
 
@@ -334,28 +331,25 @@ export function InterstitialScreen({ config, onContinue, celebrationMode }: Inte
         )}
       </div>
 
-      {/* Layer 4: Continue Button */}
+      {/* Layer 4 (173d Sections 2 + 3): compact white glass Continue
+          button. Hugs its label, ~ 44 by 44 CSS pixel tappable area on
+          mobile, navy label on frosted glass. The hero video softens
+          behind it via backdrop-blur where supported. The wrapper centers
+          the button so it does not stretch to the full width any more. */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, delay: buttonDelay }}
-        className="relative z-10 w-full max-w-lg mx-auto px-6 pb-12"
+        className="relative z-10 w-full max-w-lg mx-auto px-6 pb-12 flex justify-center"
       >
-        <button
-          // Stop propagation so the tap-anywhere handler does not also fire
-          // and call onContinue a second time.
-          onClick={(e) => { e.stopPropagation(); onContinue(); }}
-          className="w-full py-4 rounded-full bg-white text-black font-semibold text-base shadow-lg shadow-black/20 hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
-        >
-          Continue
-        </button>
+        <InterstitialContinueButton onClick={() => onContinue()} />
       </motion.div>
 
       {/* Layer 5 (173c 1.2): subtle progress fill at the bottom that
-          fills over the reading-time-aware delay. Hidden under
+          fills over the fixed 8 second auto-advance. Hidden under
           prefers-reduced-motion + celebration mode + the user setting
-          off. The label is announced to screen readers but the bar
-          itself is decorative. */}
+          off. The bar is decorative (aria-hidden) so screen-reader
+          users are never advanced before the copy finishes. */}
       {!celebrationMode && !prefersReducedMotion && !autoAdvanceDisabled ? (
         <div
           className="absolute bottom-0 left-0 right-0 z-[2] h-0.5 bg-white/[0.04]"
@@ -365,7 +359,7 @@ export function InterstitialScreen({ config, onContinue, celebrationMode }: Inte
             className="h-full bg-white/35"
             style={{
               width: `${progressPct}%`,
-              transition: paused ? "none" : `width ${INTERSTITIAL_ADVANCE.progress_tick_ms}ms linear`,
+              transition: paused ? "none" : `width ${INTERSTITIAL_PROGRESS_TICK_MS}ms linear`,
             }}
           />
         </div>

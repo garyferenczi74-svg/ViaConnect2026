@@ -1,70 +1,51 @@
 // =============================================================================
-// Prompt 173c Phase B (2026-06-04): canonical interstitial advance constants.
+// Prompt 173c Phase B + Prompt 173d (2026-06-04): interstitial advance + button
+// surface constants.
 //
-// One source of truth for the hybrid advance behavior per 173c 1.2. No
-// magic numbers in the InterstitialScreen component; tuning the cadence
-// touches this file only.
+// 173d Section 1 supersedes the 173c reading-time-aware formula. Auto-advance
+// is now a fixed 8 second switch (8000 ms) driven by ONE constant. The old
+// base_ms / words_per_second / min_ms / max_ms constants and the
+// computeAdvanceDelayMs + countInterstitialWords helpers are retired.
 //
-// Cadence design rationale (locked):
-//   * A 20-word body line at 200 to 250 wpm comprehends in 5 to 6 seconds.
-//     A timer-only 3-second flip removes the screen mid-read.
-//   * The clamp keeps short teasers from feeling rushed (>= 4s) and long
-//     interstitials from feeling abandoned (<= 9s).
-//   * The base offset accounts for the animation reveal plus a moment to
-//     orient before reading begins.
+// Everything else from 173c Section 1.2 still stands and the wiring is
+// unchanged: tap to advance, subtle progress fill, pause on interaction,
+// prefers-reduced-motion respect, settings toggle to disable globally,
+// screen reader friendly progress bar (aria-hidden).
+//
+// 173d Sections 2 + 3 expose the Continue button surface as a single
+// shared component. The tint opacity is a tunable constant here so a
+// Kelsey-driven contrast pass can raise the white opacity without
+// touching the button component itself.
 // =============================================================================
 
-// Reading-time-aware auto-advance constants. delay_ms is derived per 173c
-// 1.2 from word_count via:
+// Fixed 8 second switch (173d Section 1). 8000 ms sits comfortably above
+// the read time of the longest interstitial so the user is never rushed.
+export const INTERSTITIAL_AUTO_ADVANCE_MS = 8000;
+
+// Progress fill update tick. The bar interpolates linearly; we redraw at
+// ~ 30 fps so the motion reads as continuous without burning CPU.
+export const INTERSTITIAL_PROGRESS_TICK_MS = 33;
+
+// 173d Section 3 white glass tint. The number is the percent opacity of the
+// white tint (e.g. 45 -> bg-white/45). The InterstitialContinueButton
+// component uses this constant in its Tailwind class string; Kelsey's
+// contrast pass raises this value if the navy label drops below 4.5:1
+// against any hero video frame.
 //
-//   delay_ms = clamp(base_ms + (word_count / words_per_second) * 1000, min_ms, max_ms)
+// CONTRAST FLOOR (locked): navy #1A2744 label MUST hold at least 4.5:1
+// against the darkest representative hero video frame.
 //
-// A 20-word card lands near 7s, a short 5-word teaser at the 4s floor.
+// Backdrop-filter fallback uses a higher opacity (set in the component) so
+// engines without supports-[backdrop-filter] never serve an unreadable
+// transparent pane.
+//
+// Reduce-transparency and prefers-contrast:more bumps this toward 90 in the
+// component's media-query branches.
+export const INTERSTITIAL_BUTTON_TINT_OPACITY = 45;
+
+// Backwards-compat alias for callers that still imported the old constants
+// object. Keeps existing imports working until a follow-up tidies them.
 export const INTERSTITIAL_ADVANCE = {
-  base_ms: 1500,
-  words_per_second: 3.5, // ~ 210 wpm
-  min_ms: 4000,
-  max_ms: 9000,
-  // Progress fill update tick. The bar interpolates linearly; we redraw at
-  // ~ 30 fps so the motion reads as continuous without burning CPU.
-  progress_tick_ms: 33,
+  auto_advance_ms: INTERSTITIAL_AUTO_ADVANCE_MS,
+  progress_tick_ms: INTERSTITIAL_PROGRESS_TICK_MS,
 } as const;
-
-export type InterstitialAdvanceConfig = typeof INTERSTITIAL_ADVANCE;
-
-/**
- * Compute the reading-time-aware auto-advance delay for an interstitial
- * given the total word count of its visible body copy. Pure + total; safe
- * to unit-test in isolation.
- *
- * Callers count words across whatever copy renders on the card: the quote
- * plus the featureCard description plus the subtext, when present. The
- * floor (min_ms) protects short teasers; the ceiling (max_ms) protects
- * long featureCards from feeling abandoned.
- */
-export function computeAdvanceDelayMs(
-  wordCount: number,
-  config: InterstitialAdvanceConfig = INTERSTITIAL_ADVANCE,
-): number {
-  // NaN and negative inputs are defensive-zeroed; positive infinity is left
-  // alone so it routes to the ceiling via the clamp below.
-  if (Number.isNaN(wordCount) || wordCount < 0) wordCount = 0;
-  const raw = config.base_ms + (wordCount / config.words_per_second) * 1000;
-  return Math.max(config.min_ms, Math.min(config.max_ms, raw));
-}
-
-/**
- * Count words across the copy fragments visible on the interstitial card.
- * Whitespace runs are collapsed; empty / null fragments contribute zero.
- * Used by the InterstitialScreen to feed computeAdvanceDelayMs.
- */
-export function countInterstitialWords(...fragments: ReadonlyArray<string | null | undefined>): number {
-  let total = 0;
-  for (const f of fragments) {
-    if (!f) continue;
-    const trimmed = f.trim();
-    if (trimmed.length === 0) continue;
-    total += trimmed.split(/\s+/).length;
-  }
-  return total;
-}
