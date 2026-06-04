@@ -18,6 +18,7 @@ import { createClient } from '@/lib/supabase/client';
 import { VoiceSettingsSection } from './components/VoiceSettingsSection';
 import { VoiceNativeSettingsSection } from './components/VoiceNativeSettingsSection';
 import { HydrationSettingsSection } from './components/HydrationSettingsSection';
+import { DietarySettingsSection } from './components/DietarySettingsSection';
 
 interface SettingsRow {
   corpus_opt_in?: boolean | null;
@@ -163,6 +164,12 @@ export default function NutriVisionSettingsPage() {
             Entry path preferences card. (Prompt 173 removed the 170m Quick
             Log section.) */}
         <VoiceNativeSettingsSection />
+
+        {/* Prompt 173a Phase 8 follow up (2026-06-04): dietary choice mirror.
+            Lets the user change the picked diet after CAQ without re-running
+            the questionnaire. Triggers /api/nutrition/generate-targets on
+            save so the active targets row reflects the new fat + carb split. */}
+        <DietarySettingsSection />
 
         {/* Prompt 170o Phase 1 Phase D: hydration settings section per Hannah
             Surface 6 wireframe. Default vs Custom target slider + Conservative
