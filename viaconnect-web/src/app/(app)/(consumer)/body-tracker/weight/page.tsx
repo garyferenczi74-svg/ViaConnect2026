@@ -1,11 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Plus, Scale, Target, TrendingDown } from 'lucide-react';
 import { WeightChart } from '@/components/body-tracker/WeightChart';
 import { TimeRangeToggle } from '@/components/body-tracker/TimeRangeToggle';
 import { WeightMeasurementsForm } from '@/components/body-tracker/manual-input/forms/WeightMeasurementsForm';
 import { EntryHistoryTimeline } from '@/components/body-tracker/manual-input';
+import { GoalWeightTimelineCard } from '@/components/body-tracker/GoalWeightTimelineCard';
+import { useWeightGoalKg } from '@/hooks/useWeightGoalKg';
+import { useNutritionTargets } from '@/hooks/useNutritionTargets';
+import { createClient } from '@/lib/supabase/client';
+import { LBS_PER_KG } from '@/lib/weight-goals/guardrails';
 
 const SAMPLE_DATA = [
   { date: '2026-03-01', value: 192, label: 'Mar 1' },
@@ -21,6 +26,39 @@ export default function WeightPage() {
   const [timeRange, setTimeRange] = useState<'D' | 'W' | 'M'>('W');
   const [open, setOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [latestWeightKg, setLatestWeightKg] = useState<number | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (cancelled || !user) return;
+      setUserId(user.id);
+      // Latest body_tracker_weight log -> resolved live current weight in kg.
+      // body_tracker_weight stores pounds; convert via the canonical factor
+      // so the timeline card's projection math agrees with the engine.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: weightRow } = await (supabase as any)
+        .from('body_tracker_weight')
+        .select('weight_lbs')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      const lbs = typeof weightRow?.weight_lbs === 'number' ? weightRow.weight_lbs : null;
+      if (!cancelled) setLatestWeightKg(lbs !== null ? lbs / LBS_PER_KG : null);
+    })();
+    return () => { cancelled = true; };
+  }, [refreshKey]);
+
+  // Prompt 173 Phase 7: canonical goal weight + macro basis for the timeline
+  // card. Both hooks no-op when userId is null.
+  const { goalWeightKg } = useWeightGoalKg(userId);
+  const { targets } = useNutritionTargets(userId);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const weeklyRateKg = (targets?.macroBasis as any)?.weeklyRateKg ?? null;
 
   return (
     <div className="space-y-6" key={refreshKey}>
@@ -73,6 +111,17 @@ export default function WeightPage() {
       <div className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/75 p-5 backdrop-blur-sm">
         <WeightChart data={SAMPLE_DATA} goalWeight={176} unit="lbs" />
       </div>
+
+      {/* Prompt 173 Phase 7: projected timeline to goal via the canonical
+          user_weight_goals + the active nutrition_targets basis. Hides
+          itself when any input is missing or the direction is Maintain so
+          the page stays clean for users without targets yet. */}
+      <GoalWeightTimelineCard
+        currentWeightKg={latestWeightKg}
+        goalWeightKg={goalWeightKg}
+        weeklyRateKg={weeklyRateKg}
+        weightUnit="lbs"
+      />
 
       {/* Measurements grid */}
       <div className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/75 p-5 backdrop-blur-sm">

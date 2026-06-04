@@ -116,12 +116,33 @@ function ageFromDob(dob: unknown): number | null {
   return age >= 0 && age < 130 ? age : null;
 }
 
+// Body Tracker stores weight in pounds. Convert to kg with the canonical
+// 2.20462 lbs/kg factor mirrored from guardrails (avoiding the import here
+// keeps the resolver dep graph thin).
+const LBS_PER_KG = 2.20462;
+
 async function resolveInputs(
   userId: string,
   supabase: ReturnType<typeof createClient>,
 ): Promise<ResolvedInputs> {
   // Weight goal (Phase 2 canonical store).
   const weightGoal = await readWeightGoal(userId, supabase);
+
+  // Body Tracker most-recent weight log. Phase 7 precedence (Section 7):
+  // the most recent body_tracker_weight log wins as the live current
+  // weight, else fall back to the weight-goal snapshot, else Demographics.
+  // body_tracker_weight stores weight_lbs; convert to kg here.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: latestWeightRow } = await (supabase as any)
+    .from('body_tracker_weight')
+    .select('weight_lbs, entry:body_tracker_entries!inner(user_id, entry_date)')
+    .eq('entry.user_id', userId)
+    .order('entry(entry_date)', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const bodyTrackerWeightLbs = numericOrNull(latestWeightRow?.weight_lbs);
+  const bodyTrackerWeightKg =
+    bodyTrackerWeightLbs !== null ? bodyTrackerWeightLbs / LBS_PER_KG : null;
 
   // Demographics + Lifestyle via assessment_results phase JSON. The phase
   // numeric IDs are the DB-stored values, not the user-facing position.
@@ -139,11 +160,14 @@ async function resolveInputs(
 
   // Demographics: height (cm), weight (kg), age OR dob, sex.
   const heightCm = numericOrNull(phase1?.height);
-  // Current weight precedence: weight_goal snapshot wins (live), else
-  // Demographics weight, else null. Phase 7 will reconcile with Body
-  // Tracker logs.
+  // Current weight precedence (Section 7, documented in code):
+  //   1. Most recent body_tracker_weight log (live).
+  //   2. weight_goal snapshot (last CAQ entry).
+  //   3. Demographics weight (CAQ Phase 1 capture).
+  // The resolver favors freshness; the snapshots are last-known-good only.
   const demographicsWeightKg = numericOrNull(phase1?.weight);
-  const currentWeightKg = weightGoal?.currentWeightKg ?? demographicsWeightKg;
+  const currentWeightKg =
+    bodyTrackerWeightKg ?? weightGoal?.currentWeightKg ?? demographicsWeightKg;
   const age = numericOrNull(phase1?.age) ?? ageFromDob(phase1?.dob);
   const biologicalSex = normalizeSex(phase1?.sex);
 

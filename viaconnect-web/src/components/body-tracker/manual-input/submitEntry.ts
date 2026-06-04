@@ -35,7 +35,7 @@ export interface SubmitEntryResult {
  * Inserts a body_tracker_entries row plus N detail rows atomically enough
  * for our needs (single transaction isn't exposed via supabase-js, but
  * the entry id is required for detail FK so any failure after the header
- * leaves an orphan header — we surface the error so UI can offer retry).
+ * leaves an orphan header , we surface the error so UI can offer retry).
  */
 export async function submitEntry(input: SubmitEntryInput): Promise<SubmitEntryResult> {
   const supabase = createClient();
@@ -66,6 +66,8 @@ export async function submitEntry(input: SubmitEntryInput): Promise<SubmitEntryR
 
   const entryId = (entry as { id: string }).id;
 
+  let weightLogged = false;
+
   for (const d of input.details) {
     // Cast table name: body_tracker_circumference is in the live DB but not yet in
     // generated Supabase types until next typegen pass.
@@ -79,6 +81,20 @@ export async function submitEntry(input: SubmitEntryInput): Promise<SubmitEntryR
     if (dErr) {
       throw new Error(`Failed to insert ${d.table}: ${dErr.message}`);
     }
+    if (d.table === 'body_tracker_weight') weightLogged = true;
+  }
+
+  // Prompt 173 Phase 7: a new weight log changes the live current weight
+  // input to the Gordon macro engine (Section 5.6 + Section 7 precedence).
+  // Fire-and-forget the recompute so the engine refreshes targets without
+  // blocking the form save. Any failure is non-fatal; the next page mount
+  // can retry via useNutritionTargets.regenerate().
+  if (weightLogged) {
+    void fetch('/api/nutrition/generate-targets', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({}),
+    }).catch(() => { /* non-fatal; UX continues */ });
   }
 
   return { entryId };
