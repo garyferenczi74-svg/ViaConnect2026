@@ -74,6 +74,11 @@ function distributionFromUnknown(value: unknown): MealDistribution {
   return DEFAULT_DISTRIBUTION;
 }
 
+function goalDirectionFromUnknown(value: unknown): 'lose' | 'gain' | 'maintain' | null {
+  if (value === 'lose' || value === 'gain' || value === 'maintain') return value;
+  return null;
+}
+
 function rowToTargets(row: Record<string, unknown>): NutritionTargets {
   return {
     targetId: String(row.target_id ?? ''),
@@ -95,6 +100,13 @@ function rowToTargets(row: Record<string, unknown>): NutritionTargets {
     generatedByVersion: String(row.generated_by_version ?? 'gordon-1.0.0'),
     generatedAt: String(row.generated_at ?? ''),
     supersededAt: nullableString(row.superseded_at),
+    // Prompt 173 Phase 5: weight-goal-driven columns. Null on legacy rows.
+    goalDirection: goalDirectionFromUnknown(row.goal_direction),
+    goalWeightKg: nullableNumeric(row.goal_weight_kg),
+    currentWeightKg: nullableNumeric(row.current_weight_kg),
+    conservativePath: row.conservative_path === true,
+    conservativeReason: nullableString(row.conservative_reason),
+    macroBasis: row.macro_basis ?? null,
   };
 }
 

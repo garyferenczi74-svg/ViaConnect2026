@@ -128,6 +128,15 @@ function usdaDefaults(input: GenerateTargetsInput): NutritionTargets {
     generatedByVersion: `gordon-${GORDON_VERSION}-usda-fallback`,
     generatedAt: nowIso(),
     supersededAt: null,
+    // Prompt 173 Phase 5: legacy USDA fallback predates the weight-goal
+    // engine; null fields here flag the UI to hide the goal direction +
+    // conservative path surface for this row.
+    goalDirection: null,
+    goalWeightKg: null,
+    currentWeightKg: null,
+    conservativePath: false,
+    conservativeReason: null,
+    macroBasis: null,
   };
 }
 
@@ -212,5 +221,14 @@ export function generateTargets(input: GenerateTargetsInput): NutritionTargets {
     generatedByVersion: `gordon-${GORDON_VERSION}`,
     generatedAt: nowIso(),
     supersededAt: null,
+    // Prompt 173 Phase 5: legacy in-memory path predates the canonical
+    // weight-goal engine; null fields here flag the UI to hide the goal-
+    // direction + conservative-path surface for this row.
+    goalDirection: null,
+    goalWeightKg: null,
+    currentWeightKg: null,
+    conservativePath: false,
+    conservativeReason: null,
+    macroBasis: null,
   };
 }

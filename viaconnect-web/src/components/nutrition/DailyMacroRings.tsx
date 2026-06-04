@@ -1,16 +1,24 @@
 'use client';
 
 // Prompt #168c section 2.6: Daily Macros card. Moved from /components/dashboard
-// per spec section 3.4 + restyled to match the Nutrition section visual language
-// (translucent navy with backdrop blur instead of solid #1E3054).
+// per spec section 3.4 + restyled to match the Nutrition section visual
+// language (translucent navy with backdrop blur instead of solid #1E3054).
 //
 // Four circular ring widgets: Protein, Carbs, Fat, Fiber. Each ring shows
 // current daily total as the filled portion, target as the full circle.
 // Tier color treatment per spec (under 25% Orange Deep, 25-50% Orange Light,
 // 50-75% Amber Neutral, 75-100% Teal Light, 100% or over Teal Primary).
+//
+// Prompt 173 Phase 6 (2026-06-03): added a calorie target header above the
+// rings (consumed / target kcal), a conservative-path note when targets.
+// conservativePath is true (the 5.5 maintenance posture), and the
+// MacroDisclaimer per the compliance memo. Goal direction chip surfaces
+// the effective direction when present.
 
 import { useMemo } from 'react';
+import { HeartHandshake } from 'lucide-react';
 import type { Meal, NutritionTargets } from '@/lib/gordon/types';
+import { MacroDisclaimer } from './MacroDisclaimer';
 
 export interface DailyMacroRingsProps {
   readonly meals: Meal[];
@@ -111,6 +119,13 @@ function MacroRing({ spec, sizePx }: { spec: MacroSpec; sizePx: number }) {
   );
 }
 
+// Calm, factual direction label. Matches the WeightGoalsSection.
+const DIRECTION_LABEL: Record<'lose' | 'gain' | 'maintain', string> = {
+  lose: 'Lose',
+  gain: 'Gain',
+  maintain: 'Maintain',
+};
+
 export function DailyMacroRings(props: DailyMacroRingsProps) {
   const { meals, targets, userTimezone } = props;
   const tz = useMemo(
@@ -120,25 +135,27 @@ export function DailyMacroRings(props: DailyMacroRingsProps) {
 
   const totals = useMemo(() => {
     const todayKey = localDateKey(new Date().toISOString(), tz);
+    let kcal = 0;
     let protein = 0;
     let carbs = 0;
     let fat = 0;
     let fiber = 0;
-    if (!todayKey) return { protein, carbs, fat, fiber };
+    if (!todayKey) return { kcal, protein, carbs, fat, fiber };
     for (const m of meals) {
       if (localDateKey(m.loggedAt, tz) !== todayKey) continue;
       // Per #168c lock + #168d Layer 6, narrowed by Prompt 173b (2026-06-01):
-      // the legacy marker is qualityScore IS NULL. New full_manual saves run
-      // through Gordon scoring (Prompt 173b lifted the 168c/168d unscored
-      // lock) and contribute their macros to Daily Macros; only pre-173b
-      // NULL-score rows are excluded.
+      // the legacy marker is qualityScore IS NULL. New full_manual saves
+      // run through Gordon scoring (Prompt 173b lifted the 168c/168d
+      // unscored lock) and contribute their macros to Daily Macros; only
+      // pre-173b NULL-score rows are excluded.
       if (m.qualityScore === null) continue;
+      kcal += Number(m.caloriesKcal) || 0;
       protein += Number(m.proteinG) || 0;
       carbs += Number(m.carbsG) || 0;
       fat += Number(m.fatTotalG) || 0;
       fiber += Number(m.fiberG) || 0;
     }
-    return { protein, carbs, fat, fiber };
+    return { kcal, protein, carbs, fat, fiber };
   }, [meals, tz]);
 
   const specs: MacroSpec[] = [
@@ -148,17 +165,66 @@ export function DailyMacroRings(props: DailyMacroRingsProps) {
     { key: 'fiber', label: 'Fiber', unit: 'g', actual: totals.fiber, target: targets.dailyFiberG },
   ];
 
+  const kcalActual = Math.round(totals.kcal);
+  const kcalTarget = Math.round(targets.dailyKcal);
+  const kcalPct = kcalTarget > 0 ? Math.min(100, Math.round((kcalActual / kcalTarget) * 100)) : 0;
+
   return (
-    <section className="font-[Instrument_Sans] rounded-2xl border border-white/10 bg-[#1E3054]/40 backdrop-blur-md p-4 text-white md:p-5">
+    <section
+      className="font-[Instrument_Sans] rounded-2xl border border-white/10 bg-[#1E3054]/40 backdrop-blur-md p-4 text-white md:p-5"
+      aria-label="Daily Macros"
+    >
       <header className="mb-4 flex items-center justify-between gap-3">
         <h2 className="text-[15px] font-semibold text-white">Daily macros</h2>
         <span className="text-[11px] uppercase tracking-[0.10em] text-white/50">today</span>
       </header>
+
+      {/* Calorie target header. Sits above the macro rings; the percentage
+          bar matches the tone of the other progress surfaces on this page. */}
+      <div className="mb-4 rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2.5">
+        <div className="flex items-baseline justify-between gap-3">
+          <p className="text-[12px] uppercase tracking-[0.10em] text-white/55">Calories</p>
+          {targets.goalDirection && targets.goalDirection !== 'maintain' && !targets.conservativePath ? (
+            <span className="text-[11px] font-medium text-teal-300/80">
+              Goal: {DIRECTION_LABEL[targets.goalDirection]}
+            </span>
+          ) : null}
+        </div>
+        <div className="mt-1 flex items-baseline gap-2">
+          <span className="text-[20px] font-semibold tabular-nums text-white">{kcalActual}</span>
+          <span className="text-[12px] tabular-nums text-white/55">/ {kcalTarget} kcal</span>
+          <span className="ml-auto text-[11px] tabular-nums text-white/55">{kcalPct}%</span>
+        </div>
+        <div className="mt-2 h-1 overflow-hidden rounded-full bg-white/[0.06]">
+          <div
+            className="h-full rounded-full bg-teal-400/70"
+            style={{ width: `${kcalPct}%`, transition: 'width 200ms ease-out' }}
+          />
+        </div>
+      </div>
+
+      {/* Conservative-path note: Section 5.5 maintenance posture. Suppresses
+          deficit / rate-of-loss framing in favor of a calm referral note. */}
+      {targets.conservativePath ? (
+        <div
+          className="mb-4 flex items-start gap-2 rounded-lg border border-teal/20 bg-teal/5 px-3 py-2.5"
+          role="note"
+          aria-live="polite"
+        >
+          <HeartHandshake className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-teal-300" strokeWidth={1.5} aria-hidden="true" />
+          <p className="text-[11px] leading-relaxed text-white/70">
+            We are keeping these targets steady and maintenance oriented for now. A healthcare professional can help you set goals that feel right for you.
+          </p>
+        </div>
+      ) : null}
+
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         {specs.map((spec) => (
           <MacroRing key={spec.key} spec={spec} sizePx={88} />
         ))}
       </div>
+
+      <MacroDisclaimer />
     </section>
   );
 }

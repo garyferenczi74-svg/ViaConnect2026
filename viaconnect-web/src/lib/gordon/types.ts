@@ -119,6 +119,13 @@ export interface NutritionTargetsRow {
   generated_by_version: string;
   generated_at: string;
   superseded_at: string | null;
+  // Prompt 173 Phase 5 columns (added via 20260603110000 migration).
+  goal_direction: 'lose' | 'gain' | 'maintain' | null;
+  goal_weight_kg: number | null;
+  current_weight_kg: number | null;
+  conservative_path: boolean;
+  conservative_reason: string | null;
+  macro_basis: unknown | null;
 }
 
 // App-level NutritionTargets interface.
@@ -142,6 +149,15 @@ export interface NutritionTargets {
   generatedByVersion: string;
   generatedAt: string;
   supersededAt: string | null;
+  // Prompt 173 Phase 5: weight-goal-driven engine surface. Null on rows
+  // generated before the rebuild; UI treats null as "legacy targets" and
+  // hides the conservative + goal-direction surface.
+  goalDirection: 'lose' | 'gain' | 'maintain' | null;
+  goalWeightKg: number | null;
+  currentWeightKg: number | null;
+  conservativePath: boolean;
+  conservativeReason: string | null;
+  macroBasis: unknown | null;
 }
 
 // meal_distribution JSONB shape. Per OQ#3 locked: snack share is the total
