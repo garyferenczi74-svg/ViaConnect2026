@@ -126,6 +126,11 @@ export interface NutritionTargetsRow {
   conservative_path: boolean;
   conservative_reason: string | null;
   macro_basis: unknown | null;
+  // Prompt 173a Phase 8 columns (added via 20260603120000 migration).
+  lbm_kg: number | null;
+  lbm_source: 'measured' | 'estimated' | null;
+  body_fat_fraction: number | null;
+  dietary_choice: string | null;
 }
 
 // App-level NutritionTargets interface.
@@ -158,6 +163,11 @@ export interface NutritionTargets {
   conservativePath: boolean;
   conservativeReason: string | null;
   macroBasis: unknown | null;
+  // Prompt 173a Phase 8: lean-mass + dietary-choice surface.
+  lbmKg: number | null;
+  lbmSource: 'measured' | 'estimated' | null;
+  bodyFatFraction: number | null;
+  dietaryChoice: string | null;
 }
 
 // meal_distribution JSONB shape. Per OQ#3 locked: snack share is the total

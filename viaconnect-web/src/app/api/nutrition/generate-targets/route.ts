@@ -41,17 +41,18 @@ import {
 } from '@/lib/gordon/generateMacroTargets';
 import {
   ACTIVITY_MULTIPLIERS,
+  type DietaryChoice,
   type MacroActivityLevel,
 } from '@/lib/gordon/macro-config';
+import { resolveLeanBodyMass } from '@/lib/gordon/lbm';
 import { readActiveHistoryFromProfiles } from '@/lib/body-tracker/disordered-eating-safeguard';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 // USDA fallback defaults for the columns Phase 4 does not yet compute. Phase
-// 8 (173a) replaces dailyFiberG with the 14 g per 1000 kcal calorie-target
-// formula and the rest stay until a future engine pass owns them.
-const USDA_DEFAULT_FIBER_G = 28;
+// 8 (173a) wires daily_fiber_g through the engine; the rest stay until a
+// future engine pass owns them.
 const USDA_DEFAULT_SUGAR_G = 50;
 const USDA_DEFAULT_SODIUM_MG = 2300;
 
@@ -72,6 +73,9 @@ interface ResolvedInputs {
   biologicalSex: BiologicalSex | null;
   activityLevel: MacroActivityLevel | null;
   currentWeightKg: number | null;
+  // 173a Phase 8 additions.
+  bodyFatFraction: number | null;
+  dietaryChoice: DietaryChoice;
 }
 
 function numericOrNull(value: unknown): number | null {
@@ -104,6 +108,26 @@ function normalizeActivity(value: unknown): MacroActivityLevel | null {
   return null;
 }
 
+// 173a Phase 8: tolerate the canonical strings + the few short forms a
+// future CAQ selector might emit. Defaults to 'balanced' when null / unknown
+// so the engine always has a value (no fabricated assumption: the API
+// records the effective value in nutrition_targets.dietary_choice).
+function normalizeDietaryChoice(value: unknown): DietaryChoice {
+  if (typeof value !== 'string') return 'balanced';
+  const v = value.toLowerCase().trim().replace(/[\s-]/g, '_');
+  if (
+    v === 'balanced' || v === 'mediterranean' || v === 'low_carb' ||
+    v === 'keto' || v === 'higher_carb' || v === 'plant_based'
+  ) {
+    return v as DietaryChoice;
+  }
+  if (v === 'lowcarb') return 'low_carb';
+  if (v === 'highercarb' || v === 'high_carb' || v === 'highcarb') return 'higher_carb';
+  if (v === 'plantbased' || v === 'vegan' || v === 'vegetarian') return 'plant_based';
+  if (v === 'ketogenic') return 'keto';
+  return 'balanced';
+}
+
 // Compute age in years from a YYYY-MM-DD DOB string. Returns null on bad input.
 function ageFromDob(dob: unknown): number | null {
   if (typeof dob !== 'string') return null;
@@ -132,10 +156,12 @@ async function resolveInputs(
   // the most recent body_tracker_weight log wins as the live current
   // weight, else fall back to the weight-goal snapshot, else Demographics.
   // body_tracker_weight stores weight_lbs; convert to kg here.
+  // 173a Phase 8: also pull body_fat_pct from the same row for the LBM
+  // measured precedence.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: latestWeightRow } = await (supabase as any)
     .from('body_tracker_weight')
-    .select('weight_lbs, entry:body_tracker_entries!inner(user_id, entry_date)')
+    .select('weight_lbs, body_fat_pct, entry:body_tracker_entries!inner(user_id, entry_date)')
     .eq('entry.user_id', userId)
     .order('entry(entry_date)', { ascending: false })
     .limit(1)
@@ -143,6 +169,11 @@ async function resolveInputs(
   const bodyTrackerWeightLbs = numericOrNull(latestWeightRow?.weight_lbs);
   const bodyTrackerWeightKg =
     bodyTrackerWeightLbs !== null ? bodyTrackerWeightLbs / LBS_PER_KG : null;
+  // Body fat is stored as a PERCENTAGE on body_tracker_weight; convert to a
+  // fraction in (0,1). Out-of-range values get rejected by the resolver.
+  const rawBodyFatPct = numericOrNull(latestWeightRow?.body_fat_pct);
+  const bodyFatFraction =
+    rawBodyFatPct !== null && rawBodyFatPct > 1 ? rawBodyFatPct / 100 : rawBodyFatPct;
 
   // Demographics + Lifestyle via assessment_results phase JSON. The phase
   // numeric IDs are the DB-stored values, not the user-facing position.
@@ -177,6 +208,14 @@ async function resolveInputs(
     normalizeActivity(phase3?.exercise) ??
     normalizeActivity(phase3?.activityLevel);
 
+  // 173a Phase 8: dietary choice. Lives in the Lifestyle (phase 3) payload
+  // once the CAQ selector lands; until then we look for a `dietaryChoice`
+  // or `diet` key and default to 'balanced'. Recording the effective value
+  // on the row means the audit trail is honest regardless of source.
+  const dietaryChoice = normalizeDietaryChoice(
+    phase3?.dietaryChoice ?? phase3?.diet,
+  );
+
   return {
     weightGoal,
     heightCm,
@@ -184,6 +223,8 @@ async function resolveInputs(
     biologicalSex,
     activityLevel,
     currentWeightKg,
+    bodyFatFraction,
+    dietaryChoice,
   };
 }
 
@@ -210,7 +251,20 @@ export async function POST(_req: NextRequest): Promise<NextResponse> {
   const deSafetyActive = await readActiveHistoryFromProfiles(supabase);
   const safety: SafetyFlags = { deSafetyActive };
 
-  // Phase 4 engine.
+  // 173a Phase 8: resolve LBM via measured precedence + Boer fallback.
+  const lbm =
+    inputs.currentWeightKg !== null &&
+    inputs.heightCm !== null &&
+    inputs.biologicalSex !== null
+      ? resolveLeanBodyMass({
+          weightKg: inputs.currentWeightKg,
+          heightCm: inputs.heightCm,
+          biologicalSex: inputs.biologicalSex,
+          bodyFatFraction: inputs.bodyFatFraction,
+        })
+      : null;
+
+  // Phase 4 + 173a Phase 8 engine.
   const result = generateMacroTargets({
     body:
       inputs.currentWeightKg !== null &&
@@ -232,6 +286,8 @@ export async function POST(_req: NextRequest): Promise<NextResponse> {
             goalDirection: inputs.weightGoal.goalDirection,
           }
         : null,
+    leanBodyMass: lbm,
+    dietaryChoice: inputs.dietaryChoice,
     safety,
   });
 
@@ -277,7 +333,9 @@ export async function POST(_req: NextRequest): Promise<NextResponse> {
     daily_fat_total_g: result.targets.fatG,
     daily_fat_saturated_g: fatSaturatedG,
     daily_fat_unsat_g: fatUnsatG,
-    daily_fiber_g: USDA_DEFAULT_FIBER_G,
+    // 173a Phase 8: fiber now flows from the engine (14 g per 1000 kcal of
+    // calorie target) instead of the USDA default.
+    daily_fiber_g: result.targets.fiberG,
     daily_sugar_g: USDA_DEFAULT_SUGAR_G,
     daily_sodium_mg: USDA_DEFAULT_SODIUM_MG,
     source_caq_snapshot: {},
@@ -286,19 +344,26 @@ export async function POST(_req: NextRequest): Promise<NextResponse> {
       heightCm: inputs.heightCm,
       age: inputs.age,
       biologicalSex: inputs.biologicalSex,
+      bodyFatFraction: inputs.bodyFatFraction,
     },
     bio_opt_day: null,
     meal_distribution: DEFAULT_MEAL_DISTRIBUTION,
     generated_by_version: GORDON_VERSION,
     generated_at: nowIso,
     superseded_at: null,
-    // Phase 5 new columns.
+    // Phase 5 columns.
     goal_direction: result.basis.effectiveDirection,
     goal_weight_kg: inputs.weightGoal?.goalWeightKg ?? null,
     current_weight_kg: inputs.currentWeightKg,
     conservative_path: result.basis.conservativePath,
     conservative_reason: result.basis.conservativeReason,
     macro_basis: result.basis,
+    // 173a Phase 8 columns: lifted out of macro_basis so support queries
+    // do not have to jq into the JSON.
+    lbm_kg: result.basis.lbmKg,
+    lbm_source: result.basis.lbmSource,
+    body_fat_fraction: result.basis.bodyFatFraction,
+    dietary_choice: result.basis.effectiveDietaryChoice,
   };
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

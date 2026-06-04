@@ -137,6 +137,12 @@ function usdaDefaults(input: GenerateTargetsInput): NutritionTargets {
     conservativePath: false,
     conservativeReason: null,
     macroBasis: null,
+    // Prompt 173a Phase 8: legacy fallback never had the lean-mass or
+    // dietary-choice surface; the UI hides those chips on this row too.
+    lbmKg: null,
+    lbmSource: null,
+    bodyFatFraction: null,
+    dietaryChoice: null,
   };
 }
 
@@ -230,5 +236,11 @@ export function generateTargets(input: GenerateTargetsInput): NutritionTargets {
     conservativePath: false,
     conservativeReason: null,
     macroBasis: null,
+    // Prompt 173a Phase 8: legacy fallback omits the lean-mass +
+    // dietary-choice fields too.
+    lbmKg: null,
+    lbmSource: null,
+    bodyFatFraction: null,
+    dietaryChoice: null,
   };
 }

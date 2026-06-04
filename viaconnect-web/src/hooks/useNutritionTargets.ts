@@ -107,6 +107,14 @@ function rowToTargets(row: Record<string, unknown>): NutritionTargets {
     conservativePath: row.conservative_path === true,
     conservativeReason: nullableString(row.conservative_reason),
     macroBasis: row.macro_basis ?? null,
+    // Prompt 173a Phase 8: lean-mass + dietary-choice columns.
+    lbmKg: nullableNumeric(row.lbm_kg),
+    lbmSource:
+      row.lbm_source === 'measured' || row.lbm_source === 'estimated'
+        ? row.lbm_source
+        : null,
+    bodyFatFraction: nullableNumeric(row.body_fat_fraction),
+    dietaryChoice: nullableString(row.dietary_choice),
   };
 }
 

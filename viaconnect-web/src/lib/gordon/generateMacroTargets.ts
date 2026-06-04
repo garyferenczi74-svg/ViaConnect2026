@@ -1,33 +1,43 @@
 // =============================================================================
-// Prompt 173 Phase 4 (rebuild on main 2026-06-03): weight-goal-driven Gordon
-// macro engine. PURE, I/O-free.
+// Prompt 173 Phase 4 + Prompt 173a Phase 8 (rebuild on main 2026-06-03):
+// weight-goal-driven Gordon macro engine. PURE, I/O-free.
 //
 // Implements Prompt 173 Section 5.3 Steps 1-6 (Mifflin-St Jeor BMR, activity-
-// scaled TDEE, goal-direction-clamped calorie target, goal-weight protein,
-// fat with hormonal-health floor, carb remainder with reconciliation guard)
-// and Section 5.5 safety paths (169b safe-mode signal, sub-18.5 target BMI,
-// under-18 age) which collapse to a maintenance-only conservative target.
+// scaled TDEE, goal-direction-clamped calorie target) AND the 173a Section 5
+// amendments to those steps that landed in Phase 8:
+//   * Protein basis: 0.8 g per pound of LEAN body mass with a goal
+//     multiplier (Loss 0.9 / Maintain 0.8 / Gain 1.0). Section 5.3 Step 4
+//     g-per-kg-of-reference-weight formula is RETIRED.
+//   * Fat + carbohydrate split: governed by the user's dietary choice
+//     (balanced / mediterranean / low_carb / higher_carb / plant_based /
+//     keto). Non-keto diets: fat as a share of calorie target, carbs are the
+//     balancer; low_carb additionally caps carbs at 25% of calorie target.
+//     Keto inverts: carbs anchored at 30 g, fat is the balancer.
+//   * Fiber: 14 g per 1000 kcal of the CALORIE TARGET (not consumed).
+//   * Section 5.5 safety paths (169b safe-mode, sub-18.5 target BMI,
+//     under-18 age) collapse to a maintenance + balanced conservative
+//     target. Keto and low_carb are NEVER applied when the conservative
+//     path is active (173a Section 9).
 //
 // The function returns a DISCRIMINATED result:
 //   * { ok: false, reason: 'estimate_unavailable' } when a required input is
 //     missing. Section 5.2 explicitly forbids fabricating defaults.
 //   * { ok: true, targets, basis } when computed successfully. `basis`
 //     captures every input + decision + clamp that fired so the resulting
-//     target is auditable (the Phase 5 nutrition_targets.macro_basis JSON
+//     target is auditable (Phase 5 nutrition_targets.macro_basis JSON
 //     column persists this verbatim).
-//
-// Phase 4 scope NOTE: this module deliberately does NOT include the 173a
-// lean-mass protein amendment, per-diet fat split, or fiber as a fourth
-// tracked macro. Those land in the 173a phase (rebuild Phase 8).
 // =============================================================================
 
 import { bmiFromKgCm } from '@/lib/weight-goals/guardrails';
 import type { GoalDirection } from '@/lib/weight-goals/accessor';
 import {
   ACTIVITY_MULTIPLIERS,
+  LBS_PER_KG_MACRO,
   MACRO_CONFIG,
+  type DietaryChoice,
   type MacroActivityLevel,
 } from './macro-config';
+import type { LbmResolution } from './lbm';
 
 // ---------------------------------------------------------------------------
 // Public input + output types
@@ -40,23 +50,16 @@ export interface BodyComposition {
   // BMR + fat hormonal-minimum + carb reconciliation use this.
   currentWeightKg: number;
   heightCm: number;
-  // Integer age in years (months precision is not material here).
   age: number;
   biologicalSex: BiologicalSex;
 }
 
 export interface WeightGoalInput {
-  // Goal weight (kilograms) the macro target is computed against. The
-  // protein reference weight uses this on Lose + Gain, and current weight on
-  // Maintain (Step 4).
   goalWeightKg: number;
-  // The DB-owned direction as read from public.user_weight_goals. Authoritative.
   goalDirection: GoalDirection;
 }
 
 export interface SafetyFlags {
-  // 169b body_scan_de_response active history (currently OR in_the_past).
-  // When true Step 3 routes to the conservative maintenance-only path.
   deSafetyActive: boolean;
 }
 
@@ -64,29 +67,36 @@ export interface GenerateMacroTargetsInput {
   body: BodyComposition | null;
   activityLevel: MacroActivityLevel | null;
   weightGoal: WeightGoalInput | null;
+  // 173a Phase 8: required. The LBM resolution from src/lib/gordon/lbm.ts
+  // (measured precedence, Boer estimate fallback). Protein anchors here.
+  leanBodyMass: LbmResolution | null;
+  // 173a Phase 8: drives the fat + carbohydrate split. Defaults to
+  // 'balanced' upstream (the API route) when the user has not made a
+  // choice yet; this engine treats it as a required input so the missing
+  // case is explicit.
+  dietaryChoice: DietaryChoice | null;
   safety: SafetyFlags;
 }
 
 export interface MacroTargets {
-  // Rounded to integer kcal so display + adherence math agree.
   calorieTargetKcal: number;
-  // Macros rounded to 1 decimal of a gram so the trio reconciles tightly to
-  // calorie target after Atwater (4/4/9). Consumers can round further.
   proteinG: number;
   fatG: number;
   carbG: number;
+  // 173a Phase 8: added as a fourth tracked macro.
+  fiberG: number;
 }
 
 export type ClampReason =
-  | 'deficit_cap'           // absolute deficit hit max_deficit_kcal
-  | 'surplus_cap'           // absolute surplus hit max_surplus_kcal
-  | 'calorie_floor'         // calorie target raised to max(sex floor, BMR)
-  | 'protein_band_min'      // factor clamped UP to band min
-  | 'protein_band_max'      // factor clamped DOWN to band max
-  | 'protein_pct_ceiling'   // protein factor reduced because kcal share > 40%
-  | 'fat_hormonal_floor'    // fat raised to min_fat_g_per_kg * current_weight
-  | 'carb_reconcile_fat'    // fat reduced toward minimum so carb >= 0
-  | 'carb_reconcile_protein';// protein reduced toward band min so carb >= 0
+  | 'deficit_cap'
+  | 'surplus_cap'
+  | 'calorie_floor'
+  | 'protein_pct_ceiling'      // protein factor reduced because kcal share > 40%
+  | 'fat_hormonal_floor'       // fat raised to min_fat_g_per_kg * current_weight
+  | 'low_carb_cap'             // carbs capped at low_carb_cap_pct; freed kcal to fat
+  | 'keto_carb_cap'            // carbs anchored at keto_carb_cap_g
+  | 'carb_reconcile_fat'       // fat reduced toward hormonal floor so carb >= 0
+  | 'carb_reconcile_protein';  // protein reduced toward 1.2 g/kg LBM-derived floor so carb >= 0
 
 export type ConservativeReason =
   | 'de_safety_mode'
@@ -98,18 +108,23 @@ export interface TargetBasis {
   bmr: number;
   tdee: number;
   activityMultiplier: number;
-  // Effective goal direction AFTER the safety paths. Conservative paths
-  // always read 'maintain' here even when the stored direction differs.
   effectiveDirection: GoalDirection;
   conservativePath: boolean;
   conservativeReason: ConservativeReason;
-  sexEstimated: boolean;            // true when biological sex is 'unspecified'
+  sexEstimated: boolean;
   goalBmi: number | null;
-  referenceWeightKg: number;
-  effectiveFloorKcal: number;       // max(sex floor, BMR)
-  weeklyRateKg: number;             // implied weekly change at the chosen kcal target
-  weeklyRateExceedsCap: boolean;    // true if weeklyRateKg / current_weight > rate cap
+  effectiveFloorKcal: number;
+  weeklyRateKg: number;
+  weeklyRateExceedsCap: boolean;
   clampsFired: ReadonlyArray<ClampReason>;
+  // 173a Phase 8 additions.
+  lbmKg: number;
+  lbmSource: 'measured' | 'estimated';
+  bodyFatFraction: number | null;
+  // The dietary choice the engine actually USED (always 'balanced' on the
+  // conservative path even when the user picked keto or low_carb, per
+  // 173a Section 9).
+  effectiveDietaryChoice: DietaryChoice;
 }
 
 export type GenerateMacroTargetsResult =
@@ -128,21 +143,14 @@ function isPositiveFinite(n: number | null | undefined): n is number {
   return typeof n === 'number' && Number.isFinite(n) && n > 0;
 }
 
-// Step 1: Mifflin-St Jeor BMR with named sex-unspecified fallback. The
-// unspecified path averages the male (+5) and female (-161) constant terms
-// ((-161 + 5) / 2 = -78), exactly per Section 5.3. The result is labeled an
-// estimate via TargetBasis.sexEstimated so the UI can disclose.
 function mifflinStJeorBmr(body: BodyComposition): number {
   const sexTerm =
     body.biologicalSex === 'male' ? 5
       : body.biologicalSex === 'female' ? -161
-      : /* unspecified */ -78;
+      : -78;
   return 10 * body.currentWeightKg + 6.25 * body.heightCm - 5 * body.age + sexTerm;
 }
 
-// Step 3 inner: clamp the calorie target by the deficit / surplus absolute
-// cap THEN by the effective floor (max(sex floor, BMR)). Returns the
-// possibly-clamped target plus the clamp reasons that fired.
 function clampCalorieTarget(
   rawTarget: number,
   tdee: number,
@@ -151,9 +159,6 @@ function clampCalorieTarget(
 ): { value: number; clamps: ClampReason[] } {
   const clamps: ClampReason[] = [];
   let value = rawTarget;
-
-  // Absolute deficit / surplus cap (Section 5.4: max_deficit_kcal /
-  // max_surplus_kcal). Only fires on Lose and Gain respectively.
   if (direction === 'lose') {
     const minAllowed = tdee - MACRO_CONFIG.max_deficit_kcal;
     if (value < minAllowed) {
@@ -167,63 +172,112 @@ function clampCalorieTarget(
       clamps.push('surplus_cap');
     }
   }
-
-  // Calorie floor (Lose path only per Section 5.4: "the calorie target on
-  // the Lose path is never set below the sex-based floor, and never below
-  // the user's BMR"). Maintain / Gain are above TDEE so the floor never
-  // binds in practice, but we apply it defensively in case future tuning
-  // pushes Maintain below BMR.
   if (value < effectiveFloorKcal) {
     value = effectiveFloorKcal;
     clamps.push('calorie_floor');
   }
-
   return { value, clamps };
 }
 
-// Step 4 inner: pick the protein g/kg factor for the direction, clamp into
-// the band, then enforce the kcal-share sanity ceiling. Returns the resolved
-// protein grams plus the clamps that fired.
+// 173a Step 2: protein = 0.8 g/lb LBM * goal multiplier. Apply the 40% kcal
+// ceiling (carried from 173 5.4) so very-low-calorie + high-multiplier
+// combos cannot let protein dominate the day.
 function resolveProteinGrams(
   direction: GoalDirection,
-  referenceWeightKg: number,
+  lbmKg: number,
   calorieTargetKcal: number,
 ): { proteinG: number; clamps: ClampReason[] } {
   const clamps: ClampReason[] = [];
-  // Widen to number explicitly so the band clamp + ceiling reduction below
-  // can assign values outside the narrow literal union MACRO_CONFIG carries.
-  let factor: number =
-    direction === 'lose' ? MACRO_CONFIG.protein_factor_lose
-      : direction === 'gain' ? MACRO_CONFIG.protein_factor_gain
-      : MACRO_CONFIG.protein_factor_maintain;
+  const multiplier =
+    direction === 'lose' ? MACRO_CONFIG.protein_multiplier_lose
+      : direction === 'gain' ? MACRO_CONFIG.protein_multiplier_gain
+      : MACRO_CONFIG.protein_multiplier_maintain;
+  const lbmLbs = lbmKg * LBS_PER_KG_MACRO;
+  let proteinG = MACRO_CONFIG.protein_g_per_lb_lbm * multiplier * lbmLbs;
 
-  // Band clamp BEFORE the kcal-share ceiling so the ceiling sees a sane
-  // factor (a factor outside the band is a config / tuning error, but
-  // defensive clamping keeps the engine total).
-  if (factor < MACRO_CONFIG.protein_band_min) {
-    factor = MACRO_CONFIG.protein_band_min;
-    clamps.push('protein_band_min');
-  } else if (factor > MACRO_CONFIG.protein_band_max) {
-    factor = MACRO_CONFIG.protein_band_max;
-    clamps.push('protein_band_max');
-  }
-
-  let proteinG = factor * referenceWeightKg;
-
-  // kcal-share sanity ceiling: protein kcal must not exceed
-  // protein_max_pct_of_kcal of the calorie target. When it would, reduce the
-  // factor toward protein_band_min rather than letting it dominate.
+  // 40% kcal-share sanity ceiling (carried from 173 5.4). When protein kcal
+  // would exceed the ceiling, scale protein down to fit.
   const proteinKcalCeiling = calorieTargetKcal * MACRO_CONFIG.protein_max_pct_of_kcal;
   if (proteinG * 4 > proteinKcalCeiling) {
-    const reducedFactor = Math.max(
-      MACRO_CONFIG.protein_band_min,
-      proteinKcalCeiling / 4 / referenceWeightKg,
-    );
-    proteinG = reducedFactor * referenceWeightKg;
+    proteinG = proteinKcalCeiling / 4;
     clamps.push('protein_pct_ceiling');
   }
 
   return { proteinG, clamps };
+}
+
+function fatPctForDiet(diet: DietaryChoice): number {
+  switch (diet) {
+    case 'mediterranean':
+      return MACRO_CONFIG.fat_pct_mediterranean;
+    case 'low_carb':
+      return MACRO_CONFIG.fat_pct_low_carb;
+    case 'higher_carb':
+      return MACRO_CONFIG.fat_pct_higher_carb;
+    case 'plant_based':
+      return MACRO_CONFIG.fat_pct_plant_based;
+    case 'keto':
+      // Keto inverts the split; the keto branch in resolveFatAndCarb
+      // does not use this value. The fat_pct_low_carb value is the
+      // closest defensible default and is returned only for
+      // completeness so the function is total.
+      return MACRO_CONFIG.fat_pct_low_carb;
+    case 'balanced':
+    default:
+      return MACRO_CONFIG.fat_pct_balanced;
+  }
+}
+
+// 173a Section 5 Step 3: fat + carbohydrate by dietary choice.
+function resolveFatAndCarb(
+  diet: DietaryChoice,
+  calorieTargetKcal: number,
+  proteinG: number,
+  currentWeightKg: number,
+): { fatG: number; carbG: number; clamps: ClampReason[] } {
+  const clamps: ClampReason[] = [];
+  const proteinKcal = proteinG * 4;
+  const remainingKcal = calorieTargetKcal - proteinKcal;
+  const fatHormonalFloorG = MACRO_CONFIG.min_fat_g_per_kg * currentWeightKg;
+  const fatHormonalFloorKcal = fatHormonalFloorG * 9;
+
+  if (diet === 'keto') {
+    // Keto inversion: carbs anchored at keto_carb_cap_g; fat absorbs the
+    // remainder with the healthy-fat floor as the lower bound.
+    const carbG = MACRO_CONFIG.keto_carb_cap_g;
+    const carbKcal = carbG * 4;
+    let fatKcal = remainingKcal - carbKcal;
+    if (fatKcal < fatHormonalFloorKcal) {
+      fatKcal = fatHormonalFloorKcal;
+      clamps.push('fat_hormonal_floor');
+    }
+    const fatG = fatKcal / 9;
+    clamps.push('keto_carb_cap');
+    return { fatG, carbG, clamps };
+  }
+
+  // Non-keto path: fat as a share of calorie target with hormonal floor.
+  let fatKcal = calorieTargetKcal * fatPctForDiet(diet);
+  if (fatKcal < fatHormonalFloorKcal) {
+    fatKcal = fatHormonalFloorKcal;
+    clamps.push('fat_hormonal_floor');
+  }
+
+  let carbKcal = Math.max(0, remainingKcal - fatKcal);
+
+  if (diet === 'low_carb') {
+    // Cap carbs at low_carb_cap_pct of calorie target; freed calories
+    // reallocate to fat per 173a Section 5 Step 3.
+    const carbCapKcal = calorieTargetKcal * MACRO_CONFIG.low_carb_cap_pct;
+    if (carbKcal > carbCapKcal) {
+      const freedKcal = carbKcal - carbCapKcal;
+      carbKcal = carbCapKcal;
+      fatKcal += freedKcal;
+      clamps.push('low_carb_cap');
+    }
+  }
+
+  return { fatG: fatKcal / 9, carbG: carbKcal / 4, clamps };
 }
 
 // ---------------------------------------------------------------------------
@@ -231,9 +285,7 @@ function resolveProteinGrams(
 // ---------------------------------------------------------------------------
 
 export function generateMacroTargets(input: GenerateMacroTargetsInput): GenerateMacroTargetsResult {
-  // Missing-input gate (Section 5.2): never fabricate defaults. Return a
-  // structured estimate-unavailable result so the caller can show the
-  // "complete your profile" state instead of a fake number.
+  // Missing-input gate (Section 5.2).
   const missing: string[] = [];
   if (!input.body || !isPositiveFinite(input.body.currentWeightKg)) missing.push('currentWeightKg');
   if (!input.body || !isPositiveFinite(input.body.heightCm)) missing.push('heightCm');
@@ -242,15 +294,18 @@ export function generateMacroTargets(input: GenerateMacroTargetsInput): Generate
   if (!input.activityLevel || !(input.activityLevel in ACTIVITY_MULTIPLIERS)) missing.push('activityLevel');
   if (!input.weightGoal || !isPositiveFinite(input.weightGoal.goalWeightKg)) missing.push('goalWeightKg');
   if (!input.weightGoal || (input.weightGoal.goalDirection !== 'lose' && input.weightGoal.goalDirection !== 'gain' && input.weightGoal.goalDirection !== 'maintain')) missing.push('goalDirection');
+  if (!input.leanBodyMass || !isPositiveFinite(input.leanBodyMass.lbmKg)) missing.push('leanBodyMass');
+  if (!input.dietaryChoice) missing.push('dietaryChoice');
 
   if (missing.length > 0) {
     return { ok: false, reason: 'estimate_unavailable', missing };
   }
 
-  // Inputs are now narrowed.
   const body = input.body as BodyComposition;
   const activityLevel = input.activityLevel as MacroActivityLevel;
   const weightGoal = input.weightGoal as WeightGoalInput;
+  const leanBodyMass = input.leanBodyMass as LbmResolution;
+  const dietaryChoice = input.dietaryChoice as DietaryChoice;
 
   // Step 1: BMR.
   const bmr = mifflinStJeorBmr(body);
@@ -259,8 +314,7 @@ export function generateMacroTargets(input: GenerateMacroTargetsInput): Generate
   const activityMultiplier = ACTIVITY_MULTIPLIERS[activityLevel];
   const tdee = bmr * activityMultiplier;
 
-  // Section 5.5: safety paths. Evaluate BEFORE choosing the calorie target
-  // so the conservative branch can fully override direction to 'maintain'.
+  // Section 5.5 safety paths.
   const goalBmi = bmiFromKgCm(weightGoal.goalWeightKg, body.heightCm);
   let conservativePath = false;
   let conservativeReason: ConservativeReason = null;
@@ -269,11 +323,9 @@ export function generateMacroTargets(input: GenerateMacroTargetsInput): Generate
     conservativePath = true;
     conservativeReason = 'de_safety_mode';
   } else if (body.age < MACRO_CONFIG.adult_age_threshold) {
-    // Under-18 routes to conservative path (Section 5.5).
     conservativePath = true;
     conservativeReason = 'under_18';
   } else if (goalBmi !== null && goalBmi < MACRO_CONFIG.healthy_bmi_min) {
-    // Goal weight implies a target BMI below the healthy floor.
     conservativePath = true;
     conservativeReason = 'goal_bmi_below_floor';
   }
@@ -282,84 +334,80 @@ export function generateMacroTargets(input: GenerateMacroTargetsInput): Generate
     ? 'maintain'
     : weightGoal.goalDirection;
 
-  // Step 3: calorie target.
+  // 173a Section 9: conservative path overrides keto / low_carb to balanced.
+  const effectiveDietaryChoice: DietaryChoice =
+    conservativePath && (dietaryChoice === 'keto' || dietaryChoice === 'low_carb')
+      ? 'balanced'
+      : dietaryChoice;
+
+  // Step 3: calorie target (unchanged from 173).
   const rawCalorieTarget =
     effectiveDirection === 'maintain'
       ? tdee
       : effectiveDirection === 'lose'
         ? tdee * (1 - MACRO_CONFIG.deficit_pct)
         : tdee * (1 + MACRO_CONFIG.surplus_pct);
-
-  // Effective floor: max(sex-based floor, BMR). Unspecified-sex uses the
-  // female floor as the conservative choice per compliance memo.
   const sexFloor =
     body.biologicalSex === 'male'
       ? MACRO_CONFIG.calorie_floor_male
       : MACRO_CONFIG.calorie_floor_female;
   const effectiveFloorKcal = Math.max(sexFloor, bmr);
-
   const clamped = clampCalorieTarget(rawCalorieTarget, tdee, effectiveDirection, effectiveFloorKcal);
   const calorieTargetKcal = Math.round(clamped.value);
   const calorieClamps = clamped.clamps;
 
-  // Step 4: protein. Reference weight = goal for Lose + Gain, current for
-  // Maintain (Section 5.3 Step 4). Conservative path runs as Maintain, so
-  // it picks current weight too.
-  const referenceWeightKg =
-    effectiveDirection === 'lose' || effectiveDirection === 'gain'
-      ? weightGoal.goalWeightKg
-      : body.currentWeightKg;
-
-  const protein = resolveProteinGrams(effectiveDirection, referenceWeightKg, calorieTargetKcal);
-
-  // Step 5: fat. fat_g = (calorie_target * fat_pct) / 9, with hormonal-
-  // health minimum min_fat_g_per_kg * current_weight_kg.
-  const fatClamps: ClampReason[] = [];
-  let fatG = (calorieTargetKcal * MACRO_CONFIG.fat_pct) / 9;
-  const fatHormonalMin = MACRO_CONFIG.min_fat_g_per_kg * body.currentWeightKg;
-  if (fatG < fatHormonalMin) {
-    fatG = fatHormonalMin;
-    fatClamps.push('fat_hormonal_floor');
-  }
-
-  // Step 6: carb fills the remainder with the reconciliation guard (reduce
-  // fat toward minimum first, then protein toward band min) so no macro is
-  // ever negative.
+  // Step 4 (173a): protein = 0.8 g/lb LBM * goal multiplier with the 40% ceiling.
+  const protein = resolveProteinGrams(effectiveDirection, leanBodyMass.lbmKg, calorieTargetKcal);
   let proteinG = protein.proteinG;
+
+  // Step 5 (173a): fat + carb by dietary choice.
+  const fatAndCarb = resolveFatAndCarb(
+    effectiveDietaryChoice,
+    calorieTargetKcal,
+    proteinG,
+    body.currentWeightKg,
+  );
+  let fatG = fatAndCarb.fatG;
+  let carbG = fatAndCarb.carbG;
+  const fatCarbClamps = fatAndCarb.clamps;
+
+  // Reconciliation guard (173a Section 5). Non-keto: protein anchored, fat
+  // floors to healthy minimum, carbs absorb remainder. Keto: carbs anchored
+  // at the cap, fat is the balancer (handled inside resolveFatAndCarb).
   const reconcileClamps: ClampReason[] = [];
-  let carbKcal = calorieTargetKcal - (proteinG * 4) - (fatG * 9);
-
-  if (carbKcal < 0) {
-    // Reduce fat toward hormonal floor first.
-    const fatExcessKcal = (fatG - fatHormonalMin) * 9;
-    if (fatExcessKcal > 0) {
-      const reduction = Math.min(fatExcessKcal, -carbKcal);
-      fatG -= reduction / 9;
-      carbKcal += reduction;
-      reconcileClamps.push('carb_reconcile_fat');
+  if (effectiveDietaryChoice !== 'keto') {
+    let carbKcal = carbG * 4;
+    if (carbKcal < 0) {
+      const fatHormonalFloorG = MACRO_CONFIG.min_fat_g_per_kg * body.currentWeightKg;
+      // Reduce fat toward hormonal floor first.
+      const fatExcessKcal = (fatG - fatHormonalFloorG) * 9;
+      if (fatExcessKcal > 0) {
+        const reduction = Math.min(fatExcessKcal, -carbKcal);
+        fatG -= reduction / 9;
+        carbKcal += reduction;
+        reconcileClamps.push('carb_reconcile_fat');
+      }
     }
+    if (carbKcal < 0) {
+      // Reduce protein toward a defensible floor (1.2 g/kg LBM).
+      const proteinFloorG = 1.2 * leanBodyMass.lbmKg;
+      const proteinExcessKcal = (proteinG - proteinFloorG) * 4;
+      if (proteinExcessKcal > 0) {
+        const reduction = Math.min(proteinExcessKcal, -carbKcal);
+        proteinG -= reduction / 4;
+        carbKcal += reduction;
+        reconcileClamps.push('carb_reconcile_protein');
+      }
+    }
+    carbG = Math.max(0, carbKcal / 4);
   }
 
-  if (carbKcal < 0) {
-    // Reduce protein toward band min next.
-    const proteinFloorG = MACRO_CONFIG.protein_band_min * referenceWeightKg;
-    const proteinExcessKcal = (proteinG - proteinFloorG) * 4;
-    if (proteinExcessKcal > 0) {
-      const reduction = Math.min(proteinExcessKcal, -carbKcal);
-      proteinG -= reduction / 4;
-      carbKcal += reduction;
-      reconcileClamps.push('carb_reconcile_protein');
-    }
-  }
+  // Step 6 (173a): fiber = 14 g per 1000 kcal of calorie target, rounded.
+  const fiberG = Math.round(
+    (MACRO_CONFIG.fiber_g_per_1000_kcal * calorieTargetKcal) / 1000,
+  );
 
-  // Final non-negative guard. Spec says the reconciliation must succeed at
-  // any realistic calorie target; if a degenerate input still leaves
-  // carb < 0 we floor at zero so the engine total never emits a negative.
-  const carbG = round1(Math.max(0, carbKcal / 4));
-
-  // Implied weekly rate of change in kg (Section 7 + 5.5: never imply
-  // faster than weekly_rate_cap_pct of body weight per week).
-  // Weekly kcal delta = (TDEE - target) * 7. 7700 kcal ~ 1 kg of body mass.
+  // Implied weekly rate of change in kg (Section 7).
   const weeklyKcalDelta = (tdee - calorieTargetKcal) * 7;
   const weeklyRateKg = Math.abs(weeklyKcalDelta) / 7700;
   const weeklyRateExceedsCap =
@@ -368,7 +416,7 @@ export function generateMacroTargets(input: GenerateMacroTargetsInput): Generate
   const clampsFired: ClampReason[] = [
     ...calorieClamps,
     ...protein.clamps,
-    ...fatClamps,
+    ...fatCarbClamps,
     ...reconcileClamps,
   ];
 
@@ -378,7 +426,8 @@ export function generateMacroTargets(input: GenerateMacroTargetsInput): Generate
       calorieTargetKcal,
       proteinG: round1(proteinG),
       fatG: round1(fatG),
-      carbG,
+      carbG: round1(carbG),
+      fiberG,
     },
     basis: {
       bmr: round1(bmr),
@@ -389,11 +438,14 @@ export function generateMacroTargets(input: GenerateMacroTargetsInput): Generate
       conservativeReason,
       sexEstimated: body.biologicalSex === 'unspecified',
       goalBmi,
-      referenceWeightKg,
       effectiveFloorKcal,
       weeklyRateKg: round1(weeklyRateKg),
       weeklyRateExceedsCap,
       clampsFired,
+      lbmKg: round1(leanBodyMass.lbmKg),
+      lbmSource: leanBodyMass.source,
+      bodyFatFraction: leanBodyMass.bodyFatFraction,
+      effectiveDietaryChoice,
     },
   };
 }

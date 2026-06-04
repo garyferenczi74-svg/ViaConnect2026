@@ -82,6 +82,41 @@ export const MACRO_CONFIG = {
   // Adult age threshold. Users under this age route to the conservative
   // path per Section 5.5 (no auto-prescribed deficit / surplus).
   adult_age_threshold: 18,
+
+  // --- 173a Section 6 amendments (Phase 8) ---------------------------------
+  //
+  // Protein basis amendment: replaces the 173 g/kg total weight model with
+  // a goal-multiplier on top of 0.8 g per POUND of lean body mass.
+  //   protein_g = protein_g_per_lb_lbm * goal_multiplier[direction] * LBM_lbs
+  // Pre-ratified 2026-06-03 (DP1): Loss 0.9, Maintenance 0.8, Gain 1.0,
+  // Recomp 1.0 (Recomp is not yet a separate direction in the engine; it
+  // maps to Maintain calorically with a Gain-style protein multiplier when
+  // introduced). For non-Recomp users the three directions match Loss /
+  // Maintain / Gain. Per ISSN literature on muscle preservation in deficit.
+  protein_g_per_lb_lbm: 0.8,
+  protein_multiplier_lose: 0.9,
+  protein_multiplier_maintain: 0.8,
+  protein_multiplier_gain: 1.0,
+
+  // Per-diet fat share of calorie target (173a 6 + DP5). The non-keto
+  // diets are direct shares; keto inverts (carbs anchored, fat balances).
+  fat_pct_balanced: 0.30,
+  fat_pct_mediterranean: 0.35,
+  fat_pct_low_carb: 0.40,
+  fat_pct_higher_carb: 0.25,
+  fat_pct_plant_based: 0.30,
+
+  // Low-carb carbohydrate cap as a share of calorie target. Any calories
+  // freed by the cap reallocate to fat per 173a 5 Step 3.
+  low_carb_cap_pct: 0.25,
+
+  // Net carbohydrate cap per day under keto (grams). Fat is the balancer
+  // on the keto path.
+  keto_carb_cap_g: 30,
+
+  // Fiber target: 14 g per 1000 kcal of the CALORIE TARGET (not consumed),
+  // per 173a 6 + DP6. Dietary Guidelines figure.
+  fiber_g_per_1000_kcal: 14,
 } as const;
 
 export type MacroConfig = typeof MACRO_CONFIG;
@@ -97,3 +132,19 @@ export const ACTIVITY_MULTIPLIERS = {
 } as const;
 
 export type MacroActivityLevel = keyof typeof ACTIVITY_MULTIPLIERS;
+
+// Dietary choice (173a 4.2). Drives the fat + carbohydrate split. Plant-based
+// follows the Balanced split per 173a 4.2 (it affects food sourcing and
+// suggestions, not the macro targets).
+export type DietaryChoice =
+  | 'balanced'
+  | 'mediterranean'
+  | 'low_carb'
+  | 'keto'
+  | 'higher_carb'
+  | 'plant_based';
+
+// Pounds per kilogram. Mirrored from src/lib/weight-goals/guardrails to
+// avoid an extra import for callers that only need the engine.
+export const LBS_PER_KG_MACRO = 2.20462 as const;
+
