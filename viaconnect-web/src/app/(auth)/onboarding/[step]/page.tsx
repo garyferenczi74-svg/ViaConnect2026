@@ -22,7 +22,9 @@ import { WelcomeDashboardScreen } from "@/components/onboarding/WelcomeDashboard
 import { CAQ_INTERSTITIALS } from "@/config/caq-interstitials";
 import { CAQ_FORM_PHASE_IDS, isLastFormPhase } from "@/config/caq-phase-order";
 import { WeightGoalsSection } from "@/components/caq/WeightGoalsSection";
+import { DietaryChoiceSelector } from "@/components/caq/DietaryChoiceSelector";
 import { writeWeightGoal } from "@/lib/weight-goals/accessor";
+import type { DietaryChoice } from "@/lib/gordon/macro-config";
 import { SEED_INGREDIENTS, FARMCEUTICA_CATEGORIES, normalizeIngredientName } from "@/config/farmceutica-ingredients";
 import { searchBrandsAndProducts } from "@/config/brand-search-index";
 import BrandProductSearch from "@/components/caq/phase6/BrandProductSearch";
@@ -338,6 +340,11 @@ type GoalsData = {
   // draft and survives a round trip back to Demographics. Persisted to
   // public.user_weight_goals via writeWeightGoal on Lifestyle save.
   goalWeightKg: number | null;
+  // Prompt 173a Phase 8 follow up (2026-06-04): user dietary choice. Drives
+  // the per diet fat + carbohydrate split in the Gordon macro engine. Null
+  // when the user has not picked; the engine defaults to balanced and the
+  // recompute records the effective value on nutrition_targets.dietary_choice.
+  dietaryChoice: DietaryChoice | null;
 };
 
 // ─── Bio Optimization Score Calculator ──────────────────────────────────────────────
@@ -513,6 +520,7 @@ export default function OnboardingStepPage() {
   const [goals, setGoals] = useState<GoalsData>({
     goals: [], supplementForm: "", budgetRange: 50, communicationPref: "email",
     goalWeightKg: null,
+    dietaryChoice: null,
   });
 
   // Medication autocomplete
@@ -602,6 +610,16 @@ export default function OnboardingStepPage() {
             const gwk = (ls as Record<string, unknown>).goalWeightKg;
             if (typeof gwk === 'number' && Number.isFinite(gwk) && gwk > 0) {
               setGoals((p) => ({ ...p, goalWeightKg: gwk }));
+            }
+            // Prompt 173a Phase 8 follow up: rehydrate dietary choice from
+            // the prior Lifestyle save so the selector reflects the user
+            // picked value on resume.
+            const dc = (ls as Record<string, unknown>).dietaryChoice;
+            if (
+              dc === 'balanced' || dc === 'mediterranean' || dc === 'low_carb' ||
+              dc === 'keto' || dc === 'higher_carb' || dc === 'plant_based'
+            ) {
+              setGoals((p) => ({ ...p, dietaryChoice: dc as DietaryChoice }));
             }
           }
         } catch (err) { }
@@ -746,7 +764,7 @@ export default function OnboardingStepPage() {
       switch (stepId) {
         case "1": await savePhase("1", { ...demographics, bodyType }); break;
         case "3": {
-          await savePhase("3", { ...lifestyle, goals: goals.goals, supplementForm: goals.supplementForm, budgetRange: goals.budgetRange, goalWeightKg: goals.goalWeightKg });
+          await savePhase("3", { ...lifestyle, goals: goals.goals, supplementForm: goals.supplementForm, budgetRange: goals.budgetRange, goalWeightKg: goals.goalWeightKg, dietaryChoice: goals.dietaryChoice });
           // Prompt 173 Phase 3 persistence: when both the Phase 1 current
           // weight and the Lifestyle goal weight are present, write the
           // canonical row to public.user_weight_goals. The DB trigger
@@ -1591,10 +1609,21 @@ export default function OnboardingStepPage() {
                     supplementForm: goals.supplementForm,
                     budgetRange: goals.budgetRange,
                     goalWeightKg: goals.goalWeightKg,
+                    dietaryChoice: goals.dietaryChoice,
                   });
                 } catch { /* navigation proceeds even if save fails */ }
                 router.push("/onboarding/1");
               }}
+            />
+
+            {/* Prompt 173a Phase 8 follow up (2026-06-04): dietary choice
+                selector. Drives the per diet fat + carbohydrate split in
+                the Gordon macro engine. Saved with phase 3 payload; the
+                next /api/nutrition/generate-targets recompute picks it up
+                and records the effective value on the targets row. */}
+            <DietaryChoiceSelector
+              value={goals.dietaryChoice}
+              onChange={(choice) => setGoals({ ...goals, dietaryChoice: choice })}
             />
 
             {/* Supplement form preference */}
