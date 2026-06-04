@@ -37,17 +37,18 @@ describe('INTERSTITIAL_PROGRESS_TICK_MS', () => {
   });
 });
 
-describe('INTERSTITIAL_BUTTON_TINT_OPACITY (173d Section 3)', () => {
-  it('exposes one tunable tint constant the contrast pass can raise', () => {
+describe('INTERSTITIAL_BUTTON_TINT_OPACITY (Card-matched surface)', () => {
+  it('exposes one tunable tint constant tied to the component class string', () => {
     expect(typeof INTERSTITIAL_BUTTON_TINT_OPACITY).toBe('number');
   });
 
-  it('starts at the spec-locked 45% baseline', () => {
-    // Kelsey raises this if the navy label drops below 4.5:1 against any
-    // hero video frame. Updating it requires also editing the Tailwind
-    // class string in InterstitialContinueButton.tsx (the component
-    // documents the mirror).
-    expect(INTERSTITIAL_BUTTON_TINT_OPACITY).toBe(45);
+  it('matches the FeaturePreviewCard 10% white tint baseline', () => {
+    // Patched 2026-06-04 per Gary: the Continue button surface now reads
+    // as the same translucent lens the FeaturePreviewCard uses
+    // (bg-white/10). Updating this constant also requires editing the
+    // Tailwind class string in InterstitialContinueButton.tsx; a
+    // compile-time guard in the component surfaces the mirror.
+    expect(INTERSTITIAL_BUTTON_TINT_OPACITY).toBe(10);
   });
 
   it('stays well below the opaque ceiling so the glass effect is visible', () => {

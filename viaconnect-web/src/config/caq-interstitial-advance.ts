@@ -26,22 +26,26 @@ export const INTERSTITIAL_AUTO_ADVANCE_MS = 8000;
 // ~ 30 fps so the motion reads as continuous without burning CPU.
 export const INTERSTITIAL_PROGRESS_TICK_MS = 33;
 
-// 173d Section 3 white glass tint. The number is the percent opacity of the
-// white tint (e.g. 45 -> bg-white/45). The InterstitialContinueButton
-// component uses this constant in its Tailwind class string; Kelsey's
-// contrast pass raises this value if the navy label drops below 4.5:1
-// against any hero video frame.
+// Continue button surface tint. The number is the percent opacity of the
+// white tint (e.g. 10 -> bg-white/10). The InterstitialContinueButton
+// component uses this constant in its Tailwind class string + a compile-
+// time mirror guard.
 //
-// CONTRAST FLOOR (locked): navy #1A2744 label MUST hold at least 4.5:1
-// against the darkest representative hero video frame.
+// Patched 2026-06-04 per Gary: the button surface + label now match the
+// FeaturePreviewCard on the same interstitial. The tint dropped from 45
+// (the prior light-glass-with-navy-label posture from 173d Section 3) to
+// 10 so the surface reads as the same translucent lens the card uses, and
+// the label switched from navy to white in the component.
 //
-// Backdrop-filter fallback uses a higher opacity (set in the component) so
-// engines without supports-[backdrop-filter] never serve an unreadable
-// transparent pane.
-//
-// Reduce-transparency and prefers-contrast:more bumps this toward 90 in the
-// component's media-query branches.
-export const INTERSTITIAL_BUTTON_TINT_OPACITY = 45;
+// CONTRAST POSTURE (white label):
+//   * supports-[backdrop-filter]: white label over bg-white/10 on the
+//     hero video reads cleanly because the underlying dark navy
+//     dominates the blurred frame.
+//   * supports-[not(backdrop-filter)] + prefers-reduced-transparency +
+//     prefers-contrast:more all fall back to a solid Card #1E3054
+//     surface in the component so the white label never sits over a
+//     near-transparent pane.
+export const INTERSTITIAL_BUTTON_TINT_OPACITY = 10;
 
 // Backwards-compat alias for callers that still imported the old constants
 // object. Keeps existing imports working until a follow-up tidies them.
