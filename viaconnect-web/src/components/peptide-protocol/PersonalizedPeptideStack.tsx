@@ -92,7 +92,7 @@ export function PersonalizedPeptideStack({ userId }: { userId?: string } = {}) {
   const patterns: string[] = protocol?.detected_patterns || [];
 
   return (
-    <div className="rounded-2xl border border-white/15 bg-white/10 backdrop-blur-md p-4 sm:p-5 space-y-4">
+    <div className="relative z-0 rounded-2xl border border-white/15 bg-white/10 backdrop-blur-md p-4 sm:p-5 space-y-4">
 
       {/* ── HEADER ── */}
       <div className="flex items-center justify-between flex-wrap gap-3">

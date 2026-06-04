@@ -46,8 +46,15 @@ export function PeptideSearchBar() {
         setShowDropdown(false);
       }
     };
+    const keyHandler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setShowDropdown(false);
+    };
     document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
+    document.addEventListener('keydown', keyHandler);
+    return () => {
+      document.removeEventListener('mousedown', handler);
+      document.removeEventListener('keydown', keyHandler);
+    };
   }, []);
 
   const search = useCallback(async (q: string, category: string) => {
@@ -106,7 +113,7 @@ export function PeptideSearchBar() {
   };
 
   return (
-    <div ref={wrapperRef} className="rounded-2xl border border-white/15 bg-white/10 backdrop-blur-md p-4 sm:p-5 space-y-3">
+    <div ref={wrapperRef} className="relative z-30 rounded-2xl border border-white/15 bg-white/10 backdrop-blur-md p-4 sm:p-5 space-y-3">
       <div className="flex items-center gap-2">
         <Search className="w-4 h-4 text-[#2DA5A0]" strokeWidth={1.5} />
         <span className="text-sm font-semibold text-white">Search Peptides</span>
@@ -158,7 +165,7 @@ export function PeptideSearchBar() {
               initial={{ opacity: 0, y: -4 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -4 }}
-              className="absolute z-50 top-full mt-1 left-0 right-0 bg-[#1E3054]/90 backdrop-blur-md rounded-2xl border border-[rgba(255,255,255,0.10)] shadow-2xl overflow-hidden"
+              className="absolute z-50 top-full mt-1 left-0 right-0 bg-[#1E3054] rounded-xl border border-white/10 shadow-xl overflow-hidden"
             >
               {results.length === 0 ? (
                 <div className="px-4 py-6 text-center text-sm text-[rgba(255,255,255,0.35)]">
@@ -169,6 +176,7 @@ export function PeptideSearchBar() {
                   {results.map(peptide => (
                     <div
                       key={peptide.id}
+                      onClick={() => setShowDropdown(false)}
                       className="flex items-start gap-3 px-4 py-3 hover:bg-[rgba(255,255,255,0.05)] cursor-pointer transition-colors"
                     >
                       <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#1A2744] to-[#2DA5A0] flex items-center justify-center shrink-0 mt-0.5">
