@@ -21,6 +21,8 @@ import { InterstitialScreen } from "@/components/onboarding/InterstitialScreen";
 import { WelcomeDashboardScreen } from "@/components/onboarding/WelcomeDashboardScreen";
 import { CAQ_INTERSTITIALS } from "@/config/caq-interstitials";
 import { CAQ_FORM_PHASE_IDS, isLastFormPhase } from "@/config/caq-phase-order";
+import { WeightGoalsSection } from "@/components/caq/WeightGoalsSection";
+import { writeWeightGoal } from "@/lib/weight-goals/accessor";
 import { SEED_INGREDIENTS, FARMCEUTICA_CATEGORIES, normalizeIngredientName } from "@/config/farmceutica-ingredients";
 import { searchBrandsAndProducts } from "@/config/brand-search-index";
 import BrandProductSearch from "@/components/caq/phase6/BrandProductSearch";
@@ -331,6 +333,11 @@ type GoalsData = {
   supplementForm: string;
   budgetRange: number;
   communicationPref: string;
+  // Prompt 173 Phase 3: canonical goal weight in kilograms (null when not
+  // set). Lives in the goals slice so it persists with the Lifestyle phase
+  // draft and survives a round trip back to Demographics. Persisted to
+  // public.user_weight_goals via writeWeightGoal on Lifestyle save.
+  goalWeightKg: number | null;
 };
 
 // ─── Bio Optimization Score Calculator ──────────────────────────────────────────────
@@ -505,6 +512,7 @@ export default function OnboardingStepPage() {
   // Phase 5 state
   const [goals, setGoals] = useState<GoalsData>({
     goals: [], supplementForm: "", budgetRange: 50, communicationPref: "email",
+    goalWeightKg: null,
   });
 
   // Medication autocomplete
@@ -587,6 +595,14 @@ export default function OnboardingStepPage() {
             // Pre-populate goals
             const goals_arr = (ls as Record<string, unknown>).goals as string[] | undefined;
             if (goals_arr?.length) setGoals((p) => ({ ...p, goals: goals_arr }));
+            // Prompt 173 Phase 3: pre-populate goalWeightKg from the
+            // Lifestyle draft so a Demographics round trip preserves the
+            // entered value. Canonical source is user_weight_goals; a
+            // Phase 7 hook will reconcile this with Body Tracker writes.
+            const gwk = (ls as Record<string, unknown>).goalWeightKg;
+            if (typeof gwk === 'number' && Number.isFinite(gwk) && gwk > 0) {
+              setGoals((p) => ({ ...p, goalWeightKg: gwk }));
+            }
           }
         } catch (err) { }
       }
@@ -729,7 +745,29 @@ export default function OnboardingStepPage() {
       // is the last form phase and fires the completion + compute chain.
       switch (stepId) {
         case "1": await savePhase("1", { ...demographics, bodyType }); break;
-        case "3": await savePhase("3", { ...lifestyle, goals: goals.goals, supplementForm: goals.supplementForm, budgetRange: goals.budgetRange }); break;
+        case "3": {
+          await savePhase("3", { ...lifestyle, goals: goals.goals, supplementForm: goals.supplementForm, budgetRange: goals.budgetRange, goalWeightKg: goals.goalWeightKg });
+          // Prompt 173 Phase 3 persistence: when both the Phase 1 current
+          // weight and the Lifestyle goal weight are present, write the
+          // canonical row to public.user_weight_goals. The DB trigger
+          // owns goal_direction; writeWeightGoal omits it. Failure is
+          // non-fatal so the CAQ flow continues even if the network drops.
+          try {
+            const cw = parseFloat(demographics.weight);
+            const gw = goals.goalWeightKg;
+            if (Number.isFinite(cw) && cw > 0 && gw !== null && Number.isFinite(gw) && gw > 0) {
+              const supabase = createClient();
+              const { data: { user } } = await supabase.auth.getUser();
+              if (user) {
+                await writeWeightGoal(
+                  { userId: user.id, currentWeightKg: cw, goalWeightKg: gw, source: "caq" },
+                  supabase,
+                );
+              }
+            }
+          } catch { /* persistence is best-effort; the CAQ proceeds */ }
+          break;
+        }
         case "1b": await savePhase("6", { healthConcerns, familyHistory }); break;
         case "2a": await savePhase("7", symptomsPhysical); break;
         case "2b": await savePhase("8", symptomsNeuro); break;
@@ -1530,6 +1568,34 @@ export default function OnboardingStepPage() {
                 ))}
               </div>
             </div>
+
+            {/* Prompt 173 Phase 3: Weight Goals sub-section.
+                Lives inside the Wellness Goals block. Reads the Phase 1
+                current weight + height read-only and writes goal_weight_kg
+                into goals state; persistence to user_weight_goals fires on
+                Lifestyle save via writeWeightGoal (the DB trigger then
+                owns the derived goal_direction). */}
+            <WeightGoalsSection
+              currentWeightKgRaw={demographics.weight}
+              heightCmRaw={demographics.height}
+              weightUnit={weightUnit}
+              goalWeightKg={goals.goalWeightKg}
+              onGoalWeightKgChange={(kg) => setGoals({ ...goals, goalWeightKg: kg })}
+              onEditDemographics={async () => {
+                // Persist the in-progress Lifestyle draft so the round trip
+                // back to Demographics does not lose state, then navigate.
+                try {
+                  await savePhase("3", {
+                    ...lifestyle,
+                    goals: goals.goals,
+                    supplementForm: goals.supplementForm,
+                    budgetRange: goals.budgetRange,
+                    goalWeightKg: goals.goalWeightKg,
+                  });
+                } catch { /* navigation proceeds even if save fails */ }
+                router.push("/onboarding/1");
+              }}
+            />
 
             {/* Supplement form preference */}
             <div>
