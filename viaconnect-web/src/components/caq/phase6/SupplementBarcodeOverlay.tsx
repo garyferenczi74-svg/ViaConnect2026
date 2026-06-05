@@ -167,35 +167,89 @@ function releaseCameraTracks(): void {
 }
 
 /**
- * Prompt 175d Section 2.5: request continuous autofocus on the active
- * video track. iOS Safari and Chrome both support the 'continuous'
- * focusMode; older browsers reject the constraint, which we swallow.
- * Returns the negotiated track settings (width, height, frameRate) for
- * the diagnostic log so we can see what resolution actually negotiated.
+ * Prompt 175e Section 2.4: wait for the video element to reach a usable
+ * readyState before any post-attach work touches the track. html5-qrcode's
+ * loadedmetadata fires when videoWidth + videoHeight are populated; if
+ * we run applyConstraints before then, iOS sometimes silently rejects.
+ * Resolves on either the event firing or a 3 second timeout so a quiet
+ * stream does not strand the enhancement chain.
  */
-async function requestContinuousFocus(): Promise<void> {
+function waitForVideoReady(video: HTMLVideoElement): Promise<void> {
+  if (video.readyState >= 2 && video.videoWidth > 0) return Promise.resolve();
+  return new Promise<void>((resolve) => {
+    let resolved = false;
+    const finish = () => {
+      if (resolved) return;
+      resolved = true;
+      video.removeEventListener('loadedmetadata', finish);
+      resolve();
+    };
+    video.addEventListener('loadedmetadata', finish, { once: true });
+    window.setTimeout(finish, 3000);
+  });
+}
+
+/**
+ * Prompt 175e Section 2.1 + 2.5: post-attach enhancements applied to
+ * the live track AFTER the stream has been attached. Each enhancement
+ * is independently guarded so a single rejection (older device,
+ * unsupported constraint) does not tear down the live stream.
+ *
+ *   * Resolution bump to 1920x1080 ideal. Failed bump leaves the
+ *     auto-negotiated default in place; decode still works at the
+ *     lower resolution.
+ *   * focusMode: continuous. Falls back to the device's default focus
+ *     behavior when unsupported.
+ *
+ * Torch is NOT applied here; it remains an explicit user toggle
+ * through scan.toggleFlashlight per 175c.
+ */
+async function enhanceTrack(): Promise<void> {
   if (typeof document === 'undefined') return;
   const container = document.getElementById('barcode-scanner-viewport');
   const video = container?.querySelector('video');
-  if (!(video instanceof HTMLVideoElement)) return;
+  if (!(video instanceof HTMLVideoElement)) {
+    diagLog('enhanceTrack:video-missing');
+    return;
+  }
+  await waitForVideoReady(video);
   const stream = video.srcObject;
-  if (!stream || typeof (stream as MediaStream).getVideoTracks !== 'function') return;
+  if (!stream || typeof (stream as MediaStream).getVideoTracks !== 'function') {
+    diagLog('enhanceTrack:no-stream');
+    return;
+  }
   const track = (stream as MediaStream).getVideoTracks()[0];
-  if (!track) return;
+  if (!track) {
+    diagLog('enhanceTrack:no-track');
+    return;
+  }
+
+  const settings = track.getSettings();
+  diagLog('enhanceTrack:initial-settings', {
+    width: settings.width,
+    height: settings.height,
+    frameRate: settings.frameRate,
+    facingMode: settings.facingMode,
+  });
+
+  // Resolution bump. Independent try/catch so a rejection does not
+  // skip the focus enhancement below.
   try {
-    const settings = track.getSettings();
-    diagLog('requestContinuousFocus:track-settings', {
-      width: settings.width,
-      height: settings.height,
-      frameRate: settings.frameRate,
-      facingMode: settings.facingMode,
-    });
+    await track.applyConstraints({ width: { ideal: 1920 }, height: { ideal: 1080 } });
+    const after = track.getSettings();
+    diagLog('enhanceTrack:resolution-applied', { width: after.width, height: after.height });
+  } catch (err) {
+    diagLog('enhanceTrack:resolution-rejected', { err: String(err) });
+  }
+
+  // Continuous focus. Independent try/catch.
+  try {
     await track.applyConstraints({
       advanced: [{ focusMode: 'continuous' } as MediaTrackConstraintSet],
     });
-    diagLog('requestContinuousFocus:applied');
+    diagLog('enhanceTrack:focus-applied');
   } catch (err) {
-    diagLog('requestContinuousFocus:rejected', { err: String(err) });
+    diagLog('enhanceTrack:focus-rejected', { err: String(err) });
   }
 }
 
@@ -303,20 +357,21 @@ export function SupplementBarcodeOverlay({
     [hapticEnabled, onScanned, reducedMotion],
   );
 
-  // Prompt 175c Section 2.3 + 175d Section 2.3, 2.4: full-frame scan
-  // (qrbox: null) at high resolution (1920x1080 ideal) with explicit
-  // symbology hints restricted to product barcodes (UPC + EAN + ITF +
-  // CODE_128). Native BarcodeDetector enabled on Chrome / Edge / Android
-  // as a free speed-up; iOS falls through to ZXing.
+  // Prompt 175c Section 2.3 + 175d Section 2.3 + 175e Section 2.1:
+  // full-frame scan (qrbox: null) with explicit symbology hints
+  // restricted to product barcodes, native BarcodeDetector enabled on
+  // Chrome / Edge / Android as a free speed-up. Initial camera
+  // constraints are deliberately MINIMAL (string facingMode only,
+  // no resolution, no torch, no focus): 175d's resolution + focus +
+  // torch are applied post-attach by enhanceTrack so iOS Safari can
+  // start the stream first and then negotiate the higher resolution
+  // without the address-bar-animation hang that the 175d initial
+  // 1920x1080 ideal hint triggered.
   const scan = useBarcodeScan({
     onDetect,
     config: {
       qrbox: null,
-      cameraConstraints: {
-        facingMode: { ideal: 'environment' },
-        width: { ideal: 1920 },
-        height: { ideal: 1080 },
-      },
+      cameraConstraints: { facingMode: 'environment' },
       formatsToSupport: SUPPLEMENT_BARCODE_FORMATS,
       useBarCodeDetectorIfSupported: true,
     },
@@ -331,11 +386,10 @@ export function SupplementBarcodeOverlay({
     void scan.start().then(() => {
       diagLog('scan.start:resolved', { state: scan.state, error: scan.error });
       pollHardenIosVideo();
-      // Prompt 175d Section 2.5: request continuous autofocus on the
-      // active track after the stream attaches. Cooperative; iOS sometimes
-      // ignores the constraint silently, so the diagnostic log records
-      // the actually-negotiated track settings either way.
-      void requestContinuousFocus();
+      // Prompt 175e Section 2.1: post-attach enhancement chain
+      // (resolution bump + continuous focus). Each step independently
+      // guarded; a single failure never tears down the live stream.
+      void enhanceTrack();
     });
     return () => {
       diagLog('overlay:close');
@@ -391,12 +445,12 @@ export function SupplementBarcodeOverlay({
     : HELPER_ESCALATION;
 
   const handleTapToFocus = (): void => {
-    // Prompt 175d Section 2.5: tap anywhere on the backdrop to nudge the
-    // camera into refocusing. Re-applying the continuous-focus constraint
+    // Prompt 175d Section 2.5 + 175e: tap anywhere on the backdrop to
+    // nudge the camera into refocusing. Re-running the enhancement chain
     // is a portable refocus signal that works on iOS and Chrome without
     // requiring pointsOfInterest, which iOS WKWebView does not honor.
     diagLog('tap-to-focus');
-    void requestContinuousFocus();
+    void enhanceTrack();
   };
 
   const overlay = (
@@ -541,10 +595,15 @@ export function SupplementBarcodeOverlay({
           className="absolute inset-x-4 bottom-24 mx-auto max-w-md rounded-2xl p-4"
           style={{ backgroundColor: '#1E3054', color: '#FFFFFF' }}
         >
+          {/* Prompt 175e Section 2.3: cause-specific copy per error
+              code so the user sees an actionable message rather than
+              the generic startup line. */}
           <p style={{ fontSize: 14, fontWeight: 500 }}>
             {scan.error === 'no_camera_hardware'
               ? 'This device does not have a camera available.'
-              : 'Scanner did not start. Try again, or enter the supplement by name.'}
+              : scan.error === 'camera_in_use'
+                ? 'Another app is using the camera. Close it and try again, or enter the supplement by name.'
+                : 'Scanner did not start. Try again, or enter the supplement by name.'}
           </p>
         </div>
       ) : null}

@@ -138,6 +138,25 @@ function formatFromHtml5Code(code: string): BarcodeFormat | null {
   }
 }
 
+/**
+ * Prompt 175e Section 2.2: detect an OverconstrainedError from any of
+ * the surface shapes html5-qrcode and the WebRTC stack produce. The
+ * DOM error name is the most reliable signal; the library sometimes
+ * wraps the error in a string with the constraint name, so a message
+ * substring match is the fallback. Exported for unit-testing the
+ * environment-to-any fallback classifier without standing up the
+ * scanner.
+ */
+export function isOverconstrainedError(err: unknown): boolean {
+  if (err instanceof Error && err.name === 'OverconstrainedError') return true;
+  const msg = err instanceof Error ? err.message : String(err);
+  const lower = msg.toLowerCase();
+  return (
+    lower.includes('overconstrained')
+    || lower.includes('constraint')
+  );
+}
+
 export type BarcodeScanState =
   | 'idle'
   | 'requesting_permission'
@@ -278,54 +297,84 @@ export function useBarcodeScan(opts: UseBarcodeScanOptions): UseBarcodeScanResul
         startConfig.qrbox = callerConfig.qrbox ?? { width: 280, height: 96 };
       }
 
-      // Prompt 175d Section 2.4: per-caller camera constraints with a
-      // safe default of just facingMode for backward compatibility.
+      // Prompt 175d Section 2.4 + 175e Section 2.1: per-caller camera
+      // constraints with a safe default of just facingMode for backward
+      // compatibility. The supplement scanner now passes a string
+      // facingMode (no resolution / torch / focus) per 175e Section 2.1.
       const cameraConstraints: CameraConstraintsArg =
         callerConfig.cameraConstraints ?? { facingMode: 'environment' };
 
-      await scannerRef.current.start(
-        cameraConstraints,
-        startConfig,
-        (decodedText, decodedResult) => {
-          const rawFormat =
-            (decodedResult as { result?: { format?: { format?: string } } }).result
-              ?.format?.format ?? '';
-          if (!SUPPORTED_HTML5_QRCODE_FORMATS.has(rawFormat)) return;
-          const format = formatFromHtml5Code(rawFormat);
-          if (format === null) return;
-          const now = performance.now();
-          const decoderLatencyMs = Math.max(
-            0,
-            Math.round(now - lastDetectionAtRef.current),
-          );
-          lastDetectionAtRef.current = now;
-          setState('detected');
-          onDetectRef.current({
-            value: decodedText,
-            format,
-            decoder: 'html5_qrcode',
-            decoder_latency_ms: decoderLatencyMs,
-          });
-        },
-        () => {
-          // Per-frame "no scan yet" callbacks. Swallow silently.
-        },
-      );
+      const successCallback = (decodedText: string, decodedResult: { result?: { format?: { format?: string } } }) => {
+        const rawFormat = decodedResult.result?.format?.format ?? '';
+        if (!SUPPORTED_HTML5_QRCODE_FORMATS.has(rawFormat)) return;
+        const format = formatFromHtml5Code(rawFormat);
+        if (format === null) return;
+        const now = performance.now();
+        const decoderLatencyMs = Math.max(0, Math.round(now - lastDetectionAtRef.current));
+        lastDetectionAtRef.current = now;
+        setState('detected');
+        onDetectRef.current({
+          value: decodedText,
+          format,
+          decoder: 'html5_qrcode',
+          decoder_latency_ms: decoderLatencyMs,
+        });
+      };
+      const noopFrameCallback = () => { /* per-frame "no scan yet" */ };
+
+      try {
+        await scannerRef.current.start(cameraConstraints, startConfig, successCallback, noopFrameCallback);
+      } catch (firstErr) {
+        // Prompt 175e Section 2.2: environment-to-any fallback. If the
+        // first attempt failed with a constraint mismatch (the most
+        // likely cause of the 175d regression on devices that hang on
+        // an over-specified initial constraint), retry once with the
+        // minimal MediaTrackConstraints object {} so the browser picks
+        // any available camera. NotAllowedError + NotFoundError do NOT
+        // fall back; they bubble up to the outer catch for the right
+        // user-facing message.
+        if (isOverconstrainedError(firstErr)) {
+          // eslint-disable-next-line no-console
+          console.warn('[useBarcodeScan] OverconstrainedError on initial start, retrying with bare constraints', firstErr);
+          await scannerRef.current.start({} as CameraConstraintsArg, startConfig, successCallback, noopFrameCallback);
+        } else {
+          throw firstErr;
+        }
+      }
 
       setState('scanning');
     } catch (err) {
+      // Prompt 175e Section 2.3: prefer err.name over message substring
+      // because the JS error name is the stable WebRTC contract and
+      // localized error messages can defeat substring matching.
+      const errName = err instanceof Error ? err.name : '';
       const msg = err instanceof Error ? err.message : String(err);
       const lower = msg.toLowerCase();
       if (
-        lower.includes('permission')
+        errName === 'NotAllowedError'
+        || lower.includes('permission')
         || lower.includes('notallowed')
         || lower.includes('denied')
       ) {
         setState('permission_denied');
         setError('permission_denied');
-      } else if (lower.includes('notfound') || lower.includes('no camera')) {
+      } else if (
+        errName === 'NotFoundError'
+        || lower.includes('notfound')
+        || lower.includes('no camera')
+      ) {
         setState('error');
         setError('no_camera_hardware');
+      } else if (
+        errName === 'NotReadableError'
+        || lower.includes('notreadable')
+        || lower.includes('in use')
+      ) {
+        // Prompt 175e Section 2.3: camera is in use by another app or
+        // browser tab. Surface a distinct error code so the overlay can
+        // show a meaningful prompt.
+        setState('error');
+        setError('camera_in_use');
       } else {
         setState('error');
         setError('scanner_init_failed');
