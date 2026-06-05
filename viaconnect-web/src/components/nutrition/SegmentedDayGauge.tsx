@@ -88,8 +88,10 @@ export function SegmentedDayGauge(props: SegmentedDayGaugeProps) {
     }
   }, [color]);
 
+  // Prompt 175m gauge sizing (2026-06-05): gap-3 → gap-2 mobile for
+  // visual rhythm parity with NutritionScoreCircleGauge.
   return (
-    <div className="flex flex-col items-center gap-3">
+    <div className="flex flex-col items-center gap-2 md:gap-3">
       <div className="md:hidden">
         <SegmentedRing
           sizePx={mobilePx}

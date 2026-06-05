@@ -153,48 +153,55 @@ export function NutritionScoreCard({ userId: propUserId }: NutritionScoreCardPro
     };
   }, [meals, tz, effectiveTargets]);
 
+  // Prompt 175m gauge sizing (2026-06-05): mobile cap shrunk from 140 to
+  // 120 px per the 120 to 160 spec target. Stroke drops proportionally
+  // from 10 to 8 so the ring keeps its visual weight at the new size.
+  // Card padding, header margin, grid gap, and per-item caption gap all
+  // tightened on mobile so each gauge group sits at ~170 px vertical
+  // instead of ~210 px; that puts more than one gauge plus an adjacent
+  // caption inside an iPhone class viewport. Desktop sizes unchanged.
   return (
-    <div className="rounded-xl border border-white/10 bg-[#1E3054]/35 backdrop-blur-md p-5">
-      <div className="mb-4 flex items-center gap-2">
+    <div className="rounded-xl border border-white/10 bg-[#1E3054]/35 backdrop-blur-md p-4 md:p-5">
+      <div className="mb-3 flex items-center gap-2 md:mb-4">
         <Apple className="h-5 w-5 text-[#2DA5A0]" strokeWidth={1.5} />
         <h2 className="text-base font-bold text-white">Nutrition Score</h2>
       </div>
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-        <div className="flex flex-col items-center gap-2">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-3 md:gap-6">
+        <div className="flex flex-col items-center gap-1.5 md:gap-2">
           <NutritionScoreCircleGauge
             score={computed.nutritionScore}
             mealCount={computed.nutritionMealCount}
             emptyStateLabel={`Based on ${computed.nutritionMealCount} meals logged today`}
-            mobilePx={140}
+            mobilePx={120}
             desktopPx={150}
-            mobileStroke={10}
+            mobileStroke={8}
             desktopStroke={12}
           />
           <span className="text-[12px] uppercase tracking-[0.10em] text-white/55">
             Nutrition Score
           </span>
         </div>
-        <div className="flex flex-col items-center gap-2">
+        <div className="flex flex-col items-center gap-1.5 md:gap-2">
           <NutritionScoreCircleGauge
             score={computed.macrosScore}
             mealCount={computed.macrosMealCount}
             emptyStateLabel="Log meals to fill your daily macros"
-            mobilePx={140}
+            mobilePx={120}
             desktopPx={150}
-            mobileStroke={10}
+            mobileStroke={8}
             desktopStroke={12}
           />
           <span className="text-[12px] uppercase tracking-[0.10em] text-white/55">
             Total Daily Macros
           </span>
         </div>
-        <div className="flex flex-col items-center gap-2">
+        <div className="flex flex-col items-center gap-1.5 md:gap-2">
           <SegmentedDayGauge
             daysLogged={computed.daysLoggedThisWeek}
             totalDays={SEVEN_DAYS}
-            mobilePx={140}
+            mobilePx={120}
             desktopPx={150}
-            mobileStroke={10}
+            mobileStroke={8}
             desktopStroke={12}
           />
           <span className="text-[12px] uppercase tracking-[0.10em] text-white/55">

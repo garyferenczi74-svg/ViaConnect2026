@@ -74,8 +74,14 @@ export function NutritionScoreCircleGauge(props: NutritionScoreCircleGaugeProps)
   // Render two SVGs and toggle visibility via Tailwind responsive classes.
   // Single SVG with CSS would also work but the geometry math depends on
   // sizePx so two renders keeps the math correct at each breakpoint.
+  //
+  // Prompt 175m gauge sizing (2026-06-05): gap-3 between the ring and
+  // the tier / helper line dropped to gap-2 on mobile so each gauge
+  // group sits more compactly inside NutritionScoreCard. Desktop keeps
+  // gap-3 because the larger ring carries the extra breathing room
+  // visually.
   return (
-    <div className="flex flex-col items-center gap-3">
+    <div className="flex flex-col items-center gap-2 md:gap-3">
       <div className="md:hidden">
         <CircleGauge sizePx={mobilePx} stroke={mobileStroke} score={clamped} hasData={hasData} color={tier.color} pulseKey={pulseKey} />
       </div>
