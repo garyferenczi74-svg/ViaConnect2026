@@ -1,13 +1,16 @@
 // Prompt 175d (2026-06-05): barcode decode regression tests.
+// Prompt 175j (2026-06-05): updated for the html5-qrcode -> zxing-wasm swap.
 //
-// The decode path itself runs through html5-qrcode against a live video
-// stream and cannot be exercised in vitest without a browser. The pieces
-// covered here are the pure-logic guards that wrap the decoder:
+// The decode path itself runs against a live video stream and cannot
+// be exercised in vitest without a browser. The pieces covered here
+// are the pure-logic guards that wrap the decoder:
 //   * Codeage UPC-A 850049609517 fixture passes the GTIN check digit
 //     and is classified as UPC_A
-//   * SUPPLEMENT_BARCODE_FORMATS matches the spec 175d Section 2.3 set
-//     (UPC_A, UPC_E, EAN_13, EAN_8, CODE_128, ITF) so html5-qrcode is
-//     instructed to scan exactly those symbologies
+//   * SUPPLEMENT_BARCODE_FORMATS matches the spec 175d Section 2.3
+//     symbology set in zxing-wasm canonical names
+//   * HTML5_QRCODE_FORMATS retains its numeric values for backward
+//     compatibility with any code or row in the database that captured
+//     them historically
 
 import { describe, it, expect } from 'vitest';
 import { validateBarcode } from '@/lib/nutrition/barcode/checksum';
@@ -16,7 +19,7 @@ import {
   SUPPLEMENT_BARCODE_FORMATS,
 } from '@/components/barcode/hooks/useBarcodeScan';
 
-describe('Prompt 175d: barcode decode guards', () => {
+describe('Prompt 175d + 175j: barcode decode guards', () => {
   describe('Codeage UPC-A fixture', () => {
     it('850049609517 passes the GTIN check digit', () => {
       const result = validateBarcode('850049609517');
@@ -33,20 +36,23 @@ describe('Prompt 175d: barcode decode guards', () => {
     });
   });
 
-  describe('SUPPLEMENT_BARCODE_FORMATS', () => {
+  describe('SUPPLEMENT_BARCODE_FORMATS (zxing-wasm canonical names)', () => {
     it('matches the spec 175d Section 2.3 symbology set', () => {
       const set = new Set(SUPPLEMENT_BARCODE_FORMATS);
-      expect(set.has(HTML5_QRCODE_FORMATS.UPC_A)).toBe(true);
-      expect(set.has(HTML5_QRCODE_FORMATS.UPC_E)).toBe(true);
-      expect(set.has(HTML5_QRCODE_FORMATS.EAN_13)).toBe(true);
-      expect(set.has(HTML5_QRCODE_FORMATS.EAN_8)).toBe(true);
-      expect(set.has(HTML5_QRCODE_FORMATS.CODE_128)).toBe(true);
-      expect(set.has(HTML5_QRCODE_FORMATS.ITF)).toBe(true);
+      // zxing-wasm canonical names per node_modules/zxing-wasm
+      // BARCODE_FORMATS list. These differ from html5-qrcode's
+      // string set ('UPCA' vs 'UPC_A', 'EAN13' vs 'EAN_13', etc.).
+      expect(set.has('UPCA')).toBe(true);
+      expect(set.has('UPCE')).toBe(true);
+      expect(set.has('EAN13')).toBe(true);
+      expect(set.has('EAN8')).toBe(true);
+      expect(set.has('Code128')).toBe(true);
+      expect(set.has('ITF')).toBe(true);
     });
 
-    it('excludes QR_CODE so html5-qrcode does not waste scan budget on QR', () => {
+    it('excludes QRCode so the decoder does not waste budget on QR', () => {
       const set = new Set(SUPPLEMENT_BARCODE_FORMATS);
-      expect(set.has(HTML5_QRCODE_FORMATS.QR_CODE)).toBe(false);
+      expect(set.has('QRCode')).toBe(false);
     });
 
     it('has six entries (no duplicates, no extras)', () => {
@@ -54,12 +60,12 @@ describe('Prompt 175d: barcode decode guards', () => {
     });
   });
 
-  describe('HTML5_QRCODE_FORMATS numeric ids', () => {
-    it('matches the html5-qrcode 2.x Html5QrcodeSupportedFormats enum', () => {
-      // Spot check against the stable enum values published in the
-      // library's type declarations. Changing one of these would imply
-      // the library upgraded to a version with a renumbered enum, which
-      // is a manual-review-required event.
+  describe('HTML5_QRCODE_FORMATS legacy numeric ids', () => {
+    it('retains the historical html5-qrcode numeric values for back-compat', () => {
+      // These constants are still exported from useBarcodeScan even
+      // after the 175j swap. The numeric values are no longer fed to
+      // any library; they are kept so older code and database rows
+      // that captured them continue to typecheck.
       expect(HTML5_QRCODE_FORMATS.UPC_A).toBe(14);
       expect(HTML5_QRCODE_FORMATS.EAN_13).toBe(11);
       expect(HTML5_QRCODE_FORMATS.CODE_128).toBe(5);

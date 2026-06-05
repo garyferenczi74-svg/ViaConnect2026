@@ -39,8 +39,12 @@ export const BarcodeLookupOutcomeEnum = z.enum([
 ]);
 export type BarcodeLookupOutcome = z.infer<typeof BarcodeLookupOutcomeEnum>;
 
+// Prompt 175j (2026-06-05): 'zxing_wasm' added after the html5-qrcode ->
+// zxing-wasm swap. 'html5_qrcode' retained so older barcode_scan_session
+// rows in Supabase keep decoding without a migration.
 export const BarcodeDecoderKindEnum = z.enum([
   'html5_qrcode',
+  'zxing_wasm',
   'mlkit_native',
   'manual',
 ]);

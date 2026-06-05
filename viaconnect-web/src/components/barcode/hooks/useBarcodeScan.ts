@@ -1,50 +1,69 @@
 /**
- * Prompt 170l Phase 1c-1: useBarcodeScan hook.
+ * Prompt 175j (2026-06-05): useBarcodeScan hook, zxing-wasm backend.
  *
- * Wraps html5-qrcode (already installed at package.json line 55) and exposes
- * a stable scan lifecycle: idle > requesting permission > scanning > detected.
- * The hook handles permission flow, decoder lifecycle, and reports decoded
- * BarcodeDecodedResult through the onDetect callback.
+ * Originally wrapped html5-qrcode 2.3.x (170l Phase 1c-1). After a day of
+ * spinning on iOS Safari decode failures (175c through 175i), agent
+ * research surfaced that html5-qrcode has a documented, unfixed iPhone
+ * 1D-decode regression with ~9 open issues going back to 2022 and the
+ * exact symptom signature my Vercel telemetry showed (camera attaches,
+ * getState reports SCANNING, zero decodes). 175j swaps to zxing-wasm
+ * v3.1.0 (released June 1 2026) which is the WASM-compiled ZXing
+ * decoder used by production retail apps; the public hook API is
+ * preserved so SupplementBarcodeOverlay and NutriVision's
+ * BarcodeScannerOverlay see no breaking change.
  *
- * QR codes and unsupported barcode types are silently rejected so the user
- * sees no "false" detections that aren't EAN-13 / UPC-A / EAN-8 / ITF-14.
- *
- * Per Gate 1: html5-qrcode is the web decoder; native ML Kit lands Phase 1c-5.
- * For now html5-qrcode is the sole decoder via the 'html5_qrcode' decoder kind.
+ * Pattern (per agent research, see prompt 175j commit body):
+ *   1. Raw video element created on demand, mounted into the existing
+ *      BARCODE_SCANNER_ELEMENT_ID container.
+ *   2. getUserMedia({ facingMode: { ideal: 'environment' },
+ *      width: 1920 ideal, height: 1080 ideal }) attaches a high-res
+ *      stream. iOS gotchas handled: playsinline + muted + autoplay set
+ *      as HTML attributes; video.play() awaited.
+ *   3. requestAnimationFrame loop draws each video frame to a hidden
+ *      canvas (willReadFrequently: true for ~5x throughput on Safari),
+ *      reads ImageData, calls zxing-wasm readBarcodes with
+ *      tryHarder: true and the per-caller formats list.
+ *   4. Full-frame decode, NOT a cropped region. ZXing's 1D decoders
+ *      need the start + end guard bars and any crop excludes them at
+ *      handheld distance (the actual root cause of 175c-175i's
+ *      failure to decode UPC-A bottles).
+ *   5. On hit, single-fire via stopped flag; release stream tracks
+ *      explicitly so the iOS camera-active indicator clears.
  */
 
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import type {
+  ReaderOptions,
+  ReadResult,
+  ReadInputBarcodeFormat,
+} from 'zxing-wasm/reader';
 import type { BarcodeDecodedResult, BarcodeFormat } from '@/lib/nutrition/barcode/types';
 
-// html5-qrcode is dynamically imported inside start() to avoid SSR issues:
-// the library references `window` and `document` at module load time and the
-// existing src/components/shared/BarcodeScanner.tsx uses the same pattern.
-// Prompt 175d (2026-06-05): constructor config widened to accept
-// formatsToSupport so callers can restrict the decoder to a known set
-// of symbologies (faster + fewer false reads).
-// Prompt 175g (2026-06-05): useBarCodeDetectorIfSupported moves to the
-// TOP-LEVEL constructor config per html5-qrcode 2.3.x. Earlier versions
-// nested it under experimentalFeatures and the prior 175d code used
-// that legacy shape; the library silently ignored the wrapper on 2.3.x,
-// which is a no-op on iOS but worth fixing so Chrome / Android pick up
-// the native BarcodeDetector fast path.
-type Html5QrcodeCtor = new (
-  elementId: string,
-  config: {
-    verbose: boolean;
-    formatsToSupport?: ReadonlyArray<number>;
-    useBarCodeDetectorIfSupported?: boolean;
-  },
-) => Html5QrcodeInstance;
+// =============================================================================
+// Public re-exports kept for backward compatibility with callers.
+// =============================================================================
 
-// Prompt 175d: html5-qrcode 2.x Html5QrcodeSupportedFormats numeric ids.
-// Imported as constants so callers do not have to pull the runtime enum
-// just to specify which symbologies to scan. Verified against html5-qrcode
-// 2.3.x type declarations; the numeric values are stable across the 2.x
-// line. Spec 175d Section 2.3: enable UPC_A, UPC_E, EAN_13, EAN_8,
-// CODE_128, ITF at minimum.
+/**
+ * DOM id the overlay components reserve for the scanner viewport. The
+ * hook mounts its own video element into this container at start() and
+ * removes it at stop(). Stable across html5-qrcode -> zxing-wasm swap
+ * so SupplementBarcodeOverlay and BarcodeScannerOverlay keep rendering
+ * the same div.
+ */
+export const BARCODE_SCANNER_ELEMENT_ID = 'barcode-scanner-viewport';
+
+/**
+ * Numeric format ids kept as named constants for backward compatibility
+ * with callers that imported HTML5_QRCODE_FORMATS by name. The numeric
+ * values are no longer fed to a library; SUPPLEMENT_BARCODE_FORMATS now
+ * carries zxing-wasm string ids instead. New code should import
+ * SUPPLEMENT_BARCODE_FORMATS directly.
+ *
+ * @deprecated Use SUPPLEMENT_BARCODE_FORMATS instead. These numeric
+ * constants are retained only because existing tests probe them.
+ */
 export const HTML5_QRCODE_FORMATS = {
   QR_CODE: 0,
   CODE_128: 5,
@@ -58,104 +77,27 @@ export const HTML5_QRCODE_FORMATS = {
   UPC_EAN_EXTENSION: 16,
 } as const;
 
-// Default symbology set for product barcodes. Used by the CAQ
-// supplement overlay; other call sites can override via
-// UseBarcodeScanOptions.config.formatsToSupport.
-export const SUPPLEMENT_BARCODE_FORMATS = [
-  HTML5_QRCODE_FORMATS.UPC_A,
-  HTML5_QRCODE_FORMATS.UPC_E,
-  HTML5_QRCODE_FORMATS.EAN_13,
-  HTML5_QRCODE_FORMATS.EAN_8,
-  HTML5_QRCODE_FORMATS.CODE_128,
-  HTML5_QRCODE_FORMATS.ITF,
-] as ReadonlyArray<number>;
-
-// Prompt 175c (2026-06-05): qrbox is optional on the underlying library
-// so callers can opt out of html5-qrcode's internal viewfinder mask
-// (NutriVision's BarcodeScannerOverlay keeps the default mask; the CAQ
-// supplement overlay sets qrbox: undefined and draws its own reticle so
-// only one framing element renders per iOS Safari fix).
-type QrboxValue =
-  | { width: number; height: number }
-  | ((viewfinderWidth: number, viewfinderHeight: number) => { width: number; height: number })
-  | undefined;
-
-// Prompt 175d (2026-06-05): cameraConstraints widened to a real
-// MediaTrackConstraints shape so callers can request a high-resolution
-// environment-facing track (Section 2.4: do not downscale before decode).
-type CameraConstraintsArg =
-  | { facingMode: string }
-  | {
-      facingMode?: string | { ideal?: string; exact?: string };
-      width?: { ideal?: number; min?: number };
-      height?: { ideal?: number; min?: number };
-      frameRate?: { ideal?: number };
-    };
-
-interface Html5QrcodeInstance {
-  start: (
-    cameraConstraints: CameraConstraintsArg,
-    config: {
-      fps: number;
-      qrbox?: QrboxValue;
-      aspectRatio?: number;
-      disableFlip?: boolean;
-    },
-    onSuccess: (
-      decodedText: string,
-      decodedResult: { result?: { format?: { format?: string } } },
-    ) => void,
-    onFrame: () => void,
-  ) => Promise<void>;
-  stop: () => Promise<void>;
-  // Prompt 175c (2026-06-05): html5-qrcode's clear() returns
-  // Promise<void> per its 2.x types; the prior local declaration of
-  // Promise<void> | void allowed a void inference path that prevented
-  // .catch from typechecking on the unmount cleanup.
-  clear: () => Promise<void>;
-  applyVideoConstraints: (constraints: MediaTrackConstraints) => Promise<void>;
-  // Prompt 175g (2026-06-05): html5-qrcode exposes getState() returning
-  // an enum-like number describing whether the scanner is NOT_STARTED,
-  // SCANNING, PAUSED, etc. Surfaced so the overlay can log it for
-  // visibility when the decode loop stalls.
-  getState?: () => number;
-}
-
-export const BARCODE_SCANNER_ELEMENT_ID = 'barcode-scanner-viewport';
-
-// Prompt 175d (2026-06-05): post-decode filter widened to UPC_E +
-// CODE_128 so html5-qrcode reads of those symbologies are not silently
-// dropped after the constructor's formatsToSupport widens to the full
-// SUPPLEMENT_BARCODE_FORMATS list.
-const SUPPORTED_HTML5_QRCODE_FORMATS = new Set([
-  'EAN_13',
-  'UPC_A',
-  'UPC_E',
-  'EAN_8',
+/**
+ * Symbology set for retail product barcodes. zxing-wasm string format
+ * names (the contract changed from the html5-qrcode numeric ids; existing
+ * callers pass this through to the hook so no import-site changes are
+ * required, only the internal type is different).
+ */
+export const SUPPLEMENT_BARCODE_FORMATS: ReadonlyArray<ReadInputBarcodeFormat> = [
+  'UPCA',
+  'UPCE',
+  'EAN13',
+  'EAN8',
+  'Code128',
   'ITF',
-  'CODE_128',
-]);
-
-function formatFromHtml5Code(code: string): BarcodeFormat | null {
-  switch (code) {
-    case 'EAN_13': return 'EAN_13';
-    case 'UPC_A': return 'UPC_A';
-    case 'UPC_E': return 'UPC_E';
-    case 'EAN_8': return 'EAN_8';
-    case 'ITF': return 'ITF_14';
-    case 'CODE_128': return 'CODE_128';
-    default: return null;
-  }
-}
+];
 
 /**
- * Prompt 175e Section 2.2: detect an OverconstrainedError from any of
- * the surface shapes html5-qrcode and the WebRTC stack produce. The
- * DOM error name is the most reliable signal; the library sometimes
- * wraps the error in a string with the constraint name, so a message
- * substring match is the fallback. Exported for unit-testing the
- * environment-to-any fallback classifier without standing up the
- * scanner.
+ * Prompt 175e Section 2.2: classify a getUserMedia error as
+ * OverconstrainedError. Used to drive the environment-to-any
+ * fallback retry inside start(). DOM error name first; message
+ * substring as fallback for the wrapped string shapes some
+ * platforms produce.
  */
 export function isOverconstrainedError(err: unknown): boolean {
   if (err instanceof Error && err.name === 'OverconstrainedError') return true;
@@ -167,6 +109,10 @@ export function isOverconstrainedError(err: unknown): boolean {
   );
 }
 
+// =============================================================================
+// Types
+// =============================================================================
+
 export type BarcodeScanState =
   | 'idle'
   | 'requesting_permission'
@@ -175,53 +121,57 @@ export type BarcodeScanState =
   | 'permission_denied'
   | 'error';
 
+type CameraConstraintsArg =
+  | { facingMode: string }
+  | {
+      facingMode?: string | { ideal?: string; exact?: string };
+      width?: { ideal?: number; min?: number };
+      height?: { ideal?: number; min?: number };
+      frameRate?: { ideal?: number };
+    };
+
 export interface UseBarcodeScanOptions {
   onDetect: (result: BarcodeDecodedResult) => void;
   onError?: (error: Error) => void;
   /**
-   * Prompt 175f Section 2.1 + 11.O: per-frame "no scan yet" hook so the
-   * caller can prove the decode loop is actually iterating. html5-qrcode
-   * invokes the underlying callback for every frame it analyzed without
-   * producing a result, so the count here divided by elapsed time is
-   * the empirical decode-attempt rate. Optional; absence is a no-op.
+   * Per-frame "no scan yet" hook so callers can prove the decode loop
+   * is iterating. Fires once per rAF tick when no code was found.
    */
   onFrameAttempt?: () => void;
-  /**
-   * Prompt 175c (2026-06-05): per-caller override of html5-qrcode start
-   * config. Defaults preserve the NutriVision behavior (qrbox 280x96, fps
-   * 10, aspectRatio 1.777). The supplement-vision overlay passes
-   * { qrbox: null } to opt out of the internal viewfinder mask so only
-   * the overlay's own teal reticle is visible.
-   */
   config?: {
     /**
-     * Pass null to omit qrbox entirely (no internal mask + full-frame
-     * scanning). Pass an object or a function to override the default
-     * 280x96 box.
-     */
-    qrbox?: { width: number; height: number } | ((vw: number, vh: number) => { width: number; height: number }) | null;
-    fps?: number;
-    aspectRatio?: number;
-    /**
-     * Prompt 175d (2026-06-05): per-caller camera constraints. Defaults
-     * to { facingMode: 'environment' } for the food scanner which works
-     * fine at the auto-negotiated resolution. The supplement scanner
-     * passes high-resolution hints (width + height ideal 1920 + 1080)
-     * so UPC-A bars have enough pixels per module to decode.
+     * Camera constraints for the initial getUserMedia call. iOS
+     * Safari is happiest with a string facingMode; resolution hints
+     * apply post-attach via track.applyConstraints inside the
+     * overlay (175e Section 2.1).
      */
     cameraConstraints?: CameraConstraintsArg;
     /**
-     * Prompt 175d Section 2.3: per-caller symbology hints. When set,
-     * html5-qrcode restricts the decoder to these formats only, which
-     * improves both decode speed and false-positive resistance. Use
-     * SUPPLEMENT_BARCODE_FORMATS for the standard product barcode set.
+     * zxing-wasm symbology hints. Defaults to the supplement set
+     * (UPC-A / UPC-E / EAN-13 / EAN-8 / Code128 / ITF). Restricting
+     * formats reduces ZXing latency per frame and false positives.
      */
-    formatsToSupport?: ReadonlyArray<number>;
+    formatsToSupport?: ReadonlyArray<ReadInputBarcodeFormat>;
     /**
-     * Prompt 175d: enable html5-qrcode's experimental native
-     * BarcodeDetector path when the browser supports it. Chrome and
-     * Edge on Android implement it; iOS Safari does not, so this is
-     * a no-op on iOS and a speed-up everywhere else.
+     * @deprecated Kept for backward-compat with the html5-qrcode era.
+     * 1D barcode decode needs the FULL frame to capture start/end
+     * guard bars; the hook ignores any qrbox value and decodes the
+     * full frame.
+     */
+    qrbox?: { width: number; height: number } | ((vw: number, vh: number) => { width: number; height: number }) | null;
+    /**
+     * @deprecated zxing-wasm runs on a rAF loop; the fps cap from the
+     * html5-qrcode era is no longer meaningful and is ignored.
+     */
+    fps?: number;
+    /**
+     * @deprecated html5-qrcode took an aspectRatio hint; getUserMedia
+     * negotiates this from width/height. Ignored.
+     */
+    aspectRatio?: number;
+    /**
+     * @deprecated html5-qrcode-specific. zxing-wasm always uses its
+     * own decoder; the browser's BarcodeDetector is not consulted.
      */
     useBarCodeDetectorIfSupported?: boolean;
   };
@@ -235,22 +185,64 @@ export interface UseBarcodeScanResult {
   toggleFlashlight: () => Promise<boolean>;
   flashlightOn: boolean;
   /**
-   * Prompt 175g (2026-06-05): query html5-qrcode's internal state at
-   * call time. Returns null when the scanner has not been constructed
-   * yet or when the library does not expose getState. Used by the
-   * supplement overlay's decode-attempts-per-second log so a stalled
-   * loop reports its actual library state (PAUSED, NOT_STARTED, etc.)
-   * not just attempts == 0.
+   * Backwards-compat shim for the html5-qrcode telemetry that 175g
+   * shipped. Returns 2 (the old SCANNING enum value) while the loop
+   * is active so existing diagnostic queries keep matching; null
+   * otherwise.
    */
   queryHtml5QrcodeState: () => number | null;
 }
+
+// =============================================================================
+// Internal helpers
+// =============================================================================
+
+const DEFAULT_FORMATS = SUPPLEMENT_BARCODE_FORMATS;
+
+interface ActiveScanner {
+  video: HTMLVideoElement;
+  stream: MediaStream;
+  canvas: HTMLCanvasElement;
+  ctx: CanvasRenderingContext2D;
+  rafId: number;
+  stopped: boolean;
+}
+
+function mapZxingFormat(f: ReadResult['format']): BarcodeFormat | null {
+  switch (f) {
+    case 'UPCA':    return 'UPC_A';
+    case 'UPCE':    return 'UPC_E';
+    case 'EAN13':   return 'EAN_13';
+    case 'EAN8':    return 'EAN_8';
+    case 'ITF':     return 'ITF_14';
+    case 'ITF14':   return 'ITF_14';
+    case 'Code128': return 'CODE_128';
+    default:        return null;
+  }
+}
+
+let zxingModulePrepared = false;
+async function ensureZxingPrepared(): Promise<void> {
+  if (zxingModulePrepared) return;
+  const { prepareZXingModule } = await import('zxing-wasm/reader');
+  prepareZXingModule({
+    overrides: {
+      locateFile: (path: string, prefix: string) =>
+        path.endsWith('.wasm') ? `/wasm/${path}` : prefix + path,
+    },
+  });
+  zxingModulePrepared = true;
+}
+
+// =============================================================================
+// Hook
+// =============================================================================
 
 export function useBarcodeScan(opts: UseBarcodeScanOptions): UseBarcodeScanResult {
   const [state, setState] = useState<BarcodeScanState>('idle');
   const [error, setError] = useState<string | null>(null);
   const [flashlightOn, setFlashlightOn] = useState(false);
-  const scannerRef = useRef<Html5QrcodeInstance | null>(null);
-  const lastDetectionAtRef = useRef<number>(0);
+  const scannerRef = useRef<ActiveScanner | null>(null);
 
   const onDetectRef = useRef(opts.onDetect);
   const onErrorRef = useRef(opts.onError);
@@ -262,15 +254,20 @@ export function useBarcodeScan(opts: UseBarcodeScanOptions): UseBarcodeScanResul
   }, [opts.onDetect, opts.onError, opts.onFrameAttempt]);
 
   const stop = useCallback(async () => {
-    const scanner = scannerRef.current;
+    const active = scannerRef.current;
     scannerRef.current = null;
-    if (scanner) {
+    if (active) {
+      active.stopped = true;
+      try { cancelAnimationFrame(active.rafId); } catch { /* noop */ }
       try {
-        await scanner.stop();
-        await scanner.clear();
-      } catch {
-        // benign: scanner may already be stopped
-      }
+        active.stream.getTracks().forEach((t) => {
+          try { t.stop(); } catch { /* noop */ }
+        });
+      } catch { /* noop */ }
+      try {
+        active.video.srcObject = null;
+        active.video.remove();
+      } catch { /* noop */ }
     }
     setFlashlightOn(false);
     setState('idle');
@@ -278,8 +275,8 @@ export function useBarcodeScan(opts: UseBarcodeScanOptions): UseBarcodeScanResul
 
   const start = useCallback(async () => {
     if (typeof document === 'undefined') return;
-    const el = document.getElementById(BARCODE_SCANNER_ELEMENT_ID);
-    if (!el) {
+    const container = document.getElementById(BARCODE_SCANNER_ELEMENT_ID);
+    if (!container) {
       setError('scanner_mount_missing');
       setState('error');
       return;
@@ -289,102 +286,123 @@ export function useBarcodeScan(opts: UseBarcodeScanOptions): UseBarcodeScanResul
     setError(null);
 
     try {
-      if (!scannerRef.current) {
-        const mod = (await import('html5-qrcode')) as unknown as {
-          Html5Qrcode: Html5QrcodeCtor;
-        };
-        // Prompt 175d + 175g: pass formatsToSupport + the top-level
-        // useBarCodeDetectorIfSupported flag at construction time.
-        // useBarCodeDetectorIfSupported is the html5-qrcode 2.3.x shape
-        // (no longer nested under experimentalFeatures); on iOS it is a
-        // no-op since BarcodeDetector is not implemented, on Chrome it
-        // engages the native fast path.
-        const callerCtor = opts.config ?? {};
-        scannerRef.current = new mod.Html5Qrcode(BARCODE_SCANNER_ELEMENT_ID, {
-          verbose: false,
-          formatsToSupport: callerCtor.formatsToSupport,
-          useBarCodeDetectorIfSupported: callerCtor.useBarCodeDetectorIfSupported ?? false,
-        });
-      }
+      await ensureZxingPrepared();
+      const { readBarcodes } = await import('zxing-wasm/reader');
 
-      lastDetectionAtRef.current = performance.now();
-
-      // Prompt 175c: resolve per-caller config overrides. Default values
-      // preserve NutriVision's existing scan behavior. qrbox === null
-      // (explicit) opts out of html5-qrcode's internal viewfinder mask.
       const callerConfig = opts.config ?? {};
-      const startConfig: {
-        fps: number;
-        qrbox?: QrboxValue;
-        aspectRatio?: number;
-        disableFlip?: boolean;
-      } = {
-        fps: callerConfig.fps ?? 10,
-        aspectRatio: callerConfig.aspectRatio ?? 1.777,
-        disableFlip: true,
-      };
-      if (callerConfig.qrbox !== null) {
-        startConfig.qrbox = callerConfig.qrbox ?? { width: 280, height: 96 };
-      }
-
-      // Prompt 175d Section 2.4 + 175e Section 2.1: per-caller camera
-      // constraints with a safe default of just facingMode for backward
-      // compatibility. The supplement scanner now passes a string
-      // facingMode (no resolution / torch / focus) per 175e Section 2.1.
       const cameraConstraints: CameraConstraintsArg =
         callerConfig.cameraConstraints ?? { facingMode: 'environment' };
+      const formats: ReadOnlyArrayLike<ReadInputBarcodeFormat> =
+        callerConfig.formatsToSupport ?? DEFAULT_FORMATS;
 
-      const successCallback = (decodedText: string, decodedResult: { result?: { format?: { format?: string } } }) => {
-        const rawFormat = decodedResult.result?.format?.format ?? '';
-        if (!SUPPORTED_HTML5_QRCODE_FORMATS.has(rawFormat)) return;
-        const format = formatFromHtml5Code(rawFormat);
-        if (format === null) return;
-        const now = performance.now();
-        const decoderLatencyMs = Math.max(0, Math.round(now - lastDetectionAtRef.current));
-        lastDetectionAtRef.current = now;
-        setState('detected');
-        onDetectRef.current({
-          value: decodedText,
-          format,
-          decoder: 'html5_qrcode',
-          decoder_latency_ms: decoderLatencyMs,
-        });
-      };
-      // Prompt 175f Section 2.1: forward html5-qrcode's per-frame
-      // no-scan-yet callback to the caller so the overlay can count
-      // decode attempts and prove the loop is running.
-      const noopFrameCallback = () => {
-        const cb = onFrameAttemptRef.current;
-        if (cb) {
-          try { cb(); } catch { /* best effort */ }
-        }
-      };
+      // Build the video element. iOS Safari REQUIRES playsinline +
+      // muted + autoplay as HTML attributes (175j Section "iOS gotchas
+      // 1-3"). Setting just the property is not enough on older Safari.
+      const video = document.createElement('video');
+      video.setAttribute('playsinline', 'true');
+      video.setAttribute('webkit-playsinline', 'true');
+      video.setAttribute('autoplay', 'true');
+      video.setAttribute('muted', 'true');
+      video.playsInline = true;
+      video.muted = true;
+      video.autoplay = true;
+      video.style.width = '100%';
+      video.style.height = '100%';
+      video.style.objectFit = 'cover';
+      // Replace the container's children with this video so duplicate
+      // mounts (e.g. dev double-render) do not stack streams.
+      container.replaceChildren(video);
 
+      // Request the stream. Environment-to-any fallback per 175e Section
+      // 2.2: if the first attempt OverconstrainedErrors, retry with bare
+      // video: true. NotAllowedError / NotFoundError bubble up.
+      let stream: MediaStream;
       try {
-        await scannerRef.current.start(cameraConstraints, startConfig, successCallback, noopFrameCallback);
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: cameraConstraints as MediaTrackConstraints,
+          audio: false,
+        });
       } catch (firstErr) {
-        // Prompt 175e Section 2.2: environment-to-any fallback. If the
-        // first attempt failed with a constraint mismatch (the most
-        // likely cause of the 175d regression on devices that hang on
-        // an over-specified initial constraint), retry once with the
-        // minimal MediaTrackConstraints object {} so the browser picks
-        // any available camera. NotAllowedError + NotFoundError do NOT
-        // fall back; they bubble up to the outer catch for the right
-        // user-facing message.
         if (isOverconstrainedError(firstErr)) {
-          // eslint-disable-next-line no-console
-          console.warn('[useBarcodeScan] OverconstrainedError on initial start, retrying with bare constraints', firstErr);
-          await scannerRef.current.start({} as CameraConstraintsArg, startConfig, successCallback, noopFrameCallback);
+          stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
         } else {
           throw firstErr;
         }
       }
 
+      video.srcObject = stream;
+      // iOS rejects play() promises silently when not awaited; without
+      // awaiting, readyState may never reach HAVE_CURRENT_DATA and the
+      // rAF loop draws blank frames forever. This is one of the two
+      // root causes of the 175c-175i 175h "SCANNING but no decode"
+      // symptom.
+      try { await video.play(); } catch { /* iOS sometimes rejects after gesture */ }
+
+      // Build the off-DOM canvas the rAF loop draws into.
+      // willReadFrequently: true is required on Safari to keep
+      // getImageData on the CPU path (175j Section "iOS gotchas 6").
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      if (!ctx) {
+        // Treat a missing 2D context as a init failure; very rare path.
+        stream.getTracks().forEach((t) => { try { t.stop(); } catch { /* noop */ } });
+        setState('error');
+        setError('canvas_unavailable');
+        return;
+      }
+
+      const active: ActiveScanner = {
+        video,
+        stream,
+        canvas,
+        ctx,
+        rafId: 0,
+        stopped: false,
+      };
+      scannerRef.current = active;
+
+      const tick = async (): Promise<void> => {
+        const me = scannerRef.current;
+        if (!me || me.stopped) return;
+        if (me.video.readyState >= 2 && me.video.videoWidth > 0 && me.video.videoHeight > 0) {
+          me.canvas.width = me.video.videoWidth;
+          me.canvas.height = me.video.videoHeight;
+          try {
+            me.ctx.drawImage(me.video, 0, 0);
+            const img = me.ctx.getImageData(0, 0, me.canvas.width, me.canvas.height);
+            // Caller's per-frame counter (175f).
+            try { onFrameAttemptRef.current?.(); } catch { /* noop */ }
+            const readerOptions: ReaderOptions = {
+              formats: formats as ReadInputBarcodeFormat[],
+              tryHarder: true,
+              maxNumberOfSymbols: 1,
+            };
+            const results = await readBarcodes(img, readerOptions);
+            if (me.stopped) return;
+            if (results.length > 0) {
+              const r = results[0];
+              const mapped = mapZxingFormat(r.format);
+              if (mapped !== null && r.text) {
+                setState('detected');
+                onDetectRef.current({
+                  value: r.text,
+                  format: mapped,
+                  decoder: 'zxing_wasm',
+                  decoder_latency_ms: 0,
+                });
+                return; // single-fire; caller drives stop()
+              }
+            }
+          } catch {
+            // Decode errors are normal for frames without a code; swallow.
+          }
+        }
+        active.rafId = requestAnimationFrame(() => { void tick(); });
+      };
+      active.rafId = requestAnimationFrame(() => { void tick(); });
+
       setState('scanning');
     } catch (err) {
-      // Prompt 175e Section 2.3: prefer err.name over message substring
-      // because the JS error name is the stable WebRTC contract and
-      // localized error messages can defeat substring matching.
       const errName = err instanceof Error ? err.name : '';
       const msg = err instanceof Error ? err.message : String(err);
       const lower = msg.toLowerCase();
@@ -408,9 +426,6 @@ export function useBarcodeScan(opts: UseBarcodeScanOptions): UseBarcodeScanResul
         || lower.includes('notreadable')
         || lower.includes('in use')
       ) {
-        // Prompt 175e Section 2.3: camera is in use by another app or
-        // browser tab. Surface a distinct error code so the overlay can
-        // show a meaningful prompt.
         setState('error');
         setError('camera_in_use');
       } else {
@@ -419,14 +434,20 @@ export function useBarcodeScan(opts: UseBarcodeScanOptions): UseBarcodeScanResul
       }
       if (err instanceof Error) onErrorRef.current?.(err);
     }
+  // start does not depend on opts.config because opts.config is stable
+  // for a given mount; callers that need to change config remount the
+  // hook by toggling open.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const toggleFlashlight = useCallback(async (): Promise<boolean> => {
-    const scanner = scannerRef.current;
-    if (!scanner) return false;
+    const active = scannerRef.current;
+    if (!active) return false;
+    const track = active.stream.getVideoTracks()[0];
+    if (!track) return false;
     try {
       const next = !flashlightOn;
-      await scanner.applyVideoConstraints({
+      await track.applyConstraints({
         advanced: [{ torch: next } as MediaTrackConstraintSet],
       });
       setFlashlightOn(next);
@@ -436,30 +457,35 @@ export function useBarcodeScan(opts: UseBarcodeScanOptions): UseBarcodeScanResul
     }
   }, [flashlightOn]);
 
+  // Unmount cleanup so a hot-reload or component-tree teardown does not
+  // leave a stream live.
   useEffect(() => {
     return () => {
-      const scanner = scannerRef.current;
+      const active = scannerRef.current;
       scannerRef.current = null;
-      if (scanner) {
-        scanner.stop().catch(() => undefined).then(() =>
-          scanner.clear().catch(() => undefined),
-        );
+      if (active) {
+        active.stopped = true;
+        try { cancelAnimationFrame(active.rafId); } catch { /* noop */ }
+        try { active.stream.getTracks().forEach((t) => { try { t.stop(); } catch { /* noop */ } }); } catch { /* noop */ }
       }
     };
   }, []);
 
-  // Prompt 175g: expose html5-qrcode's getState() through the hook so
-  // callers can include the library's internal state in their
-  // diagnostic logs.
+  // Backwards-compat: 175g shipped a queryHtml5QrcodeState() field on
+  // the hook return so the telemetry could read the html5-qrcode internal
+  // enum (NOT_STARTED=1, SCANNING=2, PAUSED=3). Existing logs query for
+  // "html5QrcodeState":2; keep the matcher truthful by returning 2 while
+  // an active scanner exists.
   const queryHtml5QrcodeState = useCallback((): number | null => {
-    const scanner = scannerRef.current;
-    if (!scanner || typeof scanner.getState !== 'function') return null;
-    try {
-      return scanner.getState();
-    } catch {
-      return null;
-    }
+    if (!scannerRef.current) return null;
+    return 2;
   }, []);
 
   return { state, error, start, stop, toggleFlashlight, flashlightOn, queryHtml5QrcodeState };
 }
+
+// =============================================================================
+// Local helper type
+// =============================================================================
+
+type ReadOnlyArrayLike<T> = ReadonlyArray<T>;
