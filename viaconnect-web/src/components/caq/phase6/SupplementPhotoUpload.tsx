@@ -138,26 +138,33 @@ export default function SupplementPhotoUpload({
 
     let processedFile = file;
     try {
-      if (isHeic || file.size > 3 * 1024 * 1024) {
-        try {
-          const bitmap = await createImageBitmap(file);
-          const canvas = document.createElement('canvas');
-          const scale = Math.min(1800 / Math.max(bitmap.width, bitmap.height), 1);
-          canvas.width = bitmap.width * scale;
-          canvas.height = bitmap.height * scale;
-          canvas.getContext('2d')!.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-          const blob = await new Promise<Blob>((r) =>
-            canvas.toBlob((b) => r(b!), 'image/jpeg', 0.75),
-          );
-          processedFile = new File([blob], 'photo.jpg', { type: 'image/jpeg' });
-        } catch (convertErr) {
-          if (isHeic) {
-            setState('error');
-            setErrorMsg('Could not process this HEIC photo. Try retaking in JPG mode via iPhone Settings, or upload a different photo.');
-            return null;
-          }
-          throw convertErr;
+      // Prompt 175h hotfix (2026-06-05): always recompress in the
+      // two-photo flow. iPhone camera JPEGs commonly land at 2 to 3 MB
+      // each; two of those base64 encoded blow past Vercel's 4.5 MB
+      // body limit, which surfaced as the 413 the user just hit. Target
+      // 1400 px max + quality 0.7 yields ~250 to 500 KB per shot so
+      // even two photos stay well under the cap.
+      try {
+        const bitmap = await createImageBitmap(file);
+        const canvas = document.createElement('canvas');
+        const scale = Math.min(1400 / Math.max(bitmap.width, bitmap.height), 1);
+        canvas.width = Math.round(bitmap.width * scale);
+        canvas.height = Math.round(bitmap.height * scale);
+        canvas.getContext('2d')!.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+        const blob = await new Promise<Blob>((r) =>
+          canvas.toBlob((b) => r(b!), 'image/jpeg', 0.7),
+        );
+        processedFile = new File([blob], 'photo.jpg', { type: 'image/jpeg' });
+      } catch (convertErr) {
+        if (isHeic) {
+          setState('error');
+          setErrorMsg('Could not process this HEIC photo. Try retaking in JPG mode via iPhone Settings, or upload a different photo.');
+          return null;
         }
+        // Non-HEIC + createImageBitmap unavailable. Fall back to the
+        // raw file; the upstream byte-floor will catch anything truly
+        // unreadable.
+        processedFile = file;
       }
 
       const base64 = await new Promise<string>((resolve, reject) => {
@@ -165,6 +172,14 @@ export default function SupplementPhotoUpload({
         reader.onloadend = () => resolve((reader.result as string).split(',')[1]);
         reader.onerror = () => reject(new Error('Could not read file'));
         reader.readAsDataURL(processedFile);
+      });
+
+      // eslint-disable-next-line no-console
+      console.info('[caq.photo-upload] prepared', {
+        originalBytes: file.size,
+        compressedBytes: processedFile.size,
+        base64Length: base64.length,
+        approxPayloadBytes: Math.floor((base64.length / 4) * 3),
       });
 
       const previewUrl = URL.createObjectURL(processedFile);
@@ -245,7 +260,7 @@ export default function SupplementPhotoUpload({
       if (data === null) {
         setErrorMsg(
           response.status === 413
-            ? 'The photos were too large to upload. Try retaking with the camera instead of the photo library.'
+            ? 'These photos are too large for our server. Try removing one of the two and retrying with just the front label.'
             : 'We could not read this label automatically.',
         );
         setState('degraded');
