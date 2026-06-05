@@ -30,6 +30,12 @@ export interface CanonicalIngestInput {
   form?: string | null;
   structuredIngredients?: ReadonlyArray<Record<string, unknown>>;
   source: CanonicalSource;
+  // Prompt 175g (2026-06-05): per-field provenance map. Keys are
+  // canonical column names (product_name, brand, primary_strength,
+  // form, structured_ingredients). Values are source slugs. Existing
+  // row's field_sources is merged with this map on upsert so the
+  // newest source wins per field. Pass null / empty to skip.
+  fieldSources?: Record<string, string>;
 }
 
 export interface CanonicalIngestResult {
@@ -95,6 +101,32 @@ export async function ingestCanonicalProduct(
   if (!identityKey) {
     return { ok: false, identityKey: null, upserted: false, reason: 'no_identity' };
   }
+  // Prompt 175g (2026-06-05): merge per-field provenance with whatever
+  // was already on the existing row. We read first so the new
+  // fieldSources only overrides keys the caller is filling THIS
+  // upsert; columns we are not touching keep their prior provenance.
+  let mergedSources: Record<string, string> = {};
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: existing } = await (admin as any)
+      .from('supplement_reference_canonical')
+      .select('field_sources')
+      .eq('identity_key', identityKey)
+      .maybeSingle();
+    if (existing?.field_sources && typeof existing.field_sources === 'object') {
+      mergedSources = { ...(existing.field_sources as Record<string, string>) };
+    }
+  } catch {
+    // Best effort; new row will write a fresh map.
+  }
+  if (input.fieldSources && typeof input.fieldSources === 'object') {
+    for (const [key, value] of Object.entries(input.fieldSources)) {
+      if (typeof value === 'string' && value.length > 0) {
+        mergedSources[key] = value;
+      }
+    }
+  }
+
   const row = {
     identity_key: identityKey,
     brand: input.brand ?? null,
@@ -106,6 +138,7 @@ export async function ingestCanonicalProduct(
     dsld_id: input.dsldId ?? null,
     structured_ingredients: input.structuredIngredients ?? [],
     source_of_record: input.source,
+    field_sources: mergedSources,
     updated_at: new Date().toISOString(),
   };
   try {

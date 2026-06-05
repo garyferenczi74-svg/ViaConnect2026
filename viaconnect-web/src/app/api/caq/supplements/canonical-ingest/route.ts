@@ -34,6 +34,9 @@ interface IngestPayload {
   form?: unknown;
   structuredIngredients?: unknown;
   source?: unknown;
+  // Prompt 175g (2026-06-05): per-field provenance from the client's
+  // resolve result merged with the user's manual edits.
+  fieldSources?: unknown;
 }
 
 const VALID_SOURCES: ReadonlySet<CanonicalSource> = new Set([
@@ -85,6 +88,19 @@ export async function POST(request: Request) {
     .filter((it): it is Record<string, unknown> => it !== null && typeof it === 'object' && !Array.isArray(it))
     .slice(0, 64);
 
+  // Defensive coercion of the per-field provenance map: keys + values
+  // must be strings. Drops anything else silently.
+  let fieldSources: Record<string, string> | undefined;
+  if (body.fieldSources && typeof body.fieldSources === 'object' && !Array.isArray(body.fieldSources)) {
+    const out: Record<string, string> = {};
+    for (const [k, v] of Object.entries(body.fieldSources as Record<string, unknown>)) {
+      if (typeof k === 'string' && typeof v === 'string' && k.length > 0 && v.length > 0) {
+        out[k.slice(0, 32)] = v.slice(0, 32);
+      }
+    }
+    if (Object.keys(out).length > 0) fieldSources = out;
+  }
+
   const admin = createAdminClient();
   const result = await ingestCanonicalProduct(
     {
@@ -97,6 +113,7 @@ export async function POST(request: Request) {
       form: form && form.length > 0 ? form : null,
       structuredIngredients,
       source,
+      fieldSources,
     },
     admin,
   );

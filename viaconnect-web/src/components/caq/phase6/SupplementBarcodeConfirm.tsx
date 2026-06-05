@@ -22,16 +22,18 @@
 
 'use client';
 
-import { useMemo, useState } from 'react';
-import { Barcode, ChevronDown, CircleAlert } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { Barcode, ChevronDown, CircleAlert, Loader2 } from 'lucide-react';
 
 const ORANGE = '#B75E18';
+const TEAL = '#2DA5A0';
 
 export interface BarcodeConfirmRecord {
   name: string;
   brand: string;
   source: 'barcode';
   deliveryMethod: string;
+  form: string;
   dosage: string;
   unit: string;
   frequency: string;
@@ -49,6 +51,22 @@ export interface SupplementBarcodeConfirmProps {
   onConfirm: (record: BarcodeConfirmRecord) => void;
   onCancel: () => void;
 }
+
+// Prompt 175g (2026-06-05): physical form of the product, distinct
+// from the existing Delivery Method which is a treatment category
+// (Methylated Vitamins, Liposomal, etc.). Auto-filled from the
+// resolver when a source returned it.
+const FORM_OPTIONS: ReadonlyArray<{ v: string; l: string }> = [
+  { v: 'capsule', l: 'Capsule' },
+  { v: 'tablet', l: 'Tablet' },
+  { v: 'softgel', l: 'Softgel' },
+  { v: 'powder', l: 'Powder' },
+  { v: 'liquid', l: 'Liquid' },
+  { v: 'tincture', l: 'Tincture' },
+  { v: 'gummy', l: 'Gummy' },
+  { v: 'lozenge', l: 'Lozenge' },
+  { v: 'spray', l: 'Spray' },
+];
 
 const DELIVERY_METHODS: ReadonlyArray<{ v: string; l: string }> = [
   { v: 'standard_actives', l: 'Standard Actives' },
@@ -82,10 +100,74 @@ export function SupplementBarcodeConfirm({
   const [name, setName] = useState<string>('');
   const [brand, setBrand] = useState<string>('');
   const [deliveryMethod, setDeliveryMethod] = useState<string>('');
+  const [form, setForm] = useState<string>('');
   const [dosage, setDosage] = useState<string>('');
   const [unit, setUnit] = useState<string>('mg');
   const [frequency, setFrequency] = useState<string>('once_daily');
   const [reason, setReason] = useState<string>('');
+
+  // Prompt 175g (2026-06-05): per-field provenance map so the user can
+  // see which source filled each pre-filled field. Empty when the
+  // resolver returned identity_only or while the resolve fetch is in
+  // flight.
+  const [fieldSources, setFieldSources] = useState<Record<string, string>>({});
+  const [resolving, setResolving] = useState<boolean>(true);
+  const [resolveStatus, setResolveStatus] = useState<'ok' | 'identity_only' | 'not_found' | null>(null);
+  const [resolveSource, setResolveSource] = useState<string | null>(null);
+
+  // Prompt 175g (2026-06-05): fetch /api/caq/supplements/resolve on
+  // mount so the panel pre-fills name + brand + form + dosage before
+  // the user types anything. The resolver cascades: canonical first,
+  // then DSLD, then OpenFoodFacts, then peptides. Identity-only
+  // surfaces the OCR fallback prominently per Section 2.4.
+  useEffect(() => {
+    let cancelled = false;
+    setResolving(true);
+    setResolveStatus(null);
+    setResolveSource(null);
+    fetch('/api/caq/supplements/resolve', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ barcode: barcodeValue }),
+    })
+      .then((r) => r.json())
+      .then((json: { status: string; source?: string; draft?: Record<string, unknown> }) => {
+        if (cancelled) return;
+        setResolveStatus(json.status === 'ok' || json.status === 'identity_only' || json.status === 'not_found' ? json.status : 'not_found');
+        setResolveSource(json.source ?? null);
+        if (json.status === 'ok' && json.draft) {
+          const d = json.draft;
+          const dProductName = typeof d.product_name === 'string' ? d.product_name : '';
+          const dBrand = typeof d.brand === 'string' ? d.brand : '';
+          const dForm = typeof d.form === 'string' ? d.form : '';
+          const dStrength = typeof d.primary_strength === 'string' ? d.primary_strength : '';
+          const dSources = (d.field_sources && typeof d.field_sources === 'object')
+            ? d.field_sources as Record<string, string>
+            : {};
+          if (dProductName) setName(dProductName);
+          if (dBrand) setBrand(dBrand);
+          if (dForm) setForm(dForm);
+          if (dStrength) {
+            // primary_strength is "<amount> <unit>"; split for the
+            // existing dosage + unit fields.
+            const match = dStrength.match(/^([\d.]+)\s*([A-Za-z]+)/);
+            if (match) {
+              setDosage(match[1]);
+              setUnit(match[2]);
+            }
+          }
+          setFieldSources(dSources);
+        }
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setResolveStatus('not_found');
+      })
+      .finally(() => {
+        if (!cancelled) setResolving(false);
+      });
+    return () => { cancelled = true; };
+  }, [barcodeValue]);
 
   const isComplete = useMemo(
     () => name.trim().length > 0 && deliveryMethod !== '' && dosage !== '' && Number(dosage) > 0 && frequency !== '',
@@ -94,23 +176,51 @@ export function SupplementBarcodeConfirm({
 
   return (
     <div className="rounded-xl border border-white/10 bg-white/[0.03] p-5 space-y-5 mb-3">
-      {/* Barcode chip, low-confidence Orange flag */}
+      {/* Barcode chip with resolve status (175g). While resolving, show
+          a small spinner. On success, show source badge in Teal. On
+          identity_only or not_found, surface the orange "confirm by
+          hand" badge as before. */}
       <div>
         <div className="flex items-center justify-between mb-3">
           <p className="text-xs text-white/30">Scanned barcode</p>
-          <span
-            className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full"
-            style={{ backgroundColor: 'rgba(183, 94, 24, 0.12)', color: ORANGE }}
-          >
-            <CircleAlert size={11} strokeWidth={1.5} aria-hidden="true" />
-            Identity only, please confirm
-          </span>
+          {resolving ? (
+            <span
+              className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full"
+              style={{ backgroundColor: 'rgba(45, 165, 160, 0.12)', color: TEAL }}
+            >
+              <Loader2 size={11} strokeWidth={1.5} aria-hidden="true" className="animate-spin" />
+              Looking up product...
+            </span>
+          ) : resolveStatus === 'ok' ? (
+            <span
+              className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full"
+              style={{ backgroundColor: 'rgba(45, 165, 160, 0.12)', color: TEAL }}
+            >
+              Found via {resolveSource ?? 'catalog'}
+            </span>
+          ) : (
+            <span
+              className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full"
+              style={{ backgroundColor: 'rgba(183, 94, 24, 0.12)', color: ORANGE }}
+            >
+              <CircleAlert size={11} strokeWidth={1.5} aria-hidden="true" />
+              Identity only, please confirm
+            </span>
+          )}
         </div>
         <div
           className="inline-flex items-center gap-2 px-3 py-2 rounded-lg"
-          style={{ backgroundColor: 'rgba(183, 94, 24, 0.08)', border: `1px solid rgba(183, 94, 24, 0.3)` }}
+          style={{
+            backgroundColor: resolveStatus === 'ok' ? 'rgba(45, 165, 160, 0.08)' : 'rgba(183, 94, 24, 0.08)',
+            border: `1px solid ${resolveStatus === 'ok' ? 'rgba(45, 165, 160, 0.3)' : 'rgba(183, 94, 24, 0.3)'}`,
+          }}
         >
-          <Barcode size={18} strokeWidth={1.5} aria-hidden="true" style={{ color: ORANGE }} />
+          <Barcode
+            size={18}
+            strokeWidth={1.5}
+            aria-hidden="true"
+            style={{ color: resolveStatus === 'ok' ? TEAL : ORANGE }}
+          />
           <span className="font-mono text-sm text-white">{barcodeValue}</span>
           <span className="text-[10px] text-white/40 uppercase tracking-wider">{barcodeFormat.replace('_', '-')}</span>
         </div>
@@ -193,6 +303,32 @@ export function SupplementBarcodeConfirm({
         </div>
       </div>
 
+      {/* Prompt 175g (2026-06-05): physical Form select, distinct from
+          Delivery Method (treatment category). Auto-fills from the
+          resolver. Optional; users can leave it blank if the bottle
+          does not match the listed forms. */}
+      <div>
+        <label className="text-xs text-white/40 mb-1.5 block">
+          Form <span className="text-white/15">(optional)</span>
+          {fieldSources.form ? (
+            <span className="ml-2 text-[10px]" style={{ color: TEAL }}>via {fieldSources.form}</span>
+          ) : null}
+        </label>
+        <div className="relative">
+          <select
+            value={form}
+            onChange={(e) => setForm(e.target.value)}
+            className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white appearance-none cursor-pointer focus:border-teal-400/50 focus:ring-1 focus:ring-teal-400/30 focus:outline-none transition-all [&>option]:bg-[#1E2D4A] [&>option]:text-white text-sm"
+          >
+            <option value="">Select form...</option>
+            {FORM_OPTIONS.map((f) => (
+              <option key={f.v} value={f.v}>{f.l}</option>
+            ))}
+          </select>
+          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30 pointer-events-none" strokeWidth={1.5} />
+        </div>
+      </div>
+
       {/* Frequency */}
       <div>
         <label className="text-xs text-white/40 mb-2 block">
@@ -243,6 +379,10 @@ export function SupplementBarcodeConfirm({
             // server via ON CONFLICT (identity_key).
             try {
               const isNumericRetailUpc = /^\d{8,14}$/.test(barcodeValue);
+              // Prompt 175g (2026-06-05): pass the physical form (175g
+              // new field) AND the per-field provenance map captured
+              // from /resolve so upstream readers can see which source
+              // contributed each value.
               fetch('/api/caq/supplements/canonical-ingest', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -251,14 +391,23 @@ export function SupplementBarcodeConfirm({
                   brand: brand.trim() || null,
                   productName: name.trim(),
                   primaryStrength: dosage && unit ? `${dosage} ${unit}` : null,
-                  form: deliveryMethod || null,
+                  form: form || null,
                   structuredIngredients: [{
                     name: name.trim(),
                     amount: Number(dosage),
                     unit,
+                    form: form || null,
                     source: 'user_scan',
                   }],
                   source: 'user_scan',
+                  fieldSources: {
+                    ...fieldSources,
+                    // Any fields the user typed override the resolver
+                    // provenance with 'manual'.
+                    product_name: name !== '' && !fieldSources.product_name ? 'manual' : (fieldSources.product_name ?? 'manual'),
+                    brand: brand !== '' && !fieldSources.brand ? 'manual' : (fieldSources.brand ?? 'manual'),
+                    form: form !== '' && !fieldSources.form ? 'manual' : (fieldSources.form ?? 'manual'),
+                  },
                 }),
                 keepalive: true,
               }).catch(() => undefined);
@@ -270,6 +419,7 @@ export function SupplementBarcodeConfirm({
               brand: brand.trim(),
               source: 'barcode',
               deliveryMethod,
+              form,
               dosage,
               unit,
               frequency,
