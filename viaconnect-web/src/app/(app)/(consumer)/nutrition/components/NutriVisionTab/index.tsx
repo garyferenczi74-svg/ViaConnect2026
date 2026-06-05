@@ -12,7 +12,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
-import { Camera, ChevronLeft, HelpCircle, ImageUp, Mic, ScanBarcode, Settings, X } from 'lucide-react';
+import { Camera, ChevronLeft, HelpCircle, ImageUp, Mic, Settings, X } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import type { CaptureResult, CaptureSource } from '@/lib/capacitor/camera-capture';
@@ -33,18 +33,11 @@ import { useCameraCapture } from './hooks/useCameraCapture';
 import { useNutriVisionAnalysis } from './hooks/useNutriVisionAnalysis';
 import { useMealItemEdits } from './hooks/useMealItemEdits';
 import { detectMealTypeForNow } from './types';
-// Prompt 170l Phase 1c-2: barcode entry path surfaces.
-import { BarcodeScannerOverlay } from '@/components/barcode/BarcodeScannerOverlay';
-import { ProductConfirmation } from '@/components/barcode/ProductConfirmation';
-import { NotFoundFallback } from '@/components/barcode/NotFoundFallback';
-import { ManualBarcodeEntry } from '@/components/barcode/ManualBarcodeEntry';
-import { MacroEditPanel } from '@/components/barcode/MacroEditPanel';
-import {
-  convertOFFProductToMealItemDraft,
-  buildBlankSlateDraft,
-} from '@/components/barcode/lib/off-product-to-draft';
-import type { LookupResult } from '@/components/barcode/hooks/useOffLookup';
-import type { OFFProduct } from '@/lib/nutrition/barcode/types';
+// Prompt 175m (2026-06-05): the 170l Phase 1c-2 barcode entry path
+// (BarcodeScannerOverlay + ProductConfirmation + NotFoundFallback +
+// ManualBarcodeEntry + MacroEditPanel + OFF lookup machinery) was
+// removed from the Nutrition log surface per Gary. The /api/nutrition/
+// barcode/* routes remain in the codebase for any non-UI caller.
 // Prompt 170n Phase C: Voice-Native entry path components.
 import { VoiceNativeCaptureOverlay } from './VoiceNative/VoiceNativeCaptureOverlay';
 import { voiceNativeToMealDraft } from './VoiceNative/voice-native-to-meal-draft';
@@ -184,24 +177,13 @@ export default function NutriVisionTab() {
   // without forcing the user back to the capture screen.
   const [lastCaptureForRetry, setLastCaptureForRetry] = useState<CaptureResult | null>(null);
 
-  // Prompt 170l Phase 1c-2: barcode entry path state.
-  const [barcodeProduct, setBarcodeProduct] = useState<OFFProduct | null>(null);
-  const [barcodeFormat, setBarcodeFormat] = useState<string | null>(null);
-  const [barcodeNotFoundValue, setBarcodeNotFoundValue] = useState<string | null>(null);
-  const [barcodeNotFoundIsNetwork, setBarcodeNotFoundIsNetwork] = useState<boolean>(false);
-  const [manualEntryOpen, setManualEntryOpen] = useState<boolean>(false);
-  const [macroEditOpen, setMacroEditOpen] = useState<boolean>(false);
-  const [macroEditMode, setMacroEditMode] = useState<'prefilled' | 'blank_slate'>('prefilled');
-  const [blankSlateBarcode, setBlankSlateBarcode] = useState<string | null>(null);
+  // Prompt 175m (2026-06-05): barcode entry path state removed.
   // Prompt 171a: web-only camera preview overlay state. Mobile native opens
   // the Capacitor camera plugin's system UI which already has its own preview;
   // this overlay is web-only.
   const [showWebCameraPreview, setShowWebCameraPreview] = useState(false);
-  // Prompt 170l Phase 1c-3: multi-product flow accumulator (§11.7).
-  // When user taps "Scan another product" on §11.4, the current item is
-  // pushed here and the next scan returns to product confirmation; the final
-  // "Save to meal" tap builds the draft from [...pendingBarcodeItems, current].
-  const [pendingBarcodeItems, setPendingBarcodeItems] = useState<import('./types').MealItemDraft[]>([]);
+  // Prompt 175m (2026-06-05): pendingBarcodeItems removed with the rest
+  // of the barcode entry path.
 
   // Prompt 170m Phase C: Quick Log modal state. The modal is overlay-style
   // and manages its own internal typing/loading/clarifying states. On parse
@@ -423,247 +405,7 @@ export default function NutriVisionTab() {
     setPhase('idle');
   }, [analysis, capture]);
 
-  // Prompt 170l Phase 1c-2: barcode flow handlers.
-  const handleOpenScanner = useCallback(() => {
-    setBarcodeProduct(null);
-    setBarcodeFormat(null);
-    setBarcodeNotFoundValue(null);
-    setBarcodeNotFoundIsNetwork(false);
-    setPhase('scanning');
-  }, []);
-
-  const handleLookupResult = useCallback(
-    (barcode: string, lookup: LookupResult) => {
-      if (lookup.outcome === 'cache_hit' || lookup.outcome === 'off_hit' || lookup.outcome === 'sessionstorage_hit') {
-        if (lookup.product) {
-          setBarcodeProduct(lookup.product);
-          setBarcodeFormat(null);
-          setPhase('product_confirm');
-        }
-        return;
-      }
-      if (lookup.outcome === 'off_miss') {
-        setBarcodeNotFoundValue(barcode);
-        setBarcodeNotFoundIsNetwork(false);
-        setPhase('product_not_found');
-        return;
-      }
-      if (lookup.outcome === 'network_error') {
-        setBarcodeNotFoundValue(barcode);
-        setBarcodeNotFoundIsNetwork(true);
-        setPhase('product_not_found');
-        return;
-      }
-      if (lookup.outcome === 'rate_limit') {
-        toast.error("You've reached today's scan limit. Try again tomorrow.");
-        setPhase('idle');
-        return;
-      }
-      if (lookup.outcome === 'feature_disabled') {
-        toast.error('Barcode scanning is currently unavailable.');
-        setPhase('idle');
-        return;
-      }
-      toast.error('Something went wrong with that scan. Try again.');
-      setPhase('idle');
-    },
-    [],
-  );
-
-  const handleScannerLookupResult = useCallback(
-    (barcode: string, _decoded: unknown, lookup: LookupResult) => {
-      handleLookupResult(barcode, lookup);
-    },
-    [handleLookupResult],
-  );
-
-  const handleProductSave = useCallback(
-    (portionMultiplier: number) => {
-      if (!barcodeProduct) return;
-      const itemDraft = convertOFFProductToMealItemDraft(barcodeProduct, {
-        portionMultiplier,
-      });
-      if (itemDraft === null) {
-        toast.error("That product didn't have enough nutrition data to save.");
-        return;
-      }
-      // Multi-product flow: combine with any items accumulated from prior
-      // "Scan another product" steps. Single-product flow has pending=[].
-      const allItems = [...pendingBarcodeItems, itemDraft];
-      const totals = allItems.reduce(
-        (acc, it) => ({
-          calories_kcal: acc.calories_kcal + it.calories_kcal,
-          protein_g: acc.protein_g + it.protein_g,
-          carbs_g: acc.carbs_g + it.carbs_g,
-          fat_g: acc.fat_g + it.fat_g,
-          fiber_g: acc.fiber_g + (it.fiber_g ?? 0),
-          sugar_g: acc.sugar_g + (it.sugar_g ?? 0),
-          sodium_mg: acc.sodium_mg + (it.sodium_mg ?? 0),
-          cholesterol_mg: acc.cholesterol_mg + (it.cholesterol_mg ?? 0),
-        }),
-        { calories_kcal: 0, protein_g: 0, carbs_g: 0, fat_g: 0, fiber_g: 0, sugar_g: 0, sodium_mg: 0, cholesterol_mg: 0 },
-      );
-      const newDraft = {
-        id: `barcode-meal-${Date.now().toString(36)}`,
-        items: allItems,
-        totals,
-        meal_confidence: 0.95,
-        warnings: [],
-        // Barcode meals have an exact serving size from OFF; plate selector
-        // (170a Supplement 17) is not applicable.
-        credit_card_detected: true,
-      };
-      setDraft(newDraft);
-      setBarcodeProduct(null);
-      setPendingBarcodeItems([]);
-      setPhase('reviewing');
-    },
-    [barcodeProduct, pendingBarcodeItems],
-  );
-
-  // Prompt 170l Phase 1c-3 §11.7: append current item to pending list and
-  // return to scanner so the user can scan another product into the same
-  // meal-in-progress.
-  const handleScanAnother = useCallback(
-    (portionMultiplier: number) => {
-      if (!barcodeProduct) return;
-      const itemDraft = convertOFFProductToMealItemDraft(barcodeProduct, {
-        portionMultiplier,
-      });
-      if (itemDraft === null) {
-        toast.error("That product didn't have enough nutrition data to add.");
-        return;
-      }
-      setPendingBarcodeItems((prev) => [...prev, itemDraft]);
-      setBarcodeProduct(null);
-      setBarcodeFormat(null);
-      setPhase('scanning');
-    },
-    [barcodeProduct],
-  );
-
-  const handleProductCancel = useCallback(() => {
-    setBarcodeProduct(null);
-    setBarcodeFormat(null);
-    // Cancel = abandon entire flow including any accumulated multi-product items.
-    setPendingBarcodeItems([]);
-    setPhase('idle');
-  }, []);
-
-  const handleProductBack = useCallback(() => {
-    setBarcodeProduct(null);
-    setPhase('scanning');
-  }, []);
-
-  const handleEditMacros = useCallback(() => {
-    setMacroEditMode('prefilled');
-    setMacroEditOpen(true);
-  }, []);
-
-  const handleFallbackPhotograph = useCallback(() => {
-    setBarcodeNotFoundValue(null);
-    setBarcodeNotFoundIsNetwork(false);
-    setPhase('idle');
-    void onCapture('camera');
-  }, [onCapture]);
-
-  const handleFallbackEnterMacros = useCallback(() => {
-    if (!barcodeNotFoundValue) return;
-    setBlankSlateBarcode(barcodeNotFoundValue);
-    setMacroEditMode('blank_slate');
-    setMacroEditOpen(true);
-  }, [barcodeNotFoundValue]);
-
-  const handleFallbackContribute = useCallback(() => {
-    if (!barcodeNotFoundValue) return;
-    // Open OFF deep-link to the contribution page for this barcode.
-    const url = `https://world.openfoodfacts.org/cgi/product.pl?type=edit&code=${encodeURIComponent(barcodeNotFoundValue)}`;
-    window.open(url, '_blank', 'noopener,noreferrer');
-    // Fire-and-forget Helix barcode_off_contribution_clicked event (3pt).
-    void fetch('/api/nutrition/barcode/contribution', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ barcode: barcodeNotFoundValue }),
-    }).catch(() => undefined);
-    toast.success("Thanks for contributing. We'll find this product next time.");
-    setBarcodeNotFoundValue(null);
-    setPhase('idle');
-  }, [barcodeNotFoundValue]);
-
-  const handleFallbackRetry = useCallback(() => {
-    setBarcodeNotFoundValue(null);
-    setBarcodeNotFoundIsNetwork(false);
-    setPhase('scanning');
-  }, []);
-
-  const handleFallbackBack = useCallback(() => {
-    setBarcodeNotFoundValue(null);
-    setBarcodeNotFoundIsNetwork(false);
-    setPhase('scanning');
-  }, []);
-
-  const handleFallbackClose = useCallback(() => {
-    setBarcodeNotFoundValue(null);
-    setBarcodeNotFoundIsNetwork(false);
-    setPhase('idle');
-  }, []);
-
-  const handleMacroEditSave = useCallback(
-    (values: { calories_kcal: number; protein_g: number; carbs_g: number; fat_g: number; fiber_g: number; sodium_mg: number; sugar_g: number }, didOverride: boolean) => {
-      if (macroEditMode === 'blank_slate' && blankSlateBarcode !== null) {
-        const itemDraft = buildBlankSlateDraft(blankSlateBarcode);
-        itemDraft.calories_kcal = Math.round(values.calories_kcal);
-        itemDraft.protein_g = Number(values.protein_g.toFixed(1));
-        itemDraft.carbs_g = Number(values.carbs_g.toFixed(1));
-        itemDraft.fat_g = Number(values.fat_g.toFixed(1));
-        itemDraft.fiber_g = Number(values.fiber_g.toFixed(1));
-        itemDraft.sugar_g = Number(values.sugar_g.toFixed(1));
-        itemDraft.sodium_mg = Math.round(values.sodium_mg);
-        const totals = {
-          calories_kcal: itemDraft.calories_kcal,
-          protein_g: itemDraft.protein_g,
-          carbs_g: itemDraft.carbs_g,
-          fat_g: itemDraft.fat_g,
-          fiber_g: itemDraft.fiber_g ?? 0,
-          sugar_g: itemDraft.sugar_g ?? 0,
-          sodium_mg: itemDraft.sodium_mg ?? 0,
-          cholesterol_mg: 0,
-        };
-        setDraft({
-          id: `barcode-blank-meal-${Date.now().toString(36)}`,
-          items: [itemDraft],
-          totals,
-          meal_confidence: 0.5,
-          warnings: ['User-entered macros'],
-          credit_card_detected: true,
-        });
-        setBlankSlateBarcode(null);
-        setBarcodeNotFoundValue(null);
-        setMacroEditOpen(false);
-        setPhase('reviewing');
-        return;
-      }
-      // prefilled mode: update the in-flight barcodeProduct then re-render confirmation
-      if (barcodeProduct !== null && didOverride) {
-        const editedProduct: OFFProduct = {
-          ...barcodeProduct,
-          nutriments: {
-            ...(barcodeProduct.nutriments ?? {}),
-            'energy-kcal_100g': values.calories_kcal,
-            proteins_100g: values.protein_g,
-            carbohydrates_100g: values.carbs_g,
-            fat_100g: values.fat_g,
-            fiber_100g: values.fiber_g,
-            sugars_100g: values.sugar_g,
-            sodium_100g: values.sodium_mg / 1000,
-          },
-        };
-        setBarcodeProduct(editedProduct);
-      }
-      setMacroEditOpen(false);
-    },
-    [macroEditMode, blankSlateBarcode, barcodeProduct],
-  );
+  // Prompt 175m (2026-06-05): barcode flow handlers removed.
 
   // Prompt 170n Phase C: Voice-Native flow handlers.
   const handleOpenVoiceNative = useCallback(() => {
@@ -697,15 +439,7 @@ export default function NutriVisionTab() {
     [],
   );
 
-  const handleOpenManualEntry = useCallback(() => setManualEntryOpen(true), []);
-  const handleCloseManualEntry = useCallback(() => setManualEntryOpen(false), []);
-  const handleManualEntryLookup = useCallback(
-    (barcode: string, lookup: LookupResult) => {
-      setManualEntryOpen(false);
-      handleLookupResult(barcode, lookup);
-    },
-    [handleLookupResult],
-  );
+  // Prompt 175m (2026-06-05): manual barcode entry handlers removed.
 
   return (
     <>
@@ -753,7 +487,6 @@ export default function NutriVisionTab() {
           {phase === 'idle' && (
             <IdleSurface
               onCapture={onCapture}
-              onOpenScanner={handleOpenScanner}
               onOpenVoiceNative={handleOpenVoiceNative}
               isCapturing={capture.isCapturing}
               error={analysisError ?? capture.error}
@@ -857,36 +590,9 @@ export default function NutriVisionTab() {
             />
           )}
 
-          {phase === 'product_confirm' && barcodeProduct && (
-            <ProductConfirmation
-              product={barcodeProduct}
-              format={barcodeFormat}
-              servingSizeG={barcodeProduct.serving_size
-                ? (parseFloat(barcodeProduct.serving_size) || 100)
-                : 100}
-              initialPortionMultiplier={1}
-              onCancel={handleProductCancel}
-              onBack={handleProductBack}
-              onClose={handleProductCancel}
-              onSave={handleProductSave}
-              onEditMacros={handleEditMacros}
-              onScanAnother={handleScanAnother}
-            />
-          )}
-
-          {phase === 'product_not_found' && barcodeNotFoundValue && (
-            <NotFoundFallback
-              barcode={barcodeNotFoundValue}
-              fallbackToPhotoEnabled={true}
-              isNetworkError={barcodeNotFoundIsNetwork}
-              onClose={handleFallbackClose}
-              onBack={handleFallbackBack}
-              onPhotograph={handleFallbackPhotograph}
-              onEnterMacros={handleFallbackEnterMacros}
-              onContribute={handleFallbackContribute}
-              onRetry={handleFallbackRetry}
-            />
-          )}
+          {/* Prompt 175m (2026-06-05): product_confirm and
+              product_not_found phases removed with the rest of the
+              barcode entry path. */}
 
           {showTips && (
             <TipsModal onClose={() => setShowTips(false)} />
@@ -909,22 +615,8 @@ export default function NutriVisionTab() {
         onConfirm={handleWebCameraConfirm}
       />
 
-      {/* Prompt 170l Phase 1c-2: barcode scanner overlay + modals at the
-          document root so they layer above the page content. */}
-      <BarcodeScannerOverlay
-        open={phase === 'scanning'}
-        onClose={handleProductCancel}
-        onLookupResult={handleScannerLookupResult}
-        onManualEntry={handleOpenManualEntry}
-        hapticEnabled={true}
-        audioChimeEnabled={false}
-      />
-
-      <ManualBarcodeEntry
-        open={manualEntryOpen}
-        onClose={handleCloseManualEntry}
-        onLookupResult={handleManualEntryLookup}
-      />
+      {/* Prompt 175m (2026-06-05): BarcodeScannerOverlay and
+          ManualBarcodeEntry mounts removed. */}
 
       {/* Prompt 170n Phase C: Voice-Native entry path capture overlay.
           Prompt 173 removed the deaf/HoH onSwitchToText fallback when the
@@ -936,28 +628,8 @@ export default function NutriVisionTab() {
         onParseComplete={handleVoiceNativeParseComplete}
       />
 
-      <MacroEditPanel
-        open={macroEditOpen}
-        mode={macroEditMode}
-        initialValues={
-          macroEditMode === 'prefilled' && barcodeProduct
-            ? {
-                calories_kcal: (barcodeProduct.nutriments?.['energy-kcal_100g'] ?? 0),
-                protein_g: (barcodeProduct.nutriments?.['proteins_100g'] ?? 0),
-                carbs_g: (barcodeProduct.nutriments?.['carbohydrates_100g'] ?? 0),
-                fat_g: (barcodeProduct.nutriments?.['fat_100g'] ?? 0),
-                fiber_g: (barcodeProduct.nutriments?.['fiber_100g'] ?? 0),
-                sugar_g: (barcodeProduct.nutriments?.['sugars_100g'] ?? 0),
-                sodium_mg: ((barcodeProduct.nutriments?.['sodium_100g'] ?? 0) * 1000),
-              }
-            : undefined
-        }
-        productNameHint={
-          macroEditMode === 'prefilled' ? (barcodeProduct?.product_name ?? undefined) : undefined
-        }
-        onClose={() => setMacroEditOpen(false)}
-        onSave={handleMacroEditSave}
-      />
+      {/* Prompt 175m (2026-06-05): MacroEditPanel mount removed with
+          the rest of the barcode entry path. */}
     </>
   );
 }
@@ -968,7 +640,6 @@ export default function NutriVisionTab() {
 
 interface IdleSurfaceProps {
   onCapture: (source: CaptureSource) => void;
-  onOpenScanner: () => void;
   onOpenVoiceNative: () => void;
   isCapturing: boolean;
   error: string | null;
@@ -977,18 +648,15 @@ interface IdleSurfaceProps {
 }
 
 // Prompt 170l Phase 1c-2 + Hannah 11.1: equal-weight peer entry path row.
-// Prompt 173 reduced from four peers to three after the 170m text-native
-// Quick Log removal. Gary 2026-06-02: promote the gallery upload from the
-// underlined link below the row to an equal-weight 4th peer between Photo
-// and Scan Barcode (the original four-peer layout returns with Upload
-// taking the slot Quick Log used to hold). Photo retains left position
-// for muscle memory; Upload sits next to Photo per Gary's "next to photo"
-// direction; Scan Barcode and Voice keep their order. iPhone SE tap-target
-// ergonomics return to the grid-cols-2 min-[360px]:grid-cols-4 split.
+// Prompt 175m (2026-06-05): Scan Barcode peer removed per Gary, leaving
+// Photo + Upload + Voice. The grid now sits at 3 columns from the
+// min-[360px] breakpoint up; iPhone SE class viewports get the
+// grid-cols-2 split (Photo + Upload on row 1, Voice on row 2 full
+// width).
 function IdleSurface(props: IdleSurfaceProps) {
   return (
     <div className="flex flex-col gap-4">
-      <div className="grid grid-cols-2 gap-2 min-[360px]:grid-cols-4 sm:gap-3">
+      <div className="grid grid-cols-2 gap-2 min-[360px]:grid-cols-3 sm:gap-3">
         <EntryPathCard
           icon={<Camera className="h-6 w-6 sm:h-9 sm:w-9" strokeWidth={1.5} />}
           title="Photo"
@@ -1004,14 +672,6 @@ function IdleSurface(props: IdleSurfaceProps) {
           onTap={() => props.onCapture('gallery')}
           disabled={props.isCapturing}
           ariaLabel="Upload. Pick a photo from your library."
-        />
-        <EntryPathCard
-          icon={<ScanBarcode className="h-6 w-6 sm:h-9 sm:w-9" strokeWidth={1.5} />}
-          title="Scan Barcode"
-          subtitle="Packaged foods."
-          onTap={props.onOpenScanner}
-          disabled={false}
-          ariaLabel="Scan Barcode. Read packaged food labels in under a second."
         />
         <EntryPathCard
           icon={<Mic className="h-6 w-6 sm:h-9 sm:w-9" strokeWidth={1.5} />}

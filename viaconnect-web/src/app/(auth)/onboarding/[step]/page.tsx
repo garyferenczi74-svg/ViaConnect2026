@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { ArrowLeft, ArrowRight, Loader2, Plus, X, Sparkles, Zap, Brain, Moon, Flame, Heart, CheckCircle2, Crown, Star, Calendar, ChevronDown, Info, Camera, FolderOpen, SkipForward, BrainCircuit, RefreshCw, Barcode as BarcodeIcon } from "lucide-react";
+import { ArrowLeft, ArrowRight, Loader2, Plus, X, Sparkles, Zap, Brain, Moon, Flame, Heart, CheckCircle2, Crown, Star, Calendar, ChevronDown, Info, Camera, FolderOpen, SkipForward, BrainCircuit, RefreshCw } from "lucide-react";
 import { ProgressMotivator } from "@/components/caq/ProgressMotivator";
 import { VoiceInput } from "@/components/caq/VoiceInput";
 import { CalmingHelixBackground } from "@/components/caq/CalmingHelixBackground";
@@ -14,8 +14,6 @@ import { shouldShowBodyTypeSelector } from "@/lib/caq/body-type-trigger";
 import { completeCAQAndTriggerEngines } from "@/lib/caq/complete-caq";
 import { fetchPreviousCAQ } from "@/lib/caq/fetchPreviousCAQ";
 import SupplementPhotoUpload from "@/components/caq/phase6/SupplementPhotoUpload";
-import { SupplementBarcodeOverlay } from "@/components/caq/phase6/SupplementBarcodeOverlay";
-import { SupplementBarcodeConfirm } from "@/components/caq/phase6/SupplementBarcodeConfirm";
 import { CONVERSATIONAL_LABELS } from "@/config/caq-conversational-labels";
 import { SMART_PLACEHOLDERS, DEFAULT_PLACEHOLDER } from "@/config/caq-smart-placeholders";
 import toast from "react-hot-toast";
@@ -565,12 +563,8 @@ export default function OnboardingStepPage() {
   const [liveDbResults, setLiveDbResults] = useState<{ result_type: string; brand_name: string; product_name: string; product_category: string; match_score: number }[]>([]);
   const [showDosageModal, setShowDosageModal] = useState<string | null>(null);
   const [dosageForm, setDosageForm] = useState({ deliveryMethod: "", dosage: "", unit: "mg", frequency: "", reason: "" });
-  // Prompt 175a Part 3 (2026-06-04): barcode tier state. pendingBarcode
-  // gates the SupplementBarcodeConfirm panel; both clear on confirm or
-  // cancel. No persistence in this batch (no schema columns yet for
-  // capture_source or upc); a later batch adds those columns.
-  const [barcodeScannerOpen, setBarcodeScannerOpen] = useState<boolean>(false);
-  const [pendingBarcode, setPendingBarcode] = useState<{ value: string; format: string } | null>(null);
+  // Prompt 175m (2026-06-05): barcode tier removed from CAQ. State + UI
+  // gone. Photo capture + search remain the supported entry points.
   // AI product lookup state
   const [aiLookupLoading, setAiLookupLoading] = useState(false);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -1941,56 +1935,13 @@ export default function OnboardingStepPage() {
 
               {/* Old inline search results removed, BrandProductSearch component handles all search UI */}
 
-              {/* Prompt 175a Part 3: Scan barcode action. */}
-              {!showDosageModal && !aiLookupResult && !aiLookupLoading && !pendingBarcode && !userSupplements.some(s => s.name === "None") && (
-                <>
-                  <div className="flex items-center gap-4 my-4">
-                    <div className="flex-grow h-px bg-white/10" />
-                    <span className="text-xs text-white/25 font-medium uppercase tracking-wider">or</span>
-                    <div className="flex-grow h-px bg-white/10" />
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setBarcodeScannerOpen(true)}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-teal-400/30 bg-teal-400/[0.04] text-sm text-teal-400 hover:bg-teal-400/[0.08] transition-colors"
-                    aria-label="Open the barcode scanner"
-                  >
-                    <BarcodeIcon size={18} strokeWidth={1.5} aria-hidden="true" />
-                    Scan barcode
-                  </button>
-                </>
-              )}
+              {/* Prompt 175m (2026-06-05): the Scan barcode action and
+                  the SupplementBarcodeConfirm panel were removed from
+                  CAQ Phase 6 per Gary. Photo capture + search remain
+                  the supported entry points on this surface. */}
 
-              {/* Prompt 175a Part 3: Barcode confirmation panel. Replaces
-                  the photo upload + manual dosage modal while a pending
-                  barcode is being confirmed. */}
-              {pendingBarcode && (
-                <SupplementBarcodeConfirm
-                  barcodeValue={pendingBarcode.value}
-                  barcodeFormat={pendingBarcode.format}
-                  onConfirm={(rec) => {
-                    commitSupplement({
-                      name: rec.name,
-                      brand: rec.brand,
-                      source: rec.source,
-                      deliveryMethod: rec.deliveryMethod,
-                      dosage: rec.dosage,
-                      unit: rec.unit,
-                      frequency: rec.frequency,
-                      reason: rec.reason,
-                      timeOfDay: rec.time_of_day,
-                      withFood: rec.with_food,
-                      timingReason: rec.timing_reason,
-                      timingSource: rec.timing_source,
-                    });
-                    setPendingBarcode(null);
-                  }}
-                  onCancel={() => setPendingBarcode(null)}
-                />
-              )}
-
-              {/* "or" Divider + NEW Photo Upload Component */}
-              {!showDosageModal && !aiLookupResult && !aiLookupLoading && !pendingBarcode && !userSupplements.some(s => s.name === "None") && (
+              {/* "or" Divider + Photo Upload Component */}
+              {!showDosageModal && !aiLookupResult && !aiLookupLoading && !userSupplements.some(s => s.name === "None") && (
                 <>
                   <div className="flex items-center gap-4 my-4">
                     <div className="flex-grow h-px bg-white/10" />
@@ -2039,23 +1990,8 @@ export default function OnboardingStepPage() {
                 </>
               )}
 
-              {/* Prompt 175a Part 3: Barcode scanner overlay. fixed inset-0
-                  so JSX placement is irrelevant; lifecycle gated by
-                  barcodeScannerOpen. On detect: capture barcode + format,
-                  close the overlay, open the confirm panel. */}
-              <SupplementBarcodeOverlay
-                open={barcodeScannerOpen}
-                onClose={() => setBarcodeScannerOpen(false)}
-                onScanned={(decoded) => {
-                  setBarcodeScannerOpen(false);
-                  setPendingBarcode({ value: decoded.value, format: decoded.format });
-                }}
-                onManualEntry={() => {
-                  setBarcodeScannerOpen(false);
-                  setShowDosageModal("External Supplement");
-                  setDosageForm({ deliveryMethod: "", dosage: "", unit: "mg", frequency: "", reason: "" });
-                }}
-              />
+              {/* Prompt 175m (2026-06-05): SupplementBarcodeOverlay mount
+                  removed from CAQ Phase 6. */}
 
               {/* AI Lookup Loading */}
               {aiLookupLoading && (

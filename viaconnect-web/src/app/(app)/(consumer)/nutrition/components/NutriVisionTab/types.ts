@@ -32,14 +32,10 @@ export type Phase =
   // #170a supplement §20.1: analysis failures land on a structured error card
   // instead of a toast. The error phase preserves the captured photo + lets
   // the user retry, log manually, or discard.
-  | 'error'
-  // Prompt 170l Phase 1c-2: barcode entry path phases.
-  //   scanning            barcode scanner overlay active (Hannah 11.2)
-  //   product_confirm     OFF product confirmation screen (Hannah 11.4)
-  //   product_not_found   OFF lookup miss fallback (Hannah 11.5)
-  | 'scanning'
-  | 'product_confirm'
-  | 'product_not_found';
+  | 'error';
+// Prompt 175m (2026-06-05): the 170l Phase 1c-2 barcode entry phases
+// (scanning, product_confirm, product_not_found) were removed per
+// Gary. The Photo, Upload, and Voice peers remain.
 
 export type ProgressStage = 'reading' | 'portions' | 'nutrients' | 'idle';
 

@@ -42,32 +42,34 @@ describe('NutriVisionTab index source', () => {
     expect(page).not.toContain('NutriVision is coming online');
   });
 
-  // Prompt 173 removed the 170m text-native Quick Log entry path, leaving
-  // three cards (Photo, Scan Barcode, Voice) in a grid-cols-3 layout.
-  // Gary 2026-06-02: promote the existing gallery upload (previously an
-  // underlined link below the row) to an equal-weight 4th card between
-  // Photo and Scan Barcode. The grid returns to grid-cols-2 with the
-  // min-[360px]:grid-cols-4 split. The 170m MessageSquareText import
-  // stays gone.
-  it('entry-path row renders exactly four cards (Photo + Upload + Scan Barcode + Voice) in grid-cols-2 min-[360px]:grid-cols-4', () => {
-    // Four EntryPathCard mounts inside IdleSurface. The interior count is
-    // exact because no other site mounts EntryPathCard.
+  // Prompt 173 reduced the entry path row to three cards (Photo + Scan
+  // Barcode + Voice). Gary 2026-06-02 promoted Upload to a fourth peer.
+  // Prompt 175m (2026-06-05) removed the Scan Barcode peer entirely,
+  // returning the row to three cards: Photo + Upload + Voice. The grid
+  // sits at grid-cols-2 on iPhone SE class viewports and min-[360px]:
+  // grid-cols-3 on everything wider.
+  it('entry-path row renders exactly three cards (Photo + Upload + Voice) in grid-cols-2 min-[360px]:grid-cols-3', () => {
     const cardMatches = source.match(/<EntryPathCard\b/g) ?? [];
-    expect(cardMatches).toHaveLength(4);
-    expect(source).toContain('grid grid-cols-2 gap-2 min-[360px]:grid-cols-4 sm:gap-3');
+    expect(cardMatches).toHaveLength(3);
+    expect(source).toContain('grid grid-cols-2 gap-2 min-[360px]:grid-cols-3 sm:gap-3');
     // Title strings present.
     expect(source).toContain('title="Photo"');
     expect(source).toContain('title="Upload"');
-    expect(source).toContain('title="Scan Barcode"');
     expect(source).toContain('title="Voice"');
     // Upload uses ImageUp Lucide icon and reuses the existing gallery handler.
     expect(source).toContain('ImageUp');
     expect(source).toContain("props.onCapture('gallery')");
+    // Prompt 175m: Scan Barcode peer tile + lucide-react ScanBarcode
+    // import stay gone. The deletion-tombstone comments still mention
+    // the component names so a stricter substring check would match
+    // the comments themselves; check only the user-facing surface.
+    expect(source).not.toContain('title="Scan Barcode"');
+    expect(source).not.toMatch(/from ['"]lucide-react['"][^;]*ScanBarcode/);
+    expect(source).not.toMatch(/<ScanBarcode\b/);
     // The removed Quick Log card stays gone.
     expect(source).not.toContain('title="Quick Log"');
     expect(source).not.toContain('MessageSquareText');
-    // The old underlined "Upload photo from gallery" link is no longer present;
-    // the Upload card replaces it.
+    // The old underlined "Upload photo from gallery" link stays gone.
     expect(source).not.toContain('Upload photo from gallery');
   });
 });
