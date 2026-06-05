@@ -47,10 +47,15 @@ export const maxDuration = 90;
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
+// Prompt 175b hotfix 2 (2026-06-05): unified neutral copy. Every
+// server-failure path (provider 429, provider 5xx, parse failure,
+// circuit open, timeout, unhandled) surfaces the same calm sentence
+// because the user's next action is identical in every case: drop to
+// the manual search. The prior "Photo analysis hit a snag. Please try
+// again" copy was misleading because no amount of retry helps when
+// both providers are unavailable.
 const USER_MESSAGE_FOR_MANUAL_FALLBACK =
   'We could not read your label automatically. Please add it using the search below.';
-const USER_MESSAGE_FOR_RETRY =
-  'Photo analysis hit a snag. Please try again, or add it using the search below.';
 const USER_MESSAGE_FOR_UNSUPPORTED =
   'Unsupported image format. Please use a JPEG, PNG, WebP, or HEIC photo.';
 
@@ -114,7 +119,7 @@ export async function POST(request: Request) {
         return jsonError(err.code, USER_MESSAGE_FOR_UNSUPPORTED, status);
       }
       safeLog.error('api.ai.supplement-vision', 'normalize failed', { error: err });
-      return degraded200('image_normalize_failed', USER_MESSAGE_FOR_RETRY);
+      return degraded200('image_normalize_failed', USER_MESSAGE_FOR_MANUAL_FALLBACK);
     }
 
     const { result, attempts } = await runProviderRouter({
@@ -166,7 +171,7 @@ export async function POST(request: Request) {
     // Per spec Section 13 + Acceptance Criteria 1: the route must never
     // return 5xx for an unhandled error. Surface a graceful 200 so the
     // client routes to manual search.
-    return degraded200('unknown', USER_MESSAGE_FOR_RETRY);
+    return degraded200('unknown', USER_MESSAGE_FOR_MANUAL_FALLBACK);
   }
 }
 
@@ -234,21 +239,14 @@ function attemptsSummary(attempts: ReadonlyArray<TierAttempt>): ReadonlyArray<{
 }
 
 function mapOutcomeToUserMessage(code: ExtractionOutcomeCode): string {
-  switch (code) {
-    case 'config_missing':
-    case 'parse_failed':
-    case 'no_items':
-      return USER_MESSAGE_FOR_MANUAL_FALLBACK;
-    case 'circuit_open':
-    case 'timeout':
-    case 'upstream_error':
-      return USER_MESSAGE_FOR_RETRY;
-    case 'unsupported_image':
-    case 'image_normalize_failed':
-      return USER_MESSAGE_FOR_UNSUPPORTED;
-    default:
-      return USER_MESSAGE_FOR_RETRY;
+  // All server-failure paths converge on MANUAL_FALLBACK because the
+  // user's next step is identical in every case: drop to the manual
+  // search. The outcomeCode still varies for telemetry + log queries.
+  // Only the 4xx client-validation paths get a distinct message.
+  if (code === 'unsupported_image' || code === 'image_normalize_failed') {
+    return USER_MESSAGE_FOR_UNSUPPORTED;
   }
+  return USER_MESSAGE_FOR_MANUAL_FALLBACK;
 }
 
 // mapOutcomeToStatus removed by 175b hotfix. The route now returns either
