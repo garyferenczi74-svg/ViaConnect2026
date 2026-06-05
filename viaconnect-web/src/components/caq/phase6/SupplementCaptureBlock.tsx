@@ -1,0 +1,243 @@
+'use client';
+
+// =============================================================================
+// Prompt 175l (2026-06-05): SupplementCaptureBlock.
+//
+// The polished CAQ capture block, refactored into a single reusable
+// component so the Supplement Protocol page can mount the exact same
+// search-or-scan-or-photo flow that the onboarding CAQ uses, without
+// duplicating the JSX. Hannah's timing (175h), the multi-source
+// resolver (175a/175g), and Marshall's canonical ingest all flow
+// through the existing shared atomic components (SupplementBarcodeConfirm,
+// SupplementBarcodeOverlay, SupplementPhotoUpload).
+//
+// Visual order per 175l Section 1.1:
+//   1. Search field (typeahead against search_supplements RPC)
+//   2. OR divider
+//   3. Scan barcode button (teal outline)
+//   4. OR divider
+//   5. SupplementPhotoUpload dashed card
+//
+// When the user picks a search result, scans a barcode, or analyzes a
+// photo, the matching SupplementBarcodeConfirm panel mounts in place
+// of the picker until the user confirms or cancels.
+//
+// Parent contract: onSupplementAdded fires with the fully-edited
+// BarcodeConfirmRecord (primary + extras + timing) once the user taps
+// Add to My Supplements in the confirm panel. The parent persists.
+// =============================================================================
+
+import { useEffect, useRef, useState } from 'react';
+import { Barcode as BarcodeIcon, Search } from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
+import {
+  SupplementBarcodeConfirm,
+  type BarcodeConfirmRecord,
+  type SupplementConfirmInitialDraft,
+} from '@/components/caq/phase6/SupplementBarcodeConfirm';
+import { SupplementBarcodeOverlay } from '@/components/caq/phase6/SupplementBarcodeOverlay';
+import SupplementPhotoUpload from '@/components/caq/phase6/SupplementPhotoUpload';
+
+type SearchRow = {
+  brand_name: string;
+  product_name: string;
+  product_category: string;
+};
+
+export interface SupplementCaptureBlockProps {
+  /**
+   * Fires when the user confirms an addition. Caller persists to the
+   * single user supplement intake store. Return a promise so the block
+   * can disable inputs while saving and clear its own state on success.
+   */
+  onSupplementAdded: (record: BarcodeConfirmRecord) => void | Promise<void>;
+  /**
+   * Optional. Overrides the default placeholder copy when the page
+   * voice prefers different language.
+   */
+  searchPlaceholder?: string;
+}
+
+const DEFAULT_PLACEHOLDER =
+  'Search vitamins, minerals, supplements, and peptides by brand or ingredient';
+
+export function SupplementCaptureBlock({
+  onSupplementAdded,
+  searchPlaceholder = DEFAULT_PLACEHOLDER,
+}: SupplementCaptureBlockProps): JSX.Element {
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [searchResults, setSearchResults] = useState<SearchRow[]>([]);
+  const [scannerOpen, setScannerOpen] = useState<boolean>(false);
+  const [pendingBarcode, setPendingBarcode] = useState<{ value: string; format: string } | null>(null);
+  const [pendingSearchDraft, setPendingSearchDraft] = useState<SupplementConfirmInitialDraft | null>(null);
+  const [saving, setSaving] = useState<boolean>(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (searchQuery.trim().length < 2) {
+      setSearchResults([]);
+      return;
+    }
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(async () => {
+      try {
+        const supabase = createClient();
+        const { data } = await supabase.rpc('search_supplements', {
+          search_query: searchQuery.trim().toLowerCase(),
+          result_limit: 8,
+        });
+        if (Array.isArray(data)) {
+          setSearchResults(
+            (data as Array<Record<string, unknown>>).map((r) => ({
+              brand_name: (r.brand_name as string) || '',
+              product_name: (r.product_name as string) || '',
+              product_category: (r.product_category as string) || 'Supplement',
+            })),
+          );
+        }
+      } catch {
+        setSearchResults([]);
+      }
+    }, 250);
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [searchQuery]);
+
+  async function commit(rec: BarcodeConfirmRecord): Promise<void> {
+    setSaving(true);
+    try {
+      await onSupplementAdded(rec);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const isConfirming = pendingBarcode !== null || pendingSearchDraft !== null;
+
+  return (
+    <div className="space-y-4">
+      {/* Pickers hidden while a confirm panel is open so the page stays
+          focused on a single action. */}
+      {!isConfirming && (
+        <>
+          {/* Search field + dropdown */}
+          <div className="space-y-2">
+            <div className="relative">
+              <Search
+                className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/30"
+                strokeWidth={1.5}
+                aria-hidden="true"
+              />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder={searchPlaceholder}
+                disabled={saving}
+                className="w-full min-w-0 pl-12 pr-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-white/30 focus:border-teal-400/50 focus:ring-1 focus:ring-teal-400/30 focus:outline-none text-sm disabled:opacity-50"
+              />
+            </div>
+            {searchQuery.trim().length >= 2 && searchResults.length > 0 && (
+              <div className="rounded-xl bg-[#1E2D4A] border border-white/10 shadow-2xl max-h-64 overflow-y-auto">
+                {searchResults.map((row, idx) => (
+                  <button
+                    key={`${row.brand_name}-${row.product_name}-${idx}`}
+                    type="button"
+                    onClick={() => {
+                      setPendingSearchDraft({
+                        name: row.product_name,
+                        brand: row.brand_name,
+                      });
+                      setSearchQuery('');
+                      setSearchResults([]);
+                    }}
+                    className="w-full text-left px-4 py-3 hover:bg-white/5 border-b border-white/5 last:border-0 transition-colors"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-sm text-white/90 min-w-0 truncate">{row.product_name}</span>
+                      {row.brand_name ? (
+                        <span className="text-xs text-white/40 flex-shrink-0">{row.brand_name}</span>
+                      ) : null}
+                    </div>
+                    {row.product_category ? (
+                      <span className="text-[10px] text-white/30 uppercase tracking-wider">{row.product_category}</span>
+                    ) : null}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <OrDivider />
+
+          {/* Scan barcode */}
+          <button
+            type="button"
+            onClick={() => setScannerOpen(true)}
+            disabled={saving}
+            className="min-h-[48px] w-full flex items-center justify-center gap-2 rounded-xl bg-teal-400/10 border border-teal-400/30 text-teal-400 text-sm font-medium hover:bg-teal-400/15 transition-all disabled:opacity-50"
+          >
+            <BarcodeIcon className="w-4 h-4" strokeWidth={1.5} aria-hidden="true" />
+            Scan barcode
+          </button>
+
+          <OrDivider />
+
+          {/* Photo upload (dashed card + two-photo capture + confirm) */}
+          <SupplementPhotoUpload onProductAdded={(rec) => commit(rec)} />
+        </>
+      )}
+
+      {/* Barcode confirmation panel */}
+      {pendingBarcode && (
+        <SupplementBarcodeConfirm
+          barcodeValue={pendingBarcode.value}
+          barcodeFormat={pendingBarcode.format}
+          source="barcode"
+          onConfirm={async (rec) => {
+            await commit(rec);
+            setPendingBarcode(null);
+          }}
+          onCancel={() => setPendingBarcode(null)}
+        />
+      )}
+
+      {/* Search-result confirmation panel */}
+      {pendingSearchDraft && (
+        <SupplementBarcodeConfirm
+          barcodeValue={null}
+          barcodeFormat={null}
+          source="search"
+          initialDraft={pendingSearchDraft}
+          onConfirm={async (rec) => {
+            await commit(rec);
+            setPendingSearchDraft(null);
+          }}
+          onCancel={() => setPendingSearchDraft(null)}
+        />
+      )}
+
+      {/* Barcode scanner overlay */}
+      <SupplementBarcodeOverlay
+        open={scannerOpen}
+        onClose={() => setScannerOpen(false)}
+        onScanned={(decoded) => {
+          setPendingBarcode({ value: decoded.value, format: decoded.format });
+          setScannerOpen(false);
+        }}
+        onManualEntry={() => setScannerOpen(false)}
+      />
+    </div>
+  );
+}
+
+function OrDivider(): JSX.Element {
+  return (
+    <div className="flex items-center gap-4 my-2">
+      <div className="flex-grow h-px bg-white/10" />
+      <span className="text-xs text-white/25 font-medium uppercase tracking-wider">or</span>
+      <div className="flex-grow h-px bg-white/10" />
+    </div>
+  );
+}

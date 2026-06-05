@@ -23,7 +23,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Barcode, Camera, ChevronDown, CircleAlert, Loader2, Plus, Trash2 } from 'lucide-react';
+import { Barcode, Camera, ChevronDown, CircleAlert, Loader2, Plus, Search, Trash2 } from 'lucide-react';
 import type {
   Frequency as TimingFrequency,
   TimeOfDay,
@@ -36,11 +36,11 @@ const TEAL = '#2DA5A0';
 export interface BarcodeConfirmRecord {
   name: string;
   brand: string;
-  // Prompt 175h Section 2.3 (2026-06-05): the confirm panel now serves
-  // both the barcode tier and the Photo AI tier. The source token
-  // identifies which surface produced the record so downstream writers
-  // can attribute capture_source correctly.
-  source: 'barcode' | 'photo';
+  // Prompt 175h Section 2.3 + 175l (2026-06-05): the confirm panel
+  // serves the barcode tier, the Photo AI tier, and the search-result
+  // tier. The source token identifies which surface produced the
+  // record so downstream writers can attribute capture_source correctly.
+  source: 'barcode' | 'photo' | 'search';
   deliveryMethod: string;
   form: string;
   dosage: string;
@@ -111,11 +111,12 @@ export interface SupplementBarcodeConfirmProps {
   barcodeValue: string | null;
   barcodeFormat: string | null;
   /**
-   * Prompt 175h Section 2.3 (2026-06-05): identifies which tier
-   * produced this confirmation. 'barcode' renders the scan resolve
-   * flow; 'photo' skips the /resolve fetch and uses initialDraft.
+   * Prompt 175h Section 2.3 + 175l (2026-06-05): identifies which tier
+   * produced this confirmation. 'barcode' runs the scan resolve flow;
+   * 'photo' skips the resolve fetch and uses the photo extraction
+   * draft; 'search' uses the catalog-row selection draft.
    */
-  source?: 'barcode' | 'photo';
+  source?: 'barcode' | 'photo' | 'search';
   initialDraft?: SupplementConfirmInitialDraft;
   onConfirm: (record: BarcodeConfirmRecord) => void;
   onCancel: () => void;
@@ -370,7 +371,11 @@ export function SupplementBarcodeConfirm({
       <div>
         <div className="flex items-center justify-between mb-3">
           <p className="text-xs text-white/30">
-            {source === 'photo' ? 'Read from photo' : 'Scanned barcode'}
+            {source === 'photo'
+              ? 'Read from photo'
+              : source === 'search'
+                ? 'Selected from catalog'
+                : 'Scanned barcode'}
           </p>
           {resolving ? (
             <span
@@ -385,7 +390,11 @@ export function SupplementBarcodeConfirm({
               className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full"
               style={{ backgroundColor: 'rgba(45, 165, 160, 0.12)', color: TEAL }}
             >
-              {source === 'photo' ? 'Read by Photo AI' : `Found via ${resolveSource ?? 'catalog'}`}
+              {source === 'photo'
+                ? 'Read by Photo AI'
+                : source === 'search'
+                  ? 'Catalog match'
+                  : `Found via ${resolveSource ?? 'catalog'}`}
             </span>
           ) : (
             <span
@@ -415,6 +424,18 @@ export function SupplementBarcodeConfirm({
             <span className="text-[10px] text-white/40 uppercase tracking-wider">
               {barcodeFormat ? barcodeFormat.replace('_', '-') : ''}
             </span>
+          </div>
+        ) : source === 'search' ? (
+          <div
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg"
+            style={{
+              backgroundColor: 'rgba(45, 165, 160, 0.08)',
+              border: '1px solid rgba(45, 165, 160, 0.3)',
+            }}
+          >
+            <Search size={18} strokeWidth={1.5} aria-hidden="true" style={{ color: TEAL }} />
+            <span className="text-sm text-white">Catalog</span>
+            <span className="text-[10px] text-white/40 uppercase tracking-wider">search</span>
           </div>
         ) : (
           <div
@@ -781,7 +802,7 @@ export function SupplementBarcodeConfirm({
                 amount: i.amount,
                 unit: i.unit,
                 form: i.form,
-                source: source === 'photo' ? 'photo_ai' : 'user_scan',
+                source: source === 'photo' ? 'photo_ai' : source === 'search' ? 'user_search' : 'user_scan',
               }));
               fetch('/api/caq/supplements/canonical-ingest', {
                 method: 'POST',
@@ -793,7 +814,7 @@ export function SupplementBarcodeConfirm({
                   primaryStrength: dosage && unit ? `${dosage} ${unit}` : null,
                   form: form || null,
                   structuredIngredients: ingestStructured,
-                  source: source === 'photo' ? 'photo_ai' : 'user_scan',
+                  source: source === 'photo' ? 'photo_ai' : source === 'search' ? 'user_search' : 'user_scan',
                   fieldSources: {
                     ...fieldSources,
                     product_name: name !== '' && !fieldSources.product_name ? 'manual' : (fieldSources.product_name ?? 'manual'),
