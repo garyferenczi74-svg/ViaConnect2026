@@ -436,7 +436,22 @@ export function SupplementBarcodeOverlay({
       totalAttemptsRef.current += 1;
     },
     config: {
-      qrbox: null,
+      // Prompt 175i (2026-06-05): qrbox switched from null to a
+      // viewport-relative function. With qrbox: null html5-qrcode hands
+      // ZXing the full 1080-wide frame on iOS, and ZXing's 1D decoders
+      // are both slow and prone to missing centered codes when scanning
+      // that wide an area. Constraining to 70% width x 35% height in
+      // the center gives ZXing a focused region matching where users
+      // actually hold the barcode, at the cost of html5-qrcode drawing
+      // its own dim mask. We accept the visual conflict with the custom
+      // teal reticle for this diagnostic round; a follow-up batch can
+      // hide the library mask via CSS once decoding is proven to work.
+      qrbox: (vw: number, vh: number) => {
+        const minDim = Math.min(vw, vh);
+        const width = Math.min(Math.floor(vw * 0.7), 700);
+        const height = Math.min(Math.floor(minDim * 0.35), 300);
+        return { width, height };
+      },
       cameraConstraints: { facingMode: 'environment' },
       formatsToSupport: SUPPLEMENT_BARCODE_FORMATS,
       useBarCodeDetectorIfSupported: true,
@@ -494,6 +509,27 @@ export function SupplementBarcodeOverlay({
     liveScanStateRef.current = scan.state;
     liveScanErrorRef.current = scan.error;
     diagLog('scan-state-change', { state: scan.state, error: scan.error, flashlightOn: scan.flashlightOn });
+    // Prompt 175i (2026-06-05): also POST every state transition to
+    // the telemetry sink so the Vercel trace shows whether
+    // setState('scanning') ever fires. If the only state ever logged
+    // is 'idle', useBarcodeScan.start() is not reaching its success
+    // path. PHI-free.
+    try {
+      fetch('/api/caq/supplements/barcode-telemetry', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionId: sessionIdRef.current,
+          phase: 'state_transition',
+          scanState: scan.state,
+          scanError: scan.error,
+          elapsedMs: openedAtRef.current > 0 ? Date.now() - openedAtRef.current : 0,
+        }),
+        keepalive: true,
+      }).catch(() => undefined);
+    } catch {
+      // Best effort.
+    }
   }, [scan.state, scan.error, scan.flashlightOn, open]);
 
   // Prompt 175f Section 2.1 + 175g + Acceptance Criteria 3: drain the
