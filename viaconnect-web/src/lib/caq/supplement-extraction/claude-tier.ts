@@ -72,6 +72,19 @@ export function createClaudeTierAdapter(input: ClaudeTierAdapterInput): TierAdap
     const timeoutMs = TIER_TIMEOUT_MS[tier];
     const startedAt = Date.now();
 
+    // Prompt 175f Section 11.O three-point trace: log the payload byte
+    // length immediately before the provider fetch so a grep of the
+    // runtime logs can confirm the image actually made it to the
+    // provider call. PHI-free: bytes only, never the content.
+    const payloadBytes = Math.floor((input.imageBase64.length / 4) * 3);
+    safeLog.info('caq.supplement-extraction.claude-tier', 'pre-fetch', {
+      tier,
+      model,
+      payloadBytes,
+      base64Length: input.imageBase64.length,
+      mimeType: input.mimeType,
+    });
+
     let res: Response;
     try {
       res = await breaker.execute(() =>

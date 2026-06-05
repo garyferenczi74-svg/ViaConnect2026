@@ -282,6 +282,13 @@ export function SupplementBarcodeOverlay({
   const [mounted, setMounted] = useState(false);
   const inFlightBarcodeRef = useRef<string | null>(null);
   const manualEntryLinkRef = useRef<HTMLButtonElement | null>(null);
+  // Prompt 175f Section 2.1 + 14: per-second decode-attempt counter so
+  // the iOS Web Inspector trace shows whether the loop is actually
+  // iterating. Incremented from html5-qrcode's per-frame callback via
+  // useBarcodeScan's new onFrameAttempt hook; flushed to diagLog once
+  // per 1000 ms with the current videoWidth/videoHeight so a zero rate
+  // is visibly distinct from a low rate.
+  const frameAttemptCounterRef = useRef<number>(0);
 
   // Portal target. createPortal requires a real DOM node; this state
   // flips true after first client render so SSR does not call
@@ -367,8 +374,11 @@ export function SupplementBarcodeOverlay({
   // start the stream first and then negotiate the higher resolution
   // without the address-bar-animation hang that the 175d initial
   // 1920x1080 ideal hint triggered.
+  // Prompt 175f Section 2.1: onFrameAttempt increments the per-second
+  // counter so the loop's running state is visible in the trace.
   const scan = useBarcodeScan({
     onDetect,
+    onFrameAttempt: () => { frameAttemptCounterRef.current += 1; },
     config: {
       qrbox: null,
       cameraConstraints: { facingMode: 'environment' },
@@ -425,6 +435,31 @@ export function SupplementBarcodeOverlay({
     if (!open) return;
     diagLog('scan-state-change', { state: scan.state, error: scan.error, flashlightOn: scan.flashlightOn });
   }, [scan.state, scan.error, scan.flashlightOn, open]);
+
+  // Prompt 175f Section 2.1 + Acceptance Criteria 3: drain the per-frame
+  // counter once per second and emit a diagLog with the rate plus the
+  // current videoWidth / videoHeight. A zero rate proves the decode
+  // loop is not iterating; a nonzero rate with zero videoWidth proves
+  // the loop is running but seeing an empty frame.
+  useEffect(() => {
+    if (!open) return;
+    const interval = window.setInterval(() => {
+      const attemptsThisSecond = frameAttemptCounterRef.current;
+      frameAttemptCounterRef.current = 0;
+      const video = typeof document !== 'undefined'
+        ? document.querySelector('#barcode-scanner-viewport video')
+        : null;
+      const videoEl = video instanceof HTMLVideoElement ? video : null;
+      diagLog('decode-attempts-per-second', {
+        attempts: attemptsThisSecond,
+        videoWidth: videoEl?.videoWidth ?? 0,
+        videoHeight: videoEl?.videoHeight ?? 0,
+        readyState: videoEl?.readyState ?? 0,
+        scanState: scan.state,
+      });
+    }, 1000);
+    return () => window.clearInterval(interval);
+  }, [open, scan.state]);
 
   const handleClose = useCallback(() => {
     void scan.stop().finally(() => {

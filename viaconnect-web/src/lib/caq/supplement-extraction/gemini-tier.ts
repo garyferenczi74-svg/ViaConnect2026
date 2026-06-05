@@ -63,6 +63,16 @@ export async function callGeminiTier(input: GeminiTierAdapterInput): Promise<Ext
   const timeoutMs = TIER_TIMEOUT_MS.gemini;
   const startedAt = Date.now();
 
+  // Prompt 175f Section 11.O three-point trace: log the payload byte
+  // length immediately before the provider fetch.
+  const payloadBytes = Math.floor((input.imageBase64.length / 4) * 3);
+  safeLog.info('caq.supplement-extraction.gemini-tier', 'pre-fetch', {
+    modelId,
+    payloadBytes,
+    base64Length: input.imageBase64.length,
+    mimeType: input.mimeType,
+  });
+
   let res: Response;
   try {
     res = await breaker.execute(() =>

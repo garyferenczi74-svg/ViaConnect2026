@@ -121,6 +121,23 @@ export default function SupplementPhotoUpload({ onProductIdentified, onProductAd
         reader.readAsDataURL(processedFile);
       });
 
+      // Prompt 175f Section 2.2 + 11.O three-point trace point 1:
+      // log the encoded base64 length BEFORE upload so the iOS Web
+      // Inspector trace shows what the client actually sent. PHI-free
+      // (size only). The server logs the receipt at point 2; the
+      // provider adapter logs the byte length at point 3.
+      try {
+        // eslint-disable-next-line no-console
+        console.info('[caq.photo-upload] pre-upload', {
+          fileBytes: processedFile.size,
+          base64Length: base64.length,
+          approximatePayloadBytes: Math.floor((base64.length / 4) * 3),
+          mimeType: processedFile.type || 'image/jpeg',
+        });
+      } catch {
+        // Best effort.
+      }
+
       setState('analyzing');
 
       const response = await fetch('/api/ai/supplement-vision', {
@@ -132,13 +149,21 @@ export default function SupplementPhotoUpload({ onProductIdentified, onProductAd
       const data = await response.json();
 
       if (!data.success) {
-        // Prompt 175b hotfix Section 9.1: the route now always returns
-        // HTTP 200 on server failure with a degraded payload. The red
-        // dead-end error state is gone; we surface a calm "drop to
-        // manual" UI keyed by the `degraded` flag.
-        if (data.degraded === true || response.status === 200) {
+        // Prompt 175b hotfix Section 9.1 + 175f Section 2.5: the route
+        // now always returns HTTP 200 on server failure with a degraded
+        // payload AND an explicit `status` + `reason` so the client
+        // can branch on a stable token. The red dead-end error state
+        // is gone; we surface a calm "drop to manual" UI.
+        if (data.degraded === true || data.status === 'degraded' || response.status === 200) {
+          // Prompt 175f Section 2.4 + 10: distinct copy for the
+          // no_image_received case so the user sees "we did not receive
+          // a photo" instead of the generic "could not read it" line.
+          if (data.reason === 'no_image_received') {
+            setErrorMsg('We did not receive a photo. Please try again.');
+          } else {
+            setErrorMsg(sanitizeServerErrorMessage(data.error));
+          }
           setState('degraded');
-          setErrorMsg(sanitizeServerErrorMessage(data.error));
           return;
         }
         // 4xx case: client validation error (unsupported image, missing

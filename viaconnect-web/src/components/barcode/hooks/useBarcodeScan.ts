@@ -169,6 +169,14 @@ export interface UseBarcodeScanOptions {
   onDetect: (result: BarcodeDecodedResult) => void;
   onError?: (error: Error) => void;
   /**
+   * Prompt 175f Section 2.1 + 11.O: per-frame "no scan yet" hook so the
+   * caller can prove the decode loop is actually iterating. html5-qrcode
+   * invokes the underlying callback for every frame it analyzed without
+   * producing a result, so the count here divided by elapsed time is
+   * the empirical decode-attempt rate. Optional; absence is a no-op.
+   */
+  onFrameAttempt?: () => void;
+  /**
    * Prompt 175c (2026-06-05): per-caller override of html5-qrcode start
    * config. Defaults preserve the NutriVision behavior (qrbox 280x96, fps
    * 10, aspectRatio 1.777). The supplement-vision overlay passes
@@ -227,10 +235,12 @@ export function useBarcodeScan(opts: UseBarcodeScanOptions): UseBarcodeScanResul
 
   const onDetectRef = useRef(opts.onDetect);
   const onErrorRef = useRef(opts.onError);
+  const onFrameAttemptRef = useRef(opts.onFrameAttempt);
   useEffect(() => {
     onDetectRef.current = opts.onDetect;
     onErrorRef.current = opts.onError;
-  }, [opts.onDetect, opts.onError]);
+    onFrameAttemptRef.current = opts.onFrameAttempt;
+  }, [opts.onDetect, opts.onError, opts.onFrameAttempt]);
 
   const stop = useCallback(async () => {
     const scanner = scannerRef.current;
@@ -320,7 +330,15 @@ export function useBarcodeScan(opts: UseBarcodeScanOptions): UseBarcodeScanResul
           decoder_latency_ms: decoderLatencyMs,
         });
       };
-      const noopFrameCallback = () => { /* per-frame "no scan yet" */ };
+      // Prompt 175f Section 2.1: forward html5-qrcode's per-frame
+      // no-scan-yet callback to the caller so the overlay can count
+      // decode attempts and prove the loop is running.
+      const noopFrameCallback = () => {
+        const cb = onFrameAttemptRef.current;
+        if (cb) {
+          try { cb(); } catch { /* best effort */ }
+        }
+      };
 
       try {
         await scannerRef.current.start(cameraConstraints, startConfig, successCallback, noopFrameCallback);

@@ -58,6 +58,46 @@ const USER_MESSAGE_FOR_MANUAL_FALLBACK =
   'We could not read your label automatically. Please add it using the search below.';
 const USER_MESSAGE_FOR_UNSUPPORTED =
   'Unsupported image format. Please use a JPEG, PNG, WebP, or HEIC photo.';
+// Prompt 175f Section 2.4: a distinct user-facing message for the
+// no_image_received case so the surface tells the user the photo did
+// not reach the server, instead of the generic "could not read"
+// language that conflates "tried but failed" with "nothing arrived".
+const USER_MESSAGE_FOR_NO_IMAGE =
+  'We did not receive a photo. Please try again.';
+
+// Prompt 175f Section 2.2 + 2.4: minimum payload floor (in raw decoded
+// bytes) below which the route concludes the image never reached the
+// server in a meaningful form. Anything smaller than this cannot be a
+// real JPEG label capture; a JPEG with even a stub label is several KB.
+// Trip value is intentionally generous so a legitimately compressed
+// label (down to 800 KB target) never trips it from above, while an
+// empty body or a fragment trips it cleanly.
+const SUPPLEMENT_VISION_MIN_PAYLOAD_BYTES = 5_000;
+
+/**
+ * Prompt 175f Section 11.O three-point trace: estimate the raw byte
+ * length of a base64 string without allocating a full Buffer. base64 is
+ * ~33 percent overhead so length / 4 * 3 minus padding gives the
+ * decoded byte count. Pure function so the floor check is testable
+ * without a request.
+ */
+export function approximateBase64ByteLength(base64: string): number {
+  if (typeof base64 !== 'string' || base64.length === 0) return 0;
+  let pad = 0;
+  if (base64.endsWith('==')) pad = 2;
+  else if (base64.endsWith('=')) pad = 1;
+  return Math.max(0, Math.floor((base64.length / 4) * 3) - pad);
+}
+
+/**
+ * Prompt 175f Section 2.4: returns true when the payload is below the
+ * "no_image_received" floor. Centralizes the integer comparison so the
+ * floor + the route + the tests all agree on the same threshold.
+ */
+export function isPayloadBelowFloor(base64: string | null | undefined): boolean {
+  if (typeof base64 !== 'string' || base64.length === 0) return true;
+  return approximateBase64ByteLength(base64) < SUPPLEMENT_VISION_MIN_PAYLOAD_BYTES;
+}
 
 interface LegacyIdentifiedProduct {
   brand: string | null;
@@ -80,8 +120,37 @@ export async function POST(request: Request) {
     const imageBase64 = body?.imageBase64;
     const mimeType = body?.mimeType;
 
-    if (typeof imageBase64 !== 'string' || imageBase64.length === 0) {
-      return jsonError('unsupported_image', USER_MESSAGE_FOR_UNSUPPORTED, 400);
+    // Prompt 175f Section 2.4: log the received payload size BEFORE any
+    // provider call so the runtime logs can prove the image actually
+    // reached the server. PHI-free: bytes + boolean only.
+    const receivedBytes = approximateBase64ByteLength(
+      typeof imageBase64 === 'string' ? imageBase64 : '',
+    );
+    const receivedNonEmpty = typeof imageBase64 === 'string' && imageBase64.length > 0;
+    const mimeReceived = typeof mimeType === 'string' ? mimeType : null;
+    safeLog.info('api.ai.supplement-vision', 'received', {
+      receivedBytes,
+      receivedNonEmpty,
+      mimeType: mimeReceived,
+      base64Length: typeof imageBase64 === 'string' ? imageBase64.length : 0,
+    });
+
+    // Prompt 175f Section 2.4 + 2.5: missing or below-floor image is a
+    // degraded 200 with the explicit no_image_received reason, NOT a
+    // 400. The user fix is to retry the capture; the route now signals
+    // that distinctly so the UI can show "we did not receive a photo"
+    // copy instead of conflating it with "vision unavailable".
+    if (isPayloadBelowFloor(typeof imageBase64 === 'string' ? imageBase64 : null)) {
+      safeLog.warn('api.ai.supplement-vision', 'no_image_received', {
+        receivedBytes,
+        receivedNonEmpty,
+        floorBytes: SUPPLEMENT_VISION_MIN_PAYLOAD_BYTES,
+      });
+      return degraded200('unsupported_image', USER_MESSAGE_FOR_NO_IMAGE, {
+        status: 'degraded',
+        reason: 'no_image_received',
+        receivedBytes,
+      });
     }
 
     const geminiApiKey = getPhotoAiGeminiApiKey();
@@ -104,10 +173,15 @@ export async function POST(request: Request) {
     const { data: userData } = await supabase.auth.getUser();
     const userId: string | null = userData?.user?.id ?? null;
 
+    // After the floor check above, imageBase64 is guaranteed to be a
+    // non-empty string of meaningful size. The narrow is restated for
+    // TypeScript because the isPayloadBelowFloor helper takes a union
+    // and does not narrow the call site.
+    const imageBase64String = imageBase64 as string;
     const mimeTypeString = typeof mimeType === 'string' ? mimeType : null;
     let normalized;
     try {
-      normalized = await validateAndNormalize(imageBase64, mimeTypeString);
+      normalized = await validateAndNormalize(imageBase64String, mimeTypeString);
     } catch (err) {
       if (isValidationError(err)) {
         // Client-side validation failure (unsupported mime type, too large,
@@ -158,13 +232,19 @@ export async function POST(request: Request) {
     await fireAndForgetLog(userId, finalAttempt, escalated, matchedCount);
 
     const legacy = toLegacyShape(result);
+    // Prompt 175f Section 2.5 + 9.1: every 200 carries an explicit
+    // status so no response is ambiguous between "real read" and
+    // "masked failure". 'ok' here, 'degraded' on every degraded200
+    // branch.
     return NextResponse.json({
+      status: 'ok',
       success: true,
       outcomeCode: 'success' satisfies ExtractionOutcomeCode,
       data: legacy,
       modelTier: result.modelTier,
       escalated,
       attempts: attemptsSummary(attempts),
+      receivedBytes,
     });
   } catch (err: unknown) {
     safeLog.error('api.ai.supplement-vision', 'unexpected error', { error: err });
@@ -192,8 +272,13 @@ function degraded200(
   userMessage: string,
   extras: Record<string, unknown> = {},
 ) {
+  // Prompt 175f Section 2.5 + 9.1: status field is always 'degraded'
+  // here. Callers can override `reason` via extras when they need to
+  // pin a specific value (e.g. 'no_image_received') that does not flow
+  // from the outcomeCode enum.
   return NextResponse.json(
     {
+      status: 'degraded',
       success: false,
       degraded: true,
       reason: degradedReasonFor(code),
