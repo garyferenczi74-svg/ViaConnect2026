@@ -361,24 +361,40 @@ export function useBarcodeScan(opts: UseBarcodeScanOptions): UseBarcodeScanResul
       };
       scannerRef.current = active;
 
+      // Prompt 175k (2026-06-05): rAF loop uses the captured active
+      // closure only; the prior 175j version queried scannerRef.current
+      // at the top of every tick and returned WITHOUT requeueing on a
+      // null read. Any external stop() or remount nulled the ref and
+      // killed the loop after a single tick. With the closure pattern
+      // the loop exits only on active.stopped or on a detected match,
+      // and the requeue is unconditional in every other path.
+      const readerOptions: ReaderOptions = {
+        formats: formats as ReadInputBarcodeFormat[],
+        tryHarder: true,
+        maxNumberOfSymbols: 1,
+      };
       const tick = async (): Promise<void> => {
-        const me = scannerRef.current;
-        if (!me || me.stopped) return;
-        if (me.video.readyState >= 2 && me.video.videoWidth > 0 && me.video.videoHeight > 0) {
-          me.canvas.width = me.video.videoWidth;
-          me.canvas.height = me.video.videoHeight;
-          try {
-            me.ctx.drawImage(me.video, 0, 0);
-            const img = me.ctx.getImageData(0, 0, me.canvas.width, me.canvas.height);
-            // Caller's per-frame counter (175f).
+        if (active.stopped) return;
+        // If a newer scanner has taken over (re-mount / re-start), this
+        // stale closure must yield. Mark stopped so any in-flight async
+        // returns early and the loop dies without surfacing a result.
+        if (scannerRef.current !== active) {
+          active.stopped = true;
+          return;
+        }
+        try {
+          if (
+            active.video.readyState >= 2
+            && active.video.videoWidth > 0
+            && active.video.videoHeight > 0
+          ) {
+            active.canvas.width = active.video.videoWidth;
+            active.canvas.height = active.video.videoHeight;
+            active.ctx.drawImage(active.video, 0, 0);
+            const img = active.ctx.getImageData(0, 0, active.canvas.width, active.canvas.height);
             try { onFrameAttemptRef.current?.(); } catch { /* noop */ }
-            const readerOptions: ReaderOptions = {
-              formats: formats as ReadInputBarcodeFormat[],
-              tryHarder: true,
-              maxNumberOfSymbols: 1,
-            };
             const results = await readBarcodes(img, readerOptions);
-            if (me.stopped) return;
+            if (active.stopped) return;
             if (results.length > 0) {
               const r = results[0];
               const mapped = mapZxingFormat(r.format);
@@ -393,11 +409,13 @@ export function useBarcodeScan(opts: UseBarcodeScanOptions): UseBarcodeScanResul
                 return; // single-fire; caller drives stop()
               }
             }
-          } catch {
-            // Decode errors are normal for frames without a code; swallow.
           }
+        } catch {
+          // Decode errors are normal for frames without a code; swallow.
         }
-        active.rafId = requestAnimationFrame(() => { void tick(); });
+        if (!active.stopped) {
+          active.rafId = requestAnimationFrame(() => { void tick(); });
+        }
       };
       active.rafId = requestAnimationFrame(() => { void tick(); });
 

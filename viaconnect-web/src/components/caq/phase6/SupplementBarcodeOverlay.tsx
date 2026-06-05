@@ -466,11 +466,13 @@ export function SupplementBarcodeOverlay({
     diagLog('overlay:open');
     void scan.start().then(() => {
       diagLog('scan.start:resolved', { state: scan.state, error: scan.error });
-      pollHardenIosVideo();
-      // Prompt 175e Section 2.1: post-attach enhancement chain
-      // (resolution bump + continuous focus). Each step independently
-      // guarded; a single failure never tears down the live stream.
-      void enhanceTrack();
+      // Prompt 175k (2026-06-05): pollHardenIosVideo and enhanceTrack
+      // are vestigial from the html5-qrcode era. The new
+      // useBarcodeScan creates its own video element with all iOS
+      // required attributes set inline (playsinline, webkit-playsinline,
+      // muted, autoplay) and awaits video.play() itself. Calling those
+      // helpers again here re-runs play() and applyConstraints on the
+      // live element which can flip state and tear down the rAF loop.
     });
     return () => {
       diagLog('overlay:close');
@@ -609,12 +611,13 @@ export function SupplementBarcodeOverlay({
     : HELPER_ESCALATION;
 
   const handleTapToFocus = (): void => {
-    // Prompt 175d Section 2.5 + 175e: tap anywhere on the backdrop to
-    // nudge the camera into refocusing. Re-running the enhancement chain
-    // is a portable refocus signal that works on iOS and Chrome without
-    // requiring pointsOfInterest, which iOS WKWebView does not honor.
+    // Prompt 175k (2026-06-05): tap-to-focus is a no-op under the new
+    // useBarcodeScan / zxing-wasm decoder; iOS handles refocus
+    // automatically as the user moves the bottle and ZXing's
+    // tryHarder flag absorbs the transient blur. The diagLog stays so
+    // the Safari Web Inspector trace continues to record taps for
+    // future tuning.
     diagLog('tap-to-focus');
-    void enhanceTrack();
   };
 
   const overlay = (
