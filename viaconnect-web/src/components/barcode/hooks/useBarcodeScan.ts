@@ -22,15 +22,20 @@ import type { BarcodeDecodedResult, BarcodeFormat } from '@/lib/nutrition/barcod
 // the library references `window` and `document` at module load time and the
 // existing src/components/shared/BarcodeScanner.tsx uses the same pattern.
 // Prompt 175d (2026-06-05): constructor config widened to accept
-// formatsToSupport + experimentalFeatures so callers can restrict the
-// decoder to a known set of symbologies (faster + fewer false reads)
-// and opt in to the native BarcodeDetector on Chrome.
+// formatsToSupport so callers can restrict the decoder to a known set
+// of symbologies (faster + fewer false reads).
+// Prompt 175g (2026-06-05): useBarCodeDetectorIfSupported moves to the
+// TOP-LEVEL constructor config per html5-qrcode 2.3.x. Earlier versions
+// nested it under experimentalFeatures and the prior 175d code used
+// that legacy shape; the library silently ignored the wrapper on 2.3.x,
+// which is a no-op on iOS but worth fixing so Chrome / Android pick up
+// the native BarcodeDetector fast path.
 type Html5QrcodeCtor = new (
   elementId: string,
   config: {
     verbose: boolean;
     formatsToSupport?: ReadonlyArray<number>;
-    experimentalFeatures?: { useBarCodeDetectorIfSupported?: boolean };
+    useBarCodeDetectorIfSupported?: boolean;
   },
 ) => Html5QrcodeInstance;
 
@@ -109,6 +114,11 @@ interface Html5QrcodeInstance {
   // .catch from typechecking on the unmount cleanup.
   clear: () => Promise<void>;
   applyVideoConstraints: (constraints: MediaTrackConstraints) => Promise<void>;
+  // Prompt 175g (2026-06-05): html5-qrcode exposes getState() returning
+  // an enum-like number describing whether the scanner is NOT_STARTED,
+  // SCANNING, PAUSED, etc. Surfaced so the overlay can log it for
+  // visibility when the decode loop stalls.
+  getState?: () => number;
 }
 
 export const BARCODE_SCANNER_ELEMENT_ID = 'barcode-scanner-viewport';
@@ -224,6 +234,15 @@ export interface UseBarcodeScanResult {
   stop: () => Promise<void>;
   toggleFlashlight: () => Promise<boolean>;
   flashlightOn: boolean;
+  /**
+   * Prompt 175g (2026-06-05): query html5-qrcode's internal state at
+   * call time. Returns null when the scanner has not been constructed
+   * yet or when the library does not expose getState. Used by the
+   * supplement overlay's decode-attempts-per-second log so a stalled
+   * loop reports its actual library state (PAUSED, NOT_STARTED, etc.)
+   * not just attempts == 0.
+   */
+  queryHtml5QrcodeState: () => number | null;
 }
 
 export function useBarcodeScan(opts: UseBarcodeScanOptions): UseBarcodeScanResult {
@@ -274,16 +293,17 @@ export function useBarcodeScan(opts: UseBarcodeScanOptions): UseBarcodeScanResul
         const mod = (await import('html5-qrcode')) as unknown as {
           Html5Qrcode: Html5QrcodeCtor;
         };
-        // Prompt 175d: pass formatsToSupport + experimentalFeatures at
-        // construction time. The library applies these for the lifetime
-        // of the instance, so any later start() inherits them.
+        // Prompt 175d + 175g: pass formatsToSupport + the top-level
+        // useBarCodeDetectorIfSupported flag at construction time.
+        // useBarCodeDetectorIfSupported is the html5-qrcode 2.3.x shape
+        // (no longer nested under experimentalFeatures); on iOS it is a
+        // no-op since BarcodeDetector is not implemented, on Chrome it
+        // engages the native fast path.
         const callerCtor = opts.config ?? {};
         scannerRef.current = new mod.Html5Qrcode(BARCODE_SCANNER_ELEMENT_ID, {
           verbose: false,
           formatsToSupport: callerCtor.formatsToSupport,
-          experimentalFeatures: callerCtor.useBarCodeDetectorIfSupported
-            ? { useBarCodeDetectorIfSupported: true }
-            : undefined,
+          useBarCodeDetectorIfSupported: callerCtor.useBarCodeDetectorIfSupported ?? false,
         });
       }
 
@@ -428,5 +448,18 @@ export function useBarcodeScan(opts: UseBarcodeScanOptions): UseBarcodeScanResul
     };
   }, []);
 
-  return { state, error, start, stop, toggleFlashlight, flashlightOn };
+  // Prompt 175g: expose html5-qrcode's getState() through the hook so
+  // callers can include the library's internal state in their
+  // diagnostic logs.
+  const queryHtml5QrcodeState = useCallback((): number | null => {
+    const scanner = scannerRef.current;
+    if (!scanner || typeof scanner.getState !== 'function') return null;
+    try {
+      return scanner.getState();
+    } catch {
+      return null;
+    }
+  }, []);
+
+  return { state, error, start, stop, toggleFlashlight, flashlightOn, queryHtml5QrcodeState };
 }

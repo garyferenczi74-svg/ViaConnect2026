@@ -167,6 +167,18 @@ function releaseCameraTracks(): void {
 }
 
 /**
+ * Prompt 175g (2026-06-05): per-session correlation id for the server
+ * telemetry sink. Short, URL-safe, randomized per scanner open so two
+ * sessions in the same Vercel log query can be told apart.
+ */
+function generateSessionId(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID().slice(0, 8);
+  }
+  return `s${Date.now().toString(36)}${Math.floor(Math.random() * 1e6).toString(36)}`;
+}
+
+/**
  * Prompt 175e Section 2.4: wait for the video element to reach a usable
  * readyState before any post-attach work touches the track. html5-qrcode's
  * loadedmetadata fires when videoWidth + videoHeight are populated; if
@@ -289,6 +301,13 @@ export function SupplementBarcodeOverlay({
   // per 1000 ms with the current videoWidth/videoHeight so a zero rate
   // is visibly distinct from a low rate.
   const frameAttemptCounterRef = useRef<number>(0);
+  const totalAttemptsRef = useRef<number>(0);
+  // Prompt 175g (2026-06-05): per-overlay session id used as the
+  // correlation key when the overlay POSTs decode stats to the new
+  // server telemetry sink. Randomized per open + close so multiple
+  // sessions can be distinguished in the Vercel runtime logs.
+  const sessionIdRef = useRef<string>(generateSessionId());
+  const openedAtRef = useRef<number>(0);
 
   // Portal target. createPortal requires a real DOM node; this state
   // flips true after first client render so SSR does not call
@@ -378,7 +397,10 @@ export function SupplementBarcodeOverlay({
   // counter so the loop's running state is visible in the trace.
   const scan = useBarcodeScan({
     onDetect,
-    onFrameAttempt: () => { frameAttemptCounterRef.current += 1; },
+    onFrameAttempt: () => {
+      frameAttemptCounterRef.current += 1;
+      totalAttemptsRef.current += 1;
+    },
     config: {
       qrbox: null,
       cameraConstraints: { facingMode: 'environment' },
@@ -436,30 +458,59 @@ export function SupplementBarcodeOverlay({
     diagLog('scan-state-change', { state: scan.state, error: scan.error, flashlightOn: scan.flashlightOn });
   }, [scan.state, scan.error, scan.flashlightOn, open]);
 
-  // Prompt 175f Section 2.1 + Acceptance Criteria 3: drain the per-frame
-  // counter once per second and emit a diagLog with the rate plus the
-  // current videoWidth / videoHeight. A zero rate proves the decode
-  // loop is not iterating; a nonzero rate with zero videoWidth proves
-  // the loop is running but seeing an empty frame.
+  // Prompt 175f Section 2.1 + 175g + Acceptance Criteria 3: drain the
+  // per-frame counter, log to the Web Inspector AND POST to the new
+  // server telemetry sink so Vercel runtime logs surface barcode
+  // activity. PHI-free (counts, dimensions, library state, session id).
   useEffect(() => {
     if (!open) return;
-    const interval = window.setInterval(() => {
-      const attemptsThisSecond = frameAttemptCounterRef.current;
+    sessionIdRef.current = generateSessionId();
+    totalAttemptsRef.current = 0;
+    openedAtRef.current = Date.now();
+    // First tick fires after 1 second; final tick on unmount runs in
+    // the cleanup so a closed-immediately session still leaves a trace.
+    const flush = (phase: string): void => {
+      const attemptsThisInterval = frameAttemptCounterRef.current;
       frameAttemptCounterRef.current = 0;
       const video = typeof document !== 'undefined'
         ? document.querySelector('#barcode-scanner-viewport video')
         : null;
       const videoEl = video instanceof HTMLVideoElement ? video : null;
-      diagLog('decode-attempts-per-second', {
-        attempts: attemptsThisSecond,
+      const html5State = scan.queryHtml5QrcodeState();
+      const sample = {
+        sessionId: sessionIdRef.current,
+        phase,
+        attemptsThisInterval,
+        attemptsTotal: totalAttemptsRef.current,
         videoWidth: videoEl?.videoWidth ?? 0,
         videoHeight: videoEl?.videoHeight ?? 0,
         readyState: videoEl?.readyState ?? 0,
         scanState: scan.state,
-      });
-    }, 1000);
-    return () => window.clearInterval(interval);
-  }, [open, scan.state]);
+        html5QrcodeState: html5State,
+        elapsedMs: Date.now() - openedAtRef.current,
+      };
+      diagLog('decode-stats', sample);
+      // Fire-and-forget POST. keepalive lets the close phase finish
+      // even if the page is unmounting. We swallow rejection so a
+      // network blip does not surface to the user.
+      try {
+        fetch('/api/caq/supplements/barcode-telemetry', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(sample),
+          keepalive: true,
+        }).catch(() => undefined);
+      } catch {
+        // Best effort.
+      }
+    };
+    const interval = window.setInterval(() => flush('tick'), 3000);
+    return () => {
+      window.clearInterval(interval);
+      flush('close');
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   const handleClose = useCallback(() => {
     void scan.stop().finally(() => {
