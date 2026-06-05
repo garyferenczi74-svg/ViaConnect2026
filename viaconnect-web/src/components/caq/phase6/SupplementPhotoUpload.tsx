@@ -419,14 +419,17 @@ export default function SupplementPhotoUpload({
                   <Trash2 size={12} strokeWidth={1.5} />
                 </button>
               </div>
+              {/* Prompt 175j (2026-06-05): CSS background-image instead
+                  of an img element so a blob URL that fails to load on
+                  iOS WebKit cannot fall back to the native broken-image
+                  glyph. The black backplate is the silent fallback. */}
               <button
                 type="button"
                 onClick={(e) => { e.preventDefault(); openPicker('front'); }}
-                className="block w-full aspect-square rounded-lg overflow-hidden border border-teal-400/30 bg-black/30"
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={frontPhoto.previewUrl} alt="Front label" className="w-full h-full object-cover" />
-              </button>
+                aria-label="Replace front photo"
+                className="block w-full aspect-square rounded-lg overflow-hidden border border-teal-400/30 bg-cover bg-center bg-black/30"
+                style={{ backgroundImage: `url(${frontPhoto.previewUrl})` }}
+              />
             </div>
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
@@ -445,16 +448,18 @@ export default function SupplementPhotoUpload({
                   </button>
                 ) : <span className="text-[10px] text-white/25">optional</span>}
               </div>
+              {/* Prompt 175j (2026-06-05): CSS background-image for the
+                  captured ingredients thumbnail; empty slot still uses a
+                  Lucide Camera icon. No img element either way. */}
               <button
                 type="button"
                 onClick={(e) => { e.preventDefault(); openPicker('ingredients'); }}
-                className={`block w-full aspect-square rounded-lg overflow-hidden border ${ingredientsPhoto ? 'border-teal-400/30 bg-black/30' : 'border-dashed border-white/15 bg-white/[0.02] flex items-center justify-center'}`}
+                aria-label={ingredientsPhoto ? 'Replace ingredients photo' : 'Add ingredients photo'}
+                className={`block w-full aspect-square rounded-lg overflow-hidden border ${ingredientsPhoto ? 'border-teal-400/30 bg-cover bg-center bg-black/30' : 'border-dashed border-white/15 bg-white/[0.02] flex items-center justify-center'}`}
+                style={ingredientsPhoto ? { backgroundImage: `url(${ingredientsPhoto.previewUrl})` } : undefined}
               >
-                {ingredientsPhoto ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={ingredientsPhoto.previewUrl} alt="Ingredients label" className="w-full h-full object-cover" />
-                ) : (
-                  <Camera size={28} strokeWidth={1.5} className="text-white/25" />
+                {ingredientsPhoto ? null : (
+                  <Camera size={28} strokeWidth={1.5} className="text-white/25" aria-hidden="true" />
                 )}
               </button>
             </div>
@@ -496,12 +501,21 @@ export default function SupplementPhotoUpload({
 
       {state === 'analyzing' && (
         <div className="border-2 border-teal-400/30 rounded-xl p-8 text-center bg-teal-400/[0.03]">
-          {frontPhoto && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={frontPhoto.previewUrl} alt="Upload" className="w-20 h-20 object-cover rounded-lg mx-auto mb-4 border border-white/10" />
-          )}
-          <div className="w-10 h-10 mx-auto mb-3 border-3 border-teal-400 border-t-transparent rounded-full animate-spin" />
-          <p className="text-sm font-medium text-teal-400">Identifying your supplement...</p>
+          {/* Prompt 175j (2026-06-05): the prior thumbnail + CSS spinner
+              relied on an img element whose blob URL failed to load in
+              this state on iOS WebKit, surfacing the alt text and the
+              native broken-image glyph. Replaced with the Lucide
+              RefreshCw at strokeWidth 1.5, Teal #2DA5A0, animate-spin
+              under motion-safe and animate-pulse under motion-reduce
+              for WCAG 2.2 AA reduced-motion compliance. */}
+          <RefreshCw
+            size={40}
+            strokeWidth={1.5}
+            aria-hidden="true"
+            className="mx-auto mb-4 motion-safe:animate-spin motion-reduce:animate-pulse"
+            style={{ color: '#2DA5A0' }}
+          />
+          <p className="text-sm font-medium" style={{ color: '#2DA5A0' }}>Identifying your supplement...</p>
           <p className="text-xs text-white/30 mt-1">This may take 10 to 15 seconds</p>
         </div>
       )}
