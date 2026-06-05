@@ -533,12 +533,20 @@ export function SupplementBarcodeConfirm({
           here as editable rows. Empty extras list = single-ingredient
           bottle (the barcode tier's typical case). */}
       {extraIngredients.length > 0 && (
-        <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4 space-y-3">
+        <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4 space-y-3 overflow-hidden">
           <p className="text-[10px] text-white/40 uppercase tracking-wider font-semibold">
             Additional ingredients ({extraIngredients.length})
           </p>
+          {/* Prompt 175k (2026-06-05): flex-wrap row with min-w-0 on
+              every child so the unit select cannot overflow the card.
+              On narrow viewports the name input takes the full row and
+              amount + unit + trash wrap to a second line; on regular
+              phone widths and up they all sit on one row. The unit
+              select matches the primary Dosage unit: w-20 fixed width,
+              appearance-none so the iOS native chevron does not push
+              past the column, text-center for the unit glyph. */}
           {extraIngredients.map((row, idx) => (
-            <div key={idx} className="grid grid-cols-[1fr_90px_70px_28px] gap-2 items-center">
+            <div key={idx} className="flex flex-wrap gap-2 items-center">
               <input
                 type="text"
                 value={row.name}
@@ -548,7 +556,7 @@ export function SupplementBarcodeConfirm({
                     prev.map((r, i) => (i === idx ? { ...r, name: e.target.value } : r)),
                   )
                 }
-                className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white placeholder:text-white/20 focus:border-teal-400/50 focus:ring-1 focus:ring-teal-400/30 focus:outline-none transition-all text-xs"
+                className="min-w-0 flex-1 basis-[140px] px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white placeholder:text-white/20 focus:border-teal-400/50 focus:ring-1 focus:ring-teal-400/30 focus:outline-none transition-all text-xs"
               />
               <input
                 type="number"
@@ -561,7 +569,7 @@ export function SupplementBarcodeConfirm({
                     prev.map((r, i) => (i === idx ? { ...r, amount: e.target.value } : r)),
                   )
                 }
-                className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white placeholder:text-white/20 focus:border-teal-400/50 focus:ring-1 focus:ring-teal-400/30 focus:outline-none transition-all text-xs [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                className="min-w-0 w-20 px-2 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-center placeholder:text-white/20 focus:border-teal-400/50 focus:ring-1 focus:ring-teal-400/30 focus:outline-none transition-all text-xs [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
               />
               <select
                 value={row.unit}
@@ -570,7 +578,7 @@ export function SupplementBarcodeConfirm({
                     prev.map((r, i) => (i === idx ? { ...r, unit: e.target.value } : r)),
                   )
                 }
-                className="px-2 py-2 rounded-lg bg-white/5 border border-white/10 text-white appearance-none cursor-pointer focus:border-teal-400/50 focus:ring-1 focus:ring-teal-400/30 focus:outline-none transition-all text-xs [&>option]:bg-[#1E2D4A] [&>option]:text-white"
+                className="min-w-0 w-20 px-2 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-center appearance-none cursor-pointer focus:border-teal-400/50 focus:ring-1 focus:ring-teal-400/30 focus:outline-none transition-all text-xs [&>option]:bg-[#1E2D4A] [&>option]:text-white"
               >
                 {UNITS.map((u) => <option key={u} value={u}>{u}</option>)}
               </select>
@@ -580,7 +588,7 @@ export function SupplementBarcodeConfirm({
                   setExtraIngredients((prev) => prev.filter((_, i) => i !== idx))
                 }
                 aria-label={`Remove ingredient ${idx + 1}`}
-                className="flex items-center justify-center w-7 h-7 rounded-md text-white/30 hover:text-orange-400 hover:bg-white/[0.04] transition-colors"
+                className="flex-shrink-0 flex items-center justify-center w-7 h-7 rounded-md text-white/30 hover:text-orange-400 hover:bg-white/[0.04] transition-colors"
               >
                 <Trash2 size={13} strokeWidth={1.5} />
               </button>
