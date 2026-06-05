@@ -541,6 +541,12 @@ function UpdateSupplementsCard() {
         return false;
       }
       const dosageString = rec.dosage && rec.unit ? `${rec.dosage}${rec.unit}` : (rec.dosage || "");
+      // Prompt 175h hotfix (2026-06-05): key_ingredients carries the
+      // full multi-active list from the confirm panel so the user's
+      // edits via the + button persist on the row.
+      const keyIngredients = rec.structured_ingredients
+        .map((ing) => ing.name)
+        .filter((n) => n.length > 0);
       const { error } = await supabase
         .from("user_current_supplements")
         .upsert({
@@ -553,7 +559,7 @@ function UpdateSupplementsCard() {
           dosage_form: rec.deliveryMethod || "capsule",
           frequency: rec.frequency || "daily",
           category: rec.deliveryMethod || "general",
-          key_ingredients: [],
+          key_ingredients: keyIngredients,
           source: rec.source === "photo" ? "photo_ai" : "barcode",
           is_current: true,
           is_ai_recommended: false,

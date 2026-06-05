@@ -76,10 +76,10 @@ interface Props {
    * Prompt 175h Section 2.3 (2026-06-05): fires when the user confirms
    * the supplement record via the confirm panel. The record carries the
    * user-edited fields including Hannah's accepted (or adjusted) timing
-   * recommendation. The identified product is provided alongside so the
-   * caller can still surface the AI ingredient breakdown if it wants.
+   * recommendation AND the full structured ingredient list (primary +
+   * extras the user added via the + button).
    */
-  onProductAdded?: (record: BarcodeConfirmRecord, identified: IdentifiedProduct) => void;
+  onProductAdded?: (record: BarcodeConfirmRecord) => void;
   /**
    * Invoked when Vision returns `overallConfidence === 'low'`. Parent
    * should route to the manual entry form pre-filled with the suggested
@@ -365,7 +365,7 @@ export default function SupplementPhotoUpload({
         source="photo"
         initialDraft={initialDraft}
         onConfirm={(rec) => {
-          onProductAdded?.(rec, product);
+          onProductAdded?.(rec);
           reset();
         }}
         onCancel={reset}

@@ -2001,12 +2001,13 @@ export default function OnboardingStepPage() {
                     onProductIdentified={(product) => {
                       void product;
                     }}
-                    onProductAdded={(rec, identified) => {
-                      // Prompt 175h Section 2.3 (2026-06-05): Photo AI
-                      // now routes through SupplementBarcodeConfirm so
-                      // the record is fully populated (delivery method,
-                      // dosage, unit, frequency, timing). We no longer
-                      // hardcode stub values here.
+                    onProductAdded={(rec) => {
+                      // Prompt 175h Section 2.3 + hotfix (2026-06-05):
+                      // ingredientBreakdown sources from
+                      // rec.structured_ingredients (user-edited via the
+                      // + button in the confirm panel), not from the
+                      // raw photo extraction. That way edits and added
+                      // rows make it to user_current_supplements.
                       commitSupplement({
                         name: rec.name,
                         brand: rec.brand,
@@ -2020,7 +2021,7 @@ export default function OnboardingStepPage() {
                         withFood: rec.with_food,
                         timingReason: rec.timing_reason,
                         timingSource: rec.timing_source,
-                        ingredientBreakdown: (identified.ingredients || []).map((ing) => ({
+                        ingredientBreakdown: rec.structured_ingredients.map((ing) => ({
                           name: ing.name,
                           amount: ing.amount ?? 0,
                           unit: ing.unit || rec.unit,

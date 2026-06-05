@@ -23,7 +23,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Barcode, Camera, ChevronDown, CircleAlert, Loader2 } from 'lucide-react';
+import { Barcode, Camera, ChevronDown, CircleAlert, Loader2, Plus, Trash2 } from 'lucide-react';
 import type {
   Frequency as TimingFrequency,
   TimeOfDay,
@@ -55,6 +55,17 @@ export interface BarcodeConfirmRecord {
   with_food: boolean;
   timing_reason: string | null;
   timing_source: 'hannah_recommended' | 'user_set';
+  // Prompt 175h hotfix (2026-06-05): full structured ingredient list
+  // for the row. Includes the primary active (name + dosage + unit +
+  // form) AND any additional actives the user added via the + button or
+  // that the photo extraction surfaced. Downstream writers can store the
+  // names in key_ingredients on user_current_supplements.
+  structured_ingredients: ReadonlyArray<{
+    name: string;
+    amount: number | null;
+    unit: string | null;
+    form: string | null;
+  }>;
 }
 
 /**
@@ -157,14 +168,45 @@ export function SupplementBarcodeConfirm({
   onConfirm,
   onCancel,
 }: SupplementBarcodeConfirmProps): JSX.Element {
-  const [name, setName] = useState<string>(initialDraft?.name ?? '');
+  // Prompt 175h hotfix (2026-06-05): seed primary active + extras from
+  // initialDraft.ingredients when the upstream produced a multi-active
+  // list (the photo path commonly does). First ingredient fills name +
+  // dosage + unit; rest become rows in extraIngredients.
+  const seededFromIngredients = initialDraft?.ingredients && initialDraft.ingredients.length > 0
+    ? initialDraft.ingredients
+    : null;
+  const seedPrimary = seededFromIngredients?.[0] ?? null;
+  const [name, setName] = useState<string>(
+    initialDraft?.name ?? seedPrimary?.name ?? '',
+  );
   const [brand, setBrand] = useState<string>(initialDraft?.brand ?? '');
   const [deliveryMethod, setDeliveryMethod] = useState<string>(initialDraft?.deliveryMethod ?? '');
-  const [form, setForm] = useState<string>(initialDraft?.form ?? '');
-  const [dosage, setDosage] = useState<string>(initialDraft?.dosage ?? '');
-  const [unit, setUnit] = useState<string>(initialDraft?.unit ?? 'mg');
+  const [form, setForm] = useState<string>(
+    initialDraft?.form ?? seedPrimary?.form ?? '',
+  );
+  const [dosage, setDosage] = useState<string>(
+    initialDraft?.dosage ?? (seedPrimary?.amount !== null && seedPrimary?.amount !== undefined
+      ? String(seedPrimary.amount)
+      : ''),
+  );
+  const [unit, setUnit] = useState<string>(
+    initialDraft?.unit ?? seedPrimary?.unit ?? 'mg',
+  );
   const [frequency, setFrequency] = useState<string>(initialDraft?.frequency ?? 'once_daily');
   const [reason, setReason] = useState<string>('');
+
+  // Extras start from initialDraft.ingredients[1..n] so a photo that
+  // surfaced multiple actives lands them all in the editor. The user
+  // can add more via the + button next to the Dosage label.
+  const [extraIngredients, setExtraIngredients] = useState<Array<{ name: string; amount: string; unit: string }>>(
+    seededFromIngredients && seededFromIngredients.length > 1
+      ? seededFromIngredients.slice(1).map((ing) => ({
+          name: ing.name ?? '',
+          amount: ing.amount !== null && ing.amount !== undefined ? String(ing.amount) : '',
+          unit: ing.unit ?? 'mg',
+        }))
+      : [],
+  );
 
   // Prompt 175h Section 2.5 (2026-06-05): Hannah timing state.
   const [timesSelected, setTimesSelected] = useState<ReadonlyArray<TimeOfDay>>(['morning']);
@@ -256,11 +298,23 @@ export function SupplementBarcodeConfirm({
   useEffect(() => {
     const validFreqs: ReadonlyArray<string> = ['once_daily', 'twice_daily', 'three_daily', 'weekly', 'as_needed'];
     if (!validFreqs.includes(frequency)) return;
-    const ingredients = initialDraft?.ingredients && initialDraft.ingredients.length > 0
-      ? initialDraft.ingredients
-      : (name.trim().length > 0
-        ? [{ name: name.trim(), amount: Number(dosage) || null, unit, form: form || null }]
-        : []);
+    // Build the full active list: primary (name + dosage + unit + form)
+    // first, then every extra row the user has filled in. Both go to
+    // Hannah so iron + calcium and similar conflicts surface even when
+    // the user typed them as separate rows rather than expecting the
+    // photo extraction to pick them up.
+    const primaryActive = name.trim().length > 0
+      ? [{ name: name.trim(), amount: Number(dosage) || null, unit, form: form || null }]
+      : [];
+    const extrasActive = extraIngredients
+      .filter((r) => r.name.trim().length > 0)
+      .map((r) => ({
+        name: r.name.trim(),
+        amount: Number(r.amount) || null,
+        unit: r.unit,
+        form: null as string | null,
+      }));
+    const ingredients = [...primaryActive, ...extrasActive];
     if (ingredients.length === 0) return;
     let cancelled = false;
     setTimingLoading(true);
@@ -285,7 +339,7 @@ export function SupplementBarcodeConfirm({
         if (!cancelled) setTimingLoading(false);
       });
     return () => { cancelled = true; };
-  }, [name, dosage, unit, form, frequency, initialDraft]);
+  }, [name, dosage, unit, form, frequency, extraIngredients, initialDraft]);
 
   function toggleTime(slot: TimeOfDay): void {
     setTimesSelected((prev) =>
@@ -429,9 +483,28 @@ export function SupplementBarcodeConfirm({
         </div>
 
         <div>
-          <label className="text-xs text-white/40 mb-1.5 block">
-            Dosage <span className="text-red-400">*</span>
-          </label>
+          <div className="flex items-center justify-between mb-1.5">
+            <label className="text-xs text-white/40">
+              Dosage <span className="text-red-400">*</span>
+              {extraIngredients.length > 0 ? (
+                <span className="ml-1 text-white/30">(primary)</span>
+              ) : null}
+            </label>
+            <button
+              type="button"
+              onClick={() =>
+                setExtraIngredients((prev) => [
+                  ...prev,
+                  { name: '', amount: '', unit: 'mg' },
+                ])
+              }
+              className="inline-flex items-center gap-1 text-[10px] font-medium text-teal-400 hover:text-teal-300"
+              aria-label="Add another active ingredient"
+            >
+              <Plus size={11} strokeWidth={1.5} />
+              Add ingredient
+            </button>
+          </div>
           <div className="flex gap-2">
             <input
               type="number"
@@ -453,6 +526,68 @@ export function SupplementBarcodeConfirm({
           </div>
         </div>
       </div>
+
+      {/* Prompt 175h hotfix (2026-06-05): additional active ingredients.
+          Multi-ingredient formulas (most photo extractions) land their
+          first active in the Dosage field above; everything else shows
+          here as editable rows. Empty extras list = single-ingredient
+          bottle (the barcode tier's typical case). */}
+      {extraIngredients.length > 0 && (
+        <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4 space-y-3">
+          <p className="text-[10px] text-white/40 uppercase tracking-wider font-semibold">
+            Additional ingredients ({extraIngredients.length})
+          </p>
+          {extraIngredients.map((row, idx) => (
+            <div key={idx} className="grid grid-cols-[1fr_90px_70px_28px] gap-2 items-center">
+              <input
+                type="text"
+                value={row.name}
+                placeholder="Ingredient name"
+                onChange={(e) =>
+                  setExtraIngredients((prev) =>
+                    prev.map((r, i) => (i === idx ? { ...r, name: e.target.value } : r)),
+                  )
+                }
+                className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white placeholder:text-white/20 focus:border-teal-400/50 focus:ring-1 focus:ring-teal-400/30 focus:outline-none transition-all text-xs"
+              />
+              <input
+                type="number"
+                value={row.amount}
+                placeholder="Amount"
+                min={0}
+                step="any"
+                onChange={(e) =>
+                  setExtraIngredients((prev) =>
+                    prev.map((r, i) => (i === idx ? { ...r, amount: e.target.value } : r)),
+                  )
+                }
+                className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white placeholder:text-white/20 focus:border-teal-400/50 focus:ring-1 focus:ring-teal-400/30 focus:outline-none transition-all text-xs [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+              />
+              <select
+                value={row.unit}
+                onChange={(e) =>
+                  setExtraIngredients((prev) =>
+                    prev.map((r, i) => (i === idx ? { ...r, unit: e.target.value } : r)),
+                  )
+                }
+                className="px-2 py-2 rounded-lg bg-white/5 border border-white/10 text-white appearance-none cursor-pointer focus:border-teal-400/50 focus:ring-1 focus:ring-teal-400/30 focus:outline-none transition-all text-xs [&>option]:bg-[#1E2D4A] [&>option]:text-white"
+              >
+                {UNITS.map((u) => <option key={u} value={u}>{u}</option>)}
+              </select>
+              <button
+                type="button"
+                onClick={() =>
+                  setExtraIngredients((prev) => prev.filter((_, i) => i !== idx))
+                }
+                aria-label={`Remove ingredient ${idx + 1}`}
+                className="flex items-center justify-center w-7 h-7 rounded-md text-white/30 hover:text-orange-400 hover:bg-white/[0.04] transition-colors"
+              >
+                <Trash2 size={13} strokeWidth={1.5} />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Prompt 175g (2026-06-05): physical Form select, distinct from
           Delivery Method (treatment category). Auto-fills from the
@@ -606,25 +741,40 @@ export function SupplementBarcodeConfirm({
             // no scanned barcode in this path. The structuredIngredients
             // come from initialDraft.ingredients when supplied so the
             // canonical record captures the full multi-active formula.
+            // Prompt 175h hotfix (2026-06-05): build the full structured
+            // ingredient list from the primary fields + extras list. The
+            // primary always sits first; extras append in their UI order.
+            const primaryAmount = Number(dosage);
+            const fullIngredients = [
+              {
+                name: name.trim(),
+                amount: Number.isFinite(primaryAmount) ? primaryAmount : null,
+                unit: unit || null,
+                form: form || null,
+              },
+              ...extraIngredients
+                .filter((r) => r.name.trim().length > 0)
+                .map((r) => {
+                  const amt = Number(r.amount);
+                  return {
+                    name: r.name.trim(),
+                    amount: Number.isFinite(amt) ? amt : null,
+                    unit: r.unit || null,
+                    form: null as string | null,
+                  };
+                }),
+            ];
             try {
               const isNumericRetailUpc = source === 'barcode' && barcodeValue
                 ? /^\d{8,14}$/.test(barcodeValue)
                 : false;
-              const ingestStructured = initialDraft?.ingredients && initialDraft.ingredients.length > 0
-                ? initialDraft.ingredients.map((i) => ({
-                    name: i.name,
-                    amount: i.amount,
-                    unit: i.unit,
-                    form: i.form,
-                    source: source === 'photo' ? 'photo_ai' : 'user_scan',
-                  }))
-                : [{
-                    name: name.trim(),
-                    amount: Number(dosage),
-                    unit,
-                    form: form || null,
-                    source: source === 'photo' ? 'photo_ai' : 'user_scan',
-                  }];
+              const ingestStructured = fullIngredients.map((i) => ({
+                name: i.name,
+                amount: i.amount,
+                unit: i.unit,
+                form: i.form,
+                source: source === 'photo' ? 'photo_ai' : 'user_scan',
+              }));
               fetch('/api/caq/supplements/canonical-ingest', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -662,6 +812,7 @@ export function SupplementBarcodeConfirm({
               with_food: withFood,
               timing_reason: timingReason,
               timing_source: timingChanged ? 'user_set' : 'hannah_recommended',
+              structured_ingredients: fullIngredients,
             });
           }}
           className={`flex-1 py-3 rounded-xl font-medium text-sm transition-all ${

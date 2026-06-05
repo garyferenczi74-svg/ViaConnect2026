@@ -124,7 +124,19 @@ export async function completeCAQAndTriggerEngines(): Promise<{
             dosage_form: String(s.deliveryMethod || "capsule"),
             frequency: String(s.frequency || "daily"),
             category: String(s.category || "general"),
-            key_ingredients: [] as string[],
+            // Prompt 175h hotfix (2026-06-05): populate key_ingredients
+            // from the structured ingredient breakdown so the user's
+            // multi-active formula reaches user_current_supplements.
+            // Falls back to empty when the row is single-ingredient.
+            key_ingredients: Array.isArray(s.ingredientBreakdown)
+              ? s.ingredientBreakdown
+                  .map((ing) =>
+                    typeof ing === "object" && ing !== null && typeof (ing as { name?: unknown }).name === "string"
+                      ? (ing as { name: string }).name
+                      : null,
+                  )
+                  .filter((n): n is string => n !== null && n.length > 0)
+              : ([] as string[]),
             source: String(s.source || "manual"),
             is_current: true,
             is_ai_recommended: false,
