@@ -308,6 +308,14 @@ export function SupplementBarcodeOverlay({
   // sessions can be distinguished in the Vercel runtime logs.
   const sessionIdRef = useRef<string>(generateSessionId());
   const openedAtRef = useRef<number>(0);
+  // Prompt 175h (2026-06-05): mirror scan.state into a ref so the
+  // telemetry interval reads the LIVE value instead of the stale value
+  // captured by its [open]-only closure. The 175g run reported every
+  // sample with scanState='idle' which was the initial value at effect
+  // setup; the hook had already transitioned to 'scanning' by the time
+  // the first tick fired but the closure could not see it.
+  const liveScanStateRef = useRef<string>('idle');
+  const liveScanErrorRef = useRef<string | null>(null);
 
   // Portal target. createPortal requires a real DOM node; this state
   // flips true after first client render so SSR does not call
@@ -348,7 +356,33 @@ export function SupplementBarcodeOverlay({
         diagLog('onDetect:checksum-rejected', {
           value: decoded.value,
           reason: validation.reason,
+          format: decoded.format,
         });
+        // Prompt 175h: POST a decoded_rejected event to the telemetry
+        // sink so Vercel logs surface that ZXing actually IS finding
+        // codes that we then drop. Reason + format + length are enough
+        // to distinguish "alphanumeric CODE_128 like an Amazon ASIN"
+        // (reason 'non_numeric', format 'CODE_128') from "checksum
+        // mismatch on a slightly misread UPC" (reason 'checksum_mismatch')
+        // from "decoder found something in a length we do not support".
+        // The barcode value itself is NEVER sent.
+        try {
+          fetch('/api/caq/supplements/barcode-telemetry', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              sessionId: sessionIdRef.current,
+              phase: 'decoded_rejected',
+              rejectionReason: validation.reason ?? 'unknown',
+              rejectedFormat: decoded.format,
+              valueLength: decoded.value.length,
+              elapsedMs: Date.now() - openedAtRef.current,
+            }),
+            keepalive: true,
+          }).catch(() => undefined);
+        } catch {
+          // Best effort.
+        }
         return;
       }
 
@@ -455,6 +489,10 @@ export function SupplementBarcodeOverlay({
 
   useEffect(() => {
     if (!open) return;
+    // Prompt 175h: mirror state + error into the live refs so the
+    // 3-second telemetry interval picks up state transitions.
+    liveScanStateRef.current = scan.state;
+    liveScanErrorRef.current = scan.error;
     diagLog('scan-state-change', { state: scan.state, error: scan.error, flashlightOn: scan.flashlightOn });
   }, [scan.state, scan.error, scan.flashlightOn, open]);
 
@@ -485,7 +523,11 @@ export function SupplementBarcodeOverlay({
         videoWidth: videoEl?.videoWidth ?? 0,
         videoHeight: videoEl?.videoHeight ?? 0,
         readyState: videoEl?.readyState ?? 0,
-        scanState: scan.state,
+        // Prompt 175h: read scanState from the LIVE ref so the value is
+        // not the stale closure capture. liveScanErrorRef included too
+        // so a permission denial or stream error is visible here.
+        scanState: liveScanStateRef.current,
+        scanError: liveScanErrorRef.current,
         html5QrcodeState: html5State,
         elapsedMs: Date.now() - openedAtRef.current,
       };

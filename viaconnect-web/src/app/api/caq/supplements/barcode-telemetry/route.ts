@@ -31,8 +31,23 @@ interface BarcodeTelemetryPayload {
   videoHeight?: number;
   readyState?: number;
   scanState?: string;
+  // Prompt 175h (2026-06-05): scanError surfaces the hook's error code
+  // (permission_denied, no_camera_hardware, camera_in_use, etc.) so a
+  // failed-startup session is distinguishable from a healthy one with
+  // no decodes. PHI-free: enum value only.
+  scanError?: string | null;
   html5QrcodeState?: number | null;
   elapsedMs?: number;
+  // Prompt 175h: decoded_rejected phase carries the symbology +
+  // length + rejection reason so Vercel logs can tell apart
+  //   "ZXing found alphanumeric CODE_128 (Amazon ASIN) -> dropped"
+  //   "ZXing found numeric 12-digit but checksum failed -> dropped"
+  //   "ZXing found a 9-digit string -> wrong_length -> dropped"
+  //   "ZXing never decoded anything"
+  // The scanned VALUE is never accepted by the endpoint.
+  rejectionReason?: string;
+  rejectedFormat?: string;
+  valueLength?: number;
 }
 
 export async function POST(request: Request) {
@@ -61,8 +76,12 @@ export async function POST(request: Request) {
     videoHeight: clampInt(body.videoHeight),
     readyState: clampInt(body.readyState),
     scanState: typeof body.scanState === 'string' ? body.scanState.slice(0, 32) : null,
+    scanError: typeof body.scanError === 'string' ? body.scanError.slice(0, 64) : null,
     html5QrcodeState: clampInt(body.html5QrcodeState),
     elapsedMs: clampInt(body.elapsedMs),
+    rejectionReason: typeof body.rejectionReason === 'string' ? body.rejectionReason.slice(0, 32) : null,
+    rejectedFormat: typeof body.rejectedFormat === 'string' ? body.rejectedFormat.slice(0, 16) : null,
+    valueLength: clampInt(body.valueLength),
   });
 
   return NextResponse.json({ ok: true }, { status: 200 });
