@@ -1,26 +1,24 @@
 'use client';
 
 // =============================================================================
-// Prompt 175l (2026-06-05): SupplementCaptureBlock.
+// Prompt 175l + 175m (2026-06-05): SupplementCaptureBlock.
 //
-// The polished CAQ capture block, refactored into a single reusable
-// component so the Supplement Protocol page can mount the exact same
-// search-or-scan-or-photo flow that the onboarding CAQ uses, without
-// duplicating the JSX. Hannah's timing (175h), the multi-source
-// resolver (175a/175g), and Marshall's canonical ingest all flow
-// through the existing shared atomic components (SupplementBarcodeConfirm,
-// SupplementBarcodeOverlay, SupplementPhotoUpload).
+// Reusable supplement capture block mounted on the Supplement Protocol
+// page. Hannah's timing (175h), the multi-source resolver (175a/175g),
+// and Marshall's canonical ingest all flow through the existing shared
+// atomic components (SupplementBarcodeConfirm, SupplementPhotoUpload).
 //
-// Visual order per 175l Section 1.1:
+// 175m surfaces (2026-06-05): barcode entry removed per Gary, leaving
+// search and photo as the two supported paths.
+//
+// Visual order:
 //   1. Search field (typeahead against search_supplements RPC)
 //   2. OR divider
-//   3. Scan barcode button (teal outline)
-//   4. OR divider
-//   5. SupplementPhotoUpload dashed card
+//   3. SupplementPhotoUpload dashed card
 //
-// When the user picks a search result, scans a barcode, or analyzes a
-// photo, the matching SupplementBarcodeConfirm panel mounts in place
-// of the picker until the user confirms or cancels.
+// When the user picks a search result or analyzes a photo, the matching
+// SupplementBarcodeConfirm panel mounts in place of the picker until
+// the user confirms or cancels.
 //
 // Parent contract: onSupplementAdded fires with the fully-edited
 // BarcodeConfirmRecord (primary + extras + timing) once the user taps
@@ -28,14 +26,13 @@
 // =============================================================================
 
 import { useEffect, useRef, useState } from 'react';
-import { Barcode as BarcodeIcon, Search } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import {
   SupplementBarcodeConfirm,
   type BarcodeConfirmRecord,
   type SupplementConfirmInitialDraft,
 } from '@/components/caq/phase6/SupplementBarcodeConfirm';
-import { SupplementBarcodeOverlay } from '@/components/caq/phase6/SupplementBarcodeOverlay';
 import SupplementPhotoUpload from '@/components/caq/phase6/SupplementPhotoUpload';
 
 type SearchRow = {
@@ -67,8 +64,6 @@ export function SupplementCaptureBlock({
 }: SupplementCaptureBlockProps): JSX.Element {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [searchResults, setSearchResults] = useState<SearchRow[]>([]);
-  const [scannerOpen, setScannerOpen] = useState<boolean>(false);
-  const [pendingBarcode, setPendingBarcode] = useState<{ value: string; format: string } | null>(null);
   const [pendingSearchDraft, setPendingSearchDraft] = useState<SupplementConfirmInitialDraft | null>(null);
   const [saving, setSaving] = useState<boolean>(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -113,7 +108,7 @@ export function SupplementCaptureBlock({
     }
   }
 
-  const isConfirming = pendingBarcode !== null || pendingSearchDraft !== null;
+  const isConfirming = pendingSearchDraft !== null;
 
   return (
     <div className="space-y-4">
@@ -171,36 +166,12 @@ export function SupplementCaptureBlock({
 
           <OrDivider />
 
-          {/* Scan barcode */}
-          <button
-            type="button"
-            onClick={() => setScannerOpen(true)}
-            disabled={saving}
-            className="min-h-[48px] w-full flex items-center justify-center gap-2 rounded-xl bg-teal-400/10 border border-teal-400/30 text-teal-400 text-sm font-medium hover:bg-teal-400/15 transition-all disabled:opacity-50"
-          >
-            <BarcodeIcon className="w-4 h-4" strokeWidth={1.5} aria-hidden="true" />
-            Scan barcode
-          </button>
-
-          <OrDivider />
+          {/* Prompt 175m (2026-06-05): Scan barcode button removed per
+              Gary. Search and Photo remain the supported paths. */}
 
           {/* Photo upload (dashed card + two-photo capture + confirm) */}
           <SupplementPhotoUpload onProductAdded={(rec) => commit(rec)} />
         </>
-      )}
-
-      {/* Barcode confirmation panel */}
-      {pendingBarcode && (
-        <SupplementBarcodeConfirm
-          barcodeValue={pendingBarcode.value}
-          barcodeFormat={pendingBarcode.format}
-          source="barcode"
-          onConfirm={async (rec) => {
-            await commit(rec);
-            setPendingBarcode(null);
-          }}
-          onCancel={() => setPendingBarcode(null)}
-        />
       )}
 
       {/* Search-result confirmation panel */}
@@ -218,16 +189,8 @@ export function SupplementCaptureBlock({
         />
       )}
 
-      {/* Barcode scanner overlay */}
-      <SupplementBarcodeOverlay
-        open={scannerOpen}
-        onClose={() => setScannerOpen(false)}
-        onScanned={(decoded) => {
-          setPendingBarcode({ value: decoded.value, format: decoded.format });
-          setScannerOpen(false);
-        }}
-        onManualEntry={() => setScannerOpen(false)}
-      />
+      {/* Prompt 175m (2026-06-05): SupplementBarcodeOverlay mount
+          removed with the rest of the barcode entry path. */}
     </div>
   );
 }
