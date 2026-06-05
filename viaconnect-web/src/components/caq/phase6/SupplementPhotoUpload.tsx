@@ -227,7 +227,30 @@ export default function SupplementPhotoUpload({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ images }),
       });
-      const data = await response.json();
+      // Prompt 175h hotfix (2026-06-05): a Vercel function timeout or
+      // 413 returns an HTML body, which crashes response.json() with
+      // "the string did not match the expected pattern" on iOS Safari.
+      // Read as text first, parse defensively, fall through to degraded
+      // on any non-JSON or empty body.
+      const contentType = response.headers.get('content-type') || '';
+      const rawText = await response.text();
+      let data: Record<string, unknown> | null = null;
+      if (rawText && contentType.includes('application/json')) {
+        try {
+          data = JSON.parse(rawText) as Record<string, unknown>;
+        } catch {
+          data = null;
+        }
+      }
+      if (data === null) {
+        setErrorMsg(
+          response.status === 413
+            ? 'The photos were too large to upload. Try retaking with the camera instead of the photo library.'
+            : 'We could not read this label automatically.',
+        );
+        setState('degraded');
+        return;
+      }
 
       if (!data.success) {
         if (data.degraded === true || data.status === 'degraded' || response.status === 200) {
@@ -244,7 +267,7 @@ export default function SupplementPhotoUpload({
         return;
       }
 
-      const identified: IdentifiedProduct = data.data;
+      const identified = data.data as IdentifiedProduct;
       setProduct(identified);
       onProductIdentified?.(identified);
 

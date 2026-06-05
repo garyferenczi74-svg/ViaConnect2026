@@ -206,59 +206,78 @@ export async function POST(request: Request) {
     const { data: userData } = await supabase.auth.getUser();
     const userId: string | null = userData?.user?.id ?? null;
 
-    // Per-image normalize + provider routing. Each image runs through
-    // the same pipeline as the single-image flow; a normalize failure
-    // on one image is logged but does not kill the other.
-    const perImage: Array<{
+    // Prompt 175h hotfix (2026-06-05): per-image normalize + provider
+    // routing in PARALLEL. The earlier sequential loop compounded two
+    // 30-second Claude calls into a 60-second function which tripped
+    // the Vercel timeout, returning an HTML error page that the client
+    // could not parse. With Promise.all the wall-clock stays bounded
+    // by the slower image, not by the sum.
+    type PerImageEntry = {
       input: NormalizedImageInput;
       result: ExtractionResult | null;
       attempts: ReadonlyArray<TierAttempt>;
       normalizeError: ExtractionOutcomeCode | null;
-    }> = [];
+      validationCode: ExtractionOutcomeCode | null;
+    };
 
-    for (const img of images) {
-      let normalized;
-      try {
-        normalized = await validateAndNormalize(img.imageBase64, img.mimeType);
-      } catch (err) {
-        if (isValidationError(err)) {
-          // Client-side validation failure on this image. With one image
-          // total the legacy flow returns 4xx; with multiple, log it and
-          // skip just this image so the other can still succeed.
-          if (images.length === 1) {
-            const status = err.code === 'unsupported_image' ? 400 : 422;
-            return jsonError(err.code, USER_MESSAGE_FOR_UNSUPPORTED, status);
+    const perImage: PerImageEntry[] = await Promise.all(
+      images.map(async (img): Promise<PerImageEntry> => {
+        let normalized;
+        try {
+          normalized = await validateAndNormalize(img.imageBase64, img.mimeType);
+        } catch (err) {
+          if (isValidationError(err)) {
+            safeLog.warn('api.ai.supplement-vision', 'per-image validation failed', {
+              role: img.role ?? 'unspecified',
+              code: err.code,
+            });
+            return {
+              input: img,
+              result: null,
+              attempts: [],
+              normalizeError: err.code,
+              validationCode: err.code,
+            };
           }
-          safeLog.warn('api.ai.supplement-vision', 'per-image validation failed', {
+          safeLog.error('api.ai.supplement-vision', 'normalize failed', {
             role: img.role ?? 'unspecified',
-            code: err.code,
+            error: err,
           });
-          perImage.push({ input: img, result: null, attempts: [], normalizeError: err.code });
-          continue;
+          return {
+            input: img,
+            result: null,
+            attempts: [],
+            normalizeError: 'image_normalize_failed',
+            validationCode: null,
+          };
         }
-        safeLog.error('api.ai.supplement-vision', 'normalize failed', {
-          role: img.role ?? 'unspecified',
-          error: err,
+        const { result, attempts } = await runProviderRouter({
+          geminiApiKey,
+          anthropicApiKey,
+          imageBase64: normalized.base64,
+          mimeType: normalized.mimeType,
         });
-        if (images.length === 1) {
-          return degraded200('image_normalize_failed', USER_MESSAGE_FOR_MANUAL_FALLBACK);
-        }
-        perImage.push({
+        return {
           input: img,
-          result: null,
-          attempts: [],
-          normalizeError: 'image_normalize_failed',
-        });
-        continue;
-      }
+          result,
+          attempts,
+          normalizeError: null,
+          validationCode: null,
+        };
+      }),
+    );
 
-      const { result, attempts } = await runProviderRouter({
-        geminiApiKey,
-        anthropicApiKey,
-        imageBase64: normalized.base64,
-        mimeType: normalized.mimeType,
-      });
-      perImage.push({ input: img, result, attempts, normalizeError: null });
+    // Single-image legacy: a normalize failure on the sole image still
+    // surfaces the 4xx / degraded the existing CAQ flow expects. With
+    // multiple images we keep degraded 200 and let mergeByRole fall
+    // through.
+    if (images.length === 1 && perImage[0].validationCode !== null) {
+      const code = perImage[0].validationCode;
+      const status = code === 'unsupported_image' ? 400 : 422;
+      return jsonError(code, USER_MESSAGE_FOR_UNSUPPORTED, status);
+    }
+    if (images.length === 1 && perImage[0].normalizeError === 'image_normalize_failed') {
+      return degraded200('image_normalize_failed', USER_MESSAGE_FOR_MANUAL_FALLBACK);
     }
 
     // Merge results by role (front + ingredients). When only one image
