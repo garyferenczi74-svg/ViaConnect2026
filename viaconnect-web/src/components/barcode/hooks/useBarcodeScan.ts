@@ -26,12 +26,22 @@ type Html5QrcodeCtor = new (
   config: { verbose: boolean },
 ) => Html5QrcodeInstance;
 
+// Prompt 175c (2026-06-05): qrbox is optional on the underlying library
+// so callers can opt out of html5-qrcode's internal viewfinder mask
+// (NutriVision's BarcodeScannerOverlay keeps the default mask; the CAQ
+// supplement overlay sets qrbox: undefined and draws its own reticle so
+// only one framing element renders per iOS Safari fix).
+type QrboxValue =
+  | { width: number; height: number }
+  | ((viewfinderWidth: number, viewfinderHeight: number) => { width: number; height: number })
+  | undefined;
+
 interface Html5QrcodeInstance {
   start: (
     cameraConstraints: { facingMode: string },
     config: {
       fps: number;
-      qrbox: { width: number; height: number };
+      qrbox?: QrboxValue;
       aspectRatio?: number;
       disableFlip?: boolean;
     },
@@ -42,7 +52,11 @@ interface Html5QrcodeInstance {
     onFrame: () => void,
   ) => Promise<void>;
   stop: () => Promise<void>;
-  clear: () => Promise<void> | void;
+  // Prompt 175c (2026-06-05): html5-qrcode's clear() returns
+  // Promise<void> per its 2.x types; the prior local declaration of
+  // Promise<void> | void allowed a void inference path that prevented
+  // .catch from typechecking on the unmount cleanup.
+  clear: () => Promise<void>;
   applyVideoConstraints: (constraints: MediaTrackConstraints) => Promise<void>;
 }
 
@@ -76,6 +90,23 @@ export type BarcodeScanState =
 export interface UseBarcodeScanOptions {
   onDetect: (result: BarcodeDecodedResult) => void;
   onError?: (error: Error) => void;
+  /**
+   * Prompt 175c (2026-06-05): per-caller override of html5-qrcode start
+   * config. Defaults preserve the NutriVision behavior (qrbox 280x96, fps
+   * 10, aspectRatio 1.777). The supplement-vision overlay passes
+   * { qrbox: null } to opt out of the internal viewfinder mask so only
+   * the overlay's own teal reticle is visible.
+   */
+  config?: {
+    /**
+     * Pass null to omit qrbox entirely (no internal mask + full-frame
+     * scanning). Pass an object or a function to override the default
+     * 280x96 box.
+     */
+    qrbox?: { width: number; height: number } | ((vw: number, vh: number) => { width: number; height: number }) | null;
+    fps?: number;
+    aspectRatio?: number;
+  };
 }
 
 export interface UseBarcodeScanResult {
@@ -140,14 +171,27 @@ export function useBarcodeScan(opts: UseBarcodeScanOptions): UseBarcodeScanResul
 
       lastDetectionAtRef.current = performance.now();
 
+      // Prompt 175c: resolve per-caller config overrides. Default values
+      // preserve NutriVision's existing scan behavior. qrbox === null
+      // (explicit) opts out of html5-qrcode's internal viewfinder mask.
+      const callerConfig = opts.config ?? {};
+      const startConfig: {
+        fps: number;
+        qrbox?: QrboxValue;
+        aspectRatio?: number;
+        disableFlip?: boolean;
+      } = {
+        fps: callerConfig.fps ?? 10,
+        aspectRatio: callerConfig.aspectRatio ?? 1.777,
+        disableFlip: true,
+      };
+      if (callerConfig.qrbox !== null) {
+        startConfig.qrbox = callerConfig.qrbox ?? { width: 280, height: 96 };
+      }
+
       await scannerRef.current.start(
         { facingMode: 'environment' },
-        {
-          fps: 10,
-          qrbox: { width: 280, height: 96 },
-          aspectRatio: 1.777,
-          disableFlip: true,
-        },
+        startConfig,
         (decodedText, decodedResult) => {
           const rawFormat =
             (decodedResult as { result?: { format?: { format?: string } } }).result

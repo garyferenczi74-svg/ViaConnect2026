@@ -1,26 +1,46 @@
 /**
- * Prompt 175a Part 1 (2026-06-04): supplement barcode scanner overlay.
+ * Prompt 175c (2026-06-05): supplement barcode scanner overlay,
+ * full-screen iOS-safe rebuild.
  *
- * Mounts the existing html5-qrcode camera via the project's useBarcodeScan
- * hook (170l) without coupling to the Open Food Facts food lookup. On
- * detection, returns the raw barcode value plus format to the parent and
- * closes. No lookup is performed inside this batch (175a batch 1, no
- * resolver yet); identity confirmation happens in the parent surface.
+ * 175b confirmed permission + stream attach + decode are working on
+ * iOS. The remaining defect was the overlay collapsing into a thin
+ * sliver at the top of the screen, with two reticles rendering at
+ * different positions and the CAQ page bleeding through. 175c fixes
+ * the rendering only: the camera, permission, and decode wiring
+ * stays exactly as 175b left them.
  *
- * Visual chrome mirrors the food scanner so the two surfaces feel like
- * one product: navy 92% backdrop with a transparent 280 by 96 cutout,
- * four teal corner brackets, a faint horizontal centerline, helper-text
- * escalation at 15s + 30s, and a persistent manual entry link.
+ * Sizing strategy (Section 2.1):
+ *   - Outer container is a portaled fixed layer at inset 0, opaque
+ *     black, sized with height 100dvh and a -webkit-fill-available
+ *     min-height fallback. dvh resolves to the current visual
+ *     viewport (collapsing in sync with the iOS address bar), unlike
+ *     vh which is the larger viewport and produces the sliver when
+ *     the address bar is visible.
+ *   - The html5-qrcode viewport div (BARCODE_SCANNER_ELEMENT_ID)
+ *     gets explicit width 100% and height 100% in style, not just
+ *     inset-0, so html5-qrcode reads non-zero dimensions even while
+ *     iOS is animating chrome.
+ *   - Portaled to document.body so no ancestor transform or filter
+ *     can constrain the fixed layer.
  *
- * Reused from the existing barcode infrastructure (no new dep):
- *   - useBarcodeScan: camera lifecycle, format filter, flashlight toggle
- *   - BARCODE_SCANNER_ELEMENT_ID: the DOM id html5-qrcode mounts into
- *   - BarcodeDecodedResult: the typed decoded value
+ * Single reticle (Section 2.3):
+ *   - One centered teal box at 80% width, aspect-square, with the
+ *     four CornerBrackets anchored to its corners.
+ *   - The supplement caller passes config.qrbox=null to useBarcodeScan
+ *     so html5-qrcode does NOT render its own internal mask. Only the
+ *     teal reticle is visible.
+ *
+ * Lifecycle (Sections 2.4 + 2.6 + Resilience):
+ *   - Body scroll locked while open, restored on unmount.
+ *   - On close, scan.stop() runs FIRST (html5-qrcode releases its
+ *     tracks) and then a belt-and-suspenders pass stops any remaining
+ *     MediaStreamTrack so the iOS camera-active indicator clears.
  */
 
 'use client';
 
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Flashlight, X } from 'lucide-react';
 import {
   useBarcodeScan,
@@ -33,8 +53,6 @@ const ESCALATION_DELAY_MS = 30_000;
 const PULSE_DURATION_MS = 300;
 const REDUCED_MOTION_FLASH_MS = 200;
 
-const NAVY = '#1A2744';
-const CARD = '#1E3054';
 const TEAL = '#2DA5A0';
 
 const HELPER_INITIAL = 'Point your camera at the barcode';
@@ -42,11 +60,9 @@ const HELPER_COACHING = 'Try moving closer, or hold the barcode flat';
 const HELPER_ESCALATION = 'Having trouble? Enter the supplement by name below.';
 const ARIA_DETECTION_COPY = 'Barcode detected.';
 
-// Prompt 175b hotfix Fix C: stage-by-stage diagnostic logging. Client-side
-// only for now (Vercel runtime logs do not capture browser console). When
-// Gary tests on iOS via Safari Web Inspector, every stage emits a tagged
-// line so the failure point is obvious. A future batch can wire a small
-// fire-and-forget POST to surface these in production runtime logs.
+// Prompt 175c: stage-by-stage diagnostic logging carried forward from
+// 175b. Vercel runtime logs do not capture browser console; this lets
+// the iOS Web Inspector trace pinpoint any remaining failure stage.
 function diagLog(stage: string, extra?: Record<string, unknown>): void {
   if (typeof console === 'undefined') return;
   try {
@@ -58,19 +74,12 @@ function diagLog(stage: string, extra?: Record<string, unknown>): void {
 }
 
 /**
- * iOS Safari + WKWebView render nothing when the video element is missing
- * the playsInline + muted + autoplay attributes. html5-qrcode handles
- * most of this internally but not in every browser build, and the
- * webkit-playsinline attribute (lowercase, separate from playsInline) is
- * still required on older iOS Safari. We set them all idempotently on
- * the video child of the scanner viewport so the stream displays after
- * the permission prompt closes.
+ * Force iOS-required attributes on the html5-qrcode video element so
+ * the stream renders inline rather than collapsing to a sliver.
+ * Idempotent; safe to call on every poll tick.
  */
 function hardenIosVideo(): void {
   if (typeof document === 'undefined') return;
-  // The viewport id comes from src/components/barcode/hooks/useBarcodeScan
-  // (BARCODE_SCANNER_ELEMENT_ID = 'barcode-scanner-viewport'). Hard-coded
-  // here to avoid a circular import and because the id is contractual.
   const container = document.getElementById('barcode-scanner-viewport');
   if (!container) {
     diagLog('hardenIosVideo:container-missing');
@@ -86,18 +95,12 @@ function hardenIosVideo(): void {
     video.setAttribute('webkit-playsinline', 'true');
     video.setAttribute('autoplay', 'true');
     video.setAttribute('muted', 'true');
-    (video as HTMLVideoElement).playsInline = true;
-    (video as HTMLVideoElement).muted = true;
-    (video as HTMLVideoElement).autoplay = true;
-    // iOS sometimes refuses to render a video whose CSS computes to zero
-    // dimensions. Ensure the element fills the viewport explicitly so the
-    // stream has somewhere to draw.
+    video.playsInline = true;
+    video.muted = true;
+    video.autoplay = true;
     video.style.width = '100%';
     video.style.height = '100%';
     video.style.objectFit = 'cover';
-    // Re-attempt play in case the stream attached before our hardening.
-    // Swallow the promise rejection because iOS rejects play() after the
-    // permission prompt closes even when the stream is fine.
     const p = video.play();
     if (p && typeof p.catch === 'function') {
       p.catch((err) => diagLog('hardenIosVideo:play-rejected', { err: String(err) }));
@@ -114,13 +117,6 @@ function hardenIosVideo(): void {
   }
 }
 
-/**
- * Re-run hardenIosVideo every 250ms for up to 2 seconds. The stream
- * attach can race the play() call on iOS, so an immediate-only harden
- * sometimes runs before the video element has a usable surface. The
- * loop self-terminates as soon as videoWidth > 0 (proof the surface is
- * actually rendering) or after the cap.
- */
 function pollHardenIosVideo(): void {
   if (typeof document === 'undefined' || typeof window === 'undefined') return;
   const MAX_ATTEMPTS = 8;
@@ -144,18 +140,38 @@ function pollHardenIosVideo(): void {
   window.setTimeout(tick, INTERVAL_MS);
 }
 
+/**
+ * Belt-and-suspenders camera release. html5-qrcode's stop() should
+ * release the underlying tracks, but on iOS WKWebView the track
+ * objects can survive past stop() and keep the camera indicator lit.
+ * Explicitly enumerate every MediaStreamTrack on the video's
+ * srcObject and stop them.
+ */
+function releaseCameraTracks(): void {
+  if (typeof document === 'undefined') return;
+  const container = document.getElementById('barcode-scanner-viewport');
+  const video = container?.querySelector('video');
+  if (!(video instanceof HTMLVideoElement)) return;
+  const stream = video.srcObject;
+  if (stream && typeof (stream as MediaStream).getTracks === 'function') {
+    const tracks = (stream as MediaStream).getTracks();
+    diagLog('releaseCameraTracks:stopping', { count: tracks.length });
+    tracks.forEach((track) => {
+      try { track.stop(); } catch { /* best effort */ }
+    });
+  } else {
+    diagLog('releaseCameraTracks:no-stream', {});
+  }
+}
+
 export interface SupplementBarcodeOverlayProps {
   open: boolean;
   onClose: () => void;
   /**
-   * Fired exactly once per successful detection. The parent is responsible
-   * for advancing to the confirmation surface and for dismissing this
-   * overlay.
+   * Fired exactly once per successful detection. The parent advances to
+   * the confirmation surface and dismisses this overlay.
    */
   onScanned: (decoded: BarcodeDecodedResult) => void;
-  /**
-   * Fired when the user taps "Enter the supplement by name below."
-   */
   onManualEntry: () => void;
   hapticEnabled?: boolean;
 }
@@ -174,8 +190,16 @@ export function SupplementBarcodeOverlay({
   const [reducedMotion, setReducedMotion] = useState(false);
   const [pulsing, setPulsing] = useState(false);
   const [detectionAnnounce, setDetectionAnnounce] = useState<string>('');
+  const [mounted, setMounted] = useState(false);
   const inFlightBarcodeRef = useRef<string | null>(null);
   const manualEntryLinkRef = useRef<HTMLButtonElement | null>(null);
+
+  // Portal target. createPortal requires a real DOM node; this state
+  // flips true after first client render so SSR does not call
+  // createPortal during hydration.
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (typeof window === 'undefined' || !window.matchMedia) return;
@@ -185,6 +209,18 @@ export function SupplementBarcodeOverlay({
     mq.addEventListener('change', handler);
     return () => mq.removeEventListener('change', handler);
   }, []);
+
+  // Prompt 175c Section 2.4: lock body scroll while the scanner is
+  // open and restore it on close so the CAQ page underneath cannot
+  // scroll behind a full-screen modal.
+  useEffect(() => {
+    if (!open || typeof document === 'undefined') return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [open]);
 
   const onDetect = useCallback(
     (decoded: BarcodeDecodedResult) => {
@@ -210,7 +246,13 @@ export function SupplementBarcodeOverlay({
     [hapticEnabled, onScanned, reducedMotion],
   );
 
-  const scan = useBarcodeScan({ onDetect });
+  // Prompt 175c Section 2.3: qrbox: null disables html5-qrcode's
+  // internal viewfinder mask so only this overlay's teal reticle is
+  // visible. The library still scans the full frame.
+  const scan = useBarcodeScan({
+    onDetect,
+    config: { qrbox: null },
+  });
 
   useEffect(() => {
     if (!open) return;
@@ -220,18 +262,16 @@ export function SupplementBarcodeOverlay({
     diagLog('overlay:open');
     void scan.start().then(() => {
       diagLog('scan.start:resolved', { state: scan.state, error: scan.error });
-      // Prompt 175b hotfix Fix C: iOS Safari + WKWebView refuse to render
-      // a video stream without playsInline + muted + autoplay all set on
-      // the actual video element. html5-qrcode mounts its own video child
-      // inside BARCODE_SCANNER_ELEMENT_ID; we force the required iOS
-      // attributes here so the stream actually displays after the
-      // permission prompt closes. Poll for up to 2 seconds because the
-      // stream attach can race the play() call on iOS.
       pollHardenIosVideo();
     });
     return () => {
       diagLog('overlay:close');
-      void scan.stop();
+      void scan.stop().finally(() => {
+        // Section 2.6 belt-and-suspenders: html5-qrcode's stop() can
+        // leave tracks live on iOS WKWebView. Explicitly stop every
+        // track so the camera-active indicator clears.
+        releaseCameraTracks();
+      });
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
@@ -254,19 +294,19 @@ export function SupplementBarcodeOverlay({
     return () => window.clearTimeout(t);
   }, [open]);
 
-  // Prompt 175b hotfix Fix C: log scan state + error transitions so the
-  // iOS Web Inspector trace shows exactly which transition stalled.
   useEffect(() => {
     if (!open) return;
     diagLog('scan-state-change', { state: scan.state, error: scan.error, flashlightOn: scan.flashlightOn });
   }, [scan.state, scan.error, scan.flashlightOn, open]);
 
   const handleClose = useCallback(() => {
-    void scan.stop();
+    void scan.stop().finally(() => {
+      releaseCameraTracks();
+    });
     onClose();
   }, [onClose, scan]);
 
-  if (!open) return null;
+  if (!open || !mounted || typeof document === 'undefined') return null;
 
   const bracketScale = pulsing && !reducedMotion ? 1.15 : 1;
   const bracketOpacity = pulsing && reducedMotion ? 0.7 : 1;
@@ -277,42 +317,47 @@ export function SupplementBarcodeOverlay({
     : helperPhase === 'coaching' ? HELPER_COACHING
     : HELPER_ESCALATION;
 
-  return (
+  const overlay = (
     <div
       role="dialog"
       aria-modal="true"
       aria-labelledby={titleId}
-      className="fixed inset-0 z-[120] flex items-center justify-center"
-      style={{ backgroundColor: 'transparent' }}
+      className="fixed inset-0 z-[120] bg-black"
+      style={{
+        // Prompt 175c Section 2.1: 100dvh tracks the visual viewport
+        // (collapses with the iOS address bar). webkit-fill-available
+        // is the Safari fallback for browsers without dvh support.
+        height: '100dvh',
+        minHeight: '-webkit-fill-available',
+      }}
     >
       <span id={titleId} className="sr-only">Supplement barcode scanner</span>
 
+      {/* Video viewport. Explicit 100%/100% style so html5-qrcode reads
+          non-zero dimensions even while iOS animates chrome. */}
       <div
         id={BARCODE_SCANNER_ELEMENT_ID}
         aria-hidden="true"
         className="absolute inset-0 bg-black"
-        style={{ overflow: 'hidden' }}
+        style={{
+          width: '100%',
+          height: '100%',
+          overflow: 'hidden',
+        }}
       />
 
-      <div className="absolute inset-0 pointer-events-none flex flex-col items-center">
+      {/* Single centered teal reticle. 80% width, square aspect.
+          Replaces the prior box-shadow cutout + duplicate framing. */}
+      <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
         <div
-          className="relative"
+          className="relative rounded-xl"
           style={{
-            marginTop: 'calc(40vh - 48px)',
-            width: 280,
-            height: 96,
-            boxShadow: `0 0 0 9999px rgba(26, 39, 68, 0.92)`,
+            width: 'min(80vw, 380px)',
+            aspectRatio: '1 / 1',
+            border: `2px solid ${TEAL}`,
+            boxShadow: '0 0 0 2000px rgba(0, 0, 0, 0.35)',
           }}
         >
-          <div
-            className="absolute left-0 right-0 top-1/2"
-            style={{
-              height: 1,
-              backgroundColor: TEAL,
-              opacity: 0.4,
-              transform: 'translateY(-0.5px)',
-            }}
-          />
           <CornerBracket position="tl" scale={bracketScale} opacity={bracketOpacity}
             durationMs={pulsing ? (reducedMotion ? REDUCED_MOTION_FLASH_MS : PULSE_DURATION_MS) : 0} />
           <CornerBracket position="tr" scale={bracketScale} opacity={bracketOpacity}
@@ -324,12 +369,13 @@ export function SupplementBarcodeOverlay({
         </div>
       </div>
 
+      {/* Top action bar. Safe-area padding so the close + flashlight
+          controls clear the iOS notch. */}
       <div
-        className="absolute top-0 left-0 right-0 flex justify-between items-center px-4"
+        className="absolute top-0 left-0 right-0 flex justify-between items-center px-4 z-10"
         style={{
-          height: 56,
-          paddingTop: 'env(safe-area-inset-top, 0)',
-          color: NAVY,
+          paddingTop: 'calc(env(safe-area-inset-top, 0px) + 12px)',
+          paddingBottom: 12,
         }}
       >
         <button
@@ -357,13 +403,17 @@ export function SupplementBarcodeOverlay({
         </button>
       </div>
 
+      {/* Bottom region. Helper text + manual entry link. Safe-area
+          padding for the home indicator. */}
       <div
-        className="absolute left-0 right-0 flex flex-col items-center text-center pointer-events-none"
-        style={{ top: 'calc(40vh + 80px)' }}
+        className="absolute left-0 right-0 flex flex-col items-center text-center px-6 z-10"
+        style={{
+          bottom: 'calc(env(safe-area-inset-bottom, 0px) + 24px)',
+        }}
       >
         <p
           aria-live="polite"
-          style={{ color: '#FFFFFF', fontSize: 14, padding: '0 24px' }}
+          style={{ color: '#FFFFFF', fontSize: 14, marginBottom: 18 }}
         >
           {helperCopy}
         </p>
@@ -372,10 +422,10 @@ export function SupplementBarcodeOverlay({
           type="button"
           ref={manualEntryLinkRef}
           onClick={onManualEntry}
-          className="pointer-events-auto mt-6 underline focus-visible:ring-2"
+          className="underline focus-visible:ring-2 pointer-events-auto"
           aria-label="Enter the supplement by name instead"
           style={{
-            color: 'rgba(255, 255, 255, 0.8)',
+            color: 'rgba(255, 255, 255, 0.85)',
             fontSize: 13,
             background: 'transparent',
             border: 'none',
@@ -390,7 +440,7 @@ export function SupplementBarcodeOverlay({
         <div
           role="alert"
           className="absolute inset-x-4 bottom-24 mx-auto max-w-md rounded-2xl p-4"
-          style={{ backgroundColor: CARD, color: '#FFFFFF' }}
+          style={{ backgroundColor: '#1E3054', color: '#FFFFFF' }}
         >
           <p style={{ fontSize: 14, fontWeight: 500 }}>
             Camera access is off. Enable it in Settings to scan barcodes.
@@ -406,7 +456,7 @@ export function SupplementBarcodeOverlay({
         <div
           role="alert"
           className="absolute inset-x-4 bottom-24 mx-auto max-w-md rounded-2xl p-4"
-          style={{ backgroundColor: CARD, color: '#FFFFFF' }}
+          style={{ backgroundColor: '#1E3054', color: '#FFFFFF' }}
         >
           <p style={{ fontSize: 14, fontWeight: 500 }}>
             {scan.error === 'no_camera_hardware'
@@ -417,6 +467,8 @@ export function SupplementBarcodeOverlay({
       ) : null}
     </div>
   );
+
+  return createPortal(overlay, document.body);
 }
 
 interface CornerBracketProps {
@@ -429,8 +481,8 @@ interface CornerBracketProps {
 function CornerBracket({ position, scale, opacity, durationMs }: CornerBracketProps): JSX.Element {
   const base: React.CSSProperties = {
     position: 'absolute',
-    width: 16,
-    height: 16,
+    width: 28,
+    height: 28,
     borderColor: TEAL,
     borderStyle: 'solid',
     transition: durationMs > 0 ? `transform ${durationMs}ms ease-out, opacity ${durationMs}ms ease-out` : 'none',
@@ -439,11 +491,11 @@ function CornerBracket({ position, scale, opacity, durationMs }: CornerBracketPr
   };
   const corner: React.CSSProperties = (() => {
     switch (position) {
-      case 'tl': return { top: -3, left: -3, borderWidth: '3px 0 0 3px' };
-      case 'tr': return { top: -3, right: -3, borderWidth: '3px 3px 0 0' };
-      case 'bl': return { bottom: -3, left: -3, borderWidth: '0 0 3px 3px' };
+      case 'tl': return { top: -4, left: -4, borderWidth: '4px 0 0 4px', borderTopLeftRadius: 12 };
+      case 'tr': return { top: -4, right: -4, borderWidth: '4px 4px 0 0', borderTopRightRadius: 12 };
+      case 'bl': return { bottom: -4, left: -4, borderWidth: '0 0 4px 4px', borderBottomLeftRadius: 12 };
       case 'br':
-      default:   return { bottom: -3, right: -3, borderWidth: '0 3px 3px 0' };
+      default:   return { bottom: -4, right: -4, borderWidth: '0 4px 4px 0', borderBottomRightRadius: 12 };
     }
   })();
   return <div style={{ ...base, ...corner }} aria-hidden="true" />;
