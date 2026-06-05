@@ -383,6 +383,29 @@ export function SupplementBarcodeOverlay({
         } catch {
           // Best effort.
         }
+        // Prompt 175l (2026-06-05): also POST the rejected metadata to
+        // the corpus so failure analytics include "ZXing found
+        // something we did not accept" cases. No frame is sent (the
+        // barcode-capture route writes a metadata row with NULL
+        // storage_path when no image is included).
+        try {
+          fetch('/api/caq/supplements/barcode-capture', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              value: decoded.value,
+              format: decoded.format,
+              validChecksum: false,
+              decoded: true,
+              frameWidth: decoded.frameWidth ?? null,
+              frameHeight: decoded.frameHeight ?? null,
+              device: typeof navigator !== 'undefined' ? navigator.userAgent.slice(0, 64) : null,
+            }),
+            keepalive: true,
+          }).catch(() => undefined);
+        } catch {
+          // Best effort.
+        }
         return;
       }
 
@@ -398,6 +421,30 @@ export function SupplementBarcodeOverlay({
         decoder: decoded.decoder,
         latencyMs: decoded.decoder_latency_ms,
       });
+
+      // Prompt 175l (2026-06-05): POST the successful frame to the
+      // barcode-analyzer corpus. The route gates frame storage on the
+      // user's barcode_capture_corpus opt-in; the metadata row writes
+      // regardless so failure analytics work without the image.
+      try {
+        fetch('/api/caq/supplements/barcode-capture', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            value: decoded.value,
+            format: validation.format,
+            validChecksum: true,
+            decoded: true,
+            frameJpegBase64: decoded.frameJpegBase64 ?? null,
+            frameWidth: decoded.frameWidth ?? null,
+            frameHeight: decoded.frameHeight ?? null,
+            device: typeof navigator !== 'undefined' ? navigator.userAgent.slice(0, 64) : null,
+          }),
+          keepalive: true,
+        }).catch(() => undefined);
+      } catch {
+        // Best effort.
+      }
 
       setPulsing(true);
       setDetectionAnnounce(ARIA_DETECTION_COPY);

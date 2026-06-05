@@ -108,9 +108,19 @@ export const BarcodeUserSettingsSchema = z.object({
 export type BarcodeFormat = 'EAN_13' | 'UPC_A' | 'UPC_E' | 'EAN_8' | 'ITF_14' | 'CODE_128';
 
 // Decoded scan result from the client-side decoder.
+//
+// Prompt 175l (2026-06-05): optional frame capture for the
+// barcode-analyzer corpus. The hook encodes a downscaled JPEG of the
+// successful frame and ships it on the result so the overlay can POST
+// to /api/caq/supplements/barcode-capture for consent-gated storage.
+// PHI-free at the type level; the value is raw base64 (no data URL
+// prefix), the encoder ensures size cap before populating.
 export interface BarcodeDecodedResult {
   value: string;
   format: BarcodeFormat;
   decoder: BarcodeDecoderKind;
   decoder_latency_ms: number;
+  frameJpegBase64?: string;
+  frameWidth?: number;
+  frameHeight?: number;
 }

@@ -236,6 +236,35 @@ export function SupplementBarcodeConfirm({
           type="button"
           disabled={!isComplete}
           onClick={() => {
+            // Prompt 175l (2026-06-05): fire-and-forget POST to
+            // /api/caq/supplements/canonical-ingest so the confirmed
+            // product upserts into supplement_reference_canonical.
+            // PHI-free: product catalog fields only. Idempotent on the
+            // server via ON CONFLICT (identity_key).
+            try {
+              const isNumericRetailUpc = /^\d{8,14}$/.test(barcodeValue);
+              fetch('/api/caq/supplements/canonical-ingest', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  upc: isNumericRetailUpc ? barcodeValue : null,
+                  brand: brand.trim() || null,
+                  productName: name.trim(),
+                  primaryStrength: dosage && unit ? `${dosage} ${unit}` : null,
+                  form: deliveryMethod || null,
+                  structuredIngredients: [{
+                    name: name.trim(),
+                    amount: Number(dosage),
+                    unit,
+                    source: 'user_scan',
+                  }],
+                  source: 'user_scan',
+                }),
+                keepalive: true,
+              }).catch(() => undefined);
+            } catch {
+              // Best effort.
+            }
             onConfirm({
               name: name.trim(),
               brand: brand.trim(),

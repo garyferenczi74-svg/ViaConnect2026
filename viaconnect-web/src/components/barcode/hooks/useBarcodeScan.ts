@@ -400,11 +400,46 @@ export function useBarcodeScan(opts: UseBarcodeScanOptions): UseBarcodeScanResul
               const mapped = mapZxingFormat(r.format);
               if (mapped !== null && r.text) {
                 setState('detected');
+                // Prompt 175l (2026-06-05): encode the successful frame
+                // as a downscaled JPEG so the overlay can POST it to the
+                // capture corpus (consent-gated server-side). Downscale
+                // to <= 800 px on the longest side at quality 0.6 so
+                // the payload stays well under the route's 800 KB cap.
+                let frameJpegBase64: string | undefined;
+                let frameW = active.canvas.width;
+                let frameH = active.canvas.height;
+                try {
+                  const TARGET = 800;
+                  const longest = Math.max(frameW, frameH);
+                  const scale = longest > TARGET ? TARGET / longest : 1;
+                  const outW = Math.max(1, Math.floor(frameW * scale));
+                  const outH = Math.max(1, Math.floor(frameH * scale));
+                  const small = document.createElement('canvas');
+                  small.width = outW;
+                  small.height = outH;
+                  const sctx = small.getContext('2d');
+                  if (sctx) {
+                    sctx.drawImage(active.canvas, 0, 0, outW, outH);
+                    const dataUrl = small.toDataURL('image/jpeg', 0.6);
+                    const splitAt = dataUrl.indexOf(',');
+                    if (splitAt > -1) {
+                      frameJpegBase64 = dataUrl.slice(splitAt + 1);
+                      frameW = outW;
+                      frameH = outH;
+                    }
+                  }
+                } catch {
+                  // Best effort; missing frame just means corpus row
+                  // lands with no image, not a decode failure.
+                }
                 onDetectRef.current({
                   value: r.text,
                   format: mapped,
                   decoder: 'zxing_wasm',
                   decoder_latency_ms: 0,
+                  frameJpegBase64,
+                  frameWidth: frameW,
+                  frameHeight: frameH,
                 });
                 return; // single-fire; caller drives stop()
               }
