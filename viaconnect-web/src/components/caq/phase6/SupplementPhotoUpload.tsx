@@ -130,29 +130,41 @@ export default function SupplementPhotoUpload({
     if (ingredientsPhoto?.previewUrl) URL.revokeObjectURL(ingredientsPhoto.previewUrl);
   }, [frontPhoto?.previewUrl, ingredientsPhoto?.previewUrl]);
 
-  async function prepareFile(file: File): Promise<{ base64: string; mimeType: string; previewUrl: string } | null> {
+  async function prepareFile(
+    file: File,
+    role: 'front' | 'ingredients',
+  ): Promise<{ base64: string; mimeType: string; previewUrl: string } | null> {
     const isHeic =
       file.type === 'image/heic' ||
       file.type === 'image/heif' ||
       /\.(heic|heif)$/i.test(file.name);
 
+    // Prompt 175h hotfix (2026-06-05): role-aware compression.
+    //
+    // The front label is large product-name text that survives
+    // aggressive compression with no loss to OCR. The ingredients panel
+    // is fine print where the vision model needs every pixel; a 1400 px
+    // long edge plus quality 0.7 was destroying the text and the model
+    // returned no items, so the confirm panel fell back to whatever the
+    // front photo extracted (just the product name, no ingredient list).
+    //
+    // Front: 1400 px, q=0.7 -> ~250 to 500 KB.
+    // Ingredients: 2000 px, q=0.85 -> ~700 KB to 1.3 MB.
+    // Combined base64 stays well under Vercel's 4.5 MB cap.
+    const targetMaxDim = role === 'ingredients' ? 2000 : 1400;
+    const targetQuality = role === 'ingredients' ? 0.85 : 0.7;
+
     let processedFile = file;
     try {
-      // Prompt 175h hotfix (2026-06-05): always recompress in the
-      // two-photo flow. iPhone camera JPEGs commonly land at 2 to 3 MB
-      // each; two of those base64 encoded blow past Vercel's 4.5 MB
-      // body limit, which surfaced as the 413 the user just hit. Target
-      // 1400 px max + quality 0.7 yields ~250 to 500 KB per shot so
-      // even two photos stay well under the cap.
       try {
         const bitmap = await createImageBitmap(file);
         const canvas = document.createElement('canvas');
-        const scale = Math.min(1400 / Math.max(bitmap.width, bitmap.height), 1);
+        const scale = Math.min(targetMaxDim / Math.max(bitmap.width, bitmap.height), 1);
         canvas.width = Math.round(bitmap.width * scale);
         canvas.height = Math.round(bitmap.height * scale);
         canvas.getContext('2d')!.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
         const blob = await new Promise<Blob>((r) =>
-          canvas.toBlob((b) => r(b!), 'image/jpeg', 0.7),
+          canvas.toBlob((b) => r(b!), 'image/jpeg', targetQuality),
         );
         processedFile = new File([blob], 'photo.jpg', { type: 'image/jpeg' });
       } catch (convertErr) {
@@ -176,6 +188,9 @@ export default function SupplementPhotoUpload({
 
       // eslint-disable-next-line no-console
       console.info('[caq.photo-upload] prepared', {
+        role,
+        targetMaxDim,
+        targetQuality,
         originalBytes: file.size,
         compressedBytes: processedFile.size,
         base64Length: base64.length,
@@ -202,7 +217,7 @@ export default function SupplementPhotoUpload({
     if (!file || !role) return;
     setState('capturing');
     setErrorMsg('');
-    const prepared = await prepareFile(file);
+    const prepared = await prepareFile(file, role);
     if (!prepared) return;
     if (role === 'front') {
       if (frontPhoto?.previewUrl) URL.revokeObjectURL(frontPhoto.previewUrl);
