@@ -5,7 +5,7 @@ import {
   Pill, CalendarClock, Sparkles, ShieldAlert, UserSearch, ShoppingBag,
   Stethoscope, Leaf, ArrowRight, Check, Search, FlaskConical, Droplets,
   Dna, Activity, TestTubes, Clock, Sunrise, Sun, Moon,
-  AlertTriangle, Plus, RefreshCw, Loader2,
+  AlertTriangle, Plus, RefreshCw, Loader2, Barcode as BarcodeIcon, Camera,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { ProtocolConfidenceBadge } from "@/components/protocol/ProtocolConfidenceBadge";
@@ -25,6 +25,16 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import RecommendedSupplements from "@/components/supplement-protocol/RecommendedSupplements";
 import { MobileHeroBackground } from "@/components/ui/MobileHeroBackground";
+// Prompt 175h Section 2.6 (2026-06-05): "Update Supplements" inline
+// add flow on /supplements. Mounts the same barcode overlay, confirm
+// panel, and photo uploader the CAQ flow uses so timing recommendations
+// fire here too.
+import { SupplementBarcodeOverlay } from "@/components/caq/phase6/SupplementBarcodeOverlay";
+import {
+  SupplementBarcodeConfirm,
+  type BarcodeConfirmRecord,
+} from "@/components/caq/phase6/SupplementBarcodeConfirm";
+import SupplementPhotoUpload from "@/components/caq/phase6/SupplementPhotoUpload";
 const SUPPLEMENT_HERO_IMAGE =
   "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Images/Athlete%205.png";
 
@@ -33,7 +43,7 @@ function PIcon({ icon: Icon, color, size = "md" }: { icon: LucideIcon; color: st
   return (<div className="relative flex-shrink-0"><div className={`absolute ${s.glow} rounded-2xl opacity-60 pointer-events-none`} style={{ backgroundColor: `${color}33` }} /><div className={`relative ${s.box} rounded-xl flex items-center justify-center`} style={{ background: `linear-gradient(135deg, ${color}33, ${color}1A, transparent)`, border: `1px solid ${color}26` }}><Icon className={s.ico} style={{ color }} strokeWidth={1.5} /></div></div>);
 }
 
-/* ═══ DATA — built from real user supplements ═══ */
+/* ═══ DATA: built from real user supplements ═══ */
 
 type ProtocolItem = {
   id: string;
@@ -245,10 +255,13 @@ export default function SupplementsPage() {
         </div>
       </Section>
 
+      {/* ═══ UPDATE SUPPLEMENTS (Prompt 175h Section 2.6, 2026-06-05) ═══ */}
+      <UpdateSupplementsCard />
+
       {/* ═══ UPDATE ASSESSMENT ═══ */}
       <SupplementsRetakeCard />
 
-      {/* ═══ 2. RECOMMENDED SUPPLEMENTS — Powered by Ultrathink AI ═══ */}
+      {/* ═══ 2. RECOMMENDED SUPPLEMENTS: Powered by Ultrathink AI ═══ */}
       <Section icon={Sparkles} iconColor="#2DA5A0" title="Recommended Supplements" subtitle="AI-powered personalized protocol by Hannah">
         <div className="p-5 md:p-6">
           <RecommendedSupplements />
@@ -269,7 +282,7 @@ export default function SupplementsPage() {
                   Browse Our Full Supplement Catalog
                 </h3>
                 <p className="mt-1 text-xs leading-relaxed text-white/50 md:text-sm">
-                  Explore the complete ViaConnect™ shop — liposomal, micellar,
+                  Explore the complete ViaConnect™ shop: liposomal, micellar,
                   methylated, minerals, amino acids, botanicals, and specialty
                   formulas. All curated for genomics-guided protocols.
                 </p>
@@ -348,9 +361,9 @@ export default function SupplementsPage() {
 }
 
 // RecommendedSupplementsSection replaced by Ultrathink-powered RecommendedSupplements component
-// Old inline section removed — see src/components/supplement-protocol/RecommendedSupplements.tsx
+// Old inline section removed; see src/components/supplement-protocol/RecommendedSupplements.tsx
 
-// @ts-nocheck — dead code, replaced by RecommendedSupplements component.
+// @ts-nocheck: dead code, replaced by RecommendedSupplements component.
 // Kept for reference / quick rollback. Imports for FarmCeuticaRecommendation
 // and generateFarmCeuticaRecommendations were dropped when the new component
 // was wired in, so this whole function no longer typechecks. Cast to any.
@@ -406,7 +419,7 @@ function _RecommendedSupplementsSectionRemoved({ assessmentCompleted, profile, s
               <h3 className="text-sm font-semibold text-teal-400 mb-1">AI-Powered Recommendations</h3>
               <p className="text-xs text-white/40">
                 {assessmentCompleted
-                  ? `Based on your goals, symptoms, and lifestyle — ${recommendations.length} products selected for you.`
+                  ? `Based on your goals, symptoms, and lifestyle, ${recommendations.length} products selected for you.`
                   : 'Complete your assessment to receive personalized supplement recommendations.'}
               </p>
             </div>
@@ -493,6 +506,201 @@ function _RecommendedSupplementsSectionRemoved({ assessmentCompleted, profile, s
         )}
       </div>
     </Section>
+  );
+}
+
+/**
+ * Prompt 175h Section 2.6 (2026-06-05): inline add-supplement card on
+ * /supplements. Mirrors the CAQ Phase 6 flow (barcode overlay + confirm
+ * panel + two-photo upload) but writes directly to
+ * user_current_supplements so the new row shows up in Daily Schedule on
+ * next refresh.
+ *
+ * The page does not subscribe to user_current_supplements via realtime,
+ * so we keep a local "recently added" list as immediate feedback and
+ * surface a "Refresh schedule" link the user can tap when they want
+ * the protocol view to pick up the change.
+ */
+function UpdateSupplementsCard() {
+  const [scannerOpen, setScannerOpen] = useState(false);
+  const [pendingBarcode, setPendingBarcode] = useState<{ value: string; format: string } | null>(null);
+  const [photoMode, setPhotoMode] = useState(false);
+  const [savingId, setSavingId] = useState<string | null>(null);
+  const [recent, setRecent] = useState<Array<{ id: string; name: string; brand: string }>>([]);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  async function persistSupplement(rec: BarcodeConfirmRecord): Promise<boolean> {
+    const tempId = `tmp-${Date.now()}`;
+    setSavingId(tempId);
+    setErrorMessage(null);
+    try {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setErrorMessage("You need to sign in to save supplements.");
+        return false;
+      }
+      const dosageString = rec.dosage && rec.unit ? `${rec.dosage}${rec.unit}` : (rec.dosage || "");
+      const { error } = await supabase
+        .from("user_current_supplements")
+        .upsert({
+          user_id: user.id,
+          supplement_name: rec.name,
+          brand: rec.brand,
+          product_name: rec.name,
+          formulation: "",
+          dosage: dosageString,
+          dosage_form: rec.deliveryMethod || "capsule",
+          frequency: rec.frequency || "daily",
+          category: rec.deliveryMethod || "general",
+          key_ingredients: [],
+          source: rec.source === "photo" ? "photo_ai" : "barcode",
+          is_current: true,
+          is_ai_recommended: false,
+          added_at: new Date().toISOString(),
+          time_of_day: rec.time_of_day && rec.time_of_day.length > 0 ? rec.time_of_day : null,
+          with_food: rec.with_food,
+          timing_reason: rec.timing_reason,
+          timing_source: rec.timing_source,
+        }, { onConflict: "user_id,supplement_name" });
+      if (error) {
+        setErrorMessage("We could not save that. Please try again.");
+        return false;
+      }
+      setRecent((prev) => [{ id: tempId, name: rec.name, brand: rec.brand }, ...prev].slice(0, 5));
+      return true;
+    } catch {
+      setErrorMessage("We could not save that. Please try again.");
+      return false;
+    } finally {
+      setSavingId(null);
+    }
+  }
+
+  return (
+    <div className="rounded-xl bg-white/[0.02] border border-white/[0.08] p-5 md:p-6">
+      <div className="flex items-start gap-3 mb-5">
+        <div className="relative flex-shrink-0">
+          <div className="absolute blur-lg -inset-1 rounded-2xl opacity-60" style={{ backgroundColor: "#2DA5A033" }} />
+          <div className="relative w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "linear-gradient(135deg, #2DA5A033, #2DA5A01A, transparent)", border: "1px solid #2DA5A026" }}>
+            <Plus className="w-4 h-4 text-teal-400" strokeWidth={1.5} />
+          </div>
+        </div>
+        <div>
+          <h4 className="text-sm font-semibold text-white">Update Supplements</h4>
+          <p className="text-xs text-white/30 mt-1 leading-relaxed max-w-md">
+            Scan a barcode or photograph a label. Hannah will suggest the best time of day based on the formula.
+          </p>
+        </div>
+      </div>
+
+      {/* Picker row */}
+      {!pendingBarcode && !photoMode && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <button
+            type="button"
+            onClick={() => setScannerOpen(true)}
+            className="min-h-[48px] flex items-center justify-center gap-2 rounded-xl bg-teal-400/10 border border-teal-400/30 text-teal-400 text-sm font-medium hover:bg-teal-400/15 transition-all"
+          >
+            <BarcodeIcon className="w-4 h-4" strokeWidth={1.5} />
+            Scan a barcode
+          </button>
+          <button
+            type="button"
+            onClick={() => setPhotoMode(true)}
+            className="min-h-[48px] flex items-center justify-center gap-2 rounded-xl bg-white/[0.04] border border-white/10 text-white/70 text-sm font-medium hover:bg-white/[0.08] hover:border-white/20 transition-all"
+          >
+            <Camera className="w-4 h-4" strokeWidth={1.5} />
+            Photograph the label
+          </button>
+        </div>
+      )}
+
+      {/* Barcode confirmation panel */}
+      {pendingBarcode && (
+        <div className="mt-3">
+          <SupplementBarcodeConfirm
+            barcodeValue={pendingBarcode.value}
+            barcodeFormat={pendingBarcode.format}
+            onConfirm={async (rec) => {
+              const ok = await persistSupplement(rec);
+              if (ok) setPendingBarcode(null);
+            }}
+            onCancel={() => setPendingBarcode(null)}
+          />
+        </div>
+      )}
+
+      {/* Photo upload + downstream confirm panel */}
+      {photoMode && !pendingBarcode && (
+        <div className="mt-3">
+          <SupplementPhotoUpload
+            onProductAdded={async (rec) => {
+              const ok = await persistSupplement(rec);
+              if (ok) setPhotoMode(false);
+            }}
+            onLowConfidence={() => {
+              setPhotoMode(false);
+              setErrorMessage("That label is hard to read. Please scan the barcode or use the search above.");
+            }}
+          />
+          <div className="mt-3 text-center">
+            <button
+              type="button"
+              onClick={() => setPhotoMode(false)}
+              className="text-xs text-white/40 underline hover:text-white/60"
+            >
+              Cancel photo
+            </button>
+          </div>
+        </div>
+      )}
+
+      {savingId && (
+        <p className="mt-3 text-xs text-white/40 flex items-center gap-1.5">
+          <Loader2 className="w-3 h-3 animate-spin" strokeWidth={1.5} />
+          Saving to your protocol...
+        </p>
+      )}
+
+      {errorMessage && (
+        <p className="mt-3 text-xs text-orange-400/80">{errorMessage}</p>
+      )}
+
+      {recent.length > 0 && (
+        <div className="mt-5 pt-4 border-t border-white/5">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-[10px] text-white/30 uppercase tracking-wider font-semibold">Recently added</p>
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="text-[11px] text-teal-400 underline hover:text-teal-300 inline-flex items-center gap-1"
+            >
+              <RefreshCw className="w-3 h-3" strokeWidth={1.5} />
+              Refresh schedule
+            </button>
+          </div>
+          <ul className="space-y-1">
+            {recent.map((r) => (
+              <li key={r.id} className="text-xs text-white/70 flex items-center gap-2">
+                <Check className="w-3 h-3 text-teal-400" strokeWidth={2} />
+                <span>{r.brand ? `${r.brand} ` : ''}{r.name}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      <SupplementBarcodeOverlay
+        open={scannerOpen}
+        onClose={() => setScannerOpen(false)}
+        onScanned={(decoded) => {
+          setPendingBarcode({ value: decoded.value, format: decoded.format });
+          setScannerOpen(false);
+        }}
+        onManualEntry={() => setScannerOpen(false)}
+      />
+    </div>
   );
 }
 

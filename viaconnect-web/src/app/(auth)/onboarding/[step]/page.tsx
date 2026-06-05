@@ -547,6 +547,14 @@ export default function OnboardingStepPage() {
     frequency: string;
     reason: string;
     ingredientBreakdown?: UserSupplementBreakdown[];
+    // Prompt 175h Section 2.5 (2026-06-05): Hannah timing fields kept
+    // alongside each row so /api/caq/supplements save can persist them
+    // to user_current_supplements.time_of_day + with_food +
+    // timing_reason + timing_source.
+    timeOfDay?: ReadonlyArray<'morning' | 'afternoon' | 'evening'>;
+    withFood?: boolean;
+    timingReason?: string | null;
+    timingSource?: 'hannah_recommended' | 'user_set';
   };
   const [userSupplements, setUserSupplements] = useState<UserSupplement[]>([]);
   const [supplementSaveState, setSupplementSaveState] = useState<Record<string, SupplementSaveState>>({});
@@ -1970,6 +1978,10 @@ export default function OnboardingStepPage() {
                       unit: rec.unit,
                       frequency: rec.frequency,
                       reason: rec.reason,
+                      timeOfDay: rec.time_of_day,
+                      withFood: rec.with_food,
+                      timingReason: rec.timing_reason,
+                      timingSource: rec.timing_source,
                     });
                     setPendingBarcode(null);
                   }}
@@ -1989,21 +2001,30 @@ export default function OnboardingStepPage() {
                     onProductIdentified={(product) => {
                       void product;
                     }}
-                    onProductAdded={(product) => {
+                    onProductAdded={(rec, identified) => {
+                      // Prompt 175h Section 2.3 (2026-06-05): Photo AI
+                      // now routes through SupplementBarcodeConfirm so
+                      // the record is fully populated (delivery method,
+                      // dosage, unit, frequency, timing). We no longer
+                      // hardcode stub values here.
                       commitSupplement({
-                        name: `${product.brand || ""} ${product.productName || "Supplement"}`.trim(),
-                        brand: product.brand || "",
+                        name: rec.name,
+                        brand: rec.brand,
                         source: "photo_ai",
-                        deliveryMethod: "standard_actives",
-                        dosage: "1",
-                        unit: "serving",
-                        frequency: "once_daily",
-                        reason: "",
-                        ingredientBreakdown: (product.ingredients || []).map((ing) => ({
+                        deliveryMethod: rec.deliveryMethod,
+                        dosage: rec.dosage,
+                        unit: rec.unit,
+                        frequency: rec.frequency,
+                        reason: rec.reason,
+                        timeOfDay: rec.time_of_day,
+                        withFood: rec.with_food,
+                        timingReason: rec.timing_reason,
+                        timingSource: rec.timing_source,
+                        ingredientBreakdown: (identified.ingredients || []).map((ing) => ({
                           name: ing.name,
                           amount: ing.amount ?? 0,
-                          unit: ing.unit || "mg",
-                          category: "standard_actives",
+                          unit: ing.unit || rec.unit,
+                          category: rec.deliveryMethod || "standard_actives",
                         })),
                       });
                     }}

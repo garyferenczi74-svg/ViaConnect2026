@@ -23,7 +23,12 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Barcode, ChevronDown, CircleAlert, Loader2 } from 'lucide-react';
+import { Barcode, Camera, ChevronDown, CircleAlert, Loader2 } from 'lucide-react';
+import type {
+  Frequency as TimingFrequency,
+  TimeOfDay,
+  TimingRecommendation,
+} from '@/lib/caq/supplements/timing/types';
 
 const ORANGE = '#B75E18';
 const TEAL = '#2DA5A0';
@@ -31,13 +36,55 @@ const TEAL = '#2DA5A0';
 export interface BarcodeConfirmRecord {
   name: string;
   brand: string;
-  source: 'barcode';
+  // Prompt 175h Section 2.3 (2026-06-05): the confirm panel now serves
+  // both the barcode tier and the Photo AI tier. The source token
+  // identifies which surface produced the record so downstream writers
+  // can attribute capture_source correctly.
+  source: 'barcode' | 'photo';
   deliveryMethod: string;
   form: string;
   dosage: string;
   unit: string;
   frequency: string;
   reason: string;
+  // Prompt 175h Section 2.5 (2026-06-05): Hannah timing fields. The
+  // confirm panel calls /api/caq/supplements/timing-recommend after the
+  // ingredients + frequency are known and surfaces the recommendation as
+  // a pre-selected chip set the user can adjust.
+  time_of_day: ReadonlyArray<TimeOfDay>;
+  with_food: boolean;
+  timing_reason: string | null;
+  timing_source: 'hannah_recommended' | 'user_set';
+}
+
+/**
+ * Prompt 175h Section 2.3 (2026-06-05): initialDraft lets a non-barcode
+ * tier (specifically the Photo AI path) seed the confirm panel with
+ * pre-resolved values. Every field is optional; the panel keeps its own
+ * defaults for anything the source did not supply.
+ */
+export interface SupplementConfirmInitialDraft {
+  name?: string;
+  brand?: string;
+  deliveryMethod?: string;
+  form?: string;
+  dosage?: string;
+  unit?: string;
+  frequency?: TimingFrequency;
+  /**
+   * Resolved ingredient list (already normalized to name + amount + unit
+   * + form). Used for the timing-recommend call so Hannah can class the
+   * formulation correctly. Photo AI passes the full ingredient list it
+   * read off the label; barcode tier leaves this undefined and the
+   * panel synthesizes a single-ingredient stub from name + dosage.
+   */
+  ingredients?: ReadonlyArray<{ name: string; amount: number | null; unit: string | null; form: string | null }>;
+  /**
+   * Per-field provenance map carried over from the upstream resolver so
+   * the panel can render the same "via <source>" microcopy as the
+   * barcode flow.
+   */
+  fieldSources?: Record<string, string>;
 }
 
 export interface SupplementBarcodeConfirmProps {
@@ -45,9 +92,20 @@ export interface SupplementBarcodeConfirmProps {
    * The decoded barcode value, displayed as a chip at the top of the
    * panel. The format (EAN_13, UPC_A, EAN_8, ITF_14) is shown as a small
    * monospace badge so users can verify the read.
+   *
+   * Prompt 175h Section 2.3 (2026-06-05): when the panel is mounted from
+   * the Photo AI path there is no barcode. Pass null for both and the
+   * panel renders the photo chip instead.
    */
-  barcodeValue: string;
-  barcodeFormat: string;
+  barcodeValue: string | null;
+  barcodeFormat: string | null;
+  /**
+   * Prompt 175h Section 2.3 (2026-06-05): identifies which tier
+   * produced this confirmation. 'barcode' renders the scan resolve
+   * flow; 'photo' skips the /resolve fetch and uses initialDraft.
+   */
+  source?: 'barcode' | 'photo';
+  initialDraft?: SupplementConfirmInitialDraft;
   onConfirm: (record: BarcodeConfirmRecord) => void;
   onCancel: () => void;
 }
@@ -94,33 +152,55 @@ const FREQUENCIES: ReadonlyArray<{ v: string; l: string }> = [
 export function SupplementBarcodeConfirm({
   barcodeValue,
   barcodeFormat,
+  source = 'barcode',
+  initialDraft,
   onConfirm,
   onCancel,
 }: SupplementBarcodeConfirmProps): JSX.Element {
-  const [name, setName] = useState<string>('');
-  const [brand, setBrand] = useState<string>('');
-  const [deliveryMethod, setDeliveryMethod] = useState<string>('');
-  const [form, setForm] = useState<string>('');
-  const [dosage, setDosage] = useState<string>('');
-  const [unit, setUnit] = useState<string>('mg');
-  const [frequency, setFrequency] = useState<string>('once_daily');
+  const [name, setName] = useState<string>(initialDraft?.name ?? '');
+  const [brand, setBrand] = useState<string>(initialDraft?.brand ?? '');
+  const [deliveryMethod, setDeliveryMethod] = useState<string>(initialDraft?.deliveryMethod ?? '');
+  const [form, setForm] = useState<string>(initialDraft?.form ?? '');
+  const [dosage, setDosage] = useState<string>(initialDraft?.dosage ?? '');
+  const [unit, setUnit] = useState<string>(initialDraft?.unit ?? 'mg');
+  const [frequency, setFrequency] = useState<string>(initialDraft?.frequency ?? 'once_daily');
   const [reason, setReason] = useState<string>('');
+
+  // Prompt 175h Section 2.5 (2026-06-05): Hannah timing state.
+  const [timesSelected, setTimesSelected] = useState<ReadonlyArray<TimeOfDay>>(['morning']);
+  const [withFood, setWithFood] = useState<boolean>(false);
+  const [timingReason, setTimingReason] = useState<string | null>(null);
+  const [timingConflicts, setTimingConflicts] = useState<ReadonlyArray<string>>([]);
+  const [timingHannahTimes, setTimingHannahTimes] = useState<ReadonlyArray<TimeOfDay>>([]);
+  const [timingHannahWithFood, setTimingHannahWithFood] = useState<boolean>(false);
+  const [timingLoading, setTimingLoading] = useState<boolean>(false);
 
   // Prompt 175g (2026-06-05): per-field provenance map so the user can
   // see which source filled each pre-filled field. Empty when the
   // resolver returned identity_only or while the resolve fetch is in
   // flight.
-  const [fieldSources, setFieldSources] = useState<Record<string, string>>({});
-  const [resolving, setResolving] = useState<boolean>(true);
-  const [resolveStatus, setResolveStatus] = useState<'ok' | 'identity_only' | 'not_found' | null>(null);
-  const [resolveSource, setResolveSource] = useState<string | null>(null);
+  const [fieldSources, setFieldSources] = useState<Record<string, string>>(initialDraft?.fieldSources ?? {});
+  // Prompt 175h Section 2.3 (2026-06-05): photo source skips the
+  // barcode-resolve fetch because the upstream Photo AI pipeline
+  // already supplied the draft.
+  const [resolving, setResolving] = useState<boolean>(source === 'barcode');
+  const [resolveStatus, setResolveStatus] = useState<'ok' | 'identity_only' | 'not_found' | null>(
+    source === 'photo' ? 'ok' : null,
+  );
+  const [resolveSource, setResolveSource] = useState<string | null>(
+    source === 'photo' ? 'photo_ai' : null,
+  );
 
   // Prompt 175g (2026-06-05): fetch /api/caq/supplements/resolve on
   // mount so the panel pre-fills name + brand + form + dosage before
   // the user types anything. The resolver cascades: canonical first,
   // then DSLD, then OpenFoodFacts, then peptides. Identity-only
   // surfaces the OCR fallback prominently per Section 2.4.
+  //
+  // Prompt 175h Section 2.3: the photo path supplies its own draft via
+  // initialDraft so we skip the barcode resolver entirely.
   useEffect(() => {
+    if (source !== 'barcode' || !barcodeValue) return;
     let cancelled = false;
     setResolving(true);
     setResolveStatus(null);
@@ -148,8 +228,6 @@ export function SupplementBarcodeConfirm({
           if (dBrand) setBrand(dBrand);
           if (dForm) setForm(dForm);
           if (dStrength) {
-            // primary_strength is "<amount> <unit>"; split for the
-            // existing dosage + unit fields.
             const match = dStrength.match(/^([\d.]+)\s*([A-Za-z]+)/);
             if (match) {
               setDosage(match[1]);
@@ -167,22 +245,79 @@ export function SupplementBarcodeConfirm({
         if (!cancelled) setResolving(false);
       });
     return () => { cancelled = true; };
-  }, [barcodeValue]);
+  }, [barcodeValue, source]);
+
+  // Prompt 175h Section 2.5 (2026-06-05): call Hannah's timing engine
+  // when the ingredient context + frequency are known. Re-runs on
+  // frequency change so the user sees the morning/evening split flip
+  // when they choose twice_daily. Photo path uses initialDraft.ingredients
+  // for richer multi-active context; barcode path synthesizes a single
+  // stub ingredient from name + dosage.
+  useEffect(() => {
+    const validFreqs: ReadonlyArray<string> = ['once_daily', 'twice_daily', 'three_daily', 'weekly', 'as_needed'];
+    if (!validFreqs.includes(frequency)) return;
+    const ingredients = initialDraft?.ingredients && initialDraft.ingredients.length > 0
+      ? initialDraft.ingredients
+      : (name.trim().length > 0
+        ? [{ name: name.trim(), amount: Number(dosage) || null, unit, form: form || null }]
+        : []);
+    if (ingredients.length === 0) return;
+    let cancelled = false;
+    setTimingLoading(true);
+    fetch('/api/caq/supplements/timing-recommend', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ingredients, frequency }),
+    })
+      .then((r) => r.json())
+      .then((json: TimingRecommendation | { error: string }) => {
+        if (cancelled) return;
+        if ('error' in json) return;
+        setTimesSelected(json.times);
+        setWithFood(json.with_food);
+        setTimingReason(json.reason);
+        setTimingConflicts(json.conflicts);
+        setTimingHannahTimes(json.times);
+        setTimingHannahWithFood(json.with_food);
+      })
+      .catch(() => undefined)
+      .finally(() => {
+        if (!cancelled) setTimingLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, [name, dosage, unit, form, frequency, initialDraft]);
+
+  function toggleTime(slot: TimeOfDay): void {
+    setTimesSelected((prev) =>
+      prev.includes(slot) ? prev.filter((s) => s !== slot) : [...prev, slot],
+    );
+  }
 
   const isComplete = useMemo(
-    () => name.trim().length > 0 && deliveryMethod !== '' && dosage !== '' && Number(dosage) > 0 && frequency !== '',
-    [name, deliveryMethod, dosage, frequency],
+    () => name.trim().length > 0 && deliveryMethod !== '' && dosage !== '' && Number(dosage) > 0 && frequency !== '' && timesSelected.length > 0,
+    [name, deliveryMethod, dosage, frequency, timesSelected],
   );
+
+  const timingChanged = useMemo(() => {
+    if (withFood !== timingHannahWithFood) return true;
+    if (timesSelected.length !== timingHannahTimes.length) return true;
+    const sorted = [...timesSelected].sort().join(',');
+    const hannahSorted = [...timingHannahTimes].sort().join(',');
+    return sorted !== hannahSorted;
+  }, [timesSelected, withFood, timingHannahTimes, timingHannahWithFood]);
 
   return (
     <div className="rounded-xl border border-white/10 bg-white/[0.03] p-5 space-y-5 mb-3">
-      {/* Barcode chip with resolve status (175g). While resolving, show
-          a small spinner. On success, show source badge in Teal. On
-          identity_only or not_found, surface the orange "confirm by
-          hand" badge as before. */}
+      {/* Source chip (175g for barcode, 175h for photo). Barcode shows
+          the decoded value + resolve status; photo shows a "Read from
+          photo" chip with the Camera icon. Both surfaces share the
+          same status badge slot so Hannah's downstream UI stays
+          consistent regardless of how the user arrived. */}
       <div>
         <div className="flex items-center justify-between mb-3">
-          <p className="text-xs text-white/30">Scanned barcode</p>
+          <p className="text-xs text-white/30">
+            {source === 'photo' ? 'Read from photo' : 'Scanned barcode'}
+          </p>
           {resolving ? (
             <span
               className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full"
@@ -196,7 +331,7 @@ export function SupplementBarcodeConfirm({
               className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full"
               style={{ backgroundColor: 'rgba(45, 165, 160, 0.12)', color: TEAL }}
             >
-              Found via {resolveSource ?? 'catalog'}
+              {source === 'photo' ? 'Read by Photo AI' : `Found via ${resolveSource ?? 'catalog'}`}
             </span>
           ) : (
             <span
@@ -208,22 +343,38 @@ export function SupplementBarcodeConfirm({
             </span>
           )}
         </div>
-        <div
-          className="inline-flex items-center gap-2 px-3 py-2 rounded-lg"
-          style={{
-            backgroundColor: resolveStatus === 'ok' ? 'rgba(45, 165, 160, 0.08)' : 'rgba(183, 94, 24, 0.08)',
-            border: `1px solid ${resolveStatus === 'ok' ? 'rgba(45, 165, 160, 0.3)' : 'rgba(183, 94, 24, 0.3)'}`,
-          }}
-        >
-          <Barcode
-            size={18}
-            strokeWidth={1.5}
-            aria-hidden="true"
-            style={{ color: resolveStatus === 'ok' ? TEAL : ORANGE }}
-          />
-          <span className="font-mono text-sm text-white">{barcodeValue}</span>
-          <span className="text-[10px] text-white/40 uppercase tracking-wider">{barcodeFormat.replace('_', '-')}</span>
-        </div>
+        {source === 'barcode' && barcodeValue ? (
+          <div
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg"
+            style={{
+              backgroundColor: resolveStatus === 'ok' ? 'rgba(45, 165, 160, 0.08)' : 'rgba(183, 94, 24, 0.08)',
+              border: `1px solid ${resolveStatus === 'ok' ? 'rgba(45, 165, 160, 0.3)' : 'rgba(183, 94, 24, 0.3)'}`,
+            }}
+          >
+            <Barcode
+              size={18}
+              strokeWidth={1.5}
+              aria-hidden="true"
+              style={{ color: resolveStatus === 'ok' ? TEAL : ORANGE }}
+            />
+            <span className="font-mono text-sm text-white">{barcodeValue}</span>
+            <span className="text-[10px] text-white/40 uppercase tracking-wider">
+              {barcodeFormat ? barcodeFormat.replace('_', '-') : ''}
+            </span>
+          </div>
+        ) : (
+          <div
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg"
+            style={{
+              backgroundColor: 'rgba(45, 165, 160, 0.08)',
+              border: '1px solid rgba(45, 165, 160, 0.3)',
+            }}
+          >
+            <Camera size={18} strokeWidth={1.5} aria-hidden="true" style={{ color: TEAL }} />
+            <span className="text-sm text-white">Photo label</span>
+            <span className="text-[10px] text-white/40 uppercase tracking-wider">vision</span>
+          </div>
+        )}
       </div>
 
       {/* Product Name + Brand */}
@@ -352,6 +503,78 @@ export function SupplementBarcodeConfirm({
         </div>
       </div>
 
+      {/* Prompt 175h Section 2.5 (2026-06-05): Hannah timing selector.
+          Pre-selected from /api/caq/supplements/timing-recommend; user
+          can adjust either time slots or with_food. When the user
+          touches anything timing_source flips from 'hannah_recommended'
+          to 'user_set'. Conflicts (iron + calcium etc.) render in
+          Orange below. */}
+      <div>
+        <div className="flex items-center justify-between mb-2">
+          <label className="text-xs text-white/40">
+            When? <span className="text-red-400">*</span>
+            {!timingChanged && timingHannahTimes.length > 0 ? (
+              <span className="ml-2 text-[10px]" style={{ color: TEAL }}>via Hannah</span>
+            ) : null}
+          </label>
+          {timingLoading ? (
+            <span
+              className="inline-flex items-center gap-1 text-[10px] font-medium"
+              style={{ color: TEAL }}
+            >
+              <Loader2 size={11} strokeWidth={1.5} aria-hidden="true" className="animate-spin" />
+              Hannah is checking...
+            </span>
+          ) : null}
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {(['morning', 'afternoon', 'evening'] as const).map((slot) => {
+            const selected = timesSelected.includes(slot);
+            const labelMap = { morning: 'Morning', afternoon: 'Afternoon', evening: 'Evening' } as const;
+            return (
+              <button
+                key={slot}
+                type="button"
+                onClick={() => toggleTime(slot)}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                  selected
+                    ? 'bg-teal-400/15 border border-teal-400/40 text-teal-400'
+                    : 'bg-white/5 border border-white/10 text-white/50 hover:border-white/20'
+                }`}
+              >
+                {labelMap[slot]}
+              </button>
+            );
+          })}
+        </div>
+        <label className="mt-3 flex items-center gap-2 text-xs text-white/60 cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={withFood}
+            onChange={(e) => setWithFood(e.target.checked)}
+            className="rounded border-white/20 bg-white/5 text-teal-400 focus:ring-teal-400/30"
+          />
+          <span>Take with food</span>
+        </label>
+        {timingReason ? (
+          <p className="mt-2 text-xs text-white/45 leading-snug">{timingReason}</p>
+        ) : null}
+        {timingConflicts.length > 0 ? (
+          <ul className="mt-2 space-y-1">
+            {timingConflicts.map((c) => (
+              <li
+                key={c}
+                className="text-xs flex items-start gap-1.5"
+                style={{ color: ORANGE }}
+              >
+                <CircleAlert size={12} strokeWidth={1.5} aria-hidden="true" className="mt-0.5 flex-shrink-0" />
+                <span>{c}</span>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+      </div>
+
       {/* Reason */}
       <div>
         <label className="text-xs text-white/30 mb-1.5 block">
@@ -377,12 +600,31 @@ export function SupplementBarcodeConfirm({
             // product upserts into supplement_reference_canonical.
             // PHI-free: product catalog fields only. Idempotent on the
             // server via ON CONFLICT (identity_key).
+            //
+            // Prompt 175h Section 2.3: photo source still ingests so
+            // canonical-match gets seeded; upc is null because there is
+            // no scanned barcode in this path. The structuredIngredients
+            // come from initialDraft.ingredients when supplied so the
+            // canonical record captures the full multi-active formula.
             try {
-              const isNumericRetailUpc = /^\d{8,14}$/.test(barcodeValue);
-              // Prompt 175g (2026-06-05): pass the physical form (175g
-              // new field) AND the per-field provenance map captured
-              // from /resolve so upstream readers can see which source
-              // contributed each value.
+              const isNumericRetailUpc = source === 'barcode' && barcodeValue
+                ? /^\d{8,14}$/.test(barcodeValue)
+                : false;
+              const ingestStructured = initialDraft?.ingredients && initialDraft.ingredients.length > 0
+                ? initialDraft.ingredients.map((i) => ({
+                    name: i.name,
+                    amount: i.amount,
+                    unit: i.unit,
+                    form: i.form,
+                    source: source === 'photo' ? 'photo_ai' : 'user_scan',
+                  }))
+                : [{
+                    name: name.trim(),
+                    amount: Number(dosage),
+                    unit,
+                    form: form || null,
+                    source: source === 'photo' ? 'photo_ai' : 'user_scan',
+                  }];
               fetch('/api/caq/supplements/canonical-ingest', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -392,18 +634,10 @@ export function SupplementBarcodeConfirm({
                   productName: name.trim(),
                   primaryStrength: dosage && unit ? `${dosage} ${unit}` : null,
                   form: form || null,
-                  structuredIngredients: [{
-                    name: name.trim(),
-                    amount: Number(dosage),
-                    unit,
-                    form: form || null,
-                    source: 'user_scan',
-                  }],
-                  source: 'user_scan',
+                  structuredIngredients: ingestStructured,
+                  source: source === 'photo' ? 'photo_ai' : 'user_scan',
                   fieldSources: {
                     ...fieldSources,
-                    // Any fields the user typed override the resolver
-                    // provenance with 'manual'.
                     product_name: name !== '' && !fieldSources.product_name ? 'manual' : (fieldSources.product_name ?? 'manual'),
                     brand: brand !== '' && !fieldSources.brand ? 'manual' : (fieldSources.brand ?? 'manual'),
                     form: form !== '' && !fieldSources.form ? 'manual' : (fieldSources.form ?? 'manual'),
@@ -417,13 +651,17 @@ export function SupplementBarcodeConfirm({
             onConfirm({
               name: name.trim(),
               brand: brand.trim(),
-              source: 'barcode',
+              source,
               deliveryMethod,
               form,
               dosage,
               unit,
               frequency,
               reason: reason.trim(),
+              time_of_day: timesSelected,
+              with_food: withFood,
+              timing_reason: timingReason,
+              timing_source: timingChanged ? 'user_set' : 'hannah_recommended',
             });
           }}
           className={`flex-1 py-3 rounded-xl font-medium text-sm transition-all ${

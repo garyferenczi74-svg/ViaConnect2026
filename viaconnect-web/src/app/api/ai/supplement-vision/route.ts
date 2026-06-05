@@ -17,8 +17,35 @@ import type {
   ExtractedSupplement,
   ExtractionOutcomeCode,
   ExtractionResult,
+  ModelTier,
   TierAttempt,
 } from '@/lib/caq/supplement-extraction/types';
+
+// Prompt 175h Section 2.1 + 2.2 (2026-06-05): the Photo AI path now
+// accepts a multi-image payload {images: [{imageBase64, mimeType, role}]}
+// where role is 'front' or 'ingredients'. Each image passes the same
+// 175f integrity floor independently. The route merges the two
+// extractions by role (front wins for brand+name+serving, ingredients
+// wins for the ingredients list). The legacy single-image payload
+// {imageBase64, mimeType} continues to work unchanged for callers that
+// have not migrated to the two-photo flow.
+export type ImageRole = 'front' | 'ingredients';
+const VALID_ROLES: ReadonlyArray<ImageRole> = ['front', 'ingredients'];
+
+interface NormalizedImageInput {
+  imageBase64: string;
+  mimeType: string | null;
+  role: ImageRole | null;
+}
+
+interface PerImageReport {
+  role: ImageRole | null;
+  receivedBytes: number;
+  outcomeCode: ExtractionOutcomeCode;
+  itemCount: number;
+  escalated: boolean;
+  modelTier: ModelTier;
+}
 
 // Prompt 175b (2026-06-04): supplement label OCR route, provider-routed.
 //
@@ -117,48 +144,56 @@ interface LegacyIdentifiedProduct {
 export async function POST(request: Request) {
   try {
     const body = await safeJson(request);
-    const imageBase64 = body?.imageBase64;
-    const mimeType = body?.mimeType;
+    const images = normalizeImagesInput(body);
 
-    // Prompt 175f Section 2.4: log the received payload size BEFORE any
-    // provider call so the runtime logs can prove the image actually
-    // reached the server. PHI-free: bytes + boolean only.
-    const receivedBytes = approximateBase64ByteLength(
-      typeof imageBase64 === 'string' ? imageBase64 : '',
+    // Prompt 175h Section 2.2: per-image byte-floor accounting. Log
+    // before any provider call so runtime logs prove every image
+    // reached the server. PHI-free: bytes + role only.
+    const totalReceivedBytes = images.reduce(
+      (sum, img) => sum + approximateBase64ByteLength(img.imageBase64),
+      0,
     );
-    const receivedNonEmpty = typeof imageBase64 === 'string' && imageBase64.length > 0;
-    const mimeReceived = typeof mimeType === 'string' ? mimeType : null;
     safeLog.info('api.ai.supplement-vision', 'received', {
-      receivedBytes,
-      receivedNonEmpty,
-      mimeType: mimeReceived,
-      base64Length: typeof imageBase64 === 'string' ? imageBase64.length : 0,
+      imageCount: images.length,
+      totalReceivedBytes,
+      roles: images.map((i) => i.role ?? 'unspecified'),
     });
 
-    // Prompt 175f Section 2.4 + 2.5: missing or below-floor image is a
-    // degraded 200 with the explicit no_image_received reason, NOT a
-    // 400. The user fix is to retry the capture; the route now signals
-    // that distinctly so the UI can show "we did not receive a photo"
-    // copy instead of conflating it with "vision unavailable".
-    if (isPayloadBelowFloor(typeof imageBase64 === 'string' ? imageBase64 : null)) {
+    if (images.length === 0) {
       safeLog.warn('api.ai.supplement-vision', 'no_image_received', {
-        receivedBytes,
-        receivedNonEmpty,
+        totalReceivedBytes,
         floorBytes: SUPPLEMENT_VISION_MIN_PAYLOAD_BYTES,
       });
       return degraded200('unsupported_image', USER_MESSAGE_FOR_NO_IMAGE, {
         status: 'degraded',
         reason: 'no_image_received',
-        receivedBytes,
+        receivedBytes: totalReceivedBytes,
       });
+    }
+
+    // Prompt 175h Section 2.2 (per-image 175f integrity): every image
+    // must individually clear the byte floor. Any image below the floor
+    // is rejected outright with no_image_received; do not silently
+    // continue with a half-empty pair.
+    for (const img of images) {
+      if (isPayloadBelowFloor(img.imageBase64)) {
+        safeLog.warn('api.ai.supplement-vision', 'no_image_received_per_image', {
+          role: img.role ?? 'unspecified',
+          receivedBytes: approximateBase64ByteLength(img.imageBase64),
+          floorBytes: SUPPLEMENT_VISION_MIN_PAYLOAD_BYTES,
+        });
+        return degraded200('unsupported_image', USER_MESSAGE_FOR_NO_IMAGE, {
+          status: 'degraded',
+          reason: 'no_image_received',
+          receivedBytes: totalReceivedBytes,
+          failedRole: img.role ?? 'unspecified',
+        });
+      }
     }
 
     const geminiApiKey = getPhotoAiGeminiApiKey();
     const anthropicApiKey = getPhotoAiAnthropicApiKey();
     if (!geminiApiKey && !anthropicApiKey) {
-      // Both providers absent. Server log retains the actionable detail;
-      // client gets neutral copy mapped to the manual-fallback branch by
-      // outcomeCode.
       safeLog.warn(
         'api.ai.supplement-vision',
         'extraction unavailable: no provider keys configured',
@@ -167,61 +202,96 @@ export async function POST(request: Request) {
       return jsonError('config_missing', USER_MESSAGE_FOR_MANUAL_FALLBACK, 503);
     }
 
-    // Session client for canonical-match RLS + user id; admin client for
-    // the observability insert (service-role bypass).
     const supabase = createClient();
     const { data: userData } = await supabase.auth.getUser();
     const userId: string | null = userData?.user?.id ?? null;
 
-    // After the floor check above, imageBase64 is guaranteed to be a
-    // non-empty string of meaningful size. The narrow is restated for
-    // TypeScript because the isPayloadBelowFloor helper takes a union
-    // and does not narrow the call site.
-    const imageBase64String = imageBase64 as string;
-    const mimeTypeString = typeof mimeType === 'string' ? mimeType : null;
-    let normalized;
-    try {
-      normalized = await validateAndNormalize(imageBase64String, mimeTypeString);
-    } catch (err) {
-      if (isValidationError(err)) {
-        // Client-side validation failure (unsupported mime type, too large,
-        // could not decode). 4xx is appropriate here because the client
-        // sent something the server cannot use, and the client should fix
-        // its input rather than retry. This is the ONLY non-2xx path that
-        // remains after the 175b hotfix.
-        const status = err.code === 'unsupported_image' ? 400 : 422;
-        return jsonError(err.code, USER_MESSAGE_FOR_UNSUPPORTED, status);
+    // Per-image normalize + provider routing. Each image runs through
+    // the same pipeline as the single-image flow; a normalize failure
+    // on one image is logged but does not kill the other.
+    const perImage: Array<{
+      input: NormalizedImageInput;
+      result: ExtractionResult | null;
+      attempts: ReadonlyArray<TierAttempt>;
+      normalizeError: ExtractionOutcomeCode | null;
+    }> = [];
+
+    for (const img of images) {
+      let normalized;
+      try {
+        normalized = await validateAndNormalize(img.imageBase64, img.mimeType);
+      } catch (err) {
+        if (isValidationError(err)) {
+          // Client-side validation failure on this image. With one image
+          // total the legacy flow returns 4xx; with multiple, log it and
+          // skip just this image so the other can still succeed.
+          if (images.length === 1) {
+            const status = err.code === 'unsupported_image' ? 400 : 422;
+            return jsonError(err.code, USER_MESSAGE_FOR_UNSUPPORTED, status);
+          }
+          safeLog.warn('api.ai.supplement-vision', 'per-image validation failed', {
+            role: img.role ?? 'unspecified',
+            code: err.code,
+          });
+          perImage.push({ input: img, result: null, attempts: [], normalizeError: err.code });
+          continue;
+        }
+        safeLog.error('api.ai.supplement-vision', 'normalize failed', {
+          role: img.role ?? 'unspecified',
+          error: err,
+        });
+        if (images.length === 1) {
+          return degraded200('image_normalize_failed', USER_MESSAGE_FOR_MANUAL_FALLBACK);
+        }
+        perImage.push({
+          input: img,
+          result: null,
+          attempts: [],
+          normalizeError: 'image_normalize_failed',
+        });
+        continue;
       }
-      safeLog.error('api.ai.supplement-vision', 'normalize failed', { error: err });
-      return degraded200('image_normalize_failed', USER_MESSAGE_FOR_MANUAL_FALLBACK);
+
+      const { result, attempts } = await runProviderRouter({
+        geminiApiKey,
+        anthropicApiKey,
+        imageBase64: normalized.base64,
+        mimeType: normalized.mimeType,
+      });
+      perImage.push({ input: img, result, attempts, normalizeError: null });
     }
 
-    const { result, attempts } = await runProviderRouter({
-      geminiApiKey,
-      anthropicApiKey,
-      imageBase64: normalized.base64,
-      mimeType: normalized.mimeType,
-    });
-    const finalAttempt = attempts[attempts.length - 1];
-    const escalated = attempts.length > 1;
+    // Merge results by role (front + ingredients). When only one image
+    // was provided, this reduces to the single-image legacy behavior.
+    const merged = mergeByRole(perImage);
+    const escalatedAny = perImage.some((p) => p.attempts.length > 1);
+    const allAttempts: TierAttempt[] = perImage.flatMap((p) => [...p.attempts]);
+    const finalAttempt = allAttempts[allAttempts.length - 1];
+    const imagesReport: PerImageReport[] = perImage.map((p) => ({
+      role: p.input.role,
+      receivedBytes: approximateBase64ByteLength(p.input.imageBase64),
+      outcomeCode: p.normalizeError ?? p.result?.outcomeCode ?? 'unknown',
+      itemCount: p.result?.items.length ?? 0,
+      escalated: p.attempts.length > 1,
+      modelTier: p.result?.modelTier ?? 'sonnet',
+    }));
 
-    // Per 175b master spec Section 9.1 + 13: the route NEVER returns 502.
-    // Every server-side failure resolves to HTTP 200 with a degraded
-    // payload so the client can drop the user into the manual-search
-    // fallback with no dead-end red error.
-    if (result.outcomeCode !== 'success' || result.items.length === 0) {
-      await fireAndForgetLog(userId, finalAttempt, escalated, 0);
-      const code = result.items.length === 0 && result.outcomeCode === 'success'
-        ? 'no_items'
-        : result.outcomeCode;
-      return degraded200(code, mapOutcomeToUserMessage(code), { attempts: attemptsSummary(attempts) });
+    if (merged === null || merged.items.length === 0) {
+      await fireAndForgetLog(userId, finalAttempt, escalatedAny, 0);
+      const code: ExtractionOutcomeCode =
+        merged?.outcomeCode === 'success' ? 'no_items' : (merged?.outcomeCode ?? 'no_items');
+      return degraded200(code, mapOutcomeToUserMessage(code), {
+        attempts: attemptsSummary(allAttempts),
+        imagesProcessed: imagesReport,
+        receivedBytes: totalReceivedBytes,
+      });
     }
 
     // Canonical-match runs against the existing search_supplements_v2 RPC.
     // Defensive: a match failure must not drop the extraction response.
     let matchedCount = 0;
     try {
-      const matched = await matchAllExtracted(result.items, supabase);
+      const matched = await matchAllExtracted(merged.items, supabase);
       for (const m of matched) {
         if (m.match.status === 'matched') matchedCount += 1;
       }
@@ -229,30 +299,143 @@ export async function POST(request: Request) {
       safeLog.warn('api.ai.supplement-vision', 'canonical match failed', { error: matchErr });
     }
 
-    await fireAndForgetLog(userId, finalAttempt, escalated, matchedCount);
+    await fireAndForgetLog(userId, finalAttempt, escalatedAny, matchedCount);
 
-    const legacy = toLegacyShape(result);
-    // Prompt 175f Section 2.5 + 9.1: every 200 carries an explicit
-    // status so no response is ambiguous between "real read" and
-    // "masked failure". 'ok' here, 'degraded' on every degraded200
-    // branch.
+    const legacy = toLegacyShape(merged);
     return NextResponse.json({
       status: 'ok',
       success: true,
       outcomeCode: 'success' satisfies ExtractionOutcomeCode,
       data: legacy,
-      modelTier: result.modelTier,
-      escalated,
-      attempts: attemptsSummary(attempts),
-      receivedBytes,
+      modelTier: merged.modelTier,
+      escalated: escalatedAny,
+      attempts: attemptsSummary(allAttempts),
+      receivedBytes: totalReceivedBytes,
+      imagesProcessed: imagesReport,
     });
   } catch (err: unknown) {
     safeLog.error('api.ai.supplement-vision', 'unexpected error', { error: err });
-    // Per spec Section 13 + Acceptance Criteria 1: the route must never
-    // return 5xx for an unhandled error. Surface a graceful 200 so the
-    // client routes to manual search.
     return degraded200('unknown', USER_MESSAGE_FOR_MANUAL_FALLBACK);
   }
+}
+
+/**
+ * Prompt 175h Section 2.1: accept either {imageBase64, mimeType} OR
+ * {images: [{imageBase64, mimeType, role}]}. Returns the normalized
+ * image list; an empty array means "no usable image arrived".
+ */
+export function normalizeImagesInput(
+  body: unknown,
+): ReadonlyArray<NormalizedImageInput> {
+  if (!body || typeof body !== 'object') return [];
+  const obj = body as Record<string, unknown>;
+
+  // New multi-image shape wins when present and non-empty.
+  if (Array.isArray(obj.images) && obj.images.length > 0) {
+    const out: NormalizedImageInput[] = [];
+    for (const raw of obj.images) {
+      if (!raw || typeof raw !== 'object') continue;
+      const r = raw as Record<string, unknown>;
+      const imageBase64 = typeof r.imageBase64 === 'string' ? r.imageBase64 : null;
+      if (!imageBase64 || imageBase64.length === 0) continue;
+      const mimeType = typeof r.mimeType === 'string' ? r.mimeType : null;
+      const role: ImageRole | null =
+        typeof r.role === 'string' && (VALID_ROLES as ReadonlyArray<string>).includes(r.role)
+          ? (r.role as ImageRole)
+          : null;
+      out.push({ imageBase64, mimeType, role });
+    }
+    return out;
+  }
+
+  // Legacy single-image shape.
+  const imageBase64 = typeof obj.imageBase64 === 'string' ? obj.imageBase64 : null;
+  if (!imageBase64 || imageBase64.length === 0) return [];
+  const mimeType = typeof obj.mimeType === 'string' ? obj.mimeType : null;
+  return [{ imageBase64, mimeType, role: null }];
+}
+
+/**
+ * Prompt 175h Section 2.1: merge per-image extraction results by role.
+ * Front image wins for brand + product name; ingredients image wins
+ * for the ingredient list. When only one image succeeded, that image
+ * supplies everything.
+ *
+ * Returns null when no image produced a usable result; otherwise an
+ * ExtractionResult shaped for the route's downstream code path.
+ */
+export function mergeByRole(
+  perImage: ReadonlyArray<{
+    input: NormalizedImageInput;
+    result: ExtractionResult | null;
+  }>,
+): ExtractionResult | null {
+  const usable = perImage.filter(
+    (p): p is { input: NormalizedImageInput; result: ExtractionResult } =>
+      p.result !== null && p.result.outcomeCode === 'success' && p.result.items.length > 0,
+  );
+  if (usable.length === 0) {
+    // None succeeded. Surface the first non-null result so the route
+    // can choose a degraded reason.
+    const first = perImage.find((p) => p.result !== null);
+    return first?.result ?? null;
+  }
+  if (usable.length === 1) {
+    return usable[0].result;
+  }
+
+  const front = usable.find((p) => p.input.role === 'front');
+  const ingredients = usable.find((p) => p.input.role === 'ingredients');
+
+  // If neither image was tagged with a role (e.g. a multi-image call
+  // without role hints), the first usable one is treated as the
+  // ingredient source and the second as the front. Order matters here
+  // because the UI lists front first.
+  const ingredientsSource = ingredients ?? usable[0];
+  const frontSource = front ?? usable[1] ?? usable[0];
+
+  // Carry the ingredients-source items as the canonical ingredient
+  // list. Front-source items are merged in only when they bring a
+  // brand or product name that the ingredients source lacks.
+  const mergedItems: ExtractedSupplement[] = [...ingredientsSource.result.items];
+  const ingredientHasBrand = mergedItems.some((i) => i.brand !== null && i.brand !== '');
+  if (!ingredientHasBrand && frontSource !== ingredientsSource) {
+    const frontBrand = frontSource.result.items.find((i) => i.brand !== null && i.brand !== '');
+    if (frontBrand) {
+      for (let i = 0; i < mergedItems.length; i += 1) {
+        if (mergedItems[i].brand === null || mergedItems[i].brand === '') {
+          mergedItems[i] = { ...mergedItems[i], brand: frontBrand.brand };
+        }
+      }
+    }
+  }
+
+  // Prefer whichever source's items had higher mean confidence to set
+  // the reported modelTier (audit hint: which provider Hannah trusted).
+  const ingAvg = meanConfidence(ingredientsSource.result.items);
+  const frontAvg = meanConfidence(frontSource.result.items);
+  const winnerTier = ingAvg >= frontAvg
+    ? ingredientsSource.result.modelTier
+    : frontSource.result.modelTier;
+  const latency = Math.max(
+    ingredientsSource.result.latencyMs,
+    frontSource.result.latencyMs,
+  );
+
+  return {
+    items: mergedItems,
+    modelTier: winnerTier,
+    escalated: ingredientsSource.result.escalated || frontSource.result.escalated,
+    latencyMs: latency,
+    outcomeCode: 'success',
+  };
+}
+
+function meanConfidence(items: ReadonlyArray<ExtractedSupplement>): number {
+  if (items.length === 0) return 0;
+  let sum = 0;
+  for (const it of items) sum += Number.isFinite(it.confidence) ? it.confidence : 0;
+  return sum / items.length;
 }
 
 function jsonError(code: ExtractionOutcomeCode, message: string, status: number) {
@@ -405,10 +588,10 @@ async function fireAndForgetLog(
   }
 }
 
-async function safeJson(request: Request): Promise<{ imageBase64?: unknown; mimeType?: unknown } | null> {
+async function safeJson(request: Request): Promise<unknown> {
   try {
     const parsed = await request.json();
-    if (parsed && typeof parsed === 'object') return parsed as { imageBase64?: unknown; mimeType?: unknown };
+    if (parsed && typeof parsed === 'object') return parsed;
     return null;
   } catch {
     return null;

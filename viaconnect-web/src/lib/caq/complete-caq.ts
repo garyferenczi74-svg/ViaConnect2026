@@ -1,4 +1,4 @@
-// Complete CAQ Trigger — fires all downstream AI engines after CAQ Phase 7
+// Complete CAQ Trigger: fires all downstream AI engines after CAQ Phase 7
 
 import { createClient } from "@/lib/supabase/client";
 
@@ -98,23 +98,43 @@ export async function completeCAQAndTriggerEngines(): Promise<{
       const userSupps = (phase4.userSupplements as Array<Record<string, unknown>>) || [];
 
       if (userSupps.length > 0 && !userSupps.some((s) => s.name === "None")) {
-        // Save to user_current_supplements
-        const entries = userSupps.map((s) => ({
-          user_id: user.id,
-          supplement_name: String(s.name || ""),
-          brand: String(s.brand || ""),
-          product_name: String(s.name || ""),
-          formulation: String(s.formulation || ""),
-          dosage: s.dosage ? `${s.dosage}${s.unit || "mg"}` : "",
-          dosage_form: String(s.deliveryMethod || "capsule"),
-          frequency: String(s.frequency || "daily"),
-          category: String(s.category || "general"),
-          key_ingredients: [] as string[],
-          source: String(s.source || "manual"),
-          is_current: true,
-          is_ai_recommended: false,
-          added_at: new Date().toISOString(),
-        }));
+        // Save to user_current_supplements. Prompt 175h Section 2.5
+        // (2026-06-05): timeOfDay + withFood + timingReason + timingSource
+        // are carried through from the confirm panel so Hannah's
+        // recommendation persists. Older rows without these fields stay
+        // null and fall back to the legacy "any time" assumption.
+        const VALID_TIMES = ["morning", "afternoon", "evening"];
+        const VALID_TIMING_SOURCES = ["hannah_recommended", "user_set"];
+        const entries = userSupps.map((s) => {
+          const rawTimes = Array.isArray(s.timeOfDay) ? s.timeOfDay : [];
+          const time_of_day = rawTimes.filter(
+            (v): v is string => typeof v === "string" && VALID_TIMES.includes(v),
+          );
+          const timing_source =
+            typeof s.timingSource === "string" && VALID_TIMING_SOURCES.includes(s.timingSource)
+              ? s.timingSource
+              : null;
+          return {
+            user_id: user.id,
+            supplement_name: String(s.name || ""),
+            brand: String(s.brand || ""),
+            product_name: String(s.name || ""),
+            formulation: String(s.formulation || ""),
+            dosage: s.dosage ? `${s.dosage}${s.unit || "mg"}` : "",
+            dosage_form: String(s.deliveryMethod || "capsule"),
+            frequency: String(s.frequency || "daily"),
+            category: String(s.category || "general"),
+            key_ingredients: [] as string[],
+            source: String(s.source || "manual"),
+            is_current: true,
+            is_ai_recommended: false,
+            added_at: new Date().toISOString(),
+            time_of_day: time_of_day.length > 0 ? time_of_day : null,
+            with_food: typeof s.withFood === "boolean" ? s.withFood : null,
+            timing_reason: typeof s.timingReason === "string" ? s.timingReason : null,
+            timing_source,
+          };
+        });
 
         await supabase.from("user_current_supplements").upsert(entries, {
           onConflict: "user_id,supplement_name",

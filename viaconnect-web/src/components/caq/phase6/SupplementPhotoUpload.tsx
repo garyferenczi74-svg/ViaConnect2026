@@ -1,14 +1,41 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
-import { detectWebView, type WebViewDetection } from '@/lib/device/detect-webview';
+// =============================================================================
+// Prompt 175h Section 2.1 + 2.3 (2026-06-05): Photo AI two-image capture +
+// confirm-panel parity.
+//
+// Before this prompt, Photo AI was a single-photo flow that showed an
+// inline "Identified" card with a hardcoded Add button. The Add button
+// committed the supplement directly with stub frequency / dosage / form
+// values because there was no editing surface. Barcode tier already had
+// SupplementBarcodeConfirm with full editing.
+//
+// 175h Section 2.3 fixes that asymmetry. SupplementPhotoUpload now:
+//   1. Captures a front photo (required) and an optional ingredients
+//      photo, each persisted as a previewable thumbnail in local state.
+//   2. POSTs the multi-image payload {images: [{role, imageBase64,
+//      mimeType}]} to /api/ai/supplement-vision (Section 2.1).
+//   3. On success, mounts SupplementBarcodeConfirm with initialDraft
+//      pre-filled from the AI extraction (Section 2.3). The user edits
+//      the same fields as the barcode tier, accepts or adjusts Hannah's
+//      timing recommendation (Section 2.5), and confirms.
+//   4. onProductAdded fires with the full BarcodeConfirmRecord so the
+//      parent's commitSupplement no longer needs to fabricate dosage,
+//      frequency, or delivery method.
+//
+// Backward compat: callers that only need the IdentifiedProduct still
+// receive it via onProductIdentified before the confirm panel mounts.
+// =============================================================================
 
-// Prompt 175 Part E (2026-06-04): never surface raw server error strings.
-// The route already replaces config detail with neutral copy (175 Part A),
-// but a second guard here keeps the UI safe if any future endpoint
-// regression leaks an internal token like 'ANTHROPIC_API_KEY not set in
-// .env.local'. If the server message is missing, empty, or matches one of
-// the known-internal patterns, swap in neutral fallback copy.
+import { useState, useRef, useEffect } from 'react';
+import { Camera, RefreshCw, Sparkles, Trash2 } from 'lucide-react';
+import { detectWebView, type WebViewDetection } from '@/lib/device/detect-webview';
+import {
+  SupplementBarcodeConfirm,
+  type BarcodeConfirmRecord,
+  type SupplementConfirmInitialDraft,
+} from '@/components/caq/phase6/SupplementBarcodeConfirm';
+
 const NEUTRAL_FALLBACK_MESSAGE =
   'We could not read this label. Try a sharper photo, or enter the supplement by name.';
 const INTERNAL_SIGNAL_PATTERNS = [
@@ -28,7 +55,7 @@ function sanitizeServerErrorMessage(raw: unknown): string {
   return trimmed;
 }
 
-interface IdentifiedProduct {
+export interface IdentifiedProduct {
   brand: string | null;
   productName: string | null;
   servingSize: string | null;
@@ -45,31 +72,49 @@ interface IdentifiedProduct {
 
 interface Props {
   onProductIdentified?: (product: IdentifiedProduct) => void;
-  onProductAdded?: (product: IdentifiedProduct) => void;
   /**
-   * Invoked when Vision returns `overallConfidence === 'low'`. Parent should
-   * route to the manual entry form pre-filled with the suggested name. When
-   * provided, the low-confidence result card replaces its primary CTA with
-   * "Enter Manually" instead of "Add to My Supplements".
+   * Prompt 175h Section 2.3 (2026-06-05): fires when the user confirms
+   * the supplement record via the confirm panel. The record carries the
+   * user-edited fields including Hannah's accepted (or adjusted) timing
+   * recommendation. The identified product is provided alongside so the
+   * caller can still surface the AI ingredient breakdown if it wants.
+   */
+  onProductAdded?: (record: BarcodeConfirmRecord, identified: IdentifiedProduct) => void;
+  /**
+   * Invoked when Vision returns `overallConfidence === 'low'`. Parent
+   * should route to the manual entry form pre-filled with the suggested
+   * name.
    */
   onLowConfidence?: (suggestedName: string) => void;
 }
 
-type State = 'idle' | 'compressing' | 'analyzing' | 'complete' | 'error' | 'degraded';
+type State =
+  | 'idle'
+  | 'capturing'
+  | 'analyzing'
+  | 'confirming'
+  | 'error'
+  | 'degraded';
 
-// Prompt 175b hotfix Section 2.2 + 10: debounce the Try again control so
-// rapid taps cannot trip the upstream rate limit.
 const TRY_AGAIN_DEBOUNCE_MS = 1200;
+type CapturedPhoto = { base64: string; mimeType: string; previewUrl: string };
 
-export default function SupplementPhotoUpload({ onProductIdentified, onProductAdded, onLowConfidence }: Props) {
+export default function SupplementPhotoUpload({
+  onProductIdentified,
+  onProductAdded,
+  onLowConfidence,
+}: Props) {
   const [state, setState] = useState<State>('idle');
+  const [frontPhoto, setFrontPhoto] = useState<CapturedPhoto | null>(null);
+  const [ingredientsPhoto, setIngredientsPhoto] = useState<CapturedPhoto | null>(null);
   const [product, setProduct] = useState<IdentifiedProduct | null>(null);
   const [errorMsg, setErrorMsg] = useState('');
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [webview, setWebview] = useState<WebViewDetection | null>(null);
   const [tryAgainDisabled, setTryAgainDisabled] = useState(false);
+  const [pendingRole, setPendingRole] = useState<'front' | 'ingredients' | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const tryAgainTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   useEffect(() => () => {
     if (tryAgainTimerRef.current) clearTimeout(tryAgainTimerRef.current);
   }, []);
@@ -80,20 +125,19 @@ export default function SupplementPhotoUpload({ onProductIdentified, onProductAd
     }
   }, []);
 
-  async function processImage(file: File) {
-    setState('compressing');
-    setErrorMsg('');
-    setProduct(null);
+  useEffect(() => () => {
+    if (frontPhoto?.previewUrl) URL.revokeObjectURL(frontPhoto.previewUrl);
+    if (ingredientsPhoto?.previewUrl) URL.revokeObjectURL(ingredientsPhoto.previewUrl);
+  }, [frontPhoto?.previewUrl, ingredientsPhoto?.previewUrl]);
 
+  async function prepareFile(file: File): Promise<{ base64: string; mimeType: string; previewUrl: string } | null> {
     const isHeic =
       file.type === 'image/heic' ||
       file.type === 'image/heif' ||
       /\.(heic|heif)$/i.test(file.name);
 
+    let processedFile = file;
     try {
-      setPreviewUrl(URL.createObjectURL(file));
-
-      let processedFile = file;
       if (isHeic || file.size > 3 * 1024 * 1024) {
         try {
           const bitmap = await createImageBitmap(file);
@@ -102,13 +146,15 @@ export default function SupplementPhotoUpload({ onProductIdentified, onProductAd
           canvas.width = bitmap.width * scale;
           canvas.height = bitmap.height * scale;
           canvas.getContext('2d')!.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-          const blob = await new Promise<Blob>(r => canvas.toBlob(b => r(b!), 'image/jpeg', 0.75));
+          const blob = await new Promise<Blob>((r) =>
+            canvas.toBlob((b) => r(b!), 'image/jpeg', 0.75),
+          );
           processedFile = new File([blob], 'photo.jpg', { type: 'image/jpeg' });
         } catch (convertErr) {
           if (isHeic) {
             setState('error');
             setErrorMsg('Could not process this HEIC photo. Try retaking in JPG mode via iPhone Settings, or upload a different photo.');
-            return;
+            return null;
           }
           throw convertErr;
         }
@@ -121,43 +167,70 @@ export default function SupplementPhotoUpload({ onProductIdentified, onProductAd
         reader.readAsDataURL(processedFile);
       });
 
-      // Prompt 175f Section 2.2 + 11.O three-point trace point 1:
-      // log the encoded base64 length BEFORE upload so the iOS Web
-      // Inspector trace shows what the client actually sent. PHI-free
-      // (size only). The server logs the receipt at point 2; the
-      // provider adapter logs the byte length at point 3.
-      try {
-        // eslint-disable-next-line no-console
-        console.info('[caq.photo-upload] pre-upload', {
-          fileBytes: processedFile.size,
-          base64Length: base64.length,
-          approximatePayloadBytes: Math.floor((base64.length / 4) * 3),
-          mimeType: processedFile.type || 'image/jpeg',
-        });
-      } catch {
-        // Best effort.
-      }
+      const previewUrl = URL.createObjectURL(processedFile);
+      const mimeType = processedFile.type || 'image/jpeg';
+      return { base64, mimeType, previewUrl };
+    } catch (err: unknown) {
+      setState('error');
+      setErrorMsg(err instanceof Error ? err.message : 'Something went wrong.');
+      return null;
+    }
+  }
 
-      setState('analyzing');
+  async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    e.preventDefault();
+    e.stopPropagation();
+    const file = e.target.files?.[0];
+    const role = pendingRole;
+    setPendingRole(null);
+    if (inputRef.current) inputRef.current.value = '';
+    if (!file || !role) return;
+    setState('capturing');
+    setErrorMsg('');
+    const prepared = await prepareFile(file);
+    if (!prepared) return;
+    if (role === 'front') {
+      if (frontPhoto?.previewUrl) URL.revokeObjectURL(frontPhoto.previewUrl);
+      setFrontPhoto(prepared);
+    } else {
+      if (ingredientsPhoto?.previewUrl) URL.revokeObjectURL(ingredientsPhoto.previewUrl);
+      setIngredientsPhoto(prepared);
+    }
+    setState('idle');
+  }
 
+  function openPicker(role: 'front' | 'ingredients'): void {
+    setPendingRole(role);
+    setTimeout(() => inputRef.current?.click(), 0);
+  }
+
+  async function analyze(): Promise<void> {
+    if (!frontPhoto) return;
+    setState('analyzing');
+    setErrorMsg('');
+    setProduct(null);
+
+    const images: Array<{ imageBase64: string; mimeType: string; role: string }> = [
+      { imageBase64: frontPhoto.base64, mimeType: frontPhoto.mimeType, role: 'front' },
+    ];
+    if (ingredientsPhoto) {
+      images.push({
+        imageBase64: ingredientsPhoto.base64,
+        mimeType: ingredientsPhoto.mimeType,
+        role: 'ingredients',
+      });
+    }
+
+    try {
       const response = await fetch('/api/ai/supplement-vision', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ imageBase64: base64, mimeType: processedFile.type || 'image/jpeg' }),
+        body: JSON.stringify({ images }),
       });
-
       const data = await response.json();
 
       if (!data.success) {
-        // Prompt 175b hotfix Section 9.1 + 175f Section 2.5: the route
-        // now always returns HTTP 200 on server failure with a degraded
-        // payload AND an explicit `status` + `reason` so the client
-        // can branch on a stable token. The red dead-end error state
-        // is gone; we surface a calm "drop to manual" UI.
         if (data.degraded === true || data.status === 'degraded' || response.status === 200) {
-          // Prompt 175f Section 2.4 + 10: distinct copy for the
-          // no_image_received case so the user sees "we did not receive
-          // a photo" instead of the generic "could not read it" line.
           if (data.reason === 'no_image_received') {
             setErrorMsg('We did not receive a photo. Please try again.');
           } else {
@@ -166,43 +239,47 @@ export default function SupplementPhotoUpload({ onProductIdentified, onProductAd
           setState('degraded');
           return;
         }
-        // 4xx case: client validation error (unsupported image, missing
-        // image). Keep the legacy error state but with the neutral copy.
         setState('error');
         setErrorMsg(sanitizeServerErrorMessage(data.error));
         return;
       }
 
-      setProduct(data.data);
-      setState('complete');
-      onProductIdentified?.(data.data);
+      const identified: IdentifiedProduct = data.data;
+      setProduct(identified);
+      onProductIdentified?.(identified);
+
+      // Prompt 175h Section 2.3: low-confidence still routes to the
+      // manual entry path so the user is not stuck reviewing nonsense.
+      if (identified.overallConfidence === 'low' && onLowConfidence) {
+        const suggestedName = `${identified.brand || ''} ${identified.productName || 'Supplement'}`.trim();
+        onLowConfidence(suggestedName);
+        reset();
+        return;
+      }
+
+      setState('confirming');
     } catch (err: unknown) {
       setState('error');
       setErrorMsg(err instanceof Error ? err.message : 'Something went wrong.');
     }
   }
 
-  function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
-    e.preventDefault();
-    e.stopPropagation();
-    const file = e.target.files?.[0];
-    if (file) processImage(file);
-    if (inputRef.current) inputRef.current.value = '';
-  }
-
-  function reset() {
+  function reset(): void {
     setState('idle');
     setProduct(null);
     setErrorMsg('');
-    if (previewUrl) URL.revokeObjectURL(previewUrl);
-    setPreviewUrl(null);
+    if (frontPhoto?.previewUrl) URL.revokeObjectURL(frontPhoto.previewUrl);
+    if (ingredientsPhoto?.previewUrl) URL.revokeObjectURL(ingredientsPhoto.previewUrl);
+    setFrontPhoto(null);
+    setIngredientsPhoto(null);
+    setPendingRole(null);
   }
 
   if (webview?.isWebView) {
     return (
       <div className="border-2 border-amber-400/40 rounded-xl p-6 text-center bg-amber-400/[0.04]">
         <div className="w-12 h-12 rounded-full bg-amber-400/10 flex items-center justify-center mx-auto mb-3">
-          <svg className="w-6 h-6 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <Camera size={24} strokeWidth={1.5} className="text-amber-400" />
         </div>
         <p className="text-sm font-medium text-white mb-2">Open in Safari or Chrome to upload a photo</p>
         <p className="text-xs text-white/50">In-app browsers cannot reach your camera or photo library. Tap the menu in your current app, choose Open in Browser, then return to this step.</p>
@@ -210,35 +287,156 @@ export default function SupplementPhotoUpload({ onProductIdentified, onProductAd
     );
   }
 
+  // Prompt 175h Section 2.3: once the AI returns a draft, mount the
+  // shared confirm panel. The panel handles all field editing, Hannah's
+  // timing recommendation, and the final Add to My Supplements action.
+  if (state === 'confirming' && product) {
+    const initialDraft: SupplementConfirmInitialDraft = {
+      name: `${product.brand || ''} ${product.productName || ''}`.trim() || product.productName || '',
+      brand: product.brand || '',
+      ingredients: product.ingredients.map((ing) => ({
+        name: ing.name,
+        amount: ing.amount,
+        unit: ing.unit,
+        form: ing.form,
+      })),
+      fieldSources: {
+        product_name: 'photo_ai',
+        brand: 'photo_ai',
+      },
+    };
+    return (
+      <SupplementBarcodeConfirm
+        barcodeValue={null}
+        barcodeFormat={null}
+        source="photo"
+        initialDraft={initialDraft}
+        onConfirm={(rec) => {
+          onProductAdded?.(rec, product);
+          reset();
+        }}
+        onCancel={reset}
+      />
+    );
+  }
+
   return (
     <div>
-      <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif" capture="environment" onChange={handleFileSelect} style={{ display: 'none' }} tabIndex={-1} />
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
+        capture="environment"
+        onChange={handleFileSelect}
+        style={{ display: 'none' }}
+        tabIndex={-1}
+      />
 
-      {state === 'idle' && (
+      {(state === 'idle' || state === 'capturing') && !frontPhoto && (
         <div
-          onClick={(e) => { e.preventDefault(); e.stopPropagation(); inputRef.current?.click(); }}
-          role="button" tabIndex={0}
-          onKeyDown={(e) => { if (e.key === 'Enter') inputRef.current?.click(); }}
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); openPicker('front'); }}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => { if (e.key === 'Enter') openPicker('front'); }}
           className="border-2 border-dashed border-teal-400/40 rounded-xl p-6 text-center cursor-pointer bg-teal-400/[0.03] hover:bg-teal-400/[0.06] transition-colors"
         >
           <div className="w-12 h-12 rounded-full bg-teal-400/10 flex items-center justify-center mx-auto mb-3">
-            <svg className="w-6 h-6 text-teal-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+            <Camera size={24} strokeWidth={1.5} className="text-teal-400" />
           </div>
           <p className="text-sm font-medium text-white mb-1">Add a photo of your product</p>
-          <p className="text-xs text-white/40">Tap to take a picture or upload from your files</p>
+          <p className="text-xs text-white/40">Tap to take a picture of the front label</p>
         </div>
       )}
 
-      {(state === 'compressing' || state === 'analyzing') && (
+      {(state === 'idle' || state === 'capturing') && frontPhoto && (
+        <div className="border border-teal-400/20 rounded-xl p-5 bg-teal-400/[0.03]">
+          <div className="grid grid-cols-2 gap-3 mb-4">
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] text-white/40 uppercase tracking-wider">Front</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (frontPhoto.previewUrl) URL.revokeObjectURL(frontPhoto.previewUrl);
+                    setFrontPhoto(null);
+                  }}
+                  className="text-white/30 hover:text-white/60"
+                  aria-label="Remove front photo"
+                >
+                  <Trash2 size={12} strokeWidth={1.5} />
+                </button>
+              </div>
+              <button
+                type="button"
+                onClick={(e) => { e.preventDefault(); openPicker('front'); }}
+                className="block w-full aspect-square rounded-lg overflow-hidden border border-teal-400/30 bg-black/30"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={frontPhoto.previewUrl} alt="Front label" className="w-full h-full object-cover" />
+              </button>
+            </div>
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] text-white/40 uppercase tracking-wider">Ingredients</span>
+                {ingredientsPhoto ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (ingredientsPhoto.previewUrl) URL.revokeObjectURL(ingredientsPhoto.previewUrl);
+                      setIngredientsPhoto(null);
+                    }}
+                    className="text-white/30 hover:text-white/60"
+                    aria-label="Remove ingredients photo"
+                  >
+                    <Trash2 size={12} strokeWidth={1.5} />
+                  </button>
+                ) : <span className="text-[10px] text-white/25">optional</span>}
+              </div>
+              <button
+                type="button"
+                onClick={(e) => { e.preventDefault(); openPicker('ingredients'); }}
+                className={`block w-full aspect-square rounded-lg overflow-hidden border ${ingredientsPhoto ? 'border-teal-400/30 bg-black/30' : 'border-dashed border-white/15 bg-white/[0.02] flex items-center justify-center'}`}
+              >
+                {ingredientsPhoto ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={ingredientsPhoto.previewUrl} alt="Ingredients label" className="w-full h-full object-cover" />
+                ) : (
+                  <Camera size={28} strokeWidth={1.5} className="text-white/25" />
+                )}
+              </button>
+            </div>
+          </div>
+          <p className="text-xs text-white/40 mb-4 leading-snug">
+            Add the ingredients panel for richer detection. Optional but recommended for multi-active formulas.
+          </p>
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={reset}
+              className="flex-1 py-2.5 text-sm text-white/50 border border-white/15 rounded-lg hover:bg-white/5 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={analyze}
+              className="flex-1 py-2.5 text-sm font-semibold text-white bg-teal-400/20 border border-teal-400/30 rounded-lg hover:bg-teal-400/30 transition-colors inline-flex items-center justify-center gap-2"
+            >
+              <Sparkles size={14} strokeWidth={1.5} />
+              Analyze
+            </button>
+          </div>
+        </div>
+      )}
+
+      {state === 'analyzing' && (
         <div className="border-2 border-teal-400/30 rounded-xl p-8 text-center bg-teal-400/[0.03]">
-          {previewUrl && (
+          {frontPhoto && (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={previewUrl} alt="Upload" className="w-20 h-20 object-cover rounded-lg mx-auto mb-4 border border-white/10" />
+            <img src={frontPhoto.previewUrl} alt="Upload" className="w-20 h-20 object-cover rounded-lg mx-auto mb-4 border border-white/10" />
           )}
           <div className="w-10 h-10 mx-auto mb-3 border-3 border-teal-400 border-t-transparent rounded-full animate-spin" />
-          <p className="text-sm font-medium text-teal-400">
-            {state === 'compressing' ? 'Processing image...' : 'Identifying your supplement...'}
-          </p>
+          <p className="text-sm font-medium text-teal-400">Identifying your supplement...</p>
           <p className="text-xs text-white/30 mt-1">This may take 10 to 15 seconds</p>
         </div>
       )}
@@ -256,20 +454,16 @@ export default function SupplementPhotoUpload({ onProductIdentified, onProductAd
               if (tryAgainTimerRef.current) clearTimeout(tryAgainTimerRef.current);
               tryAgainTimerRef.current = setTimeout(() => setTryAgainDisabled(false), TRY_AGAIN_DEBOUNCE_MS);
               reset();
-              setTimeout(() => inputRef.current?.click(), 100);
+              setTimeout(() => openPicker('front'), 100);
             }}
-            className={`text-sm underline cursor-pointer ${tryAgainDisabled ? 'text-white/30' : 'text-teal-400'}`}
+            className={`text-sm underline cursor-pointer inline-flex items-center gap-1 ${tryAgainDisabled ? 'text-white/30' : 'text-teal-400'}`}
           >
+            <RefreshCw size={12} strokeWidth={1.5} />
             Try again
           </button>
         </div>
       )}
 
-      {/* Prompt 175b hotfix Section 10: degraded path replaces the red
-          dead-end. Calm Teal-accented card that gestures toward the
-          manual search and the barcode scanner above; no retry by default
-          since the upstream is likely rate-limited and another tap would
-          just hit it again. Try again still available behind the debounce. */}
       {state === 'degraded' && (
         <div className="border border-teal-400/20 rounded-xl p-6 text-center bg-teal-400/[0.03]">
           <p className="text-sm font-medium text-white/80 mb-1">
@@ -288,89 +482,13 @@ export default function SupplementPhotoUpload({ onProductIdentified, onProductAd
               if (tryAgainTimerRef.current) clearTimeout(tryAgainTimerRef.current);
               tryAgainTimerRef.current = setTimeout(() => setTryAgainDisabled(false), TRY_AGAIN_DEBOUNCE_MS);
               reset();
-              setTimeout(() => inputRef.current?.click(), 100);
+              setTimeout(() => openPicker('front'), 100);
             }}
-            className={`text-xs underline cursor-pointer ${tryAgainDisabled ? 'text-white/30' : 'text-teal-400'}`}
+            className={`text-xs underline cursor-pointer inline-flex items-center gap-1 ${tryAgainDisabled ? 'text-white/30' : 'text-teal-400'}`}
           >
+            <RefreshCw size={11} strokeWidth={1.5} />
             Try a different photo
           </button>
-        </div>
-      )}
-
-      {state === 'complete' && product && (
-        <div className="border-2 border-teal-400/30 rounded-xl p-5 bg-teal-400/[0.03]">
-          <div className="flex items-center gap-2 mb-3">
-            <svg className="w-5 h-5 text-teal-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-            <span className="font-bold text-teal-400">Product Identified</span>
-          </div>
-
-          {product.brand && <p className="text-[10px] text-white/30 uppercase tracking-wider">{product.brand}</p>}
-          <p className="text-lg font-bold text-white mb-1">{product.productName || 'Supplement'}</p>
-          {product.servingSize && (
-            <p className="text-xs text-white/40 mb-4">
-              {product.totalCount ? `${product.totalCount} count, ` : ''}{product.servingSize}
-            </p>
-          )}
-
-          {product.ingredients?.length > 0 && (
-            <div className="mb-4">
-              <p className="text-[10px] font-bold text-white/25 uppercase tracking-wider mb-2">
-                Ingredients ({product.ingredients.length})
-              </p>
-              {product.ingredients.map((ing, i) => (
-                <div key={i} className="flex justify-between items-center py-1.5 border-b border-white/5 last:border-0">
-                  <div className="flex-1">
-                    <span className="text-sm font-medium text-white/80">{ing.name}</span>
-                    {ing.form && <span className="text-xs text-white/30 ml-1">({ing.form})</span>}
-                    {ing.isPartOfBlend && (
-                      <span className="ml-2 text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-400/10 text-amber-400/70">Blend</span>
-                    )}
-                  </div>
-                  <span className="text-sm font-bold text-white/90 ml-2">
-                    {ing.amount != null ? `${ing.amount} ${ing.unit || ''}` : '\u2014'}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {product.overallConfidence === 'low' && (
-            <p className="text-xs text-amber-400/80 mb-3">
-              We couldn&apos;t identify this with confidence. Please enter the details manually.
-            </p>
-          )}
-
-          {product.overallConfidence === 'low' && onLowConfidence ? (
-            <div className="flex gap-3">
-              <button type="button" onClick={(e) => { e.preventDefault(); reset(); }}
-                className="flex-1 py-2.5 text-sm text-white/50 border border-white/15 rounded-lg hover:bg-white/5 transition-colors">
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  const suggestedName = `${product.brand || ''} ${product.productName || 'Supplement'}`.trim();
-                  onLowConfidence(suggestedName);
-                  reset();
-                }}
-                className="flex-1 py-2.5 text-sm font-semibold text-white bg-amber-400/20 border border-amber-400/40 rounded-lg hover:bg-amber-400/30 transition-colors"
-              >
-                Enter Manually
-              </button>
-            </div>
-          ) : (
-            <div className="flex gap-3">
-              <button type="button" onClick={(e) => { e.preventDefault(); reset(); }}
-                className="flex-1 py-2.5 text-sm text-white/50 border border-white/15 rounded-lg hover:bg-white/5 transition-colors">
-                Cancel
-              </button>
-              <button type="button" onClick={(e) => { e.preventDefault(); if (product && onProductAdded) onProductAdded(product); reset(); }}
-                className="flex-1 py-2.5 text-sm font-semibold text-white bg-teal-400/20 border border-teal-400/30 rounded-lg hover:bg-teal-400/30 transition-colors">
-                Add to My Supplements
-              </button>
-            </div>
-          )}
         </div>
       )}
     </div>
