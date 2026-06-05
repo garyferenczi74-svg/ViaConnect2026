@@ -96,7 +96,12 @@ export const BarcodeUserSettingsSchema = z.object({
 });
 
 // Barcode formats we accept.
-export type BarcodeFormat = 'EAN_13' | 'UPC_A' | 'EAN_8' | 'ITF_14';
+// Prompt 175d (2026-06-05): UPC_E and CODE_128 added so html5-qrcode
+// decodes that match those symbologies flow through the supplement
+// scanner's post-decode filter instead of being silently dropped. The
+// existing food-domain consumers (NutriVision) accept the union as
+// string | null at their use sites, so widening is non-breaking.
+export type BarcodeFormat = 'EAN_13' | 'UPC_A' | 'UPC_E' | 'EAN_8' | 'ITF_14' | 'CODE_128';
 
 // Decoded scan result from the client-side decoder.
 export interface BarcodeDecodedResult {

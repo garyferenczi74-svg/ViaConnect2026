@@ -21,10 +21,49 @@ import type { BarcodeDecodedResult, BarcodeFormat } from '@/lib/nutrition/barcod
 // html5-qrcode is dynamically imported inside start() to avoid SSR issues:
 // the library references `window` and `document` at module load time and the
 // existing src/components/shared/BarcodeScanner.tsx uses the same pattern.
+// Prompt 175d (2026-06-05): constructor config widened to accept
+// formatsToSupport + experimentalFeatures so callers can restrict the
+// decoder to a known set of symbologies (faster + fewer false reads)
+// and opt in to the native BarcodeDetector on Chrome.
 type Html5QrcodeCtor = new (
   elementId: string,
-  config: { verbose: boolean },
+  config: {
+    verbose: boolean;
+    formatsToSupport?: ReadonlyArray<number>;
+    experimentalFeatures?: { useBarCodeDetectorIfSupported?: boolean };
+  },
 ) => Html5QrcodeInstance;
+
+// Prompt 175d: html5-qrcode 2.x Html5QrcodeSupportedFormats numeric ids.
+// Imported as constants so callers do not have to pull the runtime enum
+// just to specify which symbologies to scan. Verified against html5-qrcode
+// 2.3.x type declarations; the numeric values are stable across the 2.x
+// line. Spec 175d Section 2.3: enable UPC_A, UPC_E, EAN_13, EAN_8,
+// CODE_128, ITF at minimum.
+export const HTML5_QRCODE_FORMATS = {
+  QR_CODE: 0,
+  CODE_128: 5,
+  CODE_39: 6,
+  CODE_93: 7,
+  EAN_13: 11,
+  EAN_8: 12,
+  ITF: 13,
+  UPC_A: 14,
+  UPC_E: 15,
+  UPC_EAN_EXTENSION: 16,
+} as const;
+
+// Default symbology set for product barcodes. Used by the CAQ
+// supplement overlay; other call sites can override via
+// UseBarcodeScanOptions.config.formatsToSupport.
+export const SUPPLEMENT_BARCODE_FORMATS = [
+  HTML5_QRCODE_FORMATS.UPC_A,
+  HTML5_QRCODE_FORMATS.UPC_E,
+  HTML5_QRCODE_FORMATS.EAN_13,
+  HTML5_QRCODE_FORMATS.EAN_8,
+  HTML5_QRCODE_FORMATS.CODE_128,
+  HTML5_QRCODE_FORMATS.ITF,
+] as ReadonlyArray<number>;
 
 // Prompt 175c (2026-06-05): qrbox is optional on the underlying library
 // so callers can opt out of html5-qrcode's internal viewfinder mask
@@ -36,9 +75,21 @@ type QrboxValue =
   | ((viewfinderWidth: number, viewfinderHeight: number) => { width: number; height: number })
   | undefined;
 
+// Prompt 175d (2026-06-05): cameraConstraints widened to a real
+// MediaTrackConstraints shape so callers can request a high-resolution
+// environment-facing track (Section 2.4: do not downscale before decode).
+type CameraConstraintsArg =
+  | { facingMode: string }
+  | {
+      facingMode?: string | { ideal?: string; exact?: string };
+      width?: { ideal?: number; min?: number };
+      height?: { ideal?: number; min?: number };
+      frameRate?: { ideal?: number };
+    };
+
 interface Html5QrcodeInstance {
   start: (
-    cameraConstraints: { facingMode: string },
+    cameraConstraints: CameraConstraintsArg,
     config: {
       fps: number;
       qrbox?: QrboxValue;
@@ -62,19 +113,27 @@ interface Html5QrcodeInstance {
 
 export const BARCODE_SCANNER_ELEMENT_ID = 'barcode-scanner-viewport';
 
+// Prompt 175d (2026-06-05): post-decode filter widened to UPC_E +
+// CODE_128 so html5-qrcode reads of those symbologies are not silently
+// dropped after the constructor's formatsToSupport widens to the full
+// SUPPLEMENT_BARCODE_FORMATS list.
 const SUPPORTED_HTML5_QRCODE_FORMATS = new Set([
   'EAN_13',
   'UPC_A',
+  'UPC_E',
   'EAN_8',
   'ITF',
+  'CODE_128',
 ]);
 
 function formatFromHtml5Code(code: string): BarcodeFormat | null {
   switch (code) {
     case 'EAN_13': return 'EAN_13';
     case 'UPC_A': return 'UPC_A';
+    case 'UPC_E': return 'UPC_E';
     case 'EAN_8': return 'EAN_8';
     case 'ITF': return 'ITF_14';
+    case 'CODE_128': return 'CODE_128';
     default: return null;
   }
 }
@@ -106,6 +165,28 @@ export interface UseBarcodeScanOptions {
     qrbox?: { width: number; height: number } | ((vw: number, vh: number) => { width: number; height: number }) | null;
     fps?: number;
     aspectRatio?: number;
+    /**
+     * Prompt 175d (2026-06-05): per-caller camera constraints. Defaults
+     * to { facingMode: 'environment' } for the food scanner which works
+     * fine at the auto-negotiated resolution. The supplement scanner
+     * passes high-resolution hints (width + height ideal 1920 + 1080)
+     * so UPC-A bars have enough pixels per module to decode.
+     */
+    cameraConstraints?: CameraConstraintsArg;
+    /**
+     * Prompt 175d Section 2.3: per-caller symbology hints. When set,
+     * html5-qrcode restricts the decoder to these formats only, which
+     * improves both decode speed and false-positive resistance. Use
+     * SUPPLEMENT_BARCODE_FORMATS for the standard product barcode set.
+     */
+    formatsToSupport?: ReadonlyArray<number>;
+    /**
+     * Prompt 175d: enable html5-qrcode's experimental native
+     * BarcodeDetector path when the browser supports it. Chrome and
+     * Edge on Android implement it; iOS Safari does not, so this is
+     * a no-op on iOS and a speed-up everywhere else.
+     */
+    useBarCodeDetectorIfSupported?: boolean;
   };
 }
 
@@ -164,8 +245,16 @@ export function useBarcodeScan(opts: UseBarcodeScanOptions): UseBarcodeScanResul
         const mod = (await import('html5-qrcode')) as unknown as {
           Html5Qrcode: Html5QrcodeCtor;
         };
+        // Prompt 175d: pass formatsToSupport + experimentalFeatures at
+        // construction time. The library applies these for the lifetime
+        // of the instance, so any later start() inherits them.
+        const callerCtor = opts.config ?? {};
         scannerRef.current = new mod.Html5Qrcode(BARCODE_SCANNER_ELEMENT_ID, {
           verbose: false,
+          formatsToSupport: callerCtor.formatsToSupport,
+          experimentalFeatures: callerCtor.useBarCodeDetectorIfSupported
+            ? { useBarCodeDetectorIfSupported: true }
+            : undefined,
         });
       }
 
@@ -189,8 +278,13 @@ export function useBarcodeScan(opts: UseBarcodeScanOptions): UseBarcodeScanResul
         startConfig.qrbox = callerConfig.qrbox ?? { width: 280, height: 96 };
       }
 
+      // Prompt 175d Section 2.4: per-caller camera constraints with a
+      // safe default of just facingMode for backward compatibility.
+      const cameraConstraints: CameraConstraintsArg =
+        callerConfig.cameraConstraints ?? { facingMode: 'environment' };
+
       await scannerRef.current.start(
-        { facingMode: 'environment' },
+        cameraConstraints,
         startConfig,
         (decodedText, decodedResult) => {
           const rawFormat =

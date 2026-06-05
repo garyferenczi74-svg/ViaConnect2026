@@ -45,7 +45,9 @@ import { Flashlight, X } from 'lucide-react';
 import {
   useBarcodeScan,
   BARCODE_SCANNER_ELEMENT_ID,
+  SUPPLEMENT_BARCODE_FORMATS,
 } from '@/components/barcode/hooks/useBarcodeScan';
+import { validateBarcode } from '@/lib/nutrition/barcode/checksum';
 import type { BarcodeDecodedResult } from '@/lib/nutrition/barcode/types';
 
 const COACHING_DELAY_MS = 15_000;
@@ -164,6 +166,39 @@ function releaseCameraTracks(): void {
   }
 }
 
+/**
+ * Prompt 175d Section 2.5: request continuous autofocus on the active
+ * video track. iOS Safari and Chrome both support the 'continuous'
+ * focusMode; older browsers reject the constraint, which we swallow.
+ * Returns the negotiated track settings (width, height, frameRate) for
+ * the diagnostic log so we can see what resolution actually negotiated.
+ */
+async function requestContinuousFocus(): Promise<void> {
+  if (typeof document === 'undefined') return;
+  const container = document.getElementById('barcode-scanner-viewport');
+  const video = container?.querySelector('video');
+  if (!(video instanceof HTMLVideoElement)) return;
+  const stream = video.srcObject;
+  if (!stream || typeof (stream as MediaStream).getVideoTracks !== 'function') return;
+  const track = (stream as MediaStream).getVideoTracks()[0];
+  if (!track) return;
+  try {
+    const settings = track.getSettings();
+    diagLog('requestContinuousFocus:track-settings', {
+      width: settings.width,
+      height: settings.height,
+      frameRate: settings.frameRate,
+      facingMode: settings.facingMode,
+    });
+    await track.applyConstraints({
+      advanced: [{ focusMode: 'continuous' } as MediaTrackConstraintSet],
+    });
+    diagLog('requestContinuousFocus:applied');
+  } catch (err) {
+    diagLog('requestContinuousFocus:rejected', { err: String(err) });
+  }
+}
+
 export interface SupplementBarcodeOverlayProps {
   open: boolean;
   onClose: () => void;
@@ -224,9 +259,31 @@ export function SupplementBarcodeOverlay({
 
   const onDetect = useCallback(
     (decoded: BarcodeDecodedResult) => {
+      // Prompt 175d Section 2.6: belt-and-suspenders checksum validation
+      // before we hand the code to the confirmation panel. html5-qrcode's
+      // internal check rejects most garbage but a curved 1D read on a
+      // bottle can occasionally surface a digit-shifted false positive.
+      const validation = validateBarcode(decoded.value);
+      if (!validation.valid) {
+        diagLog('onDetect:checksum-rejected', {
+          value: decoded.value,
+          reason: validation.reason,
+        });
+        return;
+      }
+
       // De-duplicate rapid repeat detections of the same barcode value.
+      // Single-fire lock per Section 2.6: once we have a validated read
+      // the decode loop must not surface it again.
       if (inFlightBarcodeRef.current === decoded.value) return;
       inFlightBarcodeRef.current = decoded.value;
+
+      diagLog('onDetect:accepted', {
+        value: decoded.value,
+        format: validation.format,
+        decoder: decoded.decoder,
+        latencyMs: decoded.decoder_latency_ms,
+      });
 
       setPulsing(true);
       setDetectionAnnounce(ARIA_DETECTION_COPY);
@@ -246,12 +303,23 @@ export function SupplementBarcodeOverlay({
     [hapticEnabled, onScanned, reducedMotion],
   );
 
-  // Prompt 175c Section 2.3: qrbox: null disables html5-qrcode's
-  // internal viewfinder mask so only this overlay's teal reticle is
-  // visible. The library still scans the full frame.
+  // Prompt 175c Section 2.3 + 175d Section 2.3, 2.4: full-frame scan
+  // (qrbox: null) at high resolution (1920x1080 ideal) with explicit
+  // symbology hints restricted to product barcodes (UPC + EAN + ITF +
+  // CODE_128). Native BarcodeDetector enabled on Chrome / Edge / Android
+  // as a free speed-up; iOS falls through to ZXing.
   const scan = useBarcodeScan({
     onDetect,
-    config: { qrbox: null },
+    config: {
+      qrbox: null,
+      cameraConstraints: {
+        facingMode: { ideal: 'environment' },
+        width: { ideal: 1920 },
+        height: { ideal: 1080 },
+      },
+      formatsToSupport: SUPPLEMENT_BARCODE_FORMATS,
+      useBarCodeDetectorIfSupported: true,
+    },
   });
 
   useEffect(() => {
@@ -263,6 +331,11 @@ export function SupplementBarcodeOverlay({
     void scan.start().then(() => {
       diagLog('scan.start:resolved', { state: scan.state, error: scan.error });
       pollHardenIosVideo();
+      // Prompt 175d Section 2.5: request continuous autofocus on the
+      // active track after the stream attaches. Cooperative; iOS sometimes
+      // ignores the constraint silently, so the diagnostic log records
+      // the actually-negotiated track settings either way.
+      void requestContinuousFocus();
     });
     return () => {
       diagLog('overlay:close');
@@ -317,11 +390,21 @@ export function SupplementBarcodeOverlay({
     : helperPhase === 'coaching' ? HELPER_COACHING
     : HELPER_ESCALATION;
 
+  const handleTapToFocus = (): void => {
+    // Prompt 175d Section 2.5: tap anywhere on the backdrop to nudge the
+    // camera into refocusing. Re-applying the continuous-focus constraint
+    // is a portable refocus signal that works on iOS and Chrome without
+    // requiring pointsOfInterest, which iOS WKWebView does not honor.
+    diagLog('tap-to-focus');
+    void requestContinuousFocus();
+  };
+
   const overlay = (
     <div
       role="dialog"
       aria-modal="true"
       aria-labelledby={titleId}
+      onClick={handleTapToFocus}
       className="fixed inset-0 z-[120] bg-black"
       style={{
         // Prompt 175c Section 2.1: 100dvh tracks the visual viewport
