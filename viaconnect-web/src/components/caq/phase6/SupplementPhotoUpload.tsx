@@ -28,7 +28,7 @@
 // =============================================================================
 
 import { useState, useRef, useEffect } from 'react';
-import { Camera, RefreshCw, Sparkles, Trash2 } from 'lucide-react';
+import { Camera, RefreshCw, Trash2 } from 'lucide-react';
 import { detectWebView, type WebViewDetection } from '@/lib/device/detect-webview';
 import {
   SupplementBarcodeConfirm,
@@ -473,9 +473,21 @@ export default function SupplementPhotoUpload({
             <button
               type="button"
               onClick={analyze}
-              className="flex-1 py-2.5 text-sm font-semibold text-white bg-teal-400/20 border border-teal-400/30 rounded-lg hover:bg-teal-400/30 transition-colors inline-flex items-center justify-center gap-2"
+              className="group relative flex-1 py-2.5 text-sm font-semibold text-white border border-teal-400/40 rounded-lg overflow-hidden transition-all hover:border-teal-300/60 hover:shadow-[0_0_16px_rgba(45,165,160,0.25)] inline-flex items-center justify-center gap-2"
+              style={{ background: 'linear-gradient(135deg, rgba(45,165,160,0.22) 0%, rgba(45,165,160,0.10) 100%)' }}
             >
-              <Sparkles size={14} strokeWidth={1.5} />
+              {/* Prompt 175h hotfix (2026-06-05): swap the static
+                  Sparkles for a continuously rotating refresh icon so
+                  the Analyze CTA reads as "in motion" before the
+                  vision call even starts. 2.5s rotation for a calm
+                  cadence; speeds up on hover. */}
+              <RefreshCw
+                size={16}
+                strokeWidth={2}
+                className="text-teal-300 animate-spin group-hover:[animation-duration:1s] transition-[color]"
+                style={{ animationDuration: '2.5s' }}
+                aria-hidden="true"
+              />
               Analyze
             </button>
           </div>
