@@ -116,9 +116,13 @@ export function createClaudeTierAdapter(input: ClaudeTierAdapterInput): TierAdap
 
     if (!res.ok) {
       const upstreamBody = await safeReadText(res);
+      const is429 = res.status === 429 || res.status === 529;
+      const is5xx = res.status >= 500 && res.status < 600;
       safeLog.error('caq.supplement-extraction.claude-tier', 'tier non-2xx', {
         tier,
         status: res.status,
+        is429,
+        is5xx,
         errBody: upstreamBody.slice(0, 200),
       });
       return emptyResult(tier, 'upstream_error', Date.now() - startedAt);

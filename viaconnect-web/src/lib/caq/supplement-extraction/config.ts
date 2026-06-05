@@ -77,6 +77,16 @@ export function getPhotoAiGeminiApiKey(): string | null {
   return process.env.PHOTO_AI_GEMINI_API_KEY || process.env.GEMINI_API_KEY || null;
 }
 
+// Prompt 175b hotfix Section 2.2: one retry with exponential backoff and
+// jitter before failover, so a transient per-minute rate limit does not
+// turn into a hard provider-out outcome. These bounds are intentionally
+// short; the primary tier already has its own AbortController timeout
+// (TIER_TIMEOUT_MS), and the retry must not push total request budget
+// past the route's maxDuration.
+export const PROVIDER_RETRY_BASE_MS = 400;
+export const PROVIDER_RETRY_JITTER_MS = 300;
+export const PROVIDER_RETRY_MAX_ATTEMPTS = 2; // first attempt + one retry
+
 // Confidence thresholds. Item confidence below the threshold escalates the
 // request to the next tier. 0.7 / 0.6 are the locked defaults from 175 Part C.
 export const HAIKU_MIN_CONFIDENCE = 0.7;

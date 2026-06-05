@@ -59,6 +59,8 @@ describe('extractGeminiTextBlock', () => {
 
 describe('runProviderRouter (no-key paths)', () => {
   it('returns config_missing when neither provider key is configured', async () => {
+    // 175b hotfix: Claude is now primary, so the attempt is tagged 'sonnet'
+    // when no anthropic key is configured even with no gemini key either.
     const r = await runProviderRouter({
       geminiApiKey: null,
       anthropicApiKey: null,
@@ -67,7 +69,7 @@ describe('runProviderRouter (no-key paths)', () => {
     });
     expect(r.result.outcomeCode).toBe('config_missing');
     expect(r.attempts).toHaveLength(1);
-    expect(r.attempts[0].tier).toBe('gemini');
+    expect(r.attempts[0].tier).toBe('sonnet');
     expect(r.attempts[0].outcomeCode).toBe('config_missing');
   });
 });

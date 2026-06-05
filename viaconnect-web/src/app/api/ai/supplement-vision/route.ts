@@ -105,11 +105,16 @@ export async function POST(request: Request) {
       normalized = await validateAndNormalize(imageBase64, mimeTypeString);
     } catch (err) {
       if (isValidationError(err)) {
+        // Client-side validation failure (unsupported mime type, too large,
+        // could not decode). 4xx is appropriate here because the client
+        // sent something the server cannot use, and the client should fix
+        // its input rather than retry. This is the ONLY non-2xx path that
+        // remains after the 175b hotfix.
         const status = err.code === 'unsupported_image' ? 400 : 422;
         return jsonError(err.code, USER_MESSAGE_FOR_UNSUPPORTED, status);
       }
       safeLog.error('api.ai.supplement-vision', 'normalize failed', { error: err });
-      return jsonError('image_normalize_failed', USER_MESSAGE_FOR_RETRY, 500);
+      return degraded200('image_normalize_failed', USER_MESSAGE_FOR_RETRY);
     }
 
     const { result, attempts } = await runProviderRouter({
@@ -121,17 +126,16 @@ export async function POST(request: Request) {
     const finalAttempt = attempts[attempts.length - 1];
     const escalated = attempts.length > 1;
 
-    // Failure path: every tier struck out, or the model returned zero items.
+    // Per 175b master spec Section 9.1 + 13: the route NEVER returns 502.
+    // Every server-side failure resolves to HTTP 200 with a degraded
+    // payload so the client can drop the user into the manual-search
+    // fallback with no dead-end red error.
     if (result.outcomeCode !== 'success' || result.items.length === 0) {
       await fireAndForgetLog(userId, finalAttempt, escalated, 0);
       const code = result.items.length === 0 && result.outcomeCode === 'success'
         ? 'no_items'
         : result.outcomeCode;
-      return jsonError(
-        code,
-        mapOutcomeToUserMessage(code),
-        mapOutcomeToStatus(code),
-      );
+      return degraded200(code, mapOutcomeToUserMessage(code), { attempts: attemptsSummary(attempts) });
     }
 
     // Canonical-match runs against the existing search_supplements_v2 RPC.
@@ -155,10 +159,14 @@ export async function POST(request: Request) {
       data: legacy,
       modelTier: result.modelTier,
       escalated,
+      attempts: attemptsSummary(attempts),
     });
   } catch (err: unknown) {
     safeLog.error('api.ai.supplement-vision', 'unexpected error', { error: err });
-    return jsonError('unknown', USER_MESSAGE_FOR_RETRY, 500);
+    // Per spec Section 13 + Acceptance Criteria 1: the route must never
+    // return 5xx for an unhandled error. Surface a graceful 200 so the
+    // client routes to manual search.
+    return degraded200('unknown', USER_MESSAGE_FOR_RETRY);
   }
 }
 
@@ -167,6 +175,62 @@ function jsonError(code: ExtractionOutcomeCode, message: string, status: number)
     { success: false, outcomeCode: code, error: message },
     { status },
   );
+}
+
+/**
+ * Graceful failure response per 175b Section 9.1. Always HTTP 200 with
+ * the degraded contract so the client never sees a 5xx and can render
+ * the manual-search fallback without parsing prose.
+ */
+function degraded200(
+  code: ExtractionOutcomeCode,
+  userMessage: string,
+  extras: Record<string, unknown> = {},
+) {
+  return NextResponse.json(
+    {
+      success: false,
+      degraded: true,
+      reason: degradedReasonFor(code),
+      fallback: 'manual_search',
+      outcomeCode: code,
+      error: userMessage,
+      ...extras,
+    },
+    { status: 200 },
+  );
+}
+
+/**
+ * Map an internal outcomeCode to the 175b Section 9.1 'reason' enum so
+ * the client can branch on a stable token regardless of which tier
+ * actually failed.
+ */
+function degradedReasonFor(code: ExtractionOutcomeCode): string {
+  switch (code) {
+    case 'config_missing': return 'vision_unavailable';
+    case 'circuit_open': return 'vision_unavailable';
+    case 'timeout': return 'vision_timeout';
+    case 'upstream_error': return 'vision_unavailable';
+    case 'parse_failed': return 'vision_parse_failed';
+    case 'no_items': return 'no_extraction';
+    case 'image_normalize_failed': return 'image_unreadable';
+    default: return 'vision_unavailable';
+  }
+}
+
+function attemptsSummary(attempts: ReadonlyArray<TierAttempt>): ReadonlyArray<{
+  tier: string;
+  outcomeCode: string;
+  itemCount: number;
+  latencyMs: number;
+}> {
+  return attempts.map((a) => ({
+    tier: a.tier,
+    outcomeCode: a.outcomeCode,
+    itemCount: a.itemCount,
+    latencyMs: a.latencyMs,
+  }));
 }
 
 function mapOutcomeToUserMessage(code: ExtractionOutcomeCode): string {
@@ -187,25 +251,10 @@ function mapOutcomeToUserMessage(code: ExtractionOutcomeCode): string {
   }
 }
 
-function mapOutcomeToStatus(code: ExtractionOutcomeCode): number {
-  switch (code) {
-    case 'config_missing':
-    case 'circuit_open':
-      return 503;
-    case 'timeout':
-      return 504;
-    case 'upstream_error':
-    case 'parse_failed':
-      return 502;
-    case 'unsupported_image':
-    case 'image_normalize_failed':
-      return 400;
-    case 'no_items':
-      return 200; // graceful fallback, UI surfaces neutral copy
-    default:
-      return 500;
-  }
-}
+// mapOutcomeToStatus removed by 175b hotfix. The route now returns either
+// 4xx (client validation error via jsonError) or 200 (success OR degraded
+// via degraded200); there is no 5xx surface for server-side failures any
+// more. Acceptance Criteria 1: never 502.
 
 /**
  * Translate the ExtractionResult into the legacy IdentifiedProduct shape

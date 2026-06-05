@@ -42,6 +42,108 @@ const HELPER_COACHING = 'Try moving closer, or hold the barcode flat';
 const HELPER_ESCALATION = 'Having trouble? Enter the supplement by name below.';
 const ARIA_DETECTION_COPY = 'Barcode detected.';
 
+// Prompt 175b hotfix Fix C: stage-by-stage diagnostic logging. Client-side
+// only for now (Vercel runtime logs do not capture browser console). When
+// Gary tests on iOS via Safari Web Inspector, every stage emits a tagged
+// line so the failure point is obvious. A future batch can wire a small
+// fire-and-forget POST to surface these in production runtime logs.
+function diagLog(stage: string, extra?: Record<string, unknown>): void {
+  if (typeof console === 'undefined') return;
+  try {
+    // eslint-disable-next-line no-console
+    console.info(`[caq.barcode-overlay] ${stage}`, extra ?? {});
+  } catch {
+    // Best effort.
+  }
+}
+
+/**
+ * iOS Safari + WKWebView render nothing when the video element is missing
+ * the playsInline + muted + autoplay attributes. html5-qrcode handles
+ * most of this internally but not in every browser build, and the
+ * webkit-playsinline attribute (lowercase, separate from playsInline) is
+ * still required on older iOS Safari. We set them all idempotently on
+ * the video child of the scanner viewport so the stream displays after
+ * the permission prompt closes.
+ */
+function hardenIosVideo(): void {
+  if (typeof document === 'undefined') return;
+  // The viewport id comes from src/components/barcode/hooks/useBarcodeScan
+  // (BARCODE_SCANNER_ELEMENT_ID = 'barcode-scanner-viewport'). Hard-coded
+  // here to avoid a circular import and because the id is contractual.
+  const container = document.getElementById('barcode-scanner-viewport');
+  if (!container) {
+    diagLog('hardenIosVideo:container-missing');
+    return;
+  }
+  const video = container.querySelector('video');
+  if (!(video instanceof HTMLVideoElement)) {
+    diagLog('hardenIosVideo:video-missing');
+    return;
+  }
+  try {
+    video.setAttribute('playsinline', 'true');
+    video.setAttribute('webkit-playsinline', 'true');
+    video.setAttribute('autoplay', 'true');
+    video.setAttribute('muted', 'true');
+    (video as HTMLVideoElement).playsInline = true;
+    (video as HTMLVideoElement).muted = true;
+    (video as HTMLVideoElement).autoplay = true;
+    // iOS sometimes refuses to render a video whose CSS computes to zero
+    // dimensions. Ensure the element fills the viewport explicitly so the
+    // stream has somewhere to draw.
+    video.style.width = '100%';
+    video.style.height = '100%';
+    video.style.objectFit = 'cover';
+    // Re-attempt play in case the stream attached before our hardening.
+    // Swallow the promise rejection because iOS rejects play() after the
+    // permission prompt closes even when the stream is fine.
+    const p = video.play();
+    if (p && typeof p.catch === 'function') {
+      p.catch((err) => diagLog('hardenIosVideo:play-rejected', { err: String(err) }));
+    }
+    diagLog('hardenIosVideo:attributes-set', {
+      playsInline: video.playsInline,
+      muted: video.muted,
+      readyState: video.readyState,
+      videoWidth: video.videoWidth,
+      videoHeight: video.videoHeight,
+    });
+  } catch (err) {
+    diagLog('hardenIosVideo:threw', { err: String(err) });
+  }
+}
+
+/**
+ * Re-run hardenIosVideo every 250ms for up to 2 seconds. The stream
+ * attach can race the play() call on iOS, so an immediate-only harden
+ * sometimes runs before the video element has a usable surface. The
+ * loop self-terminates as soon as videoWidth > 0 (proof the surface is
+ * actually rendering) or after the cap.
+ */
+function pollHardenIosVideo(): void {
+  if (typeof document === 'undefined' || typeof window === 'undefined') return;
+  const MAX_ATTEMPTS = 8;
+  const INTERVAL_MS = 250;
+  let attempts = 0;
+  const tick = (): void => {
+    attempts += 1;
+    hardenIosVideo();
+    const video = document.querySelector('#barcode-scanner-viewport video');
+    const isRendering = video instanceof HTMLVideoElement && video.videoWidth > 0;
+    if (isRendering) {
+      diagLog('pollHardenIosVideo:rendering', { attempts });
+      return;
+    }
+    if (attempts >= MAX_ATTEMPTS) {
+      diagLog('pollHardenIosVideo:gave-up', { attempts });
+      return;
+    }
+    window.setTimeout(tick, INTERVAL_MS);
+  };
+  window.setTimeout(tick, INTERVAL_MS);
+}
+
 export interface SupplementBarcodeOverlayProps {
   open: boolean;
   onClose: () => void;
@@ -115,8 +217,20 @@ export function SupplementBarcodeOverlay({
     setHelperPhase('initial');
     setDetectionAnnounce('');
     inFlightBarcodeRef.current = null;
-    void scan.start();
+    diagLog('overlay:open');
+    void scan.start().then(() => {
+      diagLog('scan.start:resolved', { state: scan.state, error: scan.error });
+      // Prompt 175b hotfix Fix C: iOS Safari + WKWebView refuse to render
+      // a video stream without playsInline + muted + autoplay all set on
+      // the actual video element. html5-qrcode mounts its own video child
+      // inside BARCODE_SCANNER_ELEMENT_ID; we force the required iOS
+      // attributes here so the stream actually displays after the
+      // permission prompt closes. Poll for up to 2 seconds because the
+      // stream attach can race the play() call on iOS.
+      pollHardenIosVideo();
+    });
     return () => {
+      diagLog('overlay:close');
       void scan.stop();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -139,6 +253,13 @@ export function SupplementBarcodeOverlay({
     }, 50);
     return () => window.clearTimeout(t);
   }, [open]);
+
+  // Prompt 175b hotfix Fix C: log scan state + error transitions so the
+  // iOS Web Inspector trace shows exactly which transition stalled.
+  useEffect(() => {
+    if (!open) return;
+    diagLog('scan-state-change', { state: scan.state, error: scan.error, flashlightOn: scan.flashlightOn });
+  }, [scan.state, scan.error, scan.flashlightOn, open]);
 
   const handleClose = useCallback(() => {
     void scan.stop();

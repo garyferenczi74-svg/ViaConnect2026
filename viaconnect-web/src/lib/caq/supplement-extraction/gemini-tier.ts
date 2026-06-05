@@ -17,7 +17,13 @@
 import { withAbortTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 import { getCircuitBreaker, isCircuitBreakerError } from '@/lib/utils/circuit-breaker';
-import { TIER_TIMEOUT_MS, getGeminiModelId } from './config';
+import {
+  TIER_TIMEOUT_MS,
+  getGeminiModelId,
+  PROVIDER_RETRY_BASE_MS,
+  PROVIDER_RETRY_JITTER_MS,
+  PROVIDER_RETRY_MAX_ATTEMPTS,
+} from './config';
 import { parseClaudeExtraction } from './parse';
 import { SUPPLEMENT_EXTRACTION_PROMPT } from './claude-tier';
 import type {
@@ -100,8 +106,12 @@ export async function callGeminiTier(input: GeminiTierAdapterInput): Promise<Ext
 
   if (!res.ok) {
     const upstreamBody = await safeReadText(res);
+    const is429 = res.status === 429;
+    const is5xx = res.status >= 500 && res.status < 600;
     safeLog.error('caq.supplement-extraction.gemini-tier', 'tier non-2xx', {
       status: res.status,
+      is429,
+      is5xx,
       errBody: upstreamBody.slice(0, 200),
     });
     return emptyResult('upstream_error', Date.now() - startedAt);
@@ -174,4 +184,49 @@ async function safeReadText(res: Response): Promise<string> {
   } catch {
     return '';
   }
+}
+
+/**
+ * Prompt 175b hotfix Section 2.2: call the Gemini tier with one retry +
+ * exponential backoff + jitter when the first attempt returns a
+ * transient-retryable outcome (timeout, upstream_error, parse_failed).
+ * circuit_open does NOT retry because the breaker is already protecting
+ * the upstream. config_missing and no_items also do not retry.
+ *
+ * Returns the final ExtractionResult. The latencyMs of the returned
+ * result reflects the SERVED attempt only; the route layer is free to
+ * sum latencyMs across attempts via its own attempt log.
+ */
+export async function callGeminiTierWithRetry(input: GeminiTierAdapterInput): Promise<ExtractionResult> {
+  let last: ExtractionResult | null = null;
+  for (let attempt = 1; attempt <= PROVIDER_RETRY_MAX_ATTEMPTS; attempt += 1) {
+    const r = await callGeminiTier(input);
+    last = r;
+    if (!isRetryableOutcome(r.outcomeCode)) return r;
+    if (attempt < PROVIDER_RETRY_MAX_ATTEMPTS) {
+      const delay = backoffMs(attempt);
+      safeLog.warn('caq.supplement-extraction.gemini-tier', 'retrying after retryable outcome', {
+        attempt,
+        outcomeCode: r.outcomeCode,
+        delayMs: delay,
+      });
+      await sleep(delay);
+    }
+  }
+  return last!;
+}
+
+function isRetryableOutcome(code: ExtractionOutcomeCode): boolean {
+  return code === 'timeout' || code === 'upstream_error' || code === 'parse_failed';
+}
+
+function backoffMs(attempt: number): number {
+  // attempt is 1-indexed; first retry uses base * 2^0 + jitter, etc.
+  const base = PROVIDER_RETRY_BASE_MS * Math.pow(2, attempt - 1);
+  const jitter = Math.floor(Math.random() * PROVIDER_RETRY_JITTER_MS);
+  return base + jitter;
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }

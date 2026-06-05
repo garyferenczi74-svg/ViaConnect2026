@@ -55,7 +55,11 @@ interface Props {
   onLowConfidence?: (suggestedName: string) => void;
 }
 
-type State = 'idle' | 'compressing' | 'analyzing' | 'complete' | 'error';
+type State = 'idle' | 'compressing' | 'analyzing' | 'complete' | 'error' | 'degraded';
+
+// Prompt 175b hotfix Section 2.2 + 10: debounce the Try again control so
+// rapid taps cannot trip the upstream rate limit.
+const TRY_AGAIN_DEBOUNCE_MS = 1200;
 
 export default function SupplementPhotoUpload({ onProductIdentified, onProductAdded, onLowConfidence }: Props) {
   const [state, setState] = useState<State>('idle');
@@ -63,7 +67,12 @@ export default function SupplementPhotoUpload({ onProductIdentified, onProductAd
   const [errorMsg, setErrorMsg] = useState('');
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [webview, setWebview] = useState<WebViewDetection | null>(null);
+  const [tryAgainDisabled, setTryAgainDisabled] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const tryAgainTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => {
+    if (tryAgainTimerRef.current) clearTimeout(tryAgainTimerRef.current);
+  }, []);
 
   useEffect(() => {
     if (typeof navigator !== 'undefined') {
@@ -123,6 +132,17 @@ export default function SupplementPhotoUpload({ onProductIdentified, onProductAd
       const data = await response.json();
 
       if (!data.success) {
+        // Prompt 175b hotfix Section 9.1: the route now always returns
+        // HTTP 200 on server failure with a degraded payload. The red
+        // dead-end error state is gone; we surface a calm "drop to
+        // manual" UI keyed by the `degraded` flag.
+        if (data.degraded === true || response.status === 200) {
+          setState('degraded');
+          setErrorMsg(sanitizeServerErrorMessage(data.error));
+          return;
+        }
+        // 4xx case: client validation error (unsupported image, missing
+        // image). Keep the legacy error state but with the neutral copy.
         setState('error');
         setErrorMsg(sanitizeServerErrorMessage(data.error));
         return;
@@ -199,14 +219,55 @@ export default function SupplementPhotoUpload({ onProductIdentified, onProductAd
       )}
 
       {state === 'error' && (
-        <div className="border-2 border-red-400/30 rounded-xl p-6 text-center bg-red-400/[0.03]">
-          <p className="text-sm text-red-400 font-medium mb-3">{errorMsg}</p>
+        <div className="border-2 border-white/15 rounded-xl p-6 text-center bg-white/[0.03]">
+          <p className="text-sm text-white/70 font-medium mb-3">{errorMsg}</p>
           <button
             type="button"
-            onClick={(e) => { e.preventDefault(); reset(); setTimeout(() => inputRef.current?.click(), 100); }}
-            className="text-sm text-teal-400 underline cursor-pointer"
+            disabled={tryAgainDisabled}
+            onClick={(e) => {
+              e.preventDefault();
+              if (tryAgainDisabled) return;
+              setTryAgainDisabled(true);
+              if (tryAgainTimerRef.current) clearTimeout(tryAgainTimerRef.current);
+              tryAgainTimerRef.current = setTimeout(() => setTryAgainDisabled(false), TRY_AGAIN_DEBOUNCE_MS);
+              reset();
+              setTimeout(() => inputRef.current?.click(), 100);
+            }}
+            className={`text-sm underline cursor-pointer ${tryAgainDisabled ? 'text-white/30' : 'text-teal-400'}`}
           >
             Try again
+          </button>
+        </div>
+      )}
+
+      {/* Prompt 175b hotfix Section 10: degraded path replaces the red
+          dead-end. Calm Teal-accented card that gestures toward the
+          manual search and the barcode scanner above; no retry by default
+          since the upstream is likely rate-limited and another tap would
+          just hit it again. Try again still available behind the debounce. */}
+      {state === 'degraded' && (
+        <div className="border border-teal-400/20 rounded-xl p-6 text-center bg-teal-400/[0.03]">
+          <p className="text-sm font-medium text-white/80 mb-1">
+            {errorMsg || 'We could not read this label automatically.'}
+          </p>
+          <p className="text-xs text-white/40 mb-4">
+            Use the search above or the barcode scanner to add this supplement by name.
+          </p>
+          <button
+            type="button"
+            disabled={tryAgainDisabled}
+            onClick={(e) => {
+              e.preventDefault();
+              if (tryAgainDisabled) return;
+              setTryAgainDisabled(true);
+              if (tryAgainTimerRef.current) clearTimeout(tryAgainTimerRef.current);
+              tryAgainTimerRef.current = setTimeout(() => setTryAgainDisabled(false), TRY_AGAIN_DEBOUNCE_MS);
+              reset();
+              setTimeout(() => inputRef.current?.click(), 100);
+            }}
+            className={`text-xs underline cursor-pointer ${tryAgainDisabled ? 'text-white/30' : 'text-teal-400'}`}
+          >
+            Try a different photo
           </button>
         </div>
       )}
