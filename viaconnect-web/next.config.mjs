@@ -24,6 +24,10 @@ const nextConfig = {
       { source: '/genomics', destination: '/#genomics', permanent: true },
       { source: '/process', destination: '/#process', permanent: true },
       { source: '/about', destination: '/#about', permanent: true },
+      // Prompt #175a: Photos tab removed from the Body Tracker nav (FormaVision
+      // supersedes it). The route and its files are kept on disk; temporary
+      // redirect sends stale links to the Body Composition default.
+      { source: '/body-tracker/photos', destination: '/body-tracker/composition', permanent: false },
     ];
   },
 };
