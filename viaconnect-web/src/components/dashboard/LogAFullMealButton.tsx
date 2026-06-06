@@ -47,6 +47,10 @@ export function LogAFullMealButton({ disabled = false, onBeforeNavigate }: LogAF
           : 'hover:from-[#1A2744]/75 hover:to-[#2DA5A0]/45 hover:shadow-lg hover:shadow-black/10'
       }`}
     >
+      {/* Prompt 175n (2026-06-05): Lucide Camera at strokeWidth 1.5,
+          bumped from h-4 w-4 to h-5 w-5 so the glyph reads cleanly as a
+          camera inside the 44 px tap target. Parent Link carries the
+          aria-label so the icon is decorative for screen readers. */}
       <Link
         href="/nutrition/photo-ai"
         onClick={handleCameraClick}
@@ -54,7 +58,7 @@ export function LogAFullMealButton({ disabled = false, onBeforeNavigate }: LogAF
         aria-disabled={disabled}
         className="inline-flex items-center text-white no-underline transition-colors hover:text-[#2DA5A0]"
       >
-        <Camera className="h-4 w-4" strokeWidth={1.5} />
+        <Camera className="h-5 w-5" strokeWidth={1.5} aria-hidden="true" />
       </Link>
       <Link
         href="/nutrition/photo-ai"
