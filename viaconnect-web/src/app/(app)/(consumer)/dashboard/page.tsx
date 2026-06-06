@@ -11,9 +11,9 @@ import { HelixRewardsSummary } from '@/components/dashboard/HelixRewardsSummary'
 import { DailyInsightsCard } from '@/components/dashboard/DailyInsightsCard';
 // Prompt 170o Phase 1 Phase C: hydration tracking surfaces on Consumer Dashboard.
 // Gary 2026-06-03: standalone HydrationWidget desktop bubble retired in favor
-// of the 5th Hydration pill in the QuickLogsSurface meal-type row. The
-// HydrationFloatingActionButton stays as the bottom-right fab.
-import { HydrationFloatingActionButton } from '@/components/hydration/HydrationFloatingActionButton';
+// of the 5th Hydration pill in the QuickLogsSurface meal-type row.
+// Prompt 175 (2026-06-05): HydrationFloatingActionButton removed entirely; the
+// Quick Log Hydration tile is the single supported entry point.
 import { PatternCirclePreview } from '@/components/community/PatternCirclePreview';
 import { ConnectCard } from '@/components/dashboard/ConnectCard';
 import { DashboardLinkCard } from '@/components/dashboard/DashboardLinkCard';
@@ -279,7 +279,9 @@ export default function ConsumerDashboard() {
             removed from this slot. Hydration is now the 5th pill in the
             QuickLogsSurface meal-type row above, tapping it routes to the
             same /wellness-analytics/hydration detail view this widget linked
-            to. The HydrationFloatingActionButton stays as the always-on fab. */}
+            to. Prompt 175 (2026-06-05): the bottom-right
+            HydrationFloatingActionButton was also removed; Quick Log is now
+            the single hydration entry point on the dashboard. */}
 
         {/* Daily Insights (Prompt #61, replaces DailyUltrathinkTip) */}
         <DailyInsightsCard profile={profile} supplements={supplements} />
@@ -290,9 +292,7 @@ export default function ConsumerDashboard() {
         </div>
       </div>
     </div>
-    {/* Prompt 170o Phase 1 Phase C: Hydration FAB scrolls in after 320px;
-        bottom sheet for quick-log + custom amount. */}
-    <HydrationFloatingActionButton />
+    {/* Prompt 175 (2026-06-05): HydrationFloatingActionButton render removed. */}
     </>
   );
 }
