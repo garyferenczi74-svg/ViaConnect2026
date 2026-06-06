@@ -173,16 +173,31 @@ function SegmentedRing(props: SegmentedRingProps) {
           );
         })}
       </svg>
+      {/* Prompt 175m gauge sizing v2 (2026-06-05): proportional bands so
+          the days-logged count and denominator stay legible at the new
+          100 px mobile ring without crowding it. */}
       <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
         <span
           className="font-bold tabular-nums leading-none text-white"
-          style={{ fontSize: sizePx >= 180 ? '40px' : '28px' }}
+          style={{
+            fontSize:
+              sizePx >= 180 ? '40px'
+              : sizePx >= 140 ? '30px'
+              : sizePx >= 110 ? '24px'
+              : '20px',
+          }}
         >
           {filledSegments}
         </span>
         <span
-          className="mt-1 tabular-nums leading-none text-white/55"
-          style={{ fontSize: sizePx >= 180 ? '14px' : '12px' }}
+          className="mt-0.5 tabular-nums leading-none text-white/55"
+          style={{
+            fontSize:
+              sizePx >= 180 ? '14px'
+              : sizePx >= 140 ? '12px'
+              : sizePx >= 110 ? '11px'
+              : '9px',
+          }}
         >
           / {totalSegments}
         </span>

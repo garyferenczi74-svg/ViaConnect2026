@@ -160,16 +160,33 @@ function CircleGauge({ sizePx, stroke, score, hasData, color, pulseKey }: Circle
           />
         ) : null}
       </svg>
+      {/* Prompt 175m gauge sizing v2 (2026-06-05): proportional text bands
+          so the value and denominator stay legible across compact mobile
+          (100 px), tuned mobile (120 to 140 px), and the desktop ring.
+          Below 110 px the digit reads as 22 px so it does not crowd the
+          ring; the / 100 denominator follows at 9 px. */}
       <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
         <span
           className="font-bold tabular-nums leading-none text-white"
-          style={{ fontSize: sizePx >= 200 ? '48px' : '32px' }}
+          style={{
+            fontSize:
+              sizePx >= 200 ? '48px'
+              : sizePx >= 140 ? '34px'
+              : sizePx >= 110 ? '28px'
+              : '22px',
+          }}
         >
           {score}
         </span>
         <span
-          className="mt-1 tabular-nums leading-none text-white/55"
-          style={{ fontSize: sizePx >= 200 ? '14px' : '12px' }}
+          className="mt-0.5 tabular-nums leading-none text-white/55"
+          style={{
+            fontSize:
+              sizePx >= 200 ? '14px'
+              : sizePx >= 140 ? '12px'
+              : sizePx >= 110 ? '11px'
+              : '9px',
+          }}
         >
           / 100
         </span>
