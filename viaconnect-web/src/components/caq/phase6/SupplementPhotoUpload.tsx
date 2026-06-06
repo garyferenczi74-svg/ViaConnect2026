@@ -488,7 +488,7 @@ export default function SupplementPhotoUpload({
                   cadence; speeds up on hover. */}
               <RefreshCw
                 size={16}
-                strokeWidth={2}
+                strokeWidth={1.5}
                 className="text-teal-300 animate-spin group-hover:[animation-duration:1s] transition-[color]"
                 style={{ animationDuration: '2.5s' }}
                 aria-hidden="true"

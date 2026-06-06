@@ -1949,9 +1949,6 @@ export default function OnboardingStepPage() {
                     <div className="flex-grow h-px bg-white/10" />
                   </div>
                   <SupplementPhotoUpload
-                    onProductIdentified={(product) => {
-                      void product;
-                    }}
                     onProductAdded={(rec) => {
                       // Prompt 175h Section 2.3 + hotfix (2026-06-05):
                       // ingredientBreakdown sources from

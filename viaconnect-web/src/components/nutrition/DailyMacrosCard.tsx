@@ -27,7 +27,11 @@ export function DailyMacrosCard() {
     });
   }, []);
 
-  const { meals, loading } = useUserMeals(userId, { days: 7, includeLegacy: true });
+  // Prompt 175 audit (2026-06-05): includeLegacy was true but DailyMacroRings
+  // filters qualityScore === null anyway (173b legacy exclusion). Drop the
+  // extra fetch fan-out by passing false; net behavior is identical and
+  // matches NutritionScoreCard.
+  const { meals, loading } = useUserMeals(userId, { days: 7, includeLegacy: false });
   const { targets: prompt168Targets } = useNutritionTargets(userId);
 
   // USDA fallback when no nutrition_targets row exists yet (pre-CAQ); the

@@ -47,14 +47,18 @@ export function LogAFullMealButton({ disabled = false, onBeforeNavigate }: LogAF
           : 'hover:from-[#1A2744]/75 hover:to-[#2DA5A0]/45 hover:shadow-lg hover:shadow-black/10'
       }`}
     >
-      {/* Prompt 175n (2026-06-05): Lucide Camera at strokeWidth 1.5,
-          bumped from h-4 w-4 to h-5 w-5 so the glyph reads cleanly as a
-          camera inside the 44 px tap target. Parent Link carries the
-          aria-label so the icon is decorative for screen readers. */}
+      {/* Prompt 175 audit (2026-06-05): Lucide Camera at strokeWidth 1.5,
+          h-5 w-5. The icon-only Link is now aria-hidden + tabIndex -1
+          so screen readers do not announce two interactive elements
+          that both target /nutrition/photo-ai; the text Link below
+          owns the accessible name. The icon still receives pointer
+          taps for muscle-memory users who hit the camera glyph
+          directly. */}
       <Link
         href="/nutrition/photo-ai"
         onClick={handleCameraClick}
-        aria-label="Open Photo AI"
+        aria-hidden="true"
+        tabIndex={-1}
         aria-disabled={disabled}
         className="inline-flex items-center text-white no-underline transition-colors hover:text-[#2DA5A0]"
       >
@@ -63,13 +67,14 @@ export function LogAFullMealButton({ disabled = false, onBeforeNavigate }: LogAF
       <Link
         href="/nutrition/photo-ai"
         onClick={handleClick}
+        aria-label="Log a full meal via Photo AI"
         aria-disabled={disabled}
         className={`inline-flex items-center gap-1.5 text-white no-underline ${
           disabled ? '' : 'active:scale-[0.98]'
         }`}
       >
         <span>Log a full meal</span>
-        <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" strokeWidth={1.5} />
+        <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" strokeWidth={1.5} aria-hidden="true" />
       </Link>
     </div>
   );

@@ -656,7 +656,7 @@ interface IdleSurfaceProps {
 function IdleSurface(props: IdleSurfaceProps) {
   return (
     <div className="flex flex-col gap-4">
-      <div className="grid grid-cols-2 gap-2 min-[360px]:grid-cols-3 sm:gap-3">
+      <div className="grid grid-cols-2 gap-2 min-[360px]:grid-cols-3 sm:gap-3 [&>*:last-child]:col-span-2 min-[360px]:[&>*:last-child]:col-span-1">
         <EntryPathCard
           icon={<Camera className="h-6 w-6 sm:h-9 sm:w-9" strokeWidth={1.5} />}
           title="Photo"

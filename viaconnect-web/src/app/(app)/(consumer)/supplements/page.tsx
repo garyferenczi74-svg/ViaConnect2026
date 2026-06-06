@@ -333,9 +333,9 @@ export default function SupplementsPage() {
       </Section>
 
       {/* ═══ 5. BROWSE & BUILD PROTOCOL ═══ */}
-      <Section icon={ShoppingBag} iconColor="#B75E18" title="Browse & Build Protocol" subtitle="Scan a barcode, search by name, or browse the catalog">
+      <Section icon={ShoppingBag} iconColor="#B75E18" title="Browse & Build Protocol" subtitle="Search by name or browse the catalog">
         <div className="p-5 md:p-6 space-y-6">
-          <SupplementInput portal="consumer" onProductAdded={() => {}} />
+          <SupplementInput portal="consumer" onProductAdded={() => {}} barcodeEnabled={false} />
           <div><h3 className="text-xs text-white/20 uppercase tracking-wider font-semibold mb-3">Browse by Category</h3>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 md:gap-3">
               {CATEGORIES.map((cat) => (

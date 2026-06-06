@@ -9,11 +9,17 @@ import { ScanLine, Search, Check, AlertCircle, Dna, Loader2, ChevronRight } from
 interface SupplementInputProps {
   portal: 'consumer' | 'practitioner' | 'naturopath';
   onProductAdded: (product: PluginProductResult) => void;
+  /**
+   * Prompt 175 audit (2026-06-05): barcode entry was removed from the
+   * consumer /supplements surface. Defaults to true so practitioner and
+   * naturopath protocol builders retain the Scan Barcode button.
+   */
+  barcodeEnabled?: boolean;
 }
 
 type ViewState = 'idle' | 'scanning' | 'searching' | 'loading' | 'results' | 'error' | 'notfound';
 
-export default function SupplementInput({ portal, onProductAdded }: SupplementInputProps) {
+export default function SupplementInput({ portal, onProductAdded, barcodeEnabled = true }: SupplementInputProps) {
   const [view, setView] = useState<ViewState>('idle');
   const [query, setQuery] = useState('');
   const [searchResults, setSearchResults] = useState<PluginProductResult[]>([]);
@@ -90,24 +96,27 @@ export default function SupplementInput({ portal, onProductAdded }: SupplementIn
       {/* INPUT STATE */}
       {view !== 'results' && view !== 'scanning' && (
         <div>
-          {/* Scan Barcode button */}
-          <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
-            <button
-              type="button"
-              onClick={(e) => { e.preventDefault(); setView('scanning'); }}
-              style={{
-                flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-                padding: '14px', border: '2px solid #2DA5A0', borderRadius: '12px',
-                background: 'rgba(45,165,160,0.05)', cursor: 'pointer', fontWeight: 600,
-                color: '#1A2744', fontSize: '14px', transition: 'all 0.15s',
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(45,165,160,0.12)'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(45,165,160,0.05)'; }}
-            >
-              <ScanLine size={20} color="#2DA5A0" />
-              Scan Barcode
-            </button>
-          </div>
+          {/* Scan Barcode button (gated by barcodeEnabled prop; consumer
+              /supplements passes false per Prompt 175 audit, 2026-06-05). */}
+          {barcodeEnabled && (
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+              <button
+                type="button"
+                onClick={(e) => { e.preventDefault(); setView('scanning'); }}
+                style={{
+                  flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                  padding: '14px', border: '2px solid #2DA5A0', borderRadius: '12px',
+                  background: 'rgba(45,165,160,0.05)', cursor: 'pointer', fontWeight: 600,
+                  color: '#1A2744', fontSize: '14px', transition: 'all 0.15s',
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(45,165,160,0.12)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(45,165,160,0.05)'; }}
+              >
+                <ScanLine size={20} color="#2DA5A0" />
+                Scan Barcode
+              </button>
+            </div>
+          )}
 
           {/* Search bar */}
           <div style={{ position: 'relative' }}>
@@ -251,7 +260,7 @@ export default function SupplementInput({ portal, onProductAdded }: SupplementIn
                     )}
                   </div>
                   <span style={{ fontWeight: 700, fontSize: '14px' }}>
-                    {ing.amount != null ? `${ing.amount} ${ing.unit || ''}` : '—'}
+                    {ing.amount != null ? `${ing.amount} ${ing.unit || ''}` : 'n/a'}
                   </span>
                 </div>
               ))}
