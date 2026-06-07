@@ -1,47 +1,27 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+// Prompt 177 zxing strip (2026-06-07): barcode entry and zxing-wasm fully
+// removed. SupplementInput is search-only on every portal now. The
+// historical barcode resolve API stays in place but is dormant.
+
+import { useState, useRef } from 'react';
 import { pluginRegistry } from '@/plugins/registry';
-import BarcodeScanner from './BarcodeScanner';
 import { PluginProductResult } from '@/plugins/types';
-import { ScanLine, Search, Check, AlertCircle, Dna, Loader2, ChevronRight } from 'lucide-react';
+import { Search, Check, Dna, Loader2, ChevronRight } from 'lucide-react';
 
 interface SupplementInputProps {
   portal: 'consumer' | 'practitioner' | 'naturopath';
   onProductAdded: (product: PluginProductResult) => void;
-  /**
-   * Prompt 175 audit (2026-06-05): barcode entry was removed from the
-   * consumer /supplements surface. Defaults to true so practitioner and
-   * naturopath protocol builders retain the Scan Barcode button.
-   */
-  barcodeEnabled?: boolean;
 }
 
-type ViewState = 'idle' | 'scanning' | 'searching' | 'loading' | 'results' | 'error' | 'notfound';
+type ViewState = 'idle' | 'searching' | 'results' | 'error';
 
-export default function SupplementInput({ portal, onProductAdded, barcodeEnabled = true }: SupplementInputProps) {
+export default function SupplementInput({ portal, onProductAdded }: SupplementInputProps) {
   const [view, setView] = useState<ViewState>('idle');
   const [query, setQuery] = useState('');
   const [searchResults, setSearchResults] = useState<PluginProductResult[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<PluginProductResult | null>(null);
-  const [errorMsg, setErrorMsg] = useState('');
-  const [scannedBarcode, setScannedBarcode] = useState('');
   const searchTimer = useRef<NodeJS.Timeout>();
-
-  const handleBarcodeDetected = useCallback(async (barcode: string) => {
-    setScannedBarcode(barcode);
-    setView('loading');
-
-    const result = await pluginRegistry.lookupBarcode(barcode);
-
-    if (result) {
-      setSelectedProduct(result);
-      setView('results');
-    } else {
-      setView('notfound');
-      setErrorMsg(`Barcode ${barcode} not found. Try searching by product name.`);
-    }
-  }, []);
 
   const handleSearchChange = (value: string) => {
     setQuery(value);
@@ -79,45 +59,13 @@ export default function SupplementInput({ portal, onProductAdded, barcodeEnabled
     setSelectedProduct(null);
     setSearchResults([]);
     setQuery('');
-    setScannedBarcode('');
-    setErrorMsg('');
   }
 
   return (
     <div>
-      {/* SCANNER OVERLAY */}
-      {view === 'scanning' && (
-        <BarcodeScanner
-          onBarcodeDetected={handleBarcodeDetected}
-          onClose={() => setView('idle')}
-        />
-      )}
-
       {/* INPUT STATE */}
-      {view !== 'results' && view !== 'scanning' && (
+      {view !== 'results' && (
         <div>
-          {/* Scan Barcode button (gated by barcodeEnabled prop; consumer
-              /supplements passes false per Prompt 175 audit, 2026-06-05). */}
-          {barcodeEnabled && (
-            <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
-              <button
-                type="button"
-                onClick={(e) => { e.preventDefault(); setView('scanning'); }}
-                style={{
-                  flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-                  padding: '14px', border: '2px solid #2DA5A0', borderRadius: '12px',
-                  background: 'rgba(45,165,160,0.05)', cursor: 'pointer', fontWeight: 600,
-                  color: '#1A2744', fontSize: '14px', transition: 'all 0.15s',
-                }}
-                onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(45,165,160,0.12)'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(45,165,160,0.05)'; }}
-              >
-                <ScanLine size={20} color="#2DA5A0" />
-                Scan Barcode
-              </button>
-            </div>
-          )}
-
           {/* Search bar */}
           <div style={{ position: 'relative' }}>
             <input
@@ -186,30 +134,8 @@ export default function SupplementInput({ portal, onProductAdded, barcodeEnabled
             </div>
           )}
 
-          {/* Loading state */}
-          {view === 'loading' && (
-            <div style={{ textAlign: 'center', padding: '24px' }}>
-              <Loader2 size={32} color="#2DA5A0" style={{ margin: '0 auto 12px', animation: 'spin 1s linear infinite' }} />
-              <p style={{ fontWeight: 600, color: '#1A2744', margin: 0 }}>Looking up barcode {scannedBarcode}...</p>
-              <p style={{ fontSize: '12px', color: '#999', marginTop: '4px' }}>Checking Product Cache → NIH DSLD → Open Food Facts</p>
-              <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-            </div>
-          )}
-
-          {/* Not found */}
-          {view === 'notfound' && (
-            <div style={{ textAlign: 'center', padding: '16px', backgroundColor: '#FEF3C7', borderRadius: '12px', marginTop: '12px' }}>
-              <AlertCircle size={20} color="#92400E" style={{ margin: '0 auto 8px' }} />
-              <p style={{ color: '#92400E', fontWeight: 600, fontSize: '14px', margin: '0 0 8px' }}>{errorMsg}</p>
-              <button
-                type="button"
-                onClick={(e) => { e.preventDefault(); setView('idle'); }}
-                style={{ color: '#2DA5A0', textDecoration: 'underline', border: 'none', background: 'none', cursor: 'pointer', fontSize: '14px' }}
-              >
-                Search by name instead
-              </button>
-            </div>
-          )}
+          {/* Prompt 177 zxing strip (2026-06-07): barcode loading and
+              not-found views removed with the rest of the barcode flow. */}
         </div>
       )}
 
