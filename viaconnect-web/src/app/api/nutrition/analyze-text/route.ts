@@ -33,7 +33,9 @@ import { estimateCostUsd } from '@/lib/observability/ai-pricing';
 // was the CAQ interstitial work and did not authorize this. The dual-
 // write to nutrition_logs from #168 Apply C is preserved for realtime
 // UNION read dedupe; the legacy_nutrition_log_id link still persists.
-import { SOURCE_CONFIDENCE_DEFAULTS } from '@/lib/gordon/constants';
+// Prompt 177d Phase B: SOURCE_CONFIDENCE_DEFAULTS import dropped because
+// the text channel now computes confidence per-meal from the 4/4/9
+// reconciliation result rather than using a flat 0.90 default.
 import { scoreMealForServerInsert } from '@/lib/gordon/scoreMealForServerInsert';
 import { recomputeNutritionDimension } from '@/lib/nutrition/bos-bridge';
 
@@ -109,6 +111,55 @@ export async function POST(req: NextRequest) {
     // the meal save so the user never loses a meal because Gordon timed out.
     // console.error on scoring failure surfaces the actual stack in Vercel
     // runtime logs (safeLog.warn was getting swallowed in production).
+    // Prompt 177d Phase B (2026-06-07): write the unknown-vs-zero data
+    // contract. Sodium is the canonical "not determinable" macro on the
+    // text channel because the parser does not extract it from typed
+    // input. Per the 177d Step 3 default, store NULL rather than 0 so
+    // the score path can skip it and the UI can mark the meal Estimated.
+    //
+    // 4/4/9 reconciliation per 177d Step 3: macros vs calories must
+    // agree within 20 percent or the meal is downgraded to low
+    // confidence and surfaced as estimated.
+    const macroDerivedKcal =
+      4 * analysis.protein_g + 4 * analysis.carbs_g + 9 * analysis.total_fat_g;
+    const reconciliationRatio =
+      analysis.calories > 0 ? macroDerivedKcal / analysis.calories : 0;
+    const reconciliationPassed =
+      reconciliationRatio >= 0.80 && reconciliationRatio <= 1.20;
+
+    // Sodium is always unknown on text channel. The other 6 macros are
+    // determined if the analysis returned a non-zero or any positive
+    // value (the parser writes a numeric 0 only when the food is
+    // genuinely zero in that nutrient, e.g. plain rice has 0 sugar; we
+    // treat all parser-returned numerics as "known" for now).
+    const knownNutrients = {
+      calories_kcal: true,
+      protein_g: true,
+      carbs_g: true,
+      fat_total_g: true,
+      fat_healthy_g: true,
+      fiber_g: true,
+      sugar_g: true,
+      sodium_mg: false,
+    } as const;
+
+    const sourceConfidence = reconciliationPassed
+      ? 0.65 // 7/8 known + macros reconcile
+      : 0.45; // 7/8 known + macros do not reconcile
+
+    const prompt177dMeta = {
+      version: '177d-2026-06-07',
+      reconciliation: {
+        macro_kcal: Math.round(macroDerivedKcal * 100) / 100,
+        stated_kcal: analysis.calories,
+        ratio: Math.round(reconciliationRatio * 10000) / 10000,
+        threshold: 0.20,
+        passed: reconciliationPassed,
+      },
+      known_nutrients: knownNutrients,
+      estimated: true,
+    };
+
     let mealId: string | null = null;
     try {
       const mealsInsert = await supabase
@@ -119,14 +170,14 @@ export async function POST(req: NextRequest) {
           logged_at: loggedAt,
           meal_type: mealType,
           source: 'full_manual',
-          source_confidence: SOURCE_CONFIDENCE_DEFAULTS.full_manual,
+          source_confidence: sourceConfidence,
           protein_g: analysis.protein_g,
           carbs_g: analysis.carbs_g,
           fat_total_g: analysis.total_fat_g,
           fat_healthy_g: analysis.healthy_fat_g,
           fiber_g: analysis.fiber_g,
           sugar_g: analysis.sugar_g,
-          sodium_mg: 0,
+          sodium_mg: null,
           calories_kcal: analysis.calories,
           calories_auto_calc: false,
           meal_name: analysis.serving_description ?? null,
@@ -134,7 +185,7 @@ export async function POST(req: NextRequest) {
           raw_input: { description, ai_model: GEMINI_MODEL, route: ROUTE },
           quality_score: null,
           quality_tier: null,
-          score_breakdown: null,
+          score_breakdown: { prompt_177d_meta: prompt177dMeta },
           scored_at: null,
           gordon_version: null,
         })
@@ -161,12 +212,19 @@ export async function POST(req: NextRequest) {
     let scoredForLegacyLog: Awaited<ReturnType<typeof scoreMealForServerInsert>> | null = null;
     if (mealId !== null) {
       try {
+        // Prompt 177d Phase B: sodium passed as 0 to the score engine
+        // because the current Meal type and scoreMeal signature take a
+        // numeric. The honest representation is on the row (sodium_mg
+        // NULL) and in score_breakdown.prompt_177d_meta (sodium_mg
+        // false). A future Gordon refactor can wire knownNutrients
+        // directly into scoreMeal so the sodium penalty modifier is
+        // explicitly marked excluded rather than silently zero.
         const scored = await scoreMealForServerInsert(supabase, {
           userId: user.id,
           loggedAt,
           mealType,
           source: 'full_manual',
-          sourceConfidence: SOURCE_CONFIDENCE_DEFAULTS.full_manual,
+          sourceConfidence,
           proteinG: analysis.protein_g,
           carbsG: analysis.carbs_g,
           fatTotalG: analysis.total_fat_g,
@@ -179,11 +237,19 @@ export async function POST(req: NextRequest) {
           wholeFoodFlag: false,
           mealName: analysis.serving_description ?? null,
         });
+        // Preserve prompt_177d_meta on the score_breakdown so the
+        // Estimated chip and downstream analytics keep the
+        // reconciliation + known_nutrients audit trail after Gordon
+        // overwrites with its own breakdown.
+        const mergedBreakdown = {
+          ...(scored.score_breakdown as Record<string, unknown>),
+          prompt_177d_meta: prompt177dMeta,
+        };
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const updateRes = await (supabase as any).from('meals').update({
           quality_score: scored.quality_score,
           quality_tier: scored.quality_tier,
-          score_breakdown: scored.score_breakdown,
+          score_breakdown: mergedBreakdown,
           scored_at: scored.scored_at,
           gordon_version: scored.gordon_version,
         }).eq('meal_id', mealId);

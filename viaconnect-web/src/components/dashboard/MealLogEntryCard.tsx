@@ -14,6 +14,7 @@ import { Coffee, Sun, Moon, Cookie, ChevronDown, ChevronUp } from 'lucide-react'
 import type { Meal, MealType } from '@/lib/gordon/types';
 import { QualityScoreRing } from '@/components/meals/QualityScoreRing';
 import { ScoreBreakdownPanel } from '@/components/meals/ScoreBreakdownPanel';
+import { EstimatedChip } from '@/components/nutrition/EstimatedChip';
 
 export interface MealLogEntryCardProps {
   readonly meal: Meal;
@@ -87,6 +88,13 @@ export function MealLogEntryCard(props: MealLogEntryCardProps) {
   const scoreValue = hasScore ? Number(meal.qualityScore) : 0;
   const tierLabel = hasScore ? meal.qualityTier : null;
 
+  // Prompt 177d Phase B (2026-06-07): pull the known_nutrients map from
+  // score_breakdown so MacroCell can render n/a for "not determinable"
+  // macros (canonically sodium on the text channel).
+  const sb = meal.scoreBreakdown as { prompt_177d_meta?: { known_nutrients?: Record<string, boolean> }; prompt_177d_repair?: { known_nutrients?: Record<string, boolean> } } | null;
+  const known = sb?.prompt_177d_meta?.known_nutrients ?? sb?.prompt_177d_repair?.known_nutrients;
+  const sodiumKnown = known?.sodium_mg !== false;
+
   return (
     <article className="font-[Instrument_Sans] rounded-2xl border border-white/10 bg-[#1E3054] text-white">
       <button
@@ -134,13 +142,17 @@ export function MealLogEntryCard(props: MealLogEntryCardProps) {
             {time ? <span className="text-[12px] text-white/40">{time}</span> : null}
           </div>
           <div className="mt-0.5 truncate text-[15px] font-medium text-white">{displayName}</div>
-          <div className="mt-0.5 flex items-center gap-3 text-[12px] text-white/60">
+          <div className="mt-0.5 flex flex-wrap items-center gap-2 text-[12px] text-white/60">
             <span className="tabular-nums">{Math.round(meal.caloriesKcal)} kcal</span>
             {isLegacy ? (
               <span className="text-white/50">Score not available for legacy meal</span>
             ) : isPending ? (
               <span className="text-white/50">Scoring</span>
             ) : null}
+            {/* Prompt 177d Phase B (2026-06-07): visible Estimated marker
+                on text-channel meals. Renders for source=full_manual when
+                score_breakdown carries the 177d meta or repair block. */}
+            <EstimatedChip scoreBreakdown={meal.scoreBreakdown} source={meal.source} />
           </div>
         </div>
 
@@ -157,13 +169,17 @@ export function MealLogEntryCard(props: MealLogEntryCardProps) {
 
       {expanded ? (
         <div className="border-t border-white/10 px-3 py-3">
+          {/* Prompt 177d Phase B (2026-06-07): known_nutrients map from
+              score_breakdown tells us which macros were determinable on
+              the text channel. Sodium on a full_manual meal is the
+              canonical not-determinable nutrient and renders as n/a. */}
           <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
             <MacroCell label="Protein" value={meal.proteinG} unit="g" />
             <MacroCell label="Carbs" value={meal.carbsG} unit="g" />
             <MacroCell label="Fat" value={meal.fatTotalG} unit="g" />
             <MacroCell label="Fiber" value={meal.fiberG} unit="g" />
             <MacroCell label="Sugar" value={meal.sugarG} unit="g" />
-            <MacroCell label="Sodium" value={meal.sodiumMg} unit="mg" />
+            <MacroCell label="Sodium" value={meal.sodiumMg} unit="mg" knownOverride={sodiumKnown} />
             <MacroCell label="Healthy fat" value={meal.fatHealthyG} unit="g" />
             <MacroCell label="Calories" value={meal.caloriesKcal} unit="kcal" />
           </div>
@@ -178,13 +194,30 @@ export function MealLogEntryCard(props: MealLogEntryCardProps) {
   );
 }
 
-function MacroCell({ label, value, unit }: { label: string; value: number; unit: string }) {
+function MacroCell({
+  label,
+  value,
+  unit,
+  knownOverride,
+}: {
+  label: string;
+  value: number;
+  unit: string;
+  knownOverride?: boolean;
+}) {
+  const isKnown = knownOverride !== false;
   return (
     <div className="rounded-xl bg-white/5 px-2 py-1.5">
       <div className="text-[10px] uppercase tracking-[0.10em] text-white/50">{label}</div>
       <div className="mt-0.5 text-[13px] font-semibold tabular-nums text-white">
-        {Math.round(value)}
-        <span className="ml-1 text-[11px] font-normal text-white/60">{unit}</span>
+        {isKnown ? (
+          <>
+            {Math.round(value)}
+            <span className="ml-1 text-[11px] font-normal text-white/60">{unit}</span>
+          </>
+        ) : (
+          <span className="text-white/55">n/a</span>
+        )}
       </div>
     </div>
   );
