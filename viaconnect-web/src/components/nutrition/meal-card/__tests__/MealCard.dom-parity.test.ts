@@ -133,8 +133,17 @@ describe('MealCard dom parity vs pre-refactor AnalysisResult', () => {
       expect(microcopyN).toContain('Tap an item to adjust the portion or swap the food.');
     });
 
-    it('preserves the four chip grid container className (normal mode)', () => {
-      expect(macroChipsN).toContain(n(MEAL_TOTALS_GRID_PRE));
+    // Prompt 177g (2026-06-07) divergence: the normal mode chip row
+    // expanded from four chips (grid-cols-4) to six chips (mobile
+    // grid-cols-3 + md:grid-cols-6) to add Fiber and Sugar alongside
+    // Calories, Protein, Carbs, Fat. The pre-refactor 4-chip grid
+    // signature is no longer reachable; assert the new 6-chip grid
+    // signature instead. Safety mode stays at three chips per 170c 8.4
+    // and is covered by its own assertions further below.
+    it('renders the six chip grid container className (normal mode, 177g)', () => {
+      expect(macroChipsN).toContain(
+        n('<div className="mt-3 grid grid-cols-3 gap-2 text-center text-[11px] md:grid-cols-6">'),
+      );
     });
 
     // Phase 1B divergence: the four totals chip labels are read via

@@ -31,14 +31,15 @@ export interface MacroChipsProps {
 
 interface MacroChipProps {
   label: string;
-  value: number;
+  value: number | null;
   unit: 'kcal' | 'g' | 'percent';
   /**
    * Token driven background tint applied per chip. The token enforces the
    * brand palette (Teal #2DA5A0, Orange #B75E18, etc) and refuses off token
-   * hex.
+   * hex. Prompt 177g (2026-06-07): adds fiber + sugar tones for the
+   * extended chip row.
    */
-  tone: 'calories' | 'protein' | 'carbs' | 'fats';
+  tone: 'calories' | 'protein' | 'carbs' | 'fats' | 'fiber' | 'sugar';
 }
 
 function toneLabelColor(tone: MacroChipProps['tone']): string {
@@ -65,6 +66,15 @@ function toneLabelColor(tone: MacroChipProps['tone']): string {
     case 'fats':
       // Neutral white slate; sits over the card surface.
       return '#FFFFFF';
+    case 'fiber':
+      // Lighter Teal step for fiber (177g 2026-06-07); kept inside the
+      // brand Teal family so the chip row reads as one rhythm of color.
+      return '#5BC0BB';
+    case 'sugar':
+      // Brand Orange tone for sugar to flag it as the watch-out macro
+      // (177g 2026-06-07); contrast-derived from the same Orange step
+      // used by Protein so both clear AA contrast on Card #1E3054.
+      return '#DA8538';
   }
 }
 
@@ -93,11 +103,14 @@ function toneLabelClass(tone: MacroChipProps['tone']): string {
 
 function MacroChip({ label, value, unit, tone }: MacroChipProps) {
   const labelClass = toneLabelClass(tone);
+  // Prompt 177g (2026-06-07): unknown nutrients render as a dash per
+  // the 177d unknown-vs-zero contract, never as 0.
+  const isKnown = value !== null && Number.isFinite(value);
   return (
     <div className="rounded-lg bg-white/[0.04] px-2 py-2">
       <div className={labelClass} style={{ color: toneLabelColor(tone) }}>{label}</div>
-      <div className="mt-0.5 font-mono text-base text-white">{value}</div>
-      <div className="text-[10px] text-white/45">{unitLabel(unit)}</div>
+      <div className="mt-0.5 font-mono text-base text-white">{isKnown ? value : 'n/a'}</div>
+      <div className="text-[10px] text-white/45">{isKnown ? unitLabel(unit) : ''}</div>
     </div>
   );
 }
@@ -132,8 +145,12 @@ export function MacroChips({ macros, safetyMode = false }: MacroChipsProps) {
   }
 
   const variant = 'normal' as const;
+  // Prompt 177g (2026-06-07): six-chip row covering the 177e tracked
+  // set (calories, protein, carbs, fat, fiber) plus sugar. Mobile +
+  // tablet render 3 columns / 2 rows; desktop renders 6 across. Each
+  // chip handles null gracefully via the n/a fallback in MacroChip.
   return (
-    <div className="mt-3 grid grid-cols-4 gap-2 text-center text-[11px]">
+    <div className="mt-3 grid grid-cols-3 gap-2 text-center text-[11px] md:grid-cols-6">
       <MacroChip
         label={getMicrocopy('chips.calories.label', variant)}
         value={Math.round(macros.kcal)}
@@ -157,6 +174,18 @@ export function MacroChips({ macros, safetyMode = false }: MacroChipsProps) {
         value={Number(macros.fatsG.toFixed(1))}
         unit="g"
         tone="fats"
+      />
+      <MacroChip
+        label="Fiber"
+        value={macros.fiberG === null ? null : Number(macros.fiberG.toFixed(1))}
+        unit="g"
+        tone="fiber"
+      />
+      <MacroChip
+        label="Sugar"
+        value={macros.sugarG === null ? null : Number(macros.sugarG.toFixed(1))}
+        unit="g"
+        tone="sugar"
       />
     </div>
   );

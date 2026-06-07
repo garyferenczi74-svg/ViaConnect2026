@@ -28,6 +28,14 @@ export interface UseMealItemEditsArgs {
   initialDraft: MealDraft;
 }
 
+export type EditableNutrientField =
+  | 'calories_kcal'
+  | 'protein_g'
+  | 'carbs_g'
+  | 'fat_g'
+  | 'fiber_g'
+  | 'sugar_g';
+
 export interface UseMealItemEditsReturn {
   draft: MealDraft;
   editDiff: EditDiff;
@@ -42,6 +50,17 @@ export interface UseMealItemEditsReturn {
   appendItem: (item: MealItemDraft) => void;
   removeItem: (itemId: string) => void;
   markVerified: (itemId: string) => void;
+  /**
+   * Prompt 177g (2026-06-07): user-corrected nutrient value on a single
+   * item. Sets the absolute field at current portion, back-derives the
+   * per_100g pack so future portion changes scale from the corrected
+   * value, marks the item user_modified, and increments the
+   * itemsModified diff so the corpus writer sees the correction. The
+   * meal totals roll up via the existing aggregate path on the next
+   * render. The server-side Gordon re-score picks up the new value on
+   * save through the unchanged buildSavePayload contract.
+   */
+  setItemNutrient: (itemId: string, field: EditableNutrientField, value: number) => void;
   setPlateSize: (kind: PlateSelectorKind) => void;
   buildSavePayload: (mealType: MealType) => NutriVisionMealInsertPayload;
 }
@@ -225,6 +244,50 @@ export function useMealItemEdits(args: UseMealItemEditsArgs): UseMealItemEditsRe
     setEditDiff((d) => ({ ...d, itemsModified: d.itemsModified + 1 }));
   }, []);
 
+  // Prompt 177g (2026-06-07): user-corrected per-item nutrient value.
+  // The user typed an absolute value at the current portion; we back-
+  // derive per_100g = (corrected_absolute / portion_grams * 100) so a
+  // future portion change scales from the corrected baseline. Edits to
+  // calories or any macro tag the item user_modified; the meal totals
+  // recompute on the next render via the aggregate path and the
+  // server-side Gordon re-score picks up the corrected values on save.
+  const setItemNutrient = useCallback(
+    (itemId: string, field: EditableNutrientField, value: number) => {
+      if (!Number.isFinite(value) || value < 0) return;
+      setItems((curr) =>
+        curr.map((it) => {
+          if (it.id !== itemId) return it;
+          const grams = Number.isFinite(it.portion_grams) && it.portion_grams > 0 ? it.portion_grams : 100;
+          const factor = 100 / grams;
+          const next: MealItemDraft = { ...it, user_modified: true, user_overrode_macros: true };
+          const back = value * factor;
+          if (field === 'calories_kcal') {
+            next.calories_kcal = roundInt(value);
+            next.per_100g = { ...it.per_100g, calories_kcal: roundInt(back) };
+          } else if (field === 'protein_g') {
+            next.protein_g = round1(value);
+            next.per_100g = { ...it.per_100g, protein_g: round1(back) };
+          } else if (field === 'carbs_g') {
+            next.carbs_g = round1(value);
+            next.per_100g = { ...it.per_100g, carbs_g: round1(back) };
+          } else if (field === 'fat_g') {
+            next.fat_g = round1(value);
+            next.per_100g = { ...it.per_100g, fat_g: round1(back) };
+          } else if (field === 'fiber_g') {
+            next.fiber_g = round1(value);
+            next.per_100g = { ...it.per_100g, fiber_g: round1(back) };
+          } else if (field === 'sugar_g') {
+            next.sugar_g = round1(value);
+            next.per_100g = { ...it.per_100g, sugar_g: round1(back) };
+          }
+          return next;
+        }),
+      );
+      setEditDiff((d) => ({ ...d, itemsModified: d.itemsModified + 1 }));
+    },
+    [],
+  );
+
   const setCookingOil = useCallback((itemId: string, selection: CookingOilSelection) => {
     setItems((curr) => curr.map((it) => {
       if (it.id !== itemId) return it;
@@ -374,6 +437,10 @@ export function useMealItemEdits(args: UseMealItemEditsArgs): UseMealItemEditsRe
         carbs_g: it.carbs_g,
         fat_g: it.fat_g,
         user_modified: it.user_modified,
+        // Schema default matches the zod default(false) on the insert
+        // contract; the conditional block below overwrites with the
+        // item's explicit value when present.
+        user_overrode_macros: it.user_overrode_macros === true,
       };
       if (typeof it.cuisine_tag === 'string') row.cuisine_tag = it.cuisine_tag;
       if (it.bounding_box) row.bounding_box = it.bounding_box;
@@ -453,6 +520,7 @@ export function useMealItemEdits(args: UseMealItemEditsArgs): UseMealItemEditsRe
     appendItem,
     removeItem,
     markVerified,
+    setItemNutrient,
     setPlateSize,
     buildSavePayload,
   };

@@ -109,6 +109,16 @@ export interface MealCardProps {
   onApplyChip: (itemId: string | 'meal', chip: ModifierChip) => void;
   onRemoveItem: (itemId: string) => void;
   onMarkVerified: (itemId: string) => void;
+  /**
+   * Prompt 177g (2026-06-07): tap-to-edit per-item nutrient correction.
+   * Optional so MealCard renders without it for callers that have not
+   * adopted the editable tile pattern yet.
+   */
+  onNutrientEdit?: (
+    itemId: string,
+    field: 'calories_kcal' | 'protein_g' | 'carbs_g' | 'fat_g' | 'fiber_g' | 'sugar_g',
+    value: number,
+  ) => void;
   /** Save bar disabled state during async save. */
   isSaving: boolean;
 }
@@ -344,6 +354,11 @@ export function MealCard(props: MealCardProps) {
             onApplyChip={(c) => props.onApplyChip(item.id, c)}
             onRemove={() => props.onRemoveItem(item.id)}
             onMarkVerified={() => props.onMarkVerified(item.id)}
+            onNutrientEdit={
+              props.onNutrientEdit
+                ? (field, value) => props.onNutrientEdit?.(item.id, field, value)
+                : undefined
+            }
           />
         ))}
       </div>

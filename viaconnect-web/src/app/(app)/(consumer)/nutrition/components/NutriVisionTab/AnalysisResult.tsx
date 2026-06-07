@@ -75,6 +75,16 @@ interface AnalysisResultProps {
   onAddItem: () => void;
   onRemoveItem: (itemId: string) => void;
   onMarkVerified: (itemId: string) => void;
+  // Prompt 177g (2026-06-07): per-item nutrient correction from the
+  // user. Wired through MealCard -> MealItemCard so each macro tile
+  // becomes a tap-to-edit surface; on commit the orchestrator updates
+  // the draft and the server-side Gordon re-score picks up the
+  // corrected value on save.
+  onNutrientEdit?: (
+    itemId: string,
+    field: 'calories_kcal' | 'protein_g' | 'carbs_g' | 'fat_g' | 'fiber_g' | 'sugar_g',
+    value: number,
+  ) => void;
   // #170a supplement §17.2: parent plumbs the selection up to useMealItemEdits
   // so the save payload carries plate_size on the meal row.
   onPlateSizeChange: (kind: PlateSelectorKind) => void;
@@ -246,6 +256,7 @@ export function AnalysisResult(props: AnalysisResultProps) {
       onApplyChip={props.onApplyChip}
       onRemoveItem={props.onRemoveItem}
       onMarkVerified={props.onMarkVerified}
+      onNutrientEdit={props.onNutrientEdit}
       isSaving={props.isSaving}
     />
   );

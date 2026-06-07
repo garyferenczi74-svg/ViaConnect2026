@@ -26,6 +26,14 @@ import { FoodSearchDropdown } from './FoodSearchDropdown';
 import type { MealItemDraft, FoodSwapReplacement, ModifierChip } from './types';
 import { ScannedChip } from '@/components/barcode/ScannedChip';
 
+export type EditableNutrientField =
+  | 'calories_kcal'
+  | 'protein_g'
+  | 'carbs_g'
+  | 'fat_g'
+  | 'fiber_g'
+  | 'sugar_g';
+
 export interface MealItemCardProps {
   item: MealItemDraft;
   onPortionChange: (grams: number) => void;
@@ -34,6 +42,14 @@ export interface MealItemCardProps {
   onApplyChip: (chip: ModifierChip) => void;
   onRemove: () => void;
   onMarkVerified: () => void;
+  /**
+   * Prompt 177g (2026-06-07): tap-to-edit per-item nutrient correction.
+   * When provided, each macro tile becomes a button that opens an
+   * inline number input. On commit the parent updates the item draft
+   * and the server-side Gordon re-score picks up the corrected value
+   * on save. Optional; when omitted the tiles render read-only.
+   */
+  onNutrientEdit?: (field: EditableNutrientField, value: number) => void;
   /**
    * Prompt 172 Phase 1B: 170c section 8.4 silent ratio mode contract. When
    * true the per item kcal column is suppressed; the protein, carbs, fat
@@ -76,9 +92,105 @@ export function MealItemCard({
   onApplyChip,
   onRemove,
   onMarkVerified,
+  onNutrientEdit,
   safetyMode = false,
 }: MealItemCardProps) {
   const [showSwap, setShowSwap] = useState(false);
+  // Prompt 177g (2026-06-07): inline edit state for the macro tiles. Only
+  // one tile edits at a time; committing closes the input and fires the
+  // parent handler with the corrected value.
+  const [editingField, setEditingField] = useState<EditableNutrientField | null>(null);
+  const [editValue, setEditValue] = useState<string>('');
+
+  const startEdit = (field: EditableNutrientField, current: number | null) => {
+    if (!onNutrientEdit) return;
+    setEditingField(field);
+    setEditValue(current === null || !Number.isFinite(current) ? '' : String(current));
+  };
+  const commitEdit = () => {
+    if (editingField === null || !onNutrientEdit) {
+      setEditingField(null);
+      return;
+    }
+    const parsed = Number(editValue);
+    if (Number.isFinite(parsed) && parsed >= 0) {
+      onNutrientEdit(editingField, parsed);
+    }
+    setEditingField(null);
+    setEditValue('');
+  };
+  const cancelEdit = () => {
+    setEditingField(null);
+    setEditValue('');
+  };
+
+  // Renders one macro tile. When onNutrientEdit is provided the tile is a
+  // button that opens an inline numeric input; otherwise it stays read only.
+  // Null value renders as a dash per the 177d unknown contract.
+  const renderTile = (
+    label: string,
+    field: EditableNutrientField,
+    value: number | null,
+    unit: 'kcal' | 'g',
+  ) => {
+    const isEditing = editingField === field;
+    const display =
+      value === null || !Number.isFinite(value)
+        ? 'n/a'
+        : unit === 'kcal'
+          ? String(Math.round(value))
+          : `${value.toFixed(1)} g`;
+
+    if (isEditing) {
+      return (
+        <div className="rounded-lg bg-white/[0.04] px-2 py-1.5">
+          <div className="text-white/45">{label}</div>
+          <input
+            type="number"
+            inputMode="decimal"
+            step="0.1"
+            min="0"
+            value={editValue}
+            onChange={(e) => setEditValue(e.target.value)}
+            onBlur={commitEdit}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                commitEdit();
+              } else if (e.key === 'Escape') {
+                e.preventDefault();
+                cancelEdit();
+              }
+            }}
+            autoFocus
+            aria-label={`Edit ${label}`}
+            className="mt-0.5 w-full rounded bg-white/10 px-1 py-0.5 text-center font-mono text-[11px] text-white outline-none ring-1 ring-[#2DA5A0]/60"
+          />
+        </div>
+      );
+    }
+
+    if (onNutrientEdit) {
+      return (
+        <button
+          type="button"
+          onClick={() => startEdit(field, value)}
+          aria-label={`Edit ${label}`}
+          className="rounded-lg bg-white/[0.04] px-2 py-1.5 text-center transition-colors hover:bg-white/[0.08]"
+        >
+          <div className="text-white/45">{label}</div>
+          <div className="font-mono text-white">{display}</div>
+        </button>
+      );
+    }
+
+    return (
+      <div className="rounded-lg bg-white/[0.04] px-2 py-1.5">
+        <div className="text-white/45">{label}</div>
+        <div className="font-mono text-white">{display}</div>
+      </div>
+    );
+  };
 
   const suggestion = useMemo(() => {
     const s = item.cooking_oil_suggestion;
@@ -126,44 +238,26 @@ export function MealItemCard({
         <ConfidenceBadge band={item.confidence_band} score={item.recognition_confidence} />
       </div>
 
-      {/* Macros row */}
+      {/* Macros row. Prompt 177g (2026-06-07): added Fiber + Sugar tiles
+          (six total in normal mode) and made each tile tap-to-edit when
+          onNutrientEdit is supplied. Unknown values render as a dash per
+          the 177d unknown-vs-zero contract. Safety mode still suppresses
+          per-item kcal and stays on the three-column protein/carbs/fat
+          grid because the spec brief is unchanged at that layer. */}
       {safetyMode ? (
-        // Prompt 172 Phase 1B: 170c section 8.4 silent ratio mode contract.
-        // Per item kcal is suppressed; protein, carbs, fat gram columns
-        // continue to render in a three column grid. No visible mode
-        // indicator per the silent UX requirement.
         <div className="mt-3 grid grid-cols-3 gap-2 text-center text-[11px]">
-          <div className="rounded-lg bg-white/[0.04] px-2 py-1.5">
-            <div className="text-white/45">Protein</div>
-            <div className="font-mono text-white">{item.protein_g.toFixed(1)} g</div>
-          </div>
-          <div className="rounded-lg bg-white/[0.04] px-2 py-1.5">
-            <div className="text-white/45">Carbs</div>
-            <div className="font-mono text-white">{item.carbs_g.toFixed(1)} g</div>
-          </div>
-          <div className="rounded-lg bg-white/[0.04] px-2 py-1.5">
-            <div className="text-white/45">Fat</div>
-            <div className="font-mono text-white">{item.fat_g.toFixed(1)} g</div>
-          </div>
+          {renderTile('Protein', 'protein_g', item.protein_g, 'g')}
+          {renderTile('Carbs', 'carbs_g', item.carbs_g, 'g')}
+          {renderTile('Fat', 'fat_g', item.fat_g, 'g')}
         </div>
       ) : (
-        <div className="mt-3 grid grid-cols-4 gap-2 text-center text-[11px]">
-          <div className="rounded-lg bg-white/[0.04] px-2 py-1.5">
-            <div className="text-white/45">Cal</div>
-            <div className="font-mono text-white">{Math.round(item.calories_kcal)}</div>
-          </div>
-          <div className="rounded-lg bg-white/[0.04] px-2 py-1.5">
-            <div className="text-white/45">Protein</div>
-            <div className="font-mono text-white">{item.protein_g.toFixed(1)} g</div>
-          </div>
-          <div className="rounded-lg bg-white/[0.04] px-2 py-1.5">
-            <div className="text-white/45">Carbs</div>
-            <div className="font-mono text-white">{item.carbs_g.toFixed(1)} g</div>
-          </div>
-          <div className="rounded-lg bg-white/[0.04] px-2 py-1.5">
-            <div className="text-white/45">Fat</div>
-            <div className="font-mono text-white">{item.fat_g.toFixed(1)} g</div>
-          </div>
+        <div className="mt-3 grid grid-cols-3 gap-2 text-center text-[11px] md:grid-cols-6">
+          {renderTile('Cal', 'calories_kcal', item.calories_kcal, 'kcal')}
+          {renderTile('Protein', 'protein_g', item.protein_g, 'g')}
+          {renderTile('Carbs', 'carbs_g', item.carbs_g, 'g')}
+          {renderTile('Fat', 'fat_g', item.fat_g, 'g')}
+          {renderTile('Fiber', 'fiber_g', typeof item.fiber_g === 'number' ? item.fiber_g : null, 'g')}
+          {renderTile('Sugar', 'sugar_g', typeof item.sugar_g === 'number' ? item.sugar_g : null, 'g')}
         </div>
       )}
 

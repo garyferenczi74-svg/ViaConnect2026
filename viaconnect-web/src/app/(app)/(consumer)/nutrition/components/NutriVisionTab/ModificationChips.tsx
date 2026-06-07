@@ -2,11 +2,17 @@
 
 // Prompt #170 Phase 1l: modifier chip row.
 //
+// Prompt 177g (2026-06-07): de-duplicated add-to-meal chips. The
+// per-item add-on chips (butter, cream, cheese, sauce) duplicated the
+// meal-level Add to the meal section, which surfaced the same affordance
+// twice. Per-item now keeps only the cooking-method chips (grilled,
+// baked, raw) because those exist nowhere else and are genuinely per
+// item. Meal scope keeps butter, cream, cheese, sauce as the canonical
+// add-to-meal entry point.
+//
 // Two scopes:
-//   - per item:  butter / cream / cheese / sauce bump the per-100g composition;
-//                grilled / baked / raw set the cooking method + clear oil.
-//   - whole meal: butter / cream / cheese / sauce spawn a new item; the
-//                 other three are hidden at meal scope.
+//   - per item:   grilled / baked / raw set the cooking method + clear oil.
+//   - whole meal: butter / cream / cheese / sauce spawn a new item.
 //
 // Hard rules honored: no em or en dashes, no emojis, no any.
 
@@ -19,10 +25,6 @@ interface ModificationChipsProps {
 }
 
 const ITEM_CHIPS: ReadonlyArray<{ id: ModifierChip; label: string }> = [
-  { id: 'butter',  label: 'Butter' },
-  { id: 'cream',   label: 'Cream' },
-  { id: 'cheese',  label: 'Cheese' },
-  { id: 'sauce',   label: 'Sauce' },
   { id: 'grilled', label: 'Grilled' },
   { id: 'baked',   label: 'Baked' },
   { id: 'raw',     label: 'Raw' },

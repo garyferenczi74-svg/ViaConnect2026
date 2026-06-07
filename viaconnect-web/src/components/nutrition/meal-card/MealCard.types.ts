@@ -69,6 +69,16 @@ export interface MealMacros {
   carbsG: number;
   fatsG: number;
   /**
+   * Prompt 177g (2026-06-07): fiber and sugar joined the displayed
+   * macro chip row to align with the 177e canonical macro set (plus
+   * sugar, which is part of Gordon's broader 8-nutrient scoring even
+   * though it is not in the daily target set). null means the
+   * originating channel could not determine it; renders as a dash and
+   * is excluded from the daily macro sum per 177d.
+   */
+  fiberG: number | null;
+  sugarG: number | null;
+  /**
    * Composition percent splits, derived from the macro grams. Used by the
    * safety mode ratio variant in 1B; included on every model so the future
    * variant has a single read path.

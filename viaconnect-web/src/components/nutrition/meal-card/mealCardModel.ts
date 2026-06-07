@@ -88,8 +88,23 @@ function toItem(item: MealItemDraft, safetyMode: boolean): MealCardItem {
   };
 }
 
+// Prompt 177g (2026-06-07): item-level known-nutrient check for fiber +
+// sugar. Returns true when at least one item in the meal carries a
+// numeric value for the field. When false the totals roll-up has no
+// honest signal to display and the macro chip renders a dash per the
+// 177d unknown-vs-zero contract.
+function anyItemHas(
+  draft: MealDraft,
+  field: 'fiber_g' | 'sugar_g',
+): boolean {
+  for (const it of draft.items) {
+    if (typeof it[field] === 'number') return true;
+  }
+  return false;
+}
+
 function deriveMacros(draft: MealDraft): MealMacros {
-  const { calories_kcal, protein_g, carbs_g, fat_g } = draft.totals;
+  const { calories_kcal, protein_g, carbs_g, fat_g, fiber_g, sugar_g } = draft.totals;
   const sum = protein_g + carbs_g + fat_g;
   const proteinPct = sum > 0 ? Math.round((protein_g / sum) * 100) : 0;
   const carbsPct = sum > 0 ? Math.round((carbs_g / sum) * 100) : 0;
@@ -99,6 +114,8 @@ function deriveMacros(draft: MealDraft): MealMacros {
     proteinG: protein_g,
     carbsG: carbs_g,
     fatsG: fat_g,
+    fiberG: anyItemHas(draft, 'fiber_g') ? fiber_g : null,
+    sugarG: anyItemHas(draft, 'sugar_g') ? sugar_g : null,
     proteinPct,
     carbsPct,
     fatsPct,
