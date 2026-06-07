@@ -18,6 +18,7 @@
 import { useMemo } from 'react';
 import { HeartHandshake } from 'lucide-react';
 import type { Meal, NutritionTargets } from '@/lib/gordon/types';
+import { isMealNutrientKnown } from '@/lib/gordon/known-nutrients';
 import { MacroDisclaimer } from './MacroDisclaimer';
 
 export interface DailyMacroRingsProps {
@@ -32,6 +33,12 @@ interface MacroSpec {
   unit: string;
   actual: number;
   target: number;
+  // Prompt 177d Phase D (2026-06-07): true when one or more of today's
+  // meals could not determine this macro on the source channel. The day
+  // total reflects only the meals that DID determine it; the ring + the
+  // caption surface "estimated" so the user is not shown a fictional
+  // shortfall caused by a data gap rather than under-eating.
+  partial?: boolean;
 }
 
 // Prompt #168c section 2.6 fill-percent tier band colors.
@@ -75,13 +82,27 @@ function MacroRing({ spec, sizePx }: { spec: MacroSpec; sizePx: number }) {
   const arcLength = ratio * circumference;
   const color = colorForFill(spec.actual, spec.target);
 
+  // Prompt 177d Phase D (2026-06-07): when partial, the displayed total
+  // excludes any meal that could not determine this macro. The caption
+  // explains that with "estimated" microcopy so the user understands
+  // the ring is honest about a known data gap rather than a shortfall.
+  const partial = spec.partial === true;
+  const tooltip = partial
+    ? `${spec.label} excludes one or more text-channel meals where ${spec.label.toLowerCase()} was not determinable.`
+    : undefined;
+
   return (
     <div className="flex flex-col items-center gap-2">
       <div
         role="img"
-        aria-label={`${spec.label} ${Math.round(spec.actual)} of ${Math.round(spec.target)} ${spec.unit}`}
+        aria-label={
+          partial
+            ? `${spec.label} ${Math.round(spec.actual)} of ${Math.round(spec.target)} ${spec.unit}, estimated`
+            : `${spec.label} ${Math.round(spec.actual)} of ${Math.round(spec.target)} ${spec.unit}`
+        }
         className="relative inline-flex items-center justify-center"
         style={{ width: sizePx, height: sizePx }}
+        title={tooltip}
       >
         <svg width={sizePx} height={sizePx} viewBox={`0 0 ${sizePx} ${sizePx}`}>
           <circle
@@ -115,6 +136,15 @@ function MacroRing({ spec, sizePx }: { spec: MacroSpec; sizePx: number }) {
         </div>
       </div>
       <span className="text-[12px] uppercase tracking-[0.10em] text-white/65">{spec.label}</span>
+      {partial ? (
+        <span
+          className="text-[10px] font-medium"
+          style={{ color: '#2DA5A0' }}
+          title={tooltip}
+        >
+          Estimated
+        </span>
+      ) : null}
     </div>
   );
 }
@@ -133,6 +163,11 @@ export function DailyMacroRings(props: DailyMacroRingsProps) {
     [userTimezone],
   );
 
+  // Prompt 177d Phase D (2026-06-07): per-macro honest aggregation.
+  // For each macro we sum only the meals where the originating channel
+  // could determine it. If any of today's scored meals could not, the
+  // macro is flagged partial so the UI can surface an "estimated"
+  // microcopy and not present a false shortfall.
   const totals = useMemo(() => {
     const todayKey = localDateKey(new Date().toISOString(), tz);
     let kcal = 0;
@@ -140,29 +175,72 @@ export function DailyMacroRings(props: DailyMacroRingsProps) {
     let carbs = 0;
     let fat = 0;
     let fiber = 0;
-    if (!todayKey) return { kcal, protein, carbs, fat, fiber };
+    let proteinPartial = false;
+    let carbsPartial = false;
+    let fatPartial = false;
+    let fiberPartial = false;
+    if (!todayKey) {
+      return {
+        kcal,
+        protein,
+        carbs,
+        fat,
+        fiber,
+        proteinPartial,
+        carbsPartial,
+        fatPartial,
+        fiberPartial,
+      };
+    }
     for (const m of meals) {
       if (localDateKey(m.loggedAt, tz) !== todayKey) continue;
-      // Per #168c lock + #168d Layer 6, narrowed by Prompt 173b (2026-06-01):
-      // the legacy marker is qualityScore IS NULL. New full_manual saves
-      // run through Gordon scoring (Prompt 177d Gary 2026-06-06 decision lifted the 168c/168d
-      // unscored lock) and contribute their macros to Daily Macros; only
-      // pre-173b NULL-score rows are excluded.
+      // Per #168c lock + #168d Layer 6, narrowed by Prompt 177d (Gary
+      // 2026-06-06 decision): the legacy marker is qualityScore IS NULL.
+      // New full_manual saves run through Gordon and contribute their
+      // macros honestly; only pre-177d NULL-score rows are excluded.
       if (m.qualityScore === null) continue;
+      // Calories is always determined on every channel (anchor of the
+      // 177d 4 / 4 / 9 reconciliation), so it is summed unconditionally.
       kcal += Number(m.caloriesKcal) || 0;
-      protein += Number(m.proteinG) || 0;
-      carbs += Number(m.carbsG) || 0;
-      fat += Number(m.fatTotalG) || 0;
-      fiber += Number(m.fiberG) || 0;
+      if (isMealNutrientKnown(m, 'protein_g')) {
+        protein += Number(m.proteinG) || 0;
+      } else {
+        proteinPartial = true;
+      }
+      if (isMealNutrientKnown(m, 'carbs_g')) {
+        carbs += Number(m.carbsG) || 0;
+      } else {
+        carbsPartial = true;
+      }
+      if (isMealNutrientKnown(m, 'fat_total_g')) {
+        fat += Number(m.fatTotalG) || 0;
+      } else {
+        fatPartial = true;
+      }
+      if (isMealNutrientKnown(m, 'fiber_g')) {
+        fiber += Number(m.fiberG) || 0;
+      } else {
+        fiberPartial = true;
+      }
     }
-    return { kcal, protein, carbs, fat, fiber };
+    return {
+      kcal,
+      protein,
+      carbs,
+      fat,
+      fiber,
+      proteinPartial,
+      carbsPartial,
+      fatPartial,
+      fiberPartial,
+    };
   }, [meals, tz]);
 
   const specs: MacroSpec[] = [
-    { key: 'protein', label: 'Protein', unit: 'g', actual: totals.protein, target: targets.dailyProteinG },
-    { key: 'carbs', label: 'Carbs', unit: 'g', actual: totals.carbs, target: targets.dailyCarbsG },
-    { key: 'fat', label: 'Fat', unit: 'g', actual: totals.fat, target: targets.dailyFatTotalG },
-    { key: 'fiber', label: 'Fiber', unit: 'g', actual: totals.fiber, target: targets.dailyFiberG },
+    { key: 'protein', label: 'Protein', unit: 'g', actual: totals.protein, target: targets.dailyProteinG, partial: totals.proteinPartial },
+    { key: 'carbs', label: 'Carbs', unit: 'g', actual: totals.carbs, target: targets.dailyCarbsG, partial: totals.carbsPartial },
+    { key: 'fat', label: 'Fat', unit: 'g', actual: totals.fat, target: targets.dailyFatTotalG, partial: totals.fatPartial },
+    { key: 'fiber', label: 'Fiber', unit: 'g', actual: totals.fiber, target: targets.dailyFiberG, partial: totals.fiberPartial },
   ];
 
   const kcalActual = Math.round(totals.kcal);

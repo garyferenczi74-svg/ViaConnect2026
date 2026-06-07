@@ -17,6 +17,7 @@ import { createClient } from '@/lib/supabase/client';
 import { useUserMeals } from '@/hooks/useUserMeals';
 import { useNutritionTargets } from '@/hooks/useNutritionTargets';
 import { generateTargets } from '@/lib/gordon/generateTargets';
+import { isMealNutrientKnown } from '@/lib/gordon/known-nutrients';
 import { NutritionScoreCircleGauge } from './NutritionScoreCircleGauge';
 import { SegmentedDayGauge } from './SegmentedDayGauge';
 
@@ -80,6 +81,12 @@ export function NutritionScoreCard({ userId: propUserId }: NutritionScoreCardPro
     }
 
     // Nutrition Score: avg qualityScore over today's scored meals.
+    // Per Prompt 177d Phase D (2026-06-07): macro totals exclude any
+    // meal that could not determine the macro on its source channel.
+    // The per-macro attainment ratio still divides by the daily target,
+    // so a day where one meal omitted (say) fiber is presented as a
+    // smaller attainment than a fully-known day, but not artificially
+    // penalized by counting the unknown contribution as zero.
     let nutritionSum = 0;
     let nutritionScoredCount = 0;
     let todayMealCount = 0;
@@ -87,44 +94,69 @@ export function NutritionScoreCard({ userId: propUserId }: NutritionScoreCardPro
     let carbsSum = 0;
     let fatSum = 0;
     let fiberSum = 0;
+    let proteinKnownCount = 0;
+    let carbsKnownCount = 0;
+    let fatKnownCount = 0;
+    let fiberKnownCount = 0;
 
     for (const m of meals) {
       if (localDateKey(m.loggedAt, tz) !== todayKey) continue;
-      // Per #168c + #168d, narrowed by Prompt 173b (2026-06-01): the legacy
-      // marker is qualityScore IS NULL. New full_manual saves run through
-      // Gordon scoring and contribute to both the Nutrition Score average
-      // AND the Total Daily Macros aggregate; only pre-173b NULL-score rows
-      // are excluded.
+      // Per #168c + #168d, narrowed by Prompt 177d (Gary 2026-06-06
+      // decision): the legacy marker is qualityScore IS NULL. New
+      // full_manual saves run through Gordon and contribute to both the
+      // Nutrition Score average AND the Total Daily Macros aggregate;
+      // only pre-177d NULL-score rows are excluded.
       if (m.qualityScore === null || m.qualityScore === undefined) continue;
       todayMealCount += 1;
-      proteinSum += Number(m.proteinG) || 0;
-      carbsSum += Number(m.carbsG) || 0;
-      fatSum += Number(m.fatTotalG) || 0;
-      fiberSum += Number(m.fiberG) || 0;
-      if (m.qualityScore !== null && m.qualityScore !== undefined) {
-        nutritionScoredCount += 1;
-        nutritionSum += Math.max(0, Math.min(100, Number(m.qualityScore)));
+      if (isMealNutrientKnown(m, 'protein_g')) {
+        proteinSum += Number(m.proteinG) || 0;
+        proteinKnownCount += 1;
       }
+      if (isMealNutrientKnown(m, 'carbs_g')) {
+        carbsSum += Number(m.carbsG) || 0;
+        carbsKnownCount += 1;
+      }
+      if (isMealNutrientKnown(m, 'fat_total_g')) {
+        fatSum += Number(m.fatTotalG) || 0;
+        fatKnownCount += 1;
+      }
+      if (isMealNutrientKnown(m, 'fiber_g')) {
+        fiberSum += Number(m.fiberG) || 0;
+        fiberKnownCount += 1;
+      }
+      nutritionScoredCount += 1;
+      nutritionSum += Math.max(0, Math.min(100, Number(m.qualityScore)));
     }
     const nutritionScore = nutritionScoredCount > 0 ? Math.round(nutritionSum / nutritionScoredCount) : 0;
 
     // Total Daily Macros: avg of (sum / target * 100) across the 4 macros.
-    // Each ratio capped at 100% so a single overshoot does not skew the average.
-    const proteinPct = effectiveTargets.dailyProteinG > 0
+    // Each ratio capped at 100% so a single overshoot does not skew the
+    // average. A macro with no known contributors today is excluded from
+    // the average rather than counted as 0, so a day where every meal
+    // omitted (say) fiber does not zero-out the macros score.
+    const proteinPct = proteinKnownCount > 0 && effectiveTargets.dailyProteinG > 0
       ? Math.min(100, (proteinSum / effectiveTargets.dailyProteinG) * 100)
-      : 0;
-    const carbsPct = effectiveTargets.dailyCarbsG > 0
+      : null;
+    const carbsPct = carbsKnownCount > 0 && effectiveTargets.dailyCarbsG > 0
       ? Math.min(100, (carbsSum / effectiveTargets.dailyCarbsG) * 100)
-      : 0;
-    const fatPct = effectiveTargets.dailyFatTotalG > 0
+      : null;
+    const fatPct = fatKnownCount > 0 && effectiveTargets.dailyFatTotalG > 0
       ? Math.min(100, (fatSum / effectiveTargets.dailyFatTotalG) * 100)
-      : 0;
-    const fiberPct = effectiveTargets.dailyFiberG > 0
+      : null;
+    const fiberPct = fiberKnownCount > 0 && effectiveTargets.dailyFiberG > 0
       ? Math.min(100, (fiberSum / effectiveTargets.dailyFiberG) * 100)
+      : null;
+    const macroAttainments = [proteinPct, carbsPct, fatPct, fiberPct].filter(
+      (v): v is number => v !== null,
+    );
+    const macrosScore = todayMealCount > 0 && macroAttainments.length > 0
+      ? Math.round(macroAttainments.reduce((a, b) => a + b, 0) / macroAttainments.length)
       : 0;
-    const macrosScore = todayMealCount > 0
-      ? Math.round((proteinPct + carbsPct + fatPct + fiberPct) / 4)
-      : 0;
+    const macrosPartial =
+      proteinKnownCount < todayMealCount ||
+      carbsKnownCount < todayMealCount ||
+      fatKnownCount < todayMealCount ||
+      fiberKnownCount < todayMealCount;
 
     // 7 Day check-in: count UNIQUE days in the last 7 where at least one meal
     // was logged. The gauge below renders 7 arc segments; one fills per logged
@@ -149,6 +181,7 @@ export function NutritionScoreCard({ userId: propUserId }: NutritionScoreCardPro
       nutritionMealCount: todayMealCount,
       macrosScore,
       macrosMealCount: todayMealCount,
+      macrosPartial,
       daysLoggedThisWeek: daysWithMeals.size,
     };
   }, [meals, tz, effectiveTargets]);
@@ -195,6 +228,18 @@ export function NutritionScoreCard({ userId: propUserId }: NutritionScoreCardPro
           <span className="text-[11px] uppercase tracking-[0.10em] text-white/55 md:text-[12px]">
             Total Daily Macros
           </span>
+          {/* Prompt 177d Phase D (2026-06-07): one or more meals today
+              omitted a macro; the score reflects only known
+              contributions. */}
+          {computed.macrosPartial ? (
+            <span
+              className="text-[10px] font-medium"
+              style={{ color: '#2DA5A0' }}
+              title="One or more text-channel meals today omitted a macro; the score reflects only known contributions."
+            >
+              Estimated
+            </span>
+          ) : null}
         </div>
         <div className="flex flex-col items-center gap-1 md:gap-2">
           <SegmentedDayGauge
