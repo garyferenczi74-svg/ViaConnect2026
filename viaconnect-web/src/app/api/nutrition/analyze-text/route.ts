@@ -12,16 +12,27 @@ import { AIRouteError } from '@/lib/errors/classify-ai';
 import { recordAudit, newRequestId } from '@/lib/observability/audit-recorder';
 import { GEMINI_MODEL } from '@/lib/nutrition/gemini-prompts';
 import { estimateCostUsd } from '@/lib/observability/ai-pricing';
-// Prompt 173b (Gary 2026-06-01) lifted the 168c/168d unscored lock on this
-// path. Meals saved here now run through Gordon scoring + BOS recompute, so
-// Today's Meals + Daily Macros + Dashboard Nutrition gauge all surface the
-// score. The Today's Meals "Score not available for legacy meal" treatment
-// now keys off quality_score IS NULL (the actual legacy marker, applied to
-// pre-173b rows) rather than source='full_manual', so pre-existing legacy
-// rows are unchanged while new full_manual saves contribute their score.
-// The dual-write to nutrition_logs from #168 Apply C is preserved for
-// realtime UNION read dedupe; the legacy_nutrition_log_id link still
-// persists.
+// Prompt 177d (Gary 2026-06-06 decision) blessed the text meal channel as
+// a first-class scored channel of estimated confidence. The 168c/168d
+// unscored lock is lifted by deliberate decision. Meals saved here run
+// through Gordon scoring + BOS recompute, write a real quality_score on
+// the canonical meals row (source='full_manual'), and feed Today's Meals,
+// Daily Macros, the Nutrition Score, the Bio Optimization Score, and
+// Helix events like any other scored channel. The Today's Meals "Score
+// not available for legacy meal" treatment now keys off quality_score IS
+// NULL (the actual legacy marker, applied to pre-177d rows that were
+// stored under the prior unscored convention) rather than
+// source='full_manual'. Per 177d Step 2, an unknown nutrient must be
+// recorded as NULL and excluded from the score math rather than defaulted
+// to 0; the meals migration on 2026-06-07 dropped the NOT NULL constraint
+// on the 7 macro columns to make that representable. The parser prompt
+// rewrite + Gordon unknown-aware scoring + 4/4/9 reconciliation gating +
+// visible "Estimated" marker are pending in a follow-up.
+//
+// The earlier comment attributing the unlock to 173b is corrected: 173b
+// was the CAQ interstitial work and did not authorize this. The dual-
+// write to nutrition_logs from #168 Apply C is preserved for realtime
+// UNION read dedupe; the legacy_nutrition_log_id link still persists.
 import { SOURCE_CONFIDENCE_DEFAULTS } from '@/lib/gordon/constants';
 import { scoreMealForServerInsert } from '@/lib/gordon/scoreMealForServerInsert';
 import { recomputeNutritionDimension } from '@/lib/nutrition/bos-bridge';
@@ -86,11 +97,12 @@ export async function POST(req: NextRequest) {
     const analysis = aggregate(items);
     const latencyMs = Date.now() - startedAt;
 
-    // Prompt 168 Apply C dual-write (preserved) + Prompt 173b (2026-06-01)
-    // Gordon scoring. The 168c/168d unscored lock is lifted; quality_score
-    // carries the Gordon-computed value so Today's Meals + Daily Macros +
-    // Dashboard gauge all surface the score for new full_manual rows.
-    // Pre-173b NULL-score rows remain the legacy marker.
+    // Prompt 168 Apply C dual-write (preserved) + Prompt 177d (Gary
+    // 2026-06-06 decision) Gordon scoring. The 168c/168d unscored lock
+    // is lifted by deliberate decision; quality_score carries the
+    // Gordon-computed value so Today's Meals + Daily Macros + Dashboard
+    // gauge all surface the score for new full_manual rows. Pre-177d
+    // NULL-score rows remain the legacy marker.
     //
     // Prompt 173c: meals INSERT runs first (status quo); scoring runs after
     // and UPDATEs the row with the score. Decouples a scoring failure from
@@ -247,7 +259,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Prompt 173b: BOS recompute so the Dashboard Nutrition gauge picks up
+    // Prompt 177d: BOS recompute so the Dashboard Nutrition gauge picks up
     // the new scored full_manual meal. Best-effort; never fails the response.
     try {
       await recomputeNutritionDimension({ userId: user.id, date: loggedAt });

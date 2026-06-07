@@ -145,7 +145,7 @@ export function DailyMacroRings(props: DailyMacroRingsProps) {
       if (localDateKey(m.loggedAt, tz) !== todayKey) continue;
       // Per #168c lock + #168d Layer 6, narrowed by Prompt 173b (2026-06-01):
       // the legacy marker is qualityScore IS NULL. New full_manual saves
-      // run through Gordon scoring (Prompt 173b lifted the 168c/168d
+      // run through Gordon scoring (Prompt 177d Gary 2026-06-06 decision lifted the 168c/168d
       // unscored lock) and contribute their macros to Daily Macros; only
       // pre-173b NULL-score rows are excluded.
       if (m.qualityScore === null) continue;

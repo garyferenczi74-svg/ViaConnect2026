@@ -72,13 +72,14 @@ function NutritionPageInner() {
 
   useEffect(() => { loadMealCount(); }, []);
 
-  // Prompt #168c section 2.4 + Prompt 173b: three gradient pill channel
-  // buttons restored. "Log Full Meal" LEFTMOST routes to the text-description
-  // editor at /nutrition/log-meal; Prompt 173b lifted the 168c/168d unscored
-  // lock on that path so meals saved there now run through Gordon scoring +
-  // BOS recompute and surface their score on Today's Meals + Daily Macros +
-  // Dashboard Nutrition gauge. NutriVision is the photo/barcode/voice scored
-  // hub; Connect Your App pairs an integration.
+  // Prompt #168c section 2.4 + Prompt 177d (Gary 2026-06-06 decision):
+  // three gradient pill channel buttons restored. "Log Full Meal" LEFTMOST
+  // routes to the text-description editor at /nutrition/log-meal; Prompt
+  // 177d lifted the 168c/168d unscored lock on that path so meals saved
+  // there now run through Gordon scoring + BOS recompute and surface
+  // their score on Today's Meals + Daily Macros + Dashboard Nutrition
+  // gauge. NutriVision is the photo/voice scored hub; Connect Your App
+  // pairs an integration.
   // Accent + hover-shadow RGB per channel matches the NutrigenDX reference
   // pattern below (See NutrigenDX Results / Upload Nutrition Test / Review
   // Nutrition Results): linear-gradient(135deg, <accent>, #1E3054) plus a

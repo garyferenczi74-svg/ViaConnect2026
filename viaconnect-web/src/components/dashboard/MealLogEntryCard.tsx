@@ -68,11 +68,14 @@ export function MealLogEntryCard(props: MealLogEntryCardProps) {
     : MEAL_TYPE_LABEL[meal.mealType];
   const displayName = meal.mealName && meal.mealName.trim() !== '' ? meal.mealName : fallbackName;
 
-  // Per #168d Layer 5 + #168c lock, narrowed by Prompt 173b (2026-06-01):
-  // the legacy marker is the qualityScore NULL value itself, not the source.
-  // Prompt 173b lifted the 168c/168d unscored lock so new full_manual saves
-  // run through Gordon and surface their score; only pre-173b NULL-score
-  // rows render as legacy N/A.
+  // Per #168d Layer 5 + #168c lock, narrowed by Prompt 177d (Gary
+  // 2026-06-06 decision): the legacy marker is the qualityScore NULL
+  // value itself, not the source. Prompt 177d formally blessed text
+  // meals as a scored channel of estimated confidence, so new
+  // full_manual saves run through Gordon and surface their score; only
+  // pre-177d NULL-score rows render as legacy N/A. The earlier
+  // attribution to 173b was incorrect; 173b was the CAQ interstitial
+  // work and did not authorize this.
   //   isLegacy   = qualityScore is null. Renders "Score not available for
   //                legacy meal" with N/A ring.
   //   isPending  = scored source with null tier (transient between insert
