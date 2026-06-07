@@ -186,6 +186,28 @@ export interface ScoreModifier {
   name: string;
   value: number;
   note: string;
+  // Prompt 177d Phase C (2026-06-07): when true, the modifier was
+  // explicitly excluded because the underlying nutrient was not
+  // determinable on the originating channel (sodium on text meals is
+  // the canonical case). The modifier value is 0 and the note explains
+  // the exclusion rather than implying a healthy zero.
+  excluded?: boolean;
+}
+
+// Prompt 177d Phase C (2026-06-07): map of which Gordon-scored nutrients
+// the originating channel could determine. Missing keys default to true
+// (known) so existing callers do not need to opt in. The analyze-text
+// route writes sodium_mg false because the parser does not extract
+// sodium from typed input.
+export interface KnownNutrients {
+  protein_g?: boolean;
+  carbs_g?: boolean;
+  fat_total_g?: boolean;
+  fat_healthy_g?: boolean;
+  fiber_g?: boolean;
+  sugar_g?: boolean;
+  sodium_mg?: boolean;
+  calories_kcal?: boolean;
 }
 
 // Persisted in score_breakdown JSONB column on meals row.

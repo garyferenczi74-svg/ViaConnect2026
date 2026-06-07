@@ -212,13 +212,15 @@ export async function POST(req: NextRequest) {
     let scoredForLegacyLog: Awaited<ReturnType<typeof scoreMealForServerInsert>> | null = null;
     if (mealId !== null) {
       try {
-        // Prompt 177d Phase B: sodium passed as 0 to the score engine
-        // because the current Meal type and scoreMeal signature take a
-        // numeric. The honest representation is on the row (sodium_mg
-        // NULL) and in score_breakdown.prompt_177d_meta (sodium_mg
-        // false). A future Gordon refactor can wire knownNutrients
-        // directly into scoreMeal so the sodium penalty modifier is
-        // explicitly marked excluded rather than silently zero.
+        // Prompt 177d Phase C (2026-06-07): knownNutrients threads
+        // through to scoreMeal so the sodium penalty modifier is
+        // explicitly marked excluded with the note "Sodium not
+        // determinable; excluded from score" rather than silently
+        // computed as 0 and labeled "Within sodium guidance". Math is
+        // unchanged for the no-penalty case but the breakdown is now
+        // honest. sodiumMg still passes 0 for the legacy preview Meal
+        // shape; the engine ignores meal.sodiumMg when
+        // knownNutrients.sodium_mg is false.
         const scored = await scoreMealForServerInsert(supabase, {
           userId: user.id,
           loggedAt,
@@ -236,6 +238,7 @@ export async function POST(req: NextRequest) {
           caloriesAutoCalc: false,
           wholeFoodFlag: false,
           mealName: analysis.serving_description ?? null,
+          knownNutrients,
         });
         // Preserve prompt_177d_meta on the score_breakdown so the
         // Estimated chip and downstream analytics keep the

@@ -9,6 +9,7 @@
 // Section 3.4 of docs/superpowers/plans/2026-05-14-prompt-168-meal-foundation.md.
 
 import type {
+  KnownNutrients,
   Meal,
   MealDistribution,
   NutritionTargets,
@@ -83,11 +84,24 @@ function evaluateMacroFit(deltaPct: number): number {
   return -10;
 }
 
+// Prompt 177d Phase C (2026-06-07): knownNutrients is an optional 5th
+// argument. When a nutrient key is explicitly false, the dependent
+// modifier is marked excluded with value 0 and a note explaining the
+// channel could not determine it. Existing callers that omit the
+// argument get the original behavior because the helper treats missing
+// or undefined keys as "known".
+function isKnown(map: KnownNutrients | undefined, key: keyof KnownNutrients): boolean {
+  if (!map) return true;
+  const v = map[key];
+  return v !== false;
+}
+
 export function scoreMeal(
   meal: Meal,
   targets: NutritionTargets,
   mealDistribution: MealDistribution,
   snacksLoggedTodayAtSaveTime: number,
+  knownNutrients?: KnownNutrients,
 ): ScoreBreakdown {
   const share = shareForMealType(meal.mealType, mealDistribution, snacksLoggedTodayAtSaveTime);
 
@@ -103,98 +117,169 @@ export function scoreMeal(
   const modifiers: ScoreModifier[] = [];
   let score = SCORE_BASE;
 
-  // Macro Fit: protein, carbs, fat. Each contributes -10 to +10.
-  const proteinDelta = proteinTargetG > 0 ? (meal.proteinG - proteinTargetG) / proteinTargetG : 0;
-  const proteinValue = evaluateMacroFit(proteinDelta);
-  score += proteinValue;
-  modifiers.push({
-    name: 'Protein Fit',
-    value: proteinValue,
-    note: macroFitNote('protein', proteinTargetG, proteinDelta),
-  });
+  // Macro Fit: protein, carbs, fat. Each contributes -10 to +10. Per
+  // 177d Phase C, exclude any macro whose known_nutrients flag is
+  // false rather than scoring it from 0 (which would penalize a meal
+  // as "10 percent under target" when the underlying value is just
+  // unknown).
+  if (isKnown(knownNutrients, 'protein_g')) {
+    const proteinDelta = proteinTargetG > 0 ? (meal.proteinG - proteinTargetG) / proteinTargetG : 0;
+    const proteinValue = evaluateMacroFit(proteinDelta);
+    score += proteinValue;
+    modifiers.push({
+      name: 'Protein Fit',
+      value: proteinValue,
+      note: macroFitNote('protein', proteinTargetG, proteinDelta),
+    });
+  } else {
+    modifiers.push({
+      name: 'Protein Fit',
+      value: 0,
+      note: 'Protein not determinable; excluded from score',
+      excluded: true,
+    });
+  }
 
-  const carbsDelta = carbsTargetG > 0 ? (meal.carbsG - carbsTargetG) / carbsTargetG : 0;
-  const carbsValue = evaluateMacroFit(carbsDelta);
-  score += carbsValue;
-  modifiers.push({
-    name: 'Carb Fit',
-    value: carbsValue,
-    note: macroFitNote('carb', carbsTargetG, carbsDelta),
-  });
+  if (isKnown(knownNutrients, 'carbs_g')) {
+    const carbsDelta = carbsTargetG > 0 ? (meal.carbsG - carbsTargetG) / carbsTargetG : 0;
+    const carbsValue = evaluateMacroFit(carbsDelta);
+    score += carbsValue;
+    modifiers.push({
+      name: 'Carb Fit',
+      value: carbsValue,
+      note: macroFitNote('carb', carbsTargetG, carbsDelta),
+    });
+  } else {
+    modifiers.push({
+      name: 'Carb Fit',
+      value: 0,
+      note: 'Carbs not determinable; excluded from score',
+      excluded: true,
+    });
+  }
 
-  const fatDelta = fatTargetG > 0 ? (meal.fatTotalG - fatTargetG) / fatTargetG : 0;
-  const fatValue = evaluateMacroFit(fatDelta);
-  score += fatValue;
-  modifiers.push({
-    name: 'Fat Fit',
-    value: fatValue,
-    note: macroFitNote('fat', fatTargetG, fatDelta),
-  });
+  if (isKnown(knownNutrients, 'fat_total_g')) {
+    const fatDelta = fatTargetG > 0 ? (meal.fatTotalG - fatTargetG) / fatTargetG : 0;
+    const fatValue = evaluateMacroFit(fatDelta);
+    score += fatValue;
+    modifiers.push({
+      name: 'Fat Fit',
+      value: fatValue,
+      note: macroFitNote('fat', fatTargetG, fatDelta),
+    });
+  } else {
+    modifiers.push({
+      name: 'Fat Fit',
+      value: 0,
+      note: 'Fat not determinable; excluded from score',
+      excluded: true,
+    });
+  }
 
-  // Fiber Bonus: 0 to +15.
-  const fiberRatio = fiberTargetG > 0 ? meal.fiberG / fiberTargetG : 0;
-  let fiberBonus = 0;
-  if (fiberRatio >= FIBER_RATIO_FULL) fiberBonus = 15;
-  else if (fiberRatio >= FIBER_RATIO_HIGH) fiberBonus = 10;
-  else if (fiberRatio >= FIBER_RATIO_MID) fiberBonus = 5;
-  else if (fiberRatio >= FIBER_RATIO_LOW) fiberBonus = 2;
-  score += fiberBonus;
-  modifiers.push({
-    name: 'Fiber Bonus',
-    value: fiberBonus,
-    note: `${meal.fiberG.toFixed(1)}g of ${fiberTargetG.toFixed(1)}g target`,
-  });
+  // Fiber Bonus: 0 to +15. Excluded entirely if fiber was not
+  // determinable on the originating channel.
+  if (isKnown(knownNutrients, 'fiber_g')) {
+    const fiberRatio = fiberTargetG > 0 ? meal.fiberG / fiberTargetG : 0;
+    let fiberBonus = 0;
+    if (fiberRatio >= FIBER_RATIO_FULL) fiberBonus = 15;
+    else if (fiberRatio >= FIBER_RATIO_HIGH) fiberBonus = 10;
+    else if (fiberRatio >= FIBER_RATIO_MID) fiberBonus = 5;
+    else if (fiberRatio >= FIBER_RATIO_LOW) fiberBonus = 2;
+    score += fiberBonus;
+    modifiers.push({
+      name: 'Fiber Bonus',
+      value: fiberBonus,
+      note: `${meal.fiberG.toFixed(1)}g of ${fiberTargetG.toFixed(1)}g target`,
+    });
+  } else {
+    modifiers.push({
+      name: 'Fiber Bonus',
+      value: 0,
+      note: 'Fiber not determinable; excluded from score',
+      excluded: true,
+    });
+  }
 
-  // Sugar Penalty: 0 to -20. Plain-English copy notes total sugar from all
-  // sources per locked spec.
-  const sugarRatio = sugarLimitG > 0 ? meal.sugarG / sugarLimitG : 0;
-  let sugarPenalty = 0;
-  if (sugarRatio >= SUGAR_RATIO_DOUBLE) sugarPenalty = -20;
-  else if (sugarRatio >= SUGAR_RATIO_HIGH) sugarPenalty = -15;
-  else if (sugarRatio >= SUGAR_RATIO_FULL) sugarPenalty = -10;
-  else if (sugarRatio >= SUGAR_RATIO_NEAR) sugarPenalty = -5;
-  score += sugarPenalty;
-  modifiers.push({
-    name: 'Sugar Penalty',
-    value: sugarPenalty,
-    note:
-      sugarPenalty === 0
-        ? 'Total sugar from all sources, including natural fruit and dairy, within range'
-        : 'Total sugar from all sources, including natural fruit and dairy, over per-meal guidance',
-  });
+  // Sugar Penalty: 0 to -20. Excluded entirely if sugar was not
+  // determinable on the originating channel.
+  if (isKnown(knownNutrients, 'sugar_g')) {
+    const sugarRatio = sugarLimitG > 0 ? meal.sugarG / sugarLimitG : 0;
+    let sugarPenalty = 0;
+    if (sugarRatio >= SUGAR_RATIO_DOUBLE) sugarPenalty = -20;
+    else if (sugarRatio >= SUGAR_RATIO_HIGH) sugarPenalty = -15;
+    else if (sugarRatio >= SUGAR_RATIO_FULL) sugarPenalty = -10;
+    else if (sugarRatio >= SUGAR_RATIO_NEAR) sugarPenalty = -5;
+    score += sugarPenalty;
+    modifiers.push({
+      name: 'Sugar Penalty',
+      value: sugarPenalty,
+      note:
+        sugarPenalty === 0
+          ? 'Total sugar from all sources, including natural fruit and dairy, within range'
+          : 'Total sugar from all sources, including natural fruit and dairy, over per-meal guidance',
+    });
+  } else {
+    modifiers.push({
+      name: 'Sugar Penalty',
+      value: 0,
+      note: 'Sugar not determinable; excluded from score',
+      excluded: true,
+    });
+  }
 
   // Saturated Fat Penalty: 0 to -15. Sat fat = max(0, fat_total - fat_healthy).
-  const satFat = Math.max(0, meal.fatTotalG - meal.fatHealthyG);
-  const satFatRatio = satFatLimitG > 0 ? satFat / satFatLimitG : 0;
-  let satFatPenalty = 0;
-  if (satFatRatio >= SAT_FAT_RATIO_DOUBLE) satFatPenalty = -15;
-  else if (satFatRatio >= SAT_FAT_RATIO_HIGH) satFatPenalty = -10;
-  else if (satFatRatio >= SAT_FAT_RATIO_FULL) satFatPenalty = -5;
-  score += satFatPenalty;
-  modifiers.push({
-    name: 'Saturated Fat Penalty',
-    value: satFatPenalty,
-    note:
-      satFatPenalty === 0
-        ? 'Within healthy range'
-        : `${satFat.toFixed(1)}g saturated fat vs ${satFatLimitG.toFixed(1)}g limit`,
-  });
+  // Excluded only when total fat OR healthy-fat split is not determinable.
+  if (isKnown(knownNutrients, 'fat_total_g') && isKnown(knownNutrients, 'fat_healthy_g')) {
+    const satFat = Math.max(0, meal.fatTotalG - meal.fatHealthyG);
+    const satFatRatio = satFatLimitG > 0 ? satFat / satFatLimitG : 0;
+    let satFatPenalty = 0;
+    if (satFatRatio >= SAT_FAT_RATIO_DOUBLE) satFatPenalty = -15;
+    else if (satFatRatio >= SAT_FAT_RATIO_HIGH) satFatPenalty = -10;
+    else if (satFatRatio >= SAT_FAT_RATIO_FULL) satFatPenalty = -5;
+    score += satFatPenalty;
+    modifiers.push({
+      name: 'Saturated Fat Penalty',
+      value: satFatPenalty,
+      note:
+        satFatPenalty === 0
+          ? 'Within healthy range'
+          : `${satFat.toFixed(1)}g saturated fat vs ${satFatLimitG.toFixed(1)}g limit`,
+    });
+  } else {
+    modifiers.push({
+      name: 'Saturated Fat Penalty',
+      value: 0,
+      note: 'Saturated fat not determinable; excluded from score',
+      excluded: true,
+    });
+  }
 
-  // Sodium Penalty: 0 to -15.
-  const sodiumRatio = sodiumLimitMg > 0 ? meal.sodiumMg / sodiumLimitMg : 0;
-  let sodiumPenalty = 0;
-  if (sodiumRatio >= SODIUM_RATIO_DOUBLE) sodiumPenalty = -15;
-  else if (sodiumRatio >= SODIUM_RATIO_HIGH) sodiumPenalty = -10;
-  else if (sodiumRatio >= SODIUM_RATIO_FULL) sodiumPenalty = -5;
-  score += sodiumPenalty;
-  modifiers.push({
-    name: 'Sodium Penalty',
-    value: sodiumPenalty,
-    note:
-      sodiumPenalty === 0
-        ? 'Within sodium guidance'
-        : `${Math.round(meal.sodiumMg)}mg vs ${Math.round(sodiumLimitMg)}mg limit`,
-  });
+  // Sodium Penalty: 0 to -15. The canonical "not determinable" macro on
+  // the text channel. When excluded, the breakdown explicitly says so
+  // rather than letting a silent zero read as "within guidance".
+  if (isKnown(knownNutrients, 'sodium_mg')) {
+    const sodiumRatio = sodiumLimitMg > 0 ? meal.sodiumMg / sodiumLimitMg : 0;
+    let sodiumPenalty = 0;
+    if (sodiumRatio >= SODIUM_RATIO_DOUBLE) sodiumPenalty = -15;
+    else if (sodiumRatio >= SODIUM_RATIO_HIGH) sodiumPenalty = -10;
+    else if (sodiumRatio >= SODIUM_RATIO_FULL) sodiumPenalty = -5;
+    score += sodiumPenalty;
+    modifiers.push({
+      name: 'Sodium Penalty',
+      value: sodiumPenalty,
+      note:
+        sodiumPenalty === 0
+          ? 'Within sodium guidance'
+          : `${Math.round(meal.sodiumMg)}mg vs ${Math.round(sodiumLimitMg)}mg limit`,
+    });
+  } else {
+    modifiers.push({
+      name: 'Sodium Penalty',
+      value: 0,
+      note: 'Sodium not determinable; excluded from score',
+      excluded: true,
+    });
+  }
 
   // Whole Food Bonus: 0 to +10. whole_food_flag wins; else inspect ingredient
   // list ratio when array shaped.

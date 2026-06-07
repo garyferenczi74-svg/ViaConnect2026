@@ -15,7 +15,14 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { scoreMeal } from './scoreMeal';
 import { generateTargets } from './generateTargets';
 import { DEFAULT_MEAL_DISTRIBUTION } from './constants';
-import type { Meal, MealType, MealSource, NutritionTargets, MealDistribution } from './types';
+import type {
+  KnownNutrients,
+  Meal,
+  MealType,
+  MealSource,
+  NutritionTargets,
+  MealDistribution,
+} from './types';
 
 export interface ScoreMealForInsertInput {
   readonly userId: string;
@@ -34,6 +41,12 @@ export interface ScoreMealForInsertInput {
   readonly caloriesAutoCalc: boolean;
   readonly wholeFoodFlag: boolean | null;
   readonly mealName: string | null;
+  // Prompt 177d Phase C (2026-06-07): optional map of which nutrients the
+  // originating channel could determine. Missing or undefined treats
+  // every nutrient as known (preserves the pre-177d behavior for
+  // Photo AI, Quick Log, Connected Apps). The analyze-text route
+  // passes sodium_mg false because the parser does not extract it.
+  readonly knownNutrients?: KnownNutrients;
 }
 
 export interface ScoreMealForInsertResult {
@@ -150,6 +163,7 @@ export async function scoreMealForServerInsert(
     targets,
     targets.mealDistribution ?? DEFAULT_MEAL_DISTRIBUTION,
     snacksToday,
+    input.knownNutrients,
   );
 
   return {
