@@ -322,7 +322,10 @@ export function DailyMacroRings(props: DailyMacroRingsProps) {
         ))}
       </div>
 
-      <MacroDisclaimer />
+      {/* Prompt 177h (2026-06-07): collapsible variant on /nutrition so the
+          card reclaims vertical space while keeping the locked compliance
+          text reachable in one tap. Body Tracker mount stays expanded. */}
+      <MacroDisclaimer collapsible />
     </section>
   );
 }
