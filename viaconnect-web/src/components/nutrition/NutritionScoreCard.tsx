@@ -231,8 +231,17 @@ export function NutritionScoreCard({ userId: propUserId }: NutritionScoreCardPro
         <Apple className="h-5 w-5 text-[#2DA5A0]" strokeWidth={1.5} />
         <h2 className="text-base font-bold text-white">Nutrition Score</h2>
       </div>
-      <div className="grid grid-cols-1 gap-2 md:grid-cols-3 md:gap-6">
-        <div className="flex flex-col items-center gap-1 md:gap-2">
+      {/* Prompt 177f (2026-06-07): mobile-only layout restructure.
+          Mobile: hero Nutrition Score spans both columns (col-span-2);
+          Total Daily Macros + 7 Day Average sit side by side beneath
+          at the smaller 88 px diameter that matches the Daily macros
+          section gauges. Desktop: identical to pre-177f three-column
+          layout via md:grid-cols-3 + md:col-span-1, and the secondary
+          gauges keep their desktop 150 px diameter. Layout only; every
+          value, label, tier color, caption, and stroke threshold is
+          unchanged. */}
+      <div className="grid grid-cols-2 gap-2 md:grid-cols-3 md:gap-6">
+        <div className="col-span-2 flex flex-col items-center gap-1 md:col-span-1 md:gap-2">
           <NutritionScoreCircleGauge
             score={computed.nutritionScore}
             mealCount={computed.nutritionMealCount}
@@ -251,12 +260,13 @@ export function NutritionScoreCard({ userId: propUserId }: NutritionScoreCardPro
             score={computed.macrosScore}
             mealCount={computed.macrosMealCount}
             emptyStateLabel="Log meals to fill your daily macros"
-            mobilePx={100}
+            mobilePx={88}
             desktopPx={150}
-            mobileStroke={6}
+            mobileStroke={5}
             desktopStroke={12}
+            compactMobileCaption
           />
-          <span className="text-[11px] uppercase tracking-[0.10em] text-white/55 md:text-[12px]">
+          <span className="text-[10px] uppercase tracking-[0.10em] text-white/55 md:text-[12px]">
             Total Daily Macros
           </span>
           {/* Prompt 177d Phase D (2026-06-07): one or more meals today
@@ -276,12 +286,12 @@ export function NutritionScoreCard({ userId: propUserId }: NutritionScoreCardPro
           <SegmentedDayGauge
             daysLogged={computed.daysLoggedThisWeek}
             totalDays={SEVEN_DAYS}
-            mobilePx={100}
+            mobilePx={88}
             desktopPx={150}
-            mobileStroke={6}
+            mobileStroke={5}
             desktopStroke={12}
           />
-          <span className="text-[11px] uppercase tracking-[0.10em] text-white/55 md:text-[12px]">
+          <span className="text-[10px] uppercase tracking-[0.10em] text-white/55 md:text-[12px]">
             7 Day Average
           </span>
         </div>

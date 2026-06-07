@@ -17,6 +17,12 @@ export interface NutritionScoreCircleGaugeProps {
   readonly desktopPx?: number;
   readonly mobileStroke?: number;
   readonly desktopStroke?: number;
+  // Prompt 177f (2026-06-07): scales the tier label and empty-state
+  // caption down on mobile only so they fit cleanly under the smaller
+  // secondary gauges (Total Daily Macros + 7 Day Average) on the
+  // restructured Nutrition Score card. Desktop typography unchanged.
+  // Default false preserves the existing hero rendering.
+  readonly compactMobileCaption?: boolean;
 }
 
 interface TierBand {
@@ -55,6 +61,7 @@ export function NutritionScoreCircleGauge(props: NutritionScoreCircleGaugeProps)
     desktopPx = 200,
     mobileStroke = 12,
     desktopStroke = 16,
+    compactMobileCaption = false,
   } = props;
   const clamped = Math.max(0, Math.min(100, Math.round(score)));
   const hasData = mealCount > 0 && score > 0;
@@ -90,13 +97,19 @@ export function NutritionScoreCircleGauge(props: NutritionScoreCircleGaugeProps)
       </div>
       {hasData ? (
         <span
-          className="text-[14px] font-medium uppercase tracking-[0.10em]"
+          className={`font-medium uppercase tracking-[0.10em] ${
+            compactMobileCaption ? 'text-[12px] md:text-[14px]' : 'text-[14px]'
+          }`}
           style={{ color: tier.color }}
         >
           {tier.label}
         </span>
       ) : (
-        <span className="text-[12px] text-white/55">
+        <span
+          className={`text-white/55 ${
+            compactMobileCaption ? 'text-[10px] md:text-[12px]' : 'text-[12px]'
+          }`}
+        >
           {emptyStateLabel ?? `Based on ${mealCount} meals logged today`}
         </span>
       )}
