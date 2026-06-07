@@ -1,25 +1,36 @@
 'use client';
 
-// Prompt #168 Apply B: useUserMeals.
-// Reads UNION of `meals` (canonical post-cutover) and `nutrition_logs` (legacy)
-// during the 168 to 168a transition window so dashboard surfaces don't lose
-// historical entries. Section 5.1 + Path B locked decision at top of plan.
+// Prompt 176 (2026-06-07): useUserMeals on TanStack Query.
 //
-// Dedup: if a `meals` row carries a non-null legacy_nutrition_log_id matching a
-// nutrition_logs row's id, the meals row wins. Section 4.2 of the plan keeps
-// `legacy_nutrition_log_id` on the meals row precisely for this hand-off.
+// Three cards on /nutrition (NutritionScoreCard + DailyMacrosCard +
+// DailyTotalsTab) all call useUserMeals(userId, {days: 7}). Before
+// 176 each call mounted its own useState + useEffect fetch, producing
+// three identical GETs per page load and three independent loading +
+// error states. A transient failure could leave one card erroring
+// while the others rendered data, which reads as a broken app.
 //
-// Realtime: subscribes to a single supabase channel filtered by user_id on the
-// meals table. INSERT/UPDATE/DELETE all trigger a fetch. Surgical merge is a
-// 168a polish; refetch-on-event is the simpler-correct path for Apply B.
-// Section 5.2 of the plan flags the "one subscription per session" ideal as a
-// context-provider concern that belongs in Apply C / 168a, not here.
+// Branch A: TanStack Query is already in the project (Providers.tsx).
+// Stable cache key ['user-meals', userId, days, includeLegacy] makes
+// three mounts with identical args collapse onto one network request,
+// one shared loading state, and one shared error state. Resilience
+// hardening (8 s timeout, try/catch fail-open via the throw boundary,
+// structured logging via safeLog) wraps the single fetch.
 //
-// Errors are captured into the returned `error` field and never thrown.
+// Realtime: each hook mount still establishes its own postgres_changes
+// channel and invalidates the shared query on any event so an insert
+// from one card path refreshes the data across the cluster.
+//
+// Reads UNION of meals (canonical post-cutover) and nutrition_logs
+// (legacy) per Prompt 168 Apply B Path B. Errors are returned via
+// the error field and never thrown out of the hook.
 
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@/lib/supabase/client';
+import { safeLog } from '@/lib/utils/safe-log';
 import type { Meal, MealType, MealSource, ScoreBreakdown, QualityTier, QualityTierDb } from '@/lib/gordon/types';
+
+const FETCH_TIMEOUT_MS = 8_000;
 
 export interface UseUserMealsOptions {
   readonly days?: number;
@@ -197,100 +208,138 @@ function legacyRowToMeal(row: Record<string, unknown>): Meal {
   };
 }
 
+/**
+ * Prompt 176 (2026-06-07): pure fetch function extracted from the
+ * hook body so useQuery can call it directly. Includes the 8 s
+ * timeout race and structured logging. Throws on error so useQuery
+ * captures it into the shared error state for every subscriber.
+ */
+async function fetchUserMeals(
+  userId: string,
+  days: number,
+  includeLegacy: boolean,
+): Promise<Meal[]> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const supabase = createClient() as any;
+  const sinceIso = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+
+  const mealsPromise = supabase
+    .from('meals')
+    .select('*')
+    .eq('user_id', userId)
+    .gte('logged_at', sinceIso)
+    .order('logged_at', { ascending: false });
+
+  const legacyPromise = includeLegacy
+    ? supabase
+        .from('nutrition_logs')
+        .select('*')
+        .eq('user_id', userId)
+        .gte('logged_at', sinceIso)
+        .order('logged_at', { ascending: false })
+    : Promise.resolve({ data: [], error: null });
+
+  // 8 s timeout race. The Supabase client does not accept an
+  // AbortSignal, so the orphan promise resolves silently if the
+  // outer race rejects first.
+  const timeout = new Promise<never>((_, reject) => {
+    setTimeout(
+      () => reject(new Error(`useUserMeals fetch timeout after ${FETCH_TIMEOUT_MS}ms`)),
+      FETCH_TIMEOUT_MS,
+    );
+  });
+
+  const [mealsRes, legacyRes] = (await Promise.race([
+    Promise.all([mealsPromise, legacyPromise]),
+    timeout,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ])) as any;
+
+  const mealsRows: Record<string, unknown>[] =
+    mealsRes && Array.isArray(mealsRes.data) ? mealsRes.data : [];
+  const canonical: Meal[] = mealsRows.map(mealRowToMeal);
+  const supersededLegacyIds = new Set<string>();
+  for (const m of canonical) {
+    if (m.legacyNutritionLogId) supersededLegacyIds.add(m.legacyNutritionLogId);
+  }
+
+  let legacy: Meal[] = [];
+  if (includeLegacy) {
+    const legacyRows: Record<string, unknown>[] =
+      legacyRes && Array.isArray(legacyRes.data) ? legacyRes.data : [];
+    legacy = legacyRows
+      .filter((r) => {
+        const id = typeof r.id === 'string' ? r.id : null;
+        return id !== null && !supersededLegacyIds.has(id);
+      })
+      .map(legacyRowToMeal);
+  }
+
+  // mealsRes.error surfaced if it was a real failure. Missing-table
+  // PGRST205 on the legacy fetch is treated as an empty legacy set
+  // rather than a hard error (common in dev).
+  const mealsErr = mealsRes && mealsRes.error ? mealsRes.error : null;
+  if (mealsErr && mealsErr.code !== 'PGRST205') {
+    throw new Error(String(mealsErr.message ?? 'meals fetch failed'));
+  }
+
+  return [...canonical, ...legacy].sort((a, b) => {
+    const aT = a.loggedAt ? Date.parse(a.loggedAt) : 0;
+    const bT = b.loggedAt ? Date.parse(b.loggedAt) : 0;
+    return bT - aT;
+  });
+}
+
 export function useUserMeals(
   userId: string | null | undefined,
   options?: UseUserMealsOptions,
 ): UseUserMealsResult {
   const days = options?.days ?? DEFAULT_DAYS;
   const includeLegacy = options?.includeLegacy ?? true;
+  const queryClient = useQueryClient();
 
-  const [meals, setMeals] = useState<Meal[]>([]);
-  const [loading, setLoading] = useState<boolean>(Boolean(userId));
-  const [error, setError] = useState<Error | null>(null);
+  // Stable cache key. Any caller passing the same tuple resolves onto
+  // the same query, so three identical mounts on /nutrition share one
+  // network request, one loading state, and one error state.
+  const queryKey = ['user-meals', userId ?? null, days, includeLegacy] as const;
 
-  const fetchMeals = useCallback(async () => {
-    if (!userId) {
-      setMeals([]);
-      setLoading(false);
-      return;
-    }
-    setLoading(true);
-    setError(null);
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const supabase = createClient() as any;
-      const sinceIso = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
-
-      const mealsPromise = supabase
-        .from('meals')
-        .select('*')
-        .eq('user_id', userId)
-        .gte('logged_at', sinceIso)
-        .order('logged_at', { ascending: false });
-
-      const legacyPromise = includeLegacy
-        ? supabase
-            .from('nutrition_logs')
-            .select('*')
-            .eq('user_id', userId)
-            .gte('logged_at', sinceIso)
-            .order('logged_at', { ascending: false })
-        : Promise.resolve({ data: [], error: null });
-
-      const [mealsRes, legacyRes] = await Promise.all([mealsPromise, legacyPromise]);
-
-      const mealsRows: Record<string, unknown>[] =
-        mealsRes && Array.isArray(mealsRes.data) ? mealsRes.data : [];
-      const canonical: Meal[] = mealsRows.map(mealRowToMeal);
-      const supersededLegacyIds = new Set<string>();
-      for (const m of canonical) {
-        if (m.legacyNutritionLogId) supersededLegacyIds.add(m.legacyNutritionLogId);
+  const queryResult = useQuery<Meal[], Error>({
+    queryKey,
+    queryFn: async () => {
+      if (!userId) return [];
+      try {
+        const result = await fetchUserMeals(userId, days, includeLegacy);
+        safeLog.info('hooks.useUserMeals', 'fetch ok', {
+          userId,
+          days,
+          includeLegacy,
+          count: result.length,
+        });
+        return result;
+      } catch (err) {
+        safeLog.error('hooks.useUserMeals', 'fetch failed', {
+          userId,
+          days,
+          includeLegacy,
+          error: err instanceof Error ? err.message : String(err),
+        });
+        throw err instanceof Error ? err : new Error(String(err));
       }
+    },
+    enabled: !!userId,
+  });
 
-      let legacy: Meal[] = [];
-      if (includeLegacy) {
-        const legacyRows: Record<string, unknown>[] =
-          legacyRes && Array.isArray(legacyRes.data) ? legacyRes.data : [];
-        legacy = legacyRows
-          .filter((r) => {
-            const id = typeof r.id === 'string' ? r.id : null;
-            return id !== null && !supersededLegacyIds.has(id);
-          })
-          .map(legacyRowToMeal);
-      }
-
-      // mealsRes.error and legacyRes.error are surfaced if either hit a real
-      // failure. Missing-table conditions on the legacy fetch (PGRST205) are
-      // common in dev; treat as an empty legacy set rather than a hard error.
-      const mealsErr = mealsRes && mealsRes.error ? mealsRes.error : null;
-      if (mealsErr && mealsErr.code !== 'PGRST205') {
-        throw new Error(String(mealsErr.message ?? 'meals fetch failed'));
-      }
-
-      const combined = [...canonical, ...legacy].sort((a, b) => {
-        const aT = a.loggedAt ? Date.parse(a.loggedAt) : 0;
-        const bT = b.loggedAt ? Date.parse(b.loggedAt) : 0;
-        return bT - aT;
-      });
-
-      setMeals(combined);
-    } catch (caught) {
-      setError(caught instanceof Error ? caught : new Error(String(caught)));
-    } finally {
-      setLoading(false);
-    }
-  }, [userId, days, includeLegacy]);
-
-  useEffect(() => {
-    fetchMeals();
-  }, [fetchMeals]);
-
+  // Realtime: each hook instance still attaches its own postgres_changes
+  // channel and invalidates the shared query on any event. Multiple
+  // instances with the same args share the refetched data even though
+  // each owns its own channel. A future polish could lift the channel
+  // into a per-user singleton via context.
   useEffect(() => {
     if (!userId) return;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const supabase = createClient() as any;
     const channel = supabase
-      .channel(`user-meals-${userId}`)
+      .channel(`user-meals-${userId}-${days}-${includeLegacy}`)
       .on(
         'postgres_changes',
         {
@@ -300,7 +349,7 @@ export function useUserMeals(
           filter: `user_id=eq.${userId}`,
         },
         () => {
-          fetchMeals();
+          void queryClient.invalidateQueries({ queryKey: ['user-meals', userId, days, includeLegacy] });
         },
       )
       .subscribe();
@@ -312,9 +361,13 @@ export function useUserMeals(
         // best effort cleanup; supabase-js swallows unsubscribed channels
       }
     };
-  }, [userId, fetchMeals]);
+  }, [userId, days, includeLegacy, queryClient]);
 
-  return { meals, loading, error };
+  return {
+    meals: queryResult.data ?? [],
+    loading: queryResult.isLoading,
+    error: queryResult.error ?? null,
+  };
 }
 
 export default useUserMeals;
