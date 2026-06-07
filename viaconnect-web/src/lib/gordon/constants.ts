@@ -124,3 +124,28 @@ export const SODIUM_RATIO_FULL    = 1.00;
 export const KCAL_FIT_TIGHT       = 0.15;
 export const KCAL_FIT_LOOSE       = 0.30;
 export const KCAL_FIT_WIDE        = 0.50;
+
+// Prompt 177e (2026-06-07): Total Daily Macros internal weighting tunable.
+// 177 spec section 4.4 (Open Tuning Decision 3) flags this as a Gordon
+// tunable. The canonical tracked set per 177e is five macros: calories,
+// protein, carbs, fat, fiber.
+//
+// Calories is the energy-balance dimension; protein, carbs, fat, fiber
+// are composition. Calories carries a weight of 0.5 so it influences
+// the daily macros score without naively double-counting energy (which
+// is approximately 4 * protein + 4 * carbs + 9 * fat). Composition
+// macros each weighted 1.0. Single-source-of-truth so flipping the
+// preference is a one-line edit here, not a refactor at each call site.
+export const DAILY_MACRO_WEIGHTS: Readonly<{
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  fiber: number;
+}> = {
+  calories: 0.5,
+  protein: 1.0,
+  carbs: 1.0,
+  fat: 1.0,
+  fiber: 1.0,
+};

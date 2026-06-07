@@ -18,7 +18,12 @@ import { useUserMeals } from '@/hooks/useUserMeals';
 import { useNutritionTargets } from '@/hooks/useNutritionTargets';
 import { generateTargets } from '@/lib/gordon/generateTargets';
 import { isMealNutrientKnown } from '@/lib/gordon/known-nutrients';
-import { calorieWeightedMealQualityScore, type ScoredMealContribution } from '@/lib/gordon/daily-aggregate';
+import {
+  calorieWeightedMealQualityScore,
+  totalDailyMacrosScore,
+  type DailyMacroAttainments,
+  type ScoredMealContribution,
+} from '@/lib/gordon/daily-aggregate';
 import { NutritionScoreCircleGauge } from './NutritionScoreCircleGauge';
 import { SegmentedDayGauge } from './SegmentedDayGauge';
 
@@ -94,10 +99,12 @@ export function NutritionScoreCard({ userId: propUserId }: NutritionScoreCardPro
     const scoredMealsToday: ScoredMealContribution[] = [];
     let nutritionScoredCount = 0;
     let todayMealCount = 0;
+    let caloriesSum = 0;
     let proteinSum = 0;
     let carbsSum = 0;
     let fatSum = 0;
     let fiberSum = 0;
+    let caloriesKnownCount = 0;
     let proteinKnownCount = 0;
     let carbsKnownCount = 0;
     let fatKnownCount = 0;
@@ -112,6 +119,14 @@ export function NutritionScoreCard({ userId: propUserId }: NutritionScoreCardPro
       // only pre-177d NULL-score rows are excluded.
       if (m.qualityScore === null || m.qualityScore === undefined) continue;
       todayMealCount += 1;
+      // Prompt 177e (2026-06-07): calories is always determined on
+      // every channel (the 4 / 4 / 9 reconciliation anchor) so its
+      // known check defaults to true unless the parser explicitly
+      // marks it false.
+      if (isMealNutrientKnown(m, 'calories_kcal')) {
+        caloriesSum += Number(m.caloriesKcal) || 0;
+        caloriesKnownCount += 1;
+      }
       if (isMealNutrientKnown(m, 'protein_g')) {
         proteinSum += Number(m.proteinG) || 0;
         proteinKnownCount += 1;
@@ -136,11 +151,17 @@ export function NutritionScoreCard({ userId: propUserId }: NutritionScoreCardPro
     }
     const nutritionScore = calorieWeightedMealQualityScore(scoredMealsToday);
 
-    // Total Daily Macros: avg of (sum / target * 100) across the 4 macros.
-    // Each ratio capped at 100% so a single overshoot does not skew the
-    // average. A macro with no known contributors today is excluded from
-    // the average rather than counted as 0, so a day where every meal
-    // omitted (say) fiber does not zero-out the macros score.
+    // Total Daily Macros per Prompt 177e (2026-06-07): the tracked set
+    // is calories, protein, carbs, fat, fiber, matching what Gordon
+    // already targets in nutrition_targets. Each macro contributes its
+    // attainment (logged / target * 100, capped at 100). The five
+    // attainments combine via DAILY_MACRO_WEIGHTS so calories influences
+    // the day without naively double-counting energy. A macro with no
+    // known contributors today is skipped from the weighted average
+    // rather than counted as 0.
+    const caloriesPct = caloriesKnownCount > 0 && effectiveTargets.dailyKcal > 0
+      ? Math.min(100, (caloriesSum / effectiveTargets.dailyKcal) * 100)
+      : null;
     const proteinPct = proteinKnownCount > 0 && effectiveTargets.dailyProteinG > 0
       ? Math.min(100, (proteinSum / effectiveTargets.dailyProteinG) * 100)
       : null;
@@ -153,13 +174,16 @@ export function NutritionScoreCard({ userId: propUserId }: NutritionScoreCardPro
     const fiberPct = fiberKnownCount > 0 && effectiveTargets.dailyFiberG > 0
       ? Math.min(100, (fiberSum / effectiveTargets.dailyFiberG) * 100)
       : null;
-    const macroAttainments = [proteinPct, carbsPct, fatPct, fiberPct].filter(
-      (v): v is number => v !== null,
-    );
-    const macrosScore = todayMealCount > 0 && macroAttainments.length > 0
-      ? Math.round(macroAttainments.reduce((a, b) => a + b, 0) / macroAttainments.length)
-      : 0;
+    const attainments: DailyMacroAttainments = {
+      calories: caloriesPct,
+      protein: proteinPct,
+      carbs: carbsPct,
+      fat: fatPct,
+      fiber: fiberPct,
+    };
+    const macrosScore = todayMealCount > 0 ? totalDailyMacrosScore(attainments) : 0;
     const macrosPartial =
+      caloriesKnownCount < todayMealCount ||
       proteinKnownCount < todayMealCount ||
       carbsKnownCount < todayMealCount ||
       fatKnownCount < todayMealCount ||

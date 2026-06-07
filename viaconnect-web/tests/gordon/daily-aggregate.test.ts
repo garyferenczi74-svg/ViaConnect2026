@@ -6,7 +6,12 @@
 // when a future Gordon-tunable preference (uniform vs weighted) ships.
 
 import { describe, it, expect } from 'vitest';
-import { calorieWeightedMealQualityScore } from '@/lib/gordon/daily-aggregate';
+import {
+  calorieWeightedMealQualityScore,
+  dailyMacrosHasSignal,
+  totalDailyMacrosScore,
+} from '@/lib/gordon/daily-aggregate';
+import { DAILY_MACRO_WEIGHTS } from '@/lib/gordon/constants';
 
 describe('calorieWeightedMealQualityScore', () => {
   it('returns 0 for an empty day', () => {
@@ -84,5 +89,122 @@ describe('calorieWeightedMealQualityScore', () => {
     // (95*50 + 25*900) / 950 = 28.68 -> 29
     expect(result).toBe(29);
     expect(result).toBeLessThan(35);
+  });
+});
+
+// Prompt 177e (2026-06-07): Total Daily Macros across five tracked macros.
+describe('totalDailyMacrosScore', () => {
+  it('returns 0 when every attainment is null', () => {
+    const result = totalDailyMacrosScore({
+      calories: null,
+      protein: null,
+      carbs: null,
+      fat: null,
+      fiber: null,
+    });
+    expect(result).toBe(0);
+  });
+
+  it('averages five equal attainments correctly under default weights', () => {
+    // calories 80 with weight 0.5, four composition macros at 80 with
+    // weight 1.0 each -> weighted avg still 80.
+    const result = totalDailyMacrosScore({
+      calories: 80,
+      protein: 80,
+      carbs: 80,
+      fat: 80,
+      fiber: 80,
+    });
+    expect(result).toBe(80);
+  });
+
+  it('weights composition macros more heavily than calories', () => {
+    // Composition macros all at 100, calories at 0. Uniform avg would
+    // be 80 (one zero out of five equal weights). With calories at
+    // half weight, the weighted total = (0*0.5 + 100*4) / 4.5 ~= 88.89.
+    const result = totalDailyMacrosScore({
+      calories: 0,
+      protein: 100,
+      carbs: 100,
+      fat: 100,
+      fiber: 100,
+    });
+    expect(result).toBe(89);
+    expect(result).toBeGreaterThan(80); // > uniform average
+  });
+
+  it('weights calories at half a composition macro per DAILY_MACRO_WEIGHTS', () => {
+    expect(DAILY_MACRO_WEIGHTS.calories).toBe(0.5);
+    expect(DAILY_MACRO_WEIGHTS.protein).toBe(1.0);
+    expect(DAILY_MACRO_WEIGHTS.carbs).toBe(1.0);
+    expect(DAILY_MACRO_WEIGHTS.fat).toBe(1.0);
+    expect(DAILY_MACRO_WEIGHTS.fiber).toBe(1.0);
+  });
+
+  it('skips null attainments without zeroing the average', () => {
+    // Day where fiber was unknown on every meal. Other four hit 80.
+    // Result should be 80, not (80*4 + 0) / 5 = 64.
+    const result = totalDailyMacrosScore({
+      calories: 80,
+      protein: 80,
+      carbs: 80,
+      fat: 80,
+      fiber: null,
+    });
+    expect(result).toBe(80);
+  });
+
+  it('clamps individual attainments to [0, 100] before weighting', () => {
+    // Inputs above 100 (overshoot at the macro level) and below 0
+    // (impossible but defensive) must not blow up the aggregate.
+    const result = totalDailyMacrosScore({
+      calories: 150,
+      protein: -10,
+      carbs: 60,
+      fat: 60,
+      fiber: 60,
+    });
+    // clamped: cal=100*0.5 + protein=0*1 + carbs=60 + fat=60 + fiber=60
+    // = (50 + 0 + 60 + 60 + 60) / 4.5 = 230/4.5 = 51.11 -> 51
+    expect(result).toBe(51);
+  });
+
+  it('calories alone still produces a score when every macro is null', () => {
+    // Edge: meals logged but none determined any macro past calories.
+    // The day should reflect what we know rather than zeroing.
+    const result = totalDailyMacrosScore({
+      calories: 80,
+      protein: null,
+      carbs: null,
+      fat: null,
+      fiber: null,
+    });
+    expect(result).toBe(80);
+  });
+});
+
+describe('dailyMacrosHasSignal', () => {
+  it('returns false when every macro is null', () => {
+    expect(
+      dailyMacrosHasSignal({
+        calories: null,
+        protein: null,
+        carbs: null,
+        fat: null,
+        fiber: null,
+      }),
+    ).toBe(false);
+  });
+
+  it('returns true when at least one macro is non-null', () => {
+    expect(
+      dailyMacrosHasSignal({
+        calories: 80,
+        protein: null,
+        carbs: null,
+        fat: null,
+        fiber: null,
+      }),
+    ).toBe(true);
   });
 });

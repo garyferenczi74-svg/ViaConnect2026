@@ -168,6 +168,9 @@ export function DailyMacroRings(props: DailyMacroRingsProps) {
   // could determine it. If any of today's scored meals could not, the
   // macro is flagged partial so the UI can surface an "estimated"
   // microcopy and not present a false shortfall.
+  // Prompt 177e (2026-06-07): calories joined the tracked set and gets
+  // the same partial treatment for honesty parity, even though calories
+  // is determined on every shipped channel today.
   const totals = useMemo(() => {
     const todayKey = localDateKey(new Date().toISOString(), tz);
     let kcal = 0;
@@ -175,6 +178,7 @@ export function DailyMacroRings(props: DailyMacroRingsProps) {
     let carbs = 0;
     let fat = 0;
     let fiber = 0;
+    let kcalPartial = false;
     let proteinPartial = false;
     let carbsPartial = false;
     let fatPartial = false;
@@ -186,6 +190,7 @@ export function DailyMacroRings(props: DailyMacroRingsProps) {
         carbs,
         fat,
         fiber,
+        kcalPartial,
         proteinPartial,
         carbsPartial,
         fatPartial,
@@ -199,9 +204,11 @@ export function DailyMacroRings(props: DailyMacroRingsProps) {
       // New full_manual saves run through Gordon and contribute their
       // macros honestly; only pre-177d NULL-score rows are excluded.
       if (m.qualityScore === null) continue;
-      // Calories is always determined on every channel (anchor of the
-      // 177d 4 / 4 / 9 reconciliation), so it is summed unconditionally.
-      kcal += Number(m.caloriesKcal) || 0;
+      if (isMealNutrientKnown(m, 'calories_kcal')) {
+        kcal += Number(m.caloriesKcal) || 0;
+      } else {
+        kcalPartial = true;
+      }
       if (isMealNutrientKnown(m, 'protein_g')) {
         protein += Number(m.proteinG) || 0;
       } else {
@@ -229,6 +236,7 @@ export function DailyMacroRings(props: DailyMacroRingsProps) {
       carbs,
       fat,
       fiber,
+      kcalPartial,
       proteinPartial,
       carbsPartial,
       fatPartial,
@@ -258,7 +266,10 @@ export function DailyMacroRings(props: DailyMacroRingsProps) {
       </header>
 
       {/* Calorie target header. Sits above the macro rings; the percentage
-          bar matches the tone of the other progress surfaces on this page. */}
+          bar matches the tone of the other progress surfaces on this page.
+          Prompt 177e (2026-06-07): calories is now a tracked macro in
+          the Total Daily Macros score; this header is the canonical UI
+          surface for the calorie target + logged value the spec asks for. */}
       <div className="mb-4 rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2.5">
         <div className="flex items-baseline justify-between gap-3">
           <p className="text-[12px] uppercase tracking-[0.10em] text-white/55">Calories</p>
@@ -279,6 +290,15 @@ export function DailyMacroRings(props: DailyMacroRingsProps) {
             style={{ width: `${kcalPct}%`, transition: 'width 200ms ease-out' }}
           />
         </div>
+        {totals.kcalPartial ? (
+          <p
+            className="mt-1 text-[10px] font-medium"
+            style={{ color: '#2DA5A0' }}
+            title="One or more text-channel meals today did not determine calories; the total reflects only meals that did."
+          >
+            Estimated
+          </p>
+        ) : null}
       </div>
 
       {/* Conservative-path note: Section 5.5 maintenance posture. Suppresses
