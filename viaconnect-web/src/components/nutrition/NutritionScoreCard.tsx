@@ -18,6 +18,7 @@ import { useUserMeals } from '@/hooks/useUserMeals';
 import { useNutritionTargets } from '@/hooks/useNutritionTargets';
 import { generateTargets } from '@/lib/gordon/generateTargets';
 import { isMealNutrientKnown } from '@/lib/gordon/known-nutrients';
+import { calorieWeightedMealQualityScore, type ScoredMealContribution } from '@/lib/gordon/daily-aggregate';
 import { NutritionScoreCircleGauge } from './NutritionScoreCircleGauge';
 import { SegmentedDayGauge } from './SegmentedDayGauge';
 
@@ -80,14 +81,17 @@ export function NutritionScoreCard({ userId: propUserId }: NutritionScoreCardPro
       };
     }
 
-    // Nutrition Score: avg qualityScore over today's scored meals.
+    // Nutrition Score: calorie-weighted average of today's per-meal
+    // qualityScore values per 177 spec section 4.5 (Gordon tunable
+    // default). A substantial dinner now influences the day more than
+    // a small snack, rather than a tiny perfect snack masking a poor
+    // dinner under a uniform average. The averaging math lives in
+    // lib/gordon/daily-aggregate so the swap to uniform (or any other
+    // future weighting) is a one-line change at the call site.
+    //
     // Per Prompt 177d Phase D (2026-06-07): macro totals exclude any
     // meal that could not determine the macro on its source channel.
-    // The per-macro attainment ratio still divides by the daily target,
-    // so a day where one meal omitted (say) fiber is presented as a
-    // smaller attainment than a fully-known day, but not artificially
-    // penalized by counting the unknown contribution as zero.
-    let nutritionSum = 0;
+    const scoredMealsToday: ScoredMealContribution[] = [];
     let nutritionScoredCount = 0;
     let todayMealCount = 0;
     let proteinSum = 0;
@@ -125,9 +129,12 @@ export function NutritionScoreCard({ userId: propUserId }: NutritionScoreCardPro
         fiberKnownCount += 1;
       }
       nutritionScoredCount += 1;
-      nutritionSum += Math.max(0, Math.min(100, Number(m.qualityScore)));
+      scoredMealsToday.push({
+        qualityScore: Number(m.qualityScore),
+        caloriesKcal: Number(m.caloriesKcal) || 0,
+      });
     }
-    const nutritionScore = nutritionScoredCount > 0 ? Math.round(nutritionSum / nutritionScoredCount) : 0;
+    const nutritionScore = calorieWeightedMealQualityScore(scoredMealsToday);
 
     // Total Daily Macros: avg of (sum / target * 100) across the 4 macros.
     // Each ratio capped at 100% so a single overshoot does not skew the
