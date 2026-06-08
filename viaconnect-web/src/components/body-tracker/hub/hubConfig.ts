@@ -110,7 +110,7 @@ export const SURFACES: SurfaceCard[] = [
     gridClass: "md:col-span-1 lg:col-span-2 lg:row-span-1",
     media: {
       kind: "video",
-      src: "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Videos/body%20composition.mp4",
+      src: "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Videos/body%20comp%202.mp4",
       poster: "",
       objectPosition: "center",
       gradientClass:
