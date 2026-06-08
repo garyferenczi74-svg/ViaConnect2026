@@ -59,6 +59,9 @@ export const BODY_TRACKER_TABS = [
   { id: 'composition', label: 'Body Composition', href: '/body-tracker/composition' },
   { id: 'weight',      label: 'Weight',           href: '/body-tracker/weight' },
   { id: 'milestones',  label: 'Milestones',       href: '/body-tracker/milestones' },
+  // Prompt 179 + 179b: the weight-trajectory tab. User-facing label is
+  // "Progress"; the data model + API keep the body_goals namespace.
+  { id: 'progress',    label: 'Progress',         href: '/body-tracker/progress' },
   { id: 'metabolic',   label: 'Metabolic',        href: '/body-tracker/metabolic' },
   { id: 'connections', label: 'Connections',      href: '/body-tracker/connections' },
 ] as const;

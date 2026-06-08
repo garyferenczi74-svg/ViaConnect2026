@@ -9,6 +9,7 @@ import { safeLog } from '@/lib/utils/safe-log';
 import {
   getActiveGoal,
   getLatestTarget,
+  getLatestWeight,
   getRecalibrations,
   getWeightSeries,
   getLoggedKcalWindow,
@@ -27,7 +28,10 @@ export async function GET() {
     if (!user) return NextResponse.json({ ok: false, error: 'unauthorized' }, { status: 401 });
 
     const goal = await getActiveGoal(user.id, sb);
-    if (!goal) return NextResponse.json({ ok: true, goal: null });
+    if (!goal) {
+      const latest = await getLatestWeight(user.id, sb);
+      return NextResponse.json({ ok: true, goal: null, latestWeightLb: latest?.weightLb ?? null });
+    }
 
     const today = new Date().toISOString().slice(0, 10);
     const chartStart = addDaysISO(today, -90);
