@@ -126,7 +126,10 @@ export const SURFACES: SurfaceCard[] = [
     // Desktop: right column under Body Composition.
     gridClass: "md:col-span-1 lg:col-span-2 lg:row-span-1",
     media: {
-      kind: "gradient",
+      kind: "video",
+      src: "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Videos/an_atractive_fit_woman_in_the.mp4",
+      poster: "",
+      objectPosition: "center",
       gradientClass:
         "bg-[radial-gradient(110%_110%_at_100%_100%,rgba(45,165,160,0.30)_0%,rgba(30,48,84,0.85)_60%,rgba(26,39,68,1)_100%)]",
     },
