@@ -163,7 +163,10 @@ export const SURFACES: SurfaceCard[] = [
     // Desktop: bottom triad, center.
     gridClass: "md:col-span-1 lg:col-span-2 lg:row-span-1",
     media: {
-      kind: "gradient",
+      kind: "video",
+      src: "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Videos/Mountain%20top.mp4",
+      poster: "",
+      objectPosition: "center",
       gradientClass:
         "bg-[radial-gradient(110%_110%_at_50%_100%,rgba(183,94,24,0.30)_0%,rgba(30,48,84,0.85)_55%,rgba(26,39,68,1)_100%)]",
     },
