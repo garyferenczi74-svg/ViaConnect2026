@@ -18,6 +18,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import type { NutritionTargets, MealDistribution } from '@/lib/gordon/types';
+import { fetchGoalOverlay } from '@/lib/gordon/resolveDailyTarget';
 
 export interface UseNutritionTargetsResult {
   readonly targets: NutritionTargets | null;
@@ -151,7 +152,29 @@ export function useNutritionTargets(
       if (queryErr && queryErr.code !== 'PGRST116' && queryErr.code !== 'PGRST205') {
         throw new Error(String(queryErr.message ?? 'nutrition_targets fetch failed'));
       }
-      setTargets(data ? rowToTargets(data as Record<string, unknown>) : null);
+      const base = data ? rowToTargets(data as Record<string, unknown>) : null;
+      if (!base) {
+        setTargets(null);
+      } else {
+        // Prompt 179 DD-1: overlay the active goal target (override, then goal)
+        // onto the CAQ static row. fetchGoalOverlay fails open to null, leaving
+        // the CAQ target untouched when there is no active goal.
+        const todayISO = new Date().toISOString().slice(0, 10);
+        const overlay = await fetchGoalOverlay(userId, todayISO, supabase);
+        setTargets(
+          overlay
+            ? {
+                ...base,
+                dailyKcal: overlay.dailyKcal,
+                dailyProteinG: overlay.dailyProteinG,
+                dailyCarbsG: overlay.dailyCarbsG,
+                dailyFatTotalG: overlay.dailyFatTotalG,
+                dailyFiberG: overlay.dailyFiberG,
+                targetSource: overlay.source,
+              }
+            : { ...base, targetSource: 'caq_static' },
+        );
+      }
     } catch (caught) {
       setError(caught instanceof Error ? caught : new Error(String(caught)));
       setTargets(null);

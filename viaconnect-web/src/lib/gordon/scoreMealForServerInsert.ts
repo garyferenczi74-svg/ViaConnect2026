@@ -15,6 +15,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { scoreMeal } from './scoreMeal';
 import { generateTargets } from './generateTargets';
 import { DEFAULT_MEAL_DISTRIBUTION } from './constants';
+import { fetchGoalOverlay } from './resolveDailyTarget';
 import type {
   KnownNutrients,
   Meal,
@@ -106,6 +107,28 @@ export async function scoreMealForServerInsert(
   } catch {
     targets = generateTargets({ caqSnapshot: null, bodySnapshot: null, bioOptDay: null, mealPatternHistory: null });
     targets = { ...targets, userId: input.userId };
+  }
+
+  // Prompt 179 DD-1: overlay the active goal target (manual override, then the
+  // latest effective goal target) onto the static CAQ target so meal scoring
+  // matches the daily target the member sees. fetchGoalOverlay fails open to
+  // null, so when there is no active goal the CAQ/USDA target is untouched.
+  try {
+    const todayISO = new Date(input.loggedAt).toISOString().slice(0, 10);
+    const overlay = await fetchGoalOverlay(input.userId, todayISO, supabase);
+    if (overlay) {
+      targets = {
+        ...targets,
+        dailyKcal: overlay.dailyKcal,
+        dailyProteinG: overlay.dailyProteinG,
+        dailyCarbsG: overlay.dailyCarbsG,
+        dailyFatTotalG: overlay.dailyFatTotalG,
+        dailyFiberG: overlay.dailyFiberG,
+        targetSource: overlay.source,
+      };
+    }
+  } catch {
+    // fetchGoalOverlay already fails open; this guard is defensive only.
   }
 
   // Count today's snacks for the snack divisor (locked-on-save per OQ#3).

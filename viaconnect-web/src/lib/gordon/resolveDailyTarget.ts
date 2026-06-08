@@ -84,8 +84,64 @@ function rawCaqRowToResolved(row: Record<string, unknown>): ResolvedDailyTarget 
 }
 
 /**
- * Resolve the precedence target for a user on a given local date. Always fails
- * open to the CAQ static target (or null) when the goal layer errors.
+ * Fetch only the GOAL overlay (manual override, else latest effective goal
+ * target) for a user on a date. Returns null when there is no active goal or no
+ * applicable target. Fails open to null so callers keep their CAQ static target.
+ */
+export async function fetchGoalOverlay(
+  userId: string,
+  localDateISO: string,
+  supabase: SupabaseClient,
+): Promise<ResolvedDailyTarget | null> {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const sb = supabase as any;
+    const { data: goal } = await withTimeout<{ data: { id: string } | null }>(
+      sb.from('body_goals').select('id').eq('user_id', userId).eq('status', 'active').maybeSingle(),
+      8000,
+      'goalOverlay.activeGoal',
+    );
+    if (!goal) return null;
+
+    const { data: overrideRow } = await withTimeout<{ data: BodyGoalTargetRow | null }>(
+      sb
+        .from('body_goal_targets')
+        .select('*')
+        .eq('goal_id', goal.id)
+        .eq('source', 'manual_override')
+        .eq('effective_date', localDateISO)
+        .order('computed_at', { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+      8000,
+      'goalOverlay.override',
+    );
+    if (overrideRow) return goalTargetRowToResolved(overrideRow as BodyGoalTargetRow, 'manual_override');
+
+    const { data: latestRow } = await withTimeout<{ data: BodyGoalTargetRow | null }>(
+      sb
+        .from('body_goal_targets')
+        .select('*')
+        .eq('goal_id', goal.id)
+        .lte('effective_date', localDateISO)
+        .order('effective_date', { ascending: false })
+        .order('computed_at', { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+      8000,
+      'goalOverlay.latest',
+    );
+    return latestRow ? goalTargetRowToResolved(latestRow as BodyGoalTargetRow, 'goal_target') : null;
+  } catch (err) {
+    safeLog.warn('goalOverlay', 'goal layer failed', { err, userId });
+    return null;
+  }
+}
+
+/**
+ * Resolve the full precedence target for a user on a date: the goal overlay
+ * (override, then goal target) when present, otherwise the CAQ static target.
+ * Always fails open; never throws.
  */
 export async function fetchResolvedDailyTarget(
   userId: string,
@@ -95,7 +151,7 @@ export async function fetchResolvedDailyTarget(
   // CAQ static first; it is the fail-open fallback for everything below.
   let caqStatic: ResolvedDailyTarget | null = null;
   try {
-    const { data } = await withTimeout(
+    const { data } = await withTimeout<{ data: Record<string, unknown> | null }>(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (supabase as any)
         .from('nutrition_targets')
@@ -113,54 +169,10 @@ export async function fetchResolvedDailyTarget(
     safeLog.warn('resolveDailyTarget', 'caq fetch failed', { err, userId });
   }
 
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const sb = supabase as any;
-    const { data: goal } = await withTimeout(
-      sb.from('body_goals').select('id').eq('user_id', userId).eq('status', 'active').maybeSingle(),
-      8000,
-      'resolveDailyTarget.activeGoal',
-    );
-    if (!goal) return caqStatic;
-
-    const { data: overrideRow } = await withTimeout(
-      sb
-        .from('body_goal_targets')
-        .select('*')
-        .eq('goal_id', goal.id)
-        .eq('source', 'manual_override')
-        .eq('effective_date', localDateISO)
-        .order('computed_at', { ascending: false })
-        .limit(1)
-        .maybeSingle(),
-      8000,
-      'resolveDailyTarget.override',
-    );
-    const { data: latestRow } = await withTimeout(
-      sb
-        .from('body_goal_targets')
-        .select('*')
-        .eq('goal_id', goal.id)
-        .lte('effective_date', localDateISO)
-        .order('effective_date', { ascending: false })
-        .order('computed_at', { ascending: false })
-        .limit(1)
-        .maybeSingle(),
-      8000,
-      'resolveDailyTarget.latest',
-    );
-
-    return pickResolvedTarget({
-      override: overrideRow
-        ? goalTargetRowToResolved(overrideRow as BodyGoalTargetRow, 'manual_override')
-        : null,
-      goalTarget: latestRow
-        ? goalTargetRowToResolved(latestRow as BodyGoalTargetRow, 'goal_target')
-        : null,
-      caqStatic,
-    });
-  } catch (err) {
-    safeLog.warn('resolveDailyTarget', 'goal layer failed, using CAQ static', { err, userId });
-    return caqStatic;
-  }
+  const overlay = await fetchGoalOverlay(userId, localDateISO, supabase);
+  return pickResolvedTarget({
+    override: overlay?.source === 'manual_override' ? overlay : null,
+    goalTarget: overlay?.source === 'goal_target' ? overlay : null,
+    caqStatic,
+  });
 }
