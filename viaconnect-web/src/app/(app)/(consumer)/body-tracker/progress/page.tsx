@@ -6,6 +6,11 @@
 // Chart, Daily Targets, Adaptive Recalibration, Adherence, Safety). Data model
 // and API keep the body_goals namespace; only the surface is named Progress.
 // The My Biology hub card already routes here, so no hub config change is needed.
+//
+// IMPORTANT: this is a client component. Never add `export const metadata` here.
+// Next.js forbids a metadata export under "use client" and it fails the
+// production build; the 180b placeholder hit exactly that. (Rebuilt 2026-06-08
+// to force a clean Vercel compile and clear a stale placeholder build cache.)
 
 import { BackToHubLink } from '@/components/body-tracker/hub/BackToHubLink';
 import { useActiveGoal } from '@/components/body-tracker/progress/useActiveGoal';
