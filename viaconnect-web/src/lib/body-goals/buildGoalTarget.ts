@@ -122,6 +122,7 @@ export function buildGoalTarget(input: BuildGoalTargetInput): BuildGoalTargetRes
         lbmKg: lbm ? Math.round(lbm.lbmKg * 10) / 10 : null,
         lbmSource: lbm ? lbm.source : null,
         macroClamps: split.clamps,
+        projectedDate: solved.projectedDate,
       },
       projectedDate: solved.projectedDate,
     },

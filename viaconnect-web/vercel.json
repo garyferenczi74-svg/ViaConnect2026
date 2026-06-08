@@ -14,6 +14,7 @@
     }
   ],
   "crons": [
-    { "path": "/api/bos/worker", "schedule": "*/5 * * * *" }
+    { "path": "/api/bos/worker", "schedule": "*/5 * * * *" },
+    { "path": "/api/body/goals/recalibrate-cron", "schedule": "0 8 * * 1" }
   ]
 }
