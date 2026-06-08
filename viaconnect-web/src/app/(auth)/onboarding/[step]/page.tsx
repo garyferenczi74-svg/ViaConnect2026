@@ -3006,11 +3006,12 @@ function OnboardingComplete() {
   const offset = circ - (animatedScore / 100) * circ;
 
   function handleSelectTier(tier: PlanTierRow) {
-    // Prompt 177j: the family tier routes straight into the family signup and
-    // checkout flow at /checkout, where the seat add-on configurator and the
-    // family_members management live. The other tiers continue onboarding.
+    // Prompt 177j: the Platinum+ Family signup and checkout flow is not built
+    // yet (no membership checkout route exists), so the family tier surfaces a
+    // coming-soon state instead of routing into the supplement cart at
+    // /checkout. The card still displays the plan and its pricing.
     if (tier.is_family_tier) {
-      router.push(`/checkout?tier=${tier.id}&cycle=monthly`);
+      toast("Platinum+ Family plan is coming soon.", { duration: 3000 });
       return;
     }
     setSelectedTier(tier.id);
@@ -3102,7 +3103,7 @@ function OnboardingComplete() {
           const priceStr = tier.monthly_price_cents === 0 ? "0" : (tier.monthly_price_cents / 100).toFixed(2);
           const cycleStr = tier.monthly_price_cents === 0 ? "forever" : "month";
           const features = TIER_FEATURES[tier.id] ?? [];
-          const ctaLabel = tier.id === "free" ? "Get Started Free" : `Start ${tier.display_name} Membership`;
+          const ctaLabel = isFamily ? "Coming Soon" : tier.id === "free" ? "Get Started Free" : `Start ${tier.display_name} Membership`;
           const adultAddOn = ((tier.additional_adult_price_cents ?? 0) / 100).toFixed(2);
           const childAddOn = ((tier.additional_children_chunk_price_cents ?? 0) / 100).toFixed(2);
           return (
@@ -3179,8 +3180,10 @@ function OnboardingComplete() {
               className={`mt-auto w-full py-3 rounded-xl font-semibold text-sm transition-all disabled:opacity-50
                 ${isGold
                   ? "bg-gradient-to-r from-[#B75E18] to-[#D4741F] text-white hover:shadow-lg hover:shadow-orange-500/25"
-                  : isPlatinum || isFamily
+                  : isPlatinum
                   ? "bg-gradient-to-r from-[#2DA5A0] to-[#38BDB6] text-white hover:shadow-lg hover:shadow-teal-500/25"
+                  : isFamily
+                  ? "border border-[#2DA5A0]/40 text-[#2DA5A0] hover:bg-[#2DA5A0]/10"
                   : "border border-white/20 text-white/80 hover:bg-white/5"
                 }`}
             >
