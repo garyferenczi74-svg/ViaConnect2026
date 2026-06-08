@@ -8,6 +8,8 @@ import { BOSCard } from '@/components/dashboard/bos-card';
 import { TodaysProtocol } from '@/components/dashboard/TodaysProtocol';
 import { WellnessSnapshot } from '@/components/dashboard/WellnessSnapshot';
 import { DailyScoresPanel } from '@/components/dashboard/DailyScoresPanel';
+import { EngagementNudge } from '@/components/dashboard/EngagementNudge';
+import type { EngagementNudge as Nudge } from '@/lib/scoring/engagementNudges';
 import { HelixRewardsSummary } from '@/components/dashboard/HelixRewardsSummary';
 import { DailyInsightsCard } from '@/components/dashboard/DailyInsightsCard';
 // Prompt 170o Phase 1 Phase C: hydration tracking surfaces on Consumer Dashboard.
@@ -164,6 +166,11 @@ export default function ConsumerDashboard() {
     }
   }, [userId, queryClient]);
 
+  // Prompt 180g (2026-06-08): nudge surfaced by DailyScoresPanel.
+  // Rendered below the Daily Check-In card instead of inline above
+  // it. Null while the panel is loading or empty.
+  const [engagementNudge, setEngagementNudge] = useState<Nudge | null>(null);
+
   // Saved check-in data (after submit button pressed)
   const [checkinRaw, setCheckinRaw] = useState<Record<string, any> | null>(null);
   // Live preview data (updates as sliders move, before submit)
@@ -231,10 +238,20 @@ export default function ConsumerDashboard() {
         {/* All remaining content, image fades as overlay darkens */}
         <div className="mx-auto max-w-7xl space-y-6 px-4 pb-24 md:px-6">
         {/* ── 3. Daily Scores Grid (Personal Wellness Dashboard) ── */}
-        <DailyScoresPanel checkinRaw={checkinRaw} previewRaw={previewRaw} />
+        <DailyScoresPanel
+          checkinRaw={checkinRaw}
+          previewRaw={previewRaw}
+          onNudge={setEngagementNudge}
+        />
 
         {/* 3b. Daily Check-In (Prompt #62e, Tier 4 manual input) */}
         <DailyCheckIn onScoresUpdate={handleCheckinScores} onSliderChange={handleSliderPreview} />
+
+        {/* Prompt 180g (2026-06-08): Engagement nudge (e.g. "No
+            exercise logged yet ...") moved down here, below the
+            Quick Daily Check-In card. The panel above emits the
+            nudge through onNudge whenever scores load. */}
+        {engagementNudge && <EngagementNudge nudge={engagementNudge} />}
 
         {/* Prompt 168c section 2.1 + 2.8: inline Quick Log surface with horizontal */}
         {/* meal-type tab strip. Replaces the prior modal-button pattern + the 3 */}

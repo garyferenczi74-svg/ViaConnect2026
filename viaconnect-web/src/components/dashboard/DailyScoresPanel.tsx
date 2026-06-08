@@ -12,7 +12,6 @@ import {
   type DailyCheckinData,
   type MealLogData,
 } from '@/lib/scoring/dailyScoreEngineV2';
-import { EngagementNudge } from './EngagementNudge';
 import { topNudge } from '@/lib/scoring/engagementNudges';
 import { detectTimezone, localDateString } from '@/lib/timezone';
 
@@ -24,9 +23,18 @@ function todayLocal(): string {
   return localDateString(detectTimezone());
 }
 
+import type { EngagementNudge as Nudge } from '@/lib/scoring/engagementNudges';
+
 interface DailyScoresPanelProps {
   checkinRaw?: Record<string, any> | null;
   previewRaw?: Record<string, any> | null;
+  // Prompt 180g (2026-06-08): the EngagementNudge moved from this
+  // panel down below the Daily Check-In card on the dashboard. The
+  // panel still owns nudge computation (it lives next to the score
+  // data) and emits it through onNudge so the parent can render the
+  // card in its new slot. When the panel is in the loading or empty
+  // state it emits null so the parent hides the card.
+  onNudge?: (nudge: Nudge | null) => void;
 }
 
 type ScoreState = 'loading' | 'empty' | 'loaded';
@@ -84,7 +92,7 @@ function setCachedMeals(meals: LocalMeal[]) {
   } catch {}
 }
 
-export function DailyScoresPanel({ checkinRaw, previewRaw }: DailyScoresPanelProps) {
+export function DailyScoresPanel({ checkinRaw, previewRaw, onNudge }: DailyScoresPanelProps) {
   // Three-state rendering: loading → empty | loaded. Once loaded, NEVER goes back.
   const [scoreState, setScoreState] = useState<ScoreState>(() => {
     const cached = getCachedScores();
@@ -178,7 +186,7 @@ export function DailyScoresPanel({ checkinRaw, previewRaw }: DailyScoresPanelPro
 
       // Prompt #84: Build nutrition score from meal_logs.meal_score (primary),
       // then cached meal_score, then quality_rating fallback. Never read from
-      // daily_checkins for meal data — those are independent streams.
+      // daily_checkins for meal data; those are independent streams.
       const mealScores: number[] = [...dbMealScores];
 
       // Supplement with cached meals (from meal-logged events)
@@ -278,7 +286,7 @@ export function DailyScoresPanel({ checkinRaw, previewRaw }: DailyScoresPanelPro
   }, [scoreState]);
 
   // When parent passes saved check-in data (from per-card submit).
-  // Prompt #84: Preserve existing nutrition score — check-in data is an
+  // Prompt #84: Preserve existing nutrition score; check-in data is an
   // independent stream from meal data and must NEVER zero out nutrition.
   useEffect(() => {
     if (checkinRaw) {
@@ -387,6 +395,15 @@ export function DailyScoresPanel({ checkinRaw, previewRaw }: DailyScoresPanelPro
     hourOfDay: new Date().getHours(),
   });
 
+  // Prompt 180g (2026-06-08): emit the nudge to the parent so it can
+  // render the card below the Daily Check-In card. The panel itself
+  // no longer renders the nudge inline. Emit null when not loaded so
+  // the parent hides the slot.
+  useEffect(() => {
+    if (!onNudge) return;
+    onNudge(scoreState === 'loaded' && result ? nudge : null);
+  }, [onNudge, scoreState, result, nudge]);
+
   // ── Three-state rendering ──────────────────────────────────
   return (
     <div className="space-y-4">
@@ -451,7 +468,9 @@ export function DailyScoresPanel({ checkinRaw, previewRaw }: DailyScoresPanelPro
         )}
       </section>
 
-      {scoreState === 'loaded' && result && <EngagementNudge nudge={nudge} />}
+      {/* Prompt 180g (2026-06-08): EngagementNudge moved to the
+          dashboard page, rendered below the Daily Check-In card. The
+          nudge value is computed here and emitted via onNudge above. */}
     </div>
   );
 }
