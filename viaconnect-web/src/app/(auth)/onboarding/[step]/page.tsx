@@ -32,6 +32,9 @@ import { WeightGoalsSection } from "@/components/caq/WeightGoalsSection";
 import { DietaryChoiceSelector } from "@/components/caq/DietaryChoiceSelector";
 import { CaqPathChoiceScreen } from "@/components/caq/CaqPathChoiceScreen";
 import { writeWeightGoal } from "@/lib/weight-goals/accessor";
+import { kgToLbs } from "@/lib/weight-goals/guardrails";
+import { resolveCaqGoalDriver } from "@/lib/body-goals/pace";
+import type { PacePreset } from "@/lib/body-goals/types";
 import { readCaqPath, writeCaqPath } from "@/lib/caq/path";
 import type { DietaryChoice } from "@/lib/gordon/macro-config";
 import { SEED_INGREDIENTS, FARMCEUTICA_CATEGORIES, normalizeIngredientName } from "@/config/farmceutica-ingredients";
@@ -354,6 +357,9 @@ type GoalsData = {
   // draft and survives a round trip back to Demographics. Persisted to
   // public.user_weight_goals via writeWeightGoal on Lifestyle save.
   goalWeightKg: number | null;
+  // Prompt 179a: onboarding pace preset + optional target date (yyyy-mm-dd).
+  goalPace: PacePreset;
+  goalTargetDate: string | null;
   // Prompt 173a Phase 8 follow up (2026-06-04): user dietary choice. Drives
   // the per diet fat + carbohydrate split in the Gordon macro engine. Null
   // when the user has not picked; the engine defaults to balanced and the
@@ -626,6 +632,8 @@ export default function OnboardingStepPage() {
   const [goals, setGoals] = useState<GoalsData>({
     goals: [], supplementForm: "", budgetRange: 50, communicationPref: "email",
     goalWeightKg: null,
+    goalPace: "steady",
+    goalTargetDate: null,
     dietaryChoice: null,
   });
 
@@ -770,6 +778,15 @@ export default function OnboardingStepPage() {
             const gwk = (ls as Record<string, unknown>).goalWeightKg;
             if (typeof gwk === 'number' && Number.isFinite(gwk) && gwk > 0) {
               setGoals((p) => ({ ...p, goalWeightKg: gwk }));
+            }
+            // Prompt 179a: rehydrate pace + target date from the prior save.
+            const gp = (ls as Record<string, unknown>).goalPace;
+            if (gp === 'gentle' || gp === 'steady' || gp === 'ambitious' || gp === 'custom_date') {
+              setGoals((p) => ({ ...p, goalPace: gp }));
+            }
+            const gtd = (ls as Record<string, unknown>).goalTargetDate;
+            if (typeof gtd === 'string' && gtd) {
+              setGoals((p) => ({ ...p, goalTargetDate: gtd }));
             }
             // Prompt 173a Phase 8 follow up: rehydrate dietary choice from
             // the prior Lifestyle save so the selector reflects the user
@@ -920,23 +937,47 @@ export default function OnboardingStepPage() {
       switch (stepId) {
         case "1": await savePhase("1", { ...demographics, bodyType }); break;
         case "3": {
-          await savePhase("3", { ...lifestyle, goals: goals.goals, supplementForm: goals.supplementForm, budgetRange: goals.budgetRange, goalWeightKg: goals.goalWeightKg, dietaryChoice: goals.dietaryChoice });
-          // Prompt 173 Phase 3 persistence: when both the Phase 1 current
-          // weight and the Lifestyle goal weight are present, write the
-          // canonical row to public.user_weight_goals. The DB trigger
-          // owns goal_direction; writeWeightGoal omits it. Failure is
-          // non-fatal so the CAQ flow continues even if the network drops.
+          await savePhase("3", { ...lifestyle, goals: goals.goals, supplementForm: goals.supplementForm, budgetRange: goals.budgetRange, goalWeightKg: goals.goalWeightKg, goalPace: goals.goalPace, goalTargetDate: goals.goalTargetDate, dietaryChoice: goals.dietaryChoice });
+          // Prompt 179a: the CAQ goal write funnels through body_goals (the
+          // single write authority), which projects goal weight + direction
+          // into user_weight_goals so the macro engine read path is unchanged
+          // and a goal-driven daily target exists from onboarding. Best-effort:
+          // on any request failure we fall back to the legacy direct
+          // user_weight_goals write so the engine is never left without a goal.
+          // The DB trigger still owns goal_direction.
           try {
-            const cw = parseFloat(demographics.weight);
-            const gw = goals.goalWeightKg;
+            const cw = parseFloat(demographics.weight); // kg
+            const gw = goals.goalWeightKg; // kg
             if (Number.isFinite(cw) && cw > 0 && gw !== null && Number.isFinite(gw) && gw > 0) {
-              const supabase = createClient();
-              const { data: { user } } = await supabase.auth.getUser();
-              if (user) {
-                await writeWeightGoal(
-                  { userId: user.id, currentWeightKg: cw, goalWeightKg: gw, source: "caq" },
-                  supabase,
-                );
+              const currentWeightLb = kgToLbs(cw);
+              const goalWeightLb = kgToLbs(gw);
+              const drv = resolveCaqGoalDriver({ currentWeightLb, goalWeightLb, pace: goals.goalPace, targetDate: goals.goalTargetDate });
+              let posted = false;
+              try {
+                const res = await fetch("/api/body/goals", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    origin: "caq",
+                    driver: drv.driver,
+                    goalWeightLb,
+                    startWeightLb: currentWeightLb,
+                    targetRateLbPerWeek: drv.targetRateLbPerWeek ?? undefined,
+                    targetDate: drv.targetDate ?? undefined,
+                    targetPacePreset: drv.pacePreset,
+                  }),
+                });
+                posted = res.ok;
+              } catch { posted = false; }
+              if (!posted) {
+                const supabase = createClient();
+                const { data: { user } } = await supabase.auth.getUser();
+                if (user) {
+                  await writeWeightGoal(
+                    { userId: user.id, currentWeightKg: cw, goalWeightKg: gw, source: "caq" },
+                    supabase,
+                  );
+                }
               }
             }
           } catch { /* persistence is best-effort; the CAQ proceeds */ }
@@ -1864,6 +1905,10 @@ export default function OnboardingStepPage() {
               weightUnit={weightUnit}
               goalWeightKg={goals.goalWeightKg}
               onGoalWeightKgChange={(kg) => setGoals({ ...goals, goalWeightKg: kg })}
+              pace={goals.goalPace}
+              onPaceChange={(p) => setGoals({ ...goals, goalPace: p })}
+              targetDate={goals.goalTargetDate}
+              onTargetDateChange={(d) => setGoals({ ...goals, goalTargetDate: d })}
               onEditDemographics={async () => {
                 // Persist the in-progress Lifestyle draft so the round trip
                 // back to Demographics does not lose state, then navigate.
@@ -1874,6 +1919,8 @@ export default function OnboardingStepPage() {
                     supplementForm: goals.supplementForm,
                     budgetRange: goals.budgetRange,
                     goalWeightKg: goals.goalWeightKg,
+                    goalPace: goals.goalPace,
+                    goalTargetDate: goals.goalTargetDate,
                     dietaryChoice: goals.dietaryChoice,
                   });
                 } catch { /* navigation proceeds even if save fails */ }

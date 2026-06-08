@@ -32,6 +32,7 @@ import { useEffect, useState } from 'react';
 import { Info, Pencil, HeartHandshake } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { previewGoalDirection, type GoalDirection } from '@/lib/weight-goals/accessor';
+import type { PacePreset } from '@/lib/body-goals/types';
 import {
   evaluateGoalWeight,
   kgToLbs,
@@ -64,6 +65,13 @@ export interface WeightGoalsSectionProps {
   // Navigate back to Phase 1 (Demographics). The parent first persists the
   // in-progress draft (so the round trip preserves state) then routes.
   onEditDemographics: () => void;
+  // Prompt 179a: pace preset (Gentle / Steady / Ambitious / Pick a target
+  // date) captured inside this step. Shown only for a lose or gain direction.
+  pace: PacePreset;
+  onPaceChange: (p: PacePreset) => void;
+  // Target date (yyyy-mm-dd) when pace is custom_date; null otherwise.
+  targetDate: string | null;
+  onTargetDateChange: (d: string | null) => void;
 }
 
 // Round a kg value to a tidy display number in the user's unit. We keep one
@@ -107,6 +115,10 @@ export function WeightGoalsSection({
   goalWeightKg,
   onGoalWeightKgChange,
   onEditDemographics,
+  pace,
+  onPaceChange,
+  targetDate,
+  onTargetDateChange,
 }: WeightGoalsSectionProps) {
   // Local DRAFT string for the unit-aware input. Kept in the user's unit so
   // typing feels natural; we convert to canonical kg on every change.
@@ -260,6 +272,56 @@ export function WeightGoalsSection({
         >
           <span className="text-[11px] uppercase tracking-[0.12em] text-white/40 font-medium">Direction</span>
           <span className="text-sm font-medium text-teal-light">{DIRECTION_LABEL[direction]}</span>
+        </div>
+      )}
+
+      {/* Prompt 179a: pace / target-date capture. Shown only for a lose or
+          gain direction (a maintain goal needs no pace), and suppressed in
+          disordered-eating safety mode. Defaults to Steady. */}
+      {direction && (direction === 'lose' || direction === 'gain') && evaluation.isValid && currentWeightKg !== null && !deSafetyActive && (
+        <div className="space-y-2">
+          <p className="text-[11px] uppercase tracking-[0.12em] text-white/40 font-medium">Pace</p>
+          <div className="flex flex-wrap gap-2">
+            {(['gentle', 'steady', 'ambitious'] as const).map((p) => (
+              <button
+                key={p}
+                type="button"
+                onClick={() => onPaceChange(p)}
+                aria-pressed={pace === p}
+                className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-teal/50 ${
+                  pace === p
+                    ? 'border-teal/50 bg-teal/15 text-white'
+                    : 'border-dark-border bg-dark-surface text-white/55 hover:text-white/80'
+                }`}
+              >
+                {p === 'gentle' ? 'Gentle' : p === 'steady' ? 'Steady' : 'Ambitious'}
+                <span className="ml-1 text-white/40">{p === 'gentle' ? '0.5' : p === 'steady' ? '1.0' : '1.5'} lb/wk</span>
+              </button>
+            ))}
+            <button
+              type="button"
+              onClick={() => onPaceChange('custom_date')}
+              aria-pressed={pace === 'custom_date'}
+              className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-teal/50 ${
+                pace === 'custom_date'
+                  ? 'border-teal/50 bg-teal/15 text-white'
+                  : 'border-dark-border bg-dark-surface text-white/55 hover:text-white/80'
+              }`}
+            >
+              Pick a target date
+            </button>
+          </div>
+          {pace === 'custom_date' && (
+            <input
+              type="date"
+              value={targetDate ?? ''}
+              onChange={(e) => onTargetDateChange(e.target.value || null)}
+              className="w-full h-10 bg-dark-surface border border-dark-border rounded-lg px-3 text-sm text-white focus:outline-none focus:ring-1 focus:ring-copper/50 focus:border-copper/50 transition-colors"
+            />
+          )}
+          <p className="text-[11px] text-white/40">
+            Arnold keeps every plan within a safe pace. If a date would need a faster rate than is safe, the date is eased back, never your calories.
+          </p>
         </div>
       )}
 
