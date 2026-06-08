@@ -168,6 +168,12 @@ export interface NutritionTargets {
   lbmSource: 'measured' | 'estimated' | null;
   bodyFatFraction: number | null;
   dietaryChoice: string | null;
+  // Prompt 179: which precedence layer produced the macros above (manual
+  // override, then active goal target, then this CAQ static row). Optional and
+  // additive: rows resolved before the goal engine leave it undefined, and the
+  // Daily Macros + Nutrition Score surfaces read the five macros identically
+  // regardless of source.
+  targetSource?: 'manual_override' | 'goal_target' | 'caq_static' | null;
 }
 
 // meal_distribution JSONB shape. Per OQ#3 locked: snack share is the total
