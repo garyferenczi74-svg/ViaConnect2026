@@ -151,7 +151,7 @@ export function DietarySettingsSection() {
         </h3>
       </div>
       <p className="mb-4 text-sm leading-[22px] text-white/70">
-        Pick the eating style closest to how you want to eat. This drives how your fat and carbohydrate targets are split on the Nutrition Log. Changes take effect on your next macro recompute, which we trigger automatically when you save.
+        Pick the eating style closest to how you want to eat. This drives how your fat and carbohydrate targets are split on My Nutrition. Changes take effect on your next macro recompute, which we trigger automatically when you save.
       </p>
 
       {loading ? (

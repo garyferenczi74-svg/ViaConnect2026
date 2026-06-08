@@ -140,11 +140,11 @@ export default function GeneticsPage() {
     <MobileHeroBackground src={GENETICS_HERO_IMAGE} overlayOpacity={0.58} objectPosition="center center" priority />
     <div className="relative z-10 min-h-screen w-full text-white">
 
-        {/* ── Hero tagline — image shows through ── */}
+        {/* ── Hero tagline , image shows through ── */}
         <div className="w-full px-4 pt-14 pb-8 text-center">
           <div className="mx-auto mb-3 h-0.5 w-10 rounded-full bg-[#2DA5A0]" />
           <h1 className="text-2xl font-semibold tracking-tight text-white md:text-4xl">
-            GeneX360 Genetics Protocol
+            My Genetics
           </h1>
           <p className="mt-2 max-w-lg mx-auto text-sm text-white/65 md:text-base">
             Precision insights from your genetic blueprint
@@ -269,7 +269,7 @@ export default function GeneticsPage() {
           </div>
           <p className="text-xs md:text-sm text-white/50 leading-relaxed mb-5">
             Precision formulas designed to support common SNP patterns identified
-            by GeneX360™ — methylation cofactors, neurotransmitter balance,
+            by GeneX360™, methylation cofactors, neurotransmitter balance,
             detoxification, and more.
           </p>
           <Link

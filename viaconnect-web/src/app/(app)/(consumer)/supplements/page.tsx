@@ -182,7 +182,7 @@ export default function SupplementsPage() {
         <div className="flex items-center gap-4">
           <PIcon icon={Pill} color="#2DA5A0" size="lg" />
           <div>
-            <h1 className="text-xl md:text-2xl font-bold text-white tracking-tight">Supplement Protocol</h1>
+            <h1 className="text-xl md:text-2xl font-bold text-white tracking-tight">My Supplements</h1>
             <p className="text-sm text-white/40 mt-0.5">Your personalized daily regimen</p>
           </div>
         </div>
