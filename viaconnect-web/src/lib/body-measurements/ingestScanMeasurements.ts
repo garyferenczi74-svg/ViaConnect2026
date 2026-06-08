@@ -33,10 +33,10 @@ export function isPlatinum(tier: TierId): boolean {
 }
 
 export async function ingestMeasurementsFromScan(
-  params: { scanId: string; userId: string },
+  params: { scanId: string; userId: string; prefetchedScanRow?: Record<string, unknown> | null },
   supabase: IngestClient,
 ): Promise<IngestResult> {
-  const { scanId, userId } = params;
+  const { scanId, userId, prefetchedScanRow } = params;
 
   // 1. Entitlement. Fail closed: a non-Platinum tier or any lookup error means no write.
   let tier: TierId;
@@ -80,27 +80,31 @@ export async function ingestMeasurementsFromScan(
     safeLog.warn(SCOPE, 'idempotency read failed; relying on unique index', { scanId, error });
   }
 
-  // 3. Read the scan girths.
-  let scanRow: Record<string, unknown> | null = null;
-  try {
-    const scan = await withTimeout(
-      Promise.resolve(
-        supabase
-          .from('body_scan_measurements')
-          .select('*')
-          .eq('session_id', scanId)
-          .eq('user_id', userId)
-          .order('scan_date', { ascending: false })
-          .limit(1)
-          .maybeSingle(),
-      ),
-      TIMEOUT_MS,
-      `${SCOPE}.read`,
-    );
-    scanRow = (scan?.data as Record<string, unknown> | undefined) ?? null;
-  } catch (error) {
-    safeLog.warn(SCOPE, 'scan read failed', { scanId, error });
-    return { ok: false, reason: 'no_scan_data' };
+  // 3. Get the scan girths. The post-scan hook passes the row it just persisted
+  // (prefetchedScanRow) to skip a redundant read; the explicit import route has no
+  // in-memory row and reads it here.
+  let scanRow: Record<string, unknown> | null = prefetchedScanRow ?? null;
+  if (!scanRow) {
+    try {
+      const scan = await withTimeout(
+        Promise.resolve(
+          supabase
+            .from('body_scan_measurements')
+            .select('*')
+            .eq('session_id', scanId)
+            .eq('user_id', userId)
+            .order('scan_date', { ascending: false })
+            .limit(1)
+            .maybeSingle(),
+        ),
+        TIMEOUT_MS,
+        `${SCOPE}.read`,
+      );
+      scanRow = (scan?.data as Record<string, unknown> | undefined) ?? null;
+    } catch (error) {
+      safeLog.warn(SCOPE, 'scan read failed', { scanId, error });
+      return { ok: false, reason: 'no_scan_data' };
+    }
   }
   if (!scanRow) {
     safeLog.warn(SCOPE, 'no scan measurements row', { scanId });

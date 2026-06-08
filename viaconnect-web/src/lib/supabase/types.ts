@@ -2009,6 +2009,9 @@ export type Database = {
           right_upper_arm: number | null
           right_upper_thigh: number | null
           shoulder_width: number | null
+          source: string
+          scan_id: string | null
+          deleted_at: string | null
           user_id: string
           waist: number | null
         }
@@ -2029,6 +2032,9 @@ export type Database = {
           right_upper_arm?: number | null
           right_upper_thigh?: number | null
           shoulder_width?: number | null
+          source?: string
+          scan_id?: string | null
+          deleted_at?: string | null
           user_id: string
           waist?: number | null
         }
@@ -2049,6 +2055,9 @@ export type Database = {
           right_upper_arm?: number | null
           right_upper_thigh?: number | null
           shoulder_width?: number | null
+          source?: string
+          scan_id?: string | null
+          deleted_at?: string | null
           user_id?: string
           waist?: number | null
         }

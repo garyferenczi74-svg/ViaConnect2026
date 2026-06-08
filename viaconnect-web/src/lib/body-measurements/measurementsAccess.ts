@@ -11,7 +11,9 @@ import type { MeasurementUnit } from './units';
 
 const SCOPE = 'measurements.access';
 const TIMEOUT_MS = 8000;
-const MAX_ROWS = 200;
+// Newest events returned for the history + trend; one daily log for a year. The
+// trend truncates beyond this; revisit with pagination if a power user exceeds it.
+const MAX_ROWS = 365;
 
 export interface MeasurementEvent {
   id: string; // body_tracker_circumference id

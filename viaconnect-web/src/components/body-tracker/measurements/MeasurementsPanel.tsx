@@ -147,7 +147,7 @@ export function MeasurementsPanel({ unit, onChanged }: MeasurementsPanelProps) {
               disabled={!latestScanId || busy}
               className="rounded-full bg-[#2DA5A0] px-4 py-2 text-sm font-medium text-[#0c1622] transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
             >
-              {busy ? 'Working...' : latestScanId ? 'Import from latest scan' : 'No scan yet'}
+              {busy ? 'Working' : latestScanId ? 'Import from latest scan' : 'No scan yet'}
             </button>
           </div>
         ) : (
@@ -195,7 +195,7 @@ export function MeasurementsPanel({ unit, onChanged }: MeasurementsPanelProps) {
         </div>
 
         {loading ? (
-          <div className="flex h-[220px] items-center justify-center text-sm text-white/40">Loading your measurements...</div>
+          <div className="flex h-[220px] items-center justify-center text-sm text-white/40">Loading your measurements</div>
         ) : series.length === 0 ? (
           <div className="flex h-[220px] items-center justify-center px-6 text-center text-sm text-white/40">
             Log a measurement or run a body scan to see your {SITE_LABEL[site].toLowerCase()} trend.
@@ -297,7 +297,7 @@ export function MeasurementsPanel({ unit, onChanged }: MeasurementsPanelProps) {
                       {typeof siteValue === 'number'
                         ? `${SITE_LABEL[site]}: ${displayValue(siteValue, e.entryUnit, unit)} ${unit}`
                         : `${SITE_LABEL[site]} not measured`}
-                      <span className="text-white/30"> , {measured} sites</span>
+                      <span className="text-white/30"> ({measured} sites)</span>
                     </p>
                   </div>
                   <button

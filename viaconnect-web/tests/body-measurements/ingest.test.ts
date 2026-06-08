@@ -132,4 +132,15 @@ describe('ingestMeasurementsFromScan', () => {
     const res = await ingestMeasurementsFromScan({ scanId: 'scan-1', userId: 'u1' }, client);
     expect(res).toEqual({ ok: true, status: 'already_imported', entryId: null, siteCount: 0 });
   });
+
+  it('uses prefetchedScanRow and skips the DB read (post-scan hook path)', async () => {
+    // scanRow null in the stub proves the read is not the source; the prefetched row is.
+    const { client, captured } = makeSupabase({ tier: 'platinum', scanRow: null });
+    const res = await ingestMeasurementsFromScan(
+      { scanId: 'scan-9', userId: 'u1', prefetchedScanRow: SCAN_ROW },
+      client,
+    );
+    expect(res).toEqual({ ok: true, status: 'imported', entryId: 'entry-1', siteCount: 13 });
+    expect(captured.circ.scan_id).toBe('scan-9');
+  });
 });

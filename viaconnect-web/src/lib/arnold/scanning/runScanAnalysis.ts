@@ -316,7 +316,7 @@ async function persistScan(args: {
     .eq('id', session.id);
 
   const cm = (v: { cm: number }): number => round1(v.cm);
-  await supabase.from('body_scan_measurements').insert({
+  const scanMeasurementsRow = {
     user_id: session.user_id,
     session_id: session.id,
     scan_date: session.session_date,
@@ -349,15 +349,17 @@ async function persistScan(args: {
     overall_confidence: composition.blendedConfidence,
     calibrated: composition.calibrated,
     confidence_map: buildConfidenceMap(measurements),
-  } as never);
+  };
+  await supabase.from('body_scan_measurements').insert(scanMeasurementsRow as never);
 
   // Prompt 179c: Platinum members get their scan girths imported into Measurements
   // automatically. Fire and forget: the entitlement gate + idempotency live inside
   // ingestMeasurementsFromScan, and any failure here must never block scan
   // completion (the scan is already marked complete above, and the import is
-  // retryable via the explicit Import from latest scan action).
+  // retryable via the explicit Import from latest scan action). The row just
+  // persisted is passed through to skip a redundant read.
   void ingestMeasurementsFromScan(
-    { scanId: session.id, userId: session.user_id },
+    { scanId: session.id, userId: session.user_id, prefetchedScanRow: scanMeasurementsRow },
     supabase as unknown as IngestClient,
   ).catch(() => {
     /* non-fatal; scan completion is unaffected */
