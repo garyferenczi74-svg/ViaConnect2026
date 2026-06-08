@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { Bed, Zap, Brain, Apple, Activity, Heart, Sparkles, ClipboardList } from 'lucide-react';
 import { DailyScoreGauge } from './DailyScoreGauge';
@@ -379,21 +379,35 @@ export function DailyScoresPanel({ checkinRaw, previewRaw, onNudge }: DailyScore
     };
   }, [computeScores]);
 
-  // Nudge
-  const nudge = topNudge({
-    snapshots: result ? [
-      { id: 'sleep', score: result.sleep.score },
-      { id: 'exercise', score: result.activity.score },
-      { id: 'steps', score: result.activity.score },
-      { id: 'stress', score: result.moodStress.score },
-      { id: 'recovery', score: result.energy.score },
-      { id: 'streak', score: 0 },
-      { id: 'supplements', score: 0 },
-      { id: 'nutrition', score: result.nutrition.score },
-    ] : [],
-    currentStreak: 0,
-    hourOfDay: new Date().getHours(),
-  });
+  // Nudge. Prompt 180h (2026-06-08): memoize on the primitive score
+  // values + the local hour so the returned object identity is stable
+  // across renders. Without this, a fresh object every render fed into
+  // the onNudge effect drove an infinite setState loop in the parent
+  // (Maximum update depth exceeded) once 180g moved rendering out of
+  // this panel.
+  const hourOfDay = new Date().getHours();
+  const sleepScore = result?.sleep.score ?? 0;
+  const activityScore = result?.activity.score ?? 0;
+  const moodStressScore = result?.moodStress.score ?? 0;
+  const energyScore = result?.energy.score ?? 0;
+  const nutritionScore = result?.nutrition.score ?? 0;
+  const nudge = useMemo(
+    () => topNudge({
+      snapshots: result ? [
+        { id: 'sleep', score: sleepScore },
+        { id: 'exercise', score: activityScore },
+        { id: 'steps', score: activityScore },
+        { id: 'stress', score: moodStressScore },
+        { id: 'recovery', score: energyScore },
+        { id: 'streak', score: 0 },
+        { id: 'supplements', score: 0 },
+        { id: 'nutrition', score: nutritionScore },
+      ] : [],
+      currentStreak: 0,
+      hourOfDay,
+    }),
+    [result, sleepScore, activityScore, moodStressScore, energyScore, nutritionScore, hourOfDay],
+  );
 
   // Prompt 180g (2026-06-08): emit the nudge to the parent so it can
   // render the card below the Daily Check-In card. The panel itself
