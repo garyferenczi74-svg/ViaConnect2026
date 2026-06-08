@@ -103,7 +103,7 @@ function NutritionPageInner() {
     <div className="relative z-10 min-h-screen text-white">
       <div className="mx-auto max-w-7xl space-y-6 px-4 py-6 md:px-6 md:py-8">
       <div>
-        <h1 className="text-xl font-bold text-white sm:text-2xl">Nutrition</h1>
+        <h1 className="text-xl font-bold text-white sm:text-2xl">My Nutrition</h1>
         <p className="mt-1 text-sm text-white/40">Track your daily nutrition</p>
       </div>
 

@@ -43,8 +43,8 @@ export const DASHBOARD_SIDEBAR_SECTIONS: DashboardSidebarSection[] = [
   },
   {
     id: "supplement-protocol",
-    label: "Supplement Protocol",
-    shortLabel: "Supplements",
+    label: "My Supplements",
+    shortLabel: "My Supplements",
     icon: "Pill",
     scrollTarget: "#supplement-protocol",
     alwaysVisible: true,
@@ -64,8 +64,8 @@ export const DASHBOARD_SIDEBAR_SECTIONS: DashboardSidebarSection[] = [
   },
   {
     id: "genetics-section",
-    label: "Genetics Protocol",
-    shortLabel: "Genetics Protocol",
+    label: "My Genetics",
+    shortLabel: "My Genetics",
     icon: "Dna",
     scrollTarget: "#genetics-section",
     alwaysVisible: true,

@@ -13,6 +13,7 @@ import {
 import toast from 'react-hot-toast';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
+import { BackToHubLink } from '@/components/body-tracker/hub/BackToHubLink';
 import {
   ConnectionCard,
   type ConnectionSource,
@@ -108,11 +109,12 @@ export default function ConnectionsPage() {
 
   return (
     <div className="space-y-8">
+      <BackToHubLink />
       {/* Page heading */}
       <div>
         <div className="flex items-center gap-2">
           <Link2 className="h-5 w-5 text-[#2DA5A0]" strokeWidth={1.5} />
-          <h1 className="text-lg font-bold text-white">Body Tracker: Connections</h1>
+          <h1 className="text-lg font-bold text-white">Connections</h1>
         </div>
         <p className="mt-1 text-sm text-white/50">
           Connect apps and devices to enrich your data

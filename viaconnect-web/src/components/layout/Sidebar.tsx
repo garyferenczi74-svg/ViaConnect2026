@@ -83,12 +83,12 @@ const CONSUMER: PortalConfig = {
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { href: "/analytics", label: "Analytics", icon: BarChart3 },
     { href: "/wellness/advisor", label: "Hannah AI Wellness Assistant", icon: MessageCircleHeart },
-    { href: "/nutrition", label: "Nutrition Log", icon: Apple },
-    { href: "/supplements", label: "Supplement Protocol", icon: Pill },
-    { href: "/body-tracker", label: "Body Tracker", icon: Activity },
+    { href: "/nutrition", label: "My Nutrition", icon: Apple },
+    { href: "/supplements", label: "My Supplements", icon: Pill },
+    { href: "/body-tracker", label: "My Biology", icon: Activity },
     { href: "/wearables", label: "Wearables Data", icon: Activity },
     { href: "/helix", label: "Helix Rewards", icon: Dna },
-    { href: "/genetics", label: "Genetics Protocol", icon: Dna },
+    { href: "/genetics", label: "My Genetics", icon: Dna },
     { href: "/peptide-protocol", label: "Peptide Education", icon: FlaskConical },
     { href: "/plugins", label: "Plugins", icon: Plug },
     { href: "/messages", label: "Connect", icon: MessageSquare },
@@ -341,7 +341,7 @@ export function Sidebar({
                 ${collapsed ? "justify-center px-0 py-2.5 mx-1" : "px-3 py-2"}
                 ${isActive ? portal.accentBg : "text-gray-400 hover:text-white hover:bg-white/[0.04]"}`}
             >
-              {/* Active accent bar — animated slide */}
+              {/* Active accent bar , animated slide */}
               {isActive && (
                 <motion.span
                   layoutId="sidebar-active-indicator"

@@ -1,10 +1,13 @@
 'use client';
 
-// Prompt 179 + 179b: the Body Tracker "Progress" tab. Renders the six sections
-// top to bottom (Trajectory Planner, Trajectory Chart, Daily Targets, Adaptive
-// Recalibration, Adherence, Safety) responsively. Data model + API keep the
-// body_goals namespace; only the surface is named Progress.
+// Prompt 179 + 179b: the Body Tracker "Progress" surface, reached from the My
+// Biology hub (Prompt 180). Replaces the 180b coming-soon placeholder with the
+// full six-section trajectory + targets view (Trajectory Planner, Trajectory
+// Chart, Daily Targets, Adaptive Recalibration, Adherence, Safety). Data model
+// and API keep the body_goals namespace; only the surface is named Progress.
+// The My Biology hub card already routes here, so no hub config change is needed.
 
+import { BackToHubLink } from '@/components/body-tracker/hub/BackToHubLink';
 import { useActiveGoal } from '@/components/body-tracker/progress/useActiveGoal';
 import { TrajectoryPlanner } from '@/components/body-tracker/progress/TrajectoryPlanner';
 import { TrajectoryChart } from '@/components/body-tracker/progress/TrajectoryChart';
@@ -21,9 +24,10 @@ export default function ProgressPage() {
   const prefillWeightLb = data?.latestWeightLb ?? trajectory?.latestSmoothedLb ?? null;
 
   return (
-    <main aria-label="Progress" className="mx-auto w-full max-w-4xl px-4 py-5 md:px-6">
+    <div aria-label="Progress">
+      <BackToHubLink />
       <header className="mb-5">
-        <h1 className="text-lg font-semibold text-white">Progress</h1>
+        <h1 className="text-lg font-semibold text-white md:text-xl">Progress</h1>
         <p className="text-xs text-white/50">
           Your weight trajectory and the daily targets Gordon sets to keep it on pace.
         </p>
@@ -66,6 +70,6 @@ export default function ProgressPage() {
           <SafetyDisclaimer />
         </div>
       )}
-    </main>
+    </div>
   );
 }

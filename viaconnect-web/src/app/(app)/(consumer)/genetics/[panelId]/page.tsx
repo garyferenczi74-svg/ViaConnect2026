@@ -66,7 +66,7 @@ export default function PanelDeepDivePage({
   const { data: variants, isLoading } = useQuery({
     queryKey: ["panel-variants", userId, panelId],
     queryFn: async () => {
-      // genetic_variants table not in current typegen — cast supabase to any
+      // genetic_variants table not in current typegen , cast supabase to any
       const { data } = await (supabase as any)
         .from("genetic_variants")
         .select("*, product:products(id, name, short_name, price)")
@@ -112,7 +112,7 @@ export default function PanelDeepDivePage({
       <StaggerChild className="flex items-center gap-2 text-sm text-gray-400">
         <Link href="/dashboard" className="text-copper hover:underline">Dashboard</Link>
         <span>/</span>
-        <Link href="/genetics" className="text-copper hover:underline">GeneX360</Link>
+        <Link href="/genetics" className="text-copper hover:underline">My Genetics</Link>
         <span>/</span>
         <span className="text-white">{panel.name}</span>
       </StaggerChild>

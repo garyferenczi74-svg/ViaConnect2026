@@ -53,9 +53,15 @@ export const GAUGE_GRADIENT_STOPS = [
   { offset: 1.0,  color: '#2DA5A0' }, // teal
 ];
 
-// Tab definitions: Prompt #85b merged Muscle into Body Composition (6 primary tabs after #175a removed Photos)
+// Tab definitions: Prompt #85b merged Muscle into Body Composition.
+// Prompt 180 (2026-06-08): the BodyTrackerTabs component is no longer
+// mounted in the layout; the bento hub at /body-tracker is the
+// landing. Dashboard now lives at /body-tracker/dashboard so the
+// dashboard tab href moves accordingly. The constant stays for any
+// future surface that wants to enumerate surfaces, and as the source
+// of truth for the hub config.
 export const BODY_TRACKER_TABS = [
-  { id: 'dashboard',   label: 'Dashboard',        href: '/body-tracker' },
+  { id: 'dashboard',   label: 'Dashboard',        href: '/body-tracker/dashboard' },
   { id: 'composition', label: 'Body Composition', href: '/body-tracker/composition' },
   { id: 'weight',      label: 'Weight',           href: '/body-tracker/weight' },
   { id: 'milestones',  label: 'Milestones',       href: '/body-tracker/milestones' },

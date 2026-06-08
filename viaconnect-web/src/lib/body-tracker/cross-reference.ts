@@ -1,14 +1,14 @@
-// Body Tracker Cross-Reference Engine — typed shapes + confidence tier helper.
+// Body Tracker Cross-Reference Engine : typed shapes + confidence tier helper.
 //
 // Data sources (per Prompt #85c §6, extended #85l):
-//  1. body_tracker      — Arnold's own metrics (always present for any logged user)
-//  2. user_current_supplements — Supplement Protocol active items
-//  3. body_tracker_connections (wearable rows) — Apple Watch, WHOOP, Oura, Garmin, etc.
-//  4. body_tracker_connections (plugin rows)   — Apple Health, Google Fit, Strava, etc.
-//  5. clinical_assessments     — CAQ Phase 1 demographics + symptoms
-//  6. genetic_profiles         — GeneX360 SNP status results
+//  1. body_tracker      : Arnold's own metrics (always present for any logged user)
+//  2. user_current_supplements : Supplement Protocol active items
+//  3. body_tracker_connections (wearable rows) : Apple Watch, WHOOP, Oura, Garmin, etc.
+//  4. body_tracker_connections (plugin rows)   : Apple Health, Google Fit, Strava, etc.
+//  5. clinical_assessments     : CAQ Phase 1 demographics + symptoms
+//  6. genetic_profiles         : GeneX360 SNP status results
 //
-// Lab results are intentionally NOT included in Phase D — no standalone lab table exists
+// Lab results are intentionally NOT included in Phase D : no standalone lab table exists
 // in the live schema. Phase E will add lab plumbing if a dedicated table lands.
 
 export type CrossReferenceSourceId =
@@ -21,7 +21,7 @@ export type CrossReferenceSourceId =
 
 export const CROSS_REFERENCE_SOURCE_LABELS: Record<CrossReferenceSourceId, string> = {
   body_tracker: 'Body Tracker',
-  supplements:  'Supplement Protocol',
+  supplements:  'My Supplements',
   wearable:     'Connect Wearable',
   app:          'Connect App',
   caq:          'Wellness Assessment',
