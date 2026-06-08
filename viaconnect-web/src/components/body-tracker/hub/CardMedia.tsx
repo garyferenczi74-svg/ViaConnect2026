@@ -132,7 +132,7 @@ function VideoMedia({ media, gradientClass }: { media: SurfaceMedia; gradientCla
           preload="metadata"
           aria-hidden="true"
           onError={() => setVideoErrored(true)}
-          className="absolute inset-0 h-full w-full object-contain"
+          className="absolute inset-0 h-full w-full object-cover object-top"
         />
       ) : null}
     </div>

@@ -40,19 +40,24 @@ export interface CircumferenceRecord extends CircumferenceMeasurements {
 // and routes those reads through a separate query against
 // body_tracker_weight, so rowToMeasurements still ignores hip when iterating
 // body_tracker_circumference rows.
+// Column names verified against the live body_tracker_circumference schema
+// (2026-06-08). The live columns for bicep + quadriceps are right_upper_arm /
+// left_upper_arm / right_upper_thigh / left_upper_thigh; an earlier drift mapped
+// these to right_bicep / right_quadriceps (which do not exist), which silently
+// nulled those reads and made a manual entry that filled them fail on insert.
 export const MEASUREMENT_DB_COLUMN: Record<MeasurementKey, string> = {
   neck: 'neck',
   shoulderWidth: 'shoulder_width',
-  rightBicep: 'right_bicep',
+  rightBicep: 'right_upper_arm',
   rightForearm: 'right_forearm',
-  leftBicep: 'left_bicep',
+  leftBicep: 'left_upper_arm',
   leftForearm: 'left_forearm',
   chest: 'chest',
   waist: 'waist',
   hip: 'hips_in',
-  rightQuadriceps: 'right_quadriceps',
+  rightQuadriceps: 'right_upper_thigh',
   rightCalf: 'right_calf',
-  leftQuadriceps: 'left_quadriceps',
+  leftQuadriceps: 'left_upper_thigh',
   leftCalf: 'left_calf',
 };
 

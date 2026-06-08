@@ -42,15 +42,15 @@ interface CircumferenceRow {
   created_at: string;
   neck: number | null;
   shoulder_width: number | null;
-  right_bicep: number | null;
+  right_upper_arm: number | null;
   right_forearm: number | null;
-  left_bicep: number | null;
+  left_upper_arm: number | null;
   left_forearm: number | null;
   chest: number | null;
   waist: number | null;
-  right_quadriceps: number | null;
+  right_upper_thigh: number | null;
   right_calf: number | null;
-  left_quadriceps: number | null;
+  left_upper_thigh: number | null;
   left_calf: number | null;
   body_tracker_entries?: { entry_date: string | null } | null;
 }
