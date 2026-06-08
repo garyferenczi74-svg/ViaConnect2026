@@ -30,6 +30,11 @@ describe('parseDescriptionWithGemini', () => {
   });
 
   it('throws AIRouteError MALFORMED_RESPONSE on garbage JSON', async () => {
+    // Prompt 180e introduced a retry on MALFORMED_RESPONSE so a
+    // second mocked response is required to exercise the path; both
+    // calls return garbage so the final error still surfaces as
+    // MALFORMED_RESPONSE.
+    fetchMock.mockResolvedValueOnce(geminiOk('not json {{{'));
     fetchMock.mockResolvedValueOnce(geminiOk('not json {{{'));
     await expect(parseDescriptionWithGemini('two eggs')).rejects.toMatchObject({ code: 'MALFORMED_RESPONSE' });
   });

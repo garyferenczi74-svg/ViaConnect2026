@@ -8,7 +8,19 @@
 // opens after 5 failures and stays open for 60s, so every subsequent
 // caller hit "AI is temporarily unavailable" for a full minute even
 // when the provider recovered seconds later.
+//
+// Prompt 180f (2026-06-08): Claude (Anthropic Messages API) wired as
+// the text fallback provider. When the Gemini call throws an
+// AIRouteError tagged API_DOWN, RATE_LIMITED, or AUTH_INVALID, the
+// text only helpers (parseDescription, estimateItem) reroute the
+// same prompt to Claude Haiku 4.5 through its own circuit breaker
+// and timeout. The model id is the documented current Haiku id;
+// Haiku is selected over Sonnet to keep fallback cost low (this
+// path fires only during Gemini outages). The image path
+// (parseImageWithGemini) is unchanged: the vision pipeline already
+// has Claude Vision as a tertiary provider further upstream.
 
+import Anthropic from '@anthropic-ai/sdk';
 import { withAbortTimeout } from '@/lib/utils/with-timeout';
 import { getCircuitBreaker } from '@/lib/utils/circuit-breaker';
 import { AIRouteError, classifyGeminiResponse } from '@/lib/errors/classify-ai';
@@ -20,6 +32,22 @@ const BASE = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_M
 const TIMEOUT_MS = 18_000;
 const RETRY_BACKOFF_MS = 800;
 const breaker = getCircuitBreaker('gemini-api', { failureThreshold: 5, resetTimeoutMs: 60_000, halfOpenMaxAttempts: 1 });
+
+// Claude text fallback configuration. Independent breaker so a Gemini
+// outage does not propagate into Claude's failure window.
+const CLAUDE_MODEL = 'claude-haiku-4-5-20251001';
+const CLAUDE_TIMEOUT_MS = 18_000;
+const CLAUDE_MAX_TOKENS = 1024;
+const claudeBreaker = getCircuitBreaker('claude-text-api', {
+  failureThreshold: 5,
+  resetTimeoutMs: 60_000,
+  halfOpenMaxAttempts: 1,
+});
+
+// Codes that should trigger the Claude fallback. Any other AIRouteError
+// (INVALID_INPUT, MALFORMED_RESPONSE, NO_RECOGNITION, etc) reflects a
+// callable upstream and gets rethrown without a fallback attempt.
+const FALLBACK_CODES = new Set(['API_DOWN', 'RATE_LIMITED', 'AUTH_INVALID']);
 
 async function fetchGeminiOnce(url: string, body: unknown): Promise<Response> {
   return withAbortTimeout(
@@ -117,6 +145,78 @@ async function callGemini(body: unknown): Promise<{ text: string; usage: Usage }
   };
 }
 
+// Claude text fallback. Reuses the same system instruction the Gemini
+// path uses, so the produced JSON has the same shape and the existing
+// parsers (ParsedMealSchema, estimateItemAttempt) work unmodified.
+// Returns a Gemini compatible { text, usage } so downstream code is
+// agnostic to which provider answered.
+async function callClaudeText(args: {
+  systemInstruction: string;
+  userText: string;
+}): Promise<{ text: string; usage: Usage }> {
+  const key = process.env.ANTHROPIC_API_KEY;
+  if (!key) {
+    throw new AIRouteError(
+      'AUTH_MISSING',
+      'ANTHROPIC_API_KEY not configured',
+      500,
+      'AI is not configured. Please contact support.',
+    );
+  }
+  const client = new Anthropic({ apiKey: key });
+  try {
+    const message = await claudeBreaker.execute(() =>
+      withAbortTimeout(
+        (s) =>
+          client.messages.create(
+            {
+              model: CLAUDE_MODEL,
+              max_tokens: CLAUDE_MAX_TOKENS,
+              system: args.systemInstruction,
+              messages: [{ role: 'user', content: args.userText }],
+            },
+            { signal: s },
+          ),
+        CLAUDE_TIMEOUT_MS,
+        'claude.messages.create',
+      ),
+    );
+    // Concatenate text blocks; Anthropic returns an array of content
+    // blocks. Non text blocks are ignored because the system prompt
+    // restricts output to JSON.
+    let text = '';
+    for (const block of message.content) {
+      if (block.type === 'text') text += block.text;
+    }
+    if (!text) {
+      throw new AIRouteError(
+        'MALFORMED_RESPONSE',
+        'claude empty content',
+        502,
+        'AI returned no content. Try again or enter manually.',
+      );
+    }
+    return {
+      text,
+      usage: {
+        inputTokens: message.usage?.input_tokens ?? 0,
+        outputTokens: message.usage?.output_tokens ?? 0,
+      },
+    };
+  } catch (err) {
+    if (err instanceof AIRouteError) throw err;
+    safeLog.warn('gemini.callClaudeText', 'claude call failed', {
+      error: err instanceof Error ? err.message : String(err),
+    });
+    throw new AIRouteError(
+      'API_DOWN',
+      `claude ${err instanceof Error ? err.name : 'unknown'}`,
+      503,
+      'AI is temporarily unavailable. Try again or enter manually.',
+    );
+  }
+}
+
 // Recover JSON that Gemini truncated mid-output. Walks the text, tracking
 // the last position where the document was structurally complete (all
 // containers closed). Returns that prefix + balancing close-tokens. Returns
@@ -199,6 +299,15 @@ async function parseDescriptionAttempt(description: string): Promise<ParseResult
   return { parsed, usage };
 }
 
+async function parseDescriptionWithClaude(description: string): Promise<ParseResult> {
+  const { text, usage } = await callClaudeText({
+    systemInstruction: TEXT_PARSE_SYSTEM_INSTRUCTION,
+    userText: description,
+  });
+  const parsed = ParsedMealSchema.parse(parseJsonOrThrow(text));
+  return { parsed, usage };
+}
+
 export async function parseDescriptionWithGemini(description: string): Promise<ParseResult> {
   try {
     return await parseDescriptionAttempt(description);
@@ -210,7 +319,35 @@ export async function parseDescriptionWithGemini(description: string): Promise<P
     if (err instanceof AIRouteError && err.code === 'MALFORMED_RESPONSE') {
       // eslint-disable-next-line no-console
       console.warn('[gemini-client] MALFORMED_RESPONSE; retrying once');
-      return await parseDescriptionAttempt(description);
+      try {
+        return await parseDescriptionAttempt(description);
+      } catch (retryErr) {
+        // Fall through to Claude fallback below if the retry surfaces
+        // a fallback class code.
+        if (retryErr instanceof AIRouteError && FALLBACK_CODES.has(retryErr.code)) {
+          err = retryErr;
+        } else {
+          throw retryErr;
+        }
+      }
+    }
+    // Prompt 180f (2026-06-08): Claude text fallback. Only triggers on
+    // API_DOWN / RATE_LIMITED / AUTH_INVALID so a Gemini outage does
+    // not strand the user. Claude failures rethrow the original
+    // Gemini error so the user message stays consistent.
+    if (err instanceof AIRouteError && FALLBACK_CODES.has(err.code)) {
+      safeLog.warn('gemini.parseDescription', 'gemini failed, trying claude fallback', {
+        gemini_code: err.code,
+      });
+      try {
+        return await parseDescriptionWithClaude(description);
+      } catch (claudeErr) {
+        safeLog.error('gemini.parseDescription', 'claude fallback also failed', {
+          gemini_code: err.code,
+          claude_error: claudeErr instanceof Error ? claudeErr.message : String(claudeErr),
+        });
+        throw err;
+      }
     }
     throw err;
   }
@@ -233,14 +370,7 @@ export async function parseImageWithGemini(buf: Buffer, mimeType: string, note: 
   return { parsed, usage };
 }
 
-async function estimateItemAttempt(name: string, quantity: number, unit: string): Promise<EstimationResult> {
-  const { text, usage } = await callGemini({
-    systemInstruction: { parts: [{ text: ESTIMATION_FALLBACK_INSTRUCTION }] },
-    contents: [{ role: 'user', parts: [{ text: `${quantity} ${unit} ${name}` }] }],
-    // 1024 (was 512): observed truncation at ~4 fields with 512, raised so
-    // Gemini has headroom for all 10 nutrient fields plus formatting.
-    generationConfig: { temperature: 0.1, responseMimeType: 'application/json', maxOutputTokens: 1024 },
-  });
+function decodeEstimation(text: string, usage: Usage): EstimationResult {
   const parsed = parseJsonOrThrow(text) as Record<string, number>;
   return {
     nutrients: {
@@ -259,6 +389,25 @@ async function estimateItemAttempt(name: string, quantity: number, unit: string)
   };
 }
 
+async function estimateItemAttempt(name: string, quantity: number, unit: string): Promise<EstimationResult> {
+  const { text, usage } = await callGemini({
+    systemInstruction: { parts: [{ text: ESTIMATION_FALLBACK_INSTRUCTION }] },
+    contents: [{ role: 'user', parts: [{ text: `${quantity} ${unit} ${name}` }] }],
+    // 1024 (was 512): observed truncation at ~4 fields with 512, raised so
+    // Gemini has headroom for all 10 nutrient fields plus formatting.
+    generationConfig: { temperature: 0.1, responseMimeType: 'application/json', maxOutputTokens: 1024 },
+  });
+  return decodeEstimation(text, usage);
+}
+
+async function estimateItemWithClaude(name: string, quantity: number, unit: string): Promise<EstimationResult> {
+  const { text, usage } = await callClaudeText({
+    systemInstruction: ESTIMATION_FALLBACK_INSTRUCTION,
+    userText: `${quantity} ${unit} ${name}`,
+  });
+  return decodeEstimation(text, usage);
+}
+
 export async function estimateItemWithGemini(name: string, quantity: number, unit: string): Promise<EstimationResult> {
   try {
     return await estimateItemAttempt(name, quantity, unit);
@@ -266,7 +415,31 @@ export async function estimateItemWithGemini(name: string, quantity: number, uni
     if (err instanceof AIRouteError && err.code === 'MALFORMED_RESPONSE') {
       // eslint-disable-next-line no-console
       console.warn('[gemini-client] estimate MALFORMED_RESPONSE; retrying once');
-      return await estimateItemAttempt(name, quantity, unit);
+      try {
+        return await estimateItemAttempt(name, quantity, unit);
+      } catch (retryErr) {
+        if (retryErr instanceof AIRouteError && FALLBACK_CODES.has(retryErr.code)) {
+          err = retryErr;
+        } else {
+          throw retryErr;
+        }
+      }
+    }
+    // Prompt 180f (2026-06-08): Claude text fallback for the per
+    // item estimation path. Same code gating as parseDescription.
+    if (err instanceof AIRouteError && FALLBACK_CODES.has(err.code)) {
+      safeLog.warn('gemini.estimateItem', 'gemini failed, trying claude fallback', {
+        gemini_code: err.code,
+      });
+      try {
+        return await estimateItemWithClaude(name, quantity, unit);
+      } catch (claudeErr) {
+        safeLog.error('gemini.estimateItem', 'claude fallback also failed', {
+          gemini_code: err.code,
+          claude_error: claudeErr instanceof Error ? claudeErr.message : String(claudeErr),
+        });
+        throw err;
+      }
     }
     throw err;
   }
