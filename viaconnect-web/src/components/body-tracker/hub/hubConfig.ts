@@ -86,7 +86,9 @@ export const SURFACES: SurfaceCard[] = [
     // Mobile: full width, slightly taller via min-h on the card.
     gridClass: "md:col-span-2 md:row-span-1 lg:col-span-4 lg:row-span-2",
     media: {
-      kind: "gradient",
+      kind: "video",
+      src: "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Videos/Burn_belly_fat_lose_weight_m.mp4",
+      poster: "",
       gradientClass:
         "bg-[radial-gradient(120%_120%_at_0%_0%,rgba(45,165,160,0.35)_0%,rgba(30,48,84,0.85)_55%,rgba(26,39,68,1)_100%)]",
     },
