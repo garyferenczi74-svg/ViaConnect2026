@@ -92,8 +92,10 @@ export function useCircumferenceData(opts: UseCircumferenceDataOptions): UseCirc
           from: (t: string) => {
             select: (cols: string) => {
               eq: (col: string, val: string) => {
-                order: (col: string, opts: { ascending: boolean }) => {
-                  limit: (n: number) => Promise<{ data: CircumferenceRow[] | null; error: { message: string } | null }>;
+                is: (col: string, val: null) => {
+                  order: (col: string, opts: { ascending: boolean }) => {
+                    limit: (n: number) => Promise<{ data: CircumferenceRow[] | null; error: { message: string } | null }>;
+                  };
                 };
               };
             };
@@ -102,6 +104,7 @@ export function useCircumferenceData(opts: UseCircumferenceDataOptions): UseCirc
           .from('body_tracker_circumference')
           .select('*, body_tracker_entries(entry_date)')
           .eq('user_id', opts.userId!)
+          .is('deleted_at', null)
           .order('created_at', { ascending: false })
           .limit(2);
 

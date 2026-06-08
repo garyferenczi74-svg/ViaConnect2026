@@ -29,6 +29,7 @@ import {
 } from '@/components/body-tracker/CompositionSectionToggle';
 import { UnitToggle } from '@/components/body-tracker/UnitToggle';
 import { MeasurementsGrid } from '@/components/body-tracker/MeasurementsGrid';
+import { MeasurementsPanel } from '@/components/body-tracker/measurements/MeasurementsPanel';
 import { BodyCompositionForm } from '@/components/body-tracker/BodyCompositionForm';
 import { BodyScanUploader, type BodyScanResult } from '@/components/body-tracker/BodyScanUploader';
 import { BodyScanResults } from '@/components/body-tracker/BodyScanResults';
@@ -662,6 +663,7 @@ function CompositionPageInner() {
               unit={unit}
             />
           </div>
+          <MeasurementsPanel unit={unit} onChanged={refreshCirc} />
         </>
       )}
 
