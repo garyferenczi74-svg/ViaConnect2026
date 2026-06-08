@@ -1,4 +1,4 @@
-// Body Tracker — Circumference (13 measurement points) shared types, labels,
+// Body Tracker: Circumference (13 measurement points) shared types, labels,
 // conversions. Updated by Prompt #85d: renamed bicep + quadriceps fields, hip
 // removed from this surface. Updated by Prompt #155a: hip reintroduced to the
 // measurements UI without reversing #85d's storage architecture; hip read +
