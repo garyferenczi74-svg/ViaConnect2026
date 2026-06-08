@@ -44,6 +44,10 @@ export interface SurfaceMedia {
   // Poster shown before a video loads, on reduced motion, or if the
   // video fails.
   poster?: string;
+  // CSS object-position for the cover crop of an image or video, e.g.
+  // "center" or "top". CardMedia defaults to "top" when unset, which
+  // preserves the Dashboard hero framing; set "center" to crop centered.
+  objectPosition?: string;
   // Tailwind classes for the gradient placeholder used when kind is
   // "gradient" or when an image or video fails to load.
   gradientClass: string;
@@ -139,7 +143,10 @@ export const SURFACES: SurfaceCard[] = [
     // Desktop: bottom triad, left.
     gridClass: "md:col-span-1 lg:col-span-2 lg:row-span-1",
     media: {
-      kind: "gradient",
+      kind: "video",
+      src: "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Videos/Body_Weight_scale_Senior_woma.mp4",
+      poster: "",
+      objectPosition: "center",
       gradientClass:
         "bg-[radial-gradient(110%_110%_at_0%_100%,rgba(183,94,24,0.30)_0%,rgba(30,48,84,0.85)_55%,rgba(26,39,68,1)_100%)]",
     },
