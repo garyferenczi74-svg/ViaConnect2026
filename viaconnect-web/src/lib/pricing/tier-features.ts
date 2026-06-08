@@ -8,7 +8,9 @@
 // The membership_tiers table stays the source of truth for prices, names, and
 // the tier set; this module holds only the per-tier feature copy the table
 // does not store.
-export const TIER_FEATURES: Record<string, string[]> = {
+import type { TierId } from '@/types/pricing';
+
+export const TIER_FEATURES: Record<TierId, string[]> = {
   free: [
     'CAQ assessment',
     'Basic Bio Optimization Score (72% confidence)',

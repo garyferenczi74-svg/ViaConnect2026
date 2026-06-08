@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { TIER_FEATURES } from "@/lib/pricing/tier-features";
+import type { TierId } from "@/types/pricing";
 import { ArrowLeft, ArrowRight, Loader2, Plus, X, Sparkles, Zap, Brain, Moon, Flame, Heart, CheckCircle2, Crown, Star, Calendar, ChevronDown, Info, Camera, FolderOpen, SkipForward, BrainCircuit, RefreshCw, Users } from "lucide-react";
 import { ProgressMotivator } from "@/components/caq/ProgressMotivator";
 import { VoiceInput } from "@/components/caq/VoiceInput";
@@ -3072,7 +3073,7 @@ function OnboardingComplete() {
           // Onboarding shows a condensed top 5 of the shared canonical list to
           // keep the post-CAQ plan cards compact; /pricing renders the full
           // list. Same source module, so the wording stays consistent.
-          const features = (TIER_FEATURES[tier.id] ?? []).slice(0, 5);
+          const features = (TIER_FEATURES[tier.id as TierId] ?? []).slice(0, 5);
           const ctaLabel = isFamily ? "Coming Soon" : tier.id === "free" ? "Get Started Free" : `Start ${tier.display_name} Membership`;
           const adultAddOn = ((tier.additional_adult_price_cents ?? 0) / 100).toFixed(2);
           const childAddOn = ((tier.additional_children_chunk_price_cents ?? 0) / 100).toFixed(2);

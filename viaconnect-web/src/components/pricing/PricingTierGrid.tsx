@@ -127,7 +127,7 @@ export function PricingTierGrid({ className = '' }: PricingTierGridProps) {
               billingCycle={billingCycle}
               isCurrentTier={tier.id === currentTier}
               isRecommended={tier.id === 'platinum'}
-              includedFeatures={TIER_FEATURES[tier.id] ?? []}
+              includedFeatures={TIER_FEATURES[tier.id as TierId] ?? []}
               onSelect={handleSelect}
             />
           ))}
