@@ -11,6 +11,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { Camera, ChevronLeft, HelpCircle, ImageUp, Mic, Settings, X } from 'lucide-react';
 import Link from 'next/link';
@@ -806,6 +807,16 @@ interface ReviewingSurfaceProps {
 function ReviewingSurface(props: ReviewingSurfaceProps) {
   const edits = useMealItemEdits({ initialDraft: props.draft });
   const [mealType, setMealType] = useState<MealType>(() => detectMealTypeForNow());
+  // Prompt 180c (2026-06-08): explicit cross-route invalidation. The
+  // QueryClient default staleTime is 5 minutes (lib/providers.tsx) so
+  // a user returning to /nutrition right after a NutriVision save
+  // reads cached meals and the new row never appears. The realtime
+  // postgres_changes channel in useUserMeals is the other refresh
+  // path, but it relies on the meals table being added to the
+  // supabase_realtime publication and a stable WebSocket; both can
+  // fail in production. Belt and suspenders: invalidate on every
+  // successful save.
+  const queryClient = useQueryClient();
 
   const isSaving = props.forceSavingState ?? false;
 
@@ -882,12 +893,18 @@ function ReviewingSurface(props: ReviewingSurfaceProps) {
             requestId: '',
           }
         : (body as unknown as SaveResponse);
+      // Prompt 180c (2026-06-08): invalidate every cached user-meals
+      // query so Today's Meals + Daily Macros + Nutrition Score all
+      // pick up the new row when the user navigates back to
+      // /nutrition. queryKey: ['user-meals'] is the broad prefix; any
+      // (userId, days, includeLegacy) tuple beneath it gets refetched.
+      void queryClient.invalidateQueries({ queryKey: ['user-meals'] });
       props.onSaved(saveResp);
     } catch {
       toast.error('Network error. Try again.');
       props.onSavingChange(false);
     }
-  }, [edits, props, mealType]);
+  }, [edits, props, mealType, queryClient]);
 
   return (
     <AnalysisResult
