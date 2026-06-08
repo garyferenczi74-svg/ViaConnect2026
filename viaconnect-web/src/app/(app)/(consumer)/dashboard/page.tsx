@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useUserDashboardData } from '@/hooks/useUserDashboardData';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { BOSCard } from '@/components/dashboard/bos-card';
@@ -79,6 +80,10 @@ export default function ConsumerDashboard() {
   // Both hooks return safe defaults on null userId so initial render is clean.
   const { meals: prompt168Meals } = useUserMeals(userId, { days: 7, includeLegacy: true });
   const { targets: prompt168Targets } = useNutritionTargets(userId);
+  // Prompt 180d (2026-06-08): explicit cache invalidation on save. The
+  // QueryClient default staleTime is 5 minutes; the realtime channel
+  // alone is unreliable. Same pattern as 180c on NutriVisionTab.
+  const queryClient = useQueryClient();
 
   // USDA fallback when no nutrition_targets row exists yet (pre-CAQ users).
   // QuickLogsSurface always renders so non-CAQ users can still log meals
@@ -144,12 +149,20 @@ export default function ConsumerDashboard() {
       if (handoff) {
         clearNutrivisionManualLogHandoff();
       }
+      // Prompt 180d (2026-06-08): invalidate every cached user-meals
+      // tuple so Today's Meals, Daily Macros, Nutrition Score, and
+      // the Total Daily Macros card all refresh on the next render.
+      // The realtime postgres_changes channel on the meals table is
+      // the other refresh signal but cannot be relied on alone; the
+      // QueryClient default staleTime is 5 minutes and a returning
+      // user would otherwise see stale data.
+      void queryClient.invalidateQueries({ queryKey: ['user-meals'] });
       return true;
     } catch (err) {
       safeLog.warn('dashboard.handleSaveMeal', 'meals POST threw', { error: err });
       return false;
     }
-  }, [userId]);
+  }, [userId, queryClient]);
 
   // Saved check-in data (after submit button pressed)
   const [checkinRaw, setCheckinRaw] = useState<Record<string, any> | null>(null);

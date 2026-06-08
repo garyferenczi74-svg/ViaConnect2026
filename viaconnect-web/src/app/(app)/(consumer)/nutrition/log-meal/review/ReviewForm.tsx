@@ -5,6 +5,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
 import { CheckCircle2, RotateCcw, Trash2 } from 'lucide-react';
 import { MealResultCard } from '@/components/nutrition/MealResultCard';
 import type { NutritionAnalysis } from '@/lib/nutrition/schema';
@@ -16,6 +17,7 @@ interface ReviewFormProps {
 
 export function ReviewForm({ logId, initial }: ReviewFormProps) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [analysis, setAnalysis] = useState<NutritionAnalysis>(initial);
   const [submitting, setSubmitting] = useState<null | 'save' | 'discard'>(null);
   const [error, setError] = useState<string | null>(null);
@@ -35,6 +37,11 @@ export function ReviewForm({ logId, initial }: ReviewFormProps) {
         setSubmitting(null);
         return;
       }
+      // Prompt 180d (2026-06-08): invalidate user-meals so Today's
+      // Meals + Daily Macros + Nutrition Score refresh when the
+      // user lands back on /nutrition. The QueryClient default
+      // staleTime of 5 minutes would otherwise mask the new row.
+      void queryClient.invalidateQueries({ queryKey: ['user-meals'] });
       router.push('/nutrition?logged=1');
     } catch {
       setError('Network error. Try again.');
