@@ -14,6 +14,7 @@ import { navyBodyFat } from './navyBodyFat';
 import { cunbaeBodyFat } from './cunbaeBodyFat';
 import { blendComposition } from './compositionBlender';
 import { applyCalibration } from './calibrationManager';
+import { ingestMeasurementsFromScan, type IngestClient } from '@/lib/body-measurements/ingestScanMeasurements';
 import type {
   BiologicalSex,
   CompositionEstimate,
@@ -349,6 +350,18 @@ async function persistScan(args: {
     calibrated: composition.calibrated,
     confidence_map: buildConfidenceMap(measurements),
   } as never);
+
+  // Prompt 179c: Platinum members get their scan girths imported into Measurements
+  // automatically. Fire and forget: the entitlement gate + idempotency live inside
+  // ingestMeasurementsFromScan, and any failure here must never block scan
+  // completion (the scan is already marked complete above, and the import is
+  // retryable via the explicit Import from latest scan action).
+  void ingestMeasurementsFromScan(
+    { scanId: session.id, userId: session.user_id },
+    supabase as unknown as IngestClient,
+  ).catch(() => {
+    /* non-fatal; scan completion is unaffected */
+  });
 }
 
 function buildConfidenceMap(m: ExtractedMeasurements): Record<string, { confidence: string; source: string }> {
