@@ -91,7 +91,7 @@ export function BentoCard({ surface, metricValue }: BentoCardProps) {
           </p>
         </div>
 
-        <div className="flex items-center gap-1 text-[12px] font-medium text-white/70 transition-colors group-hover:text-white motion-reduce:transition-none">
+        <div className="inline-flex items-center gap-1 self-start rounded-full border border-[#5B8DEF]/30 bg-[#2A4C9E]/25 px-3 py-1.5 text-[12px] font-medium text-white backdrop-blur-md transition-all duration-200 group-hover:border-[#5B8DEF]/55 group-hover:bg-[#2A4C9E]/40 motion-reduce:transition-none">
           <span>Open</span>
           <ChevronRight
             className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transition-none motion-reduce:group-hover:translate-x-0"
