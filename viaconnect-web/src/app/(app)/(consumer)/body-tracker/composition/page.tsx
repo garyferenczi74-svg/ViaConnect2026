@@ -1,6 +1,7 @@
 'use client';
 
 import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
+import { BackToHubLink } from '@/components/body-tracker/hub/BackToHubLink';
 import { useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Plus, Camera } from 'lucide-react';
@@ -672,8 +673,11 @@ function CompositionPageInner() {
 
 export default function CompositionPage() {
   return (
-    <Suspense fallback={<div className="h-12" />}>
-      <CompositionPageInner />
-    </Suspense>
+    <>
+      <BackToHubLink />
+      <Suspense fallback={<div className="h-12" />}>
+        <CompositionPageInner />
+      </Suspense>
+    </>
   );
 }

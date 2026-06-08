@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Heart, Plus, TrendingUp, RefreshCw, Sparkles } from 'lucide-react';
+import { BackToHubLink } from '@/components/body-tracker/hub/BackToHubLink';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Cell, ResponsiveContainer,
   LineChart, Line, ReferenceLine,
@@ -40,6 +41,7 @@ export default function MetabolicPage() {
 
   return (
     <div className="space-y-6" key={refreshKey}>
+      <BackToHubLink />
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-bold text-white">Metabolic & Cardiovascular</h2>
         <button

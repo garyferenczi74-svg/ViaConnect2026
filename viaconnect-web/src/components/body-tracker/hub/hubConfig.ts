@@ -1,0 +1,202 @@
+// Prompt 180 (2026-06-08): My Biology Hub configuration.
+//
+// One typed config drives the six surface cards, the Connections strip,
+// and the Getting Started guidance strip. Each card carries a media
+// descriptor (gradient, image, or video) so Gary can swap a placeholder
+// for a real asset per card with a one line change here.
+//
+// How to swap media per card after the build:
+//   1. Drop the asset under public/body-tracker/, e.g.
+//      public/body-tracker/weight.mp4 and public/body-tracker/weight.jpg.
+//   2. In SURFACES, set that card's media to:
+//      { kind: "video", src: "/body-tracker/weight.mp4",
+//        poster: "/body-tracker/weight.jpg",
+//        gradientClass: "..." }
+//      or, for a still image:
+//      { kind: "image", src: "/body-tracker/weight.jpg",
+//        gradientClass: "..." }
+//   3. Leaving a card as { kind: "gradient", gradientClass: "..." }
+//      keeps the placeholder.
+//
+// Hard rules honored (Section 3): tokens only, Lucide strokeWidth 1.5,
+// Instrument Sans, no emojis, no em or en dashes anywhere.
+
+import {
+  Gauge,
+  Ruler,
+  Scale,
+  Target,
+  Activity,
+  Plug,
+  PlayCircle,
+  type LucideIcon,
+} from "lucide-react";
+
+export type Accent = "teal" | "orange";
+export type MediaKind = "gradient" | "image" | "video";
+
+export interface SurfaceMedia {
+  kind: MediaKind;
+  // For image or video, a path under /public, e.g. "/body-tracker/dashboard.mp4".
+  // Leave src empty to keep the gradient placeholder.
+  src?: string;
+  // Poster shown before a video loads, on reduced motion, or if the
+  // video fails.
+  poster?: string;
+  // Tailwind classes for the gradient placeholder used when kind is
+  // "gradient" or when an image or video fails to load.
+  gradientClass: string;
+}
+
+export interface SurfaceCard {
+  id: string;
+  title: string;
+  description: string;
+  href: string;
+  icon: LucideIcon;
+  accent: Accent;
+  // Key the metric hook resolves; see useHubMetrics.
+  metricKey: string;
+  metricLabel: string;
+  // Grid placement classes applied to the card wrapper.
+  gridClass: string;
+  media: SurfaceMedia;
+}
+
+// Source order is preserved in the DOM so grid auto placement produces
+// the desktop layout from Section 5 without explicit row / column
+// lines: Dashboard, Body Composition, Weight, Milestones, Metabolic.
+//
+// Progress (the sixth surface in the spec's six card layout) is the
+// 179b weight trajectory tab which has not yet landed on main. When it
+// ships, append a Progress entry between Body Composition and Weight
+// and grid placement stays correct because of source order. The
+// current five card layout still reads as an asymmetric bento because
+// Dashboard remains the featured tile.
+export const SURFACES: SurfaceCard[] = [
+  {
+    id: "dashboard",
+    title: "Dashboard",
+    description: "Today's snapshot and your current Bio Optimization signal.",
+    href: "/body-tracker/dashboard",
+    icon: Gauge,
+    accent: "teal",
+    metricKey: "bio_optimization_score",
+    metricLabel: "trending this week",
+    // Desktop: col span 4, row span 2 (top left, featured).
+    // Tablet: col span 2, single row.
+    // Mobile: full width, slightly taller via min-h on the card.
+    gridClass: "md:col-span-2 md:row-span-1 lg:col-span-4 lg:row-span-2",
+    media: {
+      kind: "gradient",
+      gradientClass:
+        "bg-[radial-gradient(120%_120%_at_0%_0%,rgba(45,165,160,0.35)_0%,rgba(30,48,84,0.85)_55%,rgba(26,39,68,1)_100%)]",
+    },
+  },
+  {
+    id: "composition",
+    title: "Body Composition",
+    description: "Segmental body fat, muscle, and the 13 point measurements.",
+    href: "/body-tracker/composition",
+    icon: Ruler,
+    accent: "teal",
+    metricKey: "body_fat_pct",
+    metricLabel: "body fat",
+    // Desktop: right column top.
+    gridClass: "md:col-span-1 lg:col-span-2 lg:row-span-1",
+    media: {
+      kind: "gradient",
+      gradientClass:
+        "bg-[radial-gradient(110%_110%_at_100%_0%,rgba(45,165,160,0.28)_0%,rgba(30,48,84,0.85)_60%,rgba(26,39,68,1)_100%)]",
+    },
+  },
+  {
+    id: "weight",
+    title: "Weight",
+    description: "Daily log and the dual journey: weight loss or muscle building.",
+    href: "/body-tracker/weight",
+    icon: Scale,
+    accent: "orange",
+    metricKey: "latest_weight_lbs",
+    metricLabel: "change this week",
+    // Desktop: bottom triad, left.
+    gridClass: "md:col-span-1 lg:col-span-2 lg:row-span-1",
+    media: {
+      kind: "gradient",
+      gradientClass:
+        "bg-[radial-gradient(110%_110%_at_0%_100%,rgba(183,94,24,0.30)_0%,rgba(30,48,84,0.85)_55%,rgba(26,39,68,1)_100%)]",
+    },
+  },
+  {
+    id: "milestones",
+    title: "Milestones",
+    description: "Weekly goals you set for yourself, tracked and rewarded through Helix.",
+    href: "/body-tracker/milestones",
+    icon: Target,
+    accent: "orange",
+    metricKey: "milestones_done_this_week",
+    metricLabel: "done this week",
+    // Desktop: bottom triad, center.
+    gridClass: "md:col-span-1 lg:col-span-2 lg:row-span-1",
+    media: {
+      kind: "gradient",
+      gradientClass:
+        "bg-[radial-gradient(110%_110%_at_50%_100%,rgba(183,94,24,0.30)_0%,rgba(30,48,84,0.85)_55%,rgba(26,39,68,1)_100%)]",
+    },
+  },
+  {
+    id: "metabolic",
+    title: "Metabolic",
+    description: "Metabolic and cardiovascular markers, resting heart rate, and recovery.",
+    href: "/body-tracker/metabolic",
+    icon: Activity,
+    accent: "teal",
+    metricKey: "resting_hr_bpm",
+    metricLabel: "resting heart rate",
+    // Desktop: bottom triad, right.
+    // Tablet: spans both columns.
+    gridClass: "md:col-span-2 lg:col-span-2 lg:row-span-1",
+    media: {
+      kind: "gradient",
+      gradientClass:
+        "bg-[radial-gradient(110%_110%_at_100%_50%,rgba(45,165,160,0.30)_0%,rgba(30,48,84,0.85)_60%,rgba(26,39,68,1)_100%)]",
+    },
+  },
+];
+
+export interface ConnectionSource {
+  id: string;
+  label: string;
+  // Always false in this prompt; the ingestion series wires real status
+  // in a later release.
+  connected: boolean;
+}
+
+export const CONNECTIONS = {
+  href: "/body-tracker/connections",
+  icon: Plug,
+  title: "Connections",
+  description: "Sync the apps and wearables that feed every surface above.",
+  sources: [
+    { id: "apple-health", label: "Apple Health", connected: false },
+    { id: "oura", label: "Oura", connected: false },
+    { id: "garmin", label: "Garmin", connected: false },
+    { id: "whoop", label: "Whoop", connected: false },
+    { id: "dexcom", label: "Dexcom", connected: false },
+  ] as ConnectionSource[],
+};
+
+export const GUIDE = {
+  icon: PlayCircle,
+  firstRunLabel: "Getting Started",
+  returningLabel: "Refresh",
+  description: "Arnold walks you through My Biology. Guide coming soon.",
+  comingSoonText: "My Biology Guide coming soon",
+  // Reserved Arnold avatar slot. Leave empty to render the avatar
+  // placeholder. Set to a /public path when the real avatar lands.
+  avatarSrc: "",
+  // Flips to true when the real walkthrough lands in a later series.
+  // While false the strip does not navigate and the action is
+  // presentational.
+  ready: false,
+};

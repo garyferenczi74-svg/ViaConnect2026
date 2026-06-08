@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Plus, Scale, Target, TrendingDown } from 'lucide-react';
+import { BackToHubLink } from '@/components/body-tracker/hub/BackToHubLink';
 import { WeightChart } from '@/components/body-tracker/WeightChart';
 import { TimeRangeToggle } from '@/components/body-tracker/TimeRangeToggle';
 import { WeightMeasurementsForm } from '@/components/body-tracker/manual-input/forms/WeightMeasurementsForm';
@@ -62,6 +63,7 @@ export default function WeightPage() {
 
   return (
     <div className="space-y-6" key={refreshKey}>
+      <BackToHubLink />
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-bold text-white">Weight & Measurements</h2>
         <div className="flex items-center gap-3">

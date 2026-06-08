@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Hexagon, Plus, Star, Trophy } from 'lucide-react';
+import { BackToHubLink } from '@/components/body-tracker/hub/BackToHubLink';
 import { MilestoneGauge } from '@/components/body-tracker/MilestoneGauge';
 import { getMilestoneMessage } from '@/lib/body-tracker/calculations';
 import { MilestoneCreatorForm } from '@/components/body-tracker/manual-input/forms/MilestoneCreatorForm';
@@ -76,6 +77,7 @@ export default function MilestonesPage() {
 
   return (
     <div className="space-y-6" key={refreshKey}>
+      <BackToHubLink />
       <ActivityPerformanceCard data={activityData} loading={activityLoading} />
 
       <div className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 backdrop-blur-md p-4 sm:p-5 space-y-5">
