@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { TIER_FEATURES } from "@/lib/pricing/tier-features";
 import { ArrowLeft, ArrowRight, Loader2, Plus, X, Sparkles, Zap, Brain, Moon, Flame, Heart, CheckCircle2, Crown, Star, Calendar, ChevronDown, Info, Camera, FolderOpen, SkipForward, BrainCircuit, RefreshCw, Users } from "lucide-react";
 import { ProgressMotivator } from "@/components/caq/ProgressMotivator";
 import { VoiceInput } from "@/components/caq/VoiceInput";
@@ -2847,40 +2848,6 @@ interface PlanTierRow {
   children_chunk_size: number | null;
   sort_order: number;
 }
-
-const TIER_FEATURES: Record<string, string[]> = {
-  free: [
-    "Bio Optimization assessment",
-    "Basic supplement recommendations",
-    "Community access",
-    "Educational content",
-  ],
-  gold: [
-    "Everything in Free",
-    "Personalized protocol builder",
-    "Monthly AI wellness check-in",
-    "ViaTokens rewards (2x earn rate)",
-    "Priority practitioner messaging",
-    "Protocol adherence tracking",
-  ],
-  platinum: [
-    "Everything in Gold",
-    "GeneX360 genetic panel discount (20% off)",
-    "Unlimited AI Advisor access (all 3 models)",
-    "ViaTokens rewards (5x earn rate)",
-    "Dedicated practitioner matching",
-    "Quarterly wellness review calls",
-    "Early access to new formulations",
-    "Free shipping on all orders",
-  ],
-  platinum_family: [
-    "Everything in Platinum",
-    "Family Wellness Dashboard",
-    "25% GeneX360 family discount",
-    "Sproutables integration",
-    "Quarterly wellness coach consultations",
-  ],
-};
 
 // Degradation only: if the membership_tiers fetch fails or times out, the grid
 // still renders all four tiers instead of an empty or broken plan grid. The

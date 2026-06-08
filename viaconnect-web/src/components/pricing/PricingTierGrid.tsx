@@ -10,61 +10,13 @@ import { PractitionerToggleButton } from '@/components/landing/scroll-sections/s
 import type { MembershipTier, TierId } from '@/types/pricing';
 import { createClient } from '@/lib/supabase/client';
 import { trackPractitionerPricingExpanded } from '@/lib/analytics';
+import { TIER_FEATURES } from '@/lib/pricing/tier-features';
 
 // Shared pricing body. Used both by /pricing standalone route and by the
 // landing PricingSection scroll wrapper. Owns the billing-cycle toggle, the
 // Supabase tier fetch, the current-tier highlight, and the family configurator
 // modal. Consumers wrap it in their own layout (full-page <main> for the
 // standalone route, SectionAnchor for the landing scroll narrative).
-const INCLUDED_FEATURES: Record<TierId, string[]> = {
-  free: [
-    'CAQ assessment',
-    'Basic Bio Optimization Score (72% confidence)',
-    'Static protocol recommendation',
-    'Shop at MSRP',
-    'Research Hub (read only)',
-    'Annual CAQ reassessment',
-  ],
-  gold: [
-    'Everything in Free',
-    'Unlimited Hannah interactions',
-    'Dynamic Bio Optimization Score tracking',
-    '40 day automatic reassessment',
-    'Lab data integration (86% confidence)',
-    'Nutrition logging with AI analysis',
-    'Supplement adherence tracking',
-    'Wearable integration (1 device)',
-    'Helix Rewards earning and redemption',
-    'Subscription discount, 10% off MSRP',
-    'Priority email support',
-  ],
-  platinum: [
-    'Everything in Gold',
-    'GeneX360 genetic data integration',
-    '96% confidence recommendations',
-    'Genetic variant explorer',
-    'Flagship SKU protocol recommendations',
-    'Multiple wearable integration',
-    'Practitioner integration',
-    'Priority Hannah response times',
-    'Advanced analytics and predictive modeling',
-    'Subscription discount, 15% off MSRP',
-    'Helix Rewards Platinum tier (5x multiplier)',
-  ],
-  platinum_family: [
-    'Everything in Platinum for up to 2 adults',
-    'Family Wellness Dashboard',
-    'Family protocol coordination',
-    'Family health history tracking',
-    'Quarterly family wellness consultations',
-    '25% family GeneX360 discount',
-    'Sproutables product integration',
-    'Family Helix Rewards pool',
-    'Family shared billing',
-    'Dedicated family account manager',
-  ],
-};
-
 interface PricingTierGridProps {
   className?: string;
 }
@@ -175,7 +127,7 @@ export function PricingTierGrid({ className = '' }: PricingTierGridProps) {
               billingCycle={billingCycle}
               isCurrentTier={tier.id === currentTier}
               isRecommended={tier.id === 'platinum'}
-              includedFeatures={INCLUDED_FEATURES[tier.id as TierId] ?? []}
+              includedFeatures={TIER_FEATURES[tier.id] ?? []}
               onSelect={handleSelect}
             />
           ))}
