@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { ArrowLeft, ArrowRight, Loader2, Plus, X, Sparkles, Zap, Brain, Moon, Flame, Heart, CheckCircle2, Crown, Star, Calendar, ChevronDown, Info, Camera, FolderOpen, SkipForward, BrainCircuit, RefreshCw } from "lucide-react";
+import { ArrowLeft, ArrowRight, Loader2, Plus, X, Sparkles, Zap, Brain, Moon, Flame, Heart, CheckCircle2, Crown, Star, Calendar, ChevronDown, Info, Camera, FolderOpen, SkipForward, BrainCircuit, RefreshCw, Users } from "lucide-react";
 import { ProgressMotivator } from "@/components/caq/ProgressMotivator";
 import { VoiceInput } from "@/components/caq/VoiceInput";
 import { CalmingHelixBackground } from "@/components/caq/CalmingHelixBackground";
@@ -449,6 +449,12 @@ export default function OnboardingStepPage() {
 
   const [isLoading, setIsLoading] = useState(false);
   const [showProcessing, setShowProcessing] = useState(false);
+  // Prompt 177k (2026-06-07): generation-failure state. When the BOS
+  // polling exhausts attempts or any of the fired engines hard fail,
+  // we switch the interstitial into an error mode that surfaces a
+  // Retry action instead of spinning forever.
+  const [generationError, setGenerationError] = useState<string | null>(null);
+  const [generationAttempt, setGenerationAttempt] = useState(0);
 
   // Prompt 173c 2.5: selected CAQ path. Loaded from caq_paths on mount,
   // with a localStorage mirror so unauthenticated mid-flow reloads keep
@@ -945,6 +951,7 @@ export default function OnboardingStepPage() {
           // animation now masks Hannah's compute window; the auto
           // navigate useEffect below polls /api/bos/current and routes
           // to the dashboard once the canonical score lands.
+          setGenerationError(null);
           setShowProcessing(true);
 
           // Path Z (Phase F): the API now returns 202 Accepted and
@@ -952,8 +959,23 @@ export default function OnboardingStepPage() {
           // trigger the worker plus the fire and forget computeBOS,
           // then rely on the polling useEffect to redirect once the
           // canonical score lands in bio_optimization_history.
+          //
+          // Prompt 177k (2026-06-07): 10s AbortController on the
+          // calculate-bio-optimization fetch. The route returns 202
+          // and enqueues; anything past 10s is a hung connection,
+          // not a slow compute, and the polling loop catches the
+          // canonical-score arrival independently.
           try {
-            await fetch("/api/ai/calculate-bio-optimization", { method: "POST" });
+            const calcCtrl = new AbortController();
+            const calcTid = setTimeout(() => calcCtrl.abort(), 10_000);
+            try {
+              await fetch("/api/ai/calculate-bio-optimization", {
+                method: "POST",
+                signal: calcCtrl.signal,
+              });
+            } finally {
+              clearTimeout(calcTid);
+            }
           } catch {
             // Network failure here is non fatal: the polling loop will
             // attempt to read /api/bos/current and either find a row
@@ -989,15 +1011,25 @@ export default function OnboardingStepPage() {
           }
 
           // ═══ Generate Supplement Recommendations ═══
+          // Prompt 177k (2026-06-07): 15s AbortController. Protocol
+          // generation is optional; failure is fail-open per the
+          // resilience contract and onboarding does not block on it.
           try {
-            const res = await fetch("/api/recommendations/generate", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({}),
-            });
-            if (res.ok) {
-              const data = await res.json();
-              toast.success(`${data.recommendations_count} supplements recommended for you!`, { duration: 4000 });
+            const recCtrl = new AbortController();
+            const recTid = setTimeout(() => recCtrl.abort(), 15_000);
+            try {
+              const res = await fetch("/api/recommendations/generate", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({}),
+                signal: recCtrl.signal,
+              });
+              if (res.ok) {
+                const data = await res.json();
+                toast.success(`${data.recommendations_count} supplements recommended for you!`, { duration: 4000 });
+              }
+            } finally {
+              clearTimeout(recTid);
             }
           } catch { /* protocol generation optional */ }
 
@@ -1034,20 +1066,30 @@ export default function OnboardingStepPage() {
   // Path Z polling: poll /api/bos/current every 5s until score is
   // non null (worker has drained the queue and the canonical compute
   // has landed in bio_optimization_history). Max 36 attempts (3 min);
-  // on timeout we toast a "still being prepared" message and route
-  // forward to the next interstitial so the user is never stuck.
+  // on timeout the generationError state flips so the interstitial
+  // shows a Retry action instead of routing forward silently.
+  //
+  // Prompt 177k (2026-06-07): polling now races against a per-attempt
+  // 8s timeout via AbortController so a hung /api/bos/current call
+  // cannot block the loop. On total timeout the spinner is replaced
+  // with the failure card (Retry kicks generationAttempt which
+  // re-runs this effect).
   useEffect(() => {
     if (!showProcessing) return;
+    if (generationError) return;
     const MAX_ATTEMPTS = 36;
     const INTERVAL_MS = 5000;
+    const PER_ATTEMPT_TIMEOUT_MS = 8000;
     let attempts = 0;
     let cancelled = false;
 
     async function pollOnce(): Promise<void> {
       if (cancelled) return;
       attempts += 1;
+      const ctrl = new AbortController();
+      const tid = setTimeout(() => ctrl.abort(), PER_ATTEMPT_TIMEOUT_MS);
       try {
-        const res = await fetch("/api/bos/current", { cache: "no-store" });
+        const res = await fetch("/api/bos/current", { cache: "no-store", signal: ctrl.signal });
         if (res.ok) {
           const data = await res.json();
           const score: number | null = data?.score ?? null;
@@ -1059,11 +1101,18 @@ export default function OnboardingStepPage() {
       } catch {
         // Single poll failure is tolerable; the loop will retry until
         // MAX_ATTEMPTS or the score lands.
+      } finally {
+        clearTimeout(tid);
       }
       if (attempts >= MAX_ATTEMPTS) {
         if (!cancelled) {
-          toast("Your score is still being prepared. You can continue and check the dashboard in a few minutes.", { duration: 6000 });
-          router.push(`/onboarding/${PHASES[getNextStepIdx(currentIndex, caqPath)].id}`);
+          // Prompt 177k (2026-06-07): surface a Retry instead of
+          // silently routing forward. The baseline protocol the user
+          // already has can stand in until the AI enrichment lands;
+          // routing forward without telling them masks the failure.
+          setGenerationError(
+            "Generating your blueprint is taking longer than expected. Please try again or continue with your baseline protocol.",
+          );
         }
         return;
       }
@@ -1072,10 +1121,52 @@ export default function OnboardingStepPage() {
 
     setTimeout(pollOnce, INTERVAL_MS);
     return () => { cancelled = true; };
-  }, [showProcessing, currentIndex, router]);
+  }, [showProcessing, generationError, generationAttempt, router]);
 
-  // Render Ultrathink processing animation (after last CAQ phase)
+  // Render Ultrathink processing animation (after last CAQ phase).
+  // Prompt 177k (2026-06-07): when generationError is set the
+  // interstitial flips to a failure card with Retry and Continue
+  // actions instead of spinning indefinitely.
   if (showProcessing) {
+    if (generationError) {
+      const continueForward = () => {
+        router.push(`/onboarding/${PHASES[getNextStepIdx(currentIndex, caqPath)].id}`);
+      };
+      const retry = () => {
+        setGenerationError(null);
+        setGenerationAttempt((n) => n + 1);
+      };
+      return (
+        <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center">
+          <Info className="h-10 w-10 text-amber-300" strokeWidth={1.5} aria-hidden="true" />
+          <h2 className="mt-6 text-lg font-semibold text-white">Generation is taking longer than expected</h2>
+          <p className="mt-2 max-w-md text-sm leading-relaxed text-white/65">
+            {generationError}
+          </p>
+          <div className="mt-6 flex w-full max-w-xs flex-col gap-2">
+            <button
+              type="button"
+              onClick={retry}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-teal-400/50 bg-teal-400/10 px-4 py-2.5 text-sm font-medium text-teal-100 transition-colors hover:bg-teal-400/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400/40"
+            >
+              <RefreshCw className="h-4 w-4" strokeWidth={1.5} />
+              Retry
+            </button>
+            <button
+              type="button"
+              onClick={continueForward}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/[0.04] px-4 py-2.5 text-sm font-medium text-white/85 transition-colors hover:bg-white/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
+            >
+              Continue with baseline
+              <ArrowRight className="h-4 w-4" strokeWidth={1.5} />
+            </button>
+          </div>
+          <p className="mt-6 max-w-md text-[11px] leading-relaxed text-white/45">
+            Your CAQ answers are saved. The AI enrichment will backfill in the background; you can check your dashboard anytime.
+          </p>
+        </div>
+      );
+    }
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center">
         <div className="animate-spin" style={{ animationDuration: "8s" }}>
@@ -2740,55 +2831,65 @@ const HEALTH_INDICATORS = [
   { key: "stress", label: "Stress", icon: Heart, color: "#4ADE80", symptomKey: "Stress" },
 ] as const;
 
-const MEMBERSHIP_TIERS = [
-  {
-    name: "Free",
-    price: "0",
-    billingCycle: "forever",
-    features: [
-      "Bio Optimization assessment",
-      "Basic supplement recommendations",
-      "Community access",
-      "Educational content",
-    ],
-    cta: "Get Started Free",
-    tier: "free" as const,
-    popular: false,
-  },
-  {
-    name: "Gold",
-    price: "8.88",
-    billingCycle: "month",
-    features: [
-      "Everything in Free",
-      "Personalized protocol builder",
-      "Monthly AI wellness check-in",
-      "ViaTokens rewards (2x earn rate)",
-      "Priority practitioner messaging",
-      "Protocol adherence tracking",
-    ],
-    cta: "Start Gold Membership",
-    tier: "gold" as const,
-    popular: false,
-  },
-  {
-    name: "Platinum",
-    price: "28.88",
-    billingCycle: "month",
-    features: [
-      "Everything in Gold",
-      "GeneX360 genetic panel discount (20% off)",
-      "Unlimited AI Advisor access (all 3 models)",
-      "ViaTokens rewards (5x earn rate)",
-      "Dedicated practitioner matching",
-      "Quarterly wellness review calls",
-      "Early access to new formulations",
-      "Free shipping on all orders",
-    ],
-    cta: "Start Platinum Membership",
-    tier: "platinum" as const,
-    popular: true,
-  },
+// Prompt 177j: Choose Your Plan is driven off the membership_tiers table so a
+// tier can never silently fall off the page again. Prices, names, and the tier
+// set come from the table at render time; only the per-tier feature bullets
+// live in the frontend (the table stores a single description, not a list).
+interface PlanTierRow {
+  id: string;
+  display_name: string;
+  monthly_price_cents: number;
+  is_family_tier: boolean;
+  base_adults_included: number;
+  base_children_included: number;
+  additional_adult_price_cents: number | null;
+  additional_children_chunk_price_cents: number | null;
+  children_chunk_size: number | null;
+  sort_order: number;
+}
+
+const TIER_FEATURES: Record<string, string[]> = {
+  free: [
+    "Bio Optimization assessment",
+    "Basic supplement recommendations",
+    "Community access",
+    "Educational content",
+  ],
+  gold: [
+    "Everything in Free",
+    "Personalized protocol builder",
+    "Monthly AI wellness check-in",
+    "ViaTokens rewards (2x earn rate)",
+    "Priority practitioner messaging",
+    "Protocol adherence tracking",
+  ],
+  platinum: [
+    "Everything in Gold",
+    "GeneX360 genetic panel discount (20% off)",
+    "Unlimited AI Advisor access (all 3 models)",
+    "ViaTokens rewards (5x earn rate)",
+    "Dedicated practitioner matching",
+    "Quarterly wellness review calls",
+    "Early access to new formulations",
+    "Free shipping on all orders",
+  ],
+  platinum_family: [
+    "Everything in Platinum",
+    "Family Wellness Dashboard",
+    "25% GeneX360 family discount",
+    "Sproutables integration",
+    "Quarterly wellness coach consultations",
+  ],
+};
+
+// Degradation only: if the membership_tiers fetch fails or times out, the grid
+// still renders all four tiers instead of an empty or broken plan grid. The
+// table stays the source of truth; these values mirror the live rows.
+const FALLBACK_TIERS: PlanTierRow[] = [
+  { id: "free", display_name: "Free", monthly_price_cents: 0, is_family_tier: false, base_adults_included: 1, base_children_included: 0, additional_adult_price_cents: null, additional_children_chunk_price_cents: null, children_chunk_size: null, sort_order: 0 },
+  { id: "gold", display_name: "Gold", monthly_price_cents: 888, is_family_tier: false, base_adults_included: 1, base_children_included: 0, additional_adult_price_cents: null, additional_children_chunk_price_cents: null, children_chunk_size: null, sort_order: 1 },
+  { id: "platinum", display_name: "Platinum", monthly_price_cents: 2888, is_family_tier: false, base_adults_included: 1, base_children_included: 0, additional_adult_price_cents: null, additional_children_chunk_price_cents: null, children_chunk_size: null, sort_order: 2 },
+  { id: "platinum_family", display_name: "Platinum+ Family", monthly_price_cents: 4888, is_family_tier: true, base_adults_included: 2, base_children_included: 2, additional_adult_price_cents: 888, additional_children_chunk_price_cents: 888, children_chunk_size: 2, sort_order: 3 },
 ];
 
 function OnboardingComplete() {
@@ -2797,6 +2898,7 @@ function OnboardingComplete() {
   const [bioScore, setBioScore] = useState(0);
   const [animatedScore, setAnimatedScore] = useState(0);
   const [selectedTier, setSelectedTier] = useState<string | null>(null);
+  const [tiers, setTiers] = useState<PlanTierRow[] | null>(null);
   const [savedSymptoms, setSavedSymptoms] = useState<SymptomsData>({});
   const [loading, setLoading] = useState(true);
 
@@ -2861,6 +2963,36 @@ function OnboardingComplete() {
     requestAnimationFrame(tick);
   }, [bioScore]);
 
+  // Prompt 177j: load every active membership tier ordered by sort_order so the
+  // Choose Your Plan grid renders all four tiers (including Platinum+ Family)
+  // and any future active tier automatically. Hardened: timeout via
+  // Promise.race, try/catch fail-open to the fallback set, structured logging,
+  // and never an empty grid.
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const supabase = createClient();
+        const query = supabase
+          .from("membership_tiers")
+          .select("id, display_name, monthly_price_cents, is_family_tier, base_adults_included, base_children_included, additional_adult_price_cents, additional_children_chunk_price_cents, children_chunk_size, sort_order")
+          .eq("is_active", true)
+          .order("sort_order");
+        const timeout = new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error("membership_tiers fetch timed out")), 5000),
+        );
+        const result = (await Promise.race([query, timeout])) as { data: PlanTierRow[] | null; error: unknown };
+        if (result.error) throw result.error;
+        const rows = (result.data ?? []).filter((t) => t && t.id);
+        if (mounted) setTiers(rows.length > 0 ? rows : FALLBACK_TIERS);
+      } catch (err) {
+        console.error("[onboarding:choose-plan] membership_tiers fetch failed, using fallback tiers", err);
+        if (mounted) setTiers(FALLBACK_TIERS);
+      }
+    })();
+    return () => { mounted = false; };
+  }, []);
+
   // Compute sub-scores from saved symptom data (1=bad, 10=good → scale to 0-100)
   function getHealthScore(symptomKey: string): number {
     const raw = savedSymptoms[symptomKey] ?? 5;
@@ -2873,9 +3005,16 @@ function OnboardingComplete() {
   const circ = 2 * Math.PI * r;
   const offset = circ - (animatedScore / 100) * circ;
 
-  function handleSelectTier(tierName: string) {
-    setSelectedTier(tierName);
-    toast.success(`${tierName} membership selected!`, { duration: 3000 });
+  function handleSelectTier(tier: PlanTierRow) {
+    // Prompt 177j: the family tier routes straight into the family signup and
+    // checkout flow at /checkout, where the seat add-on configurator and the
+    // family_members management live. The other tiers continue onboarding.
+    if (tier.is_family_tier) {
+      router.push(`/checkout?tier=${tier.id}&cycle=monthly`);
+      return;
+    }
+    setSelectedTier(tier.id);
+    toast.success(`${tier.display_name} membership selected!`, { duration: 3000 });
     setTimeout(() => {
       router.push("/onboarding/i-welcome");
     }, 1500);
@@ -2948,16 +3087,34 @@ function OnboardingComplete() {
         <div className="flex-1 h-px bg-white/[0.06]" />
       </div>
 
-      {/* Membership Tiers */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch mt-4">
-        {MEMBERSHIP_TIERS.map((tier) => (
+      {/* Membership Tiers, sourced from membership_tiers ordered by sort_order (Prompt 177j) */}
+      {!tiers ? (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="w-6 h-6 text-copper animate-spin" />
+        </div>
+      ) : (
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 items-stretch mt-4">
+        {tiers.map((tier) => {
+          const isGold = tier.id === "gold";
+          const isPlatinum = tier.id === "platinum";
+          const isFamily = tier.is_family_tier;
+          const isPopular = tier.id === "platinum";
+          const priceStr = tier.monthly_price_cents === 0 ? "0" : (tier.monthly_price_cents / 100).toFixed(2);
+          const cycleStr = tier.monthly_price_cents === 0 ? "forever" : "month";
+          const features = TIER_FEATURES[tier.id] ?? [];
+          const ctaLabel = tier.id === "free" ? "Get Started Free" : `Start ${tier.display_name} Membership`;
+          const adultAddOn = ((tier.additional_adult_price_cents ?? 0) / 100).toFixed(2);
+          const childAddOn = ((tier.additional_children_chunk_price_cents ?? 0) / 100).toFixed(2);
+          return (
           <div
-            key={tier.name}
-            className={`relative flex flex-col rounded-2xl p-6 md:p-8 transition-all duration-300
-              ${tier.tier === "gold"
+            key={tier.id}
+            className={`relative flex flex-col rounded-2xl p-6 md:p-7 transition-all duration-300
+              ${isGold
                 ? "border-2 border-copper/60 shadow-[0_0_24px_rgba(183,94,24,0.15)]"
-                : tier.tier === "platinum"
+                : isPlatinum
                 ? "border-2 border-teal/60 shadow-[0_0_32px_rgba(45,165,160,0.2)]"
+                : isFamily
+                ? "border-2 border-teal/40 shadow-[0_0_28px_rgba(45,165,160,0.16)]"
                 : "border border-white/[0.08]"
               }
               hover:-translate-y-1 hover:shadow-[0_12px_40px_rgba(0,0,0,0.3)]`}
@@ -2968,7 +3125,7 @@ function OnboardingComplete() {
             }}
           >
             {/* Most Popular Badge */}
-            {tier.popular && (
+            {isPopular && (
               <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 z-10">
                 <span className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full
                   bg-gradient-to-r from-teal-400 to-teal-500 text-[#1A2744]
@@ -2979,21 +3136,28 @@ function OnboardingComplete() {
             )}
 
             {/* Tier Name + Price */}
-            <div className="mb-6">
+            <div className="mb-5">
               <div className="flex items-center gap-2 mb-2">
-                {tier.tier === "gold" && <Crown className="w-4 h-4 text-copper-400" />}
-                {tier.tier === "platinum" && <Crown className="w-4 h-4 text-teal-400" />}
-                <h3 className="text-lg font-semibold text-white/70">{tier.name}</h3>
+                {isGold && <Crown className="w-4 h-4 text-copper-400" />}
+                {isPlatinum && <Crown className="w-4 h-4 text-teal-400" />}
+                {isFamily && <Users className="w-4 h-4 text-teal-400" strokeWidth={1.5} />}
+                <h3 className="text-lg font-semibold text-white/70">{tier.display_name}</h3>
               </div>
               <div className="flex items-baseline gap-1">
-                <span className="text-4xl md:text-5xl font-bold text-white">${tier.price}</span>
-                <span className="text-base text-white/50">/{tier.billingCycle}</span>
+                <span className="text-4xl md:text-5xl font-bold text-white">${priceStr}</span>
+                <span className="text-base text-white/50">/{cycleStr}</span>
               </div>
+              {isFamily && (
+                <p className="mt-2 text-xs text-white/60 leading-snug">
+                  {tier.base_adults_included} adults and {tier.base_children_included} children included.{" "}
+                  <span className="text-white/40">Add-ons available: additional adult ${adultAddOn}, additional {tier.children_chunk_size} children ${childAddOn}.</span>
+                </p>
+              )}
             </div>
 
             {/* Feature List */}
-            <ul className="flex-grow space-y-3 mb-8">
-              {tier.features.map((f) => (
+            <ul className="flex-grow space-y-2.5 mb-7">
+              {features.map((f) => (
                 <li key={f} className="flex items-start gap-3">
                   <span className="flex-shrink-0 w-5 h-5 mt-0.5 rounded-full
                     bg-gradient-to-br from-copper-400 to-copper-500
@@ -3010,28 +3174,30 @@ function OnboardingComplete() {
 
             {/* CTA Button */}
             <button
-              onClick={() => handleSelectTier(tier.name)}
+              onClick={() => handleSelectTier(tier)}
               disabled={selectedTier !== null}
               className={`mt-auto w-full py-3 rounded-xl font-semibold text-sm transition-all disabled:opacity-50
-                ${tier.tier === "gold"
+                ${isGold
                   ? "bg-gradient-to-r from-[#B75E18] to-[#D4741F] text-white hover:shadow-lg hover:shadow-orange-500/25"
-                  : tier.tier === "platinum"
+                  : isPlatinum || isFamily
                   ? "bg-gradient-to-r from-[#2DA5A0] to-[#38BDB6] text-white hover:shadow-lg hover:shadow-teal-500/25"
                   : "border border-white/20 text-white/80 hover:bg-white/5"
                 }`}
             >
-              {selectedTier === tier.name ? (
+              {selectedTier === tier.id ? (
                 <span className="flex items-center justify-center gap-2">
                   <Loader2 className="w-4 h-4 animate-spin" />
                   Setting up...
                 </span>
               ) : (
-                tier.cta
+                ctaLabel
               )}
             </button>
           </div>
-        ))}
+          );
+        })}
       </div>
+      )}
 
       {/* Skip */}
       <div className="text-center pb-4">
@@ -3039,7 +3205,7 @@ function OnboardingComplete() {
           onClick={() => router.push("/onboarding/i-welcome")}
           className="text-xs text-gray-600 hover:text-gray-400 transition-colors"
         >
-          Skip for now &mdash; go to dashboard
+          Skip for now, go to dashboard
         </button>
       </div>
     </div>

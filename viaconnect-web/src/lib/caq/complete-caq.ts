@@ -1,6 +1,30 @@
-// Complete CAQ Trigger: fires all downstream AI engines after CAQ Phase 7
+// Complete CAQ Trigger: fires all downstream AI engines after CAQ Phase 7.
+//
+// Prompt 177k (2026-06-07): three layer resilience pattern on every
+// downstream engine call. Per engine timeout + try/catch fail open +
+// safeLog. A single slow engine can no longer trap the CAQ generation
+// interstitial. Fire and forget semantics: any engine that times out is
+// recorded in `errors` so the caller can choose to render a retry, but
+// the rest of the engines continue independently.
 
 import { createClient } from "@/lib/supabase/client";
+import { safeLog } from "@/lib/utils/safe-log";
+
+const ENGINE_TIMEOUT_MS = 15_000;
+
+async function fetchWithTimeout(
+  url: string,
+  init: RequestInit,
+  timeoutMs: number,
+): Promise<Response> {
+  const controller = new AbortController();
+  const tid = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(tid);
+  }
+}
 
 export async function completeCAQAndTriggerEngines(): Promise<{
   success: boolean;
@@ -53,36 +77,49 @@ export async function completeCAQAndTriggerEngines(): Promise<{
 
     // ═══ STEP 2: Generate Symptom Profile (Ultrathink) ═══
     try {
-      const res = await fetch("/api/ai/generate-symptom-profile", { method: "POST" });
+      const res = await fetchWithTimeout("/api/ai/generate-symptom-profile", { method: "POST" }, ENGINE_TIMEOUT_MS);
       results["symptom_profile"] = res.ok;
       if (!res.ok) errors.push(`Symptom Profile: ${res.status}`);
     } catch (err) {
       results["symptom_profile"] = false;
       errors.push(`Symptom Profile: ${err instanceof Error ? err.message : "Failed"}`);
+      safeLog.warn("caq.complete.engine", "symptom_profile failed", {
+        error: err instanceof Error ? err.message : String(err),
+      });
     }
 
     // ═══ STEP 3: Generate Wellness Analytics ═══
     try {
-      const res = await fetch("/api/ai/generate-wellness-analytics", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ trigger: "caq_complete" }),
-      });
+      const res = await fetchWithTimeout(
+        "/api/ai/generate-wellness-analytics",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ trigger: "caq_complete" }),
+        },
+        ENGINE_TIMEOUT_MS,
+      );
       results["wellness_analytics"] = res.ok;
       if (!res.ok) errors.push(`Wellness Analytics: ${res.status}`);
     } catch (err) {
       results["wellness_analytics"] = false;
       errors.push(`Wellness Analytics: ${err instanceof Error ? err.message : "Failed"}`);
+      safeLog.warn("caq.complete.engine", "wellness_analytics failed", {
+        error: err instanceof Error ? err.message : String(err),
+      });
     }
 
     // ═══ STEP 4: Check Interactions ═══
     try {
-      const res = await fetch("/api/ai/check-interactions", { method: "POST" });
+      const res = await fetchWithTimeout("/api/ai/check-interactions", { method: "POST" }, ENGINE_TIMEOUT_MS);
       results["interactions"] = res.ok;
       if (!res.ok) errors.push(`Interactions: ${res.status}`);
     } catch (err) {
       results["interactions"] = false;
       errors.push(`Interactions: ${err instanceof Error ? err.message : "Failed"}`);
+      safeLog.warn("caq.complete.engine", "interactions failed", {
+        error: err instanceof Error ? err.message : String(err),
+      });
     }
 
     // ═══ STEP 5: Copy Phase 6 supplements to user_current_supplements + adherence ═══
@@ -182,16 +219,23 @@ export async function completeCAQAndTriggerEngines(): Promise<{
 
     // ═══ STEP 6: Trigger Ultrathink Protocol Generation ═══
     try {
-      const ultraRes = await fetch("/api/ultrathink/recommend", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ trigger: "caq-complete" }),
-      });
+      const ultraRes = await fetchWithTimeout(
+        "/api/ultrathink/recommend",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ trigger: "caq-complete" }),
+        },
+        ENGINE_TIMEOUT_MS,
+      );
       results["ultrathink_protocol"] = ultraRes.ok;
       if (!ultraRes.ok) errors.push(`Ultrathink: ${ultraRes.status}`);
     } catch (err) {
       results["ultrathink_protocol"] = false;
       errors.push(`Ultrathink: ${err instanceof Error ? err.message : "Failed"}`);
+      safeLog.warn("caq.complete.engine", "ultrathink_protocol failed", {
+        error: err instanceof Error ? err.message : String(err),
+      });
     }
 
     const allPassed = Object.values(results).every((v) => v === true);
