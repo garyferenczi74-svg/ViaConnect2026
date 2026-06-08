@@ -1,15 +1,39 @@
 // Prompt #164 Layer 1 + fallback: three call sites against the Gemini 2.5
 // Flash REST API. Direct fetch, no SDK, no package.json change.
+//
+// Prompt 180e (2026-06-08): bumped per call timeout from 10s to 18s and
+// added a single retry on transient 5xx so a momentary Gemini blip no
+// longer trips the circuit breaker. Production logs surfaced a burst
+// of analyze-text 503s where Gemini was returning 5xx; the breaker
+// opens after 5 failures and stays open for 60s, so every subsequent
+// caller hit "AI is temporarily unavailable" for a full minute even
+// when the provider recovered seconds later.
 
 import { withAbortTimeout } from '@/lib/utils/with-timeout';
 import { getCircuitBreaker } from '@/lib/utils/circuit-breaker';
 import { AIRouteError, classifyGeminiResponse } from '@/lib/errors/classify-ai';
+import { safeLog } from '@/lib/utils/safe-log';
 import { TEXT_PARSE_SYSTEM_INSTRUCTION, PHOTO_PARSE_SYSTEM_INSTRUCTION, ESTIMATION_FALLBACK_INSTRUCTION, GEMINI_MODEL } from './gemini-prompts';
 import { ParsedMealSchema, type ParsedMeal } from './parsed-meal-schema';
 
 const BASE = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
-const TIMEOUT_MS = 10_000;
+const TIMEOUT_MS = 18_000;
+const RETRY_BACKOFF_MS = 800;
 const breaker = getCircuitBreaker('gemini-api', { failureThreshold: 5, resetTimeoutMs: 60_000, halfOpenMaxAttempts: 1 });
+
+async function fetchGeminiOnce(url: string, body: unknown): Promise<Response> {
+  return withAbortTimeout(
+    (s) =>
+      fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+        signal: s,
+      }),
+    TIMEOUT_MS,
+    'gemini.generateContent',
+  );
+}
 
 export interface Usage {
   inputTokens: number;
@@ -45,14 +69,35 @@ function requireKey(): string {
 
 async function callGemini(body: unknown): Promise<{ text: string; usage: Usage }> {
   const key = requireKey();
-  const res = await breaker.execute(() =>
-    withAbortTimeout((s) => fetch(`${BASE}?key=${key}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-      signal: s,
-    }), TIMEOUT_MS, 'gemini.generateContent'),
-  );
+  const url = `${BASE}?key=${key}`;
+  // Prompt 180e (2026-06-08): single retry on 5xx with a short backoff.
+  // The breaker counts only the outer execute result so one transient
+  // blip no longer pushes us toward the failureThreshold of 5. 429
+  // (rate limited) is not retried because retry would just trip the
+  // upstream quota harder; the breaker still handles that case.
+  const res = await breaker.execute(async () => {
+    let first: Response | null = null;
+    try {
+      first = await fetchGeminiOnce(url, body);
+    } catch (err) {
+      // Network or timeout error: retry once before letting the breaker
+      // count this attempt.
+      safeLog.warn('gemini.callGemini', 'first attempt threw, retrying', {
+        error: err instanceof Error ? err.message : String(err),
+      });
+      await new Promise((r) => setTimeout(r, RETRY_BACKOFF_MS));
+      return fetchGeminiOnce(url, body);
+    }
+    if (first.status >= 500 && first.status <= 599) {
+      safeLog.warn('gemini.callGemini', 'first attempt 5xx, retrying', {
+        status: first.status,
+      });
+      await new Promise((r) => setTimeout(r, RETRY_BACKOFF_MS));
+      const second = await fetchGeminiOnce(url, body);
+      return second;
+    }
+    return first;
+  });
   if (!res.ok) {
     const c = classifyGeminiResponse(res.status);
     throw new AIRouteError(c.code, `gemini ${res.status}`, c.httpStatus, c.userMessage);
