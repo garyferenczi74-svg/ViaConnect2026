@@ -499,6 +499,10 @@ export default function OnboardingStepPage() {
   const [weightUnit, setWeightUnit] = useState<"kg" | "lbs">("lbs");
   const [heightFt, setHeightFt] = useState("");
   const [heightIn, setHeightIn] = useState("");
+  // Prompt 177i: raw lbs display string for the Weight input, mirroring
+  // heightFt/heightIn. demographics.weight stays canonical kg; this holds
+  // exactly what the user types so keystrokes never round trip through kg.
+  const [weightLbs, setWeightLbs] = useState("");
   const [bodyType, setBodyType] = useState<string | null>(null);
 
   // Phase 1b state, Health Concerns & Family History
@@ -686,6 +690,12 @@ export default function OnboardingStepPage() {
               setHeightIn(String(Math.round(totalIn % 12)));
             }
           }
+          // Mirror the height hydration for weight so the default lbs input
+          // shows the saved value (canonical is kg) on return to Phase 1.
+          if (d1.weight) {
+            const kg = parseFloat(String(d1.weight));
+            if (kg > 0) setWeightLbs(String(Math.round(kg * 2.20462)));
+          }
           if (d1.bodyType) setBodyType(String(d1.bodyType));
         }
       } catch { /* silent: assessment_results may be empty for brand-new users */ }
@@ -710,6 +720,11 @@ export default function OnboardingStepPage() {
                 setHeightFt(String(Math.floor(totalIn / 12)));
                 setHeightIn(String(Math.round(totalIn % 12)));
               }
+            }
+            // Hydrate weightLbs from stored kg value (default unit is lbs)
+            if (d.weight) {
+              const kg = parseFloat(String(d.weight));
+              if (kg > 0) setWeightLbs(String(Math.round(kg * 2.20462)));
             }
             // Hydrate body type
             if (d.bodyType) {
@@ -1392,7 +1407,7 @@ export default function OnboardingStepPage() {
                 <div className="flex items-center justify-between mb-1.5">
                   <label className="text-sm font-medium text-white/70">Weight <span className="text-white/30">(optional)</span></label>
                   <div className="flex items-center gap-1 p-0.5 rounded-md bg-dark-surface border border-dark-border">
-                    <button type="button" onClick={() => setWeightUnit("lbs")} className={`text-[10px] px-2 py-0.5 rounded transition-colors ${weightUnit === "lbs" ? "bg-copper/20 text-copper" : "text-gray-500"}`}>lbs</button>
+                    <button type="button" onClick={() => { setWeightUnit("lbs"); setWeightLbs(demographics.weight ? String(Math.round(parseFloat(demographics.weight) * 2.20462)) : ""); }} className={`text-[10px] px-2 py-0.5 rounded transition-colors ${weightUnit === "lbs" ? "bg-copper/20 text-copper" : "text-gray-500"}`}>lbs</button>
                     <button type="button" onClick={() => setWeightUnit("kg")} className={`text-[10px] px-2 py-0.5 rounded transition-colors ${weightUnit === "kg" ? "bg-copper/20 text-copper" : "text-gray-500"}`}>kg</button>
                   </div>
                 </div>
@@ -1400,7 +1415,7 @@ export default function OnboardingStepPage() {
                   <input type="number" value={demographics.weight} onChange={(e) => setDemographics({ ...demographics, weight: e.target.value })} className={inputClass} placeholder="70" />
                 ) : (
                   <div className="relative">
-                    <input type="number" value={demographics.weight ? String(Math.round(parseFloat(demographics.weight) * 2.20462)) : ""} onChange={(e) => { const lbs = parseFloat(e.target.value) || 0; setDemographics({ ...demographics, weight: String(Math.round(lbs / 2.20462) || "") }); }} className={inputClass} placeholder="154" />
+                    <input type="number" value={weightLbs} onChange={(e) => { setWeightLbs(e.target.value); const lbs = parseFloat(e.target.value); setDemographics({ ...demographics, weight: Number.isFinite(lbs) && lbs > 0 ? String(Math.round((lbs / 2.20462) * 10) / 10) : "" }); }} className={inputClass} placeholder="154" />
                     <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-600">lbs</span>
                   </div>
                 )}
