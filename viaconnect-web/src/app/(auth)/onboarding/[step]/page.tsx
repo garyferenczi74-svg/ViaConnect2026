@@ -3069,7 +3069,10 @@ function OnboardingComplete() {
           const isPopular = tier.id === "platinum";
           const priceStr = tier.monthly_price_cents === 0 ? "0" : (tier.monthly_price_cents / 100).toFixed(2);
           const cycleStr = tier.monthly_price_cents === 0 ? "forever" : "month";
-          const features = TIER_FEATURES[tier.id] ?? [];
+          // Onboarding shows a condensed top 5 of the shared canonical list to
+          // keep the post-CAQ plan cards compact; /pricing renders the full
+          // list. Same source module, so the wording stays consistent.
+          const features = (TIER_FEATURES[tier.id] ?? []).slice(0, 5);
           const ctaLabel = isFamily ? "Coming Soon" : tier.id === "free" ? "Get Started Free" : `Start ${tier.display_name} Membership`;
           const adultAddOn = ((tier.additional_adult_price_cents ?? 0) / 100).toFixed(2);
           const childAddOn = ((tier.additional_children_chunk_price_cents ?? 0) / 100).toFixed(2);
