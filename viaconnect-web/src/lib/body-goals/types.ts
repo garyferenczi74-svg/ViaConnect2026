@@ -7,6 +7,9 @@ export type GoalActivityLevel = 'sedentary' | 'light' | 'moderate' | 'very' | 'e
 export type GoalStatus = 'active' | 'achieved' | 'paused' | 'abandoned';
 export type TargetSource = 'initial_plan' | 'weekly_recalibration' | 'manual_override' | 'revert';
 export type BmrMethod = 'katch_mcardle' | 'mifflin_st_jeor';
+// Prompt 179a: where a goal write originated, and the onboarding pace preset.
+export type GoalOrigin = 'caq' | 'goals_tab' | 'weight_card' | 'caq_backfill';
+export type PacePreset = 'gentle' | 'steady' | 'ambitious' | 'custom_date';
 
 export interface BodyGoalRow {
   id: string;
@@ -23,6 +26,11 @@ export interface BodyGoalRow {
   age_years: number | null;
   height_in: number | null;
   activity_level: GoalActivityLevel | null;
+  // Prompt 179a additions.
+  origin: GoalOrigin | null;
+  target_pace_preset: PacePreset | null;
+  needs_resync: boolean;
+  legacy_synced_at: string | null;
   created_at: string;
   updated_at: string;
 }

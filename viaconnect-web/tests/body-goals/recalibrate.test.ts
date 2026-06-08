@@ -7,6 +7,7 @@ const goal: BodyGoalRow = {
   start_weight_lb: 200, goal_weight_lb: 180, goal_bodyfat_pct: null,
   start_date: '2026-05-01', target_date: null, target_rate_lb_per_week: 1,
   sex: 'male', age_years: 35, height_in: 70, activity_level: 'light',
+  origin: 'caq', target_pace_preset: 'steady', needs_resync: false, legacy_synced_at: null,
   created_at: '', updated_at: '',
 };
 

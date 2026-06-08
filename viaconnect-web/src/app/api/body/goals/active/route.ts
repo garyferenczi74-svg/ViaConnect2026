@@ -15,6 +15,8 @@ import {
   getLoggedKcalWindow,
 } from '@/lib/body-goals/goalsData';
 import { ewmaSeries } from '@/lib/body-goals/ewma';
+import { backfillActiveGoalIfMissing } from '@/lib/body-goals/backfill';
+import { projectAndMarkSync } from '@/lib/body-goals/projectWeightGoal';
 
 const DAY_MS = 86_400_000;
 function addDaysISO(from: string, days: number): string {
@@ -27,10 +29,24 @@ export async function GET() {
     const { data: { user } } = await withTimeout(sb.auth.getUser(), 5000, 'api.body.goals.active.auth');
     if (!user) return NextResponse.json({ ok: false, error: 'unauthorized' }, { status: 401 });
 
-    const goal = await getActiveGoal(user.id, sb);
+    // 179a: lazily backfill an active goal from user_weight_goals when a
+    // member has a legacy weight goal but no body_goals row yet.
+    let goal = await getActiveGoal(user.id, sb);
+    if (!goal) {
+      goal = await backfillActiveGoalIfMissing(user.id, sb);
+    }
     if (!goal) {
       const latest = await getLatestWeight(user.id, sb);
       return NextResponse.json({ ok: true, goal: null, latestWeightLb: latest?.weightLb ?? null });
+    }
+    // 179a self-heal: if the prior write-through projection failed, re-run it
+    // on this read and clear the flag.
+    if (goal.needs_resync) {
+      await projectAndMarkSync(
+        goal.id,
+        { userId: user.id, goalWeightLb: goal.goal_weight_lb, startWeightLb: goal.start_weight_lb },
+        sb,
+      );
     }
 
     const today = new Date().toISOString().slice(0, 10);

@@ -42,3 +42,31 @@ export async function projectGoalToWeightGoals(
     return { ok: false };
   }
 }
+
+/**
+ * Prompt 179a self-heal: project, then stamp the sync flags on the body_goals
+ * row. On success clears needs_resync and records legacy_synced_at; on failure
+ * sets needs_resync so the next read re-projects. The flag update is itself
+ * fail-soft so it can never block the authoritative body_goals write.
+ */
+export async function projectAndMarkSync(
+  goalId: string,
+  args: { userId: string; goalWeightLb: number; startWeightLb: number },
+  supabase: SupabaseClient,
+): Promise<{ ok: boolean }> {
+  const result = await projectGoalToWeightGoals(args, supabase);
+  try {
+    const patch = result.ok
+      ? { needs_resync: false, legacy_synced_at: new Date().toISOString() }
+      : { needs_resync: true };
+    await withTimeout(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (supabase as any).from('body_goals').update(patch).eq('id', goalId),
+      8000,
+      'projectAndMarkSync.flags',
+    );
+  } catch (err) {
+    safeLog.warn('projectAndMarkSync', 'sync flag update failed', { err, goalId });
+  }
+  return result;
+}
