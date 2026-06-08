@@ -85,7 +85,7 @@ const CONSUMER: PortalConfig = {
     { href: "/wellness/advisor", label: "Hannah AI Wellness Assistant", icon: MessageCircleHeart },
     { href: "/nutrition", label: "My Nutrition", icon: Apple },
     { href: "/supplements", label: "My Supplements", icon: Pill },
-    { href: "/body-tracker", label: "Body Tracker", icon: Activity },
+    { href: "/body-tracker", label: "My Biology", icon: Activity },
     { href: "/wearables", label: "Wearables Data", icon: Activity },
     { href: "/helix", label: "Helix Rewards", icon: Dna },
     { href: "/genetics", label: "My Genetics", icon: Dna },
