@@ -32,12 +32,12 @@ import { bmiFromKgCm } from '@/lib/weight-goals/guardrails';
 import type { GoalDirection } from '@/lib/weight-goals/accessor';
 import {
   ACTIVITY_MULTIPLIERS,
-  LBS_PER_KG_MACRO,
   MACRO_CONFIG,
   type DietaryChoice,
   type MacroActivityLevel,
 } from './macro-config';
 import type { LbmResolution } from './lbm';
+import { deriveMacroSplit } from './macroSplit';
 
 // ---------------------------------------------------------------------------
 // Public input + output types
@@ -179,106 +179,8 @@ function clampCalorieTarget(
   return { value, clamps };
 }
 
-// 173a Step 2: protein = 0.8 g/lb LBM * goal multiplier. Apply the 40% kcal
-// ceiling (carried from 173 5.4) so very-low-calorie + high-multiplier
-// combos cannot let protein dominate the day.
-function resolveProteinGrams(
-  direction: GoalDirection,
-  lbmKg: number,
-  calorieTargetKcal: number,
-): { proteinG: number; clamps: ClampReason[] } {
-  const clamps: ClampReason[] = [];
-  const multiplier =
-    direction === 'lose' ? MACRO_CONFIG.protein_multiplier_lose
-      : direction === 'gain' ? MACRO_CONFIG.protein_multiplier_gain
-      : MACRO_CONFIG.protein_multiplier_maintain;
-  const lbmLbs = lbmKg * LBS_PER_KG_MACRO;
-  let proteinG = MACRO_CONFIG.protein_g_per_lb_lbm * multiplier * lbmLbs;
-
-  // 40% kcal-share sanity ceiling (carried from 173 5.4). When protein kcal
-  // would exceed the ceiling, scale protein down to fit.
-  const proteinKcalCeiling = calorieTargetKcal * MACRO_CONFIG.protein_max_pct_of_kcal;
-  if (proteinG * 4 > proteinKcalCeiling) {
-    proteinG = proteinKcalCeiling / 4;
-    clamps.push('protein_pct_ceiling');
-  }
-
-  return { proteinG, clamps };
-}
-
-function fatPctForDiet(diet: DietaryChoice): number {
-  switch (diet) {
-    case 'mediterranean':
-      return MACRO_CONFIG.fat_pct_mediterranean;
-    case 'low_carb':
-      return MACRO_CONFIG.fat_pct_low_carb;
-    case 'higher_carb':
-      return MACRO_CONFIG.fat_pct_higher_carb;
-    case 'plant_based':
-      return MACRO_CONFIG.fat_pct_plant_based;
-    case 'keto':
-      // Keto inverts the split; the keto branch in resolveFatAndCarb
-      // does not use this value. The fat_pct_low_carb value is the
-      // closest defensible default and is returned only for
-      // completeness so the function is total.
-      return MACRO_CONFIG.fat_pct_low_carb;
-    case 'balanced':
-    default:
-      return MACRO_CONFIG.fat_pct_balanced;
-  }
-}
-
-// 173a Section 5 Step 3: fat + carbohydrate by dietary choice.
-function resolveFatAndCarb(
-  diet: DietaryChoice,
-  calorieTargetKcal: number,
-  proteinG: number,
-  currentWeightKg: number,
-): { fatG: number; carbG: number; clamps: ClampReason[] } {
-  const clamps: ClampReason[] = [];
-  const proteinKcal = proteinG * 4;
-  const remainingKcal = calorieTargetKcal - proteinKcal;
-  const fatHormonalFloorG = MACRO_CONFIG.min_fat_g_per_kg * currentWeightKg;
-  const fatHormonalFloorKcal = fatHormonalFloorG * 9;
-
-  if (diet === 'keto') {
-    // Keto inversion: carbs anchored at keto_carb_cap_g; fat absorbs the
-    // remainder with the healthy-fat floor as the lower bound.
-    const carbG = MACRO_CONFIG.keto_carb_cap_g;
-    const carbKcal = carbG * 4;
-    let fatKcal = remainingKcal - carbKcal;
-    if (fatKcal < fatHormonalFloorKcal) {
-      fatKcal = fatHormonalFloorKcal;
-      clamps.push('fat_hormonal_floor');
-    }
-    const fatG = fatKcal / 9;
-    clamps.push('keto_carb_cap');
-    return { fatG, carbG, clamps };
-  }
-
-  // Non-keto path: fat as a share of calorie target with hormonal floor.
-  let fatKcal = calorieTargetKcal * fatPctForDiet(diet);
-  if (fatKcal < fatHormonalFloorKcal) {
-    fatKcal = fatHormonalFloorKcal;
-    clamps.push('fat_hormonal_floor');
-  }
-
-  let carbKcal = Math.max(0, remainingKcal - fatKcal);
-
-  if (diet === 'low_carb') {
-    // Cap carbs at low_carb_cap_pct of calorie target; freed calories
-    // reallocate to fat per 173a Section 5 Step 3.
-    const carbCapKcal = calorieTargetKcal * MACRO_CONFIG.low_carb_cap_pct;
-    if (carbKcal > carbCapKcal) {
-      const freedKcal = carbKcal - carbCapKcal;
-      carbKcal = carbCapKcal;
-      fatKcal += freedKcal;
-      clamps.push('low_carb_cap');
-    }
-  }
-
-  return { fatG: fatKcal / 9, carbG: carbKcal / 4, clamps };
-}
+// Steps 4 to 6 (protein, fat, carb, reconcile, fiber) now live in
+// ./macroSplit.ts as deriveMacroSplit, shared with the Prompt 179 goal engine.
 
 // ---------------------------------------------------------------------------
 // Main engine
@@ -356,56 +258,15 @@ export function generateMacroTargets(input: GenerateMacroTargetsInput): Generate
   const calorieTargetKcal = Math.round(clamped.value);
   const calorieClamps = clamped.clamps;
 
-  // Step 4 (173a): protein = 0.8 g/lb LBM * goal multiplier with the 40% ceiling.
-  const protein = resolveProteinGrams(effectiveDirection, leanBodyMass.lbmKg, calorieTargetKcal);
-  let proteinG = protein.proteinG;
-
-  // Step 5 (173a): fat + carb by dietary choice.
-  const fatAndCarb = resolveFatAndCarb(
-    effectiveDietaryChoice,
+  // Steps 4 to 6 (173a): protein, fat, carb, reconcile, fiber. Delegated to
+  // deriveMacroSplit (Prompt 179) so the goal engine reuses identical math.
+  const split = deriveMacroSplit({
     calorieTargetKcal,
-    proteinG,
-    body.currentWeightKg,
-  );
-  let fatG = fatAndCarb.fatG;
-  let carbG = fatAndCarb.carbG;
-  const fatCarbClamps = fatAndCarb.clamps;
-
-  // Reconciliation guard (173a Section 5). Non-keto: protein anchored, fat
-  // floors to healthy minimum, carbs absorb remainder. Keto: carbs anchored
-  // at the cap, fat is the balancer (handled inside resolveFatAndCarb).
-  const reconcileClamps: ClampReason[] = [];
-  if (effectiveDietaryChoice !== 'keto') {
-    let carbKcal = carbG * 4;
-    if (carbKcal < 0) {
-      const fatHormonalFloorG = MACRO_CONFIG.min_fat_g_per_kg * body.currentWeightKg;
-      // Reduce fat toward hormonal floor first.
-      const fatExcessKcal = (fatG - fatHormonalFloorG) * 9;
-      if (fatExcessKcal > 0) {
-        const reduction = Math.min(fatExcessKcal, -carbKcal);
-        fatG -= reduction / 9;
-        carbKcal += reduction;
-        reconcileClamps.push('carb_reconcile_fat');
-      }
-    }
-    if (carbKcal < 0) {
-      // Reduce protein toward a defensible floor (1.2 g/kg LBM).
-      const proteinFloorG = 1.2 * leanBodyMass.lbmKg;
-      const proteinExcessKcal = (proteinG - proteinFloorG) * 4;
-      if (proteinExcessKcal > 0) {
-        const reduction = Math.min(proteinExcessKcal, -carbKcal);
-        proteinG -= reduction / 4;
-        carbKcal += reduction;
-        reconcileClamps.push('carb_reconcile_protein');
-      }
-    }
-    carbG = Math.max(0, carbKcal / 4);
-  }
-
-  // Step 6 (173a): fiber = 14 g per 1000 kcal of calorie target, rounded.
-  const fiberG = Math.round(
-    (MACRO_CONFIG.fiber_g_per_1000_kcal * calorieTargetKcal) / 1000,
-  );
+    direction: effectiveDirection,
+    lbmKg: leanBodyMass.lbmKg,
+    currentWeightKg: body.currentWeightKg,
+    dietaryChoice: effectiveDietaryChoice,
+  });
 
   // Implied weekly rate of change in kg (Section 7).
   const weeklyKcalDelta = (tdee - calorieTargetKcal) * 7;
@@ -415,19 +276,17 @@ export function generateMacroTargets(input: GenerateMacroTargetsInput): Generate
 
   const clampsFired: ClampReason[] = [
     ...calorieClamps,
-    ...protein.clamps,
-    ...fatCarbClamps,
-    ...reconcileClamps,
+    ...split.clamps,
   ];
 
   return {
     ok: true,
     targets: {
       calorieTargetKcal,
-      proteinG: round1(proteinG),
-      fatG: round1(fatG),
-      carbG: round1(carbG),
-      fiberG,
+      proteinG: split.proteinG,
+      fatG: split.fatG,
+      carbG: split.carbG,
+      fiberG: split.fiberG,
     },
     basis: {
       bmr: round1(bmr),
