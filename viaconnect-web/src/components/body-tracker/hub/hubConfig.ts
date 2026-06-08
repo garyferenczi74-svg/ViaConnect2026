@@ -24,6 +24,7 @@
 import {
   Gauge,
   Ruler,
+  TrendingUp,
   Scale,
   Target,
   Activity,
@@ -65,14 +66,11 @@ export interface SurfaceCard {
 
 // Source order is preserved in the DOM so grid auto placement produces
 // the desktop layout from Section 5 without explicit row / column
-// lines: Dashboard, Body Composition, Weight, Milestones, Metabolic.
-//
-// Progress (the sixth surface in the spec's six card layout) is the
-// 179b weight trajectory tab which has not yet landed on main. When it
-// ships, append a Progress entry between Body Composition and Weight
-// and grid placement stays correct because of source order. The
-// current five card layout still reads as an asymmetric bento because
-// Dashboard remains the featured tile.
+// lines: Dashboard, Body Composition, Progress, Weight, Milestones,
+// Metabolic. The Progress card routes to a coming soon placeholder
+// at /body-tracker/progress while the 179b weight trajectory series
+// is in flight; when that lands the placeholder is replaced by the
+// real surface and no hub config edit is needed.
 export const SURFACES: SurfaceCard[] = [
   {
     id: "dashboard",
@@ -108,6 +106,23 @@ export const SURFACES: SurfaceCard[] = [
       kind: "gradient",
       gradientClass:
         "bg-[radial-gradient(110%_110%_at_100%_0%,rgba(45,165,160,0.28)_0%,rgba(30,48,84,0.85)_60%,rgba(26,39,68,1)_100%)]",
+    },
+  },
+  {
+    id: "progress",
+    title: "Progress",
+    description: "Your whole journey: CAQ targets, nutrition, supplements, training, AI body composition.",
+    href: "/body-tracker/progress",
+    icon: TrendingUp,
+    accent: "teal",
+    metricKey: "pct_to_goal",
+    metricLabel: "to your goal",
+    // Desktop: right column under Body Composition.
+    gridClass: "md:col-span-1 lg:col-span-2 lg:row-span-1",
+    media: {
+      kind: "gradient",
+      gradientClass:
+        "bg-[radial-gradient(110%_110%_at_100%_100%,rgba(45,165,160,0.30)_0%,rgba(30,48,84,0.85)_60%,rgba(26,39,68,1)_100%)]",
     },
   },
   {
