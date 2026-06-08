@@ -34,6 +34,10 @@ export function BentoCard({ surface, metricValue }: BentoCardProps) {
   const ariaLabel = metricValue
     ? `${surface.title}: ${metricValue} ${surface.metricLabel}`
     : surface.title;
+  // Prompt 180e: the featured Dashboard card keeps Open in flow (bottom left
+  // under the description). Every other card pins Open to the bottom right
+  // corner so it sits in a consistent position and is never clipped.
+  const isFeatured = surface.id === 'dashboard';
 
   return (
     <Link
@@ -82,16 +86,16 @@ export function BentoCard({ surface, metricValue }: BentoCardProps) {
           ) : null}
         </div>
 
-        <div className="mt-auto flex flex-col gap-1">
+        <div className={`mt-auto flex flex-col gap-1 ${isFeatured ? '' : 'pb-10 pr-16'}`}>
           <h3 className="text-[15px] font-semibold leading-tight text-white md:text-base">
             {surface.title}
           </h3>
-          <p className="text-[12px] leading-relaxed text-white/[0.62] md:text-[13px]">
+          <p className={`text-[12px] leading-relaxed text-white/[0.62] md:text-[13px] ${isFeatured ? '' : 'line-clamp-2'}`}>
             {surface.description}
           </p>
         </div>
 
-        <div className="inline-flex items-center gap-1 self-start rounded-full border border-[#5B8DEF]/30 bg-[#2A4C9E]/25 px-3 py-1.5 text-[12px] font-medium text-white backdrop-blur-md transition-all duration-200 group-hover:border-[#5B8DEF]/55 group-hover:bg-[#2A4C9E]/40 motion-reduce:transition-none">
+        <div className={`inline-flex items-center gap-1 rounded-full border border-[#5B8DEF]/30 bg-[#2A4C9E]/25 px-3 py-1.5 text-[12px] font-medium text-white backdrop-blur-md transition-all duration-200 group-hover:border-[#5B8DEF]/55 group-hover:bg-[#2A4C9E]/40 motion-reduce:transition-none ${isFeatured ? 'self-start' : 'absolute bottom-4 right-4 md:bottom-5 md:right-5'}`}>
           <span>Open</span>
           <ChevronRight
             className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transition-none motion-reduce:group-hover:translate-x-0"
