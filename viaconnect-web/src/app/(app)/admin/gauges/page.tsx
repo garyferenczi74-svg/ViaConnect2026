@@ -55,6 +55,7 @@ import { GaugeGlass, type GlassVariant } from '@/components/gauges/GaugeGlass';
 import { GaugeLiquid, type LiquidVariant } from '@/components/gauges/GaugeLiquid';
 import { GaugeMetal, type MetalVariant } from '@/components/gauges/GaugeMetal';
 import { GaugeNeu, type NeuVariant } from '@/components/gauges/GaugeNeu';
+import { GaugeSignature, type SignatureVariant } from '@/components/gauges/GaugeSignature';
 // Prompt 182f (2026-06-09): structural design tokens (surface, hairline,
 // text levels, neumorphic surface, gold / chrome / rose stops). Imported
 // here so they flow into the gallery only; the consumer surfaces stay on
@@ -380,6 +381,16 @@ const renderInset    = makeRenderNeu('inset');
 const renderPillow   = makeRenderNeu('pillow');
 const renderKnob     = makeRenderNeu('knob');
 
+// Prompt 182l (2026-06-09): Signature family renderers. Three
+// showpieces (Plasma Core, Halo Bloom, Constellation Arc). Same
+// render prop signature; the variants ignore finish.
+const makeRenderSig = (variant: SignatureVariant): GaugeRenderer => ({ value, size, metric, live, mini }) => (
+  <GaugeSignature value={value} size={size} metric={metric} live={live} mini={mini} variant={variant} />
+);
+const renderSigPlasma        = makeRenderSig('plasma');
+const renderSigHalo          = makeRenderSig('halo');
+const renderSigConstellation = makeRenderSig('constellation');
+
 // ---------------------------------------------------------------------------
 // Registry. One entry per artboard.
 // ---------------------------------------------------------------------------
@@ -394,19 +405,26 @@ const SUBS: Record<string, string> = {
   'Plasma Core, 12 metallic finishes': 'The Plasma Core in twelve premium metals: warm gold to bronze, cool platinum to gunmetal, jewel emerald to ruby',
 };
 
-const SIGNATURE_METRICS: Array<{ metric: GaugeMetric; value: number }> = [
-  { metric: 'bioscore',  value: 82 },
-  { metric: 'sleep',     value: 76 },
-  { metric: 'energy',    value: 64 },
-  { metric: 'mood',      value: 71 },
-  { metric: 'nutrition', value: 88 },
-  { metric: 'activity',  value: 59 },
-  { metric: 'wellness',  value: 73 },
-  { metric: 'mealscore', value: 91 },
+// Prompt 182l (2026-06-09): the Signature row is the three prototype
+// showpieces (Plasma Core, Halo Bloom, Constellation Arc), not eight
+// metric tints of the Plasma Core. The per metric Plasma palette is
+// still demonstrable across the other family sections because each
+// family card already picks a different metric.
+const SIGNATURE_HYBRIDS: Array<{
+  id: string;
+  label: string;
+  metric: GaugeMetric;
+  value: number;
+  states: number[];
+  render: GaugeRenderer;
+}> = [
+  { id: 'plasma-core',   label: '22, Plasma Core',       metric: 'wellness', value: 78, states: [24, 58, 91], render: renderSigPlasma },
+  { id: 'halo-bloom',    label: '23, Halo Bloom',        metric: 'mood',     value: 90, states: [20, 55, 88], render: renderSigHalo },
+  { id: 'constellation', label: '24, Constellation Arc', metric: 'sleep',    value: 75, states: [22, 56, 90], render: renderSigConstellation },
 ];
 
 const FINISH_VALUE = 78;
-const FINISH_METRIC: GaugeMetric = 'bioscore';
+const FINISH_METRIC: GaugeMetric = 'wellness';
 
 // Prompt 182k (2026-06-09): every gauge family now lives. The
 // PLACEHOLDER_GROUPS array and PlaceholderTile component are kept as
@@ -440,9 +458,9 @@ export default function GaugesGalleryPage() {
   return (
     <DesignCanvas>
       <DCSection id="signature" title="Signature" subtitle={SUBS['Signature']}>
-        {SIGNATURE_METRICS.map(({ metric, value }) => (
-          <DCArtboard key={`signature-${metric}`} label={METRIC_META[metric].name} width={340} height={478}>
-            <GaugeCard metric={metric} render={renderPlasma} value={value} />
+        {SIGNATURE_HYBRIDS.map((h) => (
+          <DCArtboard key={`signature-${h.id}`} label={h.label} width={340} height={478}>
+            <GaugeCard metric={h.metric} render={h.render} value={h.value} states={h.states} />
           </DCArtboard>
         ))}
       </DCSection>
@@ -452,8 +470,8 @@ export default function GaugesGalleryPage() {
         title="Plasma Core, 12 metallic finishes"
         subtitle={SUBS['Plasma Core, 12 metallic finishes']}
       >
-        {MATERIALS.map((mat) => (
-          <DCArtboard key={`finish-${mat.id}`} label={mat.name} width={340} height={478}>
+        {MATERIALS.map((mat, i) => (
+          <DCArtboard key={`finish-${mat.id}`} label={`M${i + 1}, ${mat.name}`} width={340} height={478}>
             <GaugeCard metric={FINISH_METRIC} finish={mat.id} render={renderPlasma} value={FINISH_VALUE} />
           </DCArtboard>
         ))}
