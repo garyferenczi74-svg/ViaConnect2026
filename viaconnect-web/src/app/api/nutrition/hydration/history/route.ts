@@ -20,10 +20,7 @@ const QuerySchema = z.object({
 });
 
 export async function GET(req: NextRequest): Promise<NextResponse> {
-  if (process.env.HYDRATION_TRACKING_ENABLED !== 'true') {
-    return NextResponse.json({ error: 'Hydration tracking is temporarily unavailable.' }, { status: 503 });
-  }
-
+  // Prompt 177m (2026-06-09): 170o launch gate removed (see quick-log).
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {

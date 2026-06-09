@@ -17,10 +17,7 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export async function GET(): Promise<NextResponse> {
-  if (process.env.HYDRATION_TRACKING_ENABLED !== 'true') {
-    return NextResponse.json({ error: 'Hydration tracking is temporarily unavailable.' }, { status: 503 });
-  }
-
+  // Prompt 177m (2026-06-09): 170o launch gate removed (see quick-log).
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
@@ -42,10 +39,7 @@ export async function GET(): Promise<NextResponse> {
 }
 
 export async function PUT(req: NextRequest): Promise<NextResponse> {
-  if (process.env.HYDRATION_TRACKING_ENABLED !== 'true') {
-    return NextResponse.json({ error: 'Hydration tracking is temporarily unavailable.' }, { status: 503 });
-  }
-
+  // Prompt 177m (2026-06-09): 170o launch gate removed (see quick-log).
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {

@@ -54,9 +54,7 @@ async function loadOwnedMeal(adminClient: ReturnType<typeof createAdminClient>, 
 }
 
 export async function PUT(req: NextRequest, ctx: RouteContext): Promise<NextResponse> {
-  if (process.env.HYDRATION_TRACKING_ENABLED !== 'true') {
-    return NextResponse.json({ error: 'Hydration tracking is temporarily unavailable.' }, { status: 503 });
-  }
+  // Prompt 177m (2026-06-09): 170o launch gate removed (see quick-log).
 
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -153,9 +151,7 @@ export async function PUT(req: NextRequest, ctx: RouteContext): Promise<NextResp
 }
 
 export async function DELETE(_req: NextRequest, ctx: RouteContext): Promise<NextResponse> {
-  if (process.env.HYDRATION_TRACKING_ENABLED !== 'true') {
-    return NextResponse.json({ error: 'Hydration tracking is temporarily unavailable.' }, { status: 503 });
-  }
+  // Prompt 177m (2026-06-09): 170o launch gate removed (see quick-log).
 
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();

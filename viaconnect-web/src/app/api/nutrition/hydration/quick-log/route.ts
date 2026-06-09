@@ -85,12 +85,12 @@ interface CatalogRowForLog {
 }
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
-  if (process.env.HYDRATION_TRACKING_ENABLED !== 'true') {
-    return NextResponse.json(
-      { error: 'Hydration tracking is temporarily unavailable.' },
-      { status: 503 },
-    );
-  }
+  // Prompt 177m (2026-06-09): 170o launch gate removed. The env var
+  // HYDRATION_TRACKING_ENABLED was never set to 'true' in production
+  // and every hydration log POST short circuited with a 503 before
+  // touching the database; the UI therefore appeared to do nothing.
+  // Hydration is GA and ships unconditionally; rollback now flows
+  // through the same channels every other GA feature uses.
 
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();

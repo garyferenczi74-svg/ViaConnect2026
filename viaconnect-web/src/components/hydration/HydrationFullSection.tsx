@@ -17,7 +17,6 @@ import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { Droplet, Coffee, Wine, Beer, Milk } from 'lucide-react';
 import { HydrationRing, formatVolumeLabel } from './HydrationRing';
-import { HydrationQuickLogButtons } from './HydrationQuickLogButtons';
 import { HydrationEditPanel } from './HydrationEditPanel';
 import { useHydrationToday } from './useHydrationToday';
 import { useHydrationHistory } from './useHydrationHistory';
@@ -164,15 +163,11 @@ export function HydrationFullSection({
             ) : null}
           </div>
         </div>
-        <div className="mt-5">
-          <HydrationQuickLogButtons
-            surface={logSurface}
-            variant="three"
-            layout="row"
-            size="large"
-            onLogged={() => { void today.refresh(); void week.refresh(); void month.refresh(); }}
-          />
-        </div>
+        {/* Prompt 177m (2026-06-09): +250 / +500 / +750 quick-add row
+            removed. The per beverage How much picker (BeveragePicker)
+            below is the single logging path; the three button row was
+            redundant because picking a beverage already opens the
+            volume stepper + Log action. */}
 
         {today.data && today.data.events_today.length > 0 ? (
           <div className="mt-6">
