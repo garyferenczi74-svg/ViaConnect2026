@@ -65,7 +65,10 @@ describe('traceTextPipeline', () => {
     expect(t.referenceId).toBe('169704');
     expect(t.matchedName).toBe('Rice, white, cooked');
     expect(t.estimatedGrams).toBe(150);
-    expect(t.per100g?.calories).toBe(130);
+    expect(t.per100g?.calories_kcal).toBe(130);
+    expect(t.per100g?.fat_g).toBe(0.3);
+    expect(t.conversionChain).toContain('150g');
+    expect(t.conversionChain).toContain('via unitToGrams');
     expect(t.itemTotals.calories_kcal).toBe(195);
     expect(t.itemTotals.sodium_mg).toBeNull();
     expect(t.nullFields).toContain('sodium_mg');
@@ -184,5 +187,31 @@ describe('tracePhotoPipeline', () => {
     expect(meal.items[0].referenceSource).toBe('resolve_miss');
     expect(meal.items[0].estimatedGrams).toBe(100);
     expect(meal.items[0].itemTotals.calories_kcal).toBeNull();
+  });
+
+  it('sums meal totals across multiple resolved photo items', async () => {
+    const second: VisionItem = {
+      ...visionItem,
+      id: 'v2',
+      foodName: 'white rice',
+      portionGramsHint: 100,
+    };
+    resolveNutrientsMock
+      .mockResolvedValueOnce({
+        source: 'usda_fdc',
+        foodName: 'Chicken breast, grilled',
+        per100g: { calories_kcal: 165, protein_g: 31, carbs_g: 0, fat_g: 3.6, fiber_g: 0, sugar_g: 0, sodium_mg: 74 },
+        usdaFdcId: 171534,
+      })
+      .mockResolvedValueOnce({
+        source: 'usda_fdc',
+        foodName: 'Rice, white, cooked',
+        per100g: { calories_kcal: 130, protein_g: 2.7, carbs_g: 28.2, fat_g: 0.3, fiber_g: 0.4, sugar_g: 0.1, sodium_mg: 1 },
+        usdaFdcId: 169704,
+      });
+    const meal = await tracePhotoPipeline([visionItem, second], 'det:plate');
+    expect(meal.items).toHaveLength(2);
+    expect(meal.mealTotals.calories_kcal).toBe(295);
+    expect(meal.mealTotals.protein_g).toBe(33.7);
   });
 });

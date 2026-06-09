@@ -91,6 +91,60 @@ function roundInt(n: number): number {
   return Math.round(n);
 }
 
+// Normalize the text engine per-100g (ItemNutrients-style keys) to the same
+// canonical keys the photo engine uses, so the divergence report reads per100g
+// uniformly across engines. Text-only nutrients (saturated, trans, omega3) are
+// kept as extras.
+function textPer100gToRecord(p: {
+  calories: number;
+  protein_g: number;
+  carbs_g: number;
+  total_fat_g: number;
+  saturated_fat_g: number;
+  trans_fat_g: number;
+  omega3_g: number;
+  sugar_g: number;
+  fiber_g: number;
+}): Record<string, number> {
+  return {
+    calories_kcal: p.calories,
+    protein_g: p.protein_g,
+    carbs_g: p.carbs_g,
+    fat_g: p.total_fat_g,
+    fiber_g: p.fiber_g,
+    sugar_g: p.sugar_g,
+    saturated_fat_g: p.saturated_fat_g,
+    trans_fat_g: p.trans_fat_g,
+    omega3_g: p.omega3_g,
+  };
+}
+
+// Single error-branch builder for both engines, so the two catch blocks stay
+// identical and the error trace never reflects a half-populated stage trace.
+function errorTrace(
+  engine: 'text' | 'photo',
+  rawInput: string,
+  identifiedLabel: string,
+  detectedBasis: string | null,
+  err: unknown
+): ItemTrace {
+  return {
+    engine,
+    rawInput,
+    identifiedLabel,
+    referenceSource: null,
+    referenceId: null,
+    matchedName: null,
+    detectedBasis,
+    per100g: null,
+    estimatedGrams: null,
+    conversionChain: 'errored before completion',
+    itemTotals: emptyTotals(),
+    nullFields: [...NUTRIENT_KEYS],
+    error: err instanceof Error ? err.message : String(err),
+  };
+}
+
 function emptyTotals(): ItemTotals {
   return {
     calories_kcal: null,
@@ -231,7 +285,7 @@ export async function traceTextPipeline(parsedItems: ParsedItem[]): Promise<Meal
         referenceId: lookupTrace.fdcId != null ? String(lookupTrace.fdcId) : null,
         matchedName: lookupTrace.matchedName ?? null,
         detectedBasis: null,
-        per100g: lookupTrace.per100g ? { ...lookupTrace.per100g } : null,
+        per100g: lookupTrace.per100g ? textPer100gToRecord(lookupTrace.per100g) : null,
         estimatedGrams: lookupTrace.grams ?? null,
         conversionChain: describeTextConversion(item, lookupTrace),
         itemTotals,
@@ -239,21 +293,7 @@ export async function traceTextPipeline(parsedItems: ParsedItem[]): Promise<Meal
         error: null,
       });
     } catch (err) {
-      items.push({
-        engine: 'text',
-        rawInput,
-        identifiedLabel: item.name,
-        referenceSource: null,
-        referenceId: null,
-        matchedName: null,
-        detectedBasis: null,
-        per100g: null,
-        estimatedGrams: null,
-        conversionChain: describeTextConversion(item, lookupTrace),
-        itemTotals: emptyTotals(),
-        nullFields: [...NUTRIENT_KEYS],
-        error: err instanceof Error ? err.message : String(err),
-      });
+      items.push(errorTrace('text', rawInput, item.name, null, err));
     }
   }
 
@@ -360,21 +400,7 @@ export async function tracePhotoPipeline(
         error: null,
       });
     } catch (err) {
-      items.push({
-        engine: 'photo',
-        rawInput: photoRef,
-        identifiedLabel: vi.foodName,
-        referenceSource: null,
-        referenceId: null,
-        matchedName: null,
-        detectedBasis: vi.cookingMethod ?? null,
-        per100g: null,
-        estimatedGrams: null,
-        conversionChain: 'errored before portion estimate',
-        itemTotals: emptyTotals(),
-        nullFields: [...NUTRIENT_KEYS],
-        error: err instanceof Error ? err.message : String(err),
-      });
+      items.push(errorTrace('photo', photoRef, vi.foodName, vi.cookingMethod ?? null, err));
     }
   }
 

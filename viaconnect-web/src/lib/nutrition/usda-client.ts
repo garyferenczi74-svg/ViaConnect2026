@@ -12,6 +12,8 @@ import { unitToGrams } from './typical-weights';
 
 const BASE = 'https://api.nal.usda.gov/fdc/v1';
 const TIMEOUT_MS = 6000;
+// Shared so the search URL and the benchmark trace cannot drift apart.
+const USDA_DATA_TYPES = 'Foundation,SR Legacy';
 const breaker = getCircuitBreaker('usda-api', { failureThreshold: 5, resetTimeoutMs: 60_000, halfOpenMaxAttempts: 1 });
 
 export interface ItemNutrients {
@@ -124,7 +126,7 @@ export async function lookupFood(name: string, quantity: number, unit: string, t
   if (insErr) safeLog.warn('nutrition.usda-client', 'cache write failed', { error: insErr });
   if (trace) {
     trace.cacheHit = false;
-    trace.dataType = 'Foundation,SR Legacy';
+    trace.dataType = USDA_DATA_TYPES;
   }
   return scaleToServing(row, quantity, unit, normalized, trace);
 }
@@ -132,7 +134,7 @@ export async function lookupFood(name: string, quantity: number, unit: string, t
 async function searchUSDA(query: string): Promise<{ fdcId: number; description: string } | null> {
   const key = process.env.USDA_FDC_API_KEY || 'DEMO_KEY';
   if (key === 'DEMO_KEY') safeLog.warn('nutrition.usda-client', 'using DEMO_KEY (30/hr limit)');
-  const url = `${BASE}/foods/search?query=${encodeURIComponent(query)}&dataType=Foundation,SR%20Legacy&pageSize=5&api_key=${key}`;
+  const url = `${BASE}/foods/search?query=${encodeURIComponent(query)}&dataType=${USDA_DATA_TYPES.split(' ').join('%20')}&pageSize=5&api_key=${key}`;
   const res = await breaker.execute(() => withAbortTimeout((s) => fetch(url, { signal: s }), TIMEOUT_MS, 'usda.search'));
   if (!res.ok) {
     const c = classifyUSDAResponse(res.status);
