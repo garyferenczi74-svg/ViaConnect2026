@@ -198,13 +198,14 @@ export function PlasmaGauge({
   const inView = useInView(ref);
   const reduced = useReducedMotion();
   const compact = variant === 'compact';
-  // Prompt 182c (2026-06-09): compact gauges (Quick Log meal quality
-  // rings, Daily Macros, Today's Meals) render as a static composite
-  // plate per the canonical reference ("minis render static"). Only
-  // hero and standard gauges receive .g-anim and therefore run the
-  // continuous keyframes. The count up entrance still plays once for
-  // every variant when the gauge first enters the viewport.
-  const anim = animated && inView && !reduced && !compact;
+  // Prompt 182m (2026-06-09): every variant (hero, standard, compact)
+  // gets the orb pulse and the clockwise ring bead now. The earlier
+  // 182c "minis render static" rule is superseded by 182b which
+  // explicitly calls for compact to keep the pulse + bead because the
+  // bead replaces the removed orbiting sparks. The rotating bezel
+  // sheen is still trimmed in compact for performance via the
+  // separate {!compact && ...} gate below.
+  const anim = animated && inView && !reduced;
   const n = useCountUp(Math.round(value), animated && inView);
   const p = Math.max(0.0001, Math.min(1, value / (max || 100)));
 
@@ -227,10 +228,12 @@ export function PlasmaGauge({
   const cx = 100, cy = 100, R = 78, sw = compact ? 7 : 9;
   const trackD = arcPath(cx, cy, R, 0, 1);
   const progD = arcPath(cx, cy, R, 0, p);
-  // Per spark orbit keyframe binding. Each g-gyro keyframe bakes both
-  // the plane tilt and the spin so the 3D composition stays under
-  // preserve 3d during animation. Compact gauges skip these entirely.
-  const sparkCls = ['g-spark-1', 'g-spark-2', 'g-spark-3'];
+
+  // Prompt 182m (2026-06-09): orbiting sparks (formerly three dots on
+  // tilted preserve 3d planes spinning at 4 / 5 / 6 seconds) are
+  // removed entirely. The only motion inside the plasma orb is now
+  // the pulse; the clockwise ring bead carries all motion on the
+  // ring stroke.
 
   const fontDisplay = "var(--font-instrument-sans), 'Instrument Sans', system-ui, sans-serif";
   const sublabel = unit ? `of ${max} ${unit}` : `/ ${max}`;
@@ -302,26 +305,34 @@ export function PlasmaGauge({
             opacity={0.55}
           />
         )}
-        {metal && !compact && (
-          <path
-            className="g-glint-rg"
-            d={progD}
-            fill="none"
-            stroke="#fff"
-            strokeWidth={sw * 0.5}
-            strokeLinecap="round"
-            pathLength={100}
-            // CSS vars consumed by the g-glint keyframe so the dash
-            // sweep direction is configurable per ring without
-            // editing the keyframe.
-            style={{
-              strokeDasharray: '9 91',
-              mixBlendMode: 'screen',
-              ['--glint-from' as string]: '0',
-              ['--glint-to' as string]: '-100',
-            }}
-          />
-        )}
+        {/* Prompt 182m (2026-06-09): clockwise ring bead. Replaces the
+            prior progress-only glint. Runs the FULL track ring so the
+            clockwise motion is continuous regardless of fill, lands
+            as the single piece of motion on every gauge variant
+            (hero, standard, compact). Tighter dash + screen blend +
+            an accent glow filter so the bead reads as a defined
+            moving object rather than a faint shimmer. Direction is
+            clockwise: stroke-dashoffset advances 0 to -100, which
+            advances along the path direction (arcPath draws CW from
+            the 4:30 start) so the bead sweeps 12, 3, 6, 9 as
+            measured from a clock face. */}
+        <path
+          className="g-glint-rg"
+          d={trackD}
+          fill="none"
+          stroke="#fff"
+          strokeWidth={Math.max(2.2, sw * 0.6)}
+          strokeLinecap="round"
+          pathLength={100}
+          style={{
+            strokeDasharray: '4 96',
+            mixBlendMode: 'screen',
+            filter: `drop-shadow(0 0 ${Math.round(size * 0.03)}px ${GLOW})`,
+            opacity: 0.95,
+            ['--glint-from' as string]: '0',
+            ['--glint-to' as string]: '-100',
+          }}
+        />
       </svg>
 
       {/* metallic bezel + rotating sheen (non compact only) */}
@@ -381,35 +392,11 @@ export function PlasmaGauge({
         />
       </div>
 
-      {/* Orbiting sparks: three 3D preserve d planes driven by
-          g-gyro1 / g-gyro2 / g-gyro3 keyframes. Each gyro bakes its
-          own rotateX / rotateY tilt with a rotateZ spin, so the tilt
-          stays composed under the animation. Compact gauges render
-          no sparks (minis are static plates) per the canonical
-          reference. */}
-      {!compact && [0, 1, 2].map((i) => {
-        const dotPx = 7;
-        return (
-          <div
-            key={i}
-            className={sparkCls[i]}
-            aria-hidden="true"
-            style={{
-              position: 'absolute', inset: '20%', zIndex: 7,
-              transformStyle: 'preserve-3d',
-            }}
-          >
-            <div style={{
-              position: 'absolute', top: '50%', left: '50%',
-              width: dotPx, height: dotPx, borderRadius: '50%',
-              marginLeft: -dotPx / 2, marginTop: -dotPx / 2,
-              transform: `translateX(${size * 0.18}px)`,
-              background: `radial-gradient(circle at 35% 30%, #fff, ${C})`,
-              boxShadow: `0 0 12px ${GLOW}`,
-            }} />
-          </div>
-        );
-      })}
+      {/* Prompt 182m (2026-06-09): the orbiting spark planes (three
+          dots on tilted preserve 3d planes driven by g-spark-1 /
+          g-spark-2 / g-spark-3) are removed. The only motion inside
+          the plasma orb is the pulse. The clockwise ring bead above
+          carries every other piece of motion. */}
 
       {/* value readout */}
       <div style={{
