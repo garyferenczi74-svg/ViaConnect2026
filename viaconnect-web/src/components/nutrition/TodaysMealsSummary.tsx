@@ -90,15 +90,43 @@ export function TodaysMealsSummary(props: TodaysMealsSummaryProps) {
   const queryClient = useQueryClient();
   const pendingDeletes = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
-  useEffect(() => {
+  // Fix (Gary 2026-06-09): the original cleanup CANCELED pending delete
+  // timers on unmount, so removing a meal and then navigating away or
+  // refreshing within the 5 second undo window dropped the server delete
+  // and the meal returned on the next load (the remove button looked
+  // broken). Flush instead: fire any still pending delete immediately, with
+  // keepalive so the request survives page unload. Leaving the surface
+  // implicitly confirms the removal, which is the correct undo semantics.
+  const flushPendingDeletes = useCallback(() => {
     const timers = pendingDeletes.current;
-    return () => {
-      // On unmount cancel any pending timers; the optimistic cache will
-      // be cleared by the next mount via useUserMeals refetch.
-      for (const t of timers.values()) clearTimeout(t);
-      timers.clear();
-    };
+    if (timers.size === 0) return;
+    for (const [mealId, t] of timers.entries()) {
+      clearTimeout(t);
+      try {
+        void fetch(`/api/nutrition/meals/${mealId}`, { method: 'DELETE', keepalive: true });
+      } catch {
+        // best effort during unload; nothing actionable here
+      }
+    }
+    timers.clear();
   }, []);
+
+  useEffect(() => {
+    // pagehide covers refresh, tab close, and SPA back/forward cache;
+    // visibilitychange to hidden covers mobile app backgrounding (Capacitor)
+    // where pagehide may not fire; the unmount return covers in app
+    // navigation away from the nutrition surface.
+    const onVisibility = () => {
+      if (document.visibilityState === 'hidden') flushPendingDeletes();
+    };
+    window.addEventListener('pagehide', flushPendingDeletes);
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      window.removeEventListener('pagehide', flushPendingDeletes);
+      document.removeEventListener('visibilitychange', onVisibility);
+      flushPendingDeletes();
+    };
+  }, [flushPendingDeletes]);
 
   const matchUserMealsQueries = useCallback(
     (predicate: (meals: Meal[]) => Meal[]) => {
