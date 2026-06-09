@@ -36,7 +36,7 @@ import { isNutritionDiagnosticsEnabled } from '../diagnostic-flags';
 const STAGE_TIMEOUT_MS = 5000;
 const SCOPE = 'nutrition.accuracy.bench';
 
-const NUTRIENT_KEYS = [
+export const NUTRIENT_KEYS = [
   'calories_kcal',
   'protein_g',
   'carbs_g',
