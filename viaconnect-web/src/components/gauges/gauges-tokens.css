@@ -1,0 +1,73 @@
+/* ViaConnect 3D Wellness Gauges, design tokens (Prompt 182f / 2026-06-09).
+ *
+ * Ported from the prototype tokens.css with three deviations that the
+ * project's standing rules require:
+ *
+ *   1. No Google Fonts @import. Instrument Sans is the brand font per the
+ *      Prompt 182 "DO NOT REGRESS" list; Bricolage Grotesque and Hanken
+ *      Grotesk are not loaded. --font-display and --font-ui alias to the
+ *      Instrument Sans CSS variable the rest of the app already exposes so
+ *      future code can read var(--font-display) and get the brand font.
+ *
+ *   2. The prototype's [data-metric] per metric color rules are omitted.
+ *      Their palette (energy=amber, mood=teal, nutrition=coral) predates
+ *      the ViaConnect anchored palette and would regress the brand
+ *      identity. The PlasmaGauge GaugeCard scaffolding sets --c, --c-bright,
+ *      and --glow inline per card from METRIC_COLORS, so any element that
+ *      reads var(--c) etc still resolves to the canonical accent without
+ *      these rules.
+ *
+ *   3. Surface, hairline, text level, neumorphic, and gold / chrome / rose
+ *      material stops are ported intact. They scaffold future gauge
+ *      variants (Metallic family uses the material stops directly; Glass,
+ *      Neumorphic, and Liquid families use the surface and hairline
+ *      tokens).
+ *
+ * This stylesheet is imported by the /admin/gauges gallery page only. It
+ * does not flow into the consumer surfaces (Dashboard, My Biology hub,
+ * My Nutrition) so the live app's tokens are unaffected.
+ */
+
+:root {
+  /* Font aliases. Instrument Sans is the brand font; future code that
+   * reads var(--font-display) or var(--font-ui) still gets it. */
+  --font-display: var(--font-instrument-sans), 'Instrument Sans', system-ui, sans-serif;
+  --font-ui:      var(--font-instrument-sans), 'Instrument Sans', system-ui, sans-serif;
+
+  /* Card surface tokens. */
+  --surface-0: #0b0f18;
+  --surface-1: #111726;
+  --surface-2: #18203200;
+  --hairline: rgba(255, 255, 255, 0.07);
+  --text-hi:  #f4f7ff;
+  --text-mid: rgba(228, 235, 250, 0.62);
+  --text-lo:  rgba(228, 235, 250, 0.34);
+
+  /* Neumorphic surface, lighter so the soft shadow pair reads. */
+  --neu-bg:    #161d2c;
+  --neu-light: rgba(255, 255, 255, 0.06);
+  --neu-dark:  rgba(0, 0, 0, 0.55);
+
+  /* Material stops for the Metallic family. The Plasma Core uses its own
+   * MATERIALS table inside PlasmaGauge.tsx for the bezel + number gradient;
+   * the variables below are for future Metallic only variants (open arc,
+   * extruded ring, etc) that derive their conic gradient from these stops
+   * instead of from JS state. */
+  --gold-1:   #6b4e1f;
+  --gold-2:   #b8862f;
+  --gold-3:   #f6dd95;
+  --gold-4:   #ffffff;
+  --gold-5:   #8a6322;
+
+  --chrome-1: #3a4254;
+  --chrome-2: #aeb8cc;
+  --chrome-3: #ffffff;
+  --chrome-4: #6f7c93;
+  --chrome-5: #232a38;
+
+  --rose-1:   #6e3a3f;
+  --rose-2:   #c98a86;
+  --rose-3:   #ffe2dc;
+  --rose-4:   #b06a66;
+  --rose-5:   #43262a;
+}
