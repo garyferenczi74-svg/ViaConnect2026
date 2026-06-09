@@ -54,6 +54,7 @@ import { Gauge3D, type Gauge3DVariant } from '@/components/gauges/Gauge3D';
 import { GaugeGlass, type GlassVariant } from '@/components/gauges/GaugeGlass';
 import { GaugeLiquid, type LiquidVariant } from '@/components/gauges/GaugeLiquid';
 import { GaugeMetal, type MetalVariant } from '@/components/gauges/GaugeMetal';
+import { GaugeNeu, type NeuVariant } from '@/components/gauges/GaugeNeu';
 // Prompt 182f (2026-06-09): structural design tokens (surface, hairline,
 // text levels, neumorphic surface, gold / chrome / rose stops). Imported
 // here so they flow into the gallery only; the consumer surfaces stay on
@@ -368,6 +369,17 @@ const renderRoseGold       = makeRenderMetal('rose-gold');
 const renderObsidianGold   = makeRenderMetal('obsidian-gold');
 const renderPlatinumDome   = makeRenderMetal('platinum-dome');
 
+// Prompt 182k (2026-06-09): Neumorphic family renderers. Same render
+// prop signature. Neu variants ignore finish (tactile look is built
+// from inset / raised box shadows on var(--c) etc).
+const makeRenderNeu = (variant: NeuVariant): GaugeRenderer => ({ value, size, metric, live, mini }) => (
+  <GaugeNeu value={value} size={size} metric={metric} live={live} mini={mini} variant={variant} />
+);
+const renderExtruded = makeRenderNeu('extruded');
+const renderInset    = makeRenderNeu('inset');
+const renderPillow   = makeRenderNeu('pillow');
+const renderKnob     = makeRenderNeu('knob');
+
 // ---------------------------------------------------------------------------
 // Registry. One entry per artboard.
 // ---------------------------------------------------------------------------
@@ -396,15 +408,11 @@ const SIGNATURE_METRICS: Array<{ metric: GaugeMetric; value: number }> = [
 const FINISH_VALUE = 78;
 const FINISH_METRIC: GaugeMetric = 'bioscore';
 
-const PLACEHOLDER_GROUPS: Array<{ group: string; entries: Array<{ id: string; label: string }> }> = [
-  {
-    group: 'Neumorphic',
-    entries: [
-      { id: 'placeholder-neumorphic-1', label: 'Neumorphic, channel' },
-      { id: 'placeholder-neumorphic-2', label: 'Neumorphic, extruded' },
-    ],
-  },
-];
+// Prompt 182k (2026-06-09): every gauge family now lives. The
+// PLACEHOLDER_GROUPS array and PlaceholderTile component are kept as
+// zero entry scaffolding so a future family can re slot a placeholder
+// row in by appending one entry, without re plumbing the gallery.
+const PLACEHOLDER_GROUPS: Array<{ group: string; entries: Array<{ id: string; label: string }> }> = [];
 
 function PlaceholderTile({ label }: { label: string }) {
   return (
@@ -520,6 +528,24 @@ export default function GaugesGalleryPage() {
         </DCArtboard>
         <DCArtboard label="21, Wave Capsule"    width={340} height={478}>
           <GaugeCard metric="mood"      render={renderCapsule} value={90} states={[20, 55, 88]} />
+        </DCArtboard>
+      </DCSection>
+
+      {/* Prompt 182k (2026-06-09): Neumorphic family lights up.
+          Extruded dial, pressed inset, pillowed segments, tactile
+          knob. Every gauge family now lives in the gallery. */}
+      <DCSection id="neumorphic" title="Neumorphic" subtitle={SUBS['Neumorphic']}>
+        <DCArtboard label="10, Extruded Dial"     width={340} height={478}>
+          <GaugeCard metric="activity"  render={renderExtruded} value={15} states={[15, 48, 83]} />
+        </DCArtboard>
+        <DCArtboard label="11, Pressed Inset"     width={340} height={478}>
+          <GaugeCard metric="nutrition" render={renderInset}    value={45} states={[13, 50, 86]} />
+        </DCArtboard>
+        <DCArtboard label="12, Pillowed Segments" width={340} height={478}>
+          <GaugeCard metric="sleep"     render={renderPillow}   value={75} states={[22, 56, 90]} />
+        </DCArtboard>
+        <DCArtboard label="13, Tactile Knob"      width={340} height={478}>
+          <GaugeCard metric="energy"    render={renderKnob}     value={30} states={[14, 47, 82]} />
         </DCArtboard>
       </DCSection>
 
