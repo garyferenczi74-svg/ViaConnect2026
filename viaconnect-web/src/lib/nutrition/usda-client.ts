@@ -27,6 +27,32 @@ export interface ItemNutrients {
   source: 'usda';
 }
 
+// Prompt 184 Phase 0: optional trace surface for the benchmark harness. When a
+// caller passes a trace object, lookupFood records the matched row, fdcId,
+// per-100g values, and the grams it scaled to, so the divergence report can
+// attribute error to reference selection versus quantity. The routes never
+// pass it, so production behavior is unchanged.
+export interface UsdaLookupTrace {
+  cacheHit?: boolean;
+  dataType?: string;
+  matchedName?: string;
+  fdcId?: number | null;
+  servingSizeG?: number | null;
+  grams?: number;
+  unitToGramsResolved?: boolean;
+  per100g?: {
+    calories: number;
+    protein_g: number;
+    carbs_g: number;
+    total_fat_g: number;
+    saturated_fat_g: number;
+    trans_fat_g: number;
+    omega3_g: number;
+    sugar_g: number;
+    fiber_g: number;
+  };
+}
+
 interface CacheRow {
   food_name: string;
   fdc_id: number | null;
@@ -43,7 +69,7 @@ interface CacheRow {
   expires_at: string;
 }
 
-export async function lookupFood(name: string, quantity: number, unit: string): Promise<ItemNutrients | null> {
+export async function lookupFood(name: string, quantity: number, unit: string, trace?: UsdaLookupTrace): Promise<ItemNutrients | null> {
   const normalized = normalizeQuery(name);
   const admin = createAdminClient();
 
@@ -54,7 +80,8 @@ export async function lookupFood(name: string, quantity: number, unit: string): 
     .maybeSingle();
 
   if (cached && new Date(cached.expires_at) > new Date()) {
-    return scaleToServing(cached as CacheRow, quantity, unit, normalized);
+    if (trace) trace.cacheHit = true;
+    return scaleToServing(cached as CacheRow, quantity, unit, normalized, trace);
   }
 
   const search = await searchUSDA(normalized);
@@ -95,7 +122,11 @@ export async function lookupFood(name: string, quantity: number, unit: string): 
     raw_payload: detail,
   });
   if (insErr) safeLog.warn('nutrition.usda-client', 'cache write failed', { error: insErr });
-  return scaleToServing(row, quantity, unit, normalized);
+  if (trace) {
+    trace.cacheHit = false;
+    trace.dataType = 'Foundation,SR Legacy';
+  }
+  return scaleToServing(row, quantity, unit, normalized, trace);
 }
 
 async function searchUSDA(query: string): Promise<{ fdcId: number; description: string } | null> {
@@ -124,9 +155,28 @@ async function fetchUSDADetail(fdcId: number): Promise<{ foodNutrients?: Array<{
   return res.json();
 }
 
-function scaleToServing(row: CacheRow, quantity: number, unit: string, foodHint: string): ItemNutrients {
-  const grams = unitToGrams(unit, quantity, foodHint) ?? (row.serving_size_g ?? 100);
+function scaleToServing(row: CacheRow, quantity: number, unit: string, foodHint: string, trace?: UsdaLookupTrace): ItemNutrients {
+  const rawGrams = unitToGrams(unit, quantity, foodHint);
+  const grams = rawGrams ?? (row.serving_size_g ?? 100);
   const f = grams / 100;
+  if (trace) {
+    trace.matchedName = row.food_name;
+    trace.fdcId = row.fdc_id;
+    trace.servingSizeG = row.serving_size_g;
+    trace.grams = grams;
+    trace.unitToGramsResolved = rawGrams !== null;
+    trace.per100g = {
+      calories: row.calories_per_100g,
+      protein_g: row.protein_per_100g,
+      carbs_g: row.carbs_per_100g,
+      total_fat_g: row.total_fat_per_100g,
+      saturated_fat_g: row.saturated_fat_per_100g,
+      trans_fat_g: row.trans_fat_per_100g,
+      omega3_g: row.omega3_per_100g,
+      sugar_g: row.sugar_per_100g,
+      fiber_g: row.fiber_per_100g,
+    };
+  }
   return {
     calories: Math.round(row.calories_per_100g * f),
     protein_g: round1(row.protein_per_100g * f),
