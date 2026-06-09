@@ -94,12 +94,15 @@ export const METRIC_FINISH: Record<GaugeMetric, MetalFinish> = {
 };
 
 // Arc geometry: 270 degree open bottom, 0 degrees at top, clockwise.
-const GAP = 135, SWEEP = 270;
-const polar = (cx: number, cy: number, r: number, deg: number): [number, number] => {
+// Prompt 182g (2026-06-09): exported so the True 3D family (orbit /
+// gyro / coin / helix) can compute its own arc paths against the same
+// open bottom geometry without re implementing the trig.
+export const GAP = 135, SWEEP = 270;
+export const polar = (cx: number, cy: number, r: number, deg: number): [number, number] => {
   const a = (deg - 90) * Math.PI / 180;
   return [cx + r * Math.cos(a), cy + r * Math.sin(a)];
 };
-const arcPath = (cx: number, cy: number, r: number, p0: number, p1: number): string => {
+export const arcPath = (cx: number, cy: number, r: number, p0: number, p1: number): string => {
   const a0 = GAP + SWEEP * p0, a1 = GAP + SWEEP * p1;
   const [x0, y0] = polar(cx, cy, r, a0);
   const [x1, y1] = polar(cx, cy, r, a1);
@@ -143,7 +146,9 @@ function useReducedMotion(): boolean {
 // Count up from 0 to value on first inView fire. Initial state = value so
 // SSR matches the first client render. The animation fires once via a ref
 // gate so re entry to viewport does not replay it.
-function useCountUp(value: number, run: boolean, dur = 1400): number {
+// Prompt 182g (2026-06-09): exported so non Plasma gauge variants (the
+// True 3D family etc) can reuse the same entrance animation.
+export function useCountUp(value: number, run: boolean, dur = 1400): number {
   const [n, setN] = useState(value);
   const ranRef = useRef(false);
   useEffect(() => {

@@ -50,6 +50,7 @@ import {
   type GaugeMetric,
   type MetalFinish,
 } from '@/components/gauges/PlasmaGauge';
+import { Gauge3D, type Gauge3DVariant } from '@/components/gauges/Gauge3D';
 // Prompt 182f (2026-06-09): structural design tokens (surface, hairline,
 // text levels, neumorphic surface, gold / chrome / rose stops). Imported
 // here so they flow into the gallery only; the consumer surfaces stay on
@@ -230,9 +231,12 @@ function GaugeCard({
   // CSS custom properties scoped to the card. The prototype exposes
   // these via the surrounding theme; here we set them inline per card
   // so the icon chip, glow halo, and label use the correct accent.
+  // Prompt 182g (2026-06-09): --c-deep added so the True 3D family
+  // gradients resolve correctly.
   const cardVars = {
     ['--c' as string]: palette.c,
     ['--c-bright' as string]: palette.bright,
+    ['--c-deep' as string]: palette.deep,
     ['--glow' as string]: palette.glow,
   } as CSSProperties;
 
@@ -314,6 +318,18 @@ const renderPlasma: GaugeRenderer = ({ value, size, metric, finish, live, mini }
   />
 );
 
+// Prompt 182g (2026-06-09): True 3D family renderers. Same render prop
+// signature as Plasma so the GaugeCard shell is variant agnostic; the
+// 3D variants ignore the finish prop because they color code per
+// metric only (no metallic finishes for the 3D family today).
+const makeRender3D = (variant: Gauge3DVariant): GaugeRenderer => ({ value, size, metric, live, mini }) => (
+  <Gauge3D value={value} size={size} metric={metric} live={live} mini={mini} variant={variant} />
+);
+const renderOrbit = makeRender3D('orbit');
+const renderGyro  = makeRender3D('gyro');
+const renderCoin  = makeRender3D('coin');
+const renderHelix = makeRender3D('helix');
+
 // ---------------------------------------------------------------------------
 // Registry. One entry per artboard.
 // ---------------------------------------------------------------------------
@@ -363,13 +379,6 @@ const PLACEHOLDER_GROUPS: Array<{ group: string; entries: Array<{ id: string; la
     entries: [
       { id: 'placeholder-neumorphic-1', label: 'Neumorphic, channel' },
       { id: 'placeholder-neumorphic-2', label: 'Neumorphic, extruded' },
-    ],
-  },
-  {
-    group: 'True 3D',
-    entries: [
-      { id: 'placeholder-3d-1', label: '3D, perspective ring' },
-      { id: 'placeholder-3d-2', label: '3D, orbiting body' },
     ],
   },
   {
@@ -424,6 +433,23 @@ export default function GaugesGalleryPage() {
             <GaugeCard metric={FINISH_METRIC} finish={mat.id} render={renderPlasma} value={FINISH_VALUE} />
           </DCArtboard>
         ))}
+      </DCSection>
+
+      {/* Prompt 182g (2026-06-09): True 3D family lights up. Real
+          perspective + preserve 3d. Orbit, gyro, coin, helix. */}
+      <DCSection id="true-3d" title="True 3D" subtitle={SUBS['True 3D']}>
+        <DCArtboard label="14, Tilted Orbit" width={340} height={478}>
+          <GaugeCard metric="mood"     render={renderOrbit} value={90} states={[20, 55, 88]} />
+        </DCArtboard>
+        <DCArtboard label="15, Gyroscope" width={340} height={478}>
+          <GaugeCard metric="wellness" render={renderGyro}  value={45} states={[13, 50, 86]} />
+        </DCArtboard>
+        <DCArtboard label="16, 3D Coin" width={340} height={478}>
+          <GaugeCard metric="activity" render={renderCoin}  value={15} states={[15, 48, 83]} />
+        </DCArtboard>
+        <DCArtboard label="17, DNA Helix" width={340} height={478}>
+          <GaugeCard metric="sleep"    render={renderHelix} value={75} states={[22, 56, 90]} />
+        </DCArtboard>
       </DCSection>
 
       {PLACEHOLDER_GROUPS.map((pg) => (
