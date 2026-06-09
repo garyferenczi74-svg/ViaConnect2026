@@ -23,55 +23,31 @@
 // isolation. Framer Motion's motion.circle animates the
 // strokeDasharray from 0 to fillLength over the same duration.
 
-import { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
 import type { BOSCurrentResponse } from '@/lib/scoring/types';
 import {
   colorForScore,
   labelForScore,
   sentenceCase,
   geometryFor,
-  countUpValueAtProgress,
-  GAUGE_SIZE,
-  GAUGE_STROKE,
-  START_ANGLE_DEGREES,
 } from './bos-gauge-helpers';
+import { PlasmaGauge } from '@/components/gauges/PlasmaGauge';
 
 export interface BOSScoreGaugeProps {
   data: BOSCurrentResponse;
 }
 
-// useCountUp: legacy ease-out-cubic over 1.5s via requestAnimationFrame.
-// The pure curve math lives in countUpValueAtProgress (unit-tested).
-function useCountUp(target: number, duration = 1500): number {
-  const [value, setValue] = useState(0);
-  useEffect(() => {
-    let frame: number;
-    const start = performance.now();
-    const tick = (now: number) => {
-      const progress = Math.min(1, (now - start) / duration);
-      setValue(countUpValueAtProgress(target, progress));
-      if (progress < 1) frame = requestAnimationFrame(tick);
-    };
-    frame = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(frame);
-  }, [target, duration]);
-  return value;
-}
-
 export function BOSScoreGauge({ data }: BOSScoreGaugeProps) {
   const isPlaceholder = data.score === null;
   const target = data.score ?? 0;
-  const animated = useCountUp(target);
-  const color = isPlaceholder ? '#2DA5A0' : colorForScore(animated);
-  const label = isPlaceholder ? 'READY' : labelForScore(animated);
+  const color = isPlaceholder ? '#2DA5A0' : colorForScore(target);
+  const label = isPlaceholder ? 'READY' : labelForScore(target);
 
-  const { radius, center, circumference, arcLength } = geometryFor(
-    GAUGE_SIZE,
-    GAUGE_STROKE,
-  );
-  const fillLength = (animated / 100) * arcLength;
-
+  // Prompt 182 (2026-06-09): the open arc + tier color SVG body is
+  // replaced by the shared PlasmaGauge in hero variant. The wrapper
+  // keeps the placeholder branch ("--" when score is null), the tier
+  // pill below, and the aria-live announcement so the BOS card chrome
+  // is unchanged. Sizing matches the prior 240 / mobile 200 layout via
+  // a responsive wrapper.
   return (
     <div
       className="flex flex-col items-center"
@@ -82,67 +58,28 @@ export function BOSScoreGauge({ data }: BOSScoreGaugeProps) {
           : `Bio Optimization Score ${target}, ${sentenceCase(label)}`
       }
     >
-      <div className="relative" style={{ width: GAUGE_SIZE, height: GAUGE_SIZE }}>
-        <svg
-          width={GAUGE_SIZE}
-          height={GAUGE_SIZE}
-          viewBox={`0 0 ${GAUGE_SIZE} ${GAUGE_SIZE}`}
-          style={{ transform: `rotate(${START_ANGLE_DEGREES}deg)` }}
-          aria-hidden="true"
-        >
-          <circle
-            cx={center}
-            cy={center}
-            r={radius}
-            fill="none"
-            stroke="rgba(255,255,255,0.06)"
-            strokeWidth={GAUGE_STROKE}
-            strokeDasharray={`${arcLength} ${circumference}`}
-            strokeLinecap="round"
-          />
-          {!isPlaceholder ? (
-            <motion.circle
-              cx={center}
-              cy={center}
-              r={radius}
-              fill="none"
-              stroke={color}
-              strokeWidth={GAUGE_STROKE}
-              strokeLinecap="round"
-              initial={{ strokeDasharray: `0 ${circumference}` }}
-              animate={{ strokeDasharray: `${fillLength} ${circumference}` }}
-              transition={{ duration: 1.5, ease: 'easeOut', delay: 0.2 }}
-              style={{ filter: `drop-shadow(0 0 12px ${color}66)` }}
-            />
-          ) : null}
-        </svg>
-
-        {/* Center label sits in a non-rotated div over the rotated SVG */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          {isPlaceholder ? (
+      <div className="relative h-[200px] w-[200px] sm:h-[240px] sm:w-[240px]">
+        {isPlaceholder ? (
+          <div className="absolute inset-0 flex items-center justify-center">
             <span
               className="text-5xl font-bold text-white/40 sm:text-6xl"
               aria-label="No score yet"
             >
               --
             </span>
-          ) : (
-            <motion.div
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
-              className="text-center"
-            >
-              <div
-                className="text-5xl font-bold leading-none sm:text-6xl"
-                style={{ color }}
-              >
-                {animated}
-              </div>
-              <div className="mt-1 text-sm text-white/40">/ 100</div>
-            </motion.div>
-          )}
-        </div>
+          </div>
+        ) : (
+          <>
+            {/* Mobile size */}
+            <div className="block sm:hidden">
+              <PlasmaGauge metric="bioscore" variant="hero" size={200} value={target} />
+            </div>
+            {/* Desktop size */}
+            <div className="hidden sm:block">
+              <PlasmaGauge metric="bioscore" variant="hero" size={240} value={target} />
+            </div>
+          </>
+        )}
       </div>
 
       <p

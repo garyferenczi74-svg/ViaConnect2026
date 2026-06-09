@@ -472,12 +472,15 @@ export function DailyScoresPanel({ checkinRaw, previewRaw, onNudge }: DailyScore
         {/* LOADED: gauges (never resets to empty) */}
         {scoreState === 'loaded' && result && (
           <div className={`relative grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6 ${isPreview ? 'ring-1 ring-[#2DA5A0]/20 rounded-2xl p-1' : ''}`}>
-            <DailyScoreGauge {...result.sleep} color="#004aad" dataMode={result.dataMode} icon={Bed} isPreview={isPreview} />
-            <DailyScoreGauge {...result.energy} dataMode={result.dataMode} icon={Zap} isPreview={isPreview} />
-            <DailyScoreGauge {...result.moodStress} dataMode={result.dataMode} icon={Brain} isPreview={isPreview} />
-            <DailyScoreGauge {...result.nutrition} dataMode={result.dataMode} icon={Apple} isPreview={isPreview} />
-            <DailyScoreGauge {...result.activity} dataMode={result.dataMode} icon={Activity} isPreview={isPreview} />
-            <DailyScoreGauge {...result.overall} dataMode={result.dataMode} icon={Heart} isPreview={isPreview} />
+            {/* Prompt 182 (2026-06-09): metric token routed per gauge so the
+                shared PlasmaGauge picks the correct accent. moodStress maps
+                to the 'mood' token and overall maps to 'wellness'. */}
+            <DailyScoreGauge metric="sleep"     {...result.sleep}      color="#004aad" dataMode={result.dataMode} icon={Bed}      isPreview={isPreview} />
+            <DailyScoreGauge metric="energy"    {...result.energy}     dataMode={result.dataMode} icon={Zap}      isPreview={isPreview} />
+            <DailyScoreGauge metric="mood"      {...result.moodStress} dataMode={result.dataMode} icon={Brain}    isPreview={isPreview} />
+            <DailyScoreGauge metric="nutrition" {...result.nutrition}  dataMode={result.dataMode} icon={Apple}    isPreview={isPreview} />
+            <DailyScoreGauge metric="activity"  {...result.activity}   dataMode={result.dataMode} icon={Activity} isPreview={isPreview} />
+            <DailyScoreGauge metric="wellness"  {...result.overall}    dataMode={result.dataMode} icon={Heart}    isPreview={isPreview} />
           </div>
         )}
       </section>

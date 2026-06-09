@@ -20,6 +20,7 @@ import { HeartHandshake } from 'lucide-react';
 import type { Meal, NutritionTargets } from '@/lib/gordon/types';
 import { isMealNutrientKnown } from '@/lib/gordon/known-nutrients';
 import { MacroDisclaimer } from './MacroDisclaimer';
+import { PlasmaGauge } from '@/components/gauges/PlasmaGauge';
 
 export interface DailyMacroRingsProps {
   readonly meals: Meal[];
@@ -75,17 +76,12 @@ function colorForFill(actual: number, target: number): string {
 }
 
 function MacroRing({ spec, sizePx }: { spec: MacroSpec; sizePx: number }) {
-  const stroke = 8;
-  const radius = (sizePx - stroke) / 2;
-  const circumference = 2 * Math.PI * radius;
-  const ratio = spec.target > 0 ? Math.min(1, spec.actual / spec.target) : 0;
-  const arcLength = ratio * circumference;
-  const color = colorForFill(spec.actual, spec.target);
-
-  // Prompt 177d Phase D (2026-06-07): when partial, the displayed total
-  // excludes any meal that could not determine this macro. The caption
-  // explains that with "estimated" microcopy so the user understands
-  // the ring is honest about a known data gap rather than a shortfall.
+  // Prompt 182 (2026-06-09): the flat ring is replaced by the shared
+  // PlasmaGauge in compact variant. The metric token (protein, carbs,
+  // fat, fiber) maps 1:1 to spec.key. value passes grams consumed,
+  // max passes the daily target so the sublabel reads "of {target} g".
+  // The label below the gauge and the partial estimated tag are
+  // preserved.
   const partial = spec.partial === true;
   const tooltip = partial
     ? `${spec.label} excludes one or more text-channel meals where ${spec.label.toLowerCase()} was not determinable.`
@@ -100,40 +96,16 @@ function MacroRing({ spec, sizePx }: { spec: MacroSpec; sizePx: number }) {
             ? `${spec.label} ${Math.round(spec.actual)} of ${Math.round(spec.target)} ${spec.unit}, estimated`
             : `${spec.label} ${Math.round(spec.actual)} of ${Math.round(spec.target)} ${spec.unit}`
         }
-        className="relative inline-flex items-center justify-center"
-        style={{ width: sizePx, height: sizePx }}
         title={tooltip}
       >
-        <svg width={sizePx} height={sizePx} viewBox={`0 0 ${sizePx} ${sizePx}`}>
-          <circle
-            cx={sizePx / 2}
-            cy={sizePx / 2}
-            r={radius}
-            fill="none"
-            stroke="rgba(255,255,255,0.08)"
-            strokeWidth={stroke}
-          />
-          <circle
-            cx={sizePx / 2}
-            cy={sizePx / 2}
-            r={radius}
-            fill="none"
-            stroke={color}
-            strokeWidth={stroke}
-            strokeLinecap="round"
-            strokeDasharray={`${arcLength} ${circumference - arcLength}`}
-            transform={`rotate(-90 ${sizePx / 2} ${sizePx / 2})`}
-            style={{ transition: 'stroke-dasharray 200ms ease-out, stroke 200ms ease-out' }}
-          />
-        </svg>
-        <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-[14px] font-semibold tabular-nums leading-none text-white">
-            {Math.round(spec.actual)}
-          </span>
-          <span className="mt-0.5 text-[10px] tabular-nums leading-none text-white/55">
-            / {Math.round(spec.target)}
-          </span>
-        </div>
+        <PlasmaGauge
+          value={spec.actual}
+          metric={spec.key}
+          variant="compact"
+          size={sizePx}
+          max={spec.target > 0 ? spec.target : 100}
+          unit={spec.unit}
+        />
       </div>
       <span className="text-[12px] uppercase tracking-[0.10em] text-white/65">{spec.label}</span>
       {partial ? (

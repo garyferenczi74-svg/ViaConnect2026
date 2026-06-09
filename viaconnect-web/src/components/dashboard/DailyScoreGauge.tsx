@@ -1,13 +1,21 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
+// Prompt 182 (2026-06-09): the per metric score tile that fronts the
+// 6 gauge grid on the Daily Scores screen. The flat open arc SVG is
+// replaced with a shared PlasmaGauge in standard variant. The card
+// chrome (border, background, top accent bloom, label row, mode chip)
+// is preserved exactly so the grid reads the same on the Dashboard.
+
 import { ClipboardList, Watch, Merge, type LucideIcon } from 'lucide-react';
 import type { DataMode } from '@/lib/scoring/dailyScoreEngineV2';
+import { PlasmaGauge, type PlasmaMetric } from '@/components/gauges/PlasmaGauge';
 
 interface DailyScoreGaugeProps {
   score: number;
   label: string;
+  // The legacy color prop is retained for the accent bloom + label tint
+  // so existing call sites do not move; the gauge body now derives its
+  // accent from the metric token instead.
   color: string;
   confidence: number;
   dataMode: DataMode;
@@ -15,6 +23,9 @@ interface DailyScoreGaugeProps {
   size?: 'sm' | 'md';
   animate?: boolean;
   isPreview?: boolean;
+  // Prompt 182: which PlasmaGauge palette to use. Daily Scores passes
+  // one per row from DailyScoresPanel.
+  metric?: PlasmaMetric;
 }
 
 const MODE_ICONS: Record<DataMode, LucideIcon> = {
@@ -22,23 +33,6 @@ const MODE_ICONS: Record<DataMode, LucideIcon> = {
   wearable: Watch,
   combined: Merge,
 };
-
-function useCountUp(target: number, duration = 1200): number {
-  const [value, setValue] = useState(0);
-  useEffect(() => {
-    let frame: number;
-    const start = performance.now();
-    const tick = (now: number) => {
-      const p = Math.min(1, (now - start) / duration);
-      const eased = 1 - Math.pow(1 - p, 3);
-      setValue(Math.round(target * eased));
-      if (p < 1) frame = requestAnimationFrame(tick);
-    };
-    frame = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(frame);
-  }, [target, duration]);
-  return value;
-}
 
 export function DailyScoreGauge({
   score,
@@ -50,17 +44,9 @@ export function DailyScoreGauge({
   size = 'md',
   animate = true,
   isPreview = false,
+  metric = 'wellness',
 }: DailyScoreGaugeProps) {
-  const animated = animate ? useCountUp(score) : score;
   const sz = size === 'sm' ? 100 : 120;
-  const stroke = size === 'sm' ? 7 : 9;
-  const radius = (sz - stroke) / 2;
-  const center = sz / 2;
-  const sweep = 270;
-  const startAngle = 135;
-  const circumference = 2 * Math.PI * radius;
-  const arcLength = (sweep / 360) * circumference;
-  const fillLength = (animated / 100) * arcLength;
   const ModeIcon = MODE_ICONS[dataMode];
   const noData = confidence === 0;
 
@@ -72,53 +58,35 @@ export function DailyScoreGauge({
       />
 
       <div className="relative" style={{ width: sz, height: sz }}>
-        <svg width={sz} height={sz} viewBox={`0 0 ${sz} ${sz}`} style={{ transform: `rotate(${startAngle}deg)` }}>
-          <circle cx={center} cy={center} r={radius} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth={stroke} strokeDasharray={`${arcLength} ${circumference}`} strokeLinecap="round" />
-          {!noData && (
-            <motion.circle
-              cx={center} cy={center} r={radius} fill="none"
-              stroke={color} strokeWidth={stroke} strokeLinecap="round"
-              strokeDasharray={isPreview ? `4 4` : undefined}
-              initial={{ strokeDasharray: isPreview ? `4 4` : `0 ${circumference}` }}
-              animate={{ strokeDasharray: isPreview ? `4 4` : `${fillLength} ${circumference}` }}
-              transition={{ duration: 1.2, ease: 'easeOut' }}
-              style={{
-                filter: isPreview ? undefined : `drop-shadow(0 0 8px ${color}55)`,
-                opacity: isPreview ? 0.5 : 1,
-                strokeDashoffset: isPreview ? 0 : undefined,
-              }}
-            />
-          )}
-          {!noData && isPreview && (
-            <motion.circle
-              cx={center} cy={center} r={radius} fill="none"
-              stroke={color} strokeWidth={stroke} strokeLinecap="round"
-              initial={{ strokeDasharray: `0 ${circumference}` }}
-              animate={{ strokeDasharray: `${fillLength} ${circumference}` }}
-              transition={{ duration: 0.6, ease: 'easeOut' }}
-              style={{ opacity: 0.3 }}
-            />
-          )}
-          {confidence > 0 && confidence < 1 && (
-            <circle cx={center} cy={center} r={radius + stroke / 2 + 3} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth={1} strokeDasharray={`${arcLength * confidence} ${circumference}`} strokeLinecap="round" />
-          )}
-        </svg>
-
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          {noData ? (
+        {noData ? (
+          <div className="absolute inset-0 flex items-center justify-center">
             <span className="text-lg text-white/20">--</span>
-          ) : (
-            <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }} className="text-center">
-              <div className="text-xl font-bold leading-none sm:text-2xl" style={{ color, opacity: isPreview ? 0.5 : 1 }}>{animated}</div>
-              <div className="mt-0.5 text-[9px] text-white/40">{isPreview ? 'preview' : '/100'}</div>
-            </motion.div>
-          )}
-        </div>
+          </div>
+        ) : (
+          <PlasmaGauge
+            value={score}
+            metric={metric}
+            variant="standard"
+            size={sz}
+            animated={animate && !isPreview}
+          />
+        )}
       </div>
 
       <div className="mt-2 flex items-center gap-1.5">
-        {GaugeIcon && <GaugeIcon className="h-3 w-3" strokeWidth={1.5} style={{ color: noData ? 'rgba(255,255,255,0.4)' : color }} />}
-        <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: noData ? 'rgba(255,255,255,0.6)' : color }}>{label}</p>
+        {GaugeIcon && (
+          <GaugeIcon
+            className="h-3 w-3"
+            strokeWidth={1.5}
+            style={{ color: noData ? 'rgba(255,255,255,0.4)' : color }}
+          />
+        )}
+        <p
+          className="text-[10px] font-semibold uppercase tracking-wider"
+          style={{ color: noData ? 'rgba(255,255,255,0.6)' : color }}
+        >
+          {label}
+        </p>
       </div>
 
       {confidence > 0 && (

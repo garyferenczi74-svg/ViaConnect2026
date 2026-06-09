@@ -1,12 +1,17 @@
 'use client';
 
 // Prompt #168 Apply A: Gordon quality score ring.
-// Pure presentation; tier change triggers single 200ms scale pulse.
-// Token map per Section 6.3 of docs/superpowers/plans/2026-05-14-prompt-168-meal-foundation.md.
+//
+// Prompt 182 (2026-06-09): the flat open arc is replaced by the
+// shared PlasmaGauge in compact variant with the mealscore (green)
+// token. The wrapper keeps the tier label below the ring so the
+// Dashboard quick log preview (sizePx 140) and the Today's Meals
+// per meal rings (sizePx ~60) read the same as before, just with
+// the new 3D treatment.
 
-import { useEffect, useId, useRef, useState } from 'react';
 import type { QualityTier } from '@/lib/gordon/types';
 import { TIER_BOUNDARIES } from '@/lib/gordon/constants';
+import { PlasmaGauge } from '@/components/gauges/PlasmaGauge';
 
 export interface QualityScoreRingProps {
   readonly score: number;
@@ -22,28 +27,7 @@ function colorForTier(tier: QualityTier): string {
 export function QualityScoreRing(props: QualityScoreRingProps) {
   const { score, tier, sizePx = 140 } = props;
   const clampedScore = Math.max(0, Math.min(100, Math.round(score)));
-  const stroke = 10;
-  const radius = (sizePx - stroke) / 2;
-  const circumference = 2 * Math.PI * radius;
-  const arcLength = (clampedScore / 100) * circumference;
   const tierColor = colorForTier(tier);
-
-  const previousTier = useRef<QualityTier>(tier);
-  const [pulseKey, setPulseKey] = useState(0);
-  useEffect(() => {
-    if (previousTier.current !== tier) {
-      previousTier.current = tier;
-      setPulseKey((k) => k + 1);
-    }
-  }, [tier]);
-
-  const pulseStyleId = useId();
-  const pulseAnimationName = `scoreRingPulse_${pulseStyleId.replace(/[^a-zA-Z0-9_]/g, '')}`;
-  // Scale text proportionally to ring diameter. Score sits inside the ring;
-  // tier label sits below the ring as a sibling so it never overflows the
-  // small Today's Meals gauge (sizePx=60). Min 10px on the tier label keeps
-  // it readable at small sizes.
-  const scoreFontPx = Math.max(14, Math.round(sizePx * 0.32));
   const tierFontPx = Math.max(10, Math.round(sizePx * 0.085));
 
   return (
@@ -52,54 +36,12 @@ export function QualityScoreRing(props: QualityScoreRingProps) {
       aria-label={`Quality score ${clampedScore} out of 100, tier ${tier}`}
       className="inline-flex flex-col items-center font-[Instrument_Sans]"
     >
-      <div
-        className="relative inline-flex items-center justify-center"
-        style={{ width: sizePx, height: sizePx }}
-      >
-        <style>{`
-          @keyframes ${pulseAnimationName} {
-            0%   { transform: scale(1); }
-            50%  { transform: scale(1.05); }
-            100% { transform: scale(1); }
-          }
-        `}</style>
-        <svg
-          key={pulseKey}
-          width={sizePx}
-          height={sizePx}
-          viewBox={`0 0 ${sizePx} ${sizePx}`}
-          style={{
-            animation: pulseKey > 0 ? `${pulseAnimationName} 200ms ease-out 1` : undefined,
-          }}
-        >
-          <circle
-            cx={sizePx / 2}
-            cy={sizePx / 2}
-            r={radius}
-            fill="none"
-            stroke="rgba(255,255,255,0.08)"
-            strokeWidth={stroke}
-          />
-          <circle
-            cx={sizePx / 2}
-            cy={sizePx / 2}
-            r={radius}
-            fill="none"
-            stroke={tierColor}
-            strokeWidth={stroke}
-            strokeLinecap="round"
-            strokeDasharray={`${arcLength} ${circumference - arcLength}`}
-            transform={`rotate(-90 ${sizePx / 2} ${sizePx / 2})`}
-            style={{ transition: 'stroke-dasharray 200ms ease-out, stroke 200ms ease-out' }}
-          />
-        </svg>
-        <span
-          className="pointer-events-none absolute inset-0 flex items-center justify-center font-semibold leading-none tabular-nums text-white"
-          style={{ fontSize: `${scoreFontPx}px` }}
-        >
-          {clampedScore}
-        </span>
-      </div>
+      <PlasmaGauge
+        value={clampedScore}
+        metric="mealscore"
+        variant="compact"
+        size={sizePx}
+      />
       <span
         className="mt-1 font-medium uppercase tracking-[0.10em] whitespace-nowrap"
         style={{ color: tierColor, fontSize: `${tierFontPx}px` }}
