@@ -25,18 +25,26 @@ export type BenchmarkCategory = (typeof BENCHMARK_CATEGORIES)[number];
 
 /**
  * Per-nutrient consensus values for one item, already scaled to the item
- * portion. A value is null (never 0) when the nutrient is genuinely not
- * characterized for the item, mirroring the NULL-not-0 rule in the engines.
+ * portion. A genuine measured value (including a true 0, such as carbs in
+ * chicken) is recorded as a number. null is used only when the nutrient is
+ * not characterized for the item, mirroring the NULL-not-0 rule the engines
+ * follow for un-extractable values. sugar_g is a subset of carbs_g and may
+ * not exceed it.
  */
-export const NutrientTargetSchema = z.object({
-  calories_kcal: z.number().min(0),
-  protein_g: z.number().min(0).nullable(),
-  carbs_g: z.number().min(0).nullable(),
-  fat_g: z.number().min(0).nullable(),
-  fiber_g: z.number().min(0).nullable(),
-  sugar_g: z.number().min(0).nullable(),
-  sodium_mg: z.number().min(0).nullable(),
-});
+export const NutrientTargetSchema = z
+  .object({
+    calories_kcal: z.number().min(0),
+    protein_g: z.number().min(0).nullable(),
+    carbs_g: z.number().min(0).nullable(),
+    fat_g: z.number().min(0).nullable(),
+    fiber_g: z.number().min(0).nullable(),
+    sugar_g: z.number().min(0).nullable(),
+    sodium_mg: z.number().min(0).nullable(),
+  })
+  .refine(
+    (v) => v.carbs_g === null || v.sugar_g === null || v.sugar_g <= v.carbs_g,
+    { message: 'sugar_g cannot exceed carbs_g (sugar is a subset of carbs)' }
+  );
 
 export const ConsensusTargetSchema = z.object({
   source: z.enum(['five_app_median', 'fdc_derived']),
@@ -69,7 +77,7 @@ export const BenchmarkItemSchema = z
   );
 
 export const BenchmarkBasketSchema = z.object({
-  version: z.string().min(1),
+  version: z.string().regex(/^\d+$/),
   generated_basis: z.string().min(1),
   items: z.array(BenchmarkItemSchema).min(30).max(40),
 });

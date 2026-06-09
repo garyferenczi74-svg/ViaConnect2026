@@ -1,12 +1,17 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import {
   loadBenchmarkBasket,
   BenchmarkItemSchema,
   BENCHMARK_CATEGORIES,
+  type BenchmarkBasket,
 } from '../basket';
 
 describe('benchmark basket fixture', () => {
-  const basket = loadBenchmarkBasket();
+  let basket: BenchmarkBasket;
+
+  beforeAll(() => {
+    basket = loadBenchmarkBasket();
+  });
 
   it('loads and validates without throwing', () => {
     expect(() => loadBenchmarkBasket()).not.toThrow();
@@ -48,6 +53,15 @@ describe('benchmark basket fixture', () => {
     for (const item of basket.items) {
       expect(item.consensus_target.portion_g).toBeGreaterThan(0);
       expect(item.consensus_target.basis).toBeTruthy();
+    }
+  });
+
+  it('never has sugar exceeding carbs across the basket', () => {
+    for (const item of basket.items) {
+      const { carbs_g, sugar_g } = item.consensus_target.values;
+      if (carbs_g !== null && sugar_g !== null) {
+        expect(sugar_g).toBeLessThanOrEqual(carbs_g);
+      }
     }
   });
 
