@@ -305,20 +305,20 @@ export function PlasmaGauge({
             opacity={0.55}
           />
         )}
-        {/* Prompt 182m (2026-06-09): clockwise ring bead. Replaces the
-            prior progress-only glint. Runs the FULL track ring so the
-            clockwise motion is continuous regardless of fill, lands
-            as the single piece of motion on every gauge variant
-            (hero, standard, compact). Tighter dash + screen blend +
-            an accent glow filter so the bead reads as a defined
-            moving object rather than a faint shimmer. Direction is
-            clockwise: stroke-dashoffset advances 0 to -100, which
-            advances along the path direction (arcPath draws CW from
-            the 4:30 start) so the bead sweeps 12, 3, 6, 9 as
-            measured from a clock face. */}
+        {/* Prompt 182n (2026-06-09): clockwise bead that travels ONLY
+            along the colored progress arc. Fades in just after the
+            start of the colored arc, holds visible across the middle,
+            fades out as it nears the end, and reappears at the start
+            on the next cycle. Driven by the .g-bead-cw class which
+            binds the g-bead-cw keyframe (combined dashoffset slide +
+            opacity envelope, paused by default, runs when the root
+            has .g-anim). Tight dash + screen blend + accent glow so
+            the bead reads as a defined moving object rather than a
+            faint shimmer. arcPath draws progD clockwise from the
+            4:30 start, so the bead sweeps 12, 3, 6 on a clock face. */}
         <path
-          className="g-glint-rg"
-          d={trackD}
+          className="g-bead-cw"
+          d={progD}
           fill="none"
           stroke="#fff"
           strokeWidth={Math.max(2.2, sw * 0.6)}
@@ -328,9 +328,6 @@ export function PlasmaGauge({
             strokeDasharray: '4 96',
             mixBlendMode: 'screen',
             filter: `drop-shadow(0 0 ${Math.round(size * 0.03)}px ${GLOW})`,
-            opacity: 0.95,
-            ['--glint-from' as string]: '0',
-            ['--glint-to' as string]: '-100',
           }}
         />
       </svg>

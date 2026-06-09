@@ -20,6 +20,14 @@
 .g-core-hi   { animation: g-pulse 1.9s ease-in-out 0.4s infinite paused; transform-origin: center; }
 .g-sheen-rg  { animation: g-sheen 7s linear infinite paused; }
 .g-glint-rg  { animation: g-glint 2.6s linear infinite paused; }
+/* Prompt 182n (2026-06-09): clockwise progress bead. Combines the
+   dashoffset slide (position) with an opacity envelope so the bead
+   fades in near the start of the colored arc, holds visible across
+   the middle, then fades out as it reaches the end of the colored
+   portion. The next iteration restarts at the beginning of the arc.
+   Slightly snappier cycle (2.2 s vs g-glint's 2.6 s) so the fade
+   reads without dragging. */
+.g-bead-cw   { animation: g-bead-cw 2.2s linear infinite paused; }
 .g-spark-1   { animation: g-gyro1 4s linear infinite paused; }
 .g-spark-2   { animation: g-gyro2 5s linear infinite paused; }
 .g-spark-3   { animation: g-gyro3 6s linear infinite paused; }
@@ -30,6 +38,7 @@
 .g-anim .g-core-hi,
 .g-anim .g-sheen-rg,
 .g-anim .g-glint-rg,
+.g-anim .g-bead-cw,
 .g-anim .g-spark-1,
 .g-anim .g-spark-2,
 .g-anim .g-spark-3 {
@@ -47,6 +56,19 @@
   @keyframes g-glint {
     0%   { stroke-dashoffset: var(--glint-from, 0); }
     100% { stroke-dashoffset: var(--glint-to, -100); }
+  }
+
+  /* Prompt 182n (2026-06-09): clockwise progress bead. Combines a
+     dashoffset slide (position) with an opacity envelope so the bead
+     fades in just after the start of the colored arc, holds visible
+     through the middle, and fades out as it nears the end. The next
+     loop reappears at the start. Used by .g-bead-cw on PlasmaGauge's
+     progress arc; the dashoffset values assume pathLength=100. */
+  @keyframes g-bead-cw {
+    0%   { stroke-dashoffset:    0; opacity: 0; }
+    4%   { stroke-dashoffset:   -4; opacity: 1; }
+    88%  { stroke-dashoffset:  -88; opacity: 1; }
+    100% { stroke-dashoffset: -100; opacity: 0; }
   }
 
   /* conic sheen sweep on metallic bezels */
