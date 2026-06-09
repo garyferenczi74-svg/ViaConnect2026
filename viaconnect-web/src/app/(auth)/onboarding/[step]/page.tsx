@@ -200,6 +200,7 @@ const FAMILY_HISTORY_CONDITIONS = [
   { value: "cancer_other", label: "Other Cancer" },
   { value: "stroke", label: "Stroke" },
   { value: "hypertension", label: "High Blood Pressure" },
+  { value: "hypotension", label: "Low Blood Pressure" },
   { value: "high_cholesterol", label: "High Cholesterol" },
   { value: "alzheimers", label: "Alzheimer's / Dementia" },
   { value: "parkinsons", label: "Parkinson's Disease" },
