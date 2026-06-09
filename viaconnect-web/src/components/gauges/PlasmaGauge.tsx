@@ -106,6 +106,22 @@ const MATERIALS: Record<PlasmaFinish, MaterialPalette> = {
   ruby:        { dark: '#5A0F22', mid: '#A6233F', bright: '#D9466A', hi: '#EE869C', glow: 'rgba(217,70,106,0.55)' },
 };
 
+// Prompt 182a (2026-06-09): convert a hex token to rgba with explicit
+// alpha. Used to fade the molten core to transparent at its outer
+// rim so the glass orb's inset shadow stays visible. Accepts #RGB and
+// #RRGGBB; falls back to the hex untouched on any other shape so the
+// browser still parses it.
+function hexToRgba(hex: string, alpha: number): string {
+  const h = hex.replace('#', '');
+  const expand = h.length === 3 ? h.split('').map((c) => c + c).join('') : h;
+  if (expand.length !== 6) return hex;
+  const r = parseInt(expand.slice(0, 2), 16);
+  const g = parseInt(expand.slice(2, 4), 16);
+  const b = parseInt(expand.slice(4, 6), 16);
+  if ([r, g, b].some(Number.isNaN)) return hex;
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
 // Optional all metal map. Exported so a theme switch can flip the app
 // to metallic without per call site edits. NOT applied by default.
 export const METRIC_FINISH: Record<PlasmaMetric, PlasmaFinish> = {
@@ -296,10 +312,12 @@ export function PlasmaGauge({
     background: `radial-gradient(circle at 50% 46%, rgba(10,18,38,0.85), transparent 70%)`,
   };
   const accentForGlow = material ? material.glow : palette.glow;
+  // Prompt 182a (2026-06-09): bloom slightly stronger so the accent
+  // halo reads against the #1E3054 card on every metric.
   const bloomStyle: React.CSSProperties = {
     background: `radial-gradient(circle at 50% 50%, ${accentForGlow}, transparent 65%)`,
-    filter: `blur(${Math.round(size * 0.07)}px)`,
-    opacity: 0.5,
+    filter: `blur(${Math.round(size * 0.08)}px)`,
+    opacity: 0.62,
   };
   const accentForRing = material ? material.bright : palette.c;
   const ringGlowStdDev = Math.round(size * 0.012);
@@ -474,75 +492,104 @@ export function PlasmaGauge({
         ) : null}
       </svg>
 
-      {/* z 4: glass orb (inset 24%) */}
+      {/* z 4: glass orb (inset 24%). Prompt 182a (2026-06-09): boosted
+          the highlight + border opacities so the glass shell reads
+          against the molten core and the gauge well behind it. The
+          core lives INSIDE this div and fades to transparent at its
+          outer rim so the orb's inset shadow ring is always visible
+          regardless of the pulse phase. */}
       <div
         aria-hidden="true"
         className="pointer-events-none absolute rounded-full overflow-hidden"
         style={{
           inset: `${Math.round(size * 0.24)}px`,
           background:
-            'radial-gradient(circle at 35% 30%, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.04) 35%, rgba(255,255,255,0.02) 60%, rgba(0,0,0,0.30) 100%)',
-          border: '1px solid rgba(255,255,255,0.10)',
+            'radial-gradient(circle at 35% 28%, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.08) 32%, rgba(255,255,255,0.02) 62%, rgba(0,0,0,0.35) 100%)',
+          border: '1px solid rgba(255,255,255,0.22)',
           boxShadow:
-            'inset 0 2px 6px rgba(255,255,255,0.22), inset 0 -8px 18px rgba(0,0,0,0.55)',
+            'inset 0 3px 9px rgba(255,255,255,0.45), inset 0 -10px 22px rgba(0,0,0,0.65), 0 0 0 1px rgba(0,0,0,0.20)',
           backdropFilter: 'blur(2px)',
           WebkitBackdropFilter: 'blur(2px)',
         }}
       >
-        {/* z 5: pulsing core */}
+        {/* z 5: pulsing molten core. Fades to transparent at 100% so
+            the glass orb rim and its inset shadow show through the
+            core's outer edge. The core sits inset 8% inside the orb
+            so a permanent ring of glass is visible regardless of the
+            pulse scale (0.94 to 1.06). */}
         <div
           aria-hidden="true"
-          className="pg-core absolute inset-0"
+          className="pg-core absolute"
           style={{
-            background: `radial-gradient(circle at 50% 50%, #ffffff 0%, ${palette.bright} 25%, ${palette.c} 55%, ${palette.deep} 100%)`,
+            inset: '8%',
+            borderRadius: '50%',
+            background: `radial-gradient(circle at 50% 48%, #ffffff 0%, ${palette.bright} 22%, ${palette.c} 50%, ${hexToRgba(palette.deep, 0.85)} 78%, ${hexToRgba(palette.deep, 0)} 100%)`,
             transformOrigin: 'center',
           }}
         />
+        {/* Second smaller highlight pulsing out of phase, blended on
+            screen so it glints across the white-hot crown without
+            washing the metric color. */}
         <div
           aria-hidden="true"
           className="pg-core-hi absolute"
           style={{
-            inset: '15%',
-            background: `radial-gradient(circle at 50% 40%, rgba(255,255,255,0.85), rgba(255,255,255,0.0) 60%)`,
+            inset: '22%',
+            borderRadius: '50%',
+            background: `radial-gradient(circle at 50% 38%, rgba(255,255,255,0.90), rgba(255,255,255,0.0) 65%)`,
             mixBlendMode: 'screen',
             transformOrigin: 'center',
           }}
         />
       </div>
 
-      {/* z 6: orbiting sparks */}
+      {/* z 6: orbiting sparks. Prompt 182a (2026-06-09): boosted dot
+          size + glow radius so the sparks actually read at the 120 to
+          200 px gauge range. The dot is a white core with an accent
+          colored halo so it sells as a glint of plasma rather than a
+          static dot. */}
       {sparks.length > 0 ? (
         <div
           aria-hidden="true"
           className="pointer-events-none absolute inset-0"
           style={{ perspective: `${size * 2}px` }}
         >
-          {sparks.map((spark, i) => (
-            <div
-              key={i}
-              className={`${spark.cls} absolute inset-0`}
-              style={{
-                transformStyle: 'preserve-3d',
-                transform: `rotateX(${spark.tilt}deg)`,
-              }}
-            >
+          {sparks.map((spark, i) => {
+            const dotSize = variant === 'compact'
+              ? Math.max(4, Math.round(size * 0.030))
+              : Math.max(7, Math.round(size * 0.048));
+            const halfDot = dotSize / 2;
+            const glow = variant === 'compact'
+              ? Math.max(6, Math.round(size * 0.05))
+              : Math.max(10, Math.round(size * 0.08));
+            return (
               <div
+                key={i}
+                className={`${spark.cls} absolute inset-0`}
                 style={{
-                  position: 'absolute',
-                  left: '50%',
-                  top: '50%',
-                  width: Math.max(3, Math.round(size * 0.025)),
-                  height: Math.max(3, Math.round(size * 0.025)),
-                  marginLeft: -Math.max(3, Math.round(size * 0.025)) / 2,
-                  marginTop: -Math.max(3, Math.round(size * 0.025)) / 2,
-                  background: '#ffffff',
-                  borderRadius: '50%',
-                  boxShadow: `0 0 ${Math.round(size * 0.04)}px ${accentForGlow}`,
-                  transform: `translateZ(${Math.round(size * 0.18)}px)`,
+                  transformStyle: 'preserve-3d',
+                  transform: `rotateX(${spark.tilt}deg)`,
                 }}
-              />
-            </div>
-          ))}
+              >
+                <div
+                  style={{
+                    position: 'absolute',
+                    left: '50%',
+                    top: '50%',
+                    width: dotSize,
+                    height: dotSize,
+                    marginLeft: -halfDot,
+                    marginTop: -halfDot,
+                    background:
+                      'radial-gradient(circle at 50% 50%, #ffffff 0%, #ffffff 35%, rgba(255,255,255,0.6) 60%, rgba(255,255,255,0) 100%)',
+                    borderRadius: '50%',
+                    boxShadow: `0 0 ${glow}px ${accentForGlow}, 0 0 ${Math.round(glow / 2)}px ${accentForGlow}`,
+                    transform: `translateZ(${Math.round(size * 0.18)}px)`,
+                  }}
+                />
+              </div>
+            );
+          })}
         </div>
       ) : null}
 
