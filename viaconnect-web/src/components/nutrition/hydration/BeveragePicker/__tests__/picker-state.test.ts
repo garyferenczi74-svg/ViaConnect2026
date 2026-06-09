@@ -163,8 +163,39 @@ describe('search', () => {
       row({ id: '3', slug: 'coffee_decaf', display_name: 'Decaf Coffee', category: 'coffee' }),
       row({ id: '4', slug: 'tea_green', display_name: 'Green Tea', category: 'tea' }),
     ];
+    // Prompt 177n (2026-06-09): both Drip Coffee and Decaf Coffee match
+    // on display_name substring (score 70). With equal sort_order ties
+    // resolve by display_name so the order is alphabetical: Decaf
+    // before Drip.
     const results = searchCatalog(catalog, 'coff');
-    expect(results.map((r) => r.id)).toEqual(['2', '3']);
+    expect(results.map((r) => r.id)).toEqual(['3', '2']);
+  });
+
+  it('searchCatalog returns category matches so "cof" surfaces Espresso Shot', () => {
+    // Prompt 177n (2026-06-09): mirrors the search_beverages RPC
+    // behavior validated against production. Typing "cof" surfaces the
+    // coffee family even when the display_name does not contain the
+    // typed prefix, because category='coffee' matches.
+    const catalog = [
+      row({ id: '1', slug: 'water_still', display_name: 'Still Water' }),
+      row({ id: '2', slug: 'coffee_espresso', display_name: 'Espresso Shot', category: 'coffee' }),
+      row({ id: '3', slug: 'coffee_drip', display_name: 'Drip Coffee', category: 'coffee' }),
+    ];
+    const results = searchCatalog(catalog, 'cof');
+    // Drip Coffee matches by display_name substring (score 70); Espresso
+    // Shot matches by category substring (score 50). Name match wins.
+    expect(results.map((r) => r.id)).toEqual(['3', '2']);
+  });
+
+  it('searchCatalog ranks display_name prefix above substring', () => {
+    const catalog = [
+      row({ id: '1', slug: 'a', display_name: 'Iced Coffee', category: 'coffee' }),
+      row({ id: '2', slug: 'b', display_name: 'Coffee Drip', category: 'coffee' }),
+    ];
+    const results = searchCatalog(catalog, 'coffee');
+    // 'Coffee Drip' starts with 'coffee' (score 100); 'Iced Coffee'
+    // contains it (score 70).
+    expect(results.map((r) => r.id)).toEqual(['2', '1']);
   });
 
   it('searchCatalog returns empty for empty or whitespace query', () => {

@@ -139,10 +139,27 @@ export function filterByCategory(
 }
 
 /**
- * Case insensitive substring search over display_name. Returns up to 20
- * matches per spec section 10. Order is preserved from the server sort.
+ * Case insensitive ranked search over display_name, category, and slug.
+ * Mirrors the search_beverages RPC shape from prompt 177n so a typed
+ * "cof" surfaces the coffee family by matching on category, and "wat"
+ * surfaces the water family the same way. Up to 20 matches per spec
+ * section 10.
+ *
+ * Ranking (matches the RPC shape):
+ *   100  display_name prefix
+ *    70  display_name substring
+ *    50  category substring
+ *    40  slug substring
+ *
+ * Ties resolve by the catalog's sort_order then display_name so the
+ * canonical ordering the server sends is preserved within a tier.
  */
 export const SEARCH_RESULT_LIMIT = 20;
+
+interface RankedRow {
+  row: BeverageCatalogRow;
+  score: number;
+}
 
 export function searchCatalog(
   catalog: ReadonlyArray<BeverageCatalogRow>,
@@ -150,14 +167,24 @@ export function searchCatalog(
 ): ReadonlyArray<BeverageCatalogRow> {
   const trimmed = query.trim().toLowerCase();
   if (trimmed.length === 0) return [];
-  const matches: BeverageCatalogRow[] = [];
+  const ranked: RankedRow[] = [];
   for (const row of catalog) {
-    if (row.display_name.toLowerCase().includes(trimmed)) {
-      matches.push(row);
-      if (matches.length >= SEARCH_RESULT_LIMIT) break;
-    }
+    const name = row.display_name.toLowerCase();
+    const category = (row.category as string | null | undefined)?.toLowerCase() ?? '';
+    const slug = row.slug.toLowerCase();
+    let score = 0;
+    if (name.startsWith(trimmed)) score = 100;
+    else if (name.includes(trimmed)) score = 70;
+    else if (category.includes(trimmed)) score = 50;
+    else if (slug.includes(trimmed)) score = 40;
+    if (score > 0) ranked.push({ row, score });
   }
-  return matches;
+  ranked.sort((a, b) => {
+    if (b.score !== a.score) return b.score - a.score;
+    if (a.row.sort_order !== b.row.sort_order) return a.row.sort_order - b.row.sort_order;
+    return a.row.display_name.localeCompare(b.row.display_name);
+  });
+  return ranked.slice(0, SEARCH_RESULT_LIMIT).map((r) => r.row);
 }
 
 /**
