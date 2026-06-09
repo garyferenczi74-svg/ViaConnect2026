@@ -1,35 +1,112 @@
 'use client';
 
-// Prompt 182d (2026-06-09): internal gauge gallery.
+// Prompt 182d / 182e (2026-06-09): internal gauge gallery at
+// /admin/gauges.
 //
-// Mirrors the canonical prototype/app.jsx layout (DesignCanvas,
-// DCSection, DCArtboard, GaugeCard) in ViaConnect styling so the
-// PlasmaGauge can be compared head to head against the other gauge
-// families as they ship.
+// Mirrors the canonical prototype shell (app.jsx + gauge-core.jsx) in
+// ViaConnect styling so every gauge family can be compared side by
+// side as variants ship. Display only. No data access, no schema
+// changes, no route table edit beyond the new page.
 //
-// The route is internal: /admin/gauges. No data access, no auth
-// beyond the existing /admin route group gate. Display only.
-//
-// Each registry entry slots into one of seven families. The Signature
-// family is the showpiece Plasma Core in default color mode; the
-// "Plasma Core, 12 metallic finishes" family renders the same gauge
-// twelve times, once per metal, so the finish palette can be reviewed
-// in one place. The other five families ship as placeholder shells
-// until their respective component variants land.
+// 182e (this commit) adopts the prototype's richer GaugeCard
+// scaffolding: glow halo behind the hero, hero gauge in the middle,
+// label row with the metric icon chip + display name, and a STATES
+// strip showing the same gauge at three preset values (22 / 58 / 91)
+// as miniature compact tiles. The render prop signature is
+// (props) => ReactNode where the variant renderer receives
+// { value, size, metric, live, mini? }, so future families (Liquid,
+// Helix, Coin etc) plug in without touching the card shell.
 //
 // House rules: no em or en dashes anywhere (subtitles use commas and
-// colons). No emojis. Instrument Sans only.
+// colons). No emojis. Instrument Sans only. Lucide icons at
+// strokeWidth 1.5.
 
-import { type CSSProperties, type ReactNode } from 'react';
-import { PlasmaGauge, MATERIALS, METRIC_FINISH, type GaugeMetric, type MetalFinish } from '@/components/gauges/PlasmaGauge';
-
-// Prompt 182d: metadata cannot ship from a 'use client' page. The
-// browser tab title defaults to the parent layout's title; the
-// header above the canvas already reads "Gauges Gallery".
+import {
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from 'react';
+import {
+  Activity,
+  Apple,
+  Beef,
+  Brain,
+  Droplets,
+  Heart,
+  Moon,
+  Sparkles,
+  Utensils,
+  Wheat,
+  Zap,
+  type LucideIcon,
+} from 'lucide-react';
+import {
+  PlasmaGauge,
+  MATERIALS,
+  METRIC_COLORS,
+  METRIC_FINISH,
+  type GaugeMetric,
+  type MetalFinish,
+} from '@/components/gauges/PlasmaGauge';
 
 // ---------------------------------------------------------------------------
-// Canvas primitives. Inline because the gallery is the only consumer; if a
-// second design canvas surface ever wants the same shell they will lift.
+// Metric metadata (display name + icon). Extended from the prototype's six
+// core metrics to cover every PlasmaGauge token so the gallery surfaces the
+// full taxonomy.
+// ---------------------------------------------------------------------------
+
+interface MetricMeta {
+  name: string;
+  icon: LucideIcon;
+}
+
+const METRIC_META: Record<GaugeMetric, MetricMeta> = {
+  bioscore:  { name: 'Bio Optimization Score', icon: Sparkles },
+  sleep:     { name: 'Sleep Quality',          icon: Moon },
+  energy:    { name: 'Energy Level',           icon: Zap },
+  mood:      { name: 'Mood and Stress',        icon: Brain },
+  nutrition: { name: 'Nutrition',              icon: Apple },
+  activity:  { name: 'Physical Activity',      icon: Activity },
+  wellness:  { name: 'Overall Wellness',       icon: Heart },
+  protein:   { name: 'Protein',                icon: Beef },
+  carbs:     { name: 'Carbohydrates',          icon: Wheat },
+  fat:       { name: 'Dietary Fat',            icon: Droplets },
+  fiber:     { name: 'Fiber',                  icon: Wheat },
+  mealscore: { name: 'Meal Quality',           icon: Utensils },
+};
+
+// ---------------------------------------------------------------------------
+// Hooks (porting useInView + useCountUp from the prototype's gauge-core).
+// useCountUp is unused inside this gallery because the PlasmaGauge renderer
+// owns its own count up; useInView is exported so future renderers that
+// want their own gating can grab it. Both stay co located with the card
+// so a renderer that does not use PlasmaGauge can still wire correctly.
+// ---------------------------------------------------------------------------
+
+function useInView(margin = '120px'): [React.RefObject<HTMLDivElement>, boolean] {
+  const ref = useRef<HTMLDivElement>(null);
+  const [seen, setSeen] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    if (typeof IntersectionObserver === 'undefined') {
+      setSeen(true);
+      return;
+    }
+    const io = new IntersectionObserver(
+      (es) => es.forEach((e) => setSeen(e.isIntersecting)),
+      { rootMargin: margin },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [margin]);
+  return [ref, seen];
+}
+
+// ---------------------------------------------------------------------------
+// Canvas primitives.
 // ---------------------------------------------------------------------------
 
 function DesignCanvas({ children }: { children: ReactNode }) {
@@ -68,21 +145,19 @@ function DCArtboard({
   label,
   width,
   height,
-  style,
   children,
 }: {
   label: string;
   width: number;
   height: number;
-  style?: CSSProperties;
   children: ReactNode;
 }) {
   return (
     <div
-      className="flex flex-col overflow-hidden border border-white/10"
-      style={{ width: '100%', maxWidth: width, minHeight: height, ...style }}
+      className="flex flex-col overflow-hidden rounded-[26px] border border-white/10 bg-[#1A2744]"
+      style={{ width: '100%', maxWidth: width, minHeight: height }}
     >
-      <div className="flex-1 flex items-center justify-center px-4 py-6">{children}</div>
+      <div className="flex-1">{children}</div>
       <div className="border-t border-white/10 px-3 py-2 text-[11px] font-medium uppercase tracking-[0.10em] text-white/55">
         {label}
       </div>
@@ -90,38 +165,131 @@ function DCArtboard({
   );
 }
 
-interface GaugeCardProps {
-  metric: GaugeMetric;
-  finish?: MetalFinish | null;
+// ---------------------------------------------------------------------------
+// GaugeCard. The prototype's shared card shell.
+//
+// render(props) is the variant renderer. Today only PlasmaGauge ships; the
+// signature is stable so a Liquid Fill or Helix renderer can slot in
+// without changing this card.
+// ---------------------------------------------------------------------------
+
+export interface GaugeRendererProps {
   value: number;
-  heroSize?: number;
-  showFinishLabel?: boolean;
+  size: number;
+  metric: GaugeMetric;
+  finish: MetalFinish | null;
+  live: boolean;
+  mini?: boolean;
 }
 
-function GaugeCard({ metric, finish = null, value, heroSize = 196, showFinishLabel = false }: GaugeCardProps) {
+type GaugeRenderer = (props: GaugeRendererProps) => ReactNode;
+
+function GaugeCard({
+  metric,
+  finish = null,
+  render,
+  value = 72,
+  states = [22, 58, 91],
+  heroSize = 196,
+}: {
+  metric: GaugeMetric;
+  finish?: MetalFinish | null;
+  render: GaugeRenderer;
+  value?: number;
+  states?: number[];
+  heroSize?: number;
+}) {
+  const meta = METRIC_META[metric];
+  const IconCmp = meta.icon;
+  const palette = METRIC_COLORS[metric];
+  const [ref, inView] = useInView();
+  const live = inView;
+
+  // CSS custom properties scoped to the card. The prototype exposes
+  // these via the surrounding theme; here we set them inline per card
+  // so the icon chip, glow halo, and label use the correct accent.
+  const cardVars = {
+    ['--c' as string]: palette.c,
+    ['--c-bright' as string]: palette.bright,
+    ['--glow' as string]: palette.glow,
+  } as CSSProperties;
+
   return (
-    <div className="flex flex-col items-center gap-3">
-      <PlasmaGauge metric={metric} finish={finish} value={value} size={heroSize} variant="hero" />
-      {showFinishLabel && finish ? (
-        <span className="text-[11px] uppercase tracking-[0.12em] text-white/55">{finish.replace('-', ' ')}</span>
-      ) : null}
+    <div ref={ref} data-metric={metric} className="relative flex h-full w-full flex-col items-center overflow-hidden px-[22px] pt-[30px] pb-[22px]" style={cardVars}>
+      {/* Glow halo behind the hero gauge. */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute top-[-18%] left-1/2 h-[52%] w-[78%] -translate-x-1/2 rounded-full"
+        style={{
+          background: `radial-gradient(circle, ${palette.glow} 0%, transparent 70%)`,
+          opacity: 0.5,
+          filter: 'blur(26px)',
+        }}
+      />
+
+      {/* Hero gauge. */}
+      <div className="relative z-[1] flex h-[208px] items-center justify-center">
+        {render({ value, size: heroSize, metric, finish, live })}
+      </div>
+
+      {/* Label row: icon chip + display name. */}
+      <div className="relative z-[1] mt-1 flex items-center gap-[9px]">
+        <span
+          className="inline-flex h-7 w-7 items-center justify-center rounded-[9px] border"
+          style={{
+            color: palette.bright,
+            background: `color-mix(in srgb, ${palette.c} 14%, transparent)`,
+            borderColor: `color-mix(in srgb, ${palette.c} 26%, transparent)`,
+          }}
+          aria-hidden="true"
+        >
+          <IconCmp className="h-3.5 w-3.5" strokeWidth={1.5} />
+        </span>
+        <span className="font-[Instrument_Sans] text-[15.5px] font-semibold tracking-[0.2px] text-white">
+          {meta.name}
+        </span>
+      </div>
+
+      {/* STATES strip. */}
+      <div className="relative z-[1] mt-auto w-full pt-4">
+        <div className="border-t border-white/10 pt-3 text-center">
+          <div className="text-[9.5px] font-semibold uppercase tracking-[2.4px] text-white/45">States</div>
+        </div>
+        <div className="mt-2 flex justify-around gap-1.5">
+          {states.map((v) => (
+            <div key={v} className="flex flex-col items-center gap-1.5">
+              <div className="flex h-14 w-14 items-center justify-center">
+                {render({ value: v, size: 56, metric, finish, live: false, mini: true })}
+              </div>
+              <span className="font-[Instrument_Sans] text-[13px] font-bold tabular-nums text-white/65">{v}</span>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
 
 // ---------------------------------------------------------------------------
-// Registry. One entry per artboard.
+// Plasma renderer: the (only) gauge variant shipping today. Plugged into
+// GaugeCard via the render prop so the card shell stays variant agnostic.
 // ---------------------------------------------------------------------------
 
-interface RegistryEntry {
-  id: string;
-  group: string;
-  label: string;
-  metric: GaugeMetric;
-  value: number;
-  finish?: MetalFinish | null;
-  heroSize?: number;
-}
+const renderPlasma: GaugeRenderer = ({ value, size, metric, finish, live, mini }) => (
+  <PlasmaGauge
+    value={value}
+    metric={metric}
+    finish={finish}
+    size={size}
+    variant={mini ? 'compact' : 'hero'}
+    animated={live}
+    showUnit={!mini}
+  />
+);
+
+// ---------------------------------------------------------------------------
+// Registry. One entry per artboard.
+// ---------------------------------------------------------------------------
 
 const SUBS: Record<string, string> = {
   'Metallic and premium': 'Conic metal bezels, rotating sheen, travelling specular glint',
@@ -133,25 +301,20 @@ const SUBS: Record<string, string> = {
   'Plasma Core, 12 metallic finishes': 'The Plasma Core in twelve premium metals: warm gold to bronze, cool platinum to gunmetal, jewel emerald to ruby',
 };
 
-// Signature row: the Plasma Core in default color mode at every metric so the
-// per metric palette reads alongside the showpiece composition.
-const SIGNATURE_METRICS: Array<{ metric: GaugeMetric; label: string; value: number }> = [
-  { metric: 'bioscore',  label: 'Bio Optimization Score',  value: 82 },
-  { metric: 'sleep',     label: 'Sleep',                   value: 76 },
-  { metric: 'energy',    label: 'Energy',                  value: 64 },
-  { metric: 'mood',      label: 'Mood',                    value: 71 },
-  { metric: 'nutrition', label: 'Nutrition',               value: 88 },
-  { metric: 'activity',  label: 'Activity',                value: 59 },
-  { metric: 'wellness',  label: 'Overall Wellness',        value: 73 },
-  { metric: 'mealscore', label: 'Meal Quality',            value: 91 },
+const SIGNATURE_METRICS: Array<{ metric: GaugeMetric; value: number }> = [
+  { metric: 'bioscore',  value: 82 },
+  { metric: 'sleep',     value: 76 },
+  { metric: 'energy',    value: 64 },
+  { metric: 'mood',      value: 71 },
+  { metric: 'nutrition', value: 88 },
+  { metric: 'activity',  value: 59 },
+  { metric: 'wellness',  value: 73 },
+  { metric: 'mealscore', value: 91 },
 ];
 
-// Plasma Core, 12 metallic finishes: same gauge, twelve metals.
 const FINISH_VALUE = 78;
 const FINISH_METRIC: GaugeMetric = 'bioscore';
 
-// Placeholder families that have not shipped a variant yet. Render a labelled
-// empty card so the gallery composition reads as the full taxonomy.
 const PLACEHOLDER_GROUPS: Array<{ group: string; entries: Array<{ id: string; label: string }> }> = [
   {
     group: 'Metallic and premium',
@@ -193,9 +356,11 @@ const PLACEHOLDER_GROUPS: Array<{ group: string; entries: Array<{ id: string; la
 
 function PlaceholderTile({ label }: { label: string }) {
   return (
-    <div className="flex h-[196px] w-[196px] flex-col items-center justify-center rounded-full border border-dashed border-white/10 bg-white/[0.02] text-center">
-      <span className="text-[11px] uppercase tracking-[0.12em] text-white/45">Coming soon</span>
-      <span className="mt-2 max-w-[140px] text-[12px] leading-relaxed text-white/70">{label}</span>
+    <div className="flex h-[208px] flex-col items-center justify-center px-[22px] pt-[30px] pb-[22px]">
+      <div className="flex h-[196px] w-[196px] flex-col items-center justify-center rounded-full border border-dashed border-white/10 bg-white/[0.02] text-center">
+        <span className="text-[11px] uppercase tracking-[0.12em] text-white/45">Coming soon</span>
+        <span className="mt-2 max-w-[140px] text-[12px] leading-relaxed text-white/70">{label}</span>
+      </div>
     </div>
   );
 }
@@ -205,77 +370,38 @@ function PlaceholderTile({ label }: { label: string }) {
 // ---------------------------------------------------------------------------
 
 export default function GaugesGalleryPage() {
-  // Build the registry from the four source arrays.
-  const registry: RegistryEntry[] = [];
-
-  // Signature: the showpiece Plasma Core in color mode at every metric.
-  for (const m of SIGNATURE_METRICS) {
-    registry.push({
-      id: `signature-${m.metric}`,
-      group: 'Signature',
-      label: m.label,
-      metric: m.metric,
-      value: m.value,
-    });
-  }
-
-  // Plasma Core, 12 finishes. One entry per metal in the canonical order.
-  for (const mat of MATERIALS) {
-    registry.push({
-      id: `plasma-finish-${mat.id}`,
-      group: 'Plasma Core, 12 metallic finishes',
-      label: mat.name,
-      metric: FINISH_METRIC,
-      value: FINISH_VALUE,
-      finish: mat.id,
-    });
-  }
-
-  // Group registry entries preserving first seen order so Signature surfaces
-  // first, then the 12 finishes, then any placeholder groups.
-  const groups: string[] = [];
-  const byGroup: Record<string, RegistryEntry[]> = {};
-  for (const e of registry) {
-    if (!byGroup[e.group]) {
-      byGroup[e.group] = [];
-      groups.push(e.group);
-    }
-    byGroup[e.group].push(e);
-  }
-
   return (
     <DesignCanvas>
-      {groups.map((g) => (
-        <DCSection key={g} id={g} title={g} subtitle={SUBS[g]}>
-          {byGroup[g].map((e) => (
-            <DCArtboard key={e.id} label={e.label} width={340} height={478} style={{ background: '#1A2744', borderRadius: 26 }}>
-              <GaugeCard
-                metric={e.metric}
-                finish={e.finish ?? null}
-                value={e.value}
-                heroSize={e.heroSize}
-                showFinishLabel={!!e.finish}
-              />
-            </DCArtboard>
-          ))}
-        </DCSection>
-      ))}
+      <DCSection id="signature" title="Signature" subtitle={SUBS['Signature']}>
+        {SIGNATURE_METRICS.map(({ metric, value }) => (
+          <DCArtboard key={`signature-${metric}`} label={METRIC_META[metric].name} width={340} height={478}>
+            <GaugeCard metric={metric} render={renderPlasma} value={value} />
+          </DCArtboard>
+        ))}
+      </DCSection>
 
-      {/* Placeholder families: render shells until each variant ships. */}
+      <DCSection
+        id="plasma-finishes"
+        title="Plasma Core, 12 metallic finishes"
+        subtitle={SUBS['Plasma Core, 12 metallic finishes']}
+      >
+        {MATERIALS.map((mat) => (
+          <DCArtboard key={`finish-${mat.id}`} label={mat.name} width={340} height={478}>
+            <GaugeCard metric={FINISH_METRIC} finish={mat.id} render={renderPlasma} value={FINISH_VALUE} />
+          </DCArtboard>
+        ))}
+      </DCSection>
+
       {PLACEHOLDER_GROUPS.map((pg) => (
         <DCSection key={pg.group} id={pg.group} title={pg.group} subtitle={SUBS[pg.group]}>
           {pg.entries.map((e) => (
-            <DCArtboard key={e.id} label={e.label} width={340} height={478} style={{ background: '#1A2744', borderRadius: 26 }}>
+            <DCArtboard key={e.id} label={e.label} width={340} height={478}>
               <PlaceholderTile label={e.label} />
             </DCArtboard>
           ))}
         </DCSection>
       ))}
 
-      {/* METRIC_FINISH usage note: the map is exported by PlasmaGauge so a
-          single theme switch can flip the app to metallic without per call
-          site edits. The Signature section above shows color mode; flipping
-          ships in a later commit if Gary wants the all metal default. */}
       <section className="mt-4 rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 p-4 text-[12px] leading-relaxed text-white/55 md:p-5 md:text-[13px]">
         <strong className="text-white/75">METRIC_FINISH map (reference):</strong>
         <pre className="mt-2 overflow-x-auto whitespace-pre text-[11px] text-white/45">{JSON.stringify(METRIC_FINISH, null, 2)}</pre>
