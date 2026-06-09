@@ -23,6 +23,7 @@ import { SURFACES } from './hubConfig';
 import { BentoCard } from './BentoCard';
 import { GuidanceStrip } from './GuidanceStrip';
 import { ConnectionsStrip } from './ConnectionsStrip';
+import { AssessmentRetakeCard } from './AssessmentRetakeCard';
 import { useHubMetrics } from './useHubMetrics';
 
 export function BodyTrackerHub() {
@@ -75,6 +76,9 @@ export function BodyTrackerHub() {
 
       {/* Connections strip (foundation layer). */}
       <ConnectionsStrip />
+
+      {/* Update Your Assessment card (mirrors the My Supplements design). */}
+      <AssessmentRetakeCard />
     </div>
   );
 }
