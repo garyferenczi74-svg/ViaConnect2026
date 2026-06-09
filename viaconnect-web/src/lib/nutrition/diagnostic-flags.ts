@@ -23,9 +23,9 @@ export function isNutritionDiagnosticsEnabled(): boolean {
 }
 
 /**
- * Set by the divergence report harness to pin deterministic behavior, for
- * example using captured vision detection fixtures instead of live vision
- * calls. Off by default.
+ * Gates benchmark-mode code paths, for example substituting captured vision
+ * detection fixtures for live vision calls so the divergence harness runs
+ * deterministically. Off by default.
  */
 export function isNutritionBenchmarkMode(): boolean {
   return readBooleanEnv('NUTRITION_BENCHMARK_MODE', false);

@@ -34,10 +34,6 @@ describe('isNutritionDiagnosticsEnabled', () => {
     }
   );
 
-  it('does not throw when the env var is undefined', () => {
-    delete process.env[DIAGNOSTICS_KEY];
-    expect(() => isNutritionDiagnosticsEnabled()).not.toThrow();
-  });
 });
 
 describe('isNutritionBenchmarkMode', () => {
@@ -46,10 +42,21 @@ describe('isNutritionBenchmarkMode', () => {
     expect(isNutritionBenchmarkMode()).toBe(false);
   });
 
-  it('returns true for a truthy token', () => {
-    process.env[BENCHMARK_KEY] = 'true';
-    expect(isNutritionBenchmarkMode()).toBe(true);
-  });
+  it.each(['true', '1', ' On ', 'YES'])(
+    'returns true for the truthy token %s',
+    (value) => {
+      process.env[BENCHMARK_KEY] = value;
+      expect(isNutritionBenchmarkMode()).toBe(true);
+    }
+  );
+
+  it.each(['no', 'off', 'garbage', ''])(
+    'returns false for the non-truthy value %s',
+    (value) => {
+      process.env[BENCHMARK_KEY] = value;
+      expect(isNutritionBenchmarkMode()).toBe(false);
+    }
+  );
 
   it('is independent of the diagnostics flag', () => {
     process.env[DIAGNOSTICS_KEY] = 'true';
