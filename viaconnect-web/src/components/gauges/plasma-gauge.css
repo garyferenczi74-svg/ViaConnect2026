@@ -1,77 +1,136 @@
-/* PlasmaGauge keyframes (Prompt 182b / 2026-06-09).
+/* PlasmaGauge animations (Prompt 182c / 2026-06-09).
  *
- * Co located with PlasmaGauge.tsx per the canonical reference. The
- * earlier 182 build kept these in globals.css; moved here to match
- * the reference's plasma-gauge.css convention and to scope the
- * keyframes to the component import graph.
+ * g- namespace keyframe library matches the canonical anim.css paste.
+ * Keyframes live inside @media (prefers-reduced-motion: no-preference)
+ * so users who prefer reduced motion automatically get no keyframes
+ * defined; the bindings on .g-core, .g-spark-N etc dangle and the
+ * animations never start.
  *
- * Names live under the pg- namespace so they cannot collide with any
- * other component keyframes. The orbit keyframes bake both rotateX
- * (the plane tilt) and rotateY (the spin) so the 3D orbit composes
- * correctly when the keyframe runs; a single rotateY keyframe would
- * clobber an inline rotateX transform mid animation. */
+ * Play state inversion vs the earlier .pg-paused pattern: each animated
+ * element declares its animation in the paused state by default. Only
+ * when the gauge root has the .g-anim class (live and in view and
+ * variant is hero or standard, not compact) does the running override
+ * apply. Compact gauges therefore never animate: the orb, the core,
+ * and the sparks render as a static composite plate.
+ */
 
-@keyframes pg-pulse {
-  0%, 100% { transform: scale(0.94); opacity: 0.55; }
-  50%      { transform: scale(1.06); opacity: 1; }
+/* ---- Default (paused) animation bindings on each animated layer ---- */
+
+.g-core      { animation: g-pulse 2.6s ease-in-out infinite paused; transform-origin: center; }
+.g-core-hi   { animation: g-pulse 1.9s ease-in-out 0.4s infinite paused; transform-origin: center; }
+.g-sheen-rg  { animation: g-sheen 7s linear infinite paused; }
+.g-glint-rg  { animation: g-glint 2.6s linear infinite paused; }
+.g-spark-1   { animation: g-gyro1 4s linear infinite paused; }
+.g-spark-2   { animation: g-gyro2 5s linear infinite paused; }
+.g-spark-3   { animation: g-gyro3 6s linear infinite paused; }
+
+/* ---- Live state: root has .g-anim ---- */
+
+.g-anim .g-core,
+.g-anim .g-core-hi,
+.g-anim .g-sheen-rg,
+.g-anim .g-glint-rg,
+.g-anim .g-spark-1,
+.g-anim .g-spark-2,
+.g-anim .g-spark-3 {
+  animation-play-state: running;
 }
 
-@keyframes pg-pulse-hi {
-  0%, 100% { transform: scale(0.92); opacity: 0.35; }
-  50%      { transform: scale(1.04); opacity: 0.85; }
-}
+/* ---- Keyframe library (gated on prefers-reduced-motion) ---- */
 
-@keyframes pg-sheen {
-  0%   { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
+@media (prefers-reduced-motion: no-preference) {
 
-@keyframes pg-glint {
-  0%   { stroke-dashoffset: 0; }
-  100% { stroke-dashoffset: -100; }
-}
+  @keyframes g-spin      { to { transform: rotate(360deg); } }
+  @keyframes g-spin-rev  { to { transform: rotate(-360deg); } }
 
-/* Per spark orbit keyframes. Each tilt is baked so the rotateX
- * (plane tilt) and rotateY (spin around the orbit axis) compose
- * together correctly under preserve-3d. Without baking both, the
- * keyframe's transform would replace the inline rotateX and the
- * spark would orbit in a flat horizontal circle instead of a
- * tilted 3D orbit. */
-@keyframes pg-spark-1 { 0% { transform: rotateX(62deg) rotateY(0deg); }   100% { transform: rotateX(62deg) rotateY(360deg); } }
-@keyframes pg-spark-2 { 0% { transform: rotateX(70deg) rotateY(120deg); } 100% { transform: rotateX(70deg) rotateY(480deg); } }
-@keyframes pg-spark-3 { 0% { transform: rotateX(78deg) rotateY(240deg); } 100% { transform: rotateX(78deg) rotateY(600deg); } }
-
-.pg-core       { animation: pg-pulse 2.6s ease-in-out infinite; }
-.pg-core-hi    { animation: pg-pulse-hi 1.9s ease-in-out infinite 0.4s; }
-.pg-sheen      { animation: pg-sheen 7s linear infinite; }
-.pg-glint      { animation: pg-glint 2.6s linear infinite; }
-.pg-spark-1    { animation: pg-spark-1 4s linear infinite; }
-.pg-spark-2    { animation: pg-spark-2 5s linear infinite; }
-.pg-spark-3    { animation: pg-spark-3 6s linear infinite; }
-
-/* When the gauge container has .pg-paused (off screen or reduced
- * motion gate), pause every continuous animation so the final frame
- * holds visible. The count up resolves to the final value on initial
- * render so static frames, print, and reduced motion all show the
- * filled gauge regardless of these pauses. */
-.pg-paused .pg-core,
-.pg-paused .pg-core-hi,
-.pg-paused .pg-sheen,
-.pg-paused .pg-glint,
-.pg-paused .pg-spark-1,
-.pg-paused .pg-spark-2,
-.pg-paused .pg-spark-3 {
-  animation-play-state: paused;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .pg-core,
-  .pg-core-hi,
-  .pg-sheen,
-  .pg-glint,
-  .pg-spark-1,
-  .pg-spark-2,
-  .pg-spark-3 {
-    animation: none;
+  /* travelling specular glint along a stroked path (dash offset) */
+  @keyframes g-glint {
+    0%   { stroke-dashoffset: var(--glint-from, 0); }
+    100% { stroke-dashoffset: var(--glint-to, -100); }
   }
+
+  /* conic sheen sweep on metallic bezels */
+  @keyframes g-sheen { to { transform: rotate(360deg); } }
+
+  /* soft pulsing core / glow */
+  @keyframes g-pulse {
+    0%, 100% { opacity: 0.55; transform: scale(0.94); }
+    50%      { opacity: 1;    transform: scale(1.06); }
+  }
+  @keyframes g-breathe {
+    0%, 100% { transform: scale(1); }
+    50%      { transform: scale(1.035); }
+  }
+
+  /* liquid wave translation (reserved for future Liquid variant) */
+  @keyframes g-wave  { to { transform: translateX(-50%); } }
+  @keyframes g-wave2 { to { transform: translateX(-33.333%); } }
+
+  /* surface bob */
+  @keyframes g-bob   { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+
+  /* rising bubbles */
+  @keyframes g-rise {
+    0%   { transform: translateY(0) scale(0.6); opacity: 0; }
+    15%  { opacity: 0.9; }
+    100% { transform: translateY(-46px) scale(1); opacity: 0; }
+  }
+
+  /* mercury blob wobble */
+  @keyframes g-wobble {
+    0%, 100% { border-radius: 48% 52% 50% 50% / 50% 48% 52% 50%; }
+    33%      { border-radius: 54% 46% 44% 56% / 56% 52% 48% 44%; }
+    66%      { border-radius: 46% 54% 56% 44% / 44% 48% 52% 56%; }
+  }
+
+  /* true 3D rotations on preserved 3d stages */
+  @keyframes g-rotY { to { transform: rotateY(360deg); } }
+  @keyframes g-rotX { to { transform: rotateX(360deg); } }
+  @keyframes g-gyro1 {
+    from { transform: rotateX(66deg) rotateZ(0deg); }
+    to   { transform: rotateX(66deg) rotateZ(360deg); }
+  }
+  @keyframes g-gyro2 {
+    from { transform: rotateY(70deg) rotateZ(0deg); }
+    to   { transform: rotateY(70deg) rotateZ(-360deg); }
+  }
+  @keyframes g-gyro3 {
+    from { transform: rotateX(28deg) rotateY(20deg) rotateZ(0deg); }
+    to   { transform: rotateX(28deg) rotateY(20deg) rotateZ(360deg); }
+  }
+
+  /* tilt float for perspective rings */
+  @keyframes g-float3d {
+    0%, 100% { transform: rotateX(58deg) rotateZ(0deg) translateZ(0); }
+    50%      { transform: rotateX(54deg) rotateZ(8deg) translateZ(6px); }
+  }
+
+  /* coin: gentle tilt that reveals thickness without hiding the face */
+  @keyframes g-coin {
+    0%, 100% { transform: rotateY(-28deg) rotateX(9deg); }
+    50%      { transform: rotateY(28deg) rotateX(4deg); }
+  }
+
+  /* helix spin around vertical axis, kept slightly tilted toward viewer */
+  @keyframes g-helixspin {
+    from { transform: rotateX(8deg) rotateY(0deg); }
+    to   { transform: rotateX(8deg) rotateY(360deg); }
+  }
+
+  /* drifting particle motes */
+  @keyframes g-drift {
+    0%   { transform: translate(0,0); opacity: 0; }
+    20%  { opacity: 0.9; }
+    100% { transform: translate(var(--dx, 12px), var(--dy, -30px)); opacity: 0; }
+  }
+
+  /* halo petal shimmer */
+  @keyframes g-petal { 0%, 100% { opacity: 0.85; } 50% { opacity: 1; } }
+
+  /* shimmering value number */
+  @keyframes g-textsheen { to { background-position: 200% center; } }
+
+  /* constellation node twinkle */
+  @keyframes g-twinkle { 0%, 100% { opacity: 0.85; } 50% { opacity: 0.45; } }
+
 }

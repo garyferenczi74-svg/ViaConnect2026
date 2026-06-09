@@ -192,10 +192,15 @@ export function PlasmaGauge({
   const uid = useId().replace(/[^a-zA-Z0-9_]/g, '_');
   const inView = useInView(ref);
   const reduced = useReducedMotion();
-  const anim = animated && inView && !reduced;
-  const n = useCountUp(Math.round(value), animated && inView);
-
   const compact = variant === 'compact';
+  // Prompt 182c (2026-06-09): compact gauges (Quick Log meal quality
+  // rings, Daily Macros, Today's Meals) render as a static composite
+  // plate per the canonical reference ("minis render static"). Only
+  // hero and standard gauges receive .g-anim and therefore run the
+  // continuous keyframes. The count up entrance still plays once for
+  // every variant when the gauge first enters the viewport.
+  const anim = animated && inView && !reduced && !compact;
+  const n = useCountUp(Math.round(value), animated && inView);
   const p = Math.max(0.0001, Math.min(1, value / (max || 100)));
 
   const M = finish ? MAT_BY_ID[finish] ?? null : null;
@@ -217,11 +222,10 @@ export function PlasmaGauge({
   const cx = 100, cy = 100, R = 78, sw = compact ? 7 : 9;
   const trackD = arcPath(cx, cy, R, 0, 1);
   const progD = arcPath(cx, cy, R, 0, p);
-  const sparkCount = compact ? 1 : 3;
-  // Pick the orbit keyframe per spark index. The keyframes bake both
-  // rotateX (plane tilt) and rotateY (orbit spin) so the 3D composition
-  // does not get clobbered by an inline rotateX during animation.
-  const sparkCls = ['pg-spark-1', 'pg-spark-2', 'pg-spark-3'];
+  // Per spark orbit keyframe binding. Each g-gyro keyframe bakes both
+  // the plane tilt and the spin so the 3D composition stays under
+  // preserve 3d during animation. Compact gauges skip these entirely.
+  const sparkCls = ['g-spark-1', 'g-spark-2', 'g-spark-3'];
 
   const fontDisplay = "var(--font-instrument-sans), 'Instrument Sans', system-ui, sans-serif";
   const sublabel = unit ? `of ${max} ${unit}` : `/ ${max}`;
@@ -234,7 +238,7 @@ export function PlasmaGauge({
   return (
     <div
       ref={ref}
-      className={`pg-root ${anim ? '' : 'pg-paused'}`}
+      className={`g-root ${anim ? 'g-anim' : ''}`}
       style={{ width: size, height: size, position: 'relative', perspective: `${600 * size / 200}px` }}
       role="img"
       aria-label={a11yLabel}
@@ -295,14 +299,22 @@ export function PlasmaGauge({
         )}
         {metal && !compact && (
           <path
-            className="pg-glint"
+            className="g-glint-rg"
             d={progD}
             fill="none"
             stroke="#fff"
             strokeWidth={sw * 0.5}
             strokeLinecap="round"
             pathLength={100}
-            style={{ strokeDasharray: '9 91', mixBlendMode: 'screen' }}
+            // CSS vars consumed by the g-glint keyframe so the dash
+            // sweep direction is configurable per ring without
+            // editing the keyframe.
+            style={{
+              strokeDasharray: '9 91',
+              mixBlendMode: 'screen',
+              ['--glint-from' as string]: '0',
+              ['--glint-to' as string]: '-100',
+            }}
           />
         )}
       </svg>
@@ -318,7 +330,7 @@ export function PlasmaGauge({
             boxShadow: 'inset 0 0 0 1px rgba(0,0,0,.4)',
           }} />
           {!compact && (
-            <div aria-hidden="true" className="pg-sheen" style={{
+            <div aria-hidden="true" className="g-sheen-rg" style={{
               position: 'absolute', inset: '20%', borderRadius: '50%', zIndex: 6,
               background: 'conic-gradient(from 0deg, transparent 0 18%, rgba(255,255,255,.9) 26%, transparent 34% 72%, rgba(255,255,255,.5) 80%, transparent 88%)',
               WebkitMaskImage: 'radial-gradient(circle, transparent 0 83%, #000 85% 100%)',
@@ -342,33 +354,36 @@ export function PlasmaGauge({
           boxShadow: 'inset 0 2px 6px rgba(255,255,255,.3), inset 0 -10px 20px rgba(0,0,0,.5)',
         }}
       >
-        {/* pulsing molten core */}
+        {/* pulsing molten core (g-core; paused by default, runs only
+            when root has .g-anim, which means hero or standard + in
+            view + reduced motion not set). */}
         <div
-          className="pg-core"
+          className="g-core"
           style={{
             position: 'absolute', inset: '12%', borderRadius: '50%',
             background: coreBg,
             filter: 'blur(2px)',
-            transformOrigin: 'center',
           }}
         />
         {/* second smaller highlight pulsing out of phase, screen blended */}
         <div
-          className="pg-core-hi"
+          className="g-core-hi"
           style={{
             position: 'absolute', inset: '26%', borderRadius: '50%',
             mixBlendMode: 'screen',
             background: `radial-gradient(circle, #fff 0%, ${CB} 50%, transparent 75%)`,
-            transformOrigin: 'center',
           }}
         />
       </div>
 
-      {/* orbiting sparks: 3D preserve d planes with baked rotateX + rotateY
-          per spark via the pg-spark-N keyframes so the tilt does not get
-          clobbered by the spin. */}
-      {Array.from({ length: sparkCount }).map((_, i) => {
-        const dotPx = compact ? 5 : 7;
+      {/* Orbiting sparks: three 3D preserve d planes driven by
+          g-gyro1 / g-gyro2 / g-gyro3 keyframes. Each gyro bakes its
+          own rotateX / rotateY tilt with a rotateZ spin, so the tilt
+          stays composed under the animation. Compact gauges render
+          no sparks (minis are static plates) per the canonical
+          reference. */}
+      {!compact && [0, 1, 2].map((i) => {
+        const dotPx = 7;
         return (
           <div
             key={i}
@@ -385,7 +400,7 @@ export function PlasmaGauge({
               marginLeft: -dotPx / 2, marginTop: -dotPx / 2,
               transform: `translateX(${size * 0.18}px)`,
               background: `radial-gradient(circle at 35% 30%, #fff, ${C})`,
-              boxShadow: `0 0 ${compact ? 8 : 12}px ${GLOW}`,
+              boxShadow: `0 0 12px ${GLOW}`,
             }} />
           </div>
         );
