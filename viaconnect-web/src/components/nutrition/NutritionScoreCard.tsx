@@ -25,7 +25,7 @@ import {
   type ScoredMealContribution,
 } from '@/lib/gordon/daily-aggregate';
 import { NutritionScoreCircleGauge } from './NutritionScoreCircleGauge';
-import { SegmentedDayGauge } from './SegmentedDayGauge';
+import { PlasmaGauge } from '@/components/gauges/PlasmaGauge';
 
 interface NutritionScoreCardProps {
   // Optional. If not passed, the component fetches its own user.
@@ -283,14 +283,31 @@ export function NutritionScoreCard({ userId: propUserId }: NutritionScoreCardPro
           ) : null}
         </div>
         <div className="flex flex-col items-center gap-1 md:gap-2">
-          <SegmentedDayGauge
-            daysLogged={computed.daysLoggedThisWeek}
-            totalDays={SEVEN_DAYS}
-            mobilePx={88}
-            desktopPx={150}
-            mobileStroke={5}
-            desktopStroke={12}
-          />
+          {/* Prompt 182o (2026-06-09): 7 Day Average gauge swaps from the
+              SegmentedDayGauge ring-of-segments to the shared PlasmaGauge
+              driven by the same 7-day check-in count. value = days logged
+              this week, max = 7 so the center reads N over the / 7
+              denominator and the colored arc fills proportionally.
+              metric=wellness (champagne gold) so the gauge reads apart
+              from the two green nutrition gauges in the same row. */}
+          <div className="md:hidden">
+            <PlasmaGauge
+              value={computed.daysLoggedThisWeek}
+              metric="wellness"
+              variant="standard"
+              size={88}
+              max={SEVEN_DAYS}
+            />
+          </div>
+          <div className="hidden md:block">
+            <PlasmaGauge
+              value={computed.daysLoggedThisWeek}
+              metric="wellness"
+              variant="standard"
+              size={150}
+              max={SEVEN_DAYS}
+            />
+          </div>
           <span className="text-[10px] uppercase tracking-[0.10em] text-white/55 md:text-[12px]">
             7 Day Average
           </span>
