@@ -187,11 +187,21 @@ export interface PlasmaGaugeProps {
   showUnit?: boolean;
   // Optional aria label override; default reads the metric and value.
   ariaLabel?: string;
+  // Visual pass (Gary 2026-06-09): when a metal finish is set, the track
+  // defaults to a dark gutter and the number to a metallic gradient (the
+  // gauge gallery look). These opt the track and the number back to the
+  // flat-gauge treatment (faint grey track, white number) so a metal gauge
+  // sits consistently beside non-metal gauges in the same row while keeping
+  // its metallic progress arc and orb. Both default false to preserve the
+  // gallery rendering.
+  subtleTrack?: boolean;
+  plainNumber?: boolean;
 }
 
 export function PlasmaGauge({
   value, metric, finish = null, size = 200, variant = 'standard',
   max = 100, unit, animated = true, showUnit = true, ariaLabel,
+  subtleTrack = false, plainNumber = false,
 }: PlasmaGaugeProps) {
   const ref = useRef<HTMLDivElement>(null);
   const uid = useId().replace(/[^a-zA-Z0-9_]/g, '_');
@@ -282,8 +292,8 @@ export function PlasmaGauge({
         <path
           d={trackD}
           fill="none"
-          stroke={metal ? '#05070c' : 'rgba(255,255,255,.08)'}
-          strokeWidth={metal ? sw + 3 : sw}
+          stroke={metal && !subtleTrack ? '#05070c' : 'rgba(255,255,255,.08)'}
+          strokeWidth={metal && !subtleTrack ? sw + 3 : sw}
           strokeLinecap="round"
         />
         <path
@@ -408,7 +418,7 @@ export function PlasmaGauge({
           lineHeight: 0.9,
           fontVariantNumeric: 'tabular-nums',
           letterSpacing: '-0.01em',
-          ...(metal
+          ...((metal && !plainNumber)
             ? {
                 background: numberGradient,
                 WebkitBackgroundClip: 'text',
@@ -427,7 +437,7 @@ export function PlasmaGauge({
             fontFamily: fontDisplay,
             fontWeight: 600,
             fontSize: size * 0.07,
-            color: metal ? `${(M as Material).hi}99` : 'rgba(255,255,255,.6)',
+            color: (metal && !plainNumber) ? `${(M as Material).hi}99` : 'rgba(255,255,255,.6)',
             letterSpacing: 0.5,
             marginTop: size * 0.012,
           }}>{sublabel}</div>

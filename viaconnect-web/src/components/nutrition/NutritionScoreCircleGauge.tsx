@@ -87,10 +87,10 @@ export function NutritionScoreCircleGauge(props: NutritionScoreCircleGaugeProps)
       {hasData ? (
         <>
           <div className="md:hidden">
-            <PlasmaGauge value={clamped} metric="nutrition" variant="standard" size={mobilePx} finish={finish} />
+            <PlasmaGauge value={clamped} metric="nutrition" variant="standard" size={mobilePx} finish={finish} subtleTrack plainNumber />
           </div>
           <div className="hidden md:block">
-            <PlasmaGauge value={clamped} metric="nutrition" variant="standard" size={desktopPx} finish={finish} />
+            <PlasmaGauge value={clamped} metric="nutrition" variant="standard" size={desktopPx} finish={finish} subtleTrack plainNumber />
           </div>
           <span
             className={`font-medium uppercase tracking-[0.10em] ${
@@ -104,10 +104,10 @@ export function NutritionScoreCircleGauge(props: NutritionScoreCircleGaugeProps)
       ) : (
         <>
           <div className="md:hidden">
-            <PlasmaGauge value={0} metric="nutrition" variant="standard" size={mobilePx} finish={finish} animated={false} />
+            <PlasmaGauge value={0} metric="nutrition" variant="standard" size={mobilePx} finish={finish} subtleTrack plainNumber animated={false} />
           </div>
           <div className="hidden md:block">
-            <PlasmaGauge value={0} metric="nutrition" variant="standard" size={desktopPx} finish={finish} animated={false} />
+            <PlasmaGauge value={0} metric="nutrition" variant="standard" size={desktopPx} finish={finish} subtleTrack plainNumber animated={false} />
           </div>
           <span
             className={`text-white/55 ${
