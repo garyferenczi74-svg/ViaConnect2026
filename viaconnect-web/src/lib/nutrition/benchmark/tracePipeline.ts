@@ -70,8 +70,8 @@ export interface ItemTrace {
 
 export interface AtwaterCheck {
   macroDerivedKcal: number;
-  ratio: number | null;
-  passed: boolean | null;
+  ratio: number;
+  passed: boolean;
 }
 
 export interface MealTrace {
@@ -83,6 +83,12 @@ export interface MealTrace {
 
 function round1(n: number): number {
   return Math.round(n * 10) / 10;
+}
+
+// The photo route integer-rounds per-item calories while rounding macros to one
+// decimal, so the trace matches it field for field.
+function roundInt(n: number): number {
+  return Math.round(n);
 }
 
 function emptyTotals(): ItemTotals {
@@ -266,11 +272,12 @@ export async function traceTextPipeline(parsedItems: ParsedItem[]): Promise<Meal
     };
     const macroDerivedKcal =
       4 * analysis.protein_g + 4 * analysis.carbs_g + 9 * analysis.total_fat_g;
-    const ratio = analysis.calories > 0 ? macroDerivedKcal / analysis.calories : null;
+    // Mirror analyze-text: ratio is 0 when calories is 0, so passed is false.
+    const ratio = analysis.calories > 0 ? macroDerivedKcal / analysis.calories : 0;
     atwater = {
       macroDerivedKcal: round1(macroDerivedKcal),
-      ratio: ratio !== null ? Math.round(ratio * 1000) / 1000 : null,
-      passed: ratio !== null ? ratio >= 0.8 && ratio <= 1.2 : null,
+      ratio: Math.round(ratio * 1000) / 1000,
+      passed: ratio >= 0.8 && ratio <= 1.2,
     };
   }
 
@@ -300,6 +307,10 @@ export async function tracePhotoPipeline(
         STAGE_TIMEOUT_MS,
         `${SCOPE}.resolveNutrients`
       );
+      // Run the portion estimate even on a reference miss so the miss trace can
+      // still report grams for attribution. This differs from the route, which
+      // skips it on a miss, but it cannot affect totals (a miss reports null
+      // totals regardless).
       const portion = estimatePortion({ item: vi });
       if (!resolved) {
         items.push({
@@ -322,7 +333,7 @@ export async function tracePhotoPipeline(
       const factor = portion.grams / 100;
       const per100g = resolved.per100g;
       const itemTotals: ItemTotals = {
-        calories_kcal: round1(per100g.calories_kcal * factor),
+        calories_kcal: roundInt(per100g.calories_kcal * factor),
         protein_g: round1(per100g.protein_g * factor),
         carbs_g: round1(per100g.carbs_g * factor),
         fat_g: round1(per100g.fat_g * factor),
