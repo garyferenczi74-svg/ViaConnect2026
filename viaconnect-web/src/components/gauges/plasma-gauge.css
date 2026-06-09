@@ -1,0 +1,77 @@
+/* PlasmaGauge keyframes (Prompt 182b / 2026-06-09).
+ *
+ * Co located with PlasmaGauge.tsx per the canonical reference. The
+ * earlier 182 build kept these in globals.css; moved here to match
+ * the reference's plasma-gauge.css convention and to scope the
+ * keyframes to the component import graph.
+ *
+ * Names live under the pg- namespace so they cannot collide with any
+ * other component keyframes. The orbit keyframes bake both rotateX
+ * (the plane tilt) and rotateY (the spin) so the 3D orbit composes
+ * correctly when the keyframe runs; a single rotateY keyframe would
+ * clobber an inline rotateX transform mid animation. */
+
+@keyframes pg-pulse {
+  0%, 100% { transform: scale(0.94); opacity: 0.55; }
+  50%      { transform: scale(1.06); opacity: 1; }
+}
+
+@keyframes pg-pulse-hi {
+  0%, 100% { transform: scale(0.92); opacity: 0.35; }
+  50%      { transform: scale(1.04); opacity: 0.85; }
+}
+
+@keyframes pg-sheen {
+  0%   { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes pg-glint {
+  0%   { stroke-dashoffset: 0; }
+  100% { stroke-dashoffset: -100; }
+}
+
+/* Per spark orbit keyframes. Each tilt is baked so the rotateX
+ * (plane tilt) and rotateY (spin around the orbit axis) compose
+ * together correctly under preserve-3d. Without baking both, the
+ * keyframe's transform would replace the inline rotateX and the
+ * spark would orbit in a flat horizontal circle instead of a
+ * tilted 3D orbit. */
+@keyframes pg-spark-1 { 0% { transform: rotateX(62deg) rotateY(0deg); }   100% { transform: rotateX(62deg) rotateY(360deg); } }
+@keyframes pg-spark-2 { 0% { transform: rotateX(70deg) rotateY(120deg); } 100% { transform: rotateX(70deg) rotateY(480deg); } }
+@keyframes pg-spark-3 { 0% { transform: rotateX(78deg) rotateY(240deg); } 100% { transform: rotateX(78deg) rotateY(600deg); } }
+
+.pg-core       { animation: pg-pulse 2.6s ease-in-out infinite; }
+.pg-core-hi    { animation: pg-pulse-hi 1.9s ease-in-out infinite 0.4s; }
+.pg-sheen      { animation: pg-sheen 7s linear infinite; }
+.pg-glint      { animation: pg-glint 2.6s linear infinite; }
+.pg-spark-1    { animation: pg-spark-1 4s linear infinite; }
+.pg-spark-2    { animation: pg-spark-2 5s linear infinite; }
+.pg-spark-3    { animation: pg-spark-3 6s linear infinite; }
+
+/* When the gauge container has .pg-paused (off screen or reduced
+ * motion gate), pause every continuous animation so the final frame
+ * holds visible. The count up resolves to the final value on initial
+ * render so static frames, print, and reduced motion all show the
+ * filled gauge regardless of these pauses. */
+.pg-paused .pg-core,
+.pg-paused .pg-core-hi,
+.pg-paused .pg-sheen,
+.pg-paused .pg-glint,
+.pg-paused .pg-spark-1,
+.pg-paused .pg-spark-2,
+.pg-paused .pg-spark-3 {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pg-core,
+  .pg-core-hi,
+  .pg-sheen,
+  .pg-glint,
+  .pg-spark-1,
+  .pg-spark-2,
+  .pg-spark-3 {
+    animation: none;
+  }
+}

@@ -458,64 +458,7 @@ body {
   .text-balance { text-wrap: balance; }
 }
 
-/* --- Prompt 182: Plasma Core gauge keyframes ------------------------------ */
-/* Continuous animation primitives for the PlasmaGauge component. Paused via
-   .pg-paused on the gauge container when off screen or under
-   prefers-reduced-motion so the final filled frame stays visible. Keyframes
-   live in globals.css per the project pattern (no runtime style injection,
-   no css modules); names are namespaced pg- so they will not collide with
-   other component keyframes. */
-
-@keyframes pg-pulse {
-  0%, 100% { transform: scale(0.94); opacity: 0.55; }
-  50%      { transform: scale(1.06); opacity: 1; }
-}
-
-@keyframes pg-pulse-hi {
-  0%, 100% { transform: scale(0.92); opacity: 0.35; }
-  50%      { transform: scale(1.04); opacity: 0.85; }
-}
-
-@keyframes pg-sheen {
-  0%   { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-@keyframes pg-glint {
-  0%   { stroke-dashoffset: 0; }
-  100% { stroke-dashoffset: -100; }
-}
-
-@keyframes pg-spark-1 { 0% { transform: rotateX(62deg) rotateY(0deg); }   100% { transform: rotateX(62deg) rotateY(360deg); } }
-@keyframes pg-spark-2 { 0% { transform: rotateX(70deg) rotateY(120deg); } 100% { transform: rotateX(70deg) rotateY(480deg); } }
-@keyframes pg-spark-3 { 0% { transform: rotateX(78deg) rotateY(240deg); } 100% { transform: rotateX(78deg) rotateY(600deg); } }
-
-.pg-core       { animation: pg-pulse 2.6s ease-in-out infinite; }
-.pg-core-hi    { animation: pg-pulse-hi 1.9s ease-in-out infinite 0.4s; }
-.pg-sheen      { animation: pg-sheen 7s linear infinite; }
-.pg-glint      { animation: pg-glint 2.6s linear infinite; }
-.pg-spark-1    { animation: pg-spark-1 4s linear infinite; }
-.pg-spark-2    { animation: pg-spark-2 5s linear infinite; }
-.pg-spark-3    { animation: pg-spark-3 6s linear infinite; }
-
-.pg-paused .pg-core,
-.pg-paused .pg-core-hi,
-.pg-paused .pg-sheen,
-.pg-paused .pg-glint,
-.pg-paused .pg-spark-1,
-.pg-paused .pg-spark-2,
-.pg-paused .pg-spark-3 {
-  animation-play-state: paused;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .pg-core,
-  .pg-core-hi,
-  .pg-sheen,
-  .pg-glint,
-  .pg-spark-1,
-  .pg-spark-2,
-  .pg-spark-3 {
-    animation: none;
-  }
-}
+/* Prompt 182b (2026-06-09): PlasmaGauge keyframes moved to
+   src/components/gauges/plasma-gauge.css, co located with the
+   component per the canonical reference. The component imports its
+   own stylesheet directly; this file no longer carries those rules. */

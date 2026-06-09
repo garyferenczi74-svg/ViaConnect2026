@@ -1,222 +1,133 @@
 'use client';
+/* =============================================================================
+   PlasmaGauge: ViaConnect 3D "Plasma Core" gauge with 12 metallic finishes.
+   Prompt 182b (2026-06-09).
+   ----------------------------------------------------------------------------
+   Source of truth is the canonical reference paste in prompt 182b. Ported into
+   the repo with two project specific additions: the fiber metric (per Daily
+   Macros which has a 4th ring on the live page) and explicit pause gating via
+   .pg-paused so the IntersectionObserver does not have to re mount the
+   animation when the gauge scrolls off screen.
 
-// Prompt 182 (2026-06-09): the single 3D "Plasma Core" gauge that
-// replaces every flat ring on the ViaConnect consumer surfaces.
+   SSR safety: this file is a Client Component ('use client'). All browser
+   APIs (matchMedia, IntersectionObserver) read inside useEffect. Keyframes
+   live in plasma-gauge.css (imported, not injected at runtime). Initial
+   render shows the final value so server and client first paint match; the
+   count up plays once after first inView fires.
+
+   SVG ids are derived from useId() so up to a few dozen gauges on one screen
+   (Daily Scores + Daily Macros + Today's Meals on a single My Nutrition
+   render) cannot collide on <defs>.
+   ============================================================================= */
+
+import { useEffect, useId, useRef, useState } from 'react';
+import './plasma-gauge.css';
+
+export type GaugeMetric =
+  | 'bioscore' | 'sleep' | 'energy' | 'mood' | 'nutrition' | 'activity'
+  | 'wellness' | 'protein' | 'carbs' | 'fat' | 'fiber' | 'mealscore';
+
+// Re-exported aliases so existing call sites that imported PlasmaMetric /
+// PlasmaFinish / PlasmaVariant from the prior 182 build keep compiling.
+export type PlasmaMetric = GaugeMetric;
+export type PlasmaVariant = GaugeVariant;
+export type PlasmaFinish = MetalFinish;
+
+export type GaugeVariant = 'hero' | 'standard' | 'compact';
+export type MetalFinish =
+  | 'gold' | 'rose-gold' | 'champagne' | 'copper' | 'bronze' | 'platinum'
+  | 'chrome' | 'gunmetal' | 'emerald' | 'sapphire' | 'amethyst' | 'ruby';
+
+interface MetricColor { c: string; bright: string; deep: string; glow: string; }
+
+// ViaConnect anchored per metric palette. Brand teal #2DA5A0 + brand orange
+// #B75E18 carry the platform; remaining metrics take distinct hues so up to
+// six gauges read apart on one screen. Reused hues (teal / orange / gold)
+// never share a screen.
 //
-// One gauge powers six surfaces: BOS hero, Daily Scores grid, Quick
-// Log meal-quality rings, Nutrition Score, Daily Macros (protein,
-// carbs, fat, fiber), Today's Meals. Existing wrappers (BOSScoreGauge,
-// DailyScoreGauge, QualityScoreRing, NutritionScoreCircleGauge,
-// DailyMacroRings) delegate to this component so callers do not move.
-//
-// Layer stack back to front:
-//   z 0: gauge well (radial dark to keep 3D depth on the lighter card)
-//   z 1: ambient bloom (accent radial)
-//   z 2: metallic bezel (finish prop only, hidden in compact)
-//   z 3: progress ring SVG (track + filled arc + glow + glint)
-//   z 4: glass orb (inset 24%, translucent radial fill)
-//   z 5: pulsing core + screen blended highlight
-//   z 6: orbiting sparks (3 in standard / hero, 1 in compact, 0 if no room)
-//   z 7: value readout (number + sublabel)
-//
-// Geometry is derived from a single size prop on a 200 x 200 viewBox.
-// Continuous motion pauses off screen and under prefers-reduced-motion;
-// the count-up resolves to value either way so print / export render
-// the final filled gauge. SVG defs ids derive from useId so up to a
-// few dozen instances on one screen never collide.
-
-import { useEffect, useId, useMemo, useRef, useState } from 'react';
-
-// --------------------------------------------------------------------------
-// Tokens
-// --------------------------------------------------------------------------
-
-export type PlasmaMetric =
-  | 'bioscore'
-  | 'sleep'
-  | 'energy'
-  | 'mood'
-  | 'nutrition'
-  | 'activity'
-  | 'wellness'
-  | 'protein'
-  | 'carbs'
-  | 'fat'
-  | 'fiber'
-  | 'mealscore';
-
-export type PlasmaFinish =
-  | 'gold'
-  | 'rose-gold'
-  | 'champagne'
-  | 'copper'
-  | 'bronze'
-  | 'platinum'
-  | 'chrome'
-  | 'gunmetal'
-  | 'emerald'
-  | 'sapphire'
-  | 'amethyst'
-  | 'ruby';
-
-export type PlasmaVariant = 'hero' | 'standard' | 'compact';
-
-interface MetricPalette {
-  c: string;
-  bright: string;
-  deep: string;
-  glow: string;
-}
-
-const METRIC_COLORS: Record<PlasmaMetric, MetricPalette> = {
-  bioscore: { c: '#2DA5A0', bright: '#5FD3CE', deep: '#1B7E79', glow: 'rgba(45,165,160,0.55)' },
-  sleep:    { c: '#5B8DEF', bright: '#93B6FF', deep: '#2F5FD0', glow: 'rgba(91,141,239,0.5)' },
-  energy:   { c: '#B75E18', bright: '#F0A24E', deep: '#7E3F0E', glow: 'rgba(183,94,24,0.5)' },
-  mood:     { c: '#8B7FE8', bright: '#B7AEF5', deep: '#5C4FC0', glow: 'rgba(139,127,232,0.5)' },
-  nutrition:{ c: '#3FB46B', bright: '#79D89C', deep: '#228048', glow: 'rgba(63,180,107,0.5)' },
-  activity: { c: '#F0568C', bright: '#FF92B5', deep: '#C32E66', glow: 'rgba(240,86,140,0.5)' },
-  wellness: { c: '#E7B45A', bright: '#F6DCA0', deep: '#B9842C', glow: 'rgba(231,180,90,0.55)' },
-  protein:  { c: '#2DA5A0', bright: '#5FD3CE', deep: '#1B7E79', glow: 'rgba(45,165,160,0.5)' },
-  carbs:    { c: '#B75E18', bright: '#F0A24E', deep: '#7E3F0E', glow: 'rgba(183,94,24,0.5)' },
-  fat:      { c: '#E7B45A', bright: '#F6DCA0', deep: '#B9842C', glow: 'rgba(231,180,90,0.5)' },
-  fiber:    { c: '#9D6BD5', bright: '#C29DEC', deep: '#6B3FA0', glow: 'rgba(157,107,213,0.5)' },
-  mealscore:{ c: '#3FB46B', bright: '#79D89C', deep: '#228048', glow: 'rgba(63,180,107,0.5)' },
+// Prompt 182 Revision 1 added fiber (amethyst violet) because the live
+// DailyMacroRings renders four macros, not three. The reference paste
+// omitted fiber; this port restores it so the fiber ring in Daily Macros
+// keeps its plasma treatment instead of falling back to a flat ring.
+export const METRIC_COLORS: Record<GaugeMetric, MetricColor> = {
+  bioscore:  { c: '#2DA5A0', bright: '#5FD3CE', deep: '#1B7E79', glow: 'rgba(45,165,160,.55)' },
+  sleep:     { c: '#5B8DEF', bright: '#93B6FF', deep: '#2F5FD0', glow: 'rgba(91,141,239,.5)' },
+  energy:    { c: '#B75E18', bright: '#F0A24E', deep: '#7E3F0E', glow: 'rgba(183,94,24,.5)' },
+  mood:      { c: '#8B7FE8', bright: '#B7AEF5', deep: '#5C4FC0', glow: 'rgba(139,127,232,.5)' },
+  nutrition: { c: '#3FB46B', bright: '#79D89C', deep: '#228048', glow: 'rgba(63,180,107,.5)' },
+  activity:  { c: '#F0568C', bright: '#FF92B5', deep: '#C32E66', glow: 'rgba(240,86,140,.5)' },
+  wellness:  { c: '#E7B45A', bright: '#F6DCA0', deep: '#B9842C', glow: 'rgba(231,180,90,.55)' },
+  protein:   { c: '#2DA5A0', bright: '#5FD3CE', deep: '#1B7E79', glow: 'rgba(45,165,160,.5)' },
+  carbs:     { c: '#B75E18', bright: '#F0A24E', deep: '#7E3F0E', glow: 'rgba(183,94,24,.5)' },
+  fat:       { c: '#E7B45A', bright: '#F6DCA0', deep: '#B9842C', glow: 'rgba(231,180,90,.5)' },
+  fiber:     { c: '#9D6BD5', bright: '#C29DEC', deep: '#6B3FA0', glow: 'rgba(157,107,213,.5)' },
+  mealscore: { c: '#3FB46B', bright: '#79D89C', deep: '#228048', glow: 'rgba(63,180,107,.5)' },
 };
 
-interface MaterialPalette {
-  dark: string;
-  mid: string;
-  bright: string;
-  hi: string;
-  glow: string;
-}
+interface Material { id: MetalFinish; name: string; dark: string; mid: string; bright: string; hi: string; glow: string; }
 
-const MATERIALS: Record<PlasmaFinish, MaterialPalette> = {
-  gold:        { dark: '#7A5A14', mid: '#B58A2C', bright: '#E7B45A', hi: '#F6DCA0', glow: 'rgba(231,180,90,0.55)' },
-  'rose-gold': { dark: '#7A3A38', mid: '#B66B66', bright: '#E69992', hi: '#F4C2BC', glow: 'rgba(230,153,146,0.5)' },
-  champagne:   { dark: '#7A6A4A', mid: '#B5A37E', bright: '#E2CFA3', hi: '#F2E6C9', glow: 'rgba(226,207,163,0.5)' },
-  copper:      { dark: '#6E3010', mid: '#A65522', bright: '#D17F3B', hi: '#EFA968', glow: 'rgba(209,127,59,0.5)' },
-  bronze:      { dark: '#4A2E14', mid: '#8B5E2A', bright: '#B58146', hi: '#D7A66D', glow: 'rgba(181,129,70,0.5)' },
-  platinum:    { dark: '#404550', mid: '#8E96A6', bright: '#C8CFDB', hi: '#E8EBF1', glow: 'rgba(200,207,219,0.5)' },
-  chrome:      { dark: '#2C3138', mid: '#6F7682', bright: '#B9C0CC', hi: '#E2E5EB', glow: 'rgba(185,192,204,0.5)' },
-  gunmetal:    { dark: '#1A1F26', mid: '#3D434C', bright: '#6A7280', hi: '#9099A6', glow: 'rgba(106,114,128,0.5)' },
-  emerald:     { dark: '#0E4A36', mid: '#1E8D63', bright: '#3FC58A', hi: '#7DE3B0', glow: 'rgba(63,197,138,0.55)' },
-  sapphire:    { dark: '#0E2D6E', mid: '#1F50B5', bright: '#4577E0', hi: '#8AA8F1', glow: 'rgba(69,119,224,0.55)' },
-  amethyst:    { dark: '#3A1B6A', mid: '#683BB5', bright: '#9B68E2', hi: '#C49BF1', glow: 'rgba(155,104,226,0.55)' },
-  ruby:        { dark: '#5A0F22', mid: '#A6233F', bright: '#D9466A', hi: '#EE869C', glow: 'rgba(217,70,106,0.55)' },
-};
+// 12 metallic finishes (warm, cool, jewel) from the canonical reference.
+export const MATERIALS: Material[] = [
+  { id: 'gold',      name: 'Gold',         dark: '#5a3f16', mid: '#c79433', bright: '#e9c46a', hi: '#fff6dc', glow: 'rgba(255,206,120,.6)' },
+  { id: 'rose-gold', name: 'Rose Gold',    dark: '#5a2f30', mid: '#b07069', bright: '#e0a59c', hi: '#fff1ec', glow: 'rgba(255,180,165,.55)' },
+  { id: 'champagne', name: 'Champagne',    dark: '#6e5f38', mid: '#bda86e', bright: '#e3d199', hi: '#fffaf0', glow: 'rgba(240,225,180,.5)' },
+  { id: 'copper',    name: 'Copper',       dark: '#5a2e16', mid: '#aa5e30', bright: '#d6824a', hi: '#ffe0c2', glow: 'rgba(255,150,90,.5)' },
+  { id: 'bronze',    name: 'Bronze',       dark: '#463418', mid: '#8a6532', bright: '#b88a4a', hi: '#f0d8a8', glow: 'rgba(210,165,95,.5)' },
+  { id: 'platinum',  name: 'Platinum',     dark: '#5c6373', mid: '#9aa6ba', bright: '#c8d2e0', hi: '#ffffff', glow: 'rgba(225,235,250,.55)' },
+  { id: 'chrome',    name: 'Chrome Steel', dark: '#363f52', mid: '#7f8ca3', bright: '#aeb8cc', hi: '#ffffff', glow: 'rgba(170,195,235,.5)' },
+  { id: 'gunmetal',  name: 'Gunmetal',     dark: '#252b36', mid: '#5c6675', bright: '#8b97aa', hi: '#e7edf6', glow: 'rgba(150,165,190,.45)' },
+  { id: 'emerald',   name: 'Emerald',      dark: '#0f3d2e', mid: '#1f8a5b', bright: '#46c98a', hi: '#e3fbef', glow: 'rgba(70,200,140,.5)' },
+  { id: 'sapphire',  name: 'Sapphire',     dark: '#16306e', mid: '#2f6fd6', bright: '#5fa0ff', hi: '#e6f1ff', glow: 'rgba(95,160,255,.5)' },
+  { id: 'amethyst',  name: 'Amethyst',     dark: '#3a1f5e', mid: '#7a47c2', bright: '#b083f0', hi: '#f3e9ff', glow: 'rgba(176,131,240,.5)' },
+  { id: 'ruby',      name: 'Ruby',         dark: '#5a161f', mid: '#c0303f', bright: '#f0606f', hi: '#ffe3e5', glow: 'rgba(240,96,111,.5)' },
+];
+const MAT_BY_ID: Record<string, Material> = Object.fromEntries(MATERIALS.map((m) => [m.id, m]));
 
-// Prompt 182a (2026-06-09): convert a hex token to rgba with explicit
-// alpha. Used to fade the molten core to transparent at its outer
-// rim so the glass orb's inset shadow stays visible. Accepts #RGB and
-// #RRGGBB; falls back to the hex untouched on any other shape so the
-// browser still parses it.
-function hexToRgba(hex: string, alpha: number): string {
-  const h = hex.replace('#', '');
-  const expand = h.length === 3 ? h.split('').map((c) => c + c).join('') : h;
-  if (expand.length !== 6) return hex;
-  const r = parseInt(expand.slice(0, 2), 16);
-  const g = parseInt(expand.slice(2, 4), 16);
-  const b = parseInt(expand.slice(4, 6), 16);
-  if ([r, g, b].some(Number.isNaN)) return hex;
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-}
-
-// Optional all metal map. Exported so a theme switch can flip the app
-// to metallic without per call site edits. NOT applied by default.
-export const METRIC_FINISH: Record<PlasmaMetric, PlasmaFinish> = {
-  bioscore: 'emerald',
-  sleep: 'sapphire',
-  energy: 'gold',
-  mood: 'amethyst',
-  nutrition: 'emerald',
-  activity: 'rose-gold',
-  wellness: 'champagne',
-  protein: 'emerald',
-  carbs: 'gold',
-  fat: 'champagne',
-  fiber: 'amethyst',
+// Optional "metallic + color coded" mapping. Default ships with finish=null
+// (per metric color). Surface a single config / theme switch to apply
+// METRIC_FINISH app wide without touching call sites.
+export const METRIC_FINISH: Record<GaugeMetric, MetalFinish> = {
+  bioscore: 'emerald', sleep: 'sapphire', energy: 'gold', mood: 'amethyst',
+  nutrition: 'emerald', activity: 'rose-gold', wellness: 'champagne',
+  protein: 'emerald', carbs: 'gold', fat: 'champagne', fiber: 'amethyst',
   mealscore: 'emerald',
 };
 
-// --------------------------------------------------------------------------
-// Geometry
-// --------------------------------------------------------------------------
+// Arc geometry: 270 degree open bottom, 0 degrees at top, clockwise.
+const GAP = 135, SWEEP = 270;
+const polar = (cx: number, cy: number, r: number, deg: number): [number, number] => {
+  const a = (deg - 90) * Math.PI / 180;
+  return [cx + r * Math.cos(a), cy + r * Math.sin(a)];
+};
+const arcPath = (cx: number, cy: number, r: number, p0: number, p1: number): string => {
+  const a0 = GAP + SWEEP * p0, a1 = GAP + SWEEP * p1;
+  const [x0, y0] = polar(cx, cy, r, a0);
+  const [x1, y1] = polar(cx, cy, r, a1);
+  const large = (a1 - a0) > 180 ? 1 : 0;
+  return `M ${x0.toFixed(2)} ${y0.toFixed(2)} A ${r} ${r} 0 ${large} 1 ${x1.toFixed(2)} ${y1.toFixed(2)}`;
+};
+const metalConic = (m: Material): string =>
+  `conic-gradient(from -45deg, ${m.dark}, ${m.bright} 10%, ${m.mid} 21%, ${m.hi} 33%, ${m.dark} 45%, ${m.bright} 57%, ${m.dark} 69%, ${m.hi} 83%, ${m.mid} 92%, ${m.dark})`;
 
-const VIEWBOX = 200;
-const CENTER = VIEWBOX / 2;
-const RADIUS = 78;
-const CIRC = 2 * Math.PI * RADIUS;
-const SWEEP_DEG = 270;
-const ARC_LEN = CIRC * (SWEEP_DEG / 360);
-// 270 degree open bottom: gap centered at 6 o'clock. Rotating the
-// circle by 135 degrees clockwise places the dash start at 7:30 and
-// the gap at 6 o'clock.
-const ROTATE = 135;
-
-// --------------------------------------------------------------------------
-// Count up hook. RAF, ease out cubic, ~1.4s. Resolves to value on
-// mount when animated=false so static frames render the filled state.
-// --------------------------------------------------------------------------
-
-function useCountUp(target: number, enabled: boolean, durationMs = 1400): number {
-  const [value, setValue] = useState(enabled ? 0 : target);
-  const hasRunRef = useRef(false);
+// SSR safe hooks. Every browser API is wrapped in useEffect so the server
+// never references window or document.
+function useInView(ref: React.RefObject<HTMLElement>): boolean {
+  const [seen, setSeen] = useState(false);
   useEffect(() => {
-    if (!enabled) {
-      setValue(target);
-      hasRunRef.current = true;
-      return;
-    }
-    if (hasRunRef.current) {
-      setValue(target);
-      return;
-    }
-    hasRunRef.current = true;
-    let raf = 0;
-    const start = performance.now();
-    const tick = (now: number) => {
-      const p = Math.min(1, (now - start) / durationMs);
-      const eased = 1 - Math.pow(1 - p, 3);
-      setValue(target * eased);
-      if (p < 1) raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [target, enabled, durationMs]);
-  return value;
-}
-
-// --------------------------------------------------------------------------
-// Visibility hook. Returns true when the node is on screen. Animation
-// gated by this AND by prefers-reduced-motion. When animated is false
-// the gauge holds the final frame (no pre animation hidden state).
-// --------------------------------------------------------------------------
-
-function useOnScreen<T extends Element>(ref: React.RefObject<T>): boolean {
-  const [visible, setVisible] = useState(false);
-  useEffect(() => {
-    const node = ref.current;
-    if (!node) return;
-    if (typeof IntersectionObserver === 'undefined') {
-      setVisible(true);
-      return;
-    }
+    const el = ref.current;
+    if (!el) return;
+    if (typeof IntersectionObserver === 'undefined') { setSeen(true); return; }
     const io = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          setVisible(entry.isIntersecting);
-        }
-      },
-      { threshold: 0.05 },
+      (es) => es.forEach((e) => setSeen(e.isIntersecting)),
+      { rootMargin: '120px' },
     );
-    io.observe(node);
+    io.observe(el);
     return () => io.disconnect();
   }, [ref]);
-  return visible;
+  return seen;
 }
 
-function usePrefersReducedMotion(): boolean {
+function useReducedMotion(): boolean {
   const [reduced, setReduced] = useState(false);
   useEffect(() => {
     if (typeof window === 'undefined' || !window.matchMedia) return;
@@ -229,374 +140,294 @@ function usePrefersReducedMotion(): boolean {
   return reduced;
 }
 
-// --------------------------------------------------------------------------
-// PlasmaGauge
-// --------------------------------------------------------------------------
+// Count up from 0 to value on first inView fire. Initial state = value so
+// SSR matches the first client render. The animation fires once via a ref
+// gate so re entry to viewport does not replay it.
+function useCountUp(value: number, run: boolean, dur = 1400): number {
+  const [n, setN] = useState(value);
+  const ranRef = useRef(false);
+  useEffect(() => {
+    if (!run) {
+      setN(value);
+      return;
+    }
+    if (ranRef.current) {
+      setN(value);
+      return;
+    }
+    ranRef.current = true;
+    let raf = 0, t0 = 0;
+    const ease = (x: number) => 1 - Math.pow(1 - x, 3);
+    const tick = (t: number) => {
+      if (!t0) t0 = t;
+      const p = Math.min(1, (t - t0) / dur);
+      setN(Math.round(value * ease(p)));
+      if (p < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [value, run, dur]);
+  return n;
+}
 
 export interface PlasmaGaugeProps {
   value: number;
-  metric: PlasmaMetric;
-  finish?: PlasmaFinish | null;
+  metric: GaugeMetric;
+  finish?: MetalFinish | null;
   size?: number;
-  variant?: PlasmaVariant;
+  variant?: GaugeVariant;
   max?: number;
   unit?: string;
   animated?: boolean;
   showUnit?: boolean;
-  // Optional aria label override. The default reads the metric and
-  // numeric value out for screen readers.
+  // Optional aria label override; default reads the metric and value.
   ariaLabel?: string;
 }
 
 export function PlasmaGauge({
-  value,
-  metric,
-  finish = null,
-  size = 200,
-  variant = 'standard',
-  max = 100,
-  unit,
-  animated = true,
-  showUnit = true,
-  ariaLabel,
+  value, metric, finish = null, size = 200, variant = 'standard',
+  max = 100, unit, animated = true, showUnit = true, ariaLabel,
 }: PlasmaGaugeProps) {
-  const ref = useRef<HTMLDivElement | null>(null);
-  const reduced = usePrefersReducedMotion();
-  const onScreen = useOnScreen(ref);
-  const motionActive = animated && onScreen && !reduced;
+  const ref = useRef<HTMLDivElement>(null);
+  const uid = useId().replace(/[^a-zA-Z0-9_]/g, '_');
+  const inView = useInView(ref);
+  const reduced = useReducedMotion();
+  const anim = animated && inView && !reduced;
+  const n = useCountUp(Math.round(value), animated && inView);
 
-  const target = Number.isFinite(value) && value > 0 ? value : 0;
-  const cleanMax = Number.isFinite(max) && max > 0 ? max : 100;
-  const fillFrac = Math.max(0, Math.min(1, target / cleanMax));
+  const compact = variant === 'compact';
+  const p = Math.max(0.0001, Math.min(1, value / (max || 100)));
 
-  // Number always lands on `target` regardless of motion state so the
-  // final filled gauge renders for print + reduced motion.
-  const displayValue = useCountUp(target, motionActive);
+  const M = finish ? MAT_BY_ID[finish] ?? null : null;
+  const metal = !!M;
+  const mc = METRIC_COLORS[metric] || METRIC_COLORS.bioscore;
+  const C  = metal ? (M as Material).bright : mc.c;
+  const CB = metal ? (M as Material).hi     : mc.bright;
+  const GLOW = metal ? (M as Material).glow  : mc.glow;
+  const progStops = metal
+    ? [(M as Material).dark, (M as Material).bright, (M as Material).hi, (M as Material).mid]
+    : [mc.deep, mc.c, mc.bright];
+  const numberGradient = metal
+    ? `linear-gradient(180deg, ${(M as Material).hi}, ${(M as Material).bright} 52%, ${(M as Material).mid})`
+    : '';
+  const coreBg = metal
+    ? `radial-gradient(circle at 50% 55%, #fff 0%, ${(M as Material).hi} 18%, ${(M as Material).bright} 42%, ${(M as Material).mid} 60%, transparent 74%)`
+    : `radial-gradient(circle at 50% 55%, #fff 0%, ${CB} 22%, ${C} 48%, transparent 72%)`;
 
-  const reactUid = useId();
-  // Sanitize useId output for SVG ids (the React id starts with a
-  // colon in dev).
-  const safeUid = reactUid.replace(/[^a-zA-Z0-9_]/g, '_');
-  const id = (suffix: string) => `pg_${safeUid}_${metric}_${finish ?? 'm'}_${suffix}`;
+  const cx = 100, cy = 100, R = 78, sw = compact ? 7 : 9;
+  const trackD = arcPath(cx, cy, R, 0, 1);
+  const progD = arcPath(cx, cy, R, 0, p);
+  const sparkCount = compact ? 1 : 3;
+  // Pick the orbit keyframe per spark index. The keyframes bake both
+  // rotateX (plane tilt) and rotateY (orbit spin) so the 3D composition
+  // does not get clobbered by an inline rotateX during animation.
+  const sparkCls = ['pg-spark-1', 'pg-spark-2', 'pg-spark-3'];
 
-  const palette = METRIC_COLORS[metric];
-  const material = finish ? MATERIALS[finish] : null;
-  const strokeWidth = variant === 'compact' ? 7 : 9;
-
-  // Glint dash pattern: 9 visible, 91 gap, repeating around the arc.
-  // The dash animates via stroke-dashoffset (pg-glint keyframe).
-  const glintEnabled = variant !== 'compact';
-  const sheenEnabled = variant !== 'compact' && finish !== null;
-  // Sparks: 3 in standard / hero, 1 in compact, 0 if the size is too
-  // small to fit them comfortably.
-  const sparkCount = variant === 'compact' ? (size >= 100 ? 1 : 0) : 3;
-
-  // Number scale per spec: size * 0.27 for the number, size * 0.07 for
-  // the sublabel. tabular-nums so the count up does not shift the
-  // layout.
-  const numberFontPx = Math.round(size * 0.27);
-  const subFontPx = Math.max(10, Math.round(size * 0.07));
-  const numberDisplay = Math.round(displayValue);
-  const sublabel = unit
-    ? `of ${Math.round(cleanMax)} ${unit}`
-    : '/ 100';
-
-  // Metal bezel built as a conic gradient masked to a thin band. The
-  // gradient varies by material and the sheen overlay rotates on top.
-  const metalConic = material
-    ? `conic-gradient(from -90deg, ${material.dark} 0deg, ${material.mid} 60deg, ${material.bright} 110deg, ${material.hi} 140deg, ${material.bright} 200deg, ${material.mid} 280deg, ${material.dark} 360deg)`
-    : null;
-
-  // Ambient bloom + gauge well sizes scale with the gauge box.
-  const wellStyle: React.CSSProperties = {
-    background: `radial-gradient(circle at 50% 46%, rgba(10,18,38,0.85), transparent 70%)`,
-  };
-  const accentForGlow = material ? material.glow : palette.glow;
-  // Prompt 182a (2026-06-09): bloom slightly stronger so the accent
-  // halo reads against the #1E3054 card on every metric.
-  const bloomStyle: React.CSSProperties = {
-    background: `radial-gradient(circle at 50% 50%, ${accentForGlow}, transparent 65%)`,
-    filter: `blur(${Math.round(size * 0.08)}px)`,
-    opacity: 0.62,
-  };
-  const accentForRing = material ? material.bright : palette.c;
-  const ringGlowStdDev = Math.round(size * 0.012);
-
-  const numberStyle: React.CSSProperties = material
-    ? {
-        backgroundImage: `linear-gradient(180deg, ${material.hi}, ${material.bright} 52%, ${material.mid})`,
-        WebkitBackgroundClip: 'text',
-        backgroundClip: 'text',
-        WebkitTextFillColor: 'transparent',
-        color: 'transparent',
-        fontWeight: 800,
-        fontFamily: 'var(--font-instrument-sans), "Instrument Sans", system-ui, sans-serif',
-        fontSize: `${numberFontPx}px`,
-        fontVariantNumeric: 'tabular-nums',
-        lineHeight: 1,
-      }
-    : {
-        color: '#ffffff',
-        textShadow: `0 0 ${Math.round(size * 0.06)}px ${palette.glow}`,
-        fontWeight: 800,
-        fontFamily: 'var(--font-instrument-sans), "Instrument Sans", system-ui, sans-serif',
-        fontSize: `${numberFontPx}px`,
-        fontVariantNumeric: 'tabular-nums',
-        lineHeight: 1,
-      };
-
-  const subStyle: React.CSSProperties = {
-    fontFamily: 'var(--font-instrument-sans), "Instrument Sans", system-ui, sans-serif',
-    fontWeight: 600,
-    fontSize: `${subFontPx}px`,
-    color: 'rgba(255,255,255,0.62)',
-    marginTop: Math.round(size * 0.012),
-  };
-
-  // Sparks positioned on preserve 3d planes; the keyframes spin each.
-  const sparks = useMemo(() => {
-    const tilts = [62, 70, 78];
-    const classes = ['pg-spark-1', 'pg-spark-2', 'pg-spark-3'];
-    const out: Array<{ tilt: number; cls: string }> = [];
-    for (let i = 0; i < sparkCount; i++) out.push({ tilt: tilts[i], cls: classes[i] });
-    return out;
-  }, [sparkCount]);
-
+  const fontDisplay = "var(--font-instrument-sans), 'Instrument Sans', system-ui, sans-serif";
+  const sublabel = unit ? `of ${max} ${unit}` : `/ ${max}`;
   const a11yLabel = ariaLabel
     ? ariaLabel
     : unit
-      ? `${metric} ${Math.round(target)} of ${Math.round(cleanMax)} ${unit}`
-      : `${metric} ${Math.round(target)} of 100`;
+      ? `${metric} ${Math.round(value)} of ${max} ${unit}`
+      : `${metric} ${Math.round(value)} of ${max}`;
 
   return (
     <div
       ref={ref}
-      className={`relative inline-flex items-center justify-center select-none ${motionActive ? '' : 'pg-paused'}`}
-      style={{ width: size, height: size }}
+      className={`pg-root ${anim ? '' : 'pg-paused'}`}
+      style={{ width: size, height: size, position: 'relative', perspective: `${600 * size / 200}px` }}
       role="img"
       aria-label={a11yLabel}
     >
-      {/* z 0: gauge well (radial darkening to keep 3D depth on the lighter card) */}
-      <div aria-hidden="true" className="pointer-events-none absolute inset-0 rounded-full" style={wellStyle} />
+      {/* gauge well: localized darkening so the orb keeps 3D depth on the lighter navy card */}
+      <div aria-hidden="true" style={{
+        position: 'absolute', inset: 0, borderRadius: '50%', zIndex: 0,
+        background: 'radial-gradient(circle at 50% 46%, rgba(10,18,38,0.85), transparent 70%)',
+      }} />
+      {/* ambient bloom: blurred accent halo behind the orb */}
+      <div aria-hidden="true" style={{
+        position: 'absolute', inset: '14%', borderRadius: '50%', zIndex: 1,
+        background: `radial-gradient(circle, ${GLOW} 0%, transparent 68%)`,
+        filter: 'blur(16px)', opacity: 0.55,
+      }} />
 
-      {/* z 1: ambient bloom */}
-      <div aria-hidden="true" className="pointer-events-none absolute inset-0 rounded-full" style={bloomStyle} />
-
-      {/* z 2: metallic bezel (only when finish is set and not compact) */}
-      {sheenEnabled && metalConic ? (
-        <>
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-0 rounded-full"
-            style={{
-              background: metalConic,
-              WebkitMask: 'radial-gradient(circle at 50% 50%, transparent 82%, black 86%, black 100%)',
-              mask: 'radial-gradient(circle at 50% 50%, transparent 82%, black 86%, black 100%)',
-            }}
-          />
-          <div
-            aria-hidden="true"
-            className="pg-sheen pointer-events-none absolute inset-0 rounded-full"
-            style={{
-              background:
-                'conic-gradient(from 0deg, transparent 0deg, rgba(255,255,255,0.55) 10deg, transparent 30deg, transparent 360deg)',
-              mixBlendMode: 'screen',
-              opacity: 0.55,
-              WebkitMask: 'radial-gradient(circle at 50% 50%, transparent 82%, black 86%, black 100%)',
-              mask: 'radial-gradient(circle at 50% 50%, transparent 82%, black 86%, black 100%)',
-            }}
-          />
-        </>
-      ) : null}
-
-      {/* z 3: progress ring SVG */}
+      {/* progress ring */}
       <svg
         aria-hidden="true"
-        viewBox={`0 0 ${VIEWBOX} ${VIEWBOX}`}
+        className="pg-ring"
+        viewBox="0 0 200 200"
         width={size}
         height={size}
-        className="absolute inset-0"
+        style={{ position: 'absolute', inset: 0, zIndex: 5 }}
       >
         <defs>
-          <linearGradient id={id('arc')} x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%"   stopColor={material ? material.dark : palette.deep} />
-            <stop offset="40%"  stopColor={material ? material.mid : palette.c} />
-            <stop offset="75%"  stopColor={material ? material.bright : palette.bright} />
-            <stop offset="100%" stopColor={material ? material.hi : palette.bright} />
+          <linearGradient id={`pg-${uid}`} x1="12%" y1="0%" x2="88%" y2="100%">
+            {progStops.map((c, i) => (
+              <stop key={i} offset={`${(i / (progStops.length - 1)) * 100}%`} stopColor={c} />
+            ))}
           </linearGradient>
-          <filter id={id('glow')} x="-30%" y="-30%" width="160%" height="160%">
-            <feGaussianBlur stdDeviation={ringGlowStdDev} result="blur" />
-            <feFlood floodColor={accentForGlow} />
-            <feComposite in2="blur" operator="in" result="shadow" />
-            <feMerge>
-              <feMergeNode in="shadow" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
         </defs>
-
-        {/* Track */}
-        <circle
-          cx={CENTER}
-          cy={CENTER}
-          r={RADIUS}
+        <path
+          d={trackD}
           fill="none"
-          stroke="rgba(255,255,255,0.08)"
-          strokeWidth={strokeWidth}
+          stroke={metal ? '#05070c' : 'rgba(255,255,255,.08)'}
+          strokeWidth={metal ? sw + 3 : sw}
           strokeLinecap="round"
-          strokeDasharray={`${ARC_LEN} ${CIRC}`}
-          transform={`rotate(${ROTATE} ${CENTER} ${CENTER})`}
         />
-        {/* Filled arc */}
-        <circle
-          cx={CENTER}
-          cy={CENTER}
-          r={RADIUS}
+        <path
+          d={progD}
           fill="none"
-          stroke={`url(#${id('arc')})`}
-          strokeWidth={strokeWidth}
+          stroke={`url(#pg-${uid})`}
+          strokeWidth={sw}
           strokeLinecap="round"
-          strokeDasharray={`${ARC_LEN * fillFrac} ${CIRC}`}
-          transform={`rotate(${ROTATE} ${CENTER} ${CENTER})`}
-          filter={`url(#${id('glow')})`}
+          style={{ filter: `drop-shadow(0 0 8px ${GLOW})` }}
         />
-        {/* Metallic highlight arc (offset up 1.8px). Only in finish mode. */}
-        {material ? (
-          <circle
-            cx={CENTER}
-            cy={CENTER - 1.8}
-            r={RADIUS}
+        {metal && (
+          <path
+            d={progD}
             fill="none"
-            stroke="rgba(255,255,255,0.35)"
-            strokeWidth={Math.max(1, strokeWidth - 6)}
+            stroke="rgba(255,255,255,.7)"
+            strokeWidth={sw * 0.32}
             strokeLinecap="round"
-            strokeDasharray={`${ARC_LEN * fillFrac} ${CIRC}`}
-            transform={`rotate(${ROTATE} ${CENTER} ${CENTER})`}
+            transform="translate(0,-1.8)"
+            opacity={0.55}
           />
-        ) : null}
-        {/* Glint (standard + hero only) */}
-        {glintEnabled ? (
-          <circle
+        )}
+        {metal && !compact && (
+          <path
             className="pg-glint"
-            cx={CENTER}
-            cy={CENTER}
-            r={RADIUS}
+            d={progD}
             fill="none"
-            stroke="rgba(255,255,255,0.85)"
-            strokeWidth={Math.max(1, strokeWidth - 5)}
+            stroke="#fff"
+            strokeWidth={sw * 0.5}
             strokeLinecap="round"
-            strokeDasharray="9 91"
-            transform={`rotate(${ROTATE} ${CENTER} ${CENTER})`}
-            style={{ mixBlendMode: 'screen' }}
+            pathLength={100}
+            style={{ strokeDasharray: '9 91', mixBlendMode: 'screen' }}
           />
-        ) : null}
+        )}
       </svg>
 
-      {/* z 4: glass orb (inset 24%). Prompt 182a (2026-06-09): boosted
-          the highlight + border opacities so the glass shell reads
-          against the molten core and the gauge well behind it. The
-          core lives INSIDE this div and fades to transparent at its
-          outer rim so the orb's inset shadow ring is always visible
-          regardless of the pulse phase. */}
+      {/* metallic bezel + rotating sheen (non compact only) */}
+      {metal && (
+        <>
+          <div aria-hidden="true" style={{
+            position: 'absolute', inset: '20%', borderRadius: '50%', zIndex: 6,
+            background: metalConic(M as Material),
+            WebkitMaskImage: 'radial-gradient(circle, transparent 0 82%, #000 84% 100%)',
+            maskImage: 'radial-gradient(circle, transparent 0 82%, #000 84% 100%)',
+            boxShadow: 'inset 0 0 0 1px rgba(0,0,0,.4)',
+          }} />
+          {!compact && (
+            <div aria-hidden="true" className="pg-sheen" style={{
+              position: 'absolute', inset: '20%', borderRadius: '50%', zIndex: 6,
+              background: 'conic-gradient(from 0deg, transparent 0 18%, rgba(255,255,255,.9) 26%, transparent 34% 72%, rgba(255,255,255,.5) 80%, transparent 88%)',
+              WebkitMaskImage: 'radial-gradient(circle, transparent 0 83%, #000 85% 100%)',
+              maskImage: 'radial-gradient(circle, transparent 0 83%, #000 85% 100%)',
+              mixBlendMode: 'screen', opacity: 0.55,
+            }} />
+          )}
+        </>
+      )}
+
+      {/* glass orb + pulsing core */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute rounded-full overflow-hidden"
+        className="pg-orb"
         style={{
-          inset: `${Math.round(size * 0.24)}px`,
-          background:
-            'radial-gradient(circle at 35% 28%, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.08) 32%, rgba(255,255,255,0.02) 62%, rgba(0,0,0,0.35) 100%)',
-          border: '1px solid rgba(255,255,255,0.22)',
-          boxShadow:
-            'inset 0 3px 9px rgba(255,255,255,0.45), inset 0 -10px 22px rgba(0,0,0,0.65), 0 0 0 1px rgba(0,0,0,0.20)',
+          position: 'absolute', inset: '24%', borderRadius: '50%', zIndex: 6, overflow: 'hidden',
+          background: 'radial-gradient(circle at 38% 30%, rgba(255,255,255,.16), rgba(255,255,255,.02) 45%, rgba(0,0,0,.35))',
+          border: metal ? `1px solid ${(M as Material).hi}44` : '1px solid rgba(255,255,255,.22)',
           backdropFilter: 'blur(2px)',
           WebkitBackdropFilter: 'blur(2px)',
+          boxShadow: 'inset 0 2px 6px rgba(255,255,255,.3), inset 0 -10px 20px rgba(0,0,0,.5)',
         }}
       >
-        {/* z 5: pulsing molten core. Fades to transparent at 100% so
-            the glass orb rim and its inset shadow show through the
-            core's outer edge. The core sits inset 8% inside the orb
-            so a permanent ring of glass is visible regardless of the
-            pulse scale (0.94 to 1.06). */}
+        {/* pulsing molten core */}
         <div
-          aria-hidden="true"
-          className="pg-core absolute"
+          className="pg-core"
           style={{
-            inset: '8%',
-            borderRadius: '50%',
-            background: `radial-gradient(circle at 50% 48%, #ffffff 0%, ${palette.bright} 22%, ${palette.c} 50%, ${hexToRgba(palette.deep, 0.85)} 78%, ${hexToRgba(palette.deep, 0)} 100%)`,
+            position: 'absolute', inset: '12%', borderRadius: '50%',
+            background: coreBg,
+            filter: 'blur(2px)',
             transformOrigin: 'center',
           }}
         />
-        {/* Second smaller highlight pulsing out of phase, blended on
-            screen so it glints across the white-hot crown without
-            washing the metric color. */}
+        {/* second smaller highlight pulsing out of phase, screen blended */}
         <div
-          aria-hidden="true"
-          className="pg-core-hi absolute"
+          className="pg-core-hi"
           style={{
-            inset: '22%',
-            borderRadius: '50%',
-            background: `radial-gradient(circle at 50% 38%, rgba(255,255,255,0.90), rgba(255,255,255,0.0) 65%)`,
+            position: 'absolute', inset: '26%', borderRadius: '50%',
             mixBlendMode: 'screen',
+            background: `radial-gradient(circle, #fff 0%, ${CB} 50%, transparent 75%)`,
             transformOrigin: 'center',
           }}
         />
       </div>
 
-      {/* z 6: orbiting sparks. Prompt 182a (2026-06-09): boosted dot
-          size + glow radius so the sparks actually read at the 120 to
-          200 px gauge range. The dot is a white core with an accent
-          colored halo so it sells as a glint of plasma rather than a
-          static dot. */}
-      {sparks.length > 0 ? (
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0"
-          style={{ perspective: `${size * 2}px` }}
-        >
-          {sparks.map((spark, i) => {
-            const dotSize = variant === 'compact'
-              ? Math.max(4, Math.round(size * 0.030))
-              : Math.max(7, Math.round(size * 0.048));
-            const halfDot = dotSize / 2;
-            const glow = variant === 'compact'
-              ? Math.max(6, Math.round(size * 0.05))
-              : Math.max(10, Math.round(size * 0.08));
-            return (
-              <div
-                key={i}
-                className={`${spark.cls} absolute inset-0`}
-                style={{
-                  transformStyle: 'preserve-3d',
-                  transform: `rotateX(${spark.tilt}deg)`,
-                }}
-              >
-                <div
-                  style={{
-                    position: 'absolute',
-                    left: '50%',
-                    top: '50%',
-                    width: dotSize,
-                    height: dotSize,
-                    marginLeft: -halfDot,
-                    marginTop: -halfDot,
-                    background:
-                      'radial-gradient(circle at 50% 50%, #ffffff 0%, #ffffff 35%, rgba(255,255,255,0.6) 60%, rgba(255,255,255,0) 100%)',
-                    borderRadius: '50%',
-                    boxShadow: `0 0 ${glow}px ${accentForGlow}, 0 0 ${Math.round(glow / 2)}px ${accentForGlow}`,
-                    transform: `translateZ(${Math.round(size * 0.18)}px)`,
-                  }}
-                />
-              </div>
-            );
-          })}
-        </div>
-      ) : null}
+      {/* orbiting sparks: 3D preserve d planes with baked rotateX + rotateY
+          per spark via the pg-spark-N keyframes so the tilt does not get
+          clobbered by the spin. */}
+      {Array.from({ length: sparkCount }).map((_, i) => {
+        const dotPx = compact ? 5 : 7;
+        return (
+          <div
+            key={i}
+            className={sparkCls[i]}
+            aria-hidden="true"
+            style={{
+              position: 'absolute', inset: '20%', zIndex: 7,
+              transformStyle: 'preserve-3d',
+            }}
+          >
+            <div style={{
+              position: 'absolute', top: '50%', left: '50%',
+              width: dotPx, height: dotPx, borderRadius: '50%',
+              marginLeft: -dotPx / 2, marginTop: -dotPx / 2,
+              transform: `translateX(${size * 0.18}px)`,
+              background: `radial-gradient(circle at 35% 30%, #fff, ${C})`,
+              boxShadow: `0 0 ${compact ? 8 : 12}px ${GLOW}`,
+            }} />
+          </div>
+        );
+      })}
 
-      {/* z 7: value readout */}
-      <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-        <span style={numberStyle}>{numberDisplay}</span>
-        {showUnit ? <span style={subStyle}>{sublabel}</span> : null}
+      {/* value readout */}
+      <div style={{
+        position: 'absolute', inset: 0, zIndex: 30,
+        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+        pointerEvents: 'none',
+      }}>
+        <div style={{
+          fontFamily: fontDisplay,
+          fontWeight: 700,
+          fontSize: size * 0.27,
+          lineHeight: 0.9,
+          fontVariantNumeric: 'tabular-nums',
+          letterSpacing: '-0.01em',
+          ...(metal
+            ? {
+                background: numberGradient,
+                WebkitBackgroundClip: 'text',
+                backgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                color: 'transparent',
+                filter: 'drop-shadow(0 1px 1px rgba(0,0,0,.6))',
+              }
+            : {
+                color: '#fff',
+                textShadow: `0 2px 12px rgba(0,0,0,.6), 0 0 22px ${GLOW}`,
+              }),
+        }}>{n}</div>
+        {showUnit && (
+          <div style={{
+            fontFamily: fontDisplay,
+            fontWeight: 600,
+            fontSize: size * 0.07,
+            color: metal ? `${(M as Material).hi}99` : 'rgba(255,255,255,.6)',
+            letterSpacing: 0.5,
+            marginTop: size * 0.012,
+          }}>{sublabel}</div>
+        )}
       </div>
     </div>
   );
