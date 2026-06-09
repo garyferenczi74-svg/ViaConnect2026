@@ -5,7 +5,7 @@
 // SVG circle gauge matching the visual language of other gauges in the
 // app (Bio Optimization Score, Daily Schedule).
 
-import { PlasmaGauge } from '@/components/gauges/PlasmaGauge';
+import { PlasmaGauge, MATERIALS, type MetalFinish } from '@/components/gauges/PlasmaGauge';
 
 export interface NutritionScoreCircleGaugeProps {
   readonly score: number;
@@ -23,6 +23,12 @@ export interface NutritionScoreCircleGaugeProps {
   // restructured Nutrition Score card. Desktop typography unchanged.
   // Default false preserves the existing hero rendering.
   readonly compactMobileCaption?: boolean;
+  // Visual pass (Gary 2026-06-09): optional metallic finish for the gauge.
+  // When set, PlasmaGauge renders its metallic treatment ('amethyst' = purple
+  // metallic) and the tier label tints to match. Default null keeps the
+  // per-metric green nutrition rendering, so the Nutrition Score gauge that
+  // also uses this component is unaffected.
+  readonly finish?: MetalFinish | null;
 }
 
 interface TierBand {
@@ -60,10 +66,17 @@ export function NutritionScoreCircleGauge(props: NutritionScoreCircleGaugeProps)
     mobilePx = 160,
     desktopPx = 200,
     compactMobileCaption = false,
+    finish = null,
   } = props;
   const clamped = Math.max(0, Math.min(100, Math.round(score)));
   const hasData = mealCount > 0 && score > 0;
   const tier = tierForScore(clamped);
+  // When a metallic finish is applied, tint the tier word to the finish's
+  // bright tone so the label reads with the gauge instead of clashing with
+  // the score-tier band color.
+  const tierLabelColor = finish
+    ? MATERIALS.find((m) => m.id === finish)?.bright ?? tier.color
+    : tier.color;
 
   // Prompt 182 (2026-06-09): replaced the flat circle gauge with the
   // shared PlasmaGauge in standard variant, metric=nutrition (green).
@@ -74,16 +87,16 @@ export function NutritionScoreCircleGauge(props: NutritionScoreCircleGaugeProps)
       {hasData ? (
         <>
           <div className="md:hidden">
-            <PlasmaGauge value={clamped} metric="nutrition" variant="standard" size={mobilePx} />
+            <PlasmaGauge value={clamped} metric="nutrition" variant="standard" size={mobilePx} finish={finish} />
           </div>
           <div className="hidden md:block">
-            <PlasmaGauge value={clamped} metric="nutrition" variant="standard" size={desktopPx} />
+            <PlasmaGauge value={clamped} metric="nutrition" variant="standard" size={desktopPx} finish={finish} />
           </div>
           <span
             className={`font-medium uppercase tracking-[0.10em] ${
               compactMobileCaption ? 'text-[12px] md:text-[14px]' : 'text-[14px]'
             }`}
-            style={{ color: tier.color }}
+            style={{ color: tierLabelColor }}
           >
             {tier.label}
           </span>
@@ -91,10 +104,10 @@ export function NutritionScoreCircleGauge(props: NutritionScoreCircleGaugeProps)
       ) : (
         <>
           <div className="md:hidden">
-            <PlasmaGauge value={0} metric="nutrition" variant="standard" size={mobilePx} animated={false} />
+            <PlasmaGauge value={0} metric="nutrition" variant="standard" size={mobilePx} finish={finish} animated={false} />
           </div>
           <div className="hidden md:block">
-            <PlasmaGauge value={0} metric="nutrition" variant="standard" size={desktopPx} animated={false} />
+            <PlasmaGauge value={0} metric="nutrition" variant="standard" size={desktopPx} finish={finish} animated={false} />
           </div>
           <span
             className={`text-white/55 ${

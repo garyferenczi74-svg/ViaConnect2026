@@ -256,6 +256,10 @@ export function NutritionScoreCard({ userId: propUserId }: NutritionScoreCardPro
           </span>
         </div>
         <div className="flex flex-col items-center gap-1 md:gap-2">
+          {/* Visual pass (Gary 2026-06-09): the Total Daily Macros gauge takes
+              the amethyst (purple metallic) PlasmaGauge finish so it reads
+              apart from the green Nutrition Score gauge and the gold 7 Day
+              Average in the same row. */}
           <NutritionScoreCircleGauge
             score={computed.macrosScore}
             mealCount={computed.macrosMealCount}
@@ -265,6 +269,7 @@ export function NutritionScoreCard({ userId: propUserId }: NutritionScoreCardPro
             mobileStroke={5}
             desktopStroke={12}
             compactMobileCaption
+            finish="amethyst"
           />
           <span className="text-[10px] uppercase tracking-[0.10em] text-white/55 md:text-[12px]">
             Total Daily Macros
