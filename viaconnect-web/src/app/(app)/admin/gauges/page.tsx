@@ -52,6 +52,7 @@ import {
 } from '@/components/gauges/PlasmaGauge';
 import { Gauge3D, type Gauge3DVariant } from '@/components/gauges/Gauge3D';
 import { GaugeGlass, type GlassVariant } from '@/components/gauges/GaugeGlass';
+import { GaugeLiquid, type LiquidVariant } from '@/components/gauges/GaugeLiquid';
 // Prompt 182f (2026-06-09): structural design tokens (surface, hairline,
 // text levels, neumorphic surface, gold / chrome / rose stops). Imported
 // here so they flow into the gallery only; the consumer surfaces stay on
@@ -342,6 +343,17 @@ const renderLens    = makeRenderGlass('lens');
 const renderStacked = makeRenderGlass('stacked');
 const renderAurora  = makeRenderGlass('aurora');
 
+// Prompt 182i (2026-06-09): Liquid fill family renderers. Same render
+// prop signature; liquid variants ignore finish (palette comes from
+// METRIC_COLORS or, for mercury, a built in silver gradient).
+const makeRenderLiquid = (variant: LiquidVariant): GaugeRenderer => ({ value, size, metric, live, mini }) => (
+  <GaugeLiquid value={value} size={size} metric={metric} live={live} mini={mini} variant={variant} />
+);
+const renderSphere  = makeRenderLiquid('sphere');
+const renderTube    = makeRenderLiquid('tube');
+const renderMercury = makeRenderLiquid('mercury');
+const renderCapsule = makeRenderLiquid('capsule');
+
 // ---------------------------------------------------------------------------
 // Registry. One entry per artboard.
 // ---------------------------------------------------------------------------
@@ -384,13 +396,6 @@ const PLACEHOLDER_GROUPS: Array<{ group: string; entries: Array<{ id: string; la
     entries: [
       { id: 'placeholder-neumorphic-1', label: 'Neumorphic, channel' },
       { id: 'placeholder-neumorphic-2', label: 'Neumorphic, extruded' },
-    ],
-  },
-  {
-    group: 'Liquid fill',
-    entries: [
-      { id: 'placeholder-liquid-1', label: 'Liquid, wave fill' },
-      { id: 'placeholder-liquid-2', label: 'Liquid, bubbles' },
     ],
   },
 ];
@@ -471,6 +476,23 @@ export default function GaugesGalleryPage() {
         </DCArtboard>
         <DCArtboard label="17, DNA Helix" width={340} height={478}>
           <GaugeCard metric="sleep"    render={renderHelix} value={75} states={[22, 56, 90]} />
+        </DCArtboard>
+      </DCSection>
+
+      {/* Prompt 182i (2026-06-09): Liquid fill family lights up.
+          Sphere, fluid ring tube, mercury drop, wave capsule. */}
+      <DCSection id="liquid-fill" title="Liquid fill" subtitle={SUBS['Liquid fill']}>
+        <DCArtboard label="18, Liquid Sphere"   width={340} height={478}>
+          <GaugeCard metric="energy"    render={renderSphere}  value={30} states={[14, 47, 82]} />
+        </DCArtboard>
+        <DCArtboard label="19, Fluid Ring Tube" width={340} height={478}>
+          <GaugeCard metric="nutrition" render={renderTube}    value={45} states={[13, 50, 86]} />
+        </DCArtboard>
+        <DCArtboard label="20, Mercury Drop"    width={340} height={478}>
+          <GaugeCard metric="activity"  render={renderMercury} value={15} states={[15, 48, 83]} />
+        </DCArtboard>
+        <DCArtboard label="21, Wave Capsule"    width={340} height={478}>
+          <GaugeCard metric="mood"      render={renderCapsule} value={90} states={[20, 55, 88]} />
         </DCArtboard>
       </DCSection>
 
