@@ -53,6 +53,7 @@ import {
 import { Gauge3D, type Gauge3DVariant } from '@/components/gauges/Gauge3D';
 import { GaugeGlass, type GlassVariant } from '@/components/gauges/GaugeGlass';
 import { GaugeLiquid, type LiquidVariant } from '@/components/gauges/GaugeLiquid';
+import { GaugeMetal, type MetalVariant } from '@/components/gauges/GaugeMetal';
 // Prompt 182f (2026-06-09): structural design tokens (surface, hairline,
 // text levels, neumorphic surface, gold / chrome / rose stops). Imported
 // here so they flow into the gallery only; the consumer surfaces stay on
@@ -354,6 +355,19 @@ const renderTube    = makeRenderLiquid('tube');
 const renderMercury = makeRenderLiquid('mercury');
 const renderCapsule = makeRenderLiquid('capsule');
 
+// Prompt 182j (2026-06-09): Metallic family renderers. Same render
+// prop signature. Metal variants embed their own bezel + progress
+// palette so they ignore both finish and (for material progMode) the
+// metric palette.
+const makeRenderMetal = (variant: MetalVariant): GaugeRenderer => ({ value, size, metric, live, mini }) => (
+  <GaugeMetal value={value} size={size} metric={metric} live={live} mini={mini} variant={variant} />
+);
+const renderLiquidGold     = makeRenderMetal('liquid-gold');
+const renderBrushedChrome  = makeRenderMetal('brushed-chrome');
+const renderRoseGold       = makeRenderMetal('rose-gold');
+const renderObsidianGold   = makeRenderMetal('obsidian-gold');
+const renderPlatinumDome   = makeRenderMetal('platinum-dome');
+
 // ---------------------------------------------------------------------------
 // Registry. One entry per artboard.
 // ---------------------------------------------------------------------------
@@ -383,14 +397,6 @@ const FINISH_VALUE = 78;
 const FINISH_METRIC: GaugeMetric = 'bioscore';
 
 const PLACEHOLDER_GROUPS: Array<{ group: string; entries: Array<{ id: string; label: string }> }> = [
-  {
-    group: 'Metallic and premium',
-    entries: [
-      { id: 'placeholder-metallic-1', label: 'Metallic, gold' },
-      { id: 'placeholder-metallic-2', label: 'Metallic, platinum' },
-      { id: 'placeholder-metallic-3', label: 'Metallic, gunmetal' },
-    ],
-  },
   {
     group: 'Neumorphic',
     entries: [
@@ -443,6 +449,27 @@ export default function GaugesGalleryPage() {
             <GaugeCard metric={FINISH_METRIC} finish={mat.id} render={renderPlasma} value={FINISH_VALUE} />
           </DCArtboard>
         ))}
+      </DCSection>
+
+      {/* Prompt 182j (2026-06-09): Metallic and premium family lights
+          up. Liquid gold, brushed chrome, rose gold, obsidian and
+          gold, platinum dome. */}
+      <DCSection id="metallic-premium" title="Metallic and premium" subtitle={SUBS['Metallic and premium']}>
+        <DCArtboard label="01, Liquid Gold"      width={340} height={478}>
+          <GaugeCard metric="wellness"  render={renderLiquidGold}    value={78} states={[24, 58, 91]} />
+        </DCArtboard>
+        <DCArtboard label="02, Brushed Chrome"   width={340} height={478}>
+          <GaugeCard metric="sleep"     render={renderBrushedChrome} value={75} states={[22, 56, 90]} />
+        </DCArtboard>
+        <DCArtboard label="03, Rose Gold Bezel"  width={340} height={478}>
+          <GaugeCard metric="mood"      render={renderRoseGold}      value={90} states={[20, 55, 88]} />
+        </DCArtboard>
+        <DCArtboard label="04, Obsidian and Gold" width={340} height={478}>
+          <GaugeCard metric="energy"    render={renderObsidianGold}  value={30} states={[14, 47, 82]} />
+        </DCArtboard>
+        <DCArtboard label="05, Platinum Dome"    width={340} height={478}>
+          <GaugeCard metric="nutrition" render={renderPlatinumDome}  value={45} states={[13, 50, 86]} />
+        </DCArtboard>
       </DCSection>
 
       {/* Prompt 182h (2026-06-09): Glassmorphic family lights up.
