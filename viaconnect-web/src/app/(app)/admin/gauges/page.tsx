@@ -51,6 +51,7 @@ import {
   type MetalFinish,
 } from '@/components/gauges/PlasmaGauge';
 import { Gauge3D, type Gauge3DVariant } from '@/components/gauges/Gauge3D';
+import { GaugeGlass, type GlassVariant } from '@/components/gauges/GaugeGlass';
 // Prompt 182f (2026-06-09): structural design tokens (surface, hairline,
 // text levels, neumorphic surface, gold / chrome / rose stops). Imported
 // here so they flow into the gallery only; the consumer surfaces stay on
@@ -330,6 +331,17 @@ const renderGyro  = makeRender3D('gyro');
 const renderCoin  = makeRender3D('coin');
 const renderHelix = makeRender3D('helix');
 
+// Prompt 182h (2026-06-09): Glassmorphic family renderers. Same render
+// prop signature; the glass variants ignore finish (color coded by
+// metric only).
+const makeRenderGlass = (variant: GlassVariant): GaugeRenderer => ({ value, size, metric, live, mini }) => (
+  <GaugeGlass value={value} size={size} metric={metric} live={live} mini={mini} variant={variant} />
+);
+const renderFrosted = makeRenderGlass('frosted');
+const renderLens    = makeRenderGlass('lens');
+const renderStacked = makeRenderGlass('stacked');
+const renderAurora  = makeRenderGlass('aurora');
+
 // ---------------------------------------------------------------------------
 // Registry. One entry per artboard.
 // ---------------------------------------------------------------------------
@@ -365,13 +377,6 @@ const PLACEHOLDER_GROUPS: Array<{ group: string; entries: Array<{ id: string; la
       { id: 'placeholder-metallic-1', label: 'Metallic, gold' },
       { id: 'placeholder-metallic-2', label: 'Metallic, platinum' },
       { id: 'placeholder-metallic-3', label: 'Metallic, gunmetal' },
-    ],
-  },
-  {
-    group: 'Glassmorphic',
-    entries: [
-      { id: 'placeholder-glass-1', label: 'Glass, refraction' },
-      { id: 'placeholder-glass-2', label: 'Glass, depth layers' },
     ],
   },
   {
@@ -433,6 +438,23 @@ export default function GaugesGalleryPage() {
             <GaugeCard metric={FINISH_METRIC} finish={mat.id} render={renderPlasma} value={FINISH_VALUE} />
           </DCArtboard>
         ))}
+      </DCSection>
+
+      {/* Prompt 182h (2026-06-09): Glassmorphic family lights up.
+          Frosted, lens, stacked plates, aurora. */}
+      <DCSection id="glassmorphic" title="Glassmorphic" subtitle={SUBS['Glassmorphic']}>
+        <DCArtboard label="06, Frosted Disc"  width={340} height={478}>
+          <GaugeCard metric="sleep"    render={renderFrosted} value={75} states={[22, 56, 90]} />
+        </DCArtboard>
+        <DCArtboard label="07, Liquid Lens"   width={340} height={478}>
+          <GaugeCard metric="energy"   render={renderLens}    value={30} states={[14, 47, 82]} />
+        </DCArtboard>
+        <DCArtboard label="08, Stacked Plates" width={340} height={478}>
+          <GaugeCard metric="mood"     render={renderStacked} value={90} states={[20, 55, 88]} />
+        </DCArtboard>
+        <DCArtboard label="09, Aurora Glass"  width={340} height={478}>
+          <GaugeCard metric="wellness" render={renderAurora}  value={45} states={[13, 50, 86]} />
+        </DCArtboard>
       </DCSection>
 
       {/* Prompt 182g (2026-06-09): True 3D family lights up. Real
