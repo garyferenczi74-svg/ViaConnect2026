@@ -213,3 +213,34 @@ export async function loadFatSourceBySlug(
     return null;
   }
 }
+
+/** One fat source by id, or null when missing (fail-open). */
+export async function loadFatSourceById(
+  client: SupabaseClient,
+  id: string
+): Promise<FatSourceProfile | null> {
+  try {
+    const { data, error } = await withTimeout(
+      (async () =>
+        client
+          .from('fat_sources')
+          .select(SELECT_COLUMNS)
+          .eq('id', id)
+          .maybeSingle())(),
+      4000,
+      'nutrition.fat-sources.loadById'
+    );
+    if (error || !data) {
+      if (error) safeLog.warn('nutrition.fat-sources', 'loadFatSourceById query error', { error, id });
+      return null;
+    }
+    return rowToProfile(data as FatSourceRow);
+  } catch (err) {
+    safeLog.warn('nutrition.fat-sources', 'loadFatSourceById failed', {
+      error: err,
+      id,
+      timedOut: isTimeoutError(err),
+    });
+    return null;
+  }
+}

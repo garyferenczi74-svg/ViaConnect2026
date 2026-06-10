@@ -42,6 +42,7 @@ import {
   type NutriVisionItemPayload,
 } from '@/lib/nutrition/meals-insert-schema';
 import { scoreMealForServerInsert } from '@/lib/gordon/scoreMealForServerInsert';
+import { resolveFatBreakdown, loadFatSourceById } from '@/lib/nutrition/fat-sources';
 import { awardNutritionLogPoints } from '@/lib/nutrition/helix-bridge';
 import { awardNutriVisionHelixEvents } from '@/lib/nutrition/helix-bridge';
 import { recomputeNutritionDimension } from '@/lib/nutrition/bos-bridge';
@@ -68,6 +69,7 @@ function mealSourceToNutritionSource(source: MealSource): NutritionSource {
     case 'photo_ai':     return 'photo_ai';
     case 'tracker_api':  return 'imported';
     case 'wearable_cgm': return 'imported';
+    case 'nutrivision':  return 'photo_ai';
   }
 }
 
@@ -152,6 +154,18 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Prompt 184b: manual entries attribute their fat to the picked source
+    // (the one-source model). No source means saturated is not determinable.
+    const fatSource = payload.fat_source_id
+      ? await loadFatSourceById(supabase, payload.fat_source_id)
+      : null;
+    const fatBreakdown = resolveFatBreakdown({
+      intrinsicTotalFatG: 0,
+      intrinsicSaturatedG: 0,
+      addedFatG: payload.fat_total_g,
+      source: fatSource,
+    });
+
     const scored = await scoreMealForServerInsert(supabase, {
       userId: user.id,
       loggedAt: payload.logged_at,
@@ -161,7 +175,8 @@ export async function POST(req: NextRequest) {
       proteinG: payload.protein_g,
       carbsG: payload.carbs_g,
       fatTotalG: payload.fat_total_g,
-      fatHealthyG: payload.fat_healthy_g,
+      fatSourceId: payload.fat_source_id ?? null,
+      fatBreakdown,
       fiberG: payload.fiber_g,
       sugarG: payload.sugar_g,
       sodiumMg: payload.sodium_mg,
@@ -180,7 +195,9 @@ export async function POST(req: NextRequest) {
       protein_g: payload.protein_g,
       carbs_g: payload.carbs_g,
       fat_total_g: payload.fat_total_g,
-      fat_healthy_g: payload.fat_healthy_g,
+      fat_source_id: payload.fat_source_id ?? null,
+      fat_breakdown: fatBreakdown,
+      fat_quality_contribution: scored.fat_quality_contribution,
       fiber_g: payload.fiber_g,
       sugar_g: payload.sugar_g,
       sodium_mg: payload.sodium_mg,
@@ -302,7 +319,8 @@ async function handleNutriVision(
     proteinG: totals.protein_g,
     carbsG: totals.carbs_g,
     fatTotalG: totals.fat_g,
-    fatHealthyG: 0,
+    fatSourceId: null,
+    fatBreakdown: null,
     fiberG: totals.fiber_g,
     sugarG: totals.sugar_g,
     sodiumMg: totals.sodium_mg,
@@ -325,7 +343,9 @@ async function handleNutriVision(
     protein_g: totals.protein_g,
     carbs_g: totals.carbs_g,
     fat_total_g: totals.fat_g,
-    fat_healthy_g: 0,
+    fat_source_id: null,
+    fat_breakdown: null,
+    fat_quality_contribution: scored.fat_quality_contribution,
     fiber_g: totals.fiber_g,
     sugar_g: totals.sugar_g,
     sodium_mg: totals.sodium_mg,

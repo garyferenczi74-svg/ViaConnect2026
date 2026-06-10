@@ -25,7 +25,9 @@ export const MealsInsertPayloadSchema = z.object({
   protein_g: z.number().min(0),
   carbs_g: z.number().min(0),
   fat_total_g: z.number().min(0),
-  fat_healthy_g: z.number().min(0),
+  // Prompt 184b: the picked fat source (nullable; optional for older clients).
+  // good/healthy fat are removed; the route resolves fat_breakdown from this.
+  fat_source_id: z.string().uuid().nullable().optional(),
   fiber_g: z.number().min(0),
   sugar_g: z.number().min(0),
   sodium_mg: z.number().min(0),
