@@ -124,7 +124,7 @@ export default function ConsumerDashboard() {
           protein_g: draft.proteinG,
           carbs_g: draft.carbsG,
           fat_total_g: draft.fatTotalG,
-          fat_healthy_g: draft.fatHealthyG,
+          fat_source_id: draft.fatSourceId,
           fiber_g: draft.fiberG,
           sugar_g: draft.sugarG,
           sodium_mg: draft.sodiumMg,

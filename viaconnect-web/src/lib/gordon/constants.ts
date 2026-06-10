@@ -71,13 +71,12 @@ export interface SliderRange {
 }
 
 export const SLIDER_RANGES: Record<
-  'protein' | 'carbs' | 'fatTotal' | 'fatHealthy' | 'fiber' | 'sugar' | 'sodium' | 'calories',
+  'protein' | 'carbs' | 'fatTotal' | 'fiber' | 'sugar' | 'sodium' | 'calories',
   SliderRange
 > = {
   protein:    { unit: 'g',    min: 0, max: 150,  step: 1,  default: 25 },
   carbs:      { unit: 'g',    min: 0, max: 200,  step: 1,  default: 40 },
   fatTotal:   { unit: 'g',    min: 0, max: 100,  step: 1,  default: 15 },
-  fatHealthy: { unit: 'g',    min: 0, max: 100,  step: 1,  default: 8 },
   fiber:      { unit: 'g',    min: 0, max: 50,   step: 1,  default: 5 },
   sugar:      { unit: 'g',    min: 0, max: 100,  step: 1,  default: 10 },
   sodium:     { unit: 'mg',   min: 0, max: 3000, step: 50, default: 400 },

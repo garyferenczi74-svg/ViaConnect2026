@@ -29,8 +29,11 @@ import type {
 } from '@/lib/gordon/types';
 import type { QuickLogDraft } from '@/components/meals/QuickLogModal';
 import { NutrientSlider } from '@/components/meals/NutrientSlider';
+import { FatSourceDropdown } from '@/components/meals/FatSourceDropdown';
 import { QualityScoreRing } from '@/components/meals/QualityScoreRing';
 import { ScoreBreakdownPanel } from '@/components/meals/ScoreBreakdownPanel';
+import { resolveFatBreakdown } from '@/lib/nutrition/fat-sources';
+import { useFatSources } from '@/hooks/useFatSources';
 
 const MEAL_TYPE_LABELS: Record<MealType, string> = {
   breakfast: 'Breakfast',
@@ -150,6 +153,8 @@ export function QuickLogEntryBlock(props: QuickLogEntryBlockProps) {
     existingMeal?.mealName ?? existingMeal?.notes ?? '',
   );
   const [breakdown, setBreakdown] = useState<ScoreBreakdown | null>(null);
+  const [fatSourceId, setFatSourceId] = useState<string | null>(null);
+  const { fatSources } = useFatSources();
 
   const autoCalories = useMemo(() => {
     return Math.round(
@@ -160,6 +165,18 @@ export function QuickLogEntryBlock(props: QuickLogEntryBlockProps) {
   }, [sliders.protein, sliders.carbs, sliders.fatTotal]);
 
   const displayedCalories = caloriesAutoCalc ? autoCalories : sliders.calories;
+
+  // Prompt 184b: resolve the fat breakdown from the picked source (one-source
+  // model for manual entry) so the live score preview reflects source quality.
+  const previewFatBreakdown = useMemo(() => {
+    const source = fatSources.find((s) => s.id === fatSourceId) ?? null;
+    return resolveFatBreakdown({
+      intrinsicTotalFatG: 0,
+      intrinsicSaturatedG: 0,
+      addedFatG: sliders.fatTotal,
+      source,
+    });
+  }, [fatSources, fatSourceId, sliders.fatTotal]);
 
   const previewMeal: Meal = useMemo(
     () => ({
@@ -172,7 +189,9 @@ export function QuickLogEntryBlock(props: QuickLogEntryBlockProps) {
       proteinG: sliders.protein,
       carbsG: sliders.carbs,
       fatTotalG: sliders.fatTotal,
-      fatHealthyG: 0,
+      fatSourceId,
+      fatBreakdown: previewFatBreakdown,
+      fatQualityContribution: null,
       fiberG: sliders.fiber,
       sugarG: sliders.sugar,
       sodiumMg: sliders.sodium,
@@ -202,6 +221,8 @@ export function QuickLogEntryBlock(props: QuickLogEntryBlockProps) {
       caloriesAutoCalc,
       wholeFoodFlag,
       mealName,
+      fatSourceId,
+      previewFatBreakdown,
     ],
   );
 
@@ -283,7 +304,7 @@ export function QuickLogEntryBlock(props: QuickLogEntryBlockProps) {
       proteinG: sliders.protein,
       carbsG: sliders.carbs,
       fatTotalG: sliders.fatTotal,
-      fatHealthyG: 0,
+      fatSourceId,
       fiberG: sliders.fiber,
       sugarG: sliders.sugar,
       sodiumMg: sliders.sodium,
@@ -309,6 +330,7 @@ export function QuickLogEntryBlock(props: QuickLogEntryBlockProps) {
     caloriesAutoCalc,
     wholeFoodFlag,
     mealName,
+    fatSourceId,
     onSave,
   ]);
 
@@ -436,6 +458,11 @@ export function QuickLogEntryBlock(props: QuickLogEntryBlockProps) {
               value={sliders.fatTotal}
               onChange={(v) => updateSlider('fatTotal', v)}
               perMealTarget={perMealTargets.fatTotal}
+            />
+            <FatSourceDropdown
+              value={fatSourceId}
+              onChange={setFatSourceId}
+              fatSources={fatSources}
             />
             <NutrientSlider
               id={`ql-${mealType}-fiber`}

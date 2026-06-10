@@ -28,8 +28,11 @@ import type {
   ScoreBreakdown,
 } from '@/lib/gordon/types';
 import { NutrientSlider } from './NutrientSlider';
+import { FatSourceDropdown } from './FatSourceDropdown';
 import { QualityScoreRing } from './QualityScoreRing';
 import { ScoreBreakdownPanel } from './ScoreBreakdownPanel';
+import { resolveFatBreakdown } from '@/lib/nutrition/fat-sources';
+import { useFatSources } from '@/hooks/useFatSources';
 
 const MEAL_TYPES: ReadonlyArray<{ id: MealType; label: string }> = [
   { id: 'breakfast', label: 'Breakfast' },
@@ -46,7 +49,7 @@ export interface QuickLogDraft {
   proteinG: number;
   carbsG: number;
   fatTotalG: number;
-  fatHealthyG: number;
+  fatSourceId: string | null;
   fiberG: number;
   sugarG: number;
   sodiumMg: number;
@@ -72,7 +75,6 @@ interface SliderState {
   protein: number;
   carbs: number;
   fatTotal: number;
-  fatHealthy: number;
   fiber: number;
   sugar: number;
   sodium: number;
@@ -84,7 +86,6 @@ function defaultSliders(): SliderState {
     protein: SLIDER_RANGES.protein.default === 'auto' ? 0 : SLIDER_RANGES.protein.default,
     carbs: SLIDER_RANGES.carbs.default === 'auto' ? 0 : SLIDER_RANGES.carbs.default,
     fatTotal: SLIDER_RANGES.fatTotal.default === 'auto' ? 0 : SLIDER_RANGES.fatTotal.default,
-    fatHealthy: SLIDER_RANGES.fatHealthy.default === 'auto' ? 0 : SLIDER_RANGES.fatHealthy.default,
     fiber: SLIDER_RANGES.fiber.default === 'auto' ? 0 : SLIDER_RANGES.fiber.default,
     sugar: SLIDER_RANGES.sugar.default === 'auto' ? 0 : SLIDER_RANGES.sugar.default,
     sodium: SLIDER_RANGES.sodium.default === 'auto' ? 0 : SLIDER_RANGES.sodium.default,
@@ -139,6 +140,8 @@ export function QuickLogModal(props: QuickLogModalProps) {
   const [wholeFoodFlag, setWholeFoodFlag] = useState<boolean>(false);
   const [mealName, setMealName] = useState<string>('');
   const [breakdown, setBreakdown] = useState<ScoreBreakdown | null>(null);
+  const [fatSourceId, setFatSourceId] = useState<string | null>(null);
+  const { fatSources } = useFatSources();
   const titleId = useId();
 
   // Reset slider/meta state on each open so the modal does not hold a stale draft.
@@ -152,6 +155,7 @@ export function QuickLogModal(props: QuickLogModalProps) {
       setWholeFoodFlag(false);
       setMealName('');
       setBreakdown(null);
+      setFatSourceId(null);
     }
     wasOpen.current = open;
   }, [open, defaultMealType, defaultDateTimeLocal]);
@@ -166,6 +170,19 @@ export function QuickLogModal(props: QuickLogModalProps) {
 
   const displayedCalories = caloriesAutoCalc ? autoCalories : sliders.calories;
 
+  // Prompt 184b: resolve the fat breakdown from the picked source so the live
+  // score preview reflects the source quality. Manual entry uses the one-source
+  // model (the whole fat is attributed to the picked source).
+  const previewFatBreakdown = useMemo(() => {
+    const source = fatSources.find((s) => s.id === fatSourceId) ?? null;
+    return resolveFatBreakdown({
+      intrinsicTotalFatG: 0,
+      intrinsicSaturatedG: 0,
+      addedFatG: sliders.fatTotal,
+      source,
+    });
+  }, [fatSources, fatSourceId, sliders.fatTotal]);
+
   // Stabilize the Meal object so scoreMeal is not invoked on every keystroke
   // beyond the debounce. useMemo + 200ms debounce inside the effect.
   const previewMeal: Meal = useMemo(
@@ -179,7 +196,9 @@ export function QuickLogModal(props: QuickLogModalProps) {
       proteinG: sliders.protein,
       carbsG: sliders.carbs,
       fatTotalG: sliders.fatTotal,
-      fatHealthyG: sliders.fatHealthy,
+      fatSourceId,
+      fatBreakdown: previewFatBreakdown,
+      fatQualityContribution: null,
       fiberG: sliders.fiber,
       sugarG: sliders.sugar,
       sodiumMg: sliders.sodium,
@@ -209,6 +228,8 @@ export function QuickLogModal(props: QuickLogModalProps) {
       caloriesAutoCalc,
       wholeFoodFlag,
       mealName,
+      fatSourceId,
+      previewFatBreakdown,
     ],
   );
 
@@ -231,7 +252,6 @@ export function QuickLogModal(props: QuickLogModalProps) {
       protein: targets.dailyProteinG * sharePctForCurrentMealType,
       carbs: targets.dailyCarbsG * sharePctForCurrentMealType,
       fatTotal: targets.dailyFatTotalG * sharePctForCurrentMealType,
-      fatHealthy: targets.dailyFatUnsatG * sharePctForCurrentMealType,
       fiber: targets.dailyFiberG * sharePctForCurrentMealType,
       sugar: targets.dailySugarG * sharePctForCurrentMealType,
       sodium: targets.dailySodiumMg * sharePctForCurrentMealType,
@@ -240,21 +260,9 @@ export function QuickLogModal(props: QuickLogModalProps) {
     [targets, sharePctForCurrentMealType],
   );
 
-  const updateSlider = useCallback(
-    (key: keyof SliderState, value: number) => {
-      setSliders((prev) => {
-        const next: SliderState = { ...prev, [key]: value };
-        if (key === 'fatHealthy' && value > prev.fatTotal) {
-          next.fatTotal = value;
-        }
-        if (key === 'fatTotal' && value < prev.fatHealthy) {
-          next.fatHealthy = value;
-        }
-        return next;
-      });
-    },
-    [],
-  );
+  const updateSlider = useCallback((key: keyof SliderState, value: number) => {
+    setSliders((prev) => ({ ...prev, [key]: value }));
+  }, []);
 
   const handleCaloriesChange = useCallback((value: number) => {
     setCaloriesAutoCalc(false);
@@ -270,7 +278,6 @@ export function QuickLogModal(props: QuickLogModalProps) {
       sliders.protein === 0 &&
       sliders.carbs === 0 &&
       sliders.fatTotal === 0 &&
-      sliders.fatHealthy === 0 &&
       sliders.fiber === 0 &&
       sliders.sugar === 0 &&
       sliders.sodium === 0 &&
@@ -288,7 +295,7 @@ export function QuickLogModal(props: QuickLogModalProps) {
       proteinG: sliders.protein,
       carbsG: sliders.carbs,
       fatTotalG: sliders.fatTotal,
-      fatHealthyG: sliders.fatHealthy,
+      fatSourceId,
       fiberG: sliders.fiber,
       sugarG: sliders.sugar,
       sodiumMg: sliders.sodium,
@@ -308,6 +315,7 @@ export function QuickLogModal(props: QuickLogModalProps) {
     caloriesAutoCalc,
     wholeFoodFlag,
     mealName,
+    fatSourceId,
     onSave,
   ]);
 
@@ -392,19 +400,13 @@ export function QuickLogModal(props: QuickLogModalProps) {
       />
 
       <div>
-        <NutrientSlider
-          id="ql-fat-healthy"
-          label="Healthy Fat"
-          unit="g"
-          min={SLIDER_RANGES.fatHealthy.min}
-          max={SLIDER_RANGES.fatHealthy.max}
-          step={SLIDER_RANGES.fatHealthy.step}
-          value={sliders.fatHealthy}
-          onChange={(v) => updateSlider('fatHealthy', v)}
-          perMealTarget={perMealTargets.fatHealthy}
+        <FatSourceDropdown
+          value={fatSourceId}
+          onChange={setFatSourceId}
+          fatSources={fatSources}
         />
         <p className="mt-1 text-[11px] text-white/55">
-          Subset of total fat (mono-unsaturated, poly-unsaturated, omega-3).
+          The fat used to prepare this meal. Drives the fat-quality score.
         </p>
       </div>
 
