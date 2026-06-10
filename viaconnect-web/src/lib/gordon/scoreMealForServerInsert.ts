@@ -24,6 +24,7 @@ import type {
   NutritionTargets,
   MealDistribution,
 } from './types';
+import type { FatBreakdown } from '../nutrition/fat-sources';
 
 export interface ScoreMealForInsertInput {
   readonly userId: string;
@@ -34,7 +35,8 @@ export interface ScoreMealForInsertInput {
   readonly proteinG: number;
   readonly carbsG: number;
   readonly fatTotalG: number;
-  readonly fatHealthyG: number;
+  readonly fatSourceId: string | null;
+  readonly fatBreakdown: FatBreakdown | null;
   readonly fiberG: number;
   readonly sugarG: number;
   readonly sodiumMg: number;
@@ -56,6 +58,9 @@ export interface ScoreMealForInsertResult {
   readonly score_breakdown: unknown;
   readonly scored_at: string;
   readonly gordon_version: string;
+  // Prompt 184b: the fat-quality component contribution (the Saturated Fat
+  // Penalty modifier value) stored on the meal. NULL when excluded.
+  readonly fat_quality_contribution: number | null;
 }
 
 function rowToTargets(row: Record<string, unknown>): NutritionTargets {
@@ -159,7 +164,9 @@ export async function scoreMealForServerInsert(
     proteinG: input.proteinG,
     carbsG: input.carbsG,
     fatTotalG: input.fatTotalG,
-    fatHealthyG: input.fatHealthyG,
+    fatSourceId: input.fatSourceId,
+    fatBreakdown: input.fatBreakdown,
+    fatQualityContribution: null,
     fiberG: input.fiberG,
     sugarG: input.sugarG,
     sodiumMg: input.sodiumMg,
@@ -189,11 +196,16 @@ export async function scoreMealForServerInsert(
     input.knownNutrients,
   );
 
+  const fatQualityMod = breakdown.modifiers.find((m) => m.name === 'Saturated Fat Penalty');
+  const fatQualityContribution =
+    fatQualityMod && !fatQualityMod.excluded ? fatQualityMod.value : null;
+
   return {
     quality_score: breakdown.final_score,
     quality_tier: breakdown.tier.toLowerCase() as ScoreMealForInsertResult['quality_tier'],
     score_breakdown: breakdown,
     scored_at: breakdown.calculated_at,
     gordon_version: breakdown.gordon_version,
+    fat_quality_contribution: fatQualityContribution,
   };
 }

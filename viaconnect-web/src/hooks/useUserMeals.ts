@@ -106,7 +106,9 @@ function mealRowToMeal(row: Record<string, unknown>): Meal {
     proteinG: numericOrZero(row.protein_g),
     carbsG: numericOrZero(row.carbs_g),
     fatTotalG: numericOrZero(row.fat_total_g),
-    fatHealthyG: numericOrZero(row.fat_healthy_g),
+    fatSourceId: nullableString(row.fat_source_id),
+    fatBreakdown: (row.fat_breakdown as Meal['fatBreakdown']) ?? null,
+    fatQualityContribution: nullableNumeric(row.fat_quality_contribution),
     fiberG: numericOrZero(row.fiber_g),
     sugarG: numericOrZero(row.sugar_g),
     sodiumMg: numericOrZero(row.sodium_mg),
@@ -141,7 +143,7 @@ function mealRowToMeal(row: Record<string, unknown>): Meal {
 //                                 'full_manual' otherwise; best effort)
 //   confidence      -> sourceConfidence (default 0.5)
 //   protein_g/carbs_g/fat_total_g/fiber_g/sugar_g  -> same camelCase
-//   good_fat_g ?? healthy_fat_g                    -> fatHealthyG (default 0)
+//   good_fat_g/healthy_fat_g                       -> dropped (Prompt 184b); fat source null
 //   sodium_mg                                      -> 0 (legacy table has no sodium; known gap)
 //   calories                                       -> caloriesKcal
 //   ai_notes                                       -> notes
@@ -173,7 +175,6 @@ function legacyRowToMeal(row: Record<string, unknown>): Meal {
 
   const id = String(row.id ?? '');
   const loggedAt = String(row.logged_at ?? '');
-  const fallbackHealthy = row.good_fat_g ?? row.healthy_fat_g;
 
   return {
     mealId: id,
@@ -185,7 +186,9 @@ function legacyRowToMeal(row: Record<string, unknown>): Meal {
     proteinG: numericOrZero(row.protein_g),
     carbsG: numericOrZero(row.carbs_g),
     fatTotalG: numericOrZero(row.fat_total_g),
-    fatHealthyG: numericOrZero(fallbackHealthy),
+    fatSourceId: null,
+    fatBreakdown: null,
+    fatQualityContribution: null,
     fiberG: numericOrZero(row.fiber_g),
     sugarG: numericOrZero(row.sugar_g),
     sodiumMg: 0,

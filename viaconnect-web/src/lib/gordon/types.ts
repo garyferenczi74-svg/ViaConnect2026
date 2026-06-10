@@ -9,6 +9,8 @@
 // (poor, fair, good, excellent, perfection) per the migration. Conversion is
 // done in the row-to-app mapper, not at the type level.
 
+import type { FatBreakdown } from '../nutrition/fat-sources';
+
 // Updated 2026-05-28 for Prompt 170 NutriVision pill rebuild.
 export type MealSource =
   | 'quick_log'
@@ -37,7 +39,9 @@ export interface MealRow {
   protein_g: number;
   carbs_g: number;
   fat_total_g: number;
-  fat_healthy_g: number;
+  fat_source_id: string | null;
+  fat_breakdown: FatBreakdown | null;
+  fat_quality_contribution: number | null;
   fiber_g: number;
   sugar_g: number;
   sodium_mg: number;
@@ -69,9 +73,12 @@ export interface Meal {
   sourceConfidence: number;
   proteinG: number;
   carbsG: number;
-  // fat_total_g + fat_healthy_g (total includes the healthy subset).
+  // Single Fat (total). The added-fat source and resolved breakdown drive the
+  // fat-quality component (Prompt 184b); good/healthy fat are gone.
   fatTotalG: number;
-  fatHealthyG: number;
+  fatSourceId: string | null;
+  fatBreakdown: FatBreakdown | null;
+  fatQualityContribution: number | null;
   fiberG: number;
   sugarG: number;
   sodiumMg: number;
@@ -209,7 +216,6 @@ export interface KnownNutrients {
   protein_g?: boolean;
   carbs_g?: boolean;
   fat_total_g?: boolean;
-  fat_healthy_g?: boolean;
   fiber_g?: boolean;
   sugar_g?: boolean;
   sodium_mg?: boolean;

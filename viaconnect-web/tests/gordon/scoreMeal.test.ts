@@ -38,6 +38,16 @@ const STD_TARGETS: NutritionTargets = {
   generatedByVersion: 'gordon-1.0.0',
   generatedAt: '2026-05-14T00:00:00Z',
   supersededAt: null,
+  goalDirection: null,
+  goalWeightKg: null,
+  currentWeightKg: null,
+  conservativePath: false,
+  conservativeReason: null,
+  macroBasis: null,
+  lbmKg: null,
+  lbmSource: null,
+  bodyFatFraction: null,
+  dietaryChoice: null,
 };
 
 function buildMeal(overrides: Partial<Meal>): Meal {
@@ -51,7 +61,9 @@ function buildMeal(overrides: Partial<Meal>): Meal {
     proteinG: 0,
     carbsG: 0,
     fatTotalG: 0,
-    fatHealthyG: 0,
+    fatSourceId: null,
+    fatBreakdown: null,
+    fatQualityContribution: null,
     fiberG: 0,
     sugarG: 0,
     sodiumMg: 0,
@@ -68,9 +80,29 @@ function buildMeal(overrides: Partial<Meal>): Meal {
     scoreBreakdown: null,
     scoredAt: null,
     gordonVersion: null,
+    snackIndex: null,
     createdAt: '2026-05-14T12:00:00Z',
     updatedAt: '2026-05-14T12:00:00Z',
     ...overrides,
+  };
+}
+
+// Prompt 184b: build a minimal fat breakdown so fixtures can drive the
+// Saturated Fat Penalty via the resolved saturated grams (replacing the old
+// good/healthy split). fatQualityValue defaults to null (no quality fold).
+function fb(saturatedG: number | null, fatQualityValue: number | null = null): Meal['fatBreakdown'] {
+  return {
+    fat_source_slug: null,
+    intrinsic_fat_g: 0,
+    added_fat_g: 0,
+    saturated_g: saturatedG,
+    added_saturated_g: null,
+    added_monounsaturated_g: null,
+    added_polyunsaturated_g: null,
+    added_trans_g: null,
+    added_omega3_g: null,
+    added_omega6_g: null,
+    fat_quality_value: fatQualityValue,
   };
 }
 
@@ -108,7 +140,7 @@ const FIXTURES: ScoreFixture[] = [
     name: 'perfect breakfast: hits all targets',
     meal: buildMeal({
       mealType: 'breakfast',
-      proteinG: 25, carbsG: 60, fatTotalG: 15, fatHealthyG: 12,
+      proteinG: 25, carbsG: 60, fatTotalG: 15, fatBreakdown: fb(3),
       fiberG: 7, sugarG: 6, sodiumMg: 500, wholeFoodFlag: true,
     }),
     expectedScore: 100,
@@ -121,7 +153,7 @@ const FIXTURES: ScoreFixture[] = [
     name: 'catastrophic breakfast: every penalty fires',
     meal: buildMeal({
       mealType: 'breakfast',
-      proteinG: 5, carbsG: 200, fatTotalG: 80, fatHealthyG: 5,
+      proteinG: 5, carbsG: 200, fatTotalG: 80, fatBreakdown: fb(75),
       fiberG: 0, sugarG: 50, sodiumMg: 1500, wholeFoodFlag: false,
     }),
     expectedScore: 0,
@@ -135,7 +167,7 @@ const FIXTURES: ScoreFixture[] = [
     name: 'lunch on Excellent boundary: hits 60',
     meal: buildMeal({
       mealType: 'lunch',
-      proteinG: 35, carbsG: 70, fatTotalG: 25, fatHealthyG: 10,
+      proteinG: 35, carbsG: 70, fatTotalG: 25, fatBreakdown: fb(15),
       fiberG: 6, sugarG: 8, sodiumMg: 700, wholeFoodFlag: null,
     }),
     expectedScore: 60,
@@ -151,7 +183,7 @@ const FIXTURES: ScoreFixture[] = [
     name: 'dinner with fiber bonus full',
     meal: buildMeal({
       mealType: 'dinner',
-      proteinG: 30, carbsG: 75, fatTotalG: 15, fatHealthyG: 10,
+      proteinG: 30, carbsG: 75, fatTotalG: 15, fatBreakdown: fb(5),
       fiberG: 9, sugarG: 1, sodiumMg: 200, wholeFoodFlag: null,
     }),
     expectedScore: 95,
@@ -166,7 +198,7 @@ const FIXTURES: ScoreFixture[] = [
     name: 'lunch zero fiber: no bonus but otherwise solid',
     meal: buildMeal({
       mealType: 'lunch',
-      proteinG: 30, carbsG: 75, fatTotalG: 20, fatHealthyG: 10,
+      proteinG: 30, carbsG: 75, fatTotalG: 20, fatBreakdown: fb(10),
       fiberG: 0, sugarG: 0, sodiumMg: 600, wholeFoodFlag: null,
     }),
     expectedScore: 75,
@@ -180,7 +212,7 @@ const FIXTURES: ScoreFixture[] = [
     name: 'lunch with sugar 2x over: -20 penalty fires',
     meal: buildMeal({
       mealType: 'lunch',
-      proteinG: 30, carbsG: 75, fatTotalG: 15, fatHealthyG: 10,
+      proteinG: 30, carbsG: 75, fatTotalG: 15, fatBreakdown: fb(5),
       fiberG: 7, sugarG: 30, sodiumMg: 400, wholeFoodFlag: null,
     }),
     expectedScore: 70,
@@ -194,7 +226,7 @@ const FIXTURES: ScoreFixture[] = [
     name: 'lunch with sodium 2x over',
     meal: buildMeal({
       mealType: 'lunch',
-      proteinG: 30, carbsG: 75, fatTotalG: 20, fatHealthyG: 12,
+      proteinG: 30, carbsG: 75, fatTotalG: 20, fatBreakdown: fb(8),
       fiberG: 7, sugarG: 5, sodiumMg: 1500, wholeFoodFlag: null,
     }),
     expectedScore: 75,
@@ -210,7 +242,7 @@ const FIXTURES: ScoreFixture[] = [
     name: 'lunch with whole food flag tips into Perfection',
     meal: buildMeal({
       mealType: 'lunch',
-      proteinG: 25, carbsG: 60, fatTotalG: 18, fatHealthyG: 10,
+      proteinG: 25, carbsG: 60, fatTotalG: 18, fatBreakdown: fb(8),
       fiberG: 5, sugarG: 8, sodiumMg: 500, wholeFoodFlag: true,
     }),
     expectedScore: 80,
@@ -223,7 +255,7 @@ const FIXTURES: ScoreFixture[] = [
     name: 'lunch with ingredients_list 80% whole foods (+7)',
     meal: buildMeal({
       mealType: 'lunch',
-      proteinG: 25, carbsG: 60, fatTotalG: 18, fatHealthyG: 10,
+      proteinG: 25, carbsG: 60, fatTotalG: 18, fatBreakdown: fb(8),
       fiberG: 5, sugarG: 8, sodiumMg: 500, wholeFoodFlag: false,
       ingredientsList: [
         { whole: true }, { whole: true }, { whole: true }, { whole: true }, { whole: false },
@@ -240,7 +272,7 @@ const FIXTURES: ScoreFixture[] = [
     name: 'lunch with manual calories 2x over per-meal target',
     meal: buildMeal({
       mealType: 'lunch',
-      proteinG: 30, carbsG: 75, fatTotalG: 20, fatHealthyG: 12,
+      proteinG: 30, carbsG: 75, fatTotalG: 20, fatBreakdown: fb(8),
       fiberG: 7, sugarG: 5, sodiumMg: 400,
       caloriesKcal: 1200, caloriesAutoCalc: false, wholeFoodFlag: null,
     }),
@@ -259,7 +291,7 @@ const FIXTURES: ScoreFixture[] = [
     name: 'snack with 1 logged today: full pool 0.15 share',
     meal: buildMeal({
       mealType: 'snack',
-      proteinG: 10, carbsG: 20, fatTotalG: 8, fatHealthyG: 6,
+      proteinG: 10, carbsG: 20, fatTotalG: 8, fatBreakdown: fb(2),
       fiberG: 3, sugarG: 5, sodiumMg: 200, wholeFoodFlag: true,
     }),
     snacksToday: 1,
@@ -278,7 +310,7 @@ const FIXTURES: ScoreFixture[] = [
     name: 'snack with 2 logged today: half pool share 0.075',
     meal: buildMeal({
       mealType: 'snack',
-      proteinG: 10, carbsG: 20, fatTotalG: 8, fatHealthyG: 6,
+      proteinG: 10, carbsG: 20, fatTotalG: 8, fatBreakdown: fb(2),
       fiberG: 3, sugarG: 5, sodiumMg: 200, wholeFoodFlag: true,
     }),
     snacksToday: 2,
@@ -297,7 +329,7 @@ const FIXTURES: ScoreFixture[] = [
     name: 'snack with 4 logged today: cap clamps divisor',
     meal: buildMeal({
       mealType: 'snack',
-      proteinG: 10, carbsG: 20, fatTotalG: 8, fatHealthyG: 6,
+      proteinG: 10, carbsG: 20, fatTotalG: 8, fatBreakdown: fb(2),
       fiberG: 3, sugarG: 5, sodiumMg: 200, wholeFoodFlag: true,
     }),
     snacksToday: 4,
@@ -314,7 +346,7 @@ const FIXTURES: ScoreFixture[] = [
     name: 'lunch without whole food signal',
     meal: buildMeal({
       mealType: 'lunch',
-      proteinG: 30, carbsG: 75, fatTotalG: 20, fatHealthyG: 10,
+      proteinG: 30, carbsG: 75, fatTotalG: 20, fatBreakdown: fb(10),
       fiberG: 7, sugarG: 5, sodiumMg: 600, wholeFoodFlag: false,
     }),
     expectedScore: 85,
@@ -330,7 +362,7 @@ const FIXTURES: ScoreFixture[] = [
     name: 'lunch with sat fat triple over: -15 penalty isolated',
     meal: buildMeal({
       mealType: 'lunch',
-      proteinG: 30, carbsG: 75, fatTotalG: 25, fatHealthyG: 5,
+      proteinG: 30, carbsG: 75, fatTotalG: 25, fatBreakdown: fb(20),
       fiberG: 8.4, sugarG: 5, sodiumMg: 400, wholeFoodFlag: null,
     }),
     expectedScore: 80,
@@ -352,7 +384,7 @@ describe('scoreMeal fixtures (15 hand-traced)', () => {
 describe('scoreMeal modifier order', () => {
   it('emits modifiers in spec order', () => {
     const result = scoreMeal(
-      buildMeal({ mealType: 'lunch', proteinG: 30, carbsG: 75, fatTotalG: 20, fatHealthyG: 10, fiberG: 7, sugarG: 5, sodiumMg: 400 }),
+      buildMeal({ mealType: 'lunch', proteinG: 30, carbsG: 75, fatTotalG: 20, fatBreakdown: fb(10), fiberG: 7, sugarG: 5, sodiumMg: 400 }),
       STD_TARGETS,
       DEFAULT_MEAL_DISTRIBUTION,
       0,
@@ -368,5 +400,33 @@ describe('scoreMeal modifier order', () => {
       'Whole Food Bonus',
       'Calorie Fit',
     ]);
+  });
+});
+
+describe('Saturated Fat Penalty fat-source quality fold (Prompt 184b)', () => {
+  const satMod = (breakdown: Meal['fatBreakdown']) =>
+    scoreMeal(
+      buildMeal({
+        mealType: 'lunch', proteinG: 30, carbsG: 75, fatTotalG: 30,
+        fiberG: 7, sugarG: 5, sodiumMg: 400, fatBreakdown: breakdown,
+      }),
+      STD_TARGETS,
+      DEFAULT_MEAL_DISTRIBUTION,
+      0,
+    ).modifiers.find((m) => m.name === 'Saturated Fat Penalty');
+
+  it('scores saturated from the breakdown, not the old good/healthy split', () => {
+    expect(satMod(fb(13.2))?.value).toBe(-15); // 13.2 / 6.6 limit = 2.0 ratio
+  });
+  it('a favorable source softens the penalty', () => {
+    expect(satMod(fb(8, 85))?.value).toBe(-2); // -5 base + 3 favorable
+  });
+  it('a limit source hardens the penalty', () => {
+    expect(satMod(fb(8, 35))?.value).toBe(-8); // -5 base - 3 limit
+  });
+  it('excludes the penalty when saturated is not determinable', () => {
+    const m = satMod(fb(null));
+    expect(m?.value).toBe(0);
+    expect(m?.excluded).toBe(true);
   });
 });

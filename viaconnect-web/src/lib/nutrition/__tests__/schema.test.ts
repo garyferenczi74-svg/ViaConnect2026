@@ -13,7 +13,7 @@ describe('DataSourceSchema', () => {
 describe('NutritionAnalysisSchema with data_source', () => {
   const base = {
     calories: 200, protein_g: 10, carbs_g: 20, total_fat_g: 8,
-    good_fat_g: 4, healthy_fat_g: 1, saturated_fat_g: 3,
+    saturated_fat_g: 3,
     sugar_g: 5, fiber_g: 3,
     confidence: 0.9, ai_notes: 'ok', serving_description: 'one egg',
   };

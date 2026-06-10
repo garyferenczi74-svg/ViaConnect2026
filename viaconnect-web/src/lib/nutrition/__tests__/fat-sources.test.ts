@@ -53,6 +53,7 @@ describe('resolveFatBreakdown', () => {
     expect(b.added_saturated_g).toBeCloseTo(1.4);
     expect(b.saturated_g).toBeCloseTo(2.4);
     expect(b.added_monounsaturated_g).toBeCloseTo(7.3);
+    expect(b.fat_quality_value).toBe(85);
     expect(b.fat_source_slug).toBe('olive_oil');
     expect(b.added_fat_g).toBe(10);
   });

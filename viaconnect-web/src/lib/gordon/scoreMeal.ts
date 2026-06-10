@@ -18,6 +18,9 @@ import type {
 } from './types';
 import {
   ATWATER_FACTORS,
+  FAT_QUALITY_FAVORABLE_MIN,
+  FAT_QUALITY_LIMIT_MAX,
+  FAT_QUALITY_SOURCE_ADJ,
   FIBER_RATIO_FULL,
   FIBER_RATIO_HIGH,
   FIBER_RATIO_LOW,
@@ -227,23 +230,34 @@ export function scoreMeal(
     });
   }
 
-  // Saturated Fat Penalty: 0 to -15. Sat fat = max(0, fat_total - fat_healthy).
-  // Excluded only when total fat OR healthy-fat split is not determinable.
-  if (isKnown(knownNutrients, 'fat_total_g') && isKnown(knownNutrients, 'fat_healthy_g')) {
-    const satFat = Math.max(0, meal.fatTotalG - meal.fatHealthyG);
-    const satFatRatio = satFatLimitG > 0 ? satFat / satFatLimitG : 0;
+  // Saturated Fat Penalty: 0 to -15, with a fat-source quality fold (Prompt
+  // 184b). Saturated comes from the resolved breakdown (the food's intrinsic
+  // USDA saturated plus the chosen source's added saturated), not the old
+  // good/healthy split. A favorable source softens the penalty; a limit source
+  // hardens it. Excluded when total fat is unknown or the breakdown cannot
+  // determine saturated (an added-fat meal whose source is unknown).
+  const breakdownSatFat = meal.fatBreakdown?.saturated_g ?? null;
+  if (isKnown(knownNutrients, 'fat_total_g') && breakdownSatFat !== null) {
+    const satFatRatio = satFatLimitG > 0 ? breakdownSatFat / satFatLimitG : 0;
     let satFatPenalty = 0;
     if (satFatRatio >= SAT_FAT_RATIO_DOUBLE) satFatPenalty = -15;
     else if (satFatRatio >= SAT_FAT_RATIO_HIGH) satFatPenalty = -10;
     else if (satFatRatio >= SAT_FAT_RATIO_FULL) satFatPenalty = -5;
-    score += satFatPenalty;
+    const fq = meal.fatBreakdown?.fat_quality_value ?? null;
+    let qualityAdj = 0;
+    if (fq !== null) {
+      if (fq >= FAT_QUALITY_FAVORABLE_MIN) qualityAdj = FAT_QUALITY_SOURCE_ADJ;
+      else if (fq <= FAT_QUALITY_LIMIT_MAX) qualityAdj = -FAT_QUALITY_SOURCE_ADJ;
+    }
+    const satFatValue = Math.max(-15, Math.min(0, satFatPenalty + qualityAdj));
+    score += satFatValue;
     modifiers.push({
       name: 'Saturated Fat Penalty',
-      value: satFatPenalty,
+      value: satFatValue,
       note:
-        satFatPenalty === 0
+        satFatValue === 0
           ? 'Within healthy range'
-          : `${satFat.toFixed(1)}g saturated fat vs ${satFatLimitG.toFixed(1)}g limit`,
+          : `${breakdownSatFat.toFixed(1)}g saturated fat vs ${satFatLimitG.toFixed(1)}g limit`,
     });
   } else {
     modifiers.push({

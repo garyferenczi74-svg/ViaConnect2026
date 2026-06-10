@@ -9,6 +9,8 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { CookingOilType } from './cooking-oil/suggester';
+import { withTimeout, isTimeoutError } from '../utils/with-timeout';
+import { safeLog } from '../utils/safe-log';
 
 export type FatHealthTier = 'favorable' | 'moderate' | 'limit' | 'neutral';
 
@@ -40,6 +42,9 @@ export interface FatBreakdown {
   added_trans_g: number | null;
   added_omega3_g: number | null;
   added_omega6_g: number | null;
+  // The source's Gordon fat-quality value (0 to 100), copied here so the
+  // synchronous scorer can fold it in without a DB lookup. NULL for unknown.
+  fat_quality_value: number | null;
 }
 
 function round1(n: number): number {
@@ -112,6 +117,7 @@ export function resolveFatBreakdown(input: ResolveFatInput): FatBreakdown {
     added_trans_g,
     added_omega3_g,
     added_omega6_g,
+    fat_quality_value: source?.fatQualityValue ?? null,
   };
 }
 
@@ -152,13 +158,29 @@ function rowToProfile(row: FatSourceRow): FatSourceProfile {
 export async function loadActiveFatSources(
   client: SupabaseClient
 ): Promise<FatSourceProfile[]> {
-  const { data, error } = await client
-    .from('fat_sources')
-    .select(SELECT_COLUMNS)
-    .eq('is_active', true)
-    .order('sort_order', { ascending: true });
-  if (error || !data) return [];
-  return (data as FatSourceRow[]).map(rowToProfile);
+  try {
+    const { data, error } = await withTimeout(
+      (async () =>
+        client
+          .from('fat_sources')
+          .select(SELECT_COLUMNS)
+          .eq('is_active', true)
+          .order('sort_order', { ascending: true }))(),
+      4000,
+      'nutrition.fat-sources.loadActive'
+    );
+    if (error || !data) {
+      if (error) safeLog.warn('nutrition.fat-sources', 'loadActiveFatSources query error', { error });
+      return [];
+    }
+    return (data as FatSourceRow[]).map(rowToProfile);
+  } catch (err) {
+    safeLog.warn('nutrition.fat-sources', 'loadActiveFatSources failed', {
+      error: err,
+      timedOut: isTimeoutError(err),
+    });
+    return [];
+  }
 }
 
 /** One fat source by slug, or null when missing (fail-open). */
@@ -166,11 +188,28 @@ export async function loadFatSourceBySlug(
   client: SupabaseClient,
   slug: string
 ): Promise<FatSourceProfile | null> {
-  const { data, error } = await client
-    .from('fat_sources')
-    .select(SELECT_COLUMNS)
-    .eq('slug', slug)
-    .maybeSingle();
-  if (error || !data) return null;
-  return rowToProfile(data as FatSourceRow);
+  try {
+    const { data, error } = await withTimeout(
+      (async () =>
+        client
+          .from('fat_sources')
+          .select(SELECT_COLUMNS)
+          .eq('slug', slug)
+          .maybeSingle())(),
+      4000,
+      'nutrition.fat-sources.loadBySlug'
+    );
+    if (error || !data) {
+      if (error) safeLog.warn('nutrition.fat-sources', 'loadFatSourceBySlug query error', { error, slug });
+      return null;
+    }
+    return rowToProfile(data as FatSourceRow);
+  } catch (err) {
+    safeLog.warn('nutrition.fat-sources', 'loadFatSourceBySlug failed', {
+      error: err,
+      slug,
+      timedOut: isTimeoutError(err),
+    });
+    return null;
+  }
 }

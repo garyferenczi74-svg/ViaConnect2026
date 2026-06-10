@@ -115,6 +115,14 @@ export const SAT_FAT_RATIO_DOUBLE = 2.00;
 export const SAT_FAT_RATIO_HIGH   = 1.50;
 export const SAT_FAT_RATIO_FULL   = 1.00;
 
+// Prompt 184b: fat-source quality fold into the Saturated Fat Penalty. A
+// favorable source (fat_quality_value at or above the favorable min) softens
+// the penalty by the adjustment; a limit source (at or below the limit max)
+// hardens it. The summed modifier stays clamped to the penalty range -15 to 0.
+export const FAT_QUALITY_FAVORABLE_MIN = 75;
+export const FAT_QUALITY_LIMIT_MAX     = 50;
+export const FAT_QUALITY_SOURCE_ADJ    = 3;
+
 // Sodium penalty thresholds (ratio logged vs per-meal sodium limit).
 export const SODIUM_RATIO_DOUBLE  = 2.00;
 export const SODIUM_RATIO_HIGH    = 1.50;
