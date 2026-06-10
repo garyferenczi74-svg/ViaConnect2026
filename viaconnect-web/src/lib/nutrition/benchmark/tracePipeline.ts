@@ -66,6 +66,12 @@ export interface ItemTrace {
   // Text engine only: whether unitToGrams resolved the unit or fell back to a
   // default serving size. undefined for the photo engine.
   unitToGramsResolved?: boolean;
+  // Text engine only: whether the USDA value came from cache, and the USDA
+  // search dataType filter (Foundation,SR Legacy). The matched row's exact
+  // sub-database is not separately recorded by the client; referenceSource
+  // carries the database tier (usda vs open_food_facts vs curated).
+  cacheHit?: boolean;
+  referenceDb?: string;
   itemTotals: ItemTotals;
   nullFields: string[];
   error: string | null;
@@ -292,6 +298,8 @@ export async function traceTextPipeline(parsedItems: ParsedItem[]): Promise<Meal
         estimatedGrams: lookupTrace.grams ?? null,
         conversionChain: describeTextConversion(item, lookupTrace),
         unitToGramsResolved: lookupTrace.unitToGramsResolved,
+        cacheHit: lookupTrace.cacheHit,
+        referenceDb: lookupTrace.dataType,
         itemTotals,
         nullFields: nullFieldsOf(itemTotals),
         error: null,
@@ -301,6 +309,10 @@ export async function traceTextPipeline(parsedItems: ParsedItem[]): Promise<Meal
     }
   }
 
+  // mealTotals come from aggregate() (sum then round once), which is what the
+  // route persists and what the divergence report compares to the consensus.
+  // Per-item itemTotals above are rounded per item, so for a multi-item text
+  // meal the two can differ by a rounding step; that is expected.
   let mealTotals = emptyTotals();
   let atwater: AtwaterCheck | null = null;
   if (aggItems.length > 0) {
