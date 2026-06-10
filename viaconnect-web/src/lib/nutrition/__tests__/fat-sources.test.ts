@@ -7,6 +7,7 @@ import {
 } from '../fat-sources';
 
 const oliveOil: FatSourceProfile = {
+  id: 'olive-oil-id',
   slug: 'olive_oil',
   displayName: 'Olive oil',
   saturatedGPerG: 0.14,
@@ -96,6 +97,7 @@ describe('resolveFatBreakdown', () => {
 describe('loadFatSourceBySlug', () => {
   it('maps a DB row to a profile', async () => {
     const row = {
+      id: 'butter-id',
       slug: 'butter',
       display_name: 'Butter',
       saturated_g_per_g: 0.63,

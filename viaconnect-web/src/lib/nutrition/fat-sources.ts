@@ -15,6 +15,7 @@ import { safeLog } from '../utils/safe-log';
 export type FatHealthTier = 'favorable' | 'moderate' | 'limit' | 'neutral';
 
 export interface FatSourceProfile {
+  id: string;
   slug: string;
   displayName: string;
   saturatedGPerG: number | null;
@@ -122,6 +123,7 @@ export function resolveFatBreakdown(input: ResolveFatInput): FatBreakdown {
 }
 
 interface FatSourceRow {
+  id: string;
   slug: string;
   display_name: string;
   saturated_g_per_g: number | null;
@@ -137,10 +139,11 @@ interface FatSourceRow {
 }
 
 const SELECT_COLUMNS =
-  'slug, display_name, saturated_g_per_g, monounsaturated_g_per_g, polyunsaturated_g_per_g, trans_g_per_g, omega3_g_per_g, omega6_g_per_g, health_tier, fat_quality_value, is_active, sort_order';
+  'id, slug, display_name, saturated_g_per_g, monounsaturated_g_per_g, polyunsaturated_g_per_g, trans_g_per_g, omega3_g_per_g, omega6_g_per_g, health_tier, fat_quality_value, is_active, sort_order';
 
 function rowToProfile(row: FatSourceRow): FatSourceProfile {
   return {
+    id: row.id,
     slug: row.slug,
     displayName: row.display_name,
     saturatedGPerG: row.saturated_g_per_g,
