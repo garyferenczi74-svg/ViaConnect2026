@@ -9,7 +9,7 @@ import { safeLog } from '@/lib/utils/safe-log';
 import { createClient } from '@/lib/supabase/server';
 import { recomputeNutritionDimension } from '@/lib/nutrition/bos-bridge';
 import { awardNutritionLogPoints } from '@/lib/nutrition/helix-bridge';
-import { resolveFatBreakdown, loadFatSourceById } from '@/lib/nutrition/fat-sources';
+import { resolveMealFatBreakdown, loadFatSourceById } from '@/lib/nutrition/fat-sources';
 import { scoreMealForServerInsert } from '@/lib/gordon/scoreMealForServerInsert';
 
 interface MaybeEdits {
@@ -120,10 +120,9 @@ export async function POST(req: NextRequest) {
           .maybeSingle();
         if (mealRow) {
           const source = fatSourceId ? await loadFatSourceById(supabase, fatSourceId) : null;
-          const fatBreakdown = resolveFatBreakdown({
-            intrinsicTotalFatG: Number(mealRow.fat_total_g ?? 0),
-            intrinsicSaturatedG: typeof edits.saturated_fat_g === 'number' ? edits.saturated_fat_g : 0,
-            addedFatG: 0,
+          const fatBreakdown = resolveMealFatBreakdown({
+            totalFatG: Number(mealRow.fat_total_g ?? 0),
+            saturatedFatG: typeof edits.saturated_fat_g === 'number' ? edits.saturated_fat_g : 0,
             source,
           });
           const scored = await scoreMealForServerInsert(supabase, {

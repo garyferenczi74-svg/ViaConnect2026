@@ -122,6 +122,40 @@ export function resolveFatBreakdown(input: ResolveFatInput): FatBreakdown {
   };
 }
 
+// Prompt 184b section 4: the single fat-attribution switch. 'hybrid' (default)
+// keeps a whole food's intrinsic fat on its own USDA saturated profile and lets
+// the source contribute its quality; 'simple' makes the dropdown govern the
+// entire entry's fat. Flip this constant to change the model without a rewrite.
+export const FAT_ATTRIBUTION_MODE: 'hybrid' | 'simple' = 'hybrid';
+
+/**
+ * Resolve a parsed meal's fat using FAT_ATTRIBUTION_MODE. Hybrid keeps the
+ * food's intrinsic saturated and folds in the source quality; simple attributes
+ * the whole total to the source. Manual slider entries bypass this (they carry
+ * only a total) and call resolveFatBreakdown directly in one-source form.
+ */
+export function resolveMealFatBreakdown(args: {
+  totalFatG: number;
+  saturatedFatG: number;
+  source: FatSourceProfile | null;
+}): FatBreakdown {
+  const { totalFatG, saturatedFatG, source } = args;
+  if (FAT_ATTRIBUTION_MODE === 'simple') {
+    return resolveFatBreakdown({
+      intrinsicTotalFatG: 0,
+      intrinsicSaturatedG: 0,
+      addedFatG: totalFatG,
+      source,
+    });
+  }
+  return resolveFatBreakdown({
+    intrinsicTotalFatG: totalFatG,
+    intrinsicSaturatedG: saturatedFatG,
+    addedFatG: 0,
+    source,
+  });
+}
+
 interface FatSourceRow {
   id: string;
   slug: string;
