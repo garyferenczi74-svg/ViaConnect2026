@@ -8,6 +8,7 @@ import { MealTypeSchema } from '@/lib/nutrition/schema';
 import { parseDescriptionWithGemini, estimateItemWithGemini } from '@/lib/nutrition/gemini-client';
 import { lookupFood } from '@/lib/nutrition/usda-client';
 import { aggregate, type AggregatedItem } from '@/lib/nutrition/aggregate';
+import { resolveFatBreakdown } from '@/lib/nutrition/fat-sources';
 import { AIRouteError } from '@/lib/errors/classify-ai';
 import { recordAudit, newRequestId } from '@/lib/observability/audit-recorder';
 import { GEMINI_MODEL } from '@/lib/nutrition/gemini-prompts';
@@ -137,7 +138,6 @@ export async function POST(req: NextRequest) {
       protein_g: true,
       carbs_g: true,
       fat_total_g: true,
-      fat_healthy_g: true,
       fiber_g: true,
       sugar_g: true,
       sodium_mg: false,
@@ -160,6 +160,16 @@ export async function POST(req: NextRequest) {
       estimated: true,
     };
 
+    // Prompt 184b: resolve the fat breakdown. The text engine has no added-fat
+    // source at log time, so the breakdown is purely intrinsic (saturated from
+    // USDA), fat_source_id null. The user can attribute a source later in the UI.
+    const fatBreakdown = resolveFatBreakdown({
+      intrinsicTotalFatG: analysis.total_fat_g,
+      intrinsicSaturatedG: analysis.saturated_fat_g,
+      addedFatG: 0,
+      source: null,
+    });
+
     let mealId: string | null = null;
     try {
       const mealsInsert = await supabase
@@ -174,7 +184,9 @@ export async function POST(req: NextRequest) {
           protein_g: analysis.protein_g,
           carbs_g: analysis.carbs_g,
           fat_total_g: analysis.total_fat_g,
-          fat_healthy_g: analysis.healthy_fat_g,
+          fat_source_id: null,
+          fat_breakdown: fatBreakdown,
+          fat_quality_contribution: null,
           fiber_g: analysis.fiber_g,
           sugar_g: analysis.sugar_g,
           sodium_mg: null,
@@ -230,7 +242,8 @@ export async function POST(req: NextRequest) {
           proteinG: analysis.protein_g,
           carbsG: analysis.carbs_g,
           fatTotalG: analysis.total_fat_g,
-          fatHealthyG: analysis.healthy_fat_g,
+          fatSourceId: null,
+          fatBreakdown,
           fiberG: analysis.fiber_g,
           sugarG: analysis.sugar_g,
           sodiumMg: 0,
@@ -255,6 +268,7 @@ export async function POST(req: NextRequest) {
           score_breakdown: mergedBreakdown,
           scored_at: scored.scored_at,
           gordon_version: scored.gordon_version,
+          fat_quality_contribution: scored.fat_quality_contribution,
         }).eq('meal_id', mealId);
         if (updateRes.error) {
           // eslint-disable-next-line no-console
@@ -286,8 +300,8 @@ export async function POST(req: NextRequest) {
         source: 'manual_text', raw_input: description,
         serving_description: analysis.serving_description,
         calories: analysis.calories, protein_g: analysis.protein_g, carbs_g: analysis.carbs_g,
-        total_fat_g: analysis.total_fat_g, good_fat_g: analysis.good_fat_g,
-        healthy_fat_g: analysis.healthy_fat_g, saturated_fat_g: analysis.saturated_fat_g,
+        total_fat_g: analysis.total_fat_g, good_fat_g: null,
+        healthy_fat_g: null, saturated_fat_g: analysis.saturated_fat_g,
         sugar_g: analysis.sugar_g, fiber_g: analysis.fiber_g,
         confidence: analysis.confidence, ai_notes: analysis.ai_notes,
         ai_model: GEMINI_MODEL, ai_latency_ms: latencyMs,
