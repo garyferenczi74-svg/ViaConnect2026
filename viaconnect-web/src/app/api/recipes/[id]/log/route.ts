@@ -83,7 +83,6 @@ export async function POST(req: NextRequest, ctx: RouteContext): Promise<NextRes
       protein_g: safeMul(perServing(recipe.total_protein_g), servingsConsumed),
       carbs_g: safeMul(perServing(recipe.total_carbs_g), servingsConsumed),
       fat_total_g: safeMul(perServing(recipe.total_fat_g), servingsConsumed),
-      fat_healthy_g: 0,
       fiber_g: safeMul(perServing(recipe.total_fiber_g), servingsConsumed),
       sugar_g: safeMul(perServing(recipe.total_sugar_g), servingsConsumed),
       sodium_mg: safeMul(perServing(recipe.total_sodium_mg), servingsConsumed),

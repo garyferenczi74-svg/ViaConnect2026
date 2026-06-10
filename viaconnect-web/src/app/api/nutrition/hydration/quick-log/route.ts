@@ -230,7 +230,6 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       protein_g: 0,
       carbs_g: 0,
       fat_total_g: 0,
-      fat_healthy_g: 0,
       fiber_g: 0,
       sugar_g: 0,
       sodium_mg: 0,
