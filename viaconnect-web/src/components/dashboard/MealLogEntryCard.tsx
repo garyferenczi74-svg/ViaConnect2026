@@ -180,7 +180,6 @@ export function MealLogEntryCard(props: MealLogEntryCardProps) {
             <MacroCell label="Fiber" value={meal.fiberG} unit="g" />
             <MacroCell label="Sugar" value={meal.sugarG} unit="g" />
             <MacroCell label="Sodium" value={meal.sodiumMg} unit="mg" knownOverride={sodiumKnown} />
-            <MacroCell label="Healthy fat" value={meal.fatHealthyG} unit="g" />
             <MacroCell label="Calories" value={meal.caloriesKcal} unit="kcal" />
           </div>
           {meal.scoreBreakdown ? (

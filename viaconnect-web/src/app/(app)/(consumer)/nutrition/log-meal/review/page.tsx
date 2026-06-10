@@ -20,7 +20,7 @@ export default async function ReviewPage({ searchParams }: ReviewPageProps) {
 
   const { data: row } = await supabase
     .from('nutrition_logs')
-    .select('id, status, serving_description, calories, protein_g, carbs_g, total_fat_g, good_fat_g, healthy_fat_g, saturated_fat_g, sugar_g, fiber_g, confidence, ai_notes')
+    .select('id, status, serving_description, calories, protein_g, carbs_g, total_fat_g, saturated_fat_g, sugar_g, fiber_g, confidence, ai_notes')
     .eq('id', logId)
     .single();
 
@@ -37,8 +37,6 @@ export default async function ReviewPage({ searchParams }: ReviewPageProps) {
     protein_g: Number(row.protein_g ?? 0),
     carbs_g: Number(row.carbs_g ?? 0),
     total_fat_g: Number(row.total_fat_g ?? 0),
-    good_fat_g: Number(row.good_fat_g ?? 0),
-    healthy_fat_g: Number(row.healthy_fat_g ?? 0),
     saturated_fat_g: Number(row.saturated_fat_g ?? 0),
     sugar_g: Number(row.sugar_g ?? 0),
     fiber_g: Number(row.fiber_g ?? 0),
