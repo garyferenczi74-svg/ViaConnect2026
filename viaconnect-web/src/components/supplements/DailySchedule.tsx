@@ -55,10 +55,30 @@ function setCardTaken(view: ScheduleView | null, slotId: string, taken: boolean)
   return next;
 }
 
+// Pure: reorder a bucket's cards to the given slot-id order (optimistic),
+// stamping display_order and user_drag to mirror the server.
+function reorderViewBucket(view: ScheduleView | null, bucket: TimeOfDay, orderedSlotIds: string[]): ScheduleView | null {
+  if (!view) return view;
+  const byId = new Map(view[bucket].map((c) => [c.slot_id, c]));
+  const reordered: ScheduleCard[] = [];
+  orderedSlotIds.forEach((id, i) => {
+    const c = byId.get(id);
+    if (c) {
+      reordered.push({ ...c, display_order: i, time_source: 'user_drag' });
+      byId.delete(id);
+    }
+  });
+  for (const c of byId.values()) reordered.push(c);
+  return { ...view, [bucket]: reordered };
+}
+
 export function DailySchedule() {
   const [view, setView] = useState<ScheduleView | null>(null);
   const [loading, setLoading] = useState(true);
   const [openMobile, setOpenMobile] = useState<TimeOfDay | null>(currentBucket());
+  // Latest view, read synchronously inside the drop handler (avoids stale closure).
+  const viewRef = useRef<ScheduleView | null>(null);
+  useEffect(() => { viewRef.current = view; }, [view]);
 
   useEffect(() => {
     let active = true;
@@ -119,11 +139,33 @@ export function DailySchedule() {
     }
   }, []);
 
+  // Reorder within a bucket from a drag (slice 6b). Optimistic; restores the
+  // prior order and logs on failure. Persists display_order + user_drag.
+  const handleReorder = useCallback(async (bucket: TimeOfDay, orderedSlotIds: string[], prevCards: ScheduleCard[]) => {
+    setView((prev) => reorderViewBucket(prev, bucket, orderedSlotIds));
+    try {
+      const res = await fetch('/api/supplements/schedule', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'reorder', orderedSlotIds }),
+      });
+      const json = await res.json().catch(() => ({ ok: false }));
+      if (!res.ok || !json?.ok) throw new Error(json?.error ?? `status ${res.status}`);
+    } catch (err) {
+      setView((prev) => (prev ? { ...prev, [bucket]: prevCards } : prev));
+      safeLog.error('supplements.schedule.reorder', 'reorder failed; reverted', {
+        bucket,
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
+  }, []);
+
   const bucketRefs = useRef<Record<TimeOfDay, HTMLDivElement | null>>({ morning: null, afternoon: null, evening: null });
 
   // On drop, hit-test the pointer against each (desktop) bucket rect. A drop
-  // over a different bucket moves the card there. Same-bucket reorder via drag
-  // is a localhost-tuning follow-up; the Move to menu covers moves meanwhile.
+  // over a different bucket moves the card there (handleMove); a drop within the
+  // same bucket reorders by vertical position (handleReorder). Both lock the
+  // slot to user_drag. Mobile uses the Move to menu (desktop rects are hidden).
   const onCardDragEnd = useCallback((card: ScheduleCard, point: { x: number; y: number }) => {
     let target: TimeOfDay | null = null;
     for (const b of ['morning', 'afternoon', 'evening'] as TimeOfDay[]) {
@@ -136,8 +178,32 @@ export function DailySchedule() {
         break;
       }
     }
-    if (target && target !== card.time_of_day) void handleMove(card, target);
-  }, [handleMove]);
+    if (!target) return;
+    if (target !== card.time_of_day) {
+      void handleMove(card, target);
+      return;
+    }
+    // Same bucket: compute the new order from the drop position. Compare the
+    // drop Y against each other card's midpoint; the dragged card is excluded
+    // (its own rect is at the drop position).
+    const el = bucketRefs.current[target];
+    const current = viewRef.current?.[target] ?? [];
+    if (!el || current.length < 2) return;
+    const nodes = Array.from(el.querySelectorAll('[data-slot-id]')) as HTMLElement[];
+    const others: string[] = [];
+    let insertAt = -1;
+    for (const n of nodes) {
+      const sid = n.getAttribute('data-slot-id');
+      if (!sid || sid === card.slot_id) continue;
+      const r = n.getBoundingClientRect();
+      if (insertAt === -1 && point.y < r.top + r.height / 2) insertAt = others.length;
+      others.push(sid);
+    }
+    if (insertAt === -1) insertAt = others.length;
+    const newOrder = [...others.slice(0, insertAt), card.slot_id, ...others.slice(insertAt)];
+    if (newOrder.join('|') === current.map((c) => c.slot_id).join('|')) return;
+    void handleReorder(target, newOrder, current);
+  }, [handleMove, handleReorder]);
 
   const total = useMemo(
     () => (view ? BUCKETS.reduce((n, b) => n + (view[b.id]?.length ?? 0), 0) : 0),
