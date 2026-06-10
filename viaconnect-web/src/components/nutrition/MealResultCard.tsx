@@ -1,18 +1,25 @@
 'use client';
 
 // Prompt #160 section 3.3: meal result card.
-// Gary's five (Calories, Protein, Good Fat, Healthy Fat, Sugar) prominent.
-// Carbs, Total Fat, Saturated Fat, Fiber in the Full breakdown expandable.
+// Prompt 184b: a single Fat field plus a fat-source dropdown replace the old
+// Good Fat / Healthy Fat tiles. Prominent: Calories, Protein, Fat, Sugar.
+// Carbs, Saturated Fat, Fiber in the Full breakdown expandable.
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Info, ChevronDown, ChevronUp, CheckCircle2, AlertCircle } from 'lucide-react';
 import { MetricTile } from './MetricTile';
+import { FatSourceDropdown } from '@/components/meals/FatSourceDropdown';
+import { useFatSources } from '@/hooks/useFatSources';
 import type { NutritionAnalysis } from '@/lib/nutrition/schema';
 
 interface MealResultCardProps {
   readonly analysis: NutritionAnalysis;
   readonly onChange: (next: NutritionAnalysis) => void;
+  // Prompt 184b: the chosen fat source. Optional so non-review usages can omit
+  // it; the review surface threads it to the confirm save.
+  readonly fatSourceId?: string | null;
+  readonly onFatSourceChange?: (id: string | null) => void;
 }
 
 function dataSourceAttribution(ds: NonNullable<NutritionAnalysis['data_source']>): string {
@@ -43,7 +50,8 @@ function ConfidenceChip({ confidence }: { confidence: number }) {
   );
 }
 
-export function MealResultCard({ analysis, onChange }: MealResultCardProps) {
+export function MealResultCard({ analysis, onChange, fatSourceId, onFatSourceChange }: MealResultCardProps) {
+  const { fatSources } = useFatSources();
   const [showFull, setShowFull] = useState(false);
   const [servingDraft, setServingDraft] = useState(analysis.serving_description);
   const [editingServing, setEditingServing] = useState(false);
@@ -103,13 +111,12 @@ export function MealResultCard({ analysis, onChange }: MealResultCardProps) {
           hidden: {},
           visible: { transition: { staggerChildren: 0.05 } },
         }}
-        className="grid grid-cols-2 gap-2 sm:grid-cols-5"
+        className="grid grid-cols-2 gap-2 sm:grid-cols-4"
       >
         {[
           { label: 'Calories', value: analysis.calories, unit: 'kcal', step: 1, key: 'calories' as const },
           { label: 'Protein', value: analysis.protein_g, unit: 'g', step: 0.1, key: 'protein_g' as const },
-          { label: 'Good Fat', value: analysis.good_fat_g, unit: 'g', step: 0.1, key: 'good_fat_g' as const },
-          { label: 'Healthy Fat', value: analysis.healthy_fat_g, unit: 'g', step: 0.1, key: 'healthy_fat_g' as const },
+          { label: 'Fat', value: analysis.total_fat_g, unit: 'g', step: 0.1, key: 'total_fat_g' as const },
           { label: 'Sugar', value: analysis.sugar_g, unit: 'g', step: 0.1, key: 'sugar_g' as const },
         ].map((t) => (
           <motion.div
@@ -131,6 +138,14 @@ export function MealResultCard({ analysis, onChange }: MealResultCardProps) {
         ))}
       </motion.div>
 
+      <div className="mt-3">
+        <FatSourceDropdown
+          value={fatSourceId ?? null}
+          onChange={(id) => onFatSourceChange?.(id)}
+          fatSources={fatSources}
+        />
+      </div>
+
       <button
         type="button"
         onClick={() => setShowFull((s) => !s)}
@@ -147,7 +162,6 @@ export function MealResultCard({ analysis, onChange }: MealResultCardProps) {
           className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4"
         >
           <MetricTile label="Carbs" value={analysis.carbs_g} unit="g" variant="secondary" onChange={(v) => patch('carbs_g', v)} />
-          <MetricTile label="Total Fat" value={analysis.total_fat_g} unit="g" variant="secondary" onChange={(v) => patch('total_fat_g', v)} />
           <MetricTile label="Saturated Fat" value={analysis.saturated_fat_g} unit="g" variant="secondary" onChange={(v) => patch('saturated_fat_g', v)} />
           <MetricTile label="Fiber" value={analysis.fiber_g} unit="g" variant="secondary" onChange={(v) => patch('fiber_g', v)} />
         </motion.div>
