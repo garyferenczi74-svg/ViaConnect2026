@@ -63,6 +63,9 @@ export interface ItemTrace {
   per100g: Record<string, number> | null;
   estimatedGrams: number | null;
   conversionChain: string;
+  // Text engine only: whether unitToGrams resolved the unit or fell back to a
+  // default serving size. undefined for the photo engine.
+  unitToGramsResolved?: boolean;
   itemTotals: ItemTotals;
   nullFields: string[];
   error: string | null;
@@ -288,6 +291,7 @@ export async function traceTextPipeline(parsedItems: ParsedItem[]): Promise<Meal
         per100g: lookupTrace.per100g ? textPer100gToRecord(lookupTrace.per100g) : null,
         estimatedGrams: lookupTrace.grams ?? null,
         conversionChain: describeTextConversion(item, lookupTrace),
+        unitToGramsResolved: lookupTrace.unitToGramsResolved,
         itemTotals,
         nullFields: nullFieldsOf(itemTotals),
         error: null,

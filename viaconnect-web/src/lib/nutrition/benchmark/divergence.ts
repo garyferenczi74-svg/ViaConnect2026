@@ -22,11 +22,15 @@ import type { BenchmarkItem } from './basket';
 
 export type DominantStage =
   | 'quantity'
+  | 'unit_conversion'
   | 'raw_vs_cooked'
   | 'reference'
+  | 'atwater_reconciliation'
   | 'null_handling'
   | 'within_tolerance'
   | 'no_reference';
+// Section 3.3 also lists 'rounding'. It is intentionally not a separate stage
+// here: rounding-scale errors are sub-threshold and surface as within_tolerance.
 
 export interface MetricError {
   metric: NutrientKey;
@@ -173,6 +177,26 @@ function attributeStage(
 
   if (caloriesPct !== null && Math.abs(caloriesPct) <= TOLERANCE_PCT) {
     return { stage: 'within_tolerance', note: 'calories within 5 percent of consensus' };
+  }
+
+  // Atwater reconciliation: stored kcal inconsistent with its own macros. A raw
+  // vs cooked basis error scales kcal and macros together so the ratio is
+  // preserved; a broken ratio points at reconciliation, not basis. Text only.
+  if (trace.atwater && !trace.atwater.passed) {
+    return {
+      stage: 'atwater_reconciliation',
+      note: `macro-derived to stored kcal ratio ${trace.atwater.ratio} outside the 0.8 to 1.2 band`,
+    };
+  }
+
+  // Unit conversion: the unit did not convert to grams and fell back to a
+  // default serving size, so the grams are a guess rather than an estimate.
+  const fellBack = trace.items.some((it) => it.unitToGramsResolved === false);
+  if (fellBack && gramsPct !== null && Math.abs(gramsPct) >= QUANTITY_DOMINANT_PCT) {
+    return {
+      stage: 'unit_conversion',
+      note: 'unit did not convert to grams; fell back to a default serving size',
+    };
   }
 
   if (gramsPct !== null && Math.abs(gramsPct) >= QUANTITY_DOMINANT_PCT) {

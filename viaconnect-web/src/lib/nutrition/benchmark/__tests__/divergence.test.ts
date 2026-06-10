@@ -5,7 +5,7 @@ import {
   aggregateDivergence,
   dualAgreement,
 } from '../divergence';
-import type { ItemTotals, ItemTrace, MealTrace } from '../tracePipeline';
+import type { AtwaterCheck, ItemTotals, ItemTrace, MealTrace } from '../tracePipeline';
 import type { BenchmarkItem } from '../basket';
 
 function totals(over: Partial<ItemTotals>): ItemTotals {
@@ -43,9 +43,10 @@ function itemTrace(over: Partial<ItemTrace>): ItemTrace {
 function mealTrace(
   engine: 'text' | 'photo',
   mealTotals: ItemTotals,
-  items: ItemTrace[]
+  items: ItemTrace[],
+  atwater: AtwaterCheck | null = null
 ): MealTrace {
-  return { engine, items, mealTotals, atwater: null };
+  return { engine, items, mealTotals, atwater };
 }
 
 function benchItem(opts: {
@@ -143,6 +144,38 @@ describe('computeItemDivergence attribution', () => {
     ]);
     const d = computeItemDivergence(item, trace);
     expect(d.dominantStage).toBe('no_reference');
+  });
+
+  it('flags atwater_reconciliation when the kcal-to-macro ratio is broken', () => {
+    const item = benchItem({
+      basis: 'cooked',
+      portion_g: 150,
+      values: { calories_kcal: 195, protein_g: 4, carbs_g: 42, fat_g: 0.4, fiber_g: 0.6, sugar_g: 0.1, sodium_mg: null },
+    });
+    const trace = mealTrace(
+      'text',
+      totals({ calories_kcal: 260, protein_g: 5, carbs_g: 10, fat_g: 1 }),
+      [itemTrace({ estimatedGrams: 150 })],
+      { macroDerivedKcal: 69, ratio: 0.27, passed: false }
+    );
+    const d = computeItemDivergence(item, trace);
+    expect(d.dominantStage).toBe('atwater_reconciliation');
+  });
+
+  it('flags unit_conversion when the unit fell back to a default serving size', () => {
+    const item = benchItem({
+      basis: 'as_served',
+      portion_g: 350,
+      values: { calories_kcal: 470, protein_g: 37, carbs_g: 14, fat_g: 30, fiber_g: 4, sugar_g: 3, sodium_mg: null },
+    });
+    const trace = mealTrace(
+      'text',
+      totals({ calories_kcal: 130, protein_g: 10, carbs_g: 4, fat_g: 8 }),
+      [itemTrace({ estimatedGrams: 100, unitToGramsResolved: false })]
+    );
+    const d = computeItemDivergence(item, trace);
+    expect(d.gramsSignedPct).toBeLessThanOrEqual(-10);
+    expect(d.dominantStage).toBe('unit_conversion');
   });
 });
 
