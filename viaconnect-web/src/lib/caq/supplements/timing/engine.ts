@@ -1,31 +1,33 @@
 // =============================================================================
 // Prompt 175h Section 2.5 (2026-06-05): Hannah timing recommendation engine.
+// Prompt 185a slice 3 (2026-06-09): extended (not recreated) with Layer 1
+// knowledge-base seeding (an optional matchedRule), Layer 2 CAQ adjustment,
+// and richer output (constraint chips + matched match_key). When no rule and
+// no signals are supplied the engine behaves exactly as the 175h version.
 //
-// Deterministic rules over the resolved ingredient list. No ML, no
-// model call: pattern-match each ingredient against the class lists in
-// rules.ts, take the highest-priority class that hit, apply the
-// frequency split, attach a short plain-language reason, and return
-// the time-of-day slots with optional with_food + spacing conflicts.
+// Deterministic rules over the resolved ingredient list. No ML, no model call.
+//   Layer 1: prefer the matched supplement_timing_rules row; else pattern-match
+//            each ingredient against the class lists in rules.ts and take the
+//            highest-priority class that hit.
+//   Layer 2: refine the base bucket(s) using the user's CAQ signals.
 //
 // Inputs (TimingRecommendInput from types.ts):
 //   * ingredients: resolved structured ingredients (name primary)
 //   * frequency: once_daily / twice_daily / three_daily / weekly / as_needed
-//   * userSupplements (optional): other things the user takes, for
-//     spacing-conflict detection (iron + calcium, iron + caffeine)
+//   * userSupplements (optional): for spacing-conflict detection
+//   * matchedRule (optional, slice 3): the knowledge-base rule
+//   * caqSignals (optional, slice 3): sleep difficulty, low energy, caffeine,
+//     largest-meal window
 //
-// Output (TimingRecommendation):
-//   * times: array of morning / afternoon / evening
-//   * with_food: true for fat-soluble class
-//   * reason: short plain-language sentence
-//   * detectedClass: which class drove the recommendation
-//   * conflicts: spacing flags the UI surfaces alongside the reason
+// Output (TimingRecommendation): times, with_food, empty_stomach, fat_soluble,
+//   away_from, reason, detectedClass, match_key, conflicts.
 //
-// Consistent with the interaction engine + caffeine-timing logic
-// per the spec: where this would silently schedule around a
-// medication-spacing conflict, we surface the conflict instead.
+// Where this would silently schedule around a medication-spacing conflict, we
+// surface the conflict instead. PHI-free. No emojis. No em or en dashes.
 // =============================================================================
 
 import type {
+  CaqTimingSignals,
   Frequency,
   TimeOfDay,
   TimingClass,
@@ -43,8 +45,8 @@ import {
 
 const REASON_FOR_CLASS: Record<TimingClass, string> = {
   stimulating: 'Stimulating ingredient. Take in the morning so it does not interfere with sleep.',
-  calming: 'Calming and sleep-supporting. Take in the evening, about 30 to 60 minutes before bed.',
-  fat_soluble: 'Fat-soluble. Take with a meal containing some fat for absorption.',
+  calming: 'Often preferred in the evening as part of a calming routine.',
+  fat_soluble: 'Fat soluble. Take with a meal containing some fat for absorption.',
   iron: 'Take in the morning. Space at least 2 hours from calcium, coffee, and tea.',
   general: 'No strong timing preference. Morning is a sensible default.',
 };
@@ -100,11 +102,21 @@ export function splitByFrequency(
 }
 
 /**
+ * Prompt 185a slice 3: spread a rule's base bucket across the day per
+ * frequency. Single-slot frequencies anchor on the rule's default bucket
+ * instead of the class default.
+ */
+function splitTimesFromBase(base: TimeOfDay, frequency: Frequency): TimeOfDay[] {
+  if (frequency === 'twice_daily') return ['morning', 'evening'];
+  if (frequency === 'three_daily') return ['morning', 'afternoon', 'evening'];
+  return [base];
+}
+
+/**
  * Decide whether the recommendation includes with_food. Fat-soluble
- * class is the obvious yes. Iron has a nuance the spec does not
- * require: iron is better absorbed on an empty stomach with vitamin C,
- * so we leave with_food false for iron and surface the conflicts list
- * with a coffee/tea/calcium spacing note instead.
+ * class is the obvious yes. Iron is better absorbed on an empty stomach,
+ * so we leave with_food false for iron and surface the spacing conflicts
+ * instead.
  */
 function decideWithFood(
   cls: TimingClass,
@@ -122,6 +134,74 @@ function decideWithFood(
     }
   }
   return false;
+}
+
+/**
+ * Constraint-chip away_from list for an unmatched supplement, inferred from
+ * the detected class (only iron carries spacing defaults in code).
+ */
+function awayFromForClass(cls: TimingClass): string[] {
+  if (cls === 'iron') return ['calcium', 'coffee', 'tea'];
+  return [];
+}
+
+// match_keys whose items move toward / stay out of the evening on sleep
+// difficulty, and which move to the morning on low energy.
+const CALMING_KEYS: ReadonlySet<string> = new Set([
+  'magnesium_glycinate', 'melatonin', 'ashwagandha', 'l_theanine', 'glycine',
+]);
+const ACTIVATING_KEYS: ReadonlySet<string> = new Set(['b_complex']);
+const ENERGY_MORNING_KEYS: ReadonlySet<string> = new Set(['b_complex', 'iron', 'coq10']);
+
+interface CaqAdjustResult {
+  times: TimeOfDay[];
+  reasonSuffix: string;
+}
+
+/**
+ * Prompt 185a slice 3 Layer 2: refine the base bucket(s) using CAQ signals.
+ * Pure; returns the possibly-narrowed time set plus a general, PHI-free
+ * one-line suffix explaining the personalization. No disease or treatment
+ * claims.
+ */
+function adjustForCaq(args: {
+  times: ReadonlyArray<TimeOfDay>;
+  cls: TimingClass;
+  matchKey: string | null;
+  withFood: boolean;
+  signals: CaqTimingSignals | null;
+}): CaqAdjustResult {
+  const { times, cls, matchKey, withFood, signals } = args;
+  if (!signals) return { times: [...times], reasonSuffix: '' };
+  let next: TimeOfDay[] = [...times];
+  let suffix = '';
+  const isCalming = cls === 'calming' || (matchKey !== null && CALMING_KEYS.has(matchKey));
+  const isActivating = cls === 'stimulating' || (matchKey !== null && ACTIVATING_KEYS.has(matchKey));
+  const isIron = cls === 'iron' || matchKey === 'iron';
+
+  if (signals.sleepDifficulty && isCalming && !next.includes('evening')) {
+    next = ['evening'];
+    suffix = 'Set to the evening to support your wind down.';
+  }
+  if (signals.sleepDifficulty && isActivating && next.includes('evening')) {
+    next = next.filter((t) => t !== 'evening');
+    if (next.length === 0) next = ['morning'];
+    suffix = 'Kept out of the evening so it does not affect your sleep.';
+  }
+  if (signals.lowEnergy && matchKey !== null && ENERGY_MORNING_KEYS.has(matchKey) && !next.includes('morning')) {
+    next = ['morning'];
+    suffix = 'Placed in the morning to support daytime energy.';
+  }
+  if (signals.highMorningCaffeine && isIron && next.includes('morning')) {
+    next = next.filter((t) => t !== 'morning');
+    if (next.length === 0) next = ['afternoon'];
+    suffix = 'Shifted off the morning so coffee does not block iron absorption.';
+  }
+  if (withFood && signals.largestMealWindow && !next.includes(signals.largestMealWindow)) {
+    next = [signals.largestMealWindow];
+    suffix = 'Aligned to your largest meal for better absorption.';
+  }
+  return { times: next, reasonSuffix: suffix };
 }
 
 /**
@@ -156,21 +236,50 @@ export function detectConflicts(
 }
 
 /**
- * Main entry. Given a list of ingredients and a frequency, return the
- * Hannah timing recommendation. Pure function; no side effects, no
- * external calls. The route layer wraps this with a fetch boundary.
+ * Main entry. Given a list of ingredients and a frequency (plus, since slice 3,
+ * an optional matched rule and CAQ signals), return the Hannah timing
+ * recommendation. Pure function; no side effects, no external calls. The route
+ * or orchestration layer wraps this with the DB lookup, precedence guard, and
+ * persistence.
  */
 export function recommendTiming(input: TimingRecommendInput): TimingRecommendation {
   const cls = detectDominantClass(input.ingredients);
-  const times = splitByFrequency(cls, input.frequency);
-  const withFood = decideWithFood(cls, input.ingredients);
-  const reason = REASON_FOR_CLASS[cls];
+  const rule = input.matchedRule ?? null;
+
+  // Layer 1 base: the matched knowledge-base rule when present, else the
+  // in-code class inference.
+  const baseTimes: TimeOfDay[] = rule
+    ? splitTimesFromBase(rule.default_time_of_day, input.frequency)
+    : [...splitByFrequency(cls, input.frequency)];
+  const withFood = rule
+    ? rule.with_food ?? decideWithFood(cls, input.ingredients)
+    : decideWithFood(cls, input.ingredients);
+  const emptyStomach = rule ? rule.empty_stomach ?? false : cls === 'iron';
+  const fatSoluble = rule ? rule.fat_soluble : cls === 'fat_soluble';
+  const awayFrom = rule ? [...rule.away_from] : awayFromForClass(cls);
+  const baseReason = rule ? rule.rationale_short : REASON_FOR_CLASS[cls];
+
+  // Layer 2: CAQ adjustments.
+  const adjusted = adjustForCaq({
+    times: baseTimes,
+    cls,
+    matchKey: rule?.match_key ?? null,
+    withFood,
+    signals: input.caqSignals ?? null,
+  });
+
+  const reason = adjusted.reasonSuffix ? `${baseReason} ${adjusted.reasonSuffix}` : baseReason;
   const conflicts = detectConflicts(input.ingredients, input.userSupplements);
+
   return {
-    times,
+    times: adjusted.times,
     with_food: withFood,
+    empty_stomach: emptyStomach,
+    fat_soluble: fatSoluble,
+    away_from: awayFrom,
     reason,
     detectedClass: cls,
+    match_key: rule?.match_key ?? null,
     conflicts,
   };
 }

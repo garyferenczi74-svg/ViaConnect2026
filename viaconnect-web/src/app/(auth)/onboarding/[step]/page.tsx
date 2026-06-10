@@ -337,6 +337,14 @@ type LifestyleData = {
   waterIntake: string;
   screenTime: string;
   sunExposure: string;
+  // Prompt 185a slice 4 (2026-06-09): daily-rhythm fields the Hannah supplement
+  // timing engine anchors to. wakeTime + windDownTime also persist to
+  // profiles.sleep_wake / sleep_start on Lifestyle save (the engine's
+  // readSleepWindow path). largestMeal is a bucket label (Breakfast, Lunch, or
+  // Dinner) used for with-food alignment.
+  wakeTime: string;
+  windDownTime: string;
+  largestMeal: string;
 };
 
 type SupplementEntry = { name: string; mg: string };
@@ -549,6 +557,7 @@ export default function OnboardingStepPage() {
     diet: "", exercise: "", sleepHours: "", stressLevel: "",
     alcohol: "", smoking: "", caffeine: "", waterIntake: "",
     screenTime: "", sunExposure: "",
+    wakeTime: "", windDownTime: "", largestMeal: "",
   });
 
   // Phase 4b state, Current Supplements (ViaConnect search + AI product lookup)
@@ -767,7 +776,7 @@ export default function OnboardingStepPage() {
             // Pre-populate lifestyle
             const ls = prev.lifestyle as Record<string, string>;
             if (ls.diet || ls.exercise || ls.sleepHours) {
-              setLifestyle((p) => ({ ...p, ...(ls.diet ? { diet: ls.diet } : {}), ...(ls.exercise ? { exercise: ls.exercise } : {}), ...(ls.sleepHours ? { sleepHours: ls.sleepHours } : {}), ...(ls.stressLevel ? { stressLevel: ls.stressLevel } : {}), ...(ls.alcohol ? { alcohol: ls.alcohol } : {}), ...(ls.smoking ? { smoking: ls.smoking } : {}), ...(ls.caffeine ? { caffeine: ls.caffeine } : {}), ...(ls.waterIntake ? { waterIntake: ls.waterIntake } : {}), ...(ls.screenTime ? { screenTime: ls.screenTime } : {}), ...(ls.sunExposure ? { sunExposure: ls.sunExposure } : {}) }));
+              setLifestyle((p) => ({ ...p, ...(ls.diet ? { diet: ls.diet } : {}), ...(ls.exercise ? { exercise: ls.exercise } : {}), ...(ls.sleepHours ? { sleepHours: ls.sleepHours } : {}), ...(ls.stressLevel ? { stressLevel: ls.stressLevel } : {}), ...(ls.alcohol ? { alcohol: ls.alcohol } : {}), ...(ls.smoking ? { smoking: ls.smoking } : {}), ...(ls.caffeine ? { caffeine: ls.caffeine } : {}), ...(ls.waterIntake ? { waterIntake: ls.waterIntake } : {}), ...(ls.screenTime ? { screenTime: ls.screenTime } : {}), ...(ls.sunExposure ? { sunExposure: ls.sunExposure } : {}), ...(ls.wakeTime ? { wakeTime: ls.wakeTime } : {}), ...(ls.windDownTime ? { windDownTime: ls.windDownTime } : {}), ...(ls.largestMeal ? { largestMeal: ls.largestMeal } : {}) }));
             }
             // Pre-populate goals
             const goals_arr = (ls as Record<string, unknown>).goals as string[] | undefined;
@@ -939,6 +948,23 @@ export default function OnboardingStepPage() {
         case "1": await savePhase("1", { ...demographics, bodyType }); break;
         case "3": {
           await savePhase("3", { ...lifestyle, goals: goals.goals, supplementForm: goals.supplementForm, budgetRange: goals.budgetRange, goalWeightKg: goals.goalWeightKg, goalPace: goals.goalPace, goalTargetDate: goals.goalTargetDate, dietaryChoice: goals.dietaryChoice });
+          // Prompt 185a slice 4: persist wake + wind-down to
+          // profiles.sleep_wake / sleep_start so the Hannah timing engine's
+          // readSleepWindow path anchors the Morning and Evening buckets to the
+          // user's real day. The phase-3 jsonb above already carries wakeTime,
+          // windDownTime, and largestMeal for the meal-window reader. Best
+          // effort; the CAQ proceeds regardless.
+          try {
+            const wake = lifestyle.wakeTime;
+            const wind = lifestyle.windDownTime;
+            if (/^\d{2}:\d{2}$/.test(wake) && /^\d{2}:\d{2}$/.test(wind)) {
+              await fetch("/api/profile/sleep-window", {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ sleep_wake: wake, sleep_start: wind }),
+              });
+            }
+          } catch { /* sleep window is best-effort; the CAQ proceeds */ }
           // Prompt 179a: the CAQ goal write funnels through body_goals (the
           // single write authority), which projects goal weight + direction
           // into user_weight_goals so the macro engine read path is unchanged
@@ -1870,6 +1896,24 @@ export default function OnboardingStepPage() {
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-1.5">Sun Exposure (min/day)</label>
                 <input type="number" min={0} max={480} value={lifestyle.sunExposure} onChange={(e) => setLifestyle({ ...lifestyle, sunExposure: e.target.value })} className={inputClass} placeholder="30" />
+              </div>
+              {/* Prompt 185a slice 4: daily rhythm Hannah uses to time supplements. */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1.5">Wake time</label>
+                <input type="time" value={lifestyle.wakeTime} onChange={(e) => setLifestyle({ ...lifestyle, wakeTime: e.target.value })} className={inputClass} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1.5">Wind-down time</label>
+                <input type="time" value={lifestyle.windDownTime} onChange={(e) => setLifestyle({ ...lifestyle, windDownTime: e.target.value })} className={inputClass} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1.5">Largest meal</label>
+                <select value={lifestyle.largestMeal} onChange={(e) => setLifestyle({ ...lifestyle, largestMeal: e.target.value })} className={selectClass}>
+                  <option value="">Select...</option>
+                  <option value="Breakfast">Breakfast</option>
+                  <option value="Lunch">Lunch</option>
+                  <option value="Dinner">Dinner</option>
+                </select>
               </div>
             </div>
 

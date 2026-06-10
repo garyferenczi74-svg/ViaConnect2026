@@ -29,6 +29,9 @@ import {
   recommendTiming,
   detectConflicts,
 } from '@/lib/caq/supplements/timing/engine';
+import { matchRuleKey, matchRuleKeyForIngredients } from '@/lib/caq/supplements/timing/matchKey';
+import { resolveBucketWindows, bucketForTime } from '@/lib/caq/supplements/timing/timeWindows';
+import type { TimingRule } from '@/lib/caq/supplements/timing/types';
 
 describe('classifyIngredient', () => {
   it('classifies stimulating ingredients as stimulating', () => {
@@ -227,5 +230,160 @@ describe('rules pattern helpers', () => {
     expect(nameLooksLikeCalcium('Calcium Citrate')).toBe(true);
     expect(nameLooksLikeCalcium('Calcium Malate')).toBe(true);
     expect(nameLooksLikeCalcium('Magnesium Glycinate')).toBe(false);
+  });
+});
+
+// Prompt 185a slice 3 (2026-06-09): match_key matcher, Layer 1 rule seeding,
+// Layer 2 CAQ adjustments, and timezone window anchoring.
+
+describe('matchRuleKey (Prompt 185a slice 3)', () => {
+  it('maps ingredient names to seeded match_keys', () => {
+    expect(matchRuleKey('Magnesium Bisglycinate')).toBe('magnesium_glycinate');
+    expect(matchRuleKey('Magnesium')).toBe('magnesium_glycinate');
+    expect(matchRuleKey('Liposomal Vitamin D3 (Cholecalciferol)')).toBe('vitamin_d3');
+    expect(matchRuleKey('Ferrous Sulfate')).toBe('iron');
+    expect(matchRuleKey('Methylcobalamin (B12)')).toBe('b_complex');
+    expect(matchRuleKey('Melatonin')).toBe('melatonin');
+    expect(matchRuleKey('L-Theanine')).toBe('l_theanine');
+  });
+
+  it('prefers calcium over vitamin C for calcium ascorbate', () => {
+    expect(matchRuleKey('Calcium Ascorbate')).toBe('calcium');
+  });
+
+  it('returns null for an unknown ingredient', () => {
+    expect(matchRuleKey('Microcrystalline Cellulose')).toBeNull();
+  });
+
+  it('matchRuleKeyForIngredients picks the first matching ingredient', () => {
+    expect(matchRuleKeyForIngredients(['Inactive Filler', 'Iron Bisglycinate', 'Vitamin C'])).toBe('iron');
+    expect(matchRuleKeyForIngredients(['Nothing', 'Also Nothing'])).toBeNull();
+  });
+});
+
+describe('recommendTiming with a matched rule (Layer 1)', () => {
+  const magRule: TimingRule = {
+    match_key: 'magnesium_glycinate',
+    default_time_of_day: 'evening',
+    with_food: null,
+    empty_stomach: null,
+    fat_soluble: false,
+    away_from: [],
+    rationale_short: 'Supports relaxation in the evening.',
+  };
+  const ironRule: TimingRule = {
+    match_key: 'iron',
+    default_time_of_day: 'morning',
+    with_food: false,
+    empty_stomach: true,
+    fat_soluble: false,
+    away_from: ['calcium', 'coffee', 'tea'],
+    rationale_short: 'Best on an empty stomach.',
+  };
+
+  it('seeds the bucket, reason, and match_key from the rule', () => {
+    const r = recommendTiming({
+      ingredients: [{ name: 'Magnesium Bisglycinate' }],
+      frequency: 'once_daily',
+      matchedRule: magRule,
+    });
+    expect(r.times).toEqual(['evening']);
+    expect(r.reason).toBe('Supports relaxation in the evening.');
+    expect(r.match_key).toBe('magnesium_glycinate');
+  });
+
+  it('carries the rule constraint chips (empty_stomach, away_from)', () => {
+    const r = recommendTiming({
+      ingredients: [{ name: 'Iron Bisglycinate' }],
+      frequency: 'once_daily',
+      matchedRule: ironRule,
+    });
+    expect(r.empty_stomach).toBe(true);
+    expect(r.away_from).toContain('calcium');
+    expect(r.match_key).toBe('iron');
+  });
+
+  it('infers chips from class when no rule is matched', () => {
+    const r = recommendTiming({
+      ingredients: [{ name: 'Iron Bisglycinate' }],
+      frequency: 'once_daily',
+    });
+    expect(r.match_key).toBeNull();
+    expect(r.empty_stomach).toBe(true);
+    expect(r.away_from).toContain('coffee');
+  });
+});
+
+describe('recommendTiming Layer 2 CAQ adjustments', () => {
+  it('keeps an activating B-complex out of the evening on sleep difficulty', () => {
+    const r = recommendTiming({
+      ingredients: [{ name: 'B-Complex' }],
+      frequency: 'twice_daily',
+      caqSignals: { sleepDifficulty: true },
+    });
+    expect(r.times).not.toContain('evening');
+    expect(r.times).toContain('morning');
+  });
+
+  it('moves iron off the morning when morning caffeine is high', () => {
+    const r = recommendTiming({
+      ingredients: [{ name: 'Iron Bisglycinate' }],
+      frequency: 'once_daily',
+      caqSignals: { highMorningCaffeine: true },
+    });
+    expect(r.times).not.toContain('morning');
+  });
+
+  it('places a low-energy B-complex in the morning via the matched key', () => {
+    const r = recommendTiming({
+      ingredients: [{ name: 'B-Complex' }],
+      frequency: 'once_daily',
+      matchedRule: {
+        match_key: 'b_complex', default_time_of_day: 'afternoon', with_food: null,
+        empty_stomach: null, fat_soluble: false, away_from: [], rationale_short: 'B vitamins.',
+      },
+      caqSignals: { lowEnergy: true },
+    });
+    expect(r.times).toEqual(['morning']);
+  });
+
+  it('aligns a with-food item to the largest-meal window', () => {
+    const r = recommendTiming({
+      ingredients: [{ name: 'Vitamin D3' }],
+      frequency: 'once_daily',
+      caqSignals: { largestMealWindow: 'evening' },
+    });
+    expect(r.with_food).toBe(true);
+    expect(r.times).toEqual(['evening']);
+  });
+
+  it('leaves the recommendation unchanged when no signals are present', () => {
+    const r = recommendTiming({
+      ingredients: [{ name: 'Magnesium Glycinate' }],
+      frequency: 'once_daily',
+    });
+    expect(r.times).toEqual(['evening']);
+  });
+});
+
+describe('resolveBucketWindows + bucketForTime (timezone anchoring)', () => {
+  it('falls back to 07:00 / 22:00 defaults', () => {
+    const w = resolveBucketWindows(null, null);
+    expect(w.morning.start).toBe('07:00');
+    expect(w.evening.end).toBe('22:00');
+  });
+
+  it('anchors windows to custom wake and wind-down', () => {
+    const w = resolveBucketWindows('06:00', '21:00');
+    expect(w.morning.start).toBe('06:00');
+    expect(w.evening.end).toBe('21:00');
+    expect(bucketForTime('06:30', w)).toBe('morning');
+    expect(bucketForTime('20:00', w)).toBe('evening');
+  });
+
+  it('guards against an inverted window by falling back to defaults', () => {
+    const w = resolveBucketWindows('22:00', '06:00');
+    expect(w.morning.start).toBe('07:00');
+    expect(w.evening.end).toBe('22:00');
   });
 });

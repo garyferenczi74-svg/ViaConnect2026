@@ -4,24 +4,17 @@ import { useState, useEffect } from "react";
 import {
   Pill, CalendarClock, Sparkles, ShieldAlert, UserSearch, ShoppingBag,
   Stethoscope, Leaf, ArrowRight, Check, Search, FlaskConical, Droplets,
-  Dna, Activity, TestTubes, Clock, Sunrise, Sun, Moon,
+  Dna, Activity, TestTubes,
   AlertTriangle, Plus, RefreshCw, Loader2,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { ProtocolConfidenceBadge } from "@/components/protocol/ProtocolConfidenceBadge";
 import { PractitionerDisclaimer } from "@/components/protocol/PractitionerDisclaimer";
-import { DataSourceTag } from "@/components/protocol/DataSourceTag";
 import SupplementInput from "@/components/shared/SupplementInput";
 import type { PluginProductResult } from "@/plugins/types";
 import { useUserDashboardData } from "@/hooks/useUserDashboardData";
 import type { DashboardSupplement } from "@/hooks/useUserDashboardData";
-import { useTodaysAdherence } from "@/hooks/useTodaysAdherence";
-import {
-  supplementToSlot,
-  supplementSlug,
-  adherenceKey,
-  type ProtocolSlot,
-} from "@/lib/protocolSlot";
+import DailySchedule from "@/components/supplements/DailySchedule";
 import { createClient } from "@/lib/supabase/client";
 import RecommendedSupplements from "@/components/supplement-protocol/RecommendedSupplements";
 import { MobileHeroBackground } from "@/components/ui/MobileHeroBackground";
@@ -40,40 +33,8 @@ function PIcon({ icon: Icon, color, size = "md" }: { icon: LucideIcon; color: st
   return (<div className="relative flex-shrink-0"><div className={`absolute ${s.glow} rounded-2xl opacity-60 pointer-events-none`} style={{ backgroundColor: `${color}33` }} /><div className={`relative ${s.box} rounded-xl flex items-center justify-center`} style={{ background: `linear-gradient(135deg, ${color}33, ${color}1A, transparent)`, border: `1px solid ${color}26` }}><Icon className={s.ico} style={{ color }} strokeWidth={1.5} /></div></div>);
 }
 
-/* ═══ DATA: built from real user supplements ═══ */
-
-type ProtocolItem = {
-  id: string;
-  productSlug: string;
-  productName: string;
-  dosage: string;
-  deliveryMethod?: string;
-  priority: "essential" | "recommended" | "optional";
-  dataSourceTag: string;
-};
-
-function buildProtocol(supplements: DashboardSupplement[]): Record<ProtocolSlot, ProtocolItem[]> {
-  const protocol: Record<ProtocolSlot, ProtocolItem[]> = { morning: [], afternoon: [], evening: [], asNeeded: [] };
-  supplements.forEach((s) => {
-    const slot = supplementToSlot(s);
-    protocol[slot].push({
-      id: s.id,
-      productSlug: supplementSlug(s),
-      productName: s.product_name || s.supplement_name || "Supplement",
-      dosage: s.dosage || "",
-      deliveryMethod: s.dosage_form || undefined,
-      priority: s.is_ai_recommended ? "recommended" : "essential",
-      dataSourceTag: s.is_ai_recommended ? "ai" : "caq",
-    });
-  });
-  return protocol;
-}
-const SLOTS: { id: ProtocolSlot; label: string; icon: LucideIcon; time: string; color: string }[] = [
-  { id: "morning", label: "Morning", icon: Sunrise, time: "12 AM to 12 PM", color: "#FBBF24" },
-  { id: "afternoon", label: "Afternoon", icon: Sun, time: "12 PM to 6 PM", color: "#B75E18" },
-  { id: "evening", label: "Night", icon: Moon, time: "6 PM to 12 AM", color: "#60A5FA" },
-  { id: "asNeeded", label: "As Needed", icon: Clock, time: "Flexible", color: "#9CA3AF" },
-];
+/* Prompt 185a slice 5b: the Daily Schedule data + rendering moved into the
+   DailySchedule component, which reads GET /api/supplements/schedule. */
 const CATEGORIES = [
   { icon: FlaskConical, label: "Liposomal", color: "#2DA5A0", count: "45+" },
   { icon: Droplets, label: "Micellar", color: "#60A5FA", count: "38+" },
@@ -84,40 +45,6 @@ const CATEGORIES = [
   { icon: Sparkles, label: "Specialty", color: "#B75E18", count: "35+" },
   { icon: Pill, label: "Standard", color: "#9CA3AF", count: "50+" },
 ];
-
-function ItemRow({
-  item,
-  slot,
-  taken,
-  onToggle,
-}: {
-  item: ProtocolItem;
-  slot: ProtocolSlot;
-  taken: boolean;
-  onToggle: (slug: string, slot: ProtocolSlot) => void;
-}) {
-  return (
-    <div className="flex items-center gap-4 px-4 md:px-5 py-3.5 hover:bg-white/[0.02] transition-colors">
-      <button
-        onClick={() => onToggle(item.productSlug, slot)}
-        aria-pressed={taken}
-        aria-label={`${taken ? "Uncheck" : "Check"} ${item.productName}`}
-        className="min-w-[44px] min-h-[44px] flex items-center justify-center"
-      >
-        {taken ? <div className="w-6 h-6 rounded-full bg-teal-400/20 border border-teal-400/40 flex items-center justify-center"><Check className="w-3.5 h-3.5 text-teal-400" strokeWidth={2.5} /></div> : <div className="w-6 h-6 rounded-full border-2 border-white/15 hover:border-teal-400/30 transition-colors" />}
-      </button>
-      <div className="flex-1 min-w-0">
-        <p className={`text-sm font-medium ${taken ? "text-white/40 line-through" : "text-white/80"}`}>{item.productName}</p>
-        <div className="flex flex-wrap items-center gap-2 mt-0.5">
-          <span className="text-[10px] text-white/25">{item.dosage}</span>
-          {item.deliveryMethod && <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/[0.04] text-white/20">{item.deliveryMethod}</span>}
-          {item.dataSourceTag && <DataSourceTag source={item.dataSourceTag as "caq"} />}
-        </div>
-      </div>
-      <span className={`text-[9px] px-2 py-0.5 rounded-full font-semibold uppercase tracking-wider flex-shrink-0 ${item.priority === "essential" ? "bg-teal-400/10 text-teal-400/60 border border-teal-400/15" : item.priority === "recommended" ? "bg-orange-400/10 text-orange-400/60 border border-orange-400/15" : "bg-white/5 text-white/25 border border-white/[0.08]"}`}>{item.priority}</span>
-    </div>
-  );
-}
 
 /* ═══ SECTION WRAPPER ═══ */
 function Section({ icon, iconColor, title, subtitle, children }: { icon: LucideIcon; iconColor: string; title: string; subtitle: string; children: React.ReactNode }) {
@@ -141,8 +68,7 @@ function Section({ icon, iconColor, title, subtitle, children }: { icon: LucideI
 
 /* ═══ MAIN PAGE ═══ */
 export default function SupplementsPage() {
-  const { loading, supplements, assessmentCompleted, profile } = useUserDashboardData();
-  const { entries, toggle } = useTodaysAdherence();
+  const { loading, assessmentCompleted, profile } = useUserDashboardData();
 
   if (loading) {
     return (
@@ -152,21 +78,6 @@ export default function SupplementsPage() {
       </div>
     );
   }
-
-  const PROTOCOL = buildProtocol(supplements);
-  const allWithSlot: { item: ProtocolItem; slot: ProtocolSlot }[] = (
-    ["morning", "afternoon", "evening", "asNeeded"] as ProtocolSlot[]
-  ).flatMap((slot) => PROTOCOL[slot].map((item) => ({ item, slot })));
-  const total = allWithSlot.length;
-  const takenCount = allWithSlot.filter(({ item, slot }) => !!entries[adherenceKey(item.productSlug, slot)]).length;
-  const pct = total > 0 ? Math.round((takenCount / total) * 100) : 0;
-  const handleToggle = (slug: string, slot: ProtocolSlot) => toggle(slug, slot, total);
-  const isTaken = (item: ProtocolItem, slot: ProtocolSlot) => !!entries[adherenceKey(item.productSlug, slot)];
-
-  // Mobile: show one slot at a time based on current local hour.
-  // 00:00-11:59 = morning, 12:00-17:59 = afternoon, 18:00-23:59 = evening
-  const hour = new Date().getHours();
-  const currentSlotId: ProtocolSlot = hour < 12 ? 'morning' : hour < 18 ? 'afternoon' : 'evening';
 
   return (
     <>
@@ -190,66 +101,8 @@ export default function SupplementsPage() {
       </div>
 
       {/* ═══ 1. DAILY SCHEDULE ═══ */}
-      <Section icon={CalendarClock} iconColor="#2DA5A0" title="Daily Schedule" subtitle="Your supplement checklist for today">
-        <div className="p-5 md:p-6">
-          <div className="flex items-center justify-between mb-5">
-            <p className="text-xs text-white/30">{takenCount}/{total} taken today</p>
-            <div className="flex items-center gap-2"><div className="w-24 h-2 rounded-full bg-white/5 overflow-hidden"><div className="h-full rounded-full bg-teal-400" style={{ width: `${pct}%` }} /></div><span className="text-xs font-medium text-teal-400">{pct}%</span></div>
-          </div>
-          {/* Desktop: 3 columns (Morning / Afternoon / Night) */}
-          <div className="hidden md:grid md:grid-cols-3 gap-4">
-            {SLOTS.filter((s) => s.id !== 'asNeeded').map((slot) => {
-              const items = PROTOCOL[slot.id];
-              return (
-                <div key={slot.id} className="rounded-xl bg-white/[0.02] border border-white/5 overflow-hidden flex flex-col">
-                  <div className="flex items-center gap-3 px-4 md:px-5 py-3 border-b border-white/5">
-                    <PIcon icon={slot.icon} color={slot.color} size="sm" />
-                    <div className="flex-1 min-w-0">
-                      <h4 className="text-sm font-semibold" style={{ color: slot.color }}>{slot.label}</h4>
-                      <p className="text-[10px]" style={{ color: slot.color }}>{slot.time}</p>
-                    </div>
-                    <span className="text-xs" style={{ color: slot.color }}>{items.length}</span>
-                  </div>
-                  {items.length > 0 ? (
-                    <div className="divide-y divide-white/[0.03]">{items.map((item) => <ItemRow key={item.id} item={item} slot={slot.id} taken={isTaken(item, slot.id)} onToggle={handleToggle} />)}</div>
-                  ) : (
-                    <div className="flex-1 flex items-center justify-center py-8 px-4">
-                      <p className="text-xs text-white/25 text-center">No supplements scheduled</p>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Mobile: single container for the current time slot only.
-              Items are only those classified for the current slot. */}
-          <div className="md:hidden">
-            {(() => {
-              const headerSlot = SLOTS.find((s) => s.id === currentSlotId)!;
-              const items = PROTOCOL[currentSlotId];
-              return (
-                <div className="rounded-xl bg-white/[0.02] border border-white/5 overflow-hidden flex flex-col">
-                  <div className="flex items-center gap-3 px-4 py-3 border-b border-white/5">
-                    <PIcon icon={headerSlot.icon} color={headerSlot.color} size="sm" />
-                    <div className="flex-1 min-w-0">
-                      <h4 className="text-sm font-semibold" style={{ color: headerSlot.color }}>{headerSlot.label}</h4>
-                      <p className="text-[10px]" style={{ color: headerSlot.color }}>{headerSlot.time} · now</p>
-                    </div>
-                    <span className="text-xs" style={{ color: headerSlot.color }}>{items.length}</span>
-                  </div>
-                  {items.length > 0 ? (
-                    <div className="divide-y divide-white/[0.03]">{items.map((item) => <ItemRow key={item.id} item={item} slot={currentSlotId} taken={isTaken(item, currentSlotId)} onToggle={handleToggle} />)}</div>
-                  ) : (
-                    <div className="flex-1 flex items-center justify-center py-8 px-4">
-                      <p className="text-xs text-white/25 text-center">No supplements scheduled for {headerSlot.label.toLowerCase()}</p>
-                    </div>
-                  )}
-                </div>
-              );
-            })()}
-          </div>
-        </div>
+      <Section icon={CalendarClock} iconColor="#2DA5A0" title="Your personalized daily regimen: Daily Schedule" subtitle="Your supplement checklist for today">
+        <DailySchedule />
       </Section>
 
       {/* ═══ ADD YOUR SUPPLEMENTS (Prompt 175l, 2026-06-05) ═══

@@ -1,0 +1,244 @@
+'use client';
+
+// Prompt 185a slice 5b (2026-06-09): the today-scoped Daily Schedule surface on
+// My Supplements. Renders the three time buckets from GET /api/supplements/
+// schedule (Hannah-assigned slots, enriched with chips + rationale). Desktop is
+// three columns; mobile is stacked collapsible buckets with the current local
+// hour open by default. The take control is optimistic local state here; slice
+// 7 wires it to protocol_adherence_log keyed to the user local date.
+// No emojis. No em or en dashes.
+
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Sunrise, Sun, Moon, Loader2, Plus, ChevronDown } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
+import { DraggableScheduleCard } from './DraggableScheduleCard';
+import { safeLog } from '@/lib/utils/safe-log';
+import type { ScheduleCard, ScheduleView } from '@/lib/caq/supplements/timing/assignTiming';
+
+type TimeOfDay = 'morning' | 'afternoon' | 'evening';
+
+const BUCKETS: { id: TimeOfDay; label: string; icon: LucideIcon; color: string }[] = [
+  { id: 'morning', label: 'Morning', icon: Sunrise, color: '#FBBF24' },
+  { id: 'afternoon', label: 'Afternoon', icon: Sun, color: '#B75E18' },
+  { id: 'evening', label: 'Evening', icon: Moon, color: '#60A5FA' },
+];
+
+const EMPTY_VIEW: ScheduleView = { morning: [], afternoon: [], evening: [] };
+
+function currentBucket(): TimeOfDay {
+  const h = new Date().getHours();
+  return h < 12 ? 'morning' : h < 18 ? 'afternoon' : 'evening';
+}
+
+// Pure: move a card to a different bucket in the local view (optimistic). The
+// moved card is marked user_drag to mirror the server lock.
+function moveCardInView(view: ScheduleView, slotId: string, target: TimeOfDay): ScheduleView {
+  const next: ScheduleView = { morning: [], afternoon: [], evening: [] };
+  let moved: ScheduleCard | null = null;
+  for (const b of ['morning', 'afternoon', 'evening'] as TimeOfDay[]) {
+    for (const c of view[b]) {
+      if (c.slot_id === slotId) moved = { ...c, time_of_day: target, time_source: 'user_drag' };
+      else next[b].push(c);
+    }
+  }
+  if (moved) next[target].push(moved);
+  return next;
+}
+
+// Pure: set a card's taken flag in the local view (optimistic).
+function setCardTaken(view: ScheduleView | null, slotId: string, taken: boolean): ScheduleView | null {
+  if (!view) return view;
+  const next: ScheduleView = { morning: [], afternoon: [], evening: [] };
+  for (const b of ['morning', 'afternoon', 'evening'] as TimeOfDay[]) {
+    next[b] = view[b].map((c) => (c.slot_id === slotId ? { ...c, taken } : c));
+  }
+  return next;
+}
+
+export function DailySchedule() {
+  const [view, setView] = useState<ScheduleView | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [openMobile, setOpenMobile] = useState<TimeOfDay | null>(currentBucket());
+
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    fetch('/api/supplements/schedule')
+      .then((r) => (r.ok ? r.json() : { view: EMPTY_VIEW }))
+      .then((d) => { if (active) setView((d?.view as ScheduleView) ?? EMPTY_VIEW); })
+      .catch(() => { if (active) setView(EMPTY_VIEW); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, []);
+
+  // Mark a slot taken / not taken for the user's local date. Optimistic; the
+  // server (POST) writes protocol_adherence_log keyed to profiles.timezone, so
+  // the reset is implicit at local midnight. Reverts + logs on failure.
+  const handleToggle = useCallback(async (card: ScheduleCard) => {
+    const nextTaken = !card.taken;
+    setView((prev) => setCardTaken(prev, card.slot_id, nextTaken));
+    try {
+      const res = await fetch('/api/supplements/schedule', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userSupplementId: card.user_supplement_id, timeOfDay: card.time_of_day, taken: nextTaken }),
+      });
+      const json = await res.json().catch(() => ({ ok: false }));
+      if (!res.ok || !json?.ok) throw new Error(json?.error ?? `status ${res.status}`);
+    } catch (err) {
+      setView((prev) => setCardTaken(prev, card.slot_id, card.taken));
+      safeLog.error('supplements.schedule.intake', 'toggle failed; reverted', {
+        slotId: card.slot_id,
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
+  }, []);
+
+  // Move a supplement to another bucket via the "Move to" menu (slice 6a) or a
+  // drag (slice 6b). Optimistic; reverts visually and logs on failure. The move
+  // sets time_source = user_drag on the server so Hannah stops reassigning it.
+  const handleMove = useCallback(async (card: ScheduleCard, target: TimeOfDay) => {
+    if (card.time_of_day === target) return;
+    const original = card.time_of_day;
+    setView((prev) => (prev ? moveCardInView(prev, card.slot_id, target) : prev));
+    try {
+      const res = await fetch('/api/supplements/schedule', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'move', slotId: card.slot_id, timeOfDay: target }),
+      });
+      const json = await res.json().catch(() => ({ ok: false }));
+      if (!res.ok || !json?.ok) throw new Error(json?.error ?? `status ${res.status}`);
+    } catch (err) {
+      setView((prev) => (prev ? moveCardInView(prev, card.slot_id, original) : prev));
+      safeLog.error('supplements.schedule.move', 'move failed; reverted', {
+        slotId: card.slot_id,
+        target,
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
+  }, []);
+
+  const bucketRefs = useRef<Record<TimeOfDay, HTMLDivElement | null>>({ morning: null, afternoon: null, evening: null });
+
+  // On drop, hit-test the pointer against each (desktop) bucket rect. A drop
+  // over a different bucket moves the card there. Same-bucket reorder via drag
+  // is a localhost-tuning follow-up; the Move to menu covers moves meanwhile.
+  const onCardDragEnd = useCallback((card: ScheduleCard, point: { x: number; y: number }) => {
+    let target: TimeOfDay | null = null;
+    for (const b of ['morning', 'afternoon', 'evening'] as TimeOfDay[]) {
+      const el = bucketRefs.current[b];
+      if (!el) continue;
+      const r = el.getBoundingClientRect();
+      if (r.width === 0 && r.height === 0) continue;
+      if (point.x >= r.left && point.x <= r.right && point.y >= r.top && point.y <= r.bottom) {
+        target = b;
+        break;
+      }
+    }
+    if (target && target !== card.time_of_day) void handleMove(card, target);
+  }, [handleMove]);
+
+  const total = useMemo(
+    () => (view ? BUCKETS.reduce((n, b) => n + (view[b.id]?.length ?? 0), 0) : 0),
+    [view],
+  );
+
+  const bucketTaken = (cards: ScheduleCard[]) => cards.filter((c) => c.taken).length;
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center gap-2 p-8 text-white/40">
+        <Loader2 className="h-5 w-5 animate-spin text-[#2DA5A0]" />
+        <span className="text-sm">Building your schedule...</span>
+      </div>
+    );
+  }
+
+  if (!view || total === 0) {
+    return (
+      <div className="p-5 md:p-6">
+        <div className="rounded-xl border border-white/5 bg-white/[0.02] p-8 text-center">
+          <p className="text-sm text-white/50">No active supplements yet.</p>
+          <p className="mt-1 inline-flex items-center gap-1.5 text-xs text-[#2DA5A0]">
+            <Plus className="h-3.5 w-3.5" strokeWidth={1.5} />
+            Add supplements below to build your daily schedule.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-4 md:p-6">
+      {/* Desktop: three columns */}
+      <div className="hidden gap-4 md:grid md:grid-cols-3">
+        {BUCKETS.map((b) => {
+          const cards = view[b.id] ?? [];
+          const Icon = b.icon;
+          return (
+            <div key={b.id} ref={(el) => { bucketRefs.current[b.id] = el; }} className="flex flex-col overflow-hidden rounded-xl border border-white/5 bg-white/[0.02]">
+              <div className="flex items-center gap-2 border-b border-white/5 px-4 py-3">
+                <span className="flex h-7 w-7 items-center justify-center rounded-lg" style={{ background: `${b.color}1A` }}>
+                  <Icon className="h-4 w-4" strokeWidth={1.5} style={{ color: b.color }} />
+                </span>
+                <span className="flex-1 text-sm font-semibold" style={{ color: b.color }}>{b.label}</span>
+                <span className="text-[11px] text-white/40">{bucketTaken(cards)}/{cards.length}</span>
+              </div>
+              {cards.length > 0 ? (
+                <div className="flex flex-col gap-2 p-2">
+                  {cards.map((c) => (
+                    <DraggableScheduleCard key={c.slot_id} card={c} taken={c.taken} onToggle={() => handleToggle(c)} onMove={(t) => handleMove(c, t)} onCardDragEnd={onCardDragEnd} />
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-1 items-center justify-center px-4 py-8">
+                  <p className="text-center text-xs text-white/25">Nothing scheduled</p>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Mobile: stacked collapsible buckets */}
+      <div className="flex flex-col gap-3 md:hidden">
+        {BUCKETS.map((b) => {
+          const cards = view[b.id] ?? [];
+          const isOpen = openMobile === b.id;
+          const Icon = b.icon;
+          return (
+            <div key={b.id} className="overflow-hidden rounded-xl border border-white/5 bg-white/[0.02]">
+              <button
+                type="button"
+                onClick={() => setOpenMobile(isOpen ? null : b.id)}
+                aria-expanded={isOpen}
+                className="flex min-h-[44px] w-full items-center gap-2 px-4 py-3"
+              >
+                <span className="flex h-7 w-7 items-center justify-center rounded-lg" style={{ background: `${b.color}1A` }}>
+                  <Icon className="h-4 w-4" strokeWidth={1.5} style={{ color: b.color }} />
+                </span>
+                <span className="flex-1 text-left text-sm font-semibold" style={{ color: b.color }}>{b.label}</span>
+                <span className="text-[11px] text-white/40">{bucketTaken(cards)}/{cards.length}</span>
+                <ChevronDown className={`h-4 w-4 text-white/40 transition-transform ${isOpen ? 'rotate-180' : ''}`} strokeWidth={1.5} />
+              </button>
+              {isOpen ? (
+                cards.length > 0 ? (
+                  <div className="flex flex-col gap-2 p-2">
+                    {cards.map((c) => (
+                      <DraggableScheduleCard key={c.slot_id} card={c} taken={c.taken} onToggle={() => handleToggle(c)} onMove={(t) => handleMove(c, t)} onCardDragEnd={onCardDragEnd} />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="px-4 py-6"><p className="text-center text-xs text-white/25">Nothing scheduled</p></div>
+                )
+              ) : null}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+export default DailySchedule;
