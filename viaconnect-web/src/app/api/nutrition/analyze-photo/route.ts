@@ -7,6 +7,7 @@ import { MealTypeSchema } from '@/lib/nutrition/schema';
 import { parseImageWithGemini, estimateItemWithGemini } from '@/lib/nutrition/gemini-client';
 import { lookupFood } from '@/lib/nutrition/usda-client';
 import { aggregate, type AggregatedItem } from '@/lib/nutrition/aggregate';
+import { resolveFatBreakdown } from '@/lib/nutrition/fat-sources';
 import { AIRouteError } from '@/lib/errors/classify-ai';
 import { recordAudit, newRequestId } from '@/lib/observability/audit-recorder';
 import { GEMINI_MODEL } from '@/lib/nutrition/gemini-prompts';
@@ -96,6 +97,14 @@ export async function POST(req: NextRequest) {
     // spec Section 4.3).
     // Per Gary 2026-05-15: compute Gordon score before insert via the shared
     // helper so the same algorithm runs across all 4 meal channels.
+    // Prompt 184b: intrinsic fat breakdown (saturated from USDA, source null).
+    const fatBreakdown = resolveFatBreakdown({
+      intrinsicTotalFatG: analysis.total_fat_g,
+      intrinsicSaturatedG: analysis.saturated_fat_g,
+      addedFatG: 0,
+      source: null,
+    });
+
     let scoredColumns;
     try {
       scoredColumns = await scoreMealForServerInsert(supabase, {
@@ -107,7 +116,8 @@ export async function POST(req: NextRequest) {
         proteinG: analysis.protein_g,
         carbsG: analysis.carbs_g,
         fatTotalG: analysis.total_fat_g,
-        fatHealthyG: analysis.healthy_fat_g,
+        fatSourceId: null,
+        fatBreakdown,
         fiberG: analysis.fiber_g,
         sugarG: analysis.sugar_g,
         sodiumMg: 0,
@@ -120,7 +130,7 @@ export async function POST(req: NextRequest) {
       safeLog.warn('api.nutrition.analyze-photo', 'gordon score compute failed (continuing with null)', {
         error: e instanceof Error ? e.message : String(e),
       });
-      scoredColumns = { quality_score: null, quality_tier: null, score_breakdown: null, scored_at: null, gordon_version: null };
+      scoredColumns = { quality_score: null, quality_tier: null, score_breakdown: null, scored_at: null, gordon_version: null, fat_quality_contribution: null };
     }
 
     let mealId: string | null = null;
@@ -137,7 +147,8 @@ export async function POST(req: NextRequest) {
           protein_g: analysis.protein_g,
           carbs_g: analysis.carbs_g,
           fat_total_g: analysis.total_fat_g,
-          fat_healthy_g: analysis.healthy_fat_g,
+          fat_source_id: null,
+          fat_breakdown: fatBreakdown,
           fiber_g: analysis.fiber_g,
           sugar_g: analysis.sugar_g,
           sodium_mg: 0,
@@ -174,8 +185,8 @@ export async function POST(req: NextRequest) {
         source: 'photo_ai', photo_url: storagePath, context_note: note || null,
         serving_description: analysis.serving_description,
         calories: analysis.calories, protein_g: analysis.protein_g, carbs_g: analysis.carbs_g,
-        total_fat_g: analysis.total_fat_g, good_fat_g: analysis.good_fat_g,
-        healthy_fat_g: analysis.healthy_fat_g, saturated_fat_g: analysis.saturated_fat_g,
+        total_fat_g: analysis.total_fat_g, good_fat_g: null,
+        healthy_fat_g: null, saturated_fat_g: analysis.saturated_fat_g,
         sugar_g: analysis.sugar_g, fiber_g: analysis.fiber_g,
         confidence: analysis.confidence, ai_notes: analysis.ai_notes,
         ai_model: GEMINI_MODEL, ai_latency_ms: latencyMs,
