@@ -19,6 +19,7 @@ export function ReviewForm({ logId, initial }: ReviewFormProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [analysis, setAnalysis] = useState<NutritionAnalysis>(initial);
+  const [fatSourceId, setFatSourceId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState<null | 'save' | 'discard'>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -29,7 +30,7 @@ export function ReviewForm({ logId, initial }: ReviewFormProps) {
       const res = await fetch('/api/nutrition/confirm', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ logId, edits: analysis }),
+        body: JSON.stringify({ logId, edits: analysis, fatSourceId }),
       });
       if (!res.ok) {
         const { error: msg } = await res.json().catch(() => ({ error: 'Save failed' }));
@@ -71,7 +72,12 @@ export function ReviewForm({ logId, initial }: ReviewFormProps) {
 
   return (
     <div className="space-y-5">
-      <MealResultCard analysis={analysis} onChange={setAnalysis} />
+      <MealResultCard
+        analysis={analysis}
+        onChange={setAnalysis}
+        fatSourceId={fatSourceId}
+        onFatSourceChange={setFatSourceId}
+      />
 
       {error && (
         <p className="text-xs text-[#FCA5A5]">{error}</p>
