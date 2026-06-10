@@ -27,7 +27,7 @@ export function aggregate(items: AggregatedItem[]): NutritionAnalysis {
   if (items.length === 0) {
     return {
       calories: 0, protein_g: 0, carbs_g: 0, total_fat_g: 0,
-      good_fat_g: 0, healthy_fat_g: 0, saturated_fat_g: 0, sugar_g: 0, fiber_g: 0,
+      saturated_fat_g: 0, sugar_g: 0, fiber_g: 0,
       confidence: 0, ai_notes: 'No items identified.', serving_description: '',
       data_source: 'gemini_fallback',
     };
@@ -38,13 +38,8 @@ export function aggregate(items: AggregatedItem[]): NutritionAnalysis {
   const carbs_g = round1(sum(items.map((i) => i.nutrients.carbs_g)));
   const total_fat_g = round1(sum(items.map((i) => i.nutrients.total_fat_g)));
   const saturated_fat_g = round1(sum(items.map((i) => i.nutrients.saturated_fat_g)));
-  const trans_fat_g = round1(sum(items.map((i) => i.nutrients.trans_fat_g)));
-  const omega3 = round1(sum(items.map((i) => i.nutrients.omega3_g)));
   const sugar_g = round1(sum(items.map((i) => i.nutrients.sugar_g)));
   const fiber_g = round1(sum(items.map((i) => i.nutrients.fiber_g)));
-
-  const healthy_fat_g = omega3;
-  const good_fat_g = round1(Math.max(0, total_fat_g - saturated_fat_g - trans_fat_g - omega3));
 
   const usdaCount = items.filter((i) => i.nutrients.source === 'usda').length;
   const total = items.length;
@@ -69,8 +64,6 @@ export function aggregate(items: AggregatedItem[]): NutritionAnalysis {
     protein_g,
     carbs_g,
     total_fat_g,
-    good_fat_g,
-    healthy_fat_g,
     saturated_fat_g,
     sugar_g,
     fiber_g,

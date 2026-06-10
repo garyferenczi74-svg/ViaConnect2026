@@ -14,8 +14,6 @@ export const NutritionAnalysisSchema = z.object({
   protein_g: z.number().min(0).max(2000),
   carbs_g: z.number().min(0).max(2000),
   total_fat_g: z.number().min(0).max(2000),
-  good_fat_g: z.number().min(0).max(2000),
-  healthy_fat_g: z.number().min(0).max(2000),
   saturated_fat_g: z.number().min(0).max(2000),
   sugar_g: z.number().min(0).max(2000),
   fiber_g: z.number().min(0).max(2000),

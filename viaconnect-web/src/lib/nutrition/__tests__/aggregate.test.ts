@@ -30,13 +30,6 @@ describe('aggregate', () => {
   it('marks data_source=mixed when items have both sources', () => {
     expect(aggregate([eggUSDA, proteinBarFallback]).data_source).toBe('mixed');
   });
-  it('computes healthy_fat_g as omega-3 sum', () => {
-    expect(aggregate([eggUSDA, avocadoUSDA]).healthy_fat_g).toBeCloseTo(0.2);
-  });
-  it('computes good_fat_g as total minus saturated minus trans minus omega-3', () => {
-    const r = aggregate([eggUSDA, avocadoUSDA]);
-    expect(r.good_fat_g).toBeCloseTo(26 - 5.4 - 0 - 0.2);
-  });
   it('confidence equals usda fraction', () => {
     expect(aggregate([eggUSDA, proteinBarFallback]).confidence).toBe(0.5);
   });
