@@ -86,9 +86,10 @@ describe('NutritionHub source', () => {
     expect(source).toContain('size={176}');
   });
 
-  it('Row 1 captions read OF 100 on the score and TO TARGET on the macros gauge', () => {
+  it('Row 1 captions read OF 100 on the score and OF TARGET on the macros gauge', () => {
     expect(source).toContain('caption="OF 100"');
-    expect(source).toContain("caption: 'TO TARGET'");
+    expect(source).toContain("caption: 'OF TARGET'");
+    expect(source).toContain("valueSuffix: '%'");
   });
 
   it('Row 1 Daily Macros reuses PlasmaGauge for the percent to target', () => {

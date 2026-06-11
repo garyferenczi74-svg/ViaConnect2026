@@ -215,12 +215,15 @@ export interface PlasmaGaugeProps {
   // valueFontPx: when set, overrides the center value font size (px) instead of
   // the default size * 0.27.
   valueFontPx?: number;
+  // valueSuffix: when set, renders immediately after the center value number
+  // (e.g. a percent sign) so the value reads like "22%". Omitted = no suffix.
+  valueSuffix?: string;
 }
 
 export function PlasmaGauge({
   value, metric, finish = null, size = 200, variant = 'standard',
   max = 100, unit, animated = true, showUnit = true, ariaLabel,
-  subtleTrack = false, plainNumber = false, caption, valueFontPx,
+  subtleTrack = false, plainNumber = false, caption, valueFontPx, valueSuffix,
 }: PlasmaGaugeProps) {
   const ref = useRef<HTMLDivElement>(null);
   const uid = useId().replace(/[^a-zA-Z0-9_]/g, '_');
@@ -450,7 +453,7 @@ export function PlasmaGauge({
                 color: '#fff',
                 textShadow: `0 2px 12px rgba(0,0,0,.6), 0 0 22px ${GLOW}`,
               }),
-        }}>{n}</div>
+        }}>{n}{valueSuffix ?? ''}</div>
         {caption !== undefined ? (
           // Prompt 183a (2026-06-11): caption replaces the of/max sublabel,
           // same element, size, and position, uppercased, muted token.

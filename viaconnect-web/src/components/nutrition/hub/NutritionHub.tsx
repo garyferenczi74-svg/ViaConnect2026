@@ -341,6 +341,7 @@ export function NutritionHub() {
     | 'plainNumber'
     | 'caption'
     | 'valueFontPx'
+    | 'valueSuffix'
   > = {
     metric: 'plasmateal',
     variant: 'standard',
@@ -349,8 +350,9 @@ export function NutritionHub() {
     showUnit: false,
     subtleTrack: true,
     plainNumber: true,
-    caption: 'TO TARGET',
+    caption: 'OF TARGET',
     valueFontPx: 24,
+    valueSuffix: '%',
   };
 
   return (
