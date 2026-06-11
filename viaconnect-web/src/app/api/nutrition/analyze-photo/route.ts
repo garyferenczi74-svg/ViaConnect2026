@@ -87,8 +87,23 @@ export async function POST(req: NextRequest) {
         if (reEst) nutrients = { ...reEst.nutrients, source: 'gemini_fallback' };
       }
       if (!nutrients) {
-        const est = await estimateItemWithGemini(item.name, item.quantity, item.unit);
-        nutrients = { ...est.nutrients, source: 'gemini_fallback' };
+        // Prompt 186 incident fix: an estimator failure for ONE item no
+        // longer fails the whole meal; the item degrades to UNKNOWN
+        // nutrients (null, never 0) and the meal saves.
+        try {
+          const est = await estimateItemWithGemini(item.name, item.quantity, item.unit);
+          nutrients = { ...est.nutrients, source: 'gemini_fallback' };
+        } catch (estErr) {
+          safeLog.warn('api.nutrition.analyze-photo', 'estimator failed; item degrades to unknown', {
+            name: item.name,
+            error: estErr instanceof Error ? estErr.message : String(estErr),
+          });
+          nutrients = {
+            calories: null, protein_g: null, carbs_g: null, total_fat_g: null,
+            saturated_fat_g: null, trans_fat_g: null, omega3_g: null,
+            sugar_g: null, fiber_g: null, source: 'gemini_fallback',
+          };
+        }
       }
       items.push({ parsed: item, nutrients });
     }

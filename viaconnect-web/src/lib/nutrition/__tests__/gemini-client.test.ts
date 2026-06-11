@@ -3,9 +3,18 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 const fetchMock = vi.fn();
 globalThis.fetch = fetchMock as unknown as typeof fetch;
 
+const anthropicCreate = vi.fn();
+vi.mock('@anthropic-ai/sdk', () => ({
+  default: class MockAnthropic {
+    messages = { create: anthropicCreate };
+  },
+}));
+
 beforeEach(() => {
   fetchMock.mockReset();
+  anthropicCreate.mockReset();
   process.env.GEMINI_API_KEY = 'TESTKEY';
+  process.env.ANTHROPIC_API_KEY = 'TESTKEY';
 });
 
 import { parseDescriptionWithGemini, parseImageWithGemini, estimateItemWithGemini } from '../gemini-client';
@@ -71,5 +80,39 @@ describe('estimateItemWithGemini', () => {
     })));
     const r = await estimateItemWithGemini('protein bar', 1, 'serving');
     expect(r.nutrients.calories).toBe(200);
+  });
+
+  it('disables thinking and gives the tiny JSON response headroom (truncation incident)', async () => {
+    // 2026-06-11 production incident: gemini-2.5-flash thought tokens
+    // consumed maxOutputTokens and truncated the estimation JSON, which
+    // surfaced as "AI returned incomplete output" and failed whole meals.
+    fetchMock.mockResolvedValueOnce(geminiOk(JSON.stringify({
+      calories: 100, protein_g: 25, carbs_g: 3, total_fat_g: 1,
+      saturated_fat_g: 0.2, trans_fat_g: 0, omega3_g: 0, sugar_g: 2, fiber_g: 0,
+      confidence: 0.6,
+    })));
+    await estimateItemWithGemini('protein powder', 30, 'g');
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body as string);
+    expect(body.generationConfig.thinkingConfig.thinkingBudget).toBe(0);
+    expect(body.generationConfig.maxOutputTokens).toBeGreaterThanOrEqual(2048);
+  });
+
+  it('falls back to Claude when Gemini returns malformed output twice', async () => {
+    // Truncated estimate missing core macros, twice (attempt + retry).
+    const truncated = geminiOk('{"calories": 120, "protein_g": 24');
+    fetchMock.mockResolvedValueOnce(truncated.clone());
+    fetchMock.mockResolvedValueOnce(geminiOk('{"calories": 120, "protein_g": 24'));
+    anthropicCreate.mockResolvedValueOnce({
+      content: [{ type: 'text', text: JSON.stringify({
+        calories: 120, protein_g: 24, carbs_g: 3, total_fat_g: 1.5,
+        saturated_fat_g: 0.3, trans_fat_g: 0, omega3_g: 0, sugar_g: 2, fiber_g: 0,
+        confidence: 0.55,
+      }) }],
+      usage: { input_tokens: 40, output_tokens: 60 },
+    });
+    const r = await estimateItemWithGemini('protein powder', 30, 'g');
+    expect(anthropicCreate).toHaveBeenCalledTimes(1);
+    expect(r.nutrients.calories).toBe(120);
+    expect(r.nutrients.protein_g).toBe(24);
   });
 });

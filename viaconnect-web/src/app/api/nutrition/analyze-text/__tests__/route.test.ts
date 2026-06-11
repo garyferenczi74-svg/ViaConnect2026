@@ -88,6 +88,23 @@ describe('POST /api/nutrition/analyze-text', () => {
     expect(json.analysis.data_source).toBe('mixed');
   });
 
+  it('saves the meal with UNKNOWN nutrients when the estimator fails for an item', async () => {
+    // 2026-06-11 incident: one item's estimator failure used to 502 the
+    // whole meal. It now degrades that item to nulls (never 0) and saves.
+    parseDescription.mockResolvedValueOnce({
+      parsed: { items: [{ name: 'mystery shake', quantity: 1, unit: 'serving' }], confidence: 0.6, notes: '' },
+      usage: { inputTokens: 30, outputTokens: 20 },
+    });
+    lookupFood.mockResolvedValueOnce(null);
+    mocks.estimateItem.mockRejectedValueOnce(new Error('AI returned incomplete output'));
+    const res = await POST(makeReq({ description: 'a mystery shake', mealType: 'snack' }));
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.analysis.calories).toBeNull();
+    expect(json.analysis.data_source).toBe('gemini_fallback');
+    expect(json.analysis.nutrient_flags.unknown).toContain('calories');
+  });
+
   it('returns 400 when description is too short', async () => {
     const res = await POST(makeReq({ description: 'hi', mealType: 'breakfast' }));
     expect(res.status).toBe(400);

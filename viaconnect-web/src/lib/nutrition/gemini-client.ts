@@ -410,9 +410,18 @@ async function estimateItemAttempt(name: string, quantity: number, unit: string)
   const { text, usage } = await callGemini({
     systemInstruction: { parts: [{ text: ESTIMATION_FALLBACK_INSTRUCTION }] },
     contents: [{ role: 'user', parts: [{ text: `${quantity} ${unit} ${name}` }] }],
-    // 1024 (was 512): observed truncation at ~4 fields with 512, raised so
-    // Gemini has headroom for all 10 nutrient fields plus formatting.
-    generationConfig: { temperature: 0.1, responseMimeType: 'application/json', maxOutputTokens: 1024 },
+    // Prompt 186 incident fix (2026-06-11): gemini-2.5-flash thinks by
+    // default and its thought tokens count against maxOutputTokens, which
+    // is what truncated these tiny 10-field JSON responses mid-output
+    // (production: "AI returned incomplete output"). This is a lookup
+    // task, not a reasoning task: thinking off, plus headroom at 2048
+    // (was 1024, observed truncation at ~4 fields with 512).
+    generationConfig: {
+      temperature: 0.1,
+      responseMimeType: 'application/json',
+      maxOutputTokens: 2048,
+      thinkingConfig: { thinkingBudget: 0 },
+    },
   });
   return decodeEstimation(text, usage);
 }
@@ -435,7 +444,11 @@ export async function estimateItemWithGemini(name: string, quantity: number, uni
       try {
         return await estimateItemAttempt(name, quantity, unit);
       } catch (retryErr) {
-        if (retryErr instanceof AIRouteError && FALLBACK_CODES.has(retryErr.code)) {
+        // Prompt 186 incident fix: a second malformed estimation also
+        // falls through to Claude. Unlike the parse path, this output is
+        // ten numeric fields; Claude emits it reliably, and the
+        // alternative was failing the user's whole meal.
+        if (retryErr instanceof AIRouteError && (FALLBACK_CODES.has(retryErr.code) || retryErr.code === 'MALFORMED_RESPONSE')) {
           err = retryErr;
         } else {
           throw retryErr;
@@ -443,8 +456,9 @@ export async function estimateItemWithGemini(name: string, quantity: number, uni
       }
     }
     // Prompt 180f (2026-06-08): Claude text fallback for the per
-    // item estimation path. Same code gating as parseDescription.
-    if (err instanceof AIRouteError && FALLBACK_CODES.has(err.code)) {
+    // item estimation path. Same code gating as parseDescription, plus
+    // MALFORMED_RESPONSE (Prompt 186).
+    if (err instanceof AIRouteError && (FALLBACK_CODES.has(err.code) || err.code === 'MALFORMED_RESPONSE')) {
       safeLog.warn('gemini.estimateItem', 'gemini failed, trying claude fallback', {
         gemini_code: err.code,
       });
