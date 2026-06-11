@@ -13,21 +13,27 @@
 //
 // Five rows in fixed order: Breakfast, Lunch, Dinner, Snack, Hydration. Each
 // row collapses to a name + total + chevron and expands in flow (framer motion
-// height auto, content below shifts down, no overlay). The expanded meal type
-// panel shows the meals logged for that type today, the type's macro totals,
-// and an enlarged Plasma gauge of the type's aggregate quality score. The
-// hydration panel swaps calories for volume figures.
+// height auto, content below shifts down, no overlay). The collapsed header
+// hides while its panel is open. The expanded meal type panel is a compact
+// side-by-side flex row: meal-main (heading + a contained Meal / Macros grid)
+// on the left, an enlarged Plasma gauge beside it showing the type's KCAL in
+// the orb while the ring fills to the aggregate quality score. The hydration
+// panel swaps calories for volume figures.
 //
-// Colors: chrome uses the brand tokens; the per meal type accent dots reuse
+// Prompt 183b (2026-06-11): presentational pass to the v21 mockup. The full per
+// type gradient row FILL is replaced by a translucent navy row with a 4px
+// colored LEFT EDGE; the expanded panel is the side-by-side flex row above; the
+// gauge center shows KCAL via PlasmaGauge's additive displayValue prop.
+//
+// Colors: chrome uses the brand tokens; the per meal type accent codes reuse
 // the exact existing DATA codes from MealHistory.tsx (breakfast #FFB347, lunch
-// #2DA5A0, dinner #B75E18, snack #7C6FE0) and the per type gradients reuse the
-// exact existing classes from TodaysMealsSummary.tsx MEAL_TYPE_DEFS plus the
-// hydration sky gradient. Per spec these data colors are kept as is and not
-// forced onto a brand token.
+// #2DA5A0, dinner #B75E18, snack #7C6FE0) for the 4px left edge and the in
+// panel item dots. Per spec these data codes are kept as is and not forced onto
+// a brand token.
 
 import { useMemo, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { ChevronDown, Coffee, Cookie, Droplet, Soup, UtensilsCrossed, type LucideIcon } from 'lucide-react';
+import { ChevronDown, Coffee, Cookie, Droplet, Soup, Utensils, UtensilsCrossed, type LucideIcon } from 'lucide-react';
 import type { Meal, MealType } from '@/lib/gordon/types';
 import { PlasmaGauge } from '@/components/gauges/PlasmaGauge';
 import { useUserMeals } from '@/hooks/useUserMeals';
@@ -53,26 +59,25 @@ interface MealTypeDef {
   readonly id: MealType;
   readonly label: string;
   readonly icon: LucideIcon;
-  // Per type idle gradient: reused verbatim from TodaysMealsSummary
-  // MEAL_TYPE_DEFS (lines 48 to 53) so the surfaces read as one palette.
-  readonly gradient: string;
-  // Per type accent dot: reused verbatim from MealHistory DOT_COLORS (lines
-  // 14 to 19). These are the existing DATA codes and are kept as is.
+  // Per type accent: the existing DATA code reused verbatim from MealHistory
+  // DOT_COLORS (lines 15 to 18). Prompt 183b drives the collapsed row's 4px
+  // LEFT EDGE and the in panel item dots with this code; it is kept as is and
+  // is NOT swapped for a brand token or the mockup reference hex.
   readonly dot: string;
 }
 
-// Reused verbatim from TodaysMealsSummary.tsx MEAL_TYPE_DEFS (gradient) and
-// MealHistory.tsx DOT_COLORS (dot). Snack label is singular here to match the
-// mockup row labels (Breakfast, Lunch, Dinner, Snack).
+// Snack label is singular here to match the mockup row labels (Breakfast,
+// Lunch, Dinner, Snack). dot codes reused verbatim from MealHistory.tsx
+// DOT_COLORS (lines 15 to 18).
 const MEAL_TYPE_DEFS: ReadonlyArray<MealTypeDef> = [
-  { id: 'breakfast', label: 'Breakfast', icon: Coffee, gradient: 'from-amber-600/40 via-orange-600/20 to-amber-700/30', dot: '#FFB347' },
-  { id: 'lunch', label: 'Lunch', icon: Soup, gradient: 'from-purple-500/40 via-purple-600/20 to-purple-700/30', dot: '#2DA5A0' },
-  { id: 'dinner', label: 'Dinner', icon: UtensilsCrossed, gradient: 'from-indigo-500/40 via-indigo-600/20 to-violet-600/30', dot: '#B75E18' },
-  { id: 'snack', label: 'Snack', icon: Cookie, gradient: 'from-rose-500/40 via-pink-500/20 to-pink-600/30', dot: '#7C6FE0' },
+  { id: 'breakfast', label: 'Breakfast', icon: Coffee, dot: '#FFB347' },
+  { id: 'lunch', label: 'Lunch', icon: Soup, dot: '#2DA5A0' },
+  { id: 'dinner', label: 'Dinner', icon: UtensilsCrossed, dot: '#B75E18' },
+  { id: 'snack', label: 'Snack', icon: Cookie, dot: '#7C6FE0' },
 ];
 
-// Reused verbatim from TodaysMealsSummary.tsx (hydration header, line 420).
-const HYDRATION_GRADIENT = 'from-sky-600/40 via-blue-500/20 to-sky-700/30';
+// Hydration accent, reused verbatim from NutritionTodaysMeals' own prior
+// HYDRATION_DOT (the existing sky code) for the hydration row's 4px left edge.
 const HYDRATION_DOT = '#5B8DEF';
 
 type SectionKey = MealType | 'hydration';
@@ -93,11 +98,15 @@ function mealDisplayName(meal: Meal, label: string): string {
 
 // Shared collapsed header. Used by every row so the meal type rows and the
 // hydration row read identically when closed: dot, name, total chip, chevron.
+//
+// Prompt 183b (2026-06-11): the full per type gradient FILL is removed. The
+// row now sits on a translucent Deep Navy panel (rgba(26,39,68,0.5)) with a
+// hairline border and a 4px colored LEFT EDGE in the per type accent (the
+// existing `dot` code, reused as is). The accent reads as an edge, not a wash.
 function RowHeader({
   icon: Icon,
   label,
   dot,
-  gradient,
   total,
   isOpen,
   onToggle,
@@ -106,7 +115,6 @@ function RowHeader({
   icon: LucideIcon;
   label: string;
   dot: string;
-  gradient: string;
   total: string;
   isOpen: boolean;
   onToggle: () => void;
@@ -118,7 +126,13 @@ function RowHeader({
       onClick={onToggle}
       aria-expanded={isOpen}
       aria-controls={panelId}
-      className={`group relative flex w-full min-h-[44px] items-center justify-between gap-2 rounded-xl border border-white/15 bg-gradient-to-br px-3 py-2.5 text-[13px] font-semibold text-white backdrop-blur-xl transition-all duration-200 ease-out hover:shadow-lg hover:shadow-black/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744] md:text-[14px] ${gradient}`}
+      className="group relative flex w-full min-h-[44px] items-center justify-between gap-2 px-3 py-2.5 text-[13px] font-semibold text-white backdrop-blur-xl transition-all duration-200 ease-out hover:shadow-lg hover:shadow-black/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744] md:text-[14px]"
+      style={{
+        background: 'rgba(26,39,68,0.5)',
+        border: '1px solid rgba(255,255,255,0.07)',
+        borderRadius: 12,
+        borderLeft: `4px solid ${dot}`,
+      }}
     >
       <span className="flex items-center gap-2">
         <span className="flex items-center gap-2">
@@ -145,135 +159,223 @@ function RowHeader({
   );
 }
 
-// One macro line inside the Macros column. Label left, value right.
-function MacroLine({ label, value }: { label: string; value: string }) {
+// One line inside a contained column (Meal item or Macros). Label left, value
+// right, justified apart so the value right-aligns within its own narrow column
+// rather than at the page edge. A faint hairline sits beneath every line except
+// the last. Prompt 183b.
+function ColumnLine({ label, value, isLast }: { label: string; value: string; isLast: boolean }) {
   return (
-    <div className="flex items-baseline justify-between gap-3 text-[12px] md:text-[13px]">
-      <span className="text-white/60">{label}</span>
-      <span className="tabular-nums text-white/90">{value}</span>
+    <div
+      className="flex items-baseline justify-between gap-3 py-1 text-[12px] md:text-[13px]"
+      style={isLast ? undefined : { borderBottom: '1px solid rgba(255,255,255,0.05)' }}
+    >
+      <span className="min-w-0 truncate text-white/55">{label}</span>
+      <span className="flex-shrink-0 tabular-nums text-white/90">{value}</span>
     </div>
   );
 }
 
-// The expanded panel for one of the four meal types. Heading + gauge on top,
-// then a tight Meal / Macros grid beneath. Stacks to one column on mobile. The
-// parent already computes totals for the collapsed kcal chip and passes them
-// down so the sum is not recomputed here.
-function MealTypePanel({ def, meals, totals }: { def: MealTypeDef; meals: Meal[]; totals: MealTypeMacroTotals }) {
+// The small uppercase teal column header with a thin teal bottom rule. Prompt
+// 183b: caps both the Meal and the Macros columns inside meal-main.
+function ColumnHeader({ children }: { children: string }) {
+  return (
+    <p
+      className="mb-1 pb-1 text-[11px] font-semibold uppercase tracking-[0.10em]"
+      style={{ color: '#2DA5A0', borderBottom: '1px solid rgba(45,165,160,0.28)' }}
+    >
+      {children}
+    </p>
+  );
+}
+
+// One macro paired with its gram value, or null when the value is missing so
+// the row is omitted (fail open, NULL not zero). Prompt 183b.
+function macroRow(label: string, grams: number | null | undefined): { label: string; value: string } | null {
+  if (grams === null || grams === undefined || !Number.isFinite(grams)) return null;
+  return { label, value: gramsLabel(grams) };
+}
+
+// The expanded panel for one of the four meal types. Prompt 183b: a single
+// compact horizontal flex row, not a tall stack. meal-main (heading + the
+// contained Meal / Macros grid) flexes to fill the left; the gauge sits BESIDE
+// it on the right, top aligned, so the panel height is the taller block with no
+// empty vertical gap. Under sm the inner WRAPS: meal-main full width, the gauge
+// centers beneath. The parent already computes totals for the collapsed kcal
+// chip and passes them down so the sum is not recomputed here.
+function MealTypePanel({
+  def,
+  meals,
+  totals,
+  onCollapse,
+}: {
+  def: MealTypeDef;
+  meals: Meal[];
+  totals: MealTypeMacroTotals;
+  onCollapse: () => void;
+}) {
   const score = useMemo(() => mealTypeAggregateScore(meals), [meals]);
   const kcal = Math.round(totals.kcal);
   const isEmpty = meals.length === 0;
 
+  // Macros, omitting any whose gram value is missing (fail open, NULL not zero).
+  const macros = [
+    macroRow('Protein', totals.protein),
+    macroRow('Carbs', totals.carbs),
+    macroRow('Fat', totals.fat),
+    macroRow('Fiber', totals.fiber),
+    macroRow('Sugar', totals.sugar),
+  ].filter((m): m is { label: string; value: string } => m !== null);
+
   return (
-    <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-3 md:px-4 md:py-4">
-      <div className="flex items-start justify-between gap-3">
-        {/* Heading top left: name + kcal. */}
-        <div className="min-w-0">
-          <h3 className="text-[14px] font-semibold text-white md:text-[15px]">{def.label}</h3>
-          <p className="mt-0.5 text-[12px] tabular-nums text-white/55">{kcalLabel(kcal)}</p>
+    <div className="rounded-xl border border-white/[0.06] bg-white/[0.02]">
+      {/* Inner side-by-side row. Wraps under sm. */}
+      <div className="flex flex-wrap items-start gap-[30px] p-[18px]">
+        {/* meal-main: heading + the contained two column grid. */}
+        <div className="grow basis-full sm:basis-0" style={{ minWidth: 0 }}>
+          {/* Heading: name + kcal on one baseline with a small collapse chevron. */}
+          <div className="flex items-baseline justify-between gap-2">
+            <h3 className="flex items-baseline gap-2 text-[14px] font-semibold text-white md:text-[15px]">
+              <span>{def.label}</span>
+              <span className="text-[12px] font-medium tabular-nums text-white/55">{kcalLabel(kcal)}</span>
+            </h3>
+            <button
+              type="button"
+              onClick={onCollapse}
+              aria-label={`Collapse ${def.label}`}
+              className="flex-shrink-0 rounded-md p-0.5 text-white/55 transition-colors hover:text-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+            >
+              <ChevronDown className="h-4 w-4 rotate-180" strokeWidth={1.5} />
+            </button>
+          </div>
+
+          {/* Contained Meal / Macros grid: values sit close to their labels, not
+              at the page edge. 1.4fr 1fr at sm+, one column on mobile. */}
+          <div className="mt-3 grid grid-cols-1 gap-[18px] sm:grid-cols-[1.4fr_1fr] sm:gap-[34px]">
+            <div>
+              <ColumnHeader>Meal</ColumnHeader>
+              {isEmpty ? (
+                <p className="py-1 text-[12px] text-white/50">No {def.label.toLowerCase()} logged yet today.</p>
+              ) : (
+                <div className="flex flex-col">
+                  {meals.map((meal, i) => (
+                    <ColumnLine
+                      key={meal.mealId}
+                      label={mealDisplayName(meal, def.label)}
+                      value={kcalLabel(Math.round(meal.caloriesKcal))}
+                      isLast={i === meals.length - 1}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div>
+              <ColumnHeader>Macros</ColumnHeader>
+              {macros.length === 0 ? (
+                <p className="py-1 text-[12px] text-white/50">No macros yet.</p>
+              ) : (
+                <div className="flex flex-col">
+                  {macros.map((m, i) => (
+                    <ColumnLine key={m.label} label={m.label} value={m.value} isLast={i === macros.length - 1} />
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
 
-        {/* Gauge top right: aggregate quality score, KCAL + total beneath. */}
-        <div className="flex flex-shrink-0 flex-col items-center">
+        {/* Gauge: BESIDE the content, top aligned, text centered. The orb shows
+            the meal-type KCAL (displayValue); the ring stays driven by the
+            aggregate quality score (value), unchanged. No KCAL label beneath. */}
+        <div className="flex flex-[0_0_auto] flex-col items-center text-center max-sm:w-full">
           <PlasmaGauge
             value={score ?? 0}
+            displayValue={kcal}
+            caption="KCAL"
+            valueFontPx={36}
             metric="plasmateal"
             max={100}
-            size={112}
+            size={132}
             showUnit={false}
             ariaLabel={
               score === null
-                ? `${def.label} quality score not available`
-                : `${def.label} quality score ${score} of 100`
+                ? `${def.label} ${kcal} kilocalories, quality score not available`
+                : `${def.label} ${kcal} kilocalories, quality score ${score} of 100`
             }
           />
-          <div className="mt-1 flex flex-col items-center leading-tight">
-            <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/45">KCAL</span>
-            <span className="text-[13px] font-semibold tabular-nums text-white/85">{kcal}</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Tight Meal / Macros grid directly beneath the heading. */}
-      <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div>
-          <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.10em] text-white/45">Meal</p>
-          {isEmpty ? (
-            <p className="text-[12px] text-white/50">No {def.label.toLowerCase()} logged yet today.</p>
-          ) : (
-            <ul className="flex flex-col gap-1">
-              {meals.map((meal) => (
-                <li key={meal.mealId} className="flex items-center gap-2 text-[12px] text-white/85 md:text-[13px]">
-                  <span
-                    aria-hidden="true"
-                    className="h-1.5 w-1.5 flex-shrink-0 rounded-full"
-                    style={{ backgroundColor: def.dot }}
-                  />
-                  <span className="min-w-0 truncate">{mealDisplayName(meal, def.label)}</span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-
-        <div>
-          <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.10em] text-white/45">Macros</p>
-          <div className="flex flex-col gap-1">
-            <MacroLine label="Protein" value={gramsLabel(totals.protein)} />
-            <MacroLine label="Carbs" value={gramsLabel(totals.carbs)} />
-            <MacroLine label="Fat" value={gramsLabel(totals.fat)} />
-            <MacroLine label="Fiber" value={gramsLabel(totals.fiber)} />
-            <MacroLine label="Sugar" value={gramsLabel(totals.sugar)} />
-          </div>
         </div>
       </div>
     </div>
   );
 }
 
-// The expanded hydration panel: volume figures (logged / target / remaining)
-// instead of calories, with a Plasma gauge of percent to the hydration target.
-function HydrationPanel({ totalMl, targetMl }: { totalMl: number; targetMl: number }) {
+// The expanded hydration panel. Prompt 183b: same compact side-by-side flex
+// row as the meal panels (so it does not stretch tall either), but framed in
+// VOLUME, not kcal. meal-main holds the heading plus a contained Logged /
+// Target / Remaining column; the gauge sits beside it showing percent to target
+// in the orb, top aligned. Under sm the inner wraps and the gauge centers.
+function HydrationPanel({
+  totalMl,
+  targetMl,
+  onCollapse,
+}: {
+  totalMl: number;
+  targetMl: number;
+  onCollapse: () => void;
+}) {
   const remaining = hydrationRemainingMl(totalMl, targetMl);
   const pct = hydrationPercentToTarget(totalMl, targetMl);
 
+  const lines: ReadonlyArray<{ label: string; value: string }> = [
+    { label: 'Logged', value: formatVolumeLabel(totalMl) },
+    { label: 'Target', value: formatVolumeLabel(targetMl) },
+    { label: 'Remaining', value: formatVolumeLabel(remaining) },
+  ];
+
   return (
-    <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-3 md:px-4 md:py-4">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h3 className="text-[14px] font-semibold text-white md:text-[15px]">Hydration</h3>
-          <p className="mt-0.5 text-[12px] tabular-nums text-white/55">{formatVolumeLabel(totalMl)}</p>
+    <div className="rounded-xl border border-white/[0.06] bg-white/[0.02]">
+      <div className="flex flex-wrap items-start gap-[30px] p-[18px]">
+        {/* meal-main: heading + the contained volume column. */}
+        <div className="grow basis-full sm:basis-0" style={{ minWidth: 0 }}>
+          <div className="flex items-baseline justify-between gap-2">
+            <h3 className="flex items-baseline gap-2 text-[14px] font-semibold text-white md:text-[15px]">
+              <span>Hydration</span>
+              <span className="text-[12px] font-medium tabular-nums text-white/55">{formatVolumeLabel(totalMl)}</span>
+            </h3>
+            <button
+              type="button"
+              onClick={onCollapse}
+              aria-label="Collapse Hydration"
+              className="flex-shrink-0 rounded-md p-0.5 text-white/55 transition-colors hover:text-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+            >
+              <ChevronDown className="h-4 w-4 rotate-180" strokeWidth={1.5} />
+            </button>
+          </div>
+
+          <div className="mt-3 max-w-[18rem]">
+            <ColumnHeader>Volume</ColumnHeader>
+            <div className="flex flex-col">
+              {lines.map((l, i) => (
+                <ColumnLine key={l.label} label={l.label} value={l.value} isLast={i === lines.length - 1} />
+              ))}
+            </div>
+          </div>
         </div>
 
-        <div className="flex flex-shrink-0 flex-col items-center">
+        {/* Gauge beside the content: percent to the hydration target in the orb. */}
+        <div className="flex flex-[0_0_auto] flex-col items-center text-center max-sm:w-full">
           <PlasmaGauge
             value={pct}
+            displayValue={pct}
+            valueSuffix="%"
+            caption="OF TARGET"
+            valueFontPx={32}
             metric="bioscore"
             max={100}
-            size={112}
-            unit="%"
+            size={132}
             showUnit={false}
             ariaLabel={`Hydration ${pct} percent of target`}
           />
-          <div className="mt-1 flex flex-col items-center leading-tight">
-            <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/45">TARGET</span>
-            <span className="text-[13px] font-semibold tabular-nums text-white/85">{formatVolumeLabel(targetMl)}</span>
-          </div>
-        </div>
-      </div>
-
-      <div className="mt-3 grid grid-cols-3 gap-3">
-        <div className="flex flex-col">
-          <span className="text-[11px] uppercase tracking-[0.10em] text-white/45">Logged</span>
-          <span className="mt-0.5 text-[14px] font-semibold tabular-nums text-white/90">{formatVolumeLabel(totalMl)}</span>
-        </div>
-        <div className="flex flex-col">
-          <span className="text-[11px] uppercase tracking-[0.10em] text-white/45">Target</span>
-          <span className="mt-0.5 text-[14px] font-semibold tabular-nums text-white/90">{formatVolumeLabel(targetMl)}</span>
-        </div>
-        <div className="flex flex-col">
-          <span className="text-[11px] uppercase tracking-[0.10em] text-white/45">Remaining</span>
-          <span className="mt-0.5 text-[14px] font-semibold tabular-nums text-white/90">{formatVolumeLabel(remaining)}</span>
         </div>
       </div>
     </div>
@@ -312,8 +414,18 @@ export function NutritionTodaysMeals(props: NutritionTodaysMealsProps) {
 
   return (
     <section className="font-[Instrument_Sans] rounded-2xl border border-white/10 bg-[#1E3054]/40 backdrop-blur-md text-white">
-      <header className="flex items-center gap-2 px-4 py-3 md:px-5 md:py-4">
-        <UtensilsCrossed className="h-4 w-4 text-white/70" strokeWidth={1.5} />
+      {/* Prompt 183b (2026-06-11): card-top Utensils chip ABOVE the title. A
+          40x40 rounded square, faint teal fill, line border, the Lucide
+          Utensils glyph in the teal token. Replicated locally here; Row 1's
+          BadgeChip is neither imported nor modified. */}
+      <header className="flex flex-col gap-2 px-4 py-3 md:px-5 md:py-4">
+        <span
+          aria-hidden="true"
+          className="inline-flex items-center justify-center border border-white/[0.08]"
+          style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(45,165,160,0.12)' }}
+        >
+          <Utensils className="h-5 w-5" strokeWidth={1.5} style={{ color: '#2DA5A0' }} />
+        </span>
         <h2 className="text-[15px] font-semibold text-white">Today&apos;s meals</h2>
       </header>
 
@@ -326,16 +438,19 @@ export function NutritionTodaysMeals(props: NutritionTodaysMealsProps) {
           const panelId = `meals-panel-${def.id}`;
           return (
             <div key={def.id}>
-              <RowHeader
-                icon={def.icon}
-                label={def.label}
-                dot={def.dot}
-                gradient={def.gradient}
-                total={kcalLabel(kcal)}
-                isOpen={isOpen}
-                onToggle={() => toggle(def.id)}
-                panelId={panelId}
-              />
+              {/* The collapsed header hides while the panel is open; the panel
+                  carries its own collapse chevron. */}
+              {!isOpen ? (
+                <RowHeader
+                  icon={def.icon}
+                  label={def.label}
+                  dot={def.dot}
+                  total={kcalLabel(kcal)}
+                  isOpen={isOpen}
+                  onToggle={() => toggle(def.id)}
+                  panelId={panelId}
+                />
+              ) : null}
               <AnimatePresence initial={false}>
                 {isOpen ? (
                   <motion.div
@@ -348,9 +463,12 @@ export function NutritionTodaysMeals(props: NutritionTodaysMealsProps) {
                     transition={reducedMotion ? { duration: 0 } : { duration: 0.22, ease: 'easeOut' }}
                     className="overflow-hidden"
                   >
-                    <div className="pt-2">
-                      <MealTypePanel def={def} meals={list} totals={totals} />
-                    </div>
+                    <MealTypePanel
+                      def={def}
+                      meals={list}
+                      totals={totals}
+                      onCollapse={() => toggle(def.id)}
+                    />
                   </motion.div>
                 ) : null}
               </AnimatePresence>
@@ -360,16 +478,17 @@ export function NutritionTodaysMeals(props: NutritionTodaysMealsProps) {
 
         {/* Hydration: 5th row. Collapsed total is volume, not kcal. */}
         <div>
-          <RowHeader
-            icon={Droplet}
-            label="Hydration"
-            dot={HYDRATION_DOT}
-            gradient={HYDRATION_GRADIENT}
-            total={formatVolumeLabel(hydrationTotalMl)}
-            isOpen={openKey === 'hydration'}
-            onToggle={() => toggle('hydration')}
-            panelId="meals-panel-hydration"
-          />
+          {openKey !== 'hydration' ? (
+            <RowHeader
+              icon={Droplet}
+              label="Hydration"
+              dot={HYDRATION_DOT}
+              total={formatVolumeLabel(hydrationTotalMl)}
+              isOpen={false}
+              onToggle={() => toggle('hydration')}
+              panelId="meals-panel-hydration"
+            />
+          ) : null}
           <AnimatePresence initial={false}>
             {openKey === 'hydration' ? (
               <motion.div
@@ -382,9 +501,11 @@ export function NutritionTodaysMeals(props: NutritionTodaysMealsProps) {
                 transition={reducedMotion ? { duration: 0 } : { duration: 0.22, ease: 'easeOut' }}
                 className="overflow-hidden"
               >
-                <div className="pt-2">
-                  <HydrationPanel totalMl={hydrationTotalMl} targetMl={hydrationTargetMl} />
-                </div>
+                <HydrationPanel
+                  totalMl={hydrationTotalMl}
+                  targetMl={hydrationTargetMl}
+                  onCollapse={() => toggle('hydration')}
+                />
               </motion.div>
             ) : null}
           </AnimatePresence>

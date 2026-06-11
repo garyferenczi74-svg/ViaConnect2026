@@ -218,12 +218,19 @@ export interface PlasmaGaugeProps {
   // valueSuffix: when set, renders immediately after the center value number
   // (e.g. a percent sign) so the value reads like "22%". Omitted = no suffix.
   valueSuffix?: string;
+  // Prompt 183b (2026-06-11): default-preserving. When set, the center renders
+  // Math.round(displayValue) IN PLACE OF the count-up of `value`, while the
+  // progress ring stays driven by `value`. Lets a gauge show one figure in the
+  // orb (e.g. KCAL) while the arc fills to a separate score. Omitted = the
+  // center counts up `value` exactly as before.
+  displayValue?: number;
 }
 
 export function PlasmaGauge({
   value, metric, finish = null, size = 200, variant = 'standard',
   max = 100, unit, animated = true, showUnit = true, ariaLabel,
   subtleTrack = false, plainNumber = false, caption, valueFontPx, valueSuffix,
+  displayValue,
 }: PlasmaGaugeProps) {
   const ref = useRef<HTMLDivElement>(null);
   const uid = useId().replace(/[^a-zA-Z0-9_]/g, '_');
@@ -240,6 +247,11 @@ export function PlasmaGauge({
   const anim = animated && inView && !reduced;
   const n = useCountUp(Math.round(value), animated && inView);
   const p = Math.max(0.0001, Math.min(1, value / (max || 100)));
+  // Prompt 183b (2026-06-11): the center figure. When displayValue is supplied
+  // the orb shows that rounded number instead of the count-up of `value`; the
+  // ring above still fills to `p` (derived from `value`). Omitted = the
+  // count-up, byte-identical to before.
+  const centerNumber = displayValue !== undefined ? Math.round(displayValue) : n;
 
   const M = finish ? MAT_BY_ID[finish] ?? null : null;
   const metal = !!M;
@@ -453,7 +465,7 @@ export function PlasmaGauge({
                 color: '#fff',
                 textShadow: `0 2px 12px rgba(0,0,0,.6), 0 0 22px ${GLOW}`,
               }),
-        }}>{n}{valueSuffix ?? ''}</div>
+        }}>{centerNumber}{valueSuffix ?? ''}</div>
         {caption !== undefined ? (
           // Prompt 183a (2026-06-11): caption replaces the of/max sublabel,
           // same element, size, and position, uppercased, muted token.

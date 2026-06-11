@@ -52,6 +52,31 @@ describe('PlasmaGauge source', () => {
     expect(source).toContain('className="g-bead-cw"');
   });
 
+  // Prompt 183b: the additive, default-preserving displayValue prop.
+  it('declares displayValue as an optional prop', () => {
+    expect(source).toContain('displayValue?: number;');
+  });
+
+  it('shows the count-up value in the center when displayValue is omitted', () => {
+    // centerNumber falls back to the count-up n unless displayValue is set, so
+    // an omitting call site renders byte-identical to before.
+    expect(source).toContain(
+      'const centerNumber = displayValue !== undefined ? Math.round(displayValue) : n;',
+    );
+    // The center renders centerNumber, not the raw count-up n directly.
+    expect(source).toContain('{centerNumber}{valueSuffix ?? \'\'}');
+    expect(source).not.toContain('}}>{n}{valueSuffix');
+  });
+
+  it('keeps the progress ring driven by value, not displayValue', () => {
+    // The ring fraction p is computed from value/max; the progress arc path
+    // progD is derived from p. displayValue never enters that computation.
+    expect(source).toContain('const p = Math.max(0.0001, Math.min(1, value / (max || 100)));');
+    expect(source).toContain('const progD = arcPath(cx, cy, R, 0, p);');
+    expect(source).not.toContain('displayValue / ');
+    expect(source).not.toContain('arcPath(cx, cy, R, 0, displayValue');
+  });
+
   it('contains no em or en dashes', () => {
     expect(source.includes(String.fromCharCode(0x2014))).toBe(false);
     expect(source.includes(String.fromCharCode(0x2013))).toBe(false);

@@ -41,14 +41,17 @@ describe('NutritionTodaysMeals source', () => {
     expect(source).toContain('mealTypeAggregateScore(meals)');
   });
 
-  it('lists exactly Protein, Carbs, Fat, Fiber, Sugar in the Macros column', () => {
-    expect(source).toContain('label="Protein"');
-    expect(source).toContain('label="Carbs"');
-    expect(source).toContain('label="Fat"');
-    expect(source).toContain('label="Fiber"');
-    expect(source).toContain('label="Sugar"');
-    // No separate Total column in the macros grid.
-    expect(source).not.toContain('label="Total"');
+  it('lists exactly Protein, Carbs, Fat, Fiber, Sugar in grams in the Macros column', () => {
+    // Prompt 183b: macros are built as rows, each value in grams (gramsLabel),
+    // omitting any whose value is missing (fail open).
+    expect(source).toContain("macroRow('Protein', totals.protein)");
+    expect(source).toContain("macroRow('Carbs', totals.carbs)");
+    expect(source).toContain("macroRow('Fat', totals.fat)");
+    expect(source).toContain("macroRow('Fiber', totals.fiber)");
+    expect(source).toContain("macroRow('Sugar', totals.sugar)");
+    expect(source).toContain('return { label, value: gramsLabel(grams) };');
+    // No separate Total row in the macros grid.
+    expect(source).not.toContain("macroRow('Total'");
   });
 
   it('reuses PlasmaGauge for the per type and hydration gauges', () => {
@@ -56,12 +59,50 @@ describe('NutritionTodaysMeals source', () => {
     expect(source).toContain('<PlasmaGauge');
   });
 
-  it('Prompt 183a: the per meal type gauge uses the teal hub metric', () => {
+  it('Prompt 183a/183b: the per meal type gauge uses the teal hub metric', () => {
     // The per-meal-type gauge moved from mealscore (green) to the teal hub
-    // finish; size stays 112 and nothing else changes.
+    // finish. Prompt 183b grew it to 132 so the kcal sits inside the orb.
     expect(source).toContain('metric="plasmateal"');
-    expect(source).toContain('size={112}');
+    expect(source).toContain('size={132}');
     expect(source).not.toContain('metric="mealscore"');
+  });
+
+  it('Prompt 183b: shows a 40x40 teal Utensils badge above the title', () => {
+    expect(source).toContain('Utensils');
+    expect(source).toContain('width: 40, height: 40, borderRadius: 12');
+    expect(source).toContain("backgroundColor: 'rgba(45,165,160,0.12)'");
+    // Replicated locally; Row 1's BadgeChip is neither imported nor rendered (a
+    // passing mention in a comment explaining the local replica is allowed).
+    expect(source).not.toMatch(/import[^\n]*BadgeChip/);
+    expect(source).not.toContain('<BadgeChip');
+  });
+
+  it('Prompt 183b: the expanded inner is a compact flex row, not a vertical stack', () => {
+    // gap 30, padding 18, top aligned items. The wrap lets it stack on mobile.
+    expect(source).toContain('flex flex-wrap items-start gap-[30px] p-[18px]');
+  });
+
+  it('Prompt 183b: the Meal/Macros grid is contained 1.4fr 1fr with space-between lines', () => {
+    expect(source).toContain('sm:grid-cols-[1.4fr_1fr]');
+    // Each line right-aligns its value within its own column, not at the page
+    // edge: a flex row justified apart.
+    expect(source).toContain('flex items-baseline justify-between');
+  });
+
+  it('Prompt 183b: the Meal and Macros columns have teal headers with a teal bottom rule', () => {
+    expect(source).toContain('<ColumnHeader>Meal</ColumnHeader>');
+    expect(source).toContain('<ColumnHeader>Macros</ColumnHeader>');
+    expect(source).toContain("color: '#2DA5A0', borderBottom: '1px solid rgba(45,165,160,0.28)'");
+    // Faint hairline between lines, none on the last.
+    expect(source).toContain("borderBottom: '1px solid rgba(255,255,255,0.05)'");
+  });
+
+  it('Prompt 183b: the gauge shows KCAL in the center via displayValue', () => {
+    expect(source).toContain('displayValue={kcal}');
+    expect(source).toContain('caption="KCAL"');
+    expect(source).toContain('valueFontPx={36}');
+    // The old separate KCAL label beneath the gauge is gone.
+    expect(source).not.toContain(">KCAL</span>");
   });
 
   it('reuses useUserMeals with the same args DailyTotalsTab passes', () => {
@@ -90,19 +131,24 @@ describe('NutritionTodaysMeals source', () => {
     expect(source).not.toContain('absolute inset-0');
   });
 
-  it('reuses the exact meal type accent dots from MealHistory', () => {
+  it('reuses the exact meal type accent codes from MealHistory for the left edge', () => {
+    // The existing DATA codes are kept as is; Prompt 183b drives the 4px row
+    // left edge with them instead of a full gradient fill.
     expect(source).toContain("dot: '#FFB347'"); // breakfast
     expect(source).toContain("dot: '#2DA5A0'"); // lunch
     expect(source).toContain("dot: '#B75E18'"); // dinner
     expect(source).toContain("dot: '#7C6FE0'"); // snack
+    expect(source).toContain("const HYDRATION_DOT = '#5B8DEF'"); // hydration
   });
 
-  it('reuses the exact meal type gradients from TodaysMealsSummary', () => {
-    expect(source).toContain('from-amber-600/40 via-orange-600/20 to-amber-700/30');
-    expect(source).toContain('from-purple-500/40 via-purple-600/20 to-purple-700/30');
-    expect(source).toContain('from-indigo-500/40 via-indigo-600/20 to-violet-600/30');
-    expect(source).toContain('from-rose-500/40 via-pink-500/20 to-pink-600/30');
-    expect(source).toContain('from-sky-600/40 via-blue-500/20 to-sky-700/30');
+  it('Prompt 183b: rows use a translucent navy panel with a 4px colored left edge, no gradient fill', () => {
+    expect(source).toContain("background: 'rgba(26,39,68,0.5)'");
+    expect(source).toContain("border: '1px solid rgba(255,255,255,0.07)'");
+    expect(source).toContain('borderLeft: `4px solid ${dot}`');
+    // The full per type gradient row FILL is gone.
+    expect(source).not.toContain('from-amber-600/40 via-orange-600/20 to-amber-700/30');
+    expect(source).not.toContain('from-sky-600/40 via-blue-500/20 to-sky-700/30');
+    expect(source).not.toContain('bg-gradient-to-br px-3');
   });
 
   it('mirrors the existing empty state copy', () => {
