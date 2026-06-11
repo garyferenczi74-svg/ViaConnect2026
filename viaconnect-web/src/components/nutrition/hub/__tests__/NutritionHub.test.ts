@@ -166,9 +166,12 @@ describe('NutritionHub source', () => {
     expect(source).toContain('setUserId(data.user?.id ?? null)');
   });
 
-  it('Row 3 wires the three Open expand tiles to MyMeals, genetics links, and NutritionInsights', () => {
-    expect(source).toContain("import { MyMeals } from '@/components/nutrition/MyMeals'");
-    expect(source).toContain('<MyMeals');
+  it('Row 3 wires the genetics links and NutritionInsights expand panels (no MyMeals)', () => {
+    // Prompt 183c: MyMeals no longer renders on the hub; the saved case became a
+    // navigation tile (covered by its own test below). Only the genetics and
+    // insights Open panels remain.
+    expect(source).not.toContain('@/components/nutrition/MyMeals');
+    expect(source).not.toContain('<MyMeals');
     expect(source).toContain(
       "import { NutritionInsights } from '@/components/nutrition/NutritionInsights'",
     );
@@ -180,6 +183,21 @@ describe('NutritionHub source', () => {
     expect(source).toContain('See NutrigenDX Results');
     expect(source).toContain('Upload Nutrition Test');
     expect(source).toContain('Review Nutrition Results');
+  });
+
+  it('Prompt 183c: the Save My Meal card is a navigation Link, not an expander', () => {
+    // The card keeps its singular label and its Bookmark badge chip, links to the
+    // standalone saved meals page with a right chevron, and shows the real saved
+    // count badge (never a hardcoded 24). It does not toggle any panel.
+    expect(source).toContain('<SaveMyMealTile');
+    expect(source).toContain('Save My Meal');
+    expect(source).toContain('<BadgeChip icon={Bookmark} />');
+    expect(source).toContain('href="/nutrition/saved-meals"');
+    expect(source).toContain('ChevronRight');
+    expect(source).toContain('savedMealsCount={metrics.savedMealsCount}');
+    expect(source).toContain('Your saved meal library, ready to log in a tap');
+    // No saved expand panel remains anywhere.
+    expect(source).not.toContain('nutrition-hub-panel-saved');
   });
 
   it('the genetics upload caption uses commas, never a middot or dash separator', () => {
@@ -194,8 +212,11 @@ describe('NutritionHub source', () => {
     expect(source).not.toContain('fixed inset-0');
   });
 
-  it('only one Row 3 panel is open at a time', () => {
-    expect(source).toContain("type OpenPanel = 'saved' | 'genetics' | 'insights' | null");
+  it('only one Row 3 panel is open at a time (saved removed from the union)', () => {
+    // Prompt 183c: the saved case is no longer an expand panel, so OpenPanel is
+    // now just the two remaining disclosure panels.
+    expect(source).toContain("type OpenPanel = 'genetics' | 'insights' | null");
+    expect(source).not.toContain("'saved'");
     expect(source).toContain('setOpenPanel((prev) => (prev === key ? null : key))');
   });
 
@@ -206,11 +227,11 @@ describe('NutritionHub source', () => {
     expect(source).toContain('aria-labelledby={`${panelId}-label`}');
     expect(source).toContain('id={`${panelId}-label`}');
 
-    // The three panel ids are the literal strings threaded to the tile and the
-    // panel. Each must appear on BOTH the ExpandTile button call site and the
-    // ExpandPanel id, so each string occurs at least twice in the source.
+    // The two remaining panel ids are the literal strings threaded to the tile
+    // and the panel (Prompt 183c removed the saved panel). Each must appear on
+    // BOTH the ExpandTile button call site and the ExpandPanel id, so each
+    // string occurs at least twice in the source.
     const panelIds = [
-      'nutrition-hub-panel-saved',
       'nutrition-hub-panel-genetics',
       'nutrition-hub-panel-insights',
     ];
@@ -229,11 +250,12 @@ describe('NutritionHub source', () => {
     expect(source).toContain('dailyMealCounts={metrics.dailyMealCounts}');
   });
 
-  it('keeps the two unmapped sections reachable below the bento', () => {
-    expect(source).toContain(
-      "import { RecipesLibrarySection } from '@/components/recipes/RecipesLibrarySection'",
-    );
-    expect(source).toContain('<RecipesLibrarySection />');
+  it('keeps the connected app dropdown below the bento and removes the inline recipes library', () => {
+    // Prompt 183c: RecipesLibrarySection moved to its own /nutrition/saved-meals
+    // page and no longer renders or imports on the hub. ConnectedAppMealDropdown
+    // stays exactly as it was.
+    expect(source).not.toContain('RecipesLibrarySection');
+    expect(source).not.toContain('@/components/recipes/RecipesLibrarySection');
     expect(source).toContain(
       "import { ConnectedAppMealDropdown } from '@/components/nutrition/ConnectedAppMealDropdown'",
     );
@@ -262,23 +284,29 @@ describe('NutritionHub source', () => {
     expect(source).toContain('from-[#1A2744]/85 via-[#1A2744]/30 to-transparent');
   });
 
-  it('puts an Open button only on the three Row 3 tiles, never on the gauges or full width tiles', () => {
-    // The Open affordance lives in the single shared ExpandTile (one source
-    // occurrence of the label and the aria-expanded button) and is instantiated
-    // exactly three times, once per Row 3 tile. The inline gauges and the full
-    // width tiles do not render ExpandTile, so they carry no Open.
+  it('puts an Open control only on the three Row 3 tiles, never on the gauges or full width tiles', () => {
+    // Prompt 183c: each of the three Row 3 tiles carries an Open. Two are
+    // expander buttons (the shared ExpandTile, instantiated twice for genetics +
+    // insights, the single aria-expanded button definition) and one is the
+    // navigation Link in SaveMyMealTile. So the Open label appears exactly twice
+    // (the ExpandTile button + the SaveMyMealTile link). The inline gauges and
+    // the full width tiles render neither, so they carry no Open.
     const opens = source.match(/<span>Open<\/span>/g) ?? [];
-    expect(opens.length).toBe(1);
+    expect(opens.length).toBe(2);
     const ariaExpanded = source.match(/aria-expanded=\{isOpen\}/g) ?? [];
     expect(ariaExpanded.length).toBe(1);
     const tiles = source.match(/<ExpandTile/g) ?? [];
-    expect(tiles.length).toBe(3);
+    expect(tiles.length).toBe(2);
+    const navTiles = source.match(/<SaveMyMealTile/g) ?? [];
+    expect(navTiles.length).toBe(1);
   });
 
   it('never fabricates a saved count or a new this week badge', () => {
-    expect(source).toContain("const savedCountKnown = typeof metrics.savedMealsCount === 'number'");
-    // The saved badge is gated on a known count and reads the real value.
-    expect(source).toContain('`${metrics.savedMealsCount} saved`');
+    // Prompt 183c: the saved count badge moved into SaveMyMealTile. It is gated
+    // on a known number and reads the real savedMealsCount, never a literal.
+    expect(source).toContain("typeof savedMealsCount === 'number'");
+    expect(source).toContain('{savedMealsCount} saved');
+    expect(source).toContain('savedMealsCount={metrics.savedMealsCount}');
     // No hardcoded fabricated literals.
     expect(source).not.toContain('24 saved');
     expect(source).not.toMatch(/2 new this week/i);

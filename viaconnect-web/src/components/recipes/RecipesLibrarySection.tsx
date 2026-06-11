@@ -1,12 +1,14 @@
 'use client';
 
 /**
- * Prompt 170f Phase D: My Recipes library section.
+ * Prompt 170f Phase D: Save My Meals library section (heading renamed from My
+ * Recipes in Prompt 183c).
  *
- * Mount target for the /nutrition page. Manages state for editor wizard
- * (create + edit), detail view, and public template browser modals.
- * Hidden entirely when RECIPES_LIBRARY_ENABLED public flag is off so
- * Phase E can flip without a page redeploy (env var read on first mount).
+ * Mount target for the /nutrition/saved-meals page (moved off the /nutrition
+ * hub in Prompt 183c). Manages state for editor wizard (create + edit), detail
+ * view, and public template browser modals. Hidden entirely when
+ * RECIPES_LIBRARY_ENABLED public flag is off so Phase E can flip without a page
+ * redeploy (env var read on first mount).
  */
 
 import { useCallback, useEffect, useState } from 'react';
@@ -128,7 +130,7 @@ export function RecipesLibrarySection() {
       <header className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <ChefHat className="h-5 w-5 text-[#2DA5A0]" strokeWidth={1.5} />
-          <h3 className="text-sm font-semibold text-white">My Recipes</h3>
+          <h3 className="text-sm font-semibold text-white">Save My Meals</h3>
         </div>
         <div className="flex gap-2">
           <button type="button" onClick={() => setTemplatesOpen(true)} className="inline-flex items-center gap-1 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-white/80 hover:bg-white/10">

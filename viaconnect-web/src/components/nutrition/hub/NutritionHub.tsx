@@ -16,10 +16,12 @@
 //   header, getting started strip, conditional NutriVision handoff banner,
 //   Row 1 triad (Nutrition Score, Daily Macros, Log Your Meal),
 //   Row 2 Today's Meals (full width),
-//   Row 3 triad (Save My Meal, Nutrition by Genetics, Nutrition Insights) each
-//     with a bottom aligned Open that expands an in flow panel below the row,
+//   Row 3 triad (Save My Meal, Nutrition by Genetics, Nutrition Insights).
+//     Save My Meal is a navigation tile whose Open links to the standalone
+//     /nutrition/saved-meals page (Prompt 183c); Genetics and Insights keep
+//     their bottom aligned Open that expands an in flow panel below the row,
 //   Row 4 Meal History (full width),
-//   unmapped sections (Recipes library, connected app dropdown) that self hide,
+//   unmapped section (connected app dropdown) that self hides,
 //   bottom strips (Connect, Assessment retake).
 //
 // Standing rules honored: tokens only (Navy #1A2744, Card #1E3054, Teal
@@ -38,6 +40,7 @@ import {
   Brain,
   Camera,
   ChevronDown,
+  ChevronRight,
   Dna,
   Gauge,
   PenLine,
@@ -49,9 +52,7 @@ import {
 import { createClient } from '@/lib/supabase/client';
 import { useNutrivisionManualLogHandoff } from '@/hooks/useNutrivisionManualLogHandoff';
 import { PlasmaGauge, type PlasmaGaugeProps } from '@/components/gauges/PlasmaGauge';
-import { MyMeals } from '@/components/nutrition/MyMeals';
 import { NutritionInsights } from '@/components/nutrition/NutritionInsights';
-import { RecipesLibrarySection } from '@/components/recipes/RecipesLibrarySection';
 import { ConnectedAppMealDropdown } from '@/components/nutrition/ConnectedAppMealDropdown';
 import { CardMedia } from '@/components/body-tracker/hub/CardMedia';
 import { AssessmentRetakeCard } from '@/components/body-tracker/hub/AssessmentRetakeCard';
@@ -278,7 +279,51 @@ function ExpandPanel({
   );
 }
 
-type OpenPanel = 'saved' | 'genetics' | 'insights' | null;
+// Prompt 183c (2026-06-11): the Save My Meal Row 3 tile is a navigation card,
+// not an expander. It keeps the same HubTile chrome as its two siblings so the
+// triad stays visually consistent, centers its content like the Row 1 cards,
+// and pins an Open control to the bottom that is a Next.js Link to the standalone
+// Save My Meals page. The saved count badge reads the real savedMealsCount and
+// is omitted entirely when the count is not yet known.
+function SaveMyMealTile({
+  gradientClass,
+  savedMealsCount,
+}: {
+  gradientClass: string;
+  savedMealsCount?: number;
+}) {
+  return (
+    <HubTile gradientClass={gradientClass} contentClassName="items-center text-center">
+      <BadgeChip icon={Bookmark} />
+      <div className="mt-3 flex flex-col items-center gap-1">
+        <h3 className="text-[15px] font-semibold leading-tight text-white md:text-base">
+          Save My Meal
+        </h3>
+        <p className="text-[12px] leading-relaxed text-white/[0.62] md:text-[13px]">
+          Your saved meal library, ready to log in a tap
+        </p>
+        {typeof savedMealsCount === 'number' ? (
+          <span className="mt-1 inline-flex items-center rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[11px] font-medium tabular-nums text-white/80 backdrop-blur-sm">
+            {savedMealsCount} saved
+          </span>
+        ) : null}
+      </div>
+
+      {/* Bottom aligned Open that navigates to the Save My Meals page. */}
+      <div className="mt-auto flex pt-4">
+        <Link
+          href="/nutrition/saved-meals"
+          className="inline-flex items-center gap-1 rounded-full border border-[#5B8DEF]/30 bg-[#2A4C9E]/25 px-3 py-1.5 text-[12px] font-medium text-white no-underline backdrop-blur-md transition-all duration-200 hover:border-[#5B8DEF]/55 hover:bg-[#2A4C9E]/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744] motion-reduce:transition-none"
+        >
+          <span>Open</span>
+          <ChevronRight className="h-3.5 w-3.5" strokeWidth={1.5} />
+        </Link>
+      </div>
+    </HubTile>
+  );
+}
+
+type OpenPanel = 'genetics' | 'insights' | null;
 
 export function NutritionHub() {
   // Single hook call at the top; its values are distributed to the tiles.
@@ -324,7 +369,6 @@ export function NutritionHub() {
   // neutral empty gauge (value 0, animation off) with a muted note instead of a
   // fabricated number. Missing is treated as NULL, never 0.
   const hasScore = typeof metrics.nutritionScore === 'number';
-  const savedCountKnown = typeof metrics.savedMealsCount === 'number';
 
   // Props shared by the real and empty Daily Macros gauge branches. The two
   // branches vary only value and animated; keeping the rest here avoids
@@ -494,19 +538,15 @@ export function NutritionHub() {
       {/* ROW 2: Today's Meals, full width. Ships its own surface. */}
       <NutritionTodaysMeals userId={userId} />
 
-      {/* ROW 3: triad of Open expand tiles. The three Open buttons bottom align
-          on a consistent line; the open panel renders below the row in flow. */}
+      {/* ROW 3: triad. Save My Meal is a navigation tile (Open links to the
+          saved meals page); Genetics and Insights are Open expand tiles. All
+          three Open controls bottom align on a consistent line; an expand tile's
+          open panel renders below the row in flow. */}
       <div>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          <ExpandTile
-            icon={Bookmark}
-            title="Save My Meal"
-            description="The saved meal library, ready to log in a tap."
-            badge={savedCountKnown ? `${metrics.savedMealsCount} saved` : undefined}
+          <SaveMyMealTile
             gradientClass={MEDIA_TEAL_BL}
-            isOpen={openPanel === 'saved'}
-            onToggle={() => toggle('saved')}
-            panelId="nutrition-hub-panel-saved"
+            savedMealsCount={metrics.savedMealsCount}
           />
           <ExpandTile
             icon={Dna}
@@ -527,12 +567,6 @@ export function NutritionHub() {
             panelId="nutrition-hub-panel-insights"
           />
         </div>
-
-        {/* Save My Meal panel: reuses MyMeals as is; its relog is MyMeals' own
-            existing behavior, not a new hub write path. */}
-        <ExpandPanel open={openPanel === 'saved'} panelId="nutrition-hub-panel-saved" reduced={reduced}>
-          <MyMeals onRelog={() => undefined} />
-        </ExpandPanel>
 
         {/* Nutrition by Genetics panel: the genetics actions reproduced from the
             old page, all three links and copy preserved. Commas only as separators. */}
@@ -615,9 +649,10 @@ export function NutritionHub() {
         dailyMealCounts={metrics.dailyMealCounts}
       />
 
-      {/* Unmapped sections kept reachable below the bento. Each self hides behind
-          its own flag / connection state, so nothing is lost. */}
-      <RecipesLibrarySection />
+      {/* Connected app meal source dropdown, kept reachable below the bento. It
+          self hides behind its own connection state, so nothing is lost. The
+          recipes library moved to its own /nutrition/saved-meals page (Prompt
+          183c) and is reached from the Save My Meal tile above. */}
       <ConnectedAppMealDropdown />
 
       {/* Bottom strips. */}
