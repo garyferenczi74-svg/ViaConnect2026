@@ -32,6 +32,13 @@
 // macro gauges are both PlasmaGauge (Prompt 183a, teal hub finish), and the per
 // card media seam is the existing CardMedia. The score and macro values are NOT
 // recomputed here; they arrive precomputed from the hook.
+//
+// Prompt 189 (2026-06-11): the Log Your Meal and Row 3 tiles render real
+// background media (one image + four videos across the hub) through the same
+// CardMedia seam, configured in nutritionHubMedia.ts; the gradient constants
+// moved there verbatim. Presentational layering only: routing, content, and
+// geometry are unchanged, and the Nutrition Score, Daily Macros, and Meal
+// History tiles keep their gradient seams.
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
@@ -55,6 +62,7 @@ import { PlasmaGauge, type PlasmaGaugeProps } from '@/components/gauges/PlasmaGa
 import { NutritionInsights } from '@/components/nutrition/NutritionInsights';
 import { ConnectedAppMealDropdown } from '@/components/nutrition/ConnectedAppMealDropdown';
 import { CardMedia } from '@/components/body-tracker/hub/CardMedia';
+import type { SurfaceMedia } from '@/components/body-tracker/hub/hubConfig';
 import { AssessmentRetakeCard } from '@/components/body-tracker/hub/AssessmentRetakeCard';
 import { useNutritionHubMetrics } from './useNutritionHubMetrics';
 import { NutritionHubHeader } from './NutritionHubHeader';
@@ -62,26 +70,24 @@ import { NutritionGettingStartedStrip } from './NutritionGettingStartedStrip';
 import { NutritionConnectStrip } from './NutritionConnectStrip';
 import { NutritionTodaysMeals } from './NutritionTodaysMeals';
 import { NutritionMealHistoryTile } from './NutritionMealHistoryTile';
+import {
+  MEDIA_ORANGE_BR,
+  MEDIA_TEAL_BC,
+  MEDIA_TEAL_BL,
+  MEDIA_TEAL_BR,
+  MEDIA_TEAL_TL,
+  MEDIA_TEAL_TR,
+  NUTRITION_CARD_MEDIA,
+} from './nutritionHubMedia';
 
 const TEAL = '#2DA5A0';
 
 // Per card media seam. ROW 1 and ROW 3 tiles drop CardMedia in as the z 0 back
-// layer with a gradient placeholder now, leaving the video swap for later. The
-// gradient classes mirror the My Biology hub card palette (teal corners for the
-// data tiles, an orange corner for the priority Log Your Meal tile) so the seam
-// reads consistently with the body-tracker bento.
-const MEDIA_TEAL_TL =
-  'bg-[radial-gradient(120%_120%_at_0%_0%,rgba(45,165,160,0.30)_0%,rgba(30,48,84,0.85)_55%,rgba(26,39,68,1)_100%)]';
-const MEDIA_TEAL_TR =
-  'bg-[radial-gradient(110%_110%_at_100%_0%,rgba(45,165,160,0.26)_0%,rgba(30,48,84,0.85)_60%,rgba(26,39,68,1)_100%)]';
-const MEDIA_ORANGE_BR =
-  'bg-[radial-gradient(120%_120%_at_100%_100%,rgba(183,94,24,0.30)_0%,rgba(30,48,84,0.85)_55%,rgba(26,39,68,1)_100%)]';
-const MEDIA_TEAL_BL =
-  'bg-[radial-gradient(110%_110%_at_0%_100%,rgba(45,165,160,0.26)_0%,rgba(30,48,84,0.85)_60%,rgba(26,39,68,1)_100%)]';
-const MEDIA_TEAL_BC =
-  'bg-[radial-gradient(110%_110%_at_50%_100%,rgba(45,165,160,0.26)_0%,rgba(30,48,84,0.85)_60%,rgba(26,39,68,1)_100%)]';
-const MEDIA_TEAL_BR =
-  'bg-[radial-gradient(110%_110%_at_100%_100%,rgba(45,165,160,0.26)_0%,rgba(30,48,84,0.85)_60%,rgba(26,39,68,1)_100%)]';
+// layer. Prompt 189: the gradient constants and the five real media
+// descriptors live in nutritionHubMedia.ts; the gradient classes mirror the My
+// Biology hub card palette (teal corners for the data tiles, an orange corner
+// for the priority Log Your Meal tile) so the seam reads consistently with the
+// body-tracker bento.
 
 // Shared tile shell for the ROW 1 and ROW 3 bento cards. Layers back to front:
 //   z 0: CardMedia gradient placeholder (the video drop in seam),
@@ -90,12 +96,20 @@ const MEDIA_TEAL_BR =
 function HubTile({
   children,
   gradientClass,
+  media,
+  mediaLogKey,
   accent,
   className,
   contentClassName,
 }: {
   children: React.ReactNode;
   gradientClass: string;
+  // Prompt 189 (2026-06-11): optional real media descriptor from
+  // nutritionHubMedia. When present, CardMedia renders it (failing open to its
+  // own gradientClass) with mediaLogKey as its structured log key; when
+  // absent, the original gradient placeholder renders exactly as before.
+  media?: SurfaceMedia;
+  mediaLogKey?: string;
   accent?: string;
   className?: string;
   // Prompt 183a (2026-06-11): optional classes for the z 2 content column. The
@@ -117,8 +131,12 @@ function HubTile({
         />
       ) : null}
 
-      {/* z 0: per card media seam (gradient now, video later). */}
-      <CardMedia media={{ kind: 'gradient', gradientClass }} />
+      {/* z 0: per card media seam. Real media when wired, gradient otherwise. */}
+      {media ? (
+        <CardMedia media={media} logKey={mediaLogKey} />
+      ) : (
+        <CardMedia media={{ kind: 'gradient', gradientClass }} />
+      )}
 
       {/* z 1: legibility scrim over any media frame. */}
       <span
@@ -183,6 +201,8 @@ function ExpandTile({
   description,
   badge,
   gradientClass,
+  media,
+  mediaLogKey,
   isOpen,
   onToggle,
   panelId,
@@ -192,12 +212,15 @@ function ExpandTile({
   description: string;
   badge?: string;
   gradientClass: string;
+  // Prompt 189: optional pass-throughs to the inner HubTile media seam.
+  media?: SurfaceMedia;
+  mediaLogKey?: string;
   isOpen: boolean;
   onToggle: () => void;
   panelId: string;
 }) {
   return (
-    <HubTile gradientClass={gradientClass}>
+    <HubTile gradientClass={gradientClass} media={media} mediaLogKey={mediaLogKey}>
       <div className="flex items-start justify-between gap-3">
         <span
           className="inline-flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.06] backdrop-blur-sm"
@@ -287,13 +310,23 @@ function ExpandPanel({
 // is omitted entirely when the count is not yet known.
 function SaveMyMealTile({
   gradientClass,
+  media,
+  mediaLogKey,
   savedMealsCount,
 }: {
   gradientClass: string;
+  // Prompt 189: optional pass-throughs to the inner HubTile media seam.
+  media?: SurfaceMedia;
+  mediaLogKey?: string;
   savedMealsCount?: number;
 }) {
   return (
-    <HubTile gradientClass={gradientClass} contentClassName="items-center text-center">
+    <HubTile
+      gradientClass={gradientClass}
+      media={media}
+      mediaLogKey={mediaLogKey}
+      contentClassName="items-center text-center"
+    >
       <BadgeChip icon={Bookmark} />
       <div className="mt-3 flex flex-col items-center gap-1">
         <h3 className="text-[15px] font-semibold leading-tight text-white md:text-base">
@@ -328,9 +361,23 @@ function SaveMyMealTile({
 // standalone /nutrition/genetics page (the three tab bento); the old expand
 // panel's three actions live on that page now. data-analytics-event is the
 // event name seam only: no analytics infrastructure reads hub cards yet.
-function NutritionGeneticsTile({ gradientClass }: { gradientClass: string }) {
+function NutritionGeneticsTile({
+  gradientClass,
+  media,
+  mediaLogKey,
+}: {
+  gradientClass: string;
+  // Prompt 189: optional pass-throughs to the inner HubTile media seam.
+  media?: SurfaceMedia;
+  mediaLogKey?: string;
+}) {
   return (
-    <HubTile gradientClass={gradientClass} contentClassName="items-center text-center">
+    <HubTile
+      gradientClass={gradientClass}
+      media={media}
+      mediaLogKey={mediaLogKey}
+      contentClassName="items-center text-center"
+    >
       <BadgeChip icon={Dna} />
       <div className="mt-3 flex flex-col items-center gap-1">
         <h3 className="text-[15px] font-semibold leading-tight text-white md:text-base">
@@ -553,7 +600,13 @@ export function NutritionHub() {
         {/* Log Your Meal: PRIORITY tile with a Teal accent edge. Badge, the title
             below it, a caption, then the two teal glass pills routing to the two
             internal log surfaces. */}
-        <HubTile gradientClass={MEDIA_ORANGE_BR} accent={TEAL} contentClassName="items-center text-center">
+        <HubTile
+          gradientClass={MEDIA_ORANGE_BR}
+          media={NUTRITION_CARD_MEDIA.logYourMeal}
+          mediaLogKey="logYourMeal"
+          accent={TEAL}
+          contentClassName="items-center text-center"
+        >
           <BadgeChip icon={Plus} />
           <h3 className="mt-3 text-[15px] font-semibold leading-tight text-white md:text-base">
             Log Your Meal
@@ -579,14 +632,22 @@ export function NutritionHub() {
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           <SaveMyMealTile
             gradientClass={MEDIA_TEAL_BL}
+            media={NUTRITION_CARD_MEDIA.saveMyMeal}
+            mediaLogKey="saveMyMeal"
             savedMealsCount={metrics.savedMealsCount}
           />
-          <NutritionGeneticsTile gradientClass={MEDIA_TEAL_BC} />
+          <NutritionGeneticsTile
+            gradientClass={MEDIA_TEAL_BC}
+            media={NUTRITION_CARD_MEDIA.nutritionByGenetics}
+            mediaLogKey="nutritionByGenetics"
+          />
           <ExpandTile
             icon={Brain}
             title="Nutrition Insights"
             description="What your logging says about your day."
             gradientClass={MEDIA_TEAL_BR}
+            media={NUTRITION_CARD_MEDIA.nutritionInsights}
+            mediaLogKey="nutritionInsights"
             isOpen={openPanel === 'insights'}
             onToggle={() => toggle('insights')}
             panelId="nutrition-hub-panel-insights"

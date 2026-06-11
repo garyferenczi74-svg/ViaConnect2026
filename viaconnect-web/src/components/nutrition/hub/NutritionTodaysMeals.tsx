@@ -30,15 +30,24 @@
 // #2DA5A0, dinner #B75E18, snack #7C6FE0) for the 4px left edge and the in
 // panel item dots. Per spec these data codes are kept as is and not forced onto
 // a brand token.
+//
+// Prompt 189 (2026-06-11): the card surface gains the same layered treatment
+// HubTile uses: CardMedia background (the todaysMeals still from
+// nutritionHubMedia, failing open to its gradient) at z 0, the shared
+// legibility scrim at z 1, and the existing content raised to z 2.
+// Presentational only; the accordion rows, the Utensils badge, and the copy
+// are unchanged.
 
 import { useMemo, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { ChevronDown, Coffee, Cookie, Droplet, Soup, Utensils, UtensilsCrossed, type LucideIcon } from 'lucide-react';
 import type { Meal, MealType } from '@/lib/gordon/types';
 import { PlasmaGauge } from '@/components/gauges/PlasmaGauge';
+import { CardMedia } from '@/components/body-tracker/hub/CardMedia';
 import { useUserMeals } from '@/hooks/useUserMeals';
 import { useHydrationToday } from '@/components/hydration/useHydrationToday';
 import { formatVolumeLabel } from '@/components/hydration/HydrationRing';
+import { NUTRITION_CARD_MEDIA } from './nutritionHubMedia';
 import {
   groupTodaysMealsByType,
   hydrationPercentToTarget,
@@ -413,12 +422,20 @@ export function NutritionTodaysMeals(props: NutritionTodaysMealsProps) {
   const reducedMotion = useReducedMotion();
 
   return (
-    <section className="font-[Instrument_Sans] rounded-2xl border border-white/10 bg-[#1E3054]/40 backdrop-blur-md text-white">
+    <section className="font-[Instrument_Sans] relative isolate overflow-hidden rounded-2xl border border-white/10 bg-[#1E3054]/40 backdrop-blur-md text-white">
+      {/* Prompt 189: z 0 background media, then the same z 1 legibility scrim
+          HubTile uses. The existing content below is raised to z 2 unchanged. */}
+      <CardMedia media={NUTRITION_CARD_MEDIA.todaysMeals} logKey="todaysMeals" />
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 z-[1] bg-gradient-to-t from-[#1A2744]/85 via-[#1A2744]/30 to-transparent"
+      />
+
       {/* Prompt 183b (2026-06-11): card-top Utensils chip ABOVE the title. A
           40x40 rounded square, faint teal fill, line border, the Lucide
           Utensils glyph in the teal token. Replicated locally here; Row 1's
           BadgeChip is neither imported nor modified. */}
-      <header className="flex flex-col gap-2 px-4 py-3 md:px-5 md:py-4">
+      <header className="relative z-[2] flex flex-col gap-2 px-4 py-3 md:px-5 md:py-4">
         <span
           aria-hidden="true"
           className="inline-flex items-center justify-center border border-white/[0.08]"
@@ -429,7 +446,7 @@ export function NutritionTodaysMeals(props: NutritionTodaysMealsProps) {
         <h2 className="text-[15px] font-semibold text-white">Today&apos;s meals</h2>
       </header>
 
-      <div className="flex flex-col gap-3 px-3 pb-3 md:px-4 md:pb-4">
+      <div className="relative z-[2] flex flex-col gap-3 px-3 pb-3 md:px-4 md:pb-4">
         {MEAL_TYPE_DEFS.map((def) => {
           const list = mealsByType[def.id];
           const isOpen = openKey === def.id;

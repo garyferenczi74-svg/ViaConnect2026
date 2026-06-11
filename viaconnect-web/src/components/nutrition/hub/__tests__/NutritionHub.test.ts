@@ -289,13 +289,48 @@ describe('NutritionHub source', () => {
     expect(source).toContain('<AssessmentRetakeCard />');
   });
 
-  it('leaves the per card media seam on Row 1 and Row 3 tiles via CardMedia gradient', () => {
+  it('runs every tile seam through CardMedia: config media when wired, gradient otherwise', () => {
     expect(source).toContain(
       "import { CardMedia } from '@/components/body-tracker/hub/CardMedia'",
     );
-    expect(source).toContain("<CardMedia media={{ kind: 'gradient'");
-    // The seam is a gradient placeholder, never a baked in video.
+    // Prompt 189: HubTile renders a provided media descriptor with its log
+    // key, and the original gradient placeholder branch is preserved exactly
+    // for the unwired tiles.
+    expect(source).toContain('<CardMedia media={media} logKey={mediaLogKey} />');
+    expect(source).toContain("<CardMedia media={{ kind: 'gradient', gradientClass }} />");
+    // No media descriptor is ever inlined in the hub; kinds and URLs live
+    // only in nutritionHubMedia.ts.
     expect(source).not.toContain("kind: 'video'");
+    expect(source).not.toContain('https://');
+  });
+
+  it('Prompt 189: the four media cards pass their nutritionHubMedia keys with log keys', () => {
+    expect(source).toContain("} from './nutritionHubMedia'");
+    expect(source).toContain('media={NUTRITION_CARD_MEDIA.logYourMeal}');
+    expect(source).toContain('mediaLogKey="logYourMeal"');
+    expect(source).toContain('media={NUTRITION_CARD_MEDIA.saveMyMeal}');
+    expect(source).toContain('mediaLogKey="saveMyMeal"');
+    expect(source).toContain('media={NUTRITION_CARD_MEDIA.nutritionByGenetics}');
+    expect(source).toContain('mediaLogKey="nutritionByGenetics"');
+    expect(source).toContain('media={NUTRITION_CARD_MEDIA.nutritionInsights}');
+    expect(source).toContain('mediaLogKey="nutritionInsights"');
+    // Exactly the four wired call sites; nothing else on the hub reads the
+    // config (Today's Meals reads its own key inside its component).
+    const reads = source.match(/NUTRITION_CARD_MEDIA\./g) ?? [];
+    expect(reads.length).toBe(4);
+    expect(source).not.toContain('NUTRITION_CARD_MEDIA.todaysMeals');
+  });
+
+  it('Prompt 189: HubTile media props are optional and the unwired tiles stay gradient only', () => {
+    expect(source).toContain('media?: SurfaceMedia');
+    expect(source).toContain('mediaLogKey?: string');
+    // Nutrition Score and Daily Macros pass gradientClass only, no media.
+    expect(source).toContain(
+      '<HubTile gradientClass={MEDIA_TEAL_TL} contentClassName="items-center text-center">',
+    );
+    expect(source).toContain(
+      '<HubTile gradientClass={MEDIA_TEAL_TR} contentClassName="items-center text-center">',
+    );
   });
 
   it('renders a legibility scrim above the media seam', () => {

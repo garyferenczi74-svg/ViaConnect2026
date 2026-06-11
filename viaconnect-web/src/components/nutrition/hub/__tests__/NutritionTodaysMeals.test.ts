@@ -127,8 +127,32 @@ describe('NutritionTodaysMeals source', () => {
   it('expands in flow via framer motion height auto, not an overlay', () => {
     expect(source).toContain("from 'framer-motion'");
     expect(source).toContain("height: 'auto'");
-    // No absolute / fixed positioned expansion layer.
-    expect(source).not.toContain('absolute inset-0');
+    // No fixed positioned expansion layer. (Prompt 189 added absolute inset-0
+    // BACKGROUND layers, media + scrim, behind the content; the expansion
+    // itself stays in flow.)
+    expect(source).not.toContain('fixed inset-0');
+    expect(source).toContain('className="overflow-hidden"');
+  });
+
+  it('Prompt 189: layers the todaysMeals background media + scrim behind unchanged content', () => {
+    expect(source).toContain(
+      "import { CardMedia } from '@/components/body-tracker/hub/CardMedia'",
+    );
+    expect(source).toContain("import { NUTRITION_CARD_MEDIA } from './nutritionHubMedia'");
+    expect(source).toContain(
+      '<CardMedia media={NUTRITION_CARD_MEDIA.todaysMeals} logKey="todaysMeals" />',
+    );
+    // The root surface gains the HubTile layering treatment while keeping its
+    // existing border, radius, and translucent navy classes.
+    expect(source).toContain('relative isolate overflow-hidden');
+    expect(source).toContain('rounded-2xl border border-white/10 bg-[#1E3054]/40 backdrop-blur-md');
+    // The exact scrim classes HubTile uses, copied verbatim.
+    expect(source).toContain(
+      'pointer-events-none absolute inset-0 z-[1] bg-gradient-to-t from-[#1A2744]/85 via-[#1A2744]/30 to-transparent',
+    );
+    // The existing content (header + rows) is raised above the scrim.
+    const raised = source.match(/relative z-\[2\]/g) ?? [];
+    expect(raised.length).toBeGreaterThanOrEqual(2);
   });
 
   it('reuses the exact meal type accent codes from MealHistory for the left edge', () => {
