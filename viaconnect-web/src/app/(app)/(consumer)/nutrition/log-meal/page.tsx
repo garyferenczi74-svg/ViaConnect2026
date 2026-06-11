@@ -10,6 +10,7 @@ import { Mic, ImagePlus, Sparkles } from 'lucide-react';
 import { MealTypeSelector } from '@/components/nutrition/MealTypeSelector';
 import { AnalyzingState } from '@/components/nutrition/AnalyzingState';
 import { AnalysisErrorCard } from '@/components/nutrition/AnalysisErrorCard';
+import { BackToNutritionLink } from '@/components/nutrition/hub/BackToNutritionLink';
 import type { MealType } from '@/lib/nutrition/schema';
 
 function toLocalDatetimeInput(d: Date): string {
@@ -115,6 +116,7 @@ export default function LogMealPage() {
 
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-6 md:py-8">
+      <BackToNutritionLink />
       <header className="mb-5">
         <h1 className="text-xl font-bold text-white sm:text-2xl">Log a Meal</h1>
         <p className="mt-1 text-sm text-white/40">Describe what you ate. Gordon will compute the macros.</p>

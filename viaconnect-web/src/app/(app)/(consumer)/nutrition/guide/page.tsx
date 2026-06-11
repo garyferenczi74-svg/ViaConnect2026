@@ -7,6 +7,7 @@ import { TierBanner } from '@/components/nutrition/guide/TierBanner';
 import { FoodCard } from '@/components/nutrition/guide/FoodCard';
 import { AvoidanceCard } from '@/components/nutrition/guide/AvoidanceCard';
 import { NutrientTargetBar } from '@/components/nutrition/guide/NutrientTargetBar';
+import { BackToNutritionLink } from '@/components/nutrition/hub/BackToNutritionLink';
 import type { GeneticsNutritionalGuide, SupplementDietSynergy, MealTemplate } from '@/lib/agents/gordan/generateNutritionalGuide';
 import { fetchGuide, requestGuideGeneration } from '@/lib/agents/gordan/generateNutritionalGuide';
 import { createClient } from '@/lib/supabase/client';
@@ -52,6 +53,7 @@ export default function NutritionGuidePage() {
   if (!guide) {
     return (
       <div className="mx-auto max-w-3xl space-y-6">
+        <BackToNutritionLink />
         <div>
           <h1 className="text-xl font-bold text-white sm:text-2xl">Your Genetics Nutritional Guide</h1>
           <p className="mt-1 text-sm text-white/40">Personalized dietary blueprint powered by Gordan</p>
@@ -87,6 +89,7 @@ export default function NutritionGuidePage() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
+      <BackToNutritionLink />
       <div>
         <h1 className="text-xl font-bold text-white sm:text-2xl">Your Genetics Nutritional Guide</h1>
         <p className="mt-1 text-sm text-white/40">Personalized dietary blueprint powered by Gordan</p>

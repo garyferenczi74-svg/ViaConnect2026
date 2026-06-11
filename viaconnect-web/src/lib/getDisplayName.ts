@@ -8,6 +8,7 @@ const NAME_MAP: Readonly<Record<string, string>> = {
   jeffery: "Jeffery",
   hannah: "Hannah",
   gordan: "Gordan",
+  gordon: "Gordon",
   arnold: "Arnold",
   hounddog: "Hounddog",
   marshall_hounddog: "Hounddog Bridge",

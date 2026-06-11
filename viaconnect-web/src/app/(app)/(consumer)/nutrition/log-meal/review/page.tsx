@@ -4,6 +4,7 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { ReviewForm } from './ReviewForm';
+import { BackToNutritionLink } from '@/components/nutrition/hub/BackToNutritionLink';
 import type { NutritionAnalysis } from '@/lib/nutrition/schema';
 
 interface ReviewPageProps {
@@ -47,6 +48,7 @@ export default async function ReviewPage({ searchParams }: ReviewPageProps) {
 
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-6 md:py-8">
+      <BackToNutritionLink />
       <header className="mb-5">
         <h1 className="text-xl font-bold text-white sm:text-2xl">Review your meal</h1>
         <p className="mt-1 text-sm text-white/40">Tap any value to adjust. Save when it looks right.</p>
