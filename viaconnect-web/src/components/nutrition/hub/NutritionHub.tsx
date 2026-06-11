@@ -219,23 +219,20 @@ function ExpandTile({
   onToggle: () => void;
   panelId: string;
 }) {
+  // Centered layout (Gary 2026-06-11): the expander tile mirrors its two
+  // navigation siblings (SaveMyMealTile, NutritionGeneticsTile) so the Row 3
+  // triad reads consistently: 40px BadgeChip on top, centered title and
+  // description, the optional badge pill beneath, and the Open control
+  // bottom aligned on the centered column.
   return (
-    <HubTile gradientClass={gradientClass} media={media} mediaLogKey={mediaLogKey}>
-      <div className="flex items-start justify-between gap-3">
-        <span
-          className="inline-flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.06] backdrop-blur-sm"
-          aria-hidden="true"
-        >
-          <Icon className="h-4 w-4" strokeWidth={1.5} style={{ color: TEAL }} />
-        </span>
-        {badge ? (
-          <span className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[11px] font-medium tabular-nums text-white/80 backdrop-blur-sm">
-            {badge}
-          </span>
-        ) : null}
-      </div>
-
-      <div className="mt-3 flex flex-col gap-1">
+    <HubTile
+      gradientClass={gradientClass}
+      media={media}
+      mediaLogKey={mediaLogKey}
+      contentClassName="items-center text-center"
+    >
+      <BadgeChip icon={Icon} />
+      <div className="mt-3 flex flex-col items-center gap-1">
         <h3
           id={`${panelId}-label`}
           className="text-[15px] font-semibold leading-tight text-white md:text-base"
@@ -243,6 +240,11 @@ function ExpandTile({
           {title}
         </h3>
         <p className="text-[12px] leading-relaxed text-white/[0.62] md:text-[13px]">{description}</p>
+        {badge ? (
+          <span className="mt-1 inline-flex items-center rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[11px] font-medium tabular-nums text-white/80 backdrop-blur-sm">
+            {badge}
+          </span>
+        ) : null}
       </div>
 
       {/* Bottom aligned Open with a guaranteed gap above. */}
