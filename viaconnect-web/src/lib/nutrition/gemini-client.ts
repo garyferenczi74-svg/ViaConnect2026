@@ -26,7 +26,7 @@ import { getCircuitBreaker } from '@/lib/utils/circuit-breaker';
 import { AIRouteError, classifyGeminiResponse } from '@/lib/errors/classify-ai';
 import { safeLog } from '@/lib/utils/safe-log';
 import { TEXT_PARSE_SYSTEM_INSTRUCTION, PHOTO_PARSE_SYSTEM_INSTRUCTION, ESTIMATION_FALLBACK_INSTRUCTION, GEMINI_MODEL } from './gemini-prompts';
-import { ParsedMealSchema, type ParsedMeal } from './parsed-meal-schema';
+import { ParsedMealSchema, normalizeParsedMealNulls, type ParsedMeal } from './parsed-meal-schema';
 
 const BASE = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 const TIMEOUT_MS = 18_000;
@@ -313,7 +313,7 @@ async function parseDescriptionAttempt(description: string): Promise<ParseResult
     contents: [{ role: 'user', parts: [{ text: description }] }],
     generationConfig: { temperature: 0.2, responseMimeType: 'application/json', maxOutputTokens: 1024 },
   });
-  const parsed = ParsedMealSchema.parse(parseJsonOrThrow(text));
+  const parsed = ParsedMealSchema.parse(normalizeParsedMealNulls(parseJsonOrThrow(text)));
   return { parsed, usage };
 }
 
@@ -322,7 +322,7 @@ async function parseDescriptionWithClaude(description: string): Promise<ParseRes
     systemInstruction: TEXT_PARSE_SYSTEM_INSTRUCTION,
     userText: description,
   });
-  const parsed = ParsedMealSchema.parse(parseJsonOrThrow(text));
+  const parsed = ParsedMealSchema.parse(normalizeParsedMealNulls(parseJsonOrThrow(text)));
   return { parsed, usage };
 }
 
@@ -384,7 +384,7 @@ export async function parseImageWithGemini(buf: Buffer, mimeType: string, note: 
     }],
     generationConfig: { temperature: 0.2, responseMimeType: 'application/json', maxOutputTokens: 1024 },
   });
-  const parsed = ParsedMealSchema.parse(parseJsonOrThrow(text));
+  const parsed = ParsedMealSchema.parse(normalizeParsedMealNulls(parseJsonOrThrow(text)));
   return { parsed, usage };
 }
 

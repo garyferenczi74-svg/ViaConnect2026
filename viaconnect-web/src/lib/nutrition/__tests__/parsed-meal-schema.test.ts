@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { ParsedMealSchema } from '../parsed-meal-schema';
+import { ParsedMealSchema, normalizeParsedMealNulls } from '../parsed-meal-schema';
 
 describe('ParsedMealSchema', () => {
   const valid = {
@@ -31,14 +31,14 @@ describe('ParsedMealSchema', () => {
     // 2026-06-11 incident: Claude renders the prompt's optional fields as
     // explicit nulls; the schema rejected them and every successful Claude
     // fallback parse was discarded.
-    const r = ParsedMealSchema.safeParse({
+    const r = ParsedMealSchema.safeParse(normalizeParsedMealNulls({
       items: [
         { name: 'quick oats', quantity: 65, unit: 'g', preparation: null },
         { name: 'protein powder', quantity: 30, unit: 'g', preparation: null },
       ],
       confidence: 0.8,
       notes: null,
-    });
+    }));
     expect(r.success).toBe(true);
     if (r.success) {
       expect(r.data.items[0].preparation).toBeUndefined();
