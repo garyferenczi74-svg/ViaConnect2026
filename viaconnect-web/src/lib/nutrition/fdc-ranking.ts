@@ -22,10 +22,18 @@ export interface RankedCandidate<T extends FdcSearchCandidate> {
 // the plain query (concentrates, extractions, baked goods, parts). Penalized
 // only when the token is NOT in the user's query, so "avocado oil" still
 // matches "Oil, avocado" and "white rice" is not penalized for "white".
-const TRANSFORM_TOKENS = new Set([
+// Every comparison set is normalized through tokenizeFoodText so entries can
+// never drift from the singularized form description tokens take ("cookies"
+// tokenizes to "cooky", "delicious" to "deliciou"; raw literals would
+// silently never match). Prompt 186 review fix.
+function normalizedTokenSet(items: string[]): Set<string> {
+  return new Set(items.flatMap((t) => tokenizeFoodText(t)));
+}
+
+const TRANSFORM_TOKENS = normalizedTokenSet([
   'oil', 'powder', 'powdered', 'dried', 'dehydrated', 'flour', 'juice',
   'candied', 'candy', 'candies', 'syrup', 'sauce', 'dressing', 'gravy',
-  'chip', 'chips', 'cracker', 'crackers', 'cereal', 'bar', 'bars',
+  'chip', 'chips', 'cracker', 'crackers', 'bar', 'bars',
   'babyfood', 'beverage', 'cocktail', 'smoothie', 'croissant', 'croissants',
   'cake', 'pie', 'cobbler', 'crisp', 'muffin', 'muffins', 'cookie',
   'cookies', 'pudding', 'jam', 'jelly', 'topping', 'spread', 'imitation',
@@ -36,12 +44,21 @@ const TRANSFORM_TOKENS = new Set([
 
 // Plain-state tokens that make a candidate a better default reference when
 // the user gave no preparation.
-const PLAIN_TOKENS = new Set(['raw', 'fresh', 'whole', 'plain']);
+const PLAIN_TOKENS = normalizedTokenSet(['raw', 'fresh', 'whole', 'plain']);
 
-const COOKING_TOKENS = new Set([
+// Cultivar and origin tokens: a generic query ("apple") should resolve to
+// the generic reference, not a specific sweet varietal (Foundation fuji
+// carries 13.3 g sugar per 100 g vs 10.4 generic). Only penalized when the
+// user did not ask for the variety.
+const VARIETAL_TOKENS = normalizedTokenSet([
+  'fuji', 'gala', 'honeycrisp', 'braeburn', 'mcintosh', 'delicious',
+  'granny', 'california', 'florida', 'hass', 'navel', 'valencia',
+  'russet', 'roma',
+]);
+
+const COOKING_TOKENS = normalizedTokenSet([
   'boiled', 'poached', 'scrambled', 'fried', 'cooked', 'baked', 'grilled',
-  'roasted', 'steamed', 'braised', 'broiled', 'toasted', 'hard-boiled',
-  'hardboiled', 'stewed',
+  'roasted', 'steamed', 'braised', 'broiled', 'toasted', 'stewed',
 ]);
 
 const WEIGHTS = {
@@ -49,6 +66,7 @@ const WEIGHTS = {
   allQueryTokensPresent: 2,
   missingQueryToken: -6,
   transformToken: -3,
+  varietalToken: -1,
   plainToken: 0.75,
   preparationMatch: 2,
   wrongPreparation: -1.5,
@@ -57,10 +75,13 @@ const WEIGHTS = {
   exactMatch: 3,
 } as const;
 
+// Analytical composition data beats survey-derived recipe data for plain
+// food references: Foundation and SR Legacy are measured; FNDDS is survey
+// data with as-consumed portions that skew large for raw whole foods.
 const DATA_TYPE_BONUS: Record<string, number> = {
-  Foundation: 1.25,
-  'SR Legacy': 1.0,
-  'Survey (FNDDS)': 0.75,
+  Foundation: 1.5,
+  'SR Legacy': 1.25,
+  'Survey (FNDDS)': 0.5,
   Branded: 0.25,
 };
 
@@ -80,14 +101,28 @@ export function tokenizeFoodText(text: string): string[] {
     .map(singularize);
 }
 
+// SR descriptions carry long parentheticals like "(Includes foods for USDA's
+// Food Distribution Program)" that would drown a good reference in noise
+// penalties. Parenthetical content is dropped EXCEPT tokens the user asked
+// for ("Bread, french or vienna (includes sourdough)" keeps "sourdough").
+function candidateTokens(description: string, querySet: ReadonlySet<string>): string[] {
+  const parens = [...description.matchAll(/\(([^)]*)\)/g)].map((m) => m[1]).join(' ');
+  const stripped = description.replace(/\([^)]*\)/g, ' ');
+  const tokens = tokenizeFoodText(stripped);
+  for (const t of tokenizeFoodText(parens)) {
+    if (querySet.has(t)) tokens.push(t);
+  }
+  return tokens;
+}
+
 export function scoreCandidate(
   queryTokens: string[],
   preparationTokens: string[],
   candidate: FdcSearchCandidate,
 ): number {
-  const descTokens = tokenizeFoodText(candidate.description);
-  const descSet = new Set(descTokens);
   const querySet = new Set(queryTokens);
+  const descTokens = candidateTokens(candidate.description, querySet);
+  const descSet = new Set(descTokens);
   const prepSet = new Set(preparationTokens);
 
   let score = 0;
@@ -107,14 +142,25 @@ export function scoreCandidate(
     score += WEIGHTS.exactMatch;
   }
 
+  // Preparation handled first: once any requested preparation token matched,
+  // other cooking tokens in the same description are noise, not a wrong
+  // preparation (FNDDS names combined methods, "boiled or poached").
+  const prepMatched = preparationTokens.some((t) => descSet.has(t));
+
   for (const token of descSet) {
     if (querySet.has(token)) continue;
     if (prepSet.has(token)) {
       score += WEIGHTS.preparationMatch;
     } else if (COOKING_TOKENS.has(token)) {
-      score += prepSet.size > 0 ? WEIGHTS.wrongPreparation : WEIGHTS.unrequestedCooking;
+      score += prepMatched
+        ? WEIGHTS.noiseToken
+        : prepSet.size > 0
+          ? WEIGHTS.wrongPreparation
+          : WEIGHTS.unrequestedCooking;
     } else if (TRANSFORM_TOKENS.has(token)) {
       score += WEIGHTS.transformToken;
+    } else if (VARIETAL_TOKENS.has(token)) {
+      score += WEIGHTS.varietalToken;
     } else if (PLAIN_TOKENS.has(token)) {
       score += prepSet.size > 0 ? WEIGHTS.noiseToken : WEIGHTS.plainToken;
     } else {

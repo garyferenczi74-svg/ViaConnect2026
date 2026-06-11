@@ -87,21 +87,138 @@ missing defense: a single parsed half-avocado carrying 884 kcal and 100 g fat mu
 meals.fat_breakdown and fat_source_id now exist live (the 184b B1 migration reached
 production after the 2026-06-10 dev-log observation), so canonical meals inserts work.
 
-## Phase 2 and 3: fixes (commits follow)
+## Phase 2 and 3: fixes (all on main)
 
-Planned and delivered in this order, every commit on main:
-1. Canonical FDC nutrient map module (one source of truth, ID + unitName, Foundation
-   Atwater + 1063 fallbacks, kJ derive-with-flag, UNKNOWN never 0).
-2. Deterministic reference ranking replacing first-hit selection.
-3. portionToGrams resolver: FDC foodPortions, then curated unit weights, then 100 g
-   with confidence downgrade. All channels routed through it.
-4. usda-client rewrite wiring 1 to 3 + permanent per-item structured logging + cache
-   schema v2 (append-only migration; poisoned cache purged).
-5. Null-aware aggregation + schema + routes; knownNutrients computed from reality.
-6. Guardrails: per-item plausibility bounds with re-estimation, Atwater on the photo
-   route, energy unit assertion.
-7. Golden-meal regression harness on recorded FDC fixtures.
+1. Canonical FDC nutrient map module fdc-nutrients.ts (one source of truth, ID +
+   unitName, Foundation Atwater 2047/2048 + Sugars 1063 fallbacks, kJ derive flagged,
+   UNKNOWN never 0, energy unit assertion fail-open). usda-nutrient-ids.ts delegates.
+2. Deterministic reference ranking (fdc-ranking.ts) replacing first-hit selection:
+   transform-token penalties (oil, dried, powder, candied, dressing...), varietal
+   penalties (a generic "apple" must not resolve to Foundation fuji at 13.3 g sugar
+   per 100 g), parenthetical stripping that preserves query matches ("includes
+   sourdough"), preparation token matching, analytical-data preference (Foundation >
+   SR Legacy > FNDDS > Branded), all-query-tokens acceptance floor. Search pageSize
+   raised 25 -> 50 because generic references rank below dozens of varietals and
+   dishes for short queries.
+3. portionToGrams resolver: direct units, then FDC foodPortions, then curated table
+   (longest key wins; sourdough no longer shadowed by bread), then 100 g default
+   WITH downgrade. Conflict guard: an FDC portion diverging more than 2.5x from a
+   known curated weight is overridden (SR french bread reports "slice" = 139 g).
+   Water-density cups on solids carry the downgrade flag.
+4. usda-client rebuild wiring 1 to 3: permanent per-item structured logging (fdcId,
+   dataType, rows used, grams + method, multiplier, outputs, missing list), per-item
+   plausibility flags (900 kcal / 60 g fat), Branded one-basis rule (per-100g rows
+   or labelNutrients converted through serving grams, never both), upsert cache
+   writes (the old insert collided with expired rows), detail-404 treated as a clean
+   miss (FDC search returns ids whose detail endpoint 404s; substituting the next
+   candidate would hand "egg" to "Egg, Benedict", so the channel estimator takes it).
+5. Cache v2 migration (applied live): extraction_version, data_type, food_portions,
+   sodium + cholesterol columns; 49 poisoned rows purged (7 were zero-kcal).
+6. Null-aware end to end: aggregate() partial/unknown tracking, nullable schema,
+   both analyze routes compute knownNutrients from reality, Atwater added to the
+   photo channel, confidence downgrades on portion defaults + failed or skipped
+   reconciliation, plausibility re-estimation before display, sodium persists as a
+   real value or NULL (never the silent 0 the photo route wrote). MealResultCard +
+   MetricTile render Unknown and est. markers.
+
+## Production findings needing Gary
+
+1. CRITICAL ENV: Vercel production has USDA_FDC_API_KEY = "" (empty string) and
+   USDA_FDC_API_KEY_2 = "" (added 2026-06-09, also empty). Production has been
+   running FoodData Central on DEMO_KEY (30 requests/hour, shared egress IPs),
+   which is why the golden meal's egg missed USDA and the 184 harness logged
+   no_reference rows. The code now accepts either env name; populating either with
+   a real key (free at https://fdc.nal.usda.gov/api-key-signup.html) restores full
+   lookup reliability. Until then misses fall back to the AI estimator, which the
+   Phase 1 reconstruction showed is accurate.
+2. SPEC CONFLICT (resolved in favor of the bands, ratification requested): the
+   Phase 2 curated-table suggestion "slice of sourdough ~50 to 60 g" cannot satisfy
+   the Phase 4 acceptance bands (carbs 38 to 50 g) or the Section 1 ground truth
+   (75 kcal per piece = 28 g) for the golden meal; no correct engine passes at 55 g.
+   Curated slice shipped at 30 g. If Gary prefers thick artisan slices, the bands
+   need re-basing.
+3. The fat_breakdown / fat_source_id columns from 184b now exist live; canonical
+   meals inserts work again (the 2026-06-10 dev-log failure is resolved).
+
+## Phase 4: regression harness
+
+src/lib/nutrition/benchmark/__tests__/golden-meals.test.ts runs the REAL ranking,
+extraction, portion, scaling, and aggregation code against RECORDED FDC responses
+(fdc-recorded-fixtures.ts, regenerated by scripts/186/build-fixture-module.mjs; never
+hand-edit nutrient values). Meals: (1) the Section 1 reference meal against Gary's
+bands, with the production decoys still in the candidate lists and the recorded
+detail-404 for the egg exercising the estimator fallback at 0.75 confidence exactly
+like the original card; (2) Cheerios Branded one-basis scaling; (3) whole avocado
+alone under the plausibility bounds; (4) apple alone with real sugar; (5) mixed
+USDA + pinned-estimate text entry with a partial sugar marker. Future prompts
+extend this suite; they must not bypass it.
+
+Downstream verification: meals writes carry nullable macros + computed
+knownNutrients; useNutritionHubMetrics types macros nullable and coerces via
+numeric(); daily-totals guards with typeof checks; Gordon scoring excludes unknown
+nutrients via knownNutrients; BOS recompute consumes the scored row. All
+null-tolerant.
 
 ## Post-fix verification
 
-(appended after fixes ship)
+The Section 1 meal re-run through the rebuilt engine (real ranking, extraction,
+portion, scaling, and aggregation code against the recorded FDC responses; the
+golden-meal suite executes this exact run on every test pass). Production env
+still lacks a real FDC key, so live NutriVision behaves identically except that
+USDA misses (DEMO_KEY rate limits) fall to the AI estimator more often.
+
+Resulting macro card:
+
+| Metric | Before (defective) | After (verified run) | Ground truth band |
+|---|---|---|---|
+| Calories | 1578 | 427 | 360 to 460 |
+| Fat | 127.1 g | 21.9 g | 14 to 24 |
+| Protein | 29.1 g | 17.5 g | 13 to 18 |
+| Sugar | 2.5 g | 18.4 g | 14 to 21 |
+| Carbs | not shown | 43.5 g | 38 to 50 |
+| Confidence | 0.75 mixed | 0.75 mixed | |
+
+Per item (matched reference, grams, kcal / fat / protein / sugar):
+- 2 whole egg: AI estimate after the recorded FDC detail 404: 148 / 10.0 / 12.4 / 0.2
+- 0.5 whole avocado: Avocado, raw at 75 g: 120 / 11.0 / 1.5 / 0.5 (the prompt's own
+  cited USDA reference values for 75 g avocado, exactly)
+- 1 slice sourdough bread: Bread, french or vienna (includes sourdough) at 30 g:
+  82 / 0.7 / 3.2 / 1.4
+- 1 whole apple: Apples, raw, without skin at 161 g (real FDC medium portion):
+  77 / 0.2 / 0.4 / 16.3
+
+Atwater check: (4 x 17.5 + 9 x 21.9 + 4 x 43.5) / 427 = 1.03, passes. Every
+Phase 4 band passes. The full repository suite stands at 29 failures vs 35 on
+the pre-186 baseline: the four error classes' tests now pass, four stale
+pre-existing test breaks were repaired in passing, and the only remaining
+failures are the two documented pre-existing ones outside 186 scope (barcode
+checksum empty-string case; voice-native haiku prompt copy) plus whatever the
+shared tree carried before this prompt.
+
+Operational notes: the one-off Supabase Edge Function prompt-186-fdc-proxy
+(JWT-gated, proxies only FDC search/detail, slims responses) exists because
+DEMO_KEY rate limits exhausted two egress IPs during fixture recording; safe to
+delete after Gary populates the real FDC key. Fixture regeneration:
+node scripts/186/build-fixture-module.mjs (raw recordings in scripts/186/fixtures).
+
+## Agent review (Jeffery aggregate, pre-push)
+
+Specialists: Michelangelo, Gordon, Hannah, security-advisor, performance-advisor.
+Verdict was fix-first with six items, all addressed before push: (1) the generic
+28 g slice guess no longer masquerades as a known curated weight (the conflict
+guard skips when the table has no real key, so a measured 192 g quiche slice
+survives) and the guess carries the downgrade flag; (2) ranking token sets are
+normalized through the tokenizer so plural and stemmed entries cannot silently
+die; (3) the estimated attribution copy is uncertainty-honest ("We could not
+confirm a USDA match for these foods."); (4) foods/search imports the
+EXTRACTION_VERSION constant instead of a literal; (5) analyze-photo logs lookup
+failures like analyze-text; (6) debug logging removed from the golden suite.
+Decisions D1 (404 = miss to estimator), D2 (30 g slice; 55 g rejected by Gordon
+and Hannah, USDA grain equivalent is 28 g), D3 (ranking weights and pageSize 50),
+and D4 (plausibility bounds) all CONFIRMED. Security and performance clean; the
+upsert conflict target matches the unique index. Follow-up queue for a future
+prompt: per-100g density plausibility bounds (Gordon + Hannah joint
+recommendation), per-item lookup parallelization with a small concurrency cap,
+a (fdc_id, extraction_version) btree for the foods/lookup predicate, the
+curated large-egg 50 x 1.4 multiplier latent quirk, and extending transform
+tokens with jerky/canned/smoked/pickled/breaded.

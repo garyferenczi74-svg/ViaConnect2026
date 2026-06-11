@@ -1,0 +1,29 @@
+{
+  "fdcId": 172675,
+  "description": "Bread, french or vienna (includes sourdough)",
+  "dataType": "SR Legacy",
+  "servingSize": null,
+  "servingSizeUnit": null,
+  "householdServingFullText": null,
+  "foodNutrients": [
+    { "nutrient": { "id": 1008, "name": "Energy", "unitName": "kcal" }, "amount": 272 },
+    { "nutrient": { "id": 1062, "name": "Energy", "unitName": "kJ" }, "amount": 1139 },
+    { "nutrient": { "id": 1003, "name": "Protein", "unitName": "g" }, "amount": 10.75 },
+    { "nutrient": { "id": 1004, "name": "Total lipid (fat)", "unitName": "g" }, "amount": 2.42 },
+    { "nutrient": { "id": 1005, "name": "Carbohydrate, by difference", "unitName": "g" }, "amount": 51.88 },
+    { "nutrient": { "id": 1079, "name": "Fiber, total dietary", "unitName": "g" }, "amount": 2.2 },
+    { "nutrient": { "id": 2000, "name": "Total Sugars", "unitName": "g" }, "amount": 4.62 },
+    { "nutrient": { "id": 1093, "name": "Sodium, Na", "unitName": "mg" }, "amount": 602 },
+    { "nutrient": { "id": 1258, "name": "Fatty acids, total saturated", "unitName": "g" }, "amount": 0.529 },
+    { "nutrient": { "id": 1404, "name": "PUFA 18:3 n-3 c,c,c (ALA)", "unitName": "g" }, "amount": 0.063 },
+    { "nutrient": { "id": 1278, "name": "PUFA 20:5 n-3 (EPA)", "unitName": "g" }, "amount": 0 },
+    { "nutrient": { "id": 1280, "name": "PUFA 22:5 n-3 (DPA)", "unitName": "g" }, "amount": 0 },
+    { "nutrient": { "id": 1272, "name": "PUFA 22:6 n-3 (DHA)", "unitName": "g" }, "amount": 0 },
+    { "nutrient": { "id": 1257, "name": "Fatty acids, total trans", "unitName": "g" }, "amount": 0.005 },
+    { "nutrient": { "id": 1253, "name": "Cholesterol", "unitName": "mg" }, "amount": 0 }
+  ],
+  "foodPortions": [
+    { "amount": 1, "gramWeight": 28.35, "modifier": "oz", "portionDescription": null, "measureUnit": { "name": "undetermined" } },
+    { "amount": 1, "gramWeight": 139, "modifier": "slice", "portionDescription": null, "measureUnit": { "name": "undetermined" } }
+  ]
+}

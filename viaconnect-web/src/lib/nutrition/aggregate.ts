@@ -104,12 +104,15 @@ export function aggregate(items: AggregatedItem[]): NutritionAnalysis {
     .join(', ')
     .slice(0, 2000);
 
+  // The estimated wording is uncertainty-honest: a miss can be a rate limit,
+  // a missing detail record, or a plausibility re-estimate, not proof the
+  // food is absent from USDA (Prompt 186 review fix).
   const ai_notes =
     data_source === 'usda'
       ? `Nutrition data from USDA FoodData Central. ${total} ${total === 1 ? 'item' : 'items'} matched.`
       : data_source === 'mixed'
         ? `Nutrition data from USDA FoodData Central for ${usdaCount} of ${total} items. Others estimated.`
-        : `Nutrition values estimated. These foods are not in the USDA database.`;
+        : `Nutrition values estimated. We could not confirm a USDA match for these foods.`;
 
   const calories = sums.calories.total === null ? null : Math.round(sums.calories.total);
 

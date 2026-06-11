@@ -1,0 +1,35 @@
+{
+  "totalHits": 275,
+  "foods": [
+    {
+      "fdcId": 2517161,
+      "description": "Cheerios Cereal",
+      "dataType": "Branded",
+      "score": 29.424736
+    },
+    {
+      "fdcId": 2738631,
+      "description": "Cheerios Cereal",
+      "dataType": "Branded",
+      "score": 29.424736
+    },
+    {
+      "fdcId": 759418,
+      "description": "Cheerios Cereal",
+      "dataType": "Branded",
+      "score": 29.424736
+    },
+    {
+      "fdcId": 1462106,
+      "description": "Blueberry Cheerios Cereal",
+      "dataType": "Branded",
+      "score": -17.050102
+    },
+    {
+      "fdcId": 2233830,
+      "description": "Blueberry Cheerios Cereal",
+      "dataType": "Branded",
+      "score": -17.050102
+    }
+  ]
+}

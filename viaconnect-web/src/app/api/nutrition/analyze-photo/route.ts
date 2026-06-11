@@ -69,7 +69,10 @@ export async function POST(req: NextRequest) {
 
     const items: AggregatedItem[] = [];
     for (const item of parsed.items) {
-      const usda = await lookupFood(item.name, item.quantity, item.unit, undefined, item.preparation).catch(() => null);
+      const usda = await lookupFood(item.name, item.quantity, item.unit, undefined, item.preparation).catch((e) => {
+        safeLog.warn('api.nutrition.analyze-photo', 'usda lookup failed', { error: e, name: item.name });
+        return null;
+      });
       let nutrients: AggregatedItem['nutrients'] | null = usda;
       // Prompt 186 Phase 3: re-estimate any single item beyond the
       // plausibility bounds (900 kcal / 60 g fat per parsed portion) before

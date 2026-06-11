@@ -27,7 +27,10 @@ const TIMEOUT_MS = 6000;
 // Shared so the search URL and the benchmark trace cannot drift apart.
 // Branded foods enter through the barcode/OFF path, not generic text search.
 const USDA_DATA_TYPES = 'Foundation,SR Legacy,Survey (FNDDS)';
-const SEARCH_PAGE_SIZE = 25;
+// 50, not 25: generic references (SR "Apples, raw, with skin") rank below
+// two dozen varietals and dishes for short queries; a shallow page leaves
+// only sweet cultivars and composed foods to choose from.
+const SEARCH_PAGE_SIZE = 50;
 // Cache rows written before the Prompt 186 extraction rebuild carried
 // first-hit references and zero-coerced nutrients; v2 rows are the only
 // trusted ones. The 186 migration purges v1 rows; this filter guards any
@@ -155,6 +158,19 @@ export async function lookupFood(
   if (!search) return null;
 
   const detail = await fetchUSDADetail(search.fdcId);
+  // FDC data inconsistency observed live (Prompt 186): the search index can
+  // return an fdcId whose detail endpoint 404s (Foundation 748967, whole
+  // egg). A missing detail is a clean miss; the caller falls back to the AI
+  // estimator rather than substituting the next-ranked candidate, which for
+  // "egg" would be a composed dish (Egg, Benedict).
+  if (detail === null) {
+    safeLog.warn(LOG_SCOPE, 'detail endpoint 404 for ranked winner; treating as miss', {
+      query: normalized,
+      fdc_id: search.fdcId,
+      matched_name: search.description,
+    });
+    return null;
+  }
   const dataType = typeof detail.dataType === 'string' ? detail.dataType : search.dataType ?? null;
   const extraction = extractCanonicalNutrients(detail);
   let values = extraction.values;
@@ -292,9 +308,18 @@ interface SearchResponseFood extends FdcSearchCandidate {
   dataType?: string;
 }
 
+// Prompt 186 finding: production carried USDA_FDC_API_KEY as an EMPTY string
+// (and a USDA_FDC_API_KEY_2 added 2026-06-09, also empty), so every live
+// lookup ran on DEMO_KEY at 30 requests/hour and items missed at random
+// (the golden meal's egg). Accept either name; empty strings fall through.
+function fdcApiKey(): string {
+  const key = process.env.USDA_FDC_API_KEY || process.env.USDA_FDC_API_KEY_2 || 'DEMO_KEY';
+  if (key === 'DEMO_KEY') safeLog.warn(LOG_SCOPE, 'using DEMO_KEY (30/hr limit); set USDA_FDC_API_KEY');
+  return key;
+}
+
 async function searchUSDA(query: string, preparation?: string): Promise<SearchSelection | null> {
-  const key = process.env.USDA_FDC_API_KEY || 'DEMO_KEY';
-  if (key === 'DEMO_KEY') safeLog.warn(LOG_SCOPE, 'using DEMO_KEY (30/hr limit)');
+  const key = fdcApiKey();
   const base = `${BASE}/foods/search?query=${encodeURIComponent(query)}&dataType=${encodeURIComponent(USDA_DATA_TYPES)}&pageSize=${SEARCH_PAGE_SIZE}&api_key=${key}`;
 
   let foods = await runSearch(`${base}&requireAllWords=true`);
@@ -344,10 +369,11 @@ interface USDADetail {
   foodPortions?: unknown[];
 }
 
-async function fetchUSDADetail(fdcId: number): Promise<USDADetail> {
-  const key = process.env.USDA_FDC_API_KEY || 'DEMO_KEY';
+async function fetchUSDADetail(fdcId: number): Promise<USDADetail | null> {
+  const key = fdcApiKey();
   const url = `${BASE}/food/${fdcId}?api_key=${key}`;
   const res = await breaker.execute(() => withAbortTimeout((s) => fetch(url, { signal: s }), TIMEOUT_MS, 'usda.detail'));
+  if (res.status === 404) return null;
   if (!res.ok) {
     const c = classifyUSDAResponse(res.status);
     throw new AIRouteError(c.code, `usda detail ${res.status} ${c.code}`, c.httpStatus, c.userMessage);

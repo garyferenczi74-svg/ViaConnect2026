@@ -1,0 +1,155 @@
+{
+  "totalHits": 666,
+  "foods": [
+    {
+      "fdcId": 747997,
+      "description": "Eggs, Grade A, Large, egg white",
+      "dataType": "Foundation",
+      "score": 338.33563
+    },
+    {
+      "fdcId": 748967,
+      "description": "Eggs, Grade A, Large, egg whole",
+      "dataType": "Foundation",
+      "score": 338.33563
+    },
+    {
+      "fdcId": 748236,
+      "description": "Eggs, Grade A, Large, egg yolk",
+      "dataType": "Foundation",
+      "score": 338.33563
+    },
+    {
+      "fdcId": 2707180,
+      "description": "Egg, Benedict",
+      "dataType": "Survey (FNDDS)",
+      "score": 322.80188
+    },
+    {
+      "fdcId": 2707179,
+      "description": "Egg, creamed",
+      "dataType": "Survey (FNDDS)",
+      "score": 322.80188
+    },
+    {
+      "fdcId": 2707181,
+      "description": "Egg, deviled",
+      "dataType": "Survey (FNDDS)",
+      "score": 322.80188
+    },
+    {
+      "fdcId": 174901,
+      "description": "Bagels, egg",
+      "dataType": "SR Legacy",
+      "score": 322.70755
+    },
+    {
+      "fdcId": 172673,
+      "description": "Bread, egg",
+      "dataType": "SR Legacy",
+      "score": 322.70755
+    },
+    {
+      "fdcId": 2708984,
+      "description": "Congee, with egg",
+      "dataType": "Survey (FNDDS)",
+      "score": 322.70755
+    },
+    {
+      "fdcId": 2707343,
+      "description": "Egg burrito",
+      "dataType": "Survey (FNDDS)",
+      "score": 322.70755
+    },
+    {
+      "fdcId": 2708597,
+      "description": "Quesadilla, egg",
+      "dataType": "Survey (FNDDS)",
+      "score": 322.70755
+    },
+    {
+      "fdcId": 2708602,
+      "description": "Taquito, egg",
+      "dataType": "Survey (FNDDS)",
+      "score": 322.70755
+    },
+    {
+      "fdcId": 2707201,
+      "description": "Egg omelet or scrambled egg, made with butter",
+      "dataType": "Survey (FNDDS)",
+      "score": 322.51157
+    },
+    {
+      "fdcId": 2707199,
+      "description": "Egg omelet or scrambled egg, made with margarine",
+      "dataType": "Survey (FNDDS)",
+      "score": 322.51157
+    },
+    {
+      "fdcId": 2707200,
+      "description": "Egg omelet or scrambled egg, made with oil",
+      "dataType": "Survey (FNDDS)",
+      "score": 322.51157
+    },
+    {
+      "fdcId": 2707205,
+      "description": "Egg omelet or scrambled egg, no added fat",
+      "dataType": "Survey (FNDDS)",
+      "score": 322.51157
+    },
+    {
+      "fdcId": 2707198,
+      "description": "Egg omelet or scrambled egg, NS as to fat",
+      "dataType": "Survey (FNDDS)",
+      "score": 322.51157
+    },
+    {
+      "fdcId": 2708972,
+      "description": "Sushi, topped with egg",
+      "dataType": "Survey (FNDDS)",
+      "score": 309.549
+    },
+    {
+      "fdcId": 2707203,
+      "description": "Egg omelet or scrambled egg, made with cooking spray",
+      "dataType": "Survey (FNDDS)",
+      "score": 308.30713
+    },
+    {
+      "fdcId": 2707204,
+      "description": "Egg omelet or scrambled egg, NS as to fat type",
+      "dataType": "Survey (FNDDS)",
+      "score": 308.30713
+    },
+    {
+      "fdcId": 2707209,
+      "description": "Egg omelet or scrambled egg, with cheese, made with butter",
+      "dataType": "Survey (FNDDS)",
+      "score": 308.30713
+    },
+    {
+      "fdcId": 2707207,
+      "description": "Egg omelet or scrambled egg, with cheese, made with margarine",
+      "dataType": "Survey (FNDDS)",
+      "score": 308.30713
+    },
+    {
+      "fdcId": 2707208,
+      "description": "Egg omelet or scrambled egg, with cheese, made with oil",
+      "dataType": "Survey (FNDDS)",
+      "score": 308.30713
+    },
+    {
+      "fdcId": 2707212,
+      "description": "Egg omelet or scrambled egg, with cheese, no added fat",
+      "dataType": "Survey (FNDDS)",
+      "score": 308.30713
+    },
+    {
+      "fdcId": 2707216,
+      "description": "Egg omelet or scrambled egg, with meat, made with butter",
+      "dataType": "Survey (FNDDS)",
+      "score": 308.30713
+    }
+  ]
+}

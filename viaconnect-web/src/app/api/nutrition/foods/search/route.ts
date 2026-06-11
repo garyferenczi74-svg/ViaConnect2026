@@ -14,6 +14,7 @@ import { AIRouteError } from '@/lib/errors/classify-ai';
 import { newRequestId } from '@/lib/observability/audit-recorder';
 
 import { normalizeQuery } from '@/lib/nutrition/normalize-query';
+import { EXTRACTION_VERSION } from '@/lib/nutrition/usda-client';
 import type { CuisineTag } from '@/lib/nutrition/vision/types';
 
 const ROUTE = '/api/nutrition/foods/search';
@@ -140,8 +141,8 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
         .select('fdc_id, food_name, calories_per_100g, protein_per_100g, carbs_per_100g, total_fat_per_100g, fiber_per_100g, sugar_per_100g')
         .ilike('food_name', `%${q}%`)
         // Prompt 186: v1 rows carried wrong references and zero-coerced
-        // nutrients; only extraction_version 2 rows are served.
-        .eq('extraction_version', 2)
+        // nutrients; only current-version rows are served.
+        .eq('extraction_version', EXTRACTION_VERSION)
         .not('calories_per_100g', 'is', null)
         .limit(half);
       if (error) {

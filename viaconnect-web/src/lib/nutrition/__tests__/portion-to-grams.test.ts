@@ -55,10 +55,43 @@ describe('portionToGrams', () => {
     expect(r.downgraded).toBe(false);
   });
 
-  it('sourdough slice uses the raised curated weight (55 g)', () => {
+  it('sourdough slice uses the curated weight (30 g; bands override the 55 g suggestion)', () => {
     const r = portionToGrams({ unit: 'slice', quantity: 1, foodHint: 'sourdough bread' });
-    expect(r.grams).toBe(55);
+    expect(r.grams).toBe(30);
     expect(r.method).toBe('curated_table');
+  });
+
+  it('overrides an implausible FDC portion with the curated weight (SR 139 g bread slice)', () => {
+    // Recorded from SR 172675: foodPortions reports "slice" as 139 g.
+    const r = portionToGrams({
+      unit: 'slice', quantity: 1, foodHint: 'sourdough bread',
+      foodPortions: [
+        { amount: 1, gramWeight: 28.35, modifier: 'oz' },
+        { amount: 1, gramWeight: 139, modifier: 'slice' },
+      ],
+    });
+    expect(r.grams).toBe(30);
+    expect(r.method).toBe('curated_table');
+    expect(r.portionLabel).toContain('curated override');
+  });
+
+  it('trusts a large FDC slice portion when the table only has the generic guess (quiche)', () => {
+    // Review fix: the generic 28 g slice guess must not masquerade as a
+    // known curated weight and crush a measured 192 g quiche slice.
+    const r = portionToGrams({
+      unit: 'slice', quantity: 1, foodHint: 'quiche',
+      foodPortions: [{ amount: 1, gramWeight: 192, modifier: 'slice' }],
+    });
+    expect(r.grams).toBe(192);
+    expect(r.method).toBe('fdc_portion');
+    expect(r.downgraded).toBe(false);
+  });
+
+  it('downgrades the generic slice guess when no portions and no table entry exist', () => {
+    const r = portionToGrams({ unit: 'slice', quantity: 1, foodHint: 'quiche' });
+    expect(r.grams).toBe(28);
+    expect(r.method).toBe('curated_table');
+    expect(r.downgraded).toBe(true);
   });
 
   it('cup of a solid via water density carries the downgrade flag (cheerios trap)', () => {

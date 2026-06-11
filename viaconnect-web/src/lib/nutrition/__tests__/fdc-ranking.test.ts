@@ -18,16 +18,24 @@ describe('rankFdcCandidates', () => {
     expect(firstHitOverridden).toBe(true);
   });
 
-  it('apple: rejects candied, dried, cider, and croissants', () => {
+  it('apple: rejects candied, dried, cider, and croissants; prefers the measured SR generic', () => {
     const { best } = rankFdcCandidates('apple', undefined, [
       { fdcId: 2709294, description: 'Apple, candied', dataType: 'Survey (FNDDS)' },
       { fdcId: 2709215, description: 'Apple, raw', dataType: 'Survey (FNDDS)' },
       { fdcId: 2709196, description: 'Apple, dried', dataType: 'Survey (FNDDS)' },
       { fdcId: 2709319, description: 'Apple cider', dataType: 'Survey (FNDDS)' },
       { fdcId: 174988, description: 'Croissants, apple', dataType: 'SR Legacy' },
-      { fdcId: 171688, description: 'Apples, raw, with skin', dataType: 'SR Legacy' },
+      { fdcId: 171688, description: "Apples, raw, with skin (Includes foods for USDA's Food Distribution Program)", dataType: 'SR Legacy' },
     ]);
-    expect(best?.description).toBe('Apple, raw');
+    expect(best?.fdcId).toBe(171688);
+  });
+
+  it('apple: a sweet varietal loses to the generic reference', () => {
+    const { best } = rankFdcCandidates('apple', undefined, [
+      { fdcId: 1750340, description: 'Apples, fuji, with skin, raw', dataType: 'Foundation' },
+      { fdcId: 2709215, description: 'Apple, raw', dataType: 'Survey (FNDDS)' },
+    ]);
+    expect(best?.fdcId).toBe(2709215);
   });
 
   it('egg: prefers the whole egg over white and yolk fractions', () => {

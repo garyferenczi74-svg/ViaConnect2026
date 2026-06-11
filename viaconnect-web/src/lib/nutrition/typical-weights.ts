@@ -19,11 +19,31 @@ const SIZE_MULTIPLIERS: Record<string, number> = {
 };
 
 const SLICE_G: Record<string, number> = {
-  // Prompt 186: sourdough raised 36 -> 55 per the curated unit-weight table
-  // (a standard sourdough slice is 50 to 60 g).
-  bread: 28, 'whole wheat bread': 28, 'sourdough bread': 55,
+  // Prompt 186: sourdough 30 g. The prompt's curated-table suggestion of 50
+  // to 60 g is mutually inconsistent with its own Section 1 ground truth
+  // (75 kcal per piece = 28 g) and the Phase 4 carbs band (38 to 50 g for
+  // the golden meal), which no engine can satisfy at 55 g. The binding
+  // acceptance bands win; flagged for Gary's ratification in the work log.
+  bread: 28, 'whole wheat bread': 28, 'sourdough bread': 30,
   bacon: 12, ham: 28, cheese: 23, pizza: 107,
 };
+
+// Prompt 186 review fix: distinguishes a real table hit from the generic
+// slice guess. The portion resolver's FDC-vs-curated conflict guard must
+// only trust weights the table actually knows; the 28 g generic slice is a
+// guess and must not override a measured FDC portion (a 192 g quiche slice
+// is legitimate), and it carries the confidence downgrade.
+export function hasCuratedWeight(unit: string, foodHint: string): boolean {
+  const hint = foodHint.toLowerCase().trim();
+  if (unit === 'slice') return matchPrefix(SLICE_G, hint) !== null;
+  if (unit === 'whole' || unit === 'small' || unit === 'medium' || unit === 'large') {
+    return matchPrefix(WHOLE_FOODS_G, hint) !== null;
+  }
+  if (unit === 'g' || unit === 'oz' || unit === 'ml' || unit === 'tbsp' || unit === 'tsp' || unit === 'cup') {
+    return true;
+  }
+  return false;
+}
 
 export function unitToGrams(unit: string, quantity: number, foodHint: string): number | null {
   const hint = foodHint.toLowerCase().trim();

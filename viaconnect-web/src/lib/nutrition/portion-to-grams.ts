@@ -13,7 +13,7 @@
 // foods; on solids they carry the downgrade flag (a cup of cereal is not
 // 240 g).
 
-import { unitToGrams } from './typical-weights';
+import { unitToGrams, hasCuratedWeight } from './typical-weights';
 import { tokenizeFoodText } from './fdc-ranking';
 
 export interface FdcFoodPortion {
@@ -138,6 +138,23 @@ export function portionToGrams(input: PortionInput): PortionResolution {
     const text = portionText(matched);
     const mult = SIZE_MULTIPLIERS[unit];
     if (mult !== undefined && mult !== 1.0 && !text.includes(unit)) grams *= mult;
+    // Conflict guard: FDC household portions are occasionally absurd for the
+    // parsed unit (SR french bread reports "slice" as 139 g, half a loaf).
+    // When the curated table GENUINELY knows this food and unit (not the
+    // generic slice guess) and the two disagree by more than 2.5x either
+    // way, the curated weight wins.
+    const curatedCheck = hasCuratedWeight(unit, foodHint) ? unitToGrams(unit, quantity, foodHint) : null;
+    if (curatedCheck !== null && curatedCheck > 0) {
+      const ratio = grams / curatedCheck;
+      if (ratio > 2.5 || ratio < 0.4) {
+        return {
+          grams: curatedCheck,
+          method: 'curated_table',
+          downgraded: false,
+          portionLabel: `curated override of implausible fdc portion (${text.slice(0, 40)} = ${Math.round(grams)}g)`,
+        };
+      }
+    }
     return {
       grams,
       method: 'fdc_portion',
@@ -164,10 +181,13 @@ export function portionToGrams(input: PortionInput): PortionResolution {
     const hint = foodHint.toLowerCase();
     const waterDensityUnit = unit === 'cup' || unit === 'tbsp' || unit === 'tsp';
     const liquid = LIQUID_HINTS.some((l) => hint.includes(l));
+    // A slice of a food the table does not know used the generic 28 g
+    // guess: a real value, but a guess, so confidence downgrades.
+    const sliceGuess = unit === 'slice' && !hasCuratedWeight(unit, foodHint);
     return {
       grams: curated,
       method: 'curated_table',
-      downgraded: waterDensityUnit && !liquid,
+      downgraded: (waterDensityUnit && !liquid) || sliceGuess,
       portionLabel: null,
     };
   }

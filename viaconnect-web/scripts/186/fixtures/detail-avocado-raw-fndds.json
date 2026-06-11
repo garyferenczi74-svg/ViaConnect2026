@@ -1,0 +1,29 @@
+{
+  "fdcId": 2709223,
+  "description": "Avocado, raw",
+  "dataType": "Survey (FNDDS)",
+  "servingSize": null,
+  "servingSizeUnit": null,
+  "householdServingFullText": null,
+  "foodNutrients": [
+    { "nutrient": { "id": 1003, "name": "Protein", "unitName": "g" }, "amount": 2 },
+    { "nutrient": { "id": 1004, "name": "Total lipid (fat)", "unitName": "g" }, "amount": 14.7 },
+    { "nutrient": { "id": 1005, "name": "Carbohydrate, by difference", "unitName": "g" }, "amount": 8.53 },
+    { "nutrient": { "id": 1008, "name": "Energy", "unitName": "kcal" }, "amount": 160 },
+    { "nutrient": { "id": 2000, "name": "Total Sugars", "unitName": "g" }, "amount": 0.66 },
+    { "nutrient": { "id": 1079, "name": "Fiber, total dietary", "unitName": "g" }, "amount": 6.7 },
+    { "nutrient": { "id": 1093, "name": "Sodium, Na", "unitName": "mg" }, "amount": 7 },
+    { "nutrient": { "id": 1253, "name": "Cholesterol", "unitName": "mg" }, "amount": 0 },
+    { "nutrient": { "id": 1258, "name": "Fatty acids, total saturated", "unitName": "g" }, "amount": 2.13 },
+    { "nutrient": { "id": 1272, "name": "PUFA 22:6 n-3 (DHA)", "unitName": "g" }, "amount": 0 },
+    { "nutrient": { "id": 1278, "name": "PUFA 20:5 n-3 (EPA)", "unitName": "g" }, "amount": 0 },
+    { "nutrient": { "id": 1280, "name": "PUFA 22:5 n-3 (DPA)", "unitName": "g" }, "amount": 0 }
+  ],
+  "foodPortions": [
+    { "amount": null, "gramWeight": 30, "modifier": "90000", "portionDescription": "Quantity not specified", "measureUnit": { "name": "undetermined" } },
+    { "amount": null, "gramWeight": 230, "modifier": "10119", "portionDescription": "1 cup, mashed or pureed", "measureUnit": { "name": "undetermined" } },
+    { "amount": null, "gramWeight": 15, "modifier": "61935", "portionDescription": "1 slice", "measureUnit": { "name": "undetermined" } },
+    { "amount": null, "gramWeight": 150, "modifier": "10205", "portionDescription": "1 cup", "measureUnit": { "name": "undetermined" } },
+    { "amount": null, "gramWeight": 150, "modifier": "60813", "portionDescription": "1 fruit", "measureUnit": { "name": "undetermined" } }
+  ]
+}

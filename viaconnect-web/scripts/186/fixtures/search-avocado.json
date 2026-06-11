@@ -1,0 +1,77 @@
+{
+  "totalHits": 12,
+  "foods": [
+    {
+      "fdcId": 2710208,
+      "description": "Avocado dressing",
+      "dataType": "Survey (FNDDS)",
+      "score": 441.56403
+    },
+    {
+      "fdcId": 2709223,
+      "description": "Avocado, raw",
+      "dataType": "Survey (FNDDS)",
+      "score": 441.56403
+    },
+    {
+      "fdcId": 173573,
+      "description": "Oil, avocado",
+      "dataType": "SR Legacy",
+      "score": 441.56403
+    },
+    {
+      "fdcId": 2710248,
+      "description": "Avocado, for use on a sandwich",
+      "dataType": "Survey (FNDDS)",
+      "score": 403.52588
+    },
+    {
+      "fdcId": 171706,
+      "description": "Avocados, raw, California",
+      "dataType": "SR Legacy",
+      "score": 403.52588
+    },
+    {
+      "fdcId": 171707,
+      "description": "Avocados, raw, Florida",
+      "dataType": "SR Legacy",
+      "score": 403.52588
+    },
+    {
+      "fdcId": 2708960,
+      "description": "Sushi roll, avocado",
+      "dataType": "Survey (FNDDS)",
+      "score": 403.52588
+    },
+    {
+      "fdcId": 2710824,
+      "description": "Avocado, Hass, peeled, raw",
+      "dataType": "Foundation",
+      "score": 371.53412
+    },
+    {
+      "fdcId": 171705,
+      "description": "Avocados, raw, all commercial varieties",
+      "dataType": "SR Legacy",
+      "score": 344.25323
+    },
+    {
+      "fdcId": 2709824,
+      "description": "Lettuce, salad with avocado, tomato, and/or carrots, with or without other vegetables, no dressing",
+      "dataType": "Survey (FNDDS)",
+      "score": 266.162
+    },
+    {
+      "fdcId": 2709308,
+      "description": "Guacamole with tomatoes",
+      "dataType": "Survey (FNDDS)",
+      "score": 29.36893
+    },
+    {
+      "fdcId": 2709307,
+      "description": "Guacamole, NFS",
+      "dataType": "Survey (FNDDS)",
+      "score": 23.875637
+    }
+  ]
+}
