@@ -153,11 +153,26 @@ async function callGemini(body: unknown): Promise<{ text: string; usage: Usage }
 // parsers (ParsedMealSchema, estimateItemAttempt) work unmodified.
 // Returns a Gemini compatible { text, usage } so downstream code is
 // agnostic to which provider answered.
+// Prompt 186 incident fix (2026-06-11): Vercel production carries the
+// Anthropic key as Anthropic_API_Key (and PHOTO_AI_ANTHROPIC_API_KEY for
+// the photo stack); process.env is case sensitive, so reading only
+// ANTHROPIC_API_KEY meant the 180f Claude fallback had NEVER fired in
+// production and Gemini rate limiting failed meals outright. Accept the
+// names that exist; empty strings fall through.
+function anthropicApiKey(): string | undefined {
+  return (
+    process.env.ANTHROPIC_API_KEY ||
+    process.env.Anthropic_API_Key ||
+    process.env.PHOTO_AI_ANTHROPIC_API_KEY ||
+    undefined
+  );
+}
+
 async function callClaudeText(args: {
   systemInstruction: string;
   userText: string;
 }): Promise<{ text: string; usage: Usage }> {
-  const key = process.env.ANTHROPIC_API_KEY;
+  const key = anthropicApiKey();
   if (!key) {
     throw new AIRouteError(
       'AUTH_MISSING',
