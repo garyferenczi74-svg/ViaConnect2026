@@ -123,14 +123,25 @@ production after the 2026-06-10 dev-log observation), so canonical meals inserts
 
 ## Production findings needing Gary
 
-1. CRITICAL ENV: Vercel production has USDA_FDC_API_KEY = "" (empty string) and
-   USDA_FDC_API_KEY_2 = "" (added 2026-06-09, also empty). Production has been
-   running FoodData Central on DEMO_KEY (30 requests/hour, shared egress IPs),
-   which is why the golden meal's egg missed USDA and the 184 harness logged
-   no_reference rows. The code now accepts either env name; populating either with
-   a real key (free at https://fdc.nal.usda.gov/api-key-signup.html) restores full
-   lookup reliability. Until then misses fall back to the AI estimator, which the
-   Phase 1 reconstruction showed is accurate.
+1. ENV (corrected 2026-06-11 evening): the original "both USDA keys are empty
+   strings" reading was an artifact of vercel env pull, which redacts sensitive
+   variables to empty (GEMINI_API_KEY and SUPABASE_SERVICE_ROLE_KEY pull the same
+   way while demonstrably working). What is certain: Gary set the real key on
+   2026-06-11, production was redeployed so the runtime picked it up, and the
+   DEMO_KEY warning no longer appears in runtime logs. The code accepts
+   USDA_FDC_API_KEY then USDA_FDC_API_KEY_2. LIVE VERIFICATION (21:31 UTC): an
+   authenticated analyze-text probe ("one medium banana and one whole apple")
+   returned data_source mixed with USDA matching, and usda_food_cache gained
+   query "banana" -> "Bananas, raw" (SR 173944, 89 kcal/100g, sugar 12.23,
+   8 foodPortions, extraction_version 2) where production previously cached
+   "Bananas, dehydrated, or banana powder" at 346. An earlier organic meal at
+   20:36 UTC cached "oat" -> "Oats" (SR 169705, 389 kcal/100g, sugar NULL not
+   0). Search, ranking, canonical extraction, portion capture, cache v2, and
+   unknown-vs-zero are all confirmed working in production. Remaining flakiness
+   observed: intermittent FDC 400/timeout responses and transient Gemini 503s,
+   both failing open to the estimator exactly as designed (the probe's apple
+   item estimated accurately on one attempt). The temporary verification auth
+   user and its meal rows were deleted after the probe.
 2. SPEC CONFLICT (resolved in favor of the bands, ratification requested): the
    Phase 2 curated-table suggestion "slice of sourdough ~50 to 60 g" cannot satisfy
    the Phase 4 acceptance bands (carbs 38 to 50 g) or the Section 1 ground truth
