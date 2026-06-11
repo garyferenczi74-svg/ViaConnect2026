@@ -25,7 +25,8 @@ import './plasma-gauge.css';
 
 export type GaugeMetric =
   | 'bioscore' | 'sleep' | 'energy' | 'mood' | 'nutrition' | 'activity'
-  | 'wellness' | 'protein' | 'carbs' | 'fat' | 'fiber' | 'mealscore';
+  | 'wellness' | 'protein' | 'carbs' | 'fat' | 'fiber' | 'mealscore'
+  | 'plasmateal';
 
 // Re-exported aliases so existing call sites that imported PlasmaMetric /
 // PlasmaFinish / PlasmaVariant from the prior 182 build keep compiling.
@@ -62,6 +63,11 @@ export const METRIC_COLORS: Record<GaugeMetric, MetricColor> = {
   fat:       { c: '#E7B45A', bright: '#F6DCA0', deep: '#B9842C', glow: 'rgba(231,180,90,.5)' },
   fiber:     { c: '#9D6BD5', bright: '#C29DEC', deep: '#6B3FA0', glow: 'rgba(157,107,213,.5)' },
   mealscore: { c: '#3FB46B', bright: '#79D89C', deep: '#228048', glow: 'rgba(63,180,107,.5)' },
+  // Prompt 183a (2026-06-11): a single brand teal finish used ONLY at the four
+  // My Nutrition hub gauge call sites so the hub triad reads as one teal family.
+  // Distinct from nutrition (green) which the Dashboard and body-tracker gauges
+  // keep. Color config only, not a new gauge.
+  plasmateal:{ c: '#2DA5A0', bright: '#7fd6d2', deep: '#1c6f6c', glow: 'rgba(45,165,160,0.55)' },
 };
 
 interface Material { id: MetalFinish; name: string; dark: string; mid: string; bright: string; hi: string; glow: string; }
@@ -91,6 +97,10 @@ export const METRIC_FINISH: Record<GaugeMetric, MetalFinish> = {
   nutrition: 'emerald', activity: 'rose-gold', wellness: 'champagne',
   protein: 'emerald', carbs: 'gold', fat: 'champagne', fiber: 'amethyst',
   mealscore: 'emerald',
+  // Prompt 183a (2026-06-11): the teal hub metric keeps the same reference
+  // finish as nutrition; the type carries no null member, and the hub call
+  // sites use the default per metric color (finish null) regardless.
+  plasmateal: 'emerald',
 };
 
 // Arc geometry: 270 degree open bottom, 0 degrees at top, clockwise.
@@ -196,12 +206,21 @@ export interface PlasmaGaugeProps {
   // gallery rendering.
   subtleTrack?: boolean;
   plainNumber?: boolean;
+  // Prompt 183a (2026-06-11): both default-preserving. When omitted the gauge
+  // renders byte-identical to before.
+  // caption: when set, renders as the center sub-label beneath the value IN
+  // PLACE OF the `of {max}` / `/ {max}` sublabel, same element and size, but
+  // uppercased.
+  caption?: string;
+  // valueFontPx: when set, overrides the center value font size (px) instead of
+  // the default size * 0.27.
+  valueFontPx?: number;
 }
 
 export function PlasmaGauge({
   value, metric, finish = null, size = 200, variant = 'standard',
   max = 100, unit, animated = true, showUnit = true, ariaLabel,
-  subtleTrack = false, plainNumber = false,
+  subtleTrack = false, plainNumber = false, caption, valueFontPx,
 }: PlasmaGaugeProps) {
   const ref = useRef<HTMLDivElement>(null);
   const uid = useId().replace(/[^a-zA-Z0-9_]/g, '_');
@@ -414,7 +433,7 @@ export function PlasmaGauge({
         <div style={{
           fontFamily: fontDisplay,
           fontWeight: 700,
-          fontSize: size * 0.27,
+          fontSize: valueFontPx ?? size * 0.27,
           lineHeight: 0.9,
           fontVariantNumeric: 'tabular-nums',
           letterSpacing: '-0.01em',
@@ -432,7 +451,19 @@ export function PlasmaGauge({
                 textShadow: `0 2px 12px rgba(0,0,0,.6), 0 0 22px ${GLOW}`,
               }),
         }}>{n}</div>
-        {showUnit && (
+        {caption !== undefined ? (
+          // Prompt 183a (2026-06-11): caption replaces the of/max sublabel,
+          // same element, size, and position, uppercased, muted token.
+          <div style={{
+            fontFamily: fontDisplay,
+            fontWeight: 600,
+            fontSize: size * 0.07,
+            color: (metal && !plainNumber) ? `${(M as Material).hi}99` : 'rgba(255,255,255,.6)',
+            letterSpacing: 0.5,
+            marginTop: size * 0.012,
+            textTransform: 'uppercase',
+          }}>{caption}</div>
+        ) : showUnit ? (
           <div style={{
             fontFamily: fontDisplay,
             fontWeight: 600,
@@ -441,7 +472,7 @@ export function PlasmaGauge({
             letterSpacing: 0.5,
             marginTop: size * 0.012,
           }}>{sublabel}</div>
-        )}
+        ) : null}
       </div>
     </div>
   );

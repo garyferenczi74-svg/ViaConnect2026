@@ -28,6 +28,13 @@ describe('NutritionMealHistoryTile source', () => {
     expect(source).toContain('STREAK_GAUGE_MAX = 7');
   });
 
+  it('Prompt 183a: the streak gauge uses the teal hub metric', () => {
+    // The streak gauge moved from nutrition (green) to the teal hub finish;
+    // size and everything else are unchanged.
+    expect(source).toContain('metric="plasmateal"');
+    expect(source).not.toContain('metric="nutrition"');
+  });
+
   it('authors no new gauge math (no svg arc / stroke geometry here)', () => {
     expect(source).not.toContain('arcPath');
     expect(source).not.toContain('strokeDasharray');

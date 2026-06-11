@@ -62,41 +62,80 @@ describe('NutritionHub source', () => {
     expect(source).toContain('Discard photo');
   });
 
-  it('Row 1 Nutrition Score reuses NutritionScoreCircleGauge with no recompute', () => {
-    expect(source).toContain(
-      "import { NutritionScoreCircleGauge } from '@/components/nutrition/NutritionScoreCircleGauge'",
-    );
-    expect(source).toContain('<NutritionScoreCircleGauge');
-    expect(source).toContain('score={metrics.nutritionScore ?? 0}');
-    expect(source).toContain('mealCount={metrics.nutritionMealCount ?? 0}');
+  it('Row 1 Nutrition Score renders a plain teal PlasmaGauge, not the tier circle gauge', () => {
+    // Prompt 183a: the score card no longer uses NutritionScoreCircleGauge; it
+    // renders a plain teal PlasmaGauge at size 176 fed the precomputed score.
+    expect(source).not.toContain('NutritionScoreCircleGauge');
+    expect(source).toContain('value={metrics.nutritionScore ?? 0}');
+    expect(source).toContain('valueFontPx={30}');
+    // The meal count still feeds the Insights panel, so the metric is preserved.
+    expect(source).toContain('metrics.nutritionMealCount ?? 0');
     // The hub does not author scoring math.
     expect(source).not.toContain('calorieWeightedMealQualityScore');
     expect(source).not.toContain('totalDailyMacrosScore');
   });
 
-  it('Row 1 Daily Macros reuses PlasmaGauge for the percent to target', () => {
+  it('Row 1 score and macro gauges use the teal hub metric at size 176', () => {
     expect(source).toContain("from '@/components/gauges/PlasmaGauge'");
-    expect(source).toContain('PlasmaGauge');
     expect(source).toContain('<PlasmaGauge');
+    // Both Row 1 gauges carry the teal hub finish, not nutrition / mealscore.
+    expect(source).toContain("metric=\"plasmateal\"");
+    expect(source).toContain("metric: 'plasmateal'");
+    // Row 1 gauges are size 176 (the props object and the score call site).
+    expect(source).toContain('size: 176');
+    expect(source).toContain('size={176}');
+  });
+
+  it('Row 1 captions read OF 100 on the score and TO TARGET on the macros gauge', () => {
+    expect(source).toContain('caption="OF 100"');
+    expect(source).toContain("caption: 'TO TARGET'");
+  });
+
+  it('Row 1 Daily Macros reuses PlasmaGauge for the percent to target', () => {
     expect(source).toContain('value={metrics.dailyMacrosPct ?? 0}');
     // The shared gauge props object caps the gauge at the 100 percent target.
     expect(source).toContain('max: 100');
   });
 
-  it('Row 1 Daily Macros renders a neutral empty gauge when the percent is undefined (no real 0)', () => {
+  it('Row 1 gauges fail open to a neutral empty gauge when the value is undefined (no real 0)', () => {
     expect(source).toContain("const hasMacroPct = typeof metrics.dailyMacrosPct === 'number'");
-    // The empty branch turns the animation off and shows a caption, not a real 0.
+    expect(source).toContain("const hasScore = typeof metrics.nutritionScore === 'number'");
+    // The empty branches turn the animation off and show a muted note, not a real 0.
     expect(source).toContain('No macros logged today yet');
+    expect(source).toContain('Log a meal to see your score');
     expect(source).toContain('animated={false}');
   });
 
-  it('Row 1 Daily Macros reads the four macro percents and omits undefined ones', () => {
-    expect(source).toContain('metrics.proteinPct');
-    expect(source).toContain('metrics.carbsPct');
-    expect(source).toContain('metrics.fatPct');
-    expect(source).toContain('metrics.fiberPct');
-    // Each readout is gated on a numeric percent.
-    expect(source).toContain("typeof m.pct === 'number'");
+  it('Row 1 Daily Macros readout shows absolute grams, not percentages', () => {
+    // The readout row reads the gram fields and omits an undefined one.
+    expect(source).toContain('metrics.proteinG');
+    expect(source).toContain('metrics.carbsG');
+    expect(source).toContain('metrics.fatG');
+    expect(source).toContain('metrics.fiberG');
+    expect(source).toContain("typeof m.grams === 'number'");
+    // A g suffix off the gram value, not a percent sign, in the readout cell.
+    expect(source).toContain('{m.grams}g');
+    expect(source).not.toContain('{m.pct}%');
+  });
+
+  it('Row 1 cards carry the badge chips Gauge, PieChart, and Plus', () => {
+    expect(source).toContain('<BadgeChip icon={Gauge} />');
+    expect(source).toContain('<BadgeChip icon={PieChart} />');
+    expect(source).toContain('<BadgeChip icon={Plus} />');
+  });
+
+  it('Row 1 cards center their content and place the title below the gauge', () => {
+    // The badge / gauge / title / caption stack is centered via the content column.
+    expect(source).toContain('contentClassName="items-center text-center"');
+  });
+
+  it('Row 1 carries no tier word and no Open affordance on the gauge cards', () => {
+    // The POOR / Fair / Good tier wording is gone from the hub entirely.
+    expect(source).not.toMatch(/\bPOOR\b/);
+    expect(source).not.toMatch(/\bFair\b/);
+    // The score and macro cards carry the new copy strings.
+    expect(source).toContain('Your nutrition signal feeding Bio Optimization');
+    expect(source).toContain('The fastest way to add what you ate');
   });
 
   it('Row 1 Log Your Meal has two internal teal glass pills to the two log routes', () => {

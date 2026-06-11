@@ -51,6 +51,14 @@ export interface NutritionHubMetrics {
   carbsPct?: number; // 0..100
   fatPct?: number; // 0..100
   fiberPct?: number; // 0..100
+  // Prompt 183a (2026-06-11): absolute consumed grams today, surfaced for the
+  // Daily Macros readout row. Rounded integers, undefined when no scored meals
+  // today (never an invented 0). The percent/score math is unchanged; these are
+  // the same per-macro sums computed before the percents.
+  proteinG?: number; // grams consumed today
+  carbsG?: number; // grams consumed today
+  fatG?: number; // grams consumed today
+  fiberG?: number; // grams consumed today
   streakDays?: number; // 0..7
   dailyMealCounts?: number[]; // length 7, oldest..today, for the history bars
   savedMealsCount?: number; // count of saved_meals
@@ -184,6 +192,10 @@ export function computeTodayNutrition(
   carbsPct?: number;
   fatPct?: number;
   fiberPct?: number;
+  proteinG?: number;
+  carbsG?: number;
+  fatG?: number;
+  fiberG?: number;
 } {
   const todayKey = localDateKey(now.toISOString(), tz);
   if (!todayKey) return {};
@@ -250,6 +262,14 @@ export function computeTodayNutrition(
     carbsPct: carbsPct === null ? undefined : Math.round(carbsPct),
     fatPct: fatPct === null ? undefined : Math.round(fatPct),
     fiberPct: fiberPct === null ? undefined : Math.round(fiberPct),
+    // Prompt 183a (2026-06-11): absolute grams consumed today. Reached only
+    // when todayMealCount > 0 (the no-meal case returns {} above), so these are
+    // present exactly when there is data, never an invented 0. Same sums the
+    // percents are derived from; no score or percent math changed.
+    proteinG: Math.round(proteinSum),
+    carbsG: Math.round(carbsSum),
+    fatG: Math.round(fatSum),
+    fiberG: Math.round(fiberSum),
   };
 }
 
@@ -413,6 +433,10 @@ export function useNutritionHubMetrics(): UseNutritionHubMetricsResult {
           if (today.carbsPct !== undefined) next.carbsPct = today.carbsPct;
           if (today.fatPct !== undefined) next.fatPct = today.fatPct;
           if (today.fiberPct !== undefined) next.fiberPct = today.fiberPct;
+          if (today.proteinG !== undefined) next.proteinG = today.proteinG;
+          if (today.carbsG !== undefined) next.carbsG = today.carbsG;
+          if (today.fatG !== undefined) next.fatG = today.fatG;
+          if (today.fiberG !== undefined) next.fiberG = today.fiberG;
 
           const counts = dailyMealCountsFromRows(rows, now, tz);
           next.dailyMealCounts = counts;

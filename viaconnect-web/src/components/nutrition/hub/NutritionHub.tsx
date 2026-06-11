@@ -24,9 +24,9 @@
 //
 // Standing rules honored: tokens only (Navy #1A2744, Card #1E3054, Teal
 // #2DA5A0, Orange #B75E18), Instrument Sans, Lucide strokeWidth 1.5, no emojis,
-// no em or en dashes anywhere. Reuse, never reimplement: the score gauge is
-// NutritionScoreCircleGauge, the macro gauge is PlasmaGauge, and the per card
-// media seam is the existing CardMedia. The score and macro values are NOT
+// no em or en dashes anywhere. Reuse, never reimplement: the Row 1 score and
+// macro gauges are both PlasmaGauge (Prompt 183a, teal hub finish), and the per
+// card media seam is the existing CardMedia. The score and macro values are NOT
 // recomputed here; they arrive precomputed from the hook.
 
 import { useEffect, useState } from 'react';
@@ -39,13 +39,15 @@ import {
   Camera,
   ChevronDown,
   Dna,
+  Gauge,
   PenLine,
+  PieChart,
+  Plus,
   Upload,
   X,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useNutrivisionManualLogHandoff } from '@/hooks/useNutrivisionManualLogHandoff';
-import { NutritionScoreCircleGauge } from '@/components/nutrition/NutritionScoreCircleGauge';
 import { PlasmaGauge, type PlasmaGaugeProps } from '@/components/gauges/PlasmaGauge';
 import { MyMeals } from '@/components/nutrition/MyMeals';
 import { NutritionInsights } from '@/components/nutrition/NutritionInsights';
@@ -89,11 +91,16 @@ function HubTile({
   gradientClass,
   accent,
   className,
+  contentClassName,
 }: {
   children: React.ReactNode;
   gradientClass: string;
   accent?: string;
   className?: string;
+  // Prompt 183a (2026-06-11): optional classes for the z 2 content column. The
+  // Row 1 cards pass items-center text-center so the badge, gauge, title, and
+  // caption stack centered; omitted elsewhere so existing tiles are unchanged.
+  contentClassName?: string;
 }) {
   return (
     <div
@@ -119,7 +126,9 @@ function HubTile({
       />
 
       {/* z 2: content. */}
-      <div className="relative z-[2] flex h-full flex-col p-4 md:p-5">{children}</div>
+      <div className={`relative z-[2] flex h-full flex-col p-4 md:p-5 ${contentClassName ?? ''}`}>
+        {children}
+      </div>
     </div>
   );
 }
@@ -140,6 +149,26 @@ function TealGlassPill({ href, icon: Icon, label }: { href: string; icon: typeof
       <Icon aria-hidden="true" className="relative h-4 w-4" strokeWidth={1.5} />
       <span className="relative">{label}</span>
     </Link>
+  );
+}
+
+// Prompt 183a (2026-06-11): the Row 1 card-top badge chip. A 40x40 rounded
+// square, faint teal fill, line border, centered Lucide icon in the teal token
+// at strokeWidth 1.5. Shared by all three Row 1 cards (Gauge, PieChart, Plus).
+function BadgeChip({ icon: Icon }: { icon: typeof Gauge }) {
+  return (
+    <span
+      aria-hidden="true"
+      className="inline-flex items-center justify-center border border-white/[0.08]"
+      style={{
+        width: 40,
+        height: 40,
+        borderRadius: 12,
+        backgroundColor: 'rgba(45,165,160,0.12)',
+      }}
+    >
+      <Icon className="h-5 w-5" strokeWidth={1.5} style={{ color: TEAL }} />
+    </span>
   );
 }
 
@@ -277,35 +306,51 @@ export function NutritionHub() {
 
   const reduced = useReducedMotion() ?? false;
 
-  // Macro readouts: only render a readout whose percent is defined. A missing
-  // macro is omitted, never shown as 0.
-  const macroReadouts: ReadonlyArray<{ label: string; pct?: number }> = [
-    { label: 'Protein', pct: metrics.proteinPct },
-    { label: 'Carbs', pct: metrics.carbsPct },
-    { label: 'Fat', pct: metrics.fatPct },
-    { label: 'Fiber', pct: metrics.fiberPct },
+  // Prompt 183a (2026-06-11): the Daily Macros readout row shows ABSOLUTE
+  // GRAMS, not percentages. Only render a readout whose gram value is defined; a
+  // missing macro is omitted, never shown as 0.
+  const macroReadouts: ReadonlyArray<{ label: string; grams?: number }> = [
+    { label: 'Protein', grams: metrics.proteinG },
+    { label: 'Carbs', grams: metrics.carbsG },
+    { label: 'Fat', grams: metrics.fatG },
+    { label: 'Fiber', grams: metrics.fiberG },
   ];
 
   // Daily Macros gauge: render the real percent when defined, otherwise a
   // neutral empty gauge (value 0, animation off) with a caption so it never
   // reads as a real 0 percent.
   const hasMacroPct = typeof metrics.dailyMacrosPct === 'number';
+  // Nutrition Score gauge: fail open. When the score is undefined render a
+  // neutral empty gauge (value 0, animation off) with a muted note instead of a
+  // fabricated number. Missing is treated as NULL, never 0.
+  const hasScore = typeof metrics.nutritionScore === 'number';
   const savedCountKnown = typeof metrics.savedMealsCount === 'number';
 
   // Props shared by the real and empty Daily Macros gauge branches. The two
   // branches vary only value and animated; keeping the rest here avoids
-  // drifting the gauge geometry between the two states.
+  // drifting the gauge geometry between the two states. Prompt 183a: teal hub
+  // finish, Row 1 size 176, percent-to-target caption.
   const macroGaugeProps: Pick<
     PlasmaGaugeProps,
-    'metric' | 'variant' | 'max' | 'size' | 'showUnit' | 'subtleTrack' | 'plainNumber'
+    | 'metric'
+    | 'variant'
+    | 'max'
+    | 'size'
+    | 'showUnit'
+    | 'subtleTrack'
+    | 'plainNumber'
+    | 'caption'
+    | 'valueFontPx'
   > = {
-    metric: 'nutrition',
+    metric: 'plasmateal',
     variant: 'standard',
     max: 100,
-    size: 150,
+    size: 176,
     showUnit: false,
     subtleTrack: true,
     plainNumber: true,
+    caption: 'TO TARGET',
+    valueFontPx: 24,
   };
 
   return (
@@ -342,57 +387,81 @@ export function NutritionHub() {
         </div>
       ) : null}
 
-      {/* ROW 1: triad. 1 col mobile, 3 cols at md+. */}
+      {/* ROW 1: triad. 1 col mobile, 3 cols at md+. Each card is centered:
+          badge chip, then (for the gauge cards) the gauge, then the title below
+          the gauge, then the caption / readouts. */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        {/* Nutrition Score: inline gauge, no Open. Reuses NutritionScoreCircleGauge
-            fed the precomputed score + meal count. A meal count of 0 triggers its
-            empty state, the correct fail open display. */}
-        <HubTile gradientClass={MEDIA_TEAL_TL}>
-          <h3 className="text-[15px] font-semibold leading-tight text-white md:text-base">
-            Nutrition Score
-          </h3>
-          <p className="mt-1 text-[12px] leading-relaxed text-white/[0.62] md:text-[13px]">
-            Today&apos;s calorie weighted meal quality.
-          </p>
-          <div className="mt-3 flex flex-1 items-center justify-center">
-            <NutritionScoreCircleGauge
-              score={metrics.nutritionScore ?? 0}
-              mealCount={metrics.nutritionMealCount ?? 0}
-              mobilePx={150}
-              desktopPx={168}
-            />
+        {/* Nutrition Score: badge, plain Plasma gauge in the teal hub finish, the
+            title below the gauge, then the signal caption. No Open, no tier word.
+            When the score is undefined a neutral empty gauge plus a muted note
+            stands in for a fabricated number. */}
+        <HubTile gradientClass={MEDIA_TEAL_TL} contentClassName="items-center text-center">
+          <BadgeChip icon={Gauge} />
+          <div className="mt-3 flex flex-1 flex-col items-center justify-center gap-2">
+            {hasScore ? (
+              <PlasmaGauge
+                metric="plasmateal"
+                size={176}
+                value={metrics.nutritionScore ?? 0}
+                caption="OF 100"
+                valueFontPx={30}
+                plainNumber
+                subtleTrack
+                showUnit={false}
+              />
+            ) : (
+              <div className="flex flex-col items-center gap-2">
+                <PlasmaGauge
+                  metric="plasmateal"
+                  size={176}
+                  value={0}
+                  animated={false}
+                  caption="OF 100"
+                  valueFontPx={30}
+                  plainNumber
+                  subtleTrack
+                  showUnit={false}
+                />
+                <span className="text-[11px] text-white/55">Log a meal to see your score</span>
+              </div>
+            )}
+            <h3 className="text-[15px] font-semibold leading-tight text-white md:text-base">
+              Nutrition Score
+            </h3>
+            <p className="text-[12px] leading-relaxed text-white/[0.62] md:text-[13px]">
+              Your nutrition signal feeding Bio Optimization
+            </p>
           </div>
         </HubTile>
 
-        {/* Daily Macros: inline single PlasmaGauge of percent to target, plus the
-            four small readouts. When the overall percent is undefined render a
-            neutral empty gauge, not a real 0. */}
-        <HubTile gradientClass={MEDIA_TEAL_TR}>
-          <h3 className="text-[15px] font-semibold leading-tight text-white md:text-base">
-            Daily Macros
-          </h3>
-          <p className="mt-1 text-[12px] leading-relaxed text-white/[0.62] md:text-[13px]">
-            Percent to your daily targets.
-          </p>
+        {/* Daily Macros: badge, single Plasma gauge of percent to target in the
+            teal hub finish, the title below the gauge, then the absolute gram
+            readout row. When the overall percent is undefined render a neutral
+            empty gauge, not a real 0. */}
+        <HubTile gradientClass={MEDIA_TEAL_TR} contentClassName="items-center text-center">
+          <BadgeChip icon={PieChart} />
           <div className="mt-3 flex flex-1 flex-col items-center justify-center gap-3">
             {hasMacroPct ? (
-              <PlasmaGauge {...macroGaugeProps} value={metrics.dailyMacrosPct ?? 0} unit="%" />
+              <PlasmaGauge {...macroGaugeProps} value={metrics.dailyMacrosPct ?? 0} />
             ) : (
               <div className="flex flex-col items-center gap-2">
                 <PlasmaGauge {...macroGaugeProps} value={0} animated={false} />
                 <span className="text-[11px] text-white/55">No macros logged today yet</span>
               </div>
             )}
+            <h3 className="text-[15px] font-semibold leading-tight text-white md:text-base">
+              Daily Macros
+            </h3>
             {hasMacroPct ? (
               <div className="grid w-full grid-cols-4 gap-1.5">
                 {macroReadouts.map((m) =>
-                  typeof m.pct === 'number' ? (
+                  typeof m.grams === 'number' ? (
                     <div key={m.label} className="flex flex-col items-center">
                       <span className="text-[10px] uppercase tracking-wide text-white/45">
                         {m.label}
                       </span>
                       <span className="text-[12px] font-semibold tabular-nums text-white/90">
-                        {m.pct}%
+                        {m.grams}g
                       </span>
                     </div>
                   ) : null,
@@ -402,16 +471,18 @@ export function NutritionHub() {
           </div>
         </HubTile>
 
-        {/* Log Your Meal: PRIORITY tile with a Teal accent edge and two teal
-            glass pills routing to the two internal log surfaces. */}
-        <HubTile gradientClass={MEDIA_ORANGE_BR} accent={TEAL}>
-          <h3 className="text-[15px] font-semibold leading-tight text-white md:text-base">
+        {/* Log Your Meal: PRIORITY tile with a Teal accent edge. Badge, the title
+            below it, a caption, then the two teal glass pills routing to the two
+            internal log surfaces. */}
+        <HubTile gradientClass={MEDIA_ORANGE_BR} accent={TEAL} contentClassName="items-center text-center">
+          <BadgeChip icon={Plus} />
+          <h3 className="mt-3 text-[15px] font-semibold leading-tight text-white md:text-base">
             Log Your Meal
           </h3>
           <p className="mt-1 text-[12px] leading-relaxed text-white/[0.62] md:text-[13px]">
-            Capture what you ate. It scores and feeds your day.
+            The fastest way to add what you ate
           </p>
-          <div className="mt-3 flex flex-1 flex-col items-center justify-center gap-3">
+          <div className="mt-3 flex w-full flex-1 flex-col items-center justify-center gap-3">
             <TealGlassPill href="/nutrition/log-meal" icon={PenLine} label="Log a Full Meal" />
             <TealGlassPill href="/nutrition/photo-ai" icon={Camera} label="NutriVision" />
           </div>

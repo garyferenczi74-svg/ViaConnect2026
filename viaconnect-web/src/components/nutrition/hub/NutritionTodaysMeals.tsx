@@ -177,7 +177,7 @@ function MealTypePanel({ def, meals, totals }: { def: MealTypeDef; meals: Meal[]
         <div className="flex flex-shrink-0 flex-col items-center">
           <PlasmaGauge
             value={score ?? 0}
-            metric="mealscore"
+            metric="plasmateal"
             max={100}
             size={112}
             showUnit={false}

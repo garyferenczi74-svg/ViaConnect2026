@@ -145,4 +145,48 @@ describe('computeTodayNutrition', () => {
     expect(result.dailyMacrosPct).toBeGreaterThanOrEqual(0);
     expect(result.dailyMacrosPct).toBeLessThanOrEqual(100);
   });
+
+  // Prompt 183a (2026-06-11): the absolute consumed grams are surfaced for the
+  // Daily Macros readout row, as rounded integers, summed across today's scored
+  // meals. The percent attainment above is unchanged.
+  it('surfaces the absolute consumed grams summed across today scored meals', () => {
+    const rows: HubMealRow[] = [
+      {
+        logged_at: iso('2026-06-10', '08:00:00'),
+        quality_score: 80,
+        calories_kcal: 600,
+        protein_g: 40.4,
+        carbs_g: 70.6,
+        fat_total_g: 18.2,
+        fiber_g: 9.5,
+      },
+      {
+        logged_at: iso('2026-06-10', '13:00:00'),
+        quality_score: 60,
+        calories_kcal: 800,
+        protein_g: 30.1,
+        carbs_g: 50.2,
+        fat_total_g: 12.3,
+        fiber_g: 5.4,
+      },
+    ];
+    const result = computeTodayNutrition(rows, targets, NOW, TZ);
+    // protein: 40.4 + 30.1 = 70.5 -> 71; carbs: 70.6 + 50.2 = 120.8 -> 121;
+    // fat: 18.2 + 12.3 = 30.5 -> 31; fiber: 9.5 + 5.4 = 14.9 -> 15.
+    expect(result.proteinG).toBe(71);
+    expect(result.carbsG).toBe(121);
+    expect(result.fatG).toBe(31);
+    expect(result.fiberG).toBe(15);
+  });
+
+  it('leaves the gram values undefined when there are no scored meals today', () => {
+    const rows: HubMealRow[] = [
+      { logged_at: iso('2026-06-09'), quality_score: 80, calories_kcal: 500, protein_g: 30 },
+    ];
+    const result = computeTodayNutrition(rows, targets, NOW, TZ);
+    expect(result.proteinG).toBeUndefined();
+    expect(result.carbsG).toBeUndefined();
+    expect(result.fatG).toBeUndefined();
+    expect(result.fiberG).toBeUndefined();
+  });
 });

@@ -56,6 +56,14 @@ describe('NutritionTodaysMeals source', () => {
     expect(source).toContain('<PlasmaGauge');
   });
 
+  it('Prompt 183a: the per meal type gauge uses the teal hub metric', () => {
+    // The per-meal-type gauge moved from mealscore (green) to the teal hub
+    // finish; size stays 112 and nothing else changes.
+    expect(source).toContain('metric="plasmateal"');
+    expect(source).toContain('size={112}');
+    expect(source).not.toContain('metric="mealscore"');
+  });
+
   it('reuses useUserMeals with the same args DailyTotalsTab passes', () => {
     expect(source).toContain("import { useUserMeals } from '@/hooks/useUserMeals'");
     expect(source).toContain('useUserMeals(userId ?? null, { days: 7, includeLegacy: true })');

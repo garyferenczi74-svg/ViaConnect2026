@@ -86,6 +86,7 @@ const METRIC_META: Record<GaugeMetric, MetricMeta> = {
   fat:       { name: 'Dietary Fat',            icon: Droplets },
   fiber:     { name: 'Fiber',                  icon: Wheat },
   mealscore: { name: 'Meal Quality',           icon: Utensils },
+  plasmateal:{ name: 'Plasma Teal',            icon: Droplets },
 };
 
 // ---------------------------------------------------------------------------

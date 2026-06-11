@@ -61,7 +61,7 @@ function StreakGauge({ streakDays, reduced }: { streakDays?: number; reduced: bo
     <div className="flex flex-shrink-0 flex-col items-center justify-center gap-2">
       <PlasmaGauge
         value={clamped}
-        metric="nutrition"
+        metric="plasmateal"
         max={STREAK_GAUGE_MAX}
         size={STREAK_GAUGE_SIZE}
         animated={!reduced}
