@@ -166,23 +166,42 @@ describe('NutritionHub source', () => {
     expect(source).toContain('setUserId(data.user?.id ?? null)');
   });
 
-  it('Row 3 wires the genetics links and NutritionInsights expand panels (no MyMeals)', () => {
+  it('Row 3 wires the NutritionInsights expand panel and no other panel (no MyMeals)', () => {
     // Prompt 183c: MyMeals no longer renders on the hub; the saved case became a
-    // navigation tile (covered by its own test below). Only the genetics and
-    // insights Open panels remain.
+    // navigation tile (covered by its own test below). Prompt 187: the genetics
+    // case became a navigation tile too, so only the insights Open panel remains.
     expect(source).not.toContain('@/components/nutrition/MyMeals');
     expect(source).not.toContain('<MyMeals');
     expect(source).toContain(
       "import { NutritionInsights } from '@/components/nutrition/NutritionInsights'",
     );
     expect(source).toContain('<NutritionInsights');
-    // Genetics actions reproduced from the old page: two /genetics links plus the guide.
-    const geneticsLinks = source.match(/href="\/genetics"/g) ?? [];
-    expect(geneticsLinks.length).toBe(2);
-    expect(source).toContain('href="/nutrition/guide"');
-    expect(source).toContain('See NutrigenDX Results');
-    expect(source).toContain('Upload Nutrition Test');
-    expect(source).toContain('Review Nutrition Results');
+  });
+
+  it('Prompt 187: the genetics links left the hub for the /nutrition/genetics page', () => {
+    // The old expand panel's three actions (See NutrigenDX Results, Upload
+    // Nutrition Test, Review Nutrition Results) moved INTO the new page, so no
+    // /genetics or /nutrition/guide link remains on the hub.
+    expect(source).not.toContain('href="/genetics"');
+    expect(source).not.toContain('href="/nutrition/guide"');
+    expect(source).not.toContain('See NutrigenDX Results');
+    expect(source).not.toContain('Upload Nutrition Test');
+    expect(source).not.toContain('Review Nutrition Results');
+    expect(source).not.toContain('nutrition-hub-panel-genetics');
+  });
+
+  it('Prompt 187: the Nutrition by Genetics card is a navigation Link, not an expander', () => {
+    // Mirrors the SaveMyMealTile precedent: HubTile chrome, centered content,
+    // the Dna badge chip, the kept description, and a bottom aligned Open Link
+    // to the standalone page carrying the analytics event name seam and a
+    // right chevron.
+    expect(source).toContain('<NutritionGeneticsTile');
+    expect(source).toContain('Nutrition by Genetics');
+    expect(source).toContain('<BadgeChip icon={Dna} />');
+    expect(source).toContain('Your NutrigenDX results and nutrition test uploads.');
+    expect(source).toContain('href="/nutrition/genetics"');
+    expect(source).toContain('data-analytics-event="nutrition_genetics_open"');
+    expect(source).toContain('ChevronRight');
   });
 
   it('Prompt 183c: the Save My Meal card is a navigation Link, not an expander', () => {
@@ -200,8 +219,9 @@ describe('NutritionHub source', () => {
     expect(source).not.toContain('nutrition-hub-panel-saved');
   });
 
-  it('the genetics upload caption uses commas, never a middot or dash separator', () => {
-    expect(source).toContain('23andMe, AncestryDNA, MyHeritage, Viome, other raw files');
+  it('uses no middot separators anywhere', () => {
+    // The genetics provider caption left the hub with its panel (Prompt 187);
+    // the hub still never uses a middot separator.
     expect(source).not.toContain('·'); // middot
   });
 
@@ -212,11 +232,12 @@ describe('NutritionHub source', () => {
     expect(source).not.toContain('fixed inset-0');
   });
 
-  it('only one Row 3 panel is open at a time (saved removed from the union)', () => {
-    // Prompt 183c: the saved case is no longer an expand panel, so OpenPanel is
-    // now just the two remaining disclosure panels.
-    expect(source).toContain("type OpenPanel = 'genetics' | 'insights' | null");
+  it('only one Row 3 panel is open at a time (genetics removed from the union)', () => {
+    // Prompt 183c removed the saved case; Prompt 187 removed the genetics case.
+    // OpenPanel is now just the insights disclosure panel.
+    expect(source).toContain("type OpenPanel = 'insights' | null");
     expect(source).not.toContain("'saved'");
+    expect(source).not.toContain("'genetics'");
     expect(source).toContain('setOpenPanel((prev) => (prev === key ? null : key))');
   });
 
@@ -227,14 +248,11 @@ describe('NutritionHub source', () => {
     expect(source).toContain('aria-labelledby={`${panelId}-label`}');
     expect(source).toContain('id={`${panelId}-label`}');
 
-    // The two remaining panel ids are the literal strings threaded to the tile
-    // and the panel (Prompt 183c removed the saved panel). Each must appear on
-    // BOTH the ExpandTile button call site and the ExpandPanel id, so each
-    // string occurs at least twice in the source.
-    const panelIds = [
-      'nutrition-hub-panel-genetics',
-      'nutrition-hub-panel-insights',
-    ];
+    // The one remaining panel id is the literal string threaded to the tile
+    // and the panel (Prompt 183c removed the saved panel, Prompt 187 removed
+    // the genetics panel). It must appear on BOTH the ExpandTile button call
+    // site and the ExpandPanel id, so the string occurs at least twice.
+    const panelIds = ['nutrition-hub-panel-insights'];
     for (const panelId of panelIds) {
       const occurrences = source.split(`panelId="${panelId}"`).length - 1;
       expect(occurrences).toBeGreaterThanOrEqual(2);
@@ -285,20 +303,22 @@ describe('NutritionHub source', () => {
   });
 
   it('puts an Open control only on the three Row 3 tiles, never on the gauges or full width tiles', () => {
-    // Prompt 183c: each of the three Row 3 tiles carries an Open. Two are
-    // expander buttons (the shared ExpandTile, instantiated twice for genetics +
-    // insights, the single aria-expanded button definition) and one is the
-    // navigation Link in SaveMyMealTile. So the Open label appears exactly twice
-    // (the ExpandTile button + the SaveMyMealTile link). The inline gauges and
-    // the full width tiles render neither, so they carry no Open.
+    // Prompt 187: each of the three Row 3 tiles carries an Open. One is the
+    // expander button (the shared ExpandTile, instantiated once for insights,
+    // the single aria-expanded button definition) and two are the navigation
+    // Links in SaveMyMealTile and NutritionGeneticsTile. So the Open label
+    // appears exactly three times. The inline gauges and the full width tiles
+    // render neither, so they carry no Open.
     const opens = source.match(/<span>Open<\/span>/g) ?? [];
-    expect(opens.length).toBe(2);
+    expect(opens.length).toBe(3);
     const ariaExpanded = source.match(/aria-expanded=\{isOpen\}/g) ?? [];
     expect(ariaExpanded.length).toBe(1);
     const tiles = source.match(/<ExpandTile/g) ?? [];
-    expect(tiles.length).toBe(2);
-    const navTiles = source.match(/<SaveMyMealTile/g) ?? [];
-    expect(navTiles.length).toBe(1);
+    expect(tiles.length).toBe(1);
+    const savedTiles = source.match(/<SaveMyMealTile/g) ?? [];
+    expect(savedTiles.length).toBe(1);
+    const geneticsTiles = source.match(/<NutritionGeneticsTile/g) ?? [];
+    expect(geneticsTiles.length).toBe(1);
   });
 
   it('never fabricates a saved count or a new this week badge', () => {

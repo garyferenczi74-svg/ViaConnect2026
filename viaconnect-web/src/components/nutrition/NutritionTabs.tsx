@@ -2,6 +2,13 @@
 
 // Prompt #162 section 2: reusable tab shell for the Nutrition page.
 // Tab state via URL ?tab=<id>. Keyboard nav: Left/Right cycle when focused.
+//
+// Prompt 187 Task 4 (2026-06-11): optional paramKey prop (default 'tab',
+// default preserving) so one page can render a second independent control,
+// e.g. the genetics recommendations needs/avoid segment on ?sub=. Each tab
+// button carries a stable id (ntab-{paramKey}-{tabId}) so panels can point
+// aria-labelledby at it, and the tablist label is overridable via the optional
+// ariaLabel prop (default 'Nutrition view', default preserving).
 
 import { useCallback } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
@@ -15,32 +22,43 @@ interface TabDef {
 interface NutritionTabsProps {
   readonly tabs: readonly TabDef[];
   readonly defaultTab: string;
+  readonly paramKey?: string;
+  readonly ariaLabel?: string;
 }
 
-export function useNutritionActiveTab(tabs: readonly TabDef[], defaultTab: string): string {
+export function useNutritionActiveTab(
+  tabs: readonly TabDef[],
+  defaultTab: string,
+  paramKey: string = 'tab',
+): string {
   const params = useSearchParams();
-  const raw = params?.get('tab') ?? null;
+  const raw = params?.get(paramKey) ?? null;
   if (raw && tabs.some((t) => t.id === raw && !t.disabled)) return raw;
   return defaultTab;
 }
 
-export function useSetNutritionTab(): (tabId: string) => void {
+export function useSetNutritionTab(paramKey: string = 'tab'): (tabId: string) => void {
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
   return useCallback(
     (tabId: string) => {
       const next = new URLSearchParams(params?.toString() ?? '');
-      next.set('tab', tabId);
+      next.set(paramKey, tabId);
       router.replace(`${pathname}?${next.toString()}`, { scroll: false });
     },
-    [router, pathname, params],
+    [router, pathname, params, paramKey],
   );
 }
 
-export function NutritionTabs({ tabs, defaultTab }: NutritionTabsProps) {
-  const active = useNutritionActiveTab(tabs, defaultTab);
-  const setTab = useSetNutritionTab();
+export function NutritionTabs({
+  tabs,
+  defaultTab,
+  paramKey = 'tab',
+  ariaLabel = 'Nutrition view',
+}: NutritionTabsProps) {
+  const active = useNutritionActiveTab(tabs, defaultTab, paramKey);
+  const setTab = useSetNutritionTab(paramKey);
   const enabled = tabs.filter((t) => !t.disabled);
 
   function onKey(e: React.KeyboardEvent<HTMLDivElement>) {
@@ -57,7 +75,7 @@ export function NutritionTabs({ tabs, defaultTab }: NutritionTabsProps) {
   return (
     <div
       role="tablist"
-      aria-label="Nutrition view"
+      aria-label={ariaLabel}
       onKeyDown={onKey}
       className="flex w-full gap-2 overflow-x-auto pb-1"
     >
@@ -67,6 +85,7 @@ export function NutritionTabs({ tabs, defaultTab }: NutritionTabsProps) {
         return (
           <button
             key={t.id}
+            id={`ntab-${paramKey}-${t.id}`}
             type="button"
             role="tab"
             aria-selected={isActive}

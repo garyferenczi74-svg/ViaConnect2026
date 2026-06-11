@@ -18,8 +18,10 @@
 //   Row 2 Today's Meals (full width),
 //   Row 3 triad (Save My Meal, Nutrition by Genetics, Nutrition Insights).
 //     Save My Meal is a navigation tile whose Open links to the standalone
-//     /nutrition/saved-meals page (Prompt 183c); Genetics and Insights keep
-//     their bottom aligned Open that expands an in flow panel below the row,
+//     /nutrition/saved-meals page (Prompt 183c); Nutrition by Genetics is a
+//     navigation tile whose Open links to the standalone /nutrition/genetics
+//     page (Prompt 187); Insights keeps its bottom aligned Open that expands
+//     an in flow panel below the row,
 //   Row 4 Meal History (full width),
 //   unmapped section (connected app dropdown) that self hides,
 //   bottom strips (Connect, Assessment retake).
@@ -35,7 +37,6 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import {
-  ArrowRight,
   Bookmark,
   Brain,
   Camera,
@@ -46,7 +47,6 @@ import {
   PenLine,
   PieChart,
   Plus,
-  Upload,
   X,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
@@ -323,7 +323,40 @@ function SaveMyMealTile({
   );
 }
 
-type OpenPanel = 'genetics' | 'insights' | null;
+// Prompt 187 Task 4 (2026-06-11): the Nutrition by Genetics Row 3 tile is a
+// navigation card mirroring SaveMyMealTile. Its Open is a Next.js Link to the
+// standalone /nutrition/genetics page (the three tab bento); the old expand
+// panel's three actions live on that page now. data-analytics-event is the
+// event name seam only: no analytics infrastructure reads hub cards yet.
+function NutritionGeneticsTile({ gradientClass }: { gradientClass: string }) {
+  return (
+    <HubTile gradientClass={gradientClass} contentClassName="items-center text-center">
+      <BadgeChip icon={Dna} />
+      <div className="mt-3 flex flex-col items-center gap-1">
+        <h3 className="text-[15px] font-semibold leading-tight text-white md:text-base">
+          Nutrition by Genetics
+        </h3>
+        <p className="text-[12px] leading-relaxed text-white/[0.62] md:text-[13px]">
+          Your NutrigenDX results and nutrition test uploads.
+        </p>
+      </div>
+
+      {/* Bottom aligned Open that navigates to the Nutrition by Genetics page. */}
+      <div className="mt-auto flex pt-4">
+        <Link
+          href="/nutrition/genetics"
+          data-analytics-event="nutrition_genetics_open"
+          className="inline-flex items-center gap-1 rounded-full border border-[#5B8DEF]/30 bg-[#2A4C9E]/25 px-3 py-1.5 text-[12px] font-medium text-white no-underline backdrop-blur-md transition-all duration-200 hover:border-[#5B8DEF]/55 hover:bg-[#2A4C9E]/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744] motion-reduce:transition-none"
+        >
+          <span>Open</span>
+          <ChevronRight className="h-3.5 w-3.5" strokeWidth={1.5} />
+        </Link>
+      </div>
+    </HubTile>
+  );
+}
+
+type OpenPanel = 'insights' | null;
 
 export function NutritionHub() {
   // Single hook call at the top; its values are distributed to the tiles.
@@ -538,25 +571,17 @@ export function NutritionHub() {
       {/* ROW 2: Today's Meals, full width. Ships its own surface. */}
       <NutritionTodaysMeals userId={userId} />
 
-      {/* ROW 3: triad. Save My Meal is a navigation tile (Open links to the
-          saved meals page); Genetics and Insights are Open expand tiles. All
-          three Open controls bottom align on a consistent line; an expand tile's
-          open panel renders below the row in flow. */}
+      {/* ROW 3: triad. Save My Meal and Nutrition by Genetics are navigation
+          tiles (Open links to their standalone pages); Insights is an Open
+          expand tile. All three Open controls bottom align on a consistent
+          line; the expand tile's open panel renders below the row in flow. */}
       <div>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           <SaveMyMealTile
             gradientClass={MEDIA_TEAL_BL}
             savedMealsCount={metrics.savedMealsCount}
           />
-          <ExpandTile
-            icon={Dna}
-            title="Nutrition by Genetics"
-            description="Your NutrigenDX results and nutrition test uploads."
-            gradientClass={MEDIA_TEAL_BC}
-            isOpen={openPanel === 'genetics'}
-            onToggle={() => toggle('genetics')}
-            panelId="nutrition-hub-panel-genetics"
-          />
+          <NutritionGeneticsTile gradientClass={MEDIA_TEAL_BC} />
           <ExpandTile
             icon={Brain}
             title="Nutrition Insights"
@@ -567,64 +592,6 @@ export function NutritionHub() {
             panelId="nutrition-hub-panel-insights"
           />
         </div>
-
-        {/* Nutrition by Genetics panel: the genetics actions reproduced from the
-            old page, all three links and copy preserved. Commas only as separators. */}
-        <ExpandPanel
-          open={openPanel === 'genetics'}
-          panelId="nutrition-hub-panel-genetics"
-          reduced={reduced}
-        >
-          <div className="rounded-2xl border border-[#2DA5A0]/30 bg-[#1E3054]/25 p-5 backdrop-blur-md">
-            <div className="flex items-start gap-4">
-              <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl border border-[#2DA5A0]/30 bg-gradient-to-br from-[#1A2744] to-[#2DA5A0]">
-                <Dna className="h-6 w-6 text-white" strokeWidth={1.5} />
-              </div>
-              <div className="min-w-0 flex-1">
-                <h3 className="text-base font-bold text-white">Nutrition by Genetics</h3>
-                <p className="mt-1 text-xs leading-relaxed text-white/60 sm:text-sm">
-                  Unlock personalized nutrition guidance based on your genetic blueprint. A
-                  NutrigenDX panel (or another nutritional genetic test) must be added to your
-                  profile before the genetic nutrition protocol can be generated.
-                </p>
-                <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-start">
-                  <Link
-                    href="/genetics"
-                    className="group relative flex min-h-[40px] items-center justify-center gap-2 overflow-hidden rounded-xl px-4 py-2 text-sm font-semibold text-white transition-all hover:shadow-[0_0_16px_rgba(45,165,160,0.35)] active:scale-[0.97]"
-                    style={{ background: 'linear-gradient(135deg, #2DA5A0 0%, #1E3054 100%)' }}
-                  >
-                    <span className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
-                    <span className="relative">See NutrigenDX Results</span>
-                    <ArrowRight className="relative h-4 w-4" strokeWidth={1.5} />
-                  </Link>
-                  <div className="flex flex-col items-stretch gap-1">
-                    <Link
-                      href="/genetics"
-                      className="group relative flex min-h-[40px] items-center justify-center gap-2 overflow-hidden rounded-xl px-4 py-2 text-sm font-semibold text-white transition-all hover:shadow-[0_0_16px_rgba(183,94,24,0.35)] active:scale-[0.97]"
-                      style={{ background: 'linear-gradient(135deg, #B75E18 0%, #1E3054 100%)' }}
-                    >
-                      <span className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
-                      <Upload className="relative h-4 w-4" strokeWidth={1.5} />
-                      <span className="relative">Upload Nutrition Test</span>
-                    </Link>
-                    <p className="text-center text-[10px] leading-tight text-white/55">
-                      23andMe, AncestryDNA, MyHeritage, Viome, other raw files
-                    </p>
-                  </div>
-                  <Link
-                    href="/nutrition/guide"
-                    className="group relative flex min-h-[40px] items-center justify-center gap-2 overflow-hidden rounded-xl px-4 py-2 text-sm font-semibold text-white transition-all hover:shadow-[0_0_16px_rgba(39,174,96,0.35)] active:scale-[0.97]"
-                    style={{ background: 'linear-gradient(135deg, #27AE60 0%, #1E3054 100%)' }}
-                  >
-                    <span className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
-                    <span className="relative">Review Nutrition Results</span>
-                    <ArrowRight className="relative h-4 w-4" strokeWidth={1.5} />
-                  </Link>
-                </div>
-              </div>
-            </div>
-          </div>
-        </ExpandPanel>
 
         {/* Nutrition Insights panel: reuses NutritionInsights as is, fed the
             precomputed meal count + score. The tile carries no fabricated
