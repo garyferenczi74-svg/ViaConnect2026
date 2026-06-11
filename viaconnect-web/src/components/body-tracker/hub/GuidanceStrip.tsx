@@ -21,7 +21,6 @@ import { useGuideLabel } from './useGuideLabel';
 const ACCENT_HEX = '#2DA5A0';
 
 export function GuidanceStrip() {
-  const Icon = GUIDE.icon;
   const labelState = useGuideLabel();
   const label =
     labelState === 'returning' ? GUIDE.returningLabel : GUIDE.firstRunLabel;
@@ -87,9 +86,8 @@ export function GuidanceStrip() {
           aria-disabled={!GUIDE.ready}
           tabIndex={GUIDE.ready ? 0 : -1}
           role="note"
-          className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-[#2DA5A0]/30 bg-[#2DA5A0]/5 px-3 py-2 text-[12px] font-medium text-[#2DA5A0] md:w-auto"
+          className="inline-flex w-full items-center justify-center rounded-xl border border-[#2DA5A0]/30 bg-[#2DA5A0]/5 px-3 py-2 text-[12px] font-medium text-[#2DA5A0] md:w-auto"
         >
-          <Icon className="h-3.5 w-3.5" strokeWidth={1.5} />
           {GUIDE.comingSoonText}
         </span>
       </div>

@@ -43,19 +43,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import {
-  Bookmark,
-  Brain,
-  Camera,
-  ChevronDown,
-  ChevronRight,
-  Dna,
-  Gauge,
-  PenLine,
-  PieChart,
-  Plus,
-  X,
-} from 'lucide-react';
+import { Camera, ChevronDown, ChevronRight, PenLine, X } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useNutrivisionManualLogHandoff } from '@/hooks/useNutrivisionManualLogHandoff';
 import { PlasmaGauge, type PlasmaGaugeProps } from '@/components/gauges/PlasmaGauge';
@@ -113,8 +101,8 @@ function HubTile({
   accent?: string;
   className?: string;
   // Prompt 183a (2026-06-11): optional classes for the z 2 content column. The
-  // Row 1 cards pass items-center text-center so the badge, gauge, title, and
-  // caption stack centered; omitted elsewhere so existing tiles are unchanged.
+  // Row 1 cards pass items-center text-center so the gauge, title, and caption
+  // stack centered; omitted elsewhere so existing tiles are unchanged.
   contentClassName?: string;
 }) {
   return (
@@ -171,32 +159,11 @@ function TealGlassPill({ href, icon: Icon, label }: { href: string; icon: typeof
   );
 }
 
-// Prompt 183a (2026-06-11): the Row 1 card-top badge chip. A 40x40 rounded
-// square, faint teal fill, line border, centered Lucide icon in the teal token
-// at strokeWidth 1.5. Shared by all three Row 1 cards (Gauge, PieChart, Plus).
-function BadgeChip({ icon: Icon }: { icon: typeof Gauge }) {
-  return (
-    <span
-      aria-hidden="true"
-      className="inline-flex items-center justify-center border border-white/[0.08]"
-      style={{
-        width: 40,
-        height: 40,
-        borderRadius: 12,
-        backgroundColor: 'rgba(45,165,160,0.12)',
-      }}
-    >
-      <Icon className="h-5 w-5" strokeWidth={1.5} style={{ color: TEAL }} />
-    </span>
-  );
-}
-
 // One of the three ROW 3 tiles. The header text sits at the top; the Open
 // button is pinned to the bottom on a consistent line with a guaranteed gap
 // above it (mt-auto + pt-4) so it never crowds the copy. Open toggles a panel
 // rendered by the parent BELOW the triad row.
 function ExpandTile({
-  icon: Icon,
   title,
   description,
   badge,
@@ -207,7 +174,6 @@ function ExpandTile({
   onToggle,
   panelId,
 }: {
-  icon: typeof Bookmark;
   title: string;
   description: string;
   badge?: string;
@@ -221,9 +187,9 @@ function ExpandTile({
 }) {
   // Centered layout (Gary 2026-06-11): the expander tile mirrors its two
   // navigation siblings (SaveMyMealTile, NutritionGeneticsTile) so the Row 3
-  // triad reads consistently: 40px BadgeChip on top, centered title and
-  // description, the optional badge pill beneath, and the Open control
-  // bottom aligned on the centered column.
+  // triad reads consistently: centered title and description, the optional
+  // badge pill beneath, and the Open control bottom aligned on the centered
+  // column.
   return (
     <HubTile
       gradientClass={gradientClass}
@@ -231,8 +197,7 @@ function ExpandTile({
       mediaLogKey={mediaLogKey}
       contentClassName="items-center text-center"
     >
-      <BadgeChip icon={Icon} />
-      <div className="mt-3 flex flex-col items-center gap-1">
+      <div className="flex flex-col items-center gap-1">
         <h3
           id={`${panelId}-label`}
           className="text-[15px] font-semibold leading-tight text-white md:text-base"
@@ -329,8 +294,7 @@ function SaveMyMealTile({
       mediaLogKey={mediaLogKey}
       contentClassName="items-center text-center"
     >
-      <BadgeChip icon={Bookmark} />
-      <div className="mt-3 flex flex-col items-center gap-1">
+      <div className="flex flex-col items-center gap-1">
         <h3 className="text-[15px] font-semibold leading-tight text-white md:text-base">
           Save My Meal
         </h3>
@@ -380,8 +344,7 @@ function NutritionGeneticsTile({
       mediaLogKey={mediaLogKey}
       contentClassName="items-center text-center"
     >
-      <BadgeChip icon={Dna} />
-      <div className="mt-3 flex flex-col items-center gap-1">
+      <div className="flex flex-col items-center gap-1">
         <h3 className="text-[15px] font-semibold leading-tight text-white md:text-base">
           Nutrition by Genetics
         </h3>
@@ -515,17 +478,16 @@ export function NutritionHub() {
         </div>
       ) : null}
 
-      {/* ROW 1: triad. 1 col mobile, 3 cols at md+. Each card is centered:
-          badge chip, then (for the gauge cards) the gauge, then the title below
-          the gauge, then the caption / readouts. */}
+      {/* ROW 1: triad. 1 col mobile, 3 cols at md+. Each card centers its
+          content: the gauge (on the gauge cards), then the title below it,
+          then the caption / readouts. */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        {/* Nutrition Score: badge, plain Plasma gauge in the teal hub finish, the
+        {/* Nutrition Score: plain Plasma gauge in the teal hub finish, the
             title below the gauge, then the signal caption. No Open, no tier word.
             When the score is undefined a neutral empty gauge plus a muted note
             stands in for a fabricated number. */}
         <HubTile gradientClass={MEDIA_TEAL_TL} contentClassName="items-center text-center">
-          <BadgeChip icon={Gauge} />
-          <div className="mt-3 flex flex-1 flex-col items-center justify-center gap-2">
+          <div className="flex flex-1 flex-col items-center justify-center gap-2">
             {hasScore ? (
               <PlasmaGauge
                 metric="plasmateal"
@@ -562,13 +524,12 @@ export function NutritionHub() {
           </div>
         </HubTile>
 
-        {/* Daily Macros: badge, single Plasma gauge of percent to target in the
+        {/* Daily Macros: single Plasma gauge of percent to target in the
             teal hub finish, the title below the gauge, then the absolute gram
             readout row. When the overall percent is undefined render a neutral
             empty gauge, not a real 0. */}
         <HubTile gradientClass={MEDIA_TEAL_TR} contentClassName="items-center text-center">
-          <BadgeChip icon={PieChart} />
-          <div className="mt-3 flex flex-1 flex-col items-center justify-center gap-3">
+          <div className="flex flex-1 flex-col items-center justify-center gap-3">
             {hasMacroPct ? (
               <PlasmaGauge {...macroGaugeProps} value={metrics.dailyMacrosPct ?? 0} />
             ) : (
@@ -599,9 +560,9 @@ export function NutritionHub() {
           </div>
         </HubTile>
 
-        {/* Log Your Meal: PRIORITY tile with a Teal accent edge. Badge, the title
-            below it, a caption, then the two teal glass pills routing to the two
-            internal log surfaces. */}
+        {/* Log Your Meal: PRIORITY tile with a Teal accent edge. The title, a
+            caption, then the two teal glass pills routing to the two internal
+            log surfaces. */}
         <HubTile
           gradientClass={MEDIA_ORANGE_BR}
           media={NUTRITION_CARD_MEDIA.logYourMeal}
@@ -609,8 +570,7 @@ export function NutritionHub() {
           accent={TEAL}
           contentClassName="items-center text-center"
         >
-          <BadgeChip icon={Plus} />
-          <h3 className="mt-3 text-[15px] font-semibold leading-tight text-white md:text-base">
+          <h3 className="text-[15px] font-semibold leading-tight text-white md:text-base">
             Log Your Meal
           </h3>
           <p className="mt-1 text-[12px] leading-relaxed text-white/[0.62] md:text-[13px]">
@@ -644,7 +604,6 @@ export function NutritionHub() {
             mediaLogKey="nutritionByGenetics"
           />
           <ExpandTile
-            icon={Brain}
             title="Nutrition Insights"
             description="What your logging says about your day."
             gradientClass={MEDIA_TEAL_BR}

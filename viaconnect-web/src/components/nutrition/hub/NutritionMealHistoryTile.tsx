@@ -19,7 +19,6 @@
 
 import { useMemo } from 'react';
 import { useReducedMotion } from 'framer-motion';
-import { CalendarDays, Flame } from 'lucide-react';
 import { PlasmaGauge } from '@/components/gauges/PlasmaGauge';
 import {
   barHeightFractions,
@@ -36,9 +35,8 @@ export interface NutritionMealHistoryTileProps {
   readonly dailyMealCounts?: number[];
 }
 
-// Brand tokens. Card #1E3054, Teal #2DA5A0, Orange #B75E18, Navy #1A2744.
+// Brand tokens. Card #1E3054, Teal #2DA5A0, Navy #1A2744.
 const TEAL = '#2DA5A0';
-const ORANGE = '#B75E18';
 const STREAK_GAUGE_MAX = 7;
 const STREAK_GAUGE_SIZE = 132;
 
@@ -73,8 +71,7 @@ function StreakGauge({ streakDays, reduced }: { streakDays?: number; reduced: bo
         }
       />
       {present ? (
-        <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-white/50">
-          <Flame aria-hidden="true" className="h-3.5 w-3.5" strokeWidth={1.5} style={{ color: ORANGE }} />
+        <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white/50">
           <span>day streak</span>
         </div>
       ) : (
@@ -202,8 +199,7 @@ export function NutritionMealHistoryTile({
 
   return (
     <section className="font-[Instrument_Sans] w-full rounded-2xl border border-white/10 bg-[#1E3054]/40 text-white backdrop-blur-md">
-      <header className="flex items-center gap-2 px-4 py-3 md:px-5 md:py-4">
-        <CalendarDays className="h-4 w-4 text-white/70" strokeWidth={1.5} />
+      <header className="px-4 py-3 md:px-5 md:py-4">
         <h2 className="text-[15px] font-semibold text-white">7 day meal history</h2>
       </header>
 

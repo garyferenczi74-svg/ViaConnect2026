@@ -5,13 +5,12 @@
 // Structure back to front (Section 6):
 //   z 0: media layer (gradient, image, or video) via CardMedia.
 //   z 1: legibility scrim so text stays readable over any frame.
-//   z 2: content panel with the icon chip on the left and an optional
-//        metric chip on the right; title, description, and the go
-//        affordance below.
+//   z 2: content panel with an optional metric chip on the right;
+//        title, description, and the go affordance below.
 //
 // A 2px top accent rule uses the card's accent token. The whole card
-// is a single Next.js Link; the metric chip and icon chip are
-// presentational only and do not steal focus.
+// is a single Next.js Link; the metric chip is presentational only and
+// does not steal focus.
 
 import Link from 'next/link';
 import { ChevronRight } from 'lucide-react';
@@ -29,7 +28,6 @@ const ACCENT_HEX: Record<SurfaceCard['accent'], string> = {
 };
 
 export function BentoCard({ surface, metricValue }: BentoCardProps) {
-  const Icon = surface.icon;
   const accentHex = ACCENT_HEX[surface.accent];
   const ariaLabel = metricValue
     ? `${surface.title}: ${metricValue} ${surface.metricLabel}`
@@ -64,14 +62,8 @@ export function BentoCard({ surface, metricValue }: BentoCardProps) {
 
       {/* z 2: content panel. */}
       <div className="relative z-[2] flex h-full flex-col gap-3 p-4 md:p-5">
-        <div className="flex items-start justify-between gap-3">
-          <span
-            className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.06] backdrop-blur-sm"
-            aria-hidden="true"
-          >
-            <Icon className="h-4 w-4" strokeWidth={1.5} style={{ color: accentHex }} />
-          </span>
-          {metricValue ? (
+        {metricValue ? (
+          <div className="flex items-start justify-end">
             <span
               className="inline-flex max-w-[55%] flex-col items-end rounded-xl border border-white/10 bg-white/[0.04] px-2.5 py-1 text-right backdrop-blur-sm"
               aria-hidden="true"
@@ -83,8 +75,8 @@ export function BentoCard({ surface, metricValue }: BentoCardProps) {
                 {surface.metricLabel}
               </span>
             </span>
-          ) : null}
-        </div>
+          </div>
+        ) : null}
 
         <div className={`mt-auto flex flex-col gap-1 ${isFeatured ? '' : 'pb-10 pr-16'}`}>
           <h3 className="text-[15px] font-semibold leading-tight text-white md:text-base">

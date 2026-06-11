@@ -63,6 +63,15 @@ describe('CardMedia source', () => {
     expect(bento).toContain('<CardMedia media={surface.media} />');
   });
 
+  it('icon removal (Gary 2026-06-11): BentoCard renders no icon chip, keeping the metric chip and Open chevron', () => {
+    // hubConfig SURFACES keep their icon fields; BentoCard simply no longer
+    // reads surface.icon. The functional Open chevron stays.
+    const bento = readFileSync(BENTO, 'utf-8');
+    expect(bento).not.toContain('surface.icon');
+    expect(bento).toContain('ChevronRight');
+    expect(bento).toContain('{metricValue}');
+  });
+
   it('contains no em or en dashes', () => {
     expect(source.includes(String.fromCharCode(0x2014))).toBe(false);
     expect(source.includes(String.fromCharCode(0x2013))).toBe(false);

@@ -4,8 +4,8 @@
 // the Vercel preview. These lock the PlasmaGauge reuse with max 7, the seven
 // bar slots, the props only / presentational contract (no data hooks, no
 // Supabase, no fetch), the undefined prop empty states (no fabricated 0), the
-// streak caption, the absence of an Open button, strokeWidth 1.5, and the no
-// dash rule.
+// streak caption, the absence of an Open button, the icon free chrome, and
+// the no dash rule.
 
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
@@ -112,11 +112,13 @@ describe('NutritionMealHistoryTile source', () => {
     expect(source).toContain('useReducedMotion');
   });
 
-  it('uses Lucide strokeWidth 1.5 only', () => {
-    expect(source).toContain("from 'lucide-react'");
-    expect(source).toContain('strokeWidth={1.5}');
-    expect(source).not.toContain('strokeWidth={2}');
-    expect(source).not.toContain('strokeWidth={1}');
+  it('icon removal (Gary 2026-06-11): the CalendarDays header icon and Flame streak icon are gone', () => {
+    // The tile renders no Lucide icons at all now; the title, the gauge, the
+    // bars, and the day streak caption stay.
+    expect(source).not.toContain("from 'lucide-react'");
+    expect(source).not.toContain('CalendarDays');
+    expect(source).not.toContain('Flame');
+    expect(source).toContain('7 day meal history');
   });
 
   it('contains no em or en dashes', () => {

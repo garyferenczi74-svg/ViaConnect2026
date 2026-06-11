@@ -35,12 +35,11 @@
 // HubTile uses: CardMedia background (the todaysMeals still from
 // nutritionHubMedia, failing open to its gradient) at z 0, the shared
 // legibility scrim at z 1, and the existing content raised to z 2.
-// Presentational only; the accordion rows, the Utensils badge, and the copy
-// are unchanged.
+// Presentational only; the accordion rows and the copy are unchanged.
 
 import { useMemo, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { ChevronDown, Coffee, Cookie, Droplet, Soup, Utensils, UtensilsCrossed, type LucideIcon } from 'lucide-react';
+import { ChevronDown, Coffee, Cookie, Droplet, Soup, UtensilsCrossed, type LucideIcon } from 'lucide-react';
 import type { Meal, MealType } from '@/lib/gordon/types';
 import { PlasmaGauge } from '@/components/gauges/PlasmaGauge';
 import { CardMedia } from '@/components/body-tracker/hub/CardMedia';
@@ -431,18 +430,7 @@ export function NutritionTodaysMeals(props: NutritionTodaysMealsProps) {
         className="pointer-events-none absolute inset-0 z-[1] bg-gradient-to-t from-[#1A2744]/85 via-[#1A2744]/30 to-transparent"
       />
 
-      {/* Prompt 183b (2026-06-11): card-top Utensils chip ABOVE the title. A
-          40x40 rounded square, faint teal fill, line border, the Lucide
-          Utensils glyph in the teal token. Replicated locally here; Row 1's
-          BadgeChip is neither imported nor modified. */}
-      <header className="relative z-[2] flex flex-col gap-2 px-4 py-3 md:px-5 md:py-4">
-        <span
-          aria-hidden="true"
-          className="inline-flex items-center justify-center border border-white/[0.08]"
-          style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(45,165,160,0.12)' }}
-        >
-          <Utensils className="h-5 w-5" strokeWidth={1.5} style={{ color: '#2DA5A0' }} />
-        </span>
+      <header className="relative z-[2] px-4 py-3 md:px-5 md:py-4">
         <h2 className="text-[15px] font-semibold text-white">Today&apos;s meals</h2>
       </header>
 

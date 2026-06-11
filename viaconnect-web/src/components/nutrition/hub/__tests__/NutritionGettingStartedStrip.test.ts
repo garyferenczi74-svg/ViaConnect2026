@@ -4,9 +4,9 @@
 // BackToNutritionLink.test.ts); full visual sign off happens at Vercel
 // preview. These lock the hardcoded Getting Started label, the
 // description wired through getDisplayName, the coming soon pill text,
-// the white pill text and icon treatment, the non interactive state,
-// the reserved avatar seam, the absence of any DB read, and the no dash
-// rule.
+// the white pill text with no icon (icon removal, Gary 2026-06-11), the
+// non interactive state, the reserved avatar seam, the absence of any
+// DB read, and the no dash rule.
 
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
@@ -36,10 +36,10 @@ describe('NutritionGettingStartedStrip source', () => {
     expect(source).toContain("const COMING_SOON_TEXT = 'My Nutrition Guide coming soon'");
   });
 
-  it('renders the coming soon pill text and its icon in white', () => {
-    // The pill chip carries white text and the PlayCircle icon is white.
+  it('icon removal (Gary 2026-06-11): the pill keeps its white text and carries no icon', () => {
     expect(source).toContain('text-white');
-    expect(source).toContain('PlayCircle className="h-3.5 w-3.5 text-white"');
+    expect(source).not.toContain('PlayCircle');
+    expect(source).not.toContain("from 'lucide-react'");
   });
 
   it('keeps the action non interactive and presentational', () => {
@@ -57,10 +57,6 @@ describe('NutritionGettingStartedStrip source', () => {
     expect(source).not.toContain('createClient');
     expect(source).not.toContain('has_seen');
     expect(source).not.toContain('useGuideLabel');
-  });
-
-  it('uses Lucide strokeWidth 1.5', () => {
-    expect(source).toContain('strokeWidth={1.5}');
   });
 
   it('contains no em or en dashes', () => {

@@ -9,7 +9,7 @@
 //   - The label is hardcoded to "Getting Started". The guide is coming
 //     soon, so the first run vs returning distinction is moot; we read
 //     no profile flag and add no DB column.
-//   - The coming soon pill text and its icon are WHITE (not teal).
+//   - The coming soon pill text is WHITE (not teal).
 //   - The guide name flows through getDisplayName('gordon').
 //
 // The action is non interactive while the guide is coming soon:
@@ -19,7 +19,6 @@
 // Mobile (under 560px): avatar + text stack at the top, the action goes
 // full width below. Desktop and tablet keep the horizontal layout.
 
-import { PlayCircle } from 'lucide-react';
 import { getDisplayName } from '@/lib/getDisplayName';
 
 const ACCENT_HEX = '#2DA5A0';
@@ -84,17 +83,16 @@ export function NutritionGettingStartedStrip() {
       </div>
 
       {/* Coming soon presentational action. aria-disabled and removed from
-          the tab order while the guide is not ready. The pill text and
-          its icon are white per spec. Mobile: full width below text.
+          the tab order while the guide is not ready. The pill text is
+          white per spec. Mobile: full width below text.
           Desktop: right aligned chip. */}
       <div className="flex md:ml-auto md:flex-shrink-0">
         <span
           aria-disabled="true"
           tabIndex={-1}
           role="note"
-          className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/[0.05] px-3 py-2 text-[12px] font-medium text-white md:w-auto"
+          className="inline-flex w-full items-center justify-center rounded-xl border border-white/20 bg-white/[0.05] px-3 py-2 text-[12px] font-medium text-white md:w-auto"
         >
-          <PlayCircle className="h-3.5 w-3.5 text-white" strokeWidth={1.5} />
           {COMING_SOON_TEXT}
         </span>
       </div>

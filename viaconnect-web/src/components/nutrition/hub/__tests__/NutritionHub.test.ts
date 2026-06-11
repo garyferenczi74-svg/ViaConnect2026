@@ -119,10 +119,14 @@ describe('NutritionHub source', () => {
     expect(source).not.toContain('{m.pct}%');
   });
 
-  it('Row 1 cards carry the badge chips Gauge, PieChart, and Plus', () => {
-    expect(source).toContain('<BadgeChip icon={Gauge} />');
-    expect(source).toContain('<BadgeChip icon={PieChart} />');
-    expect(source).toContain('<BadgeChip icon={Plus} />');
+  it('icon removal (Gary 2026-06-11): no decorative badge chips remain on any card', () => {
+    // BadgeChip and its six call sites are gone. Only the functional control
+    // icons survive in the lucide import: the teal glass pill CTAs (PenLine,
+    // Camera), the Open chevrons, and the handoff banner X.
+    expect(source).not.toContain('BadgeChip');
+    expect(source).toContain(
+      "import { Camera, ChevronDown, ChevronRight, PenLine, X } from 'lucide-react'",
+    );
   });
 
   it('Row 1 cards center their content and place the title below the gauge', () => {
@@ -192,12 +196,10 @@ describe('NutritionHub source', () => {
 
   it('Prompt 187: the Nutrition by Genetics card is a navigation Link, not an expander', () => {
     // Mirrors the SaveMyMealTile precedent: HubTile chrome, centered content,
-    // the Dna badge chip, the kept description, and a bottom aligned Open Link
-    // to the standalone page carrying the analytics event name seam and a
-    // right chevron.
+    // the kept description, and a bottom aligned Open Link to the standalone
+    // page carrying the analytics event name seam and a right chevron.
     expect(source).toContain('<NutritionGeneticsTile');
     expect(source).toContain('Nutrition by Genetics');
-    expect(source).toContain('<BadgeChip icon={Dna} />');
     expect(source).toContain('Your NutrigenDX results and nutrition test uploads.');
     expect(source).toContain('href="/nutrition/genetics"');
     expect(source).toContain('data-analytics-event="nutrition_genetics_open"');
@@ -205,12 +207,11 @@ describe('NutritionHub source', () => {
   });
 
   it('Prompt 183c: the Save My Meal card is a navigation Link, not an expander', () => {
-    // The card keeps its singular label and its Bookmark badge chip, links to the
-    // standalone saved meals page with a right chevron, and shows the real saved
-    // count badge (never a hardcoded 24). It does not toggle any panel.
+    // The card keeps its singular label, links to the standalone saved meals
+    // page with a right chevron, and shows the real saved count badge (never a
+    // hardcoded 24). It does not toggle any panel.
     expect(source).toContain('<SaveMyMealTile');
     expect(source).toContain('Save My Meal');
-    expect(source).toContain('<BadgeChip icon={Bookmark} />');
     expect(source).toContain('href="/nutrition/saved-meals"');
     expect(source).toContain('ChevronRight');
     expect(source).toContain('savedMealsCount={metrics.savedMealsCount}');
@@ -423,5 +424,33 @@ describe('nutrition page.tsx wrapper', () => {
   it('contains no em or en dashes', () => {
     expect(source.includes(String.fromCharCode(0x2014))).toBe(false);
     expect(source.includes(String.fromCharCode(0x2013))).toBe(false);
+  });
+});
+
+// Icon removal exceptions (Gary 2026-06-11): the Connections strip and the
+// Update Your Assessment card KEEP their icons on both hubs. Read only locks
+// on those untouched files so a future sweep cannot strip them silently.
+describe('icon removal exceptions keep their icons', () => {
+  const CONNECT = path.resolve(__dirname, '..', 'NutritionConnectStrip.tsx');
+  const RETAKE = path.resolve(
+    __dirname,
+    '..',
+    '..',
+    '..',
+    'body-tracker',
+    'hub',
+    'AssessmentRetakeCard.tsx',
+  );
+
+  it('NutritionConnectStrip still renders its Plug chip', () => {
+    const src = readFileSync(CONNECT, 'utf-8');
+    expect(src).toContain("import { ArrowRight, Plug } from 'lucide-react'");
+    expect(src).toContain('<Plug');
+  });
+
+  it('AssessmentRetakeCard still renders its RefreshCw icons', () => {
+    const src = readFileSync(RETAKE, 'utf-8');
+    expect(src).toContain("import { RefreshCw, Check } from 'lucide-react'");
+    expect(src).toContain('<RefreshCw');
   });
 });

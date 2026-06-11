@@ -67,12 +67,20 @@ describe('NutritionTodaysMeals source', () => {
     expect(source).not.toContain('metric="mealscore"');
   });
 
-  it('Prompt 183b: shows a 40x40 teal Utensils badge above the title', () => {
-    expect(source).toContain('Utensils');
-    expect(source).toContain('width: 40, height: 40, borderRadius: 12');
-    expect(source).toContain("backgroundColor: 'rgba(45,165,160,0.12)'");
-    // Replicated locally; Row 1's BadgeChip is neither imported nor rendered (a
-    // passing mention in a comment explaining the local replica is allowed).
+  it('icon removal (Gary 2026-06-11): the card-top Utensils chip is gone, the row icons stay', () => {
+    // The 40x40 teal badge above the title was removed; the title and the
+    // functional meal row icons stay. Word bounded so UtensilsCrossed (the
+    // dinner row icon) still passes.
+    expect(source).not.toMatch(/\bUtensils\b/);
+    expect(source).not.toContain('width: 40, height: 40, borderRadius: 12');
+    expect(source).not.toContain('rgba(45,165,160,0.12)');
+    expect(source).toContain('Today&apos;s meals');
+    expect(source).toContain('Coffee');
+    expect(source).toContain('Soup');
+    expect(source).toContain('UtensilsCrossed');
+    expect(source).toContain('Cookie');
+    expect(source).toContain('Droplet');
+    // Still no BadgeChip import or render.
     expect(source).not.toMatch(/import[^\n]*BadgeChip/);
     expect(source).not.toContain('<BadgeChip');
   });
