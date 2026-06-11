@@ -1,10 +1,11 @@
 'use client';
 
 // Prompt #160 section 9: animated analyzing state. Pulsing Sparkles icon,
-// "Gordan is analyzing your meal..." subtitle.
+// "Gordon is analyzing your meal..." subtitle.
 
 import { motion } from 'framer-motion';
 import { Sparkles } from 'lucide-react';
+import { getDisplayName } from '@/lib/getDisplayName';
 
 export function AnalyzingState({ subtitle }: { subtitle?: string }) {
   return (
@@ -16,7 +17,7 @@ export function AnalyzingState({ subtitle }: { subtitle?: string }) {
       >
         <Sparkles className="h-8 w-8 text-[#2DA5A0]" strokeWidth={1.5} />
       </motion.div>
-      <p className="mt-4 text-sm font-medium text-white">Gordan is analyzing your meal...</p>
+      <p className="mt-4 text-sm font-medium text-white">{getDisplayName('gordon')} is analyzing your meal...</p>
       {subtitle && <p className="mt-1 text-xs text-white/40">{subtitle}</p>}
     </div>
   );

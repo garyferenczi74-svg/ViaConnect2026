@@ -35,7 +35,7 @@ function generateInsight(meals: number, score: number) {
     return {
       message: "No meals logged today yet. Logging meals helps Hannah understand your nutritional patterns and refine your supplement protocol.",
       suggestions: [
-        "Try a quick log — just tap the meal type and rate its quality. Takes 5 seconds.",
+        "Try a quick log. Just tap the meal type and rate its quality. Takes 5 seconds.",
         "Your supplement stack is optimized for your genetics, but dietary data makes it even more precise.",
       ],
     };
@@ -44,15 +44,15 @@ function generateInsight(meals: number, score: number) {
     return {
       message: `You've logged ${meals} meal${meals > 1 ? 's' : ''} today. Logging 3+ meals gives Hannah a complete picture of your daily nutrition.`,
       suggestions: [
-        "Consistent logging unlocks weekly trend analysis and personalized meal suggestions.",
+        "Consistent logging unlocks weekly trend analysis and meal suggestions tailored to what you log.",
         score < 50
-          ? "Consider adding more protein-rich foods — your CAQ profile suggests room for improvement."
+          ? "A protein forward meal can help lift a lower score."
           : "Your nutrition score is looking solid. Keep logging to maintain your streak.",
       ],
     };
   }
   return {
-    message: `Great consistency — ${meals} meals logged today with a nutrition score of ${score}/100. Hannah can now track your weekly patterns.`,
+    message: `Great consistency. ${meals} meals logged today with a nutrition score of ${score}/100. Hannah can now track your weekly patterns.`,
     suggestions: [
       score >= 75
         ? "Strong nutritional balance today. Your supplement stack and diet are working well together."

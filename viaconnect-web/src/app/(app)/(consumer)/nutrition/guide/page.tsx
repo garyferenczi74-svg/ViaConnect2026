@@ -11,6 +11,7 @@ import { BackToNutritionLink } from '@/components/nutrition/hub/BackToNutritionL
 import type { GeneticsNutritionalGuide, SupplementDietSynergy, MealTemplate } from '@/lib/agents/gordan/generateNutritionalGuide';
 import { fetchGuide, requestGuideGeneration } from '@/lib/agents/gordan/generateNutritionalGuide';
 import { createClient } from '@/lib/supabase/client';
+import { getDisplayName } from '@/lib/getDisplayName';
 
 export default function NutritionGuidePage() {
   const [guide, setGuide] = useState<GeneticsNutritionalGuide | null>(null);
@@ -56,13 +57,13 @@ export default function NutritionGuidePage() {
         <BackToNutritionLink />
         <div>
           <h1 className="text-xl font-bold text-white sm:text-2xl">Your Genetics Nutritional Guide</h1>
-          <p className="mt-1 text-sm text-white/40">Personalized dietary blueprint powered by Gordan</p>
+          <p className="mt-1 text-sm text-white/40">Personalized dietary blueprint powered by {getDisplayName('gordon')}</p>
         </div>
         <div className="rounded-xl border border-white/10 bg-[#1E3054]/60 backdrop-blur-md p-8 text-center">
           <Dna className="mx-auto h-10 w-10 text-[#2DA5A0]/50" strokeWidth={1.5} />
           <h2 className="mt-4 text-lg font-semibold text-white">No Guide Generated Yet</h2>
           <p className="mx-auto mt-2 max-w-md text-sm text-white/40">
-            Gordan will analyze your CAQ responses, lab results, and genetic data to create a personalized nutritional guide tailored to your DNA.
+            {getDisplayName('gordon')} will analyze your CAQ responses, lab results, and genetic data to create a personalized nutritional guide tailored to your DNA.
           </p>
           <button
             onClick={handleGenerate}
@@ -92,7 +93,7 @@ export default function NutritionGuidePage() {
       <BackToNutritionLink />
       <div>
         <h1 className="text-xl font-bold text-white sm:text-2xl">Your Genetics Nutritional Guide</h1>
-        <p className="mt-1 text-sm text-white/40">Personalized dietary blueprint powered by Gordan</p>
+        <p className="mt-1 text-sm text-white/40">Personalized dietary blueprint powered by {getDisplayName('gordon')}</p>
       </div>
 
       <TierBanner
