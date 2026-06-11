@@ -17,7 +17,12 @@ import { Camera, ChevronLeft, HelpCircle, ImageUp, Mic, Settings, X } from 'luci
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import type { CaptureResult, CaptureSource } from '@/lib/capacitor/camera-capture';
-import { detectPlatform } from '@/lib/capacitor/camera-capture';
+import {
+  detectPlatform,
+  captureCameraFallbackPhoto,
+  CaptureCancelledError,
+} from '@/lib/capacitor/camera-capture';
+import { safeLog } from '@/lib/utils/safe-log';
 import { WebCameraPreview } from './WebCameraPreview';
 import { mapAIErrorToClass } from '@/lib/nutrition/vision/error-class-mapper';
 import { writeNutrivisionManualLogHandoff } from '@/hooks/useNutrivisionManualLogHandoff';
@@ -312,6 +317,11 @@ export default function NutriVisionTab() {
     // Prompt 171a: on web, the camera path opens a preview overlay so the
     // user can frame before capture. Gallery and native paths are unchanged.
     if (source === 'camera' && detectPlatform() === 'web') {
+      safeLog.info('nutrivision.capture', 'nutrivision_camera_opened', {
+        component: 'NutriVisionTab',
+        action: 'web_overlay',
+        platform: 'web',
+      });
       setShowWebCameraPreview(true);
       return;
     }
@@ -347,6 +357,28 @@ export default function NutriVisionTab() {
   const handleWebCameraCancel = useCallback(() => {
     setShowWebCameraPreview(false);
   }, []);
+
+  // Prompt 190: Photo-path fallback when getUserMedia is denied or
+  // unavailable. Closes the overlay and opens a native file input WITH
+  // capture="environment" (the device camera). The Upload tile never takes
+  // this path; its picker carries no capture attribute. Fail-open: a cancel
+  // returns to idle silently, anything else surfaces inline.
+  const handleWebCameraNativeFallback = useCallback(async () => {
+    setShowWebCameraPreview(false);
+    setAnalysisError(null);
+    setPhase('capturing');
+    try {
+      const result = await captureCameraFallbackPhoto();
+      setLastCaptureForRetry(result);
+      setPhase('analyzing');
+      await analysis.analyze(result);
+    } catch (err) {
+      setPhase('idle');
+      if (!(err instanceof CaptureCancelledError)) {
+        setAnalysisError(err instanceof Error ? err.message : 'Could not capture a photo. Try again.');
+      }
+    }
+  }, [analysis]);
 
   // #170a supplement §20.4: Try Again reuses the cached CaptureResult so the
   // user does not re-frame. If the capture is no longer available we fall
@@ -614,6 +646,7 @@ export default function NutriVisionTab() {
         open={showWebCameraPreview}
         onCancel={handleWebCameraCancel}
         onConfirm={handleWebCameraConfirm}
+        onNativeFallback={handleWebCameraNativeFallback}
       />
 
       {/* Prompt 175m (2026-06-05): BarcodeScannerOverlay and

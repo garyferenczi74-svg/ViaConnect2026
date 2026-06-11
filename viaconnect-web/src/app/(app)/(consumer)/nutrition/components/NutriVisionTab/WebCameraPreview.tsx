@@ -37,6 +37,13 @@ export interface WebCameraPreviewProps {
   maxEdgePx?: number;
   /** JPEG quality 0-100 (defaults to camera-capture.ts default). */
   jpegQuality?: number;
+  /**
+   * Prompt 190: when getUserMedia is denied or unavailable, the Photo path
+   * falls back to a native file input WITH capture="environment" (forces
+   * the device camera). The parent owns the input flow; this button only
+   * hands control back inside the user gesture.
+   */
+  onNativeFallback?: () => void;
 }
 
 type PreviewState = 'initializing' | 'streaming' | 'captured' | 'permission_denied' | 'unsupported' | 'capture_error';
@@ -51,6 +58,7 @@ export function WebCameraPreview({
   onConfirm,
   maxEdgePx,
   jpegQuality,
+  onNativeFallback,
 }: WebCameraPreviewProps): JSX.Element | null {
   const titleId = useId();
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -270,14 +278,27 @@ export function WebCameraPreview({
                 ? 'Allow camera access in your browser settings to take a meal photo.'
                 : 'Try Upload photo from your library instead.')}
           </p>
-          <button
-            type="button"
-            onClick={handleCancel}
-            className="mt-3 underline"
-            style={{ color: TEAL, fontSize: 13 }}
-          >
-            Close
-          </button>
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            {onNativeFallback && (
+              <button
+                type="button"
+                onClick={onNativeFallback}
+                className="inline-flex items-center gap-2 rounded-full px-4 py-2 font-medium"
+                style={{ backgroundColor: TEAL, color: '#FFFFFF', fontSize: 13 }}
+              >
+                <Camera size={14} strokeWidth={1.5} aria-hidden="true" />
+                Use device camera
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={handleCancel}
+              className="underline"
+              style={{ color: TEAL, fontSize: 13 }}
+            >
+              Close
+            </button>
+          </div>
         </div>
       )}
 

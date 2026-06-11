@@ -8,8 +8,11 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   detectPlatform,
   captureMealPhoto,
+  captureCameraFallbackPhoto,
   CaptureCancelledError,
   CaptureUnsupportedError,
+  CaptureFileTooLargeError,
+  CaptureUnsupportedTypeError,
 } from '../camera-capture';
 
 // 1x1 white JPEG (raw base64, no data URL prefix).
@@ -62,11 +65,13 @@ describe('detectPlatform', () => {
 class FakeFile {
   readonly type: string;
   readonly size: number;
+  readonly name: string;
   private readonly base64: string;
-  constructor(base64: string, type: string) {
+  constructor(base64: string, type: string, opts?: { size?: number; name?: string }) {
     this.base64 = base64;
     this.type = type;
-    this.size = Math.floor((base64.length * 3) / 4);
+    this.size = opts?.size ?? Math.floor((base64.length * 3) / 4);
+    this.name = opts?.name ?? 'photo.jpg';
   }
   asDataUrl(): string {
     return `data:${this.type};base64,${this.base64}`;
@@ -94,21 +99,26 @@ interface FakeInputEl {
   setAttribute(name: string, value: string): void;
   addEventListener(event: string, cb: () => void): void;
   click(): void;
+  _attributes: Record<string, string>;
   _listeners: Record<string, Array<() => void>>;
   _onClick: (() => void) | null;
 }
 
 function makeFakeInput(onClick: (input: FakeInputEl) => void): FakeInputEl {
   const listeners: Record<string, Array<() => void>> = {};
+  const attributes: Record<string, string> = {};
   const input: FakeInputEl = {
     type: '',
     accept: '',
     style: {},
     files: null,
     parentNode: null,
+    _attributes: attributes,
     _listeners: listeners,
     _onClick: null,
-    setAttribute: (_name, _value) => undefined,
+    setAttribute: (name, value) => {
+      attributes[name] = value;
+    },
     addEventListener: (event, cb) => {
       listeners[event] = listeners[event] ?? [];
       listeners[event].push(cb);
@@ -193,6 +203,90 @@ describe('captureMealPhoto (web)', () => {
     expect(result.imageBase64.startsWith('data:')).toBe(false);
     expect(typeof result.capturedAt).toBe('string');
     expect(result.bytesAfterCompression).toBeGreaterThan(0);
+  });
+
+  it('source="gallery": the input carries NO capture attribute and accepts HEIC (Prompt 190 defect)', async () => {
+    // The capture attribute on the upload input was the Prompt 190 bug: on
+    // iOS Safari it forces the camera and suppresses the library picker.
+    let captured: FakeInputEl | null = null;
+    stubBrowserGlobals({
+      onCreateInput: (input) => {
+        captured = input;
+        input.files = [new FakeFile(ONE_PX_JPEG_BASE64, 'image/jpeg') as unknown as FakeFile];
+        fireChange(input);
+      },
+    });
+
+    await captureMealPhoto({ source: 'gallery' });
+
+    expect(captured).not.toBeNull();
+    const el = captured as unknown as FakeInputEl;
+    expect(el._attributes.capture).toBeUndefined();
+    expect(el.accept).toContain('image/heic');
+    expect(el.accept).toContain('image/heif');
+    expect(el.accept).toContain('image/jpeg');
+  });
+
+  it('captureCameraFallbackPhoto: the Photo fallback input DOES carry capture="environment"', async () => {
+    let captured: FakeInputEl | null = null;
+    stubBrowserGlobals({
+      onCreateInput: (input) => {
+        captured = input;
+        input.files = [new FakeFile(ONE_PX_JPEG_BASE64, 'image/jpeg') as unknown as FakeFile];
+        fireChange(input);
+      },
+    });
+
+    const result = await captureCameraFallbackPhoto();
+
+    expect(result.deviceClass).toBe('web');
+    const el = captured as unknown as FakeInputEl;
+    expect(el._attributes.capture).toBe('environment');
+  });
+
+  it('source="gallery": a file over 15MB rejects with CaptureFileTooLargeError', async () => {
+    stubBrowserGlobals({
+      onCreateInput: (input) => {
+        input.files = [
+          new FakeFile(ONE_PX_JPEG_BASE64, 'image/jpeg', { size: 16 * 1024 * 1024 }) as unknown as FakeFile,
+        ];
+        fireChange(input);
+      },
+    });
+
+    await expect(captureMealPhoto({ source: 'gallery' })).rejects.toBeInstanceOf(
+      CaptureFileTooLargeError,
+    );
+  });
+
+  it('source="gallery": an unsupported type rejects with CaptureUnsupportedTypeError', async () => {
+    stubBrowserGlobals({
+      onCreateInput: (input) => {
+        input.files = [
+          new FakeFile(ONE_PX_JPEG_BASE64, 'application/pdf', { name: 'meal.pdf' }) as unknown as FakeFile,
+        ];
+        fireChange(input);
+      },
+    });
+
+    await expect(captureMealPhoto({ source: 'gallery' })).rejects.toBeInstanceOf(
+      CaptureUnsupportedTypeError,
+    );
+  });
+
+  it('source="gallery": a HEIC library photo is accepted and re-encoded through the pipeline', async () => {
+    stubBrowserGlobals({
+      onCreateInput: (input) => {
+        input.files = [
+          new FakeFile(ONE_PX_JPEG_BASE64, 'image/heic', { name: 'IMG_0001.heic' }) as unknown as FakeFile,
+        ];
+        fireChange(input);
+      },
+    });
+
+    const result = await captureMealPhoto({ source: 'gallery' });
+    expect(result.deviceClass).toBe('web');
+    expect(result.imageBase64.length).toBeGreaterThan(0);
   });
 
   it('source="camera" + getUserMedia unavailable: throws CaptureUnsupportedError', async () => {

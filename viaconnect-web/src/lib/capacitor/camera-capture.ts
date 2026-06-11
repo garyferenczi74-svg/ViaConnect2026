@@ -9,6 +9,10 @@
 // Phase 1 hardcodes deviceClass to ios_no_lidar and android_no_depth.
 // LiDAR + ARCore Depth detection ship in Phase 170b.
 
+import { safeLog } from '@/lib/utils/safe-log';
+
+const LOG_SCOPE = 'nutrivision.capture';
+
 export type CaptureSource = 'camera' | 'gallery';
 
 export type DeviceClass =
@@ -51,11 +55,38 @@ export class CaptureUnsupportedError extends Error {
   }
 }
 
+// Prompt 190: selection validation errors. Messages are user-ready; the
+// capture hook surfaces err.message inline in the NutriVision panel.
+export class CaptureFileTooLargeError extends Error {
+  readonly name = 'CaptureFileTooLargeError' as const;
+  constructor(message = 'That photo is larger than 15 MB. Choose a smaller image.') {
+    super(message);
+  }
+}
+
+export class CaptureUnsupportedTypeError extends Error {
+  readonly name = 'CaptureUnsupportedTypeError' as const;
+  constructor(message = 'That file type is not supported. Choose a JPEG, PNG, WebP, or HEIC photo.') {
+    super(message);
+  }
+}
+
 const DEFAULT_MAX_BYTES = 800_000;
 const DEFAULT_JPEG_QUALITY = 80;
 const DEFAULT_MAX_EDGE_PX = 1920;
 const MIN_JPEG_QUALITY = 50;
 const QUALITY_STEP = 5;
+
+// Prompt 190: the Upload path accepts library photos including the iOS
+// default HEIC/HEIF; decode goes through the canvas pipeline which
+// re-encodes to JPEG, so downstream analysis is unchanged. 15 MB ceiling
+// is validated before any decode work.
+const GALLERY_ACCEPT = 'image/jpeg,image/png,image/webp,image/heic,image/heif';
+const MAX_SELECTED_FILE_BYTES = 15 * 1024 * 1024;
+const SELECTABLE_TYPES = new Set([
+  'image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/heic', 'image/heif',
+]);
+const SELECTABLE_EXTENSION_RX = /\.(jpe?g|png|webp|heic|heif)$/i;
 
 // Capacitor's runtime global. We type narrowly so the abstraction does not
 // hard-depend on @capacitor/core. Tests stub this via vi.stubGlobal.
@@ -163,6 +194,12 @@ async function captureNative(
   }
   const { Camera, CameraResultType, CameraSource } = mod;
 
+  safeLog.info(LOG_SCOPE, opts.source === 'gallery' ? 'nutrivision_upload_picker_opened' : 'nutrivision_camera_opened', {
+    component: 'camera-capture',
+    action: opts.source === 'gallery' ? 'upload_picker' : 'native_camera',
+    platform: deviceClass,
+  });
+
   let photo: CapacitorPhoto;
   try {
     photo = await Camera.getPhoto({
@@ -216,18 +253,41 @@ async function captureWeb(opts: NormalizedOpts): Promise<CaptureResult> {
   return captureWebCamera(opts);
 }
 
-async function captureWebGallery(opts: NormalizedOpts): Promise<CaptureResult> {
+// Prompt 190: shared hidden file input picker for the two web file paths.
+//
+// withCaptureAttribute MUST stay false for the Upload tile: on iOS Safari
+// and most Android browsers the capture attribute forces the camera and
+// suppresses the library picker entirely, which was the Prompt 190 defect
+// (Upload behaved identically to Photo). It is true ONLY for the Photo
+// path's fallback when getUserMedia is denied or unavailable, where forcing
+// the native camera is the intended behavior.
+//
+// A fresh input is created per invocation and removed afterwards, so
+// selecting the same file twice in a row re-fires change, and it is
+// positioned offscreen (never display none) so the programmatic click works
+// on iOS.
+async function pickWebImageFile(args: {
+  withCaptureAttribute: boolean;
+}): Promise<File> {
   if (typeof document === 'undefined') {
     throw new CaptureUnsupportedError('document is not available');
   }
   const input = document.createElement('input');
   input.type = 'file';
-  input.accept = 'image/jpeg,image/png,image/webp';
-  input.setAttribute('capture', 'environment');
+  input.accept = GALLERY_ACCEPT;
+  if (args.withCaptureAttribute) {
+    input.setAttribute('capture', 'environment');
+  }
   input.style.position = 'fixed';
   input.style.left = '-10000px';
   input.style.top = '-10000px';
   document.body.appendChild(input);
+
+  safeLog.info(LOG_SCOPE, args.withCaptureAttribute ? 'nutrivision_camera_opened' : 'nutrivision_upload_picker_opened', {
+    component: 'camera-capture',
+    action: args.withCaptureAttribute ? 'camera_fallback_input' : 'upload_picker',
+    platform: 'web',
+  });
 
   const file = await new Promise<File>((resolve, reject) => {
     let settled = false;
@@ -249,9 +309,35 @@ async function captureWebGallery(opts: NormalizedOpts): Promise<CaptureResult> {
     if (input.parentNode) input.parentNode.removeChild(input);
   });
 
+  return file;
+}
+
+// Prompt 190: client-side validation before any decode work. Unsupported
+// types and oversized files surface inline in the panel; nothing is
+// uploaded, so no orphaned storage objects.
+function validateSelectedFile(file: File): void {
+  const type = (file.type ?? '').toLowerCase();
+  const name = typeof file.name === 'string' ? file.name : '';
+  const typeOk =
+    (type.length > 0 && SELECTABLE_TYPES.has(type)) ||
+    (type.length === 0 && SELECTABLE_EXTENSION_RX.test(name));
+  if (!typeOk) {
+    throw new CaptureUnsupportedTypeError();
+  }
+  if (typeof file.size === 'number' && file.size > MAX_SELECTED_FILE_BYTES) {
+    throw new CaptureFileTooLargeError();
+  }
+}
+
+async function fileToCaptureResult(file: File, opts: NormalizedOpts): Promise<CaptureResult> {
   const base64 = await fileToBase64(file);
-  const mime = inferMimeFromType(file.type);
-  const compressed = await compressIfNeeded(base64, mime, opts);
+  // Decode under the file's real type so Safari renders HEIC correctly; the
+  // canvas pipeline re-encodes to JPEG, which the analysis pipeline already
+  // ingests. Browsers that cannot decode HEIC (desktop Chrome) reject in
+  // loadBase64Image and surface a clear error instead of a silent failure.
+  const sourceMimeLabel = (file.type ?? '').toLowerCase() || 'image/jpeg';
+  const mime = inferMimeFromType(file.type ?? '');
+  const compressed = await compressIfNeeded(base64, mime, opts, undefined, sourceMimeLabel);
   return {
     imageBase64: compressed.base64,
     mime: compressed.mime,
@@ -261,6 +347,51 @@ async function captureWebGallery(opts: NormalizedOpts): Promise<CaptureResult> {
     height: compressed.height,
     bytesAfterCompression: compressed.bytes,
   };
+}
+
+async function captureWebGallery(opts: NormalizedOpts): Promise<CaptureResult> {
+  const file = await pickWebImageFile({ withCaptureAttribute: false });
+  try {
+    validateSelectedFile(file);
+    const result = await fileToCaptureResult(file, opts);
+    safeLog.info(LOG_SCOPE, 'nutrivision_upload_selected', {
+      component: 'camera-capture',
+      action: 'upload_selected',
+      file_type: file.type ?? null,
+      file_size: file.size ?? null,
+      outcome: 'decoded',
+    });
+    return result;
+  } catch (err) {
+    safeLog.warn(LOG_SCOPE, 'nutrivision_upload_failed', {
+      component: 'camera-capture',
+      action: 'upload_failed',
+      file_type: file.type ?? null,
+      file_size: file.size ?? null,
+      outcome: err instanceof Error ? err.name : 'unknown',
+    });
+    if (err instanceof CaptureUnsupportedError) {
+      // Decode failures on library files are a type problem from the user's
+      // seat (a HEIC the browser cannot read), not a missing camera.
+      throw new CaptureUnsupportedTypeError(
+        'This photo format could not be read by your browser. Convert it to JPEG and try again.',
+      );
+    }
+    throw err;
+  }
+}
+
+// Prompt 190: Photo-path fallback when getUserMedia is denied or
+// unavailable. The capture attribute is intentional HERE AND ONLY HERE: it
+// forces the native camera, which is what the Photo tile means. Exported
+// for the WebCameraPreview unsupported/denied state.
+export async function captureCameraFallbackPhoto(
+  opts: CaptureOpts = { source: 'camera' },
+): Promise<CaptureResult> {
+  const normalized = normalizeOpts(opts);
+  const file = await pickWebImageFile({ withCaptureAttribute: true });
+  validateSelectedFile(file);
+  return fileToCaptureResult(file, normalized);
 }
 
 // ----------------------------------------------------------------------------
@@ -348,6 +479,12 @@ async function captureWebCamera(opts: NormalizedOpts): Promise<CaptureResult> {
   if (!md || typeof md.getUserMedia !== 'function') {
     throw new CaptureUnsupportedError('getUserMedia is not available');
   }
+
+  safeLog.info(LOG_SCOPE, 'nutrivision_camera_opened', {
+    component: 'camera-capture',
+    action: 'web_camera_headless',
+    platform: 'web',
+  });
 
   let stream: MediaStreamLike;
   try {
@@ -470,6 +607,9 @@ async function compressIfNeeded(
   mime: CaptureMime,
   opts: NormalizedOpts,
   knownDims?: { width: number; height: number },
+  // Prompt 190: the decode label can differ from the output mime (HEIC in,
+  // JPEG out after the canvas re-encode).
+  sourceMimeLabel?: string,
 ): Promise<CompressResult> {
   const startBytes = base64ByteLength(base64);
 
@@ -497,7 +637,7 @@ async function compressIfNeeded(
     };
   }
 
-  const img = await loadBase64Image(base64, mime);
+  const img = await loadBase64Image(base64, sourceMimeLabel ?? mime);
   const { canvas, width, height } = scaleToCanvas(img, opts.maxEdgePx);
   let quality = opts.jpegQuality;
   let dataUrl = canvas.toDataURL('image/jpeg', clamp01(quality / 100));
@@ -519,7 +659,7 @@ async function compressIfNeeded(
   };
 }
 
-function loadBase64Image(base64: string, mime: CaptureMime): Promise<HTMLImageElement> {
+function loadBase64Image(base64: string, mime: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => resolve(img);
