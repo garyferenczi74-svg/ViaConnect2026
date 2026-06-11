@@ -19,7 +19,9 @@ const SIZE_MULTIPLIERS: Record<string, number> = {
 };
 
 const SLICE_G: Record<string, number> = {
-  bread: 28, 'whole wheat bread': 28, 'sourdough bread': 36,
+  // Prompt 186: sourdough raised 36 -> 55 per the curated unit-weight table
+  // (a standard sourdough slice is 50 to 60 g).
+  bread: 28, 'whole wheat bread': 28, 'sourdough bread': 55,
   bacon: 12, ham: 28, cheese: 23, pizza: 107,
 };
 
@@ -46,7 +48,10 @@ export function unitToGrams(unit: string, quantity: number, foodHint: string): n
 }
 
 function matchPrefix(table: Record<string, number>, hint: string): number | null {
-  for (const key of Object.keys(table)) {
+  // Prompt 186: longest key wins so "sourdough bread" is not shadowed by
+  // "bread" (the old first-match returned 28 g for every bread variant).
+  const keys = Object.keys(table).sort((a, b) => b.length - a.length);
+  for (const key of keys) {
     if (hint === key || hint.includes(key)) return table[key];
   }
   return null;

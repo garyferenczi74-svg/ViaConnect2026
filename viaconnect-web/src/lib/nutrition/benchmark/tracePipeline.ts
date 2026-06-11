@@ -60,7 +60,7 @@ export interface ItemTrace {
   // apply to nutrient selection. Text: null, since the text engine tracks no
   // basis at all. Either way the engine never adjusts for raw vs cooked.
   detectedBasis: string | null;
-  per100g: Record<string, number> | null;
+  per100g: Record<string, number | null> | null;
   estimatedGrams: number | null;
   conversionChain: string;
   // Text engine only: whether unitToGrams resolved the unit or fell back to a
@@ -103,18 +103,18 @@ function roundInt(n: number): number {
 // Normalize the text engine per-100g (ItemNutrients-style keys) to the same
 // canonical keys the photo engine uses, so the divergence report reads per100g
 // uniformly across engines. Text-only nutrients (saturated, trans, omega3) are
-// kept as extras.
+// kept as extras. Prompt 186: values are nullable (UNKNOWN, never 0).
 function textPer100gToRecord(p: {
-  calories: number;
-  protein_g: number;
-  carbs_g: number;
-  total_fat_g: number;
-  saturated_fat_g: number;
-  trans_fat_g: number;
-  omega3_g: number;
-  sugar_g: number;
-  fiber_g: number;
-}): Record<string, number> {
+  calories: number | null;
+  protein_g: number | null;
+  carbs_g: number | null;
+  total_fat_g: number | null;
+  saturated_fat_g: number | null;
+  trans_fat_g: number | null;
+  omega3_g: number | null;
+  sugar_g: number | null;
+  fiber_g: number | null;
+}): Record<string, number | null> {
   return {
     calories_kcal: p.calories,
     protein_g: p.protein_g,
@@ -283,8 +283,8 @@ export async function traceTextPipeline(parsedItems: ParsedItem[]): Promise<Meal
         fat_g: nut.total_fat_g,
         fiber_g: nut.fiber_g,
         sugar_g: nut.sugar_g,
-        // the text engine (ItemNutrients) carries no sodium, so it stays null
-        sodium_mg: null,
+        // Prompt 186: the canonical map surfaces sodium (1093) when present.
+        sodium_mg: nut.sodium_mg,
       };
       items.push({
         engine: 'text',
@@ -324,16 +324,23 @@ export async function traceTextPipeline(parsedItems: ParsedItem[]): Promise<Meal
       fat_g: analysis.total_fat_g,
       fiber_g: analysis.fiber_g,
       sugar_g: analysis.sugar_g,
-      sodium_mg: null,
+      sodium_mg: analysis.sodium_mg ?? null,
     };
-    const macroDerivedKcal =
-      4 * analysis.protein_g + 4 * analysis.carbs_g + 9 * analysis.total_fat_g;
-    // Mirror analyze-text: ratio is 0 when calories is 0, so passed is false.
-    const ratio = analysis.calories > 0 ? macroDerivedKcal / analysis.calories : 0;
+    // Mirror analyze-text (Prompt 186): the check runs only when all four
+    // inputs are known; unknown macros mean skipped, reported as not passed.
+    const macrosKnown =
+      analysis.calories !== null && analysis.protein_g !== null &&
+      analysis.carbs_g !== null && analysis.total_fat_g !== null;
+    const macroDerivedKcal = macrosKnown
+      ? 4 * (analysis.protein_g as number) + 4 * (analysis.carbs_g as number) + 9 * (analysis.total_fat_g as number)
+      : 0;
+    const ratio = macrosKnown && (analysis.calories as number) > 0
+      ? macroDerivedKcal / (analysis.calories as number)
+      : 0;
     atwater = {
       macroDerivedKcal: round1(macroDerivedKcal),
       ratio: Math.round(ratio * 1000) / 1000,
-      passed: ratio >= 0.8 && ratio <= 1.2,
+      passed: macrosKnown && ratio >= 0.8 && ratio <= 1.2,
     };
   }
 

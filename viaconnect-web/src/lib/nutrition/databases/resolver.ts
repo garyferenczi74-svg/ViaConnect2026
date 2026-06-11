@@ -104,14 +104,16 @@ export async function resolveNutrients(
   }
 
   // Step 2: USDA FDC. Request 100g so the returned ItemNutrients is already
-  // shaped per 100g for us to map straight through.
+  // shaped per 100g for us to map straight through. Prompt 186: a USDA hit
+  // whose core macros are UNKNOWN maps to null and the cascade continues
+  // (an OFF or vision value beats a hollow reference).
   const usda = await tryStep('usda_fdc', opts.requestId, () =>
     lookupFood(foodName, 100, 'g'),
   );
-  if (usda !== null) {
-    const mapped = mapUsda(usda, foodName);
-    logMatch(opts.requestId, foodName, mapped.source);
-    return mapped;
+  const mappedUsda = usda !== null ? mapUsda(usda, foodName) : null;
+  if (mappedUsda !== null) {
+    logMatch(opts.requestId, foodName, mappedUsda.source);
+    return mappedUsda;
   }
 
   // Step 3: OFF barcode (if hint).
@@ -207,22 +209,34 @@ function mapCurated(curated: CuratedNutrients): ResolvedNutrients {
   return out;
 }
 
-function mapUsda(usda: ItemNutrients, foodName: string): ResolvedNutrients {
-  // The existing USDA client requests 100g so the returned ItemNutrients is
-  // already per 100g. Sodium and cholesterol are not surfaced by the legacy
-  // client; the resolver leaves those undefined per spec.
-  return {
+function mapUsda(usda: ItemNutrients, foodName: string): ResolvedNutrients | null {
+  // The USDA client requests 100g so the returned ItemNutrients is already
+  // per 100g. Prompt 186: core macros must be known; optional nutrients are
+  // included only when known (never zero-coerced), and sodium/cholesterol
+  // now flow through from the canonical map.
+  if (
+    usda.calories === null || usda.protein_g === null ||
+    usda.carbs_g === null || usda.total_fat_g === null
+  ) {
+    return null;
+  }
+  const per100g: ResolvedPer100g = {
+    calories_kcal: usda.calories,
+    protein_g: usda.protein_g,
+    carbs_g: usda.carbs_g,
+    fat_g: usda.total_fat_g,
+  };
+  if (usda.fiber_g !== null) per100g.fiber_g = usda.fiber_g;
+  if (usda.sugar_g !== null) per100g.sugar_g = usda.sugar_g;
+  if (usda.sodium_mg !== null) per100g.sodium_mg = usda.sodium_mg;
+  if (usda.cholesterol_mg !== null) per100g.cholesterol_mg = usda.cholesterol_mg;
+  const out: ResolvedNutrients = {
     source: 'usda_fdc',
     foodName,
-    per100g: {
-      calories_kcal: usda.calories,
-      protein_g: usda.protein_g,
-      carbs_g: usda.carbs_g,
-      fat_g: usda.total_fat_g,
-      fiber_g: usda.fiber_g,
-      sugar_g: usda.sugar_g,
-    },
+    per100g,
   };
+  if (usda.meta?.fdcId != null) out.usdaFdcId = usda.meta.fdcId;
+  return out;
 }
 
 function mapOff(off: OFFNutrients): ResolvedNutrients {

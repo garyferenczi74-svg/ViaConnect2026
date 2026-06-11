@@ -27,10 +27,24 @@ describe('extractNutrientsPer100g', () => {
     expect(out.saturated_fat_g).toBeCloseTo(3.3);
     expect(out.omega3_g).toBeCloseTo(0.1);
   });
-  it('handles missing nutrients by defaulting to 0', () => {
+  it('handles missing nutrients as UNKNOWN (null), never 0', () => {
+    // Prompt 186: the golden-meal defect cached Foundation foods at 0 kcal
+    // and displayed missing sugar as 0. Missing now stays null.
     const out = extractNutrientsPer100g({ foodNutrients: [] });
-    expect(out.calories).toBe(0);
-    expect(out.fiber_g).toBe(0);
+    expect(out.calories).toBeNull();
+    expect(out.fiber_g).toBeNull();
+  });
+  it('falls back to Atwater energy ids for Foundation foods', () => {
+    // Foundation foods (e.g. Pineapple, raw 2346398) carry no 1008 row;
+    // energy publishes as 2047/2048 kcal.
+    const out = extractNutrientsPer100g({
+      foodNutrients: [
+        { nutrient: { id: 2047, name: 'Energy (Atwater General Factors)', unitName: 'kcal' }, amount: 60.11 },
+        { nutrient: { id: 1063, name: 'Sugars, Total', unitName: 'g' }, amount: 11.42 },
+      ],
+    });
+    expect(out.calories).toBeCloseTo(60.11);
+    expect(out.sugar_g).toBeCloseTo(11.42);
   });
   it('sums all four omega-3 sub-nutrients into omega3_g', () => {
     const payload = {

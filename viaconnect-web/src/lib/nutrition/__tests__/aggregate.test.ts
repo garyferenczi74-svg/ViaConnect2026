@@ -36,9 +36,45 @@ describe('aggregate', () => {
   it('serving_description concatenates items', () => {
     expect(aggregate([eggUSDA, avocadoUSDA]).serving_description).toBe('2 whole egg, 1 medium avocado');
   });
-  it('returns confidence 0 + empty for zero items (caller should have errored upstream)', () => {
+  it('returns confidence 0 + unknown totals for zero items (caller should have errored upstream)', () => {
     const r = aggregate([]);
     expect(r.confidence).toBe(0);
-    expect(r.calories).toBe(0);
+    expect(r.calories).toBeNull();
+  });
+  it('keeps a fully unknown nutrient null and lists it in nutrient_flags.unknown', () => {
+    const noSugar: AggregatedItem = {
+      parsed: { name: 'mystery', quantity: 1, unit: 'whole' },
+      nutrients: { ...eggUSDA.nutrients, sugar_g: null },
+    };
+    const r = aggregate([noSugar]);
+    expect(r.sugar_g).toBeNull();
+    expect(r.nutrient_flags?.unknown).toContain('sugar_g');
+  });
+  it('marks a partially unknown nutrient as partial, not zero-filled', () => {
+    const noSugar: AggregatedItem = {
+      parsed: { name: 'croissant', quantity: 1, unit: 'whole' },
+      nutrients: { ...eggUSDA.nutrients, sugar_g: null },
+    };
+    const r = aggregate([eggUSDA, noSugar]);
+    expect(r.sugar_g).toBeCloseTo(1.1);
+    expect(r.nutrient_flags?.partial).toContain('sugar_g');
+    expect(r.nutrient_flags?.unknown).not.toContain('sugar_g');
+  });
+  it('downgrades confidence when an item carries the portion or plausibility flag', () => {
+    const flagged: AggregatedItem = {
+      parsed: { name: 'avocado', quantity: 0.5, unit: 'whole' },
+      nutrients: {
+        ...avocadoUSDA.nutrients,
+        meta: {
+          fdcId: 1, dataType: 'SR Legacy', matchedName: 'Avocados, raw',
+          grams: 100, gramsMethod: 'default_100g', confidenceDowngraded: true,
+          derivedEnergy: false, missingNutrients: [], plausibilityFlagged: false,
+          basis: 'per_100g',
+        },
+      },
+    };
+    const r = aggregate([eggUSDA, flagged]);
+    expect(r.confidence).toBeLessThan(1);
+    expect(r.nutrient_flags?.downgraded).toBe(true);
   });
 });

@@ -73,17 +73,20 @@ export interface ParseResult {
   usage: Usage;
 }
 
+// Prompt 186: secondary nutrients the model omits stay UNKNOWN (null), never
+// 0. Core macros (calories, protein, carbs, fat) are required; a response
+// missing them is malformed and goes through the existing retry path.
 export interface EstimationResult {
   nutrients: {
     calories: number;
     protein_g: number;
     carbs_g: number;
     total_fat_g: number;
-    saturated_fat_g: number;
-    trans_fat_g: number;
-    omega3_g: number;
-    sugar_g: number;
-    fiber_g: number;
+    saturated_fat_g: number | null;
+    trans_fat_g: number | null;
+    omega3_g: number | null;
+    sugar_g: number | null;
+    fiber_g: number | null;
   };
   confidence: number;
   usage: Usage;
@@ -372,17 +375,31 @@ export async function parseImageWithGemini(buf: Buffer, mimeType: string, note: 
 
 function decodeEstimation(text: string, usage: Usage): EstimationResult {
   const parsed = parseJsonOrThrow(text) as Record<string, number>;
+  const numOrNull = (v: unknown): number | null =>
+    typeof v === 'number' && Number.isFinite(v) ? v : null;
+  // Core macros must be present; estimates without them are malformed and
+  // the caller's retry handles it. Secondary nutrients stay null when the
+  // model omits them (Prompt 186 unknown-vs-zero contract).
+  const core = {
+    calories: numOrNull(parsed.calories),
+    protein_g: numOrNull(parsed.protein_g),
+    carbs_g: numOrNull(parsed.carbs_g),
+    total_fat_g: numOrNull(parsed.total_fat_g),
+  };
+  if (core.calories === null || core.protein_g === null || core.carbs_g === null || core.total_fat_g === null) {
+    throw new AIRouteError('MALFORMED_RESPONSE', 'estimation missing core macros', 502, 'AI returned incomplete output. Try again or enter manually.');
+  }
   return {
     nutrients: {
-      calories: Math.round(parsed.calories ?? 0),
-      protein_g: parsed.protein_g ?? 0,
-      carbs_g: parsed.carbs_g ?? 0,
-      total_fat_g: parsed.total_fat_g ?? 0,
-      saturated_fat_g: parsed.saturated_fat_g ?? 0,
-      trans_fat_g: parsed.trans_fat_g ?? 0,
-      omega3_g: parsed.omega3_g ?? 0,
-      sugar_g: parsed.sugar_g ?? 0,
-      fiber_g: parsed.fiber_g ?? 0,
+      calories: Math.round(core.calories),
+      protein_g: core.protein_g,
+      carbs_g: core.carbs_g,
+      total_fat_g: core.total_fat_g,
+      saturated_fat_g: numOrNull(parsed.saturated_fat_g),
+      trans_fat_g: numOrNull(parsed.trans_fat_g),
+      omega3_g: numOrNull(parsed.omega3_g),
+      sugar_g: numOrNull(parsed.sugar_g),
+      fiber_g: numOrNull(parsed.fiber_g),
     },
     confidence: typeof parsed.confidence === 'number' ? parsed.confidence : 0.5,
     usage,

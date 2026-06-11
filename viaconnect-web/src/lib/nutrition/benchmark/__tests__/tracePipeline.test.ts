@@ -13,6 +13,20 @@ import type { VisionItem } from '../../vision/types';
 const lookupFoodMock = vi.mocked(lookupFood);
 const resolveNutrientsMock = vi.mocked(resolveNutrients);
 
+// Prompt 186: ItemNutrients now carries sodium, cholesterol, and meta.
+const testMeta = (grams: number, fdcId: number | null, matchedName: string | null) => ({
+  fdcId,
+  dataType: 'SR Legacy',
+  matchedName,
+  grams,
+  gramsMethod: 'curated_table' as const,
+  confidenceDowngraded: false,
+  derivedEnergy: false,
+  missingNutrients: [],
+  plausibilityFlagged: false,
+  basis: 'per_100g' as const,
+});
+
 beforeEach(() => {
   lookupFoodMock.mockReset();
   resolveNutrientsMock.mockReset();
@@ -50,7 +64,10 @@ describe('traceTextPipeline', () => {
         omega3_g: 0,
         sugar_g: 0.1,
         fiber_g: 0.6,
+        sodium_mg: null,
+        cholesterol_mg: null,
         source: 'usda',
+        meta: testMeta(150, 169704, 'Rice, white, cooked'),
       };
     });
 
@@ -120,7 +137,10 @@ describe('traceTextPipeline', () => {
           omega3_g: 0,
           sugar_g: 0,
           fiber_g: 0,
+          sodium_mg: null,
+          cholesterol_mg: null,
           source: 'usda',
+          meta: testMeta(50, 1, null),
         };
       });
 
