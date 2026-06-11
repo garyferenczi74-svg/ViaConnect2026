@@ -212,6 +212,40 @@ DEMO_KEY rate limits exhausted two egress IPs during fixture recording; safe to
 delete after Gary populates the real FDC key. Fixture regeneration:
 node scripts/186/build-fixture-module.mjs (raw recordings in scripts/186/fixtures).
 
+## Same-day incident chain (Log a Meal: "We couldn't analyze that meal")
+
+Gary's screenshot at 1:37 PM exposed a chain of three stacked defects, each fixed
+and pushed the same evening (ff066af9, 0c9e0283, 0d121304, 937c6f08):
+
+1. gemini-2.5-flash thinks by default and thought tokens count against
+   maxOutputTokens, truncating the ten-field estimation JSON. The new
+   core-macro guard correctly refused to zero-fill (the old code would have
+   saved calories 0) but the uncaught throw failed the whole meal. Fixed:
+   thinkingBudget 0 + 2048 headroom on the estimation call; a per-item
+   estimator failure now degrades that item to UNKNOWN nutrients so the meal
+   always saves; a twice-malformed estimate falls back to Claude.
+2. The 180f Claude fallback had NEVER fired in production: the code reads
+   ANTHROPIC_API_KEY but Vercel carries Anthropic_API_Key and
+   PHOTO_AI_ANTHROPIC_API_KEY (process.env is case sensitive). With Gemini
+   rate limited, parse failures became hard 503s. Fixed: the nutrition client
+   accepts the names that exist. Eight other routes outside the meal channel
+   still read the exact-case name; adding ANTHROPIC_API_KEY in Vercel revives
+   them all (Gary's desk).
+3. With the fallback finally firing, Claude parsed the meal correctly and the
+   schema discarded it: the prompt marks preparation/notes "optional", Gemini
+   omits the keys but Claude emits explicit nulls, and z.string().optional()
+   rejects null. Fixed: normalizeParsedMealNulls at the three model-output
+   parse sites (a schema-level transform was tried and reverted; it makes the
+   inferred keys required, 61 type errors).
+
+Live verification with Gary's exact text ("65 g quick oats, 30 g protein
+powder, 45 g blueberries, 1.5 gram chicken thighs"): HTTP 200 first attempt,
+data_source mixed (USDA 2 of 4), 384 kcal / 21.9 protein / 50.8 carbs /
+10.3 fat / 7.3 sugar / 9.8 fiber / 99.5 sodium, sodium partial-marked.
+Remaining for Gary: the Gemini key is persistently rate limited this evening
+(free-tier signature); a paid tier or the ANTHROPIC_API_KEY addition spreads
+the load.
+
 ## Agent review (Jeffery aggregate, pre-push)
 
 Specialists: Michelangelo, Gordon, Hannah, security-advisor, performance-advisor.
