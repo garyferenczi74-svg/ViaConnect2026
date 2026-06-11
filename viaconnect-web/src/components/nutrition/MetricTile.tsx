@@ -9,10 +9,16 @@ import { Pencil } from 'lucide-react';
 
 interface MetricTileProps {
   readonly label: string;
-  readonly value: number;
+  // Prompt 186: null means UNKNOWN (the engine could not determine this
+  // nutrient). Rendered as "Unknown", never as 0. Tapping still opens the
+  // editor so the user can supply a value.
+  readonly value: number | null;
   readonly unit: string;
   readonly variant?: 'prominent' | 'secondary';
   readonly step?: number;
+  // Prompt 186: true when this nutrient total is a partial sum (some items
+  // unknown); the tile shows an "est." marker next to the value.
+  readonly estimated?: boolean;
   readonly onChange?: (next: number) => void;
 }
 
@@ -22,10 +28,11 @@ export function MetricTile({
   unit,
   variant = 'prominent',
   step = 0.1,
+  estimated = false,
   onChange,
 }: MetricTileProps) {
   const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState<string>(String(value));
+  const [draft, setDraft] = useState<string>(value === null ? '' : String(value));
 
   const numeralSize = variant === 'prominent' ? 'text-3xl' : 'text-xl';
   const padding = variant === 'prominent' ? 'p-4' : 'p-3';
@@ -61,15 +68,26 @@ export function MetricTile({
         <button
           type="button"
           onClick={() => {
-            setDraft(String(value));
+            setDraft(value === null ? '' : String(value));
             setEditing(true);
           }}
           className="mt-1 flex w-full items-baseline gap-1 text-left"
         >
-          <span className={`${numeralSize} font-semibold tabular-nums text-white`}>
-            {value.toFixed(unit === 'kcal' ? 0 : 1)}
-          </span>
-          <span className="text-xs text-white/40">{unit}</span>
+          {value === null ? (
+            <span className={`${variant === 'prominent' ? 'text-xl' : 'text-base'} font-medium text-amber-300/80`}>
+              Unknown
+            </span>
+          ) : (
+            <>
+              <span className={`${numeralSize} font-semibold tabular-nums text-white`}>
+                {value.toFixed(unit === 'kcal' ? 0 : 1)}
+              </span>
+              <span className="text-xs text-white/40">{unit}</span>
+              {estimated && (
+                <span className="text-[10px] font-medium uppercase tracking-wide text-amber-300/80">est.</span>
+              )}
+            </>
+          )}
           <Pencil className="ml-auto h-3 w-3 text-white/20" strokeWidth={1.5} />
         </button>
       )}

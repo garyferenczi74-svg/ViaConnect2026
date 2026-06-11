@@ -76,25 +76,28 @@ export async function POST(req: NextRequest) {
 
     const items: AggregatedItem[] = [];
     for (const item of parsed.items) {
-      const usda = await lookupFood(item.name, item.quantity, item.unit).catch((e) => {
+      const usda = await lookupFood(item.name, item.quantity, item.unit, undefined, item.preparation).catch((e) => {
         safeLog.warn('api.nutrition.analyze-text', 'usda lookup failed', { error: e, name: item.name });
         return null;
       });
-      if (usda) {
-        items.push({ parsed: item, nutrients: usda });
-      } else {
-        const est = await estimateItemWithGemini(item.name, item.quantity, item.unit);
-        items.push({
-          parsed: item,
-          nutrients: {
-            calories: est.nutrients.calories, protein_g: est.nutrients.protein_g,
-            carbs_g: est.nutrients.carbs_g, total_fat_g: est.nutrients.total_fat_g,
-            saturated_fat_g: est.nutrients.saturated_fat_g, trans_fat_g: est.nutrients.trans_fat_g,
-            omega3_g: est.nutrients.omega3_g, sugar_g: est.nutrients.sugar_g,
-            fiber_g: est.nutrients.fiber_g, source: 'gemini_fallback',
-          },
+      let nutrients: AggregatedItem['nutrients'] | null = usda;
+      // Prompt 186 Phase 3: a single common-food portion beyond the
+      // plausibility bounds (900 kcal / 60 g fat) is re-estimated before
+      // display rather than trusted. Fail open: if re-estimation fails the
+      // flagged USDA value stays and aggregate() downgrades confidence.
+      if (usda?.meta?.plausibilityFlagged === true) {
+        safeLog.warn('api.nutrition.analyze-text', 'plausibility bound exceeded; re-estimating item', {
+          name: item.name, matched: usda.meta.matchedName,
+          calories: usda.calories, total_fat_g: usda.total_fat_g,
         });
+        const reEst = await estimateItemWithGemini(item.name, item.quantity, item.unit).catch(() => null);
+        if (reEst) nutrients = { ...reEst.nutrients, source: 'gemini_fallback' };
       }
+      if (!nutrients) {
+        const est = await estimateItemWithGemini(item.name, item.quantity, item.unit);
+        nutrients = { ...est.nutrients, source: 'gemini_fallback' };
+      }
+      items.push({ parsed: item, nutrients });
     }
 
     const analysis = aggregate(items);
@@ -121,51 +124,71 @@ export async function POST(req: NextRequest) {
     // 4/4/9 reconciliation per 177d Step 3: macros vs calories must
     // agree within 20 percent or the meal is downgraded to low
     // confidence and surfaced as estimated.
-    const macroDerivedKcal =
-      4 * analysis.protein_g + 4 * analysis.carbs_g + 9 * analysis.total_fat_g;
+    // Prompt 186: the Atwater check only runs when all four inputs are
+    // known; unknown macros mean the check is skipped (not passed) and the
+    // meal stays at the low-confidence band with the estimated marker.
+    const macrosKnown =
+      analysis.calories !== null && analysis.protein_g !== null &&
+      analysis.carbs_g !== null && analysis.total_fat_g !== null;
+    const macroDerivedKcal = macrosKnown
+      ? 4 * (analysis.protein_g as number) + 4 * (analysis.carbs_g as number) + 9 * (analysis.total_fat_g as number)
+      : 0;
     const reconciliationRatio =
-      analysis.calories > 0 ? macroDerivedKcal / analysis.calories : 0;
+      macrosKnown && (analysis.calories as number) > 0 ? macroDerivedKcal / (analysis.calories as number) : 0;
     const reconciliationPassed =
-      reconciliationRatio >= 0.80 && reconciliationRatio <= 1.20;
+      macrosKnown && reconciliationRatio >= 0.80 && reconciliationRatio <= 1.20;
+    if (!reconciliationPassed) {
+      // Phase 3: never silently display internally inconsistent macros.
+      safeLog.warn('api.nutrition.analyze-text', 'atwater reconciliation failed or skipped', {
+        macro_kcal: Math.round(macroDerivedKcal * 100) / 100,
+        stated_kcal: analysis.calories,
+        ratio: Math.round(reconciliationRatio * 10000) / 10000,
+        macros_known: macrosKnown,
+        nutrient_flags: analysis.nutrient_flags ?? null,
+      });
+    }
 
-    // Sodium is always unknown on text channel. The other 6 macros are
-    // determined if the analysis returned a non-zero or any positive
-    // value (the parser writes a numeric 0 only when the food is
-    // genuinely zero in that nutrient, e.g. plain rice has 0 sugar; we
-    // treat all parser-returned numerics as "known" for now).
+    // Prompt 186: known-ness is computed from the actual analysis instead of
+    // hardcoded. A nutrient is known only when its total is non-null (it was
+    // extracted or estimated for every item, never zero-coerced).
     const knownNutrients = {
-      calories_kcal: true,
-      protein_g: true,
-      carbs_g: true,
-      fat_total_g: true,
-      fiber_g: true,
-      sugar_g: true,
-      sodium_mg: false,
-    } as const;
+      calories_kcal: analysis.calories !== null,
+      protein_g: analysis.protein_g !== null,
+      carbs_g: analysis.carbs_g !== null,
+      fat_total_g: analysis.total_fat_g !== null,
+      fiber_g: analysis.fiber_g !== null,
+      sugar_g: analysis.sugar_g !== null,
+      sodium_mg: analysis.sodium_mg != null,
+    };
 
-    const sourceConfidence = reconciliationPassed
-      ? 0.65 // 7/8 known + macros reconcile
-      : 0.45; // 7/8 known + macros do not reconcile
+    const downgradedByItems = analysis.nutrient_flags?.downgraded === true;
+    const sourceConfidence = reconciliationPassed && !downgradedByItems
+      ? 0.65 // macros known + reconcile + no portion/plausibility downgrade
+      : 0.45; // unknown macros, failed reconciliation, or downgraded items
 
     const prompt177dMeta = {
-      version: '177d-2026-06-07',
+      version: '186-2026-06-11',
       reconciliation: {
         macro_kcal: Math.round(macroDerivedKcal * 100) / 100,
         stated_kcal: analysis.calories,
         ratio: Math.round(reconciliationRatio * 10000) / 10000,
         threshold: 0.20,
         passed: reconciliationPassed,
+        skipped_unknown_macros: !macrosKnown,
       },
       known_nutrients: knownNutrients,
+      nutrient_flags: analysis.nutrient_flags ?? null,
       estimated: true,
     };
 
     // Prompt 184b: resolve the fat breakdown. The text engine has no added-fat
     // source at log time, so the breakdown is purely intrinsic (saturated from
     // USDA), fat_source_id null. The user can attribute a source later in the UI.
+    // Prompt 186: unknown fat passes 0 into the breakdown accounting only;
+    // the meals row keeps NULL and knownNutrients excludes it from scoring.
     const fatBreakdown = resolveFatBreakdown({
-      intrinsicTotalFatG: analysis.total_fat_g,
-      intrinsicSaturatedG: analysis.saturated_fat_g,
+      intrinsicTotalFatG: analysis.total_fat_g ?? 0,
+      intrinsicSaturatedG: analysis.saturated_fat_g ?? 0,
       addedFatG: 0,
       source: null,
     });
@@ -189,7 +212,7 @@ export async function POST(req: NextRequest) {
           fat_quality_contribution: null,
           fiber_g: analysis.fiber_g,
           sugar_g: analysis.sugar_g,
-          sodium_mg: null,
+          sodium_mg: analysis.sodium_mg ?? null,
           calories_kcal: analysis.calories,
           calories_auto_calc: false,
           meal_name: analysis.serving_description ?? null,
@@ -233,21 +256,23 @@ export async function POST(req: NextRequest) {
         // honest. sodiumMg still passes 0 for the legacy preview Meal
         // shape; the engine ignores meal.sodiumMg when
         // knownNutrients.sodium_mg is false.
+        // Prompt 186: unknown nutrients pass 0 for the legacy numeric shape
+        // but knownNutrients marks them excluded so the engine skips them.
         const scored = await scoreMealForServerInsert(supabase, {
           userId: user.id,
           loggedAt,
           mealType,
           source: 'full_manual',
           sourceConfidence,
-          proteinG: analysis.protein_g,
-          carbsG: analysis.carbs_g,
-          fatTotalG: analysis.total_fat_g,
+          proteinG: analysis.protein_g ?? 0,
+          carbsG: analysis.carbs_g ?? 0,
+          fatTotalG: analysis.total_fat_g ?? 0,
           fatSourceId: null,
           fatBreakdown,
-          fiberG: analysis.fiber_g,
-          sugarG: analysis.sugar_g,
-          sodiumMg: 0,
-          caloriesKcal: analysis.calories,
+          fiberG: analysis.fiber_g ?? 0,
+          sugarG: analysis.sugar_g ?? 0,
+          sodiumMg: analysis.sodium_mg ?? 0,
+          caloriesKcal: analysis.calories ?? 0,
           caloriesAutoCalc: false,
           wholeFoodFlag: false,
           mealName: analysis.serving_description ?? null,
@@ -368,7 +393,7 @@ export async function POST(req: NextRequest) {
           meal_type: mealType,
           log_method: 'manual',
           description: description.slice(0, 500),
-          calories: Math.round(analysis.calories),
+          calories: analysis.calories === null ? null : Math.round(analysis.calories),
           protein_g: analysis.protein_g,
           carbs_g: analysis.carbs_g,
           fat_g: analysis.total_fat_g,

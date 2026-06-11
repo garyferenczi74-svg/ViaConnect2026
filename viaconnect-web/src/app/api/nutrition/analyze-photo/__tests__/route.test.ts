@@ -62,7 +62,8 @@ describe('POST /api/nutrition/analyze-photo', () => {
     const res = await POST(makePhotoReq());
     expect(res.status).toBe(200);
     expect(upload).toHaveBeenCalledTimes(1);
-    expect(insertSelect).toHaveBeenCalledTimes(1);
+    // Dual-write since 168 Apply C: meals insert + nutrition_logs insert.
+    expect(insertSelect).toHaveBeenCalledTimes(2);
   });
 
   it('returns 400 on missing image', async () => {

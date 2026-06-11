@@ -66,7 +66,8 @@ describe('POST /api/nutrition/analyze-text', () => {
     const json = await res.json();
     expect(json.logId).toBe('log-1');
     expect(json.analysis.data_source).toBe('usda');
-    expect(insertSelect).toHaveBeenCalledTimes(1);
+    // Dual-write since 168 Apply C: meals insert + nutrition_logs insert.
+    expect(insertSelect).toHaveBeenCalledTimes(2);
   });
 
   it('returns mixed when one item misses USDA', async () => {

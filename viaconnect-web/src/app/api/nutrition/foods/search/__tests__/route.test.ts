@@ -21,11 +21,14 @@ function tableBuilder(rows: ReadonlyArray<unknown>) {
       select: (...args: unknown[]) => typeof obj;
       ilike: (...args: unknown[]) => typeof obj;
       eq: (...args: unknown[]) => typeof obj;
+      not: (...args: unknown[]) => typeof obj;
       limit: (...args: unknown[]) => Promise<{ data: ReadonlyArray<unknown>; error: null }>;
     } = {
       select: () => obj,
       ilike: () => obj,
       eq: () => obj,
+      // Prompt 186: the route filters extraction_version + not-null calories.
+      not: () => obj,
       limit: () => Promise.resolve(result),
     };
     return obj;

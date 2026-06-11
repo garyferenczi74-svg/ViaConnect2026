@@ -14,7 +14,7 @@ import { AIRouteError } from '@/lib/errors/classify-ai';
 import { newRequestId } from '@/lib/observability/audit-recorder';
 
 import { lookupByBarcode } from '@/lib/nutrition/databases/open-food-facts';
-import { lookupFood } from '@/lib/nutrition/usda-client';
+import { lookupFood, EXTRACTION_VERSION } from '@/lib/nutrition/usda-client';
 import type { ResolvedNutrients } from '@/lib/nutrition/databases/resolver';
 
 const ROUTE = '/api/nutrition/foods/lookup';
@@ -120,11 +120,16 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
         }
         // The legacy USDA client is keyed by name so we lift the cached row by
         // fdc_id directly; the row schema is documented in usda-client.ts.
+        // Prompt 186: only extraction_version 2 rows are trusted (v1 rows
+        // carried first-hit references and zero-coerced nutrients), and
+        // fdc_id is not unique across query keys so we take the first row.
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data, error } = await (supabaseAdmin as any)
           .from('usda_food_cache')
-          .select('food_name, fdc_id, serving_size_g, calories_per_100g, protein_per_100g, carbs_per_100g, total_fat_per_100g, sugar_per_100g, fiber_per_100g')
+          .select('food_name, fdc_id, serving_size_g, calories_per_100g, protein_per_100g, carbs_per_100g, total_fat_per_100g, sugar_per_100g, fiber_per_100g, sodium_per_100g, cholesterol_per_100g')
           .eq('fdc_id', fdcId)
+          .eq('extraction_version', EXTRACTION_VERSION)
+          .limit(1)
           .maybeSingle();
         if (error) {
           safeLog.warn('api.nutrivision.foods.lookup', 'usda cache lookup error', {
@@ -139,20 +144,43 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
           );
         }
         if (data) {
-          const resolved: ResolvedNutrients = {
-            source: 'usda_fdc',
-            foodName: String(data.food_name ?? ''),
-            usdaFdcId: fdcId,
-            per100g: {
-              calories_kcal: Number(data.calories_per_100g ?? 0),
-              protein_g: Number(data.protein_per_100g ?? 0),
-              carbs_g: Number(data.carbs_per_100g ?? 0),
-              fat_g: Number(data.total_fat_per_100g ?? 0),
-              fiber_g: Number(data.fiber_per_100g ?? 0),
-              sugar_g: Number(data.sugar_per_100g ?? 0),
-            },
+          // Prompt 186: unknown nutrients are NULL in the cache, never 0.
+          // Core macros must be known to serve the row; optional nutrients
+          // are included only when known.
+          const numOrNull = (v: unknown): number | null => {
+            if (v === null || v === undefined) return null;
+            const n = Number(v);
+            return Number.isFinite(n) ? n : null;
           };
-          return NextResponse.json({ food: resolved, requestId });
+          const core = {
+            calories_kcal: numOrNull(data.calories_per_100g),
+            protein_g: numOrNull(data.protein_per_100g),
+            carbs_g: numOrNull(data.carbs_per_100g),
+            fat_g: numOrNull(data.total_fat_per_100g),
+          };
+          if (core.calories_kcal !== null && core.protein_g !== null && core.carbs_g !== null && core.fat_g !== null) {
+            const per100g: ResolvedNutrients['per100g'] = {
+              calories_kcal: core.calories_kcal,
+              protein_g: core.protein_g,
+              carbs_g: core.carbs_g,
+              fat_g: core.fat_g,
+            };
+            const fiber = numOrNull(data.fiber_per_100g);
+            const sugar = numOrNull(data.sugar_per_100g);
+            const sodium = numOrNull(data.sodium_per_100g);
+            const cholesterol = numOrNull(data.cholesterol_per_100g);
+            if (fiber !== null) per100g.fiber_g = fiber;
+            if (sugar !== null) per100g.sugar_g = sugar;
+            if (sodium !== null) per100g.sodium_mg = sodium;
+            if (cholesterol !== null) per100g.cholesterol_mg = cholesterol;
+            const resolved: ResolvedNutrients = {
+              source: 'usda_fdc',
+              foodName: String(data.food_name ?? ''),
+              usdaFdcId: fdcId,
+              per100g,
+            };
+            return NextResponse.json({ food: resolved, requestId });
+          }
         }
         return NextResponse.json(
           { error: { code: 'NOT_FOUND', message: 'Food not found.', requestId } },

@@ -56,6 +56,11 @@ export function MealResultCard({ analysis, onChange, fatSourceId, onFatSourceCha
   const [servingDraft, setServingDraft] = useState(analysis.serving_description);
   const [editingServing, setEditingServing] = useState(false);
   const lowConfidence = analysis.confidence < 0.3;
+  // Prompt 186: partial nutrients carry the est. marker on their tile; a
+  // downgraded or partially unknown analysis surfaces the Estimated notice.
+  const partialSet = new Set(analysis.nutrient_flags?.partial ?? []);
+  const hasUnknowns = (analysis.nutrient_flags?.unknown ?? []).length > 0 || partialSet.size > 0;
+  const showEstimatedNotice = hasUnknowns || analysis.nutrient_flags?.downgraded === true;
 
   function patch<K extends keyof NutritionAnalysis>(key: K, value: NutritionAnalysis[K]) {
     onChange({ ...analysis, [key]: value });
@@ -104,6 +109,16 @@ export function MealResultCard({ analysis, onChange, fatSourceId, onFatSourceCha
         </div>
       )}
 
+      {!lowConfidence && showEstimatedNotice && (
+        <div className="mb-3 flex items-start gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-amber-200">
+          <AlertCircle className="mt-0.5 h-3.5 w-3.5 flex-none" strokeWidth={1.5} />
+          <span>
+            Estimated: some nutrients could not be fully determined. Values marked est. are
+            partial; Unknown means no reliable data. Tap any value to adjust.
+          </span>
+        </div>
+      )}
+
       <motion.div
         initial="hidden"
         animate="visible"
@@ -132,6 +147,7 @@ export function MealResultCard({ analysis, onChange, fatSourceId, onFatSourceCha
               unit={t.unit}
               variant="prominent"
               step={t.step}
+              estimated={partialSet.has(t.key)}
               onChange={(v) => patch(t.key, v as never)}
             />
           </motion.div>
@@ -161,9 +177,9 @@ export function MealResultCard({ analysis, onChange, fatSourceId, onFatSourceCha
           animate={{ opacity: 1, height: 'auto' }}
           className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4"
         >
-          <MetricTile label="Carbs" value={analysis.carbs_g} unit="g" variant="secondary" onChange={(v) => patch('carbs_g', v)} />
-          <MetricTile label="Saturated Fat" value={analysis.saturated_fat_g} unit="g" variant="secondary" onChange={(v) => patch('saturated_fat_g', v)} />
-          <MetricTile label="Fiber" value={analysis.fiber_g} unit="g" variant="secondary" onChange={(v) => patch('fiber_g', v)} />
+          <MetricTile label="Carbs" value={analysis.carbs_g} unit="g" variant="secondary" estimated={partialSet.has('carbs_g')} onChange={(v) => patch('carbs_g', v)} />
+          <MetricTile label="Saturated Fat" value={analysis.saturated_fat_g} unit="g" variant="secondary" estimated={partialSet.has('saturated_fat_g')} onChange={(v) => patch('saturated_fat_g', v)} />
+          <MetricTile label="Fiber" value={analysis.fiber_g} unit="g" variant="secondary" estimated={partialSet.has('fiber_g')} onChange={(v) => patch('fiber_g', v)} />
         </motion.div>
       )}
 

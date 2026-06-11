@@ -69,26 +69,80 @@ export async function POST(req: NextRequest) {
 
     const items: AggregatedItem[] = [];
     for (const item of parsed.items) {
-      const usda = await lookupFood(item.name, item.quantity, item.unit).catch(() => null);
-      if (usda) {
-        items.push({ parsed: item, nutrients: usda });
-      } else {
-        const est = await estimateItemWithGemini(item.name, item.quantity, item.unit);
-        items.push({
-          parsed: item,
-          nutrients: {
-            calories: est.nutrients.calories, protein_g: est.nutrients.protein_g,
-            carbs_g: est.nutrients.carbs_g, total_fat_g: est.nutrients.total_fat_g,
-            saturated_fat_g: est.nutrients.saturated_fat_g, trans_fat_g: est.nutrients.trans_fat_g,
-            omega3_g: est.nutrients.omega3_g, sugar_g: est.nutrients.sugar_g,
-            fiber_g: est.nutrients.fiber_g, source: 'gemini_fallback',
-          },
+      const usda = await lookupFood(item.name, item.quantity, item.unit, undefined, item.preparation).catch(() => null);
+      let nutrients: AggregatedItem['nutrients'] | null = usda;
+      // Prompt 186 Phase 3: re-estimate any single item beyond the
+      // plausibility bounds (900 kcal / 60 g fat per parsed portion) before
+      // display. Fail open: keep the flagged value if re-estimation fails;
+      // aggregate() downgrades meal confidence either way.
+      if (usda?.meta?.plausibilityFlagged === true) {
+        safeLog.warn('api.nutrition.analyze-photo', 'plausibility bound exceeded; re-estimating item', {
+          name: item.name, matched: usda.meta.matchedName,
+          calories: usda.calories, total_fat_g: usda.total_fat_g,
         });
+        const reEst = await estimateItemWithGemini(item.name, item.quantity, item.unit).catch(() => null);
+        if (reEst) nutrients = { ...reEst.nutrients, source: 'gemini_fallback' };
       }
+      if (!nutrients) {
+        const est = await estimateItemWithGemini(item.name, item.quantity, item.unit);
+        nutrients = { ...est.nutrients, source: 'gemini_fallback' };
+      }
+      items.push({ parsed: item, nutrients });
     }
 
     const analysis = aggregate(items);
     const latencyMs = Date.now() - startedAt;
+
+    // Prompt 186 Phase 3: Atwater consistency check on the photo channel
+    // (previously text-only). Runs only when all four inputs are known;
+    // failure or unknown macros downgrade confidence and log a structured
+    // warning. Never silently display internally inconsistent macros.
+    const macrosKnown =
+      analysis.calories !== null && analysis.protein_g !== null &&
+      analysis.carbs_g !== null && analysis.total_fat_g !== null;
+    const macroDerivedKcal = macrosKnown
+      ? 4 * (analysis.protein_g as number) + 4 * (analysis.carbs_g as number) + 9 * (analysis.total_fat_g as number)
+      : 0;
+    const reconciliationRatio =
+      macrosKnown && (analysis.calories as number) > 0 ? macroDerivedKcal / (analysis.calories as number) : 0;
+    const reconciliationPassed =
+      macrosKnown && reconciliationRatio >= 0.80 && reconciliationRatio <= 1.20;
+    if (!reconciliationPassed) {
+      safeLog.warn('api.nutrition.analyze-photo', 'atwater reconciliation failed or skipped', {
+        macro_kcal: Math.round(macroDerivedKcal * 100) / 100,
+        stated_kcal: analysis.calories,
+        ratio: Math.round(reconciliationRatio * 10000) / 10000,
+        macros_known: macrosKnown,
+        nutrient_flags: analysis.nutrient_flags ?? null,
+      });
+    }
+    const knownNutrients = {
+      calories_kcal: analysis.calories !== null,
+      protein_g: analysis.protein_g !== null,
+      carbs_g: analysis.carbs_g !== null,
+      fat_total_g: analysis.total_fat_g !== null,
+      fiber_g: analysis.fiber_g !== null,
+      sugar_g: analysis.sugar_g !== null,
+      sodium_mg: analysis.sodium_mg != null,
+    };
+    const downgradedByItems = analysis.nutrient_flags?.downgraded === true;
+    // Vision-model confidence range is 0.50 to 0.85 per spec Section 4.3;
+    // 0.65 is the healthy mid, 0.50 the floor for downgraded/inconsistent.
+    const sourceConfidence = reconciliationPassed && !downgradedByItems ? 0.65 : 0.50;
+    const prompt186Meta = {
+      version: '186-2026-06-11',
+      reconciliation: {
+        macro_kcal: Math.round(macroDerivedKcal * 100) / 100,
+        stated_kcal: analysis.calories,
+        ratio: Math.round(reconciliationRatio * 10000) / 10000,
+        threshold: 0.20,
+        passed: reconciliationPassed,
+        skipped_unknown_macros: !macrosKnown,
+      },
+      known_nutrients: knownNutrients,
+      nutrient_flags: analysis.nutrient_flags ?? null,
+      estimated: true,
+    };
 
     // Prompt 168 Apply C: Path A dual-write.
     // Step 1: insert into canonical `meals` first (best effort; failure does
@@ -98,9 +152,11 @@ export async function POST(req: NextRequest) {
     // Per Gary 2026-05-15: compute Gordon score before insert via the shared
     // helper so the same algorithm runs across all 4 meal channels.
     // Prompt 184b: intrinsic fat breakdown (saturated from USDA, source null).
+    // Prompt 186: unknown fat passes 0 into the breakdown accounting only;
+    // the meals row keeps NULL and knownNutrients excludes it from scoring.
     const fatBreakdown = resolveFatBreakdown({
-      intrinsicTotalFatG: analysis.total_fat_g,
-      intrinsicSaturatedG: analysis.saturated_fat_g,
+      intrinsicTotalFatG: analysis.total_fat_g ?? 0,
+      intrinsicSaturatedG: analysis.saturated_fat_g ?? 0,
       addedFatG: 0,
       source: null,
     });
@@ -112,19 +168,20 @@ export async function POST(req: NextRequest) {
         loggedAt,
         mealType,
         source: 'photo_ai',
-        sourceConfidence: 0.65,
-        proteinG: analysis.protein_g,
-        carbsG: analysis.carbs_g,
-        fatTotalG: analysis.total_fat_g,
+        sourceConfidence,
+        proteinG: analysis.protein_g ?? 0,
+        carbsG: analysis.carbs_g ?? 0,
+        fatTotalG: analysis.total_fat_g ?? 0,
         fatSourceId: null,
         fatBreakdown,
-        fiberG: analysis.fiber_g,
-        sugarG: analysis.sugar_g,
-        sodiumMg: 0,
-        caloriesKcal: analysis.calories,
+        fiberG: analysis.fiber_g ?? 0,
+        sugarG: analysis.sugar_g ?? 0,
+        sodiumMg: analysis.sodium_mg ?? 0,
+        caloriesKcal: analysis.calories ?? 0,
         caloriesAutoCalc: false,
         wholeFoodFlag: null,
         mealName: analysis.serving_description ?? null,
+        knownNutrients,
       });
     } catch (e) {
       safeLog.warn('api.nutrition.analyze-photo', 'gordon score compute failed (continuing with null)', {
@@ -143,7 +200,7 @@ export async function POST(req: NextRequest) {
           logged_at: loggedAt,
           meal_type: mealType,
           source: 'photo_ai',
-          source_confidence: 0.65,
+          source_confidence: sourceConfidence,
           protein_g: analysis.protein_g,
           carbs_g: analysis.carbs_g,
           fat_total_g: analysis.total_fat_g,
@@ -151,7 +208,8 @@ export async function POST(req: NextRequest) {
           fat_breakdown: fatBreakdown,
           fiber_g: analysis.fiber_g,
           sugar_g: analysis.sugar_g,
-          sodium_mg: 0,
+          // Prompt 186: unknown sodium is NULL, never a silent 0.
+          sodium_mg: analysis.sodium_mg ?? null,
           calories_kcal: analysis.calories,
           calories_auto_calc: false,
           meal_name: analysis.serving_description ?? null,
@@ -161,6 +219,10 @@ export async function POST(req: NextRequest) {
             ai_model: GEMINI_MODEL, route: ROUTE,
           },
           ...scoredColumns,
+          score_breakdown: {
+            ...((scoredColumns.score_breakdown as Record<string, unknown> | null) ?? {}),
+            prompt_186_meta: prompt186Meta,
+          },
         })
         .select('meal_id')
         .single();
