@@ -897,17 +897,17 @@ export const GENEX_M_DEEP_REPORTS: Record<string, SnpDeepReport> = {
             genotype: "Slow",
             label: "Reduced function",
             interpretation:
-              "Slower clearance of certain drugs and dietary carcinogens, which can raise exposure to those compounds.",
+              "Slower clearance of certain drugs and of compounds formed when meat is cooked at high heat, which can raise exposure to them.",
           },
         ],
       },
     ],
     biologicalRole:
-      "NAT2 acetylates certain medications and dietary carcinogens such as the heterocyclic amines formed when meat is cooked at high heat, preparing them for clearance.",
+      "NAT2 acetylates certain medications and compounds such as the heterocyclic amines formed when meat is cooked at high heat, preparing them for clearance.",
     functionalImpact:
-      "Slow acetylator status changes how you process these compounds and can increase your effective exposure to some dietary carcinogens and alter handling of specific drugs.",
+      "Slow acetylator status changes how you process these substances and can increase your effective exposure to some compounds formed when meat is cooked at high heat, and it can alter handling of specific drugs.",
     healthAssociations: [
-      "Linked to processing of grilled and processed meat carcinogens and to variability in handling certain medications.",
+      "Linked to processing of compounds formed in grilled and processed meat and to variability in handling certain medications.",
     ],
     nutrientStrategy: [
       "Support overall detox with cruciferous vegetables, antioxidants, and glutathione support.",

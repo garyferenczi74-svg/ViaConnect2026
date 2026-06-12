@@ -133,7 +133,7 @@ export const GENEX360_PANELS: Panel[] = [
             symbol: "NAT2",
             fullName: "N-acetyltransferase 2",
             description:
-              "Acetylates certain drugs and dietary carcinogens for clearance. Slow acetylator variants change how you process these compounds and can increase your toxic burden from grilled or processed foods.",
+              "Acetylates certain drugs and dietary compounds for clearance. Slow acetylator variants change how you process these compounds and can increase your toxic burden from grilled or processed foods.",
           },
         ],
       },
@@ -372,7 +372,7 @@ export const GENEX360_PANELS: Panel[] = [
             symbol: "NAT2",
             fullName: "N-acetyltransferase 2",
             description:
-              "Acetylates certain dietary carcinogens and drugs. Slow acetylator variants change clearance of compounds formed in grilled and processed foods.",
+              "Acetylates certain dietary compounds and drugs. Slow acetylator variants change clearance of compounds formed in grilled and processed foods.",
           },
           {
             symbol: "ABCG2",
