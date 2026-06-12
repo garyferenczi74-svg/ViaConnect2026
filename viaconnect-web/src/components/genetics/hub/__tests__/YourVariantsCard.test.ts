@@ -3,7 +3,7 @@
 // Source-as-text assertions per the repo convention (environment: 'node', no
 // jsdom). These lock the deep link read, the data API usage, the tabpanel
 // wiring, the GeneX360 link, the sample-data banner copy, the per test filter
-// memory, the bounded scroll affordance, and the no dash rule.
+// memory, the full height variant list (no inner scroll), and the no dash rule.
 
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
@@ -55,9 +55,11 @@ describe('YourVariantsCard source', () => {
     expect(source).not.toContain('sessionStorage');
   });
 
-  it('bounds the row list in a max height scroll area (Section 4.3)', () => {
-    expect(source).toContain('max-h-[420px]');
-    expect(source).toContain('overflow-y-auto');
+  it('expands the row list to full height with no inner scroll (Gary 2026-06-12)', () => {
+    // The list grows to fit every row and pushes the page below it down, rather
+    // than scrolling inside a bounded max height box.
+    expect(source).not.toContain('max-h-[420px]');
+    expect(source).not.toContain('overflow-y-auto');
   });
 
   it('renders the honest empty-filter line for a tier with no rows', () => {

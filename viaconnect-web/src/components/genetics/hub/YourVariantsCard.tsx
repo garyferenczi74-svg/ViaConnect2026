@@ -158,9 +158,12 @@ export function YourVariantsCard({ className }: YourVariantsCardProps) {
         />
       </div>
 
-      {/* The active test's panel: impact filter, then the filtered variant list
-          in a bounded scroll area so the card never grows an unbounded scroll
-          region (Section 4.3). */}
+      {/* The active test's panel: impact filter, then the filtered variant list.
+          Gary 2026-06-12: the list expands to its full height with no inner
+          scroll, so the card grows and the page content below it flows down
+          rather than the rows scrolling inside a bounded box. The sample set is
+          small (at most 8 rows per test), so there is no unbounded scroll
+          concern. */}
       <div
         id={PANEL_ID}
         role="tabpanel"
@@ -170,7 +173,7 @@ export function YourVariantsCard({ className }: YourVariantsCardProps) {
       >
         <VariantImpactFilter counts={counts} value={activeFilter} onChange={handleFilterChange} />
 
-        <div className="scrollbar-hide mt-3 max-h-[420px] space-y-2 overflow-y-auto">
+        <div className="mt-3 space-y-2">
           {visibleVariants.length === 0 ? (
             // The one genuinely reachable empty state: a tier with no rows in
             // this sample. Honest and short, never a fabricated error.
