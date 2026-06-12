@@ -17,11 +17,11 @@
 //   Row 1 triad (Nutrition Score, Log Your Meal, Daily Macros),
 //   Row 2 Today's Meals (full width),
 //   Row 3 triad (Save My Meal, Nutrition by Genetics, Nutrition Insights).
-//     Save My Meal is a navigation tile whose Open links to the standalone
-//     /nutrition/saved-meals page (Prompt 183c); Nutrition by Genetics is a
-//     navigation tile whose Open links to the standalone /nutrition/genetics
-//     page (Prompt 187); Insights keeps its bottom aligned Open that expands
-//     an in flow panel below the row,
+//     All three are navigation tiles whose Open links to their standalone
+//     pages: /nutrition/saved-meals (Prompt 183c), /nutrition/genetics
+//     (Prompt 187), and /nutrition/insights (Prompt 192 Task 4, which
+//     replaced the old in flow Insights expander with a tap-through tile
+//     that previews the top insight),
 //   Row 4 Meal History (full width),
 //   unmapped section (connected app dropdown) that self hides,
 //   bottom strips (Connect, Assessment retake).
@@ -42,18 +42,17 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { Camera, ChevronDown, ChevronRight, PenLine, X } from 'lucide-react';
+import { Camera, ChevronRight, PenLine, X } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useNutrivisionManualLogHandoff } from '@/hooks/useNutrivisionManualLogHandoff';
 import { PlasmaGauge, type PlasmaGaugeProps } from '@/components/gauges/PlasmaGauge';
-import { NutritionInsights } from '@/components/nutrition/NutritionInsights';
 import { ConnectedAppMealDropdown } from '@/components/nutrition/ConnectedAppMealDropdown';
 import { CardMedia } from '@/components/body-tracker/hub/CardMedia';
 import type { SurfaceMedia } from '@/components/body-tracker/hub/hubConfig';
 import { AssessmentRetakeCard } from '@/components/body-tracker/hub/AssessmentRetakeCard';
 import '@/components/body-tracker/hub/hub-card-frame.css';
 import { useNutritionHubMetrics } from './useNutritionHubMetrics';
+import { NutritionInsightsTile } from './NutritionInsightsTile';
 import { NutritionHubHeader } from './NutritionHubHeader';
 import { NutritionGettingStartedStrip } from './NutritionGettingStartedStrip';
 import { NutritionConnectStrip } from './NutritionConnectStrip';
@@ -147,119 +146,6 @@ function GlassPill({ href, icon: Icon, label }: { href: string; icon: typeof Pen
       <Icon aria-hidden="true" className="relative h-4 w-4" strokeWidth={1.5} />
       <span className="relative">{label}</span>
     </Link>
-  );
-}
-
-// One of the three ROW 3 tiles. The header text sits at the top; the Open
-// button is pinned to the bottom on a consistent line with a guaranteed gap
-// above it (mt-auto + pt-4) so it never crowds the copy. Open toggles a panel
-// rendered by the parent BELOW the triad row.
-function ExpandTile({
-  title,
-  description,
-  badge,
-  gradientClass,
-  media,
-  mediaLogKey,
-  isOpen,
-  onToggle,
-  panelId,
-}: {
-  title: string;
-  description: string;
-  badge?: string;
-  gradientClass: string;
-  // Prompt 189: optional pass-throughs to the inner HubTile media seam.
-  media?: SurfaceMedia;
-  mediaLogKey?: string;
-  isOpen: boolean;
-  onToggle: () => void;
-  panelId: string;
-}) {
-  // Centered layout (Gary 2026-06-11): the expander tile mirrors its two
-  // navigation siblings (SaveMyMealTile, NutritionGeneticsTile) so the Row 3
-  // triad reads consistently: centered title and description, the optional
-  // badge pill beneath, and the Open control bottom aligned on the centered
-  // column.
-  return (
-    <HubTile
-      gradientClass={gradientClass}
-      media={media}
-      mediaLogKey={mediaLogKey}
-      contentClassName="items-center text-center"
-    >
-      {/* Gary (2026-06-11): the heading block sits on the card's TRUE vertical
-          center (absolutely centered, pointer events pass through); the Open
-          control stays bottom anchored. */}
-      <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-1">
-        <h3
-          id={`${panelId}-label`}
-          className="text-[15px] font-semibold leading-tight text-white md:text-base"
-        >
-          {title}
-        </h3>
-        <p className="text-[12px] leading-relaxed text-white/[0.62] md:text-[13px]">{description}</p>
-        {badge ? (
-          <span className="mt-1 inline-flex items-center rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[11px] font-medium tabular-nums text-white/80 backdrop-blur-sm">
-            {badge}
-          </span>
-        ) : null}
-      </div>
-
-      {/* Bottom aligned Open with a guaranteed gap above. */}
-      <div className="mt-auto flex pt-4">
-        <button
-          type="button"
-          onClick={onToggle}
-          aria-expanded={isOpen}
-          aria-controls={panelId}
-          className="inline-flex items-center gap-1 rounded-full border border-[#5B8DEF]/30 bg-[#2A4C9E]/[0.12] px-3 py-1.5 text-[12px] font-medium text-white backdrop-blur-md transition-all duration-200 hover:border-[#5B8DEF]/55 hover:bg-[#2A4C9E]/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744] motion-reduce:transition-none"
-        >
-          <span>Open</span>
-          <ChevronDown
-            className={`h-3.5 w-3.5 transition-transform duration-200 motion-reduce:transition-none ${
-              isOpen ? 'rotate-180' : 'rotate-0'
-            }`}
-            strokeWidth={1.5}
-          />
-        </button>
-      </div>
-    </HubTile>
-  );
-}
-
-// The in flow expand panel shared by all three ROW 3 tiles. framer motion
-// height auto, in document flow (NOT an overlay), so opening pushes the content
-// below it down. Honors prefers reduced motion via an instant swap.
-function ExpandPanel({
-  open,
-  panelId,
-  reduced,
-  children,
-}: {
-  open: boolean;
-  panelId: string;
-  reduced: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <AnimatePresence initial={false}>
-      {open ? (
-        <motion.div
-          key={panelId}
-          id={panelId}
-          role="region"
-          aria-labelledby={`${panelId}-label`}
-          initial={{ height: 0, opacity: 0 }}
-          animate={{ height: 'auto', opacity: 1 }}
-          exit={{ height: 0, opacity: 0 }}
-          transition={reduced ? { duration: 0 } : { duration: 0.24, ease: 'easeOut' }}
-          className="overflow-hidden"
-        >
-          <div className="pt-4">{children}</div>
-        </motion.div>
-      ) : null}
-    </AnimatePresence>
   );
 }
 
@@ -366,8 +252,6 @@ function NutritionGeneticsTile({
   );
 }
 
-type OpenPanel = 'insights' | null;
-
 export function NutritionHub() {
   // Single hook call at the top; its values are distributed to the tiles.
   const { metrics } = useNutritionHubMetrics();
@@ -385,14 +269,6 @@ export function NutritionHub() {
 
   // Conditional photo handoff banner state, reused from the old page.
   const { handoff, clearHandoff } = useNutrivisionManualLogHandoff();
-
-  // One ROW 3 panel open at a time. Opening expands an in flow panel below the
-  // triad and pushes the rest of the page down.
-  const [openPanel, setOpenPanel] = useState<OpenPanel>(null);
-  const toggle = (key: Exclude<OpenPanel, null>) =>
-    setOpenPanel((prev) => (prev === key ? null : key));
-
-  const reduced = useReducedMotion() ?? false;
 
   // Prompt 183a (2026-06-11): the Daily Macros readout row shows ABSOLUTE
   // GRAMS, not percentages. Only render a readout whose gram value is defined; a
@@ -599,48 +475,30 @@ export function NutritionHub() {
       {/* ROW 2: Today's Meals, full width. Ships its own surface. */}
       <NutritionTodaysMeals userId={userId} />
 
-      {/* ROW 3: triad. Save My Meal and Nutrition by Genetics are navigation
-          tiles (Open links to their standalone pages); Insights is an Open
-          expand tile. All three Open controls bottom align on a consistent
-          line; the expand tile's open panel renders below the row in flow. */}
-      <div>
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          <SaveMyMealTile
-            gradientClass={MEDIA_TEAL_BL}
-            media={NUTRITION_CARD_MEDIA.saveMyMeal}
-            mediaLogKey="saveMyMeal"
-            savedMealsCount={metrics.savedMealsCount}
-          />
-          <NutritionGeneticsTile
-            gradientClass={MEDIA_TEAL_BC}
-            media={NUTRITION_CARD_MEDIA.nutritionByGenetics}
-            mediaLogKey="nutritionByGenetics"
-          />
-          <ExpandTile
-            title="Nutrition Insights"
-            description="What your logging says about your day."
-            gradientClass={MEDIA_TEAL_BR}
-            media={NUTRITION_CARD_MEDIA.nutritionInsights}
-            mediaLogKey="nutritionInsights"
-            isOpen={openPanel === 'insights'}
-            onToggle={() => toggle('insights')}
-            panelId="nutrition-hub-panel-insights"
-          />
-        </div>
-
-        {/* Nutrition Insights panel: reuses NutritionInsights as is, fed the
-            precomputed meal count + score. The tile carries no fabricated
-            weekly count badge: there is no real source for one. */}
-        <ExpandPanel
-          open={openPanel === 'insights'}
-          panelId="nutrition-hub-panel-insights"
-          reduced={reduced}
-        >
-          <NutritionInsights
-            mealsLoggedToday={metrics.nutritionMealCount ?? 0}
-            score={metrics.nutritionScore ?? 0}
-          />
-        </ExpandPanel>
+      {/* ROW 3: triad. All three are navigation tiles whose Open links to
+          their standalone pages, bottom aligned on a consistent line. Prompt
+          192 Task 4: Nutrition Insights swapped its in flow expander for a
+          tap-through tile that previews the top insight and opens
+          /nutrition/insights. The cold start gate fails toward Getting
+          Started while the hub metrics load. */}
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <SaveMyMealTile
+          gradientClass={MEDIA_TEAL_BL}
+          media={NUTRITION_CARD_MEDIA.saveMyMeal}
+          mediaLogKey="saveMyMeal"
+          savedMealsCount={metrics.savedMealsCount}
+        />
+        <NutritionGeneticsTile
+          gradientClass={MEDIA_TEAL_BC}
+          media={NUTRITION_CARD_MEDIA.nutritionByGenetics}
+          mediaLogKey="nutritionByGenetics"
+        />
+        <NutritionInsightsTile
+          gradientClass={MEDIA_TEAL_BR}
+          media={NUTRITION_CARD_MEDIA.nutritionInsights}
+          mediaLogKey="nutritionInsights"
+          coldStart={(metrics.dailyMealCounts?.reduce((sum, n) => sum + n, 0) ?? 0) < 3}
+        />
       </div>
 
       {/* ROW 4: Meal History, full width. Ships its own surface; both props fail

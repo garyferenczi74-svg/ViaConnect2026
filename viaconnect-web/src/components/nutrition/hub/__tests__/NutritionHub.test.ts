@@ -3,12 +3,17 @@
 // tests use (readFileSync + assert on the source); full visual sign off happens
 // at the Vercel preview. These lock the single metrics hook call, the band
 // order and reuse of every Task 1 to 5 piece, the gauge reuse (no recompute),
-// the teal glass pills + internal routes, the Open expand wiring of the three
+// the teal glass pills + internal routes, the navigation wiring of the three
 // Row 3 tiles, the CardMedia seam on Row 1 / Row 3, the absence of an Open
 // button on the inline gauges + full width tiles, the fail open posture (no
 // fabricated 24 saved / 2 new this week), the read only contract, and the no
 // dash rule. The page test locks the hub mount and the removal of the full
 // bleed hero.
+//
+// Prompt 192 Task 4 (2026-06-12): the Insights expander machinery (ExpandTile,
+// ExpandPanel, the OpenPanel state, the inline NutritionInsights panel) left
+// the hub for the NutritionInsightsTile navigation card; negative locks below
+// keep it from returning.
 
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
@@ -68,8 +73,6 @@ describe('NutritionHub source', () => {
     expect(source).not.toContain('NutritionScoreCircleGauge');
     expect(source).toContain('value={metrics.nutritionScore ?? 0}');
     expect(source).toContain('valueFontPx={30}');
-    // The meal count still feeds the Insights panel, so the metric is preserved.
-    expect(source).toContain('metrics.nutritionMealCount ?? 0');
     // The hub does not author scoring math.
     expect(source).not.toContain('calorieWeightedMealQualityScore');
     expect(source).not.toContain('totalDailyMacrosScore');
@@ -122,10 +125,11 @@ describe('NutritionHub source', () => {
   it('icon removal (Gary 2026-06-11): no decorative badge chips remain on any card', () => {
     // BadgeChip and its six call sites are gone. Only the functional control
     // icons survive in the lucide import: the teal glass pill CTAs (PenLine,
-    // Camera), the Open chevrons, and the handoff banner X.
+    // Camera), the Open chevrons, and the handoff banner X. Prompt 192:
+    // ChevronDown left with the ExpandTile.
     expect(source).not.toContain('BadgeChip');
     expect(source).toContain(
-      "import { Camera, ChevronDown, ChevronRight, PenLine, X } from 'lucide-react'",
+      "import { Camera, ChevronRight, PenLine, X } from 'lucide-react'",
     );
   });
 
@@ -135,14 +139,15 @@ describe('NutritionHub source', () => {
   });
 
   it('183e + Gary: heading blocks sit on the card true vertical center, actions bottom anchored', () => {
-    // The four heading wrappers (Log Your Meal, Save My Meal, Genetics,
-    // Insights) are absolutely centered text layers with pointer events
-    // passing through, so the pills and Open controls beneath stay clickable.
+    // Three heading wrappers (Log Your Meal, Save My Meal, Genetics) are
+    // absolutely centered text layers with pointer events passing through, so
+    // the pills and Open controls beneath stay clickable. Prompt 192: the
+    // Insights wrapper moved into NutritionInsightsTile.tsx with the tile.
     const centered =
       source.match(
         /pointer-events-none absolute inset-0 flex flex-col items-center justify-center/g,
       ) ?? [];
-    expect(centered.length).toBe(4);
+    expect(centered.length).toBe(3);
     // The controls keep their bottom anchor + guaranteed gap.
     expect(source).toContain('mt-auto flex pt-4');
     expect(source).toContain('mt-auto flex w-full flex-col items-center gap-3 pt-4');
@@ -197,16 +202,26 @@ describe('NutritionHub source', () => {
     expect(source).toContain('setUserId(data.user?.id ?? null)');
   });
 
-  it('Row 3 wires the NutritionInsights expand panel and no other panel (no MyMeals)', () => {
-    // Prompt 183c: MyMeals no longer renders on the hub; the saved case became a
-    // navigation tile (covered by its own test below). Prompt 187: the genetics
-    // case became a navigation tile too, so only the insights Open panel remains.
+  it('Prompt 192: Row 3 Insights is the NutritionInsightsTile, the inline panel is gone', () => {
+    // Prompt 183c: MyMeals no longer renders on the hub. Prompt 192: the old
+    // NutritionInsights inline panel and its import left too; the tile owns
+    // its own data fetch and links to /nutrition/insights. The old component
+    // file survives unrendered.
     expect(source).not.toContain('@/components/nutrition/MyMeals');
     expect(source).not.toContain('<MyMeals');
+    expect(source).not.toContain('@/components/nutrition/NutritionInsights');
+    expect(source).not.toContain('mealsLoggedToday');
     expect(source).toContain(
-      "import { NutritionInsights } from '@/components/nutrition/NutritionInsights'",
+      "import { NutritionInsightsTile } from './NutritionInsightsTile'",
     );
-    expect(source).toContain('<NutritionInsights');
+    expect(source).toContain('<NutritionInsightsTile');
+    // The tile keeps the media descriptor + log key and receives the cold
+    // start gate computed from the existing 7 day meal counts metric.
+    expect(source).toContain('media={NUTRITION_CARD_MEDIA.nutritionInsights}');
+    expect(source).toContain('mediaLogKey="nutritionInsights"');
+    expect(source).toContain(
+      'coldStart={(metrics.dailyMealCounts?.reduce((sum, n) => sum + n, 0) ?? 0) < 3}',
+    );
   });
 
   it('Prompt 187: the genetics links left the hub for the /nutrition/genetics page', () => {
@@ -253,38 +268,27 @@ describe('NutritionHub source', () => {
     expect(source).not.toContain('·'); // middot
   });
 
-  it('the three Row 3 panels expand in flow via framer motion height auto, not an overlay', () => {
-    expect(source).toContain("from 'framer-motion'");
-    expect(source).toContain("height: 'auto'");
-    // No absolute / fixed positioned expansion layer for the panels.
+  it('Prompt 192: the expander machinery is gone (ExpandTile, ExpandPanel, OpenPanel)', () => {
+    // Negative locks: the Insights expander was the machinery's last
+    // consumer, so the components, the state union, the toggle, the panel id,
+    // and the disclosure aria wiring all left the hub.
+    expect(source).not.toContain('ExpandTile');
+    expect(source).not.toContain('ExpandPanel');
+    expect(source).not.toContain('OpenPanel');
+    expect(source).not.toContain('openPanel');
+    expect(source).not.toContain('nutrition-hub-panel-insights');
+    expect(source).not.toContain('aria-expanded');
+    expect(source).not.toContain('aria-controls');
+    expect(source).not.toContain('ChevronDown');
+  });
+
+  it('Prompt 192: framer motion left the hub with the expander machinery', () => {
+    expect(source).not.toContain("from 'framer-motion'");
+    expect(source).not.toContain('AnimatePresence');
+    expect(source).not.toContain('useReducedMotion');
+    expect(source).not.toContain("height: 'auto'");
+    // Still no absolute / fixed positioned expansion layer anywhere.
     expect(source).not.toContain('fixed inset-0');
-  });
-
-  it('only one Row 3 panel is open at a time (genetics removed from the union)', () => {
-    // Prompt 183c removed the saved case; Prompt 187 removed the genetics case.
-    // OpenPanel is now just the insights disclosure panel.
-    expect(source).toContain("type OpenPanel = 'insights' | null");
-    expect(source).not.toContain("'saved'");
-    expect(source).not.toContain("'genetics'");
-    expect(source).toContain('setOpenPanel((prev) => (prev === key ? null : key))');
-  });
-
-  it('wires each Row 3 disclosure with aria-controls on the button and aria-labelledby on the panel', () => {
-    // The toggle button points at the panel it controls, and the panel names
-    // its own heading, matching the canonical shop Accordion region wiring.
-    expect(source).toContain('aria-controls={panelId}');
-    expect(source).toContain('aria-labelledby={`${panelId}-label`}');
-    expect(source).toContain('id={`${panelId}-label`}');
-
-    // The one remaining panel id is the literal string threaded to the tile
-    // and the panel (Prompt 183c removed the saved panel, Prompt 187 removed
-    // the genetics panel). It must appear on BOTH the ExpandTile button call
-    // site and the ExpandPanel id, so the string occurs at least twice.
-    const panelIds = ['nutrition-hub-panel-insights'];
-    for (const panelId of panelIds) {
-      const occurrences = source.split(`panelId="${panelId}"`).length - 1;
-      expect(occurrences).toBeGreaterThanOrEqual(2);
-    }
   });
 
   it('Row 4 renders the Meal History tile fed the precomputed streak + counts', () => {
@@ -389,23 +393,19 @@ describe('NutritionHub source', () => {
     expect(source).not.toContain("const TEAL = '#2DA5A0'");
   });
 
-  it('puts an Open control only on the three Row 3 tiles, never on the gauges or full width tiles', () => {
-    // Prompt 187: each of the three Row 3 tiles carries an Open. One is the
-    // expander button (the shared ExpandTile, instantiated once for insights,
-    // the single aria-expanded button definition) and two are the navigation
-    // Links in SaveMyMealTile and NutritionGeneticsTile. So the Open label
-    // appears exactly three times. The inline gauges and the full width tiles
-    // render neither, so they carry no Open.
+  it('puts an Open control only on the Row 3 tiles, never on the gauges or full width tiles', () => {
+    // Prompt 192: Save My Meal and Nutrition by Genetics render their Open
+    // Links here; the Nutrition Insights tile renders its own Open Link in
+    // its own file (NutritionInsightsTile.tsx), so the hub source carries
+    // exactly two. The inline gauges and the full width tiles render none.
     const opens = source.match(/<span>Open<\/span>/g) ?? [];
-    expect(opens.length).toBe(3);
-    const ariaExpanded = source.match(/aria-expanded=\{isOpen\}/g) ?? [];
-    expect(ariaExpanded.length).toBe(1);
-    const tiles = source.match(/<ExpandTile/g) ?? [];
-    expect(tiles.length).toBe(1);
+    expect(opens.length).toBe(2);
     const savedTiles = source.match(/<SaveMyMealTile/g) ?? [];
     expect(savedTiles.length).toBe(1);
     const geneticsTiles = source.match(/<NutritionGeneticsTile/g) ?? [];
     expect(geneticsTiles.length).toBe(1);
+    const insightTiles = source.match(/<NutritionInsightsTile/g) ?? [];
+    expect(insightTiles.length).toBe(1);
   });
 
   it('never fabricates a saved count or a new this week badge', () => {
