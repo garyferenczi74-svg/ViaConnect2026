@@ -59,6 +59,12 @@ describe('NutritionGettingStartedStrip source', () => {
     expect(source).not.toContain('useGuideLabel');
   });
 
+  it('Prompt 183f: the root carries the hub-card-frame luminous edge ring and AccentLine is gone', () => {
+    expect(source).toContain("import '@/components/body-tracker/hub/hub-card-frame.css'");
+    expect(source).toContain('hub-card-frame relative flex');
+    expect(source).not.toContain('AccentLine');
+  });
+
   it('contains no em or en dashes', () => {
     expect(source.includes(String.fromCharCode(0x2014))).toBe(false);
     expect(source.includes(String.fromCharCode(0x2013))).toBe(false);

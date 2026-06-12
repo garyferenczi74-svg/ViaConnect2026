@@ -14,7 +14,7 @@
 // The body sits on plain Deep Navy (the page wrapper paints #1A2744); there is
 // NO full bleed hero. Layout bands, in order:
 //   header, getting started strip, conditional NutriVision handoff banner,
-//   Row 1 triad (Nutrition Score, Daily Macros, Log Your Meal),
+//   Row 1 triad (Nutrition Score, Log Your Meal, Daily Macros),
 //   Row 2 Today's Meals (full width),
 //   Row 3 triad (Save My Meal, Nutrition by Genetics, Nutrition Insights).
 //     Save My Meal is a navigation tile whose Open links to the standalone
@@ -52,6 +52,7 @@ import { ConnectedAppMealDropdown } from '@/components/nutrition/ConnectedAppMea
 import { CardMedia } from '@/components/body-tracker/hub/CardMedia';
 import type { SurfaceMedia } from '@/components/body-tracker/hub/hubConfig';
 import { AssessmentRetakeCard } from '@/components/body-tracker/hub/AssessmentRetakeCard';
+import '@/components/body-tracker/hub/hub-card-frame.css';
 import { useNutritionHubMetrics } from './useNutritionHubMetrics';
 import { NutritionHubHeader } from './NutritionHubHeader';
 import { NutritionGettingStartedStrip } from './NutritionGettingStartedStrip';
@@ -68,8 +69,6 @@ import {
   NUTRITION_CARD_MEDIA,
 } from './nutritionHubMedia';
 
-const TEAL = '#2DA5A0';
-
 // Per card media seam. ROW 1 and ROW 3 tiles drop CardMedia in as the z 0 back
 // layer. Prompt 189: the gradient constants and the five real media
 // descriptors live in nutritionHubMedia.ts; the gradient classes mirror the My
@@ -80,13 +79,14 @@ const TEAL = '#2DA5A0';
 // Shared tile shell for the ROW 1 and ROW 3 bento cards. Layers back to front:
 //   z 0: CardMedia gradient placeholder (the video drop in seam),
 //   z 1: legibility scrim so content stays readable over any future frame,
-//   z 2: content. An optional 2px top accent rule carries the priority accent.
+//   z 2: content. The Prompt 183f hub-card-frame pseudo elements paint the
+//        tapered luminous edge ring on the root (crisp ring at z 2 under the
+//        content, blurred glow at z 1 with the scrim).
 function HubTile({
   children,
   gradientClass,
   media,
   mediaLogKey,
-  accent,
   className,
   contentClassName,
 }: {
@@ -98,7 +98,6 @@ function HubTile({
   // absent, the original gradient placeholder renders exactly as before.
   media?: SurfaceMedia;
   mediaLogKey?: string;
-  accent?: string;
   className?: string;
   // Prompt 183a (2026-06-11): optional classes for the z 2 content column. The
   // Row 1 cards pass items-center text-center so the gauge, title, and caption
@@ -107,18 +106,8 @@ function HubTile({
 }) {
   return (
     <div
-      className={`relative isolate flex min-h-[200px] flex-col overflow-hidden rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 backdrop-blur-md ${
-        accent ? 'border-t-0' : ''
-      } ${className ?? ''}`}
+      className={`hub-card-frame relative isolate flex min-h-[200px] flex-col overflow-hidden rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 backdrop-blur-md ${className ?? ''}`}
     >
-      {accent ? (
-        <span
-          aria-hidden="true"
-          className="absolute left-0 right-0 top-0 z-[3] h-[2px]"
-          style={{ backgroundColor: accent }}
-        />
-      ) : null}
-
       {/* z 0: per card media seam. Real media when wired, gradient otherwise. */}
       {media ? (
         <CardMedia media={media} logKey={mediaLogKey} />
@@ -140,13 +129,15 @@ function HubTile({
   );
 }
 
-// A teal glass pill used by the priority Log Your Meal tile: semi transparent
-// teal fill, backdrop blur, soft teal border, a faint top highlight, white text.
-function TealGlassPill({ href, icon: Icon, label }: { href: string; icon: typeof PenLine; label: string }) {
+// A white glass pill used by the priority Log Your Meal tile (Gary
+// 2026-06-11: switched from the teal fill to white translucent glass): white
+// translucent fill, backdrop blur, soft white border, a faint top highlight,
+// white text. The focus ring keeps the teal accent.
+function GlassPill({ href, icon: Icon, label }: { href: string; icon: typeof PenLine; label: string }) {
   return (
     <Link
       href={href}
-      className="group relative flex min-h-[44px] w-full items-center justify-center gap-2 overflow-hidden rounded-xl border border-[#2DA5A0]/40 bg-[#2DA5A0]/[0.18] px-4 py-2.5 text-[13px] font-semibold text-white no-underline backdrop-blur-md transition-all duration-200 hover:border-[#2DA5A0]/60 hover:bg-[#2DA5A0]/[0.28] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744] active:scale-[0.98]"
+      className="group relative flex min-h-[44px] w-full items-center justify-center gap-2 overflow-hidden rounded-xl border border-white/20 bg-white/[0.08] px-4 py-2.5 text-[13px] font-semibold text-white no-underline backdrop-blur-md transition-all duration-200 hover:border-white/35 hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744] active:scale-[0.98]"
     >
       {/* Faint top highlight on the glass. */}
       <span
@@ -197,9 +188,10 @@ function ExpandTile({
       mediaLogKey={mediaLogKey}
       contentClassName="items-center text-center"
     >
-      {/* Prompt 183e (2026-06-11): the heading block centers vertically in the
-          space above the bottom anchored Open instead of hugging the top edge. */}
-      <div className="flex flex-1 flex-col items-center justify-center gap-1">
+      {/* Gary (2026-06-11): the heading block sits on the card's TRUE vertical
+          center (absolutely centered, pointer events pass through); the Open
+          control stays bottom anchored. */}
+      <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-1">
         <h3
           id={`${panelId}-label`}
           className="text-[15px] font-semibold leading-tight text-white md:text-base"
@@ -221,7 +213,7 @@ function ExpandTile({
           onClick={onToggle}
           aria-expanded={isOpen}
           aria-controls={panelId}
-          className="inline-flex items-center gap-1 rounded-full border border-[#5B8DEF]/30 bg-[#2A4C9E]/25 px-3 py-1.5 text-[12px] font-medium text-white backdrop-blur-md transition-all duration-200 hover:border-[#5B8DEF]/55 hover:bg-[#2A4C9E]/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744] motion-reduce:transition-none"
+          className="inline-flex items-center gap-1 rounded-full border border-[#5B8DEF]/30 bg-[#2A4C9E]/[0.12] px-3 py-1.5 text-[12px] font-medium text-white backdrop-blur-md transition-all duration-200 hover:border-[#5B8DEF]/55 hover:bg-[#2A4C9E]/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744] motion-reduce:transition-none"
         >
           <span>Open</span>
           <ChevronDown
@@ -296,9 +288,9 @@ function SaveMyMealTile({
       mediaLogKey={mediaLogKey}
       contentClassName="items-center text-center"
     >
-      {/* Prompt 183e (2026-06-11): heading block vertically centered above the
-          bottom anchored Open. */}
-      <div className="flex flex-1 flex-col items-center justify-center gap-1">
+      {/* Gary (2026-06-11): heading block on the card's TRUE vertical center;
+          Open stays bottom anchored. */}
+      <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-1">
         <h3 className="text-[15px] font-semibold leading-tight text-white md:text-base">
           Save My Meal
         </h3>
@@ -316,7 +308,7 @@ function SaveMyMealTile({
       <div className="mt-auto flex pt-4">
         <Link
           href="/nutrition/saved-meals"
-          className="inline-flex items-center gap-1 rounded-full border border-[#5B8DEF]/30 bg-[#2A4C9E]/25 px-3 py-1.5 text-[12px] font-medium text-white no-underline backdrop-blur-md transition-all duration-200 hover:border-[#5B8DEF]/55 hover:bg-[#2A4C9E]/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744] motion-reduce:transition-none"
+          className="inline-flex items-center gap-1 rounded-full border border-[#5B8DEF]/30 bg-[#2A4C9E]/[0.12] px-3 py-1.5 text-[12px] font-medium text-white no-underline backdrop-blur-md transition-all duration-200 hover:border-[#5B8DEF]/55 hover:bg-[#2A4C9E]/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744] motion-reduce:transition-none"
         >
           <span>Open</span>
           <ChevronRight className="h-3.5 w-3.5" strokeWidth={1.5} />
@@ -348,9 +340,9 @@ function NutritionGeneticsTile({
       mediaLogKey={mediaLogKey}
       contentClassName="items-center text-center"
     >
-      {/* Prompt 183e (2026-06-11): heading block vertically centered above the
-          bottom anchored Open. */}
-      <div className="flex flex-1 flex-col items-center justify-center gap-1">
+      {/* Gary (2026-06-11): heading block on the card's TRUE vertical center;
+          Open stays bottom anchored. */}
+      <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-1">
         <h3 className="text-[15px] font-semibold leading-tight text-white md:text-base">
           Nutrition by Genetics
         </h3>
@@ -364,7 +356,7 @@ function NutritionGeneticsTile({
         <Link
           href="/nutrition/genetics"
           data-analytics-event="nutrition_genetics_open"
-          className="inline-flex items-center gap-1 rounded-full border border-[#5B8DEF]/30 bg-[#2A4C9E]/25 px-3 py-1.5 text-[12px] font-medium text-white no-underline backdrop-blur-md transition-all duration-200 hover:border-[#5B8DEF]/55 hover:bg-[#2A4C9E]/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744] motion-reduce:transition-none"
+          className="inline-flex items-center gap-1 rounded-full border border-[#5B8DEF]/30 bg-[#2A4C9E]/[0.12] px-3 py-1.5 text-[12px] font-medium text-white no-underline backdrop-blur-md transition-all duration-200 hover:border-[#5B8DEF]/55 hover:bg-[#2A4C9E]/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744] motion-reduce:transition-none"
         >
           <span>Open</span>
           <ChevronRight className="h-3.5 w-3.5" strokeWidth={1.5} />
@@ -492,7 +484,12 @@ export function NutritionHub() {
             title below the gauge, then the signal caption. No Open, no tier word.
             When the score is undefined a neutral empty gauge plus a muted note
             stands in for a fabricated number. */}
-        <HubTile gradientClass={MEDIA_TEAL_TL} contentClassName="items-center text-center">
+        <HubTile
+          gradientClass={MEDIA_TEAL_TL}
+          media={NUTRITION_CARD_MEDIA.nutritionScore}
+          mediaLogKey="nutritionScore"
+          contentClassName="items-center text-center"
+        >
           <div className="flex flex-1 flex-col items-center justify-center gap-2">
             {hasScore ? (
               <PlasmaGauge
@@ -530,11 +527,43 @@ export function NutritionHub() {
           </div>
         </HubTile>
 
+        {/* Log Your Meal: PRIORITY tile. The title, a caption, then the two
+            teal glass pills routing to the two internal log surfaces. Gary
+            (2026-06-11): sits BETWEEN Nutrition Score and Daily Macros. */}
+        <HubTile
+          gradientClass={MEDIA_ORANGE_BR}
+          media={NUTRITION_CARD_MEDIA.logYourMeal}
+          mediaLogKey="logYourMeal"
+          contentClassName="items-center text-center"
+        >
+          {/* Gary (2026-06-11): the title and caption sit on the card's TRUE
+              vertical center (absolutely centered text layer, pointer events
+              pass through), while the two pills stay anchored at the bottom. */}
+          <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+            <h3 className="text-[15px] font-semibold leading-tight text-white md:text-base">
+              Log Your Meal
+            </h3>
+            <p className="mt-1 text-[12px] leading-relaxed text-white/[0.62] md:text-[13px]">
+              The fastest way to add what you ate
+            </p>
+          </div>
+          {/* Gary (2026-06-11): NutriVision sits ABOVE Log a Full Meal. */}
+          <div className="mt-auto flex w-full flex-col items-center gap-3 pt-4">
+            <GlassPill href="/nutrition/photo-ai" icon={Camera} label="NutriVision" />
+            <GlassPill href="/nutrition/log-meal" icon={PenLine} label="Log a Full Meal" />
+          </div>
+        </HubTile>
+
         {/* Daily Macros: single Plasma gauge of percent to target in the
             teal hub finish, the title below the gauge, then the absolute gram
             readout row. When the overall percent is undefined render a neutral
             empty gauge, not a real 0. */}
-        <HubTile gradientClass={MEDIA_TEAL_TR} contentClassName="items-center text-center">
+        <HubTile
+          gradientClass={MEDIA_TEAL_TR}
+          media={NUTRITION_CARD_MEDIA.dailyMacros}
+          mediaLogKey="dailyMacros"
+          contentClassName="items-center text-center"
+        >
           <div className="flex flex-1 flex-col items-center justify-center gap-3">
             {hasMacroPct ? (
               <PlasmaGauge {...macroGaugeProps} value={metrics.dailyMacrosPct ?? 0} />
@@ -563,34 +592,6 @@ export function NutritionHub() {
                 )}
               </div>
             ) : null}
-          </div>
-        </HubTile>
-
-        {/* Log Your Meal: PRIORITY tile with a Teal accent edge. The title, a
-            caption, then the two teal glass pills routing to the two internal
-            log surfaces. */}
-        <HubTile
-          gradientClass={MEDIA_ORANGE_BR}
-          media={NUTRITION_CARD_MEDIA.logYourMeal}
-          mediaLogKey="logYourMeal"
-          accent={TEAL}
-          contentClassName="items-center text-center"
-        >
-          {/* Prompt 183e + Gary follow-up (2026-06-11): the title and caption
-              center vertically in the space above the pills (same pattern as
-              the Row 3 tiles), and the two pills anchor beneath them at the
-              bottom of the frame. Nothing hugs the top edge. */}
-          <div className="flex flex-1 flex-col items-center justify-center">
-            <h3 className="text-[15px] font-semibold leading-tight text-white md:text-base">
-              Log Your Meal
-            </h3>
-            <p className="mt-1 text-[12px] leading-relaxed text-white/[0.62] md:text-[13px]">
-              The fastest way to add what you ate
-            </p>
-          </div>
-          <div className="mt-auto flex w-full flex-col items-center gap-3 pt-4">
-            <TealGlassPill href="/nutrition/log-meal" icon={PenLine} label="Log a Full Meal" />
-            <TealGlassPill href="/nutrition/photo-ai" icon={Camera} label="NutriVision" />
           </div>
         </HubTile>
       </div>

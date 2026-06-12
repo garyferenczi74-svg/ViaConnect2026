@@ -112,6 +112,28 @@ describe('NutritionMealHistoryTile source', () => {
     expect(source).toContain('useReducedMotion');
   });
 
+  it('Prompt 183f: the root carries the hub-card-frame luminous edge ring, AccentLine is gone, no top border', () => {
+    expect(source).toContain("import '@/components/body-tracker/hub/hub-card-frame.css'");
+    // The frame class rides the relative, clipped, radius carrying root; the
+    // hairline border stays on all four sides.
+    expect(source).toContain(
+      'hub-card-frame font-[Instrument_Sans] relative isolate w-full overflow-hidden rounded-2xl border border-white/10',
+    );
+    // Gary (2026-06-11): the Woman on beach background video rides the same
+    // CardMedia + scrim layering, with the content raised above the scrim.
+    expect(source).toContain(
+      '<CardMedia media={NUTRITION_CARD_MEDIA.mealHistory} logKey="mealHistory" />',
+    );
+    expect(source).toContain(
+      'pointer-events-none absolute inset-0 z-[1] bg-gradient-to-t from-[#1A2744]/85 via-[#1A2744]/30 to-transparent',
+    );
+    const raised = source.match(/relative z-\[2\]/g) ?? [];
+    expect(raised.length).toBeGreaterThanOrEqual(2);
+    expect(source).not.toContain('AccentLine');
+    expect(source).not.toContain('border-t-2');
+    expect(source).not.toContain('borderTopColor');
+  });
+
   it('icon removal (Gary 2026-06-11): the CalendarDays header icon and Flame streak icon are gone', () => {
     // The tile renders no Lucide icons at all now; the title, the gauge, the
     // bars, and the day streak caption stay.

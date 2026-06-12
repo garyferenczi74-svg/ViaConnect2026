@@ -38,10 +38,13 @@ export const MEDIA_TEAL_BR =
 
 export type NutritionMediaCardKey =
   | 'todaysMeals'
+  | 'nutritionScore'
   | 'logYourMeal'
+  | 'dailyMacros'
   | 'saveMyMeal'
   | 'nutritionByGenetics'
-  | 'nutritionInsights';
+  | 'nutritionInsights'
+  | 'mealHistory';
 
 export const NUTRITION_CARD_MEDIA: Record<NutritionMediaCardKey, SurfaceMedia> = {
   // Today's Meals is the one still image. Its placeholder is MEDIA_TEAL_TL,
@@ -59,6 +62,22 @@ export const NUTRITION_CARD_MEDIA: Record<NutritionMediaCardKey, SurfaceMedia> =
     poster: '',
     objectPosition: 'center',
     gradientClass: MEDIA_ORANGE_BR,
+  },
+  // Gary (2026-06-11): Nutrition Score gains the Mountain top background video.
+  nutritionScore: {
+    kind: 'video',
+    src: 'https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Videos/Mountain%20top.mp4',
+    poster: '',
+    objectPosition: 'center',
+    gradientClass: MEDIA_TEAL_TL,
+  },
+  // Gary (2026-06-11): Daily Macros gains the Food 5 background video.
+  dailyMacros: {
+    kind: 'video',
+    src: 'https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Videos/Food%205.mp4',
+    poster: '',
+    objectPosition: 'center',
+    gradientClass: MEDIA_TEAL_TR,
   },
   saveMyMeal: {
     kind: 'video',
@@ -80,5 +99,13 @@ export const NUTRITION_CARD_MEDIA: Record<NutritionMediaCardKey, SurfaceMedia> =
     poster: '',
     objectPosition: 'center',
     gradientClass: MEDIA_TEAL_BR,
+  },
+  // Gary (2026-06-11): 7 Day Meal History gains the Woman on beach video.
+  mealHistory: {
+    kind: 'video',
+    src: 'https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Videos/Woman%20on%20beach.mp4',
+    poster: '',
+    objectPosition: 'center',
+    gradientClass: MEDIA_TEAL_BC,
   },
 };

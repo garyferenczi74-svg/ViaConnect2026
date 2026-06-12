@@ -8,27 +8,22 @@
 //   z 2: content panel with an optional metric chip on the right;
 //        title, description, and the go affordance below.
 //
-// A 2px top accent rule uses the card's accent token. The whole card
-// is a single Next.js Link; the metric chip is presentational only and
-// does not steal focus.
+// The Prompt 183f hub-card-frame class paints the tapered luminous
+// edge ring on the root. The whole card is a single Next.js Link; the
+// metric chip is presentational only and does not steal focus.
 
 import Link from 'next/link';
 import { ChevronRight } from 'lucide-react';
 import type { SurfaceCard } from './hubConfig';
 import { CardMedia } from './CardMedia';
+import './hub-card-frame.css';
 
 interface BentoCardProps {
   surface: SurfaceCard;
   metricValue?: string;
 }
 
-const ACCENT_HEX: Record<SurfaceCard['accent'], string> = {
-  teal: '#2DA5A0',
-  orange: '#B75E18',
-};
-
 export function BentoCard({ surface, metricValue }: BentoCardProps) {
-  const accentHex = ACCENT_HEX[surface.accent];
   const ariaLabel = metricValue
     ? `${surface.title}: ${metricValue} ${surface.metricLabel}`
     : surface.title;
@@ -41,16 +36,9 @@ export function BentoCard({ surface, metricValue }: BentoCardProps) {
     <Link
       href={surface.href}
       aria-label={ariaLabel}
-      className={`group relative isolate flex min-h-[180px] flex-col overflow-hidden rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 backdrop-blur-md transition-all duration-200 ease-out hover:border-white/[0.16] hover:shadow-lg hover:shadow-black/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744] ${surface.gridClass}`}
+      className={`hub-card-frame group relative isolate flex min-h-[180px] flex-col overflow-hidden rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 backdrop-blur-md transition-all duration-200 ease-out hover:border-white/[0.16] hover:shadow-lg hover:shadow-black/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744] ${surface.gridClass}`}
       data-hub-card={surface.id}
     >
-      {/* 2px top accent rule. */}
-      <span
-        aria-hidden="true"
-        className="absolute left-0 right-0 top-0 z-[3] h-[2px]"
-        style={{ backgroundColor: accentHex }}
-      />
-
       {/* z 0: media layer. */}
       <CardMedia media={surface.media} />
 
@@ -87,7 +75,9 @@ export function BentoCard({ surface, metricValue }: BentoCardProps) {
           </p>
         </div>
 
-        <div className={`inline-flex items-center gap-1 rounded-full border border-[#5B8DEF]/30 bg-[#2A4C9E]/25 px-3 py-1.5 text-[12px] font-medium text-white backdrop-blur-md transition-all duration-200 group-hover:border-[#5B8DEF]/55 group-hover:bg-[#2A4C9E]/40 motion-reduce:transition-none ${isFeatured ? 'self-start' : 'absolute bottom-4 right-4 md:bottom-5 md:right-5'}`}>
+        {/* Gary (2026-06-11): Open pill background halved so the card media
+            reads through it, matching the nutrition hub Open pills. */}
+        <div className={`inline-flex items-center gap-1 rounded-full border border-[#5B8DEF]/30 bg-[#2A4C9E]/[0.12] px-3 py-1.5 text-[12px] font-medium text-white backdrop-blur-md transition-all duration-200 group-hover:border-[#5B8DEF]/55 group-hover:bg-[#2A4C9E]/20 motion-reduce:transition-none ${isFeatured ? 'self-start' : 'absolute bottom-4 right-4 md:bottom-5 md:right-5'}`}>
           <span>Open</span>
           <ChevronRight
             className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transition-none motion-reduce:group-hover:translate-x-0"

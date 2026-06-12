@@ -1,0 +1,56 @@
+/* Prompt 183f: tapered luminous edge frame. A gradient filled border ring cut
+   from the card's own rounded rectangle by the two layer mask, so the line
+   follows the corner radius perfectly; the vertical fade tapers it to nothing
+   just past the corners. Fixed pixel stops (not percents) so the taper ends at
+   the same depth on every card height, per the spec's tuning note. */
+.hub-card-frame { position: relative; }
+
+.hub-card-frame::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border-radius: inherit;
+  padding: 1.5px;
+  background: linear-gradient(
+    to bottom,
+    rgba(var(--frame-hi, 159, 240, 236), 0.95) 0px,
+    rgba(var(--frame-mid, 127, 214, 210), 0.7) 16px,
+    rgba(var(--frame-base, 45, 165, 160), 0.35) 34px,
+    rgba(var(--frame-base, 45, 165, 160), 0) 60px
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+.hub-card-frame::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+  padding: 2px;
+  background: linear-gradient(
+    to bottom,
+    rgba(var(--frame-hi, 159, 240, 236), 0.55) 0px,
+    rgba(var(--frame-base, 45, 165, 160), 0.18) 28px,
+    rgba(var(--frame-base, 45, 165, 160), 0) 56px
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  filter: blur(5px);
+  pointer-events: none;
+}
+
+/* Accent variant: the Update Your Assessment card keeps its ORANGE accent as
+   the same frame in the orange family (Plasma energy hues, no new colors). */
+.hub-card-frame--orange {
+  --frame-hi: 240, 162, 78;
+  --frame-mid: 212, 130, 59;
+  --frame-base: 183, 94, 24;
+}

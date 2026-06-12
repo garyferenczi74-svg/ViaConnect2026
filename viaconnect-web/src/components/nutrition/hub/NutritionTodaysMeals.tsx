@@ -31,11 +31,10 @@
 // panel item dots. Per spec these data codes are kept as is and not forced onto
 // a brand token.
 //
-// Prompt 189 (2026-06-11): the card surface gains the same layered treatment
-// HubTile uses: CardMedia background (the todaysMeals still from
-// nutritionHubMedia, failing open to its gradient) at z 0, the shared
-// legibility scrim at z 1, and the existing content raised to z 2.
-// Presentational only; the accordion rows and the copy are unchanged.
+// Prompt 189 then Gary (2026-06-11): the card briefly carried the todaysMeals
+// background still + scrim; both are REMOVED again per Gary, returning the
+// card to its plain translucent surface. The z-[2] content wrappers remain so
+// content stacks above the 183f frame glow.
 //
 // Prompt 191 (2026-06-11): blue glass containment over the 189 photo. The
 // collapsed rows, the kcal / volume chips, and the expanded header strip +
@@ -53,12 +52,11 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { ChevronDown, Coffee, Cookie, Droplet, Soup, UtensilsCrossed, type LucideIcon } from 'lucide-react';
 import type { Meal, MealType } from '@/lib/gordon/types';
 import { PlasmaGauge } from '@/components/gauges/PlasmaGauge';
-import { CardMedia } from '@/components/body-tracker/hub/CardMedia';
+import '@/components/body-tracker/hub/hub-card-frame.css';
 import { useUserMeals } from '@/hooks/useUserMeals';
 import { useHydrationToday } from '@/components/hydration/useHydrationToday';
 import { formatVolumeLabel } from '@/components/hydration/HydrationRing';
-import { NUTRITION_CARD_MEDIA } from './nutritionHubMedia';
-import { GLASS_CHIP, GLASS_TIER1, GLASS_TIER2_BODY, GLASS_TIER2_HEADER } from './glass';
+import { GLASS_CHIP, GLASS_TIER2_BODY, GLASS_TIER2_HEADER, GLASS_WHITE } from './glass';
 import {
   groupTodaysMealsByType,
   hydrationPercentToTarget,
@@ -124,10 +122,11 @@ function mealDisplayName(meal: Meal, label: string): string {
 // colored LEFT EDGE in the per type accent (the existing `dot` code, reused
 // as is). The accent reads as an edge, not a wash.
 //
-// Prompt 191 (2026-06-11): that translucent panel becomes GLASS_TIER1 (same
-// Deep Navy tint family, now glass with an /85 no-backdrop-filter fallback).
-// Geometry is unchanged: the radius and the inline 4px left accent edge
-// render on top of the glass exactly as before.
+// Prompt 191 + Gary (2026-06-11): the COLLAPSED row is WHITE glass
+// (GLASS_WHITE) so closed rows read light over the photo; the section flips
+// to the dark navy glass tiers when expanded. Geometry is unchanged: the
+// radius and the inline 4px left accent edge render on top of the glass
+// exactly as before.
 function RowHeader({
   icon: Icon,
   label,
@@ -151,7 +150,7 @@ function RowHeader({
       onClick={onToggle}
       aria-expanded={isOpen}
       aria-controls={panelId}
-      className={`group relative flex w-full min-h-[44px] items-center justify-between gap-2 px-3 py-2.5 text-[13px] font-semibold text-white transition-all duration-200 ease-out hover:shadow-lg hover:shadow-black/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744] md:text-[14px] ${GLASS_TIER1}`}
+      className={`group relative flex w-full min-h-[44px] items-center justify-between gap-2 px-3 py-2.5 text-[13px] font-semibold text-white transition-all duration-200 ease-out hover:shadow-lg hover:shadow-black/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744] md:text-[14px] ${GLASS_WHITE}`}
       style={{
         borderRadius: 12,
         borderLeft: `4px solid ${dot}`,
@@ -456,16 +455,14 @@ export function NutritionTodaysMeals(props: NutritionTodaysMealsProps) {
   // the ease literal stays contextually typed against framer's Transition.
   const reducedMotion = useReducedMotion();
 
+  // Prompt 183f (2026-06-11): the teal accent is the hub-card-frame tapered
+  // luminous edge ring, painted by the class's pseudo elements so it follows
+  // the card radius and never bleeds past the rounded corners.
   return (
-    <section className="font-[Instrument_Sans] relative isolate overflow-hidden rounded-2xl border border-white/10 bg-[#1E3054]/40 backdrop-blur-md text-white">
-      {/* Prompt 189: z 0 background media, then the same z 1 legibility scrim
-          HubTile uses. The existing content below is raised to z 2 unchanged. */}
-      <CardMedia media={NUTRITION_CARD_MEDIA.todaysMeals} logKey="todaysMeals" />
-      <span
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 z-[1] bg-gradient-to-t from-[#1A2744]/85 via-[#1A2744]/30 to-transparent"
-      />
-
+    <section className="hub-card-frame font-[Instrument_Sans] relative isolate overflow-hidden rounded-2xl border border-white/10 bg-[#1E3054]/40 backdrop-blur-md text-white">
+      {/* Gary (2026-06-11): the 189 background hero and its scrim are removed
+          from this card; the surface is the plain translucent card again. The
+          z-[2] content wrappers stay so content sits above the frame glow. */}
       <header className="relative z-[2] px-4 py-3 md:px-5 md:py-4">
         <h2 className="text-[15px] font-semibold text-white">Today&apos;s meals</h2>
       </header>

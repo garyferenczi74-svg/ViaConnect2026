@@ -134,18 +134,18 @@ describe('NutritionHub source', () => {
     expect(source).toContain('contentClassName="items-center text-center"');
   });
 
-  it('183e: heading blocks center vertically in the frame with actions bottom anchored', () => {
-    // The three Row 3 heading wrappers take the free space and center within
-    // it (flex-1 + justify-center), so titles never hug the top edge over the
-    // media; the Open controls keep their mt-auto bottom anchor + pt-4 gap.
-    const centered = source.match(/flex flex-1 flex-col items-center justify-center gap-1/g) ?? [];
-    expect(centered.length).toBe(3);
+  it('183e + Gary: heading blocks sit on the card true vertical center, actions bottom anchored', () => {
+    // The four heading wrappers (Log Your Meal, Save My Meal, Genetics,
+    // Insights) are absolutely centered text layers with pointer events
+    // passing through, so the pills and Open controls beneath stay clickable.
+    const centered =
+      source.match(
+        /pointer-events-none absolute inset-0 flex flex-col items-center justify-center/g,
+      ) ?? [];
+    expect(centered.length).toBe(4);
+    // The controls keep their bottom anchor + guaranteed gap.
     expect(source).toContain('mt-auto flex pt-4');
-    // Log Your Meal (Gary follow-up): the title and caption center vertically
-    // in the space above the pills, and the two pills anchor at the bottom of
-    // the frame beneath them.
     expect(source).toContain('mt-auto flex w-full flex-col items-center gap-3 pt-4');
-    expect(source).not.toContain('flex w-full flex-1 flex-col items-center justify-center');
   });
 
   it('Row 1 carries no tier word and no Open affordance on the gauge cards', () => {
@@ -157,23 +157,36 @@ describe('NutritionHub source', () => {
     expect(source).toContain('The fastest way to add what you ate');
   });
 
-  it('Row 1 Log Your Meal has two internal teal glass pills to the two log routes', () => {
-    expect(source).toContain('TealGlassPill');
+  it('Row 1 Log Your Meal has two internal glass pills, NutriVision above Log a Full Meal', () => {
+    expect(source).toContain('GlassPill');
+    expect(source).not.toContain('TealGlassPill');
     expect(source).toContain('href="/nutrition/log-meal"');
     expect(source).toContain('href="/nutrition/photo-ai"');
     expect(source).toContain('Log a Full Meal');
     expect(source).toContain('NutriVision');
+    // Gary (2026-06-11): NutriVision sits above Log a Full Meal.
+    const iPhoto = source.indexOf('<GlassPill href="/nutrition/photo-ai"');
+    const iManual = source.indexOf('<GlassPill href="/nutrition/log-meal"');
+    expect(iPhoto).toBeGreaterThan(-1);
+    expect(iManual).toBeGreaterThan(-1);
+    expect(iPhoto).toBeLessThan(iManual);
     // Internal Next.js Link, not an absolute URL.
     expect(source).toContain("import Link from 'next/link'");
     expect(source).not.toMatch(/href=["']https?:\/\//);
   });
 
-  it('the teal glass pill is a semi transparent teal fill with blur, border, and a top highlight', () => {
-    expect(source).toContain('bg-[#2DA5A0]/[0.18]');
-    expect(source).toContain('border-[#2DA5A0]/40');
+  it('the glass pill is a WHITE translucent fill with blur, border, and a top highlight', () => {
+    // Gary (2026-06-11): pills switched from the teal fill to white glass,
+    // then the tint was halved again so the media reads through.
+    expect(source).toContain('bg-white/[0.08]');
+    expect(source).toContain('border border-white/20');
+    expect(source).not.toContain('bg-[#2DA5A0]/[0.18]');
     expect(source).toContain('backdrop-blur-md');
     // Faint top highlight band.
     expect(source).toContain('from-white/20 to-transparent');
+    // The Open pills are halved too (media visible through them).
+    expect(source).toContain('bg-[#2A4C9E]/[0.12]');
+    expect(source).not.toContain('bg-[#2A4C9E]/25');
   });
 
   it('Row 2 renders Today’s Meals full width with the resolved userId', () => {
@@ -329,27 +342,51 @@ describe('NutritionHub source', () => {
     expect(source).toContain('mediaLogKey="nutritionByGenetics"');
     expect(source).toContain('media={NUTRITION_CARD_MEDIA.nutritionInsights}');
     expect(source).toContain('mediaLogKey="nutritionInsights"');
-    // Exactly the four wired call sites; nothing else on the hub reads the
-    // config (Today's Meals reads its own key inside its component).
+    // Gary (2026-06-11): Daily Macros gains the Food 5 background video and
+    // Nutrition Score gains the Mountain top background video.
+    expect(source).toContain('media={NUTRITION_CARD_MEDIA.dailyMacros}');
+    expect(source).toContain('mediaLogKey="dailyMacros"');
+    expect(source).toContain('media={NUTRITION_CARD_MEDIA.nutritionScore}');
+    expect(source).toContain('mediaLogKey="nutritionScore"');
+    // Exactly the six wired call sites; nothing else on the hub reads the
+    // config (Today's Meals no longer renders media at all).
     const reads = source.match(/NUTRITION_CARD_MEDIA\./g) ?? [];
-    expect(reads.length).toBe(4);
+    expect(reads.length).toBe(6);
     expect(source).not.toContain('NUTRITION_CARD_MEDIA.todaysMeals');
   });
 
-  it('Prompt 189: HubTile media props are optional and the unwired tiles stay gradient only', () => {
+  it('Prompt 189: HubTile media props stay optional with the gradient fallback', () => {
     expect(source).toContain('media?: SurfaceMedia');
     expect(source).toContain('mediaLogKey?: string');
-    // Nutrition Score and Daily Macros pass gradientClass only, no media.
-    expect(source).toContain(
-      '<HubTile gradientClass={MEDIA_TEAL_TL} contentClassName="items-center text-center">',
-    );
-    expect(source).toContain(
-      '<HubTile gradientClass={MEDIA_TEAL_TR} contentClassName="items-center text-center">',
-    );
+    expect(source).toContain("<CardMedia media={{ kind: 'gradient', gradientClass }} />");
   });
 
   it('renders a legibility scrim above the media seam', () => {
     expect(source).toContain('from-[#1A2744]/85 via-[#1A2744]/30 to-transparent');
+  });
+
+  it('Prompt 183f: every HubTile carries the hub-card-frame luminous edge ring and AccentLine is gone', () => {
+    // The shared css module is imported once; the bundler dedupes it.
+    expect(source).toContain("import '@/components/body-tracker/hub/hub-card-frame.css'");
+    // The frame class rides the tile root; the base hairline border stays on
+    // all four sides.
+    expect(source).toContain(
+      'hub-card-frame relative isolate flex min-h-[200px] flex-col overflow-hidden rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 backdrop-blur-md',
+    );
+    // The prior SVG AccentLine implementation is fully removed.
+    expect(source).not.toContain('AccentLine');
+    expect(source).not.toContain('border-t-2');
+    expect(source).not.toContain('borderTopColor');
+    // No square cornered solid 2px span returns either.
+    expect(source).not.toContain('h-[2px]');
+  });
+
+  it('Prompt 183f: the now dead accent prop left HubTile entirely', () => {
+    // Its only consumer was the removed line; Log Your Meal dropped
+    // accent={TEAL} and the orphaned TEAL const is gone with it.
+    expect(source).not.toContain('accent?: string');
+    expect(source).not.toContain('accent={TEAL}');
+    expect(source).not.toContain("const TEAL = '#2DA5A0'");
   });
 
   it('puts an Open control only on the three Row 3 tiles, never on the gauges or full width tiles', () => {

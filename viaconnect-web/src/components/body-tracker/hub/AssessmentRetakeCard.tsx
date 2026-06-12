@@ -11,11 +11,12 @@
 
 import { useState } from 'react';
 import { RefreshCw, Check } from 'lucide-react';
+import './hub-card-frame.css';
 
 export function AssessmentRetakeCard() {
   const [confirming, setConfirming] = useState(false);
   return (
-    <div className="rounded-xl bg-white/[0.02] border border-white/[0.08] p-5 md:p-6">
+    <div className="hub-card-frame hub-card-frame--orange relative rounded-xl bg-white/[0.02] border border-white/[0.08] p-5 md:p-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-start gap-3">
           <div className="relative flex-shrink-0">

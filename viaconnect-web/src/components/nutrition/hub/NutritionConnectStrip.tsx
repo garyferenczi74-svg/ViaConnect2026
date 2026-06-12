@@ -14,6 +14,7 @@
 
 import Link from 'next/link';
 import { ArrowRight, Plug } from 'lucide-react';
+import '@/components/body-tracker/hub/hub-card-frame.css';
 
 const ACCENT_HEX = '#2DA5A0';
 
@@ -40,15 +41,9 @@ export function NutritionConnectStrip() {
     <Link
       href={HREF}
       aria-label={`${TITLE}: ${DESCRIPTION}`}
-      className="group relative flex min-h-[88px] flex-col gap-3 overflow-hidden rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 p-4 backdrop-blur-md transition-all duration-200 ease-out hover:border-white/[0.16] hover:shadow-lg hover:shadow-black/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744] md:min-h-[96px] md:flex-row md:items-center md:gap-4 md:p-5"
+      className="hub-card-frame group relative flex min-h-[88px] flex-col gap-3 overflow-hidden rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 p-4 backdrop-blur-md transition-all duration-200 ease-out hover:border-white/[0.16] hover:shadow-lg hover:shadow-black/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744] md:min-h-[96px] md:flex-row md:items-center md:gap-4 md:p-5"
       data-nutrition-hub-connect
     >
-      <span
-        aria-hidden="true"
-        className="absolute left-0 right-0 top-0 h-[2px]"
-        style={{ backgroundColor: ACCENT_HEX }}
-      />
-
       <div className="flex items-center gap-3 md:gap-4">
         <span
           className="inline-flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.06] backdrop-blur-sm md:h-14 md:w-14"

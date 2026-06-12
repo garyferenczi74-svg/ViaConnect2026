@@ -20,6 +20,9 @@
 import { useMemo } from 'react';
 import { useReducedMotion } from 'framer-motion';
 import { PlasmaGauge } from '@/components/gauges/PlasmaGauge';
+import { CardMedia } from '@/components/body-tracker/hub/CardMedia';
+import '@/components/body-tracker/hub/hub-card-frame.css';
+import { NUTRITION_CARD_MEDIA } from './nutritionHubMedia';
 import {
   barHeightFractions,
   weekdayLabelsEndingToday,
@@ -197,13 +200,25 @@ export function NutritionMealHistoryTile({
 }: NutritionMealHistoryTileProps) {
   const reduced = useReducedMotion() ?? false;
 
+  // Prompt 183f (2026-06-11): the teal accent is the hub-card-frame tapered
+  // luminous edge ring, painted by the class's pseudo elements on the
+  // relative, radius carrying root. Geometry is otherwise unchanged.
+  // Gary (2026-06-11): the card gains the Woman on beach background video
+  // through the same CardMedia + scrim layering the other media cards use,
+  // with the content raised above the scrim.
   return (
-    <section className="font-[Instrument_Sans] w-full rounded-2xl border border-white/10 bg-[#1E3054]/40 text-white backdrop-blur-md">
-      <header className="px-4 py-3 md:px-5 md:py-4">
+    <section className="hub-card-frame font-[Instrument_Sans] relative isolate w-full overflow-hidden rounded-2xl border border-white/10 bg-[#1E3054]/40 text-white backdrop-blur-md">
+      <CardMedia media={NUTRITION_CARD_MEDIA.mealHistory} logKey="mealHistory" />
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 z-[1] bg-gradient-to-t from-[#1A2744]/85 via-[#1A2744]/30 to-transparent"
+      />
+
+      <header className="relative z-[2] px-4 py-3 md:px-5 md:py-4">
         <h2 className="text-[15px] font-semibold text-white">7 day meal history</h2>
       </header>
 
-      <div className="flex flex-col items-stretch gap-5 px-4 pb-4 md:flex-row md:items-center md:gap-7 md:px-5 md:pb-5">
+      <div className="relative z-[2] flex flex-col items-stretch gap-5 px-4 pb-4 md:flex-row md:items-center md:gap-7 md:px-5 md:pb-5">
         <StreakGauge streakDays={streakDays} reduced={reduced} />
         <BarRow dailyMealCounts={dailyMealCounts} reduced={reduced} />
       </div>

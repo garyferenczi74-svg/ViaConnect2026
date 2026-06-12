@@ -20,14 +20,44 @@ import {
 const SOURCE = path.resolve(__dirname, '..', 'nutritionHubMedia.ts');
 
 describe('NUTRITION_CARD_MEDIA config', () => {
-  it('has exactly the five card keys', () => {
+  it('has exactly the eight card keys', () => {
     expect(Object.keys(NUTRITION_CARD_MEDIA).sort()).toEqual([
+      'dailyMacros',
       'logYourMeal',
+      'mealHistory',
       'nutritionByGenetics',
       'nutritionInsights',
+      'nutritionScore',
       'saveMyMeal',
       'todaysMeals',
     ]);
+  });
+
+  it('mealHistory carries the exact Woman on beach Hero Videos URL (Gary 2026-06-11)', () => {
+    expect(NUTRITION_CARD_MEDIA.mealHistory.kind).toBe('video');
+    expect(NUTRITION_CARD_MEDIA.mealHistory.src).toBe(
+      'https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Videos/Woman%20on%20beach.mp4',
+    );
+    expect(NUTRITION_CARD_MEDIA.mealHistory.poster).toBe('');
+    expect(NUTRITION_CARD_MEDIA.mealHistory.objectPosition).toBe('center');
+  });
+
+  it('nutritionScore carries the exact Mountain top Hero Videos URL (Gary 2026-06-11)', () => {
+    expect(NUTRITION_CARD_MEDIA.nutritionScore.kind).toBe('video');
+    expect(NUTRITION_CARD_MEDIA.nutritionScore.src).toBe(
+      'https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Videos/Mountain%20top.mp4',
+    );
+    expect(NUTRITION_CARD_MEDIA.nutritionScore.poster).toBe('');
+    expect(NUTRITION_CARD_MEDIA.nutritionScore.objectPosition).toBe('center');
+  });
+
+  it('dailyMacros carries the exact Food 5 Hero Videos URL (Gary 2026-06-11)', () => {
+    expect(NUTRITION_CARD_MEDIA.dailyMacros.kind).toBe('video');
+    expect(NUTRITION_CARD_MEDIA.dailyMacros.src).toBe(
+      'https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Videos/Food%205.mp4',
+    );
+    expect(NUTRITION_CARD_MEDIA.dailyMacros.poster).toBe('');
+    expect(NUTRITION_CARD_MEDIA.dailyMacros.objectPosition).toBe('center');
   });
 
   it('todaysMeals is the one still image with the exact Hero Images URL', () => {

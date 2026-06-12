@@ -17,8 +17,7 @@
 
 import { GUIDE } from './hubConfig';
 import { useGuideLabel } from './useGuideLabel';
-
-const ACCENT_HEX = '#2DA5A0';
+import './hub-card-frame.css';
 
 export function GuidanceStrip() {
   const labelState = useGuideLabel();
@@ -28,15 +27,9 @@ export function GuidanceStrip() {
   return (
     <section
       aria-labelledby="hub-guide-title"
-      className="relative flex min-h-[88px] flex-col gap-3 overflow-hidden rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 p-4 backdrop-blur-md md:min-h-[96px] md:flex-row md:items-center md:gap-4 md:p-5"
+      className="hub-card-frame relative flex min-h-[88px] flex-col gap-3 overflow-hidden rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 p-4 backdrop-blur-md md:min-h-[96px] md:flex-row md:items-center md:gap-4 md:p-5"
       data-hub-guidance
     >
-      <span
-        aria-hidden="true"
-        className="absolute left-0 right-0 top-0 h-[2px]"
-        style={{ backgroundColor: ACCENT_HEX }}
-      />
-
       <div className="flex items-center gap-3 md:gap-4">
         {/* Reserved Arnold avatar slot. When GUIDE.avatarSrc is empty
             we render the teal ring placeholder so the slot stays

@@ -80,6 +80,12 @@ describe('NutritionTodaysMeals source', () => {
     expect(source).not.toContain('width: 40, height: 40, borderRadius: 12');
     expect(source).not.toContain('rgba(45,165,160,0.12)');
     expect(source).toContain('Today&apos;s meals');
+    // Gary (2026-06-11): with the hero removed, the heading is plain text on
+    // the card surface again, no pill container.
+    expect(source).toContain(
+      '<h2 className="text-[15px] font-semibold text-white">Today&apos;s meals</h2>',
+    );
+    expect(source).not.toContain('rounded-full px-3 py-1 text-[15px]');
     expect(source).toContain('Coffee');
     expect(source).toContain('Soup');
     expect(source).toContain('UtensilsCrossed');
@@ -147,23 +153,26 @@ describe('NutritionTodaysMeals source', () => {
     expect(source).toContain('className="overflow-hidden"');
   });
 
-  it('Prompt 189: layers the todaysMeals background media + scrim behind unchanged content', () => {
-    expect(source).toContain(
-      "import { CardMedia } from '@/components/body-tracker/hub/CardMedia'",
-    );
-    expect(source).toContain("import { NUTRITION_CARD_MEDIA } from './nutritionHubMedia'");
-    expect(source).toContain(
-      '<CardMedia media={NUTRITION_CARD_MEDIA.todaysMeals} logKey="todaysMeals" />',
-    );
-    // The root surface gains the HubTile layering treatment while keeping its
-    // existing border, radius, and translucent navy classes.
-    expect(source).toContain('relative isolate overflow-hidden');
-    expect(source).toContain('rounded-2xl border border-white/10 bg-[#1E3054]/40 backdrop-blur-md');
-    // The exact scrim classes HubTile uses, copied verbatim.
-    expect(source).toContain(
+  it('Gary (2026-06-11): the background hero and scrim are removed, plain card surface', () => {
+    // The 189 media layer is gone again: no CardMedia, no config read, no
+    // scrim on this card.
+    expect(source).not.toContain('CardMedia');
+    expect(source).not.toContain('NUTRITION_CARD_MEDIA');
+    expect(source).not.toContain(
       'pointer-events-none absolute inset-0 z-[1] bg-gradient-to-t from-[#1A2744]/85 via-[#1A2744]/30 to-transparent',
     );
-    // The existing content (header + rows) is raised above the scrim.
+    // The root keeps its plain translucent surface, radius, and hairline.
+    expect(source).toContain('relative isolate overflow-hidden');
+    // Prompt 183f: the teal accent is the hub-card-frame luminous edge ring on
+    // the root; AccentLine is gone and the base hairline border stays on all
+    // four sides with no top border treatment anywhere in the file.
+    expect(source).toContain("import '@/components/body-tracker/hub/hub-card-frame.css'");
+    expect(source).toContain('hub-card-frame font-[Instrument_Sans] relative isolate overflow-hidden');
+    expect(source).toContain('rounded-2xl border border-white/10 bg-[#1E3054]/40 backdrop-blur-md');
+    expect(source).not.toContain('AccentLine');
+    expect(source).not.toContain('border-t-2');
+    expect(source).not.toContain('borderTopColor');
+    // The content wrappers stay above the 183f frame glow.
     const raised = source.match(/relative z-\[2\]/g) ?? [];
     expect(raised.length).toBeGreaterThanOrEqual(2);
   });
@@ -178,11 +187,14 @@ describe('NutritionTodaysMeals source', () => {
     expect(source).toContain("const HYDRATION_DOT = '#5B8DEF'"); // hydration
   });
 
-  it('Prompt 191: rows are GLASS_TIER1 keeping the 4px colored left edge, no gradient fill', () => {
+  it('Gary white glass: collapsed rows are GLASS_WHITE keeping the 4px colored left edge, no gradient fill', () => {
     expect(source).toContain(
-      "import { GLASS_CHIP, GLASS_TIER1, GLASS_TIER2_BODY, GLASS_TIER2_HEADER } from './glass'",
+      "import { GLASS_CHIP, GLASS_TIER2_BODY, GLASS_TIER2_HEADER, GLASS_WHITE } from './glass'",
     );
-    expect(source).toContain('${GLASS_TIER1}');
+    expect(source).toContain('${GLASS_WHITE}');
+    // The expanded section flips to the dark navy tiers (unchanged).
+    expect(source).toContain('GLASS_TIER2_HEADER');
+    expect(source).toContain('GLASS_TIER2_BODY');
     // Geometry unchanged: radius and the inline accent edge render on top.
     expect(source).toContain('borderRadius: 12');
     expect(source).toContain('borderLeft: `4px solid ${dot}`');
