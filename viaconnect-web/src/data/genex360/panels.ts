@@ -11,6 +11,7 @@
 // and must match markerCountLabel.
 
 import type { Panel, PanelSlug } from "./types";
+import { GENEX_M_DEEP_REPORTS } from "./genex-m-deep";
 
 export const GENEX360_PANELS: Panel[] = [
   {
@@ -1015,3 +1016,14 @@ export const PANEL_BY_SLUG: Record<PanelSlug, Panel> = GENEX360_PANELS.reduce(
 );
 
 export const PANEL_SLUGS: PanelSlug[] = GENEX360_PANELS.map((panel) => panel.slug);
+
+// Prompt 193a: attach the GeneX-M per SNP deep reports to their markers at
+// module load, keyed by lowercase gene symbol. The Prompt 193 description stays
+// the collapsed summary; deepReport is the expanded content shown in the per
+// SNP disclosure. Markers without a matching report are left unchanged.
+for (const marker of PANEL_BY_SLUG["genex-m"].groups.flatMap((group) => group.markers)) {
+  const report = GENEX_M_DEEP_REPORTS[marker.symbol.toLowerCase()];
+  if (report) {
+    marker.deepReport = report;
+  }
+}
