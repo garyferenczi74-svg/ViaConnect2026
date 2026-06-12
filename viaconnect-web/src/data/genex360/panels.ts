@@ -375,7 +375,7 @@ export const GENEX360_PANELS: Panel[] = [
           },
           {
             symbol: "ABCG2",
-            fullName: "Breast cancer resistance protein transporter",
+            fullName: "ATP binding cassette transporter G2",
             description:
               "Moves urate and many compounds out of cells. Variants raise uric acid, increasing gout tendency, and also affect handling of riboflavin and various dietary compounds.",
           },
