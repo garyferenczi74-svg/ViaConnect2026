@@ -50,7 +50,7 @@ scripts/body-tracker/157_references/
 # paths are ignored. Add new entries here per-prompt if a tmp dir contains
 # only working notes that should never enter the repo.
 docs/superpowers/plans/
-scratch/161e/
+scratch/
 tmp/158/
 tmp/159/
 tmp/161/
