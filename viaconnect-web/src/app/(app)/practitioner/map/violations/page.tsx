@@ -4,7 +4,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, ShieldCheck, FileText } from 'lucide-react';
+import { ArrowLeft, ShieldCheck } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { ActiveViolationsList } from '@/components/practitioner/map/ActiveViolationsList';
 import { MAPComplianceScoreCard } from '@/components/practitioner/map/MAPComplianceScoreCard';
@@ -106,15 +106,9 @@ export default function PractitionerMAPViolationsPage() {
         </section>
 
         <RemediationHistoryTimeline rows={history.filter((r) => r.status === 'remediated' || r.status === 'dismissed')} />
-
-        <a
-          href="/docs/map-policy.pdf"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1.5 text-[11px] text-[#2DA5A0] hover:underline"
-        >
-          <FileText className="h-3 w-3" strokeWidth={1.5} aria-hidden="true" /> MAP Policy Document
-        </a>
+        {/* Sweep 2026-06-12: the MAP Policy Document link was removed; it
+            pointed at /docs/map-policy.pdf, which never existed in public/.
+            Restore once the policy PDF is actually published. */}
       </div>
     </div>
   );

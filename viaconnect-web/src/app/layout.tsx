@@ -48,28 +48,21 @@ export const metadata: Metadata = {
     description:
       "One Genome. One Formulation. One Life at a Time. Gene-guided supplements and AI-powered clinical reasoning.",
     siteName: "ViaConnect GeneX360",
-    images: [
-      {
-        url: "/og-image.png",
-        width: 1200,
-        height: 630,
-        alt: "ViaConnect GeneX360",
-      },
-    ],
+    // Sweep 2026-06-12: og-image.png never existed in public/, so the
+    // images entries here and on twitter 404ed on every share embed.
+    // Restore both once a real 1200x630 asset is designed.
   },
   twitter: {
     card: "summary_large_image",
     title: "ViaConnect GeneX360: Precision Health",
     description:
       "Gene-guided supplements and AI-powered clinical reasoning by ViaConnect.",
-    images: ["/og-image.png"],
   },
   icons: {
     icon: [
       { url: "/favicon.ico", sizes: "any" },
       { url: "/icon.svg", type: "image/svg+xml" },
     ],
-    apple: "/apple-touch-icon.png",
   },
   manifest: "/manifest.json",
   appleWebApp: {
