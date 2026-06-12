@@ -25,3 +25,9 @@ const GENEX360_CATEGORY_SLUG = "genex360";
 export const GENEX360_SHOP_HREF = `/shop/${
   getShopCategoryBySlug(GENEX360_CATEGORY_SLUG)?.slug ?? GENEX360_CATEGORY_SLUG
 }`;
+
+// Prompt 193a follow-up (2026-06-12): the Your Genetic Blueprint hero card links
+// to the standalone blueprint page (the GeneX360 panel explorer that Gary moved
+// off the /shop/genex360 PLP), not straight to the shop. That page carries its
+// own Shop GeneX360 CTA back to GENEX360_SHOP_HREF, so the buy path is preserved.
+export const GENEX360_BLUEPRINT_HREF = "/genetics/blueprint";

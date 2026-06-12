@@ -2,7 +2,7 @@
 //
 // Source-as-text assertions per the repo convention (environment: 'node', no
 // jsdom). These lock the single most important property of the hero: it is a
-// TRUE Next.js anchor to GENEX360_SHOP_HREF, NOT the current page's role="link"
+// TRUE Next.js anchor to GENEX360_BLUEPRINT_HREF, NOT the current page's role="link"
 // + onClick fake link. They also lock the named GeneX360 Complete element, the
 // hero title copy, the Lucide stroke width, and the no dash rule.
 
@@ -15,17 +15,17 @@ const COMPONENT = path.resolve(__dirname, '..', 'GeneticBlueprintHeroCard.tsx');
 describe('GeneticBlueprintHeroCard source', () => {
   const source = readFileSync(COMPONENT, 'utf-8');
 
-  it('imports GENEX360_SHOP_HREF from the canonical links module', () => {
-    expect(source).toContain("import { GENEX360_SHOP_HREF } from './geneticsHubLinks'");
+  it('imports GENEX360_BLUEPRINT_HREF from the canonical links module', () => {
+    expect(source).toContain("import { GENEX360_BLUEPRINT_HREF } from './geneticsHubLinks'");
   });
 
   it('imports the Next.js Link component', () => {
     expect(source).toContain("import Link from 'next/link'");
   });
 
-  it('renders a true anchor to GENEX360_SHOP_HREF (not a fake link)', () => {
+  it('renders a true anchor to GENEX360_BLUEPRINT_HREF (not a fake link)', () => {
     expect(source).toContain('<Link');
-    expect(source).toContain('href={GENEX360_SHOP_HREF}');
+    expect(source).toContain('href={GENEX360_BLUEPRINT_HREF}');
   });
 
   it('does NOT use a role="link" + onClick fake link', () => {

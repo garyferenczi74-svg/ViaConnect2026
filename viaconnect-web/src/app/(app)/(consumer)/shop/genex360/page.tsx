@@ -6,7 +6,6 @@
  * though the consumer shop wrapper is Via Cura branded.
  */
 import { ShopCategoryPage } from '@/components/shop/ShopCategoryPage'
-import { GeneX360PanelSection } from '@/components/shop/genex360/GeneX360PanelSection'
 
 export const metadata = {
     title: 'GeneX360 Testing and Diagnostics | Via Cura',
@@ -15,5 +14,9 @@ export const metadata = {
 }
 
 export default async function GeneX360PlpPage() {
-    return <ShopCategoryPage slug="genex360" belowHeader={<GeneX360PanelSection />} />
+    // Prompt 193a follow-up (2026-06-12): the GeneX360 panel explorer (the pill
+    // tabs, panel description cards, and GeneX-M per SNP deep reports) moved to
+    // its own standalone page at /genetics/blueprint, reached from the Your
+    // Genetic Blueprint hero card. This PLP is the product grid only again.
+    return <ShopCategoryPage slug="genex360" />
 }

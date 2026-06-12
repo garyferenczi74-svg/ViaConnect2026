@@ -1,8 +1,9 @@
 // Prompt 193 Task T3 (2026-06-12): wiring contract tests. Source string
-// assertions per the repo convention (vitest node env, no jsdom). These confirm
-// the genex360 page mounts the island through ShopCategoryPage's belowHeader
-// prop, and that ShopCategoryPage accepts and renders belowHeader in a minimal,
-// backward compatible way.
+// assertions per the repo convention (vitest node env, no jsdom).
+// Prompt 193a follow-up (2026-06-12): the GeneX360PanelSection island moved off
+// this PLP to the standalone /genetics/blueprint page, so the genex360 page no
+// longer mounts it. ShopCategoryPage keeps its generic, backward compatible
+// belowHeader slot (now unused by this page) for any future use.
 
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
@@ -26,14 +27,9 @@ const SHOP_CATEGORY_PAGE = path.resolve(__dirname, '..', '..', 'ShopCategoryPage
 describe('genex360 page wiring', () => {
   const source = readFileSync(PAGE, 'utf-8');
 
-  it('imports the GeneX360PanelSection island', () => {
-    expect(source).toContain(
-      "import { GeneX360PanelSection } from '@/components/shop/genex360/GeneX360PanelSection'",
-    );
-  });
-
-  it('passes the island through the belowHeader prop', () => {
-    expect(source).toContain('belowHeader={<GeneX360PanelSection />}');
+  it('no longer imports or mounts the GeneX360PanelSection island (moved to /genetics/blueprint)', () => {
+    expect(source).not.toContain('GeneX360PanelSection');
+    expect(source).not.toContain('belowHeader');
   });
 
   it('keeps the metadata export', () => {

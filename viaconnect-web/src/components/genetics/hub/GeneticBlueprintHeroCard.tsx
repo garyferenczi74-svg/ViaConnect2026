@@ -9,13 +9,16 @@
 // do not have a real source for. One honest hero that doubles as the GeneX360
 // Complete entry point avoids both problems.
 //
-// The WHOLE card is one true anchor: a Next.js <Link> to GENEX360_SHOP_HREF
-// (/shop/genex360) wraps the shared GeneticsHubTile. Because the only
-// interactive element is this one link, a whole card anchor is correct and
-// supports middle click and cmd / ctrl click to open in a new tab, with normal
-// same tab navigation on a plain click. This deliberately replaces the current
-// page's JS only fake link (a generic element given link semantics plus a click
-// handler), which the spec forbids.
+// The WHOLE card is one true anchor: a Next.js <Link> to GENEX360_BLUEPRINT_HREF
+// (/genetics/blueprint, the standalone GeneX360 panel explorer) wraps the shared
+// GeneticsHubTile. Prompt 193a follow-up (2026-06-12): Gary moved the panel
+// explorer off the /shop/genex360 PLP onto its own page, so this card now points
+// at that page instead of the shop; the explorer carries its own Shop GeneX360
+// CTA so the buy path is preserved. Because the only interactive element is this
+// one link, a whole card anchor is correct and supports middle click and cmd /
+// ctrl click to open in a new tab, with normal same tab navigation on a plain
+// click. This deliberately replaces the current page's JS only fake link (a
+// generic element given link semantics plus a click handler), which the spec forbids.
 //
 // Content mirrors the current page's GeneX360 Complete treatment: the "Most
 // Popular" pill, the six panel name chips (with their trademark marks), the
@@ -33,7 +36,7 @@ import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import { GeneticsHubTile } from './GeneticsHubTile';
 import { GENETICS_CARD_MEDIA } from './geneticsHubMedia';
-import { GENEX360_SHOP_HREF } from './geneticsHubLinks';
+import { GENEX360_BLUEPRINT_HREF } from './geneticsHubLinks';
 
 // The six GeneX360 sub panel names, carried verbatim (with their trademark
 // marks) from the current /genetics page PANELS[0].subPanels so the chip set
@@ -57,7 +60,7 @@ interface GeneticBlueprintHeroCardProps {
 export function GeneticBlueprintHeroCard({ className }: GeneticBlueprintHeroCardProps) {
   return (
     <Link
-      href={GENEX360_SHOP_HREF}
+      href={GENEX360_BLUEPRINT_HREF}
       aria-label="Your Genetic Blueprint. Explore GeneX360 Complete, the full suite of six genetic panels."
       className={`group block no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744] ${className ?? ''}`}
     >
