@@ -33,7 +33,7 @@
 // is guarded inside effects or event handlers, never during render.
 
 import { useCallback, useEffect, useState } from 'react';
-import { GENEX360_PANELS, PANEL_BY_SLUG } from '@/data/genex360/panels';
+import { GENEX360_PANELS, PANEL_BY_SLUG, PANEL_SLUGS } from '@/data/genex360/panels';
 import { GENEX_M_SNP_SLUGS } from '@/data/genex360/genex-m-deep';
 import type { PanelSlug } from '@/data/genex360/types';
 import { PanelDescriptionCard } from './PanelDescriptionCard';
@@ -41,6 +41,11 @@ import { PanelPillTabs } from './PanelPillTabs';
 
 // The set of valid GeneX-M SNP slugs, for O(1) validation of hash part 2.
 const GENEX_M_SNP_SLUG_SET = new Set(GENEX_M_SNP_SLUGS);
+
+// The set of valid panel slugs, for own-property safe validation of hash part 1.
+// Using a Set (not the `in` operator on PANEL_BY_SLUG) means a crafted hash such
+// as #toString or #constructor cannot resolve to an inherited prototype key.
+const PANEL_SLUG_SET = new Set<string>(PANEL_SLUGS);
 
 // True when the user prefers reduced motion. Guarded so it is only ever called
 // from effects or event handlers (never during render or on the server).
@@ -59,7 +64,7 @@ function parseHash(hash: string): { panel: PanelSlug | null; snp: string | null 
   const raw = hash.replace(/^#/, '');
   const [panelPart, snpPart] = raw.split('/');
 
-  const panel = panelPart in PANEL_BY_SLUG ? (panelPart as PanelSlug) : null;
+  const panel = PANEL_SLUG_SET.has(panelPart) ? (panelPart as PanelSlug) : null;
 
   const snp =
     panel === 'genex-m' && snpPart && GENEX_M_SNP_SLUG_SET.has(snpPart) ? snpPart : null;

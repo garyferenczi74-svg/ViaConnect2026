@@ -95,6 +95,13 @@ describe('GeneX360PanelSection nested hash + single open SNP (193a)', () => {
     expect(source).toContain('snpPart');
   });
 
+  it('validates the panel slug with an own-property safe Set, never the in operator', () => {
+    // Guards a prototype pollution style crash: a crafted hash like #toString or
+    // #constructor must not resolve to an inherited PANEL_BY_SLUG key.
+    expect(source).toContain('PANEL_SLUG_SET.has(panelPart)');
+    expect(source).not.toContain('panelPart in PANEL_BY_SLUG');
+  });
+
   it('only honors a SNP slug under the genex-m panel', () => {
     expect(source).toContain("panel === 'genex-m'");
   });
