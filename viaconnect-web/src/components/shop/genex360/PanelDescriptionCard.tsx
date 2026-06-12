@@ -39,6 +39,12 @@ import { PanelMarkerGroup } from "./PanelMarkerGroup";
 interface PanelDescriptionCardProps {
   panel: Panel;
   onBackToPanels?: () => void;
+  // Prompt 193a: the single open SNP slug and its toggle, threaded down to every
+  // marker group so the GeneX-M card's per SNP disclosures stay single open
+  // across all groups. Only meaningful for GeneX-M; harmless elsewhere because
+  // those markers carry no deepReport, so no disclosure renders.
+  openSnpSlug?: string | null;
+  onToggleSnp?: (snpSlug: string) => void;
 }
 
 // Per panel leading icon. All six are confirmed present in lucide-react 0.577.0.
@@ -51,7 +57,12 @@ const PANEL_ICON: Record<PanelSlug, LucideIcon> = {
   "cannabis-iq": Leaf,
 };
 
-export function PanelDescriptionCard({ panel, onBackToPanels }: PanelDescriptionCardProps) {
+export function PanelDescriptionCard({
+  panel,
+  onBackToPanels,
+  openSnpSlug,
+  onToggleSnp,
+}: PanelDescriptionCardProps) {
   const PanelIcon = PANEL_ICON[panel.slug];
   const tabId = `genex360-tab-${panel.slug}`;
 
@@ -98,7 +109,12 @@ export function PanelDescriptionCard({ panel, onBackToPanels }: PanelDescription
         {/* Main column: marker groups. */}
         <div className="space-y-7 md:col-span-2">
           {panel.groups.map((group) => (
-            <PanelMarkerGroup group={group} key={group.groupTitle} />
+            <PanelMarkerGroup
+              group={group}
+              key={group.groupTitle}
+              openSnpSlug={openSnpSlug}
+              onToggleSnp={onToggleSnp}
+            />
           ))}
         </div>
 

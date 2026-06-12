@@ -17,6 +17,15 @@
 // hash stays on genex-m and does not scroll. A hash on load or a later
 // hashchange syncs the active slug and scrolls the matching card.
 //
+// Prompt 193a Task T3: the hash now has two levels. `#<panelSlug>` selects a
+// panel; `#<panelSlug>/<snpSlug>` additionally expands one GeneX-M SNP (single
+// open accordion). The island owns openSnp, parses both levels on mount and on
+// hashchange, validates the SNP slug against GENEX_M_SNP_SLUGS (only under
+// genex-m), keeps the nested hash in sync with replaceState, and scrolls the
+// expanded SNP row (id snp-<slug>, which carries scroll-mt for the sticky
+// header) into view. Switching panels via a pill collapses any open SNP and
+// drops back to the bare panel hash.
+//
 // Standing rules honored: tokens only (Deep Navy #1A2744, Teal #2DA5A0, white
 // opacity neutrals), Instrument Sans inherited, no emojis, no em or en dashes
 // (the pipe in the approved tagline is allowed), TypeScript strict (no any),
@@ -25,9 +34,13 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { GENEX360_PANELS, PANEL_BY_SLUG } from '@/data/genex360/panels';
+import { GENEX_M_SNP_SLUGS } from '@/data/genex360/genex-m-deep';
 import type { PanelSlug } from '@/data/genex360/types';
 import { PanelDescriptionCard } from './PanelDescriptionCard';
 import { PanelPillTabs } from './PanelPillTabs';
+
+// The set of valid GeneX-M SNP slugs, for O(1) validation of hash part 2.
+const GENEX_M_SNP_SLUG_SET = new Set(GENEX_M_SNP_SLUGS);
 
 // True when the user prefers reduced motion. Guarded so it is only ever called
 // from effects or event handlers (never during render or on the server).
@@ -38,13 +51,20 @@ function prefersReducedMotion(): boolean {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
 
-// Narrow an arbitrary hash fragment to a known panel slug, or null.
-function slugFromHash(hash: string): PanelSlug | null {
-  const candidate = hash.replace(/^#/, '');
-  if (candidate in PANEL_BY_SLUG) {
-    return candidate as PanelSlug;
-  }
-  return null;
+// Parse the two level hash. The fragment is `<panelSlug>` or
+// `<panelSlug>/<snpSlug>`. Part 1 is validated against PANEL_BY_SLUG; part 2 is
+// only honored when part 1 is genex-m and the slug is a known GeneX-M SNP, else
+// the SNP is null. Returns null for the panel when part 1 is unknown.
+function parseHash(hash: string): { panel: PanelSlug | null; snp: string | null } {
+  const raw = hash.replace(/^#/, '');
+  const [panelPart, snpPart] = raw.split('/');
+
+  const panel = panelPart in PANEL_BY_SLUG ? (panelPart as PanelSlug) : null;
+
+  const snp =
+    panel === 'genex-m' && snpPart && GENEX_M_SNP_SLUG_SET.has(snpPart) ? snpPart : null;
+
+  return { panel, snp };
 }
 
 // Scroll a card into view, honoring reduced motion. The card carries
@@ -57,44 +77,88 @@ function scrollToCard(slug: PanelSlug) {
   });
 }
 
+// Scroll an expanded SNP row into view. The row carries id snp-<slug> with
+// scroll-mt-[80px] so the sticky header offset is handled for us. Honors reduced
+// motion.
+function scrollToSnp(snpSlug: string) {
+  if (typeof document === 'undefined') return;
+  document.getElementById(`snp-${snpSlug}`)?.scrollIntoView({
+    behavior: prefersReducedMotion() ? 'auto' : 'smooth',
+    block: 'start',
+  });
+}
+
 export function GeneX360PanelSection() {
   // Default to genex-m for deterministic SSR; never read window during render.
   const [activeSlug, setActiveSlug] = useState<PanelSlug>('genex-m');
 
-  // On mount, adopt a deep link if the hash names a known panel, and scroll to
-  // it after hydration. A bare or unknown hash leaves us on genex-m and does not
-  // scroll.
-  useEffect(() => {
-    const target = slugFromHash(window.location.hash);
-    if (target) {
-      setActiveSlug(target);
-      scrollToCard(target);
+  // Prompt 193a: the single open GeneX-M SNP slug (null = none). Only ever set
+  // when the active panel is genex-m and the slug is a known GeneX-M SNP.
+  const [openSnp, setOpenSnp] = useState<string | null>(null);
+
+  // Adopt a deep link from the hash: panel from part 1, SNP from part 2. Then
+  // scroll, preferring the SNP row when present (after the next paint so the row
+  // is mounted), else the panel card. A bare or unknown hash leaves us on
+  // genex-m with no open SNP and does not scroll. Shared by mount and hashchange.
+  const syncFromHash = useCallback(() => {
+    const { panel, snp } = parseHash(window.location.hash);
+    if (!panel) {
+      setOpenSnp(null);
+      return;
+    }
+    setActiveSlug(panel);
+    setOpenSnp(snp);
+    if (snp) {
+      // Wait one frame so the SNP row is painted before scrolling to it.
+      requestAnimationFrame(() => scrollToSnp(snp));
+    } else {
+      scrollToCard(panel);
     }
   }, []);
 
-  // Keep the active slug in sync with later hash changes (browser nav, an
-  // external in page anchor, a pasted link) and scroll to the card.
+  // On mount, adopt the deep link after hydration.
   useEffect(() => {
-    function onHashChange() {
-      const target = slugFromHash(window.location.hash);
-      if (target) {
-        setActiveSlug(target);
-        scrollToCard(target);
-      }
-    }
-    window.addEventListener('hashchange', onHashChange);
+    syncFromHash();
+  }, [syncFromHash]);
+
+  // Keep state in sync with later hash changes (browser nav, an external in page
+  // anchor, a pasted link).
+  useEffect(() => {
+    window.addEventListener('hashchange', syncFromHash);
     return () => {
-      window.removeEventListener('hashchange', onHashChange);
+      window.removeEventListener('hashchange', syncFromHash);
     };
-  }, []);
+  }, [syncFromHash]);
 
-  // Pill selection: flip state, update the hash with replaceState (never a
-  // history push, so the back button stays clean), then smooth scroll the card.
+  // Pill selection: flip the panel, collapse any open SNP and drop the nested
+  // hash, update the hash with replaceState (never a history push, so the back
+  // button stays clean), then smooth scroll the card.
   const onSelect = useCallback((slug: PanelSlug) => {
     setActiveSlug(slug);
+    setOpenSnp(null);
     window.history.replaceState(null, '', `#${slug}`);
     scrollToCard(slug);
   }, []);
+
+  // SNP disclosure toggle: single open accordion. Opening one collapses any
+  // other. The nested hash is kept in sync with replaceState: `#<panel>/<snp>`
+  // when opening, `#<panel>` when collapsing. When opening, scroll the SNP row
+  // into view (honoring reduced motion).
+  const onToggleSnp = useCallback(
+    (snpSlug: string) => {
+      setOpenSnp((prev) => {
+        const next = prev === snpSlug ? null : snpSlug;
+        if (next) {
+          window.history.replaceState(null, '', `#${activeSlug}/${next}`);
+          scrollToSnp(next);
+        } else {
+          window.history.replaceState(null, '', `#${activeSlug}`);
+        }
+        return next;
+      });
+    },
+    [activeSlug],
+  );
 
   // Back to panels: move focus to the active pill and scroll the pill row into
   // view. This is what PanelDescriptionCard's onBackToPanels calls.
@@ -124,8 +188,15 @@ export function GeneX360PanelSection() {
         <PanelPillTabs panels={GENEX360_PANELS} activeSlug={activeSlug} onSelect={onSelect} />
       </div>
 
-      {/* The single active card. */}
-      <PanelDescriptionCard panel={activePanel} onBackToPanels={handleBack} />
+      {/* The single active card. openSnp and onToggleSnp drive the GeneX-M per
+          SNP disclosures; they are inert on panels whose markers carry no
+          deepReport. */}
+      <PanelDescriptionCard
+        panel={activePanel}
+        onBackToPanels={handleBack}
+        openSnpSlug={openSnp}
+        onToggleSnp={onToggleSnp}
+      />
 
       {/* Hidden anchor stubs for every non active slug so all six slugs stay
           addressable for shared links and screen readers. The active slug's id

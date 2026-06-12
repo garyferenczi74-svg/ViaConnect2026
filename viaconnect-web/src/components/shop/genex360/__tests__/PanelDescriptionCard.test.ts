@@ -1,11 +1,13 @@
 // Prompt 193 Task T2 (2026-06-12): contract tests for PanelDescriptionCard.
+// Prompt 193a Task T3 (2026-06-12): plus the openSnpSlug + onToggleSnp threading.
 //
 // Source-as-text assertions per the repo convention (environment: 'node', no
 // jsdom). These lock the shared id and aria convention (id={panel.slug},
 // role="tabpanel", aria-labelledby genex360-tab pattern, scroll-mt), the
 // rendered data fields, the mounted child components, the six slug icon map,
 // the Back to panels anchor and 44px tap target, the Lucide strokeWidth, and
-// the no dash rule.
+// the no dash rule. The 193a assertions confirm the single open SNP slug and
+// toggle are passed to every PanelMarkerGroup the card renders.
 
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
@@ -63,7 +65,16 @@ describe('PanelDescriptionCard source', () => {
   });
 
   it('maps the panel groups onto PanelMarkerGroup', () => {
-    expect(source).toContain('<PanelMarkerGroup group={group} key={group.groupTitle} />');
+    expect(source).toContain('<PanelMarkerGroup');
+    expect(source).toContain('group={group}');
+    expect(source).toContain('key={group.groupTitle}');
+  });
+
+  it('threads the single open SNP slug and toggle down to every marker group (193a)', () => {
+    expect(source).toContain('openSnpSlug?: string | null');
+    expect(source).toContain('onToggleSnp?: (snpSlug: string) => void');
+    expect(source).toContain('openSnpSlug={openSnpSlug}');
+    expect(source).toContain('onToggleSnp={onToggleSnp}');
   });
 
   it('mounts PanelMarkerGroup and PanelDisclaimer', () => {
