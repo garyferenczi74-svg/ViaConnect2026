@@ -30,13 +30,23 @@ export const FLAG_REGISTRY: Record<string, FlagDef> = {
     default: false,
     description: 'Render source citations under Ultrathink answers.',
   },
+
+  // ── Nutrition Insights (Prompt #192) ──
+  insights_hannah_surfacing: {
+    default: false,
+    description: 'Surface Gordon nutrition insights inside Hannah conversations.',
+  },
+  insights_helix_award: {
+    default: false,
+    description: 'Award Helix points for the first weekly insights digest review each ISO week.',
+  },
 } as const;
 
 /**
  * Check whether a feature flag is enabled.
  *
  * Resolution order:
- *   1. Environment variable (UPPER_SNAKE_CASE) — e.g. HANNAH_ULTRATHINK_ENABLED=true
+ *   1. Environment variable (UPPER_SNAKE_CASE), e.g. HANNAH_ULTRATHINK_ENABLED=true
  *   2. Registry default (always false for new flags)
  *
  * `_userId` is accepted for future per-user overrides but currently unused.
