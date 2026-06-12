@@ -197,7 +197,9 @@ function ExpandTile({
       mediaLogKey={mediaLogKey}
       contentClassName="items-center text-center"
     >
-      <div className="flex flex-col items-center gap-1">
+      {/* Prompt 183e (2026-06-11): the heading block centers vertically in the
+          space above the bottom anchored Open instead of hugging the top edge. */}
+      <div className="flex flex-1 flex-col items-center justify-center gap-1">
         <h3
           id={`${panelId}-label`}
           className="text-[15px] font-semibold leading-tight text-white md:text-base"
@@ -294,7 +296,9 @@ function SaveMyMealTile({
       mediaLogKey={mediaLogKey}
       contentClassName="items-center text-center"
     >
-      <div className="flex flex-col items-center gap-1">
+      {/* Prompt 183e (2026-06-11): heading block vertically centered above the
+          bottom anchored Open. */}
+      <div className="flex flex-1 flex-col items-center justify-center gap-1">
         <h3 className="text-[15px] font-semibold leading-tight text-white md:text-base">
           Save My Meal
         </h3>
@@ -344,7 +348,9 @@ function NutritionGeneticsTile({
       mediaLogKey={mediaLogKey}
       contentClassName="items-center text-center"
     >
-      <div className="flex flex-col items-center gap-1">
+      {/* Prompt 183e (2026-06-11): heading block vertically centered above the
+          bottom anchored Open. */}
+      <div className="flex flex-1 flex-col items-center justify-center gap-1">
         <h3 className="text-[15px] font-semibold leading-tight text-white md:text-base">
           Nutrition by Genetics
         </h3>
@@ -570,15 +576,20 @@ export function NutritionHub() {
           accent={TEAL}
           contentClassName="items-center text-center"
         >
-          <h3 className="text-[15px] font-semibold leading-tight text-white md:text-base">
-            Log Your Meal
-          </h3>
-          <p className="mt-1 text-[12px] leading-relaxed text-white/[0.62] md:text-[13px]">
-            The fastest way to add what you ate
-          </p>
-          <div className="mt-3 flex w-full flex-1 flex-col items-center justify-center gap-3">
-            <TealGlassPill href="/nutrition/log-meal" icon={PenLine} label="Log a Full Meal" />
-            <TealGlassPill href="/nutrition/photo-ai" icon={Camera} label="NutriVision" />
+          {/* Prompt 183e (2026-06-11): the whole stack (title, caption, pills)
+              is one vertically centered composition in the frame, balanced
+              over the media, instead of the title hugging the top edge. */}
+          <div className="flex w-full flex-1 flex-col items-center justify-center">
+            <h3 className="text-[15px] font-semibold leading-tight text-white md:text-base">
+              Log Your Meal
+            </h3>
+            <p className="mt-1 text-[12px] leading-relaxed text-white/[0.62] md:text-[13px]">
+              The fastest way to add what you ate
+            </p>
+            <div className="mt-4 flex w-full flex-col items-center gap-3">
+              <TealGlassPill href="/nutrition/log-meal" icon={PenLine} label="Log a Full Meal" />
+              <TealGlassPill href="/nutrition/photo-ai" icon={Camera} label="NutriVision" />
+            </div>
           </div>
         </HubTile>
       </div>

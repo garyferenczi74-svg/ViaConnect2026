@@ -134,6 +134,18 @@ describe('NutritionHub source', () => {
     expect(source).toContain('contentClassName="items-center text-center"');
   });
 
+  it('183e: heading blocks center vertically in the frame with actions bottom anchored', () => {
+    // The three Row 3 heading wrappers take the free space and center within
+    // it (flex-1 + justify-center), so titles never hug the top edge over the
+    // media; the Open controls keep their mt-auto bottom anchor + pt-4 gap.
+    const centered = source.match(/flex flex-1 flex-col items-center justify-center gap-1/g) ?? [];
+    expect(centered.length).toBe(3);
+    expect(source).toContain('mt-auto flex pt-4');
+    // Log Your Meal is one centered composition: title, caption, then pills.
+    expect(source).toContain('flex w-full flex-1 flex-col items-center justify-center');
+    expect(source).toContain('mt-4 flex w-full flex-col items-center gap-3');
+  });
+
   it('Row 1 carries no tier word and no Open affordance on the gauge cards', () => {
     // The POOR / Fair / Good tier wording is gone from the hub entirely.
     expect(source).not.toMatch(/\bPOOR\b/);
