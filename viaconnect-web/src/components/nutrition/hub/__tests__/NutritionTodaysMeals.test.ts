@@ -253,19 +253,37 @@ describe('NutritionTodaysMeals source', () => {
     expect(source).not.toContain('strokeWidth={1}');
   });
 
-  it('performs ZERO writes (read only contract)', () => {
+  it('Contract B amended (Gary 2026-06-12): writes delegate to the shared components only', () => {
+    // The file itself still authors no direct writes; the two permitted
+    // affordances arrive through the shared remove/log components.
     expect(source).not.toContain('.insert(');
     expect(source).not.toContain('.update(');
     expect(source).not.toContain('.delete(');
     expect(source).not.toContain('.upsert(');
-    // No fetch with a POST or DELETE method.
     expect(source).not.toMatch(/method:\s*['"]POST['"]/i);
     expect(source).not.toMatch(/method:\s*['"]DELETE['"]/i);
     expect(source).not.toContain('fetch(');
-    // It does not import or render the delete/edit summary (a passing mention
-    // in a comment explaining why it is NOT reused is allowed).
+    // The exactly two write affordances, both shared with /nutrition.
+    expect(source).toContain("import { useRemoveMeal } from '@/components/nutrition/useRemoveMeal'");
+    expect(source).toContain("import { RemoveMealPill } from '@/components/nutrition/RemoveMealPill'");
+    expect(source).toContain("import { LogSavedMealButton } from '@/components/nutrition/LogSavedMeal'");
+    expect(source).toContain('<RemoveMealPill');
+    expect(source).toContain('<LogSavedMealButton');
+    // It still does not import or render the delete/edit summary (a passing
+    // mention in a comment explaining why it is NOT reused is allowed).
     expect(source).not.toMatch(/import[^\n]*TodaysMealsSummary/);
     expect(source).not.toContain('<TodaysMealsSummary');
+  });
+
+  it('Gary 2026-06-12: the hydration panel keeps neither write affordance', () => {
+    // The pills render inside MealTypePanel only. HydrationPanel is the last
+    // component before the main export; assert no pill renders after its
+    // declaration.
+    const hydrationStart = source.indexOf('function HydrationPanel');
+    expect(hydrationStart).toBeGreaterThan(-1);
+    const afterHydration = source.slice(hydrationStart);
+    expect(afterHydration).not.toContain('<RemoveMealPill');
+    expect(afterHydration).not.toContain('<LogSavedMealButton');
   });
 
   it('contains no em or en dashes', () => {

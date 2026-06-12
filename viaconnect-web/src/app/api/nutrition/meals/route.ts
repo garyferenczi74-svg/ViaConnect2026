@@ -136,6 +136,12 @@ export async function POST(req: NextRequest) {
 
     // Replace-on-save for B/L/D: one entry per type per day. Snacks stack
     // via snack_index so they skip this step.
+    //
+    // Gary (2026-06-12, Jeffery must-fix): recipe-logged rows are EXCLUDED
+    // from the replace delete. The Today's Meals "Log a saved meal" pill
+    // inserts rows stamped with recipe_id via POST /api/recipes/[id]/log;
+    // a later dashboard save for the same type and day must not silently
+    // destroy them. Replace-on-save now only replaces non-recipe entries.
     if (payload.meal_type !== 'snack') {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { error: deleteErr } = await (supabase as any)
@@ -143,6 +149,7 @@ export async function POST(req: NextRequest) {
         .delete()
         .eq('user_id', user.id)
         .eq('meal_type', payload.meal_type)
+        .is('recipe_id', null)
         .gte('logged_at', startOfDay.toISOString())
         .lt('logged_at', endOfDay.toISOString());
       if (deleteErr) {

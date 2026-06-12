@@ -7,24 +7,25 @@
 // two surfaces feel unified. Sections auto-expand when a meal is logged for
 // that type; user can manually toggle.
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import toast from 'react-hot-toast';
-import { useQueryClient } from '@tanstack/react-query';
-import { ChevronDown, Coffee, Cookie, Droplet, Plus, Soup, Trash2, UtensilsCrossed } from 'lucide-react';
+import { ChevronDown, Coffee, Cookie, Droplet, Plus, Soup, UtensilsCrossed } from 'lucide-react';
 import type { Meal, MealType } from '@/lib/gordon/types';
 import { MealLogEntryCard } from '@/components/dashboard/MealLogEntryCard';
 import { HydrationFullSection } from '@/components/hydration/HydrationFullSection';
 import { useHydrationToday } from '@/components/hydration/useHydrationToday';
 import { formatVolumeLabel } from '@/components/hydration/HydrationRing';
-import { safeLog } from '@/lib/utils/safe-log';
+import { useRemoveMeal } from '@/components/nutrition/useRemoveMeal';
+import { RemoveMealPill } from '@/components/nutrition/RemoveMealPill';
+import { LogSavedMealButton } from '@/components/nutrition/LogSavedMeal';
 
-// Prompt 177i (2026-06-07): undo window before the meal delete commits to
-// the server. Long enough for a misclick recovery, short enough that the
-// user does not wonder if the action succeeded. Five seconds matches the
-// Gmail Undo Send default and the hydration delete toast cadence.
-const REMOVE_UNDO_WINDOW_MS = 5_000;
-const REMOVE_API_TIMEOUT_MS = 8_000;
+// Gary (2026-06-12): the Prompt 177i remove machinery (optimistic cache
+// removal, 5 second undo toast, flush on unload) moved verbatim into the
+// shared useRemoveMeal hook so the My Nutrition hub accordion shares the
+// same single implementation. The orange trash controls became the shared
+// red RemoveMealPill, one per logged meal (the single meal bottom button
+// special case is gone), and each meal section gains the shared
+// "Log a saved meal" pill that logs from the Save My Meal library.
 
 // Gary 2026-06-03: hydration shares the same accordion as the four meal
 // sections. Local key union widens MealType to include 'hydration' for the
@@ -81,157 +82,9 @@ export function TodaysMealsSummary(props: TodaysMealsSummaryProps) {
   const { data: hydrationToday } = useHydrationToday();
   const hydrationTotalMl = hydrationToday?.total_ml ?? 0;
 
-  // Prompt 177i (2026-06-07): remove a logged meal from a section. The
-  // optimistic remove hides the row from the query cache immediately and
-  // an undo toast offers a 5 second window to restore. The DELETE call
-  // only fires once the window expires, so a quick tap reverses without
-  // any server roundtrip. Pending timers live in a ref so we can cancel
-  // them on undo or on unmount.
-  const queryClient = useQueryClient();
-  const pendingDeletes = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
-
-  // Fix (Gary 2026-06-09): the original cleanup CANCELED pending delete
-  // timers on unmount, so removing a meal and then navigating away or
-  // refreshing within the 5 second undo window dropped the server delete
-  // and the meal returned on the next load (the remove button looked
-  // broken). Flush instead: fire any still pending delete immediately, with
-  // keepalive so the request survives page unload. Leaving the surface
-  // implicitly confirms the removal, which is the correct undo semantics.
-  const flushPendingDeletes = useCallback(() => {
-    const timers = pendingDeletes.current;
-    if (timers.size === 0) return;
-    for (const [mealId, t] of timers.entries()) {
-      clearTimeout(t);
-      try {
-        void fetch(`/api/nutrition/meals/${mealId}`, { method: 'DELETE', keepalive: true });
-      } catch {
-        // best effort during unload; nothing actionable here
-      }
-    }
-    timers.clear();
-  }, []);
-
-  useEffect(() => {
-    // pagehide covers refresh, tab close, and SPA back/forward cache;
-    // visibilitychange to hidden covers mobile app backgrounding (Capacitor)
-    // where pagehide may not fire; the unmount return covers in app
-    // navigation away from the nutrition surface.
-    const onVisibility = () => {
-      if (document.visibilityState === 'hidden') flushPendingDeletes();
-    };
-    window.addEventListener('pagehide', flushPendingDeletes);
-    document.addEventListener('visibilitychange', onVisibility);
-    return () => {
-      window.removeEventListener('pagehide', flushPendingDeletes);
-      document.removeEventListener('visibilitychange', onVisibility);
-      flushPendingDeletes();
-    };
-  }, [flushPendingDeletes]);
-
-  const matchUserMealsQueries = useCallback(
-    (predicate: (meals: Meal[]) => Meal[]) => {
-      queryClient.setQueriesData<Meal[]>({ queryKey: ['user-meals'] }, (curr) => {
-        if (!Array.isArray(curr)) return curr;
-        return predicate(curr);
-      });
-    },
-    [queryClient],
-  );
-
-  const commitRemove = useCallback(
-    async (mealId: string, restoreMeal: Meal) => {
-      // Resilience hardening: 8s timeout + try/catch fail open + safeLog.
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), REMOVE_API_TIMEOUT_MS);
-      try {
-        const resp = await fetch(`/api/nutrition/meals/${mealId}`, {
-          method: 'DELETE',
-          signal: controller.signal,
-        });
-        if (!resp.ok) {
-          throw new Error(`status ${resp.status}`);
-        }
-        safeLog.info('todays-meals.remove', 'meal removed', { meal_id: mealId });
-      } catch (err) {
-        safeLog.error('todays-meals.remove', 'delete failed; restoring row', {
-          meal_id: mealId,
-          error: err instanceof Error ? err.message : String(err),
-        });
-        // Half updated guard: restore the optimistically removed row so
-        // the cards do not stay out of sync with the server.
-        matchUserMealsQueries((curr) => {
-          if (curr.some((m) => m.mealId === restoreMeal.mealId)) return curr;
-          return [...curr, restoreMeal].sort((a, b) => {
-            const aT = a.loggedAt ? Date.parse(a.loggedAt) : 0;
-            const bT = b.loggedAt ? Date.parse(b.loggedAt) : 0;
-            return bT - aT;
-          });
-        });
-        toast.error('Could not remove the meal; restored it.');
-      } finally {
-        clearTimeout(timeoutId);
-        pendingDeletes.current.delete(mealId);
-        // Final invalidation so realtime + cache converge to the true
-        // server state on the next render.
-        void queryClient.invalidateQueries({ queryKey: ['user-meals'] });
-      }
-    },
-    [matchUserMealsQueries, queryClient],
-  );
-
-  const handleRemoveMeal = useCallback(
-    (meal: Meal) => {
-      // Already pending: undo and bail out.
-      const existing = pendingDeletes.current.get(meal.mealId);
-      if (existing) {
-        clearTimeout(existing);
-        pendingDeletes.current.delete(meal.mealId);
-        return;
-      }
-
-      // Optimistic remove from every cached user-meals query.
-      matchUserMealsQueries((curr) => curr.filter((m) => m.mealId !== meal.mealId));
-
-      const timer = setTimeout(() => {
-        void commitRemove(meal.mealId, meal);
-      }, REMOVE_UNDO_WINDOW_MS);
-      pendingDeletes.current.set(meal.mealId, timer);
-
-      const toastId = `meal-remove-${meal.mealId}`;
-      toast(
-        (t) => (
-          <span className="flex items-center gap-3">
-            <span>Meal removed.</span>
-            <button
-              type="button"
-              onClick={() => {
-                const pending = pendingDeletes.current.get(meal.mealId);
-                if (pending) {
-                  clearTimeout(pending);
-                  pendingDeletes.current.delete(meal.mealId);
-                }
-                // Restore in cache; the server was never asked.
-                matchUserMealsQueries((curr) => {
-                  if (curr.some((m) => m.mealId === meal.mealId)) return curr;
-                  return [...curr, meal].sort((a, b) => {
-                    const aT = a.loggedAt ? Date.parse(a.loggedAt) : 0;
-                    const bT = b.loggedAt ? Date.parse(b.loggedAt) : 0;
-                    return bT - aT;
-                  });
-                });
-                toast.dismiss(t.id);
-              }}
-              className="rounded-md border border-white/20 bg-white/10 px-2 py-0.5 text-[12px] font-semibold text-white hover:bg-white/20"
-            >
-              Undo
-            </button>
-          </span>
-        ),
-        { id: toastId, duration: REMOVE_UNDO_WINDOW_MS },
-      );
-    },
-    [commitRemove, matchUserMealsQueries],
-  );
+  // Gary (2026-06-12): remove semantics (optimistic removal + 5 second
+  // undo + flush on unload) live in the shared useRemoveMeal hook now.
+  const { removeMeal } = useRemoveMeal();
 
   const todaysMeals = useMemo(() => {
     const todayKey = localDateKey(new Date().toISOString(), tz);
@@ -347,28 +200,7 @@ export function TodaysMealsSummary(props: TodaysMealsSummaryProps) {
                     <ul className="flex flex-col gap-2">
                       {list.map((meal) => (
                         <li key={meal.mealId}>
-                          {/* Prompt 177i (2026-06-07): per-row trash control
-                              when the section holds more than one meal so
-                              the user can target a specific misfiled entry.
-                              Single meal sections fall through to the bottom
-                              Remove button below the list instead. */}
-                          {list.length > 1 ? (
-                            <div className="flex items-stretch gap-2">
-                              <div className="flex-1 min-w-0">
-                                <MealLogEntryCard meal={meal} userTimezone={tz} />
-                              </div>
-                              <button
-                                type="button"
-                                onClick={() => handleRemoveMeal(meal)}
-                                aria-label={`Remove this ${def.label.toLowerCase()}`}
-                                className="flex w-10 flex-shrink-0 items-center justify-center rounded-lg border border-[#B75E18]/30 bg-[#B75E18]/5 text-[#F2A66B] transition-colors hover:bg-[#B75E18]/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B75E18]/40"
-                              >
-                                <Trash2 className="h-4 w-4" strokeWidth={1.5} />
-                              </button>
-                            </div>
-                          ) : (
-                            <MealLogEntryCard meal={meal} userTimezone={tz} />
-                          )}
+                          <MealLogEntryCard meal={meal} userTimezone={tz} />
                         </li>
                       ))}
                     </ul>
@@ -385,19 +217,34 @@ export function TodaysMealsSummary(props: TodaysMealsSummaryProps) {
                       <span>Add a snack</span>
                     </Link>
                   ) : null}
-                  {/* Prompt 177i (2026-06-07): single meal sections get one
-                      bottom Remove button because a per row trash is
-                      redundant when only one row exists. */}
-                  {list.length === 1 ? (
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveMeal(list[0])}
-                      className="inline-flex w-full min-h-[40px] items-center justify-center gap-1.5 rounded-lg border border-[#B75E18]/30 bg-[#B75E18]/5 px-3 py-2 text-[12px] font-medium text-[#F2A66B] transition-colors hover:bg-[#B75E18]/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B75E18]/40"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" strokeWidth={1.5} />
-                      <span>Remove {def.label.toLowerCase() === 'snacks' ? 'this snack' : `this ${def.label.toLowerCase()}`}</span>
-                    </button>
-                  ) : null}
+                  {/* Gary (2026-06-12): section footer action row. Log a
+                      saved meal sits on the left (hides itself when the
+                      recipes library flag is off); the red Remove Meal pills
+                      sit INLINE with it in the bottom right corner, one per
+                      logged meal. With several meals each pill carries the
+                      meal name so a specific entry stays targetable. */}
+                  <div className="flex flex-wrap items-center gap-2">
+                    <LogSavedMealButton mealType={def.id} />
+                    {list.length > 0 ? (
+                      <div className="ml-auto flex flex-wrap items-center justify-end gap-1.5">
+                        {list.map((meal) => {
+                          // Trim + singular fallback so an empty mealName
+                          // never yields a bare "Remove" and unnamed snacks
+                          // read "Remove Snack", not "Remove Snacks".
+                          const displayName =
+                            meal.mealName?.trim() || (def.id === 'snack' ? 'Snack' : def.label);
+                          return (
+                            <RemoveMealPill
+                              key={meal.mealId}
+                              onClick={() => removeMeal(meal)}
+                              label={list.length > 1 ? `Remove ${displayName}` : 'Remove Meal'}
+                              ariaLabel={`Remove ${displayName}`}
+                            />
+                          );
+                        })}
+                      </div>
+                    ) : null}
+                  </div>
                 </div>
               ) : null}
             </div>

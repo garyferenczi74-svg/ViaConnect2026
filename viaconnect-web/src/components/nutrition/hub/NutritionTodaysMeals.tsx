@@ -3,13 +3,13 @@
 // Prompt 183 Task 4 (2026-06-10): READ ONLY Today's Meals accordion, the full
 // width Row 2 tile of the My Nutrition bento hub.
 //
-// Contract B: this surface is strictly read only. It never writes, inserts,
-// updates, or deletes; there are no POST or DELETE calls and no createClient
-// writes. It reads the meals the user already logged (via useUserMeals, the
-// same hook DailyTotalsTab uses) plus today's hydration totals (via
-// useHydrationToday, the same hook the existing card uses) and displays them.
-// The existing TodaysMealsSummary carries delete + edit affordances; this is a
-// fresh read only view and deliberately reuses none of that mutation code.
+// Contract B (AMENDED per Gary 2026-06-12, see the amendment block below):
+// originally strictly read only. It reads the meals the user already logged
+// (via useUserMeals, the same hook DailyTotalsTab uses) plus today's
+// hydration totals (via useHydrationToday, the same hook the existing card
+// uses) and displays them. As of 2026-06-12 the four meal type panels also
+// carry the two SHARED write affordances (Remove Meal + Log a saved meal);
+// this file itself still authors no fetch or Supabase write calls.
 //
 // Five rows in fixed order: Breakfast, Lunch, Dinner, Snack, Hydration. Each
 // row collapses to a name + total + chevron and expands in flow (framer motion
@@ -46,6 +46,15 @@
 // motion.div (backdrop-filter during a height animation janks). Tailwind's
 // backdrop-blur utilities emit -webkit-backdrop-filter, so Safari needs
 // nothing extra.
+//
+// Gary (2026-06-12): Contract B AMENDED. The card is no longer strictly read
+// only: each expanded meal type panel carries exactly two write affordances,
+// a red Remove Meal pill per logged meal and a Log a saved meal pill that
+// logs from the Save My Meal library. Both delegate to the SHARED components
+// (useRemoveMeal + RemoveMealPill + LogSavedMealButton, the same ones the
+// /nutrition card uses), so this file still authors no fetch, insert, update,
+// or delete of its own. The hydration row keeps neither affordance and stays
+// fully read only.
 
 import { useMemo, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
@@ -56,6 +65,9 @@ import '@/components/body-tracker/hub/hub-card-frame.css';
 import { useUserMeals } from '@/hooks/useUserMeals';
 import { useHydrationToday } from '@/components/hydration/useHydrationToday';
 import { formatVolumeLabel } from '@/components/hydration/HydrationRing';
+import { useRemoveMeal } from '@/components/nutrition/useRemoveMeal';
+import { RemoveMealPill } from '@/components/nutrition/RemoveMealPill';
+import { LogSavedMealButton } from '@/components/nutrition/LogSavedMeal';
 import { GLASS_CHIP, GLASS_TIER2_BODY, GLASS_TIER2_HEADER, GLASS_WHITE } from './glass';
 import {
   groupTodaysMealsByType,
@@ -237,11 +249,13 @@ function MealTypePanel({
   meals,
   totals,
   onCollapse,
+  onRemoveMeal,
 }: {
   def: MealTypeDef;
   meals: Meal[];
   totals: MealTypeMacroTotals;
   onCollapse: () => void;
+  onRemoveMeal: (meal: Meal) => void;
 }) {
   const score = useMemo(() => mealTypeAggregateScore(meals), [meals]);
   const kcal = Math.round(totals.kcal);
@@ -340,6 +354,28 @@ function MealTypePanel({
             />
           </div>
         </div>
+
+        {/* Gary (2026-06-12): Contract B amendment, panel footer action row.
+            Log a saved meal sits on the left (hides itself when the recipes
+            library flag is off); the red Remove Meal pills sit INLINE with it
+            in the bottom right corner, one per logged meal, delegating to the
+            shared useRemoveMeal undo semantics. With several meals each pill
+            carries the meal name so a specific entry stays targetable. */}
+        <div className="flex flex-wrap items-center gap-2 px-[18px] pb-[18px]">
+          <LogSavedMealButton mealType={def.id} />
+          {meals.length > 0 ? (
+            <div className="ml-auto flex flex-wrap items-center justify-end gap-1.5">
+              {meals.map((meal) => (
+                <RemoveMealPill
+                  key={meal.mealId}
+                  onClick={() => onRemoveMeal(meal)}
+                  label={meals.length > 1 ? `Remove ${mealDisplayName(meal, def.label)}` : 'Remove Meal'}
+                  ariaLabel={`Remove ${mealDisplayName(meal, def.label)}`}
+                />
+              ))}
+            </div>
+          ) : null}
+        </div>
       </div>
     </div>
   );
@@ -437,6 +473,10 @@ export function NutritionTodaysMeals(props: NutritionTodaysMealsProps) {
   const { meals } = useUserMeals(userId ?? null, { days: 7, includeLegacy: true });
   const { data: hydrationToday } = useHydrationToday();
 
+  // Gary (2026-06-12): Contract B amendment. The shared remove hook owns
+  // the optimistic removal + 5 second undo + flush on unload semantics.
+  const { removeMeal } = useRemoveMeal();
+
   const hydrationTotalMl = hydrationToday?.total_ml ?? 0;
   const hydrationTargetMl = hydrationToday?.target_ml ?? 0;
 
@@ -506,6 +546,7 @@ export function NutritionTodaysMeals(props: NutritionTodaysMealsProps) {
                       meals={list}
                       totals={totals}
                       onCollapse={() => toggle(def.id)}
+                      onRemoveMeal={removeMeal}
                     />
                   </motion.div>
                 ) : null}
