@@ -37,7 +37,10 @@ const breaker = getCircuitBreaker('gemini-api', { failureThreshold: 5, resetTime
 // outage does not propagate into Claude's failure window.
 const CLAUDE_MODEL = 'claude-haiku-4-5-20251001';
 const CLAUDE_TIMEOUT_MS = 18_000;
-const CLAUDE_MAX_TOKENS = 1024;
+// Gary 2026-06-12 incident follow-through (Hannah + Gordon): the Claude
+// fallback gets the same 2048 headroom as the Gemini parse call so a large
+// meal cannot truncate the same way during a Gemini outage.
+const CLAUDE_MAX_TOKENS = 2048;
 const claudeBreaker = getCircuitBreaker('claude-text-api', {
   failureThreshold: 5,
   resetTimeoutMs: 60_000,
@@ -307,13 +310,46 @@ function parseJsonOrThrow(text: string): unknown {
   }
 }
 
+// Gary 2026-06-12 incident: schema rejection must surface as
+// MALFORMED_RESPONSE (retryable, consistent user message), never as a raw
+// ZodError. A raw ZodError skipped the parse retry AND the route's
+// AIRouteError handling, so a truncated-then-recovered parse whose last
+// item lost a required field reached the user as UNKNOWN 500.
+function validateParsedMeal(raw: unknown): ParsedMeal {
+  const result = ParsedMealSchema.safeParse(normalizeParsedMealNulls(raw));
+  if (!result.success) {
+    const first = result.error.issues[0];
+    throw new AIRouteError(
+      'MALFORMED_RESPONSE',
+      `parsed meal schema: ${first ? `${first.path.join('.')} ${first.code}` : 'invalid'}`,
+      502,
+      'AI returned incomplete output. Try again or enter manually.',
+    );
+  }
+  return result.data;
+}
+
+// Parse generationConfig per the Gary 2026-06-12 incident: gemini-2.5-flash
+// thinks by default and thought tokens count against maxOutputTokens. A
+// multi item description costs 600 plus thought tokens, so the old 1024
+// ceiling truncated the parse JSON mid item (finishReason MAX_TOKENS,
+// reproduced 4 of 4 against the live API). Identical reasoning to the
+// 2026-06-11 estimator incident fix below: extraction is a lookup task,
+// not a reasoning task, so thinking goes off and the JSON gets headroom.
+const PARSE_GENERATION_CONFIG = {
+  temperature: 0.2,
+  responseMimeType: 'application/json',
+  maxOutputTokens: 2048,
+  thinkingConfig: { thinkingBudget: 0 },
+} as const;
+
 async function parseDescriptionAttempt(description: string): Promise<ParseResult> {
   const { text, usage } = await callGemini({
     systemInstruction: { parts: [{ text: TEXT_PARSE_SYSTEM_INSTRUCTION }] },
     contents: [{ role: 'user', parts: [{ text: description }] }],
-    generationConfig: { temperature: 0.2, responseMimeType: 'application/json', maxOutputTokens: 1024 },
+    generationConfig: PARSE_GENERATION_CONFIG,
   });
-  const parsed = ParsedMealSchema.parse(normalizeParsedMealNulls(parseJsonOrThrow(text)));
+  const parsed = validateParsedMeal(parseJsonOrThrow(text));
   return { parsed, usage };
 }
 
@@ -322,7 +358,7 @@ async function parseDescriptionWithClaude(description: string): Promise<ParseRes
     systemInstruction: TEXT_PARSE_SYSTEM_INSTRUCTION,
     userText: description,
   });
-  const parsed = ParsedMealSchema.parse(normalizeParsedMealNulls(parseJsonOrThrow(text)));
+  const parsed = validateParsedMeal(parseJsonOrThrow(text));
   return { parsed, usage };
 }
 
@@ -382,9 +418,13 @@ export async function parseImageWithGemini(buf: Buffer, mimeType: string, note: 
         { text: note ? `Context: ${note}` : 'Analyze this meal.' },
       ],
     }],
-    generationConfig: { temperature: 0.2, responseMimeType: 'application/json', maxOutputTokens: 1024 },
+    // Same truncation defect class as the text parse: photo meals with many
+    // visible items hit the thinking-tokens-eat-the-budget ceiling too (a
+    // production 502 on /api/nutrition/photo/analyze on 2026-06-11 carries
+    // the same signature). Shares PARSE_GENERATION_CONFIG.
+    generationConfig: PARSE_GENERATION_CONFIG,
   });
-  const parsed = ParsedMealSchema.parse(normalizeParsedMealNulls(parseJsonOrThrow(text)));
+  const parsed = validateParsedMeal(parseJsonOrThrow(text));
   return { parsed, usage };
 }
 

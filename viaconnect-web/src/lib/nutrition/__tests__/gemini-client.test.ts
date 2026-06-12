@@ -57,6 +57,49 @@ describe('parseDescriptionWithGemini', () => {
     delete process.env.GEMINI_API_KEY;
     await expect(parseDescriptionWithGemini('two eggs')).rejects.toMatchObject({ code: 'AUTH_MISSING' });
   });
+
+  it('disables thinking and gives the parse JSON response headroom (multi item truncation)', async () => {
+    // Gary 2026-06-12 production incident: a multi item description makes
+    // gemini-2.5-flash spend 600 plus thought tokens, which count against
+    // maxOutputTokens; the 1024 ceiling truncated the parse JSON mid item
+    // (finishReason MAX_TOKENS, reproduced 4 of 4). Same defect class the
+    // 2026-06-11 estimator incident fixed; the parse call now carries the
+    // identical config.
+    fetchMock.mockResolvedValueOnce(geminiOk(JSON.stringify({
+      items: [{ name: 'egg', quantity: 2, unit: 'whole' }],
+      confidence: 0.9,
+      notes: 'ok',
+    })));
+    await parseDescriptionWithGemini('two eggs');
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body as string);
+    expect(body.generationConfig.thinkingConfig.thinkingBudget).toBe(0);
+    expect(body.generationConfig.maxOutputTokens).toBeGreaterThanOrEqual(2048);
+  });
+
+  it('classifies a schema invalid parse as MALFORMED_RESPONSE and retries, not UNKNOWN', async () => {
+    // The truncation recovery can salvage valid JSON whose last item is
+    // incomplete; ParsedMealSchema rejection must surface as
+    // MALFORMED_RESPONSE (retryable, consistent user message), never as a
+    // raw ZodError that the route catch all reports as UNKNOWN 500.
+    fetchMock.mockResolvedValueOnce(geminiOk(JSON.stringify({
+      items: [{ name: 'oats' }], // missing quantity + unit: schema invalid
+      confidence: 0.9,
+      notes: 'truncated tail recovered',
+    })));
+    fetchMock.mockResolvedValueOnce(geminiOk(JSON.stringify({
+      items: [{ name: 'oats', quantity: 65, unit: 'g' }],
+      confidence: 0.9,
+      notes: 'retry succeeded',
+    })));
+    const r = await parseDescriptionWithGemini('65 g oats and more');
+    expect(r.parsed.items[0].quantity).toBe(65);
+  });
+
+  it('rejects with MALFORMED_RESPONSE when schema invalid twice', async () => {
+    fetchMock.mockResolvedValueOnce(geminiOk(JSON.stringify({ items: [{ name: 'oats' }], confidence: 0.9, notes: 'x' })));
+    fetchMock.mockResolvedValueOnce(geminiOk(JSON.stringify({ items: [{ name: 'oats' }], confidence: 0.9, notes: 'x' })));
+    await expect(parseDescriptionWithGemini('65 g oats and more')).rejects.toMatchObject({ code: 'MALFORMED_RESPONSE' });
+  });
 });
 
 describe('parseImageWithGemini', () => {
