@@ -16,7 +16,7 @@
  * a backfill prompt populates products.category_slug on existing rows, this
  * template renders the graceful empty-state block. No throw, no spinner.
  */
-import { Suspense } from 'react'
+import { Suspense, type ReactNode } from 'react'
 import { BreadcrumbPills } from '@/components/BreadcrumbPills'
 import { CartChrome } from '@/components/shop/CartChrome'
 import { PlpProductGrid } from '@/components/shop/PlpProductGrid'
@@ -28,9 +28,10 @@ import { getCurrentShopSession, isConsumerSession } from '@/lib/shop/role'
 interface ShopCategoryPageProps {
     slug: string
     hasCaqOnFile?: boolean
+    belowHeader?: ReactNode
 }
 
-export async function ShopCategoryPage({ slug, hasCaqOnFile }: ShopCategoryPageProps) {
+export async function ShopCategoryPage({ slug, hasCaqOnFile, belowHeader }: ShopCategoryPageProps) {
     const category = getShopCategoryBySlug(slug)
     const [products, session] = await Promise.all([
         getProductsByCategory(slug),
@@ -62,6 +63,8 @@ export async function ShopCategoryPage({ slug, hasCaqOnFile }: ShopCategoryPageP
                         </p>
                     )}
                 </header>
+
+                {belowHeader}
 
                 <Suspense>
                     <PlpProductGrid

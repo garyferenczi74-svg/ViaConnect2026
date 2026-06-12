@@ -46,8 +46,8 @@ describe('PanelMarkerGroup source', () => {
 
   it('uses a Lucide icon at strokeWidth 1.5 (no checkmark glyphs)', () => {
     expect(source).toContain('strokeWidth={1.5}');
-    expect(source).not.toContain('✅'); // white heavy check mark
-    expect(source).not.toContain('✔'); // heavy check mark
+    expect(source).not.toContain(String.fromCharCode(0x2705)); // white heavy check mark
+    expect(source).not.toContain(String.fromCharCode(0x2714)); // heavy check mark
   });
 
   it('contains no em or en dashes', () => {

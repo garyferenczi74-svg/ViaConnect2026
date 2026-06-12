@@ -50,8 +50,8 @@ describe('PanelDisclaimer source', () => {
 
   it('contains no emoji marker glyphs in copy', () => {
     // The disclaimer is text only with a single Lucide leading icon.
-    expect(source).not.toContain('✅'); // white heavy check mark
-    expect(source).not.toContain('✔'); // heavy check mark
+    expect(source).not.toContain(String.fromCharCode(0x2705)); // white heavy check mark
+    expect(source).not.toContain(String.fromCharCode(0x2714)); // heavy check mark
   });
 
   it('contains no em or en dashes', () => {
