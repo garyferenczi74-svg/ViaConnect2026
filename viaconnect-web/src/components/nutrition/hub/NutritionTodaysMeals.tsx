@@ -36,6 +36,17 @@
 // nutritionHubMedia, failing open to its gradient) at z 0, the shared
 // legibility scrim at z 1, and the existing content raised to z 2.
 // Presentational only; the accordion rows and the copy are unchanged.
+//
+// Prompt 191 (2026-06-11): blue glass containment over the 189 photo. The
+// collapsed rows, the kcal / volume chips, and the expanded header strip +
+// single body panel all sit on the shared Deep Navy glass recipes in
+// ./glass.ts so no text ever sits raw on the background photography while the
+// photo stays visible through the tint. Presentation only: expand/collapse
+// logic, data, ordering, aria wiring, and the framer-motion wrappers are
+// untouched; blur lives on the static children, never on the animated
+// motion.div (backdrop-filter during a height animation janks). Tailwind's
+// backdrop-blur utilities emit -webkit-backdrop-filter, so Safari needs
+// nothing extra.
 
 import { useMemo, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
@@ -47,6 +58,7 @@ import { useUserMeals } from '@/hooks/useUserMeals';
 import { useHydrationToday } from '@/components/hydration/useHydrationToday';
 import { formatVolumeLabel } from '@/components/hydration/HydrationRing';
 import { NUTRITION_CARD_MEDIA } from './nutritionHubMedia';
+import { GLASS_CHIP, GLASS_TIER1, GLASS_TIER2_BODY, GLASS_TIER2_HEADER } from './glass';
 import {
   groupTodaysMealsByType,
   hydrationPercentToTarget,
@@ -107,10 +119,15 @@ function mealDisplayName(meal: Meal, label: string): string {
 // Shared collapsed header. Used by every row so the meal type rows and the
 // hydration row read identically when closed: dot, name, total chip, chevron.
 //
-// Prompt 183b (2026-06-11): the full per type gradient FILL is removed. The
-// row now sits on a translucent Deep Navy panel (rgba(26,39,68,0.5)) with a
-// hairline border and a 4px colored LEFT EDGE in the per type accent (the
-// existing `dot` code, reused as is). The accent reads as an edge, not a wash.
+// Prompt 183b (2026-06-11): the full per type gradient FILL is removed in
+// favor of a translucent Deep Navy panel with a hairline border and a 4px
+// colored LEFT EDGE in the per type accent (the existing `dot` code, reused
+// as is). The accent reads as an edge, not a wash.
+//
+// Prompt 191 (2026-06-11): that translucent panel becomes GLASS_TIER1 (same
+// Deep Navy tint family, now glass with an /85 no-backdrop-filter fallback).
+// Geometry is unchanged: the radius and the inline 4px left accent edge
+// render on top of the glass exactly as before.
 function RowHeader({
   icon: Icon,
   label,
@@ -134,10 +151,8 @@ function RowHeader({
       onClick={onToggle}
       aria-expanded={isOpen}
       aria-controls={panelId}
-      className="group relative flex w-full min-h-[44px] items-center justify-between gap-2 px-3 py-2.5 text-[13px] font-semibold text-white backdrop-blur-xl transition-all duration-200 ease-out hover:shadow-lg hover:shadow-black/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744] md:text-[14px]"
+      className={`group relative flex w-full min-h-[44px] items-center justify-between gap-2 px-3 py-2.5 text-[13px] font-semibold text-white transition-all duration-200 ease-out hover:shadow-lg hover:shadow-black/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744] md:text-[14px] ${GLASS_TIER1}`}
       style={{
-        background: 'rgba(26,39,68,0.5)',
-        border: '1px solid rgba(255,255,255,0.07)',
         borderRadius: 12,
         borderLeft: `4px solid ${dot}`,
       }}
@@ -154,7 +169,9 @@ function RowHeader({
         <span>{label}</span>
       </span>
       <span className="flex items-center gap-2">
-        <span className="rounded-full bg-white/15 px-2 py-0.5 text-[11px] tabular-nums text-white/85">
+        {/* Prompt 191: the total chip is a GLASS_CHIP (text-white lives in the
+            recipe); content and tap behavior are identical. */}
+        <span className={`rounded-full px-2 py-0.5 text-[11px] tabular-nums ${GLASS_CHIP}`}>
           {total}
         </span>
         <ChevronDown
@@ -204,12 +221,18 @@ function macroRow(label: string, grams: number | null | undefined): { label: str
 }
 
 // The expanded panel for one of the four meal types. Prompt 183b: a single
-// compact horizontal flex row, not a tall stack. meal-main (heading + the
-// contained Meal / Macros grid) flexes to fill the left; the gauge sits BESIDE
-// it on the right, top aligned, so the panel height is the taller block with no
-// empty vertical gap. Under sm the inner WRAPS: meal-main full width, the gauge
-// centers beneath. The parent already computes totals for the collapsed kcal
-// chip and passes them down so the sum is not recomputed here.
+// compact horizontal flex row, not a tall stack. meal-main (the contained
+// Meal / Macros grid) flexes to fill the left; the gauge sits BESIDE it on
+// the right, top aligned, so the panel height is the taller block with no
+// empty vertical gap. Under sm the inner WRAPS: meal-main full width, the
+// gauge centers beneath. The parent already computes totals for the collapsed
+// kcal chip and passes them down so the sum is not recomputed here.
+//
+// Prompt 191: the heading (name + kcal + collapse chevron) moves onto its own
+// GLASS_TIER2_HEADER strip and everything else sits inside ONE
+// GLASS_TIER2_BODY panel, with a 10px gap between them so the photo shows
+// through. The 183b flex row and its 18px / 30px spacing are unchanged inside
+// the body panel.
 function MealTypePanel({
   def,
   meals,
@@ -235,82 +258,88 @@ function MealTypePanel({
   ].filter((m): m is { label: string; value: string } => m !== null);
 
   return (
-    <div className="rounded-xl border border-white/[0.06] bg-white/[0.02]">
-      {/* Inner side-by-side row. Wraps under sm. */}
-      <div className="flex flex-wrap items-start gap-[30px] p-[18px]">
-        {/* meal-main: heading + the contained two column grid. */}
-        <div className="grow basis-full sm:basis-0" style={{ minWidth: 0 }}>
-          {/* Heading: name + kcal on one baseline with a small collapse chevron. */}
-          <div className="flex items-baseline justify-between gap-2">
-            <h3 className="flex items-baseline gap-2 text-[14px] font-semibold text-white md:text-[15px]">
-              <span>{def.label}</span>
-              <span className="text-[12px] font-medium tabular-nums text-white/55">{kcalLabel(kcal)}</span>
-            </h3>
-            <button
-              type="button"
-              onClick={onCollapse}
-              aria-label={`Collapse ${def.label}`}
-              className="flex-shrink-0 rounded-md p-0.5 text-white/55 transition-colors hover:text-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
-            >
-              <ChevronDown className="h-4 w-4 rotate-180" strokeWidth={1.5} />
-            </button>
+    // Prompt 191: glass strip + glass body. Blur sits on these STATIC children
+    // inside the animated motion.div, never on the motion.div itself.
+    <div className="flex flex-col gap-2.5">
+      {/* Header strip: name + kcal + collapse chevron on its own glass. */}
+      <div className={`flex items-baseline justify-between gap-2 rounded-xl px-[18px] py-3 ${GLASS_TIER2_HEADER}`}>
+        <h3 className="flex items-baseline gap-2 text-[14px] font-semibold text-white md:text-[15px]">
+          <span>{def.label}</span>
+          <span className="text-[12px] font-medium tabular-nums text-white/70">{kcalLabel(kcal)}</span>
+        </h3>
+        <button
+          type="button"
+          onClick={onCollapse}
+          aria-label={`Collapse ${def.label}`}
+          className="flex-shrink-0 rounded-md p-0.5 text-white/70 transition-colors hover:text-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+        >
+          <ChevronDown className="h-4 w-4 rotate-180" strokeWidth={1.5} />
+        </button>
+      </div>
+
+      {/* Body panel: ALL remaining expanded content on ONE glass surface. */}
+      <div className={GLASS_TIER2_BODY}>
+        {/* Inner side-by-side row. Wraps under sm. (183b, unchanged.) */}
+        <div className="flex flex-wrap items-start gap-[30px] p-[18px]">
+          {/* meal-main: the contained two column grid. */}
+          <div className="grow basis-full sm:basis-0" style={{ minWidth: 0 }}>
+            {/* Contained Meal / Macros grid: values sit close to their labels,
+                not at the page edge. 1.4fr 1fr at sm+, one column on mobile. */}
+            <div className="grid grid-cols-1 gap-[18px] sm:grid-cols-[1.4fr_1fr] sm:gap-[34px]">
+              <div>
+                <ColumnHeader>Meal</ColumnHeader>
+                {isEmpty ? (
+                  <p className="py-1 text-[12px] text-white/50">No {def.label.toLowerCase()} logged yet today.</p>
+                ) : (
+                  <div className="flex flex-col">
+                    {meals.map((meal, i) => (
+                      <ColumnLine
+                        key={meal.mealId}
+                        label={mealDisplayName(meal, def.label)}
+                        value={kcalLabel(Math.round(meal.caloriesKcal))}
+                        isLast={i === meals.length - 1}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <ColumnHeader>Macros</ColumnHeader>
+                {macros.length === 0 ? (
+                  <p className="py-1 text-[12px] text-white/50">No macros yet.</p>
+                ) : (
+                  <div className="flex flex-col">
+                    {macros.map((m, i) => (
+                      <ColumnLine key={m.label} label={m.label} value={m.value} isLast={i === macros.length - 1} />
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
 
-          {/* Contained Meal / Macros grid: values sit close to their labels, not
-              at the page edge. 1.4fr 1fr at sm+, one column on mobile. */}
-          <div className="mt-3 grid grid-cols-1 gap-[18px] sm:grid-cols-[1.4fr_1fr] sm:gap-[34px]">
-            <div>
-              <ColumnHeader>Meal</ColumnHeader>
-              {isEmpty ? (
-                <p className="py-1 text-[12px] text-white/50">No {def.label.toLowerCase()} logged yet today.</p>
-              ) : (
-                <div className="flex flex-col">
-                  {meals.map((meal, i) => (
-                    <ColumnLine
-                      key={meal.mealId}
-                      label={mealDisplayName(meal, def.label)}
-                      value={kcalLabel(Math.round(meal.caloriesKcal))}
-                      isLast={i === meals.length - 1}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div>
-              <ColumnHeader>Macros</ColumnHeader>
-              {macros.length === 0 ? (
-                <p className="py-1 text-[12px] text-white/50">No macros yet.</p>
-              ) : (
-                <div className="flex flex-col">
-                  {macros.map((m, i) => (
-                    <ColumnLine key={m.label} label={m.label} value={m.value} isLast={i === macros.length - 1} />
-                  ))}
-                </div>
-              )}
-            </div>
+          {/* Gauge: BESIDE the content, top aligned, text centered. The orb
+              shows the meal-type KCAL (displayValue); the ring stays driven by
+              the aggregate quality score (value), unchanged. No KCAL label
+              beneath. */}
+          <div className="flex flex-[0_0_auto] flex-col items-center text-center max-sm:w-full">
+            <PlasmaGauge
+              value={score ?? 0}
+              displayValue={kcal}
+              caption="KCAL"
+              valueFontPx={36}
+              metric="plasmateal"
+              max={100}
+              size={132}
+              showUnit={false}
+              ariaLabel={
+                score === null
+                  ? `${def.label} ${kcal} kilocalories, quality score not available`
+                  : `${def.label} ${kcal} kilocalories, quality score ${score} of 100`
+              }
+            />
           </div>
-        </div>
-
-        {/* Gauge: BESIDE the content, top aligned, text centered. The orb shows
-            the meal-type KCAL (displayValue); the ring stays driven by the
-            aggregate quality score (value), unchanged. No KCAL label beneath. */}
-        <div className="flex flex-[0_0_auto] flex-col items-center text-center max-sm:w-full">
-          <PlasmaGauge
-            value={score ?? 0}
-            displayValue={kcal}
-            caption="KCAL"
-            valueFontPx={36}
-            metric="plasmateal"
-            max={100}
-            size={132}
-            showUnit={false}
-            ariaLabel={
-              score === null
-                ? `${def.label} ${kcal} kilocalories, quality score not available`
-                : `${def.label} ${kcal} kilocalories, quality score ${score} of 100`
-            }
-          />
         </div>
       </div>
     </div>
@@ -319,9 +348,11 @@ function MealTypePanel({
 
 // The expanded hydration panel. Prompt 183b: same compact side-by-side flex
 // row as the meal panels (so it does not stretch tall either), but framed in
-// VOLUME, not kcal. meal-main holds the heading plus a contained Logged /
-// Target / Remaining column; the gauge sits beside it showing percent to target
-// in the orb, top aligned. Under sm the inner wraps and the gauge centers.
+// VOLUME, not kcal. meal-main holds a contained Logged / Target / Remaining
+// column; the gauge sits beside it showing percent to target in the orb, top
+// aligned. Under sm the inner wraps and the gauge centers. Prompt 191: the
+// identical glass treatment as MealTypePanel, a GLASS_TIER2_HEADER strip
+// (heading + volume + chevron) over ONE GLASS_TIER2_BODY panel.
 function HydrationPanel({
   totalMl,
   targetMl,
@@ -341,49 +372,54 @@ function HydrationPanel({
   ];
 
   return (
-    <div className="rounded-xl border border-white/[0.06] bg-white/[0.02]">
-      <div className="flex flex-wrap items-start gap-[30px] p-[18px]">
-        {/* meal-main: heading + the contained volume column. */}
-        <div className="grow basis-full sm:basis-0" style={{ minWidth: 0 }}>
-          <div className="flex items-baseline justify-between gap-2">
-            <h3 className="flex items-baseline gap-2 text-[14px] font-semibold text-white md:text-[15px]">
-              <span>Hydration</span>
-              <span className="text-[12px] font-medium tabular-nums text-white/55">{formatVolumeLabel(totalMl)}</span>
-            </h3>
-            <button
-              type="button"
-              onClick={onCollapse}
-              aria-label="Collapse Hydration"
-              className="flex-shrink-0 rounded-md p-0.5 text-white/55 transition-colors hover:text-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
-            >
-              <ChevronDown className="h-4 w-4 rotate-180" strokeWidth={1.5} />
-            </button>
-          </div>
+    // Prompt 191: glass strip + glass body, same composition as MealTypePanel.
+    <div className="flex flex-col gap-2.5">
+      {/* Header strip: name + volume + collapse chevron on its own glass. */}
+      <div className={`flex items-baseline justify-between gap-2 rounded-xl px-[18px] py-3 ${GLASS_TIER2_HEADER}`}>
+        <h3 className="flex items-baseline gap-2 text-[14px] font-semibold text-white md:text-[15px]">
+          <span>Hydration</span>
+          <span className="text-[12px] font-medium tabular-nums text-white/70">{formatVolumeLabel(totalMl)}</span>
+        </h3>
+        <button
+          type="button"
+          onClick={onCollapse}
+          aria-label="Collapse Hydration"
+          className="flex-shrink-0 rounded-md p-0.5 text-white/70 transition-colors hover:text-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+        >
+          <ChevronDown className="h-4 w-4 rotate-180" strokeWidth={1.5} />
+        </button>
+      </div>
 
-          <div className="mt-3 max-w-[18rem]">
-            <ColumnHeader>Volume</ColumnHeader>
-            <div className="flex flex-col">
-              {lines.map((l, i) => (
-                <ColumnLine key={l.label} label={l.label} value={l.value} isLast={i === lines.length - 1} />
-              ))}
+      {/* Body panel: volumes + gauge on ONE glass surface. */}
+      <div className={GLASS_TIER2_BODY}>
+        <div className="flex flex-wrap items-start gap-[30px] p-[18px]">
+          {/* meal-main: the contained volume column. */}
+          <div className="grow basis-full sm:basis-0" style={{ minWidth: 0 }}>
+            <div className="max-w-[18rem]">
+              <ColumnHeader>Volume</ColumnHeader>
+              <div className="flex flex-col">
+                {lines.map((l, i) => (
+                  <ColumnLine key={l.label} label={l.label} value={l.value} isLast={i === lines.length - 1} />
+                ))}
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Gauge beside the content: percent to the hydration target in the orb. */}
-        <div className="flex flex-[0_0_auto] flex-col items-center text-center max-sm:w-full">
-          <PlasmaGauge
-            value={pct}
-            displayValue={pct}
-            valueSuffix="%"
-            caption="OF TARGET"
-            valueFontPx={32}
-            metric="bioscore"
-            max={100}
-            size={132}
-            showUnit={false}
-            ariaLabel={`Hydration ${pct} percent of target`}
-          />
+          {/* Gauge beside the content: percent to the hydration target in the orb. */}
+          <div className="flex flex-[0_0_auto] flex-col items-center text-center max-sm:w-full">
+            <PlasmaGauge
+              value={pct}
+              displayValue={pct}
+              valueSuffix="%"
+              caption="OF TARGET"
+              valueFontPx={32}
+              metric="bioscore"
+              max={100}
+              size={132}
+              showUnit={false}
+              ariaLabel={`Hydration ${pct} percent of target`}
+            />
+          </div>
         </div>
       </div>
     </div>

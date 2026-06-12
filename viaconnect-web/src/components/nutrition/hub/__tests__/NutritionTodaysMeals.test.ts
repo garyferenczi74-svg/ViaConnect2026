@@ -4,6 +4,11 @@
 // Vercel preview. These lock the five rows, the Meal / Macros columns, the
 // hydration volume framing, the PlasmaGauge reuse, the read only contract (no
 // write calls), the data hook reuse, and the no dash rule.
+//
+// Prompt 191 (2026-06-11): adds the blue glass locks (GLASS_TIER1 rows,
+// GLASS_CHIP totals, GLASS_TIER2_HEADER strip + ONE GLASS_TIER2_BODY panel
+// per expanded section) and pins the framer-motion props so the glass pass
+// stays presentation only.
 
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
@@ -173,14 +178,56 @@ describe('NutritionTodaysMeals source', () => {
     expect(source).toContain("const HYDRATION_DOT = '#5B8DEF'"); // hydration
   });
 
-  it('Prompt 183b: rows use a translucent navy panel with a 4px colored left edge, no gradient fill', () => {
-    expect(source).toContain("background: 'rgba(26,39,68,0.5)'");
-    expect(source).toContain("border: '1px solid rgba(255,255,255,0.07)'");
+  it('Prompt 191: rows are GLASS_TIER1 keeping the 4px colored left edge, no gradient fill', () => {
+    expect(source).toContain(
+      "import { GLASS_CHIP, GLASS_TIER1, GLASS_TIER2_BODY, GLASS_TIER2_HEADER } from './glass'",
+    );
+    expect(source).toContain('${GLASS_TIER1}');
+    // Geometry unchanged: radius and the inline accent edge render on top.
+    expect(source).toContain('borderRadius: 12');
     expect(source).toContain('borderLeft: `4px solid ${dot}`');
-    // The full per type gradient row FILL is gone.
+    // The 183b inline surface moved into glass.ts and is GONE here.
+    expect(source).not.toContain("background: 'rgba(26,39,68,0.5)'");
+    expect(source).not.toContain("border: '1px solid rgba(255,255,255,0.07)'");
+    // The full per type gradient row FILL stays gone.
     expect(source).not.toContain('from-amber-600/40 via-orange-600/20 to-amber-700/30');
     expect(source).not.toContain('from-sky-600/40 via-blue-500/20 to-sky-700/30');
     expect(source).not.toContain('bg-gradient-to-br px-3');
+  });
+
+  it('Prompt 191: the collapsed kcal / volume chip is a GLASS_CHIP', () => {
+    expect(source).toContain('${GLASS_CHIP}');
+    // The old white wash chip classes are gone (text-white now comes from the
+    // recipe itself).
+    expect(source).not.toContain('bg-white/15');
+    expect(source).not.toContain('text-white/85');
+  });
+
+  it('Prompt 191: each expanded section is a GLASS_TIER2_HEADER strip + ONE GLASS_TIER2_BODY panel', () => {
+    const headers = source.match(/\$\{GLASS_TIER2_HEADER\}/g) ?? [];
+    const bodies = source.match(/\{GLASS_TIER2_BODY\}/g) ?? [];
+    expect(headers.length).toBe(2); // MealTypePanel + HydrationPanel strips
+    expect(bodies.length).toBe(2); // one body panel each, no second surface
+    // A small gap between strip and body lets the photo show through.
+    expect(source).toContain('flex flex-col gap-2.5');
+    // The old expanded wrapper surface is gone.
+    expect(source).not.toContain('border-white/[0.06] bg-white/[0.02]');
+  });
+
+  it('Prompt 191: framer-motion expand/collapse props are untouched (presentation only)', () => {
+    expect(source).toContain('initial={{ height: 0, opacity: 0 }}');
+    expect(source).toContain("animate={{ height: 'auto', opacity: 1 }}");
+    expect(source).toContain('exit={{ height: 0, opacity: 0 }}');
+    expect(source).toContain(
+      "transition={reducedMotion ? { duration: 0 } : { duration: 0.22, ease: 'easeOut' }}",
+    );
+    // Blur never rides the animated container: the motion.div keeps only
+    // overflow-hidden and the glass sits on its static children. Blur ceiling
+    // holds at md and nothing declares will-change.
+    expect(source).toContain('className="overflow-hidden"');
+    expect(source).not.toContain('backdrop-blur-xl');
+    expect(source).not.toContain('backdrop-blur-lg');
+    expect(source).not.toContain('will-change');
   });
 
   it('mirrors the existing empty state copy', () => {
