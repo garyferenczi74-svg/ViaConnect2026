@@ -37,6 +37,13 @@ describe('GeneX360PanelSection source', () => {
     expect(source).toContain("removeEventListener('hashchange'");
   });
 
+  it('adopts the hash on mount WITHOUT scrolling, and scrolls only on a hashchange', () => {
+    // Prevents a page load or dev HMR reload from auto scrolling to a leftover
+    // hash target. Mount passes false; the hashchange handler passes true.
+    expect(source).toContain('adoptHash(false)');
+    expect(source).toContain('adoptHash(true)');
+  });
+
   it('updates the URL with replaceState and never pushState', () => {
     expect(source).toContain('history.replaceState');
     expect(source).not.toContain('pushState');

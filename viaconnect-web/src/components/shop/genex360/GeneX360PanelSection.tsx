@@ -101,11 +101,15 @@ export function GeneX360PanelSection() {
   // when the active panel is genex-m and the slug is a known GeneX-M SNP.
   const [openSnp, setOpenSnp] = useState<string | null>(null);
 
-  // Adopt a deep link from the hash: panel from part 1, SNP from part 2. Then
-  // scroll, preferring the SNP row when present (after the next paint so the row
-  // is mounted), else the panel card. A bare or unknown hash leaves us on
-  // genex-m with no open SNP and does not scroll. Shared by mount and hashchange.
-  const syncFromHash = useCallback(() => {
+  // Adopt the hash into state: activate the panel from part 1 and expand the SNP
+  // from part 2. scrollOnAdopt controls whether we ALSO scroll the target into
+  // view. It is false on the initial mount, so a page load (or a dev HMR reload
+  // that keeps a leftover hash from an earlier pill or SNP interaction) never
+  // yanks the page down to that target; the page loads at the top showing the
+  // explorer header. It is true on a deliberate hashchange (browser back /
+  // forward, a pasted in page anchor). A bare or unknown hash leaves us on
+  // genex-m with no open SNP and never scrolls.
+  const adoptHash = useCallback((scrollOnAdopt: boolean) => {
     const { panel, snp } = parseHash(window.location.hash);
     if (!panel) {
       setOpenSnp(null);
@@ -113,6 +117,7 @@ export function GeneX360PanelSection() {
     }
     setActiveSlug(panel);
     setOpenSnp(snp);
+    if (!scrollOnAdopt) return;
     if (snp) {
       // Wait one frame so the SNP row is painted before scrolling to it.
       requestAnimationFrame(() => scrollToSnp(snp));
@@ -121,19 +126,22 @@ export function GeneX360PanelSection() {
     }
   }, []);
 
-  // On mount, adopt the deep link after hydration.
+  // On mount, adopt the deep link into state WITHOUT scrolling, so a page load or
+  // a dev HMR reload lands at the top rather than auto scrolling to a leftover
+  // hash target.
   useEffect(() => {
-    syncFromHash();
-  }, [syncFromHash]);
+    adoptHash(false);
+  }, [adoptHash]);
 
-  // Keep state in sync with later hash changes (browser nav, an external in page
-  // anchor, a pasted link).
+  // A deliberate hash change (browser back / forward, an external in page anchor,
+  // a pasted link) adopts the new target AND scrolls it into view.
   useEffect(() => {
-    window.addEventListener('hashchange', syncFromHash);
+    const onHashChange = () => adoptHash(true);
+    window.addEventListener('hashchange', onHashChange);
     return () => {
-      window.removeEventListener('hashchange', syncFromHash);
+      window.removeEventListener('hashchange', onHashChange);
     };
-  }, [syncFromHash]);
+  }, [adoptHash]);
 
   // Pill selection: flip the panel, collapse any open SNP and drop the nested
   // hash, update the hash with replaceState (never a history push, so the back
