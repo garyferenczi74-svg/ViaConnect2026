@@ -141,9 +141,11 @@ describe('NutritionHub source', () => {
     const centered = source.match(/flex flex-1 flex-col items-center justify-center gap-1/g) ?? [];
     expect(centered.length).toBe(3);
     expect(source).toContain('mt-auto flex pt-4');
-    // Log Your Meal is one centered composition: title, caption, then pills.
-    expect(source).toContain('flex w-full flex-1 flex-col items-center justify-center');
-    expect(source).toContain('mt-4 flex w-full flex-col items-center gap-3');
+    // Log Your Meal (Gary follow-up): the title and caption center vertically
+    // in the space above the pills, and the two pills anchor at the bottom of
+    // the frame beneath them.
+    expect(source).toContain('mt-auto flex w-full flex-col items-center gap-3 pt-4');
+    expect(source).not.toContain('flex w-full flex-1 flex-col items-center justify-center');
   });
 
   it('Row 1 carries no tier word and no Open affordance on the gauge cards', () => {

@@ -576,20 +576,21 @@ export function NutritionHub() {
           accent={TEAL}
           contentClassName="items-center text-center"
         >
-          {/* Prompt 183e (2026-06-11): the whole stack (title, caption, pills)
-              is one vertically centered composition in the frame, balanced
-              over the media, instead of the title hugging the top edge. */}
-          <div className="flex w-full flex-1 flex-col items-center justify-center">
+          {/* Prompt 183e + Gary follow-up (2026-06-11): the title and caption
+              center vertically in the space above the pills (same pattern as
+              the Row 3 tiles), and the two pills anchor beneath them at the
+              bottom of the frame. Nothing hugs the top edge. */}
+          <div className="flex flex-1 flex-col items-center justify-center">
             <h3 className="text-[15px] font-semibold leading-tight text-white md:text-base">
               Log Your Meal
             </h3>
             <p className="mt-1 text-[12px] leading-relaxed text-white/[0.62] md:text-[13px]">
               The fastest way to add what you ate
             </p>
-            <div className="mt-4 flex w-full flex-col items-center gap-3">
-              <TealGlassPill href="/nutrition/log-meal" icon={PenLine} label="Log a Full Meal" />
-              <TealGlassPill href="/nutrition/photo-ai" icon={Camera} label="NutriVision" />
-            </div>
+          </div>
+          <div className="mt-auto flex w-full flex-col items-center gap-3 pt-4">
+            <TealGlassPill href="/nutrition/log-meal" icon={PenLine} label="Log a Full Meal" />
+            <TealGlassPill href="/nutrition/photo-ai" icon={Camera} label="NutriVision" />
           </div>
         </HubTile>
       </div>

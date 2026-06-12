@@ -40,6 +40,12 @@ interface CardMediaProps {
   logKey?: string;
 }
 
+// Gary fix (2026-06-11): every media layer clips itself to the host card's
+// radius (rounded-[inherit]; the video wrapper also overflow-hidden). The card
+// roots already carry overflow-hidden, but a backdrop-filter on the root can
+// defeat child clipping in some engines, letting a video bleed past the
+// rounded frame. Explicit self-clipping is visually neutral when the root
+// clip works, so every consumer (both hubs) is safe.
 export function CardMedia({ media, logKey }: CardMediaProps) {
   const gradientClass = media.gradientClass || '';
 
@@ -47,7 +53,7 @@ export function CardMedia({ media, logKey }: CardMediaProps) {
     return (
       <div
         aria-hidden="true"
-        className={`absolute inset-0 z-0 ${gradientClass}`}
+        className={`absolute inset-0 z-0 rounded-[inherit] ${gradientClass}`}
       />
     );
   }
@@ -71,7 +77,7 @@ function ImageMedia({
   const [errored, setErrored] = useState(false);
   return (
     <>
-      <div aria-hidden="true" className={`absolute inset-0 z-0 ${gradientClass}`} />
+      <div aria-hidden="true" className={`absolute inset-0 z-0 rounded-[inherit] ${gradientClass}`} />
       {!errored && media.src ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
@@ -84,7 +90,7 @@ function ImageMedia({
             setErrored(true);
             logMediaFailure(logKey, 'image', media.src);
           }}
-          className="absolute inset-0 z-0 h-full w-full object-cover"
+          className="absolute inset-0 z-0 h-full w-full rounded-[inherit] object-cover"
         />
       ) : null}
     </>
@@ -146,7 +152,7 @@ function VideoMedia({
   const showPoster = (reducedMotion || videoErrored) && !posterErrored && media.poster;
 
   return (
-    <div ref={wrapperRef} className="absolute inset-0 z-0">
+    <div ref={wrapperRef} className="absolute inset-0 z-0 overflow-hidden rounded-[inherit]">
       <div aria-hidden="true" className={`absolute inset-0 ${gradientClass}`} />
       {showPoster ? (
         // eslint-disable-next-line @next/next/no-img-element
