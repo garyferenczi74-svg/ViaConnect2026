@@ -68,7 +68,14 @@ const MACRO_SPLIT: Record<Goal, MacroSplit> = {
   high_protein:   { carbsPct: 0.30, fatPct: 0.30, proteinPct: 0.40 },
 };
 
-function defaults(): Required<Pick<ProfileInput, 'sex' | 'age' | 'weight_kg' | 'height_cm' | 'activity_level' | 'goal'>> {
+function defaults(): {
+  sex: Sex;
+  age: number;
+  weight_kg: number;
+  height_cm: number;
+  activity_level: ActivityLevel;
+  goal: Goal;
+} {
   return {
     sex: 'male',
     age: 30,

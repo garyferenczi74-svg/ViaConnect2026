@@ -130,7 +130,9 @@ export async function POST(request: Request): Promise<NextResponse> {
       return NextResponse.json(
         {
           error: 'NLU output failed schema validation',
-          issues: validated.error.errors.map(
+          // Sweep 2026-06-12: zod v4 exposes .issues; .errors threw at
+          // runtime and degraded this 502-with-details into a generic 500.
+          issues: validated.error.issues.map(
             (e) => `${e.path.join('.')}: ${e.message}`
           ),
         },

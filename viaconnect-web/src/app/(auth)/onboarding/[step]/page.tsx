@@ -7,12 +7,11 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { TIER_FEATURES } from "@/lib/pricing/tier-features";
 import type { TierId } from "@/types/pricing";
-import { ArrowLeft, ArrowRight, Loader2, Plus, X, Sparkles, Zap, Brain, Moon, Flame, Heart, CheckCircle2, Crown, Star, Calendar, ChevronDown, Info, Camera, FolderOpen, SkipForward, BrainCircuit, RefreshCw, Users } from "lucide-react";
+import { ArrowLeft, ArrowRight, Loader2, Plus, X, Sparkles, Zap, Brain, Moon, Flame, Heart, CheckCircle2, Crown, Star, ChevronDown, Info, BrainCircuit, RefreshCw, Users } from "lucide-react";
 import { ProgressMotivator } from "@/components/caq/ProgressMotivator";
 import { VoiceInput } from "@/components/caq/VoiceInput";
 import { CalmingHelixBackground } from "@/components/caq/CalmingHelixBackground";
 import { BodyTypeSelector } from "@/components/caq/BodyTypeSelector";
-import { shouldShowBodyTypeSelector } from "@/lib/caq/body-type-trigger";
 import { completeCAQAndTriggerEngines } from "@/lib/caq/complete-caq";
 import { fetchPreviousCAQ } from "@/lib/caq/fetchPreviousCAQ";
 import SupplementPhotoUpload from "@/components/caq/phase6/SupplementPhotoUpload";
@@ -37,10 +36,8 @@ import { resolveCaqGoalDriver } from "@/lib/body-goals/pace";
 import type { PacePreset } from "@/lib/body-goals/types";
 import { readCaqPath, writeCaqPath } from "@/lib/caq/path";
 import type { DietaryChoice } from "@/lib/gordon/macro-config";
-import { SEED_INGREDIENTS, FARMCEUTICA_CATEGORIES, normalizeIngredientName } from "@/config/farmceutica-ingredients";
-import { searchBrandsAndProducts } from "@/config/brand-search-index";
+import { SEED_INGREDIENTS } from "@/config/farmceutica-ingredients";
 import BrandProductSearch from "@/components/caq/phase6/BrandProductSearch";
-import { PEPTIDE_REGISTRY, searchPeptides } from "@/config/peptide-database/registry";
 import { InteractionBanner } from "@/components/interactions/InteractionBanner";
 import { emitDataEvent } from "@/lib/ai/emit-event";
 import { enqueueBOSCompute } from "@/lib/scoring/queue";
@@ -376,47 +373,6 @@ type GoalsData = {
   dietaryChoice: DietaryChoice | null;
 };
 
-// ─── Bio Optimization Score Calculator ──────────────────────────────────────────────
-
-function calculateBioOptimizationScore(
-  symptoms: SymptomsData,
-  lifestyle: LifestyleData,
-  goals: GoalsData
-): number {
-  // Base score from symptoms (1=bad, 10=good → scale to 0-100)
-  const symptomValues = Object.values(symptoms);
-  const avgSymptom = symptomValues.length > 0
-    ? symptomValues.reduce((a, b) => a + b, 0) / symptomValues.length
-    : 5;
-  const symptomScore = Math.max(0, Math.min(100, (avgSymptom / 10) * 100));
-
-  // Lifestyle bonus
-  let lifestyleScore = 50;
-  if (lifestyle.exercise === "3-4x/week" || lifestyle.exercise === "5-6x/week" || lifestyle.exercise === "Daily") lifestyleScore += 15;
-  if (lifestyle.stressLevel === "Low" || lifestyle.stressLevel === "Very Low") lifestyleScore += 10;
-  if (lifestyle.smoking === "None") lifestyleScore += 10;
-  if (lifestyle.alcohol === "None" || lifestyle.alcohol === "Occasional") lifestyleScore += 5;
-  const sleepH = parseFloat(lifestyle.sleepHours) || 0;
-  if (sleepH >= 7 && sleepH <= 9) lifestyleScore += 10;
-
-  // Goal engagement bonus
-  const goalBonus = Math.min(goals.goals.length * 2, 10);
-
-  const raw = (symptomScore * 0.5 + lifestyleScore * 0.4 + goalBonus);
-  return Math.round(Math.min(100, Math.max(0, raw)));
-}
-
-function determineConstitutionalType(symptoms: SymptomsData): string {
-  // Scale: 1=bad, 10=good. Low scores = more issues in that area.
-  const stressAnxiety = (symptoms["Stress"] || 5) + (symptoms["Anxiety"] || 5);
-  const energy = symptoms["Energy"] || 5;
-  const digestion = symptoms["Digestion"] || 5;
-
-  if (stressAnxiety < 8) return "Vata (Air)";    // Low stress+anxiety scores = high stress
-  if (energy > 6 && digestion < 5) return "Pitta (Fire)"; // High energy, poor digestion
-  return "Kapha (Earth)";
-}
-
 // ─── Shared input class ─────────────────────────────────────────────────────
 
 const inputClass = "w-full h-10 bg-dark-surface border border-dark-border rounded-lg px-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-copper/50 focus:border-copper/50 transition-colors";
@@ -585,58 +541,34 @@ export default function OnboardingStepPage() {
   const [userSupplements, setUserSupplements] = useState<UserSupplement[]>([]);
   const [supplementSaveState, setSupplementSaveState] = useState<Record<string, SupplementSaveState>>({});
   const supplementSaveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [suppSearchQuery, setSuppSearchQuery] = useState("");
-  const [suppSearchResults, setSuppSearchResults] = useState<{ name: string; search_name: string; category: string; delivery_method: string }[]>([]);
-  // Live database search results (2,189 products from 20+ brands)
-  const [liveDbResults, setLiveDbResults] = useState<{ result_type: string; brand_name: string; product_name: string; product_category: string; match_score: number }[]>([]);
+  // Sweep 2026-06-12: supplement search query/results state and the debounced
+  // Supabase search effect were removed. They fed the old Phase 4b picker,
+  // which was folded into Phase 4; nothing set the query or read the results.
   const [showDosageModal, setShowDosageModal] = useState<string | null>(null);
   const [dosageForm, setDosageForm] = useState({ deliveryMethod: "", dosage: "", unit: "mg", frequency: "", reason: "" });
   // Prompt 175m (2026-06-05): barcode tier removed from CAQ. State + UI
   // gone. Photo capture + search remain the supported entry points.
   // AI product lookup state
-  const [aiLookupLoading, setAiLookupLoading] = useState(false);
+  // Sweep 2026-06-12: nothing sets this anymore (the setter died with the
+  // Phase 4b picker), so the loading branches below never render; kept as a
+  // plain const to avoid touching the JSX in the same pass.
+  const [aiLookupLoading] = useState(false);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [aiLookupResult, setAiLookupResult] = useState<any>(null);
   const [aiLookupError, setAiLookupError] = useState("");
   const [aiEditMode, setAiEditMode] = useState(false);
-  // Photo upload state
-  const [productPhotos, setProductPhotos] = useState<File[]>([]);
-  const [photoAnalyzing, setPhotoAnalyzing] = useState(false);
-
-  // Live database search, debounced query to Supabase (2,189 products)
-  useEffect(() => {
-    if (suppSearchQuery.trim().length < 2) { setLiveDbResults([]); return; }
-    const timer = setTimeout(async () => {
-      try {
-        const supabase = createClient();
-        const { data } = await supabase.rpc('search_supplements', {
-          search_query: suppSearchQuery.trim().toLowerCase(),
-          result_limit: 8,
-        });
-        setLiveDbResults((data || []).map((r: Record<string, unknown>) => ({
-          result_type: r.result_type as string,
-          brand_name: r.brand_name as string,
-          product_name: r.product_name as string,
-          product_category: (r.product_category as string) || 'Supplement',
-          match_score: r.match_score as number,
-        })));
-      } catch { setLiveDbResults([]); }
-    }, 250);
-    return () => clearTimeout(timer);
-  }, [suppSearchQuery]);
-
   // Phase 4 state
   const [medications, setMedications] = useState<MedicationsData>({
     medications: [], supplements: [], allergies: [], adverseReactions: "",
   });
   const [medSearch, setMedSearch] = useState("");
-  const [suppInput, setSuppInput] = useState("");
-  const [suppMgInput, setSuppMgInput] = useState("");
   const [allergyInput, setAllergyInput] = useState("");
   // Interaction check state
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [interactionResults, setInteractionResults] = useState<any[]>([]);
-  const [interactionSummary, setInteractionSummary] = useState({ major: 0, moderate: 0, minor: 0, synergistic: 0 });
+  // Sweep 2026-06-12: the summary is still computed for the interaction
+  // check effect's setter call, but no UI reads it; only the setter is kept.
+  const [, setInteractionSummary] = useState({ major: 0, moderate: 0, minor: 0, synergistic: 0 });
 
   // Phase 5 state
   const [goals, setGoals] = useState<GoalsData>({
@@ -809,7 +741,7 @@ export default function OnboardingStepPage() {
               setGoals((p) => ({ ...p, dietaryChoice: dc as DietaryChoice }));
             }
           }
-        } catch (err) { }
+        } catch { }
       }
       setRetakeLoaded(true);
     });
@@ -1073,11 +1005,11 @@ export default function OnboardingStepPage() {
           }
 
           // ═══ Fire ALL downstream AI engines ═══
+          // Failures here must not block onboarding completion; engines
+          // self-heal on their next scheduled pass.
           try {
-            const triggerResult = await completeCAQAndTriggerEngines();
-            if (triggerResult.errors.length > 0) {
-            }
-          } catch (err) {
+            await completeCAQAndTriggerEngines();
+          } catch {
           }
 
           // ═══ Generate Supplement Recommendations ═══
@@ -1122,17 +1054,6 @@ export default function OnboardingStepPage() {
     ? CAQ_INTERSTITIALS[phase.caqIndex as number]
     : null;
 
-  // Redirect if invalid step (after all hooks)
-  if (!phase) {
-    router.replace("/onboarding/i-caq-intro");
-    return null;
-  }
-
-  // Render personalized welcome dashboard (special interstitial)
-  if (stepId === "i-welcome") {
-    return <WelcomeDashboardScreen />;
-  }
-
   // Path Z polling: poll /api/bos/current every 5s until score is
   // non null (worker has drained the queue and the canonical compute
   // has landed in bio_optimization_history). Max 36 attempts (3 min);
@@ -1144,6 +1065,12 @@ export default function OnboardingStepPage() {
   // cannot block the loop. On total timeout the spinner is replaced
   // with the failure card (Retry kicks generationAttempt which
   // re-runs this effect).
+  //
+  // Sweep 2026-06-12: hoisted above the early returns below. This page
+  // component stays mounted while the [step] param changes, so a hook
+  // that renders on one step but not another (rules-of-hooks violation)
+  // could crash navigation into i-welcome. The effect self-guards on
+  // showProcessing, so running it on every step is behavior-identical.
   useEffect(() => {
     if (!showProcessing) return;
     if (generationError) return;
@@ -1192,6 +1119,17 @@ export default function OnboardingStepPage() {
     setTimeout(pollOnce, INTERVAL_MS);
     return () => { cancelled = true; };
   }, [showProcessing, generationError, generationAttempt, router]);
+
+  // Redirect if invalid step (after all hooks)
+  if (!phase) {
+    router.replace("/onboarding/i-caq-intro");
+    return null;
+  }
+
+  // Render personalized welcome dashboard (special interstitial)
+  if (stepId === "i-welcome") {
+    return <WelcomeDashboardScreen />;
+  }
 
   // Render Ultrathink processing animation (after last CAQ phase).
   // Prompt 177k (2026-06-07): when generationError is set the
@@ -2120,12 +2058,10 @@ export default function OnboardingStepPage() {
                         deliveryMethod: product.delivery_method || "standard_actives",
                         dosage: "", unit: "mg", frequency: "", reason: "",
                       });
-                      setSuppSearchQuery("");
                     }}
                     onManualEntry={(searchText) => {
                       setShowDosageModal(searchText);
                       setDosageForm({ deliveryMethod: "", dosage: "", unit: "mg", frequency: "", reason: "" });
-                      setSuppSearchQuery("");
                       setAiLookupResult(null); setAiLookupError("");
                     }}
                     placeholder="Search vitamins, minerals, supplements and peptides by brand or ingredient"
@@ -2567,222 +2503,6 @@ export default function OnboardingStepPage() {
           </div>
         )}
 
-        {/* ── Phase 4b removed, supplements now in Phase 4 ── */}
-        {false && (
-          <div className="space-y-6">
-            {/* AI quality badge */}
-            <div className="flex items-start gap-3 p-4 rounded-xl bg-teal-400/5 border border-teal-400/15 mb-2">
-              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-teal-400/10 flex items-center justify-center mt-0.5">
-                <Brain className="w-4 h-4 text-teal-400" />
-              </div>
-              <div>
-                <p className="text-sm text-teal-400 font-medium">More supplements = smarter protocol</p>
-                <p className="text-xs text-white/40 mt-0.5">Include everything you take regularly, even basic multivitamins from other brands. We&apos;ll identify gaps, redundancies, and upgrade opportunities.</p>
-              </div>
-            </div>
-
-            {/* Search Input */}
-            <div className="relative">
-              <Sparkles className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/30" />
-              <input
-                type="text"
-                value={suppSearchQuery}
-                onChange={(e) => {
-                  setSuppSearchQuery(e.target.value);
-                  const q = e.target.value.toLowerCase().trim();
-                  if (q.length < 2) { setSuppSearchResults([]); return; }
-                  const matches = SEED_INGREDIENTS.filter(
-                    (ing) => ing.name.toLowerCase().includes(q) || ing.category.toLowerCase().includes(q)
-                  ).slice(0, 10);
-                  setSuppSearchResults(matches);
-                }}
-                placeholder="Search vitamins, minerals, supplements and peptides by brand or ingredient"
-                className="w-full pl-12 pr-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-white/30 focus:border-teal-400/50 focus:ring-1 focus:ring-teal-400/30 focus:outline-none"
-              />
-            </div>
-
-            {/* Category Quick Filters */}
-            <div className="flex flex-wrap gap-2">
-              {FARMCEUTICA_CATEGORIES.map((cat) => (
-                <button
-                  key={cat}
-                  type="button"
-                  onClick={() => {
-                    setSuppSearchQuery(cat);
-                    setSuppSearchResults(SEED_INGREDIENTS.filter((ing) => ing.category === cat).slice(0, 10));
-                  }}
-                  className="px-3 py-1.5 rounded-full text-xs font-medium bg-white/5 border border-white/10 text-white/50 hover:border-teal-400/30 hover:text-teal-400 transition-all"
-                >
-                  {cat}
-                </button>
-              ))}
-            </div>
-
-            {/* Search Results Dropdown */}
-            {suppSearchQuery.length >= 2 && (
-              <div className="rounded-xl bg-[#1E2D4A] border border-white/10 shadow-2xl max-h-64 overflow-y-auto">
-                {suppSearchResults.map((ing) => (
-                  <button
-                    key={ing.name}
-                    type="button"
-                    onClick={() => {
-                      setShowDosageModal(ing.name);
-                      setDosageForm({ deliveryMethod: "", dosage: "", unit: "mg", frequency: "Once daily", reason: "" });
-                      setSuppSearchQuery("");
-                      setSuppSearchResults([]);
-                    }}
-                    className="w-full text-left px-4 py-3 hover:bg-white/5 border-b border-white/5 last:border-0 transition-colors"
-                  >
-                    <span className="text-sm text-white/90">{ing.name}</span>
-                    <span className="text-xs text-white/30 ml-2">{ing.category}</span>
-                  </button>
-                ))}
-                {/* Add custom / not found */}
-                {suppSearchQuery.trim().length >= 2 && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowDosageModal(suppSearchQuery.trim());
-                      setDosageForm({ deliveryMethod: "", dosage: "", unit: "mg", frequency: "Once daily", reason: "" });
-                      setSuppSearchQuery("");
-                      setSuppSearchResults([]);
-                    }}
-                    className="w-full text-left px-4 py-3 text-sm font-medium text-copper hover:bg-copper/5 transition-colors flex items-center gap-2 border-t border-white/10"
-                  >
-                    <Plus className="w-4 h-4" />
-                    Add &quot;{suppSearchQuery.trim()}&quot; (external product)
-                  </button>
-                )}
-              </div>
-            )}
-
-            {/* Dosage Entry Modal */}
-            {showDosageModal && (
-              <div className="rounded-xl bg-[#1E2D4A] border border-white/10 p-6 space-y-5">
-                <h3 className="text-lg font-medium text-white">{showDosageModal}</h3>
-                <div className="flex gap-3">
-                  <div className="flex-1">
-                    <label className="text-xs text-white/30 mb-1 block">Dosage</label>
-                    <input type="number" placeholder="500" value={dosageForm.dosage}
-                      onChange={(e) => setDosageForm({ ...dosageForm, dosage: e.target.value })}
-                      className="w-full px-4 py-2.5 rounded-lg bg-white/5 border border-white/10 text-white placeholder:text-white/30 focus:border-teal-400/30 focus:outline-none" />
-                  </div>
-                  <div className="w-24">
-                    <label className="text-xs text-white/30 mb-1 block">Unit</label>
-                    <select value={dosageForm.unit}
-                      onChange={(e) => setDosageForm({ ...dosageForm, unit: e.target.value })}
-                      className="w-full px-3 py-2.5 rounded-lg bg-white/5 border border-white/10 text-white focus:border-teal-400/30 focus:outline-none appearance-none">
-                      <option value="mg">mg</option>
-                      <option value="mcg">mcg</option>
-                      <option value="IU">IU</option>
-                      <option value="g">g</option>
-                      <option value="CFU">CFU</option>
-                      <option value="ml">ml</option>
-                    </select>
-                  </div>
-                </div>
-                <div>
-                  <label className="text-xs text-white/30 mb-2 block">How often?</label>
-                  <div className="flex flex-wrap gap-2">
-                    {["Once daily", "Twice daily", "3x daily", "Weekly", "As needed"].map((freq) => (
-                      <button key={freq} type="button"
-                        onClick={() => setDosageForm({ ...dosageForm, frequency: freq })}
-                        className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-                          dosageForm.frequency === freq
-                            ? "bg-teal-400/15 border border-teal-400/30 text-teal-400"
-                            : "bg-white/5 border border-white/10 text-white/60 hover:border-white/20"
-                        }`}>
-                        {freq}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <label className="text-xs text-white/30 mb-1 block">Why do you take this? (optional)</label>
-                  <input type="text" placeholder="e.g., for energy, doctor recommended..."
-                    value={dosageForm.reason}
-                    onChange={(e) => setDosageForm({ ...dosageForm, reason: e.target.value })}
-                    className="w-full px-4 py-2.5 rounded-lg bg-white/5 border border-white/10 text-white placeholder:text-white/20 focus:border-teal-400/30 focus:outline-none" />
-                </div>
-                <div className="flex gap-3">
-                  <button type="button"
-                    onClick={() => {
-                      const isFarmceutica = SEED_INGREDIENTS.some((ing) => ing.name === showDosageModal);
-                      setUserSupplements([...userSupplements, {
-                        name: showDosageModal ?? "",
-                        brand: isFarmceutica ? "FarmCeutica" : "External",
-                        source: isFarmceutica ? "farmceutica" : "manual",
-                        deliveryMethod: dosageForm.deliveryMethod ?? "",
-                        dosage: dosageForm.dosage,
-                        unit: dosageForm.unit,
-                        frequency: dosageForm.frequency,
-                        reason: dosageForm.reason,
-                      }]);
-                      setShowDosageModal(null);
-                    }}
-                    className="flex-1 py-3 rounded-xl bg-teal-400/10 border border-teal-400/30 text-teal-400 font-medium hover:bg-teal-400/15 transition-all">
-                    Add to My Supplements
-                  </button>
-                  <button type="button" onClick={() => setShowDosageModal(null)}
-                    className="py-3 px-6 rounded-xl bg-white/5 border border-white/10 text-white/50 hover:text-white/70 transition-all">
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Current Supplement List */}
-            {userSupplements.length > 0 && (
-              <div>
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="flex-grow h-px bg-white/10" />
-                  <span className="text-xs uppercase tracking-[0.2em] text-white/30 font-medium">Your Supplements ({userSupplements.length})</span>
-                  <div className="flex-grow h-px bg-white/10" />
-                </div>
-                <div className="space-y-2">
-                  {userSupplements.map((supp, i) => (
-                    <div key={`${supp.name}-${i}`} className="rounded-xl border border-white/5 bg-white/[0.02] p-4 flex items-start justify-between hover:border-white/10 transition-colors">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium text-white/90">{supp.name}</span>
-                          <span className={`text-[10px] px-2 py-0.5 rounded-full border ${
-                            supp.source === "farmceutica"
-                              ? "bg-teal-400/10 border-teal-400/20 text-teal-400"
-                              : "bg-orange-400/10 border-orange-400/20 text-orange-400"
-                          }`}>
-                            {supp.source === "farmceutica" ? "FC" : "External"}
-                          </span>
-                        </div>
-                        <p className="text-xs text-white/40 mt-0.5">
-                          {supp.dosage && `${supp.dosage}${supp.unit}`} · {supp.frequency} · {supp.brand}
-                          {supp.reason && ` · ${supp.reason}`}
-                        </p>
-                      </div>
-                      <button type="button" onClick={() => setUserSupplements(userSupplements.filter((_, idx) => idx !== i))}
-                        className="text-white/30 hover:text-white/70 transition-colors p-1">
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* None button */}
-            <button
-              type="button"
-              onClick={() => setUserSupplements(userSupplements.some(s => s.name === "None") ? [] : [{ name: "None", brand: "", source: "manual", deliveryMethod: "", dosage: "", unit: "", frequency: "", reason: "" }])}
-              className={`px-4 py-2 rounded-full border text-sm font-medium transition-all ${
-                userSupplements.some(s => s.name === "None")
-                  ? "bg-portal-green/15 border-portal-green/30 text-portal-green"
-                  : "bg-white/5 border-white/10 text-white/70 hover:border-white/20"
-              }`}
-            >
-              I don&apos;t take any supplements
-            </button>
-          </div>
-        )}
-
         {/* ── Phase 5: Goals ── */}
         {stepId === "5" && (
           <div className="space-y-6">
@@ -2987,8 +2707,9 @@ function OnboardingComplete() {
         .in("phase", [7, 8, 9]);
 
       if (phases && phases.length > 0) {
-        const phaseMap: Record<number, any> = {};
-        for (const p of phases) phaseMap[p.phase] = p.data ?? {};
+        type PhaseSeverities = Record<string, { score?: number } | undefined>;
+        const phaseMap: Record<number, PhaseSeverities> = {};
+        for (const p of phases) phaseMap[p.phase] = (p.data ?? {}) as PhaseSeverities;
 
         const physical = phaseMap[7] ?? {};
         const neuro = phaseMap[8] ?? {};

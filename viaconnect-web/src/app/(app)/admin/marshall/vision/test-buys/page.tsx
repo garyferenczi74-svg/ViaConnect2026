@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ChevronLeft, Package, Plus } from 'lucide-react';
+import { ChevronLeft, Package } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 
 export const dynamic = 'force-dynamic';
@@ -43,13 +43,10 @@ export default async function TestBuysPage() {
             <h1 className="text-lg md:text-xl font-bold text-white">Test buys</h1>
             <p className="text-xs text-white/40">High-value counterfeit targets purchased for hands-on comparison. Budget approved by CFO.</p>
           </div>
-          <Link
-            href="/admin/marshall/vision/test-buys/new"
-            className="inline-flex items-center gap-2 rounded-md bg-[#B75E18] hover:bg-[#C96D1E] text-white text-sm font-medium px-3 py-2 transition"
-          >
-            <Plus className="w-4 h-4" strokeWidth={1.5} aria-hidden />
-            Initiate test buy
-          </Link>
+          {/* Sweep 2026-06-12: the Initiate test buy CTA linked to a
+              /test-buys/new route that does not exist (every click 404ed).
+              Removed until the intake form ships; restore the Link when the
+              route exists. */}
         </div>
       </div>
 

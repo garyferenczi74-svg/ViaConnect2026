@@ -77,7 +77,7 @@ describe('HANNAH_TOOL_NAME and HANNAH_TOOL_SCHEMA', () => {
   });
 
   it('declares additionalProperties: false at the top level', () => {
-    expect((HANNAH_TOOL_SCHEMA.input_schema as { additionalProperties: unknown }).additionalProperties).toBe(false);
+    expect((HANNAH_TOOL_SCHEMA.input_schema as unknown as { additionalProperties: unknown }).additionalProperties).toBe(false);
   });
 });
 

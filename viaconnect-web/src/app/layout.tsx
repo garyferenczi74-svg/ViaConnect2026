@@ -16,7 +16,7 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: {
-    default: "ViaConnect GeneX360 — Precision Health",
+    default: "ViaConnect GeneX360: Precision Health",
     template: "%s | ViaConnect GeneX360",
   },
   description:
@@ -44,7 +44,7 @@ export const metadata: Metadata = {
     type: "website",
     locale: "en_US",
     url: "/",
-    title: "ViaConnect GeneX360 — Precision Health",
+    title: "ViaConnect GeneX360: Precision Health",
     description:
       "One Genome. One Formulation. One Life at a Time. Gene-guided supplements and AI-powered clinical reasoning.",
     siteName: "ViaConnect GeneX360",
@@ -59,7 +59,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "ViaConnect GeneX360 — Precision Health",
+    title: "ViaConnect GeneX360: Precision Health",
     description:
       "Gene-guided supplements and AI-powered clinical reasoning by ViaConnect.",
     images: ["/og-image.png"],

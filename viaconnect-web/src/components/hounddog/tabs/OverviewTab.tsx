@@ -1,5 +1,6 @@
 'use client';
 
+import type { IconType } from '@/types/icon';
 import React, { useState } from 'react';
 import {
   Flame,
@@ -34,7 +35,7 @@ import PBar from '../shared/PBar';
 import LiveBadge from '../shared/LiveBadge';
 import Spark from '../shared/Spark';
 
-const AGENT_ICONS: Record<string, React.ElementType> = {
+const AGENT_ICONS: Record<string, IconType> = {
   PenTool,
   Edit3,
   Calendar,

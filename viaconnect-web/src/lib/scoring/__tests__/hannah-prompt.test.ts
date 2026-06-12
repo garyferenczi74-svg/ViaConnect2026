@@ -53,6 +53,15 @@ function makeBundle(overrides: Partial<HannahInputBundle> = {}): HannahInputBund
       computed_at: '2026-05-10T18:30:00Z',
       compute_version: '2.0.0',
     },
+    // Sweep 2026-06-12: caffeine_timing is required on HannahInputBundle;
+    // the fixture relied on overrides, which left it possibly undefined.
+    caffeine_timing: {
+      has_data: false,
+      data_window_hours: 24,
+      total_caffeine_mg_24h: 0,
+      per_meal_impact_summaries: [],
+      sleep_window: { sleep_start: '23:00', wake_time: '07:00', source: 'default' },
+    },
     ...overrides,
   };
 }

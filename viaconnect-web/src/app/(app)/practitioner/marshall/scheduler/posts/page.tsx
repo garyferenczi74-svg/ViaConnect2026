@@ -39,7 +39,7 @@ interface ScanRow {
 export default async function PostsDashboardPage() {
   const supabase = createServerClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect('/signin');
+  if (!user) redirect('/login');
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const sb = supabase as any;

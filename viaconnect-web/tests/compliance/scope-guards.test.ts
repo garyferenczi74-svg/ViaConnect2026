@@ -105,6 +105,9 @@ describe("lib/compliance scope guards", () => {
       `rules${path.sep}marketing.ts`,
       `rules${path.sep}peptide.ts`,
       `rules${path.sep}social.ts`,
+      // Prompt #123 rebuttal drafter: detection regex + rule description
+      // must name the compound to detect competitor superiority claims.
+      `rules${path.sep}rebuttal.ts`,
       `__tests__${path.sep}engine.test.ts`,
       `__tests__${path.sep}integration.test.ts`,
       `__tests__${path.sep}peptide.test.ts`,

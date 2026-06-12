@@ -37,7 +37,7 @@ export function FinalCTADesktop() {
                         <ArrowRight strokeWidth={1.5} className="ml-2 w-5 h-5" />
                     </Link>
                     <Link
-                        href="/practitioner"
+                        href="/practitioners"
                         className="inline-flex items-center justify-center rounded-full bg-[#2DA5A0]/30 backdrop-blur-xl border border-[#2DA5A0]/40 px-10 py-5 text-base font-semibold text-white shadow-[0_0_20px_rgba(45,165,160,0.4)] transition-all duration-300 hover:bg-[#2DA5A0]/50 hover:border-[#2DA5A0]/60 hover:shadow-[0_0_40px_rgba(45,165,160,0.5)]"
                     >
                         I am a Practitioner or Naturopath

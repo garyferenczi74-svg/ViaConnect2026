@@ -85,7 +85,7 @@ describe('lookupReusableReceipt', () => {
   it('returns no_match when DB has nothing', async () => {
     const { supabase } = mockSupabase(null);
     const r = await lookupReusableReceipt(
-      { supabase, practitionerId: 'p1', contentHashSha256: 'abc' },
+      { supabase, practitionerId: 'p1', contentHashSha256: 'abc', now: new Date('2026-04-24T00:00:00Z') },
       current,
       loaderFor({}),
     );
@@ -95,7 +95,7 @@ describe('lookupReusableReceipt', () => {
   it('returns revoked when receipt is marked revoked', async () => {
     const { supabase } = mockSupabase(row({ revoked: true }));
     const r = await lookupReusableReceipt(
-      { supabase, practitionerId: 'p1', contentHashSha256: 'abc' },
+      { supabase, practitionerId: 'p1', contentHashSha256: 'abc', now: new Date('2026-04-24T00:00:00Z') },
       current,
       loaderFor({}),
     );
@@ -115,7 +115,7 @@ describe('lookupReusableReceipt', () => {
   it('returns jwt_unreadable when JWT parse fails', async () => {
     const { supabase } = mockSupabase(row({ jwt_compact: 'bad.jwt' }));
     const r = await lookupReusableReceipt(
-      { supabase, practitionerId: 'p1', contentHashSha256: 'abc' },
+      { supabase, practitionerId: 'p1', contentHashSha256: 'abc', now: new Date('2026-04-24T00:00:00Z') },
       current,
       loaderFor({}),
     );
@@ -125,7 +125,7 @@ describe('lookupReusableReceipt', () => {
   it('returns valid when version matches exactly', async () => {
     const { supabase } = mockSupabase(row({ jwt_compact: jwtWith({ ruleRegistryVersion: 'v4.3.7' }) }));
     const r = await lookupReusableReceipt(
-      { supabase, practitionerId: 'p1', contentHashSha256: 'abc' },
+      { supabase, practitionerId: 'p1', contentHashSha256: 'abc', now: new Date('2026-04-24T00:00:00Z') },
       current,
       loaderFor({}),
     );
@@ -135,7 +135,7 @@ describe('lookupReusableReceipt', () => {
   it('returns stale_registry when source version cannot be resolved', async () => {
     const { supabase } = mockSupabase(row({ jwt_compact: jwtWith({ ruleRegistryVersion: 'v4.3.5' }) }));
     const r = await lookupReusableReceipt(
-      { supabase, practitionerId: 'p1', contentHashSha256: 'abc' },
+      { supabase, practitionerId: 'p1', contentHashSha256: 'abc', now: new Date('2026-04-24T00:00:00Z') },
       current,
       loaderFor({}),
     );
@@ -149,7 +149,7 @@ describe('lookupReusableReceipt', () => {
     // change only cosmetic wording on the one rule
     old.rules[0].remediationWording = 'old wording';
     const r = await lookupReusableReceipt(
-      { supabase, practitionerId: 'p1', contentHashSha256: 'abc' },
+      { supabase, practitionerId: 'p1', contentHashSha256: 'abc', now: new Date('2026-04-24T00:00:00Z') },
       current,
       loaderFor({ 'v4.3.6': old }),
     );
@@ -161,7 +161,7 @@ describe('lookupReusableReceipt', () => {
     const old = snapshot('v4.3.6');
     old.rules[0].severity = 'P3'; // current is P2, so severity was raised
     const r = await lookupReusableReceipt(
-      { supabase, practitionerId: 'p1', contentHashSha256: 'abc' },
+      { supabase, practitionerId: 'p1', contentHashSha256: 'abc', now: new Date('2026-04-24T00:00:00Z') },
       current,
       loaderFor({ 'v4.3.6': old }),
     );

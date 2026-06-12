@@ -287,7 +287,7 @@ export function NaturopathicPatientView({ patientId, relationship }: Props) {
         >
           Initiate Constitutional Assessment
         </ActionLink>
-        <ActionLink href={`/practitioner/messages?patient=${patientId}`} tone="ghost">
+        <ActionLink href={`/messages?patient=${patientId}`} tone="ghost">
           Send Message
         </ActionLink>
       </div>

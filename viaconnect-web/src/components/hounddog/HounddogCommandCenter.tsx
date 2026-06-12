@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import type { IconType } from '@/types/icon';
 import {
   Target,
   Bell,
@@ -26,7 +27,7 @@ import ResearchTab from './tabs/ResearchTab';
 /* ------------------------------------------------------------------ */
 /*  Icon resolver                                                      */
 /* ------------------------------------------------------------------ */
-const ICON_MAP: Record<string, React.ElementType> = {
+const ICON_MAP: Record<string, IconType> = {
   PenTool,
   Edit3,
   Calendar,
@@ -41,7 +42,7 @@ type TabKey = 'overview' | 'content' | 'create' | 'autoscript' | 'research';
 interface TabDef {
   key: TabKey;
   label: string;
-  icon: React.ElementType;
+  icon: IconType;
 }
 
 const TABS: TabDef[] = [

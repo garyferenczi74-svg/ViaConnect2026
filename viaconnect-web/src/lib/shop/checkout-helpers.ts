@@ -107,11 +107,15 @@ export async function finalizeOrderForSession(
 
         // Phase F5d.5: prefer Stripe-collected shipping fields when present.
         // The customer may have edited the pre-filled address on Stripe's
-        // hosted page; that edit is reflected in session.shipping_details.
+        // hosted page. Sweep 2026-06-12: Stripe 20.x moved this from
+        // session.shipping_details to session.collected_information.
+        // shipping_details; the old field read undefined at runtime, so
+        // customer edits on the hosted page were silently discarded.
         // Fall back to session.metadata.shipping_* (form-collected) for legacy
         // F4-F5d sessions or when shipping_details is absent.
-        const stripeShipping = session.shipping_details?.address ?? null
-        const stripeShippingName = session.shipping_details?.name ?? null
+        const collectedShipping = session.collected_information?.shipping_details ?? null
+        const stripeShipping = collectedShipping?.address ?? null
+        const stripeShippingName = collectedShipping?.name ?? null
         const [stripeFirstName, ...stripeLastNameParts] = (stripeShippingName ?? '').split(/\s+/)
         const stripeLastName = stripeLastNameParts.join(' ') || null
         const customerEmail = session.customer_details?.email ?? null

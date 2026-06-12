@@ -333,7 +333,9 @@ export const TESTIMONIAL_UNSUBSTANTIATED_EXT: Rule<SocialSignalLike> = {
   evaluate: (signal, ctx = defaultCtx()) => {
     if (!signal.productMatches.length) return [];
     const text = signal.content.textDerived ?? "";
-    const outcomeRe = /\b(lost|gained|dropped|reduced|increased|improved|boosted)\s+[\w\s]{3,40}?\s+(?:by|in)\s+\d+\s*(?:lb|lbs|pounds|%|percent|points|units)\b/i;
+    // Sweep 2026-06-12: the second alternative catches number-first outcomes
+    // like "I lost 30 pounds in 60 days" (amount before any time period).
+    const outcomeRe = /\b(lost|gained|dropped|reduced|increased|improved|boosted)\s+(?:[\w\s]{3,40}?\s+(?:by|in)\s+)?\d+\s*(?:lb|lbs|pounds|kg|%|percent|points|units)\b/i;
     if (!outcomeRe.test(text)) return [];
     const qualifier = /(typical results will vary|results may vary|individual results may vary|not typical)/i;
     if (qualifier.test(text)) return [];

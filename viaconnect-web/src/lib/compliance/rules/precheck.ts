@@ -165,8 +165,11 @@ export const AMBIGUOUS_ENDORSEMENT: Rule<PrecheckDraft | string> = {
     if (!mentionsProduct) return [];
     // Trigger: hashtag present but plain-English role not.
     const onlyHashtag = /\#(ad|sponsored|partner|paidpartnership)\b/i.test(text);
+    // Sweep 2026-06-12: allow up to two interleaved words (brand names like
+    // "FarmCeutica certified practitioner") so the rule's own recommended
+    // disclosure sentence passes its own check.
     const plainEnglish =
-      /\b(i am a (?:certified )?practitioner|i work with|paid partnership|compensated|i received)\b/i.test(text);
+      /\b(i am a (?:\w+\s+){0,2}(?:certified\s+)?practitioner|i work with|paid partnership|compensated|i received)\b/i.test(text);
     if (!onlyHashtag || plainEnglish) return [];
     return [
       f(

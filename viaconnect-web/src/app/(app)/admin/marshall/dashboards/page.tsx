@@ -1,4 +1,5 @@
 import { TrendingUp, Gavel, FileWarning, Scale } from "lucide-react";
+import type { IconType } from '@/types/icon';
 import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -72,7 +73,7 @@ export default async function DashboardsPage() {
   );
 }
 
-function Card({ icon: Icon, title, children }: { icon: React.ElementType; title: string; children: React.ReactNode }) {
+function Card({ icon: Icon, title, children }: { icon: IconType; title: string; children: React.ReactNode }) {
   return (
     <div className="bg-[#1E3054] rounded-xl border border-white/[0.08] p-4">
       <div className="flex items-center gap-2 mb-3">

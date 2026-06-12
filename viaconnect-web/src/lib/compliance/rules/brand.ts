@@ -92,7 +92,7 @@ export const BIOAVAILABILITY_RANGE: Rule<string> = {
     const findings: Finding[] = [];
     // Flag any numeric range adjacent to "bioavailable" / "bioavailability"
     // that is NOT the canonical 10-28.
-    const re = /(\d{1,3})\s*(?:to|[-–—])\s*(\d{1,3})\s*[×x]?\s*(?:more\s+)?(?:bioavailab(?:le|ility))/gi;
+    const re = /(\d{1,3})\s*(?:to|[-–—])\s*(\d{1,3})\s*(?:times\s+)?[×x]?\s*(?:more\s+)?(?:bioavailab(?:le|ility))/gi;
     let m: RegExpExecArray | null;
     while ((m = re.exec(text)) !== null) {
       const low = Number(m[1]);
@@ -120,7 +120,7 @@ export const BIOAVAILABILITY_RANGE: Rule<string> = {
   autoRemediate: async (text) => {
     if (typeof text !== "string") return text;
     return text.replace(
-      /(\d{1,3})\s*(?:to|[-–—])\s*(\d{1,3})\s*([×x]?)\s*((?:more\s+)?(?:bioavailab(?:le|ility)))/gi,
+      /(\d{1,3})\s*(?:to|[-–—])\s*(\d{1,3})\s*(?:times\s+)?([×x]?)\s*((?:more\s+)?(?:bioavailab(?:le|ility)))/gi,
       (_full, _a, _b, _x, tail) => `10-28× ${tail}`,
     );
   },

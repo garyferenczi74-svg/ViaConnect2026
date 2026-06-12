@@ -38,7 +38,7 @@ describe('PILL_ROUTES table', () => {
   it('uses verified consumer routes', () => {
     // Routes verified to exist on disk on 2026-05-12 (see module doc).
     expect(PILL_ROUTES.caq_resume).toBe('/onboarding/i-caq-intro');
-    expect(PILL_ROUTES.labs_upload).toBe('/plugins/labs');
+    expect(PILL_ROUTES.labs_upload).toBe('/genetics#upload-lab-results');
     expect(PILL_ROUTES.genex360_purchase).toBe('/shop/genex360');
     expect(PILL_ROUTES.genex360_status).toBe('/genetics');
     expect(PILL_ROUTES.nutrition_log).toBe('/nutrition/photo-ai');

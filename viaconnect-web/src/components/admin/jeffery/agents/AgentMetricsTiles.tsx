@@ -1,4 +1,5 @@
 import { CheckCircle2, AlertOctagon, Timer, Cpu } from "lucide-react";
+import type { IconType } from '@/types/icon';
 import AgentSparkline from "./AgentSparkline";
 import type { AgentCurrentTask } from "@/lib/agents/types";
 
@@ -45,7 +46,7 @@ function Tile({
   spark,
   tone,
 }: {
-  icon: React.ElementType;
+  icon: IconType;
   label: string;
   value: number | string;
   spark?: number[];

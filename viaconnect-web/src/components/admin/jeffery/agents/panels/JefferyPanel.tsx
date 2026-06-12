@@ -1,4 +1,5 @@
 import { GitBranch, Sparkles, ShieldAlert } from "lucide-react";
+import type { IconType } from '@/types/icon';
 import AgentCurrentTaskCard from "../AgentCurrentTaskCard";
 import AgentTaskQueueList from "../AgentTaskQueueList";
 import AgentActivityFeed from "../AgentActivityFeed";
@@ -32,7 +33,7 @@ export default function JefferyPanel({ tasks, events }: AgentPanelProps) {
   );
 }
 
-function Widget({ icon: Icon, title, value, subline }: { icon: React.ElementType; title: string; value: string; subline: string }) {
+function Widget({ icon: Icon, title, value, subline }: { icon: IconType; title: string; value: string; subline: string }) {
   return (
     <div className="bg-[#1E3054] rounded-xl border border-white/[0.08] p-3">
       <div className="flex items-center gap-2">

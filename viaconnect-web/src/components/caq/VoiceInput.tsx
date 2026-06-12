@@ -8,27 +8,10 @@ interface VoiceInputProps {
   onTranscript: (text: string) => void;
 }
 
-declare global {
-  interface Window {
-    SpeechRecognition?: new () => SpeechRecognition;
-    webkitSpeechRecognition?: new () => SpeechRecognition;
-  }
-}
-
-interface SpeechRecognition extends EventTarget {
-  continuous: boolean;
-  interimResults: boolean;
-  lang: string;
-  start(): void;
-  stop(): void;
-  onresult: ((event: SpeechRecognitionEvent) => void) | null;
-  onerror: ((event: Event) => void) | null;
-  onend: (() => void) | null;
-}
-
-interface SpeechRecognitionEvent extends Event {
-  results: { [index: number]: { [index: number]: { transcript: string } } };
-}
+// Sweep 2026-06-12: the local SpeechRecognition declarations were removed.
+// They conflicted with the ambient shim in src/types/speech-recognition.d.ts
+// once that file became ambient again (its stray export had kept it module
+// scoped, masking the duplicate). The shim covers everything used here.
 
 export function VoiceInput({ onTranscript }: VoiceInputProps) {
   const [listening, setListening] = useState(false);

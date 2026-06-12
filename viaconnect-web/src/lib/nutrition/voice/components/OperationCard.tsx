@@ -16,7 +16,7 @@ import {
   Undo2,
   X,
 } from 'lucide-react';
-import type { ComponentType } from 'react';
+import type { LucideIcon } from 'lucide-react';
 import { readMediumConfidenceThreshold } from '../feature-flags';
 import { computeCumulativeImpact, formatImpactPreview } from '../apply/macro-impact';
 import type { OperationKind, VoiceOperation } from '../types';
@@ -27,9 +27,7 @@ interface OperationCardProps {
   onToggleReject: () => void;
 }
 
-type IconCmp = ComponentType<{ size?: number; strokeWidth?: number; className?: string }>;
-
-const ICON_BY_KIND: Record<OperationKind, IconCmp> = {
+const ICON_BY_KIND: Record<OperationKind, LucideIcon> = {
   add_item: Plus,
   remove_item: Minus,
   modify_item_portion: Edit3,

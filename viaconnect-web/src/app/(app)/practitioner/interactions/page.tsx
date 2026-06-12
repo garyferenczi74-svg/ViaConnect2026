@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import type { IconType } from '@/types/icon';
 import {
   Pill,
   FlaskConical,
@@ -58,7 +59,7 @@ const INTERACTION_DB: Record<string, InteractionDetail> = {
       "NAD+ precursors (NMN/NR) may potentiate anticoagulant activity via modulation of SIRT1-mediated platelet aggregation pathways.",
     recommendation:
       "Monitor INR weekly for the first month. Consider dose adjustment if INR exceeds therapeutic range.",
-    evidence: "Level C — Case reports and pharmacologic rationale",
+    evidence: "Level C: Case reports and pharmacologic rationale",
   },
   "Warfarin::MTHFR+": {
     severity: "moderate",
@@ -66,7 +67,7 @@ const INTERACTION_DB: Record<string, InteractionDetail> = {
       "Methylfolate in MTHFR+ may reduce warfarin efficacy by increasing vitamin K-dependent clotting factor synthesis via one-carbon metabolism.",
     recommendation:
       "Monitor INR closely. Maintain consistent folate intake. Do not abruptly start or stop supplementation.",
-    evidence: "Level B — Observational studies",
+    evidence: "Level B: Observational studies",
   },
   "Sertraline::CBD Oil": {
     severity: "moderate",
@@ -74,7 +75,7 @@ const INTERACTION_DB: Record<string, InteractionDetail> = {
       "CBD inhibits CYP3A4 and CYP2C19, the primary enzymes metabolizing sertraline. May increase sertraline plasma levels by 20-40%.",
     recommendation:
       "Start CBD at low dose. Monitor for serotonergic side effects (agitation, tremor, diarrhea). Consider sertraline dose reduction.",
-    evidence: "Level B — Pharmacokinetic studies",
+    evidence: "Level B: Pharmacokinetic studies",
   },
   "Metformin::BLAST+": {
     severity: "major",
@@ -82,7 +83,7 @@ const INTERACTION_DB: Record<string, InteractionDetail> = {
       "BLAST+ contains berberine which has additive hypoglycemic effects with metformin via AMPK activation. Risk of severe hypoglycemia.",
     recommendation:
       "Avoid concurrent use or reduce metformin dose by 50%. Monitor blood glucose daily. Educate patient on hypoglycemia symptoms.",
-    evidence: "Level B — Clinical trials with berberine",
+    evidence: "Level B: Clinical trials with berberine",
   },
   "Omeprazole::MTHFR+": {
     severity: "moderate",
@@ -90,7 +91,7 @@ const INTERACTION_DB: Record<string, InteractionDetail> = {
       "Omeprazole reduces B12 absorption via gastric acid suppression. MTHFR+ contains methylcobalamin which may partially compensate, but timing of administration matters.",
     recommendation:
       "Take MTHFR+ at least 2 hours apart from omeprazole. Monitor B12 levels annually.",
-    evidence: "Level B — Pharmacokinetic interaction",
+    evidence: "Level B: Pharmacokinetic interaction",
   },
   "Levothyroxine::Vitamin D3": {
     severity: "moderate",
@@ -98,7 +99,7 @@ const INTERACTION_DB: Record<string, InteractionDetail> = {
       "Calcium in Vitamin D3 formulations may chelate levothyroxine in the GI tract, reducing absorption by up to 40%.",
     recommendation:
       "Separate administration by at least 4 hours. Take levothyroxine on an empty stomach 30-60 minutes before any supplement.",
-    evidence: "Level A — Well-established interaction",
+    evidence: "Level A: Well-established interaction",
   },
   "Atorvastatin::CBD Oil": {
     severity: "major",
@@ -106,7 +107,7 @@ const INTERACTION_DB: Record<string, InteractionDetail> = {
       "CBD is a potent inhibitor of CYP3A4, the primary enzyme responsible for atorvastatin metabolism. May increase statin levels 2-3x, raising rhabdomyolysis risk.",
     recommendation:
       "Avoid combination or use lowest statin dose with close CK monitoring. Consider pravastatin (CYP-independent) as alternative.",
-    evidence: "Level B — In vitro and pharmacokinetic data",
+    evidence: "Level B: In vitro and pharmacokinetic data",
   },
   "Metoprolol::SHRED+": {
     severity: "critical",
@@ -114,7 +115,7 @@ const INTERACTION_DB: Record<string, InteractionDetail> = {
       "SHRED+ contains synephrine and caffeine which have sympathomimetic activity directly opposing beta-blocker therapy. Risk of hypertensive crisis.",
     recommendation:
       "Contraindicated. Do not co-administer. Discontinue SHRED+ or consult cardiologist for alternative thermogenic approach.",
-    evidence: "Level A — Established pharmacologic antagonism",
+    evidence: "Level A: Established pharmacologic antagonism",
   },
 };
 
@@ -125,14 +126,14 @@ function getInteraction(med: string, supp: string): InteractionDetail {
       severity: "none",
       mechanism: "No known pharmacological interaction identified in current databases.",
       recommendation: "Standard monitoring. No dosage adjustment required.",
-      evidence: "No interaction data — considered safe based on available literature",
+      evidence: "No interaction data, considered safe based on available literature",
     }
   );
 }
 
 const SEVERITY_CONFIG: Record<
   Severity,
-  { label: string; color: string; bgClass: string; borderClass: string; icon: React.ElementType }
+  { label: string; color: string; bgClass: string; borderClass: string; icon: IconType }
 > = {
   critical: {
     label: "Critical",
@@ -288,7 +289,7 @@ export default function InteractionsPage() {
     <PageTransition className="min-h-screen bg-dark-bg p-6 md:p-10">
       <div className="max-w-7xl mx-auto space-y-6">
 
-        {/* Unified Interaction Engine — Patient interactions from DB */}
+        {/* Unified Interaction Engine: Patient interactions from DB */}
         <Card className="p-6" hover={false}>
           <InteractionEngine mode="practitioner" userId="" />
         </Card>
@@ -309,7 +310,7 @@ export default function InteractionsPage() {
 
         {/* Two-column input */}
         <StaggerChild className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Left — Medications */}
+          {/* Left: Medications */}
           <Card className="p-6 space-y-4">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-lg bg-portal-purple/15 flex items-center justify-center">
@@ -374,7 +375,7 @@ export default function InteractionsPage() {
             </div>
           </Card>
 
-          {/* Right — Supplements */}
+          {/* Right: Supplements */}
           <Card className="p-6 space-y-4">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-lg bg-portal-green/15 flex items-center justify-center">

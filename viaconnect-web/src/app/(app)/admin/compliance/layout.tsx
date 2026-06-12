@@ -1,4 +1,4 @@
-// Prompt #113 — Admin compliance section layout + role gate.
+// Prompt #113: Admin compliance section layout + role gate.
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
@@ -18,7 +18,6 @@ export default async function Layout({ children }: { children: React.ReactNode }
     { href: "/admin/compliance/ingredients", label: "Ingredients", icon: Beaker },
     { href: "/admin/compliance/claims",      label: "Claims",      icon: BookMarked },
     { href: "/admin/compliance/alerts",      label: "Alerts",      icon: BellRing },
-    { href: "/admin/compliance/canada",      label: "Canada",      icon: Globe2 },
     { href: "/admin/compliance/audit",       label: "Audit",       icon: ScrollText },
     { href: "/admin/compliance/ask-kelsey",  label: "Ask Kelsey",  icon: MessageSquare },
   ];

@@ -50,4 +50,6 @@ interface Window {
   webkitSpeechRecognition?: typeof SpeechRecognition;
 }
 
-export {};
+// Sweep 2026-06-12: the trailing export {} made this file a MODULE, which
+// scoped every declaration locally and left SpeechRecognition unresolvable
+// everywhere (10 tsc errors). A .d.ts must stay ambient: no export.

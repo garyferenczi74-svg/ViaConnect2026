@@ -1,4 +1,5 @@
 import { TrendingUp, TrendingDown } from "lucide-react";
+import type { IconType } from '@/types/icon';
 
 export function StatCard({
   icon: Icon,
@@ -8,7 +9,7 @@ export function StatCard({
   trendLabel,
   className = "",
 }: {
-  icon: React.ElementType;
+  icon: IconType;
   label: string;
   value: string | number;
   trend?: "up" | "down";

@@ -1,5 +1,6 @@
 'use client';
 
+import type { IconType } from '@/types/icon';
 import React from 'react';
 import { motion } from 'framer-motion';
 import { HelixIcon } from './HelixIcon';
@@ -20,7 +21,7 @@ import {
 /*  Icon lookup                                                        */
 /* ------------------------------------------------------------------ */
 
-const CHALLENGE_ICONS: Record<string, React.ElementType> = {
+const CHALLENGE_ICONS: Record<string, IconType> = {
   steps: Footprints,
   supplements: Pill,
   nutrition: Salad,

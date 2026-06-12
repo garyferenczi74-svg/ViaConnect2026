@@ -180,11 +180,10 @@ async function captureNative(
 ): Promise<CaptureResult> {
   let mod: unknown;
   try {
-    // @capacitor/camera is an optional native plugin. When the sandbox or web
-    // build has not installed it the dynamic import rejects and we surface a
-    // CaptureUnsupportedError. TS cannot statically resolve the specifier
-    // because the package may be absent from node_modules at typecheck time.
-    // @ts-expect-error optional native plugin; resolved at runtime when bundled.
+    // @capacitor/camera is an optional native plugin. When a build has not
+    // installed it the dynamic import rejects at runtime and we surface a
+    // CaptureUnsupportedError. The package is currently installed, so the
+    // specifier typechecks (sweep 2026-06-12 removed a stale expect-error).
     mod = await import('@capacitor/camera');
   } catch {
     throw new CaptureUnsupportedError('Capacitor camera plugin not bundled');

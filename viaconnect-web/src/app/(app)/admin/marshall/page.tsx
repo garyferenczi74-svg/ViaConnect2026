@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { IconType } from '@/types/icon';
 import { ShieldCheck, Gavel, Scale, FileWarning, ClipboardCheck, Database, Users, AlertOctagon, TrendingUp, BookOpen, FileText, Radio, Eye, Package } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import MarshallBulletinBoard from "@/components/compliance/MarshallBulletinBoard";
@@ -87,7 +88,7 @@ export default async function MarshallLandingPage() {
   );
 }
 
-function StatCard({ label, value, tone, icon: Icon }: { label: string; value: number; tone: "red" | "orange" | "amber" | "blue"; icon: React.ElementType }) {
+function StatCard({ label, value, tone, icon: Icon }: { label: string; value: number; tone: "red" | "orange" | "amber" | "blue"; icon: IconType }) {
   const toneClass = {
     red: "text-red-400 bg-red-500/10 border-red-500/20",
     orange: "text-orange-400 bg-orange-500/10 border-orange-500/20",

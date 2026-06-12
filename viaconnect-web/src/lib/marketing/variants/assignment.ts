@@ -21,7 +21,7 @@ export interface AssignVariantArgs {
 
 /**
  * Returns the slot_id assigned to the visitor for this test, or null when
- * no variants are active. Deterministic — calling repeatedly with the same
+ * no variants are active. Deterministic: calling repeatedly with the same
  * inputs returns the same result.
  */
 export async function assignVariant(args: AssignVariantArgs): Promise<string | null> {
@@ -42,10 +42,11 @@ export async function hashIndex(input: string, bucketCount: number): Promise<num
   const buf = enc.encode(input);
   const digest = await crypto.subtle.digest("SHA-256", buf);
   const bytes = new Uint8Array(digest);
-  // Big-endian unsigned 64-bit integer from first 8 bytes.
-  let n = 0n;
+  // Big-endian unsigned 64-bit integer from first 8 bytes. BigInt() calls
+  // instead of literals: tsconfig targets below ES2020 (sweep 2026-06-12).
+  let n = BigInt(0);
   for (let i = 0; i < 8; i += 1) {
-    n = (n << 8n) | BigInt(bytes[i]);
+    n = (n << BigInt(8)) | BigInt(bytes[i]);
   }
   return Number(n % BigInt(bucketCount));
 }

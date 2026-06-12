@@ -73,7 +73,7 @@ describe('AnalysisResult wires the picker', () => {
     // box. The picker label still renders above the MealCard mount, which
     // is the source of 'Meal totals' in the rendered DOM.
     const mealTypeIdx = source.indexOf('Meal type');
-    const mealCardMountIdx = source.indexOf('<MealCard');
+    const mealCardMountIdx = source.indexOf('data-meal-card-anchor');
     expect(mealTypeIdx).toBeGreaterThan(-1);
     expect(mealCardMountIdx).toBeGreaterThan(-1);
     expect(mealTypeIdx).toBeLessThan(mealCardMountIdx);

@@ -1,4 +1,4 @@
-// Prompt #111 — International admin overview.
+// Prompt #111: International admin overview.
 // Counts across pricing + availability + tax + drift + audit tables.
 
 import { createClient } from "@/lib/supabase/server";
@@ -7,7 +7,7 @@ import Link from "next/link";
 async function counts() {
   const sb = createClient();
   const c = async (table: string, filter?: (q: ReturnType<typeof sb.from>) => ReturnType<typeof sb.from>) => {
-    let q: ReturnType<typeof sb.from> = sb.from(table);
+    let q: ReturnType<typeof sb.from> = sb.from(table as Parameters<typeof sb.from>[0]);
     if (filter) q = filter(q);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const r = await (q as any).select("*", { count: "exact", head: true });

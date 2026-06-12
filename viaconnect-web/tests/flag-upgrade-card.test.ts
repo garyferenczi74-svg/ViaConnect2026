@@ -65,9 +65,11 @@ describe('upgradePromptCopyForReason', () => {
     expect(copy.cta?.href).toBe('/shop/genex360');
   });
 
-  it('opt_in_not_granted routes to account early-access settings', () => {
+  it('opt_in_not_granted routes to the pricing page', () => {
+    // Sweep 2026-06-12: /account/early-access never existed as a route; the
+    // copy now sends users to /pricing, where plan changes actually live.
     const copy = upgradePromptCopyForReason({ reason: 'opt_in_not_granted' });
-    expect(copy.cta?.href).toBe('/account/early-access');
+    expect(copy.cta?.href).toBe('/pricing');
   });
 
   it('launch_phase_not_active has no CTA (users cannot self-advance a phase)', () => {

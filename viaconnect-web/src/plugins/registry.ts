@@ -4,7 +4,7 @@ import { nihDSLDPlugin } from './core/nihDSLD';
 import { openFoodFactsPlugin } from './core/openFoodFacts';
 import { farmceuticaPeptidesPlugin } from './core/farmceuticaPeptides';
 
-// All registered plugins — core + future
+// All registered plugins: core + future
 const ALL_PLUGINS: SupplementPlugin[] = [
   farmceuticaCachePlugin,
   nihDSLDPlugin,
@@ -27,7 +27,7 @@ export function createPluginRegistry(): PluginRegistry {
     plugins: ALL_PLUGINS,
 
     getEnabled(portal: string) {
-      return ALL_PLUGINS.filter(p => p.enabled && p.portals.includes(portal as any));
+      return ALL_PLUGINS.filter(p => p.enabled && (p.portals as readonly string[]).includes(portal));
     },
 
     getByCapability(capability: string) {
@@ -48,7 +48,6 @@ export function createPluginRegistry(): PluginRegistry {
         try {
           const result = await plugin.lookupBarcode(upc);
           if (result && result.brand) {
-            console.log(`[plugin-registry] Barcode ${upc} found via ${plugin.name}`);
             return result;
           }
         } catch (err) {
@@ -56,7 +55,6 @@ export function createPluginRegistry(): PluginRegistry {
         }
       }
 
-      console.log(`[plugin-registry] Barcode ${upc} not found in any plugin`);
       return null;
     },
 

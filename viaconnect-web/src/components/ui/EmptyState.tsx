@@ -1,4 +1,5 @@
 import { Button } from "./Button";
+import type { IconType } from '@/types/icon';
 
 export function EmptyState({
   icon: Icon,
@@ -8,7 +9,7 @@ export function EmptyState({
   onAction,
   className = "",
 }: {
-  icon: React.ElementType;
+  icon: IconType;
   title: string;
   description: string;
   actionLabel?: string;

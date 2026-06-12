@@ -1,15 +1,18 @@
 "use client";
 
-// Prompt #112 — Browser push permission + subscription flow.
+// Prompt #112: Browser push permission + subscription flow.
 
 import { useEffect, useState } from "react";
 import { Smartphone } from "lucide-react";
 
-function urlBase64ToUint8Array(b64: string): Uint8Array {
+// Sweep 2026-06-12: return type pinned to Uint8Array<ArrayBuffer> so the
+// value satisfies BufferSource under TS 5.9 typed-array generics (the
+// constructor over a number length always allocates a plain ArrayBuffer).
+function urlBase64ToUint8Array(b64: string): Uint8Array<ArrayBuffer> {
   const padding = "=".repeat((4 - (b64.length % 4)) % 4);
   const base64 = (b64 + padding).replace(/-/g, "+").replace(/_/g, "/");
   const raw = typeof window !== "undefined" ? window.atob(base64) : "";
-  const out = new Uint8Array(raw.length);
+  const out = new Uint8Array(new ArrayBuffer(raw.length));
   for (let i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
   return out;
 }

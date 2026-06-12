@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import type { IconType } from '@/types/icon';
 import {
   Pill,
   Leaf,
@@ -71,7 +72,7 @@ const INTERACTION_DB: Record<string, InteractionDetail> = {
       "Ginkgo inhibits platelet-activating factor (PAF), potentiating anticoagulant effects. Increases bleeding risk, including intracranial hemorrhage.",
     recommendation:
       "Avoid combination. If patient insists, reduce ginkgo dose to <120mg/day and monitor INR weekly.",
-    evidence: "Level A — Multiple case reports and pharmacologic studies",
+    evidence: "Level A: Multiple case reports and pharmacologic studies",
   },
   "Warfarin::St. John's Wort": {
     severity: "critical",
@@ -79,7 +80,7 @@ const INTERACTION_DB: Record<string, InteractionDetail> = {
       "St. John's Wort is a potent CYP3A4 and CYP2C9 inducer, dramatically reducing warfarin plasma levels. INR can drop below therapeutic range within 5-7 days.",
     recommendation:
       "Contraindicated. Do not co-administer. If SJW is discontinued, warfarin dose will need reduction as INR rebounds.",
-    evidence: "Level A — Well-established, multiple clinical studies",
+    evidence: "Level A: Well-established, multiple clinical studies",
   },
   "Warfarin::Turmeric / Curcumin": {
     severity: "moderate",
@@ -87,7 +88,7 @@ const INTERACTION_DB: Record<string, InteractionDetail> = {
       "Curcumin has mild antiplatelet activity and may inhibit CYP2C9. Additive bleeding risk when combined with warfarin.",
     recommendation:
       "Use with caution. Monitor INR more frequently. Consider Boswellia as anti-inflammatory alternative.",
-    evidence: "Level B — Pharmacokinetic data and case reports",
+    evidence: "Level B: Pharmacokinetic data and case reports",
   },
   "Warfarin::MTHFR+": {
     severity: "moderate",
@@ -95,7 +96,7 @@ const INTERACTION_DB: Record<string, InteractionDetail> = {
       "Methylfolate in MTHFR+ may reduce warfarin efficacy by increasing vitamin K-dependent clotting factor synthesis via one-carbon metabolism.",
     recommendation:
       "Monitor INR closely. Maintain consistent folate intake. Do not abruptly start or stop supplementation.",
-    evidence: "Level B — Observational studies",
+    evidence: "Level B: Observational studies",
   },
   "Sertraline::St. John's Wort": {
     severity: "critical",
@@ -103,7 +104,7 @@ const INTERACTION_DB: Record<string, InteractionDetail> = {
       "St. John's Wort increases serotonin reuptake inhibition, creating additive serotonergic effects. High risk of serotonin syndrome (hyperthermia, agitation, clonus, tremor).",
     recommendation:
       "Contraindicated. Never combine SSRIs with St. John's Wort. Allow 2-week washout if switching.",
-    evidence: "Level A — Established, FDA warning",
+    evidence: "Level A: Established, FDA warning",
   },
   "Sertraline::Kava Kava": {
     severity: "major",
@@ -111,15 +112,15 @@ const INTERACTION_DB: Record<string, InteractionDetail> = {
       "Kava inhibits CYP2D6 and CYP3A4, potentially increasing sertraline plasma levels. Additive CNS depression and hepatotoxicity risk.",
     recommendation:
       "Avoid combination. If anxiolytic botanical needed, consider Passionflower or L-Theanine as safer alternatives.",
-    evidence: "Level B — Pharmacokinetic data",
+    evidence: "Level B: Pharmacokinetic data",
   },
   "Fluoxetine::St. John's Wort": {
     severity: "critical",
     mechanism:
-      "Same mechanism as sertraline — serotonin syndrome risk. Fluoxetine has a longer half-life (4-6 days), increasing risk window.",
+      "Same mechanism as sertraline, serotonin syndrome risk. Fluoxetine has a longer half-life (4-6 days), increasing risk window.",
     recommendation:
       "Contraindicated. Allow 5-week washout (due to norfluoxetine) before starting SJW.",
-    evidence: "Level A — FDA black box interaction",
+    evidence: "Level A: FDA black box interaction",
   },
   "Levothyroxine::Ashwagandha (KSM-66)": {
     severity: "moderate",
@@ -127,7 +128,7 @@ const INTERACTION_DB: Record<string, InteractionDetail> = {
       "Ashwagandha may increase thyroid hormone production (T3, T4) via TSH modulation. Additive effect with levothyroxine could cause hyperthyroid symptoms.",
     recommendation:
       "Monitor TSH every 6-8 weeks after initiation. May need levothyroxine dose reduction. Watch for palpitations, anxiety, weight loss.",
-    evidence: "Level B — Clinical trial data (Sharma et al., 2018)",
+    evidence: "Level B: Clinical trial data (Sharma et al., 2018)",
   },
   "Metformin::Milk Thistle": {
     severity: "moderate",
@@ -135,7 +136,7 @@ const INTERACTION_DB: Record<string, InteractionDetail> = {
       "Silymarin in Milk Thistle has hypoglycemic effects via AMPK activation, similar to metformin. Additive blood glucose lowering.",
     recommendation:
       "Monitor blood glucose more frequently. May need metformin dose adjustment. Beneficial interaction if managed properly.",
-    evidence: "Level B — Clinical trials with silymarin",
+    evidence: "Level B: Clinical trials with silymarin",
   },
   "Metoprolol::Rhodiola Rosea": {
     severity: "moderate",
@@ -143,7 +144,7 @@ const INTERACTION_DB: Record<string, InteractionDetail> = {
       "Rhodiola may have mild stimulant and cardiotonic effects, partially counteracting beta-blocker therapy. Effects are dose-dependent.",
     recommendation:
       "Use low-dose Rhodiola (100-200mg). Monitor heart rate and blood pressure. Consider Ashwagandha as adaptogenic alternative.",
-    evidence: "Level C — Pharmacologic rationale and limited clinical data",
+    evidence: "Level C: Pharmacologic rationale and limited clinical data",
   },
   "Atorvastatin::St. John's Wort": {
     severity: "major",
@@ -151,7 +152,7 @@ const INTERACTION_DB: Record<string, InteractionDetail> = {
       "SJW induces CYP3A4, reducing statin plasma levels by up to 50%. Significant loss of lipid-lowering efficacy.",
     recommendation:
       "Avoid combination. If mood support needed, consider SAMe or Rhodiola which do not induce CYP3A4.",
-    evidence: "Level A — Pharmacokinetic studies",
+    evidence: "Level A: Pharmacokinetic studies",
   },
   "Omeprazole::Turmeric / Curcumin": {
     severity: "moderate",
@@ -159,7 +160,7 @@ const INTERACTION_DB: Record<string, InteractionDetail> = {
       "Curcumin may increase gastric acid secretion, potentially counteracting PPI therapy. Also competes for CYP2C19 metabolism.",
     recommendation:
       "Separate administration by 2 hours. Monitor GERD symptoms. Consider Boswellia for anti-inflammatory needs.",
-    evidence: "Level C — Pharmacologic rationale",
+    evidence: "Level C: Pharmacologic rationale",
   },
   "Prednisone::Echinacea": {
     severity: "major",
@@ -167,7 +168,7 @@ const INTERACTION_DB: Record<string, InteractionDetail> = {
       "Echinacea is an immunostimulant that directly opposes the immunosuppressive mechanism of prednisone. May reduce corticosteroid efficacy.",
     recommendation:
       "Avoid in patients on immunosuppressive-dose corticosteroids. Safe with short-course low-dose prednisone (<10mg).",
-    evidence: "Level B — Pharmacologic antagonism with clinical rationale",
+    evidence: "Level B: Pharmacologic antagonism with clinical rationale",
   },
   "Prednisone::Ashwagandha (KSM-66)": {
     severity: "moderate",
@@ -175,7 +176,7 @@ const INTERACTION_DB: Record<string, InteractionDetail> = {
       "Ashwagandha has immunomodulatory effects. May partially oppose immunosuppression but also helps mitigate cortisol-related side effects.",
     recommendation:
       "Acceptable at low steroid doses. Avoid if prednisone >20mg/day for immunosuppression. Monitor inflammatory markers.",
-    evidence: "Level C — Mixed clinical evidence",
+    evidence: "Level C: Mixed clinical evidence",
   },
   "Metoprolol::CALM+": {
     severity: "moderate",
@@ -183,7 +184,7 @@ const INTERACTION_DB: Record<string, InteractionDetail> = {
       "CALM+ contains Ashwagandha and L-Theanine which may have additive hypotensive and bradycardic effects with beta-blockers.",
     recommendation:
       "Start CALM+ at half dose. Monitor blood pressure and heart rate for 2 weeks. Generally well-tolerated combination.",
-    evidence: "Level C — Pharmacologic rationale",
+    evidence: "Level C: Pharmacologic rationale",
   },
 };
 
@@ -194,14 +195,14 @@ function getInteraction(med: string, herb: string): InteractionDetail {
       severity: "none",
       mechanism: "No known pharmacological interaction identified in current botanical and drug databases.",
       recommendation: "Standard monitoring. No dosage adjustment required.",
-      evidence: "No interaction data — considered safe based on available literature",
+      evidence: "No interaction data, considered safe based on available literature",
     }
   );
 }
 
 const SEVERITY_CONFIG: Record<
   Severity,
-  { label: string; color: string; bgClass: string; borderClass: string; icon: React.ElementType }
+  { label: string; color: string; bgClass: string; borderClass: string; icon: IconType }
 > = {
   critical: {
     label: "Critical",
@@ -239,7 +240,7 @@ const HERB_HERB_CAUTIONS = [
   {
     herbs: "St. John's Wort + Kava Kava",
     risk: "major" as Severity,
-    note: "Both hepatotoxic — combined liver stress. Avoid pairing.",
+    note: "Both hepatotoxic, combined liver stress. Avoid pairing.",
   },
   {
     herbs: "Valerian + Kava Kava",
@@ -254,7 +255,7 @@ const HERB_HERB_CAUTIONS = [
   {
     herbs: "Ashwagandha + Rhodiola",
     risk: "none" as Severity,
-    note: "Complementary adaptogens. Safe to combine — Ashwagandha calming, Rhodiola stimulating.",
+    note: "Complementary adaptogens. Safe to combine: Ashwagandha calming, Rhodiola stimulating.",
   },
   {
     herbs: "Echinacea + Ashwagandha",
@@ -313,7 +314,7 @@ export default function NaturopathInteractionsPage() {
     <PageTransition className="min-h-screen bg-dark-bg p-4 sm:p-6 md:p-10">
       <div className="max-w-7xl mx-auto space-y-6">
 
-        {/* Unified Interaction Engine — Patient interactions from DB */}
+        {/* Unified Interaction Engine: Patient interactions from DB */}
         <Card className="p-6" hover={false}>
           <InteractionEngine mode="naturopath" userId="" />
         </Card>
@@ -334,7 +335,7 @@ export default function NaturopathInteractionsPage() {
 
         {/* Two-column input */}
         <StaggerChild className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Left — Medications */}
+          {/* Left: Medications */}
           <Card className="p-4 sm:p-6 space-y-4">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-lg bg-portal-purple/15 flex items-center justify-center">
@@ -373,7 +374,7 @@ export default function NaturopathInteractionsPage() {
             </div>
           </Card>
 
-          {/* Right — Herbs & Botanicals */}
+          {/* Right: Herbs & Botanicals */}
           <Card className="p-4 sm:p-6 space-y-4">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-lg bg-sage/15 flex items-center justify-center">

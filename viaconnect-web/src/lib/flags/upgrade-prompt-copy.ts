@@ -89,7 +89,7 @@ export function upgradePromptCopyForReason(params: {
         icon: Clock,
         heading: 'Opt-in required',
         description: 'Turn on early access to try this feature.',
-        cta: { label: 'Manage early access', href: '/account/early-access' },
+        cta: { label: 'See plans', href: '/pricing' },
       };
     case 'kill_switch_engaged':
     case 'feature_not_active':

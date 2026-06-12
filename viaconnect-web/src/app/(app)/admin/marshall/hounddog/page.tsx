@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { IconType } from '@/types/icon';
 import { Radio, Gavel, Radar, ClipboardCheck, Users, Package, ShieldCheck, AlertOctagon } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 
@@ -77,7 +78,7 @@ export default async function HounddogBridgeLanding() {
   );
 }
 
-function Stat({ label, value, icon: Icon }: { label: string; value: number; icon: React.ElementType }) {
+function Stat({ label, value, icon: Icon }: { label: string; value: number; icon: IconType }) {
   return (
     <div className="bg-[#1E3054] rounded-xl border border-white/[0.08] p-3">
       <div className="flex items-center gap-2 mb-1">

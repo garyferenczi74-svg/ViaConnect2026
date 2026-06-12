@@ -3,6 +3,7 @@
 import React from 'react';
 import { Loader } from 'lucide-react';
 import { C } from '@/lib/hounddog/constants';
+import type { IconType } from '@/types/icon';
 
 type BtnVariant = 'primary' | 'orange' | 'green' | 'ghost' | 'danger';
 
@@ -12,7 +13,7 @@ interface BtnProps {
   onClick?: () => void;
   loading?: boolean;
   className?: string;
-  icon?: React.ElementType;
+  icon?: IconType;
 }
 
 const variantStyles: Record<BtnVariant, React.CSSProperties> = {

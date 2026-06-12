@@ -289,7 +289,7 @@ describe('computeBOS happy path', () => {
   it('breakdown._compute_meta.prompt_version is hannah.bos.v2.0.1', async () => {
     const result = await computeBOS('00000000-0000-0000-0000-000000000001', trigger());
     const meta = (result.breakdown as { _compute_meta: { prompt_version: string } })._compute_meta;
-    expect(meta.prompt_version).toBe('hannah.bos.v2.0.1');
+    expect(meta.prompt_version).toBe('hannah.bos.v2.1.0');
   });
 
   // #161c Item 11: BOSBreakdownJSONB widened to its 7-key canonical shape.
@@ -297,7 +297,7 @@ describe('computeBOS happy path', () => {
   // reads from /api/bos/current.
   it('persisted breakdown has all 7 canonical keys', async () => {
     const result = await computeBOS('00000000-0000-0000-0000-000000000001', trigger());
-    const breakdown = result.breakdown as Record<string, unknown>;
+    const breakdown = result.breakdown as unknown as Record<string, unknown>;
     expect(breakdown).toHaveProperty('diagnostic_foundation');
     expect(breakdown).toHaveProperty('engagement_state');
     expect(breakdown).toHaveProperty('hannah_output');

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import type { IconType } from '@/types/icon';
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
@@ -604,7 +605,7 @@ export default function AnalyticsPage() {
       };
     });
 
-    // Streak — consecutive days with at least one log
+    // Streak: consecutive days with at least one log
     let streak = 0;
     const d = new Date(now);
     for (let i = 0; i < 90; i++) {
@@ -927,7 +928,7 @@ export default function AnalyticsPage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {(["morning", "noon", "evening", "bedtime"] as const).map((tod) => {
               const items = (protocol ?? []).filter((p) => p.time_of_day === tod);
-              const icons: Record<string, { icon: React.ElementType; color: string }> = {
+              const icons: Record<string, { icon: IconType; color: string }> = {
                 morning: { icon: Zap, color: "text-portal-yellow" },
                 noon: { icon: Activity, color: "text-cyan" },
                 evening: { icon: Moon, color: "text-plum" },

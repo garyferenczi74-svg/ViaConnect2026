@@ -89,7 +89,7 @@ describe('AnalysisResult wires PlateSelector', () => {
     // AnalysisResult mounts <MealCard ... /> in place of the inline totals
     // box. PlateSelector still renders above the MealCard mount.
     const plateIdx = source.indexOf('<PlateSelector');
-    const mealCardMountIdx = source.indexOf('<MealCard');
+    const mealCardMountIdx = source.indexOf('data-meal-card-anchor');
     expect(plateIdx).toBeGreaterThan(-1);
     expect(mealCardMountIdx).toBeGreaterThan(-1);
     expect(plateIdx).toBeLessThan(mealCardMountIdx);

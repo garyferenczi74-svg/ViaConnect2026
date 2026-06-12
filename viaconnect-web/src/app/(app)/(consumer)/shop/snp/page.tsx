@@ -94,11 +94,13 @@ export default function SnpStorefrontPage() {
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {products.map((p) => {
               const cat = categoryById.get(p.product_category_id);
+              // Sweep 2026-06-12: linked to /shop/snp/[id] which has no
+              // route (every click 404ed). Informational card until the
+              // detail page decision lands.
               return (
-                <Link
+                <div
                   key={p.id}
-                  href={`/shop/snp/${p.id}`}
-                  className="block rounded-xl p-4 border hover:opacity-90 transition"
+                  className="block rounded-xl p-4 border transition"
                   style={{ borderColor: 'rgba(212,160,32,0.3)', background: 'rgba(212,160,32,0.04)' }}
                 >
                   <div className="flex items-start justify-between gap-2">
@@ -117,7 +119,7 @@ export default function SnpStorefrontPage() {
                   <div className="text-xs mt-2" style={{ color: 'rgba(241,228,180,0.75)' }}>
                     {p.serving_count} {p.serving_unit} {p.dose_per_serving_text ? `, ${p.dose_per_serving_text}` : ''}
                   </div>
-                </Link>
+                </div>
               );
             })}
           </div>

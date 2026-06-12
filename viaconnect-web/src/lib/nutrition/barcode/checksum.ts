@@ -33,6 +33,9 @@ export function validateBarcode(input: string): BarcodeValidationResult {
   }
 
   const trimmed = input.trim();
+  if (trimmed.length === 0) {
+    return { valid: false, format: null, reason: 'wrong_length' };
+  }
   if (!/^\d+$/.test(trimmed)) {
     return { valid: false, format: null, reason: 'non_numeric' };
   }

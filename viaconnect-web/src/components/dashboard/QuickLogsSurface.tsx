@@ -159,8 +159,6 @@ export function QuickLogsSurface(props: QuickLogsSurfaceProps) {
                   mealDistribution={mealDistribution}
                   todaysSnacks={todaysSnacks}
                   onSaveSnack={async (draft, computedSnackIndex) => {
-                    // eslint-disable-next-line no-console
-                    console.log('[QuickLogsSurface] snack save bubbling up', { computedSnackIndex });
                     const result = await onSaveMeal(draft, computedSnackIndex);
                     // Keep snack panel open after save; SnackStackContainer
                     // handles its own draft state (collapses + offers Add Another).
@@ -176,8 +174,6 @@ export function QuickLogsSurface(props: QuickLogsSurfaceProps) {
                   snacksLoggedToday={todaysSnacks.length}
                   existingMeal={existingByType.get(openMeal) ?? null}
                   onSave={async (draft) => {
-                    // eslint-disable-next-line no-console
-                    console.log('[QuickLogsSurface] save bubbling up for', draft.mealType);
                     const result = await onSaveMeal(draft, null);
                     if (result !== false) {
                       setOpenMeal(null);

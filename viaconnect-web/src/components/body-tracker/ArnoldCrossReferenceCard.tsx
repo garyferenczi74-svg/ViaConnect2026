@@ -1,6 +1,6 @@
 'use client';
 
-import { Sparkles, Loader2, RefreshCw, Check, Activity, Pill, ClipboardList, Dna } from 'lucide-react';
+import { Sparkles, Loader2, RefreshCw, Check, Activity, Pill, ClipboardList, Dna, Smartphone, Watch } from 'lucide-react';
 import {
   CROSS_REFERENCE_SOURCE_LABELS,
   type CrossReferenceSourceId,
@@ -16,11 +16,15 @@ interface ArnoldCrossReferenceCardProps {
   onDismiss: () => void;
 }
 
+// Sweep 2026-06-12: app and wearable joined CrossReferenceSourceId; the map
+// must stay total or the card crashes the first time those sources ship.
 const SOURCE_ICONS: Record<CrossReferenceSourceId, typeof Activity> = {
   body_tracker: Activity,
   supplements:  Pill,
   caq:          ClipboardList,
   genetics:     Dna,
+  app:          Smartphone,
+  wearable:     Watch,
 };
 
 const TIER_COLOR: Record<1 | 2 | 3, string> = {

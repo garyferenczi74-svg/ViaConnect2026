@@ -110,7 +110,7 @@ export default async function GateAPage({ searchParams }: PageProps) {
   return (
     <div className="min-h-screen bg-[#1A2744]">
       <div className="px-4 md:px-8 py-4 md:py-5 border-b border-white/[0.08]">
-        <Link href="/admin/dashboard" className="text-xs text-white/60 hover:text-white inline-flex items-center gap-1">
+        <Link href="/admin" className="text-xs text-white/60 hover:text-white inline-flex items-center gap-1">
           <ChevronLeft className="w-3.5 h-3.5" strokeWidth={1.5} aria-hidden />
           Admin dashboard
         </Link>

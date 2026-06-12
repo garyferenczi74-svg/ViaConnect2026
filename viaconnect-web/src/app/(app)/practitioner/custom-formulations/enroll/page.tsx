@@ -95,7 +95,7 @@ export default function Level4EnrollPage() {
       <div className="max-w-3xl mx-auto p-4 sm:p-6 space-y-5">
         <div>
           <Link
-            href="/practitioner"
+            href="/practitioner/dashboard"
             className="inline-flex items-center gap-1.5 text-xs text-white/60 hover:text-white"
           >
             <ArrowLeft className="h-3.5 w-3.5" strokeWidth={1.5} /> Practitioner portal

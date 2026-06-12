@@ -4,9 +4,10 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { HelixIcon } from './HelixIcon';
 import { HelixIconWrapper } from './HelixIcons';
+import type { IconType } from '@/types/icon';
 
 interface RewardCardProps {
-  icon: React.ElementType;
+  icon: IconType;
   glow: 'teal' | 'orange';
   name: string;
   description: string;

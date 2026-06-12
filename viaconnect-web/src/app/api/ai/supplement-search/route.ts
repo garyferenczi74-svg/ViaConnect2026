@@ -75,7 +75,6 @@ export async function POST(req: Request) {
       });
     }
 
-    console.log("supplement-search: Enriching", brand, productName);
 
     let response: Response;
     try {
@@ -142,12 +141,10 @@ Search the web and return the full ingredient breakdown.`,
 
     const data = await response.json();
     const text = data.content?.filter((b: { type: string }) => b.type === "text").map((b: { text: string }) => b.text).join("") || "";
-    console.log("supplement-search: Response (first 300):", text.substring(0, 300));
 
     const cleaned = text.replace(/```json|```/g, "").trim();
     const parsed = JSON.parse(cleaned);
 
-    console.log("supplement-search: Found", parsed.fullIngredients?.length, "ingredients from", parsed.sourceUrls?.length, "sources");
 
     return NextResponse.json(parsed);
   } catch (err) {

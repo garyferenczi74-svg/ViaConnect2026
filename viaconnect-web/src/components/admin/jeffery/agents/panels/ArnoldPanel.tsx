@@ -1,4 +1,5 @@
 import { Layers, Flame, MessageSquare } from "lucide-react";
+import type { IconType } from '@/types/icon';
 import AgentCurrentTaskCard from "../AgentCurrentTaskCard";
 import AgentTaskQueueList from "../AgentTaskQueueList";
 import AgentActivityFeed from "../AgentActivityFeed";
@@ -56,7 +57,7 @@ function ReconcileCard({ count, tone }: { count: number; tone: "warn" | "muted" 
   );
 }
 
-function Widget({ icon: Icon, title, value, subline }: { icon: React.ElementType; title: string; value: string; subline: string }) {
+function Widget({ icon: Icon, title, value, subline }: { icon: IconType; title: string; value: string; subline: string }) {
   return (
     <div className="bg-[#1E3054] rounded-xl border border-white/[0.08] p-3">
       <div className="flex items-center gap-2">

@@ -1,4 +1,4 @@
-// Prompt #113 — Admin compliance Overview (6 KPI tiles per §6.13).
+// Prompt #113: Admin compliance Overview (6 KPI tiles per §6.13).
 
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
@@ -46,7 +46,9 @@ export default async function Page() {
     { label: "Blocked (7d)",          value: k.blockedWeek,      href: "/admin/compliance/audit?action=kelsey.review.blocked" },
     { label: "Disclaimer suppression (24h)", value: k.unresolved, href: "/admin/compliance/audit?target_type=disclaimer" },
     { label: "Approved claims",       value: k.approvedClaims,   href: "/admin/compliance/claims" },
-    { label: "Saleable SKU rows",     value: k.saleableCA,       href: "/admin/compliance/canada" },
+    // Sweep 2026-06-12: /admin/compliance/canada has no route; the audit
+    // log is the nearest surface for the Canada saleability trail.
+    { label: "Saleable SKU rows",     value: k.saleableCA,       href: "/admin/compliance/audit" },
   ];
   return (
     <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">

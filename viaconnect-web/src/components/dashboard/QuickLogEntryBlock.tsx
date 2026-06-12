@@ -289,11 +289,7 @@ export function QuickLogEntryBlock(props: QuickLogEntryBlockProps) {
 
   const handleSave = useCallback(async () => {
     if (isSaving) return;
-    // eslint-disable-next-line no-console
-    console.log('[QuickLogEntryBlock] Save clicked', { mealType, allSlidersZero });
     if (allSlidersZero) {
-      // eslint-disable-next-line no-console
-      console.warn('[QuickLogEntryBlock] aborted: all sliders are zero');
       return;
     }
     const draft: QuickLogDraft = {

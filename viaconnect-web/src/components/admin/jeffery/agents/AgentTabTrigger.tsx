@@ -1,5 +1,6 @@
 "use client";
 
+import type { IconType } from '@/types/icon';
 import { forwardRef } from "react";
 import * as Icons from "lucide-react";
 import AgentStatusBadge from "./AgentStatusBadge";
@@ -17,7 +18,7 @@ const AgentTabTrigger = forwardRef<HTMLButtonElement, AgentTabTriggerProps>(func
   ref,
 ) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const Icon = ((Icons as unknown) as Record<string, React.ElementType>)[registry.icon_name] ?? Icons.Circle;
+  const Icon = ((Icons as unknown) as Record<string, IconType>)[registry.icon_name] ?? Icons.Circle;
   return (
     <button
       ref={ref}

@@ -1,7 +1,15 @@
 /**
  * Marshall AutoRemediator — applies only the safe classes of auto-fix
  * (emoji strip, DSHEA inject, bioavailability normalization, display-name
- * redaction). Never touches P0 or P1; those go to the manual queue.
+ * redaction).
+ *
+ * Ceiling semantics (sweep 2026-06-12): the severity ceiling gates the
+ * ENGINE'S fallback remediations only. A rule that ships its own
+ * autoRemediate function with remediation.kind "auto" is an explicit
+ * author declaration and always applies (the bioavailability rule is P0
+ * and its canonical 10-28 normalization is mandated by Standing Rule
+ * 0.2). P0/P1 findings without a rule-provided remediator still go to
+ * the manual queue.
  */
 
 import type { Finding, Rule } from "./types";
@@ -30,14 +38,15 @@ export class AutoRemediator<TInput = string> {
         skipped.push(finding);
         continue;
       }
-      // Hard stop: never auto-remediate above the ceiling.
-      const maxAllowed = severityRank(CEILING);
-      if (severityRank(finding.severity) > maxAllowed) {
-        skipped.push(finding);
-        continue;
-      }
       const rule = this.ruleLookup(finding.ruleId);
       if (!rule?.autoRemediate) {
+        // Engine-guessed fallback: the ceiling is a hard stop here. A P0/P1
+        // without a rule-provided remediator goes to the manual queue.
+        const maxAllowed = severityRank(CEILING);
+        if (severityRank(finding.severity) > maxAllowed) {
+          skipped.push(finding);
+          continue;
+        }
         working = this.fallbackRemediate(working, finding);
         applied.push(`fallback:${finding.ruleId}`);
         continue;

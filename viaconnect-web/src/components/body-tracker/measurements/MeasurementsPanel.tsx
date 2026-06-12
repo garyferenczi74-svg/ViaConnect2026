@@ -157,7 +157,7 @@ export function MeasurementsPanel({ unit, onChanged }: MeasurementsPanelProps) {
               <span>Import measurements automatically from each body scan with Platinum.</span>
             </div>
             <a
-              href="/membership"
+              href="/pricing"
               className="rounded-full border border-[#B75E18]/50 px-4 py-2 text-sm font-medium text-[#B75E18] transition hover:bg-[#B75E18]/10"
             >
               See Platinum

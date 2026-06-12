@@ -1,4 +1,4 @@
-// Prompt #112 — Admin notifications section layout + role gate.
+// Prompt #112: Admin notifications section layout + role gate.
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
@@ -20,7 +20,6 @@ export default async function Layout({ children }: { children: React.ReactNode }
     { href: "/admin/notifications/batch-queue",      label: "Batch queue",      icon: ListChecks },
     { href: "/admin/notifications/compliance/opt-in-log", label: "Opt-in log",  icon: Shield },
     { href: "/admin/notifications/compliance/phi-failures", label: "PHI failures", icon: AlertTriangle },
-    { href: "/admin/notifications/legal-ops",        label: "Legal-ops",        icon: FileClock },
   ];
 
   return (

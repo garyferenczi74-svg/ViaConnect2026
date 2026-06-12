@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import type { IconType } from '@/types/icon';
 import Link from 'next/link';
 import {
   ArrowLeft,
@@ -28,7 +29,7 @@ import {
 interface Wearable {
   id: string;
   name: string;
-  icon: React.ElementType;
+  icon: IconType;
   status: 'connected' | 'error';
   lastSync: string;
   dataTypes: string[];
@@ -37,7 +38,7 @@ interface Wearable {
 interface AppConnection {
   id: string;
   name: string;
-  icon: React.ElementType;
+  icon: IconType;
   status: 'connected' | 'error';
   lastSync: string;
   dataTypes: string[];
@@ -120,7 +121,7 @@ function DeviceCard({
   onDisconnect,
   onRetry,
 }: {
-  icon: React.ElementType;
+  icon: IconType;
   name: string;
   status: 'connected' | 'error';
   lastSync: string;

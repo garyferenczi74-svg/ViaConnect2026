@@ -1,4 +1,4 @@
-// Prompt #111 — Admin international section layout with role gate.
+// Prompt #111: Admin international section layout with role gate.
 // Matches the existing admin/shop layout pattern: redirect non-admins.
 
 import { redirect } from "next/navigation";
@@ -22,7 +22,6 @@ export default async function InternationalAdminLayout({ children }: { children:
     { href: "/admin/international/availability-matrix",  label: "Availability",      icon: MapPin },
     { href: "/admin/international/tax/registrations",    label: "Tax Registrations", icon: FileText },
     { href: "/admin/international/fx/drift",             label: "FX Drift",          icon: TrendingUp },
-    { href: "/admin/international/tax/invoices",         label: "VAT Invoices",      icon: Receipt },
     { href: "/admin/international/settlement",           label: "Settlement",        icon: RefreshCw },
     { href: "/admin/international/audit",                label: "Audit Log",         icon: ScrollText },
   ];

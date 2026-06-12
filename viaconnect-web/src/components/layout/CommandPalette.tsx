@@ -1,5 +1,6 @@
 "use client";
 
+import type { IconType } from '@/types/icon';
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import * as Dialog from "@radix-ui/react-dialog";
@@ -22,7 +23,7 @@ type CommandItem = {
   id: string;
   label: string;
   description?: string;
-  icon: React.ElementType;
+  icon: IconType;
   href?: string;
   action?: () => void;
   category: "page" | "action" | "patient" | "product" | "marker";

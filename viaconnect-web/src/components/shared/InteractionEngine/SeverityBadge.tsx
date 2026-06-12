@@ -1,10 +1,11 @@
 'use client';
 
 import { ShieldAlert, AlertTriangle, Info, CheckCircle, Sparkles } from 'lucide-react';
+import type { IconType } from '@/types/icon';
 
 export type Severity = 'major' | 'moderate' | 'minor' | 'synergistic';
 
-const CONFIG: Record<Severity, { label: string; bg: string; text: string; border: string; Icon: React.ElementType }> = {
+const CONFIG: Record<Severity, { label: string; bg: string; text: string; border: string; Icon: IconType }> = {
   major:       { label: 'Major',       bg: 'rgba(239,68,68,0.15)',  text: '#F87171', border: 'rgba(239,68,68,0.30)',  Icon: ShieldAlert },
   moderate:    { label: 'Moderate',    bg: 'rgba(245,158,11,0.15)', text: '#F59E0B', border: 'rgba(245,158,11,0.30)', Icon: AlertTriangle },
   minor:       { label: 'Minor',       bg: 'rgba(45,165,160,0.15)', text: '#2DA5A0', border: 'rgba(45,165,160,0.30)', Icon: Info },

@@ -53,7 +53,7 @@ export async function parseTranscript(
     if (!parsed.success) {
       return {
         kind: 'malformed_response',
-        message: parsed.error.errors.map((e) => e.message).join('; '),
+        message: parsed.error.issues.map((e) => e.message).join('; '),
       };
     }
     return parsed.data;

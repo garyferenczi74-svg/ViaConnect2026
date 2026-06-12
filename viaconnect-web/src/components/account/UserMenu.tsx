@@ -1,6 +1,6 @@
 'use client';
 
-// UserMenu — dropdown trigger that lives in shop / consumer page headers
+// UserMenu: dropdown trigger that lives in shop / consumer page headers
 // next to the Cart button. Pulls user profile (name, email, avatar) in one
 // query, highlights the active /account/* route, and falls back gracefully
 // when the notifications table or avatar URL isn't available.
@@ -21,6 +21,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import type { IconType } from '@/types/icon';
 
 interface UserSnapshot {
   firstName: string;
@@ -32,7 +33,7 @@ interface UserSnapshot {
 interface MenuItem {
   label: string;
   href: string;
-  icon: React.ElementType;
+  icon: IconType;
   badge?: number;
 }
 
@@ -107,7 +108,7 @@ export function UserMenu() {
             setUnreadCount(count);
           }
         } catch {
-          /* table may not exist — ignore */
+          /* table may not exist: ignore */
         }
       } catch {
         /* keep fallback */
@@ -152,7 +153,7 @@ export function UserMenu() {
   const items: MenuItem[] = [
     { label: 'My Orders', href: '/account/orders', icon: Package },
     { label: 'Addresses', href: '/account/addresses', icon: MapPin },
-    { label: 'Shared Access', href: '/account/shared-access', icon: Share2 },
+    { label: 'Shared Access', href: '/settings/shared-access', icon: Share2 },
     {
       label: 'Notifications',
       href: '/account/notifications',
@@ -196,7 +197,7 @@ export function UserMenu() {
           )}
         </div>
 
-        {/* Name (truncated) — visible from xs+ */}
+        {/* Name (truncated): visible from xs+ */}
         <span className="max-w-[80px] truncate font-medium sm:max-w-[120px]">
           {user.firstName}
         </span>
@@ -227,7 +228,7 @@ export function UserMenu() {
             role="menu"
             className="absolute right-0 top-full z-50 mt-2 w-72 origin-top-right overflow-hidden rounded-2xl border border-[rgba(255,255,255,0.10)] bg-[#1E3054] shadow-2xl shadow-black/40"
           >
-            {/* Header — name + email + avatar */}
+            {/* Header: name + email + avatar */}
             <div className="border-b border-[rgba(255,255,255,0.06)] bg-gradient-to-br from-[rgba(45,165,160,0.08)] to-transparent px-4 py-3.5">
               <div className="flex items-center gap-3">
                 <div className="relative flex h-11 w-11 flex-shrink-0 items-center justify-center overflow-hidden rounded-full border border-[rgba(45,165,160,0.40)] bg-gradient-to-br from-[#1A2744] to-[#2DA5A0]">

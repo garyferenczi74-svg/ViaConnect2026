@@ -1,4 +1,4 @@
-// Prompt #112 — Admin overview dashboard.
+// Prompt #112: Admin overview dashboard.
 
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
@@ -6,7 +6,7 @@ import Link from "next/link";
 export default async function Page() {
   const sb = createClient();
   const c = async (table: string, filter?: (q: ReturnType<typeof sb.from>) => ReturnType<typeof sb.from>) => {
-    let q: ReturnType<typeof sb.from> = sb.from(table);
+    let q: ReturnType<typeof sb.from> = sb.from(table as Parameters<typeof sb.from>[0]);
     if (filter) q = filter(q);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const r = await (q as any).select("*", { count: "exact", head: true });

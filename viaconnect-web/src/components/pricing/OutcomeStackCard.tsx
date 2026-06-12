@@ -75,13 +75,19 @@ export function OutcomeStackCard({
         </p>
       )}
 
-      <button
-        type="button"
-        onClick={() => onSelect?.(stack.id)}
-        className="mt-5 w-full rounded-xl bg-[#2DA5A0] text-[#0B1520] px-4 py-2.5 text-sm font-semibold min-h-[44px] hover:bg-[#2DA5A0]/90 transition-all"
-      >
-        Add stack to cart
-      </button>
+      {/* Sweep 2026-06-12: the action renders only when a handler exists.
+          The stacks PLP previously navigated this button to a nonexistent
+          /shop/stacks/[id] route (404 on every click) under an Add to cart
+          label; stack add-to-cart is pending its own implementation. */}
+      {onSelect && (
+        <button
+          type="button"
+          onClick={() => onSelect(stack.id)}
+          className="mt-5 w-full rounded-xl bg-[#2DA5A0] text-[#0B1520] px-4 py-2.5 text-sm font-semibold min-h-[44px] hover:bg-[#2DA5A0]/90 transition-all"
+        >
+          Add stack to cart
+        </button>
+      )}
     </div>
   );
 }

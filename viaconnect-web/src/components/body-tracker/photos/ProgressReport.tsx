@@ -1,6 +1,7 @@
 'use client';
 
 import { TrendingDown, TrendingUp, Minus, Target, Lightbulb, Check, Sparkles } from 'lucide-react';
+import type { IconType } from '@/types/icon';
 
 interface ReportMetrics {
   weight_lbs: number | null;
@@ -182,7 +183,7 @@ function ChangeList({ title, items, accent }: { title: string; items: string[]; 
   );
 }
 
-function RecBox({ title, icon: Icon, items, accent }: { title: string; icon: React.ElementType; items: string[]; accent: string }) {
+function RecBox({ title, icon: Icon, items, accent }: { title: string; icon: IconType; items: string[]; accent: string }) {
   return (
     <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] p-3">
       <div className="flex items-center gap-1.5 mb-2">

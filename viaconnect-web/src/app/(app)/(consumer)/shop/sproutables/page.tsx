@@ -96,11 +96,14 @@ export default function SproutablesStorefrontPage() {
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {products.map((p) => {
               const cat = categoryById.get(p.product_category_id);
+              // Sweep 2026-06-12: these cards linked to /shop/sproutables/[id]
+              // which has no route, so every click 404ed. Informational cards
+              // until the detail page decision lands (storefront products do
+              // not carry a /shop/product slug).
               return (
-                <Link
+                <div
                   key={p.id}
-                  href={`/shop/sproutables/${p.id}`}
-                  className="block rounded-xl p-4 border hover:opacity-90 transition"
+                  className="block rounded-xl p-4 border transition"
                   style={{ borderColor: 'rgba(106,191,75,0.3)', background: 'rgba(106,191,75,0.05)' }}
                 >
                   <div className="flex items-start justify-between gap-2">
@@ -115,7 +118,7 @@ export default function SproutablesStorefrontPage() {
                   <div className="text-xs mt-2" style={{ color: 'rgba(232,245,232,0.7)' }}>
                     {p.serving_count} {p.serving_unit} {p.dose_per_serving_text ? `, ${p.dose_per_serving_text}` : ''}
                   </div>
-                </Link>
+                </div>
               );
             })}
           </div>

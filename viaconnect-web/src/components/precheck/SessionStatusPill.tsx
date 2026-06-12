@@ -1,7 +1,8 @@
 import { ShieldCheck, ShieldAlert, Loader2, ShieldOff } from "lucide-react";
+import type { IconType } from '@/types/icon';
 
 export default function SessionStatusPill({ status }: { status: string }) {
-  const styles: Record<string, { tone: string; Icon: React.ElementType; label: string }> = {
+  const styles: Record<string, { tone: string; Icon: IconType; label: string }> = {
     initiated:           { tone: "bg-white/10 text-white/60", Icon: Loader2, label: "Initiated" },
     normalizing:         { tone: "bg-white/10 text-white/60", Icon: Loader2, label: "Normalizing" },
     evaluating:          { tone: "bg-blue-500/15 text-blue-300", Icon: Loader2, label: "Evaluating" },

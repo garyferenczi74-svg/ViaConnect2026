@@ -18,7 +18,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, error: "AI photo identification requires an API key. Please add the supplement manually." });
     }
 
-    console.log("supplement-photo: Received image,", image.length, "chars, type:", mediaType);
 
     let response: Response;
     try {
@@ -120,7 +119,6 @@ JSON only. No markdown. No backticks.`,
 
     const data = await response.json();
     const text = data.content?.[0]?.text || "";
-    console.log("supplement-photo: Claude response (first 300):", text.substring(0, 300));
 
     const cleaned = text.replace(/```json|```/g, "").trim();
     const parsed = JSON.parse(cleaned);
@@ -129,7 +127,6 @@ JSON only. No markdown. No backticks.`,
       return NextResponse.json({ success: false, error: parsed.error });
     }
 
-    console.log("supplement-photo: Identified:", parsed.brand, parsed.productName);
     return NextResponse.json({ success: true, product: parsed });
   } catch (error) {
     safeLog.error("api.ai.supplement-photo", "unexpected error", { error });

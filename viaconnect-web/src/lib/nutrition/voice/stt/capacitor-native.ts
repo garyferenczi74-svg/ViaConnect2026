@@ -13,6 +13,7 @@
 
 'use client';
 
+import type { SpeechRecognitionPlugin } from '@capacitor-community/speech-recognition';
 import { VOICE_CAPTURE_MAX_SECONDS } from '../feature-flags';
 import type {
   STTCaptureHandle,
@@ -20,32 +21,13 @@ import type {
   STTProviderClient,
 } from './types';
 
-interface SpeechRecognitionPlugin {
-  available: () => Promise<{ available: boolean }>;
-  hasPermission: () => Promise<{ permission: boolean }>;
-  requestPermission: () => Promise<void>;
-  start: (opts: {
-    language: string;
-    maxResults?: number;
-    prompt?: string;
-    partialResults?: boolean;
-    popup?: boolean;
-  }) => Promise<{ matches?: string[] }>;
-  stop: () => Promise<void>;
-  addListener: (
-    eventName: 'partialResults',
-    listener: (data: { matches?: string[] }) => void
-  ) => Promise<{ remove: () => Promise<void> }>;
-}
-
 let cachedPlugin: SpeechRecognitionPlugin | null | undefined;
 
 async function loadPlugin(): Promise<SpeechRecognitionPlugin | null> {
   if (cachedPlugin !== undefined) return cachedPlugin;
   try {
-    // @ts-expect-error optional native plugin; resolved at runtime when bundled
     const mod = await import('@capacitor-community/speech-recognition');
-    cachedPlugin = (mod.SpeechRecognition ?? null) as SpeechRecognitionPlugin | null;
+    cachedPlugin = mod.SpeechRecognition ?? null;
   } catch {
     cachedPlugin = null;
   }
@@ -76,11 +58,10 @@ async function startCapture(
   }
 
   try {
-    const perm = await plugin.hasPermission();
-    if (!perm.permission) {
-      await plugin.requestPermission();
-      const recheck = await plugin.hasPermission();
-      if (!recheck.permission) {
+    const perm = await plugin.checkPermissions();
+    if (perm.speechRecognition !== 'granted') {
+      const recheck = await plugin.requestPermissions();
+      if (recheck.speechRecognition !== 'granted') {
         options.onError({
           kind: 'permission_denied',
           message: 'Microphone permission denied',

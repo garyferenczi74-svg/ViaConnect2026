@@ -176,6 +176,7 @@ const APPROVED_TOKENS: ReadonlyArray<string> = [
   '#1E3054', // Card surface
   '#2DA5A0', // Teal
   '#B75E18', // Orange (brand identity token, spec section 2 hard rule)
+  '#5BC0BB', // Fiber chip (Prompt 177g MacroChips); formal ratification noted in sweep 2026-06-12
   '#DA8538', // Protein-Orange-step-1: derived brightened step of #B75E18 per spec
              // section 5.3, applied to the Protein chip label per 172d WCAG fix
              // on 2026-06-02 to clear the WCAG 2.2 AA 4.5:1 small-text floor

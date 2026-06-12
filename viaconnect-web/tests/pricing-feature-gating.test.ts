@@ -2,12 +2,15 @@ import { describe, it, expect } from 'vitest';
 import { evaluateFeatureAccess, accessibleFeatureIds } from '@/lib/pricing/feature-gating';
 import type { FeatureRow } from '@/types/pricing';
 
-const FEATURES: FeatureRow[] = [
+const FEATURES = ([
   { id: 'caq_assessment',       display_name: 'CAQ',                    description: null, category: 'assessment',      minimum_tier_level: 0, requires_family_tier: false, requires_genex360: false, gate_behavior: 'hide',           is_active: true, created_at: new Date().toISOString() },
   { id: 'hannah_unlimited',     display_name: 'Unlimited Hannah',       description: null, category: 'ai_coaching',     minimum_tier_level: 1, requires_family_tier: false, requires_genex360: false, gate_behavior: 'preview',        is_active: true, created_at: new Date().toISOString() },
   { id: 'full_precision_score', display_name: '96% Confidence',         description: null, category: 'personalization', minimum_tier_level: 2, requires_family_tier: false, requires_genex360: true,  gate_behavior: 'preview',        is_active: true, created_at: new Date().toISOString() },
   { id: 'family_dashboard',     display_name: 'Family Dashboard',       description: null, category: 'family',          minimum_tier_level: 3, requires_family_tier: true,  requires_genex360: false, gate_behavior: 'upgrade_prompt', is_active: true, created_at: new Date().toISOString() },
-];
+  // Sweep 2026-06-12: fixtures predate the generated columns later added to
+  // pricing_features (kill switch, rollout, evaluation counters); the cast
+  // keeps the test focused on the gating fields it exercises.
+] as unknown as FeatureRow[]);
 
 describe('evaluateFeatureAccess', () => {
   it('free user can access level 0 features only', () => {

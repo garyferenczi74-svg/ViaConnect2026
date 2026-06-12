@@ -16,7 +16,7 @@ import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { safeLog } from '@/lib/utils/safe-log';
 import { recomputeNutritionDimension } from '@/lib/nutrition/bos-bridge';
-import { HYDRATION_SOURCE_KINDS } from '@/lib/nutrition/hydration/types';
+import { HYDRATION_SOURCE_KINDS, type HydrationSourceKind } from '@/lib/nutrition/hydration/types';
 import { computeHydrationMl } from '@/lib/nutrition/hydration/hydration-ml-computer';
 
 export const runtime = 'nodejs';
@@ -102,11 +102,20 @@ export async function PUT(req: NextRequest, ctx: RouteContext): Promise<NextResp
     return NextResponse.json({ error: 'No hydration item on this meal' }, { status: 404 });
   }
 
-  const newKind = parsed.data.beverage_kind ?? itemRow.hydration_source_kind;
+  // Sweep 2026-06-12: narrow request and DB strings to HydrationSourceKind
+  // via membership instead of a blind cast.
+  const dbKind = itemRow.hydration_source_kind;
+  const requestedKind = parsed.data.beverage_kind;
+  const newKind: HydrationSourceKind =
+    requestedKind && (HYDRATION_SOURCE_KINDS as readonly string[]).includes(requestedKind)
+      ? (requestedKind as HydrationSourceKind)
+      : dbKind !== null && (HYDRATION_SOURCE_KINDS as readonly string[]).includes(dbKind)
+        ? (dbKind as HydrationSourceKind)
+        : 'pure_water';
   const newVolume = parsed.data.volume_ml ?? Number(itemRow.portion_volume_ml ?? 0);
   const foodName = FOOD_NAME_BY_KIND[newKind] ?? itemRow.food_name;
   const newHydrationMl = computeHydrationMl({
-    source_kind: newKind as keyof typeof FOOD_NAME_BY_KIND,
+    source_kind: newKind,
     portion_volume_ml: newVolume,
     counting_mode: countingMode,
     food_name: foodName,

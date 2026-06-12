@@ -46,6 +46,7 @@ function makeItem(overrides: Partial<MealItemDraft> = {}): MealItemDraft {
 
 function makeDraft(items: MealItemDraft[]): MealDraft {
   return {
+    id: 'draft-1',
     items,
     totals: {
       calories_kcal: items.reduce((s, it) => s + it.calories_kcal, 0),

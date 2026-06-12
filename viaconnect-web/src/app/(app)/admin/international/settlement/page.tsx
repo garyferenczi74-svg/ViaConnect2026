@@ -1,4 +1,4 @@
-// Prompt #111 — Daily settlement reconciliation.
+// Prompt #111: Daily settlement reconciliation.
 
 import { createClient } from "@/lib/supabase/server";
 
@@ -19,7 +19,7 @@ function money(cents: number, currency: string) {
 export default async function Page() {
   const sb = createClient();
   const { data } = await sb.from("international_settlement_daily_reports").select("*").order("report_date", { ascending: false }).limit(30);
-  const reports = (data ?? []) as Report[];
+  const reports = (data ?? []) as unknown as Report[];
   return (
     <section className="space-y-4">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">

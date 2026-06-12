@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   Pill, CalendarClock, Sparkles, ShieldAlert, UserSearch, ShoppingBag,
-  Stethoscope, Leaf, ArrowRight, Check, Search, FlaskConical, Droplets,
+  Stethoscope, Leaf, ArrowRight, Check, FlaskConical, Droplets,
   Dna, Activity, TestTubes,
   AlertTriangle, Plus, RefreshCw, Loader2,
 } from "lucide-react";
@@ -11,9 +11,7 @@ import type { LucideIcon } from "lucide-react";
 import { ProtocolConfidenceBadge } from "@/components/protocol/ProtocolConfidenceBadge";
 import { PractitionerDisclaimer } from "@/components/protocol/PractitionerDisclaimer";
 import SupplementInput from "@/components/shared/SupplementInput";
-import type { PluginProductResult } from "@/plugins/types";
 import { useUserDashboardData } from "@/hooks/useUserDashboardData";
-import type { DashboardSupplement } from "@/hooks/useUserDashboardData";
 import DailySchedule from "@/components/supplements/DailySchedule";
 import { createClient } from "@/lib/supabase/client";
 import RecommendedSupplements from "@/components/supplement-protocol/RecommendedSupplements";
@@ -68,7 +66,7 @@ function Section({ icon, iconColor, title, subtitle, children }: { icon: LucideI
 
 /* ═══ MAIN PAGE ═══ */
 export default function SupplementsPage() {
-  const { loading, assessmentCompleted, profile } = useUserDashboardData();
+  const { loading } = useUserDashboardData();
 
   if (loading) {
     return (
@@ -215,152 +213,6 @@ export default function SupplementsPage() {
 
 // RecommendedSupplementsSection replaced by Ultrathink-powered RecommendedSupplements component
 // Old inline section removed; see src/components/supplement-protocol/RecommendedSupplements.tsx
-
-// @ts-nocheck: dead code, replaced by RecommendedSupplements component.
-// Kept for reference / quick rollback. Imports for FarmCeuticaRecommendation
-// and generateFarmCeuticaRecommendations were dropped when the new component
-// was wired in, so this whole function no longer typechecks. Cast to any.
-function _RecommendedSupplementsSectionRemoved({ assessmentCompleted, profile, supplements }: {
-  assessmentCompleted: boolean;
-  profile: ReturnType<typeof useUserDashboardData>['profile'];
-  supplements: DashboardSupplement[];
-}) {
-  const [recommendations, setRecommendations] = useState<any[]>([]);
-  const [loadingRecs, setLoadingRecs] = useState(true);
-
-  useEffect(() => {
-    if (!assessmentCompleted) { setLoadingRecs(false); return; }
-
-    async function loadRecs() {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { setLoadingRecs(false); return; }
-
-      const { data: phases } = await supabase
-        .from('assessment_results')
-        .select('phase, data')
-        .eq('user_id', user.id);
-
-      if (!phases?.length) { setLoadingRecs(false); return; }
-
-      const assessmentPhases: Record<number, Record<string, unknown>> = {};
-      for (const p of phases) {
-        assessmentPhases[p.phase] = (p.data || {}) as Record<string, unknown>;
-      }
-
-      const currentSuppNames = supplements.map(s => s.product_name || s.supplement_name || '');
-      const recs = ((globalThis as unknown as Record<string, unknown>).generateFarmCeuticaRecommendations
-        ? ((globalThis as unknown as Record<string, (...args: unknown[]) => unknown[]>).generateFarmCeuticaRecommendations)(assessmentPhases, currentSuppNames)
-        : []) as { name: string; priority: string; reason: string }[];
-      setRecommendations(recs);
-      setLoadingRecs(false);
-    }
-
-    loadRecs();
-  }, [assessmentCompleted, supplements]);
-
-  const priorityColor = (p: string) => p === 'essential' ? '#2DA5A0' : p === 'recommended' ? '#B75E18' : '#9CA3AF';
-
-  return (
-    <Section icon={Sparkles} iconColor="#2DA5A0" title="Recommended Supplements" subtitle="Personalized products for your protocol">
-      <div className="p-5 md:p-6 space-y-5">
-        {/* Header summary */}
-        <div className="rounded-xl bg-teal-400/[0.03] border border-teal-400/10 p-4">
-          <div className="flex items-start gap-3">
-            <PIcon icon={Sparkles} color="#2DA5A0" size="sm" />
-            <div>
-              <h3 className="text-sm font-semibold text-teal-400 mb-1">AI-Powered Recommendations</h3>
-              <p className="text-xs text-white/40">
-                {assessmentCompleted
-                  ? `Based on your goals, symptoms, and lifestyle, ${recommendations.length} products selected for you.`
-                  : 'Complete your assessment to receive personalized supplement recommendations.'}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Optimization areas + strengths badges */}
-        {(profile?.bio_optimization_opportunities?.length ?? 0) > 0 && (
-          <div className="flex flex-wrap gap-2">
-            {(profile?.bio_optimization_opportunities || []).map((opp, i) => (
-              <span key={`opp-${i}`} className="text-[10px] font-medium px-2.5 py-1 rounded-full bg-orange-400/10 text-orange-400/80 border border-orange-400/15">{opp}</span>
-            ))}
-            {(profile?.bio_optimization_strengths || []).map((s, i) => (
-              <span key={`str-${i}`} className="text-[10px] font-medium px-2.5 py-1 rounded-full bg-teal-400/10 text-teal-400/80 border border-teal-400/15">{s}</span>
-            ))}
-          </div>
-        )}
-
-        {/* Loading state */}
-        {loadingRecs && (
-          <div className="flex items-center justify-center py-8">
-            <Loader2 className="w-6 h-6 text-teal-400 animate-spin" />
-          </div>
-        )}
-
-        {/* Product recommendation cards */}
-        {!loadingRecs && recommendations.length > 0 && (
-          <div className="space-y-3">
-            {recommendations.map((rec) => (
-              <div key={rec.id} className="rounded-xl bg-white/[0.02] border border-white/[0.08] p-4 md:p-5 hover:border-teal-400/20 transition-all group">
-                <div className="flex items-start gap-4">
-                  <PIcon icon={Pill} color={priorityColor(rec.priority)} size="sm" />
-                  <div className="flex-1 min-w-0">
-                    {/* Product name + priority */}
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h4 className="text-sm font-semibold text-white group-hover:text-teal-400 transition-colors">{rec.productName}</h4>
-                      <span className={`text-[9px] px-2 py-0.5 rounded-full font-semibold uppercase tracking-wider ${
-                        rec.priority === 'essential' ? 'bg-teal-400/10 text-teal-400/70 border border-teal-400/20'
-                        : rec.priority === 'recommended' ? 'bg-orange-400/10 text-orange-400/70 border border-orange-400/20'
-                        : 'bg-white/5 text-white/30 border border-white/10'
-                      }`}>{rec.priority}</span>
-                    </div>
-
-                    {/* Dosage + timing + delivery */}
-                    <div className="flex flex-wrap items-center gap-2 mt-1.5">
-                      <span className="text-xs text-white/40">{rec.dosage}</span>
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/5 text-white/25">{rec.timing}</span>
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-teal-400/10 text-teal-400/40">{rec.deliveryMethod}</span>
-                    </div>
-
-                    {/* Reason */}
-                    <p className="text-xs text-white/30 mt-2 leading-relaxed">{rec.reason}</p>
-
-                    {/* Triggering factors */}
-                    {rec.triggeringFactors.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5 mt-2">
-                        {rec.triggeringFactors.slice(0, 4).map((factor: string, i: number) => (
-                          <span key={i} className="text-[9px] px-1.5 py-0.5 rounded bg-white/[0.04] text-white/20">{factor}</span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Price + Add button */}
-                  <div className="flex flex-col items-end gap-2 flex-shrink-0">
-                    <span className="text-sm font-bold text-teal-400">${rec.price.toFixed(2)}</span>
-                    <button className="min-h-[36px] px-4 py-1.5 rounded-lg text-xs font-medium bg-teal-400/10 border border-teal-400/30 text-teal-400 hover:bg-teal-400/20 transition-all flex items-center gap-1.5">
-                      <Plus className="w-3 h-3" strokeWidth={2} /> Add to Daily Schedule
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Empty state */}
-        {!loadingRecs && recommendations.length === 0 && !assessmentCompleted && (
-          <div className="text-center py-4">
-            <a href="/onboarding/i-caq-intro" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-teal-400/15 border border-teal-400/30 text-teal-400 text-sm font-medium hover:bg-teal-400/20 transition-all">
-              <Sparkles className="w-4 h-4" /> Take Assessment for Personalized Recommendations
-            </a>
-          </div>
-        )}
-      </div>
-    </Section>
-  );
-}
 
 /**
  * Prompt 175l (2026-06-05): "Add Your Supplements" section on the

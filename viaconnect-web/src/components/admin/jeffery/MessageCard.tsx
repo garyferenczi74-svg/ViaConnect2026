@@ -1,5 +1,6 @@
 "use client";
 
+import type { IconType } from '@/types/icon';
 import { motion } from "framer-motion";
 import { ChevronDown, ChevronRight, MessageSquare } from "lucide-react";
 import {
@@ -7,7 +8,7 @@ import {
   MessageCircle, AlertTriangle, Users, AlertOctagon, Search,
 } from "lucide-react";
 
-export const CATEGORY_CONFIG: Record<string, { icon: React.ElementType; color: string; label: string }> = {
+export const CATEGORY_CONFIG: Record<string, { icon: IconType; color: string; label: string }> = {
   data_ingestion:    { icon: DatabaseZap,   color: "#2DA5A0", label: "Data Ingestion" },
   knowledge_update:  { icon: BookOpen,      color: "#3B82F6", label: "Knowledge Update" },
   agent_decision:    { icon: BrainCircuit,  color: "#8B5CF6", label: "Agent Decision" },

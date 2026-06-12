@@ -1,18 +1,18 @@
-// Prompt #111 — VAT/GST invoice PDF generation using pdf-lib.
+// Prompt #111: VAT/GST invoice PDF generation using pdf-lib.
 // Approved per memory project_prompt_105_deps_approved (pdf-lib over Puppeteer).
 // Invoice numbers come from allocate_vat_invoice_number() Postgres RPC;
 // sequence name is jurisdiction-scoped (vat_invoice_seq_eu / _uk / _au).
 //
 // Regulatory fields per Sherlock review (2026-04-22):
-//   EU   : Art 226 Dir 2006/112/EC — supplier legal address, supplier VAT,
+//   EU   : Art 226 Dir 2006/112/EC: supplier legal address, supplier VAT,
 //          customer name/address (+VAT if B2B), supply date, invoice date,
 //          unique invoice number, per-line VAT rate + amount, gross/net totals,
 //          reverse-charge annotation when applicable.
-//   UK   : HMRC Notice 700 §16.3.2 (full VAT invoice >£250) — supplier VAT,
+//   UK   : HMRC Notice 700 §16.3.2 (full VAT invoice >£250): supplier VAT,
 //          supplier address, invoice number, supply date, customer address,
 //          per-line rate + VAT amount, net/VAT/gross totals, currency code
 //          if non-GBP.
-//   AU   : A New Tax System (GST) Act s.29-70(1)(c) — document titled
+//   AU   : A New Tax System (GST) Act s.29-70(1)(c): document titled
 //          "TAX INVOICE", supplier ABN, GST amount.
 
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
@@ -82,7 +82,11 @@ function formatMoney(cents: number, currency: CurrencyCode): string {
 }
 
 async function sha256Hex(bytes: Uint8Array): Promise<string> {
-  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  // Sweep 2026-06-12: digest() wants an ArrayBuffer-backed BufferSource;
+  // under TS 5.9 a generic Uint8Array<ArrayBufferLike> no longer satisfies
+  // it. Slicing the exact view range produces a plain ArrayBuffer.
+  const backing = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
+  const digest = await crypto.subtle.digest("SHA-256", backing);
   return Array.from(new Uint8Array(digest))
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");

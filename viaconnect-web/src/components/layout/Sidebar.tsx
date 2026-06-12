@@ -1,5 +1,6 @@
 "use client";
 
+import type { IconType } from '@/types/icon';
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -66,7 +67,7 @@ const NATUROPATH_EXTRAS: NaturopathExtraItem[] = [
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-type NavItem = { href: string; label: string; icon: React.ElementType };
+type NavItem = { href: string; label: string; icon: IconType };
 
 type PortalConfig = {
   nav: NavItem[];

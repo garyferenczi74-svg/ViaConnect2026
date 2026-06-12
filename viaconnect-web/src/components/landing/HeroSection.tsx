@@ -126,7 +126,7 @@ export function HeroSection({
                                             <span>Sign In</span>
                                         </Link>
                                         <Link
-                                            href="/practitioner"
+                                            href="/practitioners"
                                             className="order-1 sm:order-2 inline-flex h-14 sm:h-12 w-full sm:w-auto items-center justify-center rounded-full bg-[#2DA5A0]/30 backdrop-blur-xl border border-[#2DA5A0]/40 px-6 text-base font-semibold text-white shadow-[0_0_20px_rgba(45,165,160,0.4)] transition-all duration-300 hover:bg-[#2DA5A0]/50 hover:border-[#2DA5A0]/60 hover:shadow-[0_0_30px_rgba(45,165,160,0.6)]">
                                             <span>I am a Practitioner or Naturopath</span>
                                         </Link>

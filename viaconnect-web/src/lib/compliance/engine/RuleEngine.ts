@@ -23,7 +23,12 @@ function pickInputForRule(rule: Rule, input: EngineInput): unknown {
   if (rule.surfaces.includes(input.surface) === false) return undefined;
   switch (input.surface) {
     case "ai_output":
-      return input.aiOutput ?? input.content ?? "";
+      // Sweep 2026-06-12: string rules (the P0 peptide block, emoji strip,
+      // disclaimer append) expect the text itself; handing them the
+      // {agent, text} envelope made their typeof guards silently no-op,
+      // so live AI output was never scanned. Unwrap to the text string;
+      // object rules that need the envelope read it off EngineInput.
+      return input.aiOutput?.text ?? input.content ?? "";
     case "checkout":
       return input.cart ?? [];
     case "email":

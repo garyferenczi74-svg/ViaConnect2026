@@ -104,9 +104,10 @@ export default function OutcomeStacksPage() {
                 components={components}
                 individualTotalCents={individualTotalCents}
                 bundlePriceCents={bundlePriceCents}
-                onSelect={(id) => {
-                  window.location.href = `/shop/stacks/${id}`;
-                }}
+                // Sweep 2026-06-12: onSelect removed; it navigated to
+                // /shop/stacks/[id] which has no route (404 on every click)
+                // while labeled Add to cart. Restore with a real bundle
+                // add-to-cart when that ships.
               />
             ))}
           </div>

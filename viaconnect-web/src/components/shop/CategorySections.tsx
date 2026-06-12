@@ -1,6 +1,7 @@
 'use client';
 
 import { Zap, Star, Leaf, Dna, FlaskConical, Heart, Package, TestTube2 } from 'lucide-react';
+import type { IconType } from '@/types/icon';
 
 // ── Category config ──
 
@@ -11,7 +12,7 @@ export interface CategoryConfig {
   gradientFrom: string;
   gradientTo: string;
   borderColor: string;
-  icon: React.ElementType;
+  icon: IconType;
   description: string;
 }
 

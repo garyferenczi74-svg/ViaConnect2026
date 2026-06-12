@@ -8,6 +8,7 @@ import type { Severity } from './SeverityBadge';
 import { SeverityBadge } from './SeverityBadge';
 import { InteractionCard } from './InteractionCard';
 import { Toolbar as PractitionerToolbar } from './PractitionerExtension';
+import type { IconType } from '@/types/icon';
 
 export interface Interaction {
   id: string;
@@ -33,7 +34,7 @@ export interface Interaction {
   synergyScore?: number;
 }
 
-const HEADER_ICON: Record<InteractionMode, { Icon: React.ElementType; color: string; title: string }> = {
+const HEADER_ICON: Record<InteractionMode, { Icon: IconType; color: string; title: string }> = {
   consumer:     { Icon: ShieldAlert, color: '#2DA5A0', title: 'Medical & Herbal Interactions' },
   practitioner: { Icon: Stethoscope, color: '#2DA5A0', title: 'Clinical Interaction Report' },
   naturopath:   { Icon: Leaf,        color: '#34D399', title: 'Herb-Drug & Herb-Herb Interactions' },
@@ -96,7 +97,7 @@ export function InteractionEngine({ mode, userId, viewerUserId }: InteractionEng
 
       setInteractions(mapped);
     } catch {
-      // Silent — empty state
+      // Silent: empty state
     }
     setLoading(false);
   }, [userId, supabase]);

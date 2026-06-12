@@ -327,7 +327,7 @@ describe('170c §8.4 wellbeing guardrails: no visible mode indicator anywhere on
 });
 
 describe('170c §10 degraded service: every kind renders the right copy and never implies user fault', () => {
-  const KINDS: ReadonlyArray<DegradedServiceKind> = [
+  const KINDS: ReadonlyArray<Exclude<DegradedServiceKind, 'none'>> = [
     'logmeal_hard_stop',
     'gemini_low_confidence',
     'claude_tertiary_used',

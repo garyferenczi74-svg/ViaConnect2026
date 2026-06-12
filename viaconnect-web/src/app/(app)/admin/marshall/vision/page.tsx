@@ -23,7 +23,7 @@ const TILES = [
   { href: '/admin/marshall/vision/consumer-reports',    label: 'Consumer reports',    icon: MessageSquareWarning },
   { href: '/admin/marshall/vision/test-buys',           label: 'Test buys',           icon: Package },
   { href: '/admin/marshall/vision/takedown-templates',  label: 'Takedown templates',  icon: FileText },
-  { href: '/admin/marshall/vision/upload',              label: 'Upload suspect image', icon: Upload },
+  { href: '/admin/marshall/vision/corpus',              label: 'Upload suspect image', icon: Upload },
 ];
 
 export default async function MarshallVisionOverviewPage() {

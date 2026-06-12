@@ -278,8 +278,8 @@ function buildCtx(fixtures: Record<string, Array<Record<string, unknown>>>): Col
 }
 
 describe('SOC 2 counterfeit-determinations collector', () => {
-  it('is registered in DB_COLLECTORS (post-#125 total = 26)', () => {
-    expect(DB_COLLECTORS.length).toBe(26);
+  it('is registered in DB_COLLECTORS (post-#138a total = 27)', () => {
+    expect(DB_COLLECTORS.length).toBe(27);
     expect(DB_COLLECTORS.some((c) => c.id === 'counterfeit-determinations-collector')).toBe(true);
   });
 

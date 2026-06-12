@@ -1,11 +1,12 @@
 "use client";
 
+import type { IconType } from '@/types/icon';
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Activity, Info, CheckCircle2, AlertTriangle, XCircle, Copy, ChevronDown, ChevronRight } from "lucide-react";
 import type { AgentActivityEvent, AgentEventSeverity } from "@/lib/agents/types";
 
-const SEVERITY_ICON: Record<AgentEventSeverity, React.ElementType> = {
+const SEVERITY_ICON: Record<AgentEventSeverity, IconType> = {
   info:    Info,
   success: CheckCircle2,
   warn:    AlertTriangle,

@@ -10,8 +10,9 @@ import {
   MessageCircleHeart,
 } from 'lucide-react';
 import { useRef } from 'react';
+import type { IconType } from '@/types/icon';
 
-type NavItem = { href: string; label: string; icon: React.ElementType };
+type NavItem = { href: string; label: string; icon: IconType };
 
 const PORTAL_NAV: Record<string, NavItem[]> = {
   consumer: [

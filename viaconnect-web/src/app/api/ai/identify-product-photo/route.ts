@@ -73,7 +73,6 @@ export async function POST(request: Request) {
       photos.map(async (photo) => {
         const buffer = await photo.arrayBuffer();
         const base64 = Buffer.from(buffer).toString("base64");
-        console.log("identify-product-photo: Processing image", photo.name, photo.type, Math.round(buffer.byteLength / 1024) + "KB");
         return {
           type: "image" as const,
           source: { type: "base64" as const, media_type: (photo.type || "image/jpeg") as "image/jpeg" | "image/png" | "image/gif" | "image/webp", data: base64 },
@@ -81,7 +80,6 @@ export async function POST(request: Request) {
       })
     );
 
-    console.log("identify-product-photo: Calling Claude Vision API with", imageContents.length, "image(s)");
 
     let response: Response;
     try {
@@ -138,7 +136,6 @@ export async function POST(request: Request) {
       .map((b: { text: string }) => b.text)
       .join("") || "";
 
-    console.log("identify-product-photo: Claude response (first 300 chars):", textContent.substring(0, 300));
 
     const cleaned = textContent.replace(/```json|```/g, "").trim();
     const result = JSON.parse(cleaned);
@@ -147,7 +144,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ found: false, error: result.error || "Could not identify supplement from photo." });
     }
 
-    console.log("identify-product-photo: Identified:", result.product?.brand, result.product?.name);
 
     return NextResponse.json(result);
   } catch (err) {

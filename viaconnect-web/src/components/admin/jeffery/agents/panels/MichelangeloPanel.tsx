@@ -1,4 +1,5 @@
 import { CheckCircle2, Circle, TestTube, GitCommit } from "lucide-react";
+import type { IconType } from '@/types/icon';
 import AgentCurrentTaskCard from "../AgentCurrentTaskCard";
 import AgentTaskQueueList from "../AgentTaskQueueList";
 import AgentActivityFeed from "../AgentActivityFeed";
@@ -71,7 +72,7 @@ export default function MichelangeloPanel({ tasks, events }: AgentPanelProps) {
   );
 }
 
-function Widget({ icon: Icon, title, value, subline, tone }: { icon: React.ElementType; title: string; value: string; subline: string; tone?: "red" }) {
+function Widget({ icon: Icon, title, value, subline, tone }: { icon: IconType; title: string; value: string; subline: string; tone?: "red" }) {
   const valueClass = tone === "red" ? "text-red-400" : "text-white";
   return (
     <div className="bg-[#1E3054] rounded-xl border border-white/[0.08] p-3">

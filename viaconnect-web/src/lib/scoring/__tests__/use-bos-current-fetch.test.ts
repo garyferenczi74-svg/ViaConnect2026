@@ -50,7 +50,7 @@ describe('fetchBOSCurrent', () => {
     await __fetchBOSCurrentForTest();
 
     expect(spy).toHaveBeenCalledTimes(1);
-    const [url, init] = spy.mock.calls[0] as [string, RequestInit];
+    const [url, init] = spy.mock.calls[0] as unknown as [string, RequestInit];
     expect(url).toBe('/api/bos/current');
     expect(init.credentials).toBe('include');
   });

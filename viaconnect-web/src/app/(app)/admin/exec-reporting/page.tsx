@@ -1,6 +1,6 @@
 'use client';
 
-// Prompt #105 Phase 2b.3 — executive reporting admin landing.
+// Prompt #105 Phase 2b.3: executive reporting admin landing.
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
@@ -94,9 +94,6 @@ export default function ExecReportingAdminLanding() {
           </Link>
           <Link href="/admin/exec-reporting/packs" className="rounded-xl border border-white/[0.08] bg-[#1A2744]/60 hover:bg-[#1A2744] p-3 text-xs text-white/85">
             Packs
-          </Link>
-          <Link href="/admin/exec-reporting/members" className="rounded-xl border border-white/[0.08] bg-[#1A2744]/60 hover:bg-[#1A2744] p-3 text-xs text-white/85">
-            Board members
           </Link>
         </div>
       </div>

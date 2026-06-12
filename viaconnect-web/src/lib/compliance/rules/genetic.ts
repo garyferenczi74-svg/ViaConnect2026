@@ -39,6 +39,11 @@ export const GENEX360_CONSENT: Rule<{ userId: string; hasConsent: boolean; conse
   citation: "HIPAA 45 CFR 164.506; GINA",
   description: "Genetic reports require version-pinned consent.",
   evaluate: (input, ctx = defaultCtx()) => {
+    // Sweep 2026-06-12: this rule also sits on content_cms/ai_output
+    // surfaces where the engine hands it plain text. Without a shape
+    // guard every scan emitted a false-positive P0 and flipped
+    // blocked=true. Only evaluate consent-shaped input.
+    if (typeof input !== "object" || input === null || typeof input.hasConsent !== "boolean") return [];
     if (input.hasConsent && input.consentVersion === input.requiredVersion) return [];
     return [
       f(
@@ -119,6 +124,9 @@ export const MINOR_GENETIC_LOCK: Rule<{ userAge: number; hasGuardianConsent?: bo
   citation: "GINA; COPPA 16 CFR 312",
   description: "Genetic sampling blocked under 18; 13-17 requires guardian consent.",
   evaluate: (input, ctx = defaultCtx()) => {
+    // Sweep 2026-06-12: shape guard, same reason as GENEX360_CONSENT
+    // above; undefined userAge fell through to the guardian-consent P0.
+    if (typeof input !== "object" || input === null || typeof input.userAge !== "number") return [];
     if (input.userAge >= 18) return [];
     if (input.userAge < 13) {
       return [

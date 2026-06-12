@@ -50,7 +50,7 @@ export function CategoryFallbackImage({ categorySlug, className }: CategoryFallb
             className={`absolute inset-0 flex items-center justify-center bg-gradient-to-br ${config.gradient} ${className ?? ''}`}
             aria-hidden="true"
         >
-            {('accent' in config && config.accent) && (
+            {Boolean('accent' in config && config.accent) && (
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(45,165,160,0.18),transparent_60%)]" />
             )}
             <Icon strokeWidth={1.25} className="relative w-12 h-12 text-white/30" />

@@ -7,7 +7,9 @@
 const NAME_MAP: Readonly<Record<string, string>> = {
   jeffery: "Jeffery",
   hannah: "Hannah",
-  gordan: "Gordan",
+  // 'gordan' is the legacy slug still present in stored agent_id rows; both
+  // spellings must render the agent's real name.
+  gordan: "Gordon",
   gordon: "Gordon",
   arnold: "Arnold",
   hounddog: "Hounddog",
