@@ -14,16 +14,16 @@ const COMPONENT = path.resolve(__dirname, '..', 'VariantRow.tsx');
 describe('VariantRow source', () => {
   const source = readFileSync(COMPONENT, 'utf-8');
 
-  it('colors the High impact chip Orange #B75E18', () => {
-    expect(source).toContain('#B75E18');
+  it('colors the High impact chip Red', () => {
+    expect(source).toContain('#F87171');
   });
 
-  it('colors the Moderate impact chip Teal #2DA5A0', () => {
-    expect(source).toContain('#2DA5A0');
+  it('colors the Moderate impact chip Orange', () => {
+    expect(source).toContain('#FB923C');
   });
 
-  it('colors the Low impact chip a muted neutral', () => {
-    expect(source).toContain('text-white/40');
+  it('colors the Low impact chip Purple', () => {
+    expect(source).toContain('#A78BFA');
   });
 
   it('wires the toggle expand region (aria-expanded + aria-controls + region)', () => {

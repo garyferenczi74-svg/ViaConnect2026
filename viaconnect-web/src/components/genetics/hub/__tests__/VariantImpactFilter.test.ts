@@ -54,8 +54,14 @@ describe('VariantImpactFilter source', () => {
     expect(source).toContain('min-h-[44px]');
   });
 
-  it('uses a teal accent for the selected segment', () => {
+  it('keeps a teal accent for the All segment', () => {
     expect(source).toContain('#2DA5A0');
+  });
+
+  it('color codes the High, Moderate, and Low segments Red, Orange, Purple', () => {
+    expect(source).toContain('#F87171');
+    expect(source).toContain('#FB923C');
+    expect(source).toContain('#A78BFA');
   });
 
   it('contains no em or en dashes', () => {
