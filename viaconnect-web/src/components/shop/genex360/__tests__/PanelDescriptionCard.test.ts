@@ -77,6 +77,11 @@ describe('PanelDescriptionCard source', () => {
     expect(source).toContain('onToggleSnp={onToggleSnp}');
   });
 
+  it('threads the highlightRsid down to every marker group (193c)', () => {
+    expect(source).toContain('highlightRsid?: string | null');
+    expect(source).toContain('highlightRsid={highlightRsid}');
+  });
+
   it('mounts PanelMarkerGroup and PanelDisclaimer', () => {
     expect(source).toContain("import { PanelDisclaimer } from \"./PanelDisclaimer\"");
     expect(source).toContain("import { PanelMarkerGroup } from \"./PanelMarkerGroup\"");

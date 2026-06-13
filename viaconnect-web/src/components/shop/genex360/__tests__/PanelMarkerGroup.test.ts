@@ -111,9 +111,18 @@ describe('PanelMarkerGroup per SNP disclosure (193a)', () => {
     expect(source).toContain('id={detailId}');
     expect(source).toContain('role="region"');
     expect(source).toContain('aria-label={`${marker.symbol} full report`}');
-    expect(source).toContain('<SnpDeepReport report={marker.deepReport!} />');
+    expect(source).toContain('<SnpDeepReport report={marker.deepReport!} highlightRsid={highlightRsid} />');
     // The detail region is conditional on the open state.
     expect(source).toContain('{isOpen ? (');
+  });
+
+  it('threads the highlightRsid through to the SnpDeepReport (193c)', () => {
+    // The group accepts the prop, forwards it to SnpMarkerRow, and on to the
+    // report so the deep linked variant sub block gets its soft ring.
+    expect(source).toContain('highlightRsid?: string | null');
+    expect(source).toContain('highlightRsid={highlightRsid ?? null}');
+    expect(source).toContain('highlightRsid: string | null');
+    expect(source).toContain('highlightRsid={highlightRsid}');
   });
 
   it('animates the expand with framer motion height auto', () => {

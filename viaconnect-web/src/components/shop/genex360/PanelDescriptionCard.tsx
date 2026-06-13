@@ -45,6 +45,10 @@ interface PanelDescriptionCardProps {
   // those markers carry no deepReport, so no disclosure renders.
   openSnpSlug?: string | null;
   onToggleSnp?: (snpSlug: string) => void;
+  // Prompt 193c: the variant rsid the Report pill deep link targeted (null
+  // otherwise). Passed through to every marker group, which forwards it to
+  // SnpDeepReport so the matching variant sub block gets a soft non-alarm ring.
+  highlightRsid?: string | null;
 }
 
 // Per panel leading icon. All six are confirmed present in lucide-react 0.577.0.
@@ -62,6 +66,7 @@ export function PanelDescriptionCard({
   onBackToPanels,
   openSnpSlug,
   onToggleSnp,
+  highlightRsid,
 }: PanelDescriptionCardProps) {
   const PanelIcon = PANEL_ICON[panel.slug];
   const tabId = `genex360-tab-${panel.slug}`;
@@ -114,6 +119,7 @@ export function PanelDescriptionCard({
               key={group.groupTitle}
               openSnpSlug={openSnpSlug}
               onToggleSnp={onToggleSnp}
+              highlightRsid={highlightRsid}
             />
           ))}
         </div>

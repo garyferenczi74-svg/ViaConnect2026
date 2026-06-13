@@ -138,3 +138,46 @@ describe('SnpDeepReport source', () => {
     expect(source.includes(String.fromCharCode(0x2013))).toBe(false);
   });
 });
+
+describe('SnpDeepReport variant deep link highlight (193c)', () => {
+  const source = readFileSync(COMPONENT, 'utf-8');
+
+  it('accepts an optional highlightRsid prop', () => {
+    expect(source).toContain('highlightRsid?: string | null');
+    expect(source).toContain('SnpDeepReport({ report, highlightRsid }');
+  });
+
+  it('gives each variant sub block a variant- prefixed id and a sticky scroll margin', () => {
+    expect(source).toContain('id={`variant-${variant.rsid}`}');
+    expect(source).toContain('scroll-mt-[80px]');
+  });
+
+  it('computes the highlight by exact rsid match', () => {
+    expect(source).toContain('highlightRsid === variant.rsid');
+  });
+
+  it('applies a soft teal ring and faint teal fill when highlighted (not red)', () => {
+    expect(source).toContain('ring-2');
+    expect(source).toContain('ring-[#2DA5A0]/60');
+    expect(source).toContain('bg-[#2DA5A0]/[0.06]');
+  });
+
+  it('uses a gentle transition that prefers-reduced-motion disables', () => {
+    expect(source).toContain('transition-colors');
+    expect(source).toContain('motion-reduce:transition-none');
+  });
+
+  it('uses no red alarm styling for the highlight', () => {
+    expect(source).not.toContain('text-red');
+    expect(source).not.toContain('bg-red');
+    expect(source).not.toContain('ring-red');
+    expect(source).not.toContain('border-red');
+    expect(source).not.toContain('#ef4444');
+    expect(source).not.toContain('#dc2626');
+  });
+
+  it('contains no em or en dashes', () => {
+    expect(source.includes(String.fromCharCode(0x2014))).toBe(false);
+    expect(source.includes(String.fromCharCode(0x2013))).toBe(false);
+  });
+});

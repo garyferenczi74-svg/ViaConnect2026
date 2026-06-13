@@ -97,7 +97,10 @@ describe('GeneX360PanelSection nested hash + single open SNP (193a)', () => {
   });
 
   it('parses the two level hash by splitting on a slash', () => {
-    expect(source).toContain("raw.split('/')");
+    // Prompt 193c: the ?v= query is now split off the raw fragment FIRST, so the
+    // panel/snp path is split on a slash via pathPart (not raw). Either way the
+    // two levels come from a slash split.
+    expect(source).toContain("pathPart.split('/')");
     expect(source).toContain('panelPart');
     expect(source).toContain('snpPart');
   });
@@ -149,6 +152,66 @@ describe('GeneX360PanelSection nested hash + single open SNP (193a)', () => {
   it('threads the open slug and toggle to the card', () => {
     expect(source).toContain('openSnpSlug={openSnp}');
     expect(source).toContain('onToggleSnp={onToggleSnp}');
+  });
+
+  it('contains no em or en dashes', () => {
+    expect(source.includes(String.fromCharCode(0x2014))).toBe(false);
+    expect(source.includes(String.fromCharCode(0x2013))).toBe(false);
+  });
+});
+
+describe('GeneX360PanelSection variant deep link + highlight (193c)', () => {
+  const source = readFileSync(COMPONENT, 'utf-8');
+
+  it('splits the ?v= query off the path FIRST so the gene still validates and opens', () => {
+    // Without stripping ?v=, the gene part would be "mthfr?v=rs1801133" and fail
+    // the GENEX_M_SNP_SLUG_SET validation, breaking the gene deep link too.
+    expect(source).toContain("raw.split('?')");
+    expect(source).toContain('pathPart');
+    expect(source).toContain('queryPart');
+    // The path is still split on a slash for panel/snp.
+    expect(source).toContain("pathPart.split('/')");
+  });
+
+  it('reads the v param from the query part and returns variantRsid', () => {
+    expect(source).toContain("new URLSearchParams(queryPart).get('v')");
+    expect(source).toContain('variantRsid');
+  });
+
+  it('owns a highlightRsid state', () => {
+    expect(source).toContain('const [highlightRsid, setHighlightRsid] = useState<string | null>(null)');
+  });
+
+  it('records the variant rsid as the highlight when adopting the hash', () => {
+    expect(source).toContain('setHighlightRsid(variantRsid)');
+  });
+
+  it('gates mount scrolling on variantRsid in addition to scrollOnAdopt', () => {
+    // The bare panel / gene hash on mount still must NOT scroll (the 491cb489
+    // no-auto-scroll-on-load fix). A variant deep link is the only new mount
+    // scroll case, so the early return is skipped only when a variant is present.
+    expect(source).toContain('if (!scrollOnAdopt && !variantRsid) return;');
+  });
+
+  it('scrolls to the variant sub block on the next frame when a v is present', () => {
+    expect(source).toContain('function scrollToVariant');
+    expect(source).toContain('getElementById(`variant-${rsid}`)');
+    expect(source).toContain('requestAnimationFrame(() => scrollToVariant(variantRsid))');
+  });
+
+  it('clears the highlight when a pill is selected or a SNP is toggled', () => {
+    // Both navigations clear the highlight (the user is no longer landing from a
+    // deep link). setHighlightRsid(null) appears in onSelect and onToggleSnp.
+    expect(source).toContain('setHighlightRsid(null)');
+  });
+
+  it('passes highlightRsid down to the description card', () => {
+    expect(source).toContain('highlightRsid={highlightRsid}');
+  });
+
+  it('still uses replaceState only and never pushState', () => {
+    expect(source).toContain('history.replaceState');
+    expect(source).not.toContain('pushState');
   });
 
   it('contains no em or en dashes', () => {

@@ -26,6 +26,17 @@
 // header) into view. Switching panels via a pill collapses any open SNP and
 // drops back to the bare panel hash.
 //
+// Prompt 193c Task T3: the Report pill on Your Variants deep links here as
+// `#<panelSlug>/<geneSlug>?v=<rsid>` (Scheme A, the ?v= query lives INSIDE the
+// hash fragment). parseHash splits the ?v= part off the path FIRST (so the gene
+// still validates and opens), then reads the rsid. The island owns highlightRsid
+// and, when a variant rsid is present, opens the gene, scrolls to the variant
+// sub block (id variant-<rsid>) on the next frame, and threads highlightRsid to
+// the card so SnpDeepReport applies a soft non-alarm teal ring to that variant.
+// Crucially the variant deep link is the ONLY new mount-scroll case: a bare
+// panel or gene hash on mount still does NOT scroll (the 491cb489 fix holds).
+// Clicking a pill or toggling a SNP clears the highlight.
+//
 // Standing rules honored: tokens only (Deep Navy #1A2744, Teal #2DA5A0, white
 // opacity neutrals), Instrument Sans inherited, no emojis, no em or en dashes
 // (the pipe in the approved tagline is allowed), TypeScript strict (no any),
@@ -56,20 +67,38 @@ function prefersReducedMotion(): boolean {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
 
-// Parse the two level hash. The fragment is `<panelSlug>` or
-// `<panelSlug>/<snpSlug>`. Part 1 is validated against PANEL_BY_SLUG; part 2 is
-// only honored when part 1 is genex-m and the slug is a known GeneX-M SNP, else
-// the SNP is null. Returns null for the panel when part 1 is unknown.
-function parseHash(hash: string): { panel: PanelSlug | null; snp: string | null } {
+// Parse the two level hash, plus the optional variant query (Prompt 193c Task
+// T3, Scheme A). The fragment is `<panelSlug>`, `<panelSlug>/<snpSlug>`, or
+// either of those followed by `?v=<rsid>`, for example
+// `genex-m/mthfr?v=rs1801133`. The `?v=` part is split off FIRST so the path is
+// parsed exactly as before: if it were not stripped, the gene part would become
+// `mthfr?v=rs1801133` and fail validation, breaking the gene deep link too.
+// Part 1 is validated against PANEL_SLUG_SET; part 2 is only honored when part 1
+// is genex-m and the slug is a known GeneX-M SNP, else the SNP is null. The
+// variant rsid is the decoded `v` query value, or null when absent.
+function parseHash(hash: string): {
+  panel: PanelSlug | null;
+  snp: string | null;
+  variantRsid: string | null;
+} {
   const raw = hash.replace(/^#/, '');
-  const [panelPart, snpPart] = raw.split('/');
+
+  // Split the `?v=` query off the path FIRST. Everything before the first `?`
+  // is the panel/snp path; everything after is the query string.
+  const [pathPart, queryPart] = raw.split('?');
+  const [panelPart, snpPart] = pathPart.split('/');
 
   const panel = PANEL_SLUG_SET.has(panelPart) ? (panelPart as PanelSlug) : null;
 
   const snp =
     panel === 'genex-m' && snpPart && GENEX_M_SNP_SLUG_SET.has(snpPart) ? snpPart : null;
 
-  return { panel, snp };
+  // Read the `v` value from the query part (URLSearchParams handles decoding).
+  // A missing or empty `v` yields null.
+  const rawVariant = queryPart ? new URLSearchParams(queryPart).get('v') : null;
+  const variantRsid = rawVariant ? rawVariant : null;
+
+  return { panel, snp, variantRsid };
 }
 
 // Scroll a card into view, honoring reduced motion. The card carries
@@ -93,6 +122,18 @@ function scrollToSnp(snpSlug: string) {
   });
 }
 
+// Prompt 193c Task T3: scroll a specific variant sub block into view. The block
+// carries id variant-<rsid> with scroll-mt-[80px] so the sticky header offset is
+// handled for us. Honors reduced motion. Used only for the deliberate Report
+// pill deep link (a hash carrying ?v=<rsid>).
+function scrollToVariant(rsid: string) {
+  if (typeof document === 'undefined') return;
+  document.getElementById(`variant-${rsid}`)?.scrollIntoView({
+    behavior: prefersReducedMotion() ? 'auto' : 'smooth',
+    block: 'start',
+  });
+}
+
 export function GeneX360PanelSection() {
   // Default to genex-m for deterministic SSR; never read window during render.
   const [activeSlug, setActiveSlug] = useState<PanelSlug>('genex-m');
@@ -101,24 +142,44 @@ export function GeneX360PanelSection() {
   // when the active panel is genex-m and the slug is a known GeneX-M SNP.
   const [openSnp, setOpenSnp] = useState<string | null>(null);
 
-  // Adopt the hash into state: activate the panel from part 1 and expand the SNP
-  // from part 2. scrollOnAdopt controls whether we ALSO scroll the target into
-  // view. It is false on the initial mount, so a page load (or a dev HMR reload
-  // that keeps a leftover hash from an earlier pill or SNP interaction) never
-  // yanks the page down to that target; the page loads at the top showing the
-  // explorer header. It is true on a deliberate hashchange (browser back /
-  // forward, a pasted in page anchor). A bare or unknown hash leaves us on
-  // genex-m with no open SNP and never scrolls.
+  // Prompt 193c Task T3: the variant rsid to highlight (null = none). Set when a
+  // hash carries ?v=<rsid> (the deliberate Report pill deep link), cleared when
+  // the user navigates by clicking a pill or toggling a SNP (they are no longer
+  // landing from a deep link). Threaded down to the card so SnpDeepReport can
+  // apply a soft non-alarm teal ring to the matching variant sub block.
+  const [highlightRsid, setHighlightRsid] = useState<string | null>(null);
+
+  // Adopt the hash into state: activate the panel from part 1, expand the SNP
+  // from part 2, and record any variant rsid from the ?v= query. scrollOnAdopt
+  // controls whether we ALSO scroll on a bare panel or gene hash. It is false on
+  // the initial mount, so a page load (or a dev HMR reload that keeps a leftover
+  // hash from an earlier pill or SNP interaction) never yanks the page down to
+  // that target; the page loads at the top showing the explorer header. It is
+  // true on a deliberate hashchange (browser back / forward, a pasted in page
+  // anchor). A bare or unknown hash leaves us on genex-m with no open SNP and
+  // never scrolls.
+  //
+  // The ONLY new mount-scroll case is a hash carrying a variant rsid (the
+  // deliberate Report pill deep link): scrolling is gated on
+  // `scrollOnAdopt || variantRsid`, so a variant deep link scrolls to the
+  // variant even on mount, while a bare panel or gene hash on mount still does
+  // NOT scroll (the commit 491cb489 no-auto-scroll-on-load fix is preserved).
   const adoptHash = useCallback((scrollOnAdopt: boolean) => {
-    const { panel, snp } = parseHash(window.location.hash);
+    const { panel, snp, variantRsid } = parseHash(window.location.hash);
     if (!panel) {
       setOpenSnp(null);
+      setHighlightRsid(null);
       return;
     }
     setActiveSlug(panel);
     setOpenSnp(snp);
-    if (!scrollOnAdopt) return;
-    if (snp) {
+    setHighlightRsid(variantRsid);
+    if (!scrollOnAdopt && !variantRsid) return;
+    if (variantRsid) {
+      // Wait one frame so the gene disclosure opens and the variant sub block is
+      // painted before scrolling to it.
+      requestAnimationFrame(() => scrollToVariant(variantRsid));
+    } else if (snp) {
       // Wait one frame so the SNP row is painted before scrolling to it.
       requestAnimationFrame(() => scrollToSnp(snp));
     } else {
@@ -144,11 +205,13 @@ export function GeneX360PanelSection() {
   }, [adoptHash]);
 
   // Pill selection: flip the panel, collapse any open SNP and drop the nested
-  // hash, update the hash with replaceState (never a history push, so the back
-  // button stays clean), then smooth scroll the card.
+  // hash, clear any variant highlight (the user is navigating by click, no
+  // longer landing from a deep link), update the hash with replaceState (never a
+  // history push, so the back button stays clean), then smooth scroll the card.
   const onSelect = useCallback((slug: PanelSlug) => {
     setActiveSlug(slug);
     setOpenSnp(null);
+    setHighlightRsid(null);
     window.history.replaceState(null, '', `#${slug}`);
     scrollToCard(slug);
   }, []);
@@ -159,6 +222,9 @@ export function GeneX360PanelSection() {
   // into view (honoring reduced motion).
   const onToggleSnp = useCallback(
     (snpSlug: string) => {
+      // Clear any variant highlight: the user is navigating by clicking, no
+      // longer landing from a deep link. The bare nested hash carries no v param.
+      setHighlightRsid(null);
       setOpenSnp((prev) => {
         const next = prev === snpSlug ? null : snpSlug;
         if (next) {
@@ -203,12 +269,14 @@ export function GeneX360PanelSection() {
 
       {/* The single active card. openSnp and onToggleSnp drive the GeneX-M per
           SNP disclosures; they are inert on panels whose markers carry no
-          deepReport. */}
+          deepReport. highlightRsid soft highlights the variant a Report pill deep
+          link targeted (null otherwise). */}
       <PanelDescriptionCard
         panel={activePanel}
         onBackToPanels={handleBack}
         openSnpSlug={openSnp}
         onToggleSnp={onToggleSnp}
+        highlightRsid={highlightRsid}
       />
 
       {/* Hidden anchor stubs for every non active slug so all six slugs stay

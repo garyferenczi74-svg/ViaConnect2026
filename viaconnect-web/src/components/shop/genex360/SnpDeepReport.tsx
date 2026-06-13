@@ -3,6 +3,16 @@
 // disclosure (accordion) and the nested #genex-m/<slug> hash wiring that mounts
 // this report are a later task; this component only renders one SnpDeepReport.
 //
+// Prompt 193c Task T3 (2026-06-12): each variant sub block now carries
+// id={`variant-${variant.rsid}`} (rsid verbatim, so the resolver's exact match
+// holds) plus scroll-mt so the island can scroll it under the sticky header.
+// When the optional highlightRsid prop matches a variant's rsid, that block gets
+// a soft, NON-ALARM teal highlight: a teal ring (a structural cue, so the
+// highlight does not rely on color alone) plus a faint teal fill, applied via a
+// gentle color transition that prefers-reduced-motion disables (the static ring
+// still shows). Never red or alarm styling. Variants without the highlight, and
+// pending variants, render exactly as before.
+//
 // Section order (fixed):
 //   1. Variants and genotypes   2. Biological role       3. Functional impact
 //   4. Health associations      5. Nutrient strategy     6. Cautions
@@ -53,6 +63,12 @@ import type { SnpDeepReport as SnpDeepReportData } from "@/data/genex360/types";
 
 interface SnpDeepReportProps {
   report: SnpDeepReportData;
+  // Prompt 193c Task T3: the variant rsid a Report pill deep link targeted (null
+  // otherwise). When it matches a variant's rsid, that variant sub block gets a
+  // soft, NON-ALARM teal highlight (a teal ring plus a faint teal fill). The ring
+  // is a structural cue so the highlight does not rely on color alone, and it
+  // appears via a gentle transition that prefers-reduced-motion disables.
+  highlightRsid?: string | null;
 }
 
 // Chip classes for one genotype status label, selected by keyword. Returns the
@@ -154,7 +170,7 @@ function ProseListSection({
   );
 }
 
-export function SnpDeepReport({ report }: SnpDeepReportProps) {
+export function SnpDeepReport({ report, highlightRsid }: SnpDeepReportProps) {
   return (
     <div className="space-y-7 text-white">
       {/* Meta chips: pathway always, aliases only when present. */}
@@ -173,8 +189,25 @@ export function SnpDeepReport({ report }: SnpDeepReportProps) {
       <section className="space-y-4">
         <SectionHeading icon={Dna}>Variants and genotypes</SectionHeading>
         <div className="space-y-5">
-          {report.keyVariants.map((variant) => (
-            <div key={variant.rsid} className="space-y-2.5">
+          {report.keyVariants.map((variant) => {
+            // Prompt 193c: the deep linked variant gets a soft, non-alarm teal
+            // highlight. The ring is a structural cue (does not rely on color
+            // alone). The id and scroll margin let the island scroll this block
+            // under the sticky header. Use the rsid verbatim so the join stays
+            // exact (the resolver matches variant.rsid === rsid). The padding +
+            // rounding give the ring room to read. The transition is gentle and
+            // disabled under prefers-reduced-motion (the static ring still shows).
+            const isHighlighted = highlightRsid != null && highlightRsid === variant.rsid;
+            return (
+            <div
+              key={variant.rsid}
+              id={`variant-${variant.rsid}`}
+              className={`scroll-mt-[80px] space-y-2.5 rounded-lg p-3 transition-colors motion-reduce:transition-none ${
+                isHighlighted
+                  ? "ring-2 ring-[#2DA5A0]/60 bg-[#2DA5A0]/[0.06]"
+                  : ""
+              }`}
+            >
               {/* Variant sub heading: rsid plus common name. */}
               <h5 className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
                 <span className="font-mono text-sm font-semibold text-[#2DA5A0]">
@@ -261,7 +294,8 @@ export function SnpDeepReport({ report }: SnpDeepReportProps) {
                 </>
               )}
             </div>
-          ))}
+            );
+          })}
         </div>
       </section>
 

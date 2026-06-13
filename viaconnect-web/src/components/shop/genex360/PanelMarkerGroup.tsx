@@ -14,6 +14,10 @@
 // header. Markers without a deepReport (every non GeneX-M panel) render exactly
 // as before, with no disclosure control.
 //
+// Prompt 193c Task T3: highlightRsid (the variant a Report pill deep link
+// targeted) is forwarded to SnpDeepReport, which applies a soft non-alarm teal
+// ring to the matching variant sub block. This group only forwards the prop.
+//
 // Renders the group title as a teal tinted uppercase eyebrow, then each marker
 // as a compact row: symbol in Teal #2DA5A0, fullName muted, description in body
 // text. On desktop the markers may flow into a responsive two column grid for
@@ -35,9 +39,18 @@ interface PanelMarkerGroupProps {
   // markers; absent for every other panel.
   openSnpSlug?: string | null;
   onToggleSnp?: (snpSlug: string) => void;
+  // Prompt 193c: the variant rsid the Report pill deep link targeted (null
+  // otherwise). Forwarded to SnpDeepReport (only the open disclosure renders one)
+  // so the matching variant sub block gets a soft non-alarm ring.
+  highlightRsid?: string | null;
 }
 
-export function PanelMarkerGroup({ group, openSnpSlug, onToggleSnp }: PanelMarkerGroupProps) {
+export function PanelMarkerGroup({
+  group,
+  openSnpSlug,
+  onToggleSnp,
+  highlightRsid,
+}: PanelMarkerGroupProps) {
   const reduced = useReducedMotion() ?? false;
 
   return (
@@ -60,6 +73,7 @@ export function PanelMarkerGroup({ group, openSnpSlug, onToggleSnp }: PanelMarke
                 openSnpSlug={openSnpSlug ?? null}
                 onToggleSnp={onToggleSnp as (snpSlug: string) => void}
                 reduced={reduced}
+                highlightRsid={highlightRsid ?? null}
               />
             );
           }
@@ -101,11 +115,13 @@ function SnpMarkerRow({
   openSnpSlug,
   onToggleSnp,
   reduced,
+  highlightRsid,
 }: {
   marker: PanelMarker;
   openSnpSlug: string | null;
   onToggleSnp: (snpSlug: string) => void;
   reduced: boolean;
+  highlightRsid: string | null;
 }) {
   const slug = marker.symbol.toLowerCase();
   const isOpen = openSnpSlug === slug;
@@ -171,7 +187,7 @@ function SnpMarkerRow({
             className="overflow-hidden"
           >
             <div className="border-t border-white/[0.06] px-3 pb-4 pt-4">
-              <SnpDeepReport report={marker.deepReport!} />
+              <SnpDeepReport report={marker.deepReport!} highlightRsid={highlightRsid} />
             </div>
           </motion.div>
         ) : null}
