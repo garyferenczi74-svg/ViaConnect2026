@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { withAbortTimeout, isTimeoutError } from "@/lib/utils/with-timeout";
 import { safeLog } from "@/lib/utils/safe-log";
 import { getCircuitBreaker, isCircuitBreakerError } from "@/lib/utils/circuit-breaker";
+import { checkProductInteractions } from "@/lib/ai/interaction-engine";
 
 const claudeBreaker = getCircuitBreaker("claude-api");
 
@@ -115,6 +116,70 @@ function findLocalInteractions(medications: string[], supplements: string[]) {
   return results;
 }
 
+// Wired 2026-06-12 (protocol safety gate): the curated FarmCeutica product
+// database (INTERACTION_DB + CYP escalation) runs as a deterministic floor
+// under BOTH the Claude path and the local fallback. Claude has no knowledge
+// of FarmCeutica product formulations, and the local COMMON_INTERACTIONS map
+// only knows generic compounds, so without this layer a product-specific
+// critical (MTHFR+ x methotrexate) could pass silently.
+const ENGINE_SEVERITY_TO_WIRE: Record<string, string> = {
+  critical: "major",
+  warning: "moderate",
+  info: "minor",
+  none: "minor",
+};
+
+function productFloorInteractions(
+  medications: string[],
+  supplements: string[],
+  interactionType: "current_supplement" | "ai_recommendation",
+  cypStatusMap: Record<string, string> = {},
+) {
+  return checkProductInteractions(supplements, medications, cypStatusMap)
+    .filter((i) => i.severity !== "none")
+    .map((i) => ({
+      medication: i.medication,
+      interactsWith: i.supplement,
+      interactionType,
+      severity: ENGINE_SEVERITY_TO_WIRE[i.severity] ?? "minor",
+      mechanism: i.description,
+      clinicalEffect: i.description,
+      onsetTiming: i.severity === "critical" ? "Hours to days" : "Days to weeks",
+      mitigation: i.recommendation,
+      evidenceLevel: i.severity === "critical" ? "strong" : "moderate",
+      citations: ["FarmCeutica formulation interaction database"],
+      pharmacogenomicContext: i.pharmacogenomic_context,
+    }));
+}
+
+const WIRE_SEVERITY_RANK: Record<string, number> = {
+  major: 3,
+  moderate: 2,
+  minor: 1,
+  synergistic: 0,
+};
+
+// The floor must floor: on a key collision the HIGHER severity wins, so a
+// Claude response rating a known deterministic critical as moderate cannot
+// strip it out of blockedProducts.
+function mergeInteractions<T extends { medication: string; interactsWith: string; severity: string }>(
+  primary: T[],
+  floor: T[],
+): T[] {
+  const byKey = new Map<string, T>();
+  for (const i of primary) {
+    byKey.set(i.medication.toLowerCase() + "|" + i.interactsWith.toLowerCase(), i);
+  }
+  for (const f of floor) {
+    const key = f.medication.toLowerCase() + "|" + f.interactsWith.toLowerCase();
+    const existing = byKey.get(key);
+    if (!existing || (WIRE_SEVERITY_RANK[f.severity] ?? 0) > (WIRE_SEVERITY_RANK[existing.severity] ?? 0)) {
+      byKey.set(key, f);
+    }
+  }
+  return [...byKey.values()];
+}
+
 export async function POST(request: Request) {
   try {
     const { userId, medications, supplements, recommendations, allergies } = await request.json();
@@ -158,6 +223,39 @@ export async function POST(request: Request) {
         interactions = findLocalInteractions(medications, allSupplements);
       }
     }
+
+    // Deterministic product floor on every path. When the caller is
+    // authenticated the user's CYP status feeds the escalation, matching
+    // the generate-protocol gate.
+    let cypStatusMap: Record<string, string> = {};
+    if (userId) {
+      try {
+        const supabase = createClient();
+        const { data: gpRow } = await supabase
+          .from("genetic_profiles")
+          .select("cyp2d6_status, additional_genes")
+          .eq("user_id", userId)
+          .maybeSingle();
+        if (gpRow?.cyp2d6_status) cypStatusMap.CYP2D6 = gpRow.cyp2d6_status;
+        const extraGenes = gpRow?.additional_genes;
+        if (extraGenes && typeof extraGenes === "object" && !Array.isArray(extraGenes)) {
+          for (const [gene, status] of Object.entries(extraGenes)) {
+            if (typeof status === "string" && gene.toUpperCase().startsWith("CYP")) {
+              cypStatusMap[gene.toUpperCase()] = status;
+            }
+          }
+        }
+      } catch {
+        cypStatusMap = {};
+      }
+    }
+    interactions = mergeInteractions(
+      mergeInteractions(
+        interactions,
+        productFloorInteractions(medications, supplements || [], "current_supplement", cypStatusMap),
+      ),
+      productFloorInteractions(medications, recommendations || [], "ai_recommendation", cypStatusMap),
+    );
 
     const summary = {
       major: interactions.filter((i: { severity: string }) => i.severity === "major").length,

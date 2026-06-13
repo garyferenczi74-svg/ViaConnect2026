@@ -1,6 +1,10 @@
 /**
  * Supplement-Medication Interaction Engine
- * ViaConnect AI — Pharmacogenomic-aware interaction checking
+ * ViaConnect AI: pharmacogenomic-aware interaction checking.
+ *
+ * Wired 2026-06-12 (protocol safety gate): checkProductInteractions is the
+ * pure cross-check used by the gate and the check-interactions route;
+ * checkAllInteractions remains the DB-loading wrapper.
  */
 
 // ---------------------------------------------------------------------------
@@ -217,6 +221,87 @@ export function escalateSeverity(
 }
 
 // ---------------------------------------------------------------------------
+// Pure product cross-check (no I/O)
+// ---------------------------------------------------------------------------
+
+/**
+ * Cross-checks FarmCeutica product names against medication names using the
+ * curated INTERACTION_DB, applying CYP-based severity escalation. Pure and
+ * deterministic so the protocol safety gate and API routes can run it as the
+ * floor under any AI-powered interaction analysis.
+ */
+// Resolve a free-form product name ("MTHFR+ Methylation Support 60ct") to
+// its INTERACTION_DB key ("MTHFR+"). Boundary-guarded so NAD+ cannot match
+// inside an unrelated token. Exact match wins; otherwise the first key found
+// as a standalone token in the name.
+function resolveDbKey(productName: string): string | undefined {
+  if (INTERACTION_DB[productName]) return productName;
+  const upper = productName.toUpperCase();
+  for (const key of Object.keys(INTERACTION_DB)) {
+    const escaped = key.toUpperCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    if (new RegExp(`(?:^|[^A-Z0-9])${escaped}(?:$|[^A-Z0-9])`).test(` ${upper} `)) {
+      return key;
+    }
+  }
+  return undefined;
+}
+
+export function checkProductInteractions(
+  supplementNames: string[],
+  medicationNames: string[],
+  cypStatusMap: Record<string, string> = {},
+): InteractionCheck[] {
+  const isCYP2D6Poor =
+    cypStatusMap['CYP2D6']?.toLowerCase().includes('poor') ?? false;
+  const isCYP2C19UltraRapid =
+    cypStatusMap['CYP2C19']?.toLowerCase().includes('ultra') ?? false;
+
+  const results: InteractionCheck[] = [];
+  const meds = medicationNames.map((m) => m.toLowerCase());
+
+  for (const supplement of supplementNames) {
+    const dbKey = resolveDbKey(supplement);
+    const dbEntry = dbKey ? INTERACTION_DB[dbKey] : undefined;
+    if (!dbEntry) continue;
+
+    for (const medication of meds) {
+      const match = dbEntry[medication];
+      if (!match) continue;
+
+      let severity = match.severity;
+      let pharmacogenomicContext: string | undefined;
+
+      // CYP2D6 poor metaboliser: escalate severity by one level.
+      if (isCYP2D6Poor) {
+        severity = escalateSeverity(severity);
+        pharmacogenomicContext =
+          'CYP2D6 poor metaboliser detected. Reduced enzyme clearance may intensify this interaction; severity has been escalated.';
+      }
+
+      // CYP2C19 ultra-rapid metaboliser: add context note.
+      if (isCYP2C19UltraRapid) {
+        const note =
+          'CYP2C19 ultra-rapid metaboliser detected. Faster drug clearance may reduce medication efficacy; discuss with your prescriber.';
+        pharmacogenomicContext = pharmacogenomicContext
+          ? `${pharmacogenomicContext} ${note}`
+          : note;
+      }
+
+      results.push({
+        supplement,
+        medication,
+        severity,
+        description: match.description,
+        pharmacogenomic_context: pharmacogenomicContext,
+        recommendation: match.recommendation,
+      });
+    }
+  }
+
+  return results;
+}
+
+// ---------------------------------------------------------------------------
 // Main Interaction Checker
 // ---------------------------------------------------------------------------
 
@@ -248,13 +333,16 @@ export async function checkAllInteractions(
     return [];
   }
 
-  // 3. Load genetic profile for CYP450 genes
-  const cyp450Genes = ['CYP2D6', 'CYP2C19', 'CYP3A4', 'CYP1A2'];
-  const { data: geneticProfiles, error: genError } = await supabase
+  // 3. Load genetic profile for CYP450 genes.
+  // Fixed 2026-06-12: the original query selected gene/phenotype/
+  // metaboliser_status columns that never existed on genetic_profiles
+  // (the table is one row per user: cyp2d6_status + additional_genes
+  // json), so CYP escalation silently never applied.
+  const { data: gpRow, error: genError } = await supabase
     .from('genetic_profiles')
-    .select('gene, phenotype, metaboliser_status')
+    .select('cyp2d6_status, additional_genes')
     .eq('user_id', userId)
-    .in('gene', cyp450Genes);
+    .maybeSingle();
 
   if (genError) {
     console.error('[InteractionEngine] Failed to load genetic profiles:', genError.message);
@@ -262,64 +350,23 @@ export async function checkAllInteractions(
 
   // Build look-up maps for CYP status
   const cypStatusMap: Record<string, string> = {};
-  if (geneticProfiles) {
-    for (const gp of geneticProfiles) {
-      cypStatusMap[gp.gene] = gp.metaboliser_status ?? gp.phenotype ?? 'normal';
+  if (gpRow?.cyp2d6_status) cypStatusMap['CYP2D6'] = gpRow.cyp2d6_status;
+  const extraGenes = gpRow?.additional_genes;
+  if (extraGenes && typeof extraGenes === 'object' && !Array.isArray(extraGenes)) {
+    for (const [gene, status] of Object.entries(extraGenes)) {
+      if (typeof status === 'string' && gene.toUpperCase().startsWith('CYP')) {
+        cypStatusMap[gene.toUpperCase()] = status;
+      }
     }
   }
 
-  const isCYP2D6Poor =
-    cypStatusMap['CYP2D6']?.toLowerCase().includes('poor') ?? false;
-  const isCYP2C19UltraRapid =
-    cypStatusMap['CYP2C19']?.toLowerCase().includes('ultra') ?? false;
-
-  // 4. Cross-check every supplement × medication pair
-  const results: InteractionCheck[] = [];
-
+  // 4. Cross-check every supplement x medication pair via the pure checker.
   const supplementNames: string[] = (protocol ?? []).map(
     (p: { supplement_name: string }) => p.supplement_name,
   );
   const medicationNames: string[] = (medications ?? []).map(
-    (m: { medication_name: string }) => m.medication_name.toLowerCase(),
+    (m: { medication_name: string }) => m.medication_name,
   );
 
-  for (const supplement of supplementNames) {
-    const dbEntry = INTERACTION_DB[supplement];
-    if (!dbEntry) continue;
-
-    for (const medication of medicationNames) {
-      const match = dbEntry[medication];
-      if (!match) continue;
-
-      let severity = match.severity;
-      let pharmacogenomicContext: string | undefined;
-
-      // CYP2D6 poor metaboliser — escalate severity by one level
-      if (isCYP2D6Poor) {
-        severity = escalateSeverity(severity);
-        pharmacogenomicContext =
-          'CYP2D6 poor metaboliser detected. Reduced enzyme clearance may intensify this interaction — severity has been escalated.';
-      }
-
-      // CYP2C19 ultra-rapid metaboliser — add context note
-      if (isCYP2C19UltraRapid) {
-        const note =
-          'CYP2C19 ultra-rapid metaboliser detected. Faster drug clearance may reduce medication efficacy; discuss with your prescriber.';
-        pharmacogenomicContext = pharmacogenomicContext
-          ? `${pharmacogenomicContext} ${note}`
-          : note;
-      }
-
-      results.push({
-        supplement,
-        medication,
-        severity,
-        description: match.description,
-        pharmacogenomic_context: pharmacogenomicContext,
-        recommendation: match.recommendation,
-      });
-    }
-  }
-
-  return results;
+  return checkProductInteractions(supplementNames, medicationNames, cypStatusMap);
 }

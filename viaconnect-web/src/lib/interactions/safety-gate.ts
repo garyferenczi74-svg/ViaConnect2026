@@ -1,5 +1,7 @@
-// Safety gate: checks AI protocol against medications before saving
-// Called after protocol generation, before displaying to user
+// Safety gate: checks AI protocol against medications before saving.
+// Client-side helper over /api/ai/check-interactions. The server-side
+// pre-save pipeline (interactions + Marshall + Lex lanes) lives in
+// src/lib/interactions/protocol-gate.ts, which re-exports the filter below.
 
 export async function checkProtocolSafety(
   userId: string,
