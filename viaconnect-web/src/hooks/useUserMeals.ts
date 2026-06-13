@@ -24,10 +24,11 @@
 // (legacy) per Prompt 168 Apply B Path B. Errors are returned via
 // the error field and never thrown out of the hook.
 
-import { useEffect } from 'react';
+import { useEffect, useMemo, useSyncExternalStore } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@/lib/supabase/client';
 import { safeLog } from '@/lib/utils/safe-log';
+import { pendingMealDeletes } from '@/components/nutrition/pendingMealDeletes';
 import type { Meal, MealType, MealSource, ScoreBreakdown, QualityTier, QualityTierDb } from '@/lib/gordon/types';
 
 const FETCH_TIMEOUT_MS = 8_000;
@@ -366,8 +367,26 @@ export function useUserMeals(
     };
   }, [userId, days, includeLegacy, queryClient]);
 
+  // Meals optimistically removed but not yet committed server side (the 5 second
+  // undo window in useRemoveMeal) are filtered out here so a removal survives a
+  // refetch. Without this, the realtime channel above (or any invalidation) can
+  // refetch the still present row mid window and the meal reappears, which is the
+  // remove then readds bug on the Today's meals card.
+  const pendingDeletes = useSyncExternalStore(
+    pendingMealDeletes.subscribe,
+    pendingMealDeletes.getSnapshot,
+    pendingMealDeletes.getSnapshot,
+  );
+
+  const data = queryResult.data;
+  const meals = useMemo(() => {
+    const list = data ?? [];
+    if (pendingDeletes.size === 0) return list;
+    return list.filter((m) => !pendingDeletes.has(m.mealId));
+  }, [data, pendingDeletes]);
+
   return {
-    meals: queryResult.data ?? [],
+    meals,
     loading: queryResult.isLoading,
     error: queryResult.error ?? null,
   };
