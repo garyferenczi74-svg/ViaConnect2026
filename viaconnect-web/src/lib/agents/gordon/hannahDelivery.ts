@@ -1,5 +1,5 @@
-// Gordan → Hannah delivery format (Prompt #62h).
-// Gordan generates content; Hannah delivers it through avatar or cards.
+// Gordon → Hannah delivery format (Prompt #62h).
+// Gordon generates content; Hannah delivers it through avatar or cards.
 
 export type DeliveryType = 'avatar' | 'card' | 'both';
 
@@ -29,7 +29,7 @@ export interface DeliveryAction {
 }
 
 export interface HannahDelivery {
-  agentSource: 'gordan';
+  agentSource: 'gordon';
   deliveryType: DeliveryType;
   avatarConfig?: AvatarConfig;
   cardConfig?: CardConfig;
@@ -45,7 +45,7 @@ export function createMealFeedbackDelivery(
   actions?: DeliveryAction[],
 ): HannahDelivery {
   return {
-    agentSource: 'gordan',
+    agentSource: 'gordon',
     deliveryType: 'both',
     avatarConfig: {
       animation: 'speaking',
@@ -58,7 +58,7 @@ export function createMealFeedbackDelivery(
       position: 'nutrition_page',
     },
     content: {
-      title: 'Meal Feedback from Gordan',
+      title: 'Meal Feedback from Gordon',
       message,
       actions,
     },
@@ -67,7 +67,7 @@ export function createMealFeedbackDelivery(
 
 export function createNudgeDelivery(message: string): HannahDelivery {
   return {
-    agentSource: 'gordan',
+    agentSource: 'gordon',
     deliveryType: 'card',
     cardConfig: {
       component: 'EngagementNudge',
@@ -86,7 +86,7 @@ export function createCelebrationDelivery(
   points: number,
 ): HannahDelivery {
   return {
-    agentSource: 'gordan',
+    agentSource: 'gordon',
     deliveryType: 'both',
     avatarConfig: {
       animation: 'celebrating',

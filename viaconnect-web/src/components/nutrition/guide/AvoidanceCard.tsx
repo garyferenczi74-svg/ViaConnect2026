@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Dna, AlertTriangle, ChevronDown } from 'lucide-react';
-import type { FoodAvoidance } from '@/lib/agents/gordan/generateNutritionalGuide';
+import type { FoodAvoidance } from '@/lib/agents/gordon/generateNutritionalGuide';
 
 const SEVERITY_STYLES = {
   avoid:   { label: 'Avoid', color: '#EF4444', dot: 'bg-red-400' },

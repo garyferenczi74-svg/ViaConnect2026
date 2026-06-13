@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { Dna, ArrowRight } from 'lucide-react';
-import type { ConfidenceTier } from '@/lib/agents/gordan/generateNutritionalGuide';
+import type { ConfidenceTier } from '@/lib/agents/gordon/generateNutritionalGuide';
 
 const TIER_STYLES: Record<ConfidenceTier, { border: string; bg: string; text: string }> = {
   1: { border: 'border-[#B75E18]/30', bg: 'bg-[#B75E18]/10', text: 'text-[#B75E18]' },

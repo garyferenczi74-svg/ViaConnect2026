@@ -1,5 +1,5 @@
 /**
- * AI output adapter — scans AI advisor output (Jeffery, Gordan, Arnold, Hannah,
+ * AI output adapter: scans AI advisor output (Jeffery, Gordon, Arnold, Hannah,
  * portal advisors) BEFORE it hits the user's screen. Synchronous preferred;
  * 50ms budget per the spec.
  */

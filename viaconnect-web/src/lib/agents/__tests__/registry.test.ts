@@ -28,7 +28,7 @@ describe("AGENT_REGISTRY", () => {
 
   it("rejects unknown agent IDs", () => {
     expect(isKnownAgentId("jeffery")).toBe(true);
-    expect(isKnownAgentId("gordan")).toBe(false);
+    expect(isKnownAgentId("gordon")).toBe(false);
     expect(isKnownAgentId("")).toBe(false);
   });
 });

@@ -22,7 +22,9 @@ describe("mapUltrathinkEvent", () => {
   it("returns null for unknown agent", () => {
     const e = mapUltrathinkEvent({
       id: "e2",
-      agent_name: "gordan",
+      // gordon is a real sub-agent but not a command-center fleet member,
+      // so the mapper returns null.
+      agent_name: "gordon",
       event_type: "heartbeat",
       run_id: null,
       payload: {},
@@ -113,8 +115,8 @@ describe("mapUltrathinkRegistry", () => {
 
   it("returns null for unknown agent", () => {
     const h = mapUltrathinkRegistry({
-      agent_name: "gordan",
-      display_name: "Gordan",
+      agent_name: "gordon",
+      display_name: "Gordon",
       health_status: "healthy",
       last_heartbeat_at: new Date().toISOString(),
       consecutive_misses: 0,

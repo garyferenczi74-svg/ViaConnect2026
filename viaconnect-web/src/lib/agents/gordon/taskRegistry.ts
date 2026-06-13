@@ -1,7 +1,7 @@
-// Gordan task registry (Prompt #62h).
-// All tasks Gordan handles, with types for the API route.
+// Gordon task registry (Prompt #62h).
+// All tasks Gordon handles, with types for the API route.
 
-export const GORDAN_TASKS = {
+export const GORDON_TASKS = {
   // Real-time (consumer triggered)
   MEAL_VISION_ANALYSIS: 'meal_vision_analysis',
   NUTRITION_INSIGHT: 'nutrition_insight',
@@ -20,7 +20,7 @@ export const GORDAN_TASKS = {
   DIETARY_ADJUSTMENT: 'dietary_adjustment',
 } as const;
 
-export type GordanTask = (typeof GORDAN_TASKS)[keyof typeof GORDAN_TASKS];
+export type GordonTask = (typeof GORDON_TASKS)[keyof typeof GORDON_TASKS];
 
 const NUTRITION_KEYWORDS = [
   'eat', 'meal', 'food', 'diet', 'nutrition', 'calories', 'protein',
@@ -34,17 +34,17 @@ export function isNutritionQuery(query: string): boolean {
   return NUTRITION_KEYWORDS.some((kw) => lower.includes(kw));
 }
 
-export function determineGordanTask(query: string): GordanTask {
+export function determineGordonTask(query: string): GordonTask {
   const lower = query.toLowerCase();
   if (lower.includes('photo') || lower.includes('picture') || lower.includes('snap'))
-    return GORDAN_TASKS.MEAL_VISION_ANALYSIS;
+    return GORDON_TASKS.MEAL_VISION_ANALYSIS;
   if (lower.includes('plan') || lower.includes('suggest'))
-    return GORDAN_TASKS.MEAL_PLAN_SUGGESTION;
+    return GORDON_TASKS.MEAL_PLAN_SUGGESTION;
   if (lower.includes('interact') || lower.includes('conflict'))
-    return GORDAN_TASKS.FOOD_INTERACTION_CHECK;
+    return GORDON_TASKS.FOOD_INTERACTION_CHECK;
   if (lower.includes('week') || lower.includes('pattern') || lower.includes('trend'))
-    return GORDAN_TASKS.WEEKLY_PATTERN_ANALYSIS;
+    return GORDON_TASKS.WEEKLY_PATTERN_ANALYSIS;
   if (lower.includes('today') || lower.includes('summary'))
-    return GORDAN_TASKS.DAILY_NUTRITION_SUMMARY;
-  return GORDAN_TASKS.NUTRITION_INSIGHT;
+    return GORDON_TASKS.DAILY_NUTRITION_SUMMARY;
+  return GORDON_TASKS.NUTRITION_INSIGHT;
 }

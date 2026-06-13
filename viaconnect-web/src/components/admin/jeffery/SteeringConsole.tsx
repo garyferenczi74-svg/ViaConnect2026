@@ -9,8 +9,8 @@ const SCOPES = [
   // ViaConnect agent fleet
   { value: "jeffery", label: "Jeffery (Brain)" },
   { value: "michelangelo", label: "Michelangelo (Sr Dev)" },
-  { value: "hannah", label: "Hannah (AI Nutrition, Genomics)" },
-  { value: "gordan", label: "Gordan (Nutrition Agent)" },
+  { value: "hannah", label: "Hannah (AI Nutrition, Genomics, AI Chat)" },
+  { value: "gordon", label: "Gordon (Nutrition Dietician)" },
   { value: "arnold", label: "Arnold (Body Tracker)" },
   { value: "hounddog", label: "Hounddog (Web Scraping)" },
   { value: "sherlock", label: "Sherlock (Social Media)" },

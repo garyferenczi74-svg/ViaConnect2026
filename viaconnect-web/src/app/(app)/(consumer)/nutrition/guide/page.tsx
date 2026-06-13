@@ -8,8 +8,8 @@ import { FoodCard } from '@/components/nutrition/guide/FoodCard';
 import { AvoidanceCard } from '@/components/nutrition/guide/AvoidanceCard';
 import { NutrientTargetBar } from '@/components/nutrition/guide/NutrientTargetBar';
 import { BackToNutritionLink } from '@/components/nutrition/hub/BackToNutritionLink';
-import type { GeneticsNutritionalGuide, SupplementDietSynergy, MealTemplate } from '@/lib/agents/gordan/generateNutritionalGuide';
-import { fetchGuide, requestGuideGeneration } from '@/lib/agents/gordan/generateNutritionalGuide';
+import type { GeneticsNutritionalGuide, SupplementDietSynergy, MealTemplate } from '@/lib/agents/gordon/generateNutritionalGuide';
+import { fetchGuide, requestGuideGeneration } from '@/lib/agents/gordon/generateNutritionalGuide';
 import { createClient } from '@/lib/supabase/client';
 import { getDisplayName } from '@/lib/getDisplayName';
 

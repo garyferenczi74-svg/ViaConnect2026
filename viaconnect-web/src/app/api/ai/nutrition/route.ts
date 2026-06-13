@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { GORDAN_SYSTEM_PROMPT, GORDAN_TASK_PROMPTS } from '@/lib/agents/gordan/systemPrompt';
-import type { GordanTask } from '@/lib/agents/gordan/taskRegistry';
+import { GORDON_SYSTEM_PROMPT, GORDON_TASK_PROMPTS } from '@/lib/agents/gordon/systemPrompt';
+import type { GordonTask } from '@/lib/agents/gordon/taskRegistry';
 import { emitJefferyMessage } from '@/lib/jeffery/message-bus';
 import { scanAiOutput } from '@/lib/compliance/adapters/ai_output';
 import { withAbortTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
@@ -11,8 +11,8 @@ import { getCircuitBreaker, isCircuitBreakerError } from '@/lib/utils/circuit-br
 const claudeBreaker = getCircuitBreaker('claude-api');
 const visionBreaker = getCircuitBreaker('claude-vision');
 
-interface GordanRequest {
-  task: GordanTask;
+interface GordonRequest {
+  task: GordonTask;
   payload: Record<string, any>;
 }
 
@@ -86,7 +86,7 @@ async function logActivity(
 ) {
   try {
     await supabase.from('agent_activity_log').insert({
-      user_id: userId, agent_id: 'gordan', task,
+      user_id: userId, agent_id: 'gordon', task,
       tokens_used: tokensUsed, latency_ms: latencyMs,
       success, error_message: errorMessage ?? null,
     });
@@ -100,7 +100,7 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  let body: GordanRequest;
+  let body: GordonRequest;
   try {
     body = await req.json();
   } catch {
@@ -108,14 +108,14 @@ export async function POST(req: NextRequest) {
   }
 
   const { task, payload } = body;
-  const taskPrompt = GORDAN_TASK_PROMPTS[task];
+  const taskPrompt = GORDON_TASK_PROMPTS[task];
   if (!taskPrompt) {
     return NextResponse.json({ error: `Unknown task: ${task}` }, { status: 400 });
   }
 
   try {
     const ctx = await buildConsumerContext(supabase, user.id);
-    const systemPrompt = GORDAN_SYSTEM_PROMPT + '\n\n' + taskPrompt;
+    const systemPrompt = GORDON_SYSTEM_PROMPT + '\n\n' + taskPrompt;
 
     let userContent: any[];
 
@@ -165,23 +165,23 @@ export async function POST(req: NextRequest) {
     await logActivity(supabase, user.id, task, tokensUsed, latency, true);
 
     // Marshall post-flight scan. Findings persist + audit + escalate.
-    // Fire-and-forget; keeps Gordan responsive.
+    // Fire-and-forget; keeps Gordon responsive.
     void scanAiOutput({
-      agent: 'gordan',
+      agent: 'gordon',
       userId: user.id,
       userRole: 'consumer',
       text,
     }).catch(() => { /* best-effort */ });
 
-    // Surface Gordan activity in Jeffery's Live Feed. Fire-and-forget; don't
+    // Surface Gordon activity in Jeffery's Live Feed. Fire-and-forget; don't
     // block the user response on observability.
     void emitJefferyMessage({
       category: 'advisor_insight',
       severity: 'advisory',
-      title: `Gordan: ${task.replace(/_/g, ' ')}`,
-      summary: `Gordan completed ${task} for user ${user.id.slice(0, 8)} in ${latency}ms (${tokensUsed} tokens).`,
+      title: `Gordon: ${task.replace(/_/g, ' ')}`,
+      summary: `Gordon completed ${task} for user ${user.id.slice(0, 8)} in ${latency}ms (${tokensUsed} tokens).`,
       detail: { task, userId: user.id, tokensUsed, latencyMs: latency, payloadKeys: Object.keys(payload ?? {}) },
-      sourceAgent: 'gordan',
+      sourceAgent: 'gordon',
     }).catch(() => { /* emit is best effort */ });
 
     return NextResponse.json(result);
@@ -201,10 +201,10 @@ export async function POST(req: NextRequest) {
     void emitJefferyMessage({
       category: 'error_escalation',
       severity: 'critical',
-      title: `Gordan failed: ${task}`,
+      title: `Gordon failed: ${task}`,
       summary: (err.message ?? 'Unknown error').slice(0, 240),
       detail: { task, userId: user.id, latencyMs: latency, error: err.message },
-      sourceAgent: 'gordan',
+      sourceAgent: 'gordon',
     }).catch(() => { /* emit is best effort */ });
 
     return NextResponse.json({ error: err.message || 'Internal error' }, { status: 500 });

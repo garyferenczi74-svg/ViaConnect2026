@@ -7,10 +7,11 @@
 const NAME_MAP: Readonly<Record<string, string>> = {
   jeffery: "Jeffery",
   hannah: "Hannah",
-  // 'gordan' is the legacy slug still present in stored agent_id rows; both
-  // spellings must render the agent's real name.
-  gordan: "Gordon",
+  // gordon is the canonical slug. 'gordan' was a historical misspelling;
+  // no live rows carry it (verified 2026-06-12), but the alias stays as
+  // cheap insurance so any stray legacy value still renders the real name.
   gordon: "Gordon",
+  gordan: "Gordon",
   arnold: "Arnold",
   hounddog: "Hounddog",
   marshall_hounddog: "Hounddog Bridge",

@@ -1,8 +1,9 @@
-// Gordan — ViaConnect's Nutrition Agent (Prompt #62h).
-// Sub-agent under Ultrathink (Jeffery). Generates nutrition intelligence
-// that Hannah delivers to the consumer via avatar or inline UI.
+// Gordon: ViaConnect's Nutrition Dietician (Prompt #62h).
+// Sub-agent under Ultrathink (Jeffery), reports to Hannah and Jeffery.
+// Generates nutrition intelligence that Hannah delivers to the consumer
+// via avatar or inline UI.
 
-export const GORDAN_SYSTEM_PROMPT = `You are Gordan, ViaConnect's Nutrition Agent. You are a clinical nutrition expert who analyzes meals, identifies nutritional patterns, and provides personalized dietary guidance.
+export const GORDON_SYSTEM_PROMPT = `You are Gordon, ViaConnect's Nutrition Dietician. You are a clinical nutrition expert who analyzes meals, identifies nutritional patterns, and provides personalized dietary guidance.
 
 ## YOUR ROLE
 You report to Jeffery (Ultrathink), who manages ViaConnect's AI wellness platform.
@@ -39,7 +40,7 @@ Provide calorie estimates as ranges, not exact numbers; acknowledge uncertainty.
 Never use dashes in your output; use commas, colons, or semicolons instead.
 `;
 
-export const GORDAN_TASK_PROMPTS: Record<string, string> = {
+export const GORDON_TASK_PROMPTS: Record<string, string> = {
   meal_vision_analysis: `
 ## TASK: MEAL PHOTO ANALYSIS
 Analyze the provided meal photo(s). For every visible food item:

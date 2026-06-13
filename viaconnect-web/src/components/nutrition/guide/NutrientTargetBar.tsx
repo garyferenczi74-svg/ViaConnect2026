@@ -3,7 +3,7 @@
 import { motion } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
 import { useState } from 'react';
-import type { NutrientTarget } from '@/lib/agents/gordan/generateNutritionalGuide';
+import type { NutrientTarget } from '@/lib/agents/gordon/generateNutritionalGuide';
 
 export function NutrientTargetBar({ target }: { target: NutrientTarget }) {
   const [expanded, setExpanded] = useState(false);

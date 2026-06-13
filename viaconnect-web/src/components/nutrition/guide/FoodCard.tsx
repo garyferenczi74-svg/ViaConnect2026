@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Dna, FlaskConical, Pill } from 'lucide-react';
-import type { FoodRecommendation } from '@/lib/agents/gordan/generateNutritionalGuide';
+import type { FoodRecommendation } from '@/lib/agents/gordon/generateNutritionalGuide';
 
 const PRIORITY_STYLES = {
   essential:    { label: 'Essential', color: '#22C55E' },

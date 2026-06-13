@@ -273,7 +273,7 @@ export const GETDISPLAYNAME_REQUIRED: Rule<string> = {
     if (typeof text !== "string") return [];
     const findings: Finding[] = [];
     // Detect raw agent display strings in JSX. Heuristic: the agent slug hardcoded adjacent to role-rendering JSX.
-    const agentSlugs = ["jeffery", "hannah", "gordan", "arnold", "hounddog", "sherlock", "michelangelo", "marshall"];
+    const agentSlugs = ["jeffery", "hannah", "gordon", "arnold", "hounddog", "sherlock", "michelangelo", "marshall"];
     for (const slug of agentSlugs) {
       const re = new RegExp(`>\\s*${slug}\\s*<`, "gi");
       let m: RegExpExecArray | null;

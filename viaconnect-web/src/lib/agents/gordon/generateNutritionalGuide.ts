@@ -1,5 +1,5 @@
 // Genetics Nutritional Guide types and generation orchestrator (Prompt #62i).
-// Gordan combines genetics, labs, allergies, and CAQ to produce a
+// Gordon combines genetics, labs, allergies, and CAQ to produce a
 // personalized dietary blueprint stored as structured JSON.
 
 export interface GeneticsNutritionalGuide {
