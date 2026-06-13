@@ -12,10 +12,13 @@
 //   - healthAssociations and interactions are prose kept as a single array
 //     entry, rendered as paragraph(s) (one paragraph per entry).
 //   - nutrientStrategy, cautions, dietLifestyle are bullet lists.
-//   - a genotype.genotype can be an empty string for note only modifier rows
-//     (label "Reported"); we then render only the label chip and interpretation,
-//     never an empty call chip.
-//   - keyVariants holds 1 to 3 variants, each with its own rsid, name, genotypes.
+//   - a genotype.genotype can be an empty string; we then render only the label
+//     chip and interpretation, never an empty call chip.
+//   - a variant with pendingAssayDefinition true (Prompt 193b: SUOX, ADO) is not
+//     yet reconciled with the live assay, so its genotype tiers are hidden and a
+//     short pending note is shown in place of the rows; its genotypes array is
+//     empty.
+//   - keyVariants holds 1 to 4 variants, each with its own rsid, name, genotypes.
 //
 // Tier color rule (by label keyword, wellness guidance, never a red risk verdict):
 //   - "Typical"                                  -> Teal #2DA5A0 (faint teal fill)
@@ -180,72 +183,83 @@ export function SnpDeepReport({ report }: SnpDeepReportProps) {
                 <span className="text-[13px] text-white/55">{variant.name}</span>
               </h5>
 
-              {/* Genotype rows: a compact table on desktop, stacked cards on
-                  mobile. Each row shows the call (when non-empty), a tier
-                  colored label chip, and the interpretation. */}
+              {/* Prompt 193b: a variant pending assay confirmation hides its
+                  genotype tiers and shows a short muted note in their place. */}
+              {variant.pendingAssayDefinition ? (
+                <p className="rounded-lg border border-white/[0.06] bg-[#1E3054]/40 px-3 py-2.5 text-[13px] leading-relaxed text-white/55">
+                  Pending assay confirmation. Genotype interpretations appear once the GeneX-M assay
+                  variant is confirmed.
+                </p>
+              ) : (
+                <>
+                  {/* Genotype rows: a compact table on desktop, stacked cards on
+                      mobile. Each row shows the call (when non-empty), a tier
+                      colored label chip, and the interpretation. */}
 
-              {/* Mobile and small screens: stacked cards. */}
-              <ul className="space-y-2 md:hidden">
-                {variant.genotypes.map((genotype) => (
-                  <li
-                    key={`${genotype.label}-${genotype.genotype}`}
-                    className="rounded-lg border border-white/[0.06] bg-[#1E3054]/40 p-3"
-                  >
-                    <div className="flex flex-wrap items-center gap-2">
-                      {genotype.genotype !== "" ? (
-                        <span className="inline-flex items-center rounded-md bg-white/10 px-2 py-0.5 font-mono text-xs font-semibold text-white">
-                          {genotype.genotype}
-                        </span>
-                      ) : null}
-                      <span className={tierClasses(genotype.label)}>{genotype.label}</span>
-                    </div>
-                    <p className="mt-1.5 text-[13px] leading-relaxed text-white/75">
-                      {genotype.interpretation}
-                    </p>
-                  </li>
-                ))}
-              </ul>
-
-              {/* Desktop: compact table. */}
-              <div className="hidden overflow-hidden rounded-lg border border-white/[0.06] md:block">
-                <table className="w-full border-collapse text-left">
-                  <thead>
-                    <tr className="bg-[#1E3054]/60 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/45">
-                      <th scope="col" className="w-[14%] px-3 py-2 font-semibold">
-                        Call
-                      </th>
-                      <th scope="col" className="w-[22%] px-3 py-2 font-semibold">
-                        Status
-                      </th>
-                      <th scope="col" className="px-3 py-2 font-semibold">
-                        What it means
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
+                  {/* Mobile and small screens: stacked cards. */}
+                  <ul className="space-y-2 md:hidden">
                     {variant.genotypes.map((genotype) => (
-                      <tr
+                      <li
                         key={`${genotype.label}-${genotype.genotype}`}
-                        className="border-t border-white/[0.06] align-top"
+                        className="rounded-lg border border-white/[0.06] bg-[#1E3054]/40 p-3"
                       >
-                        <td className="px-3 py-2.5">
+                        <div className="flex flex-wrap items-center gap-2">
                           {genotype.genotype !== "" ? (
                             <span className="inline-flex items-center rounded-md bg-white/10 px-2 py-0.5 font-mono text-xs font-semibold text-white">
                               {genotype.genotype}
                             </span>
                           ) : null}
-                        </td>
-                        <td className="px-3 py-2.5">
                           <span className={tierClasses(genotype.label)}>{genotype.label}</span>
-                        </td>
-                        <td className="px-3 py-2.5 text-[13px] leading-relaxed text-white/75">
+                        </div>
+                        <p className="mt-1.5 text-[13px] leading-relaxed text-white/75">
                           {genotype.interpretation}
-                        </td>
-                      </tr>
+                        </p>
+                      </li>
                     ))}
-                  </tbody>
-                </table>
-              </div>
+                  </ul>
+
+                  {/* Desktop: compact table. */}
+                  <div className="hidden overflow-hidden rounded-lg border border-white/[0.06] md:block">
+                    <table className="w-full border-collapse text-left">
+                      <thead>
+                        <tr className="bg-[#1E3054]/60 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/45">
+                          <th scope="col" className="w-[14%] px-3 py-2 font-semibold">
+                            Call
+                          </th>
+                          <th scope="col" className="w-[22%] px-3 py-2 font-semibold">
+                            Status
+                          </th>
+                          <th scope="col" className="px-3 py-2 font-semibold">
+                            What it means
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {variant.genotypes.map((genotype) => (
+                          <tr
+                            key={`${genotype.label}-${genotype.genotype}`}
+                            className="border-t border-white/[0.06] align-top"
+                          >
+                            <td className="px-3 py-2.5">
+                              {genotype.genotype !== "" ? (
+                                <span className="inline-flex items-center rounded-md bg-white/10 px-2 py-0.5 font-mono text-xs font-semibold text-white">
+                                  {genotype.genotype}
+                                </span>
+                              ) : null}
+                            </td>
+                            <td className="px-3 py-2.5">
+                              <span className={tierClasses(genotype.label)}>{genotype.label}</span>
+                            </td>
+                            <td className="px-3 py-2.5 text-[13px] leading-relaxed text-white/75">
+                              {genotype.interpretation}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              )}
             </div>
           ))}
         </div>

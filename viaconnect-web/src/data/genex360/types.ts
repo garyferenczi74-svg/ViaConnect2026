@@ -40,6 +40,12 @@ export interface SnpVariant {
   rsid: string; // for example "rs1801133"
   name: string; // common name, for example "C677T (Ala222Val)"
   genotypes: SnpGenotype[];
+  // Prompt 193b: true when the genotype tiers for this variant are NOT yet
+  // reconciled with the live GENEX-M assay. The UI then hides the genotype rows
+  // and shows the variant identity plus a short pending note only. Used by SUOX
+  // (confirm with assay) and ADO (defer to lab, no established common variant).
+  // genotypes may be empty when this flag is set.
+  pendingAssayDefinition?: boolean;
 }
 
 export interface SnpDeepReport {

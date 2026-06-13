@@ -1,23 +1,29 @@
-// Prompt 193a (2026-06-12): comprehensive per SNP deep reports for the GeneX-M
-// panel on /shop/genex360. Transcribed verbatim from the prompt Section 7. Do
-// not paraphrase or invent biology.
+// Prompt 193b (2026-06-12): comprehensive per SNP deep reports for the GeneX-M
+// panel on /shop/genex360. The report level biology, health associations, and
+// strategy copy is authoritative and unchanged from 193a. The per SNP genotype
+// data (keyVariants) is reconciled to the authoritative GENEX-M variant set.
 //
-// ASSAY RECONCILIATION (read before launch, per Section 4): the rsid and
-// genotype values here are well established DEFAULTS for each gene. Before this
-// ships, every rsid and every genotype call MUST be reconciled against the live
-// GENEX-M assay design. Where the assay reports a different variant, rsid, or
-// genotype for a gene, update THIS file to match the assay, never the other way
-// around, and do not display a genotype the assay does not return. AHCY, SUOX,
-// ACAT1, and ADO in particular use representative rsIDs that vary by panel and
-// need confirmation. The biology, health associations, and strategy copy is
-// authoritative; the variant identifiers are defaults to verify.
+// ASSAY STATUS by locus:
+//   Confirmed (genotype tiers shown as reconciled): MTHFR, MTR, MTRR, SHMT1,
+//   AHCY, COMT, MAOA, VDR, NOS3, DAO, CBS, GST, SOD2, NAT2, TCN2, RFC1, ACAT1.
+//   Confirm with assay: BHMT keeps a real R239Q default but may instead genotype
+//   the common methylation panel set (see the BHMT inline note). SUOX is gated
+//   pending confirmation of the exact position GENEX-M genotypes; its biology and
+//   molybdenum guidance stay live while its genotype tiers are withheld.
+//   Defer to lab: ADO has no established common nutrigenetic variant; its biology
+//   stays live with no genotype to activity mapping until the lab confirms one.
+//
+// Orientation: every genotype call is shown in the assay reporting orientation.
+// Inline strand and orientation notes flag CBS, SOD2, VDR Fok1 and Taq1, and
+// MAOA, where the effect allele label depends on the strand the lab reports.
 //
 // Modeling notes: keyed by lowercase gene symbol slug (the nested hash is
 // #genex-m/<slug>). healthAssociations and interactions are prose in Section 7
-// and are kept as a single array entry to stay verbatim. Note only modifier
-// variants (a single descriptive line, no genotype rows) use a genotype with an
-// empty call and the label "Reported". Representative variants use the calls
-// "Reference" and "Variant".
+// and are kept as a single array entry to stay verbatim. Copy number style loci
+// (GSTM1, GSTT1) carry Present or Null calls, and the MAOA promoter repeat
+// carries repeat counts, never a SNP genotype. Variants that are not yet
+// reconciled with the live assay (SUOX, ADO) set pendingAssayDefinition true and
+// carry an empty genotypes array; the UI hides their tiers until confirmed.
 //
 // Standing rules honored: no em or en dashes anywhere; consumer brand is Via
 // Cura (the legal manufacturing entity is never named here); bioavailability is
@@ -49,9 +55,9 @@ export const GENEX_M_DEEP_REPORTS: Record<string, SnpDeepReport> = {
           },
           {
             genotype: "TT",
-            label: "Reduced function",
+            label: "Reduced",
             interpretation:
-              "Roughly thirty percent of typical activity and more heat sensitive. Active folate, riboflavin, and homocysteine awareness matter most here.",
+              "Roughly thirty percent of typical activity and more heat sensitive. Active folate, riboflavin, and homocysteine awareness matter most here. Effect allele T.",
           },
         ],
       },
@@ -67,9 +73,9 @@ export const GENEX_M_DEEP_REPORTS: Record<string, SnpDeepReport> = {
           },
           {
             genotype: "CC",
-            label: "Reduced function",
+            label: "Reduced",
             interpretation:
-              "Lower activity, and a combined 677 and 1298 pattern compounds the effect.",
+              "Lower activity, and a combined 677 and 1298 pattern compounds the effect. Effect allele C.",
           },
         ],
       },
@@ -123,8 +129,8 @@ export const GENEX_M_DEEP_REPORTS: Record<string, SnpDeepReport> = {
           },
           {
             genotype: "GG",
-            label: "Reduced function",
-            interpretation: "Greater demand on active B12 to keep the cycle running.",
+            label: "Reduced",
+            interpretation: "Greater demand on active B12 to keep the cycle running. Effect allele G.",
           },
         ],
       },
@@ -174,9 +180,9 @@ export const GENEX_M_DEEP_REPORTS: Record<string, SnpDeepReport> = {
           },
           {
             genotype: "GG",
-            label: "Reduced function",
+            label: "Reduced",
             interpretation:
-              "Lower ability to regenerate active B12, which compounds any MTR or B12 limitation.",
+              "Lower ability to regenerate active B12, which compounds any MTR or B12 limitation. Effect allele G.",
           },
         ],
       },
@@ -209,6 +215,11 @@ export const GENEX_M_DEEP_REPORTS: Record<string, SnpDeepReport> = {
     aliases: [],
     pathway: "Methylation, alternate route",
     keyVariants: [
+      // BHMT confirm with assay. GENEX-M may instead genotype the common
+      // methylation panel set rs585800 (BHMT/1), rs567754 (BHMT/2), rs617219
+      // (BHMT/4), rs651852 (BHMT/8). If the assay uses that set, replace this
+      // rs3733890 entry with those four variants and pull their genotype calls
+      // from the assay. R239Q is kept as a real default until the assay confirms.
       {
         rsid: "rs3733890",
         name: "R239Q",
@@ -276,9 +287,9 @@ export const GENEX_M_DEEP_REPORTS: Record<string, SnpDeepReport> = {
           },
           {
             genotype: "TT",
-            label: "Altered allocation",
+            label: "Variant",
             interpretation:
-              "Folate is biased toward DNA building, which can leave less for methylation.",
+              "Folate is biased toward DNA building, which can leave less for methylation. Effect allele T.",
           },
         ],
       },
@@ -313,20 +324,59 @@ export const GENEX_M_DEEP_REPORTS: Record<string, SnpDeepReport> = {
     pathway: "Methylation, SAM to SAH balance",
     keyVariants: [
       {
-        rsid: "rs819147, rs819134, rs819171",
-        name: "representative AHCY variants",
+        rsid: "rs819147",
+        name: "AHCY-01",
         genotypes: [
           {
-            genotype: "Reference",
+            genotype: "TT",
             label: "Typical",
             interpretation:
               "Efficient clearance of S-adenosylhomocysteine, keeping methylation reactions unblocked.",
           },
           {
-            genotype: "Variant",
-            label: "Reduced clearance",
+            genotype: "TC",
+            label: "Intermediate",
+            interpretation: "Mildly reduced clearance of S-adenosylhomocysteine.",
+          },
+          {
+            genotype: "CC",
+            label: "Reduced",
             interpretation:
-              "S-adenosylhomocysteine can accumulate, which inhibits methyltransferases and lowers the methylation ratio.",
+              "Higher S-adenosylhomocysteine, which inhibits methyltransferases and lowers the methylation ratio. Effect allele C.",
+          },
+        ],
+      },
+      {
+        rsid: "rs819134",
+        name: "AHCY-02",
+        genotypes: [
+          { genotype: "AA", label: "Typical", interpretation: "Standard AHCY activity." },
+          {
+            genotype: "AG",
+            label: "Intermediate",
+            interpretation: "Mildly reduced AHCY activity.",
+          },
+          {
+            genotype: "GG",
+            label: "Reduced",
+            interpretation: "Lower AHCY activity. Effect allele G.",
+          },
+        ],
+      },
+      {
+        rsid: "rs819171",
+        name: "AHCY-19",
+        genotypes: [
+          { genotype: "TT", label: "Typical", interpretation: "Standard AHCY activity." },
+          {
+            genotype: "TC",
+            label: "Intermediate",
+            interpretation: "Mildly reduced AHCY activity.",
+          },
+          {
+            genotype: "CC",
+            label: "Reduced",
+            interpretation: "Lower AHCY activity. Effect allele C.",
           },
         ],
       },
@@ -361,7 +411,7 @@ export const GENEX_M_DEEP_REPORTS: Record<string, SnpDeepReport> = {
     keyVariants: [
       {
         rsid: "rs4680",
-        name: "Val158Met (G to A)",
+        name: "Val158Met",
         genotypes: [
           {
             genotype: "GG",
@@ -378,19 +428,30 @@ export const GENEX_M_DEEP_REPORTS: Record<string, SnpDeepReport> = {
             genotype: "AA",
             label: "Met/Met, slow COMT",
             interpretation:
-              "You hold dopamine longer. Often sharp focus, but more sensitivity to stress, stimulants, and slower estrogen clearance.",
+              "You hold dopamine longer. Often sharp focus, but more sensitivity to stress, stimulants, and slower estrogen clearance. Effect allele A for the slow phenotype.",
           },
         ],
       },
+      // rs4633 is a modifier in linkage with rs4680 and tracks the fast or slow
+      // reading; display the call in the assay orientation.
       {
         rsid: "rs4633",
         name: "C472T (H62H)",
         genotypes: [
           {
-            genotype: "",
-            label: "Reported",
-            interpretation:
-              "Often reported alongside rs4680 and tracks with it to refine the fast or slow reading.",
+            genotype: "CC",
+            label: "Typical",
+            interpretation: "Tracks with fast COMT.",
+          },
+          {
+            genotype: "CT",
+            label: "Intermediate",
+            interpretation: "A mixed reading between fast and slow COMT.",
+          },
+          {
+            genotype: "TT",
+            label: "Variant",
+            interpretation: "Tracks with slow COMT. Effect allele T.",
           },
         ],
       },
@@ -427,31 +488,50 @@ export const GENEX_M_DEEP_REPORTS: Record<string, SnpDeepReport> = {
     aliases: [],
     pathway: "Neurotransmitter turnover",
     keyVariants: [
+      // MAOA is X linked, so females carry two alleles (GG, GT, or TT) while males
+      // are hemizygous and carry a single allele (G or T). Higher activity tracks
+      // the T orientation that most panels report and lower activity tracks G;
+      // confirm the orientation with the assay before reading the effect direction.
       {
         rsid: "rs6323",
-        name: "R297R (T to G)",
+        name: "R297R",
         genotypes: [
           {
-            genotype: "T",
-            label: "Higher activity",
-            interpretation: "Faster turnover of serotonin, norepinephrine, and dopamine.",
+            genotype: "GG",
+            label: "Typical",
+            interpretation:
+              "Females are GG, GT, or TT here and males carry a single allele G or T. This call tracks the higher turnover orientation of serotonin, norepinephrine, and dopamine; confirm the allele orientation with the assay.",
           },
           {
-            genotype: "G",
-            label: "Lower activity",
-            interpretation: "Slower turnover, which can leave these signals elevated longer.",
+            genotype: "GT",
+            label: "Intermediate",
+            interpretation:
+              "A mixed reading in females, between the two activity orientations. Males carry only a single allele, so confirm the orientation with the assay.",
+          },
+          {
+            genotype: "TT",
+            label: "Variant",
+            interpretation:
+              "Tracks the lower turnover orientation, which can leave these signals elevated longer; the higher activity orientation tracks T on most panels, so confirm with the assay.",
           },
         ],
       },
+      // The MAOA uVNTR is a variable number tandem repeat in the promoter, not a
+      // SNP, so the assay must report a repeat count. If GENEX-M does not report
+      // the uVNTR, omit this modifier rather than faking a genotype.
       {
         rsid: "MAOA-uVNTR",
-        name: "promoter repeat",
+        name: "MAOA-LPR promoter repeat",
         genotypes: [
           {
-            genotype: "",
-            label: "Reported",
-            interpretation:
-              "Often reported as a higher or lower activity promoter variant that sets baseline MAOA expression.",
+            genotype: "2R, 3R, 5R",
+            label: "Lower activity",
+            interpretation: "Lower activity promoter repeats, which set a lower baseline MAOA expression.",
+          },
+          {
+            genotype: "3.5R, 4R",
+            label: "Higher activity",
+            interpretation: "Higher activity promoter repeats, which set a higher baseline MAOA expression.",
           },
         ],
       },
@@ -484,6 +564,8 @@ export const GENEX_M_DEEP_REPORTS: Record<string, SnpDeepReport> = {
     aliases: [],
     pathway: "Vitamin D signaling, immune and methylation support",
     keyVariants: [
+      // Fok1 is reported as both C/T and F/f depending on the lab; display the
+      // call in the assay orientation.
       {
         rsid: "rs2228570",
         name: "Fok1",
@@ -493,19 +575,37 @@ export const GENEX_M_DEEP_REPORTS: Record<string, SnpDeepReport> = {
           {
             genotype: "ff",
             label: "Reduced sensitivity",
-            interpretation: "May benefit from higher vitamin D status for the same effect.",
+            interpretation: "May need higher vitamin D status to achieve the same downstream effect.",
           },
         ],
       },
+      // Bsm1 is a sensitivity modifier. Some labs report bb, Bb, BB equivalently
+      // to CC, CT, TT; set the call in the assay orientation.
       {
-        rsid: "rs1544410, rs731236",
-        name: "Bsm1 and Taq1",
+        rsid: "rs1544410",
+        name: "Bsm1",
         genotypes: [
+          { genotype: "CC", label: "Typical", interpretation: "Standard vitamin D requirement from this site." },
+          { genotype: "CT", label: "Intermediate", interpretation: "A modest shift in vitamin D requirement." },
           {
-            genotype: "",
-            label: "Reported",
-            interpretation:
-              "Reported as additional sensitivity modifiers that refine your vitamin D requirement.",
+            genotype: "TT",
+            label: "Variant",
+            interpretation: "Refines the vitamin D requirement; some labs report bb, Bb, BB on the opposite orientation.",
+          },
+        ],
+      },
+      // Taq1 is a sensitivity modifier. Some labs report AA, AG, GG on the
+      // opposite strand to TT, TC, CC; set the call in the assay orientation.
+      {
+        rsid: "rs731236",
+        name: "Taq1",
+        genotypes: [
+          { genotype: "TT", label: "Typical", interpretation: "Standard vitamin D requirement from this site." },
+          { genotype: "TC", label: "Intermediate", interpretation: "A modest shift in vitamin D requirement." },
+          {
+            genotype: "CC",
+            label: "Variant",
+            interpretation: "Refines the vitamin D requirement; some labs report AA, AG, GG on the opposite strand.",
           },
         ],
       },
@@ -546,20 +646,26 @@ export const GENEX_M_DEEP_REPORTS: Record<string, SnpDeepReport> = {
           { genotype: "GT", label: "Intermediate", interpretation: "Mildly reduced output." },
           {
             genotype: "TT",
-            label: "Reduced function",
+            label: "Reduced",
             interpretation:
-              "Lower nitric oxide production, which can affect blood flow and raise oxidative pressure.",
+              "Lower nitric oxide production, which can affect blood flow and raise oxidative pressure. Effect allele T.",
           },
         ],
       },
       {
         rsid: "rs2070744",
-        name: "-786T to C",
+        name: "-786 promoter variant",
         genotypes: [
+          { genotype: "TT", label: "Typical", interpretation: "Standard NOS3 expression." },
           {
-            genotype: "",
-            label: "Reported",
-            interpretation: "Reported as a promoter modifier of NOS3 expression.",
+            genotype: "TC",
+            label: "Intermediate",
+            interpretation: "Mildly reduced NOS3 expression.",
+          },
+          {
+            genotype: "CC",
+            label: "Reduced",
+            interpretation: "Lower NOS3 expression. Effect allele C.",
           },
         ],
       },
@@ -594,29 +700,69 @@ export const GENEX_M_DEEP_REPORTS: Record<string, SnpDeepReport> = {
     keyVariants: [
       {
         rsid: "rs10156191",
-        name: "T to C",
+        name: "c.47C>T (Thr16Met)",
         genotypes: [
-          { genotype: "TT", label: "Typical", interpretation: "Robust breakdown of dietary histamine." },
+          { genotype: "CC", label: "Typical", interpretation: "Robust breakdown of dietary histamine." },
           {
-            genotype: "TC",
+            genotype: "CT",
             label: "Intermediate",
             interpretation: "Somewhat reduced histamine clearance.",
           },
           {
-            genotype: "CC",
-            label: "Reduced function",
-            interpretation: "Lower DAO activity, more likely to react to histamine rich foods.",
+            genotype: "TT",
+            label: "Reduced",
+            interpretation: "Lower DAO activity, more likely to react to histamine rich foods. Effect allele T.",
           },
         ],
       },
       {
-        rsid: "rs1049742, rs1049793",
-        name: "DAO activity modifiers",
+        rsid: "rs1049742",
+        name: "c.995C>T (Ser332Phe)",
         genotypes: [
+          { genotype: "CC", label: "Typical", interpretation: "Robust DAO activity from this site." },
           {
-            genotype: "",
-            label: "Reported",
-            interpretation: "Reported as additional modifiers of DAO activity.",
+            genotype: "CT",
+            label: "Intermediate",
+            interpretation: "Somewhat reduced DAO activity from this site.",
+          },
+          {
+            genotype: "TT",
+            label: "Variant",
+            interpretation: "Associated with reduced DAO activity. Effect allele T.",
+          },
+        ],
+      },
+      {
+        rsid: "rs1049793",
+        name: "c.1990C>G (His645Asp)",
+        genotypes: [
+          { genotype: "CC", label: "Typical", interpretation: "Robust DAO activity from this site." },
+          {
+            genotype: "CG",
+            label: "Intermediate",
+            interpretation: "Somewhat reduced DAO activity from this site.",
+          },
+          {
+            genotype: "GG",
+            label: "Variant",
+            interpretation: "Associated with reduced DAO activity. Effect allele G.",
+          },
+        ],
+      },
+      {
+        rsid: "rs2052129",
+        name: "c.691G>T promoter variant",
+        genotypes: [
+          { genotype: "GG", label: "Typical", interpretation: "Standard DAO transcriptional activity." },
+          {
+            genotype: "GT",
+            label: "Intermediate",
+            interpretation: "Mildly reduced DAO transcriptional activity.",
+          },
+          {
+            genotype: "TT",
+            label: "Variant",
+            interpretation: "Lower transcriptional activity. Effect allele T.",
           },
         ],
       },
@@ -650,6 +796,8 @@ export const GENEX_M_DEEP_REPORTS: Record<string, SnpDeepReport> = {
     aliases: [],
     pathway: "Transsulfuration",
     keyVariants: [
+      // The 699T effect allele appears as A on the strand some labs use; display
+      // the call in the assay orientation.
       {
         rsid: "rs234706",
         name: "C699T",
@@ -672,14 +820,18 @@ export const GENEX_M_DEEP_REPORTS: Record<string, SnpDeepReport> = {
           },
         ],
       },
+      // A360A is an additional CBS modifier. The effect allele T appears as A in
+      // the 23andMe orientation; set the call in the assay orientation.
       {
         rsid: "rs1801181",
         name: "A360A",
         genotypes: [
+          { genotype: "CC", label: "Typical", interpretation: "Balanced CBS modifier reading." },
+          { genotype: "CT", label: "Intermediate", interpretation: "A modest shift in CBS activity." },
           {
-            genotype: "",
-            label: "Reported",
-            interpretation: "Reported as an additional CBS modifier.",
+            genotype: "TT",
+            label: "Variant",
+            interpretation: "Tracks with increased CBS pull; the effect allele T appears as A in the 23andMe orientation.",
           },
         ],
       },
@@ -713,6 +865,10 @@ export const GENEX_M_DEEP_REPORTS: Record<string, SnpDeepReport> = {
     aliases: ["GSTM1", "GSTP1", "GSTT1"],
     pathway: "Phase II detoxification",
     keyVariants: [
+      // GSTM1 and GSTT1 are reported as a copy number call of Present or Null,
+      // not a SNP genotype. Some panels infer the null call from tag SNPs rather
+      // than from copy number; confirm how GENEX-M determines null and present
+      // Present or Null accordingly.
       {
         rsid: "GSTM1",
         name: "deletion",
@@ -724,7 +880,7 @@ export const GENEX_M_DEEP_REPORTS: Record<string, SnpDeepReport> = {
           },
           {
             genotype: "Null",
-            label: "Reduced function",
+            label: "Reduced",
             interpretation:
               "The gene is deleted, lowering clearance of certain pollutants and oxidative byproducts.",
           },
@@ -741,8 +897,8 @@ export const GENEX_M_DEEP_REPORTS: Record<string, SnpDeepReport> = {
           },
           {
             genotype: "Null",
-            label: "Reduced function",
-            interpretation: "Deletion lowers handling of specific environmental compounds.",
+            label: "Reduced",
+            interpretation: "The gene is deleted, lowering handling of specific environmental compounds.",
           },
         ],
       },
@@ -754,8 +910,8 @@ export const GENEX_M_DEEP_REPORTS: Record<string, SnpDeepReport> = {
           { genotype: "AG", label: "Intermediate", interpretation: "Modestly altered activity." },
           {
             genotype: "GG",
-            label: "Altered function",
-            interpretation: "Changed substrate handling and antioxidant capacity.",
+            label: "Variant",
+            interpretation: "Altered substrate handling and antioxidant capacity. Effect allele G.",
           },
         ],
       },
@@ -789,6 +945,10 @@ export const GENEX_M_DEEP_REPORTS: Record<string, SnpDeepReport> = {
     aliases: ["MnSOD"],
     pathway: "Mitochondrial antioxidant defense",
     keyVariants: [
+      // The Ala and Val labels map to C and T depending on the strand and on the
+      // Ala16Val versus Val16Ala convention. Display the genotype call and the
+      // Ala or Val label exactly as the assay reports them to avoid inverting the
+      // meaning.
       {
         rsid: "rs4880",
         name: "Ala16Val (C to T)",
@@ -836,22 +996,17 @@ export const GENEX_M_DEEP_REPORTS: Record<string, SnpDeepReport> = {
     aliases: [],
     pathway: "Sulfur detoxification",
     keyVariants: [
+      // rs705703 is a regional tag of uncertain functional relevance; the
+      // clinically meaningful SUOX variants are rare deficiency mutations. The
+      // SUOX biology and molybdenum guidance stay live, but genotype tiers are
+      // withheld until the lab confirms the exact position GENEX-M genotypes and
+      // how it interprets it. Flip pendingAssayDefinition off and add the calls
+      // once confirmed.
       {
         rsid: "rs705703",
-        name: "representative SUOX variant",
-        genotypes: [
-          {
-            genotype: "Reference",
-            label: "Typical",
-            interpretation: "Efficient conversion of sulfite to safe sulfate.",
-          },
-          {
-            genotype: "Variant",
-            label: "Reduced function",
-            interpretation:
-              "Slower sulfite clearance, which can increase sensitivity to sulfites and high sulfur foods.",
-          },
-        ],
+        name: "regional tag SNP near the SUOX locus on 12q13",
+        genotypes: [],
+        pendingAssayDefinition: true,
       },
     ],
     biologicalRole:
@@ -883,9 +1038,13 @@ export const GENEX_M_DEEP_REPORTS: Record<string, SnpDeepReport> = {
     aliases: [],
     pathway: "Xenobiotic acetylation",
     keyVariants: [
+      // NAT2 reports a single derived acetylator status (rapid, intermediate, or
+      // slow) computed from the assay haplotype across rs1801280, rs1799930, and
+      // rs1799931, or taken directly if the assay returns the phenotype, rather
+      // than three raw genotype rows.
       {
         rsid: "rs1801280, rs1799930, rs1799931",
-        name: "341T to C (NAT2*5), 590G to A (NAT2*6), 857G to A (NAT2*7); combined haplotypes classify you as a rapid, intermediate, or slow acetylator",
+        name: "341T to C (NAT2*5), 590G to A (NAT2*6), 857G to A (NAT2*7); the derived acetylator status computed from the combined assay haplotype, not three raw genotype rows",
         genotypes: [
           {
             genotype: "Rapid",
@@ -895,7 +1054,7 @@ export const GENEX_M_DEEP_REPORTS: Record<string, SnpDeepReport> = {
           { genotype: "Intermediate", label: "Mixed", interpretation: "A middle acetylation pace." },
           {
             genotype: "Slow",
-            label: "Reduced function",
+            label: "Reduced",
             interpretation:
               "Slower clearance of certain drugs and of compounds formed when meat is cooked at high heat, which can raise exposure to them.",
           },
@@ -945,9 +1104,9 @@ export const GENEX_M_DEEP_REPORTS: Record<string, SnpDeepReport> = {
           },
           {
             genotype: "GG",
-            label: "Reduced function",
+            label: "Reduced",
             interpretation:
-              "Lower delivery of B12 into cells, which can create a functional shortfall even when blood B12 looks normal.",
+              "Lower delivery of B12 into cells, which can create a functional shortfall even when blood B12 looks normal. Effect allele G.",
           },
         ],
       },
@@ -996,9 +1155,9 @@ export const GENEX_M_DEEP_REPORTS: Record<string, SnpDeepReport> = {
           },
           {
             genotype: "AA",
-            label: "Altered function",
+            label: "Variant",
             interpretation:
-              "Changed intracellular folate handling that can affect how much active methylfolate reaches the methylation cycle.",
+              "Changed intracellular folate handling that can affect how much active methylfolate reaches the methylation cycle. Effect allele A.",
           },
         ],
       },
@@ -1033,18 +1192,23 @@ export const GENEX_M_DEEP_REPORTS: Record<string, SnpDeepReport> = {
     keyVariants: [
       {
         rsid: "rs3741049",
-        name: "representative ACAT1 variant",
+        name: "ACAT1-02",
         genotypes: [
           {
-            genotype: "Reference",
+            genotype: "GG",
             label: "Typical",
             interpretation: "Standard mitochondrial ketone and amino acid handling.",
           },
           {
-            genotype: "Variant",
-            label: "Altered function",
+            genotype: "GA",
+            label: "Intermediate",
+            interpretation: "Mildly altered mitochondrial handling.",
+          },
+          {
+            genotype: "AA",
+            label: "Variant",
             interpretation:
-              "Subtle changes in energy metabolism and in B12 related cofactor demand.",
+              "Possible modest change in energy metabolism and in B12 related cofactor demand. Effect allele A.",
           },
         ],
       },
@@ -1077,22 +1241,16 @@ export const GENEX_M_DEEP_REPORTS: Record<string, SnpDeepReport> = {
     aliases: ["2-aminoethanethiol dioxygenase"],
     pathway: "Sulfur, taurine, and oxygen sensing",
     keyVariants: [
+      // There is no established common nutrigenetic SNP for ADO. The biology stays
+      // live, but no genotype to activity mapping is asserted. ADO may have entered
+      // the panel list by transcription error; if the assay does not genotype ADO,
+      // consider removing it from GeneX-M pending Gary's decision. ADO is kept in
+      // the file for now and only gated.
       {
-        rsid: "ADO",
-        name: "emerging variant data",
-        genotypes: [
-          {
-            genotype: "Reference",
-            label: "Typical",
-            interpretation: "Standard handling of cysteamine toward taurine.",
-          },
-          {
-            genotype: "Variant",
-            label: "Altered function",
-            interpretation:
-              "Possible shifts in sulfur and taurine balance. Variant characterization for ADO is still developing.",
-          },
-        ],
+        rsid: "Pending assay definition",
+        name: "no established common nutrigenetic variant",
+        genotypes: [],
+        pendingAssayDefinition: true,
       },
     ],
     biologicalRole:

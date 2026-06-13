@@ -126,9 +126,15 @@ describe("GeneX-M deep reports", () => {
         for (const variant of report.keyVariants) {
           expect(variant.rsid.length).toBeGreaterThan(0);
           expect(variant.name.length).toBeGreaterThan(0);
+          if (variant.pendingAssayDefinition === true) {
+            // Prompt 193b: a variant pending assay confirmation carries no
+            // genotype tiers; its genotypes array is empty by design.
+            expect(variant.genotypes.length).toBe(0);
+            continue;
+          }
           expect(variant.genotypes.length).toBeGreaterThan(0);
           for (const genotype of variant.genotypes) {
-            // genotype.genotype may be empty for note only modifier rows, but a
+            // genotype.genotype may be empty for copy number style rows, but a
             // label and an interpretation are always present.
             expect(genotype.label.length).toBeGreaterThan(0);
             expect(genotype.interpretation.length).toBeGreaterThan(0);
@@ -153,4 +159,74 @@ describe("GeneX-M deep reports", () => {
       });
     });
   }
+
+  // Prompt 193b: lock the reconciled GeneX-M variant set.
+  describe("193b reconciliation", () => {
+    // The two stand in CALLS that must never appear as a real genotype anywhere.
+    const BANNED_CALLS = ["Reference", "Variant"];
+
+    it("has no genotype call equal to a banned stand in call in any report", () => {
+      for (const report of Object.values(GENEX_M_DEEP_REPORTS)) {
+        for (const variant of report.keyVariants) {
+          for (const genotype of variant.genotypes) {
+            expect(BANNED_CALLS).not.toContain(genotype.genotype);
+          }
+        }
+      }
+    });
+
+    it("gates SUOX with one pending variant and empty genotypes", () => {
+      const suox = GENEX_M_DEEP_REPORTS.suox;
+      expect(suox.keyVariants).toHaveLength(1);
+      expect(suox.keyVariants[0].pendingAssayDefinition).toBe(true);
+      expect(suox.keyVariants[0].genotypes).toHaveLength(0);
+    });
+
+    it("gates ADO with one pending variant and empty genotypes", () => {
+      const ado = GENEX_M_DEEP_REPORTS.ado;
+      expect(ado.keyVariants).toHaveLength(1);
+      expect(ado.keyVariants[0].pendingAssayDefinition).toBe(true);
+      expect(ado.keyVariants[0].genotypes).toHaveLength(0);
+    });
+
+    it("gives DAO four variants including the rs2052129 promoter variant", () => {
+      const dao = GENEX_M_DEEP_REPORTS.dao;
+      expect(dao.keyVariants).toHaveLength(4);
+      const rsids = dao.keyVariants.map((variant) => variant.rsid);
+      expect(rsids).toContain("rs10156191");
+      expect(rsids).toContain("rs1049742");
+      expect(rsids).toContain("rs1049793");
+      expect(rsids).toContain("rs2052129");
+    });
+
+    it("makes AHCY a real three variant set with no stand in calls", () => {
+      const ahcy = GENEX_M_DEEP_REPORTS.ahcy;
+      const rsids = ahcy.keyVariants.map((variant) => variant.rsid);
+      expect(rsids).toContain("rs819147");
+      expect(rsids).toContain("rs819134");
+      expect(rsids).toContain("rs819171");
+      for (const variant of ahcy.keyVariants) {
+        for (const genotype of variant.genotypes) {
+          expect(BANNED_CALLS).not.toContain(genotype.genotype);
+        }
+      }
+    });
+
+    it("makes ACAT1 a real rs3741049 variant with GG GA AA calls", () => {
+      const acat1 = GENEX_M_DEEP_REPORTS.acat1;
+      const rs3741049 = acat1.keyVariants.find((variant) => variant.rsid === "rs3741049");
+      expect(rs3741049).toBeDefined();
+      const calls = rs3741049 ? rs3741049.genotypes.map((genotype) => genotype.genotype) : [];
+      expect(calls).toEqual(["GG", "GA", "AA"]);
+    });
+
+    it("keeps NAT2 a single derived acetylator status variant", () => {
+      const nat2 = GENEX_M_DEEP_REPORTS.nat2;
+      expect(nat2.keyVariants).toHaveLength(1);
+      const calls = nat2.keyVariants[0].genotypes.map((genotype) => genotype.genotype);
+      expect(calls).toContain("Rapid");
+      expect(calls).toContain("Intermediate");
+      expect(calls).toContain("Slow");
+    });
+  });
 });
