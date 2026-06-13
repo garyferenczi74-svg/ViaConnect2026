@@ -188,6 +188,7 @@ export function YourVariantsCard({ className }: YourVariantsCardProps) {
                   key={rowId}
                   variant={variant}
                   rowId={rowId}
+                  panelSlug={activeTest.id}
                   isOpen={openRowId === rowId}
                   onToggle={() => setOpenRowId((prev) => (prev === rowId ? null : rowId))}
                 />

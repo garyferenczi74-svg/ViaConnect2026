@@ -9,18 +9,18 @@
 // and the existing practitioner consult disclaimer that the current /genetics
 // page shows. The visual language mirrors that page's variant expander.
 //
-// Impact chip colors are MANDATORY and exact:
-//   High     -> Orange #B75E18
-//   Moderate -> Teal   #2DA5A0
-//   Low      -> a muted neutral (white/40 text on white/5)
+// Impact chip colors (Gary 2026-06-12): High Red, Moderate Orange, Low Purple
+// on both the filter line and the row chip. Prompt 193c (2026-06-12): the
+// expanded region's footer adds a Report deep link pill (right) beside the
+// practitioner consult note (left).
 //
-// Standing rules honored: tokens only (Orange #B75E18, Teal #2DA5A0, white
-// opacity neutrals), Lucide strokeWidth 1.5, Instrument Sans inherited, no
+// Standing rules honored: Lucide strokeWidth 1.5, Instrument Sans inherited, no
 // emojis, no em or en dashes, TypeScript strict (no any).
 
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { ChevronDown, Shield } from 'lucide-react';
 import type { SampleVariant } from './geneticsVariantSamples';
+import { VariantReportPill } from './VariantReportPill';
 
 interface VariantRowProps {
   variant: SampleVariant;
@@ -30,6 +30,10 @@ interface VariantRowProps {
   // accessible label for the expanded region (aria-labelledby={rowId}); the
   // region itself is `${rowId}-panel`, which the toggle points aria-controls at.
   rowId: string;
+  // The active tab slug (non hyphenated, for example "genexm"), threaded from
+  // the parent so the Report pill can resolve this variant to its Blueprint
+  // report. The resolver maps the slug; this component just forwards it.
+  panelSlug: string;
 }
 
 // Tailwind class fragments for the impact tier chip. Gary 2026-06-12: the impact
@@ -49,7 +53,7 @@ function impactChipClasses(impact: SampleVariant['impact']): string {
   return 'border-[#A78BFA]/40 bg-[#A78BFA]/15 text-[#A78BFA]';
 }
 
-export function VariantRow({ variant, isOpen, onToggle, rowId }: VariantRowProps) {
+export function VariantRow({ variant, isOpen, onToggle, rowId, panelSlug }: VariantRowProps) {
   const reduced = useReducedMotion() ?? false;
   const panelId = `${rowId}-panel`;
   const chipClasses = impactChipClasses(variant.impact);
@@ -104,18 +108,35 @@ export function VariantRow({ variant, isOpen, onToggle, rowId }: VariantRowProps
             <div className="space-y-3 border-t border-white/[0.04] px-4 pb-4 pt-3">
               {/* One line descriptive summary. */}
               <p className="text-sm leading-relaxed text-white/60">{variant.summary}</p>
-              {/* Small rs chip, mirroring the current page's rs pill. */}
+              {/* Small rs chip, mirroring the current page's rs pill. Stays
+                  ABOVE the footer row. */}
               <div className="flex flex-wrap gap-2">
                 <span className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] text-white/40">
                   rs{variant.rsId.replace('rs', '')}
                 </span>
               </div>
-              {/* Practitioner consult disclaimer, carried over from the current
-                  /genetics page verbatim. */}
-              <p className="flex items-center gap-1 text-[10px] text-[#B75E18]/70">
-                <Shield aria-hidden="true" className="h-3 w-3" strokeWidth={1.5} />
-                Consult a practitioner before making changes based on genetic data
-              </p>
+              {/* Footer row: the practitioner consult disclaimer on the left and
+                  the Report deep link pill pinned right, vertically centered on
+                  >= sm. On narrow mobile the pill drops to its own line beneath
+                  the note and stays right aligned (self-end). When the variant
+                  has no matching report, VariantReportPill returns null and the
+                  right side is simply empty; the note alone lays out cleanly. */}
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                {/* Practitioner consult disclaimer, carried over from the
+                    current /genetics page verbatim. */}
+                <p className="flex items-center gap-1 text-[10px] text-[#B75E18]/70">
+                  <Shield aria-hidden="true" className="h-3 w-3" strokeWidth={1.5} />
+                  Consult a practitioner before making changes based on genetic data
+                </p>
+                <div className="flex justify-end">
+                  <VariantReportPill
+                    rsid={variant.rsId}
+                    panelSlug={panelSlug}
+                    geneLabel={variant.gene}
+                    variantLabel={variant.variant}
+                  />
+                </div>
+              </div>
             </div>
           </motion.div>
         ) : null}

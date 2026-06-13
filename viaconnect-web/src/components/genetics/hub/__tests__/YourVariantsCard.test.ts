@@ -75,6 +75,10 @@ describe('YourVariantsCard source', () => {
     expect(source).toContain('GENETICS_CARD_MEDIA.yourVariants');
   });
 
+  it('threads the active tab slug to VariantRow as panelSlug (Prompt 193c T2)', () => {
+    expect(source).toContain('panelSlug={activeTest.id}');
+  });
+
   it('contains no em or en dashes', () => {
     expect(source.includes(String.fromCharCode(0x2014))).toBe(false);
     expect(source.includes(String.fromCharCode(0x2013))).toBe(false);

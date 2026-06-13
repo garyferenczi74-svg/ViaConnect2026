@@ -57,6 +57,23 @@ describe('VariantRow source', () => {
     expect(source).toContain('Consult a practitioner before making changes based on genetic data');
   });
 
+  it('declares the new panelSlug prop in the props type (Prompt 193c T2)', () => {
+    expect(source).toContain('panelSlug: string;');
+  });
+
+  it('mounts the Report pill in the footer with rsid and panelSlug threaded through', () => {
+    expect(source).toContain('VariantReportPill');
+    expect(source).toContain('rsid={variant.rsId}');
+    expect(source).toContain('panelSlug={panelSlug}');
+    expect(source).toContain('geneLabel={variant.gene}');
+    expect(source).toContain('variantLabel={variant.variant}');
+  });
+
+  it('lays the footer note left and the pill right, stacking on narrow mobile', () => {
+    expect(source).toContain('sm:flex-row sm:items-center sm:justify-between');
+    expect(source).toContain('flex justify-end');
+  });
+
   it('gives the toggle a 44px minimum touch target', () => {
     expect(source).toContain('min-h-[44px]');
   });
