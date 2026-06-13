@@ -63,7 +63,7 @@ const PATTERN_RECOMMENDATIONS: Record<string, Omit<PeptideRecommendation, "id" |
     evidenceLevel: "moderate",
     authorities: ["Khavinson", "Seeds"],
     helixPerDay: 25,
-    genexSynergy: "COMT variants \u2192 enhanced HPA axis calibration with GeneX-M\u2122 data",
+    genexSynergy: "COMT variants \u2192 enhanced HPA axis calibration with GeneXM\u2122 data",
     includesRetatrutideRef: false,
   },
   mitochondrial: {
@@ -114,7 +114,7 @@ const PATTERN_RECOMMENDATIONS: Record<string, Omit<PeptideRecommendation, "id" |
     evidenceLevel: "moderate",
     authorities: ["Khavinson"],
     helixPerDay: 25,
-    genexSynergy: "COMT + MTHFR \u2192 neurotransmitter optimization with GeneX-M\u2122 data",
+    genexSynergy: "COMT + MTHFR \u2192 neurotransmitter optimization with GeneXM\u2122 data",
     includesRetatrutideRef: false,
   },
   immune: {
@@ -131,7 +131,7 @@ const PATTERN_RECOMMENDATIONS: Record<string, Omit<PeptideRecommendation, "id" |
     evidenceLevel: "moderate",
     authorities: ["Khavinson", "Yurth"],
     helixPerDay: 25,
-    genexSynergy: "HLA variants \u2192 immune calibration with GeneX-M\u2122 data",
+    genexSynergy: "HLA variants \u2192 immune calibration with GeneXM\u2122 data",
     includesRetatrutideRef: false,
   },
   hormonal: {
@@ -165,7 +165,7 @@ const PATTERN_RECOMMENDATIONS: Record<string, Omit<PeptideRecommendation, "id" |
     evidenceLevel: "moderate",
     authorities: ["Yurth", "Khavinson"],
     helixPerDay: 25,
-    genexSynergy: "FUT2 + MTHFR \u2192 gut-methylation axis with GeneX-M\u2122 data",
+    genexSynergy: "FUT2 + MTHFR \u2192 gut-methylation axis with GeneXM\u2122 data",
     includesRetatrutideRef: false,
   },
   longevity: {
