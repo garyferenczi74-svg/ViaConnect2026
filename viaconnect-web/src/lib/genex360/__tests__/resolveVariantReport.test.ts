@@ -1,22 +1,24 @@
 // Prompt 193c (2026-06-12): tests for the Your Variants to Blueprint report join.
-// The resolver reads the merged deep reports (PANEL_BY_SLUG), so these assertions
-// depend on the shipped GeneX-M reports, not on the sample data.
+// The resolver reads the DEEP_REPORT_REGISTRY (config-driven), so these
+// assertions depend on the shipped GeneX-M reports, not on the sample data. The
+// route now lives in variantReport.config.ts (the single integration point).
 
 import { describe, it, expect } from "vitest";
-import { resolveVariantReport, BLUEPRINT_ROUTE } from "../resolveVariantReport";
+import { resolveVariantReport } from "../resolveVariantReport";
+import { BLUEPRINT_ROUTE } from "../variantReport.config";
 
 describe("resolveVariantReport", () => {
   it("centralizes the Blueprint route", () => {
     expect(BLUEPRINT_ROUTE).toBe("/genetics/blueprint");
   });
 
-  it("resolves a GeneXM tab variant by rsID to its gene report with a Scheme A href", () => {
+  it("resolves a GeneXM tab variant by rsID to its gene report with a nested 3 segment href", () => {
     const target = resolveVariantReport("rs1801133", "genexm");
     expect(target.exists).toBe(true);
     expect(target.panelSlug).toBe("genex-m");
     expect(target.geneSlug).toBe("mthfr");
     expect(target.rsid).toBe("rs1801133");
-    expect(target.href).toBe("/genetics/blueprint#genex-m/mthfr?v=rs1801133");
+    expect(target.href).toBe("/genetics/blueprint#genex-m/mthfr/rs1801133");
   });
 
   it("maps the non hyphenated tab slug to the hyphenated panel slug", () => {

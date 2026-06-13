@@ -96,11 +96,10 @@ describe('GeneX360PanelSection nested hash + single open SNP (193a)', () => {
     expect(source).toContain('.has(snpPart)');
   });
 
-  it('parses the two level hash by splitting on a slash', () => {
-    // Prompt 193c: the ?v= query is now split off the raw fragment FIRST, so the
-    // panel/snp path is split on a slash via pathPart (not raw). Either way the
-    // two levels come from a slash split.
-    expect(source).toContain("pathPart.split('/')");
+  it('parses the nested hash by splitting on a slash', () => {
+    // Prompt 193c (config-driven): a single split of the raw fragment on "/"
+    // yields panel, snp, and the optional variant rsid.
+    expect(source).toContain("raw.split('/')");
     expect(source).toContain('panelPart');
     expect(source).toContain('snpPart');
   });
@@ -163,18 +162,18 @@ describe('GeneX360PanelSection nested hash + single open SNP (193a)', () => {
 describe('GeneX360PanelSection variant deep link + highlight (193c)', () => {
   const source = readFileSync(COMPONENT, 'utf-8');
 
-  it('splits the ?v= query off the path FIRST so the gene still validates and opens', () => {
-    // Without stripping ?v=, the gene part would be "mthfr?v=rs1801133" and fail
-    // the GENEX_M_SNP_SLUG_SET validation, breaking the gene deep link too.
-    expect(source).toContain("raw.split('?')");
-    expect(source).toContain('pathPart');
-    expect(source).toContain('queryPart');
-    // The path is still split on a slash for panel/snp.
-    expect(source).toContain("pathPart.split('/')");
+  it('parses three nested segments (panel, gene, variant rsid) by a single slash split', () => {
+    // Config-driven Scheme A: the rsID is the third hash segment
+    // (#genex-m/mthfr/rs1801133), so one split on "/" yields all three. A bare
+    // panel or gene hash parses cleanly with variantPart undefined.
+    expect(source).toContain("raw.split('/')");
+    expect(source).toContain('panelPart');
+    expect(source).toContain('snpPart');
+    expect(source).toContain('variantPart');
   });
 
-  it('reads the v param from the query part and returns variantRsid', () => {
-    expect(source).toContain("new URLSearchParams(queryPart).get('v')");
+  it('honors the third segment as the variant rsid only under a valid gene', () => {
+    expect(source).toContain('const variantRsid = snp && variantPart ? variantPart : null');
     expect(source).toContain('variantRsid');
   });
 

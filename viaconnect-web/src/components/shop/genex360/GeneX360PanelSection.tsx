@@ -26,16 +26,17 @@
 // header) into view. Switching panels via a pill collapses any open SNP and
 // drops back to the bare panel hash.
 //
-// Prompt 193c Task T3: the Report pill on Your Variants deep links here as
-// `#<panelSlug>/<geneSlug>?v=<rsid>` (Scheme A, the ?v= query lives INSIDE the
-// hash fragment). parseHash splits the ?v= part off the path FIRST (so the gene
-// still validates and opens), then reads the rsid. The island owns highlightRsid
-// and, when a variant rsid is present, opens the gene, scrolls to the variant
-// sub block (id variant-<rsid>) on the next frame, and threads highlightRsid to
-// the card so SnpDeepReport applies a soft non-alarm teal ring to that variant.
-// Crucially the variant deep link is the ONLY new mount-scroll case: a bare
-// panel or gene hash on mount still does NOT scroll (the 491cb489 fix holds).
-// Clicking a pill or toggling a SNP clears the highlight.
+// Prompt 193c Task T3 (config-driven reconciliation): the Report pill on Your
+// Variants deep links here as `#<panelSlug>/<geneSlug>/<rsid>` (three nested hash
+// segments; the rsID is the third segment per ANCHOR_SCHEME = "rsid" in
+// variantReport.config.ts). parseHash is a single split on "/" into panel, gene,
+// and the optional variant rsid. The island owns highlightRsid and, when a
+// variant rsid is present, opens the gene, scrolls to the variant sub block (id
+// variant-<rsid>) on the next frame, and threads highlightRsid to the card so
+// SnpDeepReport applies a soft non-alarm teal ring to that variant. Crucially the
+// variant deep link is the ONLY new mount-scroll case: a bare panel or gene hash
+// on mount still does NOT scroll (the 491cb489 fix holds). Clicking a pill or
+// toggling a SNP clears the highlight.
 //
 // Standing rules honored: tokens only (Deep Navy #1A2744, Teal #2DA5A0, white
 // opacity neutrals), Instrument Sans inherited, no emojis, no em or en dashes
@@ -67,15 +68,15 @@ function prefersReducedMotion(): boolean {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
 
-// Parse the two level hash, plus the optional variant query (Prompt 193c Task
-// T3, Scheme A). The fragment is `<panelSlug>`, `<panelSlug>/<snpSlug>`, or
-// either of those followed by `?v=<rsid>`, for example
-// `genex-m/mthfr?v=rs1801133`. The `?v=` part is split off FIRST so the path is
-// parsed exactly as before: if it were not stripped, the gene part would become
-// `mthfr?v=rs1801133` and fail validation, breaking the gene deep link too.
-// Part 1 is validated against PANEL_SLUG_SET; part 2 is only honored when part 1
-// is genex-m and the slug is a known GeneX-M SNP, else the SNP is null. The
-// variant rsid is the decoded `v` query value, or null when absent.
+// Parse the nested hash (Prompt 193c Task T3, config-driven reconciliation). The
+// fragment is `<panelSlug>`, `<panelSlug>/<snpSlug>`, or
+// `<panelSlug>/<snpSlug>/<rsid>`, for example `genex-m/mthfr/rs1801133`. It is a
+// single split on "/" into three parts. Part 1 is validated against
+// PANEL_SLUG_SET; part 2 is only honored when part 1 is genex-m and the slug is a
+// known GeneX-M SNP, else the SNP is null; part 3 (the variant rsid) is only
+// honored when a valid gene precedes it. The island writes its own one and two
+// segment hashes (a pill select or SNP toggle), which parse cleanly with
+// variantRsid null, so navigating by click clears any prior highlight.
 function parseHash(hash: string): {
   panel: PanelSlug | null;
   snp: string | null;
@@ -83,20 +84,15 @@ function parseHash(hash: string): {
 } {
   const raw = hash.replace(/^#/, '');
 
-  // Split the `?v=` query off the path FIRST. Everything before the first `?`
-  // is the panel/snp path; everything after is the query string.
-  const [pathPart, queryPart] = raw.split('?');
-  const [panelPart, snpPart] = pathPart.split('/');
+  const [panelPart, snpPart, variantPart] = raw.split('/');
 
   const panel = PANEL_SLUG_SET.has(panelPart) ? (panelPart as PanelSlug) : null;
 
   const snp =
     panel === 'genex-m' && snpPart && GENEX_M_SNP_SLUG_SET.has(snpPart) ? snpPart : null;
 
-  // Read the `v` value from the query part (URLSearchParams handles decoding).
-  // A missing or empty `v` yields null.
-  const rawVariant = queryPart ? new URLSearchParams(queryPart).get('v') : null;
-  const variantRsid = rawVariant ? rawVariant : null;
+  // The variant rsid is the third segment, honored only under a valid gene.
+  const variantRsid = snp && variantPart ? variantPart : null;
 
   return { panel, snp, variantRsid };
 }
@@ -125,7 +121,7 @@ function scrollToSnp(snpSlug: string) {
 // Prompt 193c Task T3: scroll a specific variant sub block into view. The block
 // carries id variant-<rsid> with scroll-mt-[80px] so the sticky header offset is
 // handled for us. Honors reduced motion. Used only for the deliberate Report
-// pill deep link (a hash carrying ?v=<rsid>).
+// pill deep link (a hash carrying a third variant rsid segment).
 function scrollToVariant(rsid: string) {
   if (typeof document === 'undefined') return;
   document.getElementById(`variant-${rsid}`)?.scrollIntoView({
@@ -143,14 +139,15 @@ export function GeneX360PanelSection() {
   const [openSnp, setOpenSnp] = useState<string | null>(null);
 
   // Prompt 193c Task T3: the variant rsid to highlight (null = none). Set when a
-  // hash carries ?v=<rsid> (the deliberate Report pill deep link), cleared when
+  // hash carries a variant rsid third segment (the deliberate Report pill deep
+  // link), cleared when
   // the user navigates by clicking a pill or toggling a SNP (they are no longer
   // landing from a deep link). Threaded down to the card so SnpDeepReport can
   // apply a soft non-alarm teal ring to the matching variant sub block.
   const [highlightRsid, setHighlightRsid] = useState<string | null>(null);
 
   // Adopt the hash into state: activate the panel from part 1, expand the SNP
-  // from part 2, and record any variant rsid from the ?v= query. scrollOnAdopt
+  // from part 2, and record any variant rsid from part 3. scrollOnAdopt
   // controls whether we ALSO scroll on a bare panel or gene hash. It is false on
   // the initial mount, so a page load (or a dev HMR reload that keeps a leftover
   // hash from an earlier pill or SNP interaction) never yanks the page down to

@@ -77,7 +77,7 @@ describe('VariantReportPill resolver behavior', () => {
   it('resolves an existing report so the pill renders a link', () => {
     const target = resolveVariantReport('rs1801133', 'genexm');
     expect(target.exists).toBe(true);
-    expect(target.href).toBe('/genetics/blueprint#genex-m/mthfr?v=rs1801133');
+    expect(target.href).toBe('/genetics/blueprint#genex-m/mthfr/rs1801133');
   });
 
   it('reports exists false for an unmatched rsID so the pill returns null', () => {

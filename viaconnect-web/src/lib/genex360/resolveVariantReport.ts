@@ -1,65 +1,69 @@
-// Prompt 193c (2026-06-12): the single source of truth that joins a Your Variants
-// card (My Genetics) to its full report on the Your DNA, Decoded / Your Genetic
-// Blueprint page. The join key is the rsID, which both sides already carry: the
-// Your Variants sample data exposes SampleVariant.rsId and each Blueprint deep
-// report carries keyVariants[].rsid. No component hardcodes a report URL; they
-// all call resolveVariantReport and read its href.
+// Prompt 193c (2026-06-12), config-driven reconciliation (Gary's design): the
+// single function that joins a Your Variants card (My Genetics) to its full
+// report on the Your DNA, Decoded / Your Genetic Blueprint page. The join key is
+// the rsID, which both sides already carry: the Your Variants sample data
+// exposes SampleVariant.rsId and each Blueprint deep report carries
+// keyVariants[].rsid. No component hardcodes a report URL; they all call
+// resolveVariantReport and read its href.
 //
-// Naming note: the Your Variants tab slugs are not hyphenated (genexm) while the
-// Blueprint panel slugs are (genex-m). TAB_SLUG_TO_PANEL_SLUG bridges them. The
-// resolver never depends on label spelling; it joins by rsID and slug.
+// All three integration points (the route, the anchor scheme, the registry of
+// shipped reports) live in variantReport.config.ts. This file only implements
+// the lookup. panelSlugForLabel normalizes whatever the card forwards (a non
+// hyphenated tab slug like "genexm", a visible label like "GeneXM", or an
+// already canonical "genex-m") to the canonical panel slug, so the own panel
+// lookup (which disambiguates a gene that appears in more than one panel) is
+// correct no matter what the caller passes.
 //
 // Standing rules honored: no em or en dashes; Via Cura is the only consumer
 // brand; TypeScript strict (no any).
 
-import { GENEX360_PANELS, PANEL_BY_SLUG } from "@/data/genex360/panels";
-import type { PanelSlug } from "@/data/genex360/types";
+import {
+  ANCHOR_SCHEME,
+  BLUEPRINT_ROUTE,
+  DEEP_REPORT_REGISTRY,
+  panelSlugForLabel,
+} from "./variantReport.config";
+import type { DeepReportRegistry, VariantReportTarget } from "./types";
 
-// The Your DNA, Decoded / Your Genetic Blueprint page route, centralized here so
-// no component hardcodes it. The Report pill and the Blueprint deep link handler
-// both build from this single constant.
-export const BLUEPRINT_ROUTE = "/genetics/blueprint";
-
-// Your Variants tab slug (from geneticsVariantSamples, not hyphenated) to the
-// canonical Blueprint panel slug (from panels.ts, hyphenated). An unknown tab
-// slug passes through unchanged, so a future tab whose slug already matches a
-// panel still resolves.
-const TAB_SLUG_TO_PANEL_SLUG: Record<string, PanelSlug> = {
-  genexm: "genex-m",
-  nutrigendx: "nutrigen-dx",
-  hormoneiq: "hormone-iq",
-  epigenhq: "epigen-hq",
-  peptideiq: "peptide-iq",
-  cannabisiq: "cannabis-iq",
-};
-
-export interface VariantReportTarget {
-  href: string; // full href into the Blueprint page, including hash and the rsID join
-  exists: boolean; // true only when a matching report is found
-  panelSlug: string; // for example "genex-m"
-  geneSlug: string; // for example "mthfr"
-  rsid: string; // the join key, for example "rs1801133"
+// Kebab case of a variant name, for example "C677T (Ala222Val)" to
+// "c677t-ala222val". Used only when ANCHOR_SCHEME is "variantSlug".
+export function toVariantSlug(variantName: string): string {
+  return variantName
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
 }
 
-// Scheme A href: the gene report hash plus the rsID as a v param inside the
-// fragment. The Blueprint page opens the named gene report, then scrolls to and
-// highlights the variant whose rsID equals v.
-function buildHref(panelSlug: string, geneSlug: string, rsid: string): string {
-  return `${BLUEPRINT_ROUTE}#${panelSlug}/${geneSlug}?v=${rsid}`;
+// Build the Blueprint href. Three nested hash segments: panelSlug/geneSlug/anchor
+// where anchor is the rsID (Scheme A, the default) or a variant slug (Scheme B).
+// The Blueprint island parses these segments, opens the named gene report, then
+// scrolls to and highlights the variant block whose id matches the anchor.
+function buildHref(
+  panelSlug: string,
+  geneSlug: string,
+  rsid: string,
+  variantName: string,
+): string {
+  const anchorSegment =
+    ANCHOR_SCHEME === "rsid" ? rsid : toVariantSlug(variantName);
+  return `${BLUEPRINT_ROUTE}#${panelSlug}/${geneSlug}/${anchorSegment}`;
 }
 
-// Find the gene (marker) within one panel whose merged deepReport keyVariants
-// includes the rsID. Returns the gene slug (lowercase symbol) or null. Markers
-// without a deepReport (panels whose reports have not shipped) never match.
-function findGeneInPanel(panelSlug: PanelSlug, rsid: string): string | null {
-  const panel = PANEL_BY_SLUG[panelSlug];
+// Find the gene within one panel whose keyVariants includes the rsID. Returns the
+// gene slug (the registry key) and the matched variant name, or null. A panel
+// whose reports have not shipped is simply absent from the registry and never
+// matches.
+function findInPanel(
+  registry: DeepReportRegistry,
+  panelSlug: string,
+  rsid: string,
+): { geneSlug: string; variantName: string } | null {
+  const panel = registry[panelSlug];
   if (!panel) return null;
-  for (const group of panel.groups) {
-    for (const marker of group.markers) {
-      if (marker.deepReport?.keyVariants.some((variant) => variant.rsid === rsid)) {
-        return marker.symbol.toLowerCase();
-      }
-    }
+  for (const geneSlug of Object.keys(panel)) {
+    const match = panel[geneSlug].keyVariants.find((v) => v.rsid === rsid);
+    if (match) return { geneSlug, variantName: match.name };
   }
   return null;
 }
@@ -68,46 +72,49 @@ function findGeneInPanel(panelSlug: PanelSlug, rsid: string): string | null {
 //   1. Prefer the panel the card is shown under (disambiguates a gene that
 //      appears in more than one panel, since the active tab decides which).
 //   2. Within that panel, find the gene whose keyVariants includes the rsID.
-//   3. If no match in the card's panel, fall back to scanning every panel.
+//   3. If no match in the card's panel, fall back to scanning every shipped panel.
 //   4. If still no match, return exists: false so the pill is never rendered.
-export function resolveVariantReport(rsid: string, panelSlugFromTab: string): VariantReportTarget {
-  const noMatch: VariantReportTarget = {
+export function resolveVariantReport(
+  rsid: string,
+  panelSlugFromTab: string,
+  registry: DeepReportRegistry = DEEP_REPORT_REGISTRY,
+): VariantReportTarget {
+  const notFound: VariantReportTarget = {
     href: "",
     exists: false,
-    panelSlug: "",
+    panelSlug: panelSlugFromTab,
     geneSlug: "",
     rsid,
   };
 
-  if (!rsid) return noMatch;
+  if (!rsid) return notFound;
 
-  // 1 and 2: the card's own panel first.
-  const ownPanel = TAB_SLUG_TO_PANEL_SLUG[panelSlugFromTab] ?? (panelSlugFromTab as PanelSlug);
-  const ownGene = findGeneInPanel(ownPanel, rsid);
-  if (ownGene) {
-    return {
-      href: buildHref(ownPanel, ownGene, rsid),
-      exists: true,
-      panelSlug: ownPanel,
-      geneSlug: ownGene,
-      rsid,
-    };
-  }
+  // 1 and 2: the card's own panel first (normalized to the canonical slug).
+  const ownPanelSlug = panelSlugForLabel(panelSlugFromTab);
+  let hit = findInPanel(registry, ownPanelSlug, rsid);
+  let panelSlug = ownPanelSlug;
 
-  // 3: fall back to scanning every panel by rsID.
-  for (const panel of GENEX360_PANELS) {
-    const gene = findGeneInPanel(panel.slug, rsid);
-    if (gene) {
-      return {
-        href: buildHref(panel.slug, gene, rsid),
-        exists: true,
-        panelSlug: panel.slug,
-        geneSlug: gene,
-        rsid,
-      };
+  // 3: fall back to scanning every other shipped panel by rsID.
+  if (!hit) {
+    for (const slug of Object.keys(registry)) {
+      if (slug === ownPanelSlug) continue;
+      const candidate = findInPanel(registry, slug, rsid);
+      if (candidate) {
+        hit = candidate;
+        panelSlug = slug;
+        break;
+      }
     }
   }
 
   // 4: no matching report.
-  return noMatch;
+  if (!hit) return notFound;
+
+  return {
+    href: buildHref(panelSlug, hit.geneSlug, rsid, hit.variantName),
+    exists: true,
+    panelSlug,
+    geneSlug: hit.geneSlug,
+    rsid,
+  };
 }
