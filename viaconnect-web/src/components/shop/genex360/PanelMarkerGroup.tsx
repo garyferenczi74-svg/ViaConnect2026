@@ -1,31 +1,29 @@
 'use client';
 
 // Prompt 193 Task T2 (2026-06-12): one marker group inside a GENEX360 panel
-// description card on /shop/genex360.
+// report on the Your Genetic Blueprint page.
 //
-// Prompt 193a Task T3 (2026-06-12): markers that carry a deepReport (the GeneXM
-// SNPs after the genex-m-deep merge) gain an accessible single-open disclosure.
-// The island owns the open slug; this group is controlled via openSnpSlug plus
-// onToggleSnp. A marker with a report renders a "View full report" button (44px
-// tap target, a rotating ChevronDown, aria-expanded + aria-controls) and, when
-// open, a height auto region (framer motion, instant under prefers reduced
-// motion) holding the full SnpDeepReport. The row container carries
-// id={`snp-${slug}`} with scroll-mt so the island can scroll it under the sticky
-// header. Markers without a deepReport (every non GeneXM panel) render exactly
-// as before, with no disclosure control.
+// Prompt 193e (2026-06-13): every SNP collapses to a compact tab. The collapsed
+// state shows ONLY the heading (symbol in Teal, fullName muted) and the View full
+// report toggle. The description paragraph that used to sit inline now lives
+// INSIDE the accordion, above the full report, so the list scans quickly and is
+// no longer a wall of always visible paragraphs. The accordion holds: the
+// description, then the Prompt 193a SnpDeepReport when the marker carries one
+// (GeneXM SNPs); markers without a deepReport (other panels) show the description
+// alone. The island supplies onToggleSnp, so every marker on the blueprint
+// collapses; without it (a static, non-island use) markers render inline as a
+// fallback.
 //
-// Prompt 193c Task T3: highlightRsid (the variant a Report pill deep link
-// targeted) is forwarded to SnpDeepReport, which applies a soft non-alarm teal
-// ring to the matching variant sub block. This group only forwards the prop.
+// Prompt 193a / 193c carryover: the island owns the single open slug (openSnpSlug
+// + onToggleSnp), the row keeps id={`snp-${slug}`} with scroll-mt so the island
+// can bring it under the sticky header, and highlightRsid is forwarded to
+// SnpDeepReport so a Report pill deep link gets its soft non-alarm teal ring on
+// the matching variant. Because the deep link sets openSnpSlug to the gene, the
+// accordion auto opens on arrival; it never lands on a collapsed, empty row.
 //
-// Renders the group title as a teal tinted uppercase eyebrow, then each marker
-// as a compact row: symbol in Teal #2DA5A0, fullName muted, description in body
-// text. On desktop the markers may flow into a responsive two column grid for
-// scanability; on mobile they stay single column.
-//
-// Standing rules honored: tokens only (Teal #2DA5A0, white opacity neutrals),
-// Lucide strokeWidth 1.5, Instrument Sans inherited, no emojis, no checkmark
-// glyphs in strings, no em or en dashes, TypeScript strict (no any).
+// Standing rules honored: tokens only (Teal #2DA5A0, Card #1E3054, white opacity
+// neutrals), Lucide strokeWidth 1.5, Instrument Sans inherited, no emojis, no em
+// or en dashes, TypeScript strict (no any).
 
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ChevronDown, Dot } from "lucide-react";
@@ -34,13 +32,13 @@ import { SnpDeepReport } from "./SnpDeepReport";
 
 interface PanelMarkerGroupProps {
   group: PanelMarkerGroupData;
-  // Prompt 193a: the lowercase SNP slug currently expanded (single open across
-  // the whole card), and the toggle the island owns. Only meaningful for GeneXM
-  // markers; absent for every other panel.
+  // The lowercase SNP slug currently expanded (single open across the whole card)
+  // and the toggle the island owns. When onToggleSnp is supplied EVERY marker in
+  // the group becomes a collapsible tab (Prompt 193e).
   openSnpSlug?: string | null;
   onToggleSnp?: (snpSlug: string) => void;
   // Prompt 193c: the variant rsid the Report pill deep link targeted (null
-  // otherwise). Forwarded to SnpDeepReport (only the open disclosure renders one)
+  // otherwise). Forwarded to SnpDeepReport (only the open accordion renders one)
   // so the matching variant sub block gets a soft non-alarm ring.
   highlightRsid?: string | null;
 }
@@ -52,20 +50,19 @@ export function PanelMarkerGroup({
   highlightRsid,
 }: PanelMarkerGroupProps) {
   const reduced = useReducedMotion() ?? false;
+  // The blueprint island always supplies onToggleSnp, so every marker collapses
+  // to a tab. A static, non-island consumer (none today) falls back to the inline
+  // presentation.
+  const collapsible = typeof onToggleSnp === "function";
 
   return (
     <section className="space-y-3">
       <h4 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#2DA5A0]">
         {group.groupTitle}
       </h4>
-      <ul className="grid grid-cols-1 gap-x-6 gap-y-4 md:grid-cols-2">
+      <ul className="space-y-2.5">
         {group.markers.map((marker) => {
-          // A disclosure renders only when the marker carries a deepReport AND
-          // the island supplied a toggle. Otherwise the row is the static
-          // Prompt 193 presentation, unchanged.
-          const hasReport = Boolean(marker.deepReport) && typeof onToggleSnp === "function";
-
-          if (hasReport) {
+          if (collapsible) {
             return (
               <SnpMarkerRow
                 key={marker.symbol}
@@ -78,16 +75,13 @@ export function PanelMarkerGroup({
             );
           }
 
+          // Static fallback (no island): heading plus inline description.
           return (
             <li
               key={marker.symbol}
               className="flex gap-2 rounded-lg border border-white/[0.06] bg-[#1E3054]/40 p-3"
             >
-              <Dot
-                aria-hidden="true"
-                className="mt-0.5 h-4 w-4 shrink-0 text-[#2DA5A0]"
-                strokeWidth={1.5}
-              />
+              <Dot aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-[#2DA5A0]" strokeWidth={1.5} />
               <div className="space-y-1">
                 <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
                   <span className="font-mono text-sm font-semibold text-[#2DA5A0]">
@@ -105,11 +99,12 @@ export function PanelMarkerGroup({
   );
 }
 
-// One GeneXM marker row with its disclosure. The row container carries the
-// scroll target id (snp-<slug>) and scroll-mt so the island can bring it under
-// the sticky header. The button toggles the island's single open slug; when this
-// row is the open one, a framer motion height auto region mounts the full
-// SnpDeepReport. Under prefers reduced motion the expand is instant.
+// One collapsed SNP tab with its accordion. Collapsed shows the heading plus the
+// View full report toggle only. The row carries id={`snp-${slug}`} with scroll-mt
+// so the island can scroll it under the sticky header. When this row is the open
+// one, a framer motion height auto region mounts the description followed by the
+// SnpDeepReport (when the marker has one). Under prefers reduced motion the expand
+// is instant.
 function SnpMarkerRow({
   marker,
   openSnpSlug,
@@ -130,49 +125,41 @@ function SnpMarkerRow({
   return (
     <li
       id={`snp-${slug}`}
-      className="col-span-1 scroll-mt-[80px] rounded-lg border border-white/[0.06] bg-[#1E3054]/40 md:col-span-2"
+      className="scroll-mt-[80px] overflow-hidden rounded-lg border border-white/[0.06] bg-[#1E3054]/40"
     >
-      <div className="flex gap-2 p-3">
-        <Dot
-          aria-hidden="true"
-          className="mt-0.5 h-4 w-4 shrink-0 text-[#2DA5A0]"
-          strokeWidth={1.5}
-        />
-        <div className="min-w-0 flex-1 space-y-2">
-          <div className="space-y-1">
-            <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-              <span className="font-mono text-sm font-semibold text-[#2DA5A0]">
-                {marker.symbol}
-              </span>
-              <span className="text-[11px] text-white/45">{marker.fullName}</span>
-            </div>
-            <p className="text-[13px] leading-relaxed text-white/75">{marker.description}</p>
-          </div>
-
-          {/* Disclosure toggle. 44px tap target, rotating chevron, expanded
-              state announced via aria-expanded; aria-controls points at the
-              detail region id. */}
-          <button
-            type="button"
-            onClick={() => onToggleSnp(slug)}
-            aria-expanded={isOpen}
-            aria-controls={detailId}
-            className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3.5 py-2 text-[13px] font-medium text-white/80 transition-colors hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744]"
-          >
-            {isOpen ? "Hide full report" : "View full report"}
-            <ChevronDown
-              aria-hidden="true"
-              className={`h-4 w-4 shrink-0 text-[#2DA5A0] transition-transform duration-200 motion-reduce:transition-none ${
-                isOpen ? "rotate-180" : "rotate-0"
-              }`}
-              strokeWidth={1.5}
-            />
-          </button>
+      {/* Collapsed header row: the heading on the leading edge, the View full
+          report toggle on the trailing edge. The description is NOT here anymore
+          (Prompt 193e); it moved into the accordion. On narrow widths the toggle
+          wraps beneath the heading so the row stays clean. */}
+      <div className="flex flex-wrap items-center justify-between gap-2 p-3">
+        <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5">
+          <span className="font-mono text-sm font-semibold text-[#2DA5A0]">{marker.symbol}</span>
+          <span className="text-[11px] text-white/45">{marker.fullName}</span>
         </div>
+
+        {/* Disclosure toggle. 44px tap target, rotating chevron, expanded state
+            announced via aria-expanded; aria-controls points at the detail id. */}
+        <button
+          type="button"
+          onClick={() => onToggleSnp(slug)}
+          aria-expanded={isOpen}
+          aria-controls={detailId}
+          className="inline-flex min-h-[44px] shrink-0 items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3.5 py-2 text-[13px] font-medium text-white/80 transition-colors hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744]"
+        >
+          {isOpen ? "Hide full report" : "View full report"}
+          <ChevronDown
+            aria-hidden="true"
+            className={`h-4 w-4 shrink-0 text-[#2DA5A0] transition-transform duration-200 motion-reduce:transition-none ${
+              isOpen ? "rotate-180" : "rotate-0"
+            }`}
+            strokeWidth={1.5}
+          />
+        </button>
       </div>
 
-      {/* Expanded detail region: the full SnpDeepReport. Height auto via framer
-          motion, instant under prefers reduced motion. */}
+      {/* Accordion: the description first (moved here from the collapsed row in
+          Prompt 193e), then the full SnpDeepReport when the marker carries one.
+          Height auto via framer motion, instant under prefers reduced motion. */}
       <AnimatePresence initial={false}>
         {isOpen ? (
           <motion.div
@@ -186,8 +173,11 @@ function SnpMarkerRow({
             transition={reduced ? { duration: 0 } : { duration: 0.2, ease: "easeOut" }}
             className="overflow-hidden"
           >
-            <div className="border-t border-white/[0.06] px-3 pb-4 pt-4">
-              <SnpDeepReport report={marker.deepReport!} highlightRsid={highlightRsid} />
+            <div className="space-y-4 border-t border-white/[0.06] px-3 pb-4 pt-4">
+              <p className="text-[13px] leading-relaxed text-white/75">{marker.description}</p>
+              {marker.deepReport ? (
+                <SnpDeepReport report={marker.deepReport} highlightRsid={highlightRsid} />
+              ) : null}
             </div>
           </motion.div>
         ) : null}

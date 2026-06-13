@@ -41,8 +41,8 @@ describe('PanelMarkerGroup source', () => {
     expect(source).toContain('text-white/75');
   });
 
-  it('flows markers into a responsive two column grid on desktop', () => {
-    expect(source).toContain('md:grid-cols-2');
+  it('stacks the collapsed SNP tabs in a single column (Prompt 193e)', () => {
+    expect(source).toContain('<ul className="space-y-2.5">');
   });
 
   it('types the group prop from the data layer PanelMarkerGroup', () => {
@@ -111,9 +111,16 @@ describe('PanelMarkerGroup per SNP disclosure (193a)', () => {
     expect(source).toContain('id={detailId}');
     expect(source).toContain('role="region"');
     expect(source).toContain('aria-label={`${marker.symbol} full report`}');
-    expect(source).toContain('<SnpDeepReport report={marker.deepReport!} highlightRsid={highlightRsid} />');
+    expect(source).toContain('<SnpDeepReport report={marker.deepReport} highlightRsid={highlightRsid} />');
     // The detail region is conditional on the open state.
     expect(source).toContain('{isOpen ? (');
+  });
+
+  it('moves the description into the accordion, not the collapsed header (Prompt 193e)', () => {
+    // The accordion body renders the description paragraph first, then the report
+    // only when the marker carries one. The collapsed header is heading + toggle.
+    expect(source).toContain('<p className="text-[13px] leading-relaxed text-white/75">{marker.description}</p>');
+    expect(source).toContain('marker.deepReport ? (');
   });
 
   it('threads the highlightRsid through to the SnpDeepReport (193c)', () => {
@@ -136,11 +143,11 @@ describe('PanelMarkerGroup per SNP disclosure (193a)', () => {
     expect(source).toContain('motion-reduce:transition-none');
   });
 
-  it('still renders a static row for markers without a report', () => {
-    // The non disclosure branch keeps the original list item markup with the
-    // symbol, fullName, and description and no toggle.
+  it('keeps a static inline fallback only when no toggle is supplied (non-island use)', () => {
+    // Prompt 193e: with the island toggle present EVERY marker collapses to a
+    // tab. Without onToggleSnp the static inline row remains as a fallback.
+    expect(source).toContain('Static fallback');
     expect(source).toContain('marker.fullName');
-    expect(source).toContain('marker.description');
   });
 
   it('contains no em or en dashes', () => {
