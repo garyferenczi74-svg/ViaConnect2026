@@ -48,35 +48,61 @@ export const MEDIA_ORANGE_BL =
 // card ids the later UI tasks mount: genex360Complete, uploadDna, uploadLab,
 // snpFormulations, orderPanels, yourVariants. The hero glow is keyed "hero".
 export const GENETICS_CARD_MEDIA: Record<string, SurfaceMedia> = {
+  // The large Your Genetic Blueprint card carries the teal hero glow; the moving
+  // media now lives on the GeneX360 Complete inner card below.
   hero: {
     kind: "gradient",
     gradientClass: MEDIA_HERO_HELIX,
   },
+  // Prompt 193d (2026-06-12): the GeneX360 Complete inner hero card (the bento's
+  // background hero) plays the White DNA video from the Hero Videos bucket.
+  // CardMedia renders it muted, looped, playsInline, and IntersectionObserver
+  // gated; under reduced motion or any load failure it falls open to the
+  // MEDIA_TEAL_TL gradient below (no poster is set, so the gradient is the still).
   genex360Complete: {
-    kind: "gradient",
+    kind: "video",
+    src: "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Videos/White%20DNA.mp4",
+    objectPosition: "center",
     gradientClass: MEDIA_TEAL_TL,
   },
-  // Prompt 191 Task D (2026-06-12): TEAL upload surface, anchored bottom left.
-  // The DNA raw file upload reads teal to match the teal DNA treatment on the
-  // current /genetics page (the Lab upload stays orange below), so the bento
-  // keeps the same DNA teal / Lab orange continuity the page already teaches.
+  // Prompt 193d (2026-06-13): the Upload Your DNA card shows the Mouth Swab image
+  // from the Hero Images bucket. CardMedia renders it and fails open to the
+  // MEDIA_TEAL_BL gradient on any load error (the teal keeps the DNA teal / Lab
+  // orange continuity the page already teaches).
   uploadDna: {
-    kind: "gradient",
+    kind: "image",
+    src: "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Images/Mouth%20Swab%201.png",
+    objectPosition: "center",
     gradientClass: MEDIA_TEAL_BL,
   },
-  // Orange upload surface, anchored bottom left so the two upload tiles read
-  // as a pair without sharing the exact same corner.
+  // Prompt 193d (2026-06-13): the Upload Lab Results card plays the Blood Test
+  // video from the Hero Videos bucket. CardMedia plays it muted, looped,
+  // playsInline, and IntersectionObserver gated; reduced motion or any load
+  // failure falls open to the MEDIA_ORANGE_BL gradient (no poster set).
   uploadLab: {
-    kind: "gradient",
+    kind: "video",
+    src: "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Videos/Blood%20Test.mp4",
+    objectPosition: "center",
     gradientClass: MEDIA_ORANGE_BL,
   },
-  // Orange formulation surface.
+  // Prompt 193d (2026-06-13): the Browse SNP Support Formulations card plays the
+  // SNP Support video from the Hero Videos bucket. CardMedia plays it muted,
+  // looped, playsInline, and IntersectionObserver gated; reduced motion or any
+  // load failure falls open to the MEDIA_ORANGE_BR gradient (no poster set).
   snpFormulations: {
-    kind: "gradient",
+    kind: "video",
+    src: "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Videos/SNP%20Support.mp4",
+    objectPosition: "center",
     gradientClass: MEDIA_ORANGE_BR,
   },
+  // Prompt 193d (2026-06-13): the Unlock Your Genetic Blueprint card plays its
+  // video from the Hero Videos bucket. CardMedia plays it muted, looped,
+  // playsInline, and IntersectionObserver gated; reduced motion or any load
+  // failure falls open to the MEDIA_TEAL_TR gradient (no poster set).
   orderPanels: {
-    kind: "gradient",
+    kind: "video",
+    src: "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Videos/unlock%20your%20genetic%20blueprint.mp4",
+    objectPosition: "center",
     gradientClass: MEDIA_TEAL_TR,
   },
   yourVariants: {

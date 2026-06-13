@@ -37,20 +37,21 @@ interface VariantRowProps {
 }
 
 // Tailwind class fragments for the impact tier chip. Gary 2026-06-12: the impact
-// tiers are color coded High Red, Moderate Orange, Low Purple, which overrides
-// the earlier no-red tokens-only impact styling. Kept as a literal switch so the
-// exact hex strings stay visible in source.
+// tiers are color coded High Red, Moderate Orange, Low Purple via the chip border
+// and background. Gary 2026-06-13: the chip text itself is WHITE for legibility,
+// matching the impact filter pills. Kept as a literal switch so the exact hex
+// strings stay visible in source.
 function impactChipClasses(impact: SampleVariant['impact']): string {
   if (impact === 'High') {
-    // High: Red.
-    return 'border-[#F87171]/40 bg-[#F87171]/15 text-[#F87171]';
+    // High: Red border + fill, white text.
+    return 'border-[#F87171]/40 bg-[#F87171]/15 text-white';
   }
   if (impact === 'Moderate') {
-    // Moderate: Orange.
-    return 'border-[#FB923C]/40 bg-[#FB923C]/15 text-[#FB923C]';
+    // Moderate: Orange border + fill, white text.
+    return 'border-[#FB923C]/40 bg-[#FB923C]/15 text-white';
   }
-  // Low: Purple.
-  return 'border-[#A78BFA]/40 bg-[#A78BFA]/15 text-[#A78BFA]';
+  // Low: Purple border + fill, white text.
+  return 'border-[#A78BFA]/40 bg-[#A78BFA]/15 text-white';
 }
 
 export function VariantRow({ variant, isOpen, onToggle, rowId, panelSlug }: VariantRowProps) {

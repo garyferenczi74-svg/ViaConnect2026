@@ -14,7 +14,7 @@ interface GeneX360ProductCardProps {
 }
 
 const PANEL_DISPLAY_NAMES: Record<string, string> = {
-  genex_m: 'Methylation (GeneX-M)',
+  genex_m: 'Methylation (GeneXM)',
   nutrigen_dx: 'Nutrigenomics (NutragenHQ)',
   hormone_iq: 'Hormonal (HormoneIQ)',
   epigen_hq: 'Epigenetics (EpiGenDX)',

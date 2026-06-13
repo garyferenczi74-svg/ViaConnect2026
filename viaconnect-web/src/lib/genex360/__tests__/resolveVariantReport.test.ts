@@ -1,6 +1,6 @@
 // Prompt 193c (2026-06-12): tests for the Your Variants to Blueprint report join.
 // The resolver reads the DEEP_REPORT_REGISTRY (config-driven), so these
-// assertions depend on the shipped GeneX-M reports, not on the sample data. The
+// assertions depend on the shipped GeneXM reports, not on the sample data. The
 // route now lives in variantReport.config.ts (the single integration point).
 
 import { describe, it, expect } from "vitest";
@@ -36,14 +36,14 @@ describe("resolveVariantReport", () => {
   });
 
   it("returns exists false (no pill) for a variant with no matching report", () => {
-    // MAT1A rs7087728 appears in the GeneXM sample but has no GeneX-M deep report.
+    // MAT1A rs7087728 appears in the GeneXM sample but has no GeneXM deep report.
     const target = resolveVariantReport("rs7087728", "genexm");
     expect(target.exists).toBe(false);
     expect(target.href).toBe("");
   });
 
   it("returns exists false for a panel whose reports have not shipped", () => {
-    // FUT2 rs601338 is in the NutrigenDX sample; NutriGen-DX deep reports are not
+    // FUT2 rs601338 is in the NutrigenDX sample; NutrigenDX deep reports are not
     // built yet, and the rsID is not in any shipped panel, so there is no report.
     expect(resolveVariantReport("rs601338", "nutrigendx").exists).toBe(false);
   });

@@ -43,14 +43,11 @@ export const DEEP_REPORT_REGISTRY: DeepReportRegistry = {
 // renaming any visible label. A canonical slug (genex-m) is not listed because
 // the kebab fallback below already returns it unchanged.
 export const PANEL_LABEL_TO_SLUG: Record<string, string> = {
-  // Visible tab labels.
+  // Visible tab labels (Prompt 193d reconciled them to the no hyphen style).
   GeneXM: "genex-m",
-  "GeneX-M": "genex-m",
   NutrigenDX: "nutrigen-dx",
-  "NutriGen-DX": "nutrigen-dx",
   HormoneIQ: "hormone-iq",
   EpigenHQ: "epigen-hq",
-  "EpiGen-HQ": "epigen-hq",
   PeptideIQ: "peptide-iq",
   CannabisIQ: "cannabis-iq",
   // Non hyphenated tab slugs (the activeTest.id the card forwards).

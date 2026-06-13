@@ -1,4 +1,4 @@
-// Prompt 193b (2026-06-12): comprehensive per SNP deep reports for the GeneX-M
+// Prompt 193b (2026-06-12): comprehensive per SNP deep reports for the GeneXM
 // panel on /shop/genex360. The report level biology, health associations, and
 // strategy copy is authoritative and unchanged from 193a. The per SNP genotype
 // data (keyVariants) is reconciled to the authoritative GENEX-M variant set.
@@ -1244,7 +1244,7 @@ export const GENEX_M_DEEP_REPORTS: Record<string, SnpDeepReport> = {
       // There is no established common nutrigenetic SNP for ADO. The biology stays
       // live, but no genotype to activity mapping is asserted. ADO may have entered
       // the panel list by transcription error; if the assay does not genotype ADO,
-      // consider removing it from GeneX-M pending Gary's decision. ADO is kept in
+      // consider removing it from GeneXM pending Gary's decision. ADO is kept in
       // the file for now and only gated.
       {
         rsid: "Pending assay definition",
@@ -1278,6 +1278,6 @@ export const GENEX_M_DEEP_REPORTS: Record<string, SnpDeepReport> = {
   },
 };
 
-// Lowercase symbol slugs in canonical GeneX-M order (matches the 20 GeneX-M
+// Lowercase symbol slugs in canonical GeneXM order (matches the 20 GeneXM
 // panel markers). Used to verify full coverage and to drive the nested hash.
 export const GENEX_M_SNP_SLUGS: string[] = Object.keys(GENEX_M_DEEP_REPORTS);

@@ -63,9 +63,12 @@ describe('VariantPillTabs source', () => {
     expect(source).toContain('scrollbar-hide');
   });
 
-  it('uses the teal active fill with AA passing dark navy text', () => {
-    expect(source).toContain('bg-[#2DA5A0]');
-    expect(source).toContain('text-[#1A2744]');
+  it('gives the active pill the blue glass treatment and keeps inactive pills static', () => {
+    // Gary 2026-06-13: the ACTIVE pill matches the Upload Labs blue glass CTA
+    // (Deep Navy outline + white translucent glass + white text); the inactive
+    // (static) pills keep their original white outline.
+    expect(source).toContain('border border-[#1A2744]/60 bg-white/[0.08] text-white');
+    expect(source).toContain('border border-white/20 bg-transparent text-white/70');
   });
 
   it('gives every pill a 44px minimum touch target', () => {

@@ -38,7 +38,7 @@ export const TESTING_DIAGNOSTICS_INFO: TestingProductInfo[] = [
     icon: 'Dna',
     badge: 'MOST COMPREHENSIVE',
     marketingDescription:
-      `The ultimate precision wellness blueprint, GeneX360™ combines all six of FarmCeutica's targeted genetic panels, GeneX-M, NutrigenDX, HormoneIQ, EpigenHQ, PeptideIQ, and CannabisIQ, into a single comprehensive test analyzing over 100 clinically relevant SNPs across methylation, nutrient metabolism, hormonal pathways, biological aging, peptide response, and cannabinoid sensitivity. GeneX360™ feeds directly into FarmCeutica's Hannah AI engine, generating a fully personalized supplement and peptide protocol calibrated to your unique genome, transforming generic wellness guesswork into precision-targeted, genetically informed formulations built for your biology alone.`,
+      `The ultimate precision wellness blueprint, GeneX360™ combines all six of FarmCeutica's targeted genetic panels, GeneXM, NutrigenDX, HormoneIQ, EpigenHQ, PeptideIQ, and CannabisIQ, into a single comprehensive test analyzing over 100 clinically relevant SNPs across methylation, nutrient metabolism, hormonal pathways, biological aging, peptide response, and cannabinoid sensitivity. GeneX360™ feeds directly into FarmCeutica's Hannah AI engine, generating a fully personalized supplement and peptide protocol calibrated to your unique genome, transforming generic wellness guesswork into precision-targeted, genetically informed formulations built for your biology alone.`,
     sections: [
       {
         id: 'whats-tested',
@@ -88,7 +88,7 @@ export const TESTING_DIAGNOSTICS_INFO: TestingProductInfo[] = [
     icon: 'GitBranch',
     badge: 'METHYLATION CORE',
     marketingDescription:
-      `GeneX-M™ analyzes 20 of the most clinically significant methylation-pathway SNPs, including MTHFR, COMT, CBS, MTR, MTRR, BHMT, MAOA, ACHY, ACAT, VDR, DAO, GST, SOD, NOS, SUOX, NAT, TCN2, RFC1, SHMT, and ADO, to reveal exactly how your body processes B-vitamins, clears neurotransmitters, detoxifies environmental compounds, and manages homocysteine.`,
+      `GeneXM™ analyzes 20 of the most clinically significant methylation-pathway SNPs, including MTHFR, COMT, CBS, MTR, MTRR, BHMT, MAOA, ACHY, ACAT, VDR, DAO, GST, SOD, NOS, SUOX, NAT, TCN2, RFC1, SHMT, and ADO, to reveal exactly how your body processes B-vitamins, clears neurotransmitters, detoxifies environmental compounds, and manages homocysteine.`,
     sections: [
       {
         id: 'whats-tested',
@@ -407,7 +407,7 @@ export const TESTING_DIAGNOSTICS_INFO: TestingProductInfo[] = [
         icon: 'ListChecks',
         items: [
           { title: '30 Individual Daily Packets', detail: 'Pre-portioned, labeled daily packets containing your exact supplement combination, tear, pour, take. No pill organizers or guesswork required.' },
-          { title: 'Methylation Support Formulas', detail: `Genetically matched selection from FarmCeutica's 20 methylation support products (MTHFR+™, COMT+™, etc.) based on your GeneX-M™ panel results` },
+          { title: 'Methylation Support Formulas', detail: `Genetically matched selection from FarmCeutica's 20 methylation support products (MTHFR+™, COMT+™, etc.) based on your GeneXM™ panel results` },
           { title: 'Targeted Advanced Formulas', detail: 'Personalized picks from FOCUS+, RELAX+, CATALYST+, Clean+, Balance+, Replenish NAD+, and other advanced formulas matched to your nutrient and pathway genetics' },
           { title: 'Precision Peptide Inclusion', detail: 'If your PeptideIQ™ results indicate benefit, targeted peptides from the 29-peptide portfolio in your genetically optimal delivery form (liposomal, micellar, injectable, or nasal spray)' },
           { title: 'Hormonal & Specialty Add-Ons', detail: 'Gender-specific and condition-specific formulas (RISE+, CycleSync+, ThyroBalance+, etc.) included when your HormoneIQ™ data warrants them' },

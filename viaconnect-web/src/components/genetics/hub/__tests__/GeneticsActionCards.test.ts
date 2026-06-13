@@ -8,8 +8,8 @@
 //      onClick fake link, and has no nested interactive element; and
 //   2. each of the four exported cards passes the correct destination literal
 //      (/genetics/upload x2, /shop#category-snp, /shop).
-// They also lock the DNA teal / Lab orange accents, the Lucide stroke width,
-// and the no dash rule.
+// They also lock the blue glass CTA accent (Prompt 193d), the Lucide stroke
+// width, and the no dash rule.
 
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
@@ -57,11 +57,14 @@ describe('GeneticsActionCards source', () => {
     expect(source).toContain('href="/shop"');
   });
 
-  it('keeps DNA on the teal seam and Lab on the orange seam', () => {
+  it('keeps the DNA and Lab media seams and gives every card the blue glass CTA pill', () => {
     expect(source).toContain('GENETICS_CARD_MEDIA.uploadDna');
     expect(source).toContain('GENETICS_CARD_MEDIA.uploadLab');
-    expect(source).toContain("accent=\"teal\"");
-    expect(source).toContain("accent=\"orange\"");
+    // Prompt 193d (Gary 2026-06-13): all four action card CTA pills are now the
+    // blue glass treatment; the teal / orange accents are no longer used here.
+    expect(source).toContain('accent="blue"');
+    expect(source).not.toContain('accent="teal"');
+    expect(source).not.toContain('accent="orange"');
   });
 
   it('uses the ShoppingCart icon for the SNP formulations CTA', () => {

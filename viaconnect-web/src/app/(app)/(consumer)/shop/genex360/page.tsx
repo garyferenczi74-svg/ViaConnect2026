@@ -15,7 +15,7 @@ export const metadata = {
 
 export default async function GeneX360PlpPage() {
     // Prompt 193a follow-up (2026-06-12): the GeneX360 panel explorer (the pill
-    // tabs, panel description cards, and GeneX-M per SNP deep reports) moved to
+    // tabs, panel description cards, and GeneXM per SNP deep reports) moved to
     // its own standalone page at /genetics/blueprint, reached from the Your
     // Genetic Blueprint hero card. This PLP is the product grid only again.
     return <ShopCategoryPage slug="genex360" />

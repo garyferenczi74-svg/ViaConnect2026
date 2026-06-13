@@ -54,7 +54,7 @@ describe('VariantReportPill source', () => {
 
   it('styles a teal outline pill distinct from the filled severity chips', () => {
     expect(source).toContain('border-[#2DA5A0]/50');
-    expect(source).toContain('text-[#2DA5A0]');
+    expect(source).toContain('text-white');
     expect(source).toContain('bg-transparent');
     expect(source).toContain('hover:bg-[#2DA5A0]/10');
     expect(source).toContain('rounded-full');

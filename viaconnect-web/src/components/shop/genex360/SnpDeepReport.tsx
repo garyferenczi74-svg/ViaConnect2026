@@ -1,5 +1,5 @@
 // Prompt 193a Task T2 (2026-06-12): the comprehensive individual SNP deep report
-// for one GeneX-M marker on /shop/genex360. Purely presentational. The expanded
+// for one GeneXM marker on /shop/genex360. Purely presentational. The expanded
 // disclosure (accordion) and the nested #genex-m/<slug> hash wiring that mounts
 // this report are a later task; this component only renders one SnpDeepReport.
 //
@@ -220,7 +220,7 @@ export function SnpDeepReport({ report, highlightRsid }: SnpDeepReportProps) {
                   genotype tiers and shows a short muted note in their place. */}
               {variant.pendingAssayDefinition ? (
                 <p className="rounded-lg border border-white/[0.06] bg-[#1E3054]/40 px-3 py-2.5 text-[13px] leading-relaxed text-white/55">
-                  Pending assay confirmation. Genotype interpretations appear once the GeneX-M assay
+                  Pending assay confirmation. Genotype interpretations appear once the GeneXM assay
                   variant is confirmed.
                 </p>
               ) : (

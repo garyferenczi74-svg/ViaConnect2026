@@ -29,11 +29,11 @@ describe('GeneticsHub source', () => {
     expect(source).toContain('<GeneticsGettingStartedStrip />');
   });
 
-  it('composes the blueprint hero card', () => {
+  it('composes the blueprint bento (Prompt 193d, replaces the single hero card)', () => {
     expect(source).toContain(
-      "import { GeneticBlueprintHeroCard } from './GeneticBlueprintHeroCard'",
+      "import { GeneticBlueprintBento } from './GeneticBlueprintBento'",
     );
-    expect(source).toContain('<GeneticBlueprintHeroCard');
+    expect(source).toContain('<GeneticBlueprintBento');
   });
 
   it('composes all four action cards from GeneticsActionCards', () => {
@@ -70,7 +70,7 @@ describe('GeneticsHub source', () => {
     expect(source).toContain('grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-6');
   });
 
-  it('makes the hero 4 wide and 2 tall on the desktop grid', () => {
+  it('keeps the blueprint bento 4 wide and 2 tall on the desktop grid (hero footprint)', () => {
     expect(source).toContain('lg:col-span-4');
     expect(source).toContain('lg:row-span-2');
   });

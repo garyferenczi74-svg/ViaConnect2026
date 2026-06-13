@@ -38,7 +38,7 @@ import type { SurfaceMedia } from '@/components/body-tracker/hub/hubConfig';
 import { GeneticsHubTile } from './GeneticsHubTile';
 import { GENETICS_CARD_MEDIA } from './geneticsHubMedia';
 
-type Accent = 'teal' | 'orange';
+type Accent = 'teal' | 'orange' | 'blue';
 
 // One shared shell so all four cards stay pixel identical in structure and only
 // differ by copy, destination, media seam, accent, and CTA icon. The shell
@@ -54,6 +54,9 @@ interface ActionCardProps {
   media: SurfaceMedia;
   mediaLogKey: string;
   accent: Accent;
+  // Brightens the subheading (description) to full white. Used on the cards whose
+  // background media makes the default 62 percent white too dim (Gary 2026-06-13).
+  brightSubheading?: boolean;
   className?: string;
 }
 
@@ -64,6 +67,11 @@ const ACCENT_CHIP: Record<Accent, string> = {
   teal: 'border-[#2DA5A0]/40 bg-[#2DA5A0]/[0.14] text-[#2DA5A0] group-hover:border-[#2DA5A0]/60 group-hover:bg-[#2DA5A0]/20',
   orange:
     'border-[#B75E18]/45 bg-[#B75E18]/20 text-[#B75E18] group-hover:border-[#B75E18]/65 group-hover:bg-[#B75E18]/30',
+  // Blue (the Deep Navy token #1A2744) outline on a very see-through white glass
+  // fill (8 percent), with BRIGHT WHITE label text. The base chip className adds
+  // backdrop-blur-md so the video stays visible but frosted; the white text caries
+  // a soft shadow so it reads over the moving video at this low fill.
+  blue: 'border-[#1A2744]/60 bg-white/[0.08] text-white [text-shadow:0_1px_2px_rgba(0,0,0,0.8)] group-hover:border-[#1A2744]/80 group-hover:bg-white/[0.16]',
 };
 
 function ActionCard({
@@ -75,6 +83,7 @@ function ActionCard({
   media,
   mediaLogKey,
   accent,
+  brightSubheading,
   className,
 }: ActionCardProps) {
   return (
@@ -95,7 +104,11 @@ function ActionCard({
           <h3 className="text-[15px] font-semibold leading-tight text-white md:text-base">
             {title}
           </h3>
-          <p className="text-[12px] leading-relaxed text-white/[0.62] md:text-[13px]">
+          <p
+            className={`text-[12px] leading-relaxed md:text-[13px] ${
+              brightSubheading ? 'text-white' : 'text-white/[0.62]'
+            }`}
+          >
             {description}
           </p>
         </div>
@@ -115,7 +128,7 @@ function ActionCard({
   );
 }
 
-// Upload Your DNA Test -> the real DNA raw file upload flow. TEAL accent.
+// Upload Your DNA Test -> the real DNA raw file upload flow. BLUE accent.
 export function UploadDnaCard({ className }: { className?: string }) {
   return (
     <ActionCard
@@ -126,13 +139,14 @@ export function UploadDnaCard({ className }: { className?: string }) {
       ctaIcon={Upload}
       media={GENETICS_CARD_MEDIA.uploadDna}
       mediaLogKey="uploadDna"
-      accent="teal"
+      accent="blue"
+      brightSubheading
       className={className}
     />
   );
 }
 
-// Upload Lab Results -> the same upload flow, lab side. ORANGE accent.
+// Upload Lab Results -> the same upload flow, lab side. BLUE accent.
 export function UploadLabCard({ className }: { className?: string }) {
   return (
     <ActionCard
@@ -143,31 +157,32 @@ export function UploadLabCard({ className }: { className?: string }) {
       ctaIcon={FileText}
       media={GENETICS_CARD_MEDIA.uploadLab}
       mediaLogKey="uploadLab"
-      accent="orange"
+      accent="blue"
+      brightSubheading
       className={className}
     />
   );
 }
 
-// Browse SNP Support Formulations -> the SNP support catalog anchor. ORANGE
-// accent, shopping cart CTA icon.
+// Browse Genetic SNP Support Formulations -> the SNP support catalog anchor.
+// BLUE accent, shopping cart CTA icon.
 export function SnpFormulationsCard({ className }: { className?: string }) {
   return (
     <ActionCard
       href="/shop#category-snp"
-      title="Browse SNP Support Formulations"
+      title="Browse Genetic SNP Support Formulations"
       description="Methylation cofactors, neurotransmitter, detox and more"
       ctaLabel="Browse Catalog"
       ctaIcon={ShoppingCart}
       media={GENETICS_CARD_MEDIA.snpFormulations}
       mediaLogKey="snpFormulations"
-      accent="orange"
+      accent="blue"
       className={className}
     />
   );
 }
 
-// Unlock Your Genetic Blueprint -> the full storefront. TEAL accent, arrow CTA
+// Unlock Your Genetic Blueprint -> the full storefront. BLUE accent, arrow CTA
 // icon.
 export function OrderPanelsCard({ className }: { className?: string }) {
   return (
@@ -179,7 +194,7 @@ export function OrderPanelsCard({ className }: { className?: string }) {
       ctaIcon={ArrowRight}
       media={GENETICS_CARD_MEDIA.orderPanels}
       mediaLogKey="orderPanels"
-      accent="teal"
+      accent="blue"
       className={className}
     />
   );

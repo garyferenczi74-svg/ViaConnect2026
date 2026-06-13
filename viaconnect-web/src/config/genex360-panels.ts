@@ -23,7 +23,7 @@ export const GENEX360_PANELS = [
   },
   {
     id: "genex-m",
-    name: "GeneX-M\u2122",
+    name: "GeneXM\u2122",
     subtitle: "Methylation",
     icon: "\ud83d\udd2c",
     color: "bg-blue-400/10",
@@ -79,7 +79,7 @@ export const GENEX360_PANELS = [
 
 export const GENEX360_PANEL_NAMES: Record<string, { name: string; subtitle: string }> = {
   "genex360-complete": { name: "GeneX360\u2122 Complete", subtitle: "All 6 Panels" },
-  "genex-m": { name: "GeneX-M\u2122", subtitle: "Methylation" },
+  "genex-m": { name: "GeneXM\u2122", subtitle: "Methylation" },
   "nutrigendx": { name: "NutrigenDX\u2122", subtitle: "Nutrition" },
   "hormoneiq": { name: "HormoneIQ\u2122", subtitle: "Complete Hormone" },
   "epigenhq": { name: "EpigenHQ\u2122", subtitle: "Biological Age Analysis" },

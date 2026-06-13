@@ -142,7 +142,7 @@ export function YourVariantsCard({ className }: YourVariantsCardProps) {
         </p>
         <Link
           href={GENEX360_SHOP_HREF}
-          className="inline-flex min-h-[36px] flex-none items-center justify-center rounded-full bg-[#2DA5A0] px-3.5 py-1.5 text-[12px] font-semibold text-[#1A2744] no-underline transition-colors duration-200 hover:bg-[#2DA5A0]/85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744] motion-reduce:transition-none"
+          className="inline-flex min-h-[36px] flex-none items-center justify-center rounded-full border border-[#1A2744]/60 bg-white/[0.08] px-3.5 py-1.5 text-[12px] font-semibold text-white no-underline backdrop-blur-md [text-shadow:0_1px_2px_rgba(0,0,0,0.8)] transition-colors duration-200 hover:border-[#1A2744]/80 hover:bg-white/[0.16] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744] motion-reduce:transition-none"
         >
           Order GeneX360
         </Link>

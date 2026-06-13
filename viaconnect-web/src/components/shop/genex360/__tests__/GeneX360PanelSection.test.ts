@@ -90,7 +90,7 @@ describe('GeneX360PanelSection source', () => {
 describe('GeneX360PanelSection nested hash + single open SNP (193a)', () => {
   const source = readFileSync(COMPONENT, 'utf-8');
 
-  it('imports the GeneX-M SNP slugs and validates the hash second part against them', () => {
+  it('imports the GeneXM SNP slugs and validates the hash second part against them', () => {
     expect(source).toContain("import { GENEX_M_SNP_SLUGS } from '@/data/genex360/genex-m-deep'");
     expect(source).toContain('GENEX_M_SNP_SLUG_SET');
     expect(source).toContain('.has(snpPart)');

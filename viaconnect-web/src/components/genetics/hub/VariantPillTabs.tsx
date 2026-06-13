@@ -13,8 +13,9 @@
 // scroll snap and edge fade masks so partially scrolled pills hint at more. At
 // md+ the row may wrap to two lines and the fade is dropped.
 //
-// Standing rules honored: tokens only (Teal #2DA5A0 active fill with Deep Navy
-// #1A2744 dark text for AA contrast, white opacity neutrals for the rest),
+// Gary 2026-06-13: the ACTIVE pill uses the blue glass treatment (Deep Navy
+// #1A2744 outline + white translucent glass fill + white text), matching the
+// Upload Labs CTA; the inactive (static) pills keep their original white outline.
 // Instrument Sans inherited, no emojis, no em or en dashes, TypeScript strict
 // (no any).
 
@@ -125,7 +126,7 @@ export function VariantPillTabs({ tests, activeId, onActivate, panelId }: Varian
               onClick={() => onActivate(test.id)}
               className={`flex min-h-[44px] flex-none snap-start items-center gap-2 rounded-full px-4 py-2 text-[13px] font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744] motion-reduce:transition-none ${
                 active
-                  ? 'bg-[#2DA5A0] text-[#1A2744]'
+                  ? 'border border-[#1A2744]/60 bg-white/[0.08] text-white backdrop-blur-md [text-shadow:0_1px_2px_rgba(0,0,0,0.8)] hover:border-[#1A2744]/80 hover:bg-white/[0.16]'
                   : 'border border-white/20 bg-transparent text-white/70 hover:border-white/35 hover:text-white/90'
               }`}
             >
@@ -135,7 +136,7 @@ export function VariantPillTabs({ tests, activeId, onActivate, panelId }: Varian
                   text stays legible; on inactive pills it is a subtle white chip. */}
               <span
                 className={`inline-flex min-w-[1.25rem] items-center justify-center rounded-full px-1.5 py-0.5 text-[11px] font-medium tabular-nums ${
-                  active ? 'bg-[#1A2744]/15 text-[#1A2744]' : 'bg-white/10 text-white/70'
+                  active ? 'bg-[#1A2744]/40 text-white' : 'bg-white/10 text-white/70'
                 }`}
               >
                 {counts.all}

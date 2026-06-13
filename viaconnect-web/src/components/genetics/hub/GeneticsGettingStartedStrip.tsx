@@ -87,7 +87,7 @@ export function GeneticsGettingStartedStrip() {
           aria-disabled="true"
           tabIndex={-1}
           role="note"
-          className="inline-flex w-full items-center justify-center rounded-xl border border-white/20 bg-white/[0.05] px-3 py-2 text-[12px] font-medium text-white md:w-auto"
+          className="inline-flex w-full items-center justify-center rounded-xl border border-[#1A2744]/60 bg-white/[0.08] px-3 py-2 text-[12px] font-medium text-white backdrop-blur-md [text-shadow:0_1px_2px_rgba(0,0,0,0.8)] md:w-auto"
         >
           {COMING_SOON_TEXT}
         </span>

@@ -18,7 +18,7 @@
 // hashchange syncs the active slug and scrolls the matching card.
 //
 // Prompt 193a Task T3: the hash now has two levels. `#<panelSlug>` selects a
-// panel; `#<panelSlug>/<snpSlug>` additionally expands one GeneX-M SNP (single
+// panel; `#<panelSlug>/<snpSlug>` additionally expands one GeneXM SNP (single
 // open accordion). The island owns openSnp, parses both levels on mount and on
 // hashchange, validates the SNP slug against GENEX_M_SNP_SLUGS (only under
 // genex-m), keeps the nested hash in sync with replaceState, and scrolls the
@@ -51,7 +51,7 @@ import type { PanelSlug } from '@/data/genex360/types';
 import { PanelDescriptionCard } from './PanelDescriptionCard';
 import { PanelPillTabs } from './PanelPillTabs';
 
-// The set of valid GeneX-M SNP slugs, for O(1) validation of hash part 2.
+// The set of valid GeneXM SNP slugs, for O(1) validation of hash part 2.
 const GENEX_M_SNP_SLUG_SET = new Set(GENEX_M_SNP_SLUGS);
 
 // The set of valid panel slugs, for own-property safe validation of hash part 1.
@@ -73,7 +73,7 @@ function prefersReducedMotion(): boolean {
 // `<panelSlug>/<snpSlug>/<rsid>`, for example `genex-m/mthfr/rs1801133`. It is a
 // single split on "/" into three parts. Part 1 is validated against
 // PANEL_SLUG_SET; part 2 is only honored when part 1 is genex-m and the slug is a
-// known GeneX-M SNP, else the SNP is null; part 3 (the variant rsid) is only
+// known GeneXM SNP, else the SNP is null; part 3 (the variant rsid) is only
 // honored when a valid gene precedes it. The island writes its own one and two
 // segment hashes (a pill select or SNP toggle), which parse cleanly with
 // variantRsid null, so navigating by click clears any prior highlight.
@@ -134,8 +134,8 @@ export function GeneX360PanelSection() {
   // Default to genex-m for deterministic SSR; never read window during render.
   const [activeSlug, setActiveSlug] = useState<PanelSlug>('genex-m');
 
-  // Prompt 193a: the single open GeneX-M SNP slug (null = none). Only ever set
-  // when the active panel is genex-m and the slug is a known GeneX-M SNP.
+  // Prompt 193a: the single open GeneXM SNP slug (null = none). Only ever set
+  // when the active panel is genex-m and the slug is a known GeneXM SNP.
   const [openSnp, setOpenSnp] = useState<string | null>(null);
 
   // Prompt 193c Task T3: the variant rsid to highlight (null = none). Set when a
@@ -264,7 +264,7 @@ export function GeneX360PanelSection() {
         <PanelPillTabs panels={GENEX360_PANELS} activeSlug={activeSlug} onSelect={onSelect} />
       </div>
 
-      {/* The single active card. openSnp and onToggleSnp drive the GeneX-M per
+      {/* The single active card. openSnp and onToggleSnp drive the GeneXM per
           SNP disclosures; they are inert on panels whose markers carry no
           deepReport. highlightRsid soft highlights the variant a Report pill deep
           link targeted (null otherwise). */}

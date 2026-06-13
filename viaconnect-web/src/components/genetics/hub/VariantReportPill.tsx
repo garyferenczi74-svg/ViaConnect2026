@@ -7,9 +7,10 @@
 // exists, this component returns null and the card's footer right side is empty.
 //
 // Visual: a TEAL OUTLINE pill, deliberately distinct from the FILLED severity
-// chips on the same card. Teal #2DA5A0 text and border on the Card surface meet
-// WCAG AA. The href is whatever the resolver builds (it composes BLUEPRINT_ROUTE
-// internally); this component never hardcodes the route.
+// chips on the same card. Teal #2DA5A0 border with WHITE label text (Gary
+// 2026-06-13) on the Card surface meets WCAG AA. The href is whatever the
+// resolver builds (it composes BLUEPRINT_ROUTE internally); this component never
+// hardcodes the route.
 //
 // Standing rules honored: tokens only (Navy #1A2744, Teal #2DA5A0, white
 // opacity neutrals), Lucide strokeWidth 1.5 outline icons, Instrument Sans
@@ -50,7 +51,7 @@ export function VariantReportPill({
     <Link
       href={target.href}
       aria-label={`View full ${accessibleName} report`}
-      className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full border border-[#2DA5A0]/50 bg-transparent px-3.5 py-1.5 text-[12px] font-semibold text-[#2DA5A0] no-underline transition-colors duration-200 hover:bg-[#2DA5A0]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744] motion-reduce:transition-none"
+      className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full border border-[#2DA5A0]/50 bg-transparent px-3.5 py-1.5 text-[12px] font-semibold text-white no-underline transition-colors duration-200 hover:bg-[#2DA5A0]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744] motion-reduce:transition-none"
     >
       <FileText aria-hidden="true" className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} />
       Report

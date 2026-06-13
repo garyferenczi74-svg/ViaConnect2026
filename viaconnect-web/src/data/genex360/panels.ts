@@ -16,15 +16,15 @@ import { GENEX_M_DEEP_REPORTS } from "./genex-m-deep";
 export const GENEX360_PANELS: Panel[] = [
   {
     slug: "genex-m",
-    pillLabel: "GeneX-M",
-    displayName: "GeneX-M",
+    pillLabel: "GeneXM",
+    displayName: "GeneXM",
     subtitle: "Genetic Methylation and Detox Profile",
     tagline: "Your methylation and detox blueprint, decoded.",
     panelType: "snp",
     markerCount: 20,
     markerCountLabel: "20 SNPs",
     overview:
-      "GeneX-M analyzes 20 of the most clinically relevant single nucleotide polymorphisms across the methylation, detoxification, neurotransmitter, and nutrient transport pathways. These variants shape how efficiently your body produces methyl donors, clears toxins, balances mood chemistry, and absorbs key vitamins. Knowing your pattern lets Via Cura match active, methylated nutrient forms to your genetics rather than relying on trial and error.",
+      "GeneXM analyzes 20 of the most clinically relevant single nucleotide polymorphisms across the methylation, detoxification, neurotransmitter, and nutrient transport pathways. These variants shape how efficiently your body produces methyl donors, clears toxins, balances mood chemistry, and absorbs key vitamins. Knowing your pattern lets Via Cura match active, methylated nutrient forms to your genetics rather than relying on trial and error.",
     groups: [
       {
         groupTitle: "Methylation Pathway Efficiency",
@@ -181,19 +181,19 @@ export const GENEX360_PANELS: Panel[] = [
       "Direct integration with your Via Cura custom protocol.",
     ],
     protocolTieIn:
-      "GeneX-M results feed directly into your Via Cura protocol. Where your variants slow a pathway, the protocol selects active, methylated nutrient forms delivered through the proprietary micellar and liposomal dual delivery system for 10x to 28x absorption, so the right cofactors actually reach the cells that need them. These genetic insights are also a foundational input to your Bio Optimization framework.",
+      "GeneXM results feed directly into your Via Cura protocol. Where your variants slow a pathway, the protocol selects active, methylated nutrient forms delivered through the proprietary micellar and liposomal dual delivery system for 10x to 28x absorption, so the right cofactors actually reach the cells that need them. These genetic insights are also a foundational input to your Bio Optimization framework.",
   },
   {
     slug: "nutrigen-dx",
-    pillLabel: "NutriGen-DX",
-    displayName: "NutriGen-DX",
+    pillLabel: "NutrigenDX",
+    displayName: "NutrigenDX",
     subtitle: "Functional Nutrition and Absorption Assessment",
     tagline: "Eat and supplement in agreement with your DNA.",
     panelType: "snp",
     markerCount: 27,
     markerCountLabel: "27 nutrition related markers",
     overview:
-      "NutriGen-DX decodes how your genes affect the absorption, metabolism, and use of essential nutrients and macronutrients. It identifies where you may run low despite adequate intake, how you handle fats and carbohydrates, your antioxidant and inflammatory tendencies, and your likely food sensitivities. The result is a nutrition and supplement plan aligned to your biology rather than generic guidelines.",
+      "NutrigenDX decodes how your genes affect the absorption, metabolism, and use of essential nutrients and macronutrients. It identifies where you may run low despite adequate intake, how you handle fats and carbohydrates, your antioxidant and inflammatory tendencies, and your likely food sensitivities. The result is a nutrition and supplement plan aligned to your biology rather than generic guidelines.",
     groups: [
       {
         groupTitle: "Vitamin and Mineral Metabolism",
@@ -397,7 +397,7 @@ export const GENEX360_PANELS: Panel[] = [
       "Seamless integration with your custom vitamin formulations.",
     ],
     protocolTieIn:
-      "NutriGen-DX turns your nutrition genetics into a concrete plan. Your Via Cura protocol adjusts nutrient forms, doses, and food guidance to your absorption and metabolism profile, and routes priority nutrients through the dual delivery system for 10x to 28x absorption. Your nutrition genetics feed the Bio Optimization framework so progress is measurable over time.",
+      "NutrigenDX turns your nutrition genetics into a concrete plan. Your Via Cura protocol adjusts nutrient forms, doses, and food guidance to your absorption and metabolism profile, and routes priority nutrients through the dual delivery system for 10x to 28x absorption. Your nutrition genetics feed the Bio Optimization framework so progress is measurable over time.",
   },
   {
     slug: "hormone-iq",
@@ -639,15 +639,15 @@ export const GENEX360_PANELS: Panel[] = [
   },
   {
     slug: "epigen-hq",
-    pillLabel: "EpiGen-HQ",
-    displayName: "EpiGen-HQ",
+    pillLabel: "EpigenHQ",
+    displayName: "EpigenHQ",
     subtitle: "Epigenetic Age and Expression Profile",
     tagline: "Your genes are fixed. How they are read is not.",
     panelType: "epigenetic",
     markerCount: 12,
     markerCountLabel: "12 epigenetic markers",
     overview:
-      "EpiGen-HQ looks beyond your fixed DNA sequence to how your genes are actually being expressed right now. It reads DNA methylation patterns, the chemical marks that lifestyle, nutrition, stress, and environment lay down on your genome, to estimate your biological age and the pace at which you are aging. Because these marks are modifiable, EpiGen-HQ is the panel you can move. It is a research informed wellness and tracking tool, not a medical diagnostic, and it pairs naturally with the fixed insights from GeneX-M.",
+      "EpigenHQ looks beyond your fixed DNA sequence to how your genes are actually being expressed right now. It reads DNA methylation patterns, the chemical marks that lifestyle, nutrition, stress, and environment lay down on your genome, to estimate your biological age and the pace at which you are aging. Because these marks are modifiable, EpigenHQ is the panel you can move. It is a research informed wellness and tracking tool, not a medical diagnostic, and it pairs naturally with the fixed insights from GeneXM.",
     groups: [
       {
         groupTitle: "Biological Age and Pace of Aging",
@@ -736,7 +736,7 @@ export const GENEX360_PANELS: Panel[] = [
             symbol: "Global DNA Methylation Status",
             fullName: "Overall methylation level across the genome",
             description:
-              "A high level read on whether your methylation machinery is well supplied, which connects directly to your methyl donor intake and your GeneX-M variants.",
+              "A high level read on whether your methylation machinery is well supplied, which connects directly to your methyl donor intake and your GeneXM variants.",
           },
           {
             symbol: "Telomere Associated Methylation",
@@ -761,7 +761,7 @@ export const GENEX360_PANELS: Panel[] = [
       "Optional consultation with a Via Cura wellness advisor.",
     ],
     protocolTieIn:
-      "EpiGen-HQ is the panel your Via Cura protocol is built to move. Methyl donors, polyphenols, sleep and stress support, and metabolic nutrition are selected to nudge these markers in a favorable direction, delivered for 10x to 28x absorption. Because these markers respond to lifestyle, they become a living input to your Bio Optimization framework, giving you a before and after you can actually see.",
+      "EpigenHQ is the panel your Via Cura protocol is built to move. Methyl donors, polyphenols, sleep and stress support, and metabolic nutrition are selected to nudge these markers in a favorable direction, delivered for 10x to 28x absorption. Because these markers respond to lifestyle, they become a living input to your Bio Optimization framework, giving you a before and after you can actually see.",
   },
   {
     slug: "peptide-iq",
@@ -1017,7 +1017,7 @@ export const PANEL_BY_SLUG: Record<PanelSlug, Panel> = GENEX360_PANELS.reduce(
 
 export const PANEL_SLUGS: PanelSlug[] = GENEX360_PANELS.map((panel) => panel.slug);
 
-// Prompt 193a: attach the GeneX-M per SNP deep reports to their markers at
+// Prompt 193a: attach the GeneXM per SNP deep reports to their markers at
 // module load, keyed by lowercase gene symbol. The Prompt 193 description stays
 // the collapsed summary; deepReport is the expanded content shown in the per
 // SNP disclosure. Markers without a matching report are left unchanged.

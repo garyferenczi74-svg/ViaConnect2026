@@ -1,7 +1,7 @@
-// Prompt 193a (2026-06-12): data integrity tests for the GeneX-M per SNP deep
-// reports. Validates full coverage of the 20 GeneX-M SNPs, that every report
+// Prompt 193a (2026-06-12): data integrity tests for the GeneXM per SNP deep
+// reports. Validates full coverage of the 20 GeneXM SNPs, that every report
 // field is populated, that the module load merge attaches a deepReport to every
-// GeneX-M marker and to no other panel, and that the locked dash, bioavailability,
+// GeneXM marker and to no other panel, and that the locked dash, bioavailability,
 // and brand rules hold.
 
 import { describe, it, expect } from "vitest";
@@ -9,7 +9,7 @@ import { GENEX_M_DEEP_REPORTS, GENEX_M_SNP_SLUGS } from "../genex-m-deep";
 import { GENEX360_PANELS, PANEL_BY_SLUG } from "../panels";
 import type { SnpDeepReport } from "../types";
 
-// The 20 GeneX-M SNP slugs in canonical order (lowercase gene symbols).
+// The 20 GeneXM SNP slugs in canonical order (lowercase gene symbols).
 const EXPECTED_SLUGS = [
   "mthfr",
   "mtr",
@@ -65,21 +65,21 @@ function collectStrings(report: SnpDeepReport): string[] {
   return out;
 }
 
-describe("GeneX-M deep reports", () => {
-  it("covers exactly the 20 GeneX-M SNPs in canonical order", () => {
+describe("GeneXM deep reports", () => {
+  it("covers exactly the 20 GeneXM SNPs in canonical order", () => {
     expect(GENEX_M_SNP_SLUGS).toEqual(EXPECTED_SLUGS);
     expect(Object.keys(GENEX_M_DEEP_REPORTS)).toHaveLength(20);
   });
 
-  it("keys match the GeneX-M panel marker symbols exactly", () => {
+  it("keys match the GeneXM panel marker symbols exactly", () => {
     const markerSlugs = PANEL_BY_SLUG["genex-m"].groups
       .flatMap((group) => group.markers)
       .map((marker) => marker.symbol.toLowerCase());
-    // Every GeneX-M marker has a report, and there are no extra report keys.
+    // Every GeneXM marker has a report, and there are no extra report keys.
     expect([...markerSlugs].sort()).toEqual([...EXPECTED_SLUGS].sort());
   });
 
-  it("attaches a deepReport to every GeneX-M marker via the module load merge", () => {
+  it("attaches a deepReport to every GeneXM marker via the module load merge", () => {
     const markers = PANEL_BY_SLUG["genex-m"].groups.flatMap((group) => group.markers);
     expect(markers).toHaveLength(20);
     for (const marker of markers) {
@@ -160,7 +160,7 @@ describe("GeneX-M deep reports", () => {
     });
   }
 
-  // Prompt 193b: lock the reconciled GeneX-M variant set.
+  // Prompt 193b: lock the reconciled GeneXM variant set.
   describe("193b reconciliation", () => {
     // The two stand in CALLS that must never appear as a real genotype anywhere.
     const BANNED_CALLS = ["Reference", "Variant"];

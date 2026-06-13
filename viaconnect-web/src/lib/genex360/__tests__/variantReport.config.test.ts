@@ -20,9 +20,9 @@ describe("variantReport.config", () => {
     expect(ANCHOR_SCHEME).toBe("rsid");
   });
 
-  it("registers the shipped GeneX-M reports keyed by gene slug", () => {
+  it("registers the shipped GeneXM reports keyed by gene slug", () => {
     expect(DEEP_REPORT_REGISTRY["genex-m"]).toBeDefined();
-    // mthfr is a shipped GeneX-M deep report with the canonical C677T rsID.
+    // mthfr is a shipped GeneXM deep report with the canonical C677T rsID.
     expect(
       DEEP_REPORT_REGISTRY["genex-m"].mthfr.keyVariants.some(
         (v) => v.rsid === "rs1801133",

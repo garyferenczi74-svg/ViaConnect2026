@@ -1,14 +1,14 @@
 // Prompt 193a follow-up (2026-06-12): the standalone Your Genetic Blueprint page.
 //
 // Hosts the GeneX360 panel explorer (the pill tabs, panel description cards, and
-// the GeneX-M per SNP deep reports) that Gary moved OFF the /shop/genex360 PLP
+// the GeneXM per SNP deep reports) that Gary moved OFF the /shop/genex360 PLP
 // onto its own page. It is reached from the Your Genetic Blueprint hero card on
 // /genetics. The buy path is preserved by the Shop GeneX360 CTA below, which
 // points back at the shop PLP.
 //
 // Server component on plain Deep Navy. GeneX360PanelSection is a client island
 // that reads window.location.hash (not useSearchParams), so no Suspense boundary
-// is required. The nested GeneX-M deep links now resolve here, for example
+// is required. The nested GeneXM deep links now resolve here, for example
 // /genetics/blueprint#genex-m/mthfr.
 //
 // Standing rules honored: tokens only (Deep Navy #1A2744, Teal #2DA5A0), Lucide
@@ -22,7 +22,7 @@ import { GeneX360PanelSection } from '@/components/shop/genex360/GeneX360PanelSe
 export const metadata = {
   title: 'Your Genetic Blueprint | Via Cura',
   description:
-    'Explore the six GeneX360 panels marker by marker, including the full GeneX-M per SNP reports.',
+    'Explore the six GeneX360 panels marker by marker, including the full GeneXM per SNP reports.',
 };
 
 export default function GeneticBlueprintPage() {
@@ -49,7 +49,7 @@ export default function GeneticBlueprintPage() {
               Your Genetic Blueprint
             </h1>
             <p className="max-w-xl text-[13px] leading-relaxed text-white/70 md:text-sm">
-              Explore the six GeneX360 panels marker by marker, then open any GeneX-M SNP for its
+              Explore the six GeneX360 panels marker by marker, then open any GeneXM SNP for its
               full report.
             </p>
           </div>
@@ -62,7 +62,7 @@ export default function GeneticBlueprintPage() {
           </Link>
         </header>
 
-        {/* The panel explorer (pill tabs + panel description cards + GeneX-M deep
+        {/* The panel explorer (pill tabs + panel description cards + GeneXM deep
             reports), moved here from the shop PLP. */}
         <div className="mt-8">
           <GeneX360PanelSection />

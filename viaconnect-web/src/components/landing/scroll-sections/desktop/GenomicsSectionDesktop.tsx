@@ -8,7 +8,7 @@ import { SECTION_IDS, TAGLINES } from '../shared/sectionConstants'
 const PANELS = [
     {
         icon: Dna,
-        name: 'GeneX-M',
+        name: 'GeneXM',
         accent: '#2DA5A0',
         description: 'Methylation, detoxification, and core metabolic pathways. The foundational panel.',
     },

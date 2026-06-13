@@ -6,7 +6,7 @@ import { SectionAnchor } from '../shared/SectionAnchor'
 import { SECTION_IDS, TAGLINES } from '../shared/sectionConstants'
 
 const PANELS = [
-    { icon: Dna, name: 'GeneX-M', accent: '#2DA5A0', description: 'Methylation, detoxification, and core metabolic pathways. The foundational panel.' },
+    { icon: Dna, name: 'GeneXM', accent: '#2DA5A0', description: 'Methylation, detoxification, and core metabolic pathways. The foundational panel.' },
     { icon: Apple, name: 'NutrigenDX', accent: '#7BA85B', description: 'Nutrient absorption, metabolism, and dietary response.' },
     { icon: Activity, name: 'HormoneIQ', accent: '#B75E18', description: 'Estrogen, testosterone, thyroid, and cortisol pathways.' },
     { icon: Layers, name: 'EpigenHQ', accent: '#8B5CF6', description: 'Methylation patterns and epigenetic markers.' },

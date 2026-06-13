@@ -19,13 +19,13 @@ export interface PanelMarker {
   fullName: string; // expanded name
   description: string; // function plus variant or marker effect plus health impact, no em or en dashes
   // Prompt 193a: optional comprehensive per SNP report shown in the expanded
-  // disclosure. Present on the GeneX-M SNP markers after the genex-m-deep merge;
+  // disclosure. Present on the GeneXM SNP markers after the genex-m-deep merge;
   // absent on panels without per SNP reports.
   deepReport?: SnpDeepReport;
 }
 
 // Prompt 193a (2026-06-12): comprehensive per SNP deep report types for the
-// GeneX-M individual SNP reports. The rsid and genotype fields are DEFAULTS to
+// GeneXM individual SNP reports. The rsid and genotype fields are DEFAULTS to
 // reconcile with the live GENEX-M assay (see the genex-m-deep.ts header); the
 // biology, health associations, and strategy copy is authoritative. No em or en
 // dashes anywhere; bioavailability stays "10x to 28x"; score is "Bio Optimization".
@@ -71,7 +71,7 @@ export type PanelType = "snp" | "biomarker" | "epigenetic" | "educational";
 
 export interface Panel {
   slug: PanelSlug;
-  pillLabel: string; // short label on the pill, for example "GeneX-M"
+  pillLabel: string; // short label on the pill, for example "GeneXM"
   displayName: string; // full display name
   subtitle: string; // for example "Genetic Methylation and Detox Profile"
   tagline: string; // a short panel specific line

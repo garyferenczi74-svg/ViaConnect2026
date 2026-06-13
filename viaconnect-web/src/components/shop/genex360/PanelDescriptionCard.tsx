@@ -40,8 +40,8 @@ interface PanelDescriptionCardProps {
   panel: Panel;
   onBackToPanels?: () => void;
   // Prompt 193a: the single open SNP slug and its toggle, threaded down to every
-  // marker group so the GeneX-M card's per SNP disclosures stay single open
-  // across all groups. Only meaningful for GeneX-M; harmless elsewhere because
+  // marker group so the GeneXM card's per SNP disclosures stay single open
+  // across all groups. Only meaningful for GeneXM; harmless elsewhere because
   // those markers carry no deepReport, so no disclosure renders.
   openSnpSlug?: string | null;
   onToggleSnp?: (snpSlug: string) => void;

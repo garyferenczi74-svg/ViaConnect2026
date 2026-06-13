@@ -8,11 +8,11 @@
 // the whole group reads as one control to assistive tech. Default selection is
 // All. This filters the variant list in the parent; it owns no list itself.
 //
-// Gary 2026-06-12: the High, Moderate, and Low segments are color coded High
-// Red, Moderate Orange, Low Purple on both their selected and unselected states
-// (this overrides the earlier teal only, tokens only styling); All keeps the
-// teal accent. Instrument Sans inherited, no emojis, no em or en dashes,
-// TypeScript strict (no any).
+// Gary 2026-06-12 / 2026-06-13: the High, Moderate, and Low segments are color
+// coded High Red, Moderate Orange, Low Purple via their border and background;
+// the label text itself is WHITE on all of them for legibility (Gary 2026-06-13).
+// All keeps the teal accent. Instrument Sans inherited, no emojis, no em or en
+// dashes, TypeScript strict (no any).
 
 import { useRef } from 'react';
 
@@ -41,16 +41,16 @@ const SEGMENT_CLASSES: Record<ImpactFilterValue, { selected: string; unselected:
     unselected: 'border-white/15 bg-transparent text-white/65 hover:border-white/30 hover:text-white/85',
   },
   High: {
-    selected: 'border-[#F87171]/70 bg-[#F87171]/20 text-[#F87171]',
-    unselected: 'border-[#F87171]/30 bg-transparent text-[#F87171]/90 hover:border-[#F87171]/50 hover:bg-[#F87171]/10',
+    selected: 'border-[#F87171]/70 bg-[#F87171]/20 text-white',
+    unselected: 'border-[#F87171]/30 bg-transparent text-white/90 hover:border-[#F87171]/50 hover:bg-[#F87171]/10',
   },
   Moderate: {
-    selected: 'border-[#FB923C]/70 bg-[#FB923C]/20 text-[#FB923C]',
-    unselected: 'border-[#FB923C]/30 bg-transparent text-[#FB923C]/90 hover:border-[#FB923C]/50 hover:bg-[#FB923C]/10',
+    selected: 'border-[#FB923C]/70 bg-[#FB923C]/20 text-white',
+    unselected: 'border-[#FB923C]/30 bg-transparent text-white/90 hover:border-[#FB923C]/50 hover:bg-[#FB923C]/10',
   },
   Low: {
-    selected: 'border-[#A78BFA]/70 bg-[#A78BFA]/20 text-[#A78BFA]',
-    unselected: 'border-[#A78BFA]/30 bg-transparent text-[#A78BFA]/90 hover:border-[#A78BFA]/50 hover:bg-[#A78BFA]/10',
+    selected: 'border-[#A78BFA]/70 bg-[#A78BFA]/20 text-white',
+    unselected: 'border-[#A78BFA]/30 bg-transparent text-white/90 hover:border-[#A78BFA]/50 hover:bg-[#A78BFA]/10',
   },
 };
 

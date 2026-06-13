@@ -3,7 +3,7 @@
 // Prompt 193 Task T2 (2026-06-12): one marker group inside a GENEX360 panel
 // description card on /shop/genex360.
 //
-// Prompt 193a Task T3 (2026-06-12): markers that carry a deepReport (the GeneX-M
+// Prompt 193a Task T3 (2026-06-12): markers that carry a deepReport (the GeneXM
 // SNPs after the genex-m-deep merge) gain an accessible single-open disclosure.
 // The island owns the open slug; this group is controlled via openSnpSlug plus
 // onToggleSnp. A marker with a report renders a "View full report" button (44px
@@ -11,7 +11,7 @@
 // open, a height auto region (framer motion, instant under prefers reduced
 // motion) holding the full SnpDeepReport. The row container carries
 // id={`snp-${slug}`} with scroll-mt so the island can scroll it under the sticky
-// header. Markers without a deepReport (every non GeneX-M panel) render exactly
+// header. Markers without a deepReport (every non GeneXM panel) render exactly
 // as before, with no disclosure control.
 //
 // Prompt 193c Task T3: highlightRsid (the variant a Report pill deep link
@@ -35,7 +35,7 @@ import { SnpDeepReport } from "./SnpDeepReport";
 interface PanelMarkerGroupProps {
   group: PanelMarkerGroupData;
   // Prompt 193a: the lowercase SNP slug currently expanded (single open across
-  // the whole card), and the toggle the island owns. Only meaningful for GeneX-M
+  // the whole card), and the toggle the island owns. Only meaningful for GeneXM
   // markers; absent for every other panel.
   openSnpSlug?: string | null;
   onToggleSnp?: (snpSlug: string) => void;
@@ -105,7 +105,7 @@ export function PanelMarkerGroup({
   );
 }
 
-// One GeneX-M marker row with its disclosure. The row container carries the
+// One GeneXM marker row with its disclosure. The row container carries the
 // scroll target id (snp-<slug>) and scroll-mt so the island can bring it under
 // the sticky header. The button toggles the island's single open slug; when this
 // row is the open one, a framer motion height auto region mounts the full

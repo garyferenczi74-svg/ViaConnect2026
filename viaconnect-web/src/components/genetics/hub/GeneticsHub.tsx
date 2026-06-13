@@ -38,7 +38,7 @@
 
 import { GeneticsHubHeader } from './GeneticsHubHeader';
 import { GeneticsGettingStartedStrip } from './GeneticsGettingStartedStrip';
-import { GeneticBlueprintHeroCard } from './GeneticBlueprintHeroCard';
+import { GeneticBlueprintBento } from './GeneticBlueprintBento';
 import {
   UploadDnaCard,
   UploadLabCard,
@@ -58,7 +58,7 @@ export function GeneticsHub() {
           lg:order-* classes rearrange into the desktop asymmetric layout (see
           the file header for the full mapping). */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-6">
-        <GeneticBlueprintHeroCard className="md:col-span-2 lg:order-1 lg:col-span-4 lg:row-span-2" />
+        <GeneticBlueprintBento className="md:col-span-2 lg:order-1 lg:col-span-4 lg:row-span-2" />
         <YourVariantsCard className="md:col-span-2 lg:order-4 lg:col-span-6" />
         <UploadDnaCard className="md:col-span-1 lg:order-2 lg:col-span-2" />
         <UploadLabCard className="md:col-span-1 lg:order-3 lg:col-span-2" />
