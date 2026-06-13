@@ -10,10 +10,16 @@
 // background media of the set (the hero DNA gradient) with its scrim, so the
 // inner cards and the header read at WCAG AA over it.
 //
+// Prompt 193f (2026-06-13): below md the six panel cards collapse into a compact
+// two column grid (the hero stays full width above them); md and up is unchanged.
+// See the Layout note below and BlueprintPanelCard for the compact card treatment.
+//
 // Layout. SOURCE ORDER EQUALS MOBILE ORDER: the hero first, then the six panels in
-// the spec order. On mobile the inner grid is a single column; at sm it is two
-// columns; at md and up it is the spec's four column asymmetric arrangement via
-// col-span / row-span and CSS grid auto placement (no order or col-start needed):
+// the spec order. Below md the inner grid is a compact TWO column grid (Prompt
+// 193f): the hero spans full width (col-span-2) and the six panel cards sit side by
+// side in three rows of two. At md and up it is the spec's four column asymmetric
+// arrangement via col-span / row-span and CSS grid auto placement (no order or
+// col-start needed):
 //   hero        col-span-2 row-span-2  -> rows 1 to 2, cols 1 to 2 (the 2 by 2 anchor)
 //   HormoneIQ                           -> row 1, col 3
 //   EpigenHQ                            -> row 1, col 4
@@ -66,17 +72,25 @@ export function GeneticBlueprintBento({ className }: GeneticBlueprintBentoProps)
           </p>
         </div>
 
-        {/* The nested seven card bento. Mobile: a single column in source order.
-            sm: two columns. md and up: the four column asymmetric layout via
-            col-span / row-span and grid auto placement. */}
-        <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 md:grid-cols-4">
-          <BlueprintHeroCard className="sm:col-span-2 md:row-span-2" />
+        {/* The nested seven card bento.
+            Prompt 193f (2026-06-13): mobile (below md) is a compact TWO column grid
+            so the six panel cards sit side by side, three rows of two, instead of
+            full width stacked tiles. That roughly halves the section height on a
+            phone and matches the Wellness Analytics two across reference. The hero
+            stays full width above them (col-span-2). md and up is UNCHANGED from
+            Prompt 193d: the four column asymmetric layout (hero 2 by 2, four small
+            cards in the cluster, two wide cards on the bottom row) via col-span /
+            row-span and grid auto placement, so panels 4 and 5 widen only at md. The
+            panel cards switch to their own compact presentation below md; see
+            BlueprintPanelCard. */}
+        <div className="grid grid-cols-2 gap-2.5 md:grid-cols-4">
+          <BlueprintHeroCard className="col-span-2 md:row-span-2" />
           <BlueprintPanelCard meta={PANEL_BENTO_META[0]} />
           <BlueprintPanelCard meta={PANEL_BENTO_META[1]} />
           <BlueprintPanelCard meta={PANEL_BENTO_META[2]} />
           <BlueprintPanelCard meta={PANEL_BENTO_META[3]} />
-          <BlueprintPanelCard meta={PANEL_BENTO_META[4]} className="sm:col-span-2" />
-          <BlueprintPanelCard meta={PANEL_BENTO_META[5]} className="sm:col-span-2" />
+          <BlueprintPanelCard meta={PANEL_BENTO_META[4]} className="md:col-span-2" />
+          <BlueprintPanelCard meta={PANEL_BENTO_META[5]} className="md:col-span-2" />
         </div>
       </GeneticsHubTile>
     </section>
