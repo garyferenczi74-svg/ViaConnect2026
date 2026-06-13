@@ -31,7 +31,7 @@ export function GeneticsHubHeader() {
           Your genetics at a glance
         </h1>
         <p className="mt-1 text-[13px] leading-relaxed text-white/[0.62] md:text-[14px]">
-          Your variants and tests, one hub. Tap any tile to dive in.
+          The Next Revolution in Wellness is Personalization. Tap any tile to dive in.
         </p>
       </div>
       <span

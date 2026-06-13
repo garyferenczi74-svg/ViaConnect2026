@@ -26,7 +26,7 @@ describe('GeneticsHubHeader source', () => {
   });
 
   it('renders the subline copy', () => {
-    expect(source).toContain('Your variants and tests, one hub. Tap any tile to dive in.');
+    expect(source).toContain('The Next Revolution in Wellness is Personalization. Tap any tile to dive in.');
   });
 
   it('imports getDisplayName and calls it with the hannah slug', () => {
