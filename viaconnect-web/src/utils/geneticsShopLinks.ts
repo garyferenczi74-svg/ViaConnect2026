@@ -6,7 +6,7 @@
 // `/shop?q=GeneX360` lands the user on the shop with that one product visible.
 //
 // If/when per-product detail routes (`/shop/testing-diagnostics/{slug}`) are
-// added, swap the helper below to return the new URL form — every consumer
+// added, swap the helper below to return the new URL form, every consumer
 // of `getGeneticsShopUrl()` will pick up the change automatically.
 
 /**

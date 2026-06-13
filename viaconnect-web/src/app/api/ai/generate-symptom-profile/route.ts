@@ -5,7 +5,7 @@ import { safeLog } from "@/lib/utils/safe-log";
 
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || "";
 
-const SYSTEM_PROMPT = `You are ViaConnect Clinical Intelligence — a comprehensive health analysis engine synthesizing 25 years of multi-disciplinary clinical expertise across 14 specialties: Genomics, Nutraceuticals, Herbal Medicine, Vitamins & Minerals, Peptide Therapy, Medical Cannabis, TCM, Ayurvedic Medicine, Disease Pathophysiology, Physiotherapy, Massage Therapy, General Medicine, Specialist Medicine, and Functional Medicine.
+const SYSTEM_PROMPT = `You are ViaConnect Clinical Intelligence, a comprehensive health analysis engine synthesizing 25 years of multi-disciplinary clinical expertise across 14 specialties: Genomics, Nutraceuticals, Herbal Medicine, Vitamins & Minerals, Peptide Therapy, Medical Cannabis, TCM, Ayurvedic Medicine, Disease Pathophysiology, Physiotherapy, Massage Therapy, General Medicine, Specialist Medicine, and Functional Medicine.
 
 METHODOLOGY: ABSORB every data point. CROSS-REFERENCE symptoms across systems. VIEW through ALL 14 lenses simultaneously. IDENTIFY 1-3 master patterns driving symptoms. PRIORITIZE for this specific person. TRANSLATE into plain language with analogies.
 
@@ -64,22 +64,22 @@ export async function POST() {
       name: "HPA Axis Dysregulation & Energy Depletion Pattern",
       confidence: "high",
       symptomsInvolved: fatigueGroup.map(s => s.name),
-      explanation: `Your fatigue (${fatigueGroup[0]?.severity}/10)${fatigueGroup[0]?.description ? `, which you described as "${fatigueGroup[0].description}"` : ""}, combined with ${fatigueGroup.slice(1).map(s => s.name).join(", ")} suggests your stress-response system (the HPA axis) has been running on overdrive. Think of it like a battery that's been charging at 10% while draining at 90% — eventually the system can't keep up. This pattern is extremely common and very treatable with the right approach.`,
+      explanation: `Your fatigue (${fatigueGroup[0]?.severity}/10)${fatigueGroup[0]?.description ? `, which you described as "${fatigueGroup[0].description}"` : ""}, combined with ${fatigueGroup.slice(1).map(s => s.name).join(", ")} suggests your stress-response system (the HPA axis) has been running on overdrive. Think of it like a battery that's been charging at 10% while draining at 90%, eventually the system can't keep up. This pattern is extremely common and very treatable with the right approach.`,
       westernPerspective: "Subclinical adrenal insufficiency with possible thyroid involvement. Standard workup: cortisol (AM), DHEA-S, TSH, Free T3, Free T4, ferritin, B12, folate.",
-      easternPerspective: "In TCM, this maps to Kidney Yang Deficiency with Spleen Qi Sinking — your vital energy (Qi) is depleted and can't rise to support clear thinking and sustained energy. Acupuncture points ST36, KD3, and GV20 would be indicated.",
+      easternPerspective: "In TCM, this maps to Kidney Yang Deficiency with Spleen Qi Sinking, your vital energy (Qi) is depleted and can't rise to support clear thinking and sustained energy. Acupuncture points ST36, KD3, and GV20 would be indicated.",
       functionalPerspective: "Upstream triggers likely include chronic stress depleting cortisol reserves, poor sleep quality reducing overnight recovery, and possible mitochondrial dysfunction from nutrient depletion.",
-      genomicRelevance: "MTHFR C677T or A1298C variants would amplify this pattern by reducing methylation capacity. COMT variants affect stress hormone clearance. GeneX-M\u2122 panel would clarify.",
+      genomicRelevance: "MTHFR C677T or A1298C variants would amplify this pattern by reducing methylation capacity. COMT variants affect stress hormone clearance. GeneXM\u2122 panel would clarify.",
       nutritionalGaps: ["B-vitamins (especially B12, folate, B5)", "Magnesium", "CoQ10", "Iron/ferritin", "Vitamin D"],
       herbsToConsider: ["Ashwagandha (KSM-66) for cortisol modulation", "Rhodiola Rosea for mental fatigue", "Lion's Mane for neurogenesis and focus", "Holy Basil for stress adaptation"],
       supplementProtocol: [
-        { product: "Liposomal CoQ10 (Ubiquinol)", dosage: "200mg", timing: "Morning with food", rationale: "Mitochondrial energy production — directly addresses the cellular energy deficit driving your fatigue" },
+        { product: "Liposomal CoQ10 (Ubiquinol)", dosage: "200mg", timing: "Morning with food", rationale: "Mitochondrial energy production, directly addresses the cellular energy deficit driving your fatigue" },
         { product: "BioB Fusion\u2122 Methylated B Complex", dosage: "1 capsule", timing: "Morning", rationale: "Methylated B-vitamins bypass common genetic bottlenecks and directly support energy metabolism" },
         { product: "Micellar Ashwagandha (KSM-66\u00ae)", dosage: "600mg", timing: "Morning", rationale: "Clinically proven to reduce cortisol by 30% and improve energy without stimulation" },
       ],
       lifestyleInterventions: [
-        `Aim for a consistent 10pm bedtime for 14 days — your ${lifestyle.sleepHours || "reported"} hours suggests a sleep deficit that compounds fatigue`,
+        `Aim for a consistent 10pm bedtime for 14 days, your ${lifestyle.sleepHours || "reported"} hours suggests a sleep deficit that compounds fatigue`,
         "Morning sunlight exposure within 30 minutes of waking (10 min) to reset cortisol rhythm",
-        "Reduce caffeine to before noon only — afternoon caffeine disrupts the cortisol recovery window",
+        "Reduce caffeine to before noon only, afternoon caffeine disrupts the cortisol recovery window",
       ],
       labsToRequest: ["AM Cortisol + DHEA-S", "Complete Thyroid Panel (TSH, Free T3, Free T4, TPO)", "Ferritin + Iron Panel", "Vitamin B12 + Folate + Homocysteine", "Vitamin D 25-OH"],
       urgency: "investigate_soon",
@@ -90,22 +90,22 @@ export async function POST() {
       name: "Neurotransmitter Imbalance & Stress Overload Pattern",
       confidence: moodGroup.some(s => s.severity >= 7) ? "high" : "moderate",
       symptomsInvolved: moodGroup.map(s => s.name),
-      explanation: `Your mood symptoms — ${moodGroup.map(s => `${s.name} (${s.severity}/10)`).join(", ")}${moodGroup[0]?.description ? `. You mentioned: "${moodGroup[0].description}"` : ""} — suggest your brain's chemical messaging system is under strain. Think of neurotransmitters like a postal service: when stress overwhelms the system, messages get delayed, lost, or sent to the wrong address. The result is anxiety, mood swings, and that feeling of emotional volatility.`,
+      explanation: `Your mood symptoms, ${moodGroup.map(s => `${s.name} (${s.severity}/10)`).join(", ")}${moodGroup[0]?.description ? `. You mentioned: "${moodGroup[0].description}"` : ""}, suggest your brain's chemical messaging system is under strain. Think of neurotransmitters like a postal service: when stress overwhelms the system, messages get delayed, lost, or sent to the wrong address. The result is anxiety, mood swings, and that feeling of emotional volatility.`,
       westernPerspective: "Assessment for anxiety/depression spectrum with possible GAD or adjustment disorder. Consider PHQ-9 and GAD-7 screening. Rule out thyroid and hormonal contributors.",
-      easternPerspective: "TCM: Liver Qi Stagnation transforming to Heat — emotional energy is blocked and building pressure. Ayurveda: Vata aggravation with Pitta depletion. The nervous system is overstimulated while reserves are depleted.",
+      easternPerspective: "TCM: Liver Qi Stagnation transforming to Heat, emotional energy is blocked and building pressure. Ayurveda: Vata aggravation with Pitta depletion. The nervous system is overstimulated while reserves are depleted.",
       functionalPerspective: "Root causes: chronic stress depleting serotonin precursors, gut-brain axis disruption affecting neurotransmitter production (90% of serotonin made in gut), possible methylation deficiency affecting SAMe and neurotransmitter synthesis.",
       genomicRelevance: "COMT Val158Met affects catecholamine clearance speed. MAO-A variants affect serotonin breakdown. MTHFR affects SAMe production for neurotransmitter synthesis. CannabisIQ\u2122 panel could reveal endocannabinoid system variants.",
       nutritionalGaps: ["Magnesium (critical for GABA)", "5-HTP or L-Tryptophan", "B6 (P5P form)", "Omega-3 DHA", "Vitamin D"],
       herbsToConsider: ["Ashwagandha for cortisol and anxiety", "Passionflower for acute anxiety", "St. John's Wort for mild-moderate low mood (check drug interactions)", "Lemon Balm for nervous system calming"],
       supplementProtocol: [
-        { product: "Liposomal Magnesium L-Threonate", dosage: "400mg", timing: "Evening", rationale: "Crosses blood-brain barrier uniquely. Directly supports GABA — your brain's calming neurotransmitter" },
-        { product: "L-Theanine", dosage: "200mg", timing: "As needed for anxiety", rationale: "Promotes alpha brain waves — calm alertness without drowsiness. Works within 30 minutes" },
+        { product: "Liposomal Magnesium L-Threonate", dosage: "400mg", timing: "Evening", rationale: "Crosses blood-brain barrier uniquely. Directly supports GABA, your brain's calming neurotransmitter" },
+        { product: "L-Theanine", dosage: "200mg", timing: "As needed for anxiety", rationale: "Promotes alpha brain waves, calm alertness without drowsiness. Works within 30 minutes" },
         { product: "Algal Omega-3 DHA/EPA", dosage: "1000mg", timing: "Morning", rationale: "DHA is structural brain fat. Low levels strongly correlate with mood symptoms" },
       ],
       lifestyleInterventions: [
-        "Daily 20-minute walk, preferably in nature — exercise is as effective as SSRIs for mild-moderate depression in clinical trials",
+        "Daily 20-minute walk, preferably in nature, exercise is as effective as SSRIs for mild-moderate depression in clinical trials",
         "5-minute morning breathwork: Box Breathing (4-4-4-4) to reset the vagal nerve and calm the stress response",
-        `Your stress level is ${lifestyle.stressLevel || "elevated"} — consider a non-negotiable 15-min daily decompression ritual`,
+        `Your stress level is ${lifestyle.stressLevel || "elevated"}, consider a non-negotiable 15-min daily decompression ritual`,
       ],
       labsToRequest: ["Cortisol Diurnal Pattern (4-point)", "Neurotransmitter Metabolites (organic acids)", "Vitamin D 25-OH", "Complete Thyroid Panel", "Sex Hormones (if age-appropriate)"],
       urgency: "investigate_soon",
@@ -116,9 +116,9 @@ export async function POST() {
       name: "Sleep Architecture Disruption Pattern",
       confidence: sleepGroup.some(s => s.severity >= 7) ? "high" : "moderate",
       symptomsInvolved: sleepGroup.map(s => s.name),
-      explanation: `Your sleep symptoms${sleepGroup[0]?.description ? ` — "${sleepGroup[0].description}" —` : ""} indicate disrupted sleep architecture. Sleep isn't just "time in bed." It's a complex cycle of stages, and when any stage is compromised, the entire body pays the price. Poor sleep is the #1 amplifier of every other symptom you're experiencing.`,
+      explanation: `Your sleep symptoms${sleepGroup[0]?.description ? `, "${sleepGroup[0].description}" ,` : ""} indicate disrupted sleep architecture. Sleep isn't just "time in bed." It's a complex cycle of stages, and when any stage is compromised, the entire body pays the price. Poor sleep is the #1 amplifier of every other symptom you're experiencing.`,
       westernPerspective: "Sleep hygiene assessment, consider polysomnography if apnea suspected. Rule out restless leg syndrome, circadian rhythm disorder.",
-      easternPerspective: "TCM: Heart Blood Deficiency or Liver Fire Rising disrupting Shen (spirit/consciousness). Ayurveda: Vata imbalance — the nervous system cannot settle into rest.",
+      easternPerspective: "TCM: Heart Blood Deficiency or Liver Fire Rising disrupting Shen (spirit/consciousness). Ayurveda: Vata imbalance, the nervous system cannot settle into rest.",
       functionalPerspective: "Cortisol rhythm inversion (high at night, low in morning) is a common functional finding. Blue light exposure, caffeine timing, and magnesium deficiency are primary upstream triggers.",
       genomicRelevance: "CLOCK gene variants affect circadian preference. ADORA2A variants affect caffeine sensitivity. CYP1A2 affects caffeine clearance. EpigenHQ\u2122 panel assesses biological age factors including sleep quality impact.",
       nutritionalGaps: ["Magnesium", "Glycine", "L-Theanine", "Vitamin D", "Melatonin precursors"],
@@ -129,7 +129,7 @@ export async function POST() {
       ],
       lifestyleInterventions: [
         "10pm lights-out protocol: all screens off by 9:30pm, dim lighting, no blue light",
-        "Morning sunlight within 30 min of waking — this is the single most powerful circadian reset",
+        "Morning sunlight within 30 min of waking, this is the single most powerful circadian reset",
         "No caffeine after 12pm (caffeine half-life is 5-6 hours, affecting deep sleep even if you fall asleep fine)",
       ],
       labsToRequest: ["Cortisol Diurnal Pattern", "Melatonin levels (if available)", "Ferritin (restless legs connection)", "TSH"],
@@ -158,9 +158,9 @@ export async function POST() {
     // Eastern medicine
     const eastern = {
       tcmPattern: fatigueGroup.length >= 2 ? "Kidney Yang Deficiency with Spleen Qi Sinking" : moodGroup.length >= 2 ? "Liver Qi Stagnation with Heart Blood Deficiency" : "Qi and Blood Stagnation",
-      tcmExplanation: fatigueGroup.length >= 2 ? "In Chinese Medicine, your vital energy (Qi) is like a river. When the Kidney Yang (your body's furnace) runs low, everything downstream slows — digestion, cognition, and motivation. Your Spleen, which transforms food into energy, can't do its job effectively." : "Your Liver energy, responsible for the smooth flow of emotions and motivation, has become stagnant — like a dammed river. The pressure builds, manifesting as irritability, mood swings, and that feeling of being 'stuck.'",
+      tcmExplanation: fatigueGroup.length >= 2 ? "In Chinese Medicine, your vital energy (Qi) is like a river. When the Kidney Yang (your body's furnace) runs low, everything downstream slows, digestion, cognition, and motivation. Your Spleen, which transforms food into energy, can't do its job effectively." : "Your Liver energy, responsible for the smooth flow of emotions and motivation, has become stagnant, like a dammed river. The pressure builds, manifesting as irritability, mood swings, and that feeling of being 'stuck.'",
       doshaAssessment: moodGroup.length >= 2 ? "Vata Aggravation with Pitta Depletion" : "Vata-Pitta Imbalance",
-      doshaExplanation: "In Ayurvedic terms, your Vata (air/nervous system energy) is elevated — manifesting as restlessness, anxiety, and sleep disruption. Meanwhile, your Pitta (fire/transformation energy) is depleted, showing up as low drive and digestive sluggishness.",
+      doshaExplanation: "In Ayurvedic terms, your Vata (air/nervous system energy) is elevated, manifesting as restlessness, anxiety, and sleep disruption. Meanwhile, your Pitta (fire/transformation energy) is depleted, showing up as low drive and digestive sluggishness.",
       recommendedPractices: ["Acupuncture: 'Four Gates' protocol (LI4 + LV3) for Qi flow regulation", "Qi Gong: 8 Brocades morning practice (15 min) for energy cultivation", "Pranayama: Nadi Shodhana (alternate nostril breathing) before bed for nervous system balance", "Ayurvedic: warm sesame oil self-massage (Abhyanga) before morning shower for Vata pacification"],
     };
 
@@ -174,27 +174,27 @@ export async function POST() {
         { action: "Begin 10pm lights-out sleep protocol", rationale: "Sleep optimization has the highest ROI of any lifestyle change for your symptom picture", category: "lifestyle", expectedTimeframe: "Improvement by day 5-7" },
       ],
       thisMonth: [
-        { action: "Add Ashwagandha KSM-66 600mg (morning) to protocol", rationale: "Clinically proven cortisol modulation — takes 2-4 weeks for full effect", category: "herbal", expectedTimeframe: "2-4 weeks" },
+        { action: "Add Ashwagandha KSM-66 600mg (morning) to protocol", rationale: "Clinically proven cortisol modulation, takes 2-4 weeks for full effect", category: "herbal", expectedTimeframe: "2-4 weeks" },
         { action: "Request lab panels: Thyroid (TSH/T3/T4), B12, Ferritin, Vitamin D, Cortisol", rationale: "These labs will confirm or rule out the master patterns identified", category: "lab_work", expectedTimeframe: "Results in 1-2 weeks" },
         { action: "Begin daily 20-min walks, preferably morning", rationale: "Exercise + morning light is the most powerful circadian rhythm reset available", category: "lifestyle", expectedTimeframe: "2 weeks" },
       ],
       ongoing: [
         { action: "Reassess symptoms using ViaConnect CAQ in 30 days", rationale: "Track whether interventions are moving the needle on your top symptoms", category: "assessment", expectedTimeframe: "Monthly" },
-        { action: "Consider GeneX-M\u2122 panel for MTHFR/COMT variants", rationale: "Genetic data would move your protocol from 'Personalized' to 'Precision Optimized'", category: "genetic_testing", expectedTimeframe: "When ready" },
+        { action: "Consider GeneXM\u2122 panel for MTHFR/COMT variants", rationale: "Genetic data would move your protocol from 'Personalized' to 'Precision Optimized'", category: "genetic_testing", expectedTimeframe: "When ready" },
       ],
     };
 
     const topSymptoms = top.map(s => ({
       ...s, category: s.category as "physical" | "neurological" | "emotional",
       patientDescription: s.description,
-      expertAnalysis: s.severity >= 7 ? `Your ${s.name} at ${s.severity}/10${s.description ? ` — "${s.description}" —` : ""} is in the high-severity range. This level of ${s.name} significantly impacts daily function and is likely connected to one of the master patterns identified above. This is a priority symptom to address.` : s.severity >= 4 ? `Your ${s.name} at ${s.severity}/10 is moderate and worth monitoring. ${s.description ? `You described this as "${s.description}" which` : "This"} provides important clinical context.` : `Your ${s.name} at ${s.severity}/10 is currently low-severity. Continue monitoring for changes.`,
+      expertAnalysis: s.severity >= 7 ? `Your ${s.name} at ${s.severity}/10${s.description ? `, "${s.description}" ,` : ""} is in the high-severity range. This level of ${s.name} significantly impacts daily function and is likely connected to one of the master patterns identified above. This is a priority symptom to address.` : s.severity >= 4 ? `Your ${s.name} at ${s.severity}/10 is moderate and worth monitoring. ${s.description ? `You described this as "${s.description}" which` : "This"} provides important clinical context.` : `Your ${s.name} at ${s.severity}/10 is currently low-severity. Continue monitoring for changes.`,
       connectedSymptoms: all.filter(o => o.severity >= 4 && o.name !== s.name).slice(0, 3).map(o => o.name),
       trend: s.severity >= 7 ? "concerning" as const : "stable" as const,
     }));
 
     // Executive summary
     const topNames = top.slice(0, 3).map(s => s.name).join(", ");
-    const executiveSummary = `Based on your comprehensive assessment, your overall symptom burden is ${burdenTier.toLowerCase()} (${burdenScore}/100). ${masterPatterns.length > 0 ? `I've identified ${masterPatterns.length} master pattern${masterPatterns.length > 1 ? "s" : ""} that appear to be driving the majority of your symptoms: ${masterPatterns.map(p => p.name).join(" and ")}. ` : ""}Your most impactful symptoms are ${topNames}${top[0]?.description ? ` — and your description of "${top[0].description}" gives important clinical context` : ""}. The encouraging news: these patterns are well-understood and responsive to targeted intervention. You've taken the most important step by mapping your symptoms in detail.`;
+    const executiveSummary = `Based on your comprehensive assessment, your overall symptom burden is ${burdenTier.toLowerCase()} (${burdenScore}/100). ${masterPatterns.length > 0 ? `I've identified ${masterPatterns.length} master pattern${masterPatterns.length > 1 ? "s" : ""} that appear to be driving the majority of your symptoms: ${masterPatterns.map(p => p.name).join(" and ")}. ` : ""}Your most impactful symptoms are ${topNames}${top[0]?.description ? `, and your description of "${top[0].description}" gives important clinical context` : ""}. The encouraging news: these patterns are well-understood and responsive to targeted intervention. You've taken the most important step by mapping your symptoms in detail.`;
 
     const result = {
       overallBurdenScore: burdenScore, burdenTier, executiveSummary, masterPatterns, topSymptoms,

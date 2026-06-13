@@ -23,14 +23,14 @@ const stats = [
 const wellnessAlerts = [
   {
     borderColor: '#C4944A',
-    text: 'Emma W. — Methylation pathway bottleneck detected. MTHFR TT homozygous with elevated homocysteine (14.2 μmol/L).',
+    text: 'Emma W., Methylation pathway bottleneck detected. MTHFR TT homozygous with elevated homocysteine (14.2 μmol/L).',
     badge: 'MTHFR TT',
     buttons: ['View Pathway', 'Update Plan'],
     icon: AlertTriangle,
   },
   {
     borderColor: '#7BAE7F',
-    text: 'David L. — Practitioner Dr. Patel added lisinopril to medications. Herbal interaction check recommended.',
+    text: 'David L., Practitioner Dr. Patel added lisinopril to medications. Herbal interaction check recommended.',
     badge: null,
     buttons: ['Check Interactions', 'View Notes'],
     icon: Info,
@@ -49,16 +49,16 @@ const collaborativeTimeline = [
     dotColor: '#7BAE7F',
   },
   {
-    text: 'Lab results ready for David L. — homocysteine panel',
+    text: 'Lab results ready for David L., homocysteine panel',
     time: '2 days ago',
     dotColor: '#C4944A',
   },
 ];
 
 const geneticResults = [
-  { patient: 'Emma W.', panel: 'GeneX-M', finding: 'MTHFR TT — severe methylation impact', date: 'Mar 24' },
-  { patient: 'David L.', panel: 'GeneX360', finding: 'CYP2D6 PM — poor metabolizer', date: 'Mar 22' },
-  { patient: 'Sophie R.', panel: 'CannabisIQ', finding: 'CNR1 variant — enhanced response', date: 'Mar 20' },
+  { patient: 'Emma W.', panel: 'GeneXM', finding: 'MTHFR TT, severe methylation impact', date: 'Mar 24' },
+  { patient: 'David L.', panel: 'GeneX360', finding: 'CYP2D6 PM, poor metabolizer', date: 'Mar 22' },
+  { patient: 'Sophie R.', panel: 'CannabisIQ', finding: 'CNR1 variant, enhanced response', date: 'Mar 20' },
 ];
 
 // ─── Page ────────────────────────────────────────────────────────────────────

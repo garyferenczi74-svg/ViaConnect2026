@@ -64,14 +64,14 @@ export const SNP_TARGETS: ReadonlyArray<SnpTarget> = [
 // /shop matches MASTER_SKUS marketing names (e.g. "GeneX-M™ Methylation Panel")
 // to product_catalog rows whose canonical `name` column is shorter/different
 // (e.g. "GeneXM"). The shop's NAME_ALIASES map (src/app/(app)/(consumer)/
-// shop/page.tsx line 298) is the source of truth — we mirror it here so
+// shop/page.tsx line 298) is the source of truth, we mirror it here so
 // the reality-check script can resolve the same DB row /shop resolves.
 export interface ServiceTargetWithAliases extends ServiceTarget {
   master_sku_name: string;        // name in MASTER_SKUS / MASTER_SKUS JSON
   catalog_name: string;           // canonical name in product_catalog
 }
 export const SERVICE_TARGETS: ReadonlyArray<ServiceTargetWithAliases> = [
-  { slug: 'genex-m',    display_name: 'GeneX-M',    subtitle: 'Master Methylation Panel',    motif: 'DNA-helix vertical with methyl-group annotation',
+  { slug: 'genex-m',    display_name: 'GeneXM',    subtitle: 'Master Methylation Panel',    motif: 'DNA-helix vertical with methyl-group annotation',
     master_sku_name: 'GeneX-M™ Methylation Panel',            catalog_name: 'GeneXM' },
   { slug: 'nutrigendx', display_name: 'NutrigenDX', subtitle: 'Nutrigenomic Response',       motif: 'Plate + DNA cross-section',
     master_sku_name: 'NutrigenDX™ Genetic Nutrition Panel',    catalog_name: 'NutragenHQ' },
@@ -86,7 +86,7 @@ export const SERVICE_TARGETS: ReadonlyArray<ServiceTargetWithAliases> = [
 ];
 
 // The DB table the /shop page actually reads from to populate image_url.
-// NOT `products` — that table exists but /shop doesn't use it for images.
+// NOT `products`, that table exists but /shop doesn't use it for images.
 // See src/app/(app)/(consumer)/shop/page.tsx line 239.
 export const PRODUCTS_TABLE_FOR_SHOP = 'product_catalog';
 
@@ -125,7 +125,7 @@ export const IN_SCOPE_CATEGORIES: ReadonlyArray<string> = [
 // place of display names. Checked case-insensitively.
 // Covers three source schemas:
 //  - supplement_brand_categories seed (snp_support, genex360_testing)
-//  - MASTER_SKUS enum values (SNP, Testing) — see shop/page.tsx
+//  - MASTER_SKUS enum values (SNP, Testing), see shop/page.tsx
 //  - product_catalog.category variants observed in prior prompts
 export const IN_SCOPE_CATEGORY_SLUGS: ReadonlyArray<string> = [
   'methylation-genex360',

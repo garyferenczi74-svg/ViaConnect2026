@@ -1,4 +1,4 @@
-// FarmCeutica Peptide Database — Categories 4-6
+// FarmCeutica Peptide Database, Categories 4-6
 // Immune & Regenerative | Neuro/Cognitive & Mood | Hormonal Balance & Endocrine
 // 13 products, 52 SKUs (4 delivery forms each)
 
@@ -219,9 +219,9 @@ export const NEURO_PEPTIDES: PeptideProduct[] = [
     ],
     cycleProtocol: "30 days in a row, 2-3x/year",
     onsetTimeline: "2-3 weeks cognitive clarity; 4-6 weeks full neuroprotective",
-    genexSynergy: "COMT + MTHFR -> neurotransmitter synthesis optimization with GeneX-M data",
+    genexSynergy: "COMT + MTHFR -> neurotransmitter synthesis optimization with GeneXM data",
     targetVariants: ["COMT", "MTHFR"],
-    genexPanel: "GeneX-M",
+    genexPanel: "GeneXM",
     priceRange: "$99-$129/month",
     marketLaunch: "Month 7",
   },
@@ -325,7 +325,7 @@ export const NEURO_PEPTIDES: PeptideProduct[] = [
     onsetTimeline: "5-10 min (intranasal); 30-60 min (oral/injectable)",
     genexSynergy: "COMT Val/Val -> mood stability optimization",
     targetVariants: ["COMT"],
-    genexPanel: "GeneX-M",
+    genexPanel: "GeneXM",
     priceRange: "$129-$189/month",
     marketLaunch: "Month 7",
   },

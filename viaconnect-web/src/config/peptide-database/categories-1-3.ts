@@ -1,4 +1,4 @@
-// FarmCeutica Peptide Database — Categories 1-3
+// FarmCeutica Peptide Database, Categories 1-3
 // Longevity & Core Bioregulator | Adrenal/HPA Axis & Stress | Mitochondrial/Energy
 // 13 products, 52 SKUs (4 delivery forms each)
 
@@ -43,7 +43,7 @@ export interface PeptideProduct {
   priceRange: string;
   marketLaunch: string;
   // ── Prompt #54b additions (all optional so existing entries don't need
-  // to be backfilled inline — distribution tier is resolved via the
+  // to be backfilled inline, distribution tier is resolved via the
   // TIER_ASSIGNMENTS map in ./tiers.ts when not set on the entry itself)
   distributionTier?: PeptideDistributionTier;
   clinicalTierNote?: string;
@@ -201,9 +201,9 @@ export const ADRENAL_PEPTIDES: PeptideProduct[] = [
     ],
     cycleProtocol: "30 days on, 2 months off",
     onsetTimeline: "2-4 weeks cortisol rhythm changes",
-    genexSynergy: "COMT Val/Met status -> stress response calibration with GeneX-M data",
+    genexSynergy: "COMT Val/Met status -> stress response calibration with GeneXM data",
     targetVariants: ["COMT"],
-    genexPanel: "GeneX-M",
+    genexPanel: "GeneXM",
     priceRange: "$119-$149/month",
     marketLaunch: "Month 9",
   },
@@ -236,7 +236,7 @@ export const ADRENAL_PEPTIDES: PeptideProduct[] = [
     onsetTimeline: "2-4 weeks",
     genexSynergy: "CYP1A2 metabolizer status -> cortisol clearance optimization",
     targetVariants: ["CYP1A2"],
-    genexPanel: "GeneX-M",
+    genexPanel: "GeneXM",
     priceRange: "$119-$149/month",
     marketLaunch: "Month 9",
   },
@@ -269,7 +269,7 @@ export const ADRENAL_PEPTIDES: PeptideProduct[] = [
     onsetTimeline: "30-60 min (oral); 5-10 min (nasal)",
     genexSynergy: "COMT + MTHFR status -> neurotransmitter resilience calibration",
     targetVariants: ["COMT", "MTHFR"],
-    genexPanel: "GeneX-M",
+    genexPanel: "GeneXM",
     priceRange: "$99-$129/month",
     marketLaunch: "Month 9",
   },
@@ -380,7 +380,7 @@ export const MITOCHONDRIAL_PEPTIDES: PeptideProduct[] = [
     onsetTimeline: "2-4 weeks fatigue reduction; 8-12 weeks maximal",
     genexSynergy: "COMT + flattened cortisol -> Mitochondrial Fog pattern support",
     targetVariants: ["COMT"],
-    genexPanel: "GeneX-M",
+    genexPanel: "GeneXM",
     priceRange: "$149-$199/month",
     marketLaunch: "Month 8",
   },
@@ -446,7 +446,7 @@ export const MITOCHONDRIAL_PEPTIDES: PeptideProduct[] = [
     onsetTimeline: "3-5 days initial energy; 4 weeks full benefit",
     genexSynergy: "CYP metabolizer status -> energy compound processing optimization",
     targetVariants: ["CYP2D6", "CYP3A4"],
-    genexPanel: "GeneX-M",
+    genexPanel: "GeneXM",
     priceRange: "$119-$149/month",
     marketLaunch: "Month 8",
   },

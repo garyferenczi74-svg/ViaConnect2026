@@ -55,7 +55,7 @@ const alerts = [
 ];
 
 const recentResults = [
-  { patient: "John D.", panel: "GeneX-M", date: "3/24", status: "Ready", statusColor: "bg-emerald-500/15 text-emerald-400" },
+  { patient: "John D.", panel: "GeneXM", date: "3/24", status: "Ready", statusColor: "bg-emerald-500/15 text-emerald-400" },
   { patient: "Sarah K.", panel: "GeneX360", date: "3/22", status: "Ready", statusColor: "bg-emerald-500/15 text-emerald-400" },
   { patient: "Mike R.", panel: "PeptideIQ", date: "3/20", status: "Pending", statusColor: "bg-amber-500/15 text-amber-400" },
 ];
@@ -100,7 +100,7 @@ export default function PractitionerDashboardPage() {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm text-white">
                       <span className="font-semibold">{alert.patient}</span>
-                      {" — "}
+                      {", "}
                       {alert.message}
                     </p>
                     {alert.badges.length > 0 && (
