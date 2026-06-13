@@ -1,6 +1,7 @@
 /**
  * Static agent registry for the admin Agents panel (Prompt #126).
- * Five agents are surfaced in the tab bar. Display metadata (icon, accent
+ * Seven agents are surfaced in the tab bar (marshall + lex added
+ * 2026-06-12). Display metadata (icon, accent
  * color, role label, description) lives here so new agent additions are a
  * one-line change rather than a DB seed + migration.
  *
@@ -63,6 +64,28 @@ export const AGENT_REGISTRY: Readonly<Record<AgentId, AgentRegistryRow>> = {
     icon_name: "Dumbbell",
     accent_color: "#2DA5A0",
     sort_order: 5,
+    is_active: true,
+  },
+  marshall: {
+    agent_id: "marshall",
+    display_name: "Marshall",
+    role_label: "Compliance / Customs",
+    description:
+      "Compliance rule engine across all 14 pillars, protocol safety gate compliance lane, and CBP customs case work.",
+    icon_name: "ShieldCheck",
+    accent_color: "#B75E18",
+    sort_order: 6,
+    is_active: true,
+  },
+  lex: {
+    agent_id: "lex",
+    display_name: "Lex",
+    role_label: "Legal / Litigation",
+    description:
+      "Litigation case management, legal exposure review of claims language, and the protocol safety gate legal lane.",
+    icon_name: "Scale",
+    accent_color: "#2DA5A0",
+    sort_order: 7,
     is_active: true,
   },
 };

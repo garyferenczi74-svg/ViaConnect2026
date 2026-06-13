@@ -5,7 +5,9 @@
  * to the UI via the mapper in activity-tracker.ts.
  */
 
-export type AgentId = "jeffery" | "hannah" | "michelangelo" | "sherlock" | "arnold";
+// 2026-06-12: marshall (compliance, Prompt #119/#129a) and lex (litigation,
+// Prompt #116/#129a) join the fleet per Gary's directive.
+export type AgentId = "jeffery" | "hannah" | "michelangelo" | "sherlock" | "arnold" | "marshall" | "lex";
 
 export const AGENT_IDS: readonly AgentId[] = [
   "jeffery",
@@ -13,6 +15,8 @@ export const AGENT_IDS: readonly AgentId[] = [
   "michelangelo",
   "sherlock",
   "arnold",
+  "marshall",
+  "lex",
 ] as const;
 
 export type AgentStatus = "healthy" | "degraded" | "error" | "idle" | "paused" | "stale";

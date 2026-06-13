@@ -3,13 +3,14 @@ import { AGENT_REGISTRY, orderedRegistry, isKnownAgentId } from "../registry";
 import { AGENT_IDS } from "../types";
 
 describe("AGENT_REGISTRY", () => {
-  it("contains exactly the canonical 5 agents", () => {
+  it("contains exactly the canonical 7 agents", () => {
     expect(Object.keys(AGENT_REGISTRY).sort()).toEqual([...AGENT_IDS].sort());
   });
 
   it("produces a stable sort order", () => {
     const ids = orderedRegistry().map((r) => r.agent_id);
-    expect(ids).toEqual(["jeffery", "hannah", "michelangelo", "sherlock", "arnold"]);
+    // 2026-06-12: marshall and lex joined the fleet per Gary's directive.
+    expect(ids).toEqual(["jeffery", "hannah", "michelangelo", "sherlock", "arnold", "marshall", "lex"]);
   });
 
   it("every row has valid accent color from palette", () => {
