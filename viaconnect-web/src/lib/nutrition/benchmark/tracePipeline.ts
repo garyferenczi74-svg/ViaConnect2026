@@ -25,6 +25,7 @@
 
 import { lookupFood, type UsdaLookupTrace } from '../usda-client';
 import { aggregate, type AggregatedItem } from '../aggregate';
+import { computeMealKcal } from '../compute-meal-kcal';
 import { resolveNutrients } from '../databases/resolver';
 import { estimatePortion } from '../portion/volume-estimate';
 import type { ParsedItem } from '../parsed-meal-schema';
@@ -331,8 +332,17 @@ export async function traceTextPipeline(parsedItems: ParsedItem[]): Promise<Meal
     const macrosKnown =
       analysis.calories !== null && analysis.protein_g !== null &&
       analysis.carbs_g !== null && analysis.total_fat_g !== null;
+    // Prompt 194: route the diagnostic reference kcal through the shared
+    // computeMealKcal helper (the canonical formula, with the net fiber
+    // correction) instead of an inline 4P + 4C + 9F so the divergence report
+    // never measures against a second, fiber-blind Atwater definition.
     const macroDerivedKcal = macrosKnown
-      ? 4 * (analysis.protein_g as number) + 4 * (analysis.carbs_g as number) + 9 * (analysis.total_fat_g as number)
+      ? computeMealKcal({
+          proteinG: analysis.protein_g,
+          carbsG: analysis.carbs_g,
+          fatG: analysis.total_fat_g,
+          fiberG: analysis.fiber_g,
+        })
       : 0;
     const ratio = macrosKnown && (analysis.calories as number) > 0
       ? macroDerivedKcal / (analysis.calories as number)

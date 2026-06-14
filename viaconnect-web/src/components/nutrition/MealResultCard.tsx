@@ -11,6 +11,7 @@ import { Info, ChevronDown, ChevronUp, CheckCircle2, AlertCircle } from 'lucide-
 import { MetricTile } from './MetricTile';
 import { FatSourceDropdown } from '@/components/meals/FatSourceDropdown';
 import { useFatSources } from '@/hooks/useFatSources';
+import { computeMealKcal } from '@/lib/nutrition/compute-meal-kcal';
 import type { NutritionAnalysis } from '@/lib/nutrition/schema';
 
 interface MealResultCardProps {
@@ -29,7 +30,22 @@ function dataSourceAttribution(ds: NonNullable<NutritionAnalysis['data_source']>
   return 'Nutrition values entered manually.';
 }
 
-function ConfidenceChip({ confidence }: { confidence: number }) {
+function ConfidenceChip({ confidence, noMatch }: { confidence: number; noMatch?: boolean }) {
+  // Prompt 194a: a true no-USDA-match (data_source === 'gemini_fallback') has a
+  // real confidence of 0. Rather than read as a damning "Low confidence: 0%",
+  // it relabels honestly as an Estimated marker. This never fabricates a match;
+  // a full ('usda') or partial ('mixed') match keeps its real percentage band.
+  if (noMatch) {
+    return (
+      <span
+        className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/40 bg-amber-500/15 px-2.5 py-1 text-[11px] font-medium text-amber-300"
+        title="Nutrition values estimated. We could not confirm a USDA match for these foods, so adjust any value as needed."
+      >
+        <Info className="h-3 w-3" strokeWidth={1.5} />
+        Estimated
+      </span>
+    );
+  }
   let color = 'bg-emerald-500/15 text-emerald-300 border-emerald-500/40';
   let label = 'High';
   if (confidence < 0.5) {
@@ -61,6 +77,16 @@ export function MealResultCard({ analysis, onChange, fatSourceId, onFatSourceCha
   const partialSet = new Set(analysis.nutrient_flags?.partial ?? []);
   const hasUnknowns = (analysis.nutrient_flags?.unknown ?? []).length > 0 || partialSet.size > 0;
   const showEstimatedNotice = hasUnknowns || analysis.nutrient_flags?.downgraded === true;
+  // Prompt 194a: calories are a pure function of the macros, so the Calories
+  // tile DISPLAYS the macro-derived value and is read-only. The user changes
+  // calories by editing Protein / Carbs / Fat; this re-derives every render
+  // because it is computed from `analysis`, never stored as an editable field.
+  const derivedCalories = computeMealKcal({
+    proteinG: analysis.protein_g,
+    carbsG: analysis.carbs_g,
+    fatG: analysis.total_fat_g,
+    fiberG: analysis.fiber_g,
+  });
 
   function patch<K extends keyof NutritionAnalysis>(key: K, value: NutritionAnalysis[K]) {
     onChange({ ...analysis, [key]: value });
@@ -99,7 +125,10 @@ export function MealResultCard({ analysis, onChange, fatSourceId, onFatSourceCha
             </button>
           )}
         </div>
-        <ConfidenceChip confidence={analysis.confidence} />
+        <ConfidenceChip
+          confidence={analysis.confidence}
+          noMatch={analysis.data_source === 'gemini_fallback'}
+        />
       </div>
 
       {lowConfidence && (
@@ -128,8 +157,24 @@ export function MealResultCard({ analysis, onChange, fatSourceId, onFatSourceCha
         }}
         className="grid grid-cols-2 gap-2 sm:grid-cols-4"
       >
+        <motion.div
+          variants={{
+            hidden: { opacity: 0, y: 8 },
+            visible: { opacity: 1, y: 0, transition: { duration: 0.3, ease: 'easeOut' } },
+          }}
+        >
+          {/* Prompt 194a: read-only Calories tile. Mirrors the prominent
+              MetricTile visual but is static (no Pencil, no editor) because
+              calories are derived from the macros, not directly editable. */}
+          <div className="relative rounded-xl border border-white/[0.08] bg-white/5 p-4">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-white/45">Calories</p>
+            <div className="mt-1 flex w-full items-baseline gap-1">
+              <span className="text-3xl font-semibold tabular-nums text-white">{derivedCalories.toFixed(0)}</span>
+              <span className="text-xs text-white/40">kcal</span>
+            </div>
+          </div>
+        </motion.div>
         {[
-          { label: 'Calories', value: analysis.calories, unit: 'kcal', step: 1, key: 'calories' as const },
           { label: 'Protein', value: analysis.protein_g, unit: 'g', step: 0.1, key: 'protein_g' as const },
           { label: 'Fat', value: analysis.total_fat_g, unit: 'g', step: 0.1, key: 'total_fat_g' as const },
           { label: 'Sugar', value: analysis.sugar_g, unit: 'g', step: 0.1, key: 'sugar_g' as const },

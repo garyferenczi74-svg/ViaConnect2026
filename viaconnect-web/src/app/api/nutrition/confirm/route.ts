@@ -11,6 +11,7 @@ import { recomputeNutritionDimension } from '@/lib/nutrition/bos-bridge';
 import { awardNutritionLogPoints } from '@/lib/nutrition/helix-bridge';
 import { resolveMealFatBreakdown, loadFatSourceById } from '@/lib/nutrition/fat-sources';
 import { scoreMealForServerInsert } from '@/lib/gordon/scoreMealForServerInsert';
+import { computeMealKcal, isMacroBearing } from '@/lib/nutrition/compute-meal-kcal';
 
 interface MaybeEdits {
   serving_description?: string;
@@ -70,6 +71,29 @@ export async function POST(req: NextRequest) {
         userEdited = true;
       }
     }
+
+    // Prompt 194a: the calories stored on nutrition_logs are ALWAYS the
+    // macro-derived value (computeMealKcal of the edited macros), never the
+    // advisory calories the client sent in edits.calories. The advisory can
+    // differ from the macro-derived figure but it never overrides it; the
+    // NUMERIC_FIELDS loop above may have copied edits.calories verbatim, so we
+    // override it here from the validated macros that were written to `update`.
+    // A macro absent or rejected by the loop validation coalesces to null. Note
+    // total_fat_g in edits maps to the helper's fatG. This mirrors the meals
+    // route: a calories-only edit (no macros) is not macro-bearing, so the
+    // user-provided calories are kept as-is.
+    const validatedMacro = (key: (typeof NUMERIC_FIELDS)[number]): number | null =>
+      typeof update[key] === 'number' ? (update[key] as number) : null;
+    const editedMacros = {
+      proteinG: validatedMacro('protein_g'),
+      carbsG: validatedMacro('carbs_g'),
+      fatG: validatedMacro('total_fat_g'),
+      fiberG: validatedMacro('fiber_g'),
+    };
+    if (isMacroBearing(editedMacros)) {
+      update.calories = computeMealKcal(editedMacros);
+    }
+
     if (userEdited) {
       update.user_edited = true;
       update.confidence = 1.0;

@@ -11,6 +11,10 @@
 // the marker without a second pass over the data.
 
 import { Info } from 'lucide-react';
+// Prompt 194a Task 2: the reconciliation band is the same shared constant the
+// analyze-text and analyze-photo routes use to gate confidence, so the tooltip
+// percent and the gate can never drift apart.
+import { MATCH_CONFIDENCE_LOW_BAND } from '@/lib/nutrition/match-confidence';
 
 const TEAL = '#2DA5A0';
 
@@ -56,7 +60,7 @@ export function EstimatedChip({
   if (!show) return null;
 
   const tooltip = reconciliationFailed
-    ? 'Estimated from typed input. Macros and stated calories did not reconcile within 20 percent; treat the score as a rough guide.'
+    ? `Estimated from typed input. Macros and stated calories did not reconcile within ${Math.round(MATCH_CONFIDENCE_LOW_BAND * 100)} percent; treat the score as a rough guide.`
     : 'Estimated from typed input. Sodium was not determinable, so the score excludes sodium from its math.';
 
   const isMd = size === 'md';

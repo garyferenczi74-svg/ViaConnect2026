@@ -17,6 +17,10 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { safeLog } from '@/lib/utils/safe-log';
 import { recomputeNutritionDimension } from '@/lib/nutrition/bos-bridge';
 import { logRecipeSchema } from '@/lib/recipes/types';
+// Prompt 194 Task 2b: the single shared calorie producer. The logged meal's
+// kcal is derived from the macros it stores, not scaled from the recipe's
+// stored total_calories (which is advisory).
+import { reconcileMealKcal, computeMealKcal } from '@/lib/nutrition/compute-meal-kcal';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -69,6 +73,24 @@ export async function POST(req: NextRequest, ctx: RouteContext): Promise<NextRes
   const loggedAtIso = parsed.data.logged_at ?? new Date().toISOString();
   const mealType = parsed.data.meal_type ?? 'snack';
 
+  // The macros stored on the logged meal, scaled from the recipe per serving.
+  const proteinG = safeMul(perServing(recipe.total_protein_g), servingsConsumed);
+  const carbsG = safeMul(perServing(recipe.total_carbs_g), servingsConsumed);
+  const fatTotalG = safeMul(perServing(recipe.total_fat_g), servingsConsumed);
+  const fiberG = safeMul(perServing(recipe.total_fiber_g), servingsConsumed);
+  const sugarG = safeMul(perServing(recipe.total_sugar_g), servingsConsumed);
+  const sodiumMg = safeMul(perServing(recipe.total_sodium_mg), servingsConsumed);
+
+  // Prompt 194 Task 2b: kcal is the macro-derived value via the shared producer,
+  // computed from the macros stored on this row. The recipe's own total_calories,
+  // scaled per serving, is advisory and can only flag a divergence, never win.
+  const advisoryKcal = safeMul(perServing(recipe.total_calories), servingsConsumed);
+  const kcalRecon = reconcileMealKcal(
+    { proteinG, carbsG, fatG: fatTotalG, fiberG },
+    advisoryKcal,
+  );
+  const derivedKcal = computeMealKcal({ proteinG, carbsG, fatG: fatTotalG, fiberG });
+
   const { data: mealRow, error: mealErr } = await admin
     .from('meals')
     .insert({
@@ -78,14 +100,14 @@ export async function POST(req: NextRequest, ctx: RouteContext): Promise<NextRes
       meal_name: recipe.name,
       logged_at: loggedAtIso,
       source_confidence: 1.0,
-      calories_kcal: safeMul(perServing(recipe.total_calories), servingsConsumed),
+      calories_kcal: derivedKcal,
       calories_auto_calc: true,
-      protein_g: safeMul(perServing(recipe.total_protein_g), servingsConsumed),
-      carbs_g: safeMul(perServing(recipe.total_carbs_g), servingsConsumed),
-      fat_total_g: safeMul(perServing(recipe.total_fat_g), servingsConsumed),
-      fiber_g: safeMul(perServing(recipe.total_fiber_g), servingsConsumed),
-      sugar_g: safeMul(perServing(recipe.total_sugar_g), servingsConsumed),
-      sodium_mg: safeMul(perServing(recipe.total_sodium_mg), servingsConsumed),
+      protein_g: proteinG,
+      carbs_g: carbsG,
+      fat_total_g: fatTotalG,
+      fiber_g: fiberG,
+      sugar_g: sugarG,
+      sodium_mg: sodiumMg,
       recipe_id: recipe.id,
     })
     .select('meal_id')
@@ -94,6 +116,21 @@ export async function POST(req: NextRequest, ctx: RouteContext): Promise<NextRes
   if (mealErr || !mealRow) {
     safeLog.error('api.recipes.log', 'meal insert failed', { error: mealErr, userId: user.id, recipeId: recipe.id });
     return NextResponse.json({ error: 'Could not log recipe' }, { status: 500 });
+  }
+
+  // Prompt 194 Task 2b: regression tripwire mirroring the text/photo routes.
+  // When the recipe's scaled total_calories disagrees with the macro-derived
+  // figure (the one stored) by more than the tolerance, log it. Macros win.
+  if (kcalRecon.diverged) {
+    safeLog.warn('api.recipes.log', 'kcal reconciled to macro-derived value', {
+      channel: 'recipe',
+      meal_id: mealRow.meal_id,
+      advisory_kcal: advisoryKcal,
+      computed_kcal: derivedKcal,
+      macros: { protein_g: proteinG, carbs_g: carbsG, fat_total_g: fatTotalG, fiber_g: fiberG },
+      resolver_tier: 'recipe',
+      divergence: kcalRecon.divergence,
+    });
   }
 
   const { error: updErr } = await admin

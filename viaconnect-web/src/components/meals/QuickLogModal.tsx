@@ -14,11 +14,11 @@ import {
 } from 'react';
 import { X } from 'lucide-react';
 import {
-  ATWATER_FACTORS,
   DEFAULT_MEAL_DISTRIBUTION,
   SLIDER_RANGES,
   assignTier,
 } from '@/lib/gordon/constants';
+import { computeMealKcal } from '@/lib/nutrition/compute-meal-kcal';
 import { scoreMeal } from '@/lib/gordon/scoreMeal';
 import type {
   Meal,
@@ -160,13 +160,17 @@ export function QuickLogModal(props: QuickLogModalProps) {
     wasOpen.current = open;
   }, [open, defaultMealType, defaultDateTimeLocal]);
 
+  // Prompt 194 Task 2c: the preview kcal comes from the single shared producer
+  // so it matches what the server stores. The fiber slider is included, so the
+  // value is fiber-corrected (net-carb correction inside computeMealKcal).
   const autoCalories = useMemo(() => {
-    return Math.round(
-      sliders.protein * ATWATER_FACTORS.protein +
-        sliders.carbs * ATWATER_FACTORS.carbs +
-        sliders.fatTotal * ATWATER_FACTORS.fat,
-    );
-  }, [sliders.protein, sliders.carbs, sliders.fatTotal]);
+    return computeMealKcal({
+      proteinG: sliders.protein,
+      carbsG: sliders.carbs,
+      fatG: sliders.fatTotal,
+      fiberG: sliders.fiber,
+    });
+  }, [sliders.protein, sliders.carbs, sliders.fatTotal, sliders.fiber]);
 
   const displayedCalories = caloriesAutoCalc ? autoCalories : sliders.calories;
 

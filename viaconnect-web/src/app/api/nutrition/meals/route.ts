@@ -42,6 +42,10 @@ import {
   type NutriVisionItemPayload,
 } from '@/lib/nutrition/meals-insert-schema';
 import { scoreMealForServerInsert } from '@/lib/gordon/scoreMealForServerInsert';
+// Prompt 194 Task 2b: the single shared calorie producer. Per-item and
+// meal-level kcal are pure functions of stored macros; the provider calorie
+// value is advisory and can only flag a divergence, never override the figure.
+import { reconcileMealKcal, computeMealKcal, isMacroBearing } from '@/lib/nutrition/compute-meal-kcal';
 import { resolveFatBreakdown, loadFatSourceById } from '@/lib/nutrition/fat-sources';
 import { awardNutritionLogPoints } from '@/lib/nutrition/helix-bridge';
 import { awardNutriVisionHelixEvents } from '@/lib/nutrition/helix-bridge';
@@ -173,6 +177,26 @@ export async function POST(req: NextRequest) {
       source: fatSource,
     });
 
+    // Prompt 194 Task 2c: the quick_log slider path used to store the client's
+    // no-fiber Atwater value verbatim. computeMealKcal is the single producer,
+    // so the stored kcal is the macro-derived figure and the client value is
+    // advisory only. fiber_g is fiber-inclusive carbs net correction inside the
+    // helper. Stored macro columns stay null when unknown; coalesce-to-0 lives
+    // only inside computeMealKcal.
+    const legacyMacros = {
+      proteinG: payload.protein_g,
+      carbsG: payload.carbs_g,
+      fatG: payload.fat_total_g,
+      fiberG: payload.fiber_g ?? null,
+    };
+    const legacyKcalRecon = reconcileMealKcal(legacyMacros, payload.calories_kcal);
+    // A genuine calories-only payload (all of P/C/F null) keeps the client
+    // value; the legacy schema always sends numeric macros, so this is the
+    // macro-bearing path. Do not invent macros for the calories-only case.
+    const resolvedCaloriesKcal = isMacroBearing(legacyMacros)
+      ? legacyKcalRecon.storedKcal
+      : payload.calories_kcal;
+
     const scored = await scoreMealForServerInsert(supabase, {
       userId: user.id,
       loggedAt: payload.logged_at,
@@ -187,7 +211,7 @@ export async function POST(req: NextRequest) {
       fiberG: payload.fiber_g,
       sugarG: payload.sugar_g,
       sodiumMg: payload.sodium_mg,
-      caloriesKcal: payload.calories_kcal,
+      caloriesKcal: resolvedCaloriesKcal,
       caloriesAutoCalc: payload.calories_auto_calc,
       wholeFoodFlag: payload.whole_food_flag,
       mealName: payload.meal_name,
@@ -208,7 +232,7 @@ export async function POST(req: NextRequest) {
       fiber_g: payload.fiber_g,
       sugar_g: payload.sugar_g,
       sodium_mg: payload.sodium_mg,
-      calories_kcal: payload.calories_kcal,
+      calories_kcal: resolvedCaloriesKcal,
       calories_auto_calc: payload.calories_auto_calc,
       whole_food_flag: payload.whole_food_flag,
       meal_name: payload.meal_name,
@@ -237,6 +261,26 @@ export async function POST(req: NextRequest) {
     if (insertErr || !inserted) {
       safeLog.error('api.nutrition.meals', 'insert failed', { userId: user.id, error: insertErr });
       return NextResponse.json({ error: 'Could not save meal' }, { status: 500 });
+    }
+
+    // Prompt 194 Task 2c: regression tripwire mirroring the nutrivision branch.
+    // When the client slider kcal disagrees with the macro-derived figure (the
+    // one stored) by more than the tolerance, log it. Macro-derived always wins.
+    if (isMacroBearing(legacyMacros) && legacyKcalRecon.diverged) {
+      safeLog.warn('api.nutrition.meals', 'kcal reconciled to macro-derived value', {
+        channel: 'quick_slider',
+        meal_id: inserted.meal_id,
+        advisory_kcal: payload.calories_kcal,
+        computed_kcal: legacyKcalRecon.storedKcal,
+        macros: {
+          protein_g: payload.protein_g,
+          carbs_g: payload.carbs_g,
+          fat_total_g: payload.fat_total_g,
+          fiber_g: payload.fiber_g,
+        },
+        resolver_tier: 'client_slider',
+        divergence: legacyKcalRecon.divergence,
+      });
     }
 
     try {
@@ -307,7 +351,13 @@ async function handleNutriVision(
   const requestId = globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`;
 
   // Totals derived from items (server-side, never trust client totals).
+  // totals.calories_kcal is the macro-derived value (the one stored everywhere);
+  // totals.advisory_calories_kcal is the provider sum, used only to reconcile.
   const totals = aggregateTotals(payload.items);
+  const kcalRecon = reconcileMealKcal(
+    { proteinG: totals.protein_g, carbsG: totals.carbs_g, fatG: totals.fat_g, fiberG: totals.fiber_g },
+    totals.advisory_calories_kcal,
+  );
 
   // Score via the existing Gordon helper. The MealSource enum is the surface
   // contract for Gordon today; NutriVision is a new live channel and the DB
@@ -391,6 +441,28 @@ async function handleNutriVision(
 
   const mealId = inserted.meal_id;
 
+  // Prompt 194 Task 2b: regression tripwire mirroring the text/photo routes.
+  // When the provider calorie sum disagrees with the macro-derived figure (the
+  // one stored) by more than the tolerance, log it. Macro-derived always wins.
+  if (kcalRecon.diverged) {
+    safeLog.warn('api.nutrition.meals.nutrivision', 'kcal reconciled to macro-derived value', {
+      channel: 'nutrivision',
+      meal_id: mealId,
+      advisory_kcal: totals.advisory_calories_kcal,
+      computed_kcal: totals.calories_kcal,
+      macros: {
+        protein_g: totals.protein_g,
+        carbs_g: totals.carbs_g,
+        fat_total_g: totals.fat_g,
+        fiber_g: totals.fiber_g,
+      },
+      resolver_tier: [payload.recognition_provider_primary, payload.recognition_provider_secondary]
+        .filter((p) => typeof p === 'string')
+        .join('+') || null,
+      divergence: kcalRecon.divergence,
+    });
+  }
+
   // meal_items fan-out. One row per item with all per-item fields. Failure
   // here is logged but does not roll back the meals row; the partial row is
   // still usable from the dashboard and admin can backfill.
@@ -414,7 +486,14 @@ async function handleNutriVision(
     usda_fdc_id: it.usda_fdc_id ?? null,
     off_barcode: it.off_barcode ?? null,
     curated_food_id: it.curated_food_id ?? null,
-    calories_kcal: it.calories_kcal,
+    // Prompt 194 Task 2b: per-item kcal is derived from the item's stored
+    // macros via the shared producer, not the provider's calories_kcal.
+    calories_kcal: computeMealKcal({
+      proteinG: it.protein_g,
+      carbsG: it.carbs_g,
+      fatG: it.fat_g,
+      fiberG: it.fiber_g ?? null,
+    }),
     protein_g: it.protein_g,
     carbs_g: it.carbs_g,
     fat_g: it.fat_g,
@@ -586,7 +665,11 @@ async function handleNutriVision(
 }
 
 interface DerivedTotals {
+  // calories_kcal is the macro-derived value, computed once via computeMealKcal
+  // from the full-precision macro sum (never a sum of per-item kcal). The
+  // provider sum lives separately in advisory_calories_kcal for reconciliation.
   calories_kcal: number;
+  advisory_calories_kcal: number;
   protein_g: number;
   carbs_g: number;
   fat_g: number;
@@ -596,7 +679,7 @@ interface DerivedTotals {
 }
 
 function aggregateTotals(items: ReadonlyArray<NutriVisionItemPayload>): DerivedTotals {
-  let calories = 0;
+  let advisoryCalories = 0;
   let protein = 0;
   let carbs = 0;
   let fat = 0;
@@ -604,7 +687,7 @@ function aggregateTotals(items: ReadonlyArray<NutriVisionItemPayload>): DerivedT
   let sugar = 0;
   let sodium = 0;
   for (const it of items) {
-    calories += it.calories_kcal;
+    advisoryCalories += it.calories_kcal;
     protein += it.protein_g;
     carbs += it.carbs_g;
     fat += it.fat_g;
@@ -612,8 +695,12 @@ function aggregateTotals(items: ReadonlyArray<NutriVisionItemPayload>): DerivedT
     if (typeof it.sugar_g === 'number') sugar += it.sugar_g;
     if (typeof it.sodium_mg === 'number') sodium += it.sodium_mg;
   }
+  // Derive the meal kcal once from the full-precision macro sum, before the
+  // stored macro columns are rounded for display.
+  const calories = computeMealKcal({ proteinG: protein, carbsG: carbs, fatG: fat, fiberG: fiber });
   return {
-    calories_kcal: round1(calories),
+    calories_kcal: calories,
+    advisory_calories_kcal: round1(advisoryCalories),
     protein_g: round1(protein),
     carbs_g: round1(carbs),
     fat_g: round1(fat),
@@ -636,7 +723,14 @@ function buildCorpusFinalState(
     const corpusItem: CorpusFinalStateItem = {
       foodName: it.food_name,
       portionGrams: it.portion_grams,
-      calories_kcal: it.calories_kcal,
+      // Prompt 194 Task 2b: record the macro-derived kcal that was stored on
+      // the meal_items row, not the provider's calories_kcal.
+      calories_kcal: computeMealKcal({
+        proteinG: it.protein_g,
+        carbsG: it.carbs_g,
+        fatG: it.fat_g,
+        fiberG: it.fiber_g ?? null,
+      }),
       protein_g: it.protein_g,
       carbs_g: it.carbs_g,
       fat_g: it.fat_g,

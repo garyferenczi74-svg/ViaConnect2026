@@ -27,6 +27,7 @@ import { FDC_RECORDED_SEARCHES, FDC_RECORDED_DETAILS } from '../fdc-recorded-fix
 import { lookupFood } from '../../usda-client';
 import { aggregate, type AggregatedItem } from '../../aggregate';
 import type { ParsedItem } from '../../parsed-meal-schema';
+import { computeMealKcal, reconcileMealKcal, KCAL_RECONCILE_TOLERANCE } from '../../compute-meal-kcal';
 
 function fixtureFetch() {
   return vi.fn(async (input: RequestInfo | URL) => {
@@ -116,11 +117,26 @@ describe('golden meal 1: the Prompt 186 Section 1 reference meal', () => {
     expect(analysis.carbs_g).toBeGreaterThanOrEqual(38);
     expect(analysis.carbs_g).toBeLessThanOrEqual(50);
 
-    // Atwater consistency: kcal within 20 percent of 4p + 9f + 4c.
-    const macroKcal = 4 * (analysis.protein_g as number) + 9 * (analysis.total_fat_g as number) + 4 * (analysis.carbs_g as number);
-    const ratio = macroKcal / (analysis.calories as number);
-    expect(ratio).toBeGreaterThanOrEqual(0.8);
-    expect(ratio).toBeLessThanOrEqual(1.2);
+    // Prompt 194: Atwater consistency is now near-exact via the shared helper,
+    // not a loose 20 percent ratio band. The value a meal card displays is the
+    // STORED kcal, which the routes derive from the meal's macros through
+    // computeMealKcal (the only producer). analysis.calories is the advisory
+    // USDA / estimate sum the route reconciles against; it never wins. So the
+    // canonical assertion is that the stored kcal the route would persist
+    // equals computeMealKcal of the same macros within the 1 kcal tolerance
+    // (here exact, since both come from the one helper). This closes the last
+    // acceptance number 4 loose end: no site computes Atwater independently.
+    const mealMacros = {
+      proteinG: analysis.protein_g,
+      carbsG: analysis.carbs_g,
+      fatG: analysis.total_fat_g,
+      fiberG: analysis.fiber_g,
+    };
+    const recon = reconcileMealKcal(mealMacros, analysis.calories);
+    const derivedKcal = computeMealKcal(mealMacros);
+    expect(Math.abs(recon.storedKcal - derivedKcal)).toBeLessThanOrEqual(KCAL_RECONCILE_TOLERANCE);
+    // The stored value is the macro-derived figure, not the raw USDA sum.
+    expect(recon.storedKcal).toBe(derivedKcal);
 
     // The production decoys must have lost the ranking.
     const matched = resolved.map((i) => i.nutrients.meta?.matchedName ?? '');

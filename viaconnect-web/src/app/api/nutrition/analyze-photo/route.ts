@@ -17,6 +17,14 @@ import { estimateCostUsd } from '@/lib/observability/ai-pricing';
 // so this channel matches the Quick Log channel's scoring behavior.
 import { scoreMealForServerInsert } from '@/lib/gordon/scoreMealForServerInsert';
 import { awardNutritionLogPoints } from '@/lib/nutrition/helix-bridge';
+// Prompt 194 Task 2a: stored kcal is a pure function of stored macros via the
+// shared helper; the sourced calorie value is advisory and can only flag a
+// divergence, never override the macro-derived figure.
+import { reconcileMealKcal } from '@/lib/nutrition/compute-meal-kcal';
+// Prompt 194a Task 2: user-facing confidence keys off the 20 percent macros-vs-
+// calories reconciliation band (restored from the pre-194 186 behavior), tied
+// to ONE shared constant. The 3 kcal kcalRecon guard below is telemetry only.
+import { MATCH_CONFIDENCE_LOW_BAND, macroCaloriesReconciled } from '@/lib/nutrition/match-confidence';
 
 const ROUTE = '/api/nutrition/analyze-photo';
 const MAX_FILE_BYTES = 10 * 1024 * 1024;
@@ -111,29 +119,24 @@ export async function POST(req: NextRequest) {
     const analysis = aggregate(items);
     const latencyMs = Date.now() - startedAt;
 
-    // Prompt 186 Phase 3: Atwater consistency check on the photo channel
-    // (previously text-only). Runs only when all four inputs are known;
-    // failure or unknown macros downgrade confidence and log a structured
-    // warning. Never silently display internally inconsistent macros.
+    // Prompt 194 Task 2a: stored calories are the macro-derived value from the
+    // shared helper, the single source of truth, always stored. The sourced
+    // calorie value (analysis.calories) is advisory: reconcileMealKcal flags a
+    // divergence beyond the small rounding tolerance but never overrides the
+    // figure. Prompt 194a Task 2: that divergence is a telemetry tripwire only;
+    // user-facing confidence keys off the separate 20 percent reconciliation
+    // band (macroCaloriesReconciled) below, not off kcalRecon.diverged.
+    const mealMacros = {
+      proteinG: analysis.protein_g, carbsG: analysis.carbs_g,
+      fatG: analysis.total_fat_g, fiberG: analysis.fiber_g,
+    };
+    const kcalRecon = reconcileMealKcal(mealMacros, analysis.calories);
+    const derivedKcal = kcalRecon.storedKcal;
+    // macrosKnown still gates confidence: a meal with any unknown macro stays
+    // at the low-confidence band with the estimated marker.
     const macrosKnown =
       analysis.calories !== null && analysis.protein_g !== null &&
       analysis.carbs_g !== null && analysis.total_fat_g !== null;
-    const macroDerivedKcal = macrosKnown
-      ? 4 * (analysis.protein_g as number) + 4 * (analysis.carbs_g as number) + 9 * (analysis.total_fat_g as number)
-      : 0;
-    const reconciliationRatio =
-      macrosKnown && (analysis.calories as number) > 0 ? macroDerivedKcal / (analysis.calories as number) : 0;
-    const reconciliationPassed =
-      macrosKnown && reconciliationRatio >= 0.80 && reconciliationRatio <= 1.20;
-    if (!reconciliationPassed) {
-      safeLog.warn('api.nutrition.analyze-photo', 'atwater reconciliation failed or skipped', {
-        macro_kcal: Math.round(macroDerivedKcal * 100) / 100,
-        stated_kcal: analysis.calories,
-        ratio: Math.round(reconciliationRatio * 10000) / 10000,
-        macros_known: macrosKnown,
-        nutrient_flags: analysis.nutrient_flags ?? null,
-      });
-    }
     const knownNutrients = {
       calories_kcal: analysis.calories !== null,
       protein_g: analysis.protein_g !== null,
@@ -144,16 +147,26 @@ export async function POST(req: NextRequest) {
       sodium_mg: analysis.sodium_mg != null,
     };
     const downgradedByItems = analysis.nutrient_flags?.downgraded === true;
+    // Prompt 194a Task 2: restore the pre-194 20 percent macros-vs-calories
+    // band as the user-facing confidence gate. The macro-derived calories
+    // (derivedKcal, the value stored) must agree with the advisory stated
+    // calories within the band. This is NOT the 3 kcal kcalRecon tripwire,
+    // which is an engineering guard and stays telemetry only below.
     // Vision-model confidence range is 0.50 to 0.85 per spec Section 4.3;
-    // 0.65 is the healthy mid, 0.50 the floor for downgraded/inconsistent.
-    const sourceConfidence = reconciliationPassed && !downgradedByItems ? 0.65 : 0.50;
+    // 0.65 is the healthy mid, 0.50 the floor for downgraded/out-of-band.
+    const reconciliationPassed = macroCaloriesReconciled(derivedKcal, analysis.calories, macrosKnown);
+    const reconciliationRatioValue = analysis.calories && analysis.calories > 0
+      ? Math.round((derivedKcal / analysis.calories) * 10000) / 10000
+      : 0;
+    const sourceConfidence = (reconciliationPassed && !downgradedByItems) ? 0.65 : 0.50;
     const prompt186Meta = {
-      version: '186-2026-06-11',
+      version: '194a-2026-06-14',
+      prompt_194: true,
       reconciliation: {
-        macro_kcal: Math.round(macroDerivedKcal * 100) / 100,
+        macro_kcal: derivedKcal,
         stated_kcal: analysis.calories,
-        ratio: Math.round(reconciliationRatio * 10000) / 10000,
-        threshold: 0.20,
+        ratio: reconciliationRatioValue,
+        threshold: MATCH_CONFIDENCE_LOW_BAND,
         passed: reconciliationPassed,
         skipped_unknown_macros: !macrosKnown,
       },
@@ -195,8 +208,13 @@ export async function POST(req: NextRequest) {
         fiberG: analysis.fiber_g ?? 0,
         sugarG: analysis.sugar_g ?? 0,
         sodiumMg: analysis.sodium_mg ?? 0,
-        caloriesKcal: analysis.calories ?? 0,
-        caloriesAutoCalc: false,
+        caloriesKcal: derivedKcal,
+        // Prompt 194a Task 5: the kcal IS auto-derived from macros
+        // (derivedKcal = computeMealKcal output via reconcileMealKcal), and
+        // the meals row stores calories_auto_calc: true. Pass true here so the
+        // scorer flag matches the stored value. Inert today because loggedKcal
+        // resolves to the same net-carb derivedKcal either way.
+        caloriesAutoCalc: true,
         wholeFoodFlag: null,
         mealName: analysis.serving_description ?? null,
         knownNutrients,
@@ -228,8 +246,8 @@ export async function POST(req: NextRequest) {
           sugar_g: analysis.sugar_g,
           // Prompt 186: unknown sodium is NULL, never a silent 0.
           sodium_mg: analysis.sodium_mg ?? null,
-          calories_kcal: analysis.calories,
-          calories_auto_calc: false,
+          calories_kcal: derivedKcal,
+          calories_auto_calc: true,
           meal_name: analysis.serving_description ?? null,
           notes: analysis.ai_notes ?? null,
           raw_input: {
@@ -258,13 +276,31 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    // Prompt 194 Task 2a: regression tripwire. When the sourced calorie value
+    // disagrees with the macro-derived figure (the one stored) by more than the
+    // tolerance, log it with the meal id for telemetry. Macro-derived always wins.
+    if (kcalRecon.diverged) {
+      safeLog.warn('api.nutrition.analyze-photo', 'kcal reconciled to macro-derived value', {
+        channel: 'photo',
+        meal_id: mealId,
+        advisory_kcal: analysis.calories,
+        computed_kcal: derivedKcal,
+        macros: {
+          protein_g: analysis.protein_g, carbs_g: analysis.carbs_g,
+          fat_total_g: analysis.total_fat_g, fiber_g: analysis.fiber_g,
+        },
+        resolver_tier: analysis.data_source,
+        divergence: kcalRecon.divergence,
+      });
+    }
+
     const { data: inserted, error: insErr } = await supabase
       .from('nutrition_logs')
       .insert({
         user_id: user.id, logged_at: loggedAt, meal_type: mealType,
         source: 'photo_ai', photo_url: storagePath, context_note: note || null,
         serving_description: analysis.serving_description,
-        calories: analysis.calories, protein_g: analysis.protein_g, carbs_g: analysis.carbs_g,
+        calories: derivedKcal, protein_g: analysis.protein_g, carbs_g: analysis.carbs_g,
         total_fat_g: analysis.total_fat_g, good_fat_g: null,
         healthy_fat_g: null, saturated_fat_g: analysis.saturated_fat_g,
         sugar_g: analysis.sugar_g, fiber_g: analysis.fiber_g,

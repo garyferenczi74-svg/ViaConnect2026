@@ -2,12 +2,6 @@ import type { MealDistribution, QualityTier } from './types';
 
 export const GORDON_VERSION = '1.0.0';
 
-export const ATWATER_FACTORS = {
-  protein: 4,
-  carbs: 4,
-  fat: 9,
-} as const;
-
 export const TIER_BOUNDARIES: Array<{
   tier: QualityTier;
   min: number;

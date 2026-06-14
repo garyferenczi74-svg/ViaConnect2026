@@ -17,7 +17,6 @@ import type {
   ScoreModifier,
 } from './types';
 import {
-  ATWATER_FACTORS,
   FAT_QUALITY_FAVORABLE_MIN,
   FAT_QUALITY_LIMIT_MAX,
   FAT_QUALITY_SOURCE_ADJ,
@@ -45,7 +44,6 @@ import {
   SUGAR_RATIO_NEAR,
   assignTier,
 } from './constants';
-
 function shareForMealType(
   mealType: Meal['mealType'],
   distribution: MealDistribution,
@@ -321,11 +319,19 @@ export function scoreMeal(
     note: wholeFoodNote,
   });
 
-  // Calorie Fit: -5 to +5. Auto-recompute via Atwater when meal.caloriesAutoCalc.
+  // Calorie Fit: -5 to +5. Compare GROSS energy on both sides: the meal's
+  // gross Atwater sum (4P + 4C + 9F, fiber NOT subtracted) for an auto-calc
+  // meal, or the user's gross stored caloriesKcal for a manual-calorie meal,
+  // against the gross Mifflin-St Jeor TDEE per-meal allowance (kcalTarget).
+  // This deliberately does NOT use computeMealKcal: that helper is the NET-carb
+  // single producer for displayed, stored, and rollup calories (194a Fix 1),
+  // but Calorie Fit must match the gross basis of the energy budget AND stay
+  // consistent with manual-calorie meals whose stored kcal is gross. Routing
+  // an auto-calc meal through the net producer while the target stayed gross
+  // read high-fiber meals as roughly 7.6 percent over budget. This restores the
+  // pre-194 gross-vs-gross Calorie Fit basis.
   const loggedKcal = meal.caloriesAutoCalc
-    ? meal.proteinG * ATWATER_FACTORS.protein +
-      meal.carbsG * ATWATER_FACTORS.carbs +
-      meal.fatTotalG * ATWATER_FACTORS.fat
+    ? 4 * meal.proteinG + 4 * meal.carbsG + 9 * meal.fatTotalG
     : meal.caloriesKcal;
   const kcalDeltaPct = kcalTarget > 0 ? Math.abs(loggedKcal - kcalTarget) / kcalTarget : 0;
   let kcalValue = 0;

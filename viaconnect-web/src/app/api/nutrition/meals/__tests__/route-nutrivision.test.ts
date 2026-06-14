@@ -51,8 +51,13 @@ function userScopedClient() {
       delete: () => ({
         eq: () => ({
           eq: () => ({
-            gte: () => ({
-              lt: () => Promise.resolve({ error: mocks.legacyDeleteError }),
+            // Recipe-exclusion fix (2026-06-12) added .is('recipe_id', null) to
+            // the replace-on-save delete chain; the mock mirrors it so the
+            // legacy quick_log regression path resolves instead of throwing.
+            is: () => ({
+              gte: () => ({
+                lt: () => Promise.resolve({ error: mocks.legacyDeleteError }),
+              }),
             }),
           }),
         }),
