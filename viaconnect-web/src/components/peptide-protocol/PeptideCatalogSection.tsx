@@ -109,12 +109,20 @@ export function PeptideCatalogSection() {
             type="button"
             key={c.catId}
             onClick={() => toggleCategory(c.catId)}
-            className={`px-2.5 py-1 rounded-full text-xs font-medium transition-all border whitespace-nowrap ${
+            className={`px-2.5 py-1 rounded-full text-xs font-medium transition-all border whitespace-nowrap backdrop-blur-md ${
               chipActive(c.catId)
-                ? 'text-white border-transparent shadow-sm'
+                ? 'text-white'
                 : 'bg-[rgba(255,255,255,0.08)] text-[rgba(255,255,255,0.55)] border-[rgba(255,255,255,0.12)] hover:border-[rgba(255,255,255,0.25)] hover:text-[rgba(255,255,255,0.80)]'
             }`}
-            style={chipActive(c.catId) ? { backgroundColor: c.color, borderColor: c.color } : {}}
+            style={
+              chipActive(c.catId)
+                ? {
+                    backgroundColor: `${c.color}66`,
+                    borderColor: c.color,
+                    boxShadow: `0 0 12px -2px ${c.color}80`,
+                  }
+                : {}
+            }
           >
             {c.label}
           </button>
