@@ -91,6 +91,7 @@ export function PeptideCatalogSection() {
       <div className="flex gap-1 flex-wrap">
         {CATEGORY_CHIPS.map((c) => (
           <button
+            type="button"
             key={c.catId}
             onClick={() => setActiveCatId(c.catId)}
             className={`px-2.5 py-1 rounded-full text-xs font-medium transition-all border whitespace-nowrap ${
@@ -116,7 +117,7 @@ export function PeptideCatalogSection() {
           className="flex-1 text-sm text-white placeholder:text-[rgba(255,255,255,0.30)] outline-none bg-transparent"
         />
         {query && (
-          <button onClick={() => setQuery('')} aria-label="Clear search">
+          <button type="button" onClick={() => setQuery('')} aria-label="Clear search">
             <X className="w-4 h-4 text-[rgba(255,255,255,0.35)] hover:text-[rgba(255,255,255,0.70)]" strokeWidth={1.5} />
           </button>
         )}
