@@ -175,7 +175,7 @@ export function PeptideCatalogSection() {
                     <Icon className="h-4 w-4" strokeWidth={1.5} style={{ color: cat.color }} />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <h3 className="break-words text-xs font-semibold leading-tight sm:text-sm" style={{ color: cat.color }}>
+                    <h3 className="break-words text-xs font-semibold leading-tight sm:text-sm text-white">
                       {cat.label}
                     </h3>
                     <p className="mt-0.5 text-[10px] text-[rgba(255,255,255,0.40)]">
