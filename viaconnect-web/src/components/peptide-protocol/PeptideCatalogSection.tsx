@@ -1,9 +1,9 @@
 'use client';
 
-// PeptideCatalogSection — collapsible "Browse Full Peptide Catalog" section
+// PeptideCatalogSection - collapsible "Browse Full Peptide Catalog" section
 // rendered on /peptide-protocol below the Cycling Protocol. Mirrors the
-// categorized grid from /shop/peptides but tuned for the narrower
-// max-w-3xl container (1 col mobile, 2 col sm+).
+// categorized grid from /shop/peptides, including its 1 / 2 / 3 column
+// responsive grid now that the page uses the standard max-w-7xl container.
 
 import { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -145,8 +145,8 @@ export function PeptideCatalogSection() {
                       </div>
                     </div>
 
-                    {/* Card grid: 1 col mobile, 2 col sm+ (narrower than /shop/peptides) */}
-                    <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+                    {/* Card grid: 1 col mobile, 2 col sm, 3 col lg (matches /shop/peptides) */}
+                    <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
                       {cat.products.map((peptide) => (
                         <PeptideCatalogCard key={peptide.id} peptide={peptide} />
                       ))}
