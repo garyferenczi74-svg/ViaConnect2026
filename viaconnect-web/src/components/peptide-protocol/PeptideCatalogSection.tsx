@@ -1,15 +1,17 @@
 'use client';
 
-// PeptideCatalogSection - unified "Search Peptides" module (Prompt 195a).
-// Merges the former Search Peptides control card and the Browse Full Peptide
-// Catalog card into one module: search input + category chips on top, the
-// categorized catalog grid filtered live beneath them. Single source of
-// truth is the static registry (ALL_CATEGORIES); no Supabase query.
+// PeptideCatalogSection - unified "Search Peptides" module (Prompts 195a, 195b).
+// Search input + category chips on top; the catalog renders as an accordion of
+// category sections beneath. Sections are collapsed by default and open when a
+// category pill (or its header) is activated; the "All" pill opens every
+// section. A non-empty search expands every category that has a match. Single
+// source of truth is the static registry (ALL_CATEGORIES); no Supabase query.
 
 import { useMemo, useState } from 'react';
 import {
   Search,
   X,
+  ChevronDown,
   FlaskConical,
   Dna,
   Battery,
@@ -47,7 +49,9 @@ const ICON_MAP: Record<string, LucideIcon> = {
 
 export function PeptideCatalogSection() {
   const [query, setQuery] = useState('');
-  const [activeCatId, setActiveCatId] = useState('all');
+  // null = all sections collapsed (default); 'all' = every section open;
+  // otherwise the id of the single open category.
+  const [openCatId, setOpenCatId] = useState<string | null>(null);
 
   // Single source of truth: the static registry, with the standing defensive
   // semaglutide exclusion and any empty categories dropped.
@@ -66,11 +70,18 @@ export function PeptideCatalogSection() {
 
   const totalPeptides = categories.reduce((sum, c) => sum + c.products.length, 0);
 
-  // One derived filtered list: active category and search query combined.
+  const searching = query.trim() !== '';
+
+  // Search-only filter; expansion is handled separately by openCatId.
   const filtered = useMemo(
-    () => filterCatalogCategories(categories, query, activeCatId),
-    [categories, query, activeCatId],
+    () => filterCatalogCategories(categories, query),
+    [categories, query],
   );
+
+  // One toggle for both the pills and the header rows. 'all' is just another
+  // openCatId value that the render treats as "expand everything".
+  const toggleCategory = (id: string) =>
+    setOpenCatId((prev) => (prev === id ? null : id));
 
   return (
     <section className="rounded-2xl border border-white/15 bg-white/10 backdrop-blur-md p-4 sm:p-5 space-y-4">
@@ -93,13 +104,13 @@ export function PeptideCatalogSection() {
           <button
             type="button"
             key={c.catId}
-            onClick={() => setActiveCatId(c.catId)}
+            onClick={() => toggleCategory(c.catId)}
             className={`px-2.5 py-1 rounded-full text-xs font-medium transition-all border whitespace-nowrap ${
-              activeCatId === c.catId
+              openCatId === c.catId
                 ? 'text-white border-transparent shadow-sm'
                 : 'bg-[rgba(255,255,255,0.08)] text-[rgba(255,255,255,0.55)] border-[rgba(255,255,255,0.12)] hover:border-[rgba(255,255,255,0.25)] hover:text-[rgba(255,255,255,0.80)]'
             }`}
-            style={activeCatId === c.catId ? { backgroundColor: c.color, borderColor: c.color } : {}}
+            style={openCatId === c.catId ? { backgroundColor: c.color, borderColor: c.color } : {}}
           >
             {c.label}
           </button>
@@ -130,20 +141,24 @@ export function PeptideCatalogSection() {
         profiles to your licensed practitioner.
       </p>
 
-      {/* Results */}
+      {/* Results: accordion of category sections */}
       {filtered.length === 0 ? (
         <div className="px-4 py-10 text-center text-sm text-[rgba(255,255,255,0.40)]">
           No peptides found{query ? ` matching "${query}"` : ''}.
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-2.5">
           {filtered.map((cat) => {
             const Icon = ICON_MAP[cat.icon] ?? FlaskConical;
+            const open = searching || openCatId === 'all' || openCatId === cat.id;
             return (
               <div key={cat.id} className="space-y-2.5">
-                {/* Category header */}
-                <div
-                  className="flex items-center gap-2.5 rounded-xl border p-2.5"
+                {/* Category header (toggle) */}
+                <button
+                  type="button"
+                  onClick={() => toggleCategory(cat.id)}
+                  aria-expanded={open}
+                  className="flex w-full items-center gap-2.5 rounded-xl border p-2.5 text-left transition-colors"
                   style={{
                     background: `linear-gradient(135deg, ${cat.color}1A, ${cat.color}05)`,
                     borderColor: `${cat.color}33`,
@@ -163,14 +178,20 @@ export function PeptideCatalogSection() {
                       {cat.products.length} peptide{cat.products.length !== 1 ? 's' : ''}
                     </p>
                   </div>
-                </div>
+                  <ChevronDown
+                    className={`h-4 w-4 flex-shrink-0 text-[rgba(255,255,255,0.45)] transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+                    strokeWidth={1.5}
+                  />
+                </button>
 
-                {/* Card grid: 1 col mobile, 2 col sm, 3 col lg (matches /shop/peptides) */}
-                <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
-                  {cat.products.map((peptide) => (
-                    <PeptideCatalogCard key={peptide.id} peptide={peptide} />
-                  ))}
-                </div>
+                {/* Cards (only when this section is open) */}
+                {open && (
+                  <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
+                    {cat.products.map((peptide) => (
+                      <PeptideCatalogCard key={peptide.id} peptide={peptide} />
+                    ))}
+                  </div>
+                )}
               </div>
             );
           })}
