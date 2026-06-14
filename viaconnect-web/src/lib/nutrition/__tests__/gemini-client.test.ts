@@ -112,6 +112,23 @@ describe('parseImageWithGemini', () => {
     const r = await parseImageWithGemini(Buffer.from('fake'), 'image/jpeg', 'note');
     expect(r.parsed.items[0].name).toBe('salad');
   });
+
+  it('keeps thinking ON for the photo parse with room so it does not truncate (Gary 2026-06-13 confidence regression)', async () => {
+    // Photo recognition is a vision reasoning task; thinking off (the shared text
+    // config from deb06979) tanked self-reported confidence to 0.4 or below. The
+    // photo parse must reason again, with enough headroom that the capped thinking
+    // budget plus the JSON response do not truncate.
+    fetchMock.mockResolvedValueOnce(geminiOk(JSON.stringify({
+      items: [{ name: 'salad', quantity: 1, unit: 'serving' }],
+      confidence: 0.7,
+      notes: 'ok',
+    })));
+    await parseImageWithGemini(Buffer.from('fake'), 'image/jpeg', 'note');
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body as string);
+    const tb = body.generationConfig.thinkingConfig.thinkingBudget;
+    expect(tb).toBeGreaterThan(0);
+    expect(body.generationConfig.maxOutputTokens - tb).toBeGreaterThanOrEqual(2048);
+  });
 });
 
 describe('estimateItemWithGemini', () => {

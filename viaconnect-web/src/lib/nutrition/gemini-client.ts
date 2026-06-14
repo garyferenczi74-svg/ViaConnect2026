@@ -343,6 +343,25 @@ const PARSE_GENERATION_CONFIG = {
   thinkingConfig: { thinkingBudget: 0 },
 } as const;
 
+// Photo parse config. Gary 2026-06-13 regression: the 2026-06-12 truncation fix
+// (deb06979) shared PARSE_GENERATION_CONFIG across the text AND photo parses,
+// which turned thinking OFF for the photo path too. Photo recognition is a vision
+// REASONING task (look at the plate, identify items, estimate portions, and
+// self-report a calibrated confidence), and with thinking off the model returned
+// systematically low confidence: NutriVision meals saved before the change
+// averaged 0.89, after it they came back at or below 0.4. This config restores a
+// CAPPED thinking budget for the photo path so the model reasons again, while the
+// larger maxOutputTokens guarantees room for thinking plus the JSON so it never
+// truncates (the 2026-06-11 502 the shared config was meant to fix: response room
+// is maxOutputTokens minus the capped thinking budget, here at least 4096). The
+// text + estimation paths stay thinking-off because they are lookups, not vision.
+const PHOTO_PARSE_GENERATION_CONFIG = {
+  temperature: 0.2,
+  responseMimeType: 'application/json',
+  maxOutputTokens: 6144,
+  thinkingConfig: { thinkingBudget: 2048 },
+} as const;
+
 async function parseDescriptionAttempt(description: string): Promise<ParseResult> {
   const { text, usage } = await callGemini({
     systemInstruction: { parts: [{ text: TEXT_PARSE_SYSTEM_INSTRUCTION }] },
@@ -418,11 +437,12 @@ export async function parseImageWithGemini(buf: Buffer, mimeType: string, note: 
         { text: note ? `Context: ${note}` : 'Analyze this meal.' },
       ],
     }],
-    // Same truncation defect class as the text parse: photo meals with many
-    // visible items hit the thinking-tokens-eat-the-budget ceiling too (a
-    // production 502 on /api/nutrition/photo/analyze on 2026-06-11 carries
-    // the same signature). Shares PARSE_GENERATION_CONFIG.
-    generationConfig: PARSE_GENERATION_CONFIG,
+    // Photo parse keeps thinking ON via PHOTO_PARSE_GENERATION_CONFIG: the model
+    // must reason about the image to recognize foods and self-report a calibrated
+    // confidence. Sharing the thinking-off text config (deb06979) tanked photo
+    // confidence to <=0.4 (Gary 2026-06-13). The capped thinking budget plus the
+    // larger token headroom keep the JSON from truncating (the 2026-06-11 502).
+    generationConfig: PHOTO_PARSE_GENERATION_CONFIG,
   });
   const parsed = validateParsedMeal(parseJsonOrThrow(text));
   return { parsed, usage };
