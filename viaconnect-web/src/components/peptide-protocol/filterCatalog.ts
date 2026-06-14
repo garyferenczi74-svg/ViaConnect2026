@@ -1,6 +1,6 @@
-// Chip definitions and the pure catalog filter for the unified Search
-// Peptides module (Prompt 195a). Kept separate from the component so the
-// filter logic and the chip-to-category mapping can be unit tested.
+// Chip definitions and the pure catalog search filter for the unified Search
+// Peptides module (Prompts 195a, 195b). Kept separate from the component so
+// the filter logic and the chip-to-category mapping can be unit tested.
 
 export interface CategoryChip {
   catId: string;
@@ -9,7 +9,7 @@ export interface CategoryChip {
 }
 
 // Chips keep their existing short labels and colors; catId is the real
-// ALL_CATEGORIES id so a chip actually filters the catalog. Three ids are
+// ALL_CATEGORIES id so a chip opens the right catalog category. Three ids are
 // remapped from the former Supabase chip ids: stress -> adrenal,
 // energy -> mitochondrial, gut -> gut_detox.
 export const CATEGORY_CHIPS: CategoryChip[] = [
@@ -37,19 +37,17 @@ export interface FilterableCategory<P extends FilterablePeptide> {
   products: P[];
 }
 
-// Returns the categories that match the active category, each narrowed to the
-// products that match the query, with empty categories removed. Generic so it
-// preserves the caller's concrete category type (label, icon, color, full
-// product objects) for rendering.
+// Narrows each category's products to those matching the query and drops
+// categories left empty. An empty query returns the categories unchanged.
+// Generic so it preserves the caller's concrete category type for rendering.
 export function filterCatalogCategories<
   P extends FilterablePeptide,
   C extends FilterableCategory<P>,
->(categories: C[], query: string, activeCatId: string): C[] {
+>(categories: C[], query: string): C[] {
   const q = query.trim().toLowerCase();
+  if (q === '') return categories;
   return categories
-    .filter((cat) => activeCatId === 'all' || cat.id === activeCatId)
     .map((cat) => {
-      if (q === '') return cat;
       const products = cat.products.filter(
         (p) =>
           p.name.toLowerCase().includes(q) ||

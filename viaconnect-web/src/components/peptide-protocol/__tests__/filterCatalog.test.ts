@@ -35,26 +35,27 @@ const fixture: TestCategory[] = [
 ];
 
 describe('filterCatalogCategories', () => {
-  it('returns all categories and products for All + empty query', () => {
-    const out = filterCatalogCategories(fixture, '', 'all');
+  it('returns every category and product when the query is empty', () => {
+    const out = filterCatalogCategories(fixture, '');
     expect(out).toHaveLength(2);
     expect(out.reduce((n, c) => n + c.products.length, 0)).toBe(3);
   });
 
-  it('keeps only the selected category, including remapped ids like adrenal', () => {
-    const out = filterCatalogCategories(fixture, '', 'adrenal');
+  it('filters products by a case-insensitive query and drops empty categories', () => {
+    const out = filterCatalogCategories(fixture, 'TELOMERASE');
+    expect(out).toHaveLength(1);
+    expect(out[0].id).toBe('longevity');
+    expect(out[0].products.map((p) => p.id)).toEqual(['epitalon']);
+  });
+
+  it('matches on mechanism in another category', () => {
+    const out = filterCatalogCategories(fixture, 'cortisol');
     expect(out).toHaveLength(1);
     expect(out[0].id).toBe('adrenal');
   });
 
-  it('filters products by a case-insensitive query across fields', () => {
-    const out = filterCatalogCategories(fixture, 'TELOMERASE', 'all');
-    expect(out).toHaveLength(1);
-    expect(out[0].products.map((p) => p.id)).toEqual(['epitalon']);
-  });
-
-  it('combines query and category and drops empty categories', () => {
-    const out = filterCatalogCategories(fixture, 'cortisol', 'longevity');
+  it('returns no categories when nothing matches', () => {
+    const out = filterCatalogCategories(fixture, 'zzzznope');
     expect(out).toHaveLength(0);
   });
 });
