@@ -125,7 +125,7 @@ export function PeptideSearchBar() {
           <button
             key={c.id}
             onClick={() => handleCategoryClick(c.id)}
-            className={`px-2 py-1 rounded-full text-[10px] font-medium transition-all border whitespace-nowrap ${
+            className={`px-2.5 py-1 rounded-full text-xs font-medium transition-all border whitespace-nowrap ${
               activeCategory === c.id
                 ? 'text-white border-transparent shadow-sm'
                 : 'bg-[rgba(255,255,255,0.08)] text-[rgba(255,255,255,0.55)] border-[rgba(255,255,255,0.12)] hover:border-[rgba(255,255,255,0.25)] hover:text-[rgba(255,255,255,0.80)]'
