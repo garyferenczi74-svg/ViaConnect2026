@@ -28,7 +28,7 @@ export default function PeptideProtocolRoute() {
 
   return (
     <>
-      {/* HERO — fixed behind the content. Uses z-0 (not -z-10) so it
+      {/* HERO - fixed behind the content. Uses z-0 (not -z-10) so it
           paints above the body's navy background but below the
           content wrapper (z-10). */}
       <div
@@ -55,16 +55,16 @@ export default function PeptideProtocolRoute() {
         />
       </div>
 
-      {/* CONTENT — scrolls over hero */}
+      {/* CONTENT - scrolls over hero */}
       <div className="relative z-10 text-white">
         {/* Mobile only: 80px hero peek above the content panel.
             Desktop: content flush below the nav bar (Prompt #81). */}
         <div className="h-[80px] md:hidden" />
 
-        {/* Content sits on top of the fixed hero — no solid panel so the
+        {/* Content sits on top of the fixed hero - no solid panel so the
             translucent glass containers let the hero show through. */}
-        <div className="min-h-screen rounded-t-3xl px-4 py-8 md:px-8">
-          <div className="mx-auto max-w-3xl space-y-5">
+        <div className="min-h-screen rounded-t-3xl py-8">
+          <div className="mx-auto max-w-7xl space-y-5 px-4 md:px-6">
 
             {/* Page header */}
             <div className="flex items-center justify-between gap-3 pb-2">
