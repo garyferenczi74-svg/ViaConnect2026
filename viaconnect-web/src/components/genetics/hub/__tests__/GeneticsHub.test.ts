@@ -66,26 +66,24 @@ describe('GeneticsHub source', () => {
     );
   });
 
-  it('lays the bento out on a six column lg grid', () => {
-    expect(source).toContain('grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-6');
+  it('lays the bento out on a twelve column lg grid', () => {
+    expect(source).toContain('grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-12');
   });
 
-  it('keeps the blueprint bento 4 wide and 2 tall on the desktop grid (hero footprint)', () => {
-    expect(source).toContain('lg:col-span-4');
-    expect(source).toContain('lg:row-span-2');
+  it('makes the blueprint bento and Your Variants full width bands on the desktop grid', () => {
+    expect(source).toContain('<GeneticBlueprintBento className="md:col-span-2 lg:col-span-12" />');
+    expect(source).toContain('<YourVariantsCard className="md:col-span-2 lg:col-span-12" />');
   });
 
-  it('makes Your Variants a full width band on the desktop grid', () => {
-    expect(source).toContain('lg:col-span-6');
+  it('makes the four action cards a single four across row on the desktop grid', () => {
+    expect(source).toContain('<UploadDnaCard className="md:col-span-1 lg:col-span-3" />');
+    expect(source).toContain('<UploadLabCard className="md:col-span-1 lg:col-span-3" />');
+    expect(source).toContain('<SnpFormulationsCard className="md:col-span-1 lg:col-span-3" />');
+    expect(source).toContain('<OrderPanelsCard className="md:col-span-1 lg:col-span-3" />');
   });
 
-  it('carries the lg:order desktop rearrange classes on every grid child', () => {
-    expect(source).toContain('lg:order-1');
-    expect(source).toContain('lg:order-2');
-    expect(source).toContain('lg:order-3');
-    expect(source).toContain('lg:order-4');
-    expect(source).toContain('lg:order-5');
-    expect(source).toContain('lg:order-6');
+  it('carries no lg:order classes (source order matches the desktop order)', () => {
+    expect(source).not.toContain('lg:order-');
   });
 
   it('opens no write path: no inserts, updates, deletes, or fetches', () => {

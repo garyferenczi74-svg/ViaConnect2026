@@ -6,29 +6,27 @@
 //
 // SOURCE ORDER EQUALS MOBILE ORDER. The children below are written in the
 // spec's Section 6 MOBILE order (header, getting started strip, then in the
-// grid: hero, Your Variants, Upload DNA, Upload Lab, SNP Formulations, Order
-// Panels). On a single column (mobile) this source order IS the rendered
+// grid: Blueprint, Your Variants, Upload DNA, Upload Lab, SNP Formulations,
+// Order Panels). On a single column (mobile) this source order IS the rendered
 // order, exactly as the spec wants, with no order classes doing anything.
 //
-// The lg:order-* utilities on each grid child rearrange ONLY at the lg
-// breakpoint into the desktop ASYMMETRIC layout:
-//   hero          order 1, col span 4, row span 2  (top left, dominant)
-//   Upload DNA    order 2, col span 2              (right column, row 1)
-//   Upload Lab    order 3, col span 2              (right column, row 2)
-//   Your Variants order 4, col span 6              (full width band, row 3)
-//   SNP           order 5, col span 3              (bottom left)
-//   Order Panels  order 6, col span 3              (bottom right)
-// So hero is 4 wide and 2 tall in the top left, Upload DNA + Upload Lab stack
-// in the right column (rows 1 to 2, cols 5 to 6), Your Variants is a full
-// width band (row 3, cols 1 to 6), and SNP + Order split the bottom row.
+// Source order ALSO equals the desktop order, so no order classes are needed
+// anymore. At lg the grid is 12 columns:
+//   Blueprint      col span 12  (full width band, row 1)
+//   Your Variants  col span 12  (full width band, row 2)
+//   Upload DNA     col span 3   (row 3, first of the four across action row)
+//   Upload Lab     col span 3   (row 3, second)
+//   SNP            col span 3   (row 3, third)
+//   Order Panels   col span 3   (row 3, fourth)
+// So Blueprint and Your Variants are stacked full width bands and the four
+// action cards form one four across row beneath them.
 //
-// At md (tablet) NO order classes apply: the cards fall into a 2 column
-// priority stack in source order, with the hero and Your Variants spanning
-// both columns.
+// At md (tablet) it is a 2 column grid: Blueprint and Your Variants span both
+// columns, and the four action cards fall into a 2 by 2 grid (each col span 1).
 //
-// DO NOT "fix" the child ordering to match the desktop visual. The source
-// order is mobile; the desktop arrangement lives entirely in the lg:order-*
-// classes. Reordering the children would silently break the mobile layout.
+// DO NOT "fix" or reorder the child ordering. The source order is the mobile
+// order and it already matches the desktop order, so reordering the children
+// would silently break the mobile layout.
 //
 // Standing rules honored: tokens only, Instrument Sans (font-[Instrument_Sans]
 // on the container), Lucide strokeWidth 1.5 (in the children), no emojis, no em
@@ -54,16 +52,16 @@ export function GeneticsHub() {
       <GeneticsHubHeader />
       <GeneticsGettingStartedStrip />
 
-      {/* The bento grid. Source order is the spec's mobile order; the
-          lg:order-* classes rearrange into the desktop asymmetric layout (see
-          the file header for the full mapping). */}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-6">
-        <GeneticBlueprintBento className="md:col-span-2 lg:order-1 lg:col-span-4 lg:row-span-2" />
-        <YourVariantsCard className="md:col-span-2 lg:order-4 lg:col-span-6" />
-        <UploadDnaCard className="md:col-span-1 lg:order-2 lg:col-span-2" />
-        <UploadLabCard className="md:col-span-1 lg:order-3 lg:col-span-2" />
-        <SnpFormulationsCard className="md:col-span-1 lg:order-5 lg:col-span-3" />
-        <OrderPanelsCard className="md:col-span-1 lg:order-6 lg:col-span-3" />
+      {/* The bento grid. Source order is the spec's mobile order and already
+          matches the desktop order, so no order classes are needed (see the
+          file header for the full per breakpoint mapping). */}
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-12">
+        <GeneticBlueprintBento className="md:col-span-2 lg:col-span-12" />
+        <YourVariantsCard className="md:col-span-2 lg:col-span-12" />
+        <UploadDnaCard className="md:col-span-1 lg:col-span-3" />
+        <UploadLabCard className="md:col-span-1 lg:col-span-3" />
+        <SnpFormulationsCard className="md:col-span-1 lg:col-span-3" />
+        <OrderPanelsCard className="md:col-span-1 lg:col-span-3" />
       </div>
 
       {/* Update Your Assessment card, reused unchanged from the My Biology hub. */}

@@ -111,7 +111,7 @@ export function BlueprintPanelCard({ meta, className }: BlueprintPanelCardProps)
           {/* Descriptor: md and up only. Dropped on the compact mobile card so the
               cards stay short and equal height; the full descriptor still lives on
               the panel report and in this card's accessible name. */}
-          <p className="hidden text-[11px] leading-snug text-white/85 [text-shadow:0_1px_3px_rgba(0,0,0,0.9)] md:block">
+          <p className="hidden text-[11px] leading-snug text-white/85 [text-shadow:0_1px_3px_rgba(0,0,0,0.9)] md:block line-clamp-2">
             {panel.subtitle}
           </p>
         </div>

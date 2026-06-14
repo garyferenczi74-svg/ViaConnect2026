@@ -16,24 +16,22 @@ const CARD = path.resolve(__dirname, '..', 'BlueprintPanelCard.tsx');
 describe('GeneticBlueprintBento grid (Prompt 193f)', () => {
   const source = readFileSync(BENTO, 'utf-8');
 
-  it('uses a two column grid below md that becomes four columns at md', () => {
-    expect(source).toContain('grid grid-cols-2 gap-2.5 md:grid-cols-4');
+  it('uses a two column grid below md that becomes five columns by two rows at md', () => {
+    expect(source).toContain('grid grid-cols-2 gap-2.5 md:grid-cols-5 md:grid-rows-2');
   });
 
-  it('keeps the hero full width below md and a 2 by 2 anchor at md', () => {
-    expect(source).toContain('<BlueprintHeroCard className="col-span-2 md:row-span-2" />');
+  it('keeps the hero full width below md and a full height left anchor at md', () => {
+    expect(source).toContain('<BlueprintHeroCard className="col-span-2 md:row-span-2 md:order-1" />');
   });
 
-  it('widens the two bottom panel cards only at md (2 across below md)', () => {
-    expect(source).toContain('meta={PANEL_BENTO_META[4]} className="md:col-span-2"');
-    expect(source).toContain('meta={PANEL_BENTO_META[5]} className="md:col-span-2"');
-  });
-
-  it('leaves the four cluster cards (0 to 3) on pure grid auto placement, no span', () => {
-    expect(source).toContain('<BlueprintPanelCard meta={PANEL_BENTO_META[0]} />');
-    expect(source).toContain('<BlueprintPanelCard meta={PANEL_BENTO_META[1]} />');
-    expect(source).toContain('<BlueprintPanelCard meta={PANEL_BENTO_META[2]} />');
-    expect(source).toContain('<BlueprintPanelCard meta={PANEL_BENTO_META[3]} />');
+  it('reorders the six panels for desktop only via md:order, no md:col-span', () => {
+    expect(source).toContain('meta={PANEL_BENTO_META[0]} className="md:order-4"');
+    expect(source).toContain('meta={PANEL_BENTO_META[1]} className="md:order-5"');
+    expect(source).toContain('meta={PANEL_BENTO_META[2]} className="md:order-6"');
+    expect(source).toContain('meta={PANEL_BENTO_META[3]} className="md:order-7"');
+    expect(source).toContain('meta={PANEL_BENTO_META[4]} className="md:order-2"');
+    expect(source).toContain('meta={PANEL_BENTO_META[5]} className="md:order-3"');
+    expect(source).not.toContain('className="md:col-span-2"');
   });
 
   it('contains no em or en dashes', () => {

@@ -46,17 +46,18 @@ describe('GeneticBlueprintBento source', () => {
     expect(source).toContain('<BlueprintPanelCard meta={PANEL_BENTO_META[5]}');
   });
 
-  it('makes the hero a 2 by 2 anchor on the desktop bento', () => {
-    expect(source).toContain('sm:col-span-2 md:row-span-2');
+  it('makes the hero a full height left anchor on the desktop bento', () => {
+    expect(source).toContain('col-span-2 md:row-span-2 md:order-1');
   });
 
-  it('makes the last two panels wide cards across the bottom', () => {
-    expect(source).toContain('meta={PANEL_BENTO_META[4]} className="sm:col-span-2"');
-    expect(source).toContain('meta={PANEL_BENTO_META[5]} className="sm:col-span-2"');
+  it('reorders the six panels for desktop only via md:order, no md:col-span', () => {
+    expect(source).toContain('meta={PANEL_BENTO_META[4]} className="md:order-2"');
+    expect(source).toContain('meta={PANEL_BENTO_META[5]} className="md:order-3"');
+    expect(source).not.toContain('className="md:col-span-2"');
   });
 
-  it('stacks single column on mobile, two up at sm, four column asymmetric at md and up', () => {
-    expect(source).toContain('grid grid-cols-1 gap-2.5 sm:grid-cols-2 md:grid-cols-4');
+  it('uses a two column grid below md that becomes five columns by two rows at md', () => {
+    expect(source).toContain('grid grid-cols-2 gap-2.5 md:grid-cols-5 md:grid-rows-2');
   });
 
   it('contains no em or en dashes', () => {

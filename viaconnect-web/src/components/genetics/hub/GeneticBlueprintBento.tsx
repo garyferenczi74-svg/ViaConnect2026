@@ -15,21 +15,19 @@
 // See the Layout note below and BlueprintPanelCard for the compact card treatment.
 //
 // Layout. SOURCE ORDER EQUALS MOBILE ORDER: the hero first, then the six panels in
-// the spec order. Below md the inner grid is a compact TWO column grid (Prompt
-// 193f): the hero spans full width (col-span-2) and the six panel cards sit side by
-// side in three rows of two. At md and up it is the spec's four column asymmetric
-// arrangement via col-span / row-span and CSS grid auto placement (no order or
-// col-start needed):
-//   hero        col-span-2 row-span-2  -> rows 1 to 2, cols 1 to 2 (the 2 by 2 anchor)
-//   HormoneIQ                           -> row 1, col 3
-//   EpigenHQ                            -> row 1, col 4
-//   PeptideIQ                           -> row 2, col 3
-//   CannabisIQ                          -> row 2, col 4
-//   GeneXM      col-span-2              -> row 3, cols 1 to 2 (wide)
-//   NutrigenDX  col-span-2              -> row 3, cols 3 to 4 (wide)
+// the array order. Below md the inner grid is the unchanged Prompt 193f compact TWO
+// column grid: the hero spans full width (col-span-2) and the six panel cards sit
+// side by side in three rows of two, in source/array order (no order classes apply
+// below md). At md and up the grid is five columns by two rows: the hero runs full
+// height on the LEFT at about 40% width (col-span-2 row-span-2), with the six panels
+// in a 3 by 2 grid to its right, reordered for desktop only via md:order to:
+//   row 1 -> GeneXM, NutrigenDX, HormoneIQ
+//   row 2 -> EpigenHQ, PeptideIQ, CannabisIQ
+// The array order is the mobile order and MUST NOT be reordered; the desktop visual
+// order lives entirely in the md:order utilities.
 //
-// The card is mounted into the My Genetics hub in the hero footprint
-// (lg:col-span-4 lg:row-span-2), so it sits where the single hero card was.
+// The card is mounted into the My Genetics hub as a full width band (lg:col-span-12),
+// so it spans the whole container above Your Variants and the action row.
 //
 // Standing rules honored: tokens only, Instrument Sans inherited, Lucide
 // strokeWidth 1.5 (in the cards), no emojis, no em or en dashes, TypeScript strict.
@@ -77,20 +75,24 @@ export function GeneticBlueprintBento({ className }: GeneticBlueprintBentoProps)
             so the six panel cards sit side by side, three rows of two, instead of
             full width stacked tiles. That roughly halves the section height on a
             phone and matches the Wellness Analytics two across reference. The hero
-            stays full width above them (col-span-2). md and up is UNCHANGED from
-            Prompt 193d: the four column asymmetric layout (hero 2 by 2, four small
-            cards in the cluster, two wide cards on the bottom row) via col-span /
-            row-span and grid auto placement, so panels 4 and 5 widen only at md. The
-            panel cards switch to their own compact presentation below md; see
-            BlueprintPanelCard. */}
-        <div className="grid grid-cols-2 gap-2.5 md:grid-cols-4">
-          <BlueprintHeroCard className="col-span-2 md:row-span-2" />
-          <BlueprintPanelCard meta={PANEL_BENTO_META[0]} />
-          <BlueprintPanelCard meta={PANEL_BENTO_META[1]} />
-          <BlueprintPanelCard meta={PANEL_BENTO_META[2]} />
-          <BlueprintPanelCard meta={PANEL_BENTO_META[3]} />
-          <BlueprintPanelCard meta={PANEL_BENTO_META[4]} className="md:col-span-2" />
-          <BlueprintPanelCard meta={PANEL_BENTO_META[5]} className="md:col-span-2" />
+            stays full width above them (col-span-2, no md prefix), in source/array
+            order with no order classes below md.
+            Prompt 193g (2026-06-14): at md and up the grid is five columns by two
+            rows. The hero keeps col-span-2 (now 40% at md) and md:row-span-2 so it
+            runs full height on the left, and the six panels fill the right 3 by 2
+            grid, reordered for DESKTOP ONLY via md:order to GeneXM, NutrigenDX,
+            HormoneIQ then EpigenHQ, PeptideIQ, CannabisIQ. The two formerly wide
+            cards (array index 4 and 5) drop their md:col-span-2 so all six panels are
+            uniform single cells. The panel cards switch to their own compact
+            presentation below md; see BlueprintPanelCard. */}
+        <div className="grid grid-cols-2 gap-2.5 md:grid-cols-5 md:grid-rows-2">
+          <BlueprintHeroCard className="col-span-2 md:row-span-2 md:order-1" />
+          <BlueprintPanelCard meta={PANEL_BENTO_META[0]} className="md:order-4" />
+          <BlueprintPanelCard meta={PANEL_BENTO_META[1]} className="md:order-5" />
+          <BlueprintPanelCard meta={PANEL_BENTO_META[2]} className="md:order-6" />
+          <BlueprintPanelCard meta={PANEL_BENTO_META[3]} className="md:order-7" />
+          <BlueprintPanelCard meta={PANEL_BENTO_META[4]} className="md:order-2" />
+          <BlueprintPanelCard meta={PANEL_BENTO_META[5]} className="md:order-3" />
         </div>
       </GeneticsHubTile>
     </section>
