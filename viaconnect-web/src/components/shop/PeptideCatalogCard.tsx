@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import { motion } from 'framer-motion';
 import {
   Dna,
   Battery,
@@ -55,9 +54,12 @@ const EVIDENCE_STYLE: Record<PeptideProduct['evidenceLevel'], string> = {
 
 interface PeptideCatalogCardProps {
   peptide: PeptideProduct;
+  // When true, use the glassy translucent card background that matches the
+  // generated-protocol cards on /peptide-protocol. Default solid elsewhere.
+  translucent?: boolean;
 }
 
-export function PeptideCatalogCard({ peptide }: PeptideCatalogCardProps) {
+export function PeptideCatalogCard({ peptide, translucent = false }: PeptideCatalogCardProps) {
   const Icon = ICON_MAP[peptide.categoryIcon] ?? FlaskConical;
   const isInjectableOnly =
     peptide.dosingForms.length === 1 && peptide.dosingForms[0].form === 'injectable';
@@ -65,7 +67,7 @@ export function PeptideCatalogCard({ peptide }: PeptideCatalogCardProps) {
 
   return (
     <div
-      className="group relative flex h-full flex-col rounded-2xl border border-[rgba(255,255,255,0.08)] bg-[#1E3054] p-4 transition-all duration-200 hover:border-[rgba(255,255,255,0.18)]"
+      className={`group relative flex h-full flex-col rounded-2xl border border-[rgba(255,255,255,0.08)] ${translucent ? 'bg-[#1E3054]/45 backdrop-blur-md' : 'bg-[#1E3054]'} p-4 transition-all duration-200 hover:border-[rgba(255,255,255,0.18)]`}
       style={{
         // Subtle category color tint on the top edge
         boxShadow: `inset 0 1px 0 ${peptide.categoryColor}30`,
@@ -162,7 +164,7 @@ export function PeptideCatalogCard({ peptide }: PeptideCatalogCardProps) {
         </p>
       </div>
 
-      {/* Actions — consumer view: Share + Full Profile */}
+      {/* Actions - consumer view: Share + Full Profile */}
       <div className="mt-3 flex gap-2">
         <SharePeptideButton peptide={peptide} compact />
         <Link

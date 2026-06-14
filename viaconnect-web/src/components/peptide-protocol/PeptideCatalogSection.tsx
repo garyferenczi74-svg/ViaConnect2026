@@ -192,7 +192,7 @@ export function PeptideCatalogSection() {
                 {open && (
                   <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
                     {cat.products.map((peptide) => (
-                      <PeptideCatalogCard key={peptide.id} peptide={peptide} />
+                      <PeptideCatalogCard key={peptide.id} peptide={peptide} translucent />
                     ))}
                   </div>
                 )}
