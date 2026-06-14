@@ -83,6 +83,10 @@ export function PeptideCatalogSection() {
   const toggleCategory = (id: string) =>
     setOpenCatId((prev) => (prev === id ? null : id));
 
+  // A pill reads as selected only while it is the open category and no search
+  // is overriding the accordion.
+  const chipActive = (catId: string) => openCatId === catId && !searching;
+
   return (
     <section className="rounded-2xl border border-white/15 bg-white/10 backdrop-blur-md p-4 sm:p-5 space-y-4">
       {/* Header */}
@@ -106,11 +110,11 @@ export function PeptideCatalogSection() {
             key={c.catId}
             onClick={() => toggleCategory(c.catId)}
             className={`px-2.5 py-1 rounded-full text-xs font-medium transition-all border whitespace-nowrap ${
-              openCatId === c.catId
+              chipActive(c.catId)
                 ? 'text-white border-transparent shadow-sm'
                 : 'bg-[rgba(255,255,255,0.08)] text-[rgba(255,255,255,0.55)] border-[rgba(255,255,255,0.12)] hover:border-[rgba(255,255,255,0.25)] hover:text-[rgba(255,255,255,0.80)]'
             }`}
-            style={openCatId === c.catId ? { backgroundColor: c.color, borderColor: c.color } : {}}
+            style={chipActive(c.catId) ? { backgroundColor: c.color, borderColor: c.color } : {}}
           >
             {c.label}
           </button>
