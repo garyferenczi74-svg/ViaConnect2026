@@ -54,8 +54,9 @@ const EVIDENCE_STYLE: Record<PeptideProduct['evidenceLevel'], string> = {
 
 interface PeptideCatalogCardProps {
   peptide: PeptideProduct;
-  // When true, use the glassy translucent card background that matches the
-  // generated-protocol cards on /peptide-protocol. Default solid elsewhere.
+  // When true, render the /peptide-protocol variant: glassy translucent card
+  // background plus a white category heading (the icon keeps its color).
+  // Default is a solid background with a colored category heading elsewhere.
   translucent?: boolean;
 }
 
@@ -89,8 +90,8 @@ export function PeptideCatalogCard({ peptide, translucent = false }: PeptideCata
           />
         </div>
         <span
-          className="truncate text-[10px] font-semibold uppercase tracking-wider"
-          style={{ color: `${peptide.categoryColor}CC` }}
+          className={`truncate text-[10px] font-semibold uppercase tracking-wider ${translucent ? 'text-white' : ''}`}
+          style={translucent ? undefined : { color: `${peptide.categoryColor}CC` }}
         >
           {peptide.category}
         </span>

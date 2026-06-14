@@ -186,7 +186,7 @@ export function PeptideCatalogSection() {
                     <h3 className="break-words text-xs font-semibold leading-tight sm:text-sm text-white">
                       {cat.label}
                     </h3>
-                    <p className="mt-0.5 text-[10px] text-[rgba(255,255,255,0.40)]">
+                    <p className="mt-0.5 text-[10px] text-white">
                       {cat.products.length} peptide{cat.products.length !== 1 ? 's' : ''}
                     </p>
                   </div>
