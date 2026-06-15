@@ -9,11 +9,12 @@
 // cards; BlueprintHeroCard renders the dominant GeneX360 Complete card with the
 // Most Popular badge, the 500+ variants stat, and the primary call to action.
 //
-// Prompt 193f (2026-06-13): below md BlueprintPanelCard renders a COMPACT variant
-// for the two column mobile grid: a frosted Card surface (no per card photo), a
-// leading accent icon, the panel name, and the count chip; the descriptor and the
-// background media are gated to md and up, where the card is byte for byte the
-// Prompt 193d card. BlueprintHeroCard is untouched at every width.
+// Prompt 193f (2026-06-13): below md BlueprintPanelCard rendered a COMPACT variant
+// for the two column mobile grid that gated the per card media to md and up and
+// added a leading accent icon. Mobile media restore (2026-06-14, Gary): the per
+// card background media now renders at EVERY width and the leading icon is gone,
+// so the compact mobile card carries its photo just like the md+ card. Only the
+// descriptor remains md and up. BlueprintHeroCard is untouched at every width.
 //
 // Display name, descriptor, and count come from PANEL_BY_SLUG (panels.ts) and are
 // never duplicated here. The trademark mark is shown on first mention in an
@@ -57,12 +58,6 @@ export function BlueprintPanelCard({ meta, className }: BlueprintPanelCardProps)
   // present, the card layers CardMedia + a scrim behind the content; otherwise it
   // stays a flat tinted surface.
   const media = meta.media;
-  // Prompt 193f: the leading Lucide icon for the compact mobile card. It shows only
-  // below md (the desktop 193d card carries no icon, by Gary's 193d decision). Teal
-  // for the assessment panels, orange for the two educational panels, matching the
-  // data accent so the compact grid keeps the same educational distinction.
-  const Icon = meta.icon;
-  const accentText = meta.accent === 'orange' ? 'text-[#B75E18]' : 'text-[#2DA5A0]';
 
   return (
     <Link
@@ -70,19 +65,18 @@ export function BlueprintPanelCard({ meta, className }: BlueprintPanelCardProps)
       aria-label={accessibleName}
       className={`${CARD_LINK} ${className ?? ''}`}
     >
-      {/* Prompt 193f: below md this is a COMPACT card in a two column grid: a
-          frosted Card surface (no per card photo, matching the Wellness Analytics
-          reference), a leading icon, the panel name, and the count chip. At md and
-          up it is UNCHANGED from Prompt 193d: the per card media fills it (the
-          frosted fill drops to transparent) and the descriptor returns. */}
-      <div className="relative isolate flex h-full flex-col justify-between gap-2 overflow-hidden rounded-xl border border-white/[0.12] bg-[#1E3054]/80 p-3 transition-colors duration-300 group-hover:border-[#2DA5A0]/50 md:bg-transparent">
-        {/* z0: the optional background media (image or video). Gated to md and up
-            inside an absolutely positioned wrapper so the compact mobile card stays
-            a calm frosted surface and the video neither loads nor plays on a phone,
-            while the md+ fill and z order stay byte for byte the Prompt 193d card
-            (the wrapper is absolute, so it never joins the flex flow). */}
+      {/* Mobile media restore (2026-06-14, Gary): the per card media now fills this
+          card at EVERY width (the frosted mobile fill is gone), so the compact two
+          column mobile card carries its photo just like the md+ card. The only
+          mobile difference left is the descriptor, which stays md and up so the
+          mobile cards stay short and equal height. */}
+      <div className="relative isolate flex h-full flex-col justify-between gap-2 overflow-hidden rounded-xl border border-white/[0.12] bg-transparent p-3 transition-colors duration-300 group-hover:border-[#2DA5A0]/50">
+        {/* z0: the optional background media (image or video). Rendered at every
+            width (2026-06-14, Gary) inside an absolutely positioned wrapper so the
+            media fills the card on mobile and md+ alike (the wrapper is absolute, so
+            it never joins the flex flow). */}
         {media ? (
-          <div className="absolute inset-0 z-0 hidden md:block">
+          <div className="absolute inset-0 z-0">
             <CardMedia media={media} logKey={`blueprint-${meta.slug}`} />
           </div>
         ) : null}
@@ -97,13 +91,6 @@ export function BlueprintPanelCard({ meta, className }: BlueprintPanelCardProps)
         {/* z2: content. The white type carries a soft shadow so it holds up over a
             bright frame without needing to darken the glass. */}
         <div className="relative z-[2] flex flex-col gap-1.5">
-          {/* Prompt 193f: leading icon, compact mobile card only (hidden at md+, so
-              the Prompt 193d desktop card stays icon free). */}
-          <Icon
-            aria-hidden="true"
-            className={`h-5 w-5 shrink-0 ${accentText} drop-shadow-[0_1px_2px_rgba(0,0,0,0.85)] md:hidden`}
-            strokeWidth={1.5}
-          />
           <h3 className="text-[13px] font-semibold leading-tight text-white [text-shadow:0_1px_3px_rgba(0,0,0,0.9)]">
             {panel.displayName}
             <span aria-hidden="true">&trade;</span>

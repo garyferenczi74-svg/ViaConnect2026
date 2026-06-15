@@ -2,9 +2,13 @@
 // mobile compaction. Source as text assertions per the repo convention (no DOM
 // needed). These lock the two invariants of 193f: (1) below md the six panel cards
 // sit in a compact TWO column grid with the hero full width above them, and (2) md
-// and up is UNCHANGED from Prompt 193d (the four column asymmetric layout). They
-// also lock the per card responsive treatment: the icon shows only below md, the
-// descriptor and the background media show only at md and up, and the no dash rule.
+// and up is UNCHANGED from Prompt 193d (the four column asymmetric layout).
+//
+// Mobile media restore (2026-06-14, Gary): the panel card per card treatment was
+// changed so the background media renders at EVERY width and the leading icon is
+// gone, on a transparent surface. The panel card assertions below now lock that
+// behavior; only the descriptor stays md and up. The grid invariants and the no
+// dash rule are unchanged.
 
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
@@ -43,18 +47,27 @@ describe('GeneticBlueprintBento grid (Prompt 193f)', () => {
 describe('BlueprintPanelCard compact mobile treatment (Prompt 193f)', () => {
   const source = readFileSync(CARD, 'utf-8');
 
-  it('frosts the card surface below md and goes transparent at md', () => {
-    expect(source).toContain('bg-[#1E3054]/80');
-    expect(source).toContain('md:bg-transparent');
+  it('keeps the card surface transparent at every width so the media shows through (2026-06-14 mobile media restore)', () => {
+    expect(source).toContain('rounded-xl border border-white/[0.12] bg-transparent');
+    // The frosted mobile fill and its md override are both gone.
+    expect(source).not.toContain('bg-[#1E3054]/80');
+    expect(source).not.toContain('md:bg-transparent');
   });
 
-  it('gates the per card media to md and up inside an absolute wrapper', () => {
-    expect(source).toContain('absolute inset-0 z-0 hidden md:block');
+  it('renders the per card media at every width inside an absolute wrapper (2026-06-14 mobile media restore)', () => {
+    expect(source).toContain('<div className="absolute inset-0 z-0">');
+    // The media is no longer gated off mobile.
+    expect(source).not.toContain('absolute inset-0 z-0 hidden md:block');
+    expect(source).toContain('<CardMedia media={media}');
   });
 
-  it('shows the leading Lucide icon only on the compact mobile card', () => {
-    expect(source).toContain('const Icon = meta.icon');
-    expect(source).toContain('md:hidden');
+  it('renders no leading panel icon at any width (2026-06-14 mobile media restore); only the arrow affordance remains', () => {
+    expect(source).not.toContain('const Icon = meta.icon');
+    expect(source).not.toContain('<Icon');
+    // The icon was the only md:hidden element, so it is gone too.
+    expect(source).not.toContain('md:hidden');
+    // The panel card arrow stays Lucide at strokeWidth 1.5.
+    expect(source).toContain('ArrowUpRight');
     expect(source).toContain('strokeWidth={1.5}');
   });
 
@@ -63,8 +76,9 @@ describe('BlueprintPanelCard compact mobile treatment (Prompt 193f)', () => {
     expect(source).toContain('md:block');
   });
 
-  it('tints the icon by accent (teal assessment, orange educational)', () => {
-    expect(source).toContain("meta.accent === 'orange' ? 'text-[#B75E18]' : 'text-[#2DA5A0]'");
+  it('no longer derives a per icon accent tint (2026-06-14 mobile media restore removed the icon)', () => {
+    expect(source).not.toContain("meta.accent === 'orange' ? 'text-[#B75E18]' : 'text-[#2DA5A0]'");
+    expect(source).not.toContain('const accentText');
   });
 
   it('contains no em or en dashes', () => {
