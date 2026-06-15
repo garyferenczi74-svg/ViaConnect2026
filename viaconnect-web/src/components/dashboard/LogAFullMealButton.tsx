@@ -1,12 +1,11 @@
 'use client';
 
 // Prompt #169 section 4.3: blue gradient pill for the "Log a full meal"
-// CTA. Re-pointed by Prompt 173a to /nutrition/photo-ai (the NutriVision
-// scored hub) so meals captured here write a Gordon-scored row and feed
-// Today's Meals, Daily Macros, and the Dashboard Nutrition gauge. The
-// legacy /nutrition/log-meal editor and analyze-text endpoint remain
-// frozen per the permanent 168c/168d exception and are still reachable
-// by direct URL.
+// CTA. Prompt 173a had re-pointed it to /nutrition/photo-ai (NutriVision);
+// Prompt 199 (2026-06-15) re-points it to /nutrition/log-meal, the full meal
+// text, voice, and photo editor, so the label matches the destination. The
+// log-meal page offers a "Use NutriVision Photo AI Instead" pill to reach the
+// Photo AI capture path.
 
 import Link from 'next/link';
 import { ArrowRight, Camera } from 'lucide-react';
@@ -17,13 +16,11 @@ export interface LogAFullMealButtonProps {
 }
 
 export function LogAFullMealButton({ disabled = false, onBeforeNavigate }: LogAFullMealButtonProps) {
-  // Spec section 4.3: route destination is unchanged. Caller can intercept
-  // navigation via onBeforeNavigate (returning false blocks the click) so a
-  // future "save your draft first" confirmation modal can plug in here.
-  // Camera icon prepended to the text navigates to /nutrition/photo-ai
-  // (Photo AI channel on the Nutrition Log). Implemented as a sibling Link
-  // inside a wrapping div so the icon and the text/arrow can target
-  // different routes while still rendering as a single visual pill.
+  // Caller can intercept navigation via onBeforeNavigate (returning false
+  // blocks the click) so a future "save your draft first" confirmation modal
+  // can plug in here. The camera icon and the text/arrow both navigate to
+  // /nutrition/log-meal (the full meal editor), implemented as sibling Links
+  // inside a wrapping div so they still render as a single visual pill.
   const handleClick = (event: React.MouseEvent<HTMLAnchorElement>) => {
     if (disabled) {
       event.preventDefault();
@@ -50,12 +47,12 @@ export function LogAFullMealButton({ disabled = false, onBeforeNavigate }: LogAF
       {/* Prompt 175 audit (2026-06-05): Lucide Camera at strokeWidth 1.5,
           h-5 w-5. The icon-only Link is now aria-hidden + tabIndex -1
           so screen readers do not announce two interactive elements
-          that both target /nutrition/photo-ai; the text Link below
+          that both target /nutrition/log-meal; the text Link below
           owns the accessible name. The icon still receives pointer
           taps for muscle-memory users who hit the camera glyph
           directly. */}
       <Link
-        href="/nutrition/photo-ai"
+        href="/nutrition/log-meal"
         onClick={handleCameraClick}
         aria-hidden="true"
         tabIndex={-1}
@@ -65,9 +62,9 @@ export function LogAFullMealButton({ disabled = false, onBeforeNavigate }: LogAF
         <Camera className="h-5 w-5" strokeWidth={1.5} aria-hidden="true" />
       </Link>
       <Link
-        href="/nutrition/photo-ai"
+        href="/nutrition/log-meal"
         onClick={handleClick}
-        aria-label="Log a full meal via Photo AI"
+        aria-label="Log a full meal"
         aria-disabled={disabled}
         className={`flex flex-1 items-center justify-between gap-1.5 text-white no-underline md:flex-initial md:justify-start ${
           disabled ? '' : 'active:scale-[0.98]'

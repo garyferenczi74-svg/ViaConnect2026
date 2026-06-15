@@ -232,10 +232,10 @@ export default function LogMealPage() {
             </button>
             <Link
               href="/nutrition/photo-ai"
-              className="inline-flex items-center justify-center gap-2 text-xs font-medium text-[#2DA5A0] hover:underline"
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#2DA5A0]/60 bg-[#2DA5A0]/10 px-6 py-3 text-sm font-semibold text-[#2DA5A0] transition-all min-h-[48px] hover:bg-[#2DA5A0]/20 sm:w-auto w-full"
             >
-              <ImagePlus className="h-3.5 w-3.5" strokeWidth={1.5} />
-              Use Photo Instead
+              <ImagePlus className="h-4 w-4" strokeWidth={1.5} />
+              Use NutriVision Photo AI Instead
             </Link>
           </div>
         </div>
