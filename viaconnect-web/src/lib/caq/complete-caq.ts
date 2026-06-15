@@ -75,6 +75,60 @@ export async function completeCAQAndTriggerEngines(): Promise<{
       errors.push(`Sync profile: ${err instanceof Error ? err.message : "Failed"}`);
     }
 
+    // ═══ STEP 1.5: Write the canonical CAQ version row (Prompt 196c) ═══
+    // computeBOS reads caq_assessment_versions (status='completed') as the CAQ
+    // source of truth for the Bio Optimization Score. The legacy profiles and
+    // assessment_results writes above never populated it, so the BOS preflight
+    // threw "CAQ not completed" for every user and no score ever computed. Write
+    // one completed, versioned row per CAQ completion, mapping the
+    // assessment_results phases to the version columns. Best effort: a failure
+    // is recorded but does not block the rest of the completion pipeline.
+    try {
+      const { data: phaseRows } = await supabase
+        .from("assessment_results")
+        .select("phase, data")
+        .eq("user_id", user.id);
+      const phase = (p: number) =>
+        ((phaseRows || []).find((r) => r.phase === p)?.data as Record<string, unknown> | undefined) || {};
+      const meds = phase(4);
+
+      // Version + retake linkage from the user's prior completed row. There is
+      // no unique constraint on (user_id, version_number), so derive the next
+      // number from the latest completed version.
+      const { data: prior } = await supabase
+        .from("caq_assessment_versions")
+        .select("id, version_number")
+        .eq("user_id", user.id)
+        .eq("status", "completed")
+        .order("version_number", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      const priorVersion = (prior?.version_number as number | null) ?? 0;
+
+      await supabase.from("caq_assessment_versions").insert({
+        user_id: user.id,
+        version_number: priorVersion + 1,
+        status: "completed",
+        demographics: phase(1),
+        health_concerns: phase(6),
+        physical_symptoms: phase(7),
+        neuro_symptoms: phase(8),
+        emotional_symptoms: phase(9),
+        medications: (meds.medications as unknown[]) ?? [],
+        supplements: (meds.userSupplements as unknown[]) ?? (meds.supplements as unknown[]) ?? [],
+        allergies: (meds.allergies as unknown[]) ?? [],
+        lifestyle: phase(3),
+        completed_at: new Date().toISOString(),
+        is_retake: prior != null,
+        previous_version_id: (prior?.id as string | null) ?? null,
+      } as any);
+
+      results["caq_version"] = true;
+    } catch (err) {
+      results["caq_version"] = false;
+      errors.push(`CAQ version: ${err instanceof Error ? err.message : "Failed"}`);
+    }
+
     // ═══ STEP 2: Generate Symptom Profile (Ultrathink) ═══
     try {
       const res = await fetchWithTimeout("/api/ai/generate-symptom-profile", { method: "POST" }, ENGINE_TIMEOUT_MS);
