@@ -108,6 +108,14 @@ export async function updateSession(request: NextRequest) {
     // Hounddog bridge cron (Prompt #120). Authorized via CRON_SECRET inside
     // the handler; must bypass the session redirect so Vercel Cron can reach it.
     pathname === "/api/hounddog/collectors/tick" ||
+    // Vercel cron endpoints (Prompt 196b, 2026-06-14). Both authorize via
+    // CRON_SECRET inside their handlers, so they must bypass the session
+    // redirect for Vercel Cron to reach them. Without this entry the middleware
+    // 307-redirected every cron invocation to /login: the BOS worker never
+    // drained bos_compute_queue (no Bio Optimization score ever recomputed) and
+    // the weekly body-goal recalibration never ran.
+    pathname === "/api/bos/worker" ||
+    pathname === "/api/body/goals/recalibrate-cron" ||
     // Marshall pre-check public JWKS (Prompt #121). Standard .well-known
     // discovery endpoint for third parties verifying clearance receipts.
     pathname === "/.well-known/marshall-clearance-jwks.json";
