@@ -161,7 +161,7 @@ function NutritionProgressTile({ gradientClass }: { gradientClass: string }) {
           Progress
         </h3>
         <p className="text-[12px] leading-relaxed text-white/[0.62] md:text-[13px]">
-          Track your nutrition trends over time.
+          Create and follow your wellness goals
         </p>
       </div>
 
