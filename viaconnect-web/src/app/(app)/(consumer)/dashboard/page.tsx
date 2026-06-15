@@ -278,6 +278,8 @@ export default function ConsumerDashboard() {
             <div className="flex min-w-0 flex-1 flex-col">
               <TodaysProtocol supplements={supplements} />
             </div>
+          </div>
+          <div className="flex h-full min-w-0 flex-col gap-5">
             <DashboardLinkCard
               eyebrow="Health Profile"
               eyebrowIcon={FileQuestion}
@@ -288,8 +290,6 @@ export default function ConsumerDashboard() {
               href="/onboarding/i-caq-intro"
               cta="Update Assessment"
             />
-          </div>
-          <div className="flex h-full min-w-0 flex-col gap-5">
             {/* Wellness Snapshot is desktop-only per spec */}
             <div className="hidden lg:block">
               <WellnessSnapshot autoFetch={assessmentCompleted} />
