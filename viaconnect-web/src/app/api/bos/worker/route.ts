@@ -36,6 +36,11 @@ import type { BOSTriggerEvent, QueuedEvent, WorkerUserResult } from '@/lib/scori
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
+// Prompt 196d (2026-06-15): this worker computes BOS serially per user, each
+// call invoking the Anthropic API (several seconds). The Vercel default
+// function duration (15s) is far too short to drain a multi-user batch, so a
+// run can be killed mid-compute and never persist a score. Give it room.
+export const maxDuration = 300;
 
 // Cap on rows claimed in one RPC call. Sized to cover the typical 5
 // events-per-user assumption across MAX_USERS_PER_DRAIN users with
@@ -141,7 +146,19 @@ export async function GET(request: Request): Promise<Response> {
       await markEventsProcessed(events.map((e) => e.id), supabase);
       results.push({ userId, status: 'computed', event_count: events.length });
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'unknown';
+      // Prompt 196d (2026-06-15): capture err.cause too. The Anthropic SDK
+      // throws APIConnectionError with the generic message "Connection error."
+      // and the actual reason (ENOTFOUND, ECONNREFUSED, a bad base URL,
+      // timeout) only on .cause; without it the stored processing_error is
+      // undiagnosable.
+      let message = err instanceof Error ? err.message : 'unknown';
+      const cause = (err as { cause?: unknown })?.cause;
+      if (cause) {
+        const code = (cause as { code?: string; message?: string })?.code
+          ?? (cause as { message?: string })?.message
+          ?? String(cause);
+        message = `${message} [cause: ${code}]`;
+      }
       // markEventsErrored releases processed_at = NULL and bumps
       // retry_count; the §8b RPC's retry_count < 5 ceiling prevents
       // infinite loops.

@@ -69,7 +69,9 @@ const COMPUTE_VERSION = '2.0.0';
 // 171b Phase 1: v2.0.1 -> v2.1.0 to reflect the caffeine_timing signal added
 // to the bundle + the Hannah system prompt extension.
 const PROMPT_VERSION = 'hannah.bos.v2.1.0';
-const DEFAULT_MODEL = 'claude-sonnet-4-5';
+// Prompt 196d (2026-06-15): bumped to the current Sonnet (4.6); 4.5 is the
+// prior generation. Overridable via HANNAH_MODEL.
+const DEFAULT_MODEL = 'claude-sonnet-4-6';
 const MAX_TOKENS = 1024;
 
 /**
@@ -368,7 +370,10 @@ function buildAnthropic(): { client: Anthropic; model: string } {
     throw new Error('ANTHROPIC_API_KEY required for compute module');
   }
   const model = process.env.HANNAH_MODEL ?? DEFAULT_MODEL;
-  return { client: new Anthropic({ apiKey }), model };
+  // Prompt 196d (2026-06-15): bound each call so one slow or hanging request
+  // cannot consume the whole worker budget (the SDK default timeout is 10
+  // minutes). Mirrors the arnold / nutrition-insights client hardening.
+  return { client: new Anthropic({ apiKey, timeout: 60_000, maxRetries: 2 }), model };
 }
 
 // ---------------------------------------------------------------------------
