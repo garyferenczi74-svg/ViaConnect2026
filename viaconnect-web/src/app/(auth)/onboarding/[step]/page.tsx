@@ -422,12 +422,11 @@ export default function OnboardingStepPage() {
 
   const [isLoading, setIsLoading] = useState(false);
   const [showProcessing, setShowProcessing] = useState(false);
-  // Prompt 177k (2026-06-07): generation-failure state. When the BOS
-  // polling exhausts attempts or any of the fired engines hard fail,
-  // we switch the interstitial into an error mode that surfaces a
-  // Retry action instead of spinning forever.
-  const [generationError, setGenerationError] = useState<string | null>(null);
-  const [generationAttempt, setGenerationAttempt] = useState(0);
+  // Prompt 196a (2026-06-14): manual escape control for the post-CAQ analysis
+  // screen. The bounded-race effect navigates automatically, but if the hard
+  // timeout elapses before navigation this flag reveals a Continue control so
+  // the user is never stranded on an infinite spinner.
+  const [showManualContinue, setShowManualContinue] = useState(false);
 
   // Prompt 173c 2.5: selected CAQ path. Loaded from caq_paths on mount,
   // with a localStorage mirror so unauthenticated mid-flow reloads keep
@@ -599,12 +598,33 @@ export default function OnboardingStepPage() {
   const [isRetake, setIsRetake] = useState(false);
   const [retakeLoaded, setRetakeLoaded] = useState(false);
 
+  // Prompt 196 (2026-06-14): whether the user already holds an active paid or
+  // gift membership. Read once at mount, alongside the retake signal. It is
+  // consulted only as the initial-side anomaly guard in postCaqDestination so a
+  // brand-new completer who somehow already owns a plan is not pushed through
+  // plan selection. Defaults false so a first-time free user still reaches the
+  // packages chain.
+  const [hasActivePackage, setHasActivePackage] = useState(false);
+
   // Load previous CAQ data for retake pre-population
   useEffect(() => {
     if (retakeLoaded) return;
     const supabase = createClient();
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) return;
+      // Prompt 196: read any active paid or gift membership for the post-CAQ
+      // routing guard. Best-effort; on any failure hasActivePackage stays false
+      // so a first-time user still reaches plan selection.
+      try {
+        const { data: activeMembership } = await supabase
+          .from("memberships")
+          .select("id")
+          .eq("user_id", user.id)
+          .in("status", ["active", "trialing", "gift_active"])
+          .limit(1)
+          .maybeSingle();
+        if (activeMembership) setHasActivePackage(true);
+      } catch { /* no readable membership: treat as no active package */ }
       // Load user name for Phase 1
       if (user.user_metadata?.full_name && !demographics.name) {
         setDemographics((prev) => ({ ...prev, name: user.user_metadata.full_name }));
@@ -949,11 +969,10 @@ export default function OnboardingStepPage() {
         case "4": {
           await savePhase("4", { ...medications, userSupplements });
 
-          // Show Ultrathink processing animation immediately. The
-          // animation now masks Hannah's compute window; the auto
-          // navigate useEffect below polls /api/bos/current and routes
-          // to the dashboard once the canonical score lands.
-          setGenerationError(null);
+          // Prompt 196a: show the analysis animation immediately. The
+          // bounded-race effect below navigates by mode (postCaqDestination)
+          // within a bounded window, independent of whether the AI pipeline
+          // or the canonical score has landed.
           setShowProcessing(true);
 
           // Path Z (Phase F): the API now returns 202 Accepted and
@@ -1048,77 +1067,116 @@ export default function OnboardingStepPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stepId, demographics, healthConcerns, familyHistory, symptomsPhysical, symptomsNeuro, symptomsEmotional, symptoms, lifestyle, medications, userSupplements, goals, currentIndex, router]);
 
+  // Prompt 196 (2026-06-14): post-CAQ destination by mode. A reassessment (the
+  // user finished the CAQ at least once before, captured at mount as isRetake
+  // BEFORE the completion pipeline rewrites caq_completed_at) bypasses the
+  // packages chain and the first-run welcome, landing straight on the dashboard.
+  // A first-time completer enters the packages chain (i-caq-complete then
+  // i-packages then Choose Your Plan then i-welcome) so they pick a plan, UNLESS
+  // they already hold an active paid or gift membership (anomaly guard: never
+  // force an existing member to re-select). Net effect: the packages chain shows
+  // only for a first-time completer without an active membership. Used by both
+  // the Bio Optimization poll redirect and the generation-timeout fallback so
+  // the two completion exits stay in lockstep.
+  const postCaqDestination = useCallback((): string => {
+    if (isRetake) return "/dashboard";
+    if (hasActivePackage) return "/dashboard";
+    return `/onboarding/${PHASES[getNextStepIdx(currentIndex, caqPath)].id}`;
+  }, [isRetake, hasActivePackage, currentIndex, caqPath]);
+
   // Check if current step is an interstitial
   const isInterstitial = stepId.startsWith("i-");
   const interstitialConfig = isInterstitial && phase && "caqIndex" in phase
     ? CAQ_INTERSTITIALS[phase.caqIndex as number]
     : null;
 
-  // Path Z polling: poll /api/bos/current every 5s until score is
-  // non null (worker has drained the queue and the canonical compute
-  // has landed in bio_optimization_history). Max 36 attempts (3 min);
-  // on timeout the generationError state flips so the interstitial
-  // shows a Retry action instead of routing forward silently.
+  // Prompt 196a (2026-06-14): navigation off the post-CAQ analysis screen is
+  // decoupled from the AI pipeline. The earlier design gated the redirect on
+  // /api/bos/current returning a numeric score, which never resolved on the
+  // reassessment path (a stale numeric score serializes from PostgREST as a
+  // string and failed the old typeof check, and a slow or backlogged compute
+  // never lands a fresh row), leaving the user on an infinite spinner.
   //
-  // Prompt 177k (2026-06-07): polling now races against a per-attempt
-  // 8s timeout via AbortController so a hung /api/bos/current call
-  // cannot block the loop. On total timeout the spinner is replaced
-  // with the failure card (Retry kicks generationAttempt which
-  // re-runs this effect).
+  // The new model: run a minimum display window so the four analysis lines are
+  // readable, poll the canonical score in parallel, and race that poll against
+  // a hard timeout. Navigate via postCaqDestination (which preserves the
+  // Prompt 196 mode branch: reassessment to the dashboard, first run into the
+  // packages chain) once the minimum window has elapsed AND the score has
+  // landed OR the hard timeout has fired. On timeout we navigate anyway and
+  // reveal a manual control as a belt-and-suspenders escape. Worst-case
+  // navigation is the hard timeout, well under the bounded target.
   //
-  // Sweep 2026-06-12: hoisted above the early returns below. This page
-  // component stays mounted while the [step] param changes, so a hook
-  // that renders on one step but not another (rules-of-hooks violation)
-  // could crash navigation into i-welcome. The effect self-guards on
-  // showProcessing, so running it on every step is behavior-identical.
+  // The effect is hoisted above the early returns below because the page
+  // component stays mounted while the [step] param changes; it self-guards on
+  // showProcessing so running it on every step is behavior-identical.
   useEffect(() => {
     if (!showProcessing) return;
-    if (generationError) return;
-    const MAX_ATTEMPTS = 36;
-    const INTERVAL_MS = 5000;
-    const PER_ATTEMPT_TIMEOUT_MS = 8000;
-    let attempts = 0;
+    const MIN_DISPLAY_MS = 3500;
+    const HARD_TIMEOUT_MS = 9000;
+    const POLL_INTERVAL_MS = 1200;
+    const PER_POLL_TIMEOUT_MS = 4000;
+    const startedAt = Date.now();
     let cancelled = false;
+    let navigated = false;
+    let minElapsed = false;
+    let scoreReady = false;
+
+    const navigateOnce = () => {
+      if (cancelled || navigated) return;
+      const timedOut = Date.now() - startedAt >= HARD_TIMEOUT_MS;
+      if (minElapsed && (scoreReady || timedOut)) {
+        navigated = true;
+        router.push(postCaqDestination());
+      }
+    };
+
+    const minTimer = setTimeout(() => {
+      minElapsed = true;
+      navigateOnce();
+    }, MIN_DISPLAY_MS);
+
+    const hardTimer = setTimeout(() => {
+      // Hard timeout: keep the destination reachable no matter what. Navigate
+      // anyway, and surface the manual control in case navigation is blocked.
+      navigateOnce();
+      if (!cancelled && !navigated) setShowManualContinue(true);
+    }, HARD_TIMEOUT_MS);
 
     async function pollOnce(): Promise<void> {
-      if (cancelled) return;
-      attempts += 1;
+      if (cancelled || navigated) return;
       const ctrl = new AbortController();
-      const tid = setTimeout(() => ctrl.abort(), PER_ATTEMPT_TIMEOUT_MS);
+      const tid = setTimeout(() => ctrl.abort(), PER_POLL_TIMEOUT_MS);
       try {
         const res = await fetch("/api/bos/current", { cache: "no-store", signal: ctrl.signal });
         if (res.ok) {
           const data = await res.json();
-          const score: number | null = data?.score ?? null;
-          if (typeof score === "number" && score > 0) {
-            if (!cancelled) router.push("/dashboard");
-            return;
+          // Defense in depth: the canonical score is a numeric column that
+          // PostgREST can serialize as a string. Coerce before the check so a
+          // valid score is never rejected (the route also coerces at source).
+          const raw = data?.score;
+          const score = typeof raw === "string" ? Number(raw) : raw;
+          if (typeof score === "number" && Number.isFinite(score) && score > 0) {
+            scoreReady = true;
+            navigateOnce();
           }
         }
       } catch {
-        // Single poll failure is tolerable; the loop will retry until
-        // MAX_ATTEMPTS or the score lands.
+        // A single poll failure is tolerable; the hard timeout still fires.
       } finally {
         clearTimeout(tid);
       }
-      if (attempts >= MAX_ATTEMPTS) {
-        if (!cancelled) {
-          // Prompt 177k (2026-06-07): surface a Retry instead of
-          // silently routing forward. The baseline protocol the user
-          // already has can stand in until the AI enrichment lands;
-          // routing forward without telling them masks the failure.
-          setGenerationError(
-            "Generating your blueprint is taking longer than expected. Please try again or continue with your baseline protocol.",
-          );
-        }
-        return;
+      if (!cancelled && !navigated && Date.now() - startedAt < HARD_TIMEOUT_MS) {
+        setTimeout(pollOnce, POLL_INTERVAL_MS);
       }
-      setTimeout(pollOnce, INTERVAL_MS);
     }
+    void pollOnce();
 
-    setTimeout(pollOnce, INTERVAL_MS);
-    return () => { cancelled = true; };
-  }, [showProcessing, generationError, generationAttempt, router]);
+    return () => {
+      cancelled = true;
+      clearTimeout(minTimer);
+      clearTimeout(hardTimer);
+    };
+  }, [showProcessing, router, postCaqDestination]);
 
   // Redirect if invalid step (after all hooks)
   if (!phase) {
@@ -1131,50 +1189,12 @@ export default function OnboardingStepPage() {
     return <WelcomeDashboardScreen />;
   }
 
-  // Render Ultrathink processing animation (after last CAQ phase).
-  // Prompt 177k (2026-06-07): when generationError is set the
-  // interstitial flips to a failure card with Retry and Continue
-  // actions instead of spinning indefinitely.
+  // Render the post-CAQ analysis animation (after the last CAQ phase).
+  // Prompt 196a (2026-06-14): navigation is owned by the bounded-race effect
+  // above and never depends on the AI pipeline finishing. The manual Continue
+  // control appears only if the hard timeout elapses before navigation, so the
+  // user is never stranded on an infinite spinner.
   if (showProcessing) {
-    if (generationError) {
-      const continueForward = () => {
-        router.push(`/onboarding/${PHASES[getNextStepIdx(currentIndex, caqPath)].id}`);
-      };
-      const retry = () => {
-        setGenerationError(null);
-        setGenerationAttempt((n) => n + 1);
-      };
-      return (
-        <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center">
-          <Info className="h-10 w-10 text-amber-300" strokeWidth={1.5} aria-hidden="true" />
-          <h2 className="mt-6 text-lg font-semibold text-white">Generation is taking longer than expected</h2>
-          <p className="mt-2 max-w-md text-sm leading-relaxed text-white/65">
-            {generationError}
-          </p>
-          <div className="mt-6 flex w-full max-w-xs flex-col gap-2">
-            <button
-              type="button"
-              onClick={retry}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-teal-400/50 bg-teal-400/10 px-4 py-2.5 text-sm font-medium text-teal-100 transition-colors hover:bg-teal-400/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400/40"
-            >
-              <RefreshCw className="h-4 w-4" strokeWidth={1.5} />
-              Retry
-            </button>
-            <button
-              type="button"
-              onClick={continueForward}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/[0.04] px-4 py-2.5 text-sm font-medium text-white/85 transition-colors hover:bg-white/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
-            >
-              Continue with baseline
-              <ArrowRight className="h-4 w-4" strokeWidth={1.5} />
-            </button>
-          </div>
-          <p className="mt-6 max-w-md text-[11px] leading-relaxed text-white/45">
-            Your CAQ answers are saved. The AI enrichment will backfill in the background; you can check your dashboard anytime.
-          </p>
-        </div>
-      );
-    }
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center">
         <div className="animate-spin" style={{ animationDuration: "8s" }}>
@@ -1195,6 +1215,21 @@ export default function OnboardingStepPage() {
             </div>
           ))}
         </div>
+        {showManualContinue && (
+          <div className="mt-10 w-full max-w-xs">
+            <button
+              type="button"
+              onClick={() => router.push(postCaqDestination())}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#2DA5A0] to-[#38BDB6] px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-teal-500/25 transition-all hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400/40"
+            >
+              Continue
+              <ArrowRight className="h-4 w-4" strokeWidth={1.5} />
+            </button>
+            <p className="mt-3 text-[11px] leading-relaxed text-white/45">
+              Your answers are saved. Your blueprint will finish updating in the background.
+            </p>
+          </div>
+        )}
       </div>
     );
   }

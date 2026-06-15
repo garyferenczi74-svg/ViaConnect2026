@@ -128,12 +128,25 @@ function buildPreComputeResponse(): BOSCurrentResponse {
 
 interface HistoryRowLike {
   id: string;
-  score: number | null;
+  // score and confidence are numeric columns; PostgREST serializes numeric as
+  // a string, so the runtime value can be a string even though the BOS
+  // response contract is number | null. toNum coerces below.
+  score: number | string | null;
   tier: number;
-  confidence: number;
+  confidence: number | string;
   compute_version: string | null;
   computed_at: string | null;
   breakdown: Record<string, unknown>;
+}
+
+// Coerce a PostgREST numeric (string at runtime) to a finite number, or null.
+// Prompt 196a (2026-06-14): without this, /api/bos/current returned score as
+// the string "60.00", and the onboarding poll's typeof === "number" gate never
+// passed, hanging the post-CAQ analysis screen on the reassessment path.
+function toNum(v: number | string | null | undefined): number | null {
+  if (v === null || v === undefined) return null;
+  const n = typeof v === 'string' ? Number(v) : v;
+  return Number.isFinite(n) ? n : null;
 }
 
 interface DiagnosticFoundationShape {
@@ -169,10 +182,10 @@ function buildCurrentResponse(row: HistoryRowLike): BOSCurrentResponse {
   const hannah = (breakdown.hannah_output ?? {}) as HannahOutputShape;
 
   const tier = normalizeTier(row.tier);
-  const confidence = row.confidence;
+  const confidence = toNum(row.confidence) ?? 0.720;
 
   return {
-    score: row.score,
+    score: toNum(row.score),
     baseline: diag.caq?.baseline_score ?? null,
     tier,
     confidence,

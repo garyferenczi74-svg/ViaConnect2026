@@ -258,6 +258,20 @@ describe('current full shape with valid history row', () => {
     expect(body.compute_version).toBe('2.0.0');
   });
 
+  it('coerces a PostgREST numeric string score and confidence to numbers (Prompt 196a)', async () => {
+    // numeric columns serialize from PostgREST as strings. The onboarding poll
+    // gates navigation on typeof score === "number", so an un-coerced string
+    // hung the post-CAQ analysis screen. The route must return a number.
+    installAuthedClient(makeHistoryRow({ score: '60.00', confidence: '0.860' }));
+    const res = await GET(new Request('https://example.com/api/bos/current'));
+    const body = await res.json();
+
+    expect(body.score).toBe(60);
+    expect(typeof body.score).toBe('number');
+    expect(body.confidence).toBe(0.86);
+    expect(body.confidence_display).toBe('86%');
+  });
+
   it('passes baseline through from breakdown.diagnostic_foundation.caq.baseline_score', async () => {
     installAuthedClient(makeHistoryRow({ breakdown: makeBreakdown({ caq_baseline: 65 }) }));
     const res = await GET(new Request('https://example.com/api/bos/current'));
