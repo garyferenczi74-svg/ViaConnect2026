@@ -7,9 +7,9 @@
 //
 // validateHannahOutput is the only sanctioned entry point. It enforces:
 //   - structural shape via HannahOutputZod
-//   - score >= baseline (floor)
+//   - score >= baseline_from_caq (floor)
 //   - score <= 100 (ceiling)
-//   - |score - (baseline + engagement_total)| <= 0.5 (arithmetic invariant)
+//   - |score - (baseline_from_caq + engagement_total)| <= 0.5 (arithmetic invariant)
 // On any failure it throws HannahOutputValidationError with a descriptive
 // reason field so the compute module can decide whether to retry.
 
@@ -168,7 +168,7 @@ export const HANNAH_TOOL_SCHEMA: Tool = {
  * ceiling / arithmetic invariants. Throws HannahOutputValidationError on
  * any deviation so the compute module can retry exactly once.
  */
-export function validateHannahOutput(raw: unknown, baseline: number): HannahOutput {
+export function validateHannahOutput(raw: unknown): HannahOutput {
   let parsed: HannahOutput;
   try {
     parsed = HannahOutputZod.parse(raw);
@@ -185,9 +185,15 @@ export function validateHannahOutput(raw: unknown, baseline: number): HannahOutp
   if (parsed.score > 100) {
     throw new HannahOutputValidationError(`score ${parsed.score} exceeds ceiling 100`);
   }
-  if (parsed.score < baseline) {
+  // Prompt 196e (2026-06-15): floor against the model's own reported
+  // baseline_from_caq, not an external hardcoded value. The CAQ-baseline
+  // derivation was never wired (caq.baseline_score is always null), so the old
+  // external floor was a constant 50 that wrongly rejected legitimate sub-50
+  // scores. Engagement is non-negative, so a well-formed output always
+  // satisfies this; it stays as a defensive guard against model misbehavior.
+  if (parsed.score < parsed.baseline_from_caq) {
     throw new HannahOutputValidationError(
-      `score ${parsed.score} below baseline floor ${baseline}`,
+      `score ${parsed.score} below baseline_from_caq floor ${parsed.baseline_from_caq}`,
     );
   }
 

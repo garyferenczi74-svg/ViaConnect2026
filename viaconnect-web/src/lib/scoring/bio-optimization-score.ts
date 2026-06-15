@@ -240,7 +240,6 @@ interface CallHannahArgs {
   anthropic: Anthropic;
   model: string;
   bundle: HannahInputBundle;
-  baseline: number;
   retryHint?: string;
 }
 
@@ -272,7 +271,7 @@ async function callHannahOnce(args: CallHannahArgs): Promise<CallHannahResult> {
   if (!toolBlock) {
     throw new HannahOutputValidationError('no tool_use block in response');
   }
-  const output = validateHannahOutput(toolBlock.input, args.baseline);
+  const output = validateHannahOutput(toolBlock.input);
 
   const usage = (response as { usage?: { input_tokens?: number; output_tokens?: number } }).usage;
   return {
@@ -438,13 +437,6 @@ export async function computeBOS(
   // 5. Resolve display name + assemble Hannah bundle.
   const display_name = await fetchDisplayName(supabase, userId);
 
-  // CAQ baseline: in Phase B the source returns null. Until Hannah's
-  // baseline derivation lands in a follow-on prompt, fall back to a
-  // conservative floor of 50 so validation has a real floor to test
-  // against. Hannah computes the true baseline_from_caq inside the tool
-  // call and reports it; the validator enforces score >= baseline.
-  const baselineFromCaq = typeof caq.baseline_score === 'number' ? caq.baseline_score : 50;
-
   const bundle: HannahInputBundle = {
     user_id: userId,
     display_name,
@@ -495,7 +487,6 @@ export async function computeBOS(
     anthropic,
     model,
     bundle,
-    baseline: baselineFromCaq,
   });
   const hannah = hannahResult.output;
 

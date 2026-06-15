@@ -83,7 +83,7 @@ describe('HANNAH_TOOL_NAME and HANNAH_TOOL_SCHEMA', () => {
 
 describe('validateHannahOutput accepts well-formed output', () => {
   it('returns the parsed object on the happy path', () => {
-    const result = validateHannahOutput(validOutput(), 68);
+    const result = validateHannahOutput(validOutput());
     expect(result.score).toBe(75);
     expect(result.baseline_from_caq).toBe(68);
     expect(result.engagement_total).toBe(7);
@@ -96,7 +96,7 @@ describe('validateHannahOutput accepts well-formed output', () => {
     o.decay_applied = [
       { lever: 'supplements', decay_factor: 0.5, reason: 'stale_engagement' },
     ] as never;
-    const result = validateHannahOutput(o, 68);
+    const result = validateHannahOutput(o);
     expect(result.decay_applied).toHaveLength(1);
   });
 });
@@ -105,19 +105,20 @@ describe('validateHannahOutput rejects malformed output', () => {
   it('throws HannahOutputValidationError when score is above 100', () => {
     const o = validOutput();
     o.score = 101;
-    expect(() => validateHannahOutput(o, 68)).toThrow(HannahOutputValidationError);
+    expect(() => validateHannahOutput(o)).toThrow(HannahOutputValidationError);
   });
 
-  it('throws when score is below the baseline floor', () => {
+  it('throws when score is below its own baseline_from_caq floor', () => {
     const o = validOutput();
-    o.score = 70;
-    expect(() => validateHannahOutput(o, 80)).toThrow(HannahOutputValidationError);
+    o.baseline_from_caq = 80;
+    o.score = 70; // 70 < baseline_from_caq 80; floor check fires before the arithmetic check
+    expect(() => validateHannahOutput(o)).toThrow(HannahOutputValidationError);
   });
 
   it('throws when an engagement lever is missing', () => {
     const o = validOutput() as Record<string, unknown>;
     delete (o.engagement as Record<string, unknown>).nutrition;
-    expect(() => validateHannahOutput(o, 68)).toThrow(HannahOutputValidationError);
+    expect(() => validateHannahOutput(o)).toThrow(HannahOutputValidationError);
   });
 
   it('throws when an unknown lever name is added', () => {
@@ -128,32 +129,32 @@ describe('validateHannahOutput rejects malformed output', () => {
       ceiling_pct: 5,
       state: 'in_use',
     };
-    expect(() => validateHannahOutput(o, 68)).toThrow(HannahOutputValidationError);
+    expect(() => validateHannahOutput(o)).toThrow(HannahOutputValidationError);
   });
 
   it('throws when explanation is under 20 characters', () => {
     const o = validOutput();
     o.explanation = 'too short';
-    expect(() => validateHannahOutput(o, 68)).toThrow(HannahOutputValidationError);
+    expect(() => validateHannahOutput(o)).toThrow(HannahOutputValidationError);
   });
 
   it('throws when explanation exceeds 600 characters', () => {
     const o = validOutput();
     o.explanation = 'a'.repeat(601);
-    expect(() => validateHannahOutput(o, 68)).toThrow(HannahOutputValidationError);
+    expect(() => validateHannahOutput(o)).toThrow(HannahOutputValidationError);
   });
 
   it('throws when engagement_total + baseline disagrees with score beyond 0.5 tolerance', () => {
     const o = validOutput();
     o.score = 90; // baseline 68 + engagement_total 7 = 75, score 90 is +15 outside tolerance
-    expect(() => validateHannahOutput(o, 68)).toThrow(HannahOutputValidationError);
+    expect(() => validateHannahOutput(o)).toThrow(HannahOutputValidationError);
   });
 
   it('accepts engagement_total within 0.5 tolerance', () => {
     const o = validOutput();
     // baseline 68 + engagement_total 7 = 75; score 75.4 is within tolerance
     o.score = 75.4;
-    const result = validateHannahOutput(o, 68);
+    const result = validateHannahOutput(o);
     expect(result.score).toBe(75.4);
   });
 
@@ -162,7 +163,7 @@ describe('validateHannahOutput rejects malformed output', () => {
     o.decay_applied = [
       { lever: 'supplements', decay_factor: 1.2, reason: 'stale_engagement' },
     ] as never;
-    expect(() => validateHannahOutput(o, 68)).toThrow(HannahOutputValidationError);
+    expect(() => validateHannahOutput(o)).toThrow(HannahOutputValidationError);
   });
 
   it('throws when decay_factor is < 0', () => {
@@ -170,26 +171,26 @@ describe('validateHannahOutput rejects malformed output', () => {
     o.decay_applied = [
       { lever: 'supplements', decay_factor: -0.1, reason: 'stale_engagement' },
     ] as never;
-    expect(() => validateHannahOutput(o, 68)).toThrow(HannahOutputValidationError);
+    expect(() => validateHannahOutput(o)).toThrow(HannahOutputValidationError);
   });
 
   it('throws when an unknown top-level property is added (additionalProperties: false)', () => {
     const o = validOutput() as Record<string, unknown>;
     o.random_field = 1;
-    expect(() => validateHannahOutput(o, 68)).toThrow(HannahOutputValidationError);
+    expect(() => validateHannahOutput(o)).toThrow(HannahOutputValidationError);
   });
 
   it('throws when a contribution sub-object has an unknown state enum value', () => {
     const o = validOutput();
     (o.engagement.nutrition as { state: string }).state = 'overdrive';
-    expect(() => validateHannahOutput(o, 68)).toThrow(HannahOutputValidationError);
+    expect(() => validateHannahOutput(o)).toThrow(HannahOutputValidationError);
   });
 
   it('attaches a descriptive reason on the error', () => {
     const o = validOutput();
     o.score = 200;
     try {
-      validateHannahOutput(o, 68);
+      validateHannahOutput(o);
       throw new Error('should have thrown');
     } catch (e) {
       expect(e).toBeInstanceOf(HannahOutputValidationError);
