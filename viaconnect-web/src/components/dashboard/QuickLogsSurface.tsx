@@ -112,6 +112,8 @@ export function QuickLogsSurface(props: QuickLogsSurfaceProps) {
       className="rounded-2xl border border-white/10 bg-[#1E3054]/35 backdrop-blur-md p-4 md:p-5"
     >
       <header className="mb-4 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+        {/* Cap the text block on desktop so the description does not crowd the
+            "Log a full meal" pill when they share the md row. */}
         <div className="min-w-0 md:max-w-[60%]">
           <h2
             id={`${idPrefix}-heading`}

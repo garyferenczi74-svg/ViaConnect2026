@@ -41,7 +41,7 @@ export function LogAFullMealButton({ disabled = false, onBeforeNavigate }: LogAF
   return (
     <div
       aria-disabled={disabled}
-      className={`group flex w-full min-h-[44px] items-center gap-1.5 rounded-lg border border-white/10 bg-gradient-to-br from-[#1A2744]/60 to-[#2DA5A0]/30 px-3 py-2 text-[14px] font-medium text-white backdrop-blur-md transition-all duration-200 ease-out md:inline-flex md:w-auto md:text-[16px] ${
+      className={`group flex w-full min-h-[44px] items-center gap-1.5 rounded-lg border border-white/10 bg-gradient-to-br from-[#1A2744]/60 to-[#2DA5A0]/30 px-3 py-2 text-[14px] font-medium text-white backdrop-blur-md transition-all duration-200 ease-out md:flex md:w-auto md:text-[16px] ${
         disabled
           ? 'cursor-not-allowed opacity-50'
           : 'hover:from-[#1A2744]/75 hover:to-[#2DA5A0]/45 hover:shadow-lg hover:shadow-black/10'
