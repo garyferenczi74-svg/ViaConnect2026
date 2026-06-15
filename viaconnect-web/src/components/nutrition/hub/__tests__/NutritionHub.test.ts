@@ -139,7 +139,7 @@ describe('NutritionHub source', () => {
   });
 
   it('183e + Gary: heading blocks sit on the card true vertical center, actions bottom anchored', () => {
-    // Three heading wrappers (Log Your Meal, Save My Meal, Genetics) are
+    // Four heading wrappers (Log Your Meal, Progress, Save My Meal, Genetics) are
     // absolutely centered text layers with pointer events passing through, so
     // the pills and Open controls beneath stay clickable. Prompt 192: the
     // Insights wrapper moved into NutritionInsightsTile.tsx with the tile.
@@ -147,7 +147,7 @@ describe('NutritionHub source', () => {
       source.match(
         /pointer-events-none absolute inset-0 flex flex-col items-center justify-center/g,
       ) ?? [];
-    expect(centered.length).toBe(3);
+    expect(centered.length).toBe(4);
     // The controls keep their bottom anchor + guaranteed gap.
     expect(source).toContain('mt-auto flex pt-4');
     expect(source).toContain('mt-auto flex w-full flex-col items-center gap-3 pt-4');
@@ -260,6 +260,18 @@ describe('NutritionHub source', () => {
     expect(source).toContain('Your saved meal library, ready to log in a tap');
     // No saved expand panel remains anywhere.
     expect(source).not.toContain('nutrition-hub-panel-saved');
+  });
+
+  it('Prompt 200: the Progress tile is a navigation Link inserted before Save My Meal', () => {
+    expect(source).toContain('<NutritionProgressTile');
+    expect(source).toContain('href="/nutrition/progress"');
+    expect(source).toContain('data-analytics-event="nutrition_progress_open"');
+    const iProgress = source.indexOf('<NutritionProgressTile');
+    const iSaved = source.indexOf('<SaveMyMealTile');
+    expect(iProgress).toBeGreaterThan(-1);
+    expect(iProgress).toBeLessThan(iSaved);
+    // Row 3 grid widened to four columns to fit the new tile on one line.
+    expect(source).toContain('md:grid-cols-4');
   });
 
   it('uses no middot separators anywhere', () => {
@@ -395,11 +407,12 @@ describe('NutritionHub source', () => {
 
   it('puts an Open control only on the Row 3 tiles, never on the gauges or full width tiles', () => {
     // Prompt 192: Save My Meal and Nutrition by Genetics render their Open
-    // Links here; the Nutrition Insights tile renders its own Open Link in
-    // its own file (NutritionInsightsTile.tsx), so the hub source carries
-    // exactly two. The inline gauges and the full width tiles render none.
+    // Links here; Prompt 200 adds the Progress tile's Open Link; the Nutrition
+    // Insights tile renders its own Open Link in its own file
+    // (NutritionInsightsTile.tsx), so the hub source carries exactly three. The
+    // inline gauges and the full width tiles render none.
     const opens = source.match(/<span>Open<\/span>/g) ?? [];
-    expect(opens.length).toBe(2);
+    expect(opens.length).toBe(3);
     const savedTiles = source.match(/<SaveMyMealTile/g) ?? [];
     expect(savedTiles.length).toBe(1);
     const geneticsTiles = source.match(/<NutritionGeneticsTile/g) ?? [];

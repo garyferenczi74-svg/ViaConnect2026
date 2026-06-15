@@ -149,6 +149,36 @@ function GlassPill({ href, icon: Icon, label }: { href: string; icon: typeof Pen
   );
 }
 
+// Prompt 200 (2026-06-15): the Progress Row 3 tile is a navigation card
+// mirroring SaveMyMealTile. Its Open is a Next.js Link to the standalone
+// /nutrition/progress page (a static stub for now; a future prompt builds the
+// view). Inserted before Save My Meal so the triad becomes a four tile row.
+function NutritionProgressTile({ gradientClass }: { gradientClass: string }) {
+  return (
+    <HubTile gradientClass={gradientClass} contentClassName="items-center text-center">
+      <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-1">
+        <h3 className="text-[15px] font-semibold leading-tight text-white md:text-base">
+          Progress
+        </h3>
+        <p className="text-[12px] leading-relaxed text-white/[0.62] md:text-[13px]">
+          Track your nutrition trends over time.
+        </p>
+      </div>
+
+      <div className="mt-auto flex pt-4">
+        <Link
+          href="/nutrition/progress"
+          data-analytics-event="nutrition_progress_open"
+          className="inline-flex items-center gap-1 rounded-full border border-[#5B8DEF]/30 bg-[#2A4C9E]/[0.12] px-3 py-1.5 text-[12px] font-medium text-white no-underline backdrop-blur-md transition-all duration-200 hover:border-[#5B8DEF]/55 hover:bg-[#2A4C9E]/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744] motion-reduce:transition-none"
+        >
+          <span>Open</span>
+          <ChevronRight className="h-3.5 w-3.5" strokeWidth={1.5} />
+        </Link>
+      </div>
+    </HubTile>
+  );
+}
+
 // Prompt 183c (2026-06-11): the Save My Meal Row 3 tile is a navigation card,
 // not an expander. It keeps the same HubTile chrome as its two siblings so the
 // triad stays visually consistent, centers its content like the Row 1 cards,
@@ -481,7 +511,8 @@ export function NutritionHub() {
           tap-through tile that previews the top insight and opens
           /nutrition/insights. The cold start gate fails toward Getting
           Started while the hub metrics load. */}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+        <NutritionProgressTile gradientClass={MEDIA_TEAL_TL} />
         <SaveMyMealTile
           gradientClass={MEDIA_TEAL_BL}
           media={NUTRITION_CARD_MEDIA.saveMyMeal}
