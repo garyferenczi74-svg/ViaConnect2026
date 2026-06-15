@@ -153,9 +153,23 @@ function GlassPill({ href, icon: Icon, label }: { href: string; icon: typeof Pen
 // mirroring SaveMyMealTile. Its Open is a Next.js Link to the standalone
 // /nutrition/progress page (a static stub for now; a future prompt builds the
 // view). Inserted before Save My Meal so the triad becomes a four tile row.
-function NutritionProgressTile({ gradientClass }: { gradientClass: string }) {
+function NutritionProgressTile({
+  gradientClass,
+  media,
+  mediaLogKey,
+}: {
+  gradientClass: string;
+  // Prompt 200: optional pass-throughs to the inner HubTile media seam.
+  media?: SurfaceMedia;
+  mediaLogKey?: string;
+}) {
   return (
-    <HubTile gradientClass={gradientClass} contentClassName="items-center text-center">
+    <HubTile
+      gradientClass={gradientClass}
+      media={media}
+      mediaLogKey={mediaLogKey}
+      contentClassName="items-center text-center"
+    >
       <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-1">
         <h3 className="text-[15px] font-semibold leading-tight text-white md:text-base">
           Progress
@@ -512,7 +526,11 @@ export function NutritionHub() {
           /nutrition/insights. The cold start gate fails toward Getting
           Started while the hub metrics load. */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-        <NutritionProgressTile gradientClass={MEDIA_TEAL_TL} />
+        <NutritionProgressTile
+          gradientClass={MEDIA_TEAL_TL}
+          media={NUTRITION_CARD_MEDIA.progress}
+          mediaLogKey="progress"
+        />
         <SaveMyMealTile
           gradientClass={MEDIA_TEAL_BL}
           media={NUTRITION_CARD_MEDIA.saveMyMeal}

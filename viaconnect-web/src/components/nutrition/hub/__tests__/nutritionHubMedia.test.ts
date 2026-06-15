@@ -20,7 +20,7 @@ import {
 const SOURCE = path.resolve(__dirname, '..', 'nutritionHubMedia.ts');
 
 describe('NUTRITION_CARD_MEDIA config', () => {
-  it('has exactly the eight card keys', () => {
+  it('has exactly the nine card keys', () => {
     expect(Object.keys(NUTRITION_CARD_MEDIA).sort()).toEqual([
       'dailyMacros',
       'logYourMeal',
@@ -28,6 +28,7 @@ describe('NUTRITION_CARD_MEDIA config', () => {
       'nutritionByGenetics',
       'nutritionInsights',
       'nutritionScore',
+      'progress',
       'saveMyMeal',
       'todaysMeals',
     ]);

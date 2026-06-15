@@ -364,10 +364,13 @@ describe('NutritionHub source', () => {
     expect(source).toContain('mediaLogKey="dailyMacros"');
     expect(source).toContain('media={NUTRITION_CARD_MEDIA.nutritionScore}');
     expect(source).toContain('mediaLogKey="nutritionScore"');
-    // Exactly the six wired call sites; nothing else on the hub reads the
+    // Prompt 200: the Progress tile gains the attractive-fit-woman background video.
+    expect(source).toContain('media={NUTRITION_CARD_MEDIA.progress}');
+    expect(source).toContain('mediaLogKey="progress"');
+    // Exactly the seven wired call sites; nothing else on the hub reads the
     // config (Today's Meals no longer renders media at all).
     const reads = source.match(/NUTRITION_CARD_MEDIA\./g) ?? [];
-    expect(reads.length).toBe(6);
+    expect(reads.length).toBe(7);
     expect(source).not.toContain('NUTRITION_CARD_MEDIA.todaysMeals');
   });
 

@@ -44,6 +44,7 @@ export type NutritionMediaCardKey =
   | 'saveMyMeal'
   | 'nutritionByGenetics'
   | 'nutritionInsights'
+  | 'progress'
   | 'mealHistory';
 
 export const NUTRITION_CARD_MEDIA: Record<NutritionMediaCardKey, SurfaceMedia> = {
@@ -99,6 +100,14 @@ export const NUTRITION_CARD_MEDIA: Record<NutritionMediaCardKey, SurfaceMedia> =
     poster: '',
     objectPosition: 'center',
     gradientClass: MEDIA_TEAL_BR,
+  },
+  // Prompt 200 (2026-06-15): the Progress Row 3 tile gains a background video.
+  progress: {
+    kind: 'video',
+    src: 'https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Videos/an_atractive_fit_woman_in_the.mp4',
+    poster: '',
+    objectPosition: 'center',
+    gradientClass: MEDIA_TEAL_TL,
   },
   // Gary (2026-06-11): 7 Day Meal History gains the Woman on beach video.
   mealHistory: {
