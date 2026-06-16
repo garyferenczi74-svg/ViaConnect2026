@@ -98,7 +98,17 @@ export function TrajectoryChart({
   const empty = actual.length === 0 && !projectedDate;
 
   const model = useMemo(() => {
-    const rows = downsampleByDays(actual, grain === 'weekly' ? 7 : 30);
+    // Weekly zooms into the recent 12 weeks at weekly granularity; Monthly shows
+    // the full history at monthly granularity, so the toggle visibly switches the
+    // chart (window + density), not just marker count.
+    const isWeekly = grain === 'weekly';
+    let src = actual;
+    if (isWeekly && actual.length > 0) {
+      const cutoff = Date.now() - 84 * 86_400_000;
+      const recent = actual.filter((a) => toMs(a.date) >= cutoff);
+      if (recent.length >= 2) src = recent;
+    }
+    const rows = downsampleByDays(src, isWeekly ? 7 : 30);
     const actualPts: Pt[] = rows.map((a) => ({ ms: toMs(a.date), lb: a.smoothedLb }));
     const lastActual = actualPts[actualPts.length - 1] ?? null;
     const todayMs = lastActual?.ms ?? toMs(startDate);
