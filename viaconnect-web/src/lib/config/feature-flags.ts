@@ -40,6 +40,13 @@ export const FLAG_REGISTRY: Record<string, FlagDef> = {
     default: false,
     description: 'Award Helix points for the first weekly insights digest review each ISO week.',
   },
+
+  // ── Connected Sources / Hume Body Pod (Prompt #201) ──
+  native_health_bridge: {
+    default: false,
+    description:
+      'Native HealthKit / Health Connect connect controls in the Capacitor shell. Off until the native plugin ships.',
+  },
 } as const;
 
 /**
