@@ -41,11 +41,11 @@ export default function ProgressPage() {
   }, []);
 
   return (
-    <div aria-label="Progress">
+    <div aria-label="Goals and Progress">
       <BackToHubLink />
       <header className="mb-6">
         <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#2DA5A0]">My Biology</p>
-        <h1 className="mt-1 text-lg font-semibold text-white md:text-2xl">Progress</h1>
+        <h1 className="mt-1 text-lg font-semibold text-white md:text-2xl">Goals and Progress</h1>
         <p className="mt-1 text-xs text-white/55 md:text-sm">
           Your weight trajectory and the daily targets Gordon sets to keep it on pace.
         </p>
