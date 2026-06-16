@@ -1,19 +1,20 @@
 'use client';
 
-// Prompt 179 Section 7.6 Safety and Disclaimer. Floor + rate-cap explanation,
-// medical disclaimer, clinician/dietitian note including GLP-1 and other
-// weight-affecting medications, peptides educational only.
+// Prompt 179 Section 7.6 Safety and Disclaimer. Prompt 201 (2026-06-15): moved
+// into a muted ProgressCard (no luminous edge, low emphasis) so it reads as a
+// footnote rather than an instrument. The disclaimer copy is preserved verbatim.
 
 import { ShieldAlert } from 'lucide-react';
+import { ProgressCard } from './ProgressCard';
 
 export function SafetyDisclaimer() {
   return (
-    <section className="rounded-2xl border border-[#B75E18]/30 bg-[#B75E18]/[0.06] p-5">
+    <ProgressCard muted>
       <div className="mb-2 flex items-center gap-2">
-        <ShieldAlert className="h-4 w-4 text-[#B75E18]" strokeWidth={1.5} />
-        <h2 className="text-sm font-semibold text-white">Safety and Disclaimer</h2>
+        <ShieldAlert className="h-4 w-4 text-white/40" strokeWidth={1.5} />
+        <h2 className="text-sm font-semibold text-white/80">Safety and Disclaimer</h2>
       </div>
-      <div className="space-y-2 text-xs leading-relaxed text-white/65">
+      <div className="space-y-2 text-xs leading-relaxed text-white/55">
         <p>
           Your daily calorie target never drops below a conventional floor of 1,500 kcal for men and
           1,200 kcal for women, and your rate of change is capped at the lesser of 2 lb per week or 1
@@ -28,6 +29,6 @@ export function SafetyDisclaimer() {
           are never surfaced as commercial goal inputs.
         </p>
       </div>
-    </section>
+    </ProgressCard>
   );
 }
