@@ -81,7 +81,10 @@ export async function POST(request: Request) {
         // and the Goal body fat percent feeds the lean-mass basis (falling back to
         // a measured value).
         latestWeightLb: startWeightLb,
-        currentBodyFatPct: body.goalBodyfatPct ?? latest?.bodyFatPct ?? null,
+        // Measured current body fat wins; the planner Goal body fat only fills the
+        // gap when no measured value exists (Gordon: goal body fat must never
+        // inflate present-state BMR).
+        currentBodyFatPct: latest?.bodyFatPct ?? body.goalBodyfatPct ?? null,
         dietaryChoice: null,
         origin,
         targetPacePreset: body.targetPacePreset ?? null,

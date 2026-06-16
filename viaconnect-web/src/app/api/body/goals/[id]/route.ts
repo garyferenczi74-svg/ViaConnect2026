@@ -67,7 +67,10 @@ export async function PATCH(request: Request, { params }: { params: { id: string
       goalWeightLb,
       startDate: goal.start_date,
       latestWeightLb: currentWeightLb,
-      bodyFatPct: goalBodyfat ?? latest?.bodyFatPct ?? null,
+      // Measured current body fat wins for the present-state lean-mass basis; the
+      // planner Goal body fat only fills the gap when no measured value exists
+      // (Gordon: goal body fat must never inflate present-state BMR).
+      bodyFatPct: latest?.bodyFatPct ?? goalBodyfat ?? null,
       heightIn: goal.height_in,
       age: goal.age_years,
       sex: goal.sex,
