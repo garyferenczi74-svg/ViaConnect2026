@@ -174,7 +174,7 @@ function NutritionProgressTile({
     >
       <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-1">
         <h3 className="text-[15px] font-semibold leading-tight text-white md:text-base">
-          Progress
+          Goals and Progress
         </h3>
         <p className="text-[12px] leading-relaxed text-white/[0.62] md:text-[13px]">
           Create and follow your wellness goals

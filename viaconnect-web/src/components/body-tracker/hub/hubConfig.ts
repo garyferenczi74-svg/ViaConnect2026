@@ -119,7 +119,7 @@ export const SURFACES: SurfaceCard[] = [
   },
   {
     id: "progress",
-    title: "Progress",
+    title: "Goals and Progress",
     description: "Your whole journey: CAQ targets, nutrition, supplements, training, AI body composition.",
     href: "/body-tracker/progress",
     icon: TrendingUp,
