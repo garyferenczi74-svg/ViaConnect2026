@@ -36,22 +36,21 @@ export function ProgressToGoalCard({ startLb, currentLb, goalLb }: ProgressToGoa
       icon={Target}
       accent="teal"
       attributionSlug="arnold"
+      className="h-full"
       contentClassName="items-center text-center"
     >
       <h2 className="text-sm font-semibold text-white">Progress to Goal</h2>
 
       {result ? (
-        <>
-          <div className="mt-2">
-            <PlasmaGauge
-              value={result.pct}
-              metric="plasmateal"
-              size={176}
-              valueSuffix="%"
-              caption="COMPLETE"
-              ariaLabel={`${result.pct} percent of the way to your goal weight`}
-            />
-          </div>
+        <div className="flex flex-1 flex-col items-center justify-center">
+          <PlasmaGauge
+            value={result.pct}
+            metric="plasmateal"
+            size={176}
+            valueSuffix="%"
+            caption="COMPLETE"
+            ariaLabel={`${result.pct} percent of the way to your goal weight`}
+          />
           <div className="mt-3 grid w-full grid-cols-3 gap-2">
             <Readout label="Start" value={`${Math.round(startLb as number)} lb`} />
             <Readout label="Current" value={`${Math.round(currentLb as number)} lb`} />
@@ -60,7 +59,7 @@ export function ProgressToGoalCard({ startLb, currentLb, goalLb }: ProgressToGoa
           <p className="mt-2 text-xs text-white/55">
             {result.lbsToGo} lb to {result.direction === 'loss' ? 'lose' : 'gain'}
           </p>
-        </>
+        </div>
       ) : (
         <div className="mt-2 flex flex-1 flex-col items-center justify-center">
           <PlasmaGauge
