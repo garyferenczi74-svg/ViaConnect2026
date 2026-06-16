@@ -119,7 +119,10 @@ export function DailyTargetsPanel({
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
         {tiles.map((t) => {
-          const showRing = t.ring === true && t.consumed != null && t.targetValue != null && t.targetValue > 0;
+          // Always-on: a missing consumed value renders a 0 percent ring instead
+          // of disappearing, so every targeted tile keeps its plasma gauge.
+          const consumed = t.consumed ?? 0;
+          const showRing = t.ring === true && t.targetValue != null && t.targetValue > 0;
           return (
             <div key={t.label} className="flex flex-col rounded-xl border border-white/[0.06] bg-white/[0.03] p-3">
               <div className="mb-1 flex items-center gap-1.5">
@@ -129,13 +132,13 @@ export function DailyTargetsPanel({
               {showRing ? (
                 <div className="flex flex-col items-center">
                   <PlasmaGauge
-                    value={Math.max(0, Math.min(100, Math.round((t.consumed! / t.targetValue!) * 100)))}
-                    displayValue={t.consumed!}
+                    value={Math.max(0, Math.min(100, Math.round((consumed / t.targetValue!) * 100)))}
+                    displayValue={consumed}
                     metric="plasmateal"
                     size={84}
                     variant="compact"
                     caption={`OF ${t.targetValue}`}
-                    ariaLabel={`${t.label}: ${t.consumed} of ${t.targetValue} ${t.unit} today`}
+                    ariaLabel={`${t.label}: ${consumed} of ${t.targetValue} ${t.unit} today`}
                   />
                   <span className="mt-1 text-[10px] text-white/35">{t.unit}</span>
                   {t.note ? <span className="text-[10px] text-white/35">{t.note}</span> : null}
