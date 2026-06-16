@@ -1,10 +1,16 @@
 'use client';
 
-// Prompt 179 Section 7.5, renamed to "Adherence" per Prompt 179b (the tab is
-// now Progress, so the "and Progress" echo is dropped). Content unchanged.
+// Prompt 179 Section 7.5, renamed to "Adherence" per Prompt 179b. Prompt 201
+// (2026-06-15) DD-5: restyled into an Arnold-attributed ProgressCard with a
+// 14-day logging streak row. The payload carries the logged COUNT over the
+// window, not a per-day pattern, so the first `filled` dots fill and the label
+// states the count (fail-open). The weight-vs-projected delta chip is omitted
+// because the adherence payload carries no projected-vs-actual delta field; that
+// is flagged for a later selector change, not faked here.
 
 import { CalendarCheck, Utensils, Scale, CalendarClock } from 'lucide-react';
 import type { AdherenceView, TargetView } from './useActiveGoal';
+import { ProgressCard } from './ProgressCard';
 
 function formatDate(d: string | null): string {
   if (!d) return 'Pending more data';
@@ -22,6 +28,9 @@ export function Adherence({
 }) {
   if (!adherence) return null;
 
+  const filled = Math.max(0, Math.min(adherence.windowDays, adherence.daysLogged));
+  const dots = Array.from({ length: adherence.windowDays }, (_, i) => i < filled);
+
   const stats: Array<{ label: string; value: string; Icon: typeof Scale }> = [
     { label: `Days logged (last ${adherence.windowDays})`, value: `${adherence.daysLogged}`, Icon: CalendarCheck },
     {
@@ -34,11 +43,25 @@ export function Adherence({
   ];
 
   return (
-    <section className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/60 p-5 backdrop-blur-sm">
-      <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-white">Adherence</h2>
-        <span className="text-xs text-white/50">Arnold</span>
+    <ProgressCard icon={CalendarCheck} accent="teal" attributionSlug="arnold">
+      <h2 className="text-sm font-semibold text-white">Adherence</h2>
+
+      {/* DD-5: 14-day logging streak row. */}
+      <div className="mb-4 mt-3">
+        <p className="mb-1.5 text-[11px] text-white/55">
+          Logged {filled} of the last {adherence.windowDays} days
+        </p>
+        <div className="flex flex-wrap gap-1">
+          {dots.map((on, i) => (
+            <span
+              key={i}
+              aria-hidden="true"
+              className={`h-2.5 w-2.5 rounded-full ${on ? 'bg-[#2DA5A0]' : 'border border-white/20'}`}
+            />
+          ))}
+        </div>
       </div>
+
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {stats.map((s) => (
           <div key={s.label} className="flex items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.03] p-3">
@@ -50,6 +73,6 @@ export function Adherence({
           </div>
         ))}
       </div>
-    </section>
+    </ProgressCard>
   );
 }

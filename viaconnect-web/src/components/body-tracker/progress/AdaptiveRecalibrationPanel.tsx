@@ -1,12 +1,17 @@
 'use client';
 
-// Prompt 179 Section 7.4 Adaptive Recalibration (Gordon). Shows estimated
-// maintenance, the last adjustment (expected vs actual), a compact history, and
-// the Revert + Switch to manual controls (DD-2).
+// Prompt 179 Section 7.4 Adaptive Recalibration (Gordon). Prompt 201 (2026-06-15):
+// restyled into a Gordon-attributed ProgressCard. Every control and route is
+// unchanged: Revert -> POST /revert, Switch to manual + Pin -> POST /override.
+// The estimated-maintenance learning copy is rendered as-is (the payload carries
+// estimated_tdee_kcal, not a learning string); the optional maintenance sparkline
+// is deferred. The calibration "log N days" wording is the Section 8 flagged item
+// and is left verbatim, not silently changed.
 
 import { useState } from 'react';
 import { Activity, RotateCcw, SlidersHorizontal } from 'lucide-react';
 import type { RecalView, TargetView } from './useActiveGoal';
+import { ProgressCard } from './ProgressCard';
 
 export function AdaptiveRecalibrationPanel({
   goalId,
@@ -41,13 +46,10 @@ export function AdaptiveRecalibrationPanel({
   const newest = recalibrations[0];
 
   return (
-    <section className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/60 p-5 backdrop-blur-sm">
-      <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-white">Adaptive Recalibration</h2>
-        <span className="text-xs text-white/50">Set by Gordon</span>
-      </div>
+    <ProgressCard icon={Activity} accent="teal" attributionSlug="gordon">
+      <h2 className="text-sm font-semibold text-white">Adaptive Recalibration</h2>
 
-      <div className="mb-4 rounded-xl border border-white/[0.06] bg-white/[0.03] p-3">
+      <div className="mb-4 mt-3 rounded-xl border border-white/[0.06] bg-white/[0.03] p-3">
         <div className="flex items-center gap-1.5">
           <Activity className="h-3.5 w-3.5 text-[#2DA5A0]" strokeWidth={1.5} />
           <span className="text-[11px] text-white/60">Estimated maintenance</span>
@@ -86,7 +88,7 @@ export function AdaptiveRecalibrationPanel({
           type="button"
           onClick={() => post(`/api/body/goals/${goalId}/revert`)}
           disabled={busy}
-          className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/[0.06] px-3.5 py-2 text-xs font-medium text-white transition hover:bg-white/15 disabled:opacity-50"
+          className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/[0.06] px-3.5 py-2 text-xs font-medium text-white backdrop-blur-md transition hover:bg-white/15 disabled:opacity-50"
         >
           <RotateCcw className="h-3.5 w-3.5" strokeWidth={1.5} /> Revert
         </button>
@@ -94,7 +96,7 @@ export function AdaptiveRecalibrationPanel({
           type="button"
           onClick={() => setShowManual((v) => !v)}
           disabled={busy}
-          className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/[0.06] px-3.5 py-2 text-xs font-medium text-white transition hover:bg-white/15 disabled:opacity-50"
+          className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/[0.06] px-3.5 py-2 text-xs font-medium text-white backdrop-blur-md transition hover:bg-white/15 disabled:opacity-50"
         >
           <SlidersHorizontal className="h-3.5 w-3.5" strokeWidth={1.5} /> Switch to manual
         </button>
@@ -117,12 +119,12 @@ export function AdaptiveRecalibrationPanel({
               if (k > 0) void post(`/api/body/goals/${goalId}/override`, { calorieTargetKcal: k });
             }}
             disabled={busy || !(Number(overrideKcal) > 0)}
-            className="rounded-full border border-[#2DA5A0]/50 bg-[#2DA5A0]/15 px-3.5 py-2 text-xs font-medium text-white transition hover:bg-[#2DA5A0]/25 disabled:opacity-50"
+            className="rounded-full border border-[#2DA5A0]/50 bg-[#2DA5A0]/15 px-3.5 py-2 text-xs font-medium text-white backdrop-blur-md transition hover:bg-[#2DA5A0]/25 disabled:opacity-50"
           >
             Pin today&apos;s macros
           </button>
         </div>
       ) : null}
-    </section>
+    </ProgressCard>
   );
 }
