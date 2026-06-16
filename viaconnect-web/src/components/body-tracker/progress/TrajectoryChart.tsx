@@ -199,7 +199,6 @@ export function TrajectoryChart({
   }
 
   const goalY = scale.yForLb(goalWeightLb);
-  const drawTransition = reduce ? { duration: 0 } : undefined;
 
   return (
     <ProgressCard icon={TrendingUp} accent="teal" attributionSlug="arnold">
