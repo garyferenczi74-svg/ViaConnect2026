@@ -3,9 +3,13 @@
 // Prompt 179 Section 7.3 Daily Targets (Gordon). Prompt 201 (2026-06-15): the
 // targets render as a Gordon-attributed instrument grid inside a ProgressCard.
 // DD-3: the Calories and macro tiles carry a thin Plasma Core ring of today's
-// logged intake vs the target, read through the existing meals and hub-metrics
-// selectors (never a new query) and failing open to a target-only readout. The
-// numbers come from the engine-resolved target; nothing is recomputed here.
+// logged intake vs the target. Prompt 201a (2026-06-15): the Added sugar ceiling
+// and Hydration tiles gain the same plasma ring. Hydration reads today's ml from
+// useHydrationToday; added sugar uses today's TOTAL sugar (the meals read carries
+// sugarG, not an added-sugar-only field) as the closest available signal against
+// the ceiling. All reads go through existing selectors, never a new query, and
+// fail open to a target-only readout. The targets are engine-resolved, not
+// recomputed here.
 
 import { useMemo } from 'react';
 import { Gauge, Flame, Beef, Droplet, Wheat, Leaf, CandyOff, GlassWater } from 'lucide-react';
@@ -15,6 +19,7 @@ import { PlasmaGauge } from '@/components/gauges/PlasmaGauge';
 import { getDisplayName } from '@/lib/getDisplayName';
 import { useUserMeals } from '@/hooks/useUserMeals';
 import { useNutritionHubMetrics } from '@/components/nutrition/hub/useNutritionHubMetrics';
+import { useHydrationToday } from '@/components/hydration/useHydrationToday';
 
 function localDayKey(d: Date): string {
   const off = d.getTimezoneOffset();
@@ -40,22 +45,30 @@ export function DailyTargetsPanel({
   target: TargetView | null;
   userId?: string | null;
 }) {
-  // DD-3 today-vs-target. Both reads fail open: macros come from the same hub
-  // metrics selector My Nutrition uses; today's calories are summed from the
-  // existing user-meals read. Hooks run before the early return per hook rules.
+  // DD-3 today-vs-target. All reads fail open: macros from the hub metrics
+  // selector My Nutrition uses, today's calories and sugar summed from the
+  // existing user-meals read, hydration from the existing hydration-today read.
+  // Hooks run before the early return per hook rules.
   const { metrics } = useNutritionHubMetrics();
   const { meals } = useUserMeals(userId ?? null, { days: 1, includeLegacy: true });
-  const todayKcal = useMemo(() => {
-    const today = localDayKey(new Date());
-    let sum = 0;
-    let any = false;
+  const { data: hydrationToday } = useHydrationToday();
+  const today = useMemo(() => {
+    const key = localDayKey(new Date());
+    let kcal = 0;
+    let sugar = 0;
+    let anyKcal = false;
+    let anySugar = false;
     for (const m of meals) {
-      if (m.loggedAt && localDayKey(new Date(m.loggedAt)) === today) {
-        sum += m.caloriesKcal ?? 0;
-        any = true;
+      if (m.loggedAt && localDayKey(new Date(m.loggedAt)) === key) {
+        kcal += m.caloriesKcal ?? 0;
+        anyKcal = true;
+        if (m.sugarG != null) {
+          sugar += m.sugarG;
+          anySugar = true;
+        }
       }
     }
-    return any ? Math.round(sum) : null;
+    return { kcal: anyKcal ? Math.round(kcal) : null, sugar: anySugar ? Math.round(sugar) : null };
   }, [meals]);
 
   if (!target) return null;
@@ -66,7 +79,7 @@ export function DailyTargetsPanel({
     target.added_sugar_limit_g != null ? Math.round(target.added_sugar_limit_g / 2) : null;
 
   const tiles: Tile[] = [
-    { label: 'Calories', targetValue: target.calorie_target_kcal, unit: 'kcal', Icon: Flame, color: orange, consumed: todayKcal, ring: true },
+    { label: 'Calories', targetValue: target.calorie_target_kcal, unit: 'kcal', Icon: Flame, color: orange, consumed: today.kcal, ring: true },
     { label: 'Protein', targetValue: target.protein_g, unit: 'g', Icon: Beef, color: teal, consumed: metrics.proteinG ?? null, ring: true },
     { label: 'Fat', targetValue: target.fat_g, unit: 'g', Icon: Droplet, color: teal, consumed: metrics.fatG ?? null, ring: true },
     { label: 'Carbs', targetValue: target.carb_g, unit: 'g', Icon: Wheat, color: teal, consumed: metrics.carbsG ?? null, ring: true },
@@ -77,6 +90,8 @@ export function DailyTargetsPanel({
       unit: 'g',
       Icon: CandyOff,
       color: orange,
+      consumed: today.sugar,
+      ring: true,
       note: sugarStretch != null ? `stretch ${sugarStretch} g` : undefined,
       display: target.added_sugar_limit_g != null ? undefined : 'not set',
     },
@@ -86,6 +101,8 @@ export function DailyTargetsPanel({
       unit: 'ml',
       Icon: GlassWater,
       color: teal,
+      consumed: hydrationToday?.total_ml ?? null,
+      ring: true,
       display: target.hydration_ml != null ? undefined : 'not set',
     },
   ];
@@ -121,6 +138,7 @@ export function DailyTargetsPanel({
                     ariaLabel={`${t.label}: ${t.consumed} of ${t.targetValue} ${t.unit} today`}
                   />
                   <span className="mt-1 text-[10px] text-white/35">{t.unit}</span>
+                  {t.note ? <span className="text-[10px] text-white/35">{t.note}</span> : null}
                 </div>
               ) : (
                 <>
