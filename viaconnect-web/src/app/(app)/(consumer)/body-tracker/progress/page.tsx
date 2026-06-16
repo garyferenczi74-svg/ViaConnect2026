@@ -54,7 +54,7 @@ export default function ProgressPage() {
         </p>
       </header>
 
-      {loading ? (
+      {loading && !data ? (
         <div className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/60 p-8 text-center text-sm text-white/40">
           Loading your progress...
         </div>

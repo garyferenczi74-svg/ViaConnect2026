@@ -286,7 +286,7 @@ export function TrajectoryPlanner({
                 className={inputCls}
               >
                 {tiersForMode(mode).map((t) => (
-                  <option key={t.id} value={t.id}>
+                  <option key={t.id} value={t.id} className="bg-[#1E3054] text-white">
                     {t.label}, {t.hint}
                   </option>
                 ))}
