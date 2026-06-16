@@ -76,8 +76,12 @@ export async function POST(request: Request) {
         ageYears: profile.ageYears,
         heightIn: profile.heightIn,
         activityLevel: body.activityLevel ?? profile.activityLevel,
-        latestWeightLb: latest?.weightLb ?? startWeightLb,
-        currentBodyFatPct: latest?.bodyFatPct ?? null,
+        // Prompt 201f: Arnold computes from the Trajectory Planner inputs. The
+        // member's entered Current weight (startWeightLb) drives the energy model,
+        // and the Goal body fat percent feeds the lean-mass basis (falling back to
+        // a measured value).
+        latestWeightLb: startWeightLb,
+        currentBodyFatPct: body.goalBodyfatPct ?? latest?.bodyFatPct ?? null,
         dietaryChoice: null,
         origin,
         targetPacePreset: body.targetPacePreset ?? null,

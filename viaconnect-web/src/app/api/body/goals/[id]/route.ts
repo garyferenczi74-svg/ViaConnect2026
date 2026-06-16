@@ -13,6 +13,8 @@ import type { GoalActivityLevel, GoalDriver } from '@/lib/body-goals/types';
 interface PatchBody {
   driver?: GoalDriver;
   goalWeightLb?: number;
+  // Prompt 201f: the Trajectory Planner's Current weight drives the computation.
+  startWeightLb?: number;
   targetDate?: string | null;
   targetRateLbPerWeek?: number | null;
   goalBodyfatPct?: number | null;
@@ -50,6 +52,13 @@ export async function PATCH(request: Request, { params }: { params: { id: string
     const latest = await getLatestWeight(user.id, sb);
     const today = new Date().toISOString().slice(0, 10);
 
+    // Prompt 201f: Arnold computes from the Trajectory Planner inputs. The
+    // member's entered Current weight drives the energy model when provided
+    // (falling back to the latest log, then the goal anchor), and the Goal body
+    // fat percent feeds the lean-mass basis (falling back to a measured value).
+    const currentWeightLb =
+      Number(body.startWeightLb) > 0 ? Number(body.startWeightLb) : latest?.weightLb ?? goal.start_weight_lb;
+
     const built = buildGoalTarget({
       driver,
       targetRateLbPerWeek: targetRate,
@@ -57,8 +66,8 @@ export async function PATCH(request: Request, { params }: { params: { id: string
       startWeightLb: goal.start_weight_lb,
       goalWeightLb,
       startDate: goal.start_date,
-      latestWeightLb: latest?.weightLb ?? goal.start_weight_lb,
-      bodyFatPct: latest?.bodyFatPct ?? null,
+      latestWeightLb: currentWeightLb,
+      bodyFatPct: goalBodyfat ?? latest?.bodyFatPct ?? null,
       heightIn: goal.height_in,
       age: goal.age_years,
       sex: goal.sex,
