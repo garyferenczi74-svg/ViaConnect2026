@@ -47,6 +47,7 @@ export function ProgressToGoalCard({ startLb, currentLb, goalLb }: ProgressToGoa
             value={result.pct}
             metric="plasmateal"
             size={176}
+            valueFontPx={30}
             valueSuffix="%"
             caption="COMPLETE"
             ariaLabel={`${result.pct} percent of the way to your goal weight`}
@@ -66,6 +67,7 @@ export function ProgressToGoalCard({ startLb, currentLb, goalLb }: ProgressToGoa
             value={0}
             metric="plasmateal"
             size={176}
+            valueFontPx={30}
             animated={false}
             valueSuffix="%"
             caption="COMPLETE"
