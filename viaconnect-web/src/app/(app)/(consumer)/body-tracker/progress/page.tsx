@@ -72,7 +72,12 @@ export default function ProgressPage() {
               />
             </div>
             <div className="order-2 lg:order-1 lg:col-span-7">
-              <TrajectoryPlanner existing={goal} prefillWeightLb={prefillWeightLb} onSaved={refetch} />
+              <TrajectoryPlanner
+                existing={goal}
+                prefillWeightLb={prefillWeightLb}
+                caqGoalWeightLb={data?.caqGoalWeightLb ?? null}
+                onSaved={refetch}
+              />
             </div>
           </div>
 
