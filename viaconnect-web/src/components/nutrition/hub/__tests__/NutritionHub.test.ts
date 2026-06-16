@@ -264,7 +264,10 @@ describe('NutritionHub source', () => {
 
   it('Prompt 200: the Progress tile is a navigation Link inserted before Save My Meal', () => {
     expect(source).toContain('<NutritionProgressTile');
-    expect(source).toContain('href="/nutrition/progress"');
+    // Prompt 199a: deep links to the canonical My Biology Progress surface,
+    // not the removed nutrition placeholder.
+    expect(source).toContain('href="/body-tracker/progress"');
+    expect(source).not.toContain('href="/nutrition/progress"');
     expect(source).toContain('data-analytics-event="nutrition_progress_open"');
     const iProgress = source.indexOf('<NutritionProgressTile');
     const iSaved = source.indexOf('<SaveMyMealTile');

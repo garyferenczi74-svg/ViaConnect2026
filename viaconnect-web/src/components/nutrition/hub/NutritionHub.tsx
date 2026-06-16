@@ -150,9 +150,11 @@ function GlassPill({ href, icon: Icon, label }: { href: string; icon: typeof Pen
 }
 
 // Prompt 200 (2026-06-15): the Progress Row 3 tile is a navigation card
-// mirroring SaveMyMealTile. Its Open is a Next.js Link to the standalone
-// /nutrition/progress page (a static stub for now; a future prompt builds the
-// view). Inserted before Save My Meal so the triad becomes a four tile row.
+// mirroring SaveMyMealTile, inserted before Save My Meal so the triad becomes a
+// four tile row. Prompt 199a (2026-06-15): its Open now deep links to the
+// canonical My Biology Progress surface (/body-tracker/progress, the Trajectory
+// Planner) instead of a nutrition placeholder, so both Progress cards resolve to
+// the same page.
 function NutritionProgressTile({
   gradientClass,
   media,
@@ -181,7 +183,7 @@ function NutritionProgressTile({
 
       <div className="mt-auto flex pt-4">
         <Link
-          href="/nutrition/progress"
+          href="/body-tracker/progress"
           data-analytics-event="nutrition_progress_open"
           className="inline-flex items-center gap-1 rounded-full border border-[#5B8DEF]/30 bg-[#2A4C9E]/[0.12] px-3 py-1.5 text-[12px] font-medium text-white no-underline backdrop-blur-md transition-all duration-200 hover:border-[#5B8DEF]/55 hover:bg-[#2A4C9E]/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744] motion-reduce:transition-none"
         >
