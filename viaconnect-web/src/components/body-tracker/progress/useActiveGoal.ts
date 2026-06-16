@@ -60,6 +60,9 @@ export interface ActiveGoalData {
   ok: boolean;
   goal: GoalView | null;
   latestWeightLb?: number | null;
+  // Prompt 201d: present only when there is no active goal, so the planner can
+  // prefill the goal weight from the CAQ Weight Goals step for new-goal members.
+  caqGoalWeightLb?: number | null;
   latestTarget?: TargetView | null;
   recalibrations?: RecalView[];
   trajectory?: TrajectoryView | null;

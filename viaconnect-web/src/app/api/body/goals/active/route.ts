@@ -17,6 +17,7 @@ import {
 import { ewmaSeries } from '@/lib/body-goals/ewma';
 import { backfillActiveGoalIfMissing } from '@/lib/body-goals/backfill';
 import { projectAndMarkSync } from '@/lib/body-goals/projectWeightGoal';
+import { readWeightGoal } from '@/lib/weight-goals/accessor';
 
 const DAY_MS = 86_400_000;
 function addDaysISO(from: string, days: number): string {
@@ -37,7 +38,28 @@ export async function GET() {
     }
     if (!goal) {
       const latest = await getLatestWeight(user.id, sb);
-      return NextResponse.json({ ok: true, goal: null, latestWeightLb: latest?.weightLb ?? null });
+      // Prompt 201d: expose the CAQ weight-goal so a brand-new-goal member sees
+      // their goal weight prefilled in the Trajectory Planner. Read-only, fails
+      // open to null. Only runs when there is no active goal.
+      let caqGoalWeightLb: number | null = null;
+      try {
+        const uwg = await withTimeout(
+          readWeightGoal(user.id, sb),
+          4000,
+          'api.body.goals.active.caq_goal',
+        );
+        if (uwg && Number.isFinite(uwg.goalWeightKg) && uwg.goalWeightKg > 0) {
+          caqGoalWeightLb = Math.round(uwg.goalWeightKg * 2.2046226218 * 10) / 10;
+        }
+      } catch (e) {
+        safeLog.warn('api.body.goals.active', 'caq goal weight read failed', { error: e });
+      }
+      return NextResponse.json({
+        ok: true,
+        goal: null,
+        latestWeightLb: latest?.weightLb ?? null,
+        caqGoalWeightLb,
+      });
     }
     // 179a self-heal: if the prior write-through projection failed, re-run it
     // on this read and clear the flag.
