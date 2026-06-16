@@ -8,6 +8,7 @@ import {
   onTrackStatus,
   smoothLinePath,
   areaPath,
+  downsampleByDays,
 } from '../trajectoryChartMath';
 
 const PAD = { t: 30, r: 20, b: 40, l: 50 };
@@ -102,5 +103,23 @@ describe('path builders', () => {
     const d = areaPath([{ ms: 0, lb: 150 }, { ms: 2, lb: 170 }], s);
     expect(d.endsWith('Z')).toBe(true);
     expect(d).toContain(s.baseY.toFixed(2));
+  });
+});
+
+describe('downsampleByDays', () => {
+  const daily = Array.from({ length: 15 }, (_, i) => ({
+    date: `2026-06-${String(i + 1).padStart(2, '0')}`,
+    smoothedLb: 200 - i,
+  }));
+  it('weekly granularity keeps the first, sparser middle, and last', () => {
+    const out = downsampleByDays(daily, 7);
+    expect(out[0].date).toBe('2026-06-01');
+    expect(out[out.length - 1].date).toBe('2026-06-15');
+    expect(out.length).toBeLessThan(daily.length);
+    expect(out.length).toBeGreaterThanOrEqual(3);
+  });
+  it('keeps a short series unchanged', () => {
+    const two = daily.slice(0, 2);
+    expect(downsampleByDays(two, 7)).toEqual(two);
   });
 });

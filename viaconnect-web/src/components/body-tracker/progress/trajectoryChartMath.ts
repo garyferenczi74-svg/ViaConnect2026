@@ -147,3 +147,23 @@ export function onTrackStatus(input: {
   if (losing) return diff < 0 ? 'ahead' : 'behind';
   return diff > 0 ? 'ahead' : 'behind';
 }
+
+// Downsample a date-sorted series to weekly/monthly granularity (Prompt 201k
+// Weekly/Monthly toggle): keep the first point, every point at least stepDays
+// after the last kept, and always the last point.
+export function downsampleByDays<T extends { date: string }>(rows: readonly T[], stepDays: number): T[] {
+  if (rows.length <= 2 || stepDays <= 1) return rows.slice();
+  const stepMs = stepDays * 86_400_000;
+  const toMs = (d: string) => new Date(`${d}T00:00:00Z`).getTime();
+  const out: T[] = [rows[0]];
+  let lastMs = toMs(rows[0].date);
+  for (let i = 1; i < rows.length - 1; i++) {
+    const ms = toMs(rows[i].date);
+    if (ms - lastMs >= stepMs) {
+      out.push(rows[i]);
+      lastMs = ms;
+    }
+  }
+  out.push(rows[rows.length - 1]);
+  return out;
+}
