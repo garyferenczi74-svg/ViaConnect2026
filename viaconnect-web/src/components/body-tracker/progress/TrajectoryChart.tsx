@@ -88,7 +88,8 @@ export function TrajectoryChart({
   startDate,
   goalWeightLb,
   projectedDate,
-}: Omit<TrajectoryView, 'latestSmoothedLb'>) {
+  targetDate,
+}: Omit<TrajectoryView, 'latestSmoothedLb'> & { targetDate?: string | null }) {
   const [grain, setGrain] = useState<Grain>('weekly');
   const [scrubFrac, setScrubFrac] = useState(1);
   const { ref, w } = useWidth();
@@ -138,6 +139,10 @@ export function TrajectoryChart({
   }, [actual, grain, startWeightLb, startDate, goalWeightLb, projectedDate, w]);
 
   const { actualPts, lastActual, todayMs, projMs, projectedPts, minMs, maxMs, scale, yTicks, tickMsList, combined } = model;
+
+  // Prompt 201l: the "Goal by" chip shows the planner's literal Target date when
+  // it is set (driver=date), else the engine's projected completion.
+  const goalByMs = typeof targetDate === 'string' && targetDate ? toMs(targetDate) : projMs;
 
   const latestLb = lastActual?.lb ?? startWeightLb;
   const status = onTrackStatus({
@@ -199,9 +204,9 @@ export function TrajectoryChart({
               {STATUS_COPY[status].label}
             </span>
           ) : null}
-          {projMs ? (
+          {goalByMs ? (
             <span className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[11px] font-medium text-white/70 backdrop-blur-sm">
-              Goal by {tickLabel(projMs, true)}
+              Goal by {tickLabel(goalByMs, true)}
             </span>
           ) : null}
           {/* Weekly / Monthly granularity (DD-6). */}

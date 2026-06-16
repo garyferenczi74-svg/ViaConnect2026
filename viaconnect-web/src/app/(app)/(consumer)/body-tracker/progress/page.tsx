@@ -90,6 +90,7 @@ export default function ProgressPage() {
                 startDate={trajectory.startDate}
                 goalWeightLb={trajectory.goalWeightLb}
                 projectedDate={trajectory.projectedDate}
+                targetDate={goal.target_date}
               />
 
               {/* Band 3: Daily Targets instrument grid. */}
