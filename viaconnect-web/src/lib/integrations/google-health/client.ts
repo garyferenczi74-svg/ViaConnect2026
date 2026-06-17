@@ -35,17 +35,17 @@ function rfc3339(d: Date): string {
   return d.toISOString();
 }
 
-// PROVISIONAL endpoint builders. Verify the exact path and query shape against
-// live Google Health docs once allowlisted; this is the single place to fix.
+// Endpoint builder. Verified 2026-06-16 against developers.google.com/health/
+// endpoints: /v4/users/me/dataTypes/{kebab}/dataPoints, with the time range as a
+// filter expression on data_type.interval.start_time plus page_size. All pulls
+// use the list dataPoints endpoint, which carries per-source provenance (what we
+// badge). reconcile/rollUp remain a future volume optimization; endpointMode is
+// retained as documentation of the intended choice per type.
 function buildUrl(dataType: GoogleHealthDataType, sinceISO: string, untilISO: string): string {
-  const base = `${GOOGLE_HEALTH_API_BASE}/users/me/dataTypes/${dataType.endpointName}`;
-  const suffix = dataType.endpointMode === "reconcile" ? "readings:reconcile" : "readings";
-  const params = new URLSearchParams({
-    filter: dataType.filterName,
-    startTime: sinceISO,
-    endTime: untilISO,
-  });
-  return `${base}/${suffix}?${params.toString()}`;
+  const base = `${GOOGLE_HEALTH_API_BASE}/users/me/dataTypes/${dataType.endpointName}/dataPoints`;
+  const filter = `data_type.interval.start_time >= "${sinceISO}" AND data_type.interval.start_time < "${untilISO}"`;
+  const params = new URLSearchParams({ page_size: "1000", filter });
+  return `${base}?${params.toString()}`;
 }
 
 function asNumber(...candidates: unknown[]): number | null {
@@ -66,6 +66,7 @@ function asString(...candidates: unknown[]): string | null {
 function extractRecords(dataType: GoogleHealthDataType, json: unknown): ReadingRecord[] {
   const root = json as Record<string, unknown> | null;
   const rows =
+    (root?.dataPoints as unknown[]) ??
     (root?.readings as unknown[]) ??
     (root?.data as unknown[]) ??
     (root?.points as unknown[]) ??
@@ -80,8 +81,21 @@ function extractRecords(dataType: GoogleHealthDataType, json: unknown): ReadingR
   for (const r of rows) {
     const row = r as Record<string, unknown>;
     const value = asNumber(row.value, row.numericValue, row.quantity, (row.value as any)?.amount);
+    // A data point carries its time under interval.start_time (per the verified
+    // filter field). Fall back to the flatter shapes if the response differs.
+    const interval = (row.interval ?? (row.dataType as any)?.interval) as Record<string, unknown> | undefined;
     const measuredAt =
-      asString(row.startTime, row.endTime, row.time, row.timestamp, row.recordedAt) ?? null;
+      asString(
+        interval?.startTime,
+        interval?.start_time,
+        interval?.endTime,
+        interval?.end_time,
+        row.startTime,
+        row.endTime,
+        row.time,
+        row.timestamp,
+        row.recordedAt,
+      ) ?? null;
     if (!measuredAt) continue; // a reading without a time cannot be placed on a day
     const iso = new Date(measuredAt).toISOString();
     const provenance = (row.provenance ?? row.origin ?? row.device ?? null) as GoogleHealthProvenance | null;

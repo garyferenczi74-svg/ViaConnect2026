@@ -109,9 +109,14 @@ data-type chips, success/error toasts.
 3. Redeploy the ingest-body-composition edge function from the repo (service-mode branch).
 4. Add /api/integrations/google-health/sync to the middleware cron allowlist and the Vercel
    cron schedule, or the polling fallback will 307 to login and never run.
-5. Verify scope URLs, endpoint paths, the webhook signature scheme, and the provenance shape
-   against live Google Health docs once allowlisted; they are centralized in config.ts and
-   client.ts and marked PROVISIONAL.
+5. API contract verified 2026-06-16 against developers.google.com/health and corrected in
+   config.ts/client.ts: base https://health.googleapis.com/v4; resource
+   /users/me/dataTypes/{kebab}/dataPoints; coarse readonly scopes
+   (health_metrics_and_measurements, activity_and_fitness, sleep); time range as a filter on
+   data_type.interval.start_time; total-calories type name. Still to confirm against a real
+   staging response: the exact data-point JSON field shape (value/interval/provenance), the
+   webhook signature scheme, and wiring getIdentity (healthUserId/legacyUserId) for per-user
+   webhook account mapping (currently single-connection + polling).
 6. Hannah/scoring: confirm whether active_zone_minutes or per-session exercise is canonical
    for the Exercise gauge, and that recovery_hrv (ms) and sleep_hours are the exact inputs the
    Recovery and Sleep weights expect.

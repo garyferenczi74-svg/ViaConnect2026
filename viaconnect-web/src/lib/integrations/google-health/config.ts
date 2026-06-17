@@ -20,11 +20,11 @@
 
 export const GOOGLE_HEALTH_API_VERSION = "v4";
 
-// REST base. PROVISIONAL host; verify against Google Health API docs once the
-// project is allowlisted. Centralized so the host is one edit, not many.
+// REST base. Verified 2026-06-16 against developers.google.com/health/endpoints:
+// https://health.googleapis.com/v4. Centralized so the host is one edit, not many.
 export const GOOGLE_HEALTH_API_BASE =
   process.env.GOOGLE_HEALTH_API_BASE ??
-  `https://healthapi.googleapis.com/${GOOGLE_HEALTH_API_VERSION}`;
+  `https://health.googleapis.com/${GOOGLE_HEALTH_API_VERSION}`;
 
 // OAuth 2.0 endpoints (standard Google identity platform; stable, not part of
 // the new Health surface).
@@ -179,11 +179,9 @@ export const GOOGLE_HEALTH_DATA_TYPES: GoogleHealthDataType[] = [
     target: { store: "daily_column", column: "steps_count" },
   },
   {
-    // active_zone_minutes is the canonical driver of the Exercise gauge column
-    // (daily_scores.exercise_minutes). The separate per-session "exercise" type
-    // below is supplemental detail kept in source_breakdown only, so the two do
-    // not double count. Which one should ultimately weight the Exercise gauge is
-    // a Hannah/scoring decision to confirm in staging.
+    // active_zone_minutes drives the Exercise gauge column
+    // (daily_scores.exercise_minutes). Confirm with Hannah/scoring in staging that
+    // this is the intended input for the Exercise weight.
     key: "active_zone_minutes",
     endpointName: "active-zone-minutes",
     filterName: "active_zone_minutes",
@@ -214,36 +212,32 @@ export const GOOGLE_HEALTH_DATA_TYPES: GoogleHealthDataType[] = [
     target: { store: "daily_jsonb", key: "floors" },
   },
   {
+    // Verified type name: total-calories (represents the activity caloriesOut).
     key: "calories",
-    endpointName: "calories",
-    filterName: "calories",
+    endpointName: "total-calories",
+    filterName: "total_calories",
     domain: "activity",
     scope: "activity",
     endpointMode: "reconcile",
     canonicalUnit: "kcal",
     target: { store: "daily_jsonb", key: "calories_kcal" },
   },
-  {
-    key: "exercise",
-    endpointName: "exercise",
-    filterName: "exercise",
-    domain: "activity",
-    scope: "activity",
-    endpointMode: "list",
-    canonicalUnit: "minutes",
-    target: { store: "daily_jsonb", key: "exercise_minutes_session" },
-  },
 ];
 
-// OAuth read scopes, added incrementally per domain. PROVISIONAL scope strings;
-// Google Health API scopes are HTTP URLs under
-// https://www.googleapis.com/auth/googlehealth.{scope}. Verify the exact suffix
-// once allowlisted. Always request only the bundles the enabled data types need.
+// OAuth read scopes. Verified 2026-06-16 against developers.google.com/health/scopes:
+// the API exposes coarse readonly bundles, not per-metric scopes. Body composition
+// and vitals both fall under health metrics and measurements; sleep and activity
+// have their own. We request only the readonly bundles the enabled domains need.
+const SCOPE_HEALTH_METRICS =
+  "https://www.googleapis.com/auth/googlehealth.health_metrics_and_measurements.readonly";
+const SCOPE_ACTIVITY = "https://www.googleapis.com/auth/googlehealth.activity_and_fitness.readonly";
+const SCOPE_SLEEP = "https://www.googleapis.com/auth/googlehealth.sleep.readonly";
+
 export const SCOPES: Record<GoogleHealthDomain, string> = {
-  body: "https://www.googleapis.com/auth/googlehealth.body.read",
-  vitals: "https://www.googleapis.com/auth/googlehealth.vitals.read",
-  sleep: "https://www.googleapis.com/auth/googlehealth.sleep.read",
-  activity: "https://www.googleapis.com/auth/googlehealth.activity.read",
+  body: SCOPE_HEALTH_METRICS,
+  vitals: SCOPE_HEALTH_METRICS,
+  sleep: SCOPE_SLEEP,
+  activity: SCOPE_ACTIVITY,
 };
 
 // The domains this connector reads at launch. Kept explicit so scopes stay
@@ -252,9 +246,11 @@ export const ENABLED_DOMAINS: GoogleHealthDomain[] = ["body", "vitals", "sleep",
 
 export function enabledScopes(domains: GoogleHealthDomain[] = ENABLED_DOMAINS): string[] {
   const wanted = new Set(domains);
-  return Object.entries(SCOPES)
+  const urls = Object.entries(SCOPES)
     .filter(([d]) => wanted.has(d as GoogleHealthDomain))
     .map(([, url]) => url);
+  // body and vitals share one bundle; dedupe so consent requests each scope once.
+  return [...new Set(urls)];
 }
 
 export function dataTypesForDomains(
