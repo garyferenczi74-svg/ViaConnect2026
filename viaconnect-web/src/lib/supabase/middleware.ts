@@ -89,6 +89,15 @@ export async function updateSession(request: NextRequest) {
     pathname.startsWith("/signup") ||
     pathname.startsWith("/forgot-password") ||
     pathname.startsWith("/pricing") ||
+    // Prompt 204: public legal pages plus their redirect sources. These must be
+    // public so the middleware never sends a logged-out visitor to /login, and
+    // so the next.config redirects can resolve. Required for the app-store
+    // privacy policy URL submission.
+    pathname === "/privacy" ||
+    pathname === "/terms" ||
+    pathname === "/privacy-policy" ||
+    pathname === "/terms-of-service" ||
+    pathname === "/tos" ||
     pathname === "/practitioners" ||
     pathname.startsWith("/practitioners/") ||
     pathname === "/patients/invited" ||
