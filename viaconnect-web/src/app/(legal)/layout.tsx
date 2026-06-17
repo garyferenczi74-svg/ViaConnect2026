@@ -19,9 +19,10 @@ export default function LegalLayout({
           </Link>
           <Link
             href="/"
+            aria-label="Back to home"
             className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-white transition-colors"
           >
-            <ArrowLeft className="w-4 h-4" strokeWidth={1.5} />
+            <ArrowLeft className="w-4 h-4" strokeWidth={1.5} aria-hidden="true" />
             Back to home
           </Link>
         </div>
