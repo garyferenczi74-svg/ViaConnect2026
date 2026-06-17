@@ -37,3 +37,30 @@ describe("Privacy Policy page", () => {
     expect(privacy()).toContain("Genetic Information: Special Handling");
   });
 });
+
+const terms = () =>
+  readFileSync(
+    resolve(__dirname, "../../src/app/(legal)/terms/page.tsx"),
+    "utf8"
+  );
+
+describe("Terms of Service page", () => {
+  it("uses the corrected entity name and confirmed venue", () => {
+    const src = terms();
+    expect(src).toContain("Farmceutica Wellness LLC");
+    expect(src).toContain("60 Lakefront Blvd");
+    expect(src).toContain("Erie County, New York");
+    expect(src).not.toContain("Farmceutica Wellness Ltd");
+  });
+
+  it("sets an absolute page title", () => {
+    expect(terms()).toContain('absolute: "Terms of Service | ViaConnect"');
+    expect(terms()).toContain("index: true");
+  });
+
+  it("preserves the arbitration and class-waiver headings", () => {
+    const src = terms();
+    expect(src).toContain("Binding individual arbitration");
+    expect(src).toContain("Class-action and jury-trial waiver");
+  });
+});
