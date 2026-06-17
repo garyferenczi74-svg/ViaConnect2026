@@ -79,13 +79,12 @@ data-type chips, success/error toasts.
   existing sources preserved). Verified.
 - Migration: daily_scores.source_breakdown jsonb added (additive, default empty). Verified.
 
-## Deferred to staging activation (Gary)
+## Edge function
 
-- Redeploy ingest-body-composition with the service-mode branch and the google_health
-  capability. NOT redeployed now on purpose: the branch is only exercised when the flag is on
-  and a connection syncs, and redeploying the live funnel from hand-typed content risks the
-  Apple Health and manual paths. Deploy it from the repo file (supabase functions deploy) at
-  staging time.
+- ingest-body-composition redeployed to v2 (ACTIVE) on 2026-06-16 with the service-mode
+  branch and the google_health capability. The user-JWT path is byte-identical to the prior
+  version, so the Apple Health and manual paths are unchanged; a no-auth POST returns the
+  gateway 401 as expected.
 
 ## Review (Jeffery, security, Arnold, performance, Michelangelo) and fixes applied
 
@@ -106,9 +105,9 @@ data-type chips, success/error toasts.
    Confirm whether the Health API needs allowlisting or approval before production use
    (the spec flags this as a blocker to confirm before activation).
 2. Provide GOOGLE_HEALTH_TOKEN_KEY (32 bytes, base64 or hex) and GOOGLE_HEALTH_WEBHOOK_SECRET.
-3. Redeploy the ingest-body-composition edge function from the repo (service-mode branch).
-4. Add /api/integrations/google-health/sync to the middleware cron allowlist and the Vercel
-   cron schedule, or the polling fallback will 307 to login and never run.
+3. Done 2026-06-16: ingest-body-composition redeployed v2 with the service-mode branch.
+4. Done 2026-06-16: /api/integrations/google-health/sync added to the middleware cron
+   allowlist and the Vercel cron schedule (0 */6 * * *).
 5. API contract verified 2026-06-16 against developers.google.com/health and corrected in
    config.ts/client.ts: base https://health.googleapis.com/v4; resource
    /users/me/dataTypes/{kebab}/dataPoints; coarse readonly scopes
