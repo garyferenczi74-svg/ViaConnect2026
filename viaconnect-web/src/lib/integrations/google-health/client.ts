@@ -188,10 +188,60 @@ export async function fetchDataTypeReadings(
       safeLog.warn(SCOPE, "pull non-2xx", { dataType: dataType.key, status: res.status });
       return [];
     }
-    return extractRecords(dataType, await res.json());
+    const payload = await res.json();
+    // Staging capture: log the raw first data points per type so the field
+    // mapping and unit inference can be confirmed against the real payload.
+    if (process.env.GOOGLE_HEALTH_CAPTURE === "true") {
+      const points = (payload as { dataPoints?: unknown[] })?.dataPoints;
+      safeLog.info(SCOPE, "capture: raw dataPoints", {
+        dataType: dataType.key,
+        sample: Array.isArray(points) ? points.slice(0, 2) : payload,
+      });
+    }
+    return extractRecords(dataType, payload);
   } catch (err) {
     if (isTimeoutError(err)) safeLog.warn(SCOPE, "pull timeout", { dataType: dataType.key, error: err });
     else safeLog.warn(SCOPE, "pull error", { dataType: dataType.key, error: err });
     return [];
+  }
+}
+
+export interface GoogleHealthIdentity {
+  healthUserId: string | null;
+  legacyUserId: string | null;
+}
+
+// getIdentity maps the connected account to its Google Health identifiers. The
+// healthUserId is stored at connect and used to route webhook notifications to
+// the right ViaConnect user.
+export async function fetchIdentity(accessToken: string): Promise<GoogleHealthIdentity | null> {
+  const url = `${GOOGLE_HEALTH_API_BASE}/users/me/identity`;
+  try {
+    const res = await withAbortTimeout(
+      (signal) =>
+        fetch(url, {
+          method: "GET",
+          headers: { Authorization: `Bearer ${accessToken}`, Accept: "application/json" },
+          signal,
+        }),
+      PULL_TIMEOUT_MS,
+      `${SCOPE}.identity`,
+    );
+    if (!res.ok) {
+      safeLog.warn(SCOPE, "identity non-2xx", { status: res.status });
+      return null;
+    }
+    const json = (await res.json()) as Record<string, unknown>;
+    if (process.env.GOOGLE_HEALTH_CAPTURE === "true") {
+      safeLog.info(SCOPE, "capture: identity", { json });
+    }
+    return {
+      healthUserId: asString(json.healthUserId, json.health_user_id),
+      legacyUserId: asString(json.legacyUserId, json.legacy_user_id),
+    };
+  } catch (err) {
+    if (isTimeoutError(err)) safeLog.warn(SCOPE, "identity timeout", { error: err });
+    else safeLog.warn(SCOPE, "identity error", { error: err });
+    return null;
   }
 }

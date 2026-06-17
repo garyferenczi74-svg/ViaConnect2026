@@ -11,6 +11,7 @@ import { withTimeout, isTimeoutError } from "@/lib/utils/with-timeout";
 import { safeLog } from "@/lib/utils/safe-log";
 import { GOOGLE_HEALTH_SOURCE_ID } from "@/lib/integrations/google-health/config";
 import { exchangeCode, storeConnection, isConnectorConfigured } from "@/lib/integrations/google-health/auth";
+import { fetchIdentity } from "@/lib/integrations/google-health/client";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -58,10 +59,15 @@ export async function GET(req: NextRequest) {
       return back("error=token_failed");
     }
 
+    // Resolve the Google Health identity (healthUserId) for webhook routing.
+    // Fail-open: a null identity still connects; webhooks fall back to polling.
+    const identity = await fetchIdentity(tokens.accessToken);
+
     // storeConnection upserts body_tracker_connections (status connected, tokens
-    // encrypted in metadata), so the Connected Sources surface reflects it.
+    // encrypted in metadata, identity for routing), so the Connected Sources
+    // surface reflects it.
     try {
-      await storeConnection(supabase, userId, tokens);
+      await storeConnection(supabase, userId, tokens, identity);
     } catch (err) {
       safeLog.error(SCOPE, "store connection failed", { error: err, userId });
       return back("error=db_error");

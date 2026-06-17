@@ -3,17 +3,14 @@
 // stores. Reuses the integrations webhook pattern (timeouts, structured logging,
 // connection lookup) with the real pull added.
 //
-// Signature scheme (verified 2026-06-16, developers.google.com/health/webhooks):
-// the raw JSON body is signed with ECDSA P-256 (SHA-256) via Tink's PublicKeySign
-// and verified against Google's public keyset at the gstatic URL below (Tink
-// keyset JSON, keys rotate about every 30 days). The exact signature header name
-// and the Tink keyset / signature-prefix encoding must be confirmed against the
-// first real notification, so verification is not yet finalized: the handler
-// acknowledges every call with 204 but takes NO action on the unverified payload,
-// and polling (every 6 hours) performs the actual ingestion. Acknowledging
-// without acting is safe (we never act on unverified input) and avoids Google
-// disabling the subscription on repeated rejects. Once the encoding is confirmed
-// this flips to verify-then-sync.
+// Signature scheme (developers.google.com/health/webhooks): the raw JSON body is
+// signed with ECDSA P-256 (SHA-256) via Tink and verified against Google's public
+// keyset (see webhook-signature.ts). On a verified notification the handler pulls
+// the changed window and ingests; an unverified one is acknowledged with 204 and
+// takes NO action, with polling (every 6 hours) as the safety net. The verifier
+// brute-forces the small space of signature header name and Tink/DER encoding and
+// never false-accepts, so the first real notification self-validates in staging
+// (GOOGLE_HEALTH_CAPTURE=true logs the raw header and body to assist).
 //
 // The notification payload carries healthUserId (the account whose data changed),
 // dataType, operation, clientProvidedSubscriptionName, and intervals. healthUserId
@@ -28,15 +25,13 @@ import { safeLog } from "@/lib/utils/safe-log";
 import { isFeatureEnabled } from "@/lib/config/feature-flags";
 import { GOOGLE_HEALTH_SOURCE_ID } from "@/lib/integrations/google-health/config";
 import { syncConnection, type ConnectionRow } from "@/lib/integrations/google-health/sync";
+import { verifyGoogleHealthWebhook } from "@/lib/integrations/google-health/webhook-signature";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 const SCOPE = "api.integrations.google-health.webhook";
-
-const GOOGLE_HEALTH_WEBHOOK_KEYSET_URL =
-  "https://www.gstatic.com/googlehealthapi/webhooks/webhooks_public_keyset.json";
 
 function readSignatureHeader(req: NextRequest): string | null {
   return (
@@ -47,23 +42,28 @@ function readSignatureHeader(req: NextRequest): string | null {
   );
 }
 
-// Returns true only when the ECDSA P-256 signature over rawBody verifies against
-// Google's keyset. Not yet finalized (see file header): fails closed until the
-// header name and Tink encoding are confirmed against a real notification.
-async function verifyWebhookSignature(req: NextRequest, _rawBody: string): Promise<boolean> {
+// Capture instrumentation for the staging validation pass. When
+// GOOGLE_HEALTH_CAPTURE=true, log the header names and the raw body of a
+// notification so the exact signature header and payload are confirmed against a
+// real Google notification. Non-signature header values are truncated.
+function captureIfEnabled(req: NextRequest, rawBody: string): void {
+  if (process.env.GOOGLE_HEALTH_CAPTURE !== "true") return;
+  const headers: Record<string, string> = {};
+  req.headers.forEach((v, k) => {
+    headers[k] = k.toLowerCase().includes("signature") ? v : v.slice(0, 64);
+  });
+  safeLog.info(SCOPE, "capture: webhook received", { headers, body: rawBody.slice(0, 2000) });
+}
+
+// True only when the ECDSA P-256 signature over rawBody verifies against Google's
+// keyset. Fail-closed on any gap (polling still ingests); never false-accepts.
+async function verifyWebhookSignature(req: NextRequest, rawBody: string): Promise<boolean> {
   const sig = readSignatureHeader(req);
   if (!sig) {
     safeLog.warn(SCOPE, "missing signature header", {});
     return false;
   }
-  // TODO finalize: fetch the Tink keyset from GOOGLE_HEALTH_WEBHOOK_KEYSET_URL,
-  // parse the EcdsaPublicKey (x, y), strip the 5-byte Tink signature prefix, and
-  // verify ECDSA P-256 (SHA-256) over rawBody via Web Crypto. Until confirmed we
-  // fail closed and rely on polling.
-  safeLog.warn(SCOPE, "ECDSA webhook verification not yet finalized; deferring to polling", {
-    keyset: GOOGLE_HEALTH_WEBHOOK_KEYSET_URL,
-  });
-  return false;
+  return verifyGoogleHealthWebhook(sig, rawBody);
 }
 
 export async function POST(req: NextRequest) {
@@ -86,6 +86,8 @@ export async function POST(req: NextRequest) {
   if (!isFeatureEnabled("google_health_connector")) {
     return new NextResponse(null, { status: 204 });
   }
+
+  captureIfEnabled(req, rawBody);
 
   const verified = await verifyWebhookSignature(req, rawBody);
   if (!verified) {

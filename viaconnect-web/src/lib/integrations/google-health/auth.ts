@@ -160,6 +160,13 @@ export interface GoogleHealthConnMeta {
   refresh_token?: string; // encrypted envelope
   token_expires_at?: string; // ISO
   is_active?: boolean;
+  health_user_id?: string | null; // Google Health account id, for webhook routing
+  legacy_user_id?: string | null; // Fitbit legacy account id
+}
+
+export interface GoogleHealthIdentityInput {
+  healthUserId: string | null;
+  legacyUserId: string | null;
 }
 
 export interface ConnectionRow {
@@ -168,11 +175,14 @@ export interface ConnectionRow {
   metadata: GoogleHealthConnMeta | null;
 }
 
-// Persist a connection with encrypted tokens in body_tracker_connections.
+// Persist a connection with encrypted tokens in body_tracker_connections. The
+// identity (healthUserId / legacyUserId) is stored so webhook notifications can
+// be routed to the right user.
 export async function storeConnection(
   supabase: SupabaseClient,
   userId: string,
   tokens: GoogleHealthTokens,
+  identity?: GoogleHealthIdentityInput | null,
 ): Promise<void> {
   if (!isTokenEncryptionConfigured()) {
     throw new Error("token encryption not configured; refusing to store plaintext");
@@ -195,6 +205,8 @@ export async function storeConnection(
               refresh_token: encryptToken(tokens.refreshToken),
               token_expires_at: tokens.expiresAt,
               is_active: true,
+              health_user_id: identity?.healthUserId ?? null,
+              legacy_user_id: identity?.legacyUserId ?? null,
             } satisfies GoogleHealthConnMeta,
           },
           { onConflict: "user_id,source_id" },
