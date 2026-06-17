@@ -7,7 +7,7 @@
 //   1. the shell is a TRUE anchor (<Link href={href}), never a role="link" +
 //      onClick fake link, and has no nested interactive element; and
 //   2. each of the four exported cards passes the correct destination literal
-//      (/genetics/upload x2, /shop#category-snp, /shop).
+//      (/genetics/upload, /plugins/labs, /shop#category-snp, /shop).
 // They also lock the blue glass CTA accent (Prompt 193d), the Lucide stroke
 // width, and the no dash rule.
 
@@ -43,10 +43,13 @@ describe('GeneticsActionCards source', () => {
     expect(source).toContain('export function OrderPanelsCard');
   });
 
-  it('points UploadDnaCard and UploadLabCard at /genetics/upload', () => {
-    // Two upload cards both route to the real upload flow.
-    const matches = source.match(/href="\/genetics\/upload"/g) ?? [];
-    expect(matches.length).toBe(2);
+  it('points UploadDnaCard at /genetics/upload and UploadLabCard at /plugins/labs', () => {
+    // Prompt 204: the two upload cards route to DISTINCT surfaces. The DNA card
+    // is the only /genetics/upload destination; the Lab card routes to the real
+    // Connect Lab Results page so the two tabs no longer share one target.
+    const geneticMatches = source.match(/href="\/genetics\/upload"/g) ?? [];
+    expect(geneticMatches.length).toBe(1);
+    expect(source).toContain('href="/plugins/labs"');
   });
 
   it('points SnpFormulationsCard at /shop#category-snp', () => {

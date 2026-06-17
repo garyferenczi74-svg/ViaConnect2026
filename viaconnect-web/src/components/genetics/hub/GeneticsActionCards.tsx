@@ -14,12 +14,12 @@
 //
 // Destinations (all real routes):
 //   UploadDnaCard       -> /genetics/upload   (the real DNA raw file flow)
-//   UploadLabCard       -> /genetics/upload   (same upload flow, lab side)
+//   UploadLabCard       -> /plugins/labs      (the Connect Lab Results page)
 //   SnpFormulationsCard -> /shop#category-snp (the SNP support catalog anchor)
 //   OrderPanelsCard     -> /shop              (the full storefront)
-// The current page's inline DNA and Lab dropzones are dead stubs (file inputs
-// with no onChange), so pointing these cards at /genetics/upload loses no
-// behavior; it routes to the real upload surface instead of a no op.
+// Prompt 204 (2026-06-17): the Lab card previously duplicated the DNA href and
+// misrouted lab uploads to the genetic upload page. It now routes to the real
+// Connect Lab Results surface (/plugins/labs); the DNA card is unchanged.
 //
 // Theme continuity: DNA reads TEAL and Lab reads ORANGE, matching the current
 // /genetics page (the GENETICS_CARD_MEDIA.uploadDna seam was switched to teal
@@ -146,11 +146,11 @@ export function UploadDnaCard({ className }: { className?: string }) {
   );
 }
 
-// Upload Lab Results -> the same upload flow, lab side. BLUE accent.
+// Upload Lab Results -> the Connect Lab Results page (Prompt 204 fix). BLUE accent.
 export function UploadLabCard({ className }: { className?: string }) {
   return (
     <ActionCard
-      href="/genetics/upload"
+      href="/plugins/labs"
       title="Upload Lab Results"
       description="Blood panels, biomarkers, and lab reports"
       ctaLabel="Upload Labs"
