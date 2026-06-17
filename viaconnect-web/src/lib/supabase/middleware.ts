@@ -116,6 +116,10 @@ export async function updateSession(request: NextRequest) {
     // the weekly body-goal recalibration never ran.
     pathname === "/api/bos/worker" ||
     pathname === "/api/body/goals/recalibrate-cron" ||
+    // Google Health polling fallback (Prompt 201b). Authorizes via CRON_SECRET
+    // inside the handler and is flag-gated off; must bypass the session redirect
+    // so Vercel Cron can reach it.
+    pathname === "/api/integrations/google-health/sync" ||
     // Marshall pre-check public JWKS (Prompt #121). Standard .well-known
     // discovery endpoint for third parties verifying clearance receipts.
     pathname === "/.well-known/marshall-clearance-jwks.json";

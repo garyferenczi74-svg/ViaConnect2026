@@ -15,6 +15,7 @@
   ],
   "crons": [
     { "path": "/api/bos/worker", "schedule": "*/5 * * * *" },
-    { "path": "/api/body/goals/recalibrate-cron", "schedule": "0 8 * * 1" }
+    { "path": "/api/body/goals/recalibrate-cron", "schedule": "0 8 * * 1" },
+    { "path": "/api/integrations/google-health/sync", "schedule": "0 */6 * * *" }
   ]
 }
