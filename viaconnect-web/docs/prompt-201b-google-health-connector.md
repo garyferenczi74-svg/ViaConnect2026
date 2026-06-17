@@ -112,10 +112,16 @@ data-type chips, success/error toasts.
    config.ts/client.ts: base https://health.googleapis.com/v4; resource
    /users/me/dataTypes/{kebab}/dataPoints; coarse readonly scopes
    (health_metrics_and_measurements, activity_and_fitness, sleep); time range as a filter on
-   data_type.interval.start_time; total-calories type name. Still to confirm against a real
-   staging response: the exact data-point JSON field shape (value/interval/provenance), the
-   webhook signature scheme, and wiring getIdentity (healthUserId/legacyUserId) for per-user
-   webhook account mapping (currently single-connection + polling).
+   data_type.interval.start_time; total-calories type name. Data-point parsing tightened to
+   the real schema: type-specific union objects (weight.weightGrams, bodyFat.percentage,
+   heartRate.beatsPerMinute, distance.millimeters, steps.count), unit inferred from the field
+   name with a numeric-field fallback for types not yet pinned (HRV, sleep, calories, AZM,
+   floors); provenance read from point.dataSource (device.displayName, application.platform,
+   recordingMethod). Webhook scheme corrected to ECDSA P-256 over the raw body against Google's
+   Tink keyset (gstatic), payload carries healthUserId for per-user routing, responds 204.
+   STILL pending one real staging response to finalize: the exact value-field names for the
+   unpinned types, the sleep-hours extraction, the signature header name, and the Tink
+   keyset/signature encoding (the webhook acknowledges 204 and relies on polling until then).
 6. Hannah/scoring: confirm whether active_zone_minutes or per-session exercise is canonical
    for the Exercise gauge, and that recovery_hrv (ms) and sleep_hours are the exact inputs the
    Recovery and Sleep weights expect.

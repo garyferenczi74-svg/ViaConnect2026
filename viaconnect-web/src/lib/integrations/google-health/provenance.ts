@@ -6,21 +6,21 @@
 // Fitbit Sense, a third-party scale). Reuses the Prompt 201 Hume tagging so a
 // Hume Body Pod reading that arrived via Google Health is still attributed.
 //
-// The exact provenance shape is PROVISIONAL until verified against live Google
-// Health docs. Fields are read defensively and unknown shapes degrade to the
-// generic google_health origin rather than throwing.
+// Shape verified 2026-06-16 against the dataPoints reference: a data point's
+// provenance is point.dataSource, with device.displayName, application
+// (displayName, packageName, platform), recordingMethod, and dataSourceFamily.
+// Fields are read defensively and unknown shapes degrade to the generic
+// google_health origin rather than throwing.
 //
 // All comments use hyphens only. No em-dashes or en-dashes.
 
 import { matchesHume, HUME_DEVICE_ORIGIN } from "@/lib/body-tracker/connected-sources/registry";
 
 export interface GoogleHealthProvenance {
-  platform?: string | null;
-  deviceModel?: string | null;
-  deviceManufacturer?: string | null;
-  deviceType?: string | null;
+  device?: { displayName?: string | null; formFactor?: string | null } | null;
+  application?: { displayName?: string | null; packageName?: string | null; platform?: string | null } | null;
   recordingMethod?: string | null;
-  dataOrigin?: string | null;
+  dataSourceFamily?: string | null;
   [key: string]: unknown;
 }
 
@@ -52,31 +52,23 @@ export function attributeProvenance(p: GoogleHealthProvenance | null | undefined
     return { deviceOrigin: "google_health", appOrigin, deviceLabel: "Google Health" };
   }
 
-  const model = (p.deviceModel ?? p.deviceType ?? p.dataOrigin ?? "").toString().trim();
-  const manufacturer = (p.deviceManufacturer ?? "").toString().trim();
-  const combined = [manufacturer, model].filter(Boolean).join(" ").trim();
+  const deviceName = (p.device?.displayName ?? "").toString().trim();
+  const appName = (p.application?.displayName ?? "").toString().trim();
+  const platform = (p.application?.platform ?? "").toString().trim();
 
   // Hume Body Pod readings keep the Prompt 201 origin so body-composition
   // surfaces badge them consistently across connectors.
-  if (matchesHume(combined) || matchesHume(model)) {
-    return {
-      deviceOrigin: HUME_DEVICE_ORIGIN,
-      appOrigin,
-      deviceLabel: "Hume Body Pod",
-    };
+  if (matchesHume(deviceName) || matchesHume(appName)) {
+    return { deviceOrigin: HUME_DEVICE_ORIGIN, appOrigin, deviceLabel: "Hume Body Pod" };
   }
 
-  if (combined) {
+  const primary = deviceName || appName || platform;
+  if (primary) {
     return {
-      deviceOrigin: slugify(combined),
+      deviceOrigin: slugify(primary),
       appOrigin,
-      deviceLabel: titleCase(combined),
+      deviceLabel: deviceName || appName || titleCase(platform),
     };
-  }
-
-  if (p.platform) {
-    const plat = p.platform.toString();
-    return { deviceOrigin: slugify(plat), appOrigin, deviceLabel: titleCase(plat) };
   }
 
   return { deviceOrigin: "google_health", appOrigin, deviceLabel: "Google Health" };

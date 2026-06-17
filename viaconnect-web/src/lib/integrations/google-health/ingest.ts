@@ -88,7 +88,8 @@ function normalizeValue(dataType: GoogleHealthDataType, value: number | null, ra
       else out = value;
       break;
     case "km":
-      if (unit === "m" || unit === "meter" || unit === "meters") out = value / 1000;
+      if (unit === "mm" || unit === "millimeter" || unit === "millimeters") out = value / 1_000_000;
+      else if (unit === "m" || unit === "meter" || unit === "meters") out = value / 1000;
       else if (unit === "mi" || unit === "mile" || unit === "miles") out = value * MI_TO_KM;
       else out = value;
       break;

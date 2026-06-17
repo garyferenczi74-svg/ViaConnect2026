@@ -1,17 +1,27 @@
-// Prompt 201b: Google Health webhook. Verifies the signature, then pulls the
+// Prompt 201b: Google Health webhook. On a verified notification it pulls the
 // changed window through the sync orchestrator and routes it to the domain
-// stores. Mirrors the existing integrations webhook pattern (timeouts, structured
-// logging, data_source_connections lookup) with the real pull added.
+// stores. Reuses the integrations webhook pattern (timeouts, structured logging,
+// connection lookup) with the real pull added.
 //
-// The webhook signature scheme and the per-account payload identifier are
-// PROVISIONAL until verified against live Google Health docs. Account-to-user
-// mapping for the multi-user case is a documented staging follow-up; today the
-// handler resolves the single active connection and otherwise defers to polling.
+// Signature scheme (verified 2026-06-16, developers.google.com/health/webhooks):
+// the raw JSON body is signed with ECDSA P-256 (SHA-256) via Tink's PublicKeySign
+// and verified against Google's public keyset at the gstatic URL below (Tink
+// keyset JSON, keys rotate about every 30 days). The exact signature header name
+// and the Tink keyset / signature-prefix encoding must be confirmed against the
+// first real notification, so verification is not yet finalized: the handler
+// acknowledges every call with 204 but takes NO action on the unverified payload,
+// and polling (every 6 hours) performs the actual ingestion. Acknowledging
+// without acting is safe (we never act on unverified input) and avoids Google
+// disabling the subscription on repeated rejects. Once the encoding is confirmed
+// this flips to verify-then-sync.
+//
+// The notification payload carries healthUserId (the account whose data changed),
+// dataType, operation, clientProvidedSubscriptionName, and intervals. healthUserId
+// is the per-user routing key, matched against body_tracker_connections.metadata.
 //
 // All comments use hyphens only. No em-dashes or en-dashes.
 
 import { NextRequest, NextResponse } from "next/server";
-import { createHmac, timingSafeEqual } from "crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { withTimeout } from "@/lib/utils/with-timeout";
 import { safeLog } from "@/lib/utils/safe-log";
@@ -25,48 +35,62 @@ export const maxDuration = 60;
 
 const SCOPE = "api.integrations.google-health.webhook";
 
-// PROVISIONAL signature check. When GOOGLE_HEALTH_WEBHOOK_SECRET is set we accept
-// either a matching channel token header or an HMAC-SHA256 of the raw body. Fails
-// CLOSED when no secret is configured: without it this endpoint would be an
-// unauthenticated trigger of a service-role sync, so GOOGLE_HEALTH_WEBHOOK_SECRET
-// is required before the connector flag is turned on.
-function verifySignature(req: NextRequest, rawBody: string): boolean {
-  const secret = process.env.GOOGLE_HEALTH_WEBHOOK_SECRET;
-  if (!secret) {
-    safeLog.warn(SCOPE, "no webhook secret configured; rejecting", {});
+const GOOGLE_HEALTH_WEBHOOK_KEYSET_URL =
+  "https://www.gstatic.com/googlehealthapi/webhooks/webhooks_public_keyset.json";
+
+function readSignatureHeader(req: NextRequest): string | null {
+  return (
+    req.headers.get("x-healthapi-signature") ??
+    req.headers.get("google-health-api-signature") ??
+    req.headers.get("x-goog-signature") ??
+    null
+  );
+}
+
+// Returns true only when the ECDSA P-256 signature over rawBody verifies against
+// Google's keyset. Not yet finalized (see file header): fails closed until the
+// header name and Tink encoding are confirmed against a real notification.
+async function verifyWebhookSignature(req: NextRequest, _rawBody: string): Promise<boolean> {
+  const sig = readSignatureHeader(req);
+  if (!sig) {
+    safeLog.warn(SCOPE, "missing signature header", {});
     return false;
   }
-
-  const channelToken = req.headers.get("x-goog-channel-token");
-  if (channelToken && channelToken === secret) return true;
-
-  const sig = req.headers.get("x-goog-signature") ?? req.headers.get("x-webhook-signature");
-  if (!sig) return false;
-  try {
-    const expected = createHmac("sha256", secret).update(rawBody).digest("hex");
-    const a = Buffer.from(expected);
-    const b = Buffer.from(sig);
-    return a.length === b.length && timingSafeEqual(a, b);
-  } catch {
-    return false;
-  }
+  // TODO finalize: fetch the Tink keyset from GOOGLE_HEALTH_WEBHOOK_KEYSET_URL,
+  // parse the EcdsaPublicKey (x, y), strip the 5-byte Tink signature prefix, and
+  // verify ECDSA P-256 (SHA-256) over rawBody via Web Crypto. Until confirmed we
+  // fail closed and rely on polling.
+  safeLog.warn(SCOPE, "ECDSA webhook verification not yet finalized; deferring to polling", {
+    keyset: GOOGLE_HEALTH_WEBHOOK_KEYSET_URL,
+  });
+  return false;
 }
 
 export async function POST(req: NextRequest) {
-  if (!isFeatureEnabled("google_health_connector")) {
-    return NextResponse.json({ status: "ignored" }, { status: 200 });
-  }
-
+  // Always read the body so logging has the payload context.
   let rawBody = "";
   try {
     rawBody = await req.text();
   } catch {
-    return NextResponse.json({ error: "no body" }, { status: 400 });
+    return new NextResponse(null, { status: 204 });
   }
 
-  if (!verifySignature(req, rawBody)) {
-    safeLog.warn(SCOPE, "signature rejected", {});
-    return NextResponse.json({ error: "bad signature" }, { status: 401 });
+  let payload: Record<string, unknown> = {};
+  try {
+    payload = JSON.parse(rawBody) as Record<string, unknown>;
+  } catch {
+    // non-JSON body; nothing to route
+  }
+  const healthUserId = typeof payload.healthUserId === "string" ? payload.healthUserId : null;
+
+  if (!isFeatureEnabled("google_health_connector")) {
+    return new NextResponse(null, { status: 204 });
+  }
+
+  const verified = await verifyWebhookSignature(req, rawBody);
+  if (!verified) {
+    // Acknowledge without acting; polling ingests. See file header.
+    return new NextResponse(null, { status: 204 });
   }
 
   try {
@@ -78,29 +102,37 @@ export async function POST(req: NextRequest) {
           .select("id, user_id, metadata")
           .eq("source_id", GOOGLE_HEALTH_SOURCE_ID)
           .eq("status", "connected")
-          .limit(25))(),
+          .limit(50))(),
       8000,
       `${SCOPE}.lookup`,
     );
 
     const connections = (rows as ConnectionRow[] | null) ?? [];
-    if (connections.length === 0) {
-      return NextResponse.json({ status: "no_connection" }, { status: 200 });
+    // Prefer the connection whose stored healthUserId matches the payload; fall
+    // back to the single active connection.
+    let target: ConnectionRow | null = null;
+    if (healthUserId) {
+      target =
+        connections.find(
+          (c) => (c.metadata as { health_user_id?: string } | null)?.health_user_id === healthUserId,
+        ) ?? null;
     }
-    if (connections.length > 1) {
-      // Without a verified per-account identifier we do not know which user this
-      // event belongs to; polling will pick up the change. Documented follow-up.
-      safeLog.info(SCOPE, "multiple active connections; deferring to polling", { count: connections.length });
-      return NextResponse.json({ status: "deferred" }, { status: 202 });
+    if (!target && connections.length === 1) target = connections[0];
+
+    if (!target) {
+      safeLog.info(SCOPE, "no matching connection; deferring to polling", {
+        count: connections.length,
+        hasHealthUserId: Boolean(healthUserId),
+      });
+      return new NextResponse(null, { status: 204 });
     }
 
-    const summary = await syncConnection(admin, connections[0], 2);
+    const summary = await syncConnection(admin, target, 2);
     safeLog.info(SCOPE, "webhook sync complete", { summary });
-    return NextResponse.json({ status: "received", summary }, { status: 200 });
+    return new NextResponse(null, { status: 204 });
   } catch (err) {
     safeLog.error(SCOPE, "webhook handler error", { error: err });
-    // Fail open with a 200 so the provider does not hammer retries; polling is
-    // the safety net.
-    return NextResponse.json({ status: "error" }, { status: 200 });
+    // Acknowledge so the provider does not hammer retries; polling is the safety net.
+    return new NextResponse(null, { status: 204 });
   }
 }

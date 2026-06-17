@@ -63,53 +63,105 @@ function asString(...candidates: unknown[]): string | null {
   return null;
 }
 
+// A Google Health data point carries a type-specific union object whose key is
+// the camelCase of the kebab type name (point.bodyFat, point.heartRate), and the
+// unit is encoded in the value field name (weightGrams, distanceMillimeters,
+// percentage, beatsPerMinute). We derive both rather than hard-code every field,
+// so a type whose exact field name is not yet pinned still resolves via the first
+// numeric field. Provenance lives under point.dataSource.
+function kebabToCamel(s: string): string {
+  return s.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
+}
+
+function inferUnit(fieldName: string, fallback: string): string {
+  const n = fieldName.toLowerCase();
+  if (/grams?$/.test(n)) return "g";
+  if (/millimet(er|re)s?$/.test(n)) return "mm";
+  if (/kilomet(er|re)s?$/.test(n)) return "km";
+  if (/met(er|re)s?$/.test(n)) return "m";
+  if (/percent(age)?$/.test(n)) return "percent";
+  if (/beatsperminute$/.test(n)) return "bpm";
+  if (/breathsperminute$/.test(n)) return "rpm";
+  if (/milliseconds?$/.test(n)) return "ms";
+  if (/minutes?$/.test(n)) return "minutes";
+  if (/(kilocalories?|calories)$/.test(n)) return "kcal";
+  if (/(count|steps)$/.test(n)) return "count";
+  return fallback;
+}
+
+// First finite numeric leaf in a type object plus the field it came from (so the
+// unit can be inferred). Shallow first, then one level deep.
+function firstNumericField(obj: Record<string, unknown>): { value: number; field: string } | null {
+  for (const [k, v] of Object.entries(obj)) {
+    const n = asNumber(v);
+    if (n !== null) return { value: n, field: k };
+  }
+  for (const v of Object.values(obj)) {
+    if (v && typeof v === "object") {
+      const inner = firstNumericField(v as Record<string, unknown>);
+      if (inner) return inner;
+    }
+  }
+  return null;
+}
+
+function findTime(obj: Record<string, unknown> | undefined): string | null {
+  if (!obj) return null;
+  const sample = obj.sampleTime as Record<string, unknown> | undefined;
+  const interval = obj.interval as Record<string, unknown> | undefined;
+  return asString(
+    obj.physicalTime,
+    sample?.physicalTime,
+    interval?.startTime,
+    interval?.start_time,
+    interval?.endTime,
+    obj.startTime,
+    obj.endTime,
+    obj.time,
+  );
+}
+
 function extractRecords(dataType: GoogleHealthDataType, json: unknown): ReadingRecord[] {
   const root = json as Record<string, unknown> | null;
-  const rows =
-    (root?.dataPoints as unknown[]) ??
-    (root?.readings as unknown[]) ??
-    (root?.data as unknown[]) ??
-    (root?.points as unknown[]) ??
-    (root?.values as unknown[]) ??
-    [];
+  const rows = (root?.dataPoints as unknown[]) ?? (root?.data as unknown[]) ?? [];
   if (!Array.isArray(rows)) {
     safeLog.warn(SCOPE, "unexpected response shape", { dataType: dataType.key, keys: root ? Object.keys(root) : null });
     return [];
   }
+  if (root?.nextPageToken) {
+    // page_size is 1000 over a short window; a continuation token means the tail
+    // was not read. Log rather than silently drop it (pagination is a follow-up).
+    safeLog.info(SCOPE, "nextPageToken present; window truncated to first page", { dataType: dataType.key });
+  }
 
+  const responseKey = kebabToCamel(dataType.endpointName);
   const out: ReadingRecord[] = [];
   for (const r of rows) {
-    const row = r as Record<string, unknown>;
-    const value = asNumber(row.value, row.numericValue, row.quantity, (row.value as any)?.amount);
-    // A data point carries its time under interval.start_time (per the verified
-    // filter field). Fall back to the flatter shapes if the response differs.
-    const interval = (row.interval ?? (row.dataType as any)?.interval) as Record<string, unknown> | undefined;
-    const measuredAt =
-      asString(
-        interval?.startTime,
-        interval?.start_time,
-        interval?.endTime,
-        interval?.end_time,
-        row.startTime,
-        row.endTime,
-        row.time,
-        row.timestamp,
-        row.recordedAt,
-      ) ?? null;
+    const point = r as Record<string, unknown>;
+    // Value lives in the type-specific union object. Prefer the response key;
+    // fall back to the first non-metadata object on the point.
+    let typeObj = point[responseKey] as Record<string, unknown> | undefined;
+    if (!typeObj || typeof typeObj !== "object") {
+      for (const [k, v] of Object.entries(point)) {
+        if (k !== "dataSource" && k !== "name" && k !== "interval" && v && typeof v === "object") {
+          typeObj = v as Record<string, unknown>;
+          break;
+        }
+      }
+    }
+
+    const num = typeObj ? firstNumericField(typeObj) : null;
+    const value = num?.value ?? null;
+    const rawUnit = num ? inferUnit(num.field, dataType.canonicalUnit) : dataType.canonicalUnit;
+
+    const measuredAt = findTime(typeObj) ?? findTime(point);
     if (!measuredAt) continue; // a reading without a time cannot be placed on a day
     const iso = new Date(measuredAt).toISOString();
-    const provenance = (row.provenance ?? row.origin ?? row.device ?? null) as GoogleHealthProvenance | null;
-    const externalId =
-      asString(row.id, row.readingId, row.name) ??
-      `${dataType.key}|${iso}|${value ?? "null"}`;
-    out.push({
-      dataTypeKey: dataType.key,
-      value,
-      rawUnit: asString(row.unit, (row.value as any)?.unit),
-      measuredAt: iso,
-      externalId,
-      provenance,
-    });
+
+    const provenance = (point.dataSource ?? null) as GoogleHealthProvenance | null;
+    const externalId = asString(point.name) ?? `${dataType.key}|${iso}|${value ?? "null"}`;
+
+    out.push({ dataTypeKey: dataType.key, value, rawUnit, measuredAt: iso, externalId, provenance });
   }
   return out;
 }
