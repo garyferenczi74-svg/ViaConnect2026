@@ -37,6 +37,7 @@ const SOURCE_CAPABILITIES: Record<string, string[]> = {
     "mineral_mass", "metabolic_age",
   ],
   google_health_connect: ["weight", "body_fat_pct", "lean_mass", "bmi"],
+  google_health: ["weight", "body_fat_pct"],
   fitbit: ["weight", "body_fat_pct"],
   garmin: ["weight", "body_fat_pct"],
   native_bridge: ["weight", "body_fat_pct", "lean_mass", "bmi"],
@@ -98,6 +99,15 @@ function withTimeout<T>(p: Promise<T>, ms: number, op: string): Promise<T> {
 
 function utcDay(iso: string): string {
   return new Date(iso).toISOString().slice(0, 10);
+}
+
+// Constant-time string compare for the service-mode shared secret, so a timing
+// side channel cannot probe the service-role key byte by byte.
+function timingSafeEqualStr(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
 }
 
 async function projectToWeight(
@@ -207,18 +217,30 @@ serve(async (req) => {
   let userId = "";
   let sourceId = "";
   try {
-    // Authenticate and resolve user_id server side. Never trust a user_id in the body.
-    const authHeader = req.headers.get("Authorization") ?? "";
-    const userClient = createClient(SUPABASE_URL, ANON_KEY, {
-      global: { headers: { Authorization: authHeader } },
-      auth: { autoRefreshToken: false, persistSession: false },
-    });
-    const { data: authData } = await withTimeout(userClient.auth.getUser(), 5000, "auth");
-    const user = authData?.user;
-    if (!user) return json({ error: "unauthorized" }, 401);
-    userId = user.id;
+    // Resolve user_id in one of two modes:
+    //   user JWT  : the default; user_id comes from getUser, never the body.
+    //   service   : an internal server-to-server caller (the Google Health
+    //               webhook and polling sync have no user session) presents the
+    //               service-role key in x-ingest-service-key and a trusted
+    //               userId in the body. Only our own backend holds that key, so
+    //               this does not widen the trust boundary. Reconciliation and
+    //               projection stay identical; there is still one funnel.
+    const body = (await req.json()) as IngestRequest & { userId?: string };
+    const serviceAuth = req.headers.get("x-ingest-service-key") ?? "";
+    if (serviceAuth && timingSafeEqualStr(serviceAuth, SERVICE_KEY) && typeof body?.userId === "string" && body.userId) {
+      userId = body.userId;
+    } else {
+      const authHeader = req.headers.get("Authorization") ?? "";
+      const userClient = createClient(SUPABASE_URL, ANON_KEY, {
+        global: { headers: { Authorization: authHeader } },
+        auth: { autoRefreshToken: false, persistSession: false },
+      });
+      const { data: authData } = await withTimeout(userClient.auth.getUser(), 5000, "auth");
+      const user = authData?.user;
+      if (!user) return json({ error: "unauthorized" }, 401);
+      userId = user.id;
+    }
 
-    const body = (await req.json()) as IngestRequest;
     sourceId = body?.sourceId ?? "";
     const deviceOrigin = body?.deviceOrigin ?? null;
     const samples = Array.isArray(body?.samples) ? body.samples : [];

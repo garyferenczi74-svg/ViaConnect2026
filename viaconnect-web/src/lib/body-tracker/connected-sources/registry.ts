@@ -13,7 +13,7 @@
 
 import { ALL_METRIC_KEYS, CORE_METRIC_KEYS, type BodyMetricKey } from "./metrics";
 
-export type SourceStatus = "active" | "scaffold" | "coming_soon";
+export type SourceStatus = "active" | "scaffold" | "coming_soon" | "deprecated";
 export type SourceCategory = "aggregator" | "wearable" | "manual";
 export type AuthMethod = "file_import" | "native_bridge" | "oauth2" | "manual";
 
@@ -24,8 +24,10 @@ export interface ConnectedSource {
   category: SourceCategory;
   status: SourceStatus;
   authMethod: AuthMethod;
-  capabilities: BodyMetricKey[]; // which metrics this source can deliver
+  capabilities: BodyMetricKey[]; // which body metrics this source can deliver
   notes?: string; // honest limitation copy shown in the UI
+  supersededBy?: string; // slug of the source that now provides this one
+  dataTypes?: string[]; // human labels of everything provided, for the card
 }
 
 export const CONNECTED_SOURCES: ConnectedSource[] = [
@@ -62,14 +64,38 @@ export const CONNECTED_SOURCES: ConnectedSource[] = [
     notes: "Available in the upcoming Android app. Connect from your phone once the app ships.",
   },
   {
+    id: "google_health",
+    displayName: "Google Health",
+    icon: "HeartPulse",
+    category: "aggregator",
+    status: "active",
+    authMethod: "oauth2",
+    capabilities: ["weight", "body_fat_pct"],
+    dataTypes: [
+      "Weight",
+      "Body fat",
+      "Heart rate variability",
+      "Resting heart rate",
+      "Oxygen saturation",
+      "Respiratory rate",
+      "Sleep",
+      "Steps",
+      "Activity",
+    ],
+    notes:
+      "Connect Fitbit, Pixel Watch, and other devices through Google Health. Weight and body fat appear in My Biology; heart, sleep, and activity feed your Bio Optimization gauges. Each reading keeps its originating device.",
+  },
+  {
     id: "fitbit",
     displayName: "Fitbit",
     icon: "Watch",
     category: "wearable",
-    status: "scaffold",
+    status: "deprecated",
     authMethod: "oauth2",
     capabilities: ["weight", "body_fat_pct"],
-    notes: "Coming soon. Will sync weight and body fat once the connection is enabled.",
+    supersededBy: "google_health",
+    notes:
+      "Now part of Google Health. Connect Fitbit through the Google Health source above. Readings already synced from Fitbit are kept and stay attributed to your device.",
   },
   {
     id: "garmin",

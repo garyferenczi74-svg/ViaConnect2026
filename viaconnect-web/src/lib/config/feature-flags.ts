@@ -47,6 +47,13 @@ export const FLAG_REGISTRY: Record<string, FlagDef> = {
     description:
       'Native HealthKit / Health Connect connect controls in the Capacitor shell. Off until the native plugin ships.',
   },
+
+  // ── Google Health API connector (Prompt #201b) ──
+  google_health_connector: {
+    default: false,
+    description:
+      'Google Health API web OAuth connector (Fitbit / Pixel Watch and others). Off until Google Cloud credentials are provisioned and the connector is verified in staging.',
+  },
 } as const;
 
 /**

@@ -24,6 +24,9 @@ export const APP_REGISTRY: AppDefinition[] = [
   // Fitness + Wearables
   { id: 'apple_health', name: 'Apple Health', category: 'fitness', dataProvided: ['Steps', 'Workouts', 'Sleep', 'HRV', 'Heart Rate'], gaugesAffected: ['sleep', 'exercise', 'steps', 'stress', 'recovery'], syncMethod: 'healthkit', tier: 1 },
   { id: 'fitbit', name: 'Fitbit', category: 'fitness', dataProvided: ['Steps', 'Sleep', 'Activity', 'HRV', 'SpO2'], gaugesAffected: ['sleep', 'exercise', 'steps', 'stress', 'recovery'], syncMethod: 'webhook', tier: 1 },
+  // Prompt 201b: Google Health API is the successor to the Fitbit Web API and
+  // covers Fitbit, Pixel Watch, and other devices on one OAuth surface.
+  { id: 'google_health', name: 'Google Health', category: 'health', dataProvided: ['Weight', 'Body Fat', 'HRV', 'Resting HR', 'SpO2', 'Respiratory Rate', 'Sleep', 'Steps', 'Activity'], gaugesAffected: ['sleep', 'recovery', 'stress', 'steps', 'exercise'], syncMethod: 'webhook', tier: 1 },
   { id: 'oura', name: 'Oura', category: 'fitness', dataProvided: ['Sleep Stages', 'Readiness', 'HRV', 'Temperature'], gaugesAffected: ['sleep', 'recovery', 'stress'], syncMethod: 'webhook', tier: 1 },
   { id: 'whoop', name: 'Whoop', category: 'fitness', dataProvided: ['Recovery', 'Strain', 'Sleep', 'HRV'], gaugesAffected: ['recovery', 'exercise', 'sleep', 'stress'], syncMethod: 'webhook', tier: 1 },
   { id: 'garmin', name: 'Garmin', category: 'fitness', dataProvided: ['Steps', 'Training Load', 'Body Battery', 'Sleep'], gaugesAffected: ['steps', 'exercise', 'sleep', 'recovery'], syncMethod: 'webhook', tier: 1 },

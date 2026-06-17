@@ -145,33 +145,15 @@ export default function LogMealPage() {
         <div className="space-y-5 rounded-2xl border border-white/[0.08] bg-[#1E3054]/60 p-4 backdrop-blur-md sm:p-5">
           <div>
             <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-white/40">Meal type</p>
-            {/* Gary (2026-06-12): the Hydration pill and the Log a saved meal
-                pill sit in the SAME row as the Breakfast / Lunch / Dinner /
-                Snack selector. Hydration toggles the full hydration section
-                inline below; Log a saved meal opens the Save My Meal picker
-                and logs to the currently selected meal type. */}
+            {/* Gary (2026-06-12): the Log a saved meal pill sits in the SAME row
+                as the Breakfast / Lunch / Dinner / Snack selector; it opens the
+                Save My Meal picker and logs to the currently selected meal type.
+                Gary (2026-06-16): the Hydration entry moved to a prominent button
+                under the NutriVision action below. */}
             <div className="flex flex-wrap items-center gap-2">
               <MealTypeSelector value={mealType} onChange={setMealType} />
-              <button
-                type="button"
-                onClick={() => setHydrationOpen((prev) => !prev)}
-                aria-expanded={hydrationOpen}
-                className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-sm font-medium transition-all min-h-[44px] ${
-                  hydrationOpen
-                    ? 'border-[#5B8DEF]/60 bg-[#5B8DEF]/15 text-[#5B8DEF]'
-                    : 'border-white/[0.08] bg-white/5 text-white/55 hover:bg-white/10'
-                }`}
-              >
-                <Droplet className="h-4 w-4" strokeWidth={1.5} />
-                Hydration
-              </button>
               <LogSavedMealButton mealType={mealType} />
             </div>
-            {hydrationOpen && (
-              <div className="mt-3">
-                <HydrationFullSection logSurface="hydration_detail_view" />
-              </div>
-            )}
           </div>
 
           <div>
@@ -237,6 +219,29 @@ export default function LogMealPage() {
               <ImagePlus className="h-4 w-4" strokeWidth={1.5} />
               Use NutriVision Photo AI Instead
             </Link>
+          </div>
+
+          {/* Gary (2026-06-16): prominent Hydration entry under NutriVision.
+              Opens the full hydration section inline below. */}
+          <div>
+            <button
+              type="button"
+              onClick={() => setHydrationOpen((prev) => !prev)}
+              aria-expanded={hydrationOpen}
+              className={`inline-flex w-full items-center justify-center gap-2 rounded-xl border px-6 py-3 text-sm font-semibold transition-all min-h-[48px] ${
+                hydrationOpen
+                  ? 'border-[#5B8DEF]/60 bg-[#5B8DEF]/15 text-[#5B8DEF]'
+                  : 'border-[#5B8DEF]/40 bg-[#5B8DEF]/10 text-[#5B8DEF] hover:bg-[#5B8DEF]/20'
+              }`}
+            >
+              <Droplet className="h-4 w-4" strokeWidth={1.5} />
+              Log Hydration
+            </button>
+            {hydrationOpen && (
+              <div className="mt-3">
+                <HydrationFullSection logSurface="hydration_detail_view" />
+              </div>
+            )}
           </div>
         </div>
       )}

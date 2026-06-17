@@ -14,7 +14,7 @@
 // dashes anywhere.
 
 import { motion } from 'framer-motion';
-import { Upload, Plus, Lock, CheckCircle2 } from 'lucide-react';
+import { Upload, Plus, Lock, CheckCircle2, Link2, ArrowRight } from 'lucide-react';
 import type { ConnectedSource } from '@/lib/body-tracker/connected-sources/registry';
 import type { DeviceClass } from '@/lib/capacitor/camera-capture';
 import { resolveSourceIcon } from './iconMap';
@@ -23,6 +23,8 @@ export type SourceAction =
   | { kind: 'import' }
   | { kind: 'add_reading' }
   | { kind: 'native_connect' }
+  | { kind: 'oauth_connect'; connected: boolean }
+  | { kind: 'superseded'; via: string; viaId: string }
   | { kind: 'disabled'; reason: string };
 
 interface ConnectedSourceCardProps {
@@ -33,6 +35,7 @@ interface ConnectedSourceCardProps {
   onImport: () => void;
   onAddReading: () => void;
   onNativeConnect: () => void;
+  onConnect: (sourceId: string) => void;
 }
 
 function formatLastSync(iso: string | undefined): string {
@@ -59,10 +62,16 @@ function StatusPill({ status }: { status: ConnectedSource['status'] }) {
       </span>
     );
   }
-  const label = status === 'coming_soon' ? 'Coming soon' : 'Coming soon';
+  if (status === 'deprecated') {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-white/[0.06] px-2.5 py-1 text-[11px] font-medium text-white/45 ring-1 ring-inset ring-white/10">
+        Moved
+      </span>
+    );
+  }
   return (
     <span className="inline-flex items-center gap-1 rounded-full bg-white/[0.06] px-2.5 py-1 text-[11px] font-medium text-white/45 ring-1 ring-inset ring-white/10">
-      {label}
+      Coming soon
     </span>
   );
 }
@@ -75,6 +84,7 @@ export function ConnectedSourceCard({
   onImport,
   onAddReading,
   onNativeConnect,
+  onConnect,
 }: ConnectedSourceCardProps) {
   const Icon = resolveSourceIcon(source.icon);
 
@@ -102,6 +112,20 @@ export function ConnectedSourceCard({
       {/* Capability note */}
       {source.notes && (
         <p className="text-[12px] leading-relaxed text-white/55">{source.notes}</p>
+      )}
+
+      {/* Provided data types */}
+      {source.dataTypes && source.dataTypes.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {source.dataTypes.map((t) => (
+            <span
+              key={t}
+              className="rounded-full bg-white/[0.05] px-2 py-0.5 text-[10px] font-medium text-white/55 ring-1 ring-inset ring-white/10"
+            >
+              {t}
+            </span>
+          ))}
+        </div>
       )}
 
       {/* Action */}
@@ -138,6 +162,30 @@ export function ConnectedSourceCard({
             className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl bg-[#2DA5A0] px-4 text-sm font-semibold text-white transition-colors hover:bg-[#2DA5A0]/85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/60"
           >
             Connect {source.displayName}
+          </button>
+        )}
+
+        {action.kind === 'oauth_connect' && (
+          <button
+            type="button"
+            onClick={() => onConnect(source.id)}
+            aria-label={`Connect ${source.displayName}`}
+            className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl bg-[#2DA5A0] px-4 text-sm font-semibold text-white transition-colors hover:bg-[#2DA5A0]/85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/60"
+          >
+            <Link2 className="h-4 w-4" strokeWidth={1.5} />
+            {action.connected ? 'Reconnect' : `Connect ${source.displayName}`}
+          </button>
+        )}
+
+        {action.kind === 'superseded' && (
+          <button
+            type="button"
+            onClick={() => onConnect(action.viaId)}
+            aria-label={`Connect through ${action.via}`}
+            className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl border border-[#2DA5A0]/40 bg-[#2DA5A0]/10 px-4 text-sm font-semibold text-[#2DA5A0] transition-colors hover:bg-[#2DA5A0]/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/60"
+          >
+            Connect via {action.via}
+            <ArrowRight className="h-4 w-4" strokeWidth={1.5} />
           </button>
         )}
 
