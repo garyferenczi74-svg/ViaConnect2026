@@ -108,7 +108,15 @@ export default function ConnectedSourcesPage() {
   // mount so the cards stay stable. The native bridge flag is off in this ship.
   const [platform] = useState(() => detectPlatform());
   const nativeBridgeEnabled = useMemo(() => isFeatureEnabled('native_health_bridge'), []);
-  const connectorEnabled = useMemo(() => isFeatureEnabled('google_health_connector'), []);
+  // Server routes gate on GOOGLE_HEALTH_CONNECTOR; the card needs a client-readable
+  // signal, so it also honors NEXT_PUBLIC_GOOGLE_HEALTH_CONNECTOR. Set both to true
+  // to activate (server gating + the visible Connect card).
+  const connectorEnabled = useMemo(
+    () =>
+      isFeatureEnabled('google_health_connector') ||
+      process.env.NEXT_PUBLIC_GOOGLE_HEALTH_CONNECTOR === 'true',
+    [],
+  );
 
   const loadSyncTimes = useCallback(async () => {
     try {
