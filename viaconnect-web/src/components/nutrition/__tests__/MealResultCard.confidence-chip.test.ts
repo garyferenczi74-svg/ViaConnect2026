@@ -1,16 +1,16 @@
-// Prompt 194a (2026-06-14): source-string contract tests for the MealResultCard
-// ConfidenceChip relabel. Run under the repo's active vitest config (node env,
-// no jsdom; include glob is *.test.ts) the same way the genetics/hub Blueprint
-// card tests do: read the .tsx source and assert on its content.
+// Prompt 203 (2026-06-17): source-string contract tests for the MealResultCard
+// ConfidenceChip. Run under the repo's active vitest config (node env, no jsdom;
+// include glob is *.test.ts) the same way the genetics/hub Blueprint card tests
+// do: read the .tsx source and assert on its content. The behavioural logic of
+// which tone is chosen lives in mealConfidence.test.ts.
 //
-// What this locks:
-//   - a true no-USDA-match (data_source === 'gemini_fallback') renders an honest
-//     "Estimated" pill with the Info icon at strokeWidth 1.5 and the estimated
-//     tooltip, and NOT the "{label} confidence: 0%" text.
-//   - the no-match condition is driven explicitly from data_source via a noMatch
-//     prop, never inferred from confidence === 0.
-//   - data_source 'usda' / 'mixed' keep the existing High/Medium/Low band and the
-//     percentage display.
+// What this locks (supersedes the Prompt 194a percentage contract):
+//   - the chip is driven by the resolved tone, never the raw confidence number
+//     (analysis.confidence is the USDA match RATE, not a quality signal).
+//   - an estimated meal (USDA miss) renders an honest "Estimated" pill, never a
+//     "{label} confidence: N%" percentage.
+//   - only a genuine quality downgrade renders the red "Review recommended" state.
+//   - a clean full USDA match renders "High confidence".
 //   - no em or en dashes.
 
 import { describe, it, expect } from 'vitest';
@@ -22,33 +22,33 @@ const COMPONENT = path.resolve(__dirname, '..', 'MealResultCard.tsx');
 describe('MealResultCard ConfidenceChip', () => {
   const source = readFileSync(COMPONENT, 'utf-8');
 
-  it('relabels a true no-USDA-match as an Estimated pill instead of a 0% confidence', () => {
-    // The Estimated branch is gated on noMatch and renders the literal word plus
-    // the estimated tooltip (and not a percentage).
-    expect(source).toContain('if (noMatch) {');
-    // The literal "Estimated" label sits on its own line just before the chip
-    // closes (tolerant of CRLF line endings).
+  it('drives the chip from the resolved tone, not the raw confidence number', () => {
+    expect(source).toContain("import { resolveMealConfidenceTone, type MealConfidenceTone } from './mealConfidence';");
+    expect(source).toContain('const tone = resolveMealConfidenceTone(analysis);');
+    expect(source).toContain('<ConfidenceChip tone={tone} />');
+  });
+
+  it('no longer renders a match-rate percentage as confidence', () => {
+    expect(source).not.toContain('{label} confidence: {(confidence * 100).toFixed(0)}%');
+    expect(source).not.toContain("label = 'Low'");
+  });
+
+  it('renders an Estimated pill with the Info icon for the estimated tone', () => {
+    expect(source).toContain("if (tone === 'estimated') {");
     expect(source).toMatch(/\s+Estimated\s+<\/span>/);
-    expect(source).toContain(
-      'Nutrition values estimated. We could not confirm a USDA match for these foods, so adjust any value as needed.',
-    );
-  });
-
-  it('drives no-match from data_source gemini_fallback, not from confidence === 0', () => {
-    expect(source).toContain("noMatch={analysis.data_source === 'gemini_fallback'}");
-    // The chip never infers the no-match state from a zero confidence value.
-    expect(source).not.toContain('confidence === 0');
-  });
-
-  it('uses the Info icon at strokeWidth 1.5 for the Estimated pill', () => {
     expect(source).toContain('<Info className="h-3 w-3" strokeWidth={1.5} />');
   });
 
-  it('keeps the existing High/Medium/Low band and percentage display for usda/mixed', () => {
-    expect(source).toContain("let label = 'High'");
-    expect(source).toContain("label = 'Low'");
-    expect(source).toContain("label = 'Medium'");
-    expect(source).toContain('{label} confidence: {(confidence * 100).toFixed(0)}%');
+  it('reserves the red "Review recommended" state for a genuine downgrade', () => {
+    expect(source).toContain("if (tone === 'low') {");
+    expect(source).toMatch(/\s+Review recommended\s+<\/span>/);
+    // The review banner is gated on the low tone, not on a confidence threshold.
+    expect(source).toContain("{tone === 'low' && (");
+    expect(source).not.toContain('analysis.confidence < 0.3');
+  });
+
+  it('renders High confidence for a clean full USDA match', () => {
+    expect(source).toMatch(/\s+High confidence\s+<\/span>/);
   });
 
   it('has no em or en dashes', () => {

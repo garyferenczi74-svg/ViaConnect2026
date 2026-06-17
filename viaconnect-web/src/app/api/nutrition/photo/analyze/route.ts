@@ -535,6 +535,23 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       blob_id: blobId,
     });
 
+    // TEMPORARY DIAGNOSTIC (Prompt 203, 2026-06-17 / remove after Gary confirms
+    // root cause): trace why NutriVision still reads "Low confidence" after the
+    // thinking-on fix (eb16f19e). meal_confidence is what classifyConfidence
+    // bands; from_cache===true means a recognition cached DURING the thinking-off
+    // regression (confidence <=0.4) is being replayed, which the code fix cannot
+    // override. Logs the live per-item recognition confidence the parse returned.
+    safeLog.info('api.nutrivision.photo.analyze', 'confidence trace (prompt203)', {
+      request_id: requestId,
+      from_cache: detectResult.fromCache,
+      providers_called: detectResult.providersCalled,
+      meal_confidence: recognition.mealConfidence,
+      item_confidences: recognition.items.map((it) => ({
+        food: it.foodName,
+        confidence: Math.round(it.confidence * 1000) / 1000,
+      })),
+    });
+
     return NextResponse.json({
       job_id: jobId,
       source_photo_blob_id: blobId,

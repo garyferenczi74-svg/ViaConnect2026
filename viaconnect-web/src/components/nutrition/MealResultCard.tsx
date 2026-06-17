@@ -12,6 +12,7 @@ import { MetricTile } from './MetricTile';
 import { FatSourceDropdown } from '@/components/meals/FatSourceDropdown';
 import { useFatSources } from '@/hooks/useFatSources';
 import { computeMealKcal } from '@/lib/nutrition/compute-meal-kcal';
+import { resolveMealConfidenceTone, type MealConfidenceTone } from './mealConfidence';
 import type { NutritionAnalysis } from '@/lib/nutrition/schema';
 
 interface MealResultCardProps {
@@ -30,38 +31,39 @@ function dataSourceAttribution(ds: NonNullable<NutritionAnalysis['data_source']>
   return 'Nutrition values entered manually.';
 }
 
-function ConfidenceChip({ confidence, noMatch }: { confidence: number; noMatch?: boolean }) {
-  // Prompt 194a: a true no-USDA-match (data_source === 'gemini_fallback') has a
-  // real confidence of 0. Rather than read as a damning "Low confidence: 0%",
-  // it relabels honestly as an Estimated marker. This never fabricates a match;
-  // a full ('usda') or partial ('mixed') match keeps its real percentage band.
-  if (noMatch) {
+function ConfidenceChip({ tone }: { tone: MealConfidenceTone }) {
+  // Prompt 203: the chip reflects the meal's framing, not the USDA match rate.
+  // A genuine quality downgrade reads "review", a USDA miss reads "Estimated",
+  // and only a clean full match reads "High". See mealConfidence.ts.
+  if (tone === 'low') {
+    return (
+      <span
+        className="inline-flex items-center gap-1.5 rounded-full border border-red-500/40 bg-red-500/15 px-2.5 py-1 text-[11px] font-medium text-red-300"
+        title="Some values looked unusual and were re-estimated. Review each before saving."
+      >
+        <AlertCircle className="h-3 w-3" strokeWidth={1.5} />
+        Review recommended
+      </span>
+    );
+  }
+  if (tone === 'estimated') {
     return (
       <span
         className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/40 bg-amber-500/15 px-2.5 py-1 text-[11px] font-medium text-amber-300"
-        title="Nutrition values estimated. We could not confirm a USDA match for these foods, so adjust any value as needed."
+        title="Some foods were estimated because we could not confirm a USDA match. Adjust any value as needed."
       >
         <Info className="h-3 w-3" strokeWidth={1.5} />
         Estimated
       </span>
     );
   }
-  let color = 'bg-emerald-500/15 text-emerald-300 border-emerald-500/40';
-  let label = 'High';
-  if (confidence < 0.5) {
-    color = 'bg-red-500/15 text-red-300 border-red-500/40';
-    label = 'Low';
-  } else if (confidence < 0.8) {
-    color = 'bg-amber-500/15 text-amber-300 border-amber-500/40';
-    label = 'Medium';
-  }
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium ${color}`}
-      title="AI confidence in this estimate. Tap any metric to adjust manually."
+      className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/40 bg-emerald-500/15 px-2.5 py-1 text-[11px] font-medium text-emerald-300"
+      title="Matched to USDA FoodData Central. Tap any metric to adjust manually."
     >
       <CheckCircle2 className="h-3 w-3" strokeWidth={1.5} />
-      {label} confidence: {(confidence * 100).toFixed(0)}%
+      High confidence
     </span>
   );
 }
@@ -71,12 +73,13 @@ export function MealResultCard({ analysis, onChange, fatSourceId, onFatSourceCha
   const [showFull, setShowFull] = useState(false);
   const [servingDraft, setServingDraft] = useState(analysis.serving_description);
   const [editingServing, setEditingServing] = useState(false);
-  const lowConfidence = analysis.confidence < 0.3;
-  // Prompt 186: partial nutrients carry the est. marker on their tile; a
-  // downgraded or partially unknown analysis surfaces the Estimated notice.
+  // Prompt 203: tone keys off the genuine quality signal (downgrade) and USDA
+  // match, NOT the match-rate percentage that used to fire a false "Low".
+  const tone = resolveMealConfidenceTone(analysis);
+  // Prompt 186: partial nutrients carry the est. marker on their tile; partial
+  // or unknown nutrients surface the Estimated notice below the chip.
   const partialSet = new Set(analysis.nutrient_flags?.partial ?? []);
   const hasUnknowns = (analysis.nutrient_flags?.unknown ?? []).length > 0 || partialSet.size > 0;
-  const showEstimatedNotice = hasUnknowns || analysis.nutrient_flags?.downgraded === true;
   // Prompt 194a: calories are a pure function of the macros, so the Calories
   // tile DISPLAYS the macro-derived value and is read-only. The user changes
   // calories by editing Protein / Carbs / Fat; this re-derives every render
@@ -125,20 +128,17 @@ export function MealResultCard({ analysis, onChange, fatSourceId, onFatSourceCha
             </button>
           )}
         </div>
-        <ConfidenceChip
-          confidence={analysis.confidence}
-          noMatch={analysis.data_source === 'gemini_fallback'}
-        />
+        <ConfidenceChip tone={tone} />
       </div>
 
-      {lowConfidence && (
-        <div className="mb-3 flex items-start gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-amber-200">
+      {tone === 'low' && (
+        <div className="mb-3 flex items-start gap-2 rounded-lg border border-red-500/40 bg-red-500/10 p-3 text-xs text-red-200">
           <AlertCircle className="mt-0.5 h-3.5 w-3.5 flex-none" strokeWidth={1.5} />
-          <span>Low confidence estimate. Please review each value before saving.</span>
+          <span>Some values looked unusual and were re-estimated. Please review each value before saving.</span>
         </div>
       )}
 
-      {!lowConfidence && showEstimatedNotice && (
+      {tone !== 'low' && hasUnknowns && (
         <div className="mb-3 flex items-start gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-amber-200">
           <AlertCircle className="mt-0.5 h-3.5 w-3.5 flex-none" strokeWidth={1.5} />
           <span>
