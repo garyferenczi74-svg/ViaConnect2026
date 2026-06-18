@@ -1,9 +1,12 @@
-// Prompt 191 Task C (2026-06-12): contract tests for YourVariantsCard.
+// Prompt 204b (2026-06-17): contract tests for the real-data YourVariantsCard.
 //
 // Source-as-text assertions per the repo convention (environment: 'node', no
-// jsdom). These lock the deep link read, the data API usage, the tabpanel
-// wiring, the GeneX360 link, the sample-data banner copy, the per test filter
-// memory, the full height variant list (no inner scroll), and the no dash rule.
+// jsdom). These lock the new contract: the card is driven by real member data
+// (useGeneticsVariants), the six pills render from PANEL_ORDER with labels
+// resolved through resolvePanelLabel (generic by default, branded only for an
+// owned panel, never hardcoded), the tabpanel wiring, the GeneX360 link, the
+// honest empty / locked state, and the no dash rule. The retired Prompt 191
+// sample-data internals must be gone.
 
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
@@ -19,12 +22,23 @@ describe('YourVariantsCard source', () => {
     expect(source).toContain("searchParams.get('test')");
   });
 
-  it('validates the requested test id with getTestById', () => {
-    expect(source).toContain('getTestById');
+  it('is driven by real data through the useGeneticsVariants hook', () => {
+    expect(source).toContain("import { useGeneticsVariants");
+    expect(source).toContain('useGeneticsVariants()');
   });
 
-  it('shows the total sample count via totalSampleVariantCount', () => {
-    expect(source).toContain('totalSampleVariantCount()');
+  it('renders the six panels from PANEL_ORDER, not a sample set', () => {
+    expect(source).toContain('PANEL_ORDER.map');
+    expect(source).not.toContain('geneticsVariantSamples');
+    expect(source).not.toContain('getTestById');
+    expect(source).not.toContain('totalSampleVariantCount');
+  });
+
+  it('resolves every pill label through resolvePanelLabel (never hardcoded)', () => {
+    expect(source).toContain('resolvePanelLabel(panelKey, brandedPanels.includes(panelKey))');
+    // The branded labels must not appear as literal strings in the markup.
+    expect(source).not.toContain('>GeneXM<');
+    expect(source).not.toContain("'NutrigenDX'");
   });
 
   it('renders the active panel as a tabpanel labelled by the active tab', () => {
@@ -33,9 +47,21 @@ describe('YourVariantsCard source', () => {
     expect(source).toContain('id={PANEL_ID}');
   });
 
-  it('passes a consistent panelId into the pill tabs', () => {
-    expect(source).toContain('panelId={PANEL_ID}');
-    expect(source).toContain('${PANEL_ID}-tab-${activeTest.id}');
+  it('builds the pill tablist with roving tabindex and arrow key navigation', () => {
+    expect(source).toContain('role="tablist"');
+    expect(source).toContain('tabIndex={active ? 0 : -1}');
+    expect(source).toContain("case 'ArrowRight'");
+  });
+
+  it('shows genotype status as +/+, +/-, and -/-', () => {
+    expect(source).toContain('zygosityFromStatus');
+    expect(source).toContain("'+/+'");
+    expect(source).toContain("'-/-'");
+  });
+
+  it('shows an honest empty / locked state using the generic label, not an error', () => {
+    expect(source).toContain('No {activeGenericLabel} variants yet.');
+    expect(source).not.toContain('overflow-y-auto');
   });
 
   it('imports GENEX360_SHOP_HREF and links to it with a Next Link', () => {
@@ -44,39 +70,8 @@ describe('YourVariantsCard source', () => {
     expect(source).toContain('href={GENEX360_SHOP_HREF}');
   });
 
-  it('renders the Sample data banner copy and the Order GeneX360 CTA', () => {
-    expect(source).toContain('Sample data.');
-    expect(source).toContain('Order GeneX360');
-  });
-
-  it('keeps a per test impact filter memory record (no sessionStorage)', () => {
-    expect(source).toContain('filterByTest');
-    expect(source).toContain('Record<string, ImpactFilterValue>');
-    expect(source).not.toContain('sessionStorage');
-  });
-
-  it('expands the row list to full height with no inner scroll (Gary 2026-06-12)', () => {
-    // The list grows to fit every row and pushes the page below it down, rather
-    // than scrolling inside a bounded max height box.
-    expect(source).not.toContain('max-h-[420px]');
-    expect(source).not.toContain('overflow-y-auto');
-  });
-
-  it('renders the honest empty-filter line for a tier with no rows', () => {
-    expect(source).toContain('No {activeFilter} impact variants in this sample.');
-  });
-
-  it('does not fabricate loading or error states for static sample data', () => {
-    expect(source.toLowerCase()).not.toContain('spinner');
-    expect(source).not.toContain('isLoading');
-  });
-
   it('uses the yourVariants media seam from GENETICS_CARD_MEDIA', () => {
     expect(source).toContain('GENETICS_CARD_MEDIA.yourVariants');
-  });
-
-  it('threads the active tab slug to VariantRow as panelSlug (Prompt 193c T2)', () => {
-    expect(source).toContain('panelSlug={activeTest.id}');
   });
 
   it('contains no em or en dashes', () => {

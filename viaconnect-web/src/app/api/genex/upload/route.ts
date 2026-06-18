@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import { withTimeout, isTimeoutError } from "@/lib/utils/with-timeout";
 import { safeLog } from "@/lib/utils/safe-log";
+import { persistDnaAnalysis } from "@/lib/genetics/dnaUploadStore";
 
 function apiEnvelope(
   success: boolean,
@@ -308,7 +309,7 @@ function getRecommendations(
       if (!existing || (priority === "high" && existing.priority !== "high")) {
         recommendations.set(variant.product_sku, {
           sku: variant.product_sku,
-          reason: `${variant.gene} ${variant.rsid} (${variant.genotype}) — ${variant.clinical_summary}`,
+          reason: `${variant.gene} ${variant.rsid} (${variant.genotype}): ${variant.clinical_summary}`,
           priority,
         });
       }
@@ -363,6 +364,7 @@ export async function POST(request: Request) {
 
   const file = formData.get("file") as File | null;
   const kitId = formData.get("kitId") as string | null;
+  const provider = (formData.get("provider") as string | null)?.trim() || "generic";
 
   if (!file) {
     return NextResponse.json(
@@ -426,6 +428,19 @@ export async function POST(request: Request) {
     const scoredVariants = scoreVariants(parsedVariants);
     const recommendations = getRecommendations(scoredVariants);
 
+    // Prompt 204b: run the deterministic DNA analysis engine and persist the
+    // interpreted variants to dna_uploads + user_variants for the "Your
+    // Variants" surface. Fail-open: this is additive and never blocks the
+    // existing genetic_profiles write or the user's upload result. A plain file
+    // upload is a competitor source (is_farmceutica false); branded labeling is
+    // resolved at read time from the member's purchases and kit registrations.
+    await persistDnaAnalysis(supabase, user.id, parsedVariants, {
+      provider,
+      isFarmceutica: false,
+      brandedProductCode: null,
+      sourceFilename: file.name,
+    });
+
     // Upload raw file to Supabase Storage for archival
     const storagePath = `${user.id}/${kitId}/${Date.now()}-${file.name}`;
     await supabase.storage
@@ -445,7 +460,7 @@ export async function POST(request: Request) {
         clinical_summary: v.clinical_summary,
       }));
 
-      // genetic_variants table is not in the regenerated typegen — cast supabase
+      // genetic_variants table is not in the regenerated typegen, so cast supabase
       // to any so the upsert chain compiles. Runtime behavior unchanged.
       const { error: variantError } = await (supabase as any)
         .from("genetic_variants")
@@ -502,7 +517,7 @@ export async function POST(request: Request) {
       { onConflict: "user_id" }
     );
 
-    // Audit log — typegen rejects the jsonb metadata payload structurally; cast
+    // Audit log: typegen rejects the jsonb metadata payload structurally; cast
     await (supabase as any).from("audit_logs").insert({
       user_id: user.id,
       action: "genex_upload_processed",
