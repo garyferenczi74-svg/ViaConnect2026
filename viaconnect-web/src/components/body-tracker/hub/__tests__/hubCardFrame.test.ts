@@ -15,6 +15,10 @@ import path from 'node:path';
 
 const CSS = path.resolve(__dirname, '..', 'hub-card-frame.css');
 const BENTO = path.resolve(__dirname, '..', 'BentoCard.tsx');
+// Prompt 205: the frame chrome (hub-card-frame class + css import) moved into
+// the shared BentoTile that BentoCard now composes. The contract is unchanged,
+// it just lives one layer down.
+const BENTO_TILE = path.resolve(__dirname, '..', '..', '..', 'ui', 'BentoTile.tsx');
 const GUIDANCE = path.resolve(__dirname, '..', 'GuidanceStrip.tsx');
 const CONNECTIONS = path.resolve(__dirname, '..', 'ConnectionsStrip.tsx');
 const RETAKE = path.resolve(__dirname, '..', 'AssessmentRetakeCard.tsx');
@@ -92,7 +96,6 @@ describe('hub-card-frame.css', () => {
 
 describe('hub-card-frame body-tracker consumers', () => {
   const consumers = [
-    { name: 'BentoCard', file: BENTO },
     { name: 'GuidanceStrip', file: GUIDANCE },
     { name: 'ConnectionsStrip', file: CONNECTIONS },
     { name: 'AssessmentRetakeCard', file: RETAKE },
@@ -102,6 +105,20 @@ describe('hub-card-frame body-tracker consumers', () => {
     const src = readFileSync(file, 'utf-8');
     expect(src).toContain('hub-card-frame ');
     expect(src).toContain("import './hub-card-frame.css';");
+    expect(src).not.toContain('AccentLine');
+  });
+
+  it('BentoTile (shared shell composed by BentoCard) carries hub-card-frame on its root and imports the css', () => {
+    const src = readFileSync(BENTO_TILE, 'utf-8');
+    expect(src).toContain('hub-card-frame ');
+    expect(src).toContain("import '@/components/body-tracker/hub/hub-card-frame.css';");
+    expect(src).not.toContain('AccentLine');
+  });
+
+  it('BentoCard composes the shared BentoTile and no longer references AccentLine', () => {
+    const src = readFileSync(BENTO, 'utf-8');
+    expect(src).toContain('BentoTile');
+    expect(src).toContain("from '@/components/ui/BentoTile'");
     expect(src).not.toContain('AccentLine');
   });
 

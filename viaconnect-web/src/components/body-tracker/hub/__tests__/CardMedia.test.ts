@@ -11,6 +11,10 @@ import path from 'node:path';
 
 const COMPONENT = path.resolve(__dirname, '..', 'CardMedia.tsx');
 const BENTO = path.resolve(__dirname, '..', 'BentoCard.tsx');
+// Prompt 205: BentoCard now renders its media seam through the shared BentoTile
+// instead of mounting CardMedia inline. The uninstrumented contract is the same,
+// it just travels through BentoTile (BentoCard passes media but no mediaLogKey).
+const BENTO_TILE = path.resolve(__dirname, '..', '..', '..', 'ui', 'BentoTile.tsx');
 
 describe('CardMedia source', () => {
   const source = readFileSync(COMPONENT, 'utf-8');
@@ -58,9 +62,15 @@ describe('CardMedia source', () => {
   });
 
   it('the My Biology consumer stays uninstrumented (BentoCard passes no logKey)', () => {
+    // BentoCard passes media into the shared BentoTile but never sets
+    // mediaLogKey, so no logKey reaches CardMedia: render is identical to before.
     const bento = readFileSync(BENTO, 'utf-8');
     expect(bento).not.toContain('logKey');
-    expect(bento).toContain('<CardMedia media={surface.media} />');
+    expect(bento).not.toContain('mediaLogKey');
+    expect(bento).toContain('media={surface.media}');
+    // The shared shell only forwards a logKey when mediaLogKey is supplied.
+    const tile = readFileSync(BENTO_TILE, 'utf-8');
+    expect(tile).toContain('<CardMedia media={media} logKey={mediaLogKey} />');
   });
 
   it('icon removal (Gary 2026-06-11): BentoCard renders no icon chip, keeping the metric chip and Open chevron', () => {
