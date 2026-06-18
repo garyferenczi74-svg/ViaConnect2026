@@ -82,8 +82,7 @@ export function DailyScoreGauge({
           />
         )}
         <p
-          className="text-[10px] font-semibold uppercase tracking-wider"
-          style={{ color: noData ? 'rgba(255,255,255,0.6)' : '#ffffff' }}
+          className={`text-[10px] font-semibold uppercase tracking-wider ${noData ? 'text-white/60' : 'text-white'}`}
         >
           {label}
         </p>
@@ -92,7 +91,7 @@ export function DailyScoreGauge({
       {confidence > 0 && (
         <div className="mt-1 flex items-center gap-1">
           <ModeIcon className="h-2.5 w-2.5" strokeWidth={1.5} style={{ color, opacity: 0.7 }} />
-          <span className="text-[8px]" style={{ color: '#ffffff', opacity: 0.7 }}>
+          <span className="text-[8px] text-white/70">
             {dataMode === 'manual' ? 'Check-in' : dataMode === 'wearable' ? 'Device' : 'Blended'}
           </span>
         </div>
