@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { ToastProvider } from "@/components/ui/Toast";
+import { AuthFooterSlot } from "@/components/layout/AuthFooterSlot";
 
 export const metadata: Metadata = {
   title: "Sign In",
@@ -13,7 +14,7 @@ export default function AuthLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-dark-bg relative overflow-hidden">
+    <div className="min-h-screen bg-dark-bg relative overflow-hidden flex flex-col">
       {/* DNA helix background pattern */}
       <div className="absolute inset-0 opacity-[0.03]">
         <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
@@ -32,10 +33,15 @@ export default function AuthLayout({
       <div className="absolute top-0 left-1/4 w-96 h-96 bg-teal/10 rounded-full blur-3xl animate-pulse" />
       <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-copper/10 rounded-full blur-3xl animate-pulse" />
 
-      <div className="relative z-10 flex min-h-screen items-center justify-center px-4 py-12">
-        <div className="w-full max-w-4xl">
-          {children}
+      {/* Flex column so the centered card takes the available space and the
+          footer (login and signup only) pins to the bottom of the viewport. */}
+      <div className="relative z-10 flex flex-1 flex-col">
+        <div className="flex flex-1 items-center justify-center px-4 py-12">
+          <div className="w-full max-w-4xl">
+            {children}
+          </div>
         </div>
+        <AuthFooterSlot />
       </div>
 
       <ToastProvider />

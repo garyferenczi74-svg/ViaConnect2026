@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { SiteFooter } from "@/components/layout/SiteFooter";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
@@ -376,7 +375,6 @@ export default function SignupPage() {
   }
 
   return (
-    <>
     <div className="w-full max-w-md mx-auto px-4 md:px-0">
       {/* Logo */}
       <div className="text-center mb-6">
@@ -681,7 +679,5 @@ export default function SignupPage() {
         )}
       </form>
     </div>
-      <SiteFooter />
-    </>
   );
 }

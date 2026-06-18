@@ -1,7 +1,6 @@
 "use client";
 
 import { Suspense, useState } from "react";
-import { SiteFooter } from "@/components/layout/SiteFooter";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
@@ -90,7 +89,6 @@ function LoginForm() {
   }
 
   return (
-    <>
     <div className="w-full max-w-md mx-auto px-4 md:px-0">
       {/* Logo */}
       <div className="text-center mb-8">
@@ -217,7 +215,5 @@ function LoginForm() {
         </p>
       </div>
     </div>
-      <SiteFooter />
-    </>
   );
 }
