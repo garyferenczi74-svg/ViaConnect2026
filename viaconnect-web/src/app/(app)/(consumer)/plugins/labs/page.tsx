@@ -347,6 +347,16 @@ export default function LabsPage() {
         Feed biomarker data into your GeneX360 panels for genetically contextualized insights.
       </p>
 
+      {/* Link to the saved results overlay */}
+      <Link
+        href="/lab-results"
+        className="inline-flex items-center gap-2 text-sm font-semibold transition-colors hover:text-white"
+        style={{ color: 'var(--teal-500)' }}
+      >
+        <Dna size={16} strokeWidth={1.5} />
+        View my lab results
+      </Link>
+
       {/* Hidden PDF file input for Card 1 */}
       <input
         ref={fileInputRef}
