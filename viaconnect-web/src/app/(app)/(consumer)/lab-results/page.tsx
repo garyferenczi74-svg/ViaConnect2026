@@ -17,11 +17,24 @@ type LabResult = {
   name: string;
   value: number;
   unit: string;
+  panelGroup: string;
   standard: { low: number; high: number } | null;
   geneticOptimal: { low: number; high: number } | null;
   gene: string | null;
   status: string;
+  tier: string;
+  direction: string;
 };
+
+const PANEL_ORDER = [
+  'Complete blood count',
+  'Metabolic',
+  'Lipids',
+  'Inflammatory',
+  'Hormones',
+  'Vitamins and minerals',
+  'Other',
+];
 
 type ResultsResponse = {
   results: LabResult[];
@@ -43,27 +56,28 @@ const AMBER_CHIP: React.CSSProperties = {
   border: '1px solid rgba(183, 94, 24, 0.45)',
   color: '#D98A3D',
 };
-const BLUE_CHIP: React.CSSProperties = {
-  backgroundColor: 'rgba(77, 142, 201, 0.15)',
-  border: '1px solid rgba(77, 142, 201, 0.45)',
-  color: '#7FB2E0',
+const ORANGE_CHIP: React.CSSProperties = {
+  backgroundColor: 'rgba(183, 94, 24, 0.18)',
+  border: '1px solid rgba(183, 94, 24, 0.5)',
+  color: '#B75E18',
+};
+const GRAY_CHIP: React.CSSProperties = {
+  backgroundColor: 'rgba(255, 255, 255, 0.06)',
+  border: '1px solid rgba(255, 255, 255, 0.18)',
+  color: 'rgba(255, 255, 255, 0.6)',
 };
 
-// Map the server status to a human label plus a token-driven chip color.
-function statusChip(status: string): ChipSpec | null {
-  switch (status) {
-    case 'within_genetic_optimal':
-      return { label: 'In your genetic optimal', style: TEAL_CHIP };
-    case 'below_genetic_optimal':
-      return { label: 'Below your genetic optimal', style: AMBER_CHIP };
-    case 'above_genetic_optimal':
-      return { label: 'Above your genetic optimal', style: AMBER_CHIP };
-    case 'within_standard':
-      return { label: 'In standard range', style: TEAL_CHIP };
-    case 'below_standard':
-      return { label: 'Below standard', style: BLUE_CHIP };
-    case 'above_standard':
-      return { label: 'Above standard', style: AMBER_CHIP };
+// Map the deterministic status tier to a human label plus a token-driven chip.
+function tierChip(tier: string): ChipSpec | null {
+  switch (tier) {
+    case 'optimal':
+      return { label: 'In range', style: TEAL_CHIP };
+    case 'monitor':
+      return { label: 'Monitor', style: AMBER_CHIP };
+    case 'consult':
+      return { label: 'Consult a professional', style: ORANGE_CHIP };
+    case 'unknown':
+      return { label: 'Unknown', style: GRAY_CHIP };
     default:
       return null;
   }
@@ -153,13 +167,19 @@ export default function LabResultsPage() {
           </div>
         </div>
       ) : (
-        // Result cards
-        <div className="flex flex-col gap-3 md:gap-4">
-          {results.map((r, i) => {
-            const chip = statusChip(r.status);
+        // Results grouped by panel
+        <div className="flex flex-col gap-6 md:gap-8">
+          {PANEL_ORDER.map((group) => {
+            const groupResults = results.filter((r) => r.panelGroup === group);
+            if (groupResults.length === 0) return null;
             return (
+              <div key={group} className="flex flex-col gap-3">
+                <h2 className="text-heading-3 text-white">{group}</h2>
+                {groupResults.map((r, i) => {
+                  const chip = tierChip(r.tier);
+                  return (
               <div
-                key={`${r.name}-${i}`}
+                key={`${group}-${r.name}-${i}`}
                 className="glass-v2 p-4 md:p-6 rounded-2xl flex flex-col gap-3"
                 style={{ borderLeft: '4px solid #2DA5A0' }}
               >
@@ -213,6 +233,9 @@ export default function LabResultsPage() {
                     ) : null}
                   </div>
                 ) : null}
+              </div>
+                  );
+                })}
               </div>
             );
           })}

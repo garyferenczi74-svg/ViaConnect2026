@@ -8,6 +8,8 @@ import { createClient } from '@/lib/supabase/server';
 import { safeLog } from '@/lib/utils/safe-log';
 import { buildEnrichedResults, type BiomarkerRow, type VariantRow } from '@/lib/labs/enrichBiomarkers';
 import { geneForBiomarker } from '@/lib/api/lab-service';
+import { panelGroupFor } from '@/lib/labs/biomarkerDictionary';
+import { determineStatus, applicableRange } from '@/lib/labs/biomarkerStatus';
 
 export async function GET(): Promise<NextResponse> {
   const supabase = createClient();
@@ -40,14 +42,24 @@ export async function GET(): Promise<NextResponse> {
     const results = enriched.map((b) => {
       const hasGenetic = b.genetic_optimal_low !== null && b.genetic_optimal_high !== null;
       const hasStandard = !(b.reference_range_low === 0 && b.reference_range_high === 0);
+      const printedRange = hasStandard
+        ? { low: b.reference_range_low, high: b.reference_range_high }
+        : null;
+      // Deterministic tier against the report's printed range (no invented range).
+      const tier = determineStatus(b.value, applicableRange(printedRange, null));
       return {
         name: b.name,
         value: b.value,
         unit: b.unit,
-        standard: hasStandard ? { low: b.reference_range_low, high: b.reference_range_high } : null,
+        panelGroup: panelGroupFor(b.name),
+        standard: printedRange,
         geneticOptimal: hasGenetic ? { low: b.genetic_optimal_low, high: b.genetic_optimal_high } : null,
         gene: hasGenetic ? geneForBiomarker(b.name) : null,
+        // genetic-optimal classification (overlay) is unchanged.
         status: b.status,
+        // deterministic optimal/monitor/consult/unknown tier + direction.
+        tier: tier.tier,
+        direction: tier.direction,
       };
     });
 
