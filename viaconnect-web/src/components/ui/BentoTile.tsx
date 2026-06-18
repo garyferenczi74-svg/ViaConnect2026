@@ -25,6 +25,9 @@ interface BentoTileProps {
   // Extra classes for the root frame (min height, grid column span, etc.).
   className?: string;
   // Adds the hover, focus, and group treatment used by navigation tiles.
+  // Pair this with href: on a non-href (div) root the focus-visible ring can
+  // never fire because the div is not focusable, so interactive is meant for
+  // the Link variant.
   interactive?: boolean;
   // When set, the root renders as a Next.js Link instead of a div.
   href?: string;
@@ -58,6 +61,8 @@ export function BentoTile({
 
   const inner = (
     <>
+      {/* Precedence: an explicit media descriptor wins; gradientClass is only
+          consulted when media is absent; with neither, no z 0 layer renders. */}
       {media ? (
         <CardMedia media={media} logKey={mediaLogKey} />
       ) : gradientClass !== undefined ? (
