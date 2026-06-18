@@ -160,10 +160,7 @@ export default function PluginsPage() {
 
           {/* ── BAND 1: Hero ── */}
           <BentoTile className="lg:col-span-8" scrim={false}>
-            <h1
-              className="text-heading-1 mb-2"
-              style={{ color: 'var(--text-heading-orange)' }}
-            >
+            <h1 className="text-heading-1 mb-2 text-white">
               Supercharge Your Precision Health
             </h1>
             <p className="text-body-lg text-secondary">
@@ -175,7 +172,7 @@ export default function PluginsPage() {
           {/* ── BAND 1: Active Connections ── */}
           <BentoTile className="lg:col-span-4" scrim={false}>
             <div className="mb-3 flex items-center justify-between gap-2">
-              <p className="text-overline">ACTIVE CONNECTIONS</p>
+              <p className="text-overline text-[#2DA5A0]">ACTIVE CONNECTIONS</p>
               <span className="flex-shrink-0 rounded-full border border-[#27AE60]/30 bg-[#27AE60]/10 px-2 py-0.5 text-[10px] font-semibold text-[#27AE60]">
                 {activeConnections.length} active
               </span>
@@ -204,7 +201,7 @@ export default function PluginsPage() {
           </BentoTile>
 
           {/* ── BAND 2: Connect Wearable (tall) ── */}
-          <BentoTile className="lg:col-span-6 lg:row-span-2 border-t-2 border-t-[#2DA5A0]/50" scrim={false}>
+          <BentoTile className="lg:col-span-6 lg:row-span-2" scrim={false}>
             <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[#2DA5A0]/15">
               <Watch className="h-5 w-5 text-[#2DA5A0]" strokeWidth={1.5} />
             </span>
@@ -219,8 +216,7 @@ export default function PluginsPage() {
             <Link href="/plugins/wearables" className="mt-auto pt-4">
               <button
                 type="button"
-                className="flex w-full min-h-[44px] items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition-all hover:brightness-110 active:scale-[0.98]"
-                style={{ backgroundColor: 'var(--teal-500)' }}
+                className="flex w-full min-h-[44px] items-center justify-center gap-1.5 rounded-xl border border-[#2DA5A0]/40 bg-white/[0.04] px-4 py-2.5 text-sm font-medium text-[#2DA5A0] backdrop-blur-sm transition-all hover:border-[#2DA5A0]/60 hover:bg-white/[0.07] active:scale-[0.98]"
               >
                 Connect Wearable
                 <ArrowRight className="h-4 w-4" strokeWidth={1.5} />
@@ -229,7 +225,7 @@ export default function PluginsPage() {
           </BentoTile>
 
           {/* ── BAND 2: Connect App ── */}
-          <BentoTile className="lg:col-span-6 border-t-2 border-t-[#B75E18]/50" scrim={false}>
+          <BentoTile className="lg:col-span-6" scrim={false}>
             <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[#B75E18]/15">
               <Smartphone className="h-5 w-5 text-[#B75E18]" strokeWidth={1.5} />
             </span>
@@ -244,8 +240,7 @@ export default function PluginsPage() {
             <Link href="/plugins/apps" className="mt-auto pt-4">
               <button
                 type="button"
-                className="flex w-full min-h-[44px] items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition-all hover:brightness-110 active:scale-[0.98]"
-                style={{ backgroundColor: 'var(--orange-500)' }}
+                className="flex w-full min-h-[44px] items-center justify-center gap-1.5 rounded-xl border border-[#B75E18]/40 bg-white/[0.04] px-4 py-2.5 text-sm font-medium text-[#B75E18] backdrop-blur-sm transition-all hover:border-[#B75E18]/60 hover:bg-white/[0.07] active:scale-[0.98]"
               >
                 Connect App
                 <ArrowRight className="h-4 w-4" strokeWidth={1.5} />
@@ -254,7 +249,7 @@ export default function PluginsPage() {
           </BentoTile>
 
           {/* ── BAND 2: Connect Lab ── */}
-          <BentoTile className="lg:col-span-6 border-t-2 border-t-[#27AE60]/50" scrim={false}>
+          <BentoTile className="lg:col-span-6" scrim={false}>
             <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[#27AE60]/15">
               <FlaskConical className="h-5 w-5 text-[#27AE60]" strokeWidth={1.5} />
             </span>
@@ -269,8 +264,7 @@ export default function PluginsPage() {
             <Link href="/plugins/labs" className="mt-auto pt-4">
               <button
                 type="button"
-                className="flex w-full min-h-[44px] items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition-all hover:brightness-110 active:scale-[0.98]"
-                style={{ background: 'linear-gradient(135deg, #27AE60, #1e8a4d)' }}
+                className="flex w-full min-h-[44px] items-center justify-center gap-1.5 rounded-xl border border-[#27AE60]/40 bg-white/[0.04] px-4 py-2.5 text-sm font-medium text-[#27AE60] backdrop-blur-sm transition-all hover:border-[#27AE60]/60 hover:bg-white/[0.07] active:scale-[0.98]"
               >
                 Connect Lab
                 <ArrowRight className="h-4 w-4" strokeWidth={1.5} />
@@ -280,7 +274,7 @@ export default function PluginsPage() {
 
           {/* ── BAND 3: Search + Community Requested ── */}
           <BentoTile className="lg:col-span-8 lg:row-span-2" scrim={false}>
-            <p className="mb-4 text-overline">FIND AN APP OR WEARABLE</p>
+            <p className="mb-4 text-overline text-[#2DA5A0]">FIND AN APP OR WEARABLE</p>
 
             {/* Search input */}
             <div className="relative">
@@ -333,7 +327,7 @@ export default function PluginsPage() {
               <div className="mt-4">
                 <div className="mb-2 flex items-center gap-2">
                   <Sparkles className="h-3.5 w-3.5 text-[#2DA5A0]" strokeWidth={1.5} />
-                  <p className="text-[10px] font-semibold uppercase tracking-wider text-white/40">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-[#2DA5A0]">
                     Community Requested · Powered by {getDisplayName('jeffery')}
                   </p>
                 </div>
@@ -377,7 +371,7 @@ export default function PluginsPage() {
 
           {/* ── BAND 3: Why Connect? ── */}
           <BentoTile className="lg:col-span-4 lg:row-span-2" scrim={false}>
-            <p className="mb-4 text-overline">WHY CONNECT?</p>
+            <p className="mb-4 text-overline text-[#2DA5A0]">WHY CONNECT?</p>
             <div className="flex flex-col gap-4">
               {whyConnectCards.map((card) => {
                 const CardIcon = card.icon;
@@ -398,7 +392,7 @@ export default function PluginsPage() {
 
           {/* ── BAND 4: Privacy and Security ── */}
           <BentoTile className="lg:col-span-12" scrim={false}>
-            <p className="mb-4 text-overline">PRIVACY &amp; SECURITY</p>
+            <p className="mb-4 text-overline text-[#2DA5A0]">PRIVACY &amp; SECURITY</p>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {privacyItems.map((item) => {
                 const ItemIcon = item.icon;
