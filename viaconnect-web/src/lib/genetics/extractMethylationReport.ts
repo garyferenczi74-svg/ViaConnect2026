@@ -108,6 +108,10 @@ export function mapMethylationRows(rows: MethylationReportRow[]): InterpretedVar
   for (const row of rows) {
     const variant = lookupMethylationVariant(row.variant);
     if (!variant || !isMethylationStatus(row.status)) continue;
+    // A methylation report is read for its MUTATIONS. A -/- (no mutation) row is
+    // the baseline and only adds noise, so only heterozygous (+/-) and
+    // homozygous (+/+) calls are surfaced and saved.
+    if (row.status === '-/-') continue;
     if (seen.has(variant.rsid)) continue;
     seen.add(variant.rsid);
     out.push(buildVariant(variant, row.status));

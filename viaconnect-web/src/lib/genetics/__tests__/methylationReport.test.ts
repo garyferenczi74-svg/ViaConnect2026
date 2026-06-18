@@ -57,6 +57,15 @@ describe('mapMethylationRows', () => {
     expect(out.map((v) => v.rsid)).toEqual(['rs1801133', 'rs2228570']);
     expect(out[0]).toMatchObject({ gene: 'MTHFR', panel_key: 'methylation', status: '+/-', genotype: '' });
   });
+
+  it('shows only mutations: a -/- (no mutation) row is dropped even when mapped', () => {
+    const out = mapMethylationRows([
+      { variant: 'MTHFR C677T', status: '-/-' },
+      { variant: 'BHMT/2', status: '+/-' },
+      { variant: 'MTRR/11', status: '+/+' },
+    ]);
+    expect(out.map((v) => v.rsid)).toEqual(['rs567754', 'rs1802059']);
+  });
 });
 
 describe('interpretMethylationByRsid', () => {

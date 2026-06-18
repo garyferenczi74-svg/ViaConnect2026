@@ -35,6 +35,28 @@ export const METHYLATION_VARIANTS: Record<string, MethylationVariant> = {
   CBSC699T: { rsid: 'rs234706', gene: 'CBS', clinical_significance: 'CBS C699T variant affects the transsulfuration pathway (homocysteine to cystathionine).' },
   NOSD298E: { rsid: 'rs1799983', gene: 'NOS3', clinical_significance: 'NOS3 (eNOS) Asp298Glu variant affects nitric oxide production.' },
   SHMTC1420T: { rsid: 'rs1979277', gene: 'SHMT1', clinical_significance: 'SHMT1 variant affects folate partitioning between DNA synthesis and methylation.' },
+
+  // Expanded Doctor's Data / Yasko methylation panel coverage (Prompt 204c
+  // follow-up). rsIDs below verified by Hannah against dbSNP and the published
+  // Yasko / Genetic Genie panels. SUOX S370S is intentionally omitted: no
+  // confident public rsID.
+  AHCY1: { rsid: 'rs819147', gene: 'AHCY', clinical_significance: 'AHCY (S-adenosylhomocysteine hydrolase) variant affects the SAM to SAH methylation balance.' },
+  AHCY2: { rsid: 'rs819134', gene: 'AHCY', clinical_significance: 'AHCY variant affects the SAM to SAH methylation balance.' },
+  AHCY19: { rsid: 'rs819171', gene: 'AHCY', clinical_significance: 'AHCY variant affects the SAM to SAH methylation balance.' },
+  MTHFR3: { rsid: 'rs2066470', gene: 'MTHFR', clinical_significance: 'MTHFR P39P synonymous variant within the MTHFR haplotype affecting folate metabolism.' },
+  MTRRH595Y: { rsid: 'rs10380', gene: 'MTRR', clinical_significance: 'MTRR variant affects methionine synthase reductase recycling of B12.' },
+  MTRRK350A: { rsid: 'rs162036', gene: 'MTRR', clinical_significance: 'MTRR variant affects methionine synthase reductase recycling of B12.' },
+  MTRRR415T: { rsid: 'rs2287780', gene: 'MTRR', clinical_significance: 'MTRR variant affects methionine synthase reductase recycling of B12.' },
+  MTRRS257T: { rsid: 'rs1532268', gene: 'MTRR', clinical_significance: 'MTRR variant affects methionine synthase reductase recycling of B12.' },
+  MTRR11: { rsid: 'rs1802059', gene: 'MTRR', clinical_significance: 'MTRR A664A variant within the methionine synthase reductase pathway.' },
+  BHMT1: { rsid: 'rs585800', gene: 'BHMT', clinical_significance: 'BHMT (betaine-homocysteine methyltransferase) variant affects the choline/betaine remethylation route.' },
+  BHMT2: { rsid: 'rs567754', gene: 'BHMT', clinical_significance: 'BHMT variant affects the choline/betaine remethylation route.' },
+  BHMT4: { rsid: 'rs617219', gene: 'BHMT', clinical_significance: 'BHMT variant affects the choline/betaine remethylation route.' },
+  BHMT8: { rsid: 'rs651852', gene: 'BHMT', clinical_significance: 'BHMT variant affects the choline/betaine remethylation route.' },
+  CBSA360A: { rsid: 'rs1801181', gene: 'CBS', clinical_significance: 'CBS variant affects the transsulfuration pathway (homocysteine to cystathionine).' },
+  CBSN212N: { rsid: 'rs2298758', gene: 'CBS', clinical_significance: 'CBS variant affects the transsulfuration pathway (homocysteine to cystathionine).' },
+  COMT61: { rsid: 'rs769224', gene: 'COMT', clinical_significance: 'COMT P199P synonymous variant within the COMT activity haplotype.' },
+  ACAT102: { rsid: 'rs3741049', gene: 'ACAT1', clinical_significance: 'ACAT1 (acetyl-CoA acetyltransferase) variant affects mitochondrial ketone and B12 handling.' },
 };
 
 /** Reverse index by rsID, so the confirm step can re-derive the authoritative
