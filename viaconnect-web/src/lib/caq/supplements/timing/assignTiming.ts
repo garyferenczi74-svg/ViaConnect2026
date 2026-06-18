@@ -598,3 +598,39 @@ export async function toggleIntake(
     return { ok: false, error: err instanceof Error ? err.message : String(err) };
   }
 }
+
+/**
+ * Soft-remove (is_current=false) or restore (is_current=true) a supplement from
+ * the user's current regimen. Removing drops it from the Daily Schedule (the view
+ * only includes is_current supplements) while preserving its schedule slots and
+ * adherence history, so an Undo restores it exactly by flipping the flag back.
+ * Scoped to the owning user. Resilient: withTimeout + structured logging.
+ */
+export async function setSupplementCurrent(
+  supabase: Db,
+  userId: string,
+  userSupplementId: string,
+  isCurrent: boolean,
+): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const { error } = await withTimeout(
+      supabase
+        .from('user_current_supplements')
+        .update({ is_current: isCurrent })
+        .eq('id', userSupplementId)
+        .eq('user_id', userId),
+      DB_TIMEOUT_MS,
+      `${SCOPE}.supplement.setCurrent`,
+    );
+    if (error) {
+      safeLog.warn(SCOPE, 'setSupplementCurrent failed', { userId, userSupplementId, isCurrent, error: error.message });
+      return { ok: false, error: 'Could not update the supplement; please try again.' };
+    }
+    return { ok: true };
+  } catch (err) {
+    safeLog.error(SCOPE, 'setSupplementCurrent threw', {
+      userId, userSupplementId, error: err instanceof Error ? err.message : String(err),
+    });
+    return { ok: false, error: err instanceof Error ? err.message : String(err) };
+  }
+}

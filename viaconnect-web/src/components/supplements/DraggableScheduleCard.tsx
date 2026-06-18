@@ -18,12 +18,14 @@ export function DraggableScheduleCard({
   taken,
   onToggle,
   onMove,
+  onRemove,
   onCardDragEnd,
 }: {
   card: ScheduleCard;
   taken: boolean;
   onToggle: () => void;
   onMove: (t: TimeOfDay) => void;
+  onRemove: () => void;
   onCardDragEnd: (card: ScheduleCard, point: { x: number; y: number }) => void;
 }) {
   const controls = useDragControls();
@@ -47,6 +49,7 @@ export function DraggableScheduleCard({
         taken={taken}
         onToggle={onToggle}
         onMove={onMove}
+        onRemove={onRemove}
         onHandlePointerDown={(e) => controls.start(e)}
       />
     </motion.div>

@@ -11,7 +11,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Sunrise, Sun, Moon, Loader2, Plus, ChevronDown } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { DraggableScheduleCard } from './DraggableScheduleCard';
+import { removeSupplementFromView, restoreSupplementToView } from './scheduleViewOps';
 import { safeLog } from '@/lib/utils/safe-log';
 import type { ScheduleCard, ScheduleView } from '@/lib/caq/supplements/timing/assignTiming';
 
@@ -160,6 +162,68 @@ export function DailySchedule() {
     }
   }, []);
 
+  // Remove a whole supplement from the regimen (soft delete, is_current=false).
+  // Optimistic: all of the supplement's cards leave the view immediately, with an
+  // Undo toast that restores them (PATCH restore). Reverts + logs on failure.
+  const handleRemove = useCallback(async (card: ScheduleCard) => {
+    const snapshot = viewRef.current ?? EMPTY_VIEW;
+    const { next, removed } = removeSupplementFromView(snapshot, card.user_supplement_id);
+    if (removed.length === 0) return;
+    setView(next);
+
+    const undo = async () => {
+      setView((prev) => restoreSupplementToView(prev ?? EMPTY_VIEW, removed));
+      try {
+        const res = await fetch('/api/supplements/schedule', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'restore', userSupplementId: card.user_supplement_id }),
+        });
+        const json = await res.json().catch(() => ({ ok: false }));
+        if (!res.ok || !json?.ok) throw new Error(json?.error ?? `status ${res.status}`);
+      } catch (err) {
+        setView((prev) => removeSupplementFromView(prev ?? EMPTY_VIEW, card.user_supplement_id).next);
+        safeLog.error('supplements.schedule.restore', 'restore failed', {
+          userSupplementId: card.user_supplement_id,
+          error: err instanceof Error ? err.message : String(err),
+        });
+        toast.error('Could not undo. You can re-add the supplement below.');
+      }
+    };
+
+    try {
+      const res = await fetch('/api/supplements/schedule', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'remove', userSupplementId: card.user_supplement_id }),
+      });
+      const json = await res.json().catch(() => ({ ok: false }));
+      if (!res.ok || !json?.ok) throw new Error(json?.error ?? `status ${res.status}`);
+      toast(
+        (t) => (
+          <span className="flex items-center gap-3 text-sm">
+            Removed {card.name}.
+            <button
+              type="button"
+              onClick={() => { toast.dismiss(t.id); void undo(); }}
+              className="font-semibold text-[#2DA5A0] hover:underline"
+            >
+              Undo
+            </button>
+          </span>
+        ),
+        { duration: 6000 },
+      );
+    } catch (err) {
+      setView(snapshot);
+      safeLog.error('supplements.schedule.remove', 'remove failed; reverted', {
+        userSupplementId: card.user_supplement_id,
+        error: err instanceof Error ? err.message : String(err),
+      });
+      toast.error('Could not remove the supplement. Please try again.');
+    }
+  }, []);
+
   const bucketRefs = useRef<Record<TimeOfDay, HTMLDivElement | null>>({ morning: null, afternoon: null, evening: null });
 
   // On drop, hit-test the pointer against each (desktop) bucket rect. A drop
@@ -254,7 +318,7 @@ export function DailySchedule() {
               {cards.length > 0 ? (
                 <div className="flex flex-col gap-2 p-2">
                   {cards.map((c) => (
-                    <DraggableScheduleCard key={c.slot_id} card={c} taken={c.taken} onToggle={() => handleToggle(c)} onMove={(t) => handleMove(c, t)} onCardDragEnd={onCardDragEnd} />
+                    <DraggableScheduleCard key={c.slot_id} card={c} taken={c.taken} onToggle={() => handleToggle(c)} onMove={(t) => handleMove(c, t)} onRemove={() => handleRemove(c)} onCardDragEnd={onCardDragEnd} />
                   ))}
                 </div>
               ) : (
@@ -292,7 +356,7 @@ export function DailySchedule() {
                 cards.length > 0 ? (
                   <div className="flex flex-col gap-2 p-2">
                     {cards.map((c) => (
-                      <DraggableScheduleCard key={c.slot_id} card={c} taken={c.taken} onToggle={() => handleToggle(c)} onMove={(t) => handleMove(c, t)} onCardDragEnd={onCardDragEnd} />
+                      <DraggableScheduleCard key={c.slot_id} card={c} taken={c.taken} onToggle={() => handleToggle(c)} onMove={(t) => handleMove(c, t)} onRemove={() => handleRemove(c)} onCardDragEnd={onCardDragEnd} />
                     ))}
                   </div>
                 ) : (

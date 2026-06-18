@@ -7,7 +7,7 @@
 // name. No emojis. No em or en dashes.
 
 import type { PointerEvent as ReactPointerEvent } from 'react';
-import { Utensils, Ban, Droplet, ArrowLeftRight, GripVertical, Check } from 'lucide-react';
+import { Utensils, Ban, Droplet, ArrowLeftRight, GripVertical, Check, Trash2 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { RationalePeek } from './RationalePeek';
 import { MoveToMenu } from './MoveToMenu';
@@ -32,12 +32,14 @@ export function ScheduleSupplementCard({
   taken,
   onToggle,
   onMove,
+  onRemove,
   onHandlePointerDown,
 }: {
   card: ScheduleCard;
   taken: boolean;
   onToggle: () => void;
   onMove: (t: TimeOfDay) => void;
+  onRemove: () => void;
   onHandlePointerDown?: (e: ReactPointerEvent) => void;
 }) {
   const chips: { icon: LucideIcon; label: string }[] = [];
@@ -47,7 +49,7 @@ export function ScheduleSupplementCard({
   if (card.away_from.length > 0) chips.push({ icon: ArrowLeftRight, label: `Away from ${card.away_from.join(', ')}` });
 
   return (
-    <div className="flex items-start gap-2 rounded-xl border border-white/5 bg-white/[0.02] p-2.5">
+    <div className="relative flex items-start gap-2 rounded-xl border border-white/5 bg-white/[0.02] p-2.5 pb-7">
       <button
         type="button"
         aria-label={`Drag to reschedule ${card.name}`}
@@ -92,6 +94,15 @@ export function ScheduleSupplementCard({
           </div>
         ) : null}
       </div>
+
+      <button
+        type="button"
+        onClick={onRemove}
+        aria-label={`Remove ${card.name} from your schedule`}
+        className="absolute bottom-1 right-1 flex h-9 w-9 items-center justify-center rounded-md text-white/40 transition-colors hover:bg-white/[0.06] hover:text-white"
+      >
+        <Trash2 className="h-3.5 w-3.5" strokeWidth={1.5} />
+      </button>
     </div>
   );
 }

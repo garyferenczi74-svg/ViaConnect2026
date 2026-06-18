@@ -10,7 +10,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { safeLog } from '@/lib/utils/safe-log';
-import { ensureScheduleForUser, getScheduleView, moveSlot, reorderSlots, toggleIntake } from '@/lib/caq/supplements/timing/assignTiming';
+import { ensureScheduleForUser, getScheduleView, moveSlot, reorderSlots, setSupplementCurrent, toggleIntake } from '@/lib/caq/supplements/timing/assignTiming';
 
 type Bucket = 'morning' | 'afternoon' | 'evening';
 const BUCKETS: ReadonlyArray<Bucket> = ['morning', 'afternoon', 'evening'];
@@ -61,6 +61,15 @@ export async function PATCH(req: NextRequest): Promise<NextResponse> {
         return NextResponse.json({ ok: false, error: 'No slot ids' }, { status: 400 });
       }
       const res = await reorderSlots(sb, user.id, ids);
+      return NextResponse.json({ ok: res.ok, error: res.error }, { status: res.ok ? 200 : 500 });
+    }
+
+    if (action === 'remove' || action === 'restore') {
+      const userSupplementId = typeof body?.userSupplementId === 'string' ? body.userSupplementId : '';
+      if (!userSupplementId) {
+        return NextResponse.json({ ok: false, error: 'No supplement id' }, { status: 400 });
+      }
+      const res = await setSupplementCurrent(sb, user.id, userSupplementId, action === 'restore');
       return NextResponse.json({ ok: res.ok, error: res.error }, { status: res.ok ? 200 : 500 });
     }
 
