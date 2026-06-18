@@ -133,6 +133,8 @@ export default function SignupPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [activeInterstitial, setActiveInterstitial] = useState<number | null>(null);
 
+  const [consentAccepted, setConsentAccepted] = useState(false);
+
   // Step 1
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -180,6 +182,13 @@ export default function SignupPage() {
           if (issue.path[0]) fieldErrors[issue.path[0] as string] = issue.message;
         });
         setErrors(fieldErrors);
+        return false;
+      }
+      if (!consentAccepted) {
+        setErrors((prev) => ({
+          ...prev,
+          consent: "Please agree to the Privacy Policy and Terms of Service to continue.",
+        }));
         return false;
       }
     }
@@ -264,6 +273,9 @@ export default function SignupPage() {
           phone: phone || undefined,
           location: location || undefined,
           license_number: role !== "consumer" ? licenseNumber : undefined,
+          privacy_accepted_at: new Date().toISOString(),
+          terms_accepted_at: new Date().toISOString(),
+          policy_version: "2026-06-17",
         },
       },
     });
@@ -410,6 +422,38 @@ export default function SignupPage() {
               <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-300 mb-1.5">Confirm Password</label>
               <input id="confirmPassword" type="password" autoComplete="new-password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className={errors.confirmPassword ? errorInputClass : inputClass} placeholder="Re-enter your password" />
               {errors.confirmPassword && <p className="text-xs text-rose mt-1">{errors.confirmPassword}</p>}
+            </div>
+            <div>
+              <label htmlFor="consent" className="flex items-start gap-2 cursor-pointer">
+                <input
+                  id="consent"
+                  type="checkbox"
+                  checked={consentAccepted}
+                  onChange={(e) => setConsentAccepted(e.target.checked)}
+                  className="mt-0.5 w-4 h-4 rounded border-dark-border bg-dark-surface accent-copper"
+                />
+                <span className="text-sm text-gray-400">
+                  I have read and agree to the{" "}
+                  <a
+                    href="/privacy"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-copper hover:underline"
+                  >
+                    Privacy Policy
+                  </a>{" "}
+                  and{" "}
+                  <a
+                    href="/terms"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-copper hover:underline"
+                  >
+                    Terms of Service
+                  </a>
+                </span>
+              </label>
+              {errors.consent && <p className="text-xs text-rose mt-1">{errors.consent}</p>}
             </div>
           </div>
         )}
@@ -612,7 +656,7 @@ export default function SignupPage() {
             )}
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || (step === 1 && !consentAccepted)}
               className="flex items-center gap-1.5 h-9 min-h-[44px] px-5 bg-gradient-to-r from-copper to-copper/80 hover:from-copper/90 hover:to-copper/70 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-all"
             >
               {isLoading ? (
