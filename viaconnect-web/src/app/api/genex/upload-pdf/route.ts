@@ -9,7 +9,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { safeLog } from '@/lib/utils/safe-log';
 import { withTimeout } from '@/lib/utils/with-timeout';
-import { extractPdfText } from '@/lib/pdf/extractPdfText';
+import { extractPdfText, type PdfExtractionResult } from '@/lib/pdf/extractPdfText';
 import { parseDnaReportText } from '@/lib/genetics/parseDnaReportText';
 import { analyzeVariants } from '@/lib/genetics/dnaAnalysisEngine';
 import { inMemoryRateLimit } from '@/lib/utils/inMemoryRateLimit';
@@ -53,7 +53,7 @@ export async function POST(request: Request): Promise<NextResponse> {
     const buffer = Buffer.from(await file.arrayBuffer());
     // Backstop: extractPdfText is internally bounded, but race it anyway so the
     // route always returns well under maxDuration even if a layer misbehaves.
-    let extraction;
+    let extraction: PdfExtractionResult;
     try {
       extraction = await withTimeout(extractPdfText(buffer), 40_000, 'api.genex.upload-pdf.extract');
     } catch (err) {
