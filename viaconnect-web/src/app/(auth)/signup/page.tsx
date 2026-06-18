@@ -430,7 +430,9 @@ export default function SignupPage() {
                   type="checkbox"
                   checked={consentAccepted}
                   onChange={(e) => setConsentAccepted(e.target.checked)}
-                  className="mt-0.5 w-4 h-4 rounded border-dark-border bg-dark-surface accent-copper"
+                  aria-invalid={!!errors.consent}
+                  aria-describedby={errors.consent ? "consent-error" : undefined}
+                  className="mt-0.5 w-4 h-4 rounded border-dark-border bg-dark-surface accent-copper focus-visible:ring-2 focus-visible:ring-copper/50 focus-visible:outline-none"
                 />
                 <span className="text-sm text-gray-400">
                   I have read and agree to the{" "}
@@ -453,7 +455,7 @@ export default function SignupPage() {
                   </a>
                 </span>
               </label>
-              {errors.consent && <p className="text-xs text-rose mt-1">{errors.consent}</p>}
+              {errors.consent && <p id="consent-error" className="text-xs text-rose mt-1">{errors.consent}</p>}
             </div>
           </div>
         )}
