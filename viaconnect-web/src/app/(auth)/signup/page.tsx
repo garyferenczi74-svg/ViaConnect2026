@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { SiteFooter } from "@/components/layout/SiteFooter";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
@@ -149,7 +150,7 @@ export default function SignupPage() {
   // Step 4
   const [licenseNumber, setLicenseNumber] = useState("");
 
-  // Step 5 — OTP
+  // Step 5: OTP
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [resendCooldown, setResendCooldown] = useState(0);
   const cooldownRef = useRef<ReturnType<typeof setInterval>>();
@@ -206,7 +207,7 @@ export default function SignupPage() {
   async function handleNext() {
     if (!validate()) return;
 
-    // Skip license step for consumers — show privacy interstitial first
+    // Skip license step for consumers: show privacy interstitial first
     if (step === 3 && role === "consumer") {
       setActiveInterstitial(2); // Privacy interstitial
       return;
@@ -252,7 +253,7 @@ export default function SignupPage() {
     setIsLoading(true);
     const supabase = createClient();
 
-    // Create the user account — Supabase sends the confirmation email automatically
+    // Create the user account; Supabase sends the confirmation email automatically
     const { error } = await supabase.auth.signUp({
       email: email.trim(),
       password,
@@ -267,7 +268,7 @@ export default function SignupPage() {
       },
     });
 
-    // 422 = user already registered — still allow them to verify
+    // 422 = user already registered; still allow them to verify
     if (error && !error.message.includes("already registered")) {
       toast.error(error.message);
       setIsLoading(false);
@@ -363,6 +364,7 @@ export default function SignupPage() {
   }
 
   return (
+    <>
     <div className="w-full max-w-md mx-auto px-4 md:px-0">
       {/* Logo */}
       <div className="text-center mb-6">
@@ -633,5 +635,7 @@ export default function SignupPage() {
         )}
       </form>
     </div>
+      <SiteFooter />
+    </>
   );
 }

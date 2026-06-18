@@ -1,4 +1,5 @@
 import { HeroVariantRenderer } from "@/components/landing/HeroVariantRenderer";
+import { SiteFooter } from "@/components/layout/SiteFooter";
 import { TrustBandSection } from "@/components/home/TrustBandSection";
 import { SarahScenarioSection } from "@/components/home/SarahScenarioSection";
 import { OutcomeTimelineSection } from "@/components/home/OutcomeTimelineSection";
@@ -36,6 +37,7 @@ export default function HomePage() {
         <OutcomeTimelineSection />
         <LandingScrollSections />
       </main>
+      <SiteFooter />
     </>
   );
 }
