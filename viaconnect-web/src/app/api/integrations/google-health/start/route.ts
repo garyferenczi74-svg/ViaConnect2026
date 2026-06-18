@@ -28,14 +28,19 @@ export async function GET(req: NextRequest) {
   }
   if (!isConnectorConfigured()) {
     // Presence-only diagnostic (never the values) so a not_configured can be
-    // pinpointed to the missing env var. tokenKeyValid false with hasTokenKey
-    // true means the key is set but not 32 bytes.
+    // pinpointed. tokenKey lengths (not the value) are also echoed in the
+    // redirect query so they are readable from the browser URL during setup.
+    const tk = tokenKeyDiagnostics();
     safeLog.warn(SCOPE, "connector not configured", {
       hasClientId: Boolean(process.env.GOOGLE_HEALTH_CLIENT_ID),
       hasClientSecret: Boolean(process.env.GOOGLE_HEALTH_CLIENT_SECRET),
-      tokenKey: tokenKeyDiagnostics(),
+      tokenKey: tk,
     });
-    return back("error=not_configured");
+    const hasId = Boolean(process.env.GOOGLE_HEALTH_CLIENT_ID);
+    const hasSecret = Boolean(process.env.GOOGLE_HEALTH_CLIENT_SECRET);
+    return back(
+      `error=not_configured&id=${hasId ? 1 : 0}&secret=${hasSecret ? 1 : 0}&tkRawLen=${tk.rawLen}&tkDecLen=${tk.decodedLen}`,
+    );
   }
 
   try {
