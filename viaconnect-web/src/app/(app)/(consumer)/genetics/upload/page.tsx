@@ -34,8 +34,9 @@ type PdfPreview = {
   sourceFilename: string;
   method: string;
   scanned: boolean;
+  readable?: boolean;
   matchedCount: number;
-  rows: Array<{ rsid: string; genotype: string }>;
+  rows: Array<{ rsid: string; genotype: string; status?: string }>;
   preview: Array<{
     rsid: string;
     gene: string;
@@ -296,8 +297,9 @@ export default function GeneticUploadPage() {
               <div className="flex items-start gap-2 rounded-xl border border-amber-500/30 bg-amber-500/[0.06] p-4 text-sm text-amber-200">
                 <AlertTriangle className="mt-0.5 h-4 w-4 flex-none" strokeWidth={1.5} />
                 <span>
-                  We could not find any known genetic markers in this PDF. It may be a summary report
-                  rather than raw genotype data. Try a different file or enter manually.
+                  {pdfPreview.readable === false
+                    ? 'We could not read this document. It may be unreadable, or our reader is temporarily unavailable. Try a clearer file or enter your results manually.'
+                    : 'We could not find any known genetic markers in this report. It may be a summary rather than raw genotype data, or it covers markers outside our current panel. Try a different file or enter manually.'}
                 </span>
               </div>
             ) : (
@@ -520,8 +522,9 @@ export default function GeneticUploadPage() {
               <div>
                 <p className="text-sm font-medium text-white">Your data is secure</p>
                 <p className="text-xs text-gray-400 mt-1">
-                  Genetic data is encrypted at rest and in transit. We never share your raw data with third parties.
-                  All processing happens on HIPAA-aware infrastructure. You can delete your data at any time from your profile settings.
+                  Genetic data is encrypted at rest and in transit. To read a PDF or image report, AI extraction
+                  sends that document to our AI provider (Google Gemini); we do not sell your data. Processing
+                  happens on HIPAA-aware infrastructure, and you can delete your data at any time from your profile settings.
                 </p>
               </div>
             </div>

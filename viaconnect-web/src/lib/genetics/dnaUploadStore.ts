@@ -11,7 +11,7 @@
 // genetics route pattern (genetic_variants is cast the same way).
 
 import { safeLog } from '@/lib/utils/safe-log';
-import { analyzeVariants, type ParsedSnpRow } from './dnaAnalysisEngine';
+import { analyzeVariants, type ParsedSnpRow, type InterpretedVariant } from './dnaAnalysisEngine';
 import type { PanelKey } from './panelLabels';
 
 export interface DnaUploadProvenance {
@@ -36,9 +36,20 @@ export async function persistDnaAnalysis(
   rows: ParsedSnpRow[],
   provenance: DnaUploadProvenance,
 ): Promise<DnaPersistResult> {
-  try {
-    const variants = analyzeVariants(rows);
+  return persistInterpretedVariants(supabase, userId, analyzeVariants(rows), provenance);
+}
 
+// Persist already-interpreted variants. Used by both the raw genotype path
+// (analyzeVariants output) and the methylation report path (status stated by
+// the lab and verified by the member), so the storage shape stays identical.
+export async function persistInterpretedVariants(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabase: any,
+  userId: string,
+  variants: InterpretedVariant[],
+  provenance: DnaUploadProvenance,
+): Promise<DnaPersistResult> {
+  try {
     // Provenance row first so variants can reference its id.
     const { data: upload, error: uploadErr } = await supabase
       .from('dna_uploads')
@@ -99,7 +110,7 @@ export async function persistDnaAnalysis(
 
     return { uploadId, variantCount: variants.length, panelCounts };
   } catch (err) {
-    safeLog.error('genetics.persist', 'persistDnaAnalysis threw (fail-open)', {
+    safeLog.error('genetics.persist', 'persistInterpretedVariants threw (fail-open)', {
       user_id: userId,
       error: err instanceof Error ? err.message : String(err),
     });

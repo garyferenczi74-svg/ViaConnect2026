@@ -448,6 +448,32 @@ export async function parseImageWithGemini(buf: Buffer, mimeType: string, note: 
   return { parsed, usage };
 }
 
+// Prompt 204c: generic vision extraction for a clinical report image or PDF.
+// Sends the document to Gemini with a caller-supplied system instruction and
+// prompt and returns the raw model text (the caller parses and validates it).
+// Reuses the thinking-on photo config so the model reasons about the document
+// layout, which a photographed or rotated report needs.
+export async function extractWithGeminiVision(
+  buf: Buffer,
+  mimeType: string,
+  systemInstruction: string,
+  prompt: string,
+): Promise<string> {
+  const data = buf.toString('base64');
+  const { text } = await callGemini({
+    systemInstruction: { parts: [{ text: systemInstruction }] },
+    contents: [{
+      role: 'user',
+      parts: [
+        { inlineData: { mimeType, data } },
+        { text: prompt },
+      ],
+    }],
+    generationConfig: PHOTO_PARSE_GENERATION_CONFIG,
+  });
+  return text;
+}
+
 function decodeEstimation(text: string, usage: Usage): EstimationResult {
   const parsed = parseJsonOrThrow(text) as Record<string, number>;
   const numOrNull = (v: unknown): number | null =>

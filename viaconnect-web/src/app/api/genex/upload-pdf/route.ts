@@ -12,6 +12,7 @@ import { withTimeout } from '@/lib/utils/with-timeout';
 import { extractPdfText, type PdfExtractionResult } from '@/lib/pdf/extractPdfText';
 import { parseDnaReportText } from '@/lib/genetics/parseDnaReportText';
 import { analyzeVariants } from '@/lib/genetics/dnaAnalysisEngine';
+import { extractMethylationFromPdf, mapMethylationRows } from '@/lib/genetics/extractMethylationReport';
 import { inMemoryRateLimit } from '@/lib/utils/inMemoryRateLimit';
 
 const MAX_PDF_BYTES = 10 * 1024 * 1024; // 10 MB
@@ -63,18 +64,45 @@ export async function POST(request: Request): Promise<NextResponse> {
       extraction = { text: '', method: 'none' as const, pages: 0, scanned: true };
     }
     const rows = parseDnaReportText(extraction.text);
-    const interpreted = analyzeVariants(rows);
+    let interpreted = analyzeVariants(rows);
     // The verbatim source snippet per rsID, so the verify screen can show the
     // member exactly what was read (catching a neighbouring-column misread).
-    const contextByRsid = new Map(rows.map((r) => [r.rsid, r.context]));
+    const contextByRsid = new Map<string, string>(rows.map((r) => [r.rsid, r.context]));
+    let source: 'genotype' | 'methylation_report' = 'genotype';
+
+    // Fallback: no raw rsID + genotype data was found. Many real reports
+    // (Doctor's Data, Yasko-style methylation panels) list results by
+    // gene/variant name with a +/+ +/- -/- call instead, and are often
+    // photographed or scanned. Read the table with Gemini vision and map the
+    // gene/variant labels to rsIDs. The lab states the status, so the model
+    // reads the table and the deterministic map assigns the panel.
+    if (interpreted.length === 0) {
+      const mimeType = file.type || 'application/pdf';
+      const methInterpreted = mapMethylationRows(await extractMethylationFromPdf(buffer, mimeType));
+      if (methInterpreted.length > 0) {
+        interpreted = methInterpreted;
+        source = 'methylation_report';
+        for (const v of methInterpreted) {
+          contextByRsid.set(v.rsid, `Reported as ${v.status} on your methylation pathway report`);
+        }
+      }
+    }
+
+    // readable distinguishes "we read the document but found no known markers"
+    // from "we could not read the document at all" (empty extract + no vision
+    // result, for example a Gemini outage), so the UI does not show a blank
+    // report as if every marker were absent.
+    const readable = extraction.text.length > 0 || interpreted.length > 0;
 
     return NextResponse.json({
       sourceFilename: file.name,
       method: extraction.method,
       scanned: extraction.scanned,
-      // The confirm step re-derives interpretation server-side from these rows;
-      // it never trusts a client-sent status.
-      rows: interpreted.map((v) => ({ rsid: v.rsid, genotype: v.genotype })),
+      source,
+      readable,
+      // The confirm step re-derives interpretation server-side from these rows:
+      // a genotype row is re-scored, a methylation row is re-looked-up by rsID.
+      rows: interpreted.map((v) => ({ rsid: v.rsid, genotype: v.genotype, status: v.status })),
       // For display only, so the member can verify before saving.
       preview: interpreted.map((v) => ({
         rsid: v.rsid,
