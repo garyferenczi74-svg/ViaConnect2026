@@ -11,6 +11,7 @@ import { withTimeout, isTimeoutError } from "@/lib/utils/with-timeout";
 import { safeLog } from "@/lib/utils/safe-log";
 import { isFeatureEnabled } from "@/lib/config/feature-flags";
 import { buildAuthorizeUrl, isConnectorConfigured } from "@/lib/integrations/google-health/auth";
+import { isTokenEncryptionConfigured } from "@/lib/integrations/google-health/crypto";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -26,6 +27,15 @@ export async function GET(req: NextRequest) {
     return back("error=not_enabled");
   }
   if (!isConnectorConfigured()) {
+    // Presence-only diagnostic (never the values) so a not_configured can be
+    // pinpointed to the missing env var. tokenKeyValid false with hasTokenKey
+    // true means the key is set but not 32 bytes.
+    safeLog.warn(SCOPE, "connector not configured", {
+      hasClientId: Boolean(process.env.GOOGLE_HEALTH_CLIENT_ID),
+      hasClientSecret: Boolean(process.env.GOOGLE_HEALTH_CLIENT_SECRET),
+      hasTokenKey: Boolean(process.env.GOOGLE_HEALTH_TOKEN_KEY),
+      tokenKeyValid: isTokenEncryptionConfigured(),
+    });
     return back("error=not_configured");
   }
 
