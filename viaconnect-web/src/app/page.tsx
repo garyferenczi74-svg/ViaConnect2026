@@ -37,7 +37,12 @@ export default function HomePage() {
         <OutcomeTimelineSection />
         <LandingScrollSections />
       </main>
-      <SiteFooter />
+      {/* relative z-10 lifts the footer above the hero's fixed inset-0 backdrop,
+          which paints as part of StickyHeroWrapper's z-0 stacking context and
+          otherwise covers a static footer. Matches the scroll sections' z-10. */}
+      <div className="relative z-10">
+        <SiteFooter />
+      </div>
     </>
   );
 }
