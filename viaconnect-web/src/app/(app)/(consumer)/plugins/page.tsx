@@ -296,6 +296,7 @@ export default function PluginsPage() {
                   if (e.key === 'Enter' && !matchesExisting && query.trim().length >= 2) handleRequest();
                 }}
                 placeholder="Search apps, wearables, or devices..."
+                aria-label="Search apps, wearables, or devices"
                 className="w-full rounded-xl border border-white/10 bg-white/[0.04] py-3 min-h-[44px] pl-10 pr-4 text-sm text-white placeholder-white/30 focus:border-[#2DA5A0]/40 focus:outline-none focus:ring-2 focus:ring-[#2DA5A0]/20"
               />
             </div>
