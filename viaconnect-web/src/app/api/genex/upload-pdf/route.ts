@@ -8,6 +8,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { safeLog } from '@/lib/utils/safe-log';
+import { withTimeout } from '@/lib/utils/with-timeout';
 import { extractPdfText } from '@/lib/pdf/extractPdfText';
 import { parseDnaReportText } from '@/lib/genetics/parseDnaReportText';
 import { analyzeVariants } from '@/lib/genetics/dnaAnalysisEngine';
@@ -50,7 +51,17 @@ export async function POST(request: Request): Promise<NextResponse> {
 
   try {
     const buffer = Buffer.from(await file.arrayBuffer());
-    const extraction = await extractPdfText(buffer);
+    // Backstop: extractPdfText is internally bounded, but race it anyway so the
+    // route always returns well under maxDuration even if a layer misbehaves.
+    let extraction;
+    try {
+      extraction = await withTimeout(extractPdfText(buffer), 40_000, 'api.genex.upload-pdf.extract');
+    } catch (err) {
+      safeLog.warn('api.genex.upload-pdf', 'extraction exceeded budget, treating as unreadable', {
+        user_id: user.id, error: err instanceof Error ? err.message : String(err),
+      });
+      extraction = { text: '', method: 'none' as const, pages: 0, scanned: true };
+    }
     const rows = parseDnaReportText(extraction.text);
     const interpreted = analyzeVariants(rows);
     // The verbatim source snippet per rsID, so the verify screen can show the

@@ -13,6 +13,7 @@ import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { PageTransition, StaggerChild, MotionCard } from "@/lib/motion";
+import { withAbortTimeout } from "@/lib/utils/with-timeout";
 
 const supabase = createClient();
 
@@ -118,7 +119,12 @@ export default function GeneticUploadPage() {
       if (file.name.toLowerCase().endsWith(".pdf")) {
         const formData = new FormData();
         formData.append("file", file);
-        const res = await fetch("/api/genex/upload-pdf", { method: "POST", body: formData });
+        // Abort the request if the server stalls, so the spinner can never hang.
+        const res = await withAbortTimeout(
+          (signal) => fetch("/api/genex/upload-pdf", { method: "POST", body: formData, signal }),
+          45_000,
+          "genetics.upload-pdf",
+        );
         const data = await res.json();
         if (!res.ok) {
           toast.error(data.error || "Could not read this PDF");
