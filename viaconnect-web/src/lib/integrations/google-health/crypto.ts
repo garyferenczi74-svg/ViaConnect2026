@@ -38,6 +38,30 @@ export function isTokenEncryptionConfigured(): boolean {
   return loadKey() !== null;
 }
 
+// Presence-only diagnostic for the token key: lengths, never the value. A valid
+// key is rawLen 64 (hex) or 44 (base64) and decodedLen 32. rawLen 66 usually
+// means the value was wrapped in quotes; decodedLen other than 32 means wrong
+// length or a non-hex 64-char value falling back to base64.
+export function tokenKeyDiagnostics(): {
+  present: boolean;
+  rawLen: number;
+  decodedLen: number;
+  valid: boolean;
+} {
+  const raw = process.env.GOOGLE_HEALTH_TOKEN_KEY;
+  if (!raw) return { present: false, rawLen: 0, decodedLen: 0, valid: false };
+  const trimmed = raw.trim();
+  let decodedLen = -1;
+  try {
+    decodedLen = /^[0-9a-fA-F]{64}$/.test(trimmed)
+      ? Buffer.from(trimmed, "hex").length
+      : Buffer.from(trimmed, "base64").length;
+  } catch {
+    decodedLen = -1;
+  }
+  return { present: true, rawLen: trimmed.length, decodedLen, valid: decodedLen === 32 };
+}
+
 // Encrypt a token. Throws if the key is missing or invalid: callers must check
 // isTokenEncryptionConfigured first and refuse to connect without it.
 export function encryptToken(plaintext: string): string {
