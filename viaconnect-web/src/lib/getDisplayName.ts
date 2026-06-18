@@ -6,6 +6,7 @@
 
 const NAME_MAP: Readonly<Record<string, string>> = {
   jeffery: "Jeffery",
+  aria: "ARIA",
   hannah: "Hannah",
   // gordon is the canonical slug. 'gordan' was a historical misspelling;
   // no live rows carry it (verified 2026-06-12), but the alias stays as
