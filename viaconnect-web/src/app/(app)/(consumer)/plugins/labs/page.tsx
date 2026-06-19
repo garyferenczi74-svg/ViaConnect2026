@@ -73,9 +73,48 @@ export default function LabsPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [savedCount, setSavedCount] = useState<number | null>(null);
   const [dragOver, setDragOver] = useState(false);
+  const [manualMode, setManualMode] = useState(false);
+  const [manualRows, setManualRows] = useState<Array<{ name: string; value: string; unit: string; low: string; high: string }>>(
+    () => Array.from({ length: 3 }, () => ({ name: '', value: '', unit: '', low: '', high: '' })),
+  );
 
   const handleAction = () => {
     toast.success('Connection flow coming soon');
+  };
+
+  const emptyManualRows = () => Array.from({ length: 3 }, () => ({ name: '', value: '', unit: '', low: '', high: '' }));
+
+  const updateManualRow = (i: number, field: 'name' | 'value' | 'unit' | 'low' | 'high', val: string) => {
+    setManualRows((rows) => rows.map((r, idx) => (idx === i ? { ...r, [field]: val } : r)));
+  };
+
+  const submitManual = () => {
+    const biomarkers = manualRows
+      .map((r) => {
+        const value = r.value.trim() === '' ? NaN : Number(r.value);
+        const low = r.low.trim() === '' ? null : Number(r.low);
+        const high = r.high.trim() === '' ? null : Number(r.high);
+        const refLow = low !== null && Number.isFinite(low) ? low : null;
+        const refHigh = high !== null && Number.isFinite(high) ? high : null;
+        const flag: 'low' | 'normal' | 'high' | null =
+          refLow !== null && refHigh !== null
+            ? value < refLow ? 'low' : value > refHigh ? 'high' : 'normal'
+            : null;
+        return { name: r.name.trim(), value, unit: r.unit.trim(), referenceLow: refLow, referenceHigh: refHigh, flag, context: 'Entered manually' };
+      })
+      .filter((b) => b.name.length >= 2 && Number.isFinite(b.value));
+    if (biomarkers.length === 0) {
+      toast.error('Add at least one biomarker with a name and a value');
+      return;
+    }
+    setSavedCount(null);
+    setPreview({ sourceFilename: 'Manual entry', method: 'manual', scanned: false, matchedCount: biomarkers.length, biomarkers });
+    setManualMode(false);
+  };
+
+  const cancelManual = () => {
+    setManualMode(false);
+    setManualRows(emptyManualRows());
   };
 
   const uploadPdf = useCallback(async (file: File) => {
@@ -339,6 +378,77 @@ export default function LabsPage() {
     );
   }
 
+  // MANUAL ENTRY SCREEN
+  if (manualMode) {
+    const inputCls =
+      'rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-[#2DA5A0] focus:outline-none';
+    return (
+      <div className="flex flex-col gap-4 md:gap-6 px-4 md:px-0">
+        <Link
+          href="/plugins"
+          className="flex items-center gap-2 text-sm font-medium transition-colors hover:text-white"
+          style={{ color: 'var(--teal-500)' }}
+        >
+          <ArrowLeft size={16} strokeWidth={1.5} />
+          Plugins
+        </Link>
+
+        <div className="glass-v2 p-4 md:p-6 rounded-2xl flex flex-col gap-4" style={{ borderLeft: '4px solid #2DA5A0' }}>
+          <div className="flex items-start gap-3">
+            <div
+              className="flex items-center justify-center w-11 h-11 rounded-xl flex-none"
+              style={{ backgroundColor: 'rgba(45, 165, 160, 0.15)' }}
+            >
+              <Edit3 size={22} strokeWidth={1.5} style={{ color: '#2DA5A0' }} />
+            </div>
+            <div>
+              <h2 className="text-heading-3 text-white">Enter your results</h2>
+              <p className="text-sm text-white/60 leading-relaxed mt-1">
+                Type each biomarker. Name and value are required; unit and reference range are
+                optional. You will review everything before it is saved.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <div className="hidden md:grid md:grid-cols-[2fr_1fr_1fr_1fr_1fr] gap-2 px-1 text-[11px] uppercase tracking-wide text-white/40">
+              <span>Biomarker</span>
+              <span>Value</span>
+              <span>Unit</span>
+              <span>Range low</span>
+              <span>Range high</span>
+            </div>
+            {manualRows.map((r, i) => (
+              <div key={i} className="grid grid-cols-2 md:grid-cols-[2fr_1fr_1fr_1fr_1fr] gap-2">
+                <input value={r.name} onChange={(e) => updateManualRow(i, 'name', e.target.value)} placeholder="e.g. Vitamin D" className={`${inputCls} col-span-2 md:col-span-1`} />
+                <input value={r.value} onChange={(e) => updateManualRow(i, 'value', e.target.value)} placeholder="Value" inputMode="decimal" className={inputCls} />
+                <input value={r.unit} onChange={(e) => updateManualRow(i, 'unit', e.target.value)} placeholder="Unit" className={inputCls} />
+                <input value={r.low} onChange={(e) => updateManualRow(i, 'low', e.target.value)} placeholder="Low" inputMode="decimal" className={inputCls} />
+                <input value={r.high} onChange={(e) => updateManualRow(i, 'high', e.target.value)} placeholder="High" inputMode="decimal" className={inputCls} />
+              </div>
+            ))}
+          </div>
+
+          <div>
+            <button
+              type="button"
+              onClick={() => setManualRows((rows) => [...rows, { name: '', value: '', unit: '', low: '', high: '' }])}
+              className="text-sm font-semibold"
+              style={{ color: 'var(--teal-500)' }}
+            >
+              + Add another biomarker
+            </button>
+          </div>
+
+          <div className="flex flex-wrap gap-3">
+            <VCButton variant="primary" size="sm" onClick={submitManual}>Continue to review</VCButton>
+            <VCButton variant="secondary" size="sm" onClick={cancelManual}>Cancel</VCButton>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // DEFAULT SCREEN (cards)
   return (
     <div className="flex flex-col gap-4 md:gap-6 px-4 md:px-0">
@@ -469,7 +579,7 @@ export default function LabsPage() {
         <p className="text-sm text-white/60 leading-relaxed">
           Type in individual biomarker values from any lab report.
         </p>
-        <VCButton variant="ghost" size="sm" onClick={handleAction}>
+        <VCButton variant="ghost" size="sm" onClick={() => setManualMode(true)}>
           Enter Manually &rarr;
         </VCButton>
       </div>
