@@ -44,6 +44,8 @@ import { GENEX360_SHOP_HREF } from './geneticsHubLinks';
 import { useGeneticsVariants, type VariantRecord } from './useGeneticsVariants';
 import { VariantReportPill } from './VariantReportPill';
 import { resolveVariantReport } from '@/lib/genex360/resolveVariantReport';
+import { PanelDisclaimer } from '@/components/shop/genex360/PanelDisclaimer';
+import type { PanelSlug } from '@/data/genex360/types';
 import {
   PANEL_ORDER,
   PANEL_LABELS,
@@ -172,9 +174,10 @@ export function YourVariantsCard({ className }: YourVariantsCardProps) {
   const activeGenericLabel = PANEL_LABELS[activePanel].generic_label;
   // Prompt 204e (2026-06-19): the canonical Blueprint panel slug for the active
   // panel (methylation to genex-m). This is the panelSlug the 193c resolver and
-  // Report pill join on; PANEL_LABELS is the single source so it is never
-  // hardcoded here.
-  const activePanelSlug = PANEL_LABELS[activePanel].slug;
+  // Report pill join on, and the slug the approved PanelDisclaimer keys off;
+  // PANEL_LABELS is the single source so it is never hardcoded here. The six
+  // PANEL_LABELS slugs are exactly the PanelSlug union.
+  const activePanelSlug = PANEL_LABELS[activePanel].slug as PanelSlug;
   const activeTabId = `${PANEL_ID}-tab-${activePanel}`;
 
   return (
@@ -358,6 +361,18 @@ export function YourVariantsCard({ className }: YourVariantsCardProps) {
             </Link>
           </div>
         )}
+      </div>
+
+      {/* Consult-your-practitioner warning on all SNP data (Gary 2026-06-19). My
+          204b rewrite dropped the consult note the retired VariantRow carried;
+          this restores it as a single persistent card footer, so the member
+          never sees their interpreted variants without it, on every panel.
+          Reuses the approved PanelDisclaimer verbatim (the same fuller
+          not-a-diagnosis / tendencies-not-certainties / consult-a-licensed-
+          practitioner language shown on the GENEX360 surfaces), keyed to the
+          active panel so PeptideIQ and CannabisIQ get their extra caveats too. */}
+      <div className="mt-4">
+        <PanelDisclaimer slug={activePanelSlug} />
       </div>
     </GeneticsHubTile>
   );

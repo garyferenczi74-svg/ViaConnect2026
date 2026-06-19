@@ -74,6 +74,27 @@ describe('YourVariantsCard source', () => {
     expect(source).toContain('GENETICS_CARD_MEDIA.yourVariants');
   });
 
+  it('reconnects the 193c deep link via VariantReportPill and resolveVariantReport (204e)', () => {
+    expect(source).toContain("import { VariantReportPill }");
+    expect(source).toContain("import { resolveVariantReport }");
+    // The panel slug is derived from PANEL_LABELS, never hardcoded, and fed to
+    // the resolver per row; the pill is gated on a real matching report.
+    expect(source).toContain('PANEL_LABELS[activePanel].slug');
+    expect(source).toContain('resolveVariantReport(row.rsid, activePanelSlug)');
+    expect(source).toContain('<VariantReportPill');
+    expect(source).toContain('report?.exists');
+  });
+
+  it('shows the consult-your-practitioner warning on the SNP data via the approved PanelDisclaimer', () => {
+    expect(source).toContain(
+      "import { PanelDisclaimer } from '@/components/shop/genex360/PanelDisclaimer'",
+    );
+    // Keyed to the active panel so PeptideIQ / CannabisIQ get their extra
+    // caveats, and persistent (the warning is outside the loading / rows /
+    // empty branches, so it shows on every state).
+    expect(source).toContain('<PanelDisclaimer slug={activePanelSlug} />');
+  });
+
   it('contains no em or en dashes', () => {
     expect(source.includes(String.fromCharCode(0x2014))).toBe(false);
     expect(source.includes(String.fromCharCode(0x2013))).toBe(false);
