@@ -106,26 +106,29 @@ describe('PanelMarkerGroup per SNP disclosure (193a)', () => {
     expect(source).toContain('strokeWidth={1.5}');
   });
 
-  it('mounts the SnpDeepReport in a labeled region only when this row is open', () => {
-    expect(source).toContain("import { SnpDeepReport } from \"./SnpDeepReport\"");
+  it('mounts the VariantReportTabs in a labeled region only when this row is open (204f)', () => {
+    // Prompt 204f: the open accordion now mounts the two-tab VariantReportTabs,
+    // which holds the 193a SnpDeepReport behind its Full Report tab.
+    expect(source).toContain("import { VariantReportTabs } from \"./VariantReportTabs\"");
     expect(source).toContain('id={detailId}');
     expect(source).toContain('role="region"');
     expect(source).toContain('aria-label={`${marker.symbol} full report`}');
-    expect(source).toContain('<SnpDeepReport report={marker.deepReport} highlightRsid={highlightRsid} />');
+    expect(source).toContain('<VariantReportTabs');
     // The detail region is conditional on the open state.
     expect(source).toContain('{isOpen ? (');
   });
 
-  it('moves the description into the accordion, not the collapsed header (Prompt 193e)', () => {
-    // The accordion body renders the description paragraph first, then the report
-    // only when the marker carries one. The collapsed header is heading + toggle.
-    expect(source).toContain('<p className="text-[13px] leading-relaxed text-white/75">{marker.description}</p>');
+  it('mounts the tabs for a deep-report marker and keeps an inline description otherwise (204f)', () => {
+    // Prompt 204f: a marker with a deep report opens into the tab shell (the
+    // description moves into the Full Report tab). A marker without a deep report
+    // keeps its inline description paragraph (the Prompt 193e placement).
     expect(source).toContain('marker.deepReport ? (');
+    expect(source).toContain('<p className="text-[13px] leading-relaxed text-white/75">{marker.description}</p>');
   });
 
-  it('threads the highlightRsid through to the SnpDeepReport (193c)', () => {
-    // The group accepts the prop, forwards it to SnpMarkerRow, and on to the
-    // report so the deep linked variant sub block gets its soft ring.
+  it('threads the highlightRsid through to the report (193c / 204f)', () => {
+    // The group accepts the prop, forwards it to SnpMarkerRow, and on to
+    // VariantReportTabs so the deep linked variant sub block gets its soft ring.
     expect(source).toContain('highlightRsid?: string | null');
     expect(source).toContain('highlightRsid={highlightRsid ?? null}');
     expect(source).toContain('highlightRsid: string | null');

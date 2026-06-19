@@ -14,12 +14,19 @@
 // collapses; without it (a static, non-island use) markers render inline as a
 // fallback.
 //
+// Prompt 204f (2026-06-19): for a marker that carries a deep report, the open
+// accordion now mounts VariantReportTabs rather than the SnpDeepReport directly.
+// That shell puts a plain-language Description tab in front and keeps the 193a
+// deep report behind a Full Report tab, unchanged. highlightRsid is threaded into
+// it (and on to SnpDeepReport) so a Report pill deep link still opens Full Report
+// and highlights the target variant. Markers without a deep report are unchanged.
+//
 // Prompt 193a / 193c carryover: the island owns the single open slug (openSnpSlug
 // + onToggleSnp), the row keeps id={`snp-${slug}`} with scroll-mt so the island
-// can bring it under the sticky header, and highlightRsid is forwarded to
-// SnpDeepReport so a Report pill deep link gets its soft non-alarm teal ring on
-// the matching variant. Because the deep link sets openSnpSlug to the gene, the
-// accordion auto opens on arrival; it never lands on a collapsed, empty row.
+// can bring it under the sticky header, and highlightRsid is forwarded down so a
+// Report pill deep link gets its soft non-alarm teal ring on the matching
+// variant. Because the deep link sets openSnpSlug to the gene, the accordion auto
+// opens on arrival; it never lands on a collapsed, empty row.
 //
 // Standing rules honored: tokens only (Teal #2DA5A0, Card #1E3054, white opacity
 // neutrals), Lucide strokeWidth 1.5, Instrument Sans inherited, no emojis, no em
@@ -28,7 +35,7 @@
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ChevronDown, Dot } from "lucide-react";
 import type { PanelMarker, PanelMarkerGroup as PanelMarkerGroupData } from "@/data/genex360/types";
-import { SnpDeepReport } from "./SnpDeepReport";
+import { VariantReportTabs } from "./VariantReportTabs";
 
 interface PanelMarkerGroupProps {
   group: PanelMarkerGroupData;
@@ -157,8 +164,10 @@ function SnpMarkerRow({
         </button>
       </div>
 
-      {/* Accordion: the description first (moved here from the collapsed row in
-          Prompt 193e), then the full SnpDeepReport when the marker carries one.
+      {/* Accordion body (Prompt 204f). A marker with a deep report opens into the
+          two-tab VariantReportTabs: a plain-language Description first, the full
+          193a deep report behind a Full Report tab. A marker without a deep report
+          keeps its inline description paragraph (moved here in Prompt 193e).
           Height auto via framer motion, instant under prefers reduced motion. */}
       <AnimatePresence initial={false}>
         {isOpen ? (
@@ -174,10 +183,15 @@ function SnpMarkerRow({
             className="overflow-hidden"
           >
             <div className="space-y-4 border-t border-white/[0.06] px-3 pb-4 pt-4">
-              <p className="text-[13px] leading-relaxed text-white/75">{marker.description}</p>
               {marker.deepReport ? (
-                <SnpDeepReport report={marker.deepReport} highlightRsid={highlightRsid} />
-              ) : null}
+                <VariantReportTabs
+                  marker={marker}
+                  report={marker.deepReport}
+                  highlightRsid={highlightRsid}
+                />
+              ) : (
+                <p className="text-[13px] leading-relaxed text-white/75">{marker.description}</p>
+              )}
             </div>
           </motion.div>
         ) : null}

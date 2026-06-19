@@ -1,0 +1,248 @@
+'use client';
+
+// Prompt 204f (2026-06-19): the two-tab shell around one GeneXM variant report on
+// the Your Genetic Blueprint page. It puts a plain-language Description in front
+// of the dense Prompt 193a deep report, and keeps the full technical content
+// behind a Full Report tab, unchanged.
+//
+// Tabs:
+//   Description (default on a plain open) renders the validated laySummary from
+//     the deep report when one exists, otherwise a neutral interim orientation
+//     that introduces NO fabricated specifics for the gene (only a generic note
+//     on what a SNP is, the gene name, a pointer to Full Report, and the consult
+//     note). The build never authors clinical lay copy: it only renders the
+//     validated laySummary or the safe placeholder.
+//   Full Report holds the existing content unchanged: the marker description
+//     paragraph followed by the SnpDeepReport. This component does not alter the
+//     deep report; it only moves it behind a tab.
+//
+// Deep-link interaction (preserves Prompt 204e). When the report is opened through
+// a variant deep link from the Report pill, the island sets highlightRsid and
+// scrolls to the variant sub block (id variant-<rsid>) inside SnpDeepReport on the
+// next frame. That block only exists when the Full Report tab is rendered, so the
+// default tab is decided in the useState initializer (not a post-mount effect):
+// if highlightRsid matches a variant in this report, the tab opens on Full Report
+// so the variant is in the DOM before the island's requestAnimationFrame scroll
+// fires, keeping the 204e highlight visible. A plain open lands on Description.
+//
+// Tab control mirrors PanelPillTabs: a WAI-ARIA tablist with roving tabindex,
+// arrow / Home / End navigation and automatic activation, a visible focus ring,
+// and a 44px minimum tap target. The content swap is an instant conditional
+// render (no animated transition), which respects prefers-reduced-motion by
+// construction; the pill hover and active transitions carry motion-reduce.
+//
+// Standing rules honored: tokens only (Deep Navy #1A2744, Card #1E3054, Teal
+// #2DA5A0, white opacity neutrals), Lucide strokeWidth 1.5 outline icons, no
+// emojis, no em or en dashes, TypeScript strict (no any). Any emphasis stays a
+// soft Teal, never an alarm color. Consumer brand text lives in the data.
+
+import { useEffect, useRef, useState } from 'react';
+import type { KeyboardEvent } from 'react';
+import { BookOpen, FileText, ShieldCheck } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
+import type { PanelMarker, SnpDeepReport as SnpDeepReportData } from '@/data/genex360/types';
+import { SnpDeepReport } from './SnpDeepReport';
+
+// The consult note shown on every Description tab, validated or interim. Matches
+// the existing approved short copy used across the genetics surface.
+const CONSULT_NOTE = 'Consult a practitioner before making changes based on genetic data';
+
+type ReportTab = 'description' | 'full';
+
+interface VariantReportTabsProps {
+  marker: PanelMarker;
+  report: SnpDeepReportData;
+  highlightRsid: string | null;
+}
+
+// True when the active variant deep link targets a variant that lives in THIS
+// report. Used to decide the default tab and to re-assert Full Report on a later
+// deep link.
+function targetsThisReport(report: SnpDeepReportData, highlightRsid: string | null): boolean {
+  return highlightRsid != null && report.keyVariants.some((v) => v.rsid === highlightRsid);
+}
+
+export function VariantReportTabs({ marker, report, highlightRsid }: VariantReportTabsProps) {
+  const slug = marker.symbol.toLowerCase();
+
+  // Default tab decided in the initializer so a variant deep link has Full Report
+  // (and thus the variant sub block) in the DOM before the island's rAF scroll.
+  const [activeTab, setActiveTab] = useState<ReportTab>(
+    targetsThisReport(report, highlightRsid) ? 'full' : 'description',
+  );
+
+  // A later variant deep link onto an already mounted report (for example a
+  // hashchange) re-asserts Full Report. Keyed on highlightRsid so a manual switch
+  // to Description afterward is not yanked back (highlightRsid is then unchanged).
+  useEffect(() => {
+    if (targetsThisReport(report, highlightRsid)) {
+      setActiveTab('full');
+    }
+  }, [report, highlightRsid]);
+
+  const tabs: Array<{ id: ReportTab; label: string; icon: LucideIcon }> = [
+    { id: 'description', label: 'Description', icon: BookOpen },
+    { id: 'full', label: 'Full Report', icon: FileText },
+  ];
+
+  // One ref per tab button so arrow navigation can move DOM focus (roving focus).
+  const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const activeIndex = tabs.findIndex((tab) => tab.id === activeTab);
+
+  const focusAndActivate = (index: number) => {
+    const count = tabs.length;
+    const wrapped = ((index % count) + count) % count;
+    setActiveTab(tabs[wrapped].id);
+    tabRefs.current[wrapped]?.focus();
+  };
+
+  const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    const current = activeIndex < 0 ? 0 : activeIndex;
+    switch (event.key) {
+      case 'ArrowRight':
+      case 'ArrowDown':
+        event.preventDefault();
+        focusAndActivate(current + 1);
+        break;
+      case 'ArrowLeft':
+      case 'ArrowUp':
+        event.preventDefault();
+        focusAndActivate(current - 1);
+        break;
+      case 'Home':
+        event.preventDefault();
+        focusAndActivate(0);
+        break;
+      case 'End':
+        event.preventDefault();
+        focusAndActivate(tabs.length - 1);
+        break;
+      default:
+        break;
+    }
+  };
+
+  const idBase = `report-tabs-${slug}`;
+
+  return (
+    <div className="space-y-4">
+      {/* Tab control: WAI-ARIA tablist mirroring PanelPillTabs. */}
+      <div
+        role="tablist"
+        aria-label={`${marker.symbol} report views`}
+        aria-orientation="horizontal"
+        onKeyDown={onKeyDown}
+        className="flex flex-wrap gap-2"
+      >
+        {tabs.map((tab, index) => {
+          const active = tab.id === activeTab;
+          const Icon = tab.icon;
+          return (
+            <button
+              key={tab.id}
+              ref={(node) => {
+                tabRefs.current[index] = node;
+              }}
+              type="button"
+              role="tab"
+              id={`${idBase}-tab-${tab.id}`}
+              aria-selected={active}
+              aria-controls={`${idBase}-panel-${tab.id}`}
+              tabIndex={active ? 0 : -1}
+              onClick={() => setActiveTab(tab.id)}
+              className={`inline-flex min-h-[44px] flex-none items-center gap-1.5 rounded-full px-4 py-2 text-[13px] font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744] motion-reduce:transition-none ${
+                active
+                  ? 'bg-[#2DA5A0] text-[#1A2744]'
+                  : 'border border-white/15 bg-[#1E3054] text-white/70 hover:border-white/35 hover:text-white/90'
+              }`}
+            >
+              <Icon aria-hidden="true" className="h-4 w-4 shrink-0" strokeWidth={1.5} />
+              {tab.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Description tabpanel: validated laySummary or the neutral interim state. */}
+      {activeTab === 'description' ? (
+        <div
+          role="tabpanel"
+          id={`${idBase}-panel-description`}
+          aria-labelledby={`${idBase}-tab-description`}
+          tabIndex={0}
+          className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744]"
+        >
+          <DescriptionView symbol={marker.symbol} laySummary={report.laySummary ?? []} />
+        </div>
+      ) : null}
+
+      {/* Full Report tabpanel: the existing 193a content, unchanged. */}
+      {activeTab === 'full' ? (
+        <div
+          role="tabpanel"
+          id={`${idBase}-panel-full`}
+          aria-labelledby={`${idBase}-tab-full`}
+          tabIndex={0}
+          className="space-y-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744]"
+        >
+          <p className="text-[13px] leading-relaxed text-white/75">{marker.description}</p>
+          <SnpDeepReport report={report} highlightRsid={highlightRsid} />
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+// The Description body. Renders the validated laySummary paragraphs when present,
+// otherwise the neutral interim orientation. The consult note shows in both.
+function DescriptionView({ symbol, laySummary }: { symbol: string; laySummary: string[] }) {
+  const hasValidated = laySummary.length > 0;
+  return (
+    <div className="space-y-4">
+      {hasValidated ? (
+        <div className="space-y-3">
+          {laySummary.map((paragraph) => (
+            <p key={paragraph} className="text-[13px] leading-relaxed text-white/80">
+              {paragraph}
+            </p>
+          ))}
+        </div>
+      ) : (
+        <InterimDescription symbol={symbol} />
+      )}
+
+      {/* Consult note, consistent with the rest of the genetics surface. */}
+      <p className="flex items-start gap-1.5 text-[11px] leading-relaxed text-white/55">
+        <ShieldCheck
+          aria-hidden="true"
+          className="mt-0.5 h-3.5 w-3.5 shrink-0 text-white/40"
+          strokeWidth={1.5}
+        />
+        {CONSULT_NOTE}
+      </p>
+    </div>
+  );
+}
+
+// The interim orientation for a gene without a validated laySummary yet. It names
+// the gene (factual, from the data) and explains what a SNP is in general terms,
+// but states no specific claim about this gene. Calm and non-alarm.
+function InterimDescription({ symbol }: { symbol: string }) {
+  return (
+    <div className="space-y-3 rounded-xl border border-white/[0.06] bg-[#1E3054]/40 p-4">
+      <p className="text-[13px] leading-relaxed text-white/75">
+        A SNP is a common, single-letter difference in your DNA that can gently influence how your
+        body works. It is an influence on tendencies, not a verdict.
+      </p>
+      <p className="text-[13px] leading-relaxed text-white/75">
+        This overview covers the {symbol} gene. A plain-language summary for {symbol} is being
+        prepared and reviewed, so it is not shown here yet.
+      </p>
+      <p className="text-[13px] leading-relaxed text-white/75">
+        For the full detail available today, open the Full Report tab above.
+      </p>
+    </div>
+  );
+}
+
+export default VariantReportTabs;
