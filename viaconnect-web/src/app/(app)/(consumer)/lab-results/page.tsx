@@ -10,8 +10,9 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, FlaskConical, Dna } from 'lucide-react';
+import { ArrowLeft, FlaskConical, Dna, Sparkles, Loader2, AlertTriangle } from 'lucide-react';
 import { VCButton } from '@/components/ui/VCButton';
+import { getDisplayName } from '@/lib/getDisplayName';
 
 type LabResult = {
   name: string;
@@ -87,6 +88,12 @@ export default function LabResultsPage() {
   const [results, setResults] = useState<LabResult[]>([]);
   const [totalBiomarkers, setTotalBiomarkers] = useState(0);
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
+  // Hannah decipherment (on demand).
+  const [deciphering, setDeciphering] = useState(false);
+  const [decipherText, setDecipherText] = useState<string | null>(null);
+  const [decipherDone, setDecipherDone] = useState(false);
+  const [decipherBlocked, setDecipherBlocked] = useState(false);
+  const hannah = getDisplayName('hannah');
 
   // Fail-open fetch: any error resolves to empty results, never throws.
   const loadResults = useCallback(async () => {
@@ -112,6 +119,27 @@ export default function LabResultsPage() {
     window.addEventListener('focus', onFocus);
     return () => window.removeEventListener('focus', onFocus);
   }, [loadResults]);
+
+  // Ask Hannah to interpret the confirmed results. Fail-open: any error leaves
+  // the deterministic results visible and shows an unavailable message.
+  const requestDecipher = useCallback(async () => {
+    setDeciphering(true);
+    setDecipherDone(false);
+    setDecipherBlocked(false);
+    setDecipherText(null);
+    try {
+      const res = await fetch('/api/labs/decipher', { method: 'POST' });
+      const data = await res.json();
+      setDecipherText(typeof data.text === 'string' ? data.text : null);
+      setDecipherBlocked(data.blocked === true);
+    } catch {
+      setDecipherText(null);
+      setDecipherBlocked(false);
+    } finally {
+      setDeciphering(false);
+      setDecipherDone(true);
+    }
+  }, []);
 
   return (
     <div className="flex flex-col gap-4 md:gap-6 px-4 md:px-0">
@@ -142,6 +170,25 @@ export default function LabResultsPage() {
       <p className="text-body-sm" style={{ color: 'var(--text-secondary)' }}>
         Your biomarkers, with a genetically informed optimal range where your DNA applies.
       </p>
+
+      {/* Static seek-care banner, driven by the deterministic tiers, not by any AI
+          text, so a Consult value is always surfaced even if Hannah's text is dropped. */}
+      {hasLoadedOnce && results.some((r) => r.tier === 'consult') ? (
+        <div
+          className="flex items-start gap-2 rounded-xl p-4 text-sm leading-relaxed"
+          style={{
+            backgroundColor: 'rgba(183, 94, 24, 0.1)',
+            border: '1px solid rgba(183, 94, 24, 0.4)',
+            color: '#D98A3D',
+          }}
+        >
+          <AlertTriangle size={18} strokeWidth={1.5} className="mt-0.5 flex-none" />
+          <span>
+            One or more results are flagged Consult a professional. Please contact a qualified
+            professional promptly to review them. This page is not a diagnosis.
+          </span>
+        </div>
+      ) : null}
 
       {/* Loading state (first load only) */}
       {!hasLoadedOnce ? (
@@ -241,6 +288,61 @@ export default function LabResultsPage() {
           })}
         </div>
       )}
+
+      {/* Hannah decipherment (on demand) */}
+      {hasLoadedOnce && totalBiomarkers > 0 ? (
+        <div
+          className="glass-v2 p-4 md:p-6 rounded-2xl flex flex-col gap-3"
+          style={{ borderLeft: '4px solid #B75E18' }}
+        >
+          <div className="flex items-center gap-2">
+            <Sparkles size={20} strokeWidth={1.5} style={{ color: '#B75E18' }} />
+            <h2 className="text-heading-3 text-white">{hannah}&apos;s interpretation</h2>
+          </div>
+
+          {!decipherDone && !deciphering ? (
+            <>
+              <p className="text-sm text-white/60 leading-relaxed">
+                {hannah} can translate these results into plain language with educational
+                suggestions. Not a diagnosis or medical advice.
+              </p>
+              <div>
+                <VCButton variant="primary" size="sm" onClick={requestDecipher}>
+                  Get {hannah}&apos;s interpretation
+                </VCButton>
+              </div>
+            </>
+          ) : null}
+
+          {deciphering ? (
+            <p className="inline-flex items-center gap-2 text-sm text-white/60">
+              <Loader2 size={16} strokeWidth={1.5} className="animate-spin" />
+              {hannah} is reading your results...
+            </p>
+          ) : null}
+
+          {decipherDone && decipherText ? (
+            <>
+              <p className="text-sm leading-relaxed text-white/80 whitespace-pre-wrap">{decipherText}</p>
+              <p className="text-xs leading-relaxed text-white/40">
+                {hannah} is an AI wellness guide. This is educational and not a diagnosis or a
+                substitute for medical care.
+              </p>
+            </>
+          ) : null}
+
+          {decipherDone && !decipherText ? (
+            <p className="inline-flex items-start gap-2 text-sm text-amber-200">
+              <AlertTriangle size={16} strokeWidth={1.5} className="mt-0.5 flex-none" />
+              <span>
+                {decipherBlocked
+                  ? 'We could not show an interpretation for these results. Please review them with a qualified professional.'
+                  : `${hannah}'s interpretation is unavailable right now. Please try again shortly.`}
+              </span>
+            </p>
+          ) : null}
+        </div>
+      ) : null}
 
       {/* Footer disclaimer */}
       {hasLoadedOnce ? (
