@@ -42,6 +42,7 @@ import { BookOpen, FileText, ShieldCheck } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { PanelMarker, SnpDeepReport as SnpDeepReportData } from '@/data/genex360/types';
 import { SnpDeepReport } from './SnpDeepReport';
+import type { SeverityTier } from '@/lib/genetics/severity';
 
 // The consult note shown on every Description tab, validated or interim. Matches
 // the existing approved short copy used across the genetics surface.
@@ -53,6 +54,9 @@ interface VariantReportTabsProps {
   marker: PanelMarker;
   report: SnpDeepReportData;
   highlightRsid: string | null;
+  // Prompt 204g: the member's severity by rsID, forwarded to SnpDeepReport for
+  // the Full Report cross-reference.
+  severityByRsid?: ReadonlyMap<string, SeverityTier | null>;
 }
 
 // True when the active variant deep link targets a variant that lives in THIS
@@ -62,7 +66,12 @@ function targetsThisReport(report: SnpDeepReportData, highlightRsid: string | nu
   return highlightRsid != null && report.keyVariants.some((v) => v.rsid === highlightRsid);
 }
 
-export function VariantReportTabs({ marker, report, highlightRsid }: VariantReportTabsProps) {
+export function VariantReportTabs({
+  marker,
+  report,
+  highlightRsid,
+  severityByRsid,
+}: VariantReportTabsProps) {
   const slug = marker.symbol.toLowerCase();
 
   // Default tab decided in the initializer so a variant deep link has Full Report
@@ -186,7 +195,11 @@ export function VariantReportTabs({ marker, report, highlightRsid }: VariantRepo
           className="space-y-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744]"
         >
           <p className="text-[13px] leading-relaxed text-white/75">{marker.description}</p>
-          <SnpDeepReport report={report} highlightRsid={highlightRsid} />
+          <SnpDeepReport
+            report={report}
+            highlightRsid={highlightRsid}
+            severityByRsid={severityByRsid}
+          />
         </div>
       ) : null}
     </div>

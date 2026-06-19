@@ -7,15 +7,28 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { safeLog } from '@/lib/utils/safe-log';
 import { getBrandedPanelKeys } from '@/lib/genetics/brandedProvenance';
+import { severityFor } from '@/lib/genetics/variantSeverity';
+import type { SeverityTier } from '@/lib/genetics/severity';
 import type { PanelKey } from '@/lib/genetics/panelLabels';
 
-interface VariantRow {
+// The raw shape selected from user_variants. status is the zygosity notation
+// (the genotype chip), kept distinct from severity (the score).
+interface DbVariantRow {
   panel_key: PanelKey;
   rsid: string;
   gene: string | null;
   genotype: string | null;
   status: string | null;
   clinical_significance: string | null;
+}
+
+// What the client receives: the db row plus the computed severity tier (Prompt
+// 204g). severity is the SCORE, derived from the validated per-genotype source by
+// rsID and genotype, NOT from zygosity. It is null when the member's (rsID,
+// genotype) has no validated assignment yet (the source ships empty), and the UI
+// then shows the neutral unscored fallback.
+interface VariantRow extends DbVariantRow {
+  severity: SeverityTier | null;
 }
 
 export async function GET(): Promise<NextResponse> {
@@ -45,7 +58,14 @@ export async function GET(): Promise<NextResponse> {
       return NextResponse.json({ variantsByPanel: {}, brandedPanels: [], totalVariants: 0 });
     }
 
-    const rows = (data ?? []) as VariantRow[];
+    const dbRows = (data ?? []) as DbVariantRow[];
+    // Assign each variant its severity score from the validated per-genotype
+    // source. Severity is its own field, separate from genotype and the zygosity
+    // status; unmapped variants get null (the honest unscored state).
+    const rows: VariantRow[] = dbRows.map((row) => ({
+      ...row,
+      severity: severityFor(row.rsid, row.genotype),
+    }));
     const variantsByPanel: Partial<Record<PanelKey, VariantRow[]>> = {};
     for (const row of rows) {
       (variantsByPanel[row.panel_key] ??= []).push(row);

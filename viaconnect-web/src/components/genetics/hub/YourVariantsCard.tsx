@@ -34,7 +34,7 @@
 // Instrument Sans inherited, no emojis, no em or en dashes, TypeScript strict
 // (no any).
 
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Dna } from 'lucide-react';
@@ -43,9 +43,12 @@ import { GENETICS_CARD_MEDIA } from './geneticsHubMedia';
 import { GENEX360_SHOP_HREF } from './geneticsHubLinks';
 import { useGeneticsVariants, type VariantRecord } from './useGeneticsVariants';
 import { VariantReportPill } from './VariantReportPill';
+import { VariantImpactFilter, type ImpactFilterValue } from './VariantImpactFilter';
+import { SeverityPill } from '@/components/genetics/SeverityPill';
 import { resolveVariantReport } from '@/lib/genex360/resolveVariantReport';
 import { PanelDisclaimer } from '@/components/shop/genex360/PanelDisclaimer';
 import type { PanelSlug } from '@/data/genex360/types';
+import type { SeverityTier } from '@/lib/genetics/severity';
 import {
   PANEL_ORDER,
   PANEL_LABELS,
@@ -85,25 +88,16 @@ function panelKeyForTestParam(raw: string | null): PanelKey | null {
 // stores status as a notation string; we accept the canonical +/+ , +/- , -/-
 // forms (and the order-insensitive -/+ ) and otherwise treat it as the neutral
 // -/- styling so an unexpected value never throws or shows raw text.
+//
+// Prompt 204g: zygosity is NO LONGER the score. It stays as a small neutral
+// genotype chip; the score is the severity tier (SeverityPill). The old colored
+// status badge (which borrowed brand tokens) is therefore retired.
 type Zygosity = '+/+' | '+/-' | '-/-';
 function zygosityFromStatus(status: string | null): Zygosity {
   const s = (status ?? '').trim();
   if (s === '+/+') return '+/+';
   if (s === '+/-' || s === '-/+') return '+/-';
   return '-/-';
-}
-
-// Token-driven status badge classes. +/+ orange-tinted, +/- white-tinted,
-// -/- teal-tinted, kept as a literal switch so the exact hex strings stay
-// visible in source.
-function statusBadgeClasses(z: Zygosity): string {
-  if (z === '+/+') {
-    return 'border-[#B75E18]/45 bg-[#B75E18]/15 text-[#B75E18]';
-  }
-  if (z === '+/-') {
-    return 'border-white/20 bg-white/[0.06] text-white/80';
-  }
-  return 'border-[#2DA5A0]/40 bg-[#2DA5A0]/[0.12] text-[#2DA5A0]';
 }
 
 interface YourVariantsCardProps {
@@ -124,6 +118,13 @@ export function YourVariantsCard({ className }: YourVariantsCardProps) {
   }, [searchParams]);
 
   const [activePanel, setActivePanel] = useState<PanelKey>(initialPanel);
+
+  // Prompt 204g: the All / High / Moderate / Low severity filter. Reset to All
+  // when the panel changes so the selection and counts match the visible list.
+  const [impactFilter, setImpactFilter] = useState<ImpactFilterValue>('All');
+  useEffect(() => {
+    setImpactFilter('All');
+  }, [activePanel]);
 
   // One ref per pill so arrow navigation can move DOM focus (roving focus),
   // indexed by position in PANEL_ORDER.
@@ -171,6 +172,26 @@ export function YourVariantsCard({ className }: YourVariantsCardProps) {
   };
 
   const activeRows: VariantRecord[] = variantsByPanel[activePanel] ?? [];
+
+  // Prompt 204g: live severity counts over the active panel's list, and the list
+  // filtered by the selected tier. Counts are computed in place; unscored
+  // variants (severity null) appear only under All, never under a tier.
+  const counts = useMemo(() => {
+    const c = { all: activeRows.length, high: 0, moderate: 0, low: 0 };
+    for (const row of activeRows) {
+      if (row.severity === 'high') c.high += 1;
+      else if (row.severity === 'moderate') c.moderate += 1;
+      else if (row.severity === 'low') c.low += 1;
+    }
+    return c;
+  }, [activeRows]);
+
+  const filteredRows = useMemo(() => {
+    if (impactFilter === 'All') return activeRows;
+    const tier = impactFilter.toLowerCase() as SeverityTier;
+    return activeRows.filter((row) => row.severity === tier);
+  }, [activeRows, impactFilter]);
+
   const activeGenericLabel = PANEL_LABELS[activePanel].generic_label;
   // Prompt 204e (2026-06-19): the canonical Blueprint panel slug for the active
   // panel (methylation to genex-m). This is the panelSlug the 193c resolver and
@@ -270,68 +291,86 @@ export function YourVariantsCard({ className }: YourVariantsCardProps) {
             Loading your variants...
           </p>
         ) : activeRows.length > 0 ? (
-          <div className="space-y-2">
-            {activeRows.map((row, index) => {
-              const z = zygosityFromStatus(row.status);
-              const rowKey = `${activePanel}-${row.rsid}-${index}`;
-              // Prompt 204e: reconnect the tap-to-description deep link. Resolve
-              // this variant against the 193c registry by rsID. When a full
-              // report exists on the Your Genetic Blueprint page, the row shows
-              // the Report pill; when it does not, report.exists is false and no
-              // pill (and no dead link) is rendered.
-              const report = row.rsid
-                ? resolveVariantReport(row.rsid, activePanelSlug)
-                : null;
-              return (
-                <div
-                  key={rowKey}
-                  className="rounded-xl border border-white/[0.06] bg-[#1E3054]/45 px-4 py-3"
-                >
-                  {/* Top line: gene + rsid, genotype chip, status badge. Wraps on
-                      narrow mobile so nothing overflows. */}
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-mono text-sm font-semibold text-white">
-                      {row.gene ?? 'Unknown'}
-                    </span>
-                    {row.rsid ? (
-                      <span className="font-mono text-xs text-white/35">{row.rsid}</span>
-                    ) : null}
-                    {row.genotype ? (
-                      <span className="rounded bg-white/5 px-2 py-0.5 font-mono text-xs font-semibold text-white/70">
-                        {row.genotype}
-                      </span>
-                    ) : null}
-                    <span
-                      className={`ml-auto inline-flex items-center rounded-full border px-2 py-0.5 font-mono text-[11px] font-semibold tabular-nums ${statusBadgeClasses(z)}`}
+          <div className="flex flex-col gap-3">
+            {/* Prompt 204g: the All / High / Moderate / Low severity filter with
+                live counts over this panel's list. */}
+            <VariantImpactFilter counts={counts} value={impactFilter} onChange={setImpactFilter} />
+            {filteredRows.length > 0 ? (
+              <div className="space-y-2">
+                {filteredRows.map((row, index) => {
+                  const z = zygosityFromStatus(row.status);
+                  const rowKey = `${activePanel}-${row.rsid}-${index}`;
+                  // Prompt 204e: reconnect the tap-to-description deep link.
+                  // Resolve this variant against the 193c registry by rsID. When
+                  // a full report exists on the Your Genetic Blueprint page, the
+                  // row shows the Report pill; otherwise no pill is rendered.
+                  const report = row.rsid
+                    ? resolveVariantReport(row.rsid, activePanelSlug)
+                    : null;
+                  return (
+                    <div
+                      key={rowKey}
+                      className="rounded-xl border border-white/[0.06] bg-[#1E3054]/45 px-4 py-3"
                     >
-                      {z}
-                    </span>
-                  </div>
-                  {/* Clinical significance line, when present. */}
-                  {row.clinical_significance ? (
-                    <p className="mt-2 text-[13px] leading-relaxed text-white/60">
-                      {row.clinical_significance}
-                    </p>
-                  ) : null}
-                  {/* Prompt 204e: the Report deep link. Tapping it navigates to
-                      this variant's full description on the Your Genetic
-                      Blueprint page (the 193c VariantReportPill builds the href
-                      via resolveVariantReport, so the route is never hardcoded).
-                      It is its own link, separate from the row, so nothing else
-                      is hijacked. Rendered only when a matching report exists. */}
-                  {report?.exists && row.rsid ? (
-                    <div className="mt-3 flex justify-end">
-                      <VariantReportPill
-                        rsid={row.rsid}
-                        panelSlug={activePanelSlug}
-                        geneLabel={row.gene ?? 'Unknown'}
-                        variantLabel={row.rsid}
-                      />
+                      {/* Top line: gene + rsid, the genotype chip and the zygosity
+                          chip (both genotype info), then the severity score pinned
+                          right. Wraps on narrow mobile so nothing overflows. */}
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="font-mono text-sm font-semibold text-white">
+                          {row.gene ?? 'Unknown'}
+                        </span>
+                        {row.rsid ? (
+                          <span className="font-mono text-xs text-white/35">{row.rsid}</span>
+                        ) : null}
+                        {row.genotype ? (
+                          <span className="rounded bg-white/5 px-2 py-0.5 font-mono text-xs font-semibold text-white/70">
+                            {row.genotype}
+                          </span>
+                        ) : null}
+                        {/* Prompt 204g: zygosity is a neutral genotype chip now,
+                            no longer the score and no longer brand colored. */}
+                        <span className="rounded bg-white/5 px-2 py-0.5 font-mono text-[11px] tabular-nums text-white/45">
+                          {z}
+                        </span>
+                        {/* Prompt 204g: the severity tier IS the score, pinned
+                            right. SeverityPill reads color only from
+                            severityToken() and shows Unscored until the validated
+                            per-genotype source is populated. */}
+                        <span className="ml-auto">
+                          <SeverityPill tier={row.severity} />
+                        </span>
+                      </div>
+                      {/* Clinical significance line, when present. */}
+                      {row.clinical_significance ? (
+                        <p className="mt-2 text-[13px] leading-relaxed text-white/60">
+                          {row.clinical_significance}
+                        </p>
+                      ) : null}
+                      {/* Prompt 204e: the Report deep link. Tapping it navigates to
+                          this variant's full description on the Your Genetic
+                          Blueprint page (VariantReportPill builds the href via
+                          resolveVariantReport, so the route is never hardcoded).
+                          Rendered only when a matching report exists. */}
+                      {report?.exists && row.rsid ? (
+                        <div className="mt-3 flex justify-end">
+                          <VariantReportPill
+                            rsid={row.rsid}
+                            panelSlug={activePanelSlug}
+                            geneLabel={row.gene ?? 'Unknown'}
+                            variantLabel={row.rsid}
+                          />
+                        </div>
+                      ) : null}
                     </div>
-                  ) : null}
-                </div>
-              );
-            })}
+                  );
+                })}
+              </div>
+            ) : (
+              // The panel has variants but none match the active severity filter.
+              <p className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-6 text-center text-sm text-white/45">
+                No {impactFilter} severity variants in this panel.
+              </p>
+            )}
           </div>
         ) : (
           // Empty / locked state: this panel has no interpreted variants yet.

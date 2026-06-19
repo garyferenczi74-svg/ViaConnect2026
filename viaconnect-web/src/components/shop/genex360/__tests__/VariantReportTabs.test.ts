@@ -44,9 +44,13 @@ describe('VariantReportTabs source', () => {
     expect(source).toContain('report.keyVariants.some((v) => v.rsid === highlightRsid)');
   });
 
-  it('renders the Full Report tab from the unchanged 193a SnpDeepReport, threading highlightRsid', () => {
+  it('renders the Full Report tab from the unchanged 193a SnpDeepReport, threading highlightRsid and severity', () => {
     expect(source).toContain("import { SnpDeepReport } from './SnpDeepReport'");
-    expect(source).toContain('<SnpDeepReport report={report} highlightRsid={highlightRsid} />');
+    expect(source).toContain('<SnpDeepReport');
+    expect(source).toContain('report={report}');
+    expect(source).toContain('highlightRsid={highlightRsid}');
+    // Prompt 204g: the member severity map is forwarded for the cross-reference.
+    expect(source).toContain('severityByRsid={severityByRsid}');
     // The marker description paragraph stays at the top of the Full Report tab.
     expect(source).toContain('{marker.description}');
   });

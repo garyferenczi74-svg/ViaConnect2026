@@ -36,6 +36,7 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ChevronDown, Dot } from "lucide-react";
 import type { PanelMarker, PanelMarkerGroup as PanelMarkerGroupData } from "@/data/genex360/types";
 import { VariantReportTabs } from "./VariantReportTabs";
+import type { SeverityTier } from "@/lib/genetics/severity";
 
 interface PanelMarkerGroupProps {
   group: PanelMarkerGroupData;
@@ -48,6 +49,9 @@ interface PanelMarkerGroupProps {
   // otherwise). Forwarded to SnpDeepReport (only the open accordion renders one)
   // so the matching variant sub block gets a soft non-alarm ring.
   highlightRsid?: string | null;
+  // Prompt 204g: the member's severity by rsID, forwarded to the open report so
+  // the Full Report cross-references the same tier shown on Your Variants.
+  severityByRsid?: ReadonlyMap<string, SeverityTier | null>;
 }
 
 export function PanelMarkerGroup({
@@ -55,6 +59,7 @@ export function PanelMarkerGroup({
   openSnpSlug,
   onToggleSnp,
   highlightRsid,
+  severityByRsid,
 }: PanelMarkerGroupProps) {
   const reduced = useReducedMotion() ?? false;
   // The blueprint island always supplies onToggleSnp, so every marker collapses
@@ -78,6 +83,7 @@ export function PanelMarkerGroup({
                 onToggleSnp={onToggleSnp as (snpSlug: string) => void}
                 reduced={reduced}
                 highlightRsid={highlightRsid ?? null}
+                severityByRsid={severityByRsid}
               />
             );
           }
@@ -118,12 +124,14 @@ function SnpMarkerRow({
   onToggleSnp,
   reduced,
   highlightRsid,
+  severityByRsid,
 }: {
   marker: PanelMarker;
   openSnpSlug: string | null;
   onToggleSnp: (snpSlug: string) => void;
   reduced: boolean;
   highlightRsid: string | null;
+  severityByRsid?: ReadonlyMap<string, SeverityTier | null>;
 }) {
   const slug = marker.symbol.toLowerCase();
   const isOpen = openSnpSlug === slug;
@@ -188,6 +196,7 @@ function SnpMarkerRow({
                   marker={marker}
                   report={marker.deepReport}
                   highlightRsid={highlightRsid}
+                  severityByRsid={severityByRsid}
                 />
               ) : (
                 <p className="text-[13px] leading-relaxed text-white/75">{marker.description}</p>

@@ -44,12 +44,14 @@
 // Via Cura is the only consumer brand named here. All window / document access
 // is guarded inside effects or event handlers, never during render.
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { GENEX360_PANELS, PANEL_BY_SLUG, PANEL_SLUGS } from '@/data/genex360/panels';
 import { GENEX_M_SNP_SLUGS } from '@/data/genex360/genex-m-deep';
 import type { PanelSlug } from '@/data/genex360/types';
 import { PanelDescriptionCard } from './PanelDescriptionCard';
 import { PanelPillTabs } from './PanelPillTabs';
+import { useGeneticsVariants } from '@/components/genetics/hub/useGeneticsVariants';
+import type { SeverityTier } from '@/lib/genetics/severity';
 
 // The set of valid GeneXM SNP slugs, for O(1) validation of hash part 2.
 const GENEX_M_SNP_SLUG_SET = new Set(GENEX_M_SNP_SLUGS);
@@ -248,6 +250,21 @@ export function GeneX360PanelSection() {
 
   const activePanel = PANEL_BY_SLUG[activeSlug];
 
+  // Prompt 204g: the member's severity by rsID for the Full Report cross
+  // reference. useGeneticsVariants is fail-open (empty on any failure), so the
+  // map is simply empty when there is no upload, no auth, or no validated tier
+  // yet, never an error. SnpDeepReport shows a pill only for an rsID present here.
+  const { data: variantsData } = useGeneticsVariants();
+  const severityByRsid = useMemo(() => {
+    const map = new Map<string, SeverityTier | null>();
+    for (const rows of Object.values(variantsData.variantsByPanel)) {
+      for (const row of rows ?? []) {
+        if (row.rsid) map.set(row.rsid.toLowerCase(), row.severity);
+      }
+    }
+    return map;
+  }, [variantsData]);
+
   return (
     <section aria-labelledby="genex360-panels-heading" className="mb-12 lg:mb-16">
       {/* Section header above the pills. Neutral, on brand copy; the approved
@@ -274,6 +291,7 @@ export function GeneX360PanelSection() {
         openSnpSlug={openSnp}
         onToggleSnp={onToggleSnp}
         highlightRsid={highlightRsid}
+        severityByRsid={severityByRsid}
       />
 
       {/* Hidden anchor stubs for every non active slug so all six slugs stay

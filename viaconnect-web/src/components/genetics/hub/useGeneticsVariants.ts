@@ -18,6 +18,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import type { PanelKey } from '@/lib/genetics/panelLabels';
+import type { SeverityTier } from '@/lib/genetics/severity';
 
 export interface VariantRecord {
   panel_key: PanelKey;
@@ -26,6 +27,10 @@ export interface VariantRecord {
   genotype: string | null;
   status: string | null;
   clinical_significance: string | null;
+  // Prompt 204g: the High / Moderate / Low score from the validated per-genotype
+  // source, or null when this (rsID, genotype) has no validated assignment yet.
+  // Distinct from genotype and the zygosity status.
+  severity: SeverityTier | null;
 }
 
 export interface GeneticsVariantsData {
@@ -117,6 +122,12 @@ function normalize(json: unknown): GeneticsVariantsData {
           status: typeof row.status === 'string' ? row.status : null,
           clinical_significance:
             typeof row.clinical_significance === 'string' ? row.clinical_significance : null,
+          // Only the three validated tiers are accepted; anything else degrades
+          // to null (unscored), so a malformed payload never invents a tier.
+          severity:
+            row.severity === 'high' || row.severity === 'moderate' || row.severity === 'low'
+              ? row.severity
+              : null,
         });
       }
       variantsByPanel[key as PanelKey] = rows;

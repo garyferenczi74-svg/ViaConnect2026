@@ -58,10 +58,19 @@ describe('VariantImpactFilter source', () => {
     expect(source).toContain('#2DA5A0');
   });
 
-  it('color codes the High, Moderate, and Low segments Red, Orange, Purple', () => {
-    expect(source).toContain('#F87171');
-    expect(source).toContain('#FB923C');
-    expect(source).toContain('#A78BFA');
+  it('reads the High, Moderate, Low segment color only through severityToken (Prompt 204g)', () => {
+    expect(source).toContain("import { severityToken } from '@/lib/genetics/severity'");
+    expect(source).toContain('severityToken(TIER_BY_LABEL[label])');
+    expect(source).toContain('token.pillActive');
+    expect(source).toContain('token.badge');
+  });
+
+  it('inlines no severity hex (severity color lives only in the tokens)', () => {
+    expect(source).not.toContain('#F87171');
+    expect(source).not.toContain('#FB923C');
+    expect(source).not.toContain('#A78BFA');
+    expect(source).not.toContain('#FBBF24');
+    expect(source).not.toContain('#4ADE80');
   });
 
   it('contains no em or en dashes', () => {

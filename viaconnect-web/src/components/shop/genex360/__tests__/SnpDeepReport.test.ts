@@ -144,7 +144,7 @@ describe('SnpDeepReport variant deep link highlight (193c)', () => {
 
   it('accepts an optional highlightRsid prop', () => {
     expect(source).toContain('highlightRsid?: string | null');
-    expect(source).toContain('SnpDeepReport({ report, highlightRsid }');
+    expect(source).toContain('SnpDeepReport({ report, highlightRsid, severityByRsid }');
   });
 
   it('gives each variant sub block a variant- prefixed id and a sticky scroll margin', () => {

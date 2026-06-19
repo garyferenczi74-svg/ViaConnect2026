@@ -8,13 +8,16 @@
 // the whole group reads as one control to assistive tech. Default selection is
 // All. This filters the variant list in the parent; it owns no list itself.
 //
-// Gary 2026-06-12 / 2026-06-13: the High, Moderate, and Low segments are color
-// coded High Red, Moderate Orange, Low Purple via their border and background;
-// the label text itself is WHITE on all of them for legibility (Gary 2026-06-13).
-// All keeps the teal accent. Instrument Sans inherited, no emojis, no em or en
-// dashes, TypeScript strict (no any).
+// Prompt 204g (2026-06-19): the High, Moderate, and Low segments now read their
+// color ONLY through severityToken() (the single source of truth), never inline
+// hex and never a brand token. Selected uses the solid navy-text glow pill; the
+// resting (unselected) segment uses the translucent badge. All is not a severity,
+// so it keeps the teal brand accent. Instrument Sans inherited, no emojis, no em
+// or en dashes, TypeScript strict (no any).
 
 import { useRef } from 'react';
+import { severityToken } from '@/lib/genetics/severity';
+import type { SeverityTier } from '@/lib/genetics/severity';
 
 export type ImpactFilterValue = 'All' | 'High' | 'Moderate' | 'Low';
 
@@ -32,27 +35,27 @@ const SEGMENTS: ReadonlyArray<{ label: ImpactFilterValue; countKey: 'all' | 'hig
   { label: 'Low', countKey: 'low' },
 ];
 
-// Per segment color classes. Gary 2026-06-12: High Red, Moderate Orange, Low
-// Purple; All keeps the teal accent. Full static class strings (never built from
-// a variable) so Tailwind can see and generate them.
-const SEGMENT_CLASSES: Record<ImpactFilterValue, { selected: string; unselected: string }> = {
-  All: {
-    selected: 'border-[#2DA5A0]/60 bg-[#2DA5A0]/15 text-white',
-    unselected: 'border-white/15 bg-transparent text-white/65 hover:border-white/30 hover:text-white/85',
-  },
-  High: {
-    selected: 'border-[#F87171]/70 bg-[#F87171]/20 text-white',
-    unselected: 'border-[#F87171]/30 bg-transparent text-white/90 hover:border-[#F87171]/50 hover:bg-[#F87171]/10',
-  },
-  Moderate: {
-    selected: 'border-[#FB923C]/70 bg-[#FB923C]/20 text-white',
-    unselected: 'border-[#FB923C]/30 bg-transparent text-white/90 hover:border-[#FB923C]/50 hover:bg-[#FB923C]/10',
-  },
-  Low: {
-    selected: 'border-[#A78BFA]/70 bg-[#A78BFA]/20 text-white',
-    unselected: 'border-[#A78BFA]/30 bg-transparent text-white/90 hover:border-[#A78BFA]/50 hover:bg-[#A78BFA]/10',
-  },
+// All keeps the teal brand accent (it is not a severity tier).
+const ALL_CLASSES = {
+  selected: 'border-[#2DA5A0]/60 bg-[#2DA5A0]/15 text-white',
+  unselected: 'border-white/15 bg-transparent text-white/65 hover:border-white/30 hover:text-white/85',
 };
+
+// The severity segments map to a tier and read all color from severityToken().
+const TIER_BY_LABEL: Record<'High' | 'Moderate' | 'Low', SeverityTier> = {
+  High: 'high',
+  Moderate: 'moderate',
+  Low: 'low',
+};
+
+// Resolve the class string for a segment. Severity color flows only through
+// severityToken(): the solid navy-text glow pill when selected, the translucent
+// badge when resting. All uses the teal accent.
+function segmentClasses(label: ImpactFilterValue, selected: boolean): string {
+  if (label === 'All') return selected ? ALL_CLASSES.selected : ALL_CLASSES.unselected;
+  const token = severityToken(TIER_BY_LABEL[label]);
+  return selected ? token.pillActive : token.badge;
+}
 
 export function VariantImpactFilter({ counts, value, onChange }: VariantImpactFilterProps) {
   // One ref per radio so arrow navigation can move DOM focus to the newly
@@ -115,9 +118,10 @@ export function VariantImpactFilter({ counts, value, onChange }: VariantImpactFi
             aria-checked={selected}
             tabIndex={selected ? 0 : -1}
             onClick={() => onChange(segment.label)}
-            className={`inline-flex min-h-[44px] items-center gap-1.5 rounded-full border px-3.5 py-2 text-[12px] font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744] motion-reduce:transition-none ${
-              SEGMENT_CLASSES[segment.label][selected ? 'selected' : 'unselected']
-            }`}
+            className={`inline-flex min-h-[44px] items-center gap-1.5 rounded-full border px-3.5 py-2 text-[12px] font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744] motion-reduce:transition-none ${segmentClasses(
+              segment.label,
+              selected,
+            )}`}
           >
             <span>{segment.label}</span>
             <span className="tabular-nums opacity-70">{counts[segment.countKey]}</span>

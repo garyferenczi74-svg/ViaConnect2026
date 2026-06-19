@@ -112,6 +112,16 @@ html, body {
   /* === ACCENT , FOREST === */
   --forest-700: #1b4539;
 
+  /* === SEVERITY (Prompt 204g) === */
+  /* Traffic light clinical severity scale, the single source of truth read only
+   * through severityToken() in src/lib/genetics/severity.ts. Space separated RGB
+   * channels so Tailwind arbitrary values can apply alpha, for example
+   * rgb(var(--severity-high)/0.15). Deliberately separate from the brand tokens;
+   * brand Orange and Teal are never used for severity. */
+  --severity-high: 248 113 113;     /* High, red #F87171 */
+  --severity-moderate: 251 191 36;  /* Moderate, yellow #FBBF24 */
+  --severity-low: 74 222 128;       /* Low, green #4ADE80 */
+
   /* === TEXT === */
   --text-primary: #FFFFFF;
   --text-secondary: #A0AEC0;

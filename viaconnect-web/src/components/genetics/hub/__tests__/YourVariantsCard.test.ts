@@ -95,6 +95,24 @@ describe('YourVariantsCard source', () => {
     expect(source).toContain('<PanelDisclaimer slug={activePanelSlug} />');
   });
 
+  it('renders the severity tier as the score via SeverityPill, not zygosity (204g)', () => {
+    expect(source).toContain(
+      "import { SeverityPill } from '@/components/genetics/SeverityPill'",
+    );
+    expect(source).toContain('<SeverityPill tier={row.severity} />');
+    // Zygosity is demoted to a neutral chip; the old brand-token colored status
+    // badge (statusBadgeClasses) that was the score is gone.
+    expect(source).not.toContain('statusBadgeClasses');
+  });
+
+  it('restores the All / High / Moderate / Low filter with live counts (204g)', () => {
+    expect(source).toContain("import { VariantImpactFilter, type ImpactFilterValue }");
+    expect(source).toContain('<VariantImpactFilter');
+    expect(source).toContain('counts={counts}');
+    expect(source).toContain('value={impactFilter}');
+    expect(source).toContain('filteredRows.map');
+  });
+
   it('contains no em or en dashes', () => {
     expect(source.includes(String.fromCharCode(0x2014))).toBe(false);
     expect(source.includes(String.fromCharCode(0x2013))).toBe(false);

@@ -60,6 +60,9 @@ import {
 import type { LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import type { SnpDeepReport as SnpDeepReportData } from "@/data/genex360/types";
+import { SeverityPill } from "@/components/genetics/SeverityPill";
+import { severityToken } from "@/lib/genetics/severity";
+import type { SeverityTier } from "@/lib/genetics/severity";
 
 interface SnpDeepReportProps {
   report: SnpDeepReportData;
@@ -69,6 +72,13 @@ interface SnpDeepReportProps {
   // is a structural cue so the highlight does not rely on color alone, and it
   // appears via a gentle transition that prefers-reduced-motion disables.
   highlightRsid?: string | null;
+  // Prompt 204g: the member's severity by rsID (lowercased), threaded from the
+  // Blueprint island so the Full Report cross-references the SAME tier shown on
+  // Your Variants, joined by rsID. A present key means the member has a result
+  // for that variant (value is the tier, or null when unscored); an absent key
+  // means no member result, so nothing is shown. The map is empty until the
+  // validated per-genotype source is populated, so this renders nothing for now.
+  severityByRsid?: ReadonlyMap<string, SeverityTier | null>;
 }
 
 // Chip classes for one genotype status label, selected by keyword. Returns the
@@ -170,7 +180,7 @@ function ProseListSection({
   );
 }
 
-export function SnpDeepReport({ report, highlightRsid }: SnpDeepReportProps) {
+export function SnpDeepReport({ report, highlightRsid, severityByRsid }: SnpDeepReportProps) {
   return (
     <div className="space-y-7 text-white">
       {/* Meta chips: pathway always, aliases only when present. */}
@@ -198,6 +208,13 @@ export function SnpDeepReport({ report, highlightRsid }: SnpDeepReportProps) {
             // rounding give the ring room to read. The transition is gentle and
             // disabled under prefers-reduced-motion (the static ring still shows).
             const isHighlighted = highlightRsid != null && highlightRsid === variant.rsid;
+            // Prompt 204g: the member's cross-referenced severity for this
+            // variant, joined by rsID. A present key means the member has a
+            // result (tier, or null when unscored); an absent key means no
+            // member result, so no pill and no accent edge render.
+            const rsidKey = variant.rsid.toLowerCase();
+            const hasUserResult = severityByRsid?.has(rsidKey) ?? false;
+            const userTier = hasUserResult ? severityByRsid?.get(rsidKey) ?? null : null;
             return (
             <div
               key={variant.rsid}
@@ -206,14 +223,21 @@ export function SnpDeepReport({ report, highlightRsid }: SnpDeepReportProps) {
                 isHighlighted
                   ? "ring-2 ring-[#2DA5A0]/60 bg-[#2DA5A0]/[0.06]"
                   : ""
-              }`}
+              } ${userTier ? severityToken(userTier).accent : ""}`}
             >
-              {/* Variant sub heading: rsid plus common name. */}
-              <h5 className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+              {/* Variant sub heading: rsid plus common name, with the member's
+                  severity score pinned right when a result exists (Prompt 204g
+                  cross-reference, the same SeverityPill used on Your Variants). */}
+              <h5 className="flex flex-wrap items-center gap-x-2 gap-y-1">
                 <span className="font-mono text-sm font-semibold text-[#2DA5A0]">
                   {variant.rsid}
                 </span>
                 <span className="text-[13px] text-white/55">{variant.name}</span>
+                {hasUserResult ? (
+                  <span className="ml-auto">
+                    <SeverityPill tier={userTier} />
+                  </span>
+                ) : null}
               </h5>
 
               {/* Prompt 193b: a variant pending assay confirmation hides its
