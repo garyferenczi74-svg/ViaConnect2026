@@ -7,7 +7,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { safeLog } from '@/lib/utils/safe-log';
 import { getBrandedPanelKeys } from '@/lib/genetics/brandedProvenance';
-import { severityFor } from '@/lib/genetics/variantSeverity';
+import { severityFor, methylationSeverityFor } from '@/lib/genetics/variantSeverity';
 import type { SeverityTier } from '@/lib/genetics/severity';
 import type { PanelKey } from '@/lib/genetics/panelLabels';
 
@@ -59,12 +59,22 @@ export async function GET(): Promise<NextResponse> {
     }
 
     const dbRows = (data ?? []) as DbVariantRow[];
-    // Assign each variant its severity score from the validated per-genotype
-    // source. Severity is its own field, separate from genotype and the zygosity
-    // status; unmapped variants get null (the honest unscored state).
+    // Assign each variant its severity score from the validated source. Severity
+    // is its own field, separate from genotype and the zygosity status; unmapped
+    // variants get null (the honest unscored state).
+    //
+    // Two stored shapes, two validated sources (Prompt 204g):
+    //   - DNA-raw uploads store an actual genotype (CT, GG, ...): scored by
+    //     severityFor(rsid, genotype) against VARIANT_SEVERITY.
+    //   - Methylation-panel rows store an empty genotype and a +/+ +/- zygosity
+    //     call in `status`: scored by methylationSeverityFor(rsid, status)
+    //     against METHYLATION_SEVERITY, which keys on the zygosity directly.
+    // A row never has both, so prefer the genotype score and fall back to the
+    // zygosity score; null when neither has a validated tier.
     const rows: VariantRow[] = dbRows.map((row) => ({
       ...row,
-      severity: severityFor(row.rsid, row.genotype),
+      severity:
+        severityFor(row.rsid, row.genotype) ?? methylationSeverityFor(row.rsid, row.status),
     }));
     const variantsByPanel: Partial<Record<PanelKey, VariantRow[]>> = {};
     for (const row of rows) {
