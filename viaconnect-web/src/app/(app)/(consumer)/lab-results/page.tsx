@@ -25,6 +25,9 @@ type LabResult = {
   status: string;
   tier: string;
   direction: string;
+  confidence: string | null;
+  collectionDate: string | null;
+  trend: Array<{ date: string; value: number }> | null;
 };
 
 const PANEL_ORDER = [
@@ -255,6 +258,19 @@ export default function LabResultsPage() {
                     ? `Standard range: ${r.standard.low} to ${r.standard.high} ${r.unit}`
                     : 'Standard range: not provided'}
                 </p>
+
+                {/* Confidence + collection date */}
+                <p className="text-xs text-white/40">
+                  {r.confidence ? `${r.confidence} confidence` : 'confidence unknown'}
+                  {r.collectionDate ? `, collected ${r.collectionDate}` : ''}
+                </p>
+
+                {/* Trend across repeat results */}
+                {r.trend && r.trend.length > 1 ? (
+                  <p className="text-xs" style={{ color: 'var(--teal-400, #4DC9C4)' }}>
+                    Trend: {r.trend.map((p) => p.value).join(' to ')} {r.unit}
+                  </p>
+                ) : null}
 
                 {/* Genetic optimal overlay (teal-tinted) */}
                 {r.geneticOptimal ? (

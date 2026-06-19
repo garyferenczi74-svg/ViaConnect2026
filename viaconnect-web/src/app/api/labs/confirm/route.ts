@@ -16,10 +16,22 @@ interface ConfirmBody {
     referenceLow?: unknown; referenceHigh?: unknown;
   }>;
   sourceFilename?: unknown;
+  sourceType?: unknown;
+  collectionDate?: unknown;
 }
 
 const numOrNull = (v: unknown): number | null =>
   typeof v === 'number' && Number.isFinite(v) ? v : null;
+
+const VALID_SOURCE_TYPES = new Set(['pdf_text', 'pdf_scanned', 'photo', 'csv', 'manual']);
+
+// Per-source confidence: the member typed it or it came structured (high), it was
+// parsed from a text layer (medium), or it came from OCR of a scan (low).
+function confidenceForSource(sourceType: string): string {
+  if (sourceType === 'manual' || sourceType === 'csv') return 'high';
+  if (sourceType === 'pdf_scanned' || sourceType === 'photo') return 'low';
+  return 'medium';
+}
 
 export async function POST(request: Request): Promise<NextResponse> {
   const supabase = createClient();
@@ -35,6 +47,12 @@ export async function POST(request: Request): Promise<NextResponse> {
     return NextResponse.json({ error: 'Invalid request body.' }, { status: 400 });
   }
 
+  const sourceType =
+    typeof body.sourceType === 'string' && VALID_SOURCE_TYPES.has(body.sourceType)
+      ? body.sourceType
+      : 'pdf_text';
+  const confidence = confidenceForSource(sourceType);
+
   const raw = Array.isArray(body.biomarkers) ? body.biomarkers.slice(0, MAX_ROWS) : [];
   const biomarkers: ConfirmedBiomarker[] = [];
   for (const b of raw) {
@@ -46,6 +64,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       unit: typeof b.unit === 'string' ? b.unit.slice(0, 30) : null,
       referenceLow: numOrNull(b.referenceLow),
       referenceHigh: numOrNull(b.referenceHigh),
+      confidence,
     });
   }
 
@@ -54,9 +73,18 @@ export async function POST(request: Request): Promise<NextResponse> {
   }
 
   const sourceFilename = typeof body.sourceFilename === 'string' ? body.sourceFilename.slice(0, 300) : null;
+  // Accept a YYYY-MM-DD collection date; persist defaults to today when null.
+  const collectionDate =
+    typeof body.collectionDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(body.collectionDate)
+      ? body.collectionDate
+      : null;
 
   try {
-    const result = await persistLabBiomarkers(supabase, user.id, biomarkers, sourceFilename);
+    const result = await persistLabBiomarkers(supabase, user.id, biomarkers, {
+      sourceFilename,
+      sourceType,
+      collectionDate,
+    });
     return NextResponse.json({ saved: result.saved, uploadId: result.uploadId });
   } catch (err) {
     safeLog.error('api.labs.confirm', 'save failed', {

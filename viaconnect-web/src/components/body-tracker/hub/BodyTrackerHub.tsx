@@ -18,7 +18,8 @@
 //     bottom triad. Source order preserved so grid auto placement
 //     produces this without explicit lines.
 
-import { Sparkles } from 'lucide-react';
+import Link from 'next/link';
+import { Sparkles, FlaskConical, ArrowRight } from 'lucide-react';
 import { SURFACES } from './hubConfig';
 import { BentoCard } from './BentoCard';
 import { GuidanceStrip } from './GuidanceStrip';
@@ -73,6 +74,24 @@ export function BodyTrackerHub() {
           />
         ))}
       </div>
+
+      {/* Lab Results entry (Prompt 204c). A slim link below the bento, so the
+          validated six-card grid above is untouched. */}
+      <Link
+        href="/lab-results"
+        className="flex items-center justify-between gap-3 rounded-2xl border border-white/[0.08] bg-[#1E3054]/60 px-4 py-3 no-underline transition-colors hover:border-white/20"
+      >
+        <span className="flex items-center gap-2.5">
+          <FlaskConical className="h-5 w-5 flex-none text-[#2DA5A0]" strokeWidth={1.5} />
+          <span>
+            <span className="block text-sm font-semibold text-white">Lab Results</span>
+            <span className="block text-[12px] text-white/55">
+              Your biomarkers with genetic optimal ranges and trends
+            </span>
+          </span>
+        </span>
+        <ArrowRight className="h-4 w-4 flex-none text-white/40" strokeWidth={1.5} />
+      </Link>
 
       {/* Connections strip (foundation layer). */}
       <ConnectionsStrip />

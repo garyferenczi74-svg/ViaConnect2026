@@ -183,12 +183,20 @@ export default function LabsPage() {
     if (!preview || preview.matchedCount === 0) return;
     setIsSaving(true);
     try {
+      // Map how the data arrived to a source type the confirm route stores and
+      // derives a confidence marker from.
+      const sourceType =
+        preview.method === 'csv' ? 'csv'
+        : preview.method === 'manual' ? 'manual'
+        : preview.scanned || preview.method === 'ocr' || preview.method === 'none' ? 'pdf_scanned'
+        : 'pdf_text';
       const res = await fetch('/api/labs/confirm', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           biomarkers: preview.biomarkers,
           sourceFilename: preview.sourceFilename,
+          sourceType,
         }),
       });
       const data = await res.json();
