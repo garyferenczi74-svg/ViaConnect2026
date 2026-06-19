@@ -155,7 +155,7 @@ export default function PluginsPage() {
       className="font-[Instrument_Sans] min-h-screen pb-24"
       style={{ background: 'var(--gradient-hero)' }}
     >
-      <div className="mx-auto max-w-6xl px-4 md:px-5 lg:px-6 pt-8 md:pt-12">
+      <div className="mx-auto max-w-7xl px-4 md:px-6 pt-8 md:pt-12">
         <div className="grid grid-cols-1 gap-3 md:gap-3.5 lg:grid-cols-12 lg:gap-[14px]">
 
           {/* ── BAND 1: Hero ── */}
