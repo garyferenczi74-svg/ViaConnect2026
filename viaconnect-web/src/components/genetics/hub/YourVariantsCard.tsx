@@ -42,6 +42,8 @@ import { GeneticsHubTile } from './GeneticsHubTile';
 import { GENETICS_CARD_MEDIA } from './geneticsHubMedia';
 import { GENEX360_SHOP_HREF } from './geneticsHubLinks';
 import { useGeneticsVariants, type VariantRecord } from './useGeneticsVariants';
+import { VariantReportPill } from './VariantReportPill';
+import { resolveVariantReport } from '@/lib/genex360/resolveVariantReport';
 import {
   PANEL_ORDER,
   PANEL_LABELS,
@@ -168,6 +170,11 @@ export function YourVariantsCard({ className }: YourVariantsCardProps) {
 
   const activeRows: VariantRecord[] = variantsByPanel[activePanel] ?? [];
   const activeGenericLabel = PANEL_LABELS[activePanel].generic_label;
+  // Prompt 204e (2026-06-19): the canonical Blueprint panel slug for the active
+  // panel (methylation to genex-m). This is the panelSlug the 193c resolver and
+  // Report pill join on; PANEL_LABELS is the single source so it is never
+  // hardcoded here.
+  const activePanelSlug = PANEL_LABELS[activePanel].slug;
   const activeTabId = `${PANEL_ID}-tab-${activePanel}`;
 
   return (
@@ -264,6 +271,14 @@ export function YourVariantsCard({ className }: YourVariantsCardProps) {
             {activeRows.map((row, index) => {
               const z = zygosityFromStatus(row.status);
               const rowKey = `${activePanel}-${row.rsid}-${index}`;
+              // Prompt 204e: reconnect the tap-to-description deep link. Resolve
+              // this variant against the 193c registry by rsID. When a full
+              // report exists on the Your Genetic Blueprint page, the row shows
+              // the Report pill; when it does not, report.exists is false and no
+              // pill (and no dead link) is rendered.
+              const report = row.rsid
+                ? resolveVariantReport(row.rsid, activePanelSlug)
+                : null;
               return (
                 <div
                   key={rowKey}
@@ -294,6 +309,22 @@ export function YourVariantsCard({ className }: YourVariantsCardProps) {
                     <p className="mt-2 text-[13px] leading-relaxed text-white/60">
                       {row.clinical_significance}
                     </p>
+                  ) : null}
+                  {/* Prompt 204e: the Report deep link. Tapping it navigates to
+                      this variant's full description on the Your Genetic
+                      Blueprint page (the 193c VariantReportPill builds the href
+                      via resolveVariantReport, so the route is never hardcoded).
+                      It is its own link, separate from the row, so nothing else
+                      is hijacked. Rendered only when a matching report exists. */}
+                  {report?.exists && row.rsid ? (
+                    <div className="mt-3 flex justify-end">
+                      <VariantReportPill
+                        rsid={row.rsid}
+                        panelSlug={activePanelSlug}
+                        geneLabel={row.gene ?? 'Unknown'}
+                        variantLabel={row.rsid}
+                      />
+                    </div>
                   ) : null}
                 </div>
               );
