@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { VCButton } from '@/components/ui/VCButton';
+import { parseLabCsv } from '@/lib/labs/parseLabCsv';
 
 type Biomarker = {
   name: string;
@@ -79,12 +80,26 @@ export default function LabsPage() {
 
   const uploadPdf = useCallback(async (file: File) => {
     const name = file.name.toLowerCase();
-    if (!name.endsWith('.pdf') && file.type !== 'application/pdf') {
-      toast.error('Please choose a PDF file');
+    const isCsv = name.endsWith('.csv') || file.type === 'text/csv';
+    const isPdf = name.endsWith('.pdf') || file.type === 'application/pdf';
+    if (!isCsv && !isPdf) {
+      toast.error('Please choose a PDF or CSV file');
       return;
     }
     setIsReading(true);
     try {
+      // A CSV is structured and parses on the client, then goes through the same
+      // verify-before-save screen as a PDF. No upload or AI is involved.
+      if (isCsv) {
+        const biomarkers = parseLabCsv(await file.text());
+        setSavedCount(null);
+        setPreview({ sourceFilename: file.name, method: 'csv', scanned: false, matchedCount: biomarkers.length, biomarkers });
+        if (biomarkers.length === 0) {
+          toast('We could not find biomarker rows in this CSV', { icon: 'i' });
+        }
+        return;
+      }
+
       const formData = new FormData();
       formData.append('file', file);
       const res = await fetch('/api/labs/upload-pdf', { method: 'POST', body: formData });
@@ -99,7 +114,7 @@ export default function LabsPage() {
         toast('We could not find any biomarker values in this PDF', { icon: 'i' });
       }
     } catch {
-      toast.error('Could not read this PDF. Please try again.');
+      toast.error('Could not read this file. Please try again.');
     } finally {
       setIsReading(false);
     }
@@ -361,7 +376,7 @@ export default function LabsPage() {
       <input
         ref={fileInputRef}
         type="file"
-        accept=".pdf,application/pdf"
+        accept=".pdf,.csv,application/pdf,text/csv"
         onChange={handleFileSelect}
         className="hidden"
       />
@@ -386,10 +401,10 @@ export default function LabsPage() {
         >
           <FileText size={22} strokeWidth={1.5} style={{ color: '#2DA5A0' }} />
         </div>
-        <h3 className="text-heading-3 text-white">UPLOAD LAB REPORT (PDF)</h3>
+        <h3 className="text-heading-3 text-white">UPLOAD LAB REPORT (PDF OR CSV)</h3>
         <p className="text-sm text-white/60 leading-relaxed">
-          Upload any lab report PDF and our AI extracts your biomarkers automatically. You verify
-          every reading before anything is saved. Drag a PDF here or click to browse.
+          Upload a lab report PDF and our AI extracts your biomarkers, or a CSV export to read them
+          directly. You verify every reading before anything is saved. Drag a file here or click to browse.
         </p>
         <VCButton
           variant="primary"
@@ -403,7 +418,7 @@ export default function LabsPage() {
               Reading your report...
             </span>
           ) : (
-            'Upload PDF'
+            'Upload PDF or CSV'
           )}
         </VCButton>
       </div>
