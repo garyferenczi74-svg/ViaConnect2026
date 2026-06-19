@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { matchBiomarker, panelGroupFor, biomarkerKeyFor } from '../biomarkerDictionary';
-import { determineStatus, applicableRange } from '../biomarkerStatus';
+import { determineStatus, applicableRange, isCriticalValue, statusForBiomarker } from '../biomarkerStatus';
 
 describe('matchBiomarker', () => {
   it('matches varied report names to canonical entries', () => {
@@ -68,5 +68,41 @@ describe('determineStatus', () => {
   it('is unknown with no value or no range', () => {
     expect(determineStatus(null, range)).toEqual({ tier: 'unknown', direction: 'unknown' });
     expect(determineStatus(60, null)).toEqual({ tier: 'unknown', direction: 'unknown' });
+  });
+});
+
+describe('isCriticalValue', () => {
+  it('fires on an established critical threshold with a matching unit (all five markers)', () => {
+    expect(isCriticalValue('potassium', 6.5, 'mmol/L')).toBe(true);
+    expect(isCriticalValue('potassium', 2.7, 'mEq/L')).toBe(true); // tightened low 2.8
+    expect(isCriticalValue('sodium', 118, 'mmol/L')).toBe(true);
+    expect(isCriticalValue('glucose', 48, 'mg/dL')).toBe(true); // tightened low 50
+    expect(isCriticalValue('calcium', 13.5, 'mg/dL')).toBe(true);
+    expect(isCriticalValue('platelets', 15, 'K/uL')).toBe(true);
+    expect(isCriticalValue('platelets', 15, 'K/mm3')).toBe(true); // equivalent-scale synonym
+  });
+  it('does not fire in the normal range', () => {
+    expect(isCriticalValue('potassium', 4.0, 'mmol/L')).toBe(false);
+    expect(isCriticalValue('glucose', 95, 'mg/dL')).toBe(false);
+  });
+  it('does not fire when the unit does not match (avoids scale false-positives)', () => {
+    expect(isCriticalValue('platelets', 250000, '/uL')).toBe(false);
+    expect(isCriticalValue('potassium', 6.5, 'mg/dL')).toBe(false);
+  });
+  it('does not fire for a marker with no critical thresholds', () => {
+    expect(isCriticalValue('ldl', 9999, 'mg/dL')).toBe(false);
+    expect(isCriticalValue('potassium', null, 'mmol/L')).toBe(false);
+  });
+});
+
+describe('statusForBiomarker', () => {
+  it('forces consult on a critical value, even with no printed range', () => {
+    expect(statusForBiomarker('potassium', 6.5, 'mmol/L', null)).toEqual({ tier: 'consult', direction: 'above' });
+    expect(statusForBiomarker('glucose', 500, 'mg/dL', null)).toEqual({ tier: 'consult', direction: 'above' });
+    expect(statusForBiomarker('potassium', 2.0, 'mmol/L', { low: 3.5, high: 5.0 })).toEqual({ tier: 'consult', direction: 'below' });
+  });
+  it('falls back to the range tier for a non-critical value', () => {
+    expect(statusForBiomarker('potassium', 4.0, 'mmol/L', { low: 3.5, high: 5.0 })).toEqual({ tier: 'optimal', direction: 'within' });
+    expect(statusForBiomarker('ldl', 60, 'mg/dL', null)).toEqual({ tier: 'unknown', direction: 'unknown' });
   });
 });

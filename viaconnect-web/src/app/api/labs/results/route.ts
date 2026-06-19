@@ -8,8 +8,8 @@ import { createClient } from '@/lib/supabase/server';
 import { safeLog } from '@/lib/utils/safe-log';
 import { buildEnrichedResults, type BiomarkerRow, type VariantRow } from '@/lib/labs/enrichBiomarkers';
 import { geneForBiomarker } from '@/lib/api/lab-service';
-import { panelGroupFor } from '@/lib/labs/biomarkerDictionary';
-import { determineStatus, applicableRange } from '@/lib/labs/biomarkerStatus';
+import { panelGroupFor, biomarkerKeyFor } from '@/lib/labs/biomarkerDictionary';
+import { statusForBiomarker, applicableRange } from '@/lib/labs/biomarkerStatus';
 
 export async function GET(): Promise<NextResponse> {
   const supabase = createClient();
@@ -45,8 +45,11 @@ export async function GET(): Promise<NextResponse> {
       const printedRange = hasStandard
         ? { low: b.reference_range_low, high: b.reference_range_high }
         : null;
-      // Deterministic tier against the report's printed range (no invented range).
-      const tier = determineStatus(b.value, applicableRange(printedRange, null));
+      // Deterministic tier: a critical (panic) value forces consult; otherwise
+      // judged against the report's printed range (no invented range).
+      const tier = statusForBiomarker(
+        biomarkerKeyFor(b.name), b.value, b.unit, applicableRange(printedRange, null),
+      );
       return {
         name: b.name,
         value: b.value,

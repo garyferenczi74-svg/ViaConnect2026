@@ -77,7 +77,7 @@ function tierChip(tier: string): ChipSpec | null {
     case 'consult':
       return { label: 'Consult a professional', style: ORANGE_CHIP };
     case 'unknown':
-      return { label: 'Unknown', style: GRAY_CHIP };
+      return { label: 'Needs review', style: GRAY_CHIP };
     default:
       return null;
   }
