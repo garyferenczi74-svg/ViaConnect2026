@@ -155,7 +155,7 @@ export default function PluginsPage() {
 
           {/* ── BAND 1: Hero ── */}
           <BentoTile className="lg:col-span-8" scrim={false}>
-            <h1 className="text-heading-1 mb-2 text-white">
+            <h1 className="text-heading-1 mb-2 !text-white">
               Supercharge Your Precision Health
             </h1>
             <p className="text-body-lg text-secondary">
@@ -167,7 +167,7 @@ export default function PluginsPage() {
           {/* ── BAND 1: Active Connections ── */}
           <BentoTile className="lg:col-span-4" scrim={false}>
             <div className="mb-3 flex items-center justify-between gap-2">
-              <p className="text-overline text-[#2DA5A0]">ACTIVE CONNECTIONS</p>
+              <p className="text-overline !text-[#2DA5A0]">ACTIVE CONNECTIONS</p>
               <span className="flex-shrink-0 rounded-full border border-[#27AE60]/30 bg-[#27AE60]/10 px-2 py-0.5 text-[10px] font-semibold text-[#27AE60]">
                 {activeConnections.length} active
               </span>
@@ -200,7 +200,7 @@ export default function PluginsPage() {
             <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[#2DA5A0]/15">
               <Watch className="h-5 w-5 text-[#2DA5A0]" strokeWidth={1.5} />
             </span>
-            <p className="mt-3 text-overline text-[#2DA5A0]">CONNECT YOUR WEARABLE</p>
+            <p className="mt-3 text-overline !text-[#2DA5A0]">CONNECT YOUR WEARABLE</p>
             <p className="mt-1 text-xs text-white/50">
               Apple Watch, Garmin, Oura, WHOOP, Fitbit, Polar, 500+
             </p>
@@ -224,7 +224,7 @@ export default function PluginsPage() {
             <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[#B75E18]/15">
               <Smartphone className="h-5 w-5 text-[#B75E18]" strokeWidth={1.5} />
             </span>
-            <p className="mt-3 text-overline text-[#B75E18]">CONNECT YOUR APP</p>
+            <p className="mt-3 text-overline !text-[#B75E18]">CONNECT YOUR APP</p>
             <p className="mt-1 text-xs text-white/50">
               MyFitnessPal, Strava, Peloton, Cronometer, 100+
             </p>
@@ -248,7 +248,7 @@ export default function PluginsPage() {
             <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[#27AE60]/15">
               <FlaskConical className="h-5 w-5 text-[#27AE60]" strokeWidth={1.5} />
             </span>
-            <p className="mt-3 text-overline text-[#27AE60]">CONNECT YOUR LAB</p>
+            <p className="mt-3 text-overline !text-[#27AE60]">CONNECT YOUR LAB</p>
             <p className="mt-1 text-xs text-white/50">
               Quest, Labcorp, EverlyHealth, PDF Upload
             </p>
@@ -269,7 +269,7 @@ export default function PluginsPage() {
 
           {/* ── BAND 3: Search + Community Requested ── */}
           <BentoTile className="lg:col-span-8 lg:row-span-2" scrim={false}>
-            <p className="mb-4 text-overline text-[#2DA5A0]">FIND AN APP OR WEARABLE</p>
+            <p className="mb-4 text-overline !text-[#2DA5A0]">FIND AN APP OR WEARABLE</p>
 
             {/* Search input */}
             <div className="relative">
@@ -366,7 +366,7 @@ export default function PluginsPage() {
 
           {/* ── BAND 3: Why Connect? ── */}
           <BentoTile className="lg:col-span-4 lg:row-span-2" scrim={false}>
-            <p className="mb-4 text-overline text-[#2DA5A0]">WHY CONNECT?</p>
+            <p className="mb-4 text-overline !text-[#2DA5A0]">WHY CONNECT?</p>
             <div className="flex flex-col gap-4">
               {whyConnectCards.map((card) => {
                 const CardIcon = card.icon;
@@ -387,7 +387,7 @@ export default function PluginsPage() {
 
           {/* ── BAND 4: Privacy and Security ── */}
           <BentoTile className="lg:col-span-12" scrim={false}>
-            <p className="mb-4 text-overline text-[#2DA5A0]">PRIVACY &amp; SECURITY</p>
+            <p className="mb-4 text-overline !text-[#2DA5A0]">PRIVACY &amp; SECURITY</p>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {privacyItems.map((item) => {
                 const ItemIcon = item.icon;
