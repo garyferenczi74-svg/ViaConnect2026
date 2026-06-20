@@ -57,7 +57,12 @@ export function GeneticsHub() {
           file header for the full per breakpoint mapping). */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-12">
         <GeneticBlueprintBento className="md:col-span-2 lg:col-span-12" />
-        <YourVariantsCard className="md:col-span-2 lg:col-span-12" />
+        {/* Prompt 204i follow-up: anchor target for the Blueprint "Back to Your
+            Variants" control (/genetics#your-variants). scroll-mt clears the 64px
+            sticky brand header so the card lands below it. */}
+        <div id="your-variants" className="scroll-mt-24 md:col-span-2 lg:col-span-12">
+          <YourVariantsCard />
+        </div>
         <UploadDnaCard className="md:col-span-1 lg:col-span-3" />
         <UploadLabCard className="md:col-span-1 lg:col-span-3" />
         <SnpFormulationsCard className="md:col-span-1 lg:col-span-3" />

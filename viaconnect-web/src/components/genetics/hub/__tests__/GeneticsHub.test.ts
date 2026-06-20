@@ -72,7 +72,11 @@ describe('GeneticsHub source', () => {
 
   it('makes the blueprint bento and Your Variants full width bands on the desktop grid', () => {
     expect(source).toContain('<GeneticBlueprintBento className="md:col-span-2 lg:col-span-12" />');
-    expect(source).toContain('<YourVariantsCard className="md:col-span-2 lg:col-span-12" />');
+    // Prompt 204i: Your Variants is wrapped in the #your-variants anchor target
+    // (for the Blueprint back control), which carries the full-width grid span.
+    expect(source).toContain('id="your-variants"');
+    expect(source).toContain('scroll-mt-24 md:col-span-2 lg:col-span-12');
+    expect(source).toContain('<YourVariantsCard />');
   });
 
   it('makes the four action cards a single four across row on the desktop grid', () => {
