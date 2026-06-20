@@ -305,7 +305,7 @@ export function YourVariantsCard({ className }: YourVariantsCardProps) {
                   // a full report exists on the Your Genetic Blueprint page, the
                   // row shows the Report pill; otherwise no pill is rendered.
                   const report = row.rsid
-                    ? resolveVariantReport(row.rsid, activePanelSlug)
+                    ? resolveVariantReport(row.rsid, activePanelSlug, row.gene ?? undefined)
                     : null;
                   return (
                     <div
@@ -358,6 +358,7 @@ export function YourVariantsCard({ className }: YourVariantsCardProps) {
                             panelSlug={activePanelSlug}
                             geneLabel={row.gene ?? 'Unknown'}
                             variantLabel={row.rsid}
+                            gene={row.gene ?? undefined}
                           />
                         </div>
                       ) : null}

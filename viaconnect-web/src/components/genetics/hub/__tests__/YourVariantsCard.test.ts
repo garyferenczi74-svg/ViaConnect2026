@@ -80,7 +80,7 @@ describe('YourVariantsCard source', () => {
     // The panel slug is derived from PANEL_LABELS, never hardcoded, and fed to
     // the resolver per row; the pill is gated on a real matching report.
     expect(source).toContain('PANEL_LABELS[activePanel].slug');
-    expect(source).toContain('resolveVariantReport(row.rsid, activePanelSlug)');
+    expect(source).toContain('resolveVariantReport(row.rsid, activePanelSlug, row.gene ?? undefined)');
     expect(source).toContain('<VariantReportPill');
     expect(source).toContain('report?.exists');
   });

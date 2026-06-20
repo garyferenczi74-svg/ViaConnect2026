@@ -30,4 +30,8 @@ export interface VariantReportTarget {
   panelSlug: string; // resolved panel, for example "genex-m"
   geneSlug: string; // resolved gene, for example "mthfr"
   rsid: string; // the join key
+  // Prompt 204i: "variant" when the exact rsID is a keyVariant of the report (the
+  // report has a variant-specific block); "gene" when only the gene report exists
+  // (the gene-level fallback), so the pill can avoid implying variant specificity.
+  level: "variant" | "gene";
 }

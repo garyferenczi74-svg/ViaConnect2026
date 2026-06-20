@@ -146,7 +146,13 @@ function scrollToVariant(rsid: string) {
 // adapts to the actual animation, to reduced motion (the element is at its final
 // position immediately), and to any late layout settle on a fresh cross-route
 // navigation. Capped so it never loops indefinitely.
-function scrollToVariantWhenSettled(rsid: string) {
+//
+// Prompt 204i: fallbackSnpSlug handles the gene-level Report link. When the rsID is
+// NOT a keyVariant of the gene report (the variant block variant-<rsid> never
+// exists), the loop reaches its cap without finding the element and then scrolls
+// the gene row (snp-<slug>) into view instead, so a gene-level link still lands on
+// its report rather than leaving the page at the top.
+function scrollToVariantWhenSettled(rsid: string, fallbackSnpSlug: string | null) {
   if (typeof window === 'undefined' || typeof document === 'undefined') return;
   let lastTop = Number.NaN;
   let frames = 0;
@@ -165,7 +171,11 @@ function scrollToVariantWhenSettled(rsid: string) {
     if (frames < MAX_FRAMES) {
       frames += 1;
       requestAnimationFrame(tick);
+      return;
     }
+    // Cap reached. If the variant block never appeared (a gene-level link), fall
+    // back to scrolling the gene row so the report still lands in view.
+    if (!el && fallbackSnpSlug) scrollToSnp(fallbackSnpSlug);
   };
   requestAnimationFrame(tick);
 }
@@ -214,8 +224,9 @@ export function GeneX360PanelSection() {
     if (!scrollOnAdopt && !variantRsid) return;
     if (variantRsid) {
       // Scroll once the gene disclosure has finished expanding so we land ON the
-      // variant sub block, not its collapsed position (Prompt 204i).
-      scrollToVariantWhenSettled(variantRsid);
+      // variant sub block, not its collapsed position (Prompt 204i). If the rsID is
+      // a gene-level link (not a keyVariant), fall back to the gene row (snp).
+      scrollToVariantWhenSettled(variantRsid, snp);
     } else if (snp) {
       // Wait one frame so the SNP row is painted before scrolling to it.
       requestAnimationFrame(() => scrollToSnp(snp));

@@ -55,4 +55,28 @@ describe("resolveVariantReport", () => {
   it("returns exists false for an empty rsID", () => {
     expect(resolveVariantReport("", "genexm").exists).toBe(false);
   });
+
+  it("gene-level fallback: a non-keyVariant rsID still links to its gene report (204i)", () => {
+    // rs1802059 (MTRR A664A) is not a keyVariant of any shipped report, but the
+    // MTRR gene has a GeneXM deep report, so the variant links to that gene report.
+    const target = resolveVariantReport("rs1802059", "genex-m", "MTRR");
+    expect(target.exists).toBe(true);
+    expect(target.geneSlug).toBe("mtrr");
+    expect(target.href).toBe("/genetics/blueprint#genex-m/mtrr/rs1802059");
+    expect(target.level).toBe("gene");
+  });
+
+  it("gene-level fallback does not fire when the gene has no deep report", () => {
+    expect(resolveVariantReport("rs1802059", "genex-m", "NOTAGENE").exists).toBe(false);
+    // And without a gene argument the fallback never fires.
+    expect(resolveVariantReport("rs1802059", "genex-m").exists).toBe(false);
+  });
+
+  it("prefers the exact keyVariant match over the gene-level fallback", () => {
+    // rs1801133 IS a keyVariant of MTHFR; the exact-match path is used.
+    const target = resolveVariantReport("rs1801133", "genex-m", "MTHFR");
+    expect(target.exists).toBe(true);
+    expect(target.geneSlug).toBe("mthfr");
+    expect(target.level).toBe("variant");
+  });
 });

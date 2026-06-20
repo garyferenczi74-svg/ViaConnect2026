@@ -68,6 +68,26 @@ function findInPanel(
   return null;
 }
 
+// Prompt 204i: find the panel slug that hosts a gene by its slug (the registry
+// key), preferring the card's own panel. Used for the gene-level fallback, so a
+// variant whose exact rsID is not a keyVariant still links to its gene report and
+// every variant on Your Variants has a Full Report. Own-property safe so a crafted
+// gene name cannot resolve to an inherited prototype key.
+function findGenePanel(
+  registry: DeepReportRegistry,
+  ownPanelSlug: string,
+  geneSlug: string,
+): string | null {
+  if (!geneSlug) return null;
+  const own = registry[ownPanelSlug];
+  if (own && Object.prototype.hasOwnProperty.call(own, geneSlug)) return ownPanelSlug;
+  for (const slug of Object.keys(registry)) {
+    const panel = registry[slug];
+    if (panel && Object.prototype.hasOwnProperty.call(panel, geneSlug)) return slug;
+  }
+  return null;
+}
+
 // Resolve a Your Variants card to its Blueprint report.
 //   1. Prefer the panel the card is shown under (disambiguates a gene that
 //      appears in more than one panel, since the active tab decides which).
@@ -77,6 +97,10 @@ function findInPanel(
 export function resolveVariantReport(
   rsid: string,
   panelSlugFromTab: string,
+  // Prompt 204i: the variant's gene, for the gene-level fallback (step 5). When
+  // the exact rsID is not a keyVariant of any shipped report but its gene has a
+  // deep report, the variant still links to that gene report.
+  gene?: string,
   registry: DeepReportRegistry = DEEP_REPORT_REGISTRY,
 ): VariantReportTarget {
   const notFound: VariantReportTarget = {
@@ -85,6 +109,7 @@ export function resolveVariantReport(
     panelSlug: panelSlugFromTab,
     geneSlug: "",
     rsid,
+    level: "variant",
   };
 
   if (!rsid) return notFound;
@@ -107,14 +132,35 @@ export function resolveVariantReport(
     }
   }
 
-  // 4: no matching report.
-  if (!hit) return notFound;
+  if (hit) {
+    return {
+      href: buildHref(panelSlug, hit.geneSlug, rsid, hit.variantName),
+      exists: true,
+      panelSlug,
+      geneSlug: hit.geneSlug,
+      rsid,
+      level: "variant",
+    };
+  }
 
-  return {
-    href: buildHref(panelSlug, hit.geneSlug, rsid, hit.variantName),
-    exists: true,
-    panelSlug,
-    geneSlug: hit.geneSlug,
-    rsid,
-  };
+  // 5: gene-level fallback (Prompt 204i). The exact rsID is not a keyVariant in
+  // any shipped report, but if the variant's gene has a deep report, link to that
+  // gene report so every variant has a Full Report. The href still carries the
+  // rsID as the anchor; the island opens the gene and, finding no variant block
+  // for this rsID, falls back to scrolling the gene row into view.
+  const geneSlug = (gene ?? "").trim().toLowerCase();
+  const genePanel = findGenePanel(registry, ownPanelSlug, geneSlug);
+  if (genePanel) {
+    return {
+      href: buildHref(genePanel, geneSlug, rsid, ""),
+      exists: true,
+      panelSlug: genePanel,
+      geneSlug,
+      rsid,
+      level: "gene",
+    };
+  }
+
+  // 6: no matching report.
+  return notFound;
 }

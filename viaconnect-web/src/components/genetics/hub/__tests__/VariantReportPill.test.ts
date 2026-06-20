@@ -18,8 +18,8 @@ const COMPONENT = path.resolve(__dirname, '..', 'VariantReportPill.tsx');
 describe('VariantReportPill source', () => {
   const source = readFileSync(COMPONENT, 'utf-8');
 
-  it('calls resolveVariantReport with the rsid and panelSlug', () => {
-    expect(source).toContain('resolveVariantReport(rsid, panelSlug)');
+  it('calls resolveVariantReport with the rsid, panelSlug and gene (204i fallback)', () => {
+    expect(source).toContain('resolveVariantReport(rsid, panelSlug, gene)');
   });
 
   it('returns null when the resolver reports no matching report (never a dead link)', () => {
@@ -43,9 +43,16 @@ describe('VariantReportPill source', () => {
     expect(source).toContain('strokeWidth={1.5}');
   });
 
-  it('builds a View full ... report aria-label that avoids a doubled variant label', () => {
+  it('builds a variant aria-label that avoids a doubled variant label', () => {
     expect(source).toContain('geneLabel.includes(variantLabel)');
-    expect(source).toContain('aria-label={`View full ${accessibleName} report`}');
+    expect(source).toContain('`View full ${accessibleName} report`');
+  });
+
+  it('labels a gene-level fallback link as a gene report, not variant-specific (204i)', () => {
+    expect(source).toContain("const geneLevel = target.level === \"gene\"");
+    expect(source).toContain('Gene report');
+    expect(source).toContain('`View the ${geneLabel} gene report`');
+    expect(source).toContain('aria-label={ariaLabel}');
   });
 
   it('gives the pill a 44px minimum touch target', () => {

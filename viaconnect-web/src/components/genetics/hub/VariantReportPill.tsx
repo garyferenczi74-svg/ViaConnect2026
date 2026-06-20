@@ -25,6 +25,9 @@ interface VariantReportPillProps {
   panelSlug: string;
   geneLabel: string;
   variantLabel: string;
+  // Prompt 204i: the variant's gene, for the gene-level fallback so a variant
+  // whose exact rsID is not a keyVariant still links to its gene report.
+  gene?: string;
 }
 
 export function VariantReportPill({
@@ -32,8 +35,9 @@ export function VariantReportPill({
   panelSlug,
   geneLabel,
   variantLabel,
+  gene,
 }: VariantReportPillProps) {
-  const target = resolveVariantReport(rsid, panelSlug);
+  const target = resolveVariantReport(rsid, panelSlug, gene);
 
   // No matching report: never render a dead link. The card footer simply shows
   // the consult note with an empty right side.
@@ -47,14 +51,24 @@ export function VariantReportPill({
     ? geneLabel
     : `${geneLabel} ${variantLabel}`;
 
+  // Prompt 204i (Hannah): a gene-level fallback link must NOT imply a
+  // variant-specific report. When the report has no variant block for this rsID,
+  // label it as the gene report ("Gene report") and drop the rsID from the
+  // accessible name, so the pill never overstates the clinical specificity.
+  const geneLevel = target.level === "gene";
+  const label = geneLevel ? "Gene report" : "Report";
+  const ariaLabel = geneLevel
+    ? `View the ${geneLabel} gene report`
+    : `View full ${accessibleName} report`;
+
   return (
     <Link
       href={target.href}
-      aria-label={`View full ${accessibleName} report`}
+      aria-label={ariaLabel}
       className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full border border-[#2DA5A0]/50 bg-transparent px-3.5 py-1.5 text-[12px] font-semibold text-white no-underline transition-colors duration-200 hover:bg-[#2DA5A0]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744] motion-reduce:transition-none"
     >
       <FileText aria-hidden="true" className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} />
-      Report
+      {label}
       <ArrowUpRight aria-hidden="true" className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} />
     </Link>
   );

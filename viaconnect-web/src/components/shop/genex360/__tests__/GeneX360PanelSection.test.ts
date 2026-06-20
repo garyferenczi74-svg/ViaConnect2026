@@ -199,8 +199,11 @@ describe('GeneX360PanelSection variant deep link + highlight (193c)', () => {
     // (position holds steady for a frame) before scrolling, so it lands ON the SNP
     // rather than its collapsed position.
     expect(source).toContain('function scrollToVariantWhenSettled');
-    expect(source).toContain('scrollToVariantWhenSettled(variantRsid)');
+    expect(source).toContain('scrollToVariantWhenSettled(variantRsid, snp)');
     expect(source).toContain('if (top === lastTop)');
+    // Prompt 204i gene-level fallback: when the variant block never appears (the
+    // rsID is not a keyVariant), scroll the gene row instead.
+    expect(source).toContain('if (!el && fallbackSnpSlug) scrollToSnp(fallbackSnpSlug)');
   });
 
   it('clears the highlight when a pill is selected or a SNP is toggled', () => {
