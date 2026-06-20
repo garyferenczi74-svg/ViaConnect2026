@@ -176,7 +176,7 @@ export function HydrationFullSection({
               <span className="text-white/40">{today.data.events_today.length} entries</span>
             </h3>
             <ul className="flex flex-col gap-1">
-              {today.data.events_today.map((event: HydrationTodayEvent) => {
+              {[...today.data.events_today].reverse().map((event: HydrationTodayEvent) => {
                 const kindInfo = BEVERAGE_KIND_LABELS[event.beverage_kind] ?? BEVERAGE_KIND_LABELS.pure_water;
                 const KindIcon = kindInfo.Icon;
                 return (
@@ -200,6 +200,14 @@ export function HydrationFullSection({
                 );
               })}
             </ul>
+          </div>
+        ) : null}
+
+        {today.data && today.data.events_today.length === 0 ? (
+          <div className="mt-6 flex flex-col items-center gap-2 rounded-lg border border-white/[0.06] bg-white/[0.02] px-4 py-6 text-center">
+            <Droplet className="h-6 w-6 text-[#2DA5A0]/80" strokeWidth={1.5} aria-hidden="true" />
+            <p className="text-sm text-white/75">No drinks logged yet today</p>
+            <p className="text-[12px] text-white/50">Add your first drink below to start tracking</p>
           </div>
         ) : null}
 

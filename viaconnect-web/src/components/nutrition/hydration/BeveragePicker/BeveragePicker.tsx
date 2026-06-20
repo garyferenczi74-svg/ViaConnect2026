@@ -14,7 +14,7 @@
 
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { useSafetyMode } from '@/lib/safety-mode/useSafetyMode';
 import { isKillSwitchEnabled } from '@/lib/compliance/kill-switches';
@@ -71,6 +71,25 @@ export function BeveragePicker({ volumeUnit, onLogged }: BeveragePickerProps): J
   const today = useHydrationToday();
   const [state, setState] = useState(() => buildInitialState());
   const [logging, setLogging] = useState(false);
+
+  // Prompt 207 Task 4: default the picker to Still Water on first catalog load.
+  // The catalog is async; once it arrives and the picker is still on the default
+  // view with no selection, pre-select the first water-category row (lowest
+  // sort_order) so the user lands on the volume stepper for still water without
+  // a tap. Catalog remains the single source of truth - no hardcoded list.
+  useEffect(() => {
+    if (catalogState.loading || catalogState.error) return;
+    if (catalogState.catalog.length === 0) return;
+    // Only set the default on initial mount (view === 'default', no selection).
+    setState((prev) => {
+      if (prev.view !== 'default' || prev.selectedBeverageId !== null) return prev;
+      const waterRow = catalogState.catalog.find((r) => r.category === 'water') ?? null;
+      if (!waterRow) return prev;
+      return openBeverage(prev, waterRow);
+    });
+  // Run once when the catalog finishes loading for the first time.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [catalogState.loading, catalogState.catalog]);
 
   const recentSlugs = useMemo(
     () =>
