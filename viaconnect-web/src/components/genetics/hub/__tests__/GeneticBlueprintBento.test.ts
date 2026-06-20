@@ -28,7 +28,10 @@ describe('GeneticBlueprintBento source', () => {
   it('keeps the eyebrow, title, and subtitle above the bento, inside the card', () => {
     expect(source).toContain('Your DNA, decoded');
     expect(source).toContain('Your Genetic Blueprint');
-    expect(source).toContain('The full suite of 6 genetic panels in one comprehensive test');
+    // Prompt 204 follow-up (Gary 2026-06-20): the main subheading no longer
+    // duplicates the GeneX360 card line; it reads the precision-health wording.
+    expect(source).toContain('Precision health insights from your DNA');
+    expect(source).not.toContain('The full suite of 6 genetic panels in one comprehensive test');
   });
 
   it('labels the section by its heading for assistive tech', () => {

@@ -66,7 +66,8 @@ export function GeneticBlueprintBento({ className }: GeneticBlueprintBentoProps)
             Your Genetic Blueprint
           </h2>
           <p className="max-w-md text-[13px] leading-relaxed text-white/70 md:text-sm">
-            The full suite of 6 genetic panels in one comprehensive test
+            Precision health insights from your DNA, delivered through formulations engineered
+            for your unique genome
           </p>
         </div>
 
