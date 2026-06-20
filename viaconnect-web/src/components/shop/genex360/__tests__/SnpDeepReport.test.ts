@@ -229,12 +229,17 @@ describe('SnpDeepReport member genotype-row highlight (Prompt 204i)', () => {
     expect(uses).toBe(2);
   });
 
-  it('renders a non-alarm teal Your result tag and tint on the member row', () => {
+  it('renders a consistent Your result chip on the member row (204k inline, not floating)', () => {
     expect(source).toContain('function YourResultTag');
     expect(source).toContain('Your result');
-    // Teal highlight, never an alarm color.
-    expect(source).toContain('bg-[#2DA5A0]/[0.08]');
+    // Prompt 204k: the marker is a single inline chip beside the status pill on
+    // both layouts, the same place and shape on every report. The old floating
+    // pill (a block under the CALL cell) is gone.
     expect(source).toContain('{isUserRow ? <YourResultTag hemizygous={maleHemizygous} /> : null}');
+    expect(source).not.toContain('mt-1.5 block');
+    // The matched-row background is no longer the brand-teal tint; the row tier
+    // glass (severityToken) now carries it (asserted in the 204k describe below).
+    expect(source).not.toContain('isUserRow ? "bg-[#2DA5A0]/[0.08]"');
   });
 
   it('handles X-linked MAOA rs6323 sex-aware: female diploid, male hemizygous, unknown no-mark (204i)', () => {
@@ -257,5 +262,36 @@ describe('SnpDeepReport member genotype-row highlight (Prompt 204i)', () => {
 
   it('carries a non-clinical qualifier near the highlighted row', () => {
     expect(source).toContain('Educational reference, not a diagnosis');
+  });
+});
+
+describe('SnpDeepReport row tier glass tint (Prompt 204k)', () => {
+  const source = readFileSync(COMPONENT, 'utf-8');
+
+  it('derives a row tint tier from the same status tier as the pill', () => {
+    expect(source).toContain('function rowSeverityFor');
+    // Reuses statusTierFor + STATUS_TIER_TO_SEVERITY, the same mapping the pill uses.
+    expect(source).toContain('STATUS_TIER_TO_SEVERITY[tier]');
+  });
+
+  it('tints every row from severityToken, stronger glass on the matched row', () => {
+    // Both layouts read the tint from severityToken (no inline severity hex).
+    expect(source).toContain('severityToken(rowSev).rowGlass');
+    expect(source).toContain('severityToken(rowSev).rowGlassMatched');
+    // The matched row carries the tier edge: a left accent on the desktop table,
+    // a tier border on the stacked mobile card.
+    expect(source).toContain('severityToken(rowSev).accent');
+    expect(source).toContain('severityToken(rowSev).matchedBorder');
+    // Computed once per layout (mobile cards + desktop table).
+    const uses = source.split('rowSeverityFor(genotype, refAllele)').length - 1;
+    expect(uses).toBe(2);
+  });
+
+  it('no longer paints the matched row with the brand teal fill', () => {
+    expect(source).not.toContain('isUserRow ? "bg-[#2DA5A0]/[0.08]"');
+  });
+
+  it('keeps the YOUR RESULT marker inline, not floating under the CALL cell', () => {
+    expect(source).not.toContain('mt-1.5 block');
   });
 });

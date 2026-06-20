@@ -13,6 +13,18 @@
 // still shows). Never red or alarm styling. Variants without the highlight, and
 // pending variants, render exactly as before.
 //
+// Prompt 204k (2026-06-20): each genotype row in the VARIANTS AND GENOTYPES table
+// carries a translucent "glass" tint of its own status tier (Typical green,
+// Moderate yellow, High red), read from the SAME severityToken() as the status
+// pill so the two always agree. The matched (the member's result) row gets a
+// stronger glass plus the tier edge (a left accent on the desktop table row, a
+// tier border on the stacked mobile card), and the YOUR RESULT marker is now a
+// single inline chip beside the status pill, the same place and shape on every
+// report, instead of a pill floating under the CALL cell. The tint alpha is kept
+// low so white row text stays WCAG AA legible over all three tiers, matched
+// included. The treatment is structurally identical across tiers; only the tier
+// color changes between reports.
+//
 // Section order (fixed):
 //   1. Variants and genotypes   2. Biological role       3. Functional impact
 //   4. Health associations      5. Nutrient strategy     6. Cautions
@@ -152,6 +164,16 @@ function statusTierFor(call: string, ref: string | null): StatusTier | null {
   if (!ref || call.length !== 2) return null;
   const copies = (call[0] === ref ? 0 : 1) + (call[1] === ref ? 0 : 1);
   return copies === 0 ? "Typical" : copies === 1 ? "Moderate" : "High";
+}
+
+// Prompt 204k: the severity tier used to TINT a genotype row, derived from the
+// same status tier its StatusChip shows, so the row glass shade and the status
+// pill for a row always resolve from the same severityToken() and agree. null
+// for a non-two-base call (representative or pending rows), which then render
+// with no tier tint so nothing is misrepresented.
+function rowSeverityFor(genotype: SnpGenotype, ref: string | null): SeverityTier | null {
+  const tier = statusTierFor(genotype.genotype, ref);
+  return tier ? STATUS_TIER_TO_SEVERITY[tier] : null;
 }
 
 // The STATUS chip: the derived tier colored through severityToken(), or the
@@ -399,14 +421,19 @@ export function SnpDeepReport({
                         allowRowMark &&
                         isUsersGenotypeRow(genotype, refAllele, userTier) &&
                         (!maleHemizygous || isHomozygousCall(genotype.genotype));
+                      // Prompt 204k: tint each card by its own status tier (Typical
+                      // green, Moderate yellow, High red), a stronger glass plus a
+                      // tier border on the matched row. A non-tier row stays neutral.
+                      const rowSev = rowSeverityFor(genotype, refAllele);
+                      const rowClass = rowSev
+                        ? isUserRow
+                          ? `border ${severityToken(rowSev).matchedBorder} ${severityToken(rowSev).rowGlassMatched}`
+                          : `border border-white/[0.06] ${severityToken(rowSev).rowGlass}`
+                        : "border border-white/[0.06] bg-[#1E3054]/40";
                       return (
                       <li
                         key={`${genotype.label}-${genotype.genotype}`}
-                        className={`rounded-lg border p-3 ${
-                          isUserRow
-                            ? "border-[#2DA5A0]/50 bg-[#2DA5A0]/[0.08]"
-                            : "border-white/[0.06] bg-[#1E3054]/40"
-                        }`}
+                        className={`rounded-lg p-3 ${rowClass}`}
                       >
                         <div className="flex flex-wrap items-center gap-2">
                           {genotype.genotype !== "" ? (
@@ -447,12 +474,19 @@ export function SnpDeepReport({
                             allowRowMark &&
                             isUsersGenotypeRow(genotype, refAllele, userTier) &&
                             (!maleHemizygous || isHomozygousCall(genotype.genotype));
+                          // Prompt 204k: tint each row by its own status tier; the
+                          // matched row gets a stronger glass plus the tier left
+                          // accent. A non-tier row stays untinted (neutral).
+                          const rowSev = rowSeverityFor(genotype, refAllele);
+                          const rowClass = rowSev
+                            ? isUserRow
+                              ? `${severityToken(rowSev).rowGlassMatched} ${severityToken(rowSev).accent}`
+                              : severityToken(rowSev).rowGlass
+                            : "";
                           return (
                           <tr
                             key={`${genotype.label}-${genotype.genotype}`}
-                            className={`border-t border-white/[0.06] align-top ${
-                              isUserRow ? "bg-[#2DA5A0]/[0.08]" : ""
-                            }`}
+                            className={`border-t border-white/[0.06] align-top ${rowClass}`}
                           >
                             <td className="px-3 py-2.5">
                               {genotype.genotype !== "" ? (
@@ -460,14 +494,16 @@ export function SnpDeepReport({
                                   {genotype.genotype}
                                 </span>
                               ) : null}
-                              {isUserRow ? (
-                                <span className="mt-1.5 block">
-                                  <YourResultTag hemizygous={maleHemizygous} />
-                                </span>
-                              ) : null}
                             </td>
                             <td className="px-3 py-2.5">
-                              <StatusChip genotype={genotype} refAllele={refAllele} />
+                              {/* Prompt 204k: the YOUR RESULT marker sits inline
+                                  beside the status pill on the matched row, the same
+                                  place and shape on every report, replacing the old
+                                  pill that floated under the CALL cell. */}
+                              <div className="flex flex-wrap items-center gap-1.5">
+                                <StatusChip genotype={genotype} refAllele={refAllele} />
+                                {isUserRow ? <YourResultTag hemizygous={maleHemizygous} /> : null}
+                              </div>
                             </td>
                             <td className="px-3 py-2.5 text-[13px] leading-relaxed text-white/75">
                               {genotype.interpretation}

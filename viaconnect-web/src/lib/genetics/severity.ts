@@ -26,6 +26,24 @@ export interface SeverityTokenClasses {
   pillActive: string;
   /** Left accent edge (width plus color) for an expanded Full Report variant. */
   accent: string;
+  /**
+   * Prompt 204k: the translucent "glass" tier fill for a genotype row background.
+   * A low alpha so it reads as a frosted tier shade over the navy card while
+   * keeping white row text WCAG AA legible (the bg stays dark, even for yellow).
+   */
+  rowGlass: string;
+  /**
+   * Prompt 204k: a stronger glass fill for the matched (the member's result) row,
+   * still translucent, so the matched row reads as theirs without a floating pill.
+   * Verified to keep white text AA legible at this higher alpha as well.
+   */
+  rowGlassMatched: string;
+  /**
+   * Prompt 204k: a tier-colored border for the matched row card on the stacked
+   * (mobile) layout, pairing with rowGlassMatched. The desktop table uses `accent`
+   * (the left edge) instead, since a ring does not render on a border-collapse row.
+   */
+  matchedBorder: string;
 }
 
 // Full static class strings per tier. Each references only the --severity-* token
@@ -46,6 +64,9 @@ const SEVERITY_CLASSES: Record<SeverityTier, SeverityTokenClasses> = {
     pillActive:
       'border-[rgb(var(--severity-high))] bg-[#1A2744] text-white shadow-[0_0_10px_rgb(var(--severity-high)_/_0.4)]',
     accent: 'border-l-2 border-l-[rgb(var(--severity-high))]',
+    rowGlass: 'bg-[rgb(var(--severity-high)_/_0.10)]',
+    rowGlassMatched: 'bg-[rgb(var(--severity-high)_/_0.20)]',
+    matchedBorder: 'border-[rgb(var(--severity-high)_/_0.55)]',
   },
   moderate: {
     badge:
@@ -53,6 +74,9 @@ const SEVERITY_CLASSES: Record<SeverityTier, SeverityTokenClasses> = {
     pillActive:
       'border-[rgb(var(--severity-moderate))] bg-[#1A2744] text-white shadow-[0_0_10px_rgb(var(--severity-moderate)_/_0.4)]',
     accent: 'border-l-2 border-l-[rgb(var(--severity-moderate))]',
+    rowGlass: 'bg-[rgb(var(--severity-moderate)_/_0.10)]',
+    rowGlassMatched: 'bg-[rgb(var(--severity-moderate)_/_0.20)]',
+    matchedBorder: 'border-[rgb(var(--severity-moderate)_/_0.55)]',
   },
   low: {
     badge:
@@ -60,6 +84,9 @@ const SEVERITY_CLASSES: Record<SeverityTier, SeverityTokenClasses> = {
     pillActive:
       'border-[rgb(var(--severity-low))] bg-[#1A2744] text-white shadow-[0_0_10px_rgb(var(--severity-low)_/_0.4)]',
     accent: 'border-l-2 border-l-[rgb(var(--severity-low))]',
+    rowGlass: 'bg-[rgb(var(--severity-low)_/_0.10)]',
+    rowGlassMatched: 'bg-[rgb(var(--severity-low)_/_0.20)]',
+    matchedBorder: 'border-[rgb(var(--severity-low)_/_0.55)]',
   },
 };
 

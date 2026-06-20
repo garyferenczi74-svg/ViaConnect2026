@@ -38,9 +38,22 @@ describe('severityToken', () => {
     expect(severityToken('high').accent).toContain('border-l-2');
   });
 
+  it('exposes a translucent row glass tint per tier, stronger for the matched row (204k)', () => {
+    for (const tier of TIERS) {
+      const token = severityToken(tier);
+      // Both glass fills read the tier token, at a low alpha for the resting row
+      // and a higher alpha for the matched row.
+      expect(token.rowGlass).toContain(`bg-[rgb(var(--severity-${tier})_/_0.10)]`);
+      expect(token.rowGlassMatched).toContain(`bg-[rgb(var(--severity-${tier})_/_0.20)]`);
+      // The matched mobile card border is the tier token too.
+      expect(token.matchedBorder).toContain(`var(--severity-${tier})`);
+    }
+  });
+
   it('never uses a brand token or inline traffic-light hex for severity color', () => {
     for (const tier of TIERS) {
-      const all = `${severityToken(tier).badge} ${severityToken(tier).pillActive} ${severityToken(tier).accent}`;
+      const t = severityToken(tier);
+      const all = `${t.badge} ${t.pillActive} ${t.accent} ${t.rowGlass} ${t.rowGlassMatched} ${t.matchedBorder}`;
       expect(all).not.toContain('#2DA5A0'); // teal brand
       expect(all).not.toContain('#B75E18'); // orange brand
       // The traffic-light hex lives ONLY in globals.css, never in a class string.
