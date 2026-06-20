@@ -51,15 +51,17 @@ export function VariantReportPill({
     ? geneLabel
     : `${geneLabel} ${variantLabel}`;
 
-  // Prompt 204i (Hannah): a gene-level fallback link must NOT imply a
-  // variant-specific report. When the report has no variant block for this rsID,
-  // label it as the gene report ("Gene report") and drop the rsID from the
-  // accessible name, so the pill never overstates the clinical specificity.
+  // Prompt 204 follow-up (Gary 2026-06-20): the visible label is unified to "View
+  // Your Variant" on every row, whether the link resolves to the exact variant
+  // block or to the gene-level fallback. The accessible name still STARTS with
+  // that visible label (WCAG 2.5.3 Label in Name, so voice control matches it) and
+  // keeps the gene-vs-variant distinction for assistive tech, so a gene-level link
+  // does not overstate variant specificity (the Prompt 204i Hannah guard).
   const geneLevel = target.level === "gene";
-  const label = geneLevel ? "Gene report" : "Report";
+  const label = "View Your Variant";
   const ariaLabel = geneLevel
-    ? `View the ${geneLabel} gene report`
-    : `View full ${accessibleName} report`;
+    ? `View Your Variant, the ${geneLabel} gene report`
+    : `View Your Variant, the full ${accessibleName} report`;
 
   return (
     <Link

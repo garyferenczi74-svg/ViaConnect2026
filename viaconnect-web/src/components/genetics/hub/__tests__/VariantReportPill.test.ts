@@ -2,11 +2,12 @@
 //
 // Source-as-text assertions per the repo convention (environment: 'node', no
 // jsdom). These lock the resolver wiring, the null return for no report, the
-// real next/link usage, the Report label, the Lucide FileText + ArrowUpRight
-// icons at strokeWidth 1.5, the View full aria-label, the 44px touch target,
-// the teal outline styling, and the no dash rule. The runtime resolver behavior
-// (exists false for an unmatched rsID) is asserted directly against the live
-// resolver, which the pill calls.
+// real next/link usage, the unified "View Your Variant" label (Gary 2026-06-20),
+// the Lucide FileText + ArrowUpRight icons at strokeWidth 1.5, the accessible
+// name that starts with the visible label and stays gene-distinct, the 44px
+// touch target, the teal outline styling, and the no dash rule. The runtime
+// resolver behavior (exists false for an unmatched rsID) is asserted directly
+// against the live resolver, which the pill calls.
 
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
@@ -33,8 +34,10 @@ describe('VariantReportPill source', () => {
     expect(source).toContain('href={target.href}');
   });
 
-  it('shows the visible Report label', () => {
-    expect(source).toContain('Report');
+  it('shows the unified visible "View Your Variant" label on every row', () => {
+    expect(source).toContain('const label = "View Your Variant";');
+    // No split Report / Gene report visible labels remain.
+    expect(source).not.toContain('? "Gene report" : "Report"');
   });
 
   it('renders the leading FileText and trailing ArrowUpRight icons at strokeWidth 1.5', () => {
@@ -45,13 +48,14 @@ describe('VariantReportPill source', () => {
 
   it('builds a variant aria-label that avoids a doubled variant label', () => {
     expect(source).toContain('geneLabel.includes(variantLabel)');
-    expect(source).toContain('`View full ${accessibleName} report`');
+    expect(source).toContain('`View Your Variant, the full ${accessibleName} report`');
   });
 
-  it('labels a gene-level fallback link as a gene report, not variant-specific (204i)', () => {
+  it('keeps the accessible name starting with the visible label (WCAG 2.5.3) and gene-distinct (204i)', () => {
     expect(source).toContain("const geneLevel = target.level === \"gene\"");
-    expect(source).toContain('Gene report');
-    expect(source).toContain('`View the ${geneLabel} gene report`');
+    // The accessible name still distinguishes a gene-level fallback for assistive
+    // tech, while starting with the unified visible label so voice control matches.
+    expect(source).toContain('`View Your Variant, the ${geneLabel} gene report`');
     expect(source).toContain('aria-label={ariaLabel}');
   });
 
