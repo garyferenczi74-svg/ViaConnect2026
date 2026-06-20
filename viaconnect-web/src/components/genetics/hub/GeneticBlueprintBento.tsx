@@ -33,10 +33,13 @@
 // strokeWidth 1.5 (in the cards), no emojis, no em or en dashes, TypeScript strict.
 // Presentation only: every card is a Link; no fetch, no write path, no new table.
 
+import Link from 'next/link';
+import { ShoppingBag } from 'lucide-react';
 import { GeneticsHubTile } from './GeneticsHubTile';
 import { GENETICS_CARD_MEDIA } from './geneticsHubMedia';
 import { BlueprintHeroCard, BlueprintPanelCard } from './BlueprintPanelCard';
 import { PANEL_BENTO_META } from './blueprintBentoData';
+import { GENEX360_SHOP_HREF } from './geneticsHubLinks';
 
 interface GeneticBlueprintBentoProps {
   className?: string;
@@ -53,22 +56,35 @@ export function GeneticBlueprintBento({ className }: GeneticBlueprintBentoProps)
         className="h-full"
         contentClassName="gap-5"
       >
-        {/* Section header: eyebrow, title, subtitle. Kept above the bento; the
-            bento replaces the old GeneX360 Complete block and its empty area. */}
-        <div className="flex flex-col gap-1.5">
-          <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#2DA5A0]">
-            Your DNA, decoded
-          </span>
-          <h2
-            id="genetic-blueprint-heading"
-            className="text-2xl font-semibold leading-tight text-white md:text-3xl"
+        {/* Section header: eyebrow, title, subtitle on the left, with a Shop
+            GeneX360 CTA pinned to the top right corner (Gary 2026-06-20). The row
+            aligns to the top so the button sits in the corner; the header block
+            keeps its own column so the eyebrow, title, and subtitle stack as
+            before. The button is a Next Link to the canonical GENEX360_SHOP_HREF. */}
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex flex-col gap-1.5">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#2DA5A0]">
+              Your DNA, decoded
+            </span>
+            <h2
+              id="genetic-blueprint-heading"
+              className="text-2xl font-semibold leading-tight text-white md:text-3xl"
+            >
+              Your Genetic Blueprint
+            </h2>
+            <p className="max-w-md text-[13px] leading-relaxed text-white/70 md:text-sm">
+              Precision health insights from your DNA, delivered through formulations engineered
+              for your unique genome
+            </p>
+          </div>
+          <Link
+            href={GENEX360_SHOP_HREF}
+            aria-label="Shop GeneX360 genetic tests"
+            className="inline-flex min-h-[44px] shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-[#2DA5A0]/50 bg-transparent px-4 py-2 text-[12px] font-semibold text-white no-underline transition-colors duration-200 hover:bg-[#2DA5A0]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744] motion-reduce:transition-none"
           >
-            Your Genetic Blueprint
-          </h2>
-          <p className="max-w-md text-[13px] leading-relaxed text-white/70 md:text-sm">
-            Precision health insights from your DNA, delivered through formulations engineered
-            for your unique genome
-          </p>
+            <ShoppingBag aria-hidden="true" className="h-4 w-4 shrink-0" strokeWidth={1.5} />
+            Shop GeneX360
+          </Link>
         </div>
 
         {/* The nested seven card bento.

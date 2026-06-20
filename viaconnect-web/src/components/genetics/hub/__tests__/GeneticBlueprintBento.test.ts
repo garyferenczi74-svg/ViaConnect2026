@@ -39,6 +39,18 @@ describe('GeneticBlueprintBento source', () => {
     expect(source).toContain('id="genetic-blueprint-heading"');
   });
 
+  it('pins a Shop GeneX360 CTA to the top right of the header (Gary 2026-06-20)', () => {
+    expect(source).toContain("import { GENEX360_SHOP_HREF } from './geneticsHubLinks'");
+    expect(source).toContain('href={GENEX360_SHOP_HREF}');
+    expect(source).toContain('Shop GeneX360');
+    // The header row aligns top and pushes the button to the corner.
+    expect(source).toContain('flex items-start justify-between');
+    // Lucide ShoppingBag icon at strokeWidth 1.5, 44px tap target.
+    expect(source).toContain('ShoppingBag');
+    expect(source).toContain('strokeWidth={1.5}');
+    expect(source).toContain('min-h-[44px]');
+  });
+
   it('composes the hero card plus the six inner panel cards', () => {
     expect(source).toContain('<BlueprintHeroCard');
     expect(source).toContain('<BlueprintPanelCard meta={PANEL_BENTO_META[0]}');
