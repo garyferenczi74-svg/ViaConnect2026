@@ -181,3 +181,36 @@ describe('SnpDeepReport variant deep link highlight (193c)', () => {
     expect(source.includes(String.fromCharCode(0x2013))).toBe(false);
   });
 });
+
+describe('SnpDeepReport STATUS scale (Prompt 204i, Typical / Moderate / High)', () => {
+  const source = readFileSync(COMPONENT, 'utf-8');
+
+  it('renders the STATUS chip via StatusChip in both the mobile and desktop tables', () => {
+    expect(source).toContain('function StatusChip');
+    // Both genotype tables (mobile cards + desktop table) use StatusChip.
+    const chipUses = source.split('<StatusChip genotype={genotype} refAllele={refAllele} />').length - 1;
+    expect(chipUses).toBe(2);
+  });
+
+  it('derives the tier from effect-allele copies: 0 Typical, 1 Moderate, 2 High', () => {
+    expect(source).toContain('function statusTierFor');
+    expect(source).toContain('copies === 0 ? "Typical" : copies === 1 ? "Moderate" : "High"');
+    // The reference allele is read from the Typical-labeled (baseline) genotype.
+    expect(source).toContain('function referenceAllele');
+    expect(source).toContain('g.label.includes("Typical")');
+  });
+
+  it('colors the derived tier through severityToken (Typical green, Moderate yellow, High red)', () => {
+    expect(source).toContain('STATUS_TIER_TO_SEVERITY');
+    expect(source).toContain('Typical: "low"');
+    expect(source).toContain('Moderate: "moderate"');
+    expect(source).toContain('High: "high"');
+    expect(source).toContain('severityToken(STATUS_TIER_TO_SEVERITY[tier]).badge');
+  });
+
+  it('falls back to the original descriptive label when no clean tier can be derived', () => {
+    // A non two-base call (Null/Present, Rapid/Slow, VNTR repeats) keeps tierClasses.
+    expect(source).toContain('if (!tier) {');
+    expect(source).toContain('tierClasses(genotype.label)');
+  });
+});

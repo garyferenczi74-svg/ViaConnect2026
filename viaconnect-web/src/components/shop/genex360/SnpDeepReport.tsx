@@ -59,7 +59,7 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
-import type { SnpDeepReport as SnpDeepReportData } from "@/data/genex360/types";
+import type { SnpDeepReport as SnpDeepReportData, SnpGenotype } from "@/data/genex360/types";
 import { SeverityPill } from "@/components/genetics/SeverityPill";
 import { severityToken } from "@/lib/genetics/severity";
 import type { SeverityTier } from "@/lib/genetics/severity";
@@ -111,6 +111,57 @@ export function tierClasses(label: string): string {
   // Neutral white tone for representative or descriptive labels (for example
   // "Reported", "Val/Val", "Met/Met", "Ala/Ala", "Higher activity").
   return `${base} bg-white/10 text-white/80 ring-white/15`;
+}
+
+// Prompt 204i follow-up (Gary 2026-06-19): the STATUS column reads on the SAME
+// Typical / Moderate / High scale as the member's severity score, so the table
+// lines up with the score pill. It is derived from the genotype's number of
+// effect-allele copies: 0 copies (the homozygous-reference genotype, the -/- call)
+// is Typical, 1 copy (heterozygous, +/-) is Moderate, 2 copies (homozygous
+// variant, +/+) is High. A genotype that is not a clean two-base call
+// (representative or pending variants) returns null and keeps its descriptive
+// label, so nothing is misrepresented.
+type StatusTier = "Typical" | "Moderate" | "High";
+
+// Color each derived tier through severityToken() so the chip matches the score:
+// Typical green, Moderate yellow, High red.
+const STATUS_TIER_TO_SEVERITY: Record<StatusTier, SeverityTier> = {
+  Typical: "low",
+  Moderate: "moderate",
+  High: "high",
+};
+
+// The reference allele: the repeated base of the homozygous-reference genotype
+// (the Typical-labeled row, else the first row), so the mapping does not depend on
+// row order. null when it cannot be read as a clean homozygous two-base call.
+function referenceAllele(genotypes: SnpGenotype[]): string | null {
+  const baseline = genotypes.find((g) => g.label.includes("Typical")) ?? genotypes[0];
+  const call = baseline?.genotype ?? "";
+  return call.length === 2 && call[0] === call[1] ? call[0] : null;
+}
+
+// Map one genotype call to its Typical / Moderate / High tier by counting effect
+// allele copies against the reference. null for a non-two-base call.
+function statusTierFor(call: string, ref: string | null): StatusTier | null {
+  if (!ref || call.length !== 2) return null;
+  const copies = (call[0] === ref ? 0 : 1) + (call[1] === ref ? 0 : 1);
+  return copies === 0 ? "Typical" : copies === 1 ? "Moderate" : "High";
+}
+
+// The STATUS chip: the derived tier colored through severityToken(), or the
+// original descriptive label when no clean tier can be derived.
+function StatusChip({ genotype, refAllele }: { genotype: SnpGenotype; refAllele: string | null }) {
+  const tier = statusTierFor(genotype.genotype, refAllele);
+  if (!tier) {
+    return <span className={tierClasses(genotype.label)}>{genotype.label}</span>;
+  }
+  return (
+    <span
+      className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${severityToken(STATUS_TIER_TO_SEVERITY[tier]).badge}`}
+    >
+      {tier}
+    </span>
+  );
 }
 
 // A labeled section heading with a leading outline icon.
@@ -215,6 +266,10 @@ export function SnpDeepReport({ report, highlightRsid, severityByRsid }: SnpDeep
             const rsidKey = variant.rsid.toLowerCase();
             const hasUserResult = severityByRsid?.has(rsidKey) ?? false;
             const userTier = hasUserResult ? severityByRsid?.get(rsidKey) ?? null : null;
+            // Prompt 204i follow-up: the reference allele for this variant, so each
+            // genotype's STATUS maps to Typical / Moderate / High by effect-allele
+            // copies (the same scale as the score).
+            const refAllele = referenceAllele(variant.genotypes);
             return (
             <div
               key={variant.rsid}
@@ -266,7 +321,7 @@ export function SnpDeepReport({ report, highlightRsid, severityByRsid }: SnpDeep
                               {genotype.genotype}
                             </span>
                           ) : null}
-                          <span className={tierClasses(genotype.label)}>{genotype.label}</span>
+                          <StatusChip genotype={genotype} refAllele={refAllele} />
                         </div>
                         <p className="mt-1.5 text-[13px] leading-relaxed text-white/75">
                           {genotype.interpretation}
@@ -305,7 +360,7 @@ export function SnpDeepReport({ report, highlightRsid, severityByRsid }: SnpDeep
                               ) : null}
                             </td>
                             <td className="px-3 py-2.5">
-                              <span className={tierClasses(genotype.label)}>{genotype.label}</span>
+                              <StatusChip genotype={genotype} refAllele={refAllele} />
                             </td>
                             <td className="px-3 py-2.5 text-[13px] leading-relaxed text-white/75">
                               {genotype.interpretation}
