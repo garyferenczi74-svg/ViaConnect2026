@@ -192,10 +192,15 @@ describe('GeneX360PanelSection variant deep link + highlight (193c)', () => {
     expect(source).toContain('if (!scrollOnAdopt && !variantRsid) return;');
   });
 
-  it('scrolls to the variant sub block on the next frame when a v is present', () => {
+  it('scrolls to the variant sub block once the gene accordion has settled (204i)', () => {
     expect(source).toContain('function scrollToVariant');
     expect(source).toContain('getElementById(`variant-${rsid}`)');
-    expect(source).toContain('requestAnimationFrame(() => scrollToVariant(variantRsid))');
+    // Prompt 204i: the variant deep link waits for the accordion expand to settle
+    // (position holds steady for a frame) before scrolling, so it lands ON the SNP
+    // rather than its collapsed position.
+    expect(source).toContain('function scrollToVariantWhenSettled');
+    expect(source).toContain('scrollToVariantWhenSettled(variantRsid)');
+    expect(source).toContain('if (top === lastTop)');
   });
 
   it('clears the highlight when a pill is selected or a SNP is toggled', () => {

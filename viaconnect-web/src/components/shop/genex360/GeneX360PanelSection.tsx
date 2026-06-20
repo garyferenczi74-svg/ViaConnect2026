@@ -132,6 +132,39 @@ function scrollToVariant(rsid: string) {
   });
 }
 
+// Prompt 204i fix: when arriving via a Report deep link, the gene accordion opens
+// with a framer-motion height animation (PanelMarkerGroup) and the variant sub
+// block starts at the collapsed position, so a single next-frame scroll lands
+// above the SNP and the page is left short of the target. Wait until the variant
+// block's position holds steady for one frame (the accordion has finished
+// expanding) and THEN scroll, so it lands ON the SNP. No magic-number delay: this
+// adapts to the actual animation, to reduced motion (the element is at its final
+// position immediately), and to any late layout settle on a fresh cross-route
+// navigation. Capped so it never loops indefinitely.
+function scrollToVariantWhenSettled(rsid: string) {
+  if (typeof window === 'undefined' || typeof document === 'undefined') return;
+  let lastTop = Number.NaN;
+  let frames = 0;
+  const MAX_FRAMES = 40; // ~650ms ceiling, well past the 200ms accordion expand
+  const tick = () => {
+    const el = document.getElementById(`variant-${rsid}`);
+    if (el) {
+      const top = el.getBoundingClientRect().top;
+      if (top === lastTop) {
+        // Two consecutive frames at the same position: the expand has settled.
+        scrollToVariant(rsid);
+        return;
+      }
+      lastTop = top;
+    }
+    if (frames < MAX_FRAMES) {
+      frames += 1;
+      requestAnimationFrame(tick);
+    }
+  };
+  requestAnimationFrame(tick);
+}
+
 export function GeneX360PanelSection() {
   // Default to genex-m for deterministic SSR; never read window during render.
   const [activeSlug, setActiveSlug] = useState<PanelSlug>('genex-m');
@@ -175,9 +208,9 @@ export function GeneX360PanelSection() {
     setHighlightRsid(variantRsid);
     if (!scrollOnAdopt && !variantRsid) return;
     if (variantRsid) {
-      // Wait one frame so the gene disclosure opens and the variant sub block is
-      // painted before scrolling to it.
-      requestAnimationFrame(() => scrollToVariant(variantRsid));
+      // Scroll once the gene disclosure has finished expanding so we land ON the
+      // variant sub block, not its collapsed position (Prompt 204i).
+      scrollToVariantWhenSettled(variantRsid);
     } else if (snp) {
       // Wait one frame so the SNP row is painted before scrolling to it.
       requestAnimationFrame(() => scrollToSnp(snp));
