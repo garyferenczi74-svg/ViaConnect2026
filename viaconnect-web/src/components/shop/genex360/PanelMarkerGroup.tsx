@@ -37,6 +37,7 @@ import { ChevronDown, Dot } from "lucide-react";
 import type { PanelMarker, PanelMarkerGroup as PanelMarkerGroupData } from "@/data/genex360/types";
 import { VariantReportTabs } from "./VariantReportTabs";
 import type { SeverityTier } from "@/lib/genetics/severity";
+import type { BiologicalSex } from "@/hooks/body-tracker/useUserBiologicalSex";
 
 interface PanelMarkerGroupProps {
   group: PanelMarkerGroupData;
@@ -52,6 +53,8 @@ interface PanelMarkerGroupProps {
   // Prompt 204g: the member's severity by rsID, forwarded to the open report so
   // the Full Report cross-references the same tier shown on Your Variants.
   severityByRsid?: ReadonlyMap<string, SeverityTier | null>;
+  // Prompt 204i: the member's biological sex, forwarded for X-linked (MAOA) rows.
+  userSex?: BiologicalSex | null;
 }
 
 export function PanelMarkerGroup({
@@ -60,6 +63,7 @@ export function PanelMarkerGroup({
   onToggleSnp,
   highlightRsid,
   severityByRsid,
+  userSex,
 }: PanelMarkerGroupProps) {
   const reduced = useReducedMotion() ?? false;
   // The blueprint island always supplies onToggleSnp, so every marker collapses
@@ -84,6 +88,7 @@ export function PanelMarkerGroup({
                 reduced={reduced}
                 highlightRsid={highlightRsid ?? null}
                 severityByRsid={severityByRsid}
+                userSex={userSex}
               />
             );
           }
@@ -125,6 +130,7 @@ function SnpMarkerRow({
   reduced,
   highlightRsid,
   severityByRsid,
+  userSex,
 }: {
   marker: PanelMarker;
   openSnpSlug: string | null;
@@ -132,6 +138,7 @@ function SnpMarkerRow({
   reduced: boolean;
   highlightRsid: string | null;
   severityByRsid?: ReadonlyMap<string, SeverityTier | null>;
+  userSex?: BiologicalSex | null;
 }) {
   const slug = marker.symbol.toLowerCase();
   const isOpen = openSnpSlug === slug;
@@ -197,6 +204,7 @@ function SnpMarkerRow({
                   report={marker.deepReport}
                   highlightRsid={highlightRsid}
                   severityByRsid={severityByRsid}
+                  userSex={userSex}
                 />
               ) : (
                 <p className="text-[13px] leading-relaxed text-white/75">{marker.description}</p>

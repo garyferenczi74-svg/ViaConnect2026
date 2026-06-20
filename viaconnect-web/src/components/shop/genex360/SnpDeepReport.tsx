@@ -63,6 +63,7 @@ import type { SnpDeepReport as SnpDeepReportData, SnpGenotype } from "@/data/gen
 import { SeverityPill } from "@/components/genetics/SeverityPill";
 import { severityToken } from "@/lib/genetics/severity";
 import type { SeverityTier } from "@/lib/genetics/severity";
+import type { BiologicalSex } from "@/hooks/body-tracker/useUserBiologicalSex";
 
 interface SnpDeepReportProps {
   report: SnpDeepReportData;
@@ -79,6 +80,11 @@ interface SnpDeepReportProps {
   // means no member result, so nothing is shown. The map is empty until the
   // validated per-genotype source is populated, so this renders nothing for now.
   severityByRsid?: ReadonlyMap<string, SeverityTier | null>;
+  // Prompt 204i: the member's biological sex (or null when unknown), used for
+  // X-linked variants (MAOA). Females are diploid (the genotype rows apply
+  // directly); males are hemizygous (one X copy, only a homozygous-call row can be
+  // theirs); unknown sex falls back to no row mark.
+  userSex?: BiologicalSex | null;
 }
 
 // Chip classes for one genotype status label, selected by keyword. Returns the
@@ -184,20 +190,27 @@ function isUsersGenotypeRow(
   return rowTier != null && rowTier === severityToStatusTier(userTier);
 }
 
-// rsIDs whose member genotype ROW must never be auto-marked. MAOA rs6323 is
-// X-linked: its data carries diploid GG/GT/TT rows, but a hemizygous male member
-// has no diploid genotype, and the member sex is not available at this layer, so a
-// diploid row could be mis-marked as "Your result". We exclude it (Hannah). Other
-// non-two-base markers (GST present/null, NAT2 phenotype, MAOA-uVNTR repeats)
-// already fail safe because referenceAllele returns null for them.
-const SEX_LINKED_NO_ROW_MARK = new Set<string>(["rs6323"]);
+// X-linked rsIDs. MAOA rs6323 sits on the X chromosome, so the member's genotype
+// row is sex-dependent: a female is diploid (the GG/GT/TT rows apply directly), a
+// male is hemizygous (one X copy, only a homozygous-call row can be his), and with
+// no known sex we mark no row at all. Other non-two-base markers (GST present/null,
+// NAT2 phenotype, MAOA-uVNTR repeats) already fail safe because referenceAllele
+// returns null for them. (Prompt 204i, Hannah.)
+const SEX_LINKED_X_RSIDS = new Set<string>(["rs6323"]);
+
+// A two-base call where both alleles match (AA, GG): the only kind of row a
+// hemizygous male can map to (he has no heterozygous state).
+function isHomozygousCall(call: string): boolean {
+  return call.length === 2 && call[0] === call[1];
+}
 
 // A small, non-alarm Teal tag marking the member's own genotype row. The text
-// label means the row is never identified by color alone (WCAG).
-function YourResultTag() {
+// label means the row is never identified by color alone (WCAG). For a hemizygous
+// male on an X-linked variant the label notes the single X copy.
+function YourResultTag({ hemizygous }: { hemizygous?: boolean }) {
   return (
     <span className="inline-flex items-center rounded-full border border-[#2DA5A0]/50 bg-[#2DA5A0]/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#2DA5A0]">
-      Your result
+      {hemizygous ? "Your result (one X copy)" : "Your result"}
     </span>
   );
 }
@@ -269,7 +282,12 @@ function ProseListSection({
   );
 }
 
-export function SnpDeepReport({ report, highlightRsid, severityByRsid }: SnpDeepReportProps) {
+export function SnpDeepReport({
+  report,
+  highlightRsid,
+  severityByRsid,
+  userSex,
+}: SnpDeepReportProps) {
   return (
     <div className="space-y-7 text-white">
       {/* Meta chips: pathway always, aliases only when present. */}
@@ -315,8 +333,17 @@ export function SnpDeepReport({ report, highlightRsid, severityByRsid }: SnpDeep
             // genotype's STATUS maps to Typical / Moderate / High by effect-allele
             // copies (the same scale as the score).
             const refAllele = referenceAllele(variant.genotypes);
-            // Never auto-mark a row for an X-linked variant (no member sex here).
-            const allowRowMark = !SEX_LINKED_NO_ROW_MARK.has(variant.rsid.toLowerCase());
+            // Prompt 204i: sex-aware row marking for X-linked variants (MAOA). An
+            // autosomal variant is always markable. An X-linked variant is markable
+            // only when the member's sex is known: a female maps to her diploid row
+            // directly; a male is hemizygous, so only a homozygous-call row is his
+            // (enforced per row below). Unknown sex marks no row.
+            const xLinked = SEX_LINKED_X_RSIDS.has(variant.rsid.toLowerCase());
+            const allowRowMark = !xLinked || userSex === "female" || userSex === "male";
+            const maleHemizygous = xLinked && userSex === "male";
+            // Show a short note when an X-linked variant the member has a result for
+            // cannot be mapped because their sex is unknown.
+            const xLinkedSexUnknown = xLinked && hasUserResult && userSex == null;
             return (
             <div
               key={variant.rsid}
@@ -342,6 +369,16 @@ export function SnpDeepReport({ report, highlightRsid, severityByRsid }: SnpDeep
                 ) : null}
               </h5>
 
+              {/* Prompt 204i: an X-linked variant the member has a result for but
+                  whose row cannot be mapped because their biological sex is not on
+                  file. Explain rather than silently omit the marker. */}
+              {xLinkedSexUnknown ? (
+                <p className="text-[11px] leading-relaxed text-white/45">
+                  This is an X-linked variant. Add your biological sex in your assessment to map
+                  your result to a row here.
+                </p>
+              ) : null}
+
               {/* Prompt 193b: a variant pending assay confirmation hides its
                   genotype tiers and shows a short muted note in their place. */}
               {variant.pendingAssayDefinition ? (
@@ -359,7 +396,9 @@ export function SnpDeepReport({ report, highlightRsid, severityByRsid }: SnpDeep
                   <ul className="space-y-2 md:hidden">
                     {variant.genotypes.map((genotype) => {
                       const isUserRow =
-                        allowRowMark && isUsersGenotypeRow(genotype, refAllele, userTier);
+                        allowRowMark &&
+                        isUsersGenotypeRow(genotype, refAllele, userTier) &&
+                        (!maleHemizygous || isHomozygousCall(genotype.genotype));
                       return (
                       <li
                         key={`${genotype.label}-${genotype.genotype}`}
@@ -376,7 +415,7 @@ export function SnpDeepReport({ report, highlightRsid, severityByRsid }: SnpDeep
                             </span>
                           ) : null}
                           <StatusChip genotype={genotype} refAllele={refAllele} />
-                          {isUserRow ? <YourResultTag /> : null}
+                          {isUserRow ? <YourResultTag hemizygous={maleHemizygous} /> : null}
                         </div>
                         <p className="mt-1.5 text-[13px] leading-relaxed text-white/75">
                           {genotype.interpretation}
@@ -405,7 +444,9 @@ export function SnpDeepReport({ report, highlightRsid, severityByRsid }: SnpDeep
                       <tbody>
                         {variant.genotypes.map((genotype) => {
                           const isUserRow =
-                            allowRowMark && isUsersGenotypeRow(genotype, refAllele, userTier);
+                            allowRowMark &&
+                            isUsersGenotypeRow(genotype, refAllele, userTier) &&
+                            (!maleHemizygous || isHomozygousCall(genotype.genotype));
                           return (
                           <tr
                             key={`${genotype.label}-${genotype.genotype}`}
@@ -421,7 +462,7 @@ export function SnpDeepReport({ report, highlightRsid, severityByRsid }: SnpDeep
                               ) : null}
                               {isUserRow ? (
                                 <span className="mt-1.5 block">
-                                  <YourResultTag />
+                                  <YourResultTag hemizygous={maleHemizygous} />
                                 </span>
                               ) : null}
                             </td>

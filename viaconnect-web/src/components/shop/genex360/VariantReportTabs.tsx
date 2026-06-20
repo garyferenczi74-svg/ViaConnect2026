@@ -44,6 +44,7 @@ import type { LucideIcon } from 'lucide-react';
 import type { PanelMarker, SnpDeepReport as SnpDeepReportData } from '@/data/genex360/types';
 import { SnpDeepReport } from './SnpDeepReport';
 import type { SeverityTier } from '@/lib/genetics/severity';
+import type { BiologicalSex } from '@/hooks/body-tracker/useUserBiologicalSex';
 
 // The consult note shown on every Description tab, validated or interim. Matches
 // the existing approved short copy used across the genetics surface.
@@ -64,6 +65,8 @@ interface VariantReportTabsProps {
   // Prompt 204g: the member's severity by rsID, forwarded to SnpDeepReport for
   // the Full Report cross-reference.
   severityByRsid?: ReadonlyMap<string, SeverityTier | null>;
+  // Prompt 204i: the member's biological sex, forwarded for X-linked (MAOA) rows.
+  userSex?: BiologicalSex | null;
 }
 
 // True when the active variant deep link targets a variant that lives in THIS
@@ -78,6 +81,7 @@ export function VariantReportTabs({
   report,
   highlightRsid,
   severityByRsid,
+  userSex,
 }: VariantReportTabsProps) {
   const slug = marker.symbol.toLowerCase();
 
@@ -223,6 +227,7 @@ export function VariantReportTabs({
             report={report}
             highlightRsid={highlightRsid}
             severityByRsid={severityByRsid}
+            userSex={userSex}
           />
         </div>
       ) : null}

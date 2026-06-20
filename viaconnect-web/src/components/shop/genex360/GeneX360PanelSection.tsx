@@ -52,6 +52,11 @@ import { PanelDescriptionCard } from './PanelDescriptionCard';
 import { PanelPillTabs } from './PanelPillTabs';
 import { useGeneticsVariants } from '@/components/genetics/hub/useGeneticsVariants';
 import type { SeverityTier } from '@/lib/genetics/severity';
+import { useCurrentUser } from '@/components/body-tracker/manual-input/useCurrentUser';
+import {
+  useUserBiologicalSex,
+  type BiologicalSex,
+} from '@/hooks/body-tracker/useUserBiologicalSex';
 
 // The set of valid GeneXM SNP slugs, for O(1) validation of hash part 2.
 const GENEX_M_SNP_SLUG_SET = new Set(GENEX_M_SNP_SLUGS);
@@ -298,6 +303,17 @@ export function GeneX360PanelSection() {
     return map;
   }, [variantsData]);
 
+  // Prompt 204i (Gary 2026-06-19): the member's biological sex, for X-linked
+  // variants (MAOA). Only trusted when it comes from an explicit source (a manual
+  // override or the CAQ assessment); the hook defaults to 'male' when unknown, so
+  // 'default' / 'caq_other' resolve to null here and the report falls back to the
+  // safe no-mark behavior rather than assuming a sex. Threaded down to
+  // SnpDeepReport, which keys MAOA row handling on it.
+  const { id: userId } = useCurrentUser();
+  const { sex, source } = useUserBiologicalSex(userId);
+  const userSex: BiologicalSex | null =
+    source === 'override' || source === 'caq' ? sex : null;
+
   return (
     <section aria-labelledby="genex360-panels-heading" className="mb-12 lg:mb-16">
       {/* Section header above the pills. Neutral, on brand copy; the approved
@@ -325,6 +341,7 @@ export function GeneX360PanelSection() {
         onToggleSnp={onToggleSnp}
         highlightRsid={highlightRsid}
         severityByRsid={severityByRsid}
+        userSex={userSex}
       />
 
       {/* Hidden anchor stubs for every non active slug so all six slugs stay

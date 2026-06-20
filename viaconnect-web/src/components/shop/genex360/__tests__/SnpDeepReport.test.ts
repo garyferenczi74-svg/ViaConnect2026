@@ -144,7 +144,9 @@ describe('SnpDeepReport variant deep link highlight (193c)', () => {
 
   it('accepts an optional highlightRsid prop', () => {
     expect(source).toContain('highlightRsid?: string | null');
-    expect(source).toContain('SnpDeepReport({ report, highlightRsid, severityByRsid }');
+    expect(source).toContain('export function SnpDeepReport({');
+    expect(source).toContain('severityByRsid,');
+    expect(source).toContain('userSex,');
   });
 
   it('gives each variant sub block a variant- prefixed id and a sticky scroll margin', () => {
@@ -232,14 +234,25 @@ describe('SnpDeepReport member genotype-row highlight (Prompt 204i)', () => {
     expect(source).toContain('Your result');
     // Teal highlight, never an alarm color.
     expect(source).toContain('bg-[#2DA5A0]/[0.08]');
-    expect(source).toContain('{isUserRow ? <YourResultTag /> : null}');
+    expect(source).toContain('{isUserRow ? <YourResultTag hemizygous={maleHemizygous} /> : null}');
   });
 
-  it('never marks a row for an X-linked variant (MAOA rs6323) so a hemizygous male is not mis-marked', () => {
-    expect(source).toContain('SEX_LINKED_NO_ROW_MARK');
+  it('handles X-linked MAOA rs6323 sex-aware: female diploid, male hemizygous, unknown no-mark (204i)', () => {
+    expect(source).toContain('SEX_LINKED_X_RSIDS');
     expect(source).toContain('"rs6323"');
-    expect(source).toContain('allowRowMark = !SEX_LINKED_NO_ROW_MARK.has(variant.rsid.toLowerCase())');
-    expect(source).toContain('allowRowMark && isUsersGenotypeRow');
+    // Markable only when sex is known (autosomal always; X-linked needs sex).
+    expect(source).toContain('!xLinked || userSex === "female" || userSex === "male"');
+    expect(source).toContain('maleHemizygous = xLinked && userSex === "male"');
+    // A hemizygous male can only map to a homozygous-call row.
+    expect(source).toContain('!maleHemizygous || isHomozygousCall(genotype.genotype)');
+    expect(source).toContain('function isHomozygousCall');
+    // The male tag notes the single X copy.
+    expect(source).toContain('Your result (one X copy)');
+  });
+
+  it('explains an unmappable X-linked variant when the member sex is unknown', () => {
+    expect(source).toContain('xLinkedSexUnknown = xLinked && hasUserResult && userSex == null');
+    expect(source).toContain('This is an X-linked variant');
   });
 
   it('carries a non-clinical qualifier near the highlighted row', () => {

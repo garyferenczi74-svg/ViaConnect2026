@@ -36,6 +36,7 @@ import type { Panel, PanelSlug } from "@/data/genex360/types";
 import { PanelDisclaimer } from "./PanelDisclaimer";
 import { PanelMarkerGroup } from "./PanelMarkerGroup";
 import type { SeverityTier } from "@/lib/genetics/severity";
+import type { BiologicalSex } from "@/hooks/body-tracker/useUserBiologicalSex";
 
 interface PanelDescriptionCardProps {
   panel: Panel;
@@ -53,6 +54,9 @@ interface PanelDescriptionCardProps {
   // Prompt 204g: the member's severity by rsID, passed through to every marker
   // group for the Full Report cross-reference.
   severityByRsid?: ReadonlyMap<string, SeverityTier | null>;
+  // Prompt 204i: the member's biological sex (or null when unknown), for X-linked
+  // variant (MAOA) row handling. Passed through to every marker group.
+  userSex?: BiologicalSex | null;
 }
 
 // Per panel leading icon. All six are confirmed present in lucide-react 0.577.0.
@@ -72,6 +76,7 @@ export function PanelDescriptionCard({
   onToggleSnp,
   highlightRsid,
   severityByRsid,
+  userSex,
 }: PanelDescriptionCardProps) {
   const PanelIcon = PANEL_ICON[panel.slug];
   const tabId = `genex360-tab-${panel.slug}`;
@@ -126,6 +131,7 @@ export function PanelDescriptionCard({
               onToggleSnp={onToggleSnp}
               highlightRsid={highlightRsid}
               severityByRsid={severityByRsid}
+              userSex={userSex}
             />
           ))}
         </div>
