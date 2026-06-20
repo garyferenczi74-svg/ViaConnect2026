@@ -57,6 +57,14 @@ export interface KbCitation {
   grade: EvidenceGrade;
   /** Resolvable link where one exists; verified in the citation-verification step. */
   url?: string;
+  /**
+   * True when the drafting agent could not confirm the exact citation metadata
+   * (the claim is sound but the source details need checking). The mandatory
+   * citation-verification step MUST resolve this to false before the entry can be
+   * approved. Absent or false means the draft believes the citation is real, but
+   * verification is still required for every citation regardless.
+   */
+  unverified?: boolean;
 }
 
 export interface KbProvenance {
