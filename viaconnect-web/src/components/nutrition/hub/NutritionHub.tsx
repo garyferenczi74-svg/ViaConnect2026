@@ -42,7 +42,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Camera, ChevronRight, PenLine, X } from 'lucide-react';
+import { Camera, ChevronRight, Droplet, PenLine, X } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useNutrivisionManualLogHandoff } from '@/hooks/useNutrivisionManualLogHandoff';
 import { PlasmaGauge, type PlasmaGaugeProps } from '@/components/gauges/PlasmaGauge';
@@ -469,10 +469,12 @@ export function NutritionHub() {
               The fastest way to add what you ate
             </p>
           </div>
-          {/* Gary (2026-06-11): NutriVision sits ABOVE Log a Full Meal. */}
+          {/* Gary (2026-06-11): NutriVision sits ABOVE Log a Full Meal.
+              Prompt 207: Hydration pill added as the third entry point. */}
           <div className="mt-auto flex w-full flex-col items-center gap-3 pt-4">
             <GlassPill href="/nutrition/photo-ai" icon={Camera} label="NutriVision" />
             <GlassPill href="/nutrition/log-meal" icon={PenLine} label="Log a Full Meal" />
+            <GlassPill href="/wellness-analytics/hydration" icon={Droplet} label="Hydration" />
           </div>
         </HubTile>
 
