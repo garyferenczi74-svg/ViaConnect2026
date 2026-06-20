@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { Bed, Zap, Brain, Apple, Activity, Heart, Sparkles, ClipboardList } from 'lucide-react';
+import { Bed, Zap, Brain, Apple, Activity, Heart, Sparkles, ClipboardList, Droplet } from 'lucide-react';
 import { DailyScoreGauge } from './DailyScoreGauge';
 import {
   calculateDailyScores,
@@ -14,6 +14,7 @@ import {
 } from '@/lib/scoring/dailyScoreEngineV2';
 import { topNudge } from '@/lib/scoring/engagementNudges';
 import { detectTimezone, localDateString } from '@/lib/timezone';
+import { useHydrationToday } from '@/components/hydration/useHydrationToday';
 
 // Local-date helper shared across all date-keyed reads/writes so the panel,
 // the check-in hooks, the meal widget, and the daily_checkins row all key on
@@ -93,7 +94,22 @@ function setCachedMeals(meals: LocalMeal[]) {
 }
 
 export function DailyScoresPanel({ checkinRaw, previewRaw, onNudge }: DailyScoresPanelProps) {
-  // Three-state rendering: loading → empty | loaded. Once loaded, NEVER goes back.
+  // Prompt 207 Task 5: hydration hook - called unconditionally (Rules of Hooks).
+  // Value is percentage_of_target clamped 0..100; gauge renders in loaded state only.
+  const hydrationToday = useHydrationToday();
+  const hydrationPct = Math.max(0, Math.min(100, Math.round(hydrationToday.data?.percentage_of_target ?? 0)));
+  const hydrationGauge = {
+    score: hydrationPct,
+    manualScore: hydrationPct,
+    wearableScore: null,
+    manualWeight: 1,
+    wearableWeight: 0,
+    confidence: 1,
+    label: 'Hydration',
+    color: getScoreColor(hydrationPct),
+  };
+
+  // Three-state rendering: loading -> empty | loaded. Once loaded, NEVER goes back.
   const [scoreState, setScoreState] = useState<ScoreState>(() => {
     const cached = getCachedScores();
     return cached ? 'loaded' : 'loading';
@@ -453,8 +469,8 @@ export function DailyScoresPanel({ checkinRaw, previewRaw, onNudge }: DailyScore
 
         {/* LOADING: skeleton gauges, never CTA */}
         {scoreState === 'loading' && (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
+            {[1, 2, 3, 4, 5, 6, 7].map((i) => (
               <div key={i} className="h-[180px] animate-pulse rounded-2xl bg-white/[0.04]" />
             ))}
           </div>
@@ -471,7 +487,7 @@ export function DailyScoresPanel({ checkinRaw, previewRaw, onNudge }: DailyScore
 
         {/* LOADED: gauges (never resets to empty) */}
         {scoreState === 'loaded' && result && (
-          <div className={`relative grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6 ${isPreview ? 'ring-1 ring-[#2DA5A0]/20 rounded-2xl p-1' : ''}`}>
+          <div className={`relative grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7 ${isPreview ? 'ring-1 ring-[#2DA5A0]/20 rounded-2xl p-1' : ''}`}>
             {/* Prompt 182 (2026-06-09): metric token routed per gauge so the
                 shared PlasmaGauge picks the correct accent. moodStress maps
                 to the 'mood' token and overall maps to 'wellness'. */}
@@ -481,6 +497,10 @@ export function DailyScoresPanel({ checkinRaw, previewRaw, onNudge }: DailyScore
             <DailyScoreGauge metric="nutrition" {...result.nutrition}  dataMode={result.dataMode} icon={Apple}    isPreview={isPreview} />
             <DailyScoreGauge metric="activity"  {...result.activity}   dataMode={result.dataMode} icon={Activity} isPreview={isPreview} />
             <DailyScoreGauge metric="wellness"  {...result.overall}    dataMode={result.dataMode} icon={Heart}    isPreview={isPreview} />
+            {/* Prompt 207 Task 5: 7th gauge - Hydration percentage of target.
+                Uses bioscore (brand teal) metric token. Standalone: not folded
+                into the overall score or the scoring engine. */}
+            <DailyScoreGauge metric="bioscore" {...hydrationGauge} dataMode={result.dataMode} icon={Droplet} isPreview={isPreview} />
           </div>
         )}
       </section>
