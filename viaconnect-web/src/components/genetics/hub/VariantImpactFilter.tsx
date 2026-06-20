@@ -27,12 +27,13 @@ interface VariantImpactFilterProps {
   onChange: (value: ImpactFilterValue) => void;
 }
 
-// The four segments in fixed order, each paired with the counts key it reads.
+// The segments in fixed order, each paired with the counts key it reads. Prompt
+// 204g follow-up (Gary 2026-06-19): the Low tier was removed from scoring, so the
+// filter offers only All / High / Moderate.
 const SEGMENTS: ReadonlyArray<{ label: ImpactFilterValue; countKey: 'all' | 'high' | 'moderate' | 'low' }> = [
   { label: 'All', countKey: 'all' },
   { label: 'High', countKey: 'high' },
   { label: 'Moderate', countKey: 'moderate' },
-  { label: 'Low', countKey: 'low' },
 ];
 
 // All keeps the teal brand accent (it is not a severity tier).

@@ -27,11 +27,12 @@ describe('VariantImpactFilter source', () => {
     expect(source).toContain('tabIndex={selected ? 0 : -1}');
   });
 
-  it('offers the four impact segments in order', () => {
+  it('offers the All, High, Moderate segments in order (Low removed 204g)', () => {
     expect(source).toContain("label: 'All'");
     expect(source).toContain("label: 'High'");
     expect(source).toContain("label: 'Moderate'");
-    expect(source).toContain("label: 'Low'");
+    // Low was removed from scoring, so it is no longer a filter segment.
+    expect(source).not.toContain("{ label: 'Low', countKey: 'low' }");
   });
 
   it('wires each segment to its count', () => {
@@ -39,7 +40,6 @@ describe('VariantImpactFilter source', () => {
     expect(source).toContain("countKey: 'all'");
     expect(source).toContain("countKey: 'high'");
     expect(source).toContain("countKey: 'moderate'");
-    expect(source).toContain("countKey: 'low'");
   });
 
   it('handles arrow + Home + End keyboard navigation', () => {
