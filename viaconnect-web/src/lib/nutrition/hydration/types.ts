@@ -117,6 +117,11 @@ const QuickLogRequestSchema = z.object({
   // for backward compatibility with the existing 170o quick log buttons
   // that pass only the 9 value source kind.
   beverage_slug: z.string().min(1).max(100).optional(),
+  // Prompt 207a Task 3: when the user picks a custom beverage from their
+  // personal library, the uuid is passed through so the route can resolve
+  // hydration_source_kind + hydration_coefficient from user_beverages and
+  // write the correct hydration_ml + food_name to meal_items.
+  user_beverage_id: z.string().uuid().optional(),
 });
 
 export type QuickLogRequest = z.infer<typeof QuickLogRequestSchema>;
