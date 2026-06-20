@@ -6,6 +6,11 @@ const config: Config = {
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
+    // Prompt 204i: src/lib holds class strings too (the severityToken() single
+    // source of truth in src/lib/genetics/severity.ts). Without this glob those
+    // arbitrary value classes are never generated, so the severity pills and row
+    // badges render with no color. Scan src/lib so they are emitted.
+    "./src/lib/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   theme: {
     extend: {

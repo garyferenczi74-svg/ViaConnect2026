@@ -18,10 +18,20 @@ describe('severityToken', () => {
     }
   });
 
-  it('puts Deep Navy text on the solid activated pill (WCAG AA on each fill)', () => {
+  it('makes the active pill a dark fill with a tier border and white text (204i blank fix)', () => {
+    // A solid tier fill washed the label out; the readable active state is a dark
+    // navy surface, a tier-colored border + glow, and white text.
     for (const tier of TIERS) {
-      expect(severityToken(tier).pillActive).toContain('text-[#1A2744]');
+      const pill = severityToken(tier).pillActive;
+      expect(pill).toContain('bg-[#1A2744]'); // dark navy fill, not a light fill
+      expect(pill).toContain('text-white'); // legible label
+      expect(pill).toContain(`border-[rgb(var(--severity-${tier}))]`); // tier outline
     }
+  });
+
+  it('uses the spaced CSS Color 4 alpha form so the translucent values are valid', () => {
+    // rgb(R G B / A) via the "_/_" arbitrary-value form, not an ambiguous slash.
+    expect(severityToken('high').badge).toContain('rgb(var(--severity-high)_/_0.15)');
   });
 
   it('the accent is a left edge', () => {

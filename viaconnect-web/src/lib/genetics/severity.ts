@@ -29,28 +29,36 @@ export interface SeverityTokenClasses {
 }
 
 // Full static class strings per tier. Each references only the --severity-* token
-// for its tier (plus the navy text token on the solid fill). Static so Tailwind
-// generates them; do not template these from the tier.
+// for its tier (plus the navy and white non-severity surface/text tokens). Static
+// so Tailwind generates them; do not template these from the tier.
+//
+// Prompt 204i: the alpha values use the spaced "_/_" arbitrary-value form so the
+// generated CSS is rgb(R G B / A), the unambiguous CSS Color 4 syntax. And the
+// active pill (pillActive) is a DARK fill with a tier-colored border and WHITE
+// text, NOT a solid tier fill: a solid fill plus light text washed the label out,
+// so the readable treatment is a dark navy surface, a tier outline, and white
+// text. The border color and the row badge color for a tier read the same token,
+// so the active outline and the row badge match.
 const SEVERITY_CLASSES: Record<SeverityTier, SeverityTokenClasses> = {
   high: {
     badge:
-      'border-[rgb(var(--severity-high)/0.45)] bg-[rgb(var(--severity-high)/0.15)] text-[rgb(var(--severity-high))]',
+      'border-[rgb(var(--severity-high)_/_0.45)] bg-[rgb(var(--severity-high)_/_0.15)] text-[rgb(var(--severity-high))]',
     pillActive:
-      'border-[rgb(var(--severity-high))] bg-[rgb(var(--severity-high))] text-[#1A2744] shadow-[0_0_10px_rgb(var(--severity-high)/0.45)]',
+      'border-[rgb(var(--severity-high))] bg-[#1A2744] text-white shadow-[0_0_10px_rgb(var(--severity-high)_/_0.4)]',
     accent: 'border-l-2 border-l-[rgb(var(--severity-high))]',
   },
   moderate: {
     badge:
-      'border-[rgb(var(--severity-moderate)/0.45)] bg-[rgb(var(--severity-moderate)/0.15)] text-[rgb(var(--severity-moderate))]',
+      'border-[rgb(var(--severity-moderate)_/_0.45)] bg-[rgb(var(--severity-moderate)_/_0.15)] text-[rgb(var(--severity-moderate))]',
     pillActive:
-      'border-[rgb(var(--severity-moderate))] bg-[rgb(var(--severity-moderate))] text-[#1A2744] shadow-[0_0_10px_rgb(var(--severity-moderate)/0.45)]',
+      'border-[rgb(var(--severity-moderate))] bg-[#1A2744] text-white shadow-[0_0_10px_rgb(var(--severity-moderate)_/_0.4)]',
     accent: 'border-l-2 border-l-[rgb(var(--severity-moderate))]',
   },
   low: {
     badge:
-      'border-[rgb(var(--severity-low)/0.45)] bg-[rgb(var(--severity-low)/0.15)] text-[rgb(var(--severity-low))]',
+      'border-[rgb(var(--severity-low)_/_0.45)] bg-[rgb(var(--severity-low)_/_0.15)] text-[rgb(var(--severity-low))]',
     pillActive:
-      'border-[rgb(var(--severity-low))] bg-[rgb(var(--severity-low))] text-[#1A2744] shadow-[0_0_10px_rgb(var(--severity-low)/0.45)]',
+      'border-[rgb(var(--severity-low))] bg-[#1A2744] text-white shadow-[0_0_10px_rgb(var(--severity-low)_/_0.4)]',
     accent: 'border-l-2 border-l-[rgb(var(--severity-low))]',
   },
 };
