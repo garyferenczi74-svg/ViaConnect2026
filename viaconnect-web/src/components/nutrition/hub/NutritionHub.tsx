@@ -458,10 +458,11 @@ export function NutritionHub() {
           mediaLogKey="logYourMeal"
           contentClassName="items-center text-center"
         >
-          {/* Gary (2026-06-11): the title and caption sit on the card's TRUE
-              vertical center (absolutely centered text layer, pointer events
-              pass through), while the two pills stay anchored at the bottom. */}
-          <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+          {/* Gary (2026-06-20): the title and caption sit at the TOP of the
+              card in normal flow, above the three pills, so the taller pill
+              stack no longer covers the heading. The pills stay anchored at
+              the bottom via mt-auto. */}
+          <div className="flex flex-col items-center">
             <h3 className="text-[15px] font-semibold leading-tight text-white md:text-base">
               Log Your Meal
             </h3>

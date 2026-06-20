@@ -139,15 +139,17 @@ describe('NutritionHub source', () => {
   });
 
   it('183e + Gary: heading blocks sit on the card true vertical center, actions bottom anchored', () => {
-    // Four heading wrappers (Log Your Meal, Progress, Save My Meal, Genetics) are
-    // absolutely centered text layers with pointer events passing through, so
-    // the pills and Open controls beneath stay clickable. Prompt 192: the
-    // Insights wrapper moved into NutritionInsightsTile.tsx with the tile.
+    // Three heading wrappers (Progress, Save My Meal, Genetics) are absolutely
+    // centered text layers with pointer events passing through, so the Open
+    // controls beneath stay clickable. Prompt 192: the Insights wrapper moved
+    // into NutritionInsightsTile.tsx with the tile. Prompt 207a (2026-06-20):
+    // the Log Your Meal heading moved OUT of the centered layer to the top of
+    // the card in normal flow, so its three pills no longer cover the heading.
     const centered =
       source.match(
         /pointer-events-none absolute inset-0 flex flex-col items-center justify-center/g,
       ) ?? [];
-    expect(centered.length).toBe(4);
+    expect(centered.length).toBe(3);
     // The controls keep their bottom anchor + guaranteed gap.
     expect(source).toContain('mt-auto flex pt-4');
     expect(source).toContain('mt-auto flex w-full flex-col items-center gap-3 pt-4');
