@@ -6,13 +6,12 @@
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Droplet, Mic, ImagePlus, Sparkles } from 'lucide-react';
+import { Mic, ImagePlus, Sparkles } from 'lucide-react';
 import { MealTypeSelector } from '@/components/nutrition/MealTypeSelector';
 import { AnalyzingState } from '@/components/nutrition/AnalyzingState';
 import { AnalysisErrorCard } from '@/components/nutrition/AnalysisErrorCard';
 import { BackToNutritionLink } from '@/components/nutrition/hub/BackToNutritionLink';
 import { LogSavedMealButton } from '@/components/nutrition/LogSavedMeal';
-import { HydrationFullSection } from '@/components/hydration/HydrationFullSection';
 import type { MealType } from '@/lib/nutrition/schema';
 
 function toLocalDatetimeInput(d: Date): string {
@@ -24,10 +23,6 @@ function toLocalDatetimeInput(d: Date): string {
 export default function LogMealPage() {
   const router = useRouter();
   const [mealType, setMealType] = useState<MealType>('lunch');
-  // Gary (2026-06-12): the Hydration pill joins the meal type row and
-  // toggles the full hydration section inline, the same body the dashboard
-  // Quick Log and the Nutrition Log accordions mount.
-  const [hydrationOpen, setHydrationOpen] = useState(false);
   const [loggedAt, setLoggedAt] = useState<string>(() => toLocalDatetimeInput(new Date()));
   const [description, setDescription] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -147,9 +142,7 @@ export default function LogMealPage() {
             <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-white/40">Meal type</p>
             {/* Gary (2026-06-12): the Log a saved meal pill sits in the SAME row
                 as the Breakfast / Lunch / Dinner / Snack selector; it opens the
-                Save My Meal picker and logs to the currently selected meal type.
-                Gary (2026-06-16): the Hydration entry moved to a prominent button
-                under the NutriVision action below. */}
+                Save My Meal picker and logs to the currently selected meal type. */}
             <div className="flex flex-wrap items-center gap-2">
               <MealTypeSelector value={mealType} onChange={setMealType} />
               <LogSavedMealButton mealType={mealType} />
@@ -219,29 +212,6 @@ export default function LogMealPage() {
               <ImagePlus className="h-4 w-4" strokeWidth={1.5} />
               Use NutriVision Photo AI Instead
             </Link>
-          </div>
-
-          {/* Gary (2026-06-16): prominent Hydration entry under NutriVision.
-              Opens the full hydration section inline below. */}
-          <div>
-            <button
-              type="button"
-              onClick={() => setHydrationOpen((prev) => !prev)}
-              aria-expanded={hydrationOpen}
-              className={`inline-flex w-full items-center justify-center gap-2 rounded-xl border px-6 py-3 text-sm font-semibold transition-all min-h-[48px] ${
-                hydrationOpen
-                  ? 'border-[#5B8DEF]/60 bg-[#5B8DEF]/15 text-[#5B8DEF]'
-                  : 'border-[#5B8DEF]/40 bg-[#5B8DEF]/10 text-[#5B8DEF] hover:bg-[#5B8DEF]/20'
-              }`}
-            >
-              <Droplet className="h-4 w-4" strokeWidth={1.5} />
-              Log Hydration
-            </button>
-            {hydrationOpen && (
-              <div className="mt-3">
-                <HydrationFullSection logSurface="hydration_detail_view" />
-              </div>
-            )}
           </div>
         </div>
       )}

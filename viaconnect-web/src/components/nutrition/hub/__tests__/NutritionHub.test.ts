@@ -125,11 +125,11 @@ describe('NutritionHub source', () => {
   it('icon removal (Gary 2026-06-11): no decorative badge chips remain on any card', () => {
     // BadgeChip and its six call sites are gone. Only the functional control
     // icons survive in the lucide import: the teal glass pill CTAs (PenLine,
-    // Camera), the Open chevrons, and the handoff banner X. Prompt 192:
-    // ChevronDown left with the ExpandTile.
+    // Camera, Droplet), the Open chevrons, and the handoff banner X. Prompt 192:
+    // ChevronDown left with the ExpandTile. Prompt 207: Droplet added for Hydration pill.
     expect(source).not.toContain('BadgeChip');
     expect(source).toContain(
-      "import { Camera, ChevronRight, PenLine, X } from 'lucide-react'",
+      "import { Camera, ChevronRight, Droplet, PenLine, X } from 'lucide-react'",
     );
   });
 
@@ -162,19 +162,25 @@ describe('NutritionHub source', () => {
     expect(source).toContain('The fastest way to add what you ate');
   });
 
-  it('Row 1 Log Your Meal has two internal glass pills, NutriVision above Log a Full Meal', () => {
+  it('Row 1 Log Your Meal has three internal glass pills: NutriVision, Log a Full Meal, Hydration', () => {
+    // Prompt 207: third pill added for Hydration entry point consolidation.
     expect(source).toContain('GlassPill');
     expect(source).not.toContain('TealGlassPill');
     expect(source).toContain('href="/nutrition/log-meal"');
     expect(source).toContain('href="/nutrition/photo-ai"');
+    expect(source).toContain('href="/wellness-analytics/hydration"');
     expect(source).toContain('Log a Full Meal');
     expect(source).toContain('NutriVision');
-    // Gary (2026-06-11): NutriVision sits above Log a Full Meal.
+    expect(source).toContain('Hydration');
+    // Order: NutriVision above Log a Full Meal above Hydration.
     const iPhoto = source.indexOf('<GlassPill href="/nutrition/photo-ai"');
     const iManual = source.indexOf('<GlassPill href="/nutrition/log-meal"');
+    const iHydration = source.indexOf('<GlassPill href="/wellness-analytics/hydration"');
     expect(iPhoto).toBeGreaterThan(-1);
     expect(iManual).toBeGreaterThan(-1);
+    expect(iHydration).toBeGreaterThan(-1);
     expect(iPhoto).toBeLessThan(iManual);
+    expect(iManual).toBeLessThan(iHydration);
     // Internal Next.js Link, not an absolute URL.
     expect(source).toContain("import Link from 'next/link'");
     expect(source).not.toMatch(/href=["']https?:\/\//);
