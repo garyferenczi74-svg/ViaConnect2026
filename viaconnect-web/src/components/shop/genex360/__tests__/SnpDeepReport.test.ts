@@ -214,3 +214,35 @@ describe('SnpDeepReport STATUS scale (Prompt 204i, Typical / Moderate / High)', 
     expect(source).toContain('tierClasses(genotype.label)');
   });
 });
+
+describe('SnpDeepReport member genotype-row highlight (Prompt 204i)', () => {
+  const source = readFileSync(COMPONENT, 'utf-8');
+
+  it('marks the member own genotype row by matching their severity tier to the row tier', () => {
+    expect(source).toContain('function isUsersGenotypeRow');
+    expect(source).toContain('rowTier === severityToStatusTier(userTier)');
+    expect(source).toContain('function severityToStatusTier');
+    // Computed per row in both the mobile and desktop tables.
+    const uses = source.split('isUsersGenotypeRow(genotype, refAllele, userTier)').length - 1;
+    expect(uses).toBe(2);
+  });
+
+  it('renders a non-alarm teal Your result tag and tint on the member row', () => {
+    expect(source).toContain('function YourResultTag');
+    expect(source).toContain('Your result');
+    // Teal highlight, never an alarm color.
+    expect(source).toContain('bg-[#2DA5A0]/[0.08]');
+    expect(source).toContain('{isUserRow ? <YourResultTag /> : null}');
+  });
+
+  it('never marks a row for an X-linked variant (MAOA rs6323) so a hemizygous male is not mis-marked', () => {
+    expect(source).toContain('SEX_LINKED_NO_ROW_MARK');
+    expect(source).toContain('"rs6323"');
+    expect(source).toContain('allowRowMark = !SEX_LINKED_NO_ROW_MARK.has(variant.rsid.toLowerCase())');
+    expect(source).toContain('allowRowMark && isUsersGenotypeRow');
+  });
+
+  it('carries a non-clinical qualifier near the highlighted row', () => {
+    expect(source).toContain('Educational reference, not a diagnosis');
+  });
+});

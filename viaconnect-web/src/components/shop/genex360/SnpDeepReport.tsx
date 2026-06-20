@@ -164,6 +164,44 @@ function StatusChip({ genotype, refAllele }: { genotype: SnpGenotype; refAllele:
   );
 }
 
+// Prompt 204i follow-up (Gary 2026-06-19): mark the member's OWN genotype row in
+// the table. The member's severity tier (threaded as severityByRsid) maps back to
+// the genotype STATUS tier: under the methylation zygosity-direct model the tier
+// is bijective with effect-allele copies (HIGH = +/+ = the 2-copy row, MODERATE =
+// +/- = the 1-copy row), so the row whose derived STATUS tier matches the member's
+// tier is the member's actual genotype.
+function severityToStatusTier(tier: SeverityTier): StatusTier {
+  return tier === "high" ? "High" : tier === "moderate" ? "Moderate" : "Typical";
+}
+
+function isUsersGenotypeRow(
+  genotype: SnpGenotype,
+  ref: string | null,
+  userTier: SeverityTier | null,
+): boolean {
+  if (userTier == null) return false;
+  const rowTier = statusTierFor(genotype.genotype, ref);
+  return rowTier != null && rowTier === severityToStatusTier(userTier);
+}
+
+// rsIDs whose member genotype ROW must never be auto-marked. MAOA rs6323 is
+// X-linked: its data carries diploid GG/GT/TT rows, but a hemizygous male member
+// has no diploid genotype, and the member sex is not available at this layer, so a
+// diploid row could be mis-marked as "Your result". We exclude it (Hannah). Other
+// non-two-base markers (GST present/null, NAT2 phenotype, MAOA-uVNTR repeats)
+// already fail safe because referenceAllele returns null for them.
+const SEX_LINKED_NO_ROW_MARK = new Set<string>(["rs6323"]);
+
+// A small, non-alarm Teal tag marking the member's own genotype row. The text
+// label means the row is never identified by color alone (WCAG).
+function YourResultTag() {
+  return (
+    <span className="inline-flex items-center rounded-full border border-[#2DA5A0]/50 bg-[#2DA5A0]/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#2DA5A0]">
+      Your result
+    </span>
+  );
+}
+
 // A labeled section heading with a leading outline icon.
 function SectionHeading({ icon: Icon, children }: { icon: LucideIcon; children: ReactNode }) {
   return (
@@ -249,6 +287,13 @@ export function SnpDeepReport({ report, highlightRsid, severityByRsid }: SnpDeep
       {/* 1. Variants and genotypes. */}
       <section className="space-y-4">
         <SectionHeading icon={Dna}>Variants and genotypes</SectionHeading>
+        {/* Prompt 204i (Hannah): a non-clinical qualifier so a highlighted "Your
+            result" row reads as an educational reference, not individualized
+            medical advice. */}
+        <p className="text-[11px] leading-relaxed text-white/45">
+          Educational reference, not a diagnosis. A highlighted row marks the genotype that
+          matches your result.
+        </p>
         <div className="space-y-5">
           {report.keyVariants.map((variant) => {
             // Prompt 193c: the deep linked variant gets a soft, non-alarm teal
@@ -270,6 +315,8 @@ export function SnpDeepReport({ report, highlightRsid, severityByRsid }: SnpDeep
             // genotype's STATUS maps to Typical / Moderate / High by effect-allele
             // copies (the same scale as the score).
             const refAllele = referenceAllele(variant.genotypes);
+            // Never auto-mark a row for an X-linked variant (no member sex here).
+            const allowRowMark = !SEX_LINKED_NO_ROW_MARK.has(variant.rsid.toLowerCase());
             return (
             <div
               key={variant.rsid}
@@ -310,10 +357,17 @@ export function SnpDeepReport({ report, highlightRsid, severityByRsid }: SnpDeep
 
                   {/* Mobile and small screens: stacked cards. */}
                   <ul className="space-y-2 md:hidden">
-                    {variant.genotypes.map((genotype) => (
+                    {variant.genotypes.map((genotype) => {
+                      const isUserRow =
+                        allowRowMark && isUsersGenotypeRow(genotype, refAllele, userTier);
+                      return (
                       <li
                         key={`${genotype.label}-${genotype.genotype}`}
-                        className="rounded-lg border border-white/[0.06] bg-[#1E3054]/40 p-3"
+                        className={`rounded-lg border p-3 ${
+                          isUserRow
+                            ? "border-[#2DA5A0]/50 bg-[#2DA5A0]/[0.08]"
+                            : "border-white/[0.06] bg-[#1E3054]/40"
+                        }`}
                       >
                         <div className="flex flex-wrap items-center gap-2">
                           {genotype.genotype !== "" ? (
@@ -322,12 +376,14 @@ export function SnpDeepReport({ report, highlightRsid, severityByRsid }: SnpDeep
                             </span>
                           ) : null}
                           <StatusChip genotype={genotype} refAllele={refAllele} />
+                          {isUserRow ? <YourResultTag /> : null}
                         </div>
                         <p className="mt-1.5 text-[13px] leading-relaxed text-white/75">
                           {genotype.interpretation}
                         </p>
                       </li>
-                    ))}
+                      );
+                    })}
                   </ul>
 
                   {/* Desktop: compact table. */}
@@ -347,15 +403,25 @@ export function SnpDeepReport({ report, highlightRsid, severityByRsid }: SnpDeep
                         </tr>
                       </thead>
                       <tbody>
-                        {variant.genotypes.map((genotype) => (
+                        {variant.genotypes.map((genotype) => {
+                          const isUserRow =
+                            allowRowMark && isUsersGenotypeRow(genotype, refAllele, userTier);
+                          return (
                           <tr
                             key={`${genotype.label}-${genotype.genotype}`}
-                            className="border-t border-white/[0.06] align-top"
+                            className={`border-t border-white/[0.06] align-top ${
+                              isUserRow ? "bg-[#2DA5A0]/[0.08]" : ""
+                            }`}
                           >
                             <td className="px-3 py-2.5">
                               {genotype.genotype !== "" ? (
                                 <span className="inline-flex items-center rounded-md bg-white/10 px-2 py-0.5 font-mono text-xs font-semibold text-white">
                                   {genotype.genotype}
+                                </span>
+                              ) : null}
+                              {isUserRow ? (
+                                <span className="mt-1.5 block">
+                                  <YourResultTag />
                                 </span>
                               ) : null}
                             </td>
@@ -366,7 +432,8 @@ export function SnpDeepReport({ report, highlightRsid, severityByRsid }: SnpDeep
                               {genotype.interpretation}
                             </td>
                           </tr>
-                        ))}
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>
