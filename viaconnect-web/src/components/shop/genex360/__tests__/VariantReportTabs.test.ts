@@ -55,10 +55,16 @@ describe('VariantReportTabs source', () => {
     expect(source).toContain('{marker.description}');
   });
 
-  it('renders the validated laySummary when present, otherwise the interim state', () => {
+  it('Description source order (204j): laySummary, then the deep report summary, then interim', () => {
+    // A validated laySummary still wins when present.
     expect(source).toContain('report.laySummary ?? []');
     expect(source).toContain('laySummary.length > 0');
-    expect(source).toContain('laySummary.map');
+    // Otherwise the deep report lead summary (marker.description, the same
+    // paragraph shown at the top of the Full Report) is reused as the Description.
+    expect(source).toContain('deepReportSummary={marker.description}');
+    expect(source).toContain('trimmedDeepSummary.length > 0');
+    expect(source).toContain('summaryParagraphs.map');
+    // The neutral placeholder remains only for the genuine no-summary fallback.
     expect(source).toContain('<InterimDescription symbol={symbol} />');
   });
 

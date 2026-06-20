@@ -6,12 +6,13 @@
 // behind a Full Report tab, unchanged.
 //
 // Tabs:
-//   Description (default on a plain open) renders the validated laySummary from
-//     the deep report when one exists, otherwise a neutral interim orientation
-//     that introduces NO fabricated specifics for the gene (only a generic note
-//     on what a SNP is, the gene name, a pointer to Full Report, and the consult
-//     note). The build never authors clinical lay copy: it only renders the
-//     validated laySummary or the safe placeholder.
+//   Description (default on a plain open) renders, in source order (Prompt 204j):
+//     the validated laySummary when one exists, otherwise the deep report's lead
+//     summary paragraph (the same marker.description the Full Report shows at its
+//     top, reused as the per-variant description), otherwise a neutral interim
+//     orientation that introduces NO fabricated specifics for the gene. The build
+//     never authors clinical lay copy: it only reuses validated content (the
+//     laySummary or the existing marker.description) or shows the safe placeholder.
 //   Full Report holds the existing content unchanged: the marker description
 //     paragraph followed by the SnpDeepReport. This component does not alter the
 //     deep report; it only moves it behind a tab.
@@ -209,7 +210,11 @@ export function VariantReportTabs({
           tabIndex={0}
           className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744]"
         >
-          <DescriptionView symbol={marker.symbol} laySummary={report.laySummary ?? []} />
+          <DescriptionView
+            symbol={marker.symbol}
+            laySummary={report.laySummary ?? []}
+            deepReportSummary={marker.description}
+          />
         </div>
       ) : null}
 
@@ -235,15 +240,34 @@ export function VariantReportTabs({
   );
 }
 
-// The Description body. Renders the validated laySummary paragraphs when present,
-// otherwise the neutral interim orientation. The consult note shows in both.
-function DescriptionView({ symbol, laySummary }: { symbol: string; laySummary: string[] }) {
-  const hasValidated = laySummary.length > 0;
+// The Description body. Source order (Prompt 204j): a validated laySummary wins
+// when one exists; otherwise the deep report's lead summary paragraph (the same
+// marker.description the Full Report shows at its top) is reused as the
+// Description; otherwise the neutral interim orientation. Reusing
+// marker.description shows validated content only and authors no new clinical
+// copy, so this stays inside the 204d rule. The consult note shows in every case.
+function DescriptionView({
+  symbol,
+  laySummary,
+  deepReportSummary,
+}: {
+  symbol: string;
+  laySummary: string[];
+  deepReportSummary: string;
+}) {
+  const trimmedDeepSummary = deepReportSummary.trim();
+  const summaryParagraphs =
+    laySummary.length > 0
+      ? laySummary
+      : trimmedDeepSummary.length > 0
+        ? [trimmedDeepSummary]
+        : [];
+  const hasSummary = summaryParagraphs.length > 0;
   return (
     <div className="space-y-4">
-      {hasValidated ? (
+      {hasSummary ? (
         <div className="space-y-3">
-          {laySummary.map((paragraph) => (
+          {summaryParagraphs.map((paragraph) => (
             <p key={paragraph} className="text-[13px] leading-relaxed text-white/80">
               {paragraph}
             </p>
