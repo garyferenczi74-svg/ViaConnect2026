@@ -18,12 +18,17 @@
 // Moderate yellow, High red), read from the SAME severityToken() as the status
 // pill so the two always agree. The matched (the member's result) row gets a
 // stronger glass plus the tier edge (a left accent on the desktop table row, a
-// tier border on the stacked mobile card), and the YOUR RESULT marker is now a
-// single inline chip beside the status pill, the same place and shape on every
-// report, instead of a pill floating under the CALL cell. The tint alpha is kept
-// low so white row text stays WCAG AA legible over all three tiers, matched
-// included. The treatment is structurally identical across tiers; only the tier
-// color changes between reports.
+// tier border on the stacked mobile card). The tint alpha is kept low so white
+// row text stays WCAG AA legible over all three tiers, matched included. The
+// treatment is structurally identical across tiers; only the tier color changes
+// between reports.
+//
+// Prompt 204k follow-up (Gary 2026-06-20): the visible member-result chip was
+// removed. The matched row now reads through its stronger tint and the tier edge,
+// plus a small leading CircleDot shape cue and an sr-only label (MatchedRowMarker)
+// so the row is never identified by color alone (WCAG 1.4.1, Hannah) without
+// reintroducing a chip or button. The sex-aware gating (which row counts as the
+// member's) is unchanged; only the visible treatment changed.
 //
 // Section order (fixed):
 //   1. Variants and genotypes   2. Biological role       3. Functional impact
@@ -61,6 +66,7 @@
 import {
   Activity,
   AlertTriangle,
+  CircleDot,
   Dna,
   HeartPulse,
   Leaf,
@@ -226,14 +232,22 @@ function isHomozygousCall(call: string): boolean {
   return call.length === 2 && call[0] === call[1];
 }
 
-// A small, non-alarm Teal tag marking the member's own genotype row. The text
-// label means the row is never identified by color alone (WCAG). For a hemizygous
-// male on an X-linked variant the label notes the single X copy.
-function YourResultTag({ hemizygous }: { hemizygous?: boolean }) {
+// Prompt 204k follow-up (Hannah): a NON-COLOR cue marking the member's own
+// genotype row, after the visible "Your result" chip was removed at Gary's
+// request. The CircleDot is a SHAPE cue, present only on the matched row (its
+// presence, not its hue, is the signal), and the sr-only label names the row for
+// assistive tech, so the matched row is never identified by color alone (WCAG
+// 1.4.1). It is an icon glyph, not a chip or a button.
+function MatchedRowMarker() {
   return (
-    <span className="inline-flex items-center rounded-full border border-[#2DA5A0]/50 bg-[#2DA5A0]/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#2DA5A0]">
-      {hemizygous ? "Your result (one X copy)" : "Your result"}
-    </span>
+    <>
+      <CircleDot
+        aria-hidden="true"
+        className="h-3.5 w-3.5 shrink-0 text-[#2DA5A0]"
+        strokeWidth={1.5}
+      />
+      <span className="sr-only">Your result. </span>
+    </>
   );
 }
 
@@ -327,9 +341,9 @@ export function SnpDeepReport({
       {/* 1. Variants and genotypes. */}
       <section className="space-y-4">
         <SectionHeading icon={Dna}>Variants and genotypes</SectionHeading>
-        {/* Prompt 204i (Hannah): a non-clinical qualifier so a highlighted "Your
-            result" row reads as an educational reference, not individualized
-            medical advice. */}
+        {/* Prompt 204i (Hannah): a non-clinical qualifier so a highlighted
+            member-result row reads as an educational reference, not
+            individualized medical advice. */}
         <p className="text-[11px] leading-relaxed text-white/45">
           Educational reference, not a diagnosis. A highlighted row marks the genotype that
           matches your result.
@@ -436,13 +450,13 @@ export function SnpDeepReport({
                         className={`rounded-lg p-3 ${rowClass}`}
                       >
                         <div className="flex flex-wrap items-center gap-2">
+                          {isUserRow ? <MatchedRowMarker /> : null}
                           {genotype.genotype !== "" ? (
                             <span className="inline-flex items-center rounded-md bg-white/10 px-2 py-0.5 font-mono text-xs font-semibold text-white">
                               {genotype.genotype}
                             </span>
                           ) : null}
                           <StatusChip genotype={genotype} refAllele={refAllele} />
-                          {isUserRow ? <YourResultTag hemizygous={maleHemizygous} /> : null}
                         </div>
                         <p className="mt-1.5 text-[13px] leading-relaxed text-white/75">
                           {genotype.interpretation}
@@ -489,21 +503,17 @@ export function SnpDeepReport({
                             className={`border-t border-white/[0.06] align-top ${rowClass}`}
                           >
                             <td className="px-3 py-2.5">
-                              {genotype.genotype !== "" ? (
-                                <span className="inline-flex items-center rounded-md bg-white/10 px-2 py-0.5 font-mono text-xs font-semibold text-white">
-                                  {genotype.genotype}
-                                </span>
-                              ) : null}
+                              <div className="flex items-center gap-1.5">
+                                {isUserRow ? <MatchedRowMarker /> : null}
+                                {genotype.genotype !== "" ? (
+                                  <span className="inline-flex items-center rounded-md bg-white/10 px-2 py-0.5 font-mono text-xs font-semibold text-white">
+                                    {genotype.genotype}
+                                  </span>
+                                ) : null}
+                              </div>
                             </td>
                             <td className="px-3 py-2.5">
-                              {/* Prompt 204k: the YOUR RESULT marker sits inline
-                                  beside the status pill on the matched row, the same
-                                  place and shape on every report, replacing the old
-                                  pill that floated under the CALL cell. */}
-                              <div className="flex flex-wrap items-center gap-1.5">
-                                <StatusChip genotype={genotype} refAllele={refAllele} />
-                                {isUserRow ? <YourResultTag hemizygous={maleHemizygous} /> : null}
-                              </div>
+                              <StatusChip genotype={genotype} refAllele={refAllele} />
                             </td>
                             <td className="px-3 py-2.5 text-[13px] leading-relaxed text-white/75">
                               {genotype.interpretation}

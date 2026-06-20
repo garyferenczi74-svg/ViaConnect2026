@@ -229,16 +229,21 @@ describe('SnpDeepReport member genotype-row highlight (Prompt 204i)', () => {
     expect(uses).toBe(2);
   });
 
-  it('renders a consistent Your result chip on the member row (204k inline, not floating)', () => {
-    expect(source).toContain('function YourResultTag');
-    expect(source).toContain('Your result');
-    // Prompt 204k: the marker is a single inline chip beside the status pill on
-    // both layouts, the same place and shape on every report. The old floating
-    // pill (a block under the CALL cell) is gone.
-    expect(source).toContain('{isUserRow ? <YourResultTag hemizygous={maleHemizygous} /> : null}');
+  it('replaces the Your result chip with a non-color icon cue and sr-only label (204k follow-up)', () => {
+    // Prompt 204k follow-up (Gary): the visible "Your result" chip was removed.
+    // The matched row keeps the tint plus the tier edge, and a non-color cue: a
+    // CircleDot shape (present only on the matched row) and an sr-only label, so
+    // the row is never identified by color alone (WCAG 1.4.1, Hannah). This is an
+    // icon glyph, not a chip or button.
+    expect(source).not.toContain('YourResultTag');
+    expect(source).toContain('function MatchedRowMarker');
+    expect(source).toContain('CircleDot');
+    expect(source).toContain('<span className="sr-only">Your result. </span>');
+    // The marker renders only on the matched row, in both layouts.
+    const uses = source.split('{isUserRow ? <MatchedRowMarker /> : null}').length - 1;
+    expect(uses).toBe(2);
+    // The old floating pill and the brand-teal matched fill are gone.
     expect(source).not.toContain('mt-1.5 block');
-    // The matched-row background is no longer the brand-teal tint; the row tier
-    // glass (severityToken) now carries it (asserted in the 204k describe below).
     expect(source).not.toContain('isUserRow ? "bg-[#2DA5A0]/[0.08]"');
   });
 
@@ -248,11 +253,11 @@ describe('SnpDeepReport member genotype-row highlight (Prompt 204i)', () => {
     // Markable only when sex is known (autosomal always; X-linked needs sex).
     expect(source).toContain('!xLinked || userSex === "female" || userSex === "male"');
     expect(source).toContain('maleHemizygous = xLinked && userSex === "male"');
-    // A hemizygous male can only map to a homozygous-call row.
+    // A hemizygous male can only map to a homozygous-call row. (The gating that
+    // decides which row is the member's is unchanged; only the visible chip was
+    // removed in the 204k follow-up.)
     expect(source).toContain('!maleHemizygous || isHomozygousCall(genotype.genotype)');
     expect(source).toContain('function isHomozygousCall');
-    // The male tag notes the single X copy.
-    expect(source).toContain('Your result (one X copy)');
   });
 
   it('explains an unmappable X-linked variant when the member sex is unknown', () => {
@@ -291,7 +296,8 @@ describe('SnpDeepReport row tier glass tint (Prompt 204k)', () => {
     expect(source).not.toContain('isUserRow ? "bg-[#2DA5A0]/[0.08]"');
   });
 
-  it('keeps the YOUR RESULT marker inline, not floating under the CALL cell', () => {
+  it('has removed the matched-row chip; no floating marker remains (204k follow-up)', () => {
     expect(source).not.toContain('mt-1.5 block');
+    expect(source).not.toContain('YourResultTag');
   });
 });
