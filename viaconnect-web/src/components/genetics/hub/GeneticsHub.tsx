@@ -45,6 +45,7 @@ import {
 } from './GeneticsActionCards';
 import { YourVariantsCard } from './YourVariantsCard';
 import { AssessmentRetakeCard } from '@/components/body-tracker/hub/AssessmentRetakeCard';
+import { DSHEADisclaimer } from '@/components/compliance/DSHEADisclaimer';
 
 export function GeneticsHub() {
   return (
@@ -71,6 +72,13 @@ export function GeneticsHub() {
 
       {/* Update Your Assessment card, reused unchanged from the My Biology hub. */}
       <AssessmentRetakeCard />
+
+      {/* Prompt 204 follow-up (Gary 2026-06-20): the validated #113 DSHEA
+          disclaimer. The hub now carries a structure/function claim in the
+          Blueprint subheading, so per the disclaimer component's own rule this US
+          surface must show it. Uses the shared component (canonical 21 CFR
+          101.93(d) text, suppression telemetry); no copy is authored here. */}
+      <DSHEADisclaimer surface="genetics-hub" />
     </div>
   );
 }

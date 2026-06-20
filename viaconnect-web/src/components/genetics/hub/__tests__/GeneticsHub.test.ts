@@ -60,6 +60,13 @@ describe('GeneticsHub source', () => {
     expect(source).toContain('<AssessmentRetakeCard />');
   });
 
+  it('renders the validated DSHEA disclaimer (the hub carries a structure/function claim)', () => {
+    expect(source).toContain(
+      "import { DSHEADisclaimer } from '@/components/compliance/DSHEADisclaimer'",
+    );
+    expect(source).toContain('<DSHEADisclaimer surface="genetics-hub" />');
+  });
+
   it('uses the standard max-w-7xl container with Instrument Sans', () => {
     expect(source).toContain(
       'mx-auto max-w-7xl space-y-6 px-4 py-6 md:px-6 md:py-8 font-[Instrument_Sans]',
