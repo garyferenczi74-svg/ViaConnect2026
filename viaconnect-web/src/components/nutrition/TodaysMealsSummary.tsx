@@ -81,6 +81,7 @@ export function TodaysMealsSummary(props: TodaysMealsSummaryProps) {
   // hooks for the ring + buttons + picker + history.
   const { data: hydrationToday } = useHydrationToday();
   const hydrationTotalMl = hydrationToday?.total_ml ?? 0;
+  const hydrationPct = Math.max(0, Math.min(100, Math.round(hydrationToday?.percentage_of_target ?? 0)));
 
   // Gary (2026-06-12): remove semantics (optimistic removal + 5 second
   // undo + flush on unload) live in the shared useRemoveMeal hook now.
@@ -280,6 +281,20 @@ export function TodaysMealsSummary(props: TodaysMealsSummaryProps) {
                   strokeWidth={1.5}
                 />
               </button>
+
+              <div
+                role="progressbar"
+                aria-label="Hydration progress toward daily target"
+                aria-valuenow={hydrationPct}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-white/[0.08]"
+              >
+                <div
+                  className="h-full rounded-full transition-all duration-300"
+                  style={{ width: `${hydrationPct}%`, backgroundColor: '#2DA5A0' }}
+                />
+              </div>
 
               {isOpen ? (
                 <div className="mt-2">

@@ -107,6 +107,45 @@ describe('LogSavedMeal source', () => {
   });
 });
 
+describe('TodaysMealsSummary hydration progress bar (Prompt 207 Task 6)', () => {
+  const source = readFileSync(SUMMARY, 'utf-8');
+
+  it('renders a hydration progress bar reflecting percentage of target', () => {
+    // Source-as-text: verify the progressbar role markup and aria-valuenow
+    // binding are present. Render tests are impractical (node env, no jsdom).
+    expect(source).toContain('role="progressbar"');
+    expect(source).toContain('aria-label="Hydration progress toward daily target"');
+    expect(source).toContain('aria-valuenow={hydrationPct}');
+    expect(source).toContain('aria-valuemin={0}');
+    expect(source).toContain('aria-valuemax={100}');
+  });
+
+  it('derives hydrationPct clamped 0-100 from hydrationToday?.percentage_of_target', () => {
+    expect(source).toContain('const hydrationPct = Math.max(0, Math.min(100, Math.round(hydrationToday?.percentage_of_target ?? 0)))');
+  });
+
+  it('fills the bar with teal #2DA5A0 and width tied to hydrationPct', () => {
+    expect(source).toContain("backgroundColor: '#2DA5A0'");
+    expect(source).toContain('`${hydrationPct}%`');
+  });
+
+  it('places the bar inside the hydration section, after the button, before the expanded body', () => {
+    // The button ends before the progressbar div; the isOpen body comes after.
+    const buttonEnd = source.indexOf('</button>', source.indexOf('logSurface') > -1 ? 0 : source.indexOf('Hydration'));
+    const progressBarStart = source.indexOf('role="progressbar"');
+    const expandedBody = source.indexOf('isOpen ?');
+    // The last isOpen check (hydration section) must come after the progressbar.
+    const lastIsOpen = source.lastIndexOf('isOpen ?');
+    expect(progressBarStart).toBeGreaterThan(buttonEnd);
+    expect(lastIsOpen).toBeGreaterThan(progressBarStart);
+  });
+
+  it('contains no em or en dashes', () => {
+    expect(source.includes(String.fromCharCode(0x2014))).toBe(false);
+    expect(source.includes(String.fromCharCode(0x2013))).toBe(false);
+  });
+});
+
 describe('TodaysMealsSummary source after the shared extraction', () => {
   const source = readFileSync(SUMMARY, 'utf-8');
 
