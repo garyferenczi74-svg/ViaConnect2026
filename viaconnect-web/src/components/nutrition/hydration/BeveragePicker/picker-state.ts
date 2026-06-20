@@ -74,6 +74,15 @@ export function openBeverage(state: PickerState, row: BeverageCatalogRow): Picke
   };
 }
 
+/**
+ * Transition to the create_custom view so the user can define a personal
+ * beverage. Cancel from that view calls backToDefault; on success the
+ * component fires onLogged with the new beverage_id and returns to default.
+ */
+export function openCreateCustom(state: PickerState): PickerState {
+  return { ...state, view: 'create_custom' };
+}
+
 export function backToDefault(state: PickerState): PickerState {
   return {
     ...state,
