@@ -1,13 +1,45 @@
 # Genetic Tests: Variant Report Treatment Rollout (All 6 Panels)
 
-Status: SCOPING ROADMAP (no clinical content authored here)
+Status: ALL PHASES COMPLETE (Phases 1 to 5 authored as PENDING, NON-LIVE drafts)
 Date: 2026-06-20
-Owner decision: Gary asked to confirm the recent report treatments (Prompts 204f / 204g / 204j / 204k) reach all genetic tests, not just methylation. He chose "plan all 6 tests."
+Owner decision: Gary asked to confirm the recent report treatments (Prompts 204f / 204g / 204j / 204k) reach all genetic tests, not just methylation, then chose to author per-SNP clinical content for every test, one phase per test (PeptideIQ and CannabisIQ as educational). All five phases are now authored as pending, non-live drafts, gated on a human clinical and compliance pass.
 
 This document maps what each of the six GENEX360 panels needs to receive the full
-variant report treatment. It authors NO deep report copy and NO severity tiers.
-Those are validated clinical content that ships only on a human clinical and
-compliance pass (the same gate held across 204d, 204g, and 204h).
+variant report treatment, and now records that the content has been authored as
+non-live drafts. The drafts are validated clinical content authored by Hannah and
+ship to a live surface only on a human clinical and compliance pass (the same gate
+held across 204d, 204g, and 204h). See the implementation plan at
+`docs/superpowers/plans/2026-06-20-genetics-snp-clinical-content.md`.
+
+---
+
+## 0. Completion status (2026-06-20)
+
+All six tests are covered. The per-SNP clinical content is authored and committed
+as PENDING, NON-LIVE drafts: each draft is imported only by its test, NOT attached
+to any panel marker, NOT in `DEEP_REPORT_REGISTRY`, and NOT merged into
+`VARIANT_SEVERITY`, so nothing displays until the gate. 38 tests pass; Jeffery
+reviewed each phase SHIP as non-live drafts.
+
+| Phase | Test | Authored draft | Severity draft |
+| --- | --- | --- | --- |
+| 0 | GeneXM | LIVE already (`genex-m-deep.ts`) | LIVE (zygosity) |
+| 1 | NutrigenDX | `nutrigen-dx-deep.draft.ts` (27 SNPs) | `nutrigenDxSeverityDraft.ts` |
+| 2 | HormoneIQ | `hormone-iq-deep.draft.ts` (5 genotype SNPs) | `hormoneIqSeverityDraft.ts` (CYP19A1 untiered) |
+| 3 | EpigenHQ | `epigen-hq-interpretations.draft.ts` (12, new type) | none (not a genotype panel) |
+| 4 | PeptideIQ | `peptide-iq-deep.draft.ts` (14 educational) | none (educational) |
+| 5 | CannabisIQ | `cannabis-iq-deep.draft.ts` (10 educational) | none (educational) |
+
+TWO GO-LIVE BLOCKERS (documented in the severity draft headers; must be resolved
+before ANY general genotype panel ships, beyond clinical sign-off):
+1. The general severity ladder is clinical, not allele-copy-count-monotonic (for
+   example FADS1 TT, VDR ff, CYP1A1 GG score moderate, not high). The 204i STATUS
+   chip and the 204i/204k matched-row highlight derive their tier from copy count
+   (the methylation model), so they would mislabel rows on the general path. The
+   chip and highlight must read the validated tier directly from the stored
+   genotype before go-live.
+2. NAT2 acetylator status is a composite phenotype across several SNPs and needs a
+   dedicated resolver, not the single-rsID severity map.
 
 ---
 
@@ -39,11 +71,11 @@ to GeneXM markers today (`src/data/genex360/panels.ts:1024-1029`) and
 | Panel | Type | Markers | Report treatment that applies | Status | Gate |
 | --- | --- | --- | --- | --- | --- |
 | GeneXM (`genex-m`) | snp | 20 SNPs | Full genotype report + zygosity severity | LIVE (reference implementation) | Done |
-| NutrigenDX (`nutrigen-dx`) | snp | 27 nutrition markers | Full genotype report + per-genotype severity | Roster signed off (204h-R1); content held | Human clinical + compliance |
-| HormoneIQ (`hormone-iq`) | biomarker | 29 hormone / metabolite / genetic | Biomarker monographs (lab track), SNP report only for its genetic subset | Not started | Human clinical + compliance |
-| EpigenHQ (`epigen-hq`) | epigenetic | 12 epigenetic markers | Epigenetic age / expression surface (not a genotype table) | Not started | Human clinical + compliance |
-| PeptideIQ (`peptide-iq`) | educational | 14 peptide response genes | Educational gene cards (genotype report only if assayed later) | Educational only | Product + clinical decision |
-| CannabisIQ (`cannabis-iq`) | educational | 10 cannabinoid response genes | Educational gene cards (genotype report only if assayed later) | Educational only | Product + clinical decision |
+| NutrigenDX (`nutrigen-dx`) | snp | 27 nutrition markers | Full genotype report + per-genotype severity | Draft authored (non-live) | Human clinical + compliance |
+| HormoneIQ (`hormone-iq`) | biomarker | 29 hormone / metabolite / genetic | SNP report for its 5 genetic SNPs; 24 biomarkers route to the lab track | Draft authored (5 SNPs, non-live) | Human clinical + compliance |
+| EpigenHQ (`epigen-hq`) | epigenetic | 12 epigenetic markers | Epigenetic interpretations (not a genotype table) | Draft authored (non-live) | Human clinical + compliance |
+| PeptideIQ (`peptide-iq`) | educational | 14 peptide response genes | Educational gene monographs (no tiers, no severity) | Draft authored (educational, non-live) | Product + clinical decision |
+| CannabisIQ (`cannabis-iq`) | educational | 10 cannabinoid response genes | Educational gene monographs (no tiers, no severity) | Draft authored (educational, non-live) | Product + clinical decision |
 
 ---
 
@@ -55,9 +87,15 @@ tabs, severity tinted rows, the matched-row marker, and the methylation
 zygosity-direct score (+/+ High, +/- Moderate). Nothing to do. This is the shape
 the other SNP panels copy.
 
-### 3.2 NutrigenDX (nutrigen-dx) - the clear next target (only other SNP panel)
-This is the only other genotype panel, so it is the one that genuinely receives
-the same treatment. To light it up:
+### 3.2 NutrigenDX (nutrigen-dx) - DRAFT AUTHORED (Phase 1, non-live)
+The only other genotype panel, and the first one taken. All 27 SNP deep reports
+plus the per-genotype severity draft are authored in `nutrigen-dx-deep.draft.ts`
+and `nutrigenDxSeverityDraft.ts`. The FTO exemplar resolved all three 204h holds
+(a single forward-strand A-risk orientation with the effect allele labeled per
+row, no reliance on the unverifiable 2024 citation, and T2D and CVD framed as
+soft population-level associations). Descriptive markers are correctly left
+untiered: FUT2, SLC30A8, AMY1, GSTM1, GSTT1, HLA-DQ2/DQ8, MCM6, and NAT2. The
+remaining go-live wiring (NOT done, gated) is:
 
 1. Author `nutrigen-dx-deep.ts` (mirror of `genex-m-deep.ts`): one `SnpDeepReport`
    per marker (biological role, functional impact, health associations, nutrient
@@ -73,56 +111,69 @@ the same treatment. To light it up:
    `severityFor` path, NOT the zygosity path). Until populated, those variants
    render the honest unscored fallback.
 
-Prerequisites already in motion: the SNP roster was reconciled and signed off in
-204h-R1 (`docs/knowledge-base/204h-panel-roster-reconciliation.md`). The proposed
-roster differs from the live 27 (+12 / -9). The FTO rs9939609 exemplar is HELD
-pending Hannah must-fixes (strand-flip rule, an unverifiable 2024 citation, and
-softening the T2D / CVD language). No deep-report copy or tier has shipped yet.
+Roster basis: the SNP roster was reconciled and signed off in 204h-R1
+(`docs/knowledge-base/204h-panel-roster-reconciliation.md`); the draft is authored
+against the live 27 markers.
 
 Gate: every monograph and every tier is human clinical and compliance reviewed
-before it is retrievable. A draft can be staged structurally (the 204d KB seed
-pattern: pending, non-live) but nothing displays until sign-off.
+before it is retrievable. The drafts are staged structurally (the 204d KB seed
+pattern: pending, non-live) and nothing displays until sign-off.
 
-### 3.3 HormoneIQ (hormone-iq) - biomarker, different surface
-HormoneIQ is biomarker-led (cortisol, DHEA, and similar), not a genotype table.
-The genotype report treatment does not map to its biomarker rows. Its path is the
-Lab Results engine (204c) plus biomarker monographs (204d Phase 1, the 45
-biomarker monograph work list), which interpret a measured value against a range,
-not a genotype against a tier. Any genetic subset inside the 29 markers (for
-example a COMT or MAOA SNP bundled into the hormone panel) could reuse the SNP
-report path once its rsIDs and validated content exist, but the bulk of HormoneIQ
-belongs to the lab / biomarker track.
+### 3.3 HormoneIQ (hormone-iq) - DRAFT AUTHORED (Phase 2, non-live) + biomarker handoff
+HormoneIQ is biomarker-led, so only its 5 genotype SNPs (COMT, CYP1A1, CYP1B1,
+CYP19A1, SRD5A2) get the genotype report; those are authored in
+`hormone-iq-deep.draft.ts` with a severity draft (CYP19A1 left untiered, small
+bidirectional effect). COMT rs4680 is re-authored for the estrogen and
+catecholamine clearance context, kept distinct from the GeneXM COMT report. The
+other 24 markers are lab analytes and route to the Lab Results engine (204c) plus
+biomarker monographs (204d Phase 1); that handoff is recorded in the draft header
+and is a separate track, not this treatment.
 
-### 3.4 EpigenHQ (epigen-hq) - epigenetic, different surface
-EpigenHQ reports epigenetic age and expression, not fixed genotypes. There is no
-+/+ +/- zygosity and no allele genotype to tier. It needs its own presentation
-(age delta, methylation expression bands) and its own validated interpretations.
-The genotype-table treatment does not apply. Treat as a separate design item.
+### 3.4 EpigenHQ (epigen-hq) - DRAFT AUTHORED (Phase 3, non-live), different content type
+EpigenHQ reports epigenetic age and expression, not fixed genotypes, so there is
+no allele to tier. Its 12 markers are authored as a new `EpigeneticInterpretation`
+shape (`epigen-hq-interpretations.draft.ts`): measures, higher-suggests,
+lower-suggests, and a wellness note per marker, with no genotype and no severity.
+Composition markers are framed neither-direction-better; exposure signatures are
+framed reversible and non-blaming. The EpigenHQ display surface that consumes
+these interpretations is still its own design item.
 
-### 3.5 PeptideIQ (peptide-iq) and 3.6 CannabisIQ (cannabis-iq) - educational
-Both are educational gene panels today (panelType `educational`). They name genes
-but do not assay and tier a member's genotype, so there is no per genotype report
-or severity to show. If the product decision is to make either a true assayed SNP
-test, each then follows the NutrigenDX path (author `*-deep.ts`, register, populate
-`VARIANT_SEVERITY`). Until that product decision, they remain educational cards and
-the variant report treatment intentionally does not apply.
+### 3.5 PeptideIQ (peptide-iq) and 3.6 CannabisIQ (cannabis-iq) - DRAFTS AUTHORED (Phases 4 and 5, educational, non-live)
+Per Gary's decision both stay EDUCATIONAL. The 14 PeptideIQ genes
+(`peptide-iq-deep.draft.ts`) and the 10 CannabisIQ genes
+(`cannabis-iq-deep.draft.ts`) are authored as educational monographs with NO
+genotype tiers and NO severity: each gene has one keyVariant with a single
+empty-genotype row labeled "Educational" so the UI derives no tier. CannabisIQ
+holds a strict education-not-advice framing (AKT1 as hedged risk-awareness,
+DRD2/Taq1A ANKK1 location disclosed, metabolism genes defer to a clinician). If a
+future product decision makes either a true assayed SNP test, each then follows
+the NutrigenDX path (tiered genotype rows + a severity draft + the go-live wiring).
 
 ---
 
-## 4. Recommended sequence
+## 4. Sequence (executed)
 
-1. NutrigenDX first. It is the only other genotype panel, the wiring is ready, and
-   its roster is already signed off. This is where "the treatment on a second test"
-   actually becomes visible. Author and gate its `*-deep.ts` and its
-   `VARIANT_SEVERITY` tiers.
-2. Biomarker / lab track for HormoneIQ in parallel via the 204c engine and the
-   204d biomarker monographs (a different surface, not this treatment).
-3. EpigenHQ as a separate design once the SNP and biomarker tracks are settled.
-4. Peptide / Cannabis only if a product decision turns them into assayed tests.
+1. DONE - NutrigenDX authored first (Phase 1), the only other genotype panel.
+2. DONE - HormoneIQ genotype subset authored (Phase 2); its 24 biomarkers remain
+   on the separate lab / biomarker track (204c engine + 204d biomarker monographs).
+3. DONE - EpigenHQ interpretations authored (Phase 3); the EpigenHQ display surface
+   that consumes them is still its own design item.
+4. DONE - PeptideIQ and CannabisIQ authored as educational monographs (Phases 4
+   and 5); tiered genotype rows only if a future product decision makes them
+   assayed tests.
 
-## 5. Out of scope (this document)
-- Authoring any deep report copy, lay summary, or severity tier (all human gated).
+Next, per panel, when content passes the gate: resolve the two go-live blockers in
+section 0, then wire that panel live (attach the draft to its markers via the
+`panels.ts` merge loop, register it in `DEEP_REPORT_REGISTRY`, and merge its
+severity draft into `VARIANT_SEVERITY`). Each go-live is a separate, human-gated
+step and is NOT done here.
+
+## 5. Out of scope (still not done)
+- Flipping any draft live: attaching to markers, registering, or merging severity.
+  Each go-live is human-gated and needs the two section 0 blockers resolved first.
 - Changing severity assignment logic (204g) or the report components (204f / 204k).
-- The methylation panel, which is complete.
-- Building the HormoneIQ biomarker surface or the EpigenHQ epigenetic surface
-  (each is its own design and plan).
+- The methylation panel (GeneXM), which is already complete and live.
+- Building the HormoneIQ biomarker surface or the EpigenHQ epigenetic display
+  surface (each is its own design and plan).
+- Confirming the three carry items at the gate: the cross-panel COMT framing, the
+  DRD2/Taq1A ANKK1 location disclosure, and the unverified-citation pass.
