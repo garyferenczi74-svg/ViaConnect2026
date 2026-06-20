@@ -30,11 +30,9 @@ describe('Your Genetic Blueprint page', () => {
     expect(source).toContain('Your Genetic Blueprint');
   });
 
-  it('has a sticky back control to the Your Variants list (204i)', () => {
-    expect(source).toContain('href="/genetics#your-variants"');
-    expect(source).toContain('Back to Your Variants');
-    // Sticky just below the 64px brand header so it is reachable while scrolled.
-    expect(source).toContain('sticky top-16');
+  it('has a back link to the My Genetics hub', () => {
+    expect(source).toContain('href="/genetics"');
+    expect(source).toContain('My Genetics');
   });
 
   it('preserves the buy path with a Shop GeneX360 CTA to the PLP', () => {

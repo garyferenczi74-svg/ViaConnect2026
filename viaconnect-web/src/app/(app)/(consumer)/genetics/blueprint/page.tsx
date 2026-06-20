@@ -29,22 +29,16 @@ export default function GeneticBlueprintPage() {
   return (
     <div className="min-h-screen bg-[#1A2744] text-white">
       <div className="mx-auto max-w-7xl px-4 py-8 md:px-6 md:py-10">
-        {/* Prompt 204i follow-up (Gary 2026-06-19): a STICKY back control so a
-            member who deep-linked into a specific SNP report (from the Your
-            Variants Report pill) can always return to the Your Variants list,
-            even while scrolled deep into a report. It sticks just below the 64px
-            brand header (top-16, z-30 under the header's z-50) so it never
-            overlaps it. The full-bleed backdrop hides content scrolling under it.
-            /genetics#your-variants lands on the Your Variants card. */}
-        <div className="sticky top-16 z-30 -mx-4 mb-2 border-b border-white/10 bg-[#1A2744]/85 px-4 py-3 backdrop-blur-md md:-mx-6 md:px-6">
-          <Link
-            href="/genetics#your-variants"
-            className="inline-flex min-h-[44px] items-center gap-2 text-sm font-medium text-white/80 no-underline transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744]"
-          >
-            <ArrowLeft aria-hidden="true" className="h-4 w-4" strokeWidth={1.5} />
-            Back to Your Variants
-          </Link>
-        </div>
+        {/* Back to the My Genetics hub. Prompt 204i: the per-report "Back to Your
+            Variants" control now lives beside the Description / Full Report tabs
+            (VariantReportTabs), so this stays the simple page-level hub link. */}
+        <Link
+          href="/genetics"
+          className="inline-flex min-h-[44px] items-center gap-2 text-sm font-medium text-white/70 no-underline transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744]"
+        >
+          <ArrowLeft aria-hidden="true" className="h-4 w-4" strokeWidth={1.5} />
+          My Genetics
+        </Link>
 
         {/* Page header, mirroring the Your Genetic Blueprint hero card that links
             here, plus a Shop GeneX360 CTA that preserves the buy path. */}

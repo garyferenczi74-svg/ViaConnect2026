@@ -103,6 +103,15 @@ describe('VariantReportTabs source', () => {
     expect(source.toLowerCase()).not.toContain('text-red');
   });
 
+  it('has a Back to Your Variants control beside the tabs, outside the tablist (204i)', () => {
+    expect(source).toContain("import Link from 'next/link'");
+    expect(source).toContain("YOUR_VARIANTS_HREF = '/genetics#your-variants'");
+    expect(source).toContain('href={YOUR_VARIANTS_HREF}');
+    expect(source).toContain('Back to Your Variants');
+    // The control is a nav Link, not a role=tab, so the tablist stays tabs-only.
+    expect(source).toContain('<Link');
+  });
+
   it('contains no em or en dashes', () => {
     expect(source.includes(String.fromCharCode(0x2014))).toBe(false);
     expect(source.includes(String.fromCharCode(0x2013))).toBe(false);

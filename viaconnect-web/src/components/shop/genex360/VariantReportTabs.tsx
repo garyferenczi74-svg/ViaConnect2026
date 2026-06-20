@@ -38,7 +38,8 @@
 
 import { useEffect, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
-import { BookOpen, FileText, ShieldCheck } from 'lucide-react';
+import Link from 'next/link';
+import { ArrowLeft, BookOpen, FileText, ShieldCheck } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { PanelMarker, SnpDeepReport as SnpDeepReportData } from '@/data/genex360/types';
 import { SnpDeepReport } from './SnpDeepReport';
@@ -47,6 +48,12 @@ import type { SeverityTier } from '@/lib/genetics/severity';
 // The consult note shown on every Description tab, validated or interim. Matches
 // the existing approved short copy used across the genetics surface.
 const CONSULT_NOTE = 'Consult a practitioner before making changes based on genetic data';
+
+// Prompt 204i (Gary 2026-06-19): destination of the per-report "Back to Your
+// Variants" control. VariantReportTabs is only mounted on /genetics/blueprint (a
+// My Genetics surface reached from the Your Variants Report pill), so it returns
+// to the Your Variants list on /genetics, landing on its #your-variants anchor.
+const YOUR_VARIANTS_HREF = '/genetics#your-variants';
 
 type ReportTab = 'description' | 'full';
 
@@ -135,6 +142,11 @@ export function VariantReportTabs({
 
   return (
     <div className="space-y-4">
+      {/* Header row: the WAI-ARIA tablist (Description / Full Report) on the
+          leading edge, and the Back to Your Variants control on the trailing edge
+          (Prompt 204i, Gary). The back control sits OUTSIDE the tablist so the
+          tablist only ever contains tabs. On narrow widths it wraps below. */}
+      <div className="flex flex-wrap items-center justify-between gap-2">
       {/* Tab control: WAI-ARIA tablist mirroring PanelPillTabs. */}
       <div
         role="tablist"
@@ -170,6 +182,18 @@ export function VariantReportTabs({
             </button>
           );
         })}
+      </div>
+
+        {/* Back to Your Variants: a Next Link styled like an inactive tab pill so
+            it reads as part of the report header beside the tabs, but it is a nav
+            link (outside the tablist), not a tab. 44px target, focus ring. */}
+        <Link
+          href={YOUR_VARIANTS_HREF}
+          className="inline-flex min-h-[44px] flex-none items-center gap-1.5 rounded-full border border-white/15 bg-[#1E3054] px-4 py-2 text-[13px] font-semibold text-white/70 no-underline transition-colors duration-200 hover:border-white/35 hover:text-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744] motion-reduce:transition-none"
+        >
+          <ArrowLeft aria-hidden="true" className="h-4 w-4 shrink-0" strokeWidth={1.5} />
+          Back to Your Variants
+        </Link>
       </div>
 
       {/* Description tabpanel: validated laySummary or the neutral interim state. */}
