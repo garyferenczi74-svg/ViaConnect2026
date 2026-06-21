@@ -1,9 +1,8 @@
-// Prompt 204 (2026-06-20): NutrigenDX clinical content DRAFT. This file is a
-// PENDING, NON-LIVE draft authored as the FTO exemplar that the remaining 26
-// NutrigenDX SNPs will follow. Nothing here ships: the draft is imported only by
-// its test, it is NOT attached to any panel marker, and it is NOT registered in
-// panels.ts or any report registry. The human clinical and compliance gate
-// (Gary) is the only path to live.
+// Prompt 204 (2026-06-20): NutrigenDX clinical content (all 27 SNP deep reports).
+// Authored by Hannah and LIVE since Gary's clinical and compliance sign-off
+// (2026-06-20): attached to the NutrigenDX markers by panels.ts and registered in
+// DEEP_REPORT_REGISTRY (variantReport.config.ts), so it is user-facing on the
+// blueprint. The "draft" in the filename is historical (the gate seam).
 //
 // The data shape mirrors the validated GeneXM deep reports (genex-m-deep.ts) and
 // carries NO citations field by design: the data type has none, and citation

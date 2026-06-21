@@ -1,7 +1,8 @@
-// Prompt 204 (2026-06-20): DRAFT per-genotype severity for NutrigenDX. PENDING the
-// human clinical and compliance gate (Gary). This is NOT merged into
-// VARIANT_SEVERITY (src/lib/genetics/variantSeverity.ts) and is read by nothing
-// live; it is imported only by its test. The only path to live is the gate.
+// Prompt 204 (2026-06-20): per-genotype severity for NutrigenDX. Authored by
+// Hannah and LIVE since Gary's clinical and compliance sign-off (2026-06-20): it
+// is merged into VARIANT_SEVERITY under the "nutrigen-dx" panel slug
+// (src/lib/genetics/variantSeverity.ts). The "Draft" in the filename is historical
+// (the gate seam); the content is gate-approved and user-facing.
 //
 // Shape mirrors VARIANT_SEVERITY exactly: rsID (lowercase) -> normalized genotype
 // (uppercase, no separators, per normalizeGenotype) -> validated SeverityTier.

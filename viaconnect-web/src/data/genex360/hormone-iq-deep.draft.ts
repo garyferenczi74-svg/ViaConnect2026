@@ -1,7 +1,7 @@
-// Prompt 204 (2026-06-20): HormoneIQ clinical content DRAFT, Phase 2. PENDING,
-// NON-LIVE: imported only by its test, NOT attached to any panel marker, NOT
-// registered, NOT merged into VARIANT_SEVERITY. The human clinical and
-// compliance gate (Gary) is the only path to live.
+// Prompt 204 (2026-06-20): HormoneIQ clinical content (the 5 genotype-SNP deep
+// reports). Authored by Hannah and LIVE since Gary's clinical and compliance
+// sign-off (2026-06-20): attached to the HormoneIQ SNP markers by panels.ts and
+// registered in DEEP_REPORT_REGISTRY. The "draft" in the filename is historical.
 //
 // HormoneIQ is biomarker-led. ONLY these 5 of its 29 markers are genotype SNPs
 // and get a per-SNP report here: COMT, CYP1A1, CYP1B1, CYP19A1, SRD5A2. The other

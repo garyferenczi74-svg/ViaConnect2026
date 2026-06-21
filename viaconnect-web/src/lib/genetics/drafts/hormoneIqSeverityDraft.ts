@@ -1,6 +1,7 @@
-// Prompt 204 (2026-06-20): DRAFT per-genotype severity for HormoneIQ (Phase 2).
-// PENDING the human clinical and compliance gate. NOT merged into VARIANT_SEVERITY
-// and read by nothing live; imported only by its test.
+// Prompt 204 (2026-06-20): per-genotype severity for HormoneIQ (the 5 genotype
+// SNPs). Authored by Hannah and LIVE since Gary's clinical and compliance sign-off
+// (2026-06-20): merged into VARIANT_SEVERITY under the "hormone-iq" panel slug.
+// The "Draft" in the filename is historical; the content is gate-approved.
 //
 // Shape mirrors VARIANT_SEVERITY: rsID (lowercase) -> normalized genotype
 // (uppercase, no separators) -> validated SeverityTier. Severity capped at

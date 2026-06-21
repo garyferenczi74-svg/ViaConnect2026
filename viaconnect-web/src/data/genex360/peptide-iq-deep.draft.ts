@@ -1,13 +1,12 @@
-// Prompt 204h (2026-06-20): PeptideIQ EDUCATIONAL deep report DRAFTS. This is a
-// PENDING, NON-LIVE draft. Per Gary's decision, PeptideIQ is EDUCATIONAL, so it
-// carries NO genotype tiers and NO severity scoring. Each gene exposes ONE
-// keyVariant with the canonical rsID and a SINGLE genotypes row whose genotype
-// string is empty and whose label is "Educational". That empty genotype plus the
-// "Educational" label deliberately stops the UI deriving any Typical, Moderate,
-// or High tier and produces no severity. Nothing here ships: the draft is
-// imported only by its test, it is NOT attached to any panel marker, and it is
-// NOT registered in panels.ts or any report registry. The human clinical and
-// compliance gate is the only path to live.
+// Prompt 204 (2026-06-20): PeptideIQ EDUCATIONAL deep reports. LIVE since Gary's
+// clinical and compliance sign-off (2026-06-20): attached to the PeptideIQ markers
+// by panels.ts and registered in DEEP_REPORT_REGISTRY, so it is user-facing on the
+// blueprint. Per Gary's decision PeptideIQ is EDUCATIONAL: NO genotype tiers and
+// NO severity scoring. Each gene exposes ONE keyVariant with the canonical rsID and
+// a SINGLE genotypes row whose genotype string is empty and whose label is
+// "Educational". That empty genotype plus the "Educational" label deliberately
+// stops the UI deriving any Typical, Moderate, or High tier and produces no
+// severity. The "draft" in the filename is historical (the gate seam).
 //
 // The panel theme is peptide response and tissue repair: the growth hormone and
 // IGF axis, appetite peptides, collagen and connective structure, angiogenesis,
