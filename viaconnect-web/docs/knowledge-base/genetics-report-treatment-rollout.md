@@ -1,45 +1,45 @@
 # Genetic Tests: Variant Report Treatment Rollout (All 6 Panels)
 
-Status: ALL PHASES COMPLETE (Phases 1 to 5 authored as PENDING, NON-LIVE drafts)
+Status: LIVE (four panels shipped to users 2026-06-20 after Gary's clinical and compliance sign-off)
 Date: 2026-06-20
-Owner decision: Gary asked to confirm the recent report treatments (Prompts 204f / 204g / 204j / 204k) reach all genetic tests, not just methylation, then chose to author per-SNP clinical content for every test, one phase per test (PeptideIQ and CannabisIQ as educational). All five phases are now authored as pending, non-live drafts, gated on a human clinical and compliance pass.
+Owner decision: Gary asked to confirm the recent report treatments (Prompts 204f / 204g / 204j / 204k) reach all genetic tests, not just methylation, then chose to author per-SNP clinical content for every test, one phase per test (PeptideIQ and CannabisIQ as educational). After authoring all phases as gated drafts, Gary signed off (the clinical and compliance gate) and took all ready panels live at once.
 
-This document maps what each of the six GENEX360 panels needs to receive the full
-variant report treatment, and now records that the content has been authored as
-non-live drafts. The drafts are validated clinical content authored by Hannah and
-ship to a live surface only on a human clinical and compliance pass (the same gate
-held across 204d, 204g, and 204h). See the implementation plan at
+This document maps what each of the six GENEX360 panels needs, and now records that
+four panels are LIVE to users on the blueprint. See the implementation plan at
 `docs/superpowers/plans/2026-06-20-genetics-snp-clinical-content.md`.
 
 ---
 
-## 0. Completion status (2026-06-20)
+## 0. Live status (2026-06-20)
 
-All six tests are covered. The per-SNP clinical content is authored and committed
-as PENDING, NON-LIVE drafts: each draft is imported only by its test, NOT attached
-to any panel marker, NOT in `DEEP_REPORT_REGISTRY`, and NOT merged into
-`VARIANT_SEVERITY`, so nothing displays until the gate. 38 tests pass; Jeffery
-reviewed each phase SHIP as non-live drafts.
+Four panels are LIVE: their deep reports are attached to markers (`panels.ts`),
+registered in `DEEP_REPORT_REGISTRY`, and the two SNP panels' severity is merged
+into `VARIANT_SEVERITY`, which is now PANEL-SCOPED so a shared rsID never crosses
+panels. EpigenHQ is the one panel still gated (no display surface yet, see 3.4).
+The two former go-live blockers are both RESOLVED.
 
-| Phase | Test | Authored draft | Severity draft |
+| Phase | Test | Status | Severity |
 | --- | --- | --- | --- |
-| 0 | GeneXM | LIVE already (`genex-m-deep.ts`) | LIVE (zygosity) |
-| 1 | NutrigenDX | `nutrigen-dx-deep.draft.ts` (27 SNPs) | `nutrigenDxSeverityDraft.ts` |
-| 2 | HormoneIQ | `hormone-iq-deep.draft.ts` (5 genotype SNPs) | `hormoneIqSeverityDraft.ts` (CYP19A1 untiered) |
-| 3 | EpigenHQ | `epigen-hq-interpretations.draft.ts` (12, new type) | none (not a genotype panel) |
-| 4 | PeptideIQ | `peptide-iq-deep.draft.ts` (14 educational) | none (educational) |
-| 5 | CannabisIQ | `cannabis-iq-deep.draft.ts` (10 educational) | none (educational) |
+| 0 | GeneXM | LIVE | LIVE (zygosity) |
+| 1 | NutrigenDX | LIVE (27 SNP reports) | LIVE (per-genotype) |
+| 2 | HormoneIQ | LIVE (5 SNP reports) | LIVE (per-genotype; CYP19A1 untiered) |
+| 3 | EpigenHQ | GATED (drafted; no display surface) | none (not a genotype panel) |
+| 4 | PeptideIQ | LIVE (14 educational) | none (educational) |
+| 5 | CannabisIQ | LIVE (10 educational) | none (educational) |
 
-TWO GO-LIVE BLOCKERS (documented in the severity draft headers; must be resolved
-before ANY general genotype panel ships, beyond clinical sign-off):
-1. The general severity ladder is clinical, not allele-copy-count-monotonic (for
-   example FADS1 TT, VDR ff, CYP1A1 GG score moderate, not high). The 204i STATUS
-   chip and the 204i/204k matched-row highlight derive their tier from copy count
-   (the methylation model), so they would mislabel rows on the general path. The
-   chip and highlight must read the validated tier directly from the stored
-   genotype before go-live.
-2. NAT2 acetylator status is a composite phenotype across several SNPs and needs a
-   dedicated resolver, not the single-rsID severity map.
+THE TWO GO-LIVE BLOCKERS ARE RESOLVED:
+1. RESOLVED. The STATUS chip, row tint, and matched-row highlight now read the
+   VALIDATED per-genotype tier first (panel-scoped `severityFor`), copy count only
+   as the fallback; the highlight marks the member's exact genotype. The
+   methylation panel is provably unchanged (absent from the panel-scoped
+   `VARIANT_SEVERITY`, stays on the zygosity path).
+2. RESOLVED. NAT2 has a dedicated composite resolver (`src/lib/genetics/nat2.ts`),
+   phenotype-only and untiered.
+
+KNOWN FOLLOW-UP (data integrity): `user_variants` upserts on (user_id, rsid) only.
+A member who uploads two panels that share an rsID (COMT rs4680 is in four panels)
+would have one overwrite the other; the fix adds panel_key to the conflict key and
+its matching unique constraint.
 
 ---
 

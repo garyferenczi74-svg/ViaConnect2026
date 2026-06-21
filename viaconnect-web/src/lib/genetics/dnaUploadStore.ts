@@ -90,9 +90,15 @@ export async function persistInterpretedVariants(
         clinical_significance: v.clinical_significance,
       }));
 
+      // Go-live follow-up (2026-06-20): the conflict key is PANEL-SCOPED
+      // (user_id, rsid, panel_key). A member can carry the same rsID across more
+      // than one panel (COMT rs4680 is in four panels), so keying on (user_id,
+      // rsid) alone made a second panel's upload overwrite the first panel's row
+      // for a shared rsID. This matches the user_variants_user_rsid_panel_unique
+      // constraint (see the matching migration).
       const { error: variantErr } = await supabase
         .from('user_variants')
-        .upsert(rowsToWrite, { onConflict: 'user_id,rsid' });
+        .upsert(rowsToWrite, { onConflict: 'user_id,rsid,panel_key' });
 
       if (variantErr) {
         safeLog.warn('genetics.persist', 'user_variants upsert failed (continuing)', {

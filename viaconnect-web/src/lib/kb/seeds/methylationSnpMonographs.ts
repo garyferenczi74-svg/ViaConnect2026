@@ -135,7 +135,9 @@ export const METHYLATION_SNP_MONOGRAPHS: KnowledgeEntry[] = [
           "Harmon DL, Shields DC, Woodside JV, et al. Methionine synthase D919G polymorphism is a significant but modest determinant of circulating homocysteine concentrations. Genet Epidemiol. 1999;17(4):298-309.",
         source_type: "observational",
         grade: "C",
-        unverified: true,
+        // Metadata verified against PubMed PMID 10520212 (2026-06-20).
+        url: "https://pubmed.ncbi.nlm.nih.gov/10520212/",
+        unverified: false,
       },
     ],
     cautions: ["Effect size is small and depends on vitamin B12 status."],
@@ -324,7 +326,9 @@ export const METHYLATION_SNP_MONOGRAPHS: KnowledgeEntry[] = [
           "Hotamisligil GS, Breakefield XO. Human monoamine oxidase A gene determines levels of enzyme activity. Am J Hum Genet. 1991;49(2):383-392.",
         source_type: "small_study",
         grade: "C",
-        unverified: true,
+        // Metadata verified against PubMed PMID 1678250 (2026-06-20).
+        url: "https://pubmed.ncbi.nlm.nih.gov/1678250/",
+        unverified: false,
       },
     ],
     cautions: [
@@ -401,7 +405,9 @@ export const METHYLATION_SNP_MONOGRAPHS: KnowledgeEntry[] = [
           "Heil SG, Van der Put NM, Waas ET, den Heijer M, Trijbels FJ, Blom HJ. Is mutated serine hydroxymethyltransferase (SHMT) involved in the etiology of neural tube defects? Mol Genet Metab. 2001;73(2):164-172.",
         source_type: "small_study",
         grade: "C",
-        unverified: true,
+        // Metadata verified against PubMed PMID 11386852 (2026-06-20).
+        url: "https://pubmed.ncbi.nlm.nih.gov/11386852/",
+        unverified: false,
       },
     ],
     cautions: ["Effects on homocysteine are small and inconsistent."],

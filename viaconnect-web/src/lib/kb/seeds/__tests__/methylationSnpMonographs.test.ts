@@ -55,12 +55,20 @@ describe("METHYLATION_SNP_MONOGRAPHS seed", () => {
     }
   });
 
-  it("flags citations the drafter could not confirm so verification must resolve them", () => {
+  it("has no unconfirmed citations left: the three flagged ones were verified against PubMed", () => {
+    // The MTR (PMID 10520212), MAOA (PMID 1678250), and SHMT1 (PMID 11386852)
+    // citations were confirmed against PubMed on 2026-06-20, so the verification
+    // step is resolved (unverified false) and each carries a resolvable PubMed url.
     const unverified = METHYLATION_SNP_MONOGRAPHS.flatMap((e) =>
       e.citations.filter((c) => c.unverified === true),
     );
-    // MTR rs1805087, MAOA rs6323, SHMT1 rs1979277 (real claims, unconfirmed metadata).
-    expect(unverified.length).toBe(3);
+    expect(unverified.length).toBe(0);
+    for (const pmid of ["10520212", "1678250", "11386852"]) {
+      const found = METHYLATION_SNP_MONOGRAPHS.some((e) =>
+        e.citations.some((c) => c.url === `https://pubmed.ncbi.nlm.nih.gov/${pmid}/`),
+      );
+      expect(found, `PMID ${pmid} url present`).toBe(true);
+    }
   });
 
   it("never manufactures a citation for a synonymous or no-function variant", () => {
